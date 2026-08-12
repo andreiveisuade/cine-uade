@@ -142,10 +142,20 @@ export const funciones = [
   { id: 14, peliculaId: 8, salaId: 4, inicio: fecha(2, "21:00"), idioma: "SUBTITULADA", proyeccion: "DOS_D", precio: 5500 },
 ];
 
+// Clientes y administradores son los dos roles de Usuario: comparten nombre y email,
+// y solo el administrador tiene credenciales.
+export const ROLES = ["CLIENTE", "ADMINISTRADOR"];
+
 export const clientes = [
-  { id: 1, nombre: "Andrei Veis", email: "andrei@uade.edu.ar" },
-  { id: 2, nombre: "Lucía Fernández", email: "lucia@uade.edu.ar" },
-  { id: 3, nombre: "Martín Sosa", email: "martin@uade.edu.ar" },
+  { id: 1, nombre: "Andrei Veis", email: "andrei@uade.edu.ar", rol: "CLIENTE" },
+  { id: 2, nombre: "Lucía Fernández", email: "lucia@uade.edu.ar", rol: "CLIENTE" },
+  { id: 3, nombre: "Martín Sosa", email: "martin@uade.edu.ar", rol: "CLIENTE" },
+];
+
+// La clave va en claro solo porque es data de prueba del frontend: contra el backend
+// real el login es un POST y la comparación de hashes ocurre allá.
+export const administradores = [
+  { id: 4, nombre: "Encargado del complejo", email: "encargado@cine.uade.ar", rol: "ADMINISTRADOR", password: "cine2026" },
 ];
 
 function asientoDe(salaId, codigo) {

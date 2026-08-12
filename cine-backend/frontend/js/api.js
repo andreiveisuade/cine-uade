@@ -142,7 +142,12 @@ export function crearReserva({ funcionId, nombre, email, codigos }) {
 
   let cliente = datos.clientes.find((c) => c.email.toLowerCase() === email.trim().toLowerCase());
   if (!cliente) {
-    cliente = { id: siguienteId(datos.clientes), nombre: nombre.trim(), email: email.trim() };
+    cliente = {
+      id: siguienteId([...datos.clientes, ...datos.administradores]),
+      nombre: nombre.trim(),
+      email: email.trim(),
+      rol: "CLIENTE",
+    };
     datos.clientes.push(cliente);
   }
 
@@ -174,13 +179,18 @@ export function obtenerReserva(id) {
 
 /* ----------------------------------------------------------------- encargado */
 
-const CREDENCIALES = { usuario: "encargado", clave: "cine2026" };
-
-export function login(usuario, clave) {
-  if (usuario === CREDENCIALES.usuario && clave === CREDENCIALES.clave) {
-    return responder({ usuario, nombre: "Encargado del complejo" });
+/**
+ * El mensaje de error es el mismo para email inexistente y contraseña equivocada:
+ * decir cuál de los dos falló confirma qué emails están registrados.
+ */
+export function login(email, password) {
+  const admin = datos.administradores.find(
+    (a) => a.email.toLowerCase() === String(email || "").trim().toLowerCase());
+  if (!admin || admin.password !== password) {
+    return fallar("Email o contraseña incorrectos");
   }
-  return fallar("Usuario o contraseña incorrectos");
+  const { password: _, ...sinCredenciales } = admin;
+  return responder(sinCredenciales);
 }
 
 export function obtenerPeliculas() {
