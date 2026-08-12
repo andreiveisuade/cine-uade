@@ -413,6 +413,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
+        <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
@@ -662,6 +663,61 @@ Libres: 52 de 56</code></pre>
       </p>
     </section>
 
+    <section class="doc-section" id="usuarios">
+      <h2>Usuarios y roles</h2>
+      <p>
+        Dos roles: el <strong>cliente</strong>, que compra entradas sin registrarse con contraseña, y el
+        <strong>administrador del cine</strong>, que carga películas, salas y programa funciones, y para eso
+        sí necesita iniciar sesión.
+      </p>
+
+      <h3>Herencia, no un enum suelto</h3>
+      <pre><code>Usuario (interfaz)      nombre, email, rol
+   ├── Cliente          sin credenciales
+   └── AdministradorCine  + passwordHash</code></pre>
+      <p>
+        Podría haberse resuelto con un solo tipo <code>Usuario</code> y un campo <code>rol</code>. Se eligió la
+        jerarquía porque los subtipos <strong>difieren en datos</strong>, no solo en una etiqueta: el
+        administrador tiene contraseña y el cliente no. Cuando la única diferencia es el valor de un campo, un
+        enum alcanza; cuando cambia la estructura, corresponde herencia.
+      </p>
+      <p>
+        El enum <code>Rol</code> igual existe, pero con otro propósito: es el <em>discriminador</em> que permite
+        saber, al leer una fila de la base, qué implementación construir.
+      </p>
+
+      <h3>Una tabla para los dos</h3>
+      <p>
+        Cliente y administrador comparten nombre y email, así que van a la misma tabla <code>usuario</code> con
+        una columna <code>rol</code>. Separarlos en dos tablas duplicaría esa estructura y obligaría a mirar en
+        dos lados para saber si un email ya está tomado.
+      </p>
+      <pre><code>id  nombre     email                rol            password_hash
+1   Encargado  encargado@cine.com   ADMINISTRADOR  a2c14f0d95025288…
+2   Ana        ana@mail.com         CLIENTE        NULL</code></pre>
+      <p>
+        <code>password_hash</code> admite <code>NULL</code> justamente porque el cliente no tiene: la base
+        refleja la misma asimetría que el modelo.
+      </p>
+
+      <h3>Las contraseñas no se guardan</h3>
+      <p>
+        Se guarda su hash SHA-256. Al iniciar sesión se hashea lo que ingresó el usuario y se comparan los
+        hashes; en ningún momento existe la contraseña original en la base.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Alcanza para el TP, no para producción.</strong> Es SHA-256 <em>sin salt</em>: dos usuarios con
+          la misma clave producen el mismo hash, y hay tablas precalculadas para revertir hashes comunes. Un
+          sistema real usa bcrypt o Argon2, que son lentos a propósito y salan cada clave.
+        </p>
+        <p>
+          El login además devuelve el mismo mensaje para email inexistente y contraseña equivocada: distinguirlos
+          le confirmaría a un atacante qué emails están registrados.
+        </p>
+      </div>
+    </section>
+
     <section class="doc-section" id="capas">
       <h2>Arquitectura en capas</h2>
       <p>Cada capa tiene una responsabilidad y solo conoce a la de abajo.</p>
@@ -827,7 +883,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
             <tr><td><code>pelicula</code></td><td>título y duración</td></tr>
             <tr><td><code>pelicula_genero</code></td><td>relación N:M con los géneros</td></tr>
             <tr><td><code>sala</code></td><td>nombre y capacidad</td></tr>
-            <tr><td><code>cliente</code></td><td>nombre y email (único)</td></tr>
+            <tr><td><code>usuario</code></td><td>clientes y administradores, con columna <code>rol</code></td></tr>
             <tr><td><code>funcion</code></td><td>película + sala + inicio + precio</td></tr>
             <tr><td><code>reserva</code></td><td>función + cliente + cantidad + estado</td></tr>
           </tbody>

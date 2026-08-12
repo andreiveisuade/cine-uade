@@ -39,6 +39,11 @@ public class ClienteImpl implements Cliente {
     }
 
     @Override
+    public Rol getRol() {
+        return Rol.CLIENTE;
+    }
+
+    @Override
     public String toString() {
         return "[" + id + "] " + nombre + " <" + email + ">";
     }

@@ -33,10 +33,15 @@ CREATE TABLE IF NOT EXISTS asiento (
     FOREIGN KEY (sala_id) REFERENCES sala(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS cliente (
+-- Clientes y administradores viven en la misma tabla: comparten nombre y email.
+-- La columna rol discrimina cual es cual. password_hash solo lo usa el administrador:
+-- el cliente compra sin iniciar sesion, por eso admite NULL.
+CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE
+    email VARCHAR(100) NOT NULL UNIQUE,
+    rol VARCHAR(15) NOT NULL,
+    password_hash VARCHAR(64) NULL
 );
 
 CREATE TABLE IF NOT EXISTS funcion (
@@ -57,7 +62,7 @@ CREATE TABLE IF NOT EXISTS reserva (
     cliente_id INT NOT NULL,
     estado VARCHAR(15) NOT NULL,
     FOREIGN KEY (funcion_id) REFERENCES funcion(id),
-    FOREIGN KEY (cliente_id) REFERENCES cliente(id)
+    FOREIGN KEY (cliente_id) REFERENCES usuario(id)
 );
 
 -- Una entrada por butaca, con lo que se cobro por ella: si manana cambia el precio

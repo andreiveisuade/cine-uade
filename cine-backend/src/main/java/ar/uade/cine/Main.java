@@ -1,5 +1,6 @@
 package ar.uade.cine;
 
+import ar.uade.cine.interfaces.AdministradorDAO;
 import ar.uade.cine.interfaces.AsientoDAO;
 import ar.uade.cine.interfaces.ClienteDAO;
 import ar.uade.cine.interfaces.FuncionDAO;
@@ -7,6 +8,7 @@ import ar.uade.cine.interfaces.GeneradorTicket;
 import ar.uade.cine.interfaces.PeliculaDAO;
 import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
+import ar.uade.cine.persistencia.AdministradorDAOMySQL;
 import ar.uade.cine.persistencia.AsientoDAOMySQL;
 import ar.uade.cine.persistencia.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.FuncionDAOMySQL;
@@ -14,6 +16,7 @@ import ar.uade.cine.persistencia.GeneradorTicketTxt;
 import ar.uade.cine.persistencia.PeliculaDAOMySQL;
 import ar.uade.cine.persistencia.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.SalaDAOMySQL;
+import ar.uade.cine.servicio.GestorAdministradores;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -33,6 +36,7 @@ public class Main {
         FuncionDAO funcionDAO = new FuncionDAOMySQL();
         ClienteDAO clienteDAO = new ClienteDAOMySQL();
         AsientoDAO asientoDAO = new AsientoDAOMySQL();
+        AdministradorDAO administradorDAO = new AdministradorDAOMySQL();
 
         ReservaDAO reservaDAO = new ReservaDAOMySQL();
         // Cambiando esta línea las reservas pasan a guardarse en reservas.txt,
@@ -45,9 +49,11 @@ public class Main {
         GestorSalas gestorSalas = new GestorSalas(salaDAO, asientoDAO);
         GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
         GestorClientes gestorClientes = new GestorClientes(clienteDAO);
+        GestorAdministradores gestorAdministradores = new GestorAdministradores(administradorDAO);
         GestorReservas gestorReservas = new GestorReservas(
                 reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO, generadorTicket);
 
-        new MenuConsola(gestorCartelera, gestorSalas, gestorFunciones, gestorClientes, gestorReservas).iniciar();
+        new MenuConsola(gestorCartelera, gestorSalas, gestorFunciones, gestorClientes,
+                gestorReservas, gestorAdministradores).iniciar();
     }
 }

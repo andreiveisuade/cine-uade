@@ -12,17 +12,19 @@ import java.util.Optional;
 import ar.uade.cine.interfaces.Cliente;
 import ar.uade.cine.interfaces.ClienteDAO;
 import ar.uade.cine.modelo.ClienteImpl;
+import ar.uade.cine.modelo.Rol;
 
 public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public void guardar(Cliente cliente) {
-        String sql = "INSERT INTO cliente (nombre, email) VALUES (?, ?)";
+        String sql = "INSERT INTO usuario (nombre, email, rol) VALUES (?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, cliente.getNombre());
             ps.setString(2, cliente.getEmail());
+            ps.setString(3, Rol.CLIENTE.name());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -37,11 +39,12 @@ public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public Optional<Cliente> buscarPorId(int id) {
-        String sql = "SELECT id, nombre, email FROM cliente WHERE id = ?";
+        String sql = "SELECT id, nombre, email FROM usuario WHERE rol = ? AND id = ?";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, id);
+            ps.setString(1, Rol.CLIENTE.name());
+            ps.setInt(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(mapear(rs)) : Optional.empty();
             }
@@ -52,11 +55,12 @@ public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public Optional<Cliente> buscarPorEmail(String email) {
-        String sql = "SELECT id, nombre, email FROM cliente WHERE email = ?";
+        String sql = "SELECT id, nombre, email FROM usuario WHERE rol = ? AND email = ?";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, email);
+            ps.setString(1, Rol.CLIENTE.name());
+            ps.setString(2, email);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(mapear(rs)) : Optional.empty();
             }
@@ -67,14 +71,16 @@ public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public List<Cliente> listar() {
-        String sql = "SELECT id, nombre, email FROM cliente ORDER BY id";
+        String sql = "SELECT id, nombre, email FROM usuario WHERE rol = ? ORDER BY id";
         List<Cliente> clientes = new ArrayList<>();
         try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-            while (rs.next()) {
-                clientes.add(mapear(rs));
+            ps.setString(1, Rol.CLIENTE.name());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    clientes.add(mapear(rs));
+                }
             }
             return clientes;
         } catch (SQLException e) {
@@ -84,11 +90,12 @@ public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public void eliminar(int id) {
-        String sql = "DELETE FROM cliente WHERE id = ?";
+        String sql = "DELETE FROM usuario WHERE id = ? AND rol = ?";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, id);
+            ps.setString(2, Rol.CLIENTE.name());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new PersistenciaException("No se pudo eliminar el cliente " + id, e);

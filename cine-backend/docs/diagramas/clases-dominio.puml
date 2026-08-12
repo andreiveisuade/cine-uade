@@ -36,10 +36,27 @@ interface Funcion {
   +getPrecio(): double
 }
 
-interface Cliente {
+interface Usuario {
   +getNombre(): String
   +getEmail(): String
+  +getRol(): Rol
 }
+
+interface Cliente {
+}
+
+interface AdministradorCine {
+  +getPasswordHash(): String
+}
+
+enum Rol {
+  CLIENTE
+  ADMINISTRADOR
+}
+
+Cliente --|> Usuario
+AdministradorCine --|> Usuario
+Usuario "1" -- "1" Rol
 
 interface Reserva {
   +getFuncionId(): int
@@ -119,6 +136,13 @@ Funcion "*" --> "1" Pelicula
 Funcion "*" --> "1" Sala
 Reserva "*" --> "1" Funcion
 Reserva "*" --> "1" Cliente
+
+note bottom of AdministradorCine
+  Solo el administrador tiene credenciales:
+  el cliente compra sin iniciar sesion.
+  Esa diferencia de datos es lo que justifica
+  la herencia en vez de un simple enum de rol.
+end note
 
 note bottom of Asiento
   El asiento no tiene estado "ocupado":

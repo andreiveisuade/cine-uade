@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import ar.uade.cine.interfaces.AdministradorCine;
 import ar.uade.cine.interfaces.Asiento;
 import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.Reserva;
@@ -15,6 +16,7 @@ import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.Idioma;
 import ar.uade.cine.modelo.Proyeccion;
 import ar.uade.cine.modelo.TipoSala;
+import ar.uade.cine.servicio.GestorAdministradores;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -35,15 +37,18 @@ public class MenuConsola {
     private final GestorFunciones funciones;
     private final GestorClientes clientes;
     private final GestorReservas reservas;
+    private final GestorAdministradores administradores;
     private final Scanner scanner = new Scanner(System.in);
 
     public MenuConsola(GestorCartelera cartelera, GestorSalas salas, GestorFunciones funciones,
-                       GestorClientes clientes, GestorReservas reservas) {
+                       GestorClientes clientes, GestorReservas reservas,
+                       GestorAdministradores administradores) {
         this.cartelera = cartelera;
         this.salas = salas;
         this.funciones = funciones;
         this.clientes = clientes;
         this.reservas = reservas;
+        this.administradores = administradores;
     }
 
     public void iniciar() {
@@ -55,6 +60,7 @@ public class MenuConsola {
             System.out.println("3. Funciones");
             System.out.println("4. Clientes");
             System.out.println("5. Reservas");
+            System.out.println("6. Administradores");
             System.out.println("0. Salir");
             System.out.print("Opción: ");
 
@@ -65,6 +71,7 @@ public class MenuConsola {
                     case "3" -> menuFunciones();
                     case "4" -> menuClientes();
                     case "5" -> menuReservas();
+                    case "6" -> menuAdministradores();
                     case "0" -> salir = true;
                     default -> System.out.println("Opción inválida");
                 }
@@ -301,6 +308,34 @@ public class MenuConsola {
             }
             case "5" -> imprimir(reservas.listarPorCliente(leerEntero("Id de cliente: ")));
             case "6" -> mostrarMapaDeFuncion(leerEntero("Id de función: "));
+            default -> System.out.println("Opción inválida");
+        }
+    }
+
+    // ---------- administradores ----------
+
+    private void menuAdministradores() {
+        System.out.println("\n-- Administradores --");
+        System.out.println("1. Listar  2. Registrar  3. Iniciar sesión");
+        System.out.print("Opción: ");
+        switch (leer()) {
+            case "1" -> imprimir(administradores.listar());
+            case "2" -> {
+                System.out.print("Nombre: ");
+                String nombre = leer();
+                System.out.print("Email: ");
+                String email = leer();
+                System.out.print("Contraseña (mínimo 6): ");
+                administradores.registrar(nombre, email, leer());
+                System.out.println("Administrador registrado");
+            }
+            case "3" -> {
+                System.out.print("Email: ");
+                String email = leer();
+                System.out.print("Contraseña: ");
+                AdministradorCine admin = administradores.iniciarSesion(email, leer());
+                System.out.println("Bienvenido, " + admin.getNombre());
+            }
             default -> System.out.println("Opción inválida");
         }
     }
