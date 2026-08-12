@@ -47,6 +47,7 @@ class GestorReservasTest {
     Path tempDir;
 
     private GestorReservas reservas;
+    private GestorSalas salas;
     private Path directorioTickets;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función, un cliente. */
@@ -61,7 +62,8 @@ class GestorReservasTest {
         directorioTickets = tempDir.resolve("tickets");
 
         new GestorCartelera(peliculaDAO).agregar("Matrix", 136, List.of(Genero.ACCION));
-        new GestorSalas(salaDAO, asientoDAO).agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        salas = new GestorSalas(salaDAO, asientoDAO);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         new GestorFunciones(funcionDAO, peliculaDAO, salaDAO)
                 .programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), 5000);
         new GestorClientes(clienteDAO).registrar("Andrei", "andrei@uade.edu.ar");
@@ -110,6 +112,24 @@ class GestorReservasTest {
         reservas.pagar(reserva.getId());
         assertEquals(EstadoReserva.PAGADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
         assertThrows(IllegalArgumentException.class, () -> reservas.pagar(reserva.getId()));
+    }
+
+    @Test
+    void unaButacaFueraDeServicioNoSePuedeReservar() {
+        salas.marcarFueraDeServicio(1, "A3");
+
+        assertEquals(9, reservas.lugaresLibres(1));
+        assertTrue(reservas.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A3")));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, List.of("A3")));
+    }
+
+    @Test
+    void reponerLaButacaLaVuelveAHabilitar() {
+        salas.marcarFueraDeServicio(1, "A3");
+        salas.reponer(1, "A3");
+
+        assertEquals(10, reservas.lugaresLibres(1));
+        assertEquals(1, reservas.reservar(1, 1, List.of("A3")).getCantidadEntradas());
     }
 
     @Test

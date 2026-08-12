@@ -9,6 +9,7 @@ import ar.uade.cine.interfaces.AsientoDAO;
 import ar.uade.cine.interfaces.Sala;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.AsientoImpl;
+import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.SalaImpl;
 import ar.uade.cine.modelo.TipoAsiento;
 import ar.uade.cine.modelo.TipoSala;
@@ -82,6 +83,26 @@ public class GestorSalas {
             }
         }
         return asientos;
+    }
+
+    /** Una butaca rota deja de venderse en todas las funciones, presentes y futuras. */
+    public void marcarFueraDeServicio(int salaId, String codigo) {
+        cambiarEstado(salaId, codigo, EstadoAsiento.FUERA_DE_SERVICIO);
+    }
+
+    public void reponer(int salaId, String codigo) {
+        cambiarEstado(salaId, codigo, EstadoAsiento.DISPONIBLE);
+    }
+
+    private void cambiarEstado(int salaId, String codigo, EstadoAsiento estado) {
+        String buscado = codigo == null ? "" : codigo.trim().toUpperCase();
+        Asiento asiento = asientoDAO.listarPorSala(salaId).stream()
+                .filter(a -> a.getCodigo().equals(buscado))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "La butaca " + buscado + " no existe en la sala " + salaId));
+        asiento.setEstado(estado);
+        asientoDAO.actualizar(asiento);
     }
 
     public List<Sala> listar() {

@@ -20,6 +20,11 @@ public class AsientoDAOMemoria implements AsientoDAO {
     }
 
     @Override
+    public void actualizar(Asiento asiento) {
+        // Los objetos son los mismos que devuelve listarPorSala: alcanza con mutar el estado.
+    }
+
+    @Override
     public List<Asiento> listarPorSala(int salaId) {
         return asientos.stream().filter(a -> a.getSalaId() == salaId).toList();
     }

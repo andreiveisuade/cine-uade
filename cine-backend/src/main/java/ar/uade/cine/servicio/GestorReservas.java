@@ -21,6 +21,7 @@ import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.Sala;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.EntradaImpl;
+import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.EstadoReserva;
 import ar.uade.cine.modelo.ReservaImpl;
 
@@ -55,6 +56,7 @@ public class GestorReservas {
         Funcion funcion = buscarFuncion(funcionId);
         Set<Integer> ocupados = asientosOcupados(funcionId);
         return asientoDAO.listarPorSala(funcion.getSalaId()).stream()
+                .filter(a -> a.getEstado() != EstadoAsiento.FUERA_DE_SERVICIO)
                 .filter(a -> !ocupados.contains(a.getId()))
                 .toList();
     }
@@ -83,6 +85,9 @@ public class GestorReservas {
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException(
                             "La butaca " + buscado + " no existe en esa sala"));
+            if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
+                throw new IllegalArgumentException("La butaca " + buscado + " está fuera de servicio");
+            }
             if (ocupados.contains(asiento.getId())) {
                 throw new IllegalArgumentException("La butaca " + buscado + " ya está ocupada");
             }

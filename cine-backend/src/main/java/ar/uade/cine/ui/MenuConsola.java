@@ -10,6 +10,7 @@ import java.util.Scanner;
 import ar.uade.cine.interfaces.Asiento;
 import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.Reserva;
+import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.servicio.GestorCartelera;
@@ -138,6 +139,7 @@ public class MenuConsola {
     private void menuSalas() {
         System.out.println("\n-- Salas --");
         System.out.println("1. Listar  2. Agregar  3. Ver butacas  4. Eliminar  5. Cargar las 6 salas de ejemplo");
+        System.out.println("6. Marcar butaca fuera de servicio  7. Reponer butaca");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(salas.listar());
@@ -161,6 +163,18 @@ public class MenuConsola {
             case "5" -> {
                 new SalasDeEjemplo(salas).cargar();
                 System.out.println("6 salas cargadas");
+            }
+            case "6" -> {
+                int salaId = leerEntero("Id de sala: ");
+                System.out.print("Butaca (ej. C7): ");
+                salas.marcarFueraDeServicio(salaId, leer());
+                System.out.println("Butaca fuera de servicio");
+            }
+            case "7" -> {
+                int salaId = leerEntero("Id de sala: ");
+                System.out.print("Butaca (ej. C7): ");
+                salas.reponer(salaId, leer());
+                System.out.println("Butaca repuesta");
             }
             default -> System.out.println("Opción inválida");
         }
@@ -321,19 +335,23 @@ public class MenuConsola {
                 filaActual = asiento.getFila();
                 linea = new StringBuilder("  " + asiento.getCodigo().charAt(0) + " ");
             }
-            boolean libre = sinFuncion || idsLibres.contains(asiento.getId());
             String marca = switch (asiento.getTipo()) {
                 case VIP -> "*";
                 case PAREJA -> "&";
                 case ACCESIBLE -> "+";
                 case ESTANDAR -> "";
             };
-            linea.append(libre ? "[" : "(").append(asiento.getNumero()).append(marca).append(libre ? "] " : ") ");
+            if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
+                linea.append("{").append(asiento.getNumero()).append(marca).append("} ");
+            } else {
+                boolean libre = sinFuncion || idsLibres.contains(asiento.getId());
+                linea.append(libre ? "[" : "(").append(asiento.getNumero()).append(marca).append(libre ? "] " : ") ");
+            }
         }
         if (filaActual != -1) {
             System.out.println(linea);
         }
-        System.out.println("  [n] libre  (n) ocupada  * VIP  & pareja  + accesible");
+        System.out.println("  [n] libre  (n) ocupada  {n} fuera de servicio  * VIP  & pareja  + accesible");
     }
 
     private void imprimir(List<?> elementos) {

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS asiento (
     fila INT NOT NULL,
     numero INT NOT NULL,
     tipo VARCHAR(15) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'DISPONIBLE',
     UNIQUE (sala_id, fila, numero),
     FOREIGN KEY (sala_id) REFERENCES sala(id) ON DELETE CASCADE
 );

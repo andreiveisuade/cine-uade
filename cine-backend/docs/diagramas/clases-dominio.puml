@@ -23,6 +23,7 @@ interface Asiento {
   +getFila(): int
   +getNumero(): int
   +getTipo(): TipoAsiento
+  +getEstado(): EstadoAsiento
   +getCodigo(): String
 }
 
@@ -78,6 +79,11 @@ enum TipoAsiento {
   ACCESIBLE
 }
 
+enum EstadoAsiento {
+  DISPONIBLE
+  FUERA_DE_SERVICIO
+}
+
 enum EstadoReserva {
   RESERVADA
   PAGADA
@@ -87,6 +93,7 @@ enum EstadoReserva {
 Pelicula "1" *-- "1..*" Genero
 Sala "1" -- "1" TipoSala
 Asiento "1" -- "1" TipoAsiento
+Asiento "1" -- "1" EstadoAsiento
 Reserva "1" -- "1" EstadoReserva
 
 Sala "1" *-- "1..*" Asiento

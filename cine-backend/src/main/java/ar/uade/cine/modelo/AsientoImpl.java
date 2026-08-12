@@ -9,17 +9,20 @@ public class AsientoImpl implements Asiento {
     private int fila;
     private int numero;
     private TipoAsiento tipo;
+    private EstadoAsiento estado;
 
     public AsientoImpl(int salaId, int fila, int numero, TipoAsiento tipo) {
         this.salaId = salaId;
         this.fila = fila;
         this.numero = numero;
         this.tipo = tipo;
+        this.estado = EstadoAsiento.DISPONIBLE;
     }
 
-    public AsientoImpl(int id, int salaId, int fila, int numero, TipoAsiento tipo) {
+    public AsientoImpl(int id, int salaId, int fila, int numero, TipoAsiento tipo, EstadoAsiento estado) {
         this(salaId, fila, numero, tipo);
         this.id = id;
+        this.estado = estado;
     }
 
     @Override
@@ -53,12 +56,26 @@ public class AsientoImpl implements Asiento {
     }
 
     @Override
+    public EstadoAsiento getEstado() {
+        return estado;
+    }
+
+    @Override
+    public void setEstado(EstadoAsiento estado) {
+        this.estado = estado;
+    }
+
+    @Override
     public String getCodigo() {
         return (char) ('A' + fila - 1) + String.valueOf(numero);
     }
 
     @Override
     public String toString() {
-        return getCodigo() + (tipo == TipoAsiento.ESTANDAR ? "" : " (" + tipo + ")");
+        String extra = tipo == TipoAsiento.ESTANDAR ? "" : " (" + tipo + ")";
+        if (estado == EstadoAsiento.FUERA_DE_SERVICIO) {
+            extra += " FUERA DE SERVICIO";
+        }
+        return getCodigo() + extra;
     }
 }

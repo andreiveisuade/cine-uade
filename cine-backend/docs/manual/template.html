@@ -570,6 +570,19 @@ body.lightbox-locked { overflow: hidden; }
         <code>Entrada</code> con ese asiento en alguna reserva no cancelada de esa función.
       </p>
 
+      <h3>Butacas fuera de servicio</h3>
+      <p>
+        Una butaca rota no se vende, pero tampoco está "ocupada". Esa diferencia importa: <em>ocupada</em>
+        depende de la función, <em>fuera de servicio</em> le pertenece al asiento y vale para todas.
+        Por eso <code>EstadoAsiento</code> vive en el asiento y la ocupación se calcula.
+      </p>
+      <pre><code>salas.marcarFueraDeServicio(1, "B5");   // se rompió la butaca
+salas.reponer(1, "B5");                 // la arreglaron</code></pre>
+      <p>
+        Una butaca fuera de servicio desaparece de <code>asientosLibres</code> y reservarla falla con
+        un mensaje propio, distinto al de butaca ocupada.
+      </p>
+
       <h3>Tipos de sala y de butaca</h3>
       <div class="table-wrap">
         <table>
@@ -615,8 +628,8 @@ body.lightbox-locked { overflow: hidden; }
   C [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12]
   D [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12]
   E [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12] [13] [14]
-  [n] libre  (n) ocupada  * VIP  &amp; pareja  + accesible
-Libres: 53 de 56</code></pre>
+  [n] libre  (n) ocupada  {n} fuera de servicio  * VIP  &amp; pareja  + accesible
+Libres: 52 de 56</code></pre>
       <p>
         Ese dibujo vive en <code>MenuConsola</code>, no en el modelo: es presentación. El día que haya un
         frontend web, consume los mismos datos (fila, número, tipo, ocupado) y los dibuja como quiera.
@@ -1104,6 +1117,26 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         <li>Varios chequeos de duplicados traen la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE</code>.</li>
         <li>Borrar una sala o una película con funciones asociadas falla por la <code>FOREIGN KEY</code>, con un mensaje de MySQL poco amigable en vez de una validación previa.</li>
         <li>Solo <code>Reserva</code> tiene implementación en TXT. Las demás entidades siguen atadas a MySQL.</li>
+      </ul>
+
+      <h3>Ideas anotadas para más adelante</h3>
+      <p>
+        <strong>Recomendar butacas contiguas al reservar.</strong> Hoy el cliente tipea los códigos a mano.
+        En el frontend, lo natural es que pida "3 entradas" y el sistema le proponga tres butacas
+        <em>juntas</em>; si no hay ninguna corrida de tres libres, recién ahí ofrecer asientos separados.
+      </p>
+      <p>
+        Lo que hace interesante el problema es que "contiguo" no es solo "números consecutivos en la misma
+        fila": un pasillo parte la fila en dos, así que B5 y B6 pueden estar separados por el pasillo central
+        y no ser contiguos de verdad. Para resolverlo bien habría que modelar el pasillo — como un
+        <code>TipoAsiento</code> que no se vende, o como una coordenada por butaca — y recién entonces buscar
+        corridas libres. Es la razón por la que conviene dejarlo escrito ahora y no improvisarlo después.
+      </p>
+
+      <h3>Otras mejoras pendientes</h3>
+      <ul>
+        <li><strong>Limpieza entre funciones:</strong> hoy R3 permite programar una función que arranca en el minuto exacto en que termina la anterior. Faltan 15-20 minutos de vaciado y limpieza.</li>
+        <li><strong>Aplicar los multiplicadores de precio:</strong> <code>TipoSala</code> y <code>TipoAsiento</code> los declaran pero el precio sigue plano. Es el lugar natural para una interfaz <code>PoliticaPrecio</code>.</li>
       </ul>
 
       <div class="callout">
