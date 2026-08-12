@@ -414,6 +414,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
 
@@ -473,10 +474,10 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>R1</td><td>No puede haber dos películas con el mismo título</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R2</td><td>Duración de película y capacidad de sala mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>R4</td><td>No se pueden reservar más entradas que los lugares libres</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>R6</td><td>Cancelar una reserva libera sus lugares</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R4</td><td>No se pueden reservar más entradas que los lugares libres</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R6</td><td>Cancelar una reserva libera sus lugares</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
@@ -501,14 +502,14 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas</td><td>R2</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-06</td><td>Cliente</td><td>Reservar entradas para una función</td><td>R4</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-pend">pendiente</span></td></tr>
-            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas</td><td>R2</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Reservar entradas para una función</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -605,21 +606,135 @@ new MenuConsola(gestor).iniciar();</code></pre>
       </div>
     </section>
 
+    <section class="doc-section" id="reservas">
+      <h2>Reservas y ticket</h2>
+      <p>
+        Es el circuito con más lógica del sistema y donde el patrón se ve mejor: la misma operación
+        guarda en MySQL o en un archivo de texto, y emite un comprobante, sin que el gestor sepa nada de eso.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_SECUENCIA}}
+        <figcaption>Reservar entradas, de la elección del usuario al ticket emitido</figcaption>
+      </figure>
+
+      <h3>El ticket no es un DAO</h3>
+      <p>
+        Un DAO administra datos: guarda, busca, lista, elimina. Un ticket se escribe una vez y nadie lo vuelve
+        a leer desde el programa — no tiene <code>buscarPorId</code> ni <code>eliminar</code>. Meterlo dentro de
+        <code>ReservaDAO</code> le daría dos responsabilidades: persistir y dar formato de presentación.
+      </p>
+      <p>Por eso es una interfaz aparte, con su propio contrato de una sola operación:</p>
+      <pre><code>public interface GeneradorTicket {
+    void emitir(Reserva reserva, Funcion funcion, Pelicula pelicula, Sala sala, Cliente cliente);
+}</code></pre>
+      <p>
+        <code>GestorReservas</code> lo recibe por constructor igual que al DAO. Un
+        <code>GeneradorTicketHtml</code> mañana no obliga a tocar nada (OCP), y en los tests se le puede pasar
+        uno que no escriba archivos.
+      </p>
+
+      <h3>Cómo sale el comprobante</h3>
+      <p>Al confirmar la reserva se escribe <code>tickets/ticket-&lt;id&gt;.txt</code>:</p>
+      <pre><code>============================================
+                 CINE UADE
+                 TICKET #1
+============================================
+ Pelicula     : Matrix
+ Sala         : Sala 1
+ Funcion      : 25/12/2026 20:30
+ Cliente      : Andrei Veis
+ Entradas     : 3
+ Precio unit. : $ 5000.00
+ Total        : $ 15000.00
+ Estado       : RESERVADA
+============================================
+           Presentar en boleteria
+============================================</code></pre>
+
+      <h3>Las dos implementaciones de ReservaDAO</h3>
+      <p>
+        <code>ReservaDAOMySQL</code> usa la base; <code>ReservaDAOTxt</code> guarda una reserva por línea en
+        <code>reservas.txt</code>, con los campos separados por <code>|</code>:
+      </p>
+      <pre><code>1|3|7|2|RESERVADA
+2|3|9|4|PAGADA</code></pre>
+      <p>
+        Sin motor de base de datos no hay <code>UPDATE</code>: cualquier cambio implica leer el archivo entero,
+        modificar la lista en memoria y reescribirlo. El id nuevo sale del máximo existente más uno. Es una
+        limitación real del medio, y justamente por eso el DAO existe: esa complicación queda encerrada acá
+        y no se filtra al resto del sistema.
+      </p>
+      <p>Cambiar de medio es una línea en <code>Main</code>:</p>
+      <pre><code>ReservaDAO reservaDAO = new ReservaDAOMySQL();
+// ReservaDAO reservaDAO = new ReservaDAOTxt();</code></pre>
+      <div class="callout">
+        <p>
+          <strong>Probado:</strong> con esa línea cambiada, la misma reserva que antes terminaba en la tabla
+          <code>reserva</code> aparece como <code>1|1|1|2|RESERVADA</code> en <code>reservas.txt</code>.
+          Ni <code>GestorReservas</code> ni <code>MenuConsola</code> cambian una sola línea.
+        </p>
+      </div>
+
+      <h3>Las reglas del gestor</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Operación</th><th>Qué valida</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>reservar</code></td>
+              <td>Que existan función y cliente, cantidad mayor a cero, y R4: capacidad de la sala menos las entradas ya reservadas</td>
+            </tr>
+            <tr><td><code>pagar</code></td><td>R5: solo si está <code>RESERVADA</code>. Pagar dos veces falla</td></tr>
+            <tr><td><code>cancelar</code></td><td>R6: pasa a <code>CANCELADA</code>, y el cálculo de cupo ignora las canceladas</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <code>GestorReservas</code> recibe seis dependencias, más que ningún otro gestor. No es capricho: el cupo
+        sale de la capacidad de la sala de la función, y el ticket lleva datos de película, sala y cliente.
+      </p>
+    </section>
+
     <section class="doc-section" id="base-de-datos">
       <h2>Base de datos</h2>
       <p>MySQL 8.4 en Docker. El esquema vive en <code>src/main/resources/schema.sql</code>.</p>
-      <pre><code>CREATE TABLE IF NOT EXISTS pelicula (
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tabla</th><th>Contenido</th></tr></thead>
+          <tbody>
+            <tr><td><code>pelicula</code></td><td>título y duración</td></tr>
+            <tr><td><code>pelicula_genero</code></td><td>relación N:M con los géneros</td></tr>
+            <tr><td><code>sala</code></td><td>nombre y capacidad</td></tr>
+            <tr><td><code>cliente</code></td><td>nombre y email (único)</td></tr>
+            <tr><td><code>funcion</code></td><td>película + sala + inicio + precio</td></tr>
+            <tr><td><code>reserva</code></td><td>función + cliente + cantidad + estado</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>CREATE TABLE IF NOT EXISTS funcion (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    titulo VARCHAR(100) NOT NULL,
-    duracion_minutos INT NOT NULL
+    pelicula_id INT NOT NULL,
+    sala_id INT NOT NULL,
+    inicio DATETIME NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
+    FOREIGN KEY (sala_id) REFERENCES sala(id)
 );
 
-CREATE TABLE IF NOT EXISTS pelicula_genero (
-    pelicula_id INT NOT NULL,
-    genero VARCHAR(30) NOT NULL,
-    PRIMARY KEY (pelicula_id, genero),
-    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS reserva (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    funcion_id INT NOT NULL,
+    cliente_id INT NOT NULL,
+    cantidad_entradas INT NOT NULL,
+    estado VARCHAR(15) NOT NULL,
+    FOREIGN KEY (funcion_id) REFERENCES funcion(id),
+    FOREIGN KEY (cliente_id) REFERENCES cliente(id)
 );</code></pre>
+      <p>
+        Las <code>FOREIGN KEY</code> impiden que quede una función apuntando a una película borrada, o una
+        reserva sin función. La base rechaza esos casos aunque el código se olvide de validarlos.
+      </p>
       <p>
         La relación película–género es N:M y vive en <code>pelicula_genero</code>. El género se guarda con el
         <strong>nombre</strong> de la constante del enum, no con su posición: si mañana reordenás las constantes,
@@ -862,49 +977,58 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
 │   ├── README.md
 │   ├── diagramas/          *.puml + *.svg
 │   └── manual/             template.html + build.py → index.html
+├── tickets/                (generado) ticket-1.txt, ticket-2.txt…
 └── src/
     ├── main/java/ar/uade/cine/
-    │   ├── interfaces/     Pelicula, Sala, Funcion, Cliente, Reserva, PeliculaDAO
+    │   ├── interfaces/     entidades + los 5 DAO + GeneradorTicket
     │   ├── modelo/         *Impl, Genero, EstadoReserva
-    │   ├── persistencia/   PeliculaDAOMemoria, PeliculaDAOMySQL,
-    │   │                   ConexionMySQL, PersistenciaException
-    │   ├── servicio/       GestorCartelera
+    │   ├── persistencia/   *DAOMySQL, *DAOMemoria, ReservaDAOTxt,
+    │   │                   GeneradorTicketTxt, ConexionMySQL, PersistenciaException
+    │   ├── servicio/       GestorCartelera, GestorSalas, GestorFunciones,
+    │   │                   GestorClientes, GestorReservas
     │   ├── ui/             MenuConsola
-    │   └── Main.java
+    │   └── Main.java       elige las implementaciones
     ├── main/resources/     schema.sql
-    └── test/java/          GestorCarteleraTest</code></pre>
+    └── test/java/          GestorCarteleraTest, GestorFuncionesTest, GestorReservasTest</code></pre>
+      <p><code>tickets/</code> y <code>reservas.txt</code> están en el <code>.gitignore</code>: son datos que genera la app, no código.</p>
     </section>
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Implementado de punta a punta: el circuito de <code>Pelicula</code>. Esa es la plantilla que repite
-        cada entidad nueva.
+        Las cinco entidades están implementadas de punta a punta: los nueve casos de uso y las siete reglas
+        funcionan contra MySQL, y las reservas además pueden guardarse en un archivo de texto.
       </p>
 
-      <h3>Orden sugerido para seguir</h3>
+      <h3>Tests</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Qué</th><th>Por qué en ese orden</th></tr></thead>
+          <thead><tr><th>Clase</th><th>Cubre</th></tr></thead>
           <tbody>
-            <tr><td>1</td><td><code>SalaDAO</code> + gestor</td><td>Es igual a Película: fija el patrón sin reglas raras</td></tr>
-            <tr><td>2</td><td><code>FuncionDAO</code> + R3</td><td>Primera relación entre tablas y primera regla con lógica</td></tr>
-            <tr><td>3</td><td><code>ClienteDAO</code></td><td>Simple, pero necesario antes de reservar</td></tr>
-            <tr><td>4</td><td><code>ReservaDAO</code> + R4, R5, R6</td><td>Depende de función y cliente; es la parte con más negocio</td></tr>
+            <tr><td><code>GestorCarteleraTest</code></td><td>R1, R2, R7 y el filtro por género</td></tr>
+            <tr><td><code>GestorFuncionesTest</code></td><td>R3: se pisan, no se pisan, otra sala, película inexistente</td></tr>
+            <tr><td><code>GestorReservasTest</code></td><td>R4, R5, R6, la emisión del ticket y la persistencia en txt</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        Corren sin MySQL: usan los DAO en memoria, y el de reservas escribe en un directorio temporal.
+        Es el beneficio concreto de haber inyectado los DAO por constructor.
+      </p>
 
       <h3>Deudas anotadas</h3>
       <ul>
-        <li><code>PeliculaDAO</code> no tiene <code>actualizar</code>: se puede crear y borrar, pero no editar.</li>
-        <li>El chequeo de título duplicado trae la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE titulo = ?</code>.</li>
+        <li>Ningún DAO tiene <code>actualizar</code> salvo <code>ReservaDAO</code>: no se puede editar una película ni una sala, solo crear y borrar.</li>
+        <li>Varios chequeos de duplicados traen la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE</code>.</li>
+        <li>Borrar una sala o una película con funciones asociadas falla por la <code>FOREIGN KEY</code>, con un mensaje de MySQL poco amigable en vez de una validación previa.</li>
+        <li>Solo <code>Reserva</code> tiene implementación en TXT. Las demás entidades siguen atadas a MySQL.</li>
       </ul>
 
       <div class="callout">
         <p>
-          Cada DAO se escribe cuando se escribe el gestor que lo usa. Definir los cuatro contratos por adelantado
-          lleva a inventar métodos que después nadie llama.
+          Cada DAO se escribió junto con el gestor que lo usa. Definir los contratos por adelantado llevaba a
+          inventar métodos que después nadie llamaba: la primera versión tenía 22 métodos declarados sin una
+          sola implementación.
         </p>
       </div>
     </section>

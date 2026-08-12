@@ -68,8 +68,9 @@ note bottom of Funcion
 end note
 
 note right of Pelicula
-  Implementado de punta a punta.
-  El resto todavia no tiene DAO.
+  Cada entidad tiene su DAO.
+  Reserva ademas se puede guardar
+  en MySQL o en un archivo .txt.
 end note
 
 @enduml

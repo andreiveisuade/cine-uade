@@ -1,0 +1,52 @@
+@startuml secuencia-reserva
+title Reservar entradas: del menu al ticket
+
+skinparam sequenceMessageAlign center
+hide footbox
+
+actor Cliente
+participant "MenuConsola" as UI
+participant "GestorReservas" as Gestor
+participant "ReservaDAO" as DAO <<interface>>
+participant "GeneradorTicket" as Ticket <<interface>>
+
+Cliente -> UI : elige funcion, cliente\ny cantidad
+activate UI
+
+UI -> Gestor : reservar(funcionId, clienteId, cantidad)
+activate Gestor
+
+Gestor -> Gestor : valida que existan\nfuncion y cliente
+Gestor -> DAO : listarPorFuncion(funcionId)
+activate DAO
+DAO --> Gestor : reservas existentes
+deactivate DAO
+Gestor -> Gestor : R4: capacidad de sala\n- entradas no canceladas
+
+alt no hay cupo
+  Gestor --> UI : IllegalArgumentException
+  UI --> Cliente : "Solo quedan N lugares"
+else hay cupo
+  Gestor -> DAO : guardar(reserva)
+  activate DAO
+  DAO --> Gestor : reserva con id asignado
+  deactivate DAO
+
+  Gestor -> Ticket : emitir(reserva, funcion,\npelicula, sala, cliente)
+  activate Ticket
+  Ticket -> Ticket : escribe\ntickets/ticket-N.txt
+  deactivate Ticket
+
+  Gestor --> UI : reserva
+  UI --> Cliente : "Reserva confirmada.\nTicket en tickets/ticket-N.txt"
+end
+deactivate Gestor
+deactivate UI
+
+note over DAO, Ticket
+  El gestor habla con interfaces. Que la reserva termine
+  en MySQL o en reservas.txt, y el ticket en un .txt o
+  manana en un PDF, no cambia esta secuencia.
+end note
+
+@enduml

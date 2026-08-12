@@ -3,3 +3,7 @@ target/
 .idea/
 *.iml
 .DS_Store
+
+# Datos que genera la app al correr
+tickets/
+reservas.txt

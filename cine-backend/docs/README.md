@@ -32,5 +32,6 @@ el template y volver a correr `build.py`.
 | Archivo | Qué muestra |
 |---|---|
 | `clases-dominio.puml` | Entidades, enums y relaciones del negocio |
-| `clases-capas.puml` | Arquitectura DAO: de la UI a la base, circuito de Pelicula |
+| `clases-capas.puml` | Arquitectura DAO: de la UI a la base, con las 5 entidades |
 | `casos-de-uso.puml` | Actores y casos de uso |
+| `secuencia-reserva.puml` | Flujo de reservar entradas hasta emitir el ticket |

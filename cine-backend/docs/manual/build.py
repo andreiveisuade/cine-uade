@@ -8,6 +8,7 @@ svg_map = {
     "{{SVG_CASOS_USO}}": DIAGRAMAS / "casos-de-uso.svg",
     "{{SVG_DOMINIO}}": DIAGRAMAS / "clases-dominio.svg",
     "{{SVG_CAPAS}}": DIAGRAMAS / "clases-capas.svg",
+    "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
 }
 
 

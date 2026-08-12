@@ -1,66 +1,75 @@
 @startuml clases-capas
-title Arquitectura en capas - patron DAO (circuito de Pelicula)
+title Arquitectura en capas - patron DAO
 
 skinparam classAttributeIconSize 0
-hide empty members
+hide members
 
 package ui {
-  class MenuConsola {
-    -gestor: GestorCartelera
-    +iniciar()
-  }
+  class MenuConsola
 }
 
 package servicio {
-  class GestorCartelera {
-    -dao: PeliculaDAO
-    +agregar(titulo, duracion, generos)
-    +listar(): List<Pelicula>
-    +listarPorGenero(Genero): List<Pelicula>
-    +buscar(id): Optional<Pelicula>
-    +eliminar(id)
-  }
+  class GestorCartelera
+  class GestorSalas
+  class GestorFunciones
+  class GestorClientes
+  class GestorReservas
 }
 
 package interfaces {
-  interface PeliculaDAO {
-    +guardar(Pelicula)
-    +buscarPorId(int): Optional<Pelicula>
-    +listar(): List<Pelicula>
-    +eliminar(int)
-  }
-  interface Pelicula
-}
-
-package modelo {
-  class PeliculaImpl
+  interface PeliculaDAO
+  interface SalaDAO
+  interface FuncionDAO
+  interface ClienteDAO
+  interface ReservaDAO
+  interface GeneradorTicket
 }
 
 package persistencia {
-  class PeliculaDAOMemoria
   class PeliculaDAOMySQL
-  class ConexionMySQL
-  class PersistenciaException
+  class PeliculaDAOMemoria
+  class SalaDAOMySQL
+  class FuncionDAOMySQL
+  class ClienteDAOMySQL
+  class ReservaDAOMySQL
+  class ReservaDAOTxt
+  class GeneradorTicketTxt
 }
 
 MenuConsola -down-> GestorCartelera
-GestorCartelera -down-> PeliculaDAO : depende de la abstraccion
-GestorCartelera ..> PeliculaImpl : instancia
+MenuConsola -down-> GestorSalas
+MenuConsola -down-> GestorFunciones
+MenuConsola -down-> GestorClientes
+MenuConsola -down-> GestorReservas
 
-PeliculaDAOMemoria -up-|> PeliculaDAO
+GestorCartelera -down-> PeliculaDAO
+GestorSalas -down-> SalaDAO
+GestorFunciones -down-> FuncionDAO
+GestorFunciones -down-> PeliculaDAO
+GestorFunciones -down-> SalaDAO
+GestorClientes -down-> ClienteDAO
+GestorReservas -down-> ReservaDAO
+GestorReservas -down-> GeneradorTicket
+
 PeliculaDAOMySQL -up-|> PeliculaDAO
-PeliculaImpl -up-|> Pelicula
+PeliculaDAOMemoria -up-|> PeliculaDAO
+SalaDAOMySQL -up-|> SalaDAO
+FuncionDAOMySQL -up-|> FuncionDAO
+ClienteDAOMySQL -up-|> ClienteDAO
+ReservaDAOMySQL -up-|> ReservaDAO
+ReservaDAOTxt -up-|> ReservaDAO
+GeneradorTicketTxt -up-|> GeneradorTicket
 
-PeliculaDAOMySQL -down-> ConexionMySQL
-PeliculaDAOMySQL ..> PersistenciaException : lanza
-
-note right of GestorCartelera
-  No conoce java.sql ni Scanner.
-  Cambiar de MySQL a memoria no lo toca.
+note right of GestorReservas
+  Tambien usa FuncionDAO, SalaDAO,
+  ClienteDAO y PeliculaDAO: el cupo
+  sale de la sala y el ticket lleva
+  datos de todas las entidades.
 end note
 
-note bottom of MenuConsola
-  Unico lugar con Scanner y System.out.
+note bottom of persistencia
+  Ninguna clase de esta capa imprime ni valida reglas.
+  Las de memoria existen para testear sin base de datos.
 end note
 
 @enduml
