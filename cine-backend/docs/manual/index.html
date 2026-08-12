@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manual — Sistema de cine</title>
+<style>
+
+/* ============ tokens ============ */
+:root {
+  --paper: #FFFFFF;
+  --bg: #F2F0ED;
+  --bg-raised: #FAF8F6;
+  --ink: #201A16;
+  --ink-soft: #574C44;
+  --ink-faint: #857971;
+  --line: #DED8D2;
+  --line-strong: #C2B9B1;
+  --accent: #B4531F;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F7EBE3;
+  --accent-soft-line: #E5C9B5;
+  --ok: #2E7D4F;
+  --ok-soft: #E6F4EB;
+  --pend: #93630F;
+  --pend-soft: #FBF1DC;
+  --shadow: 0 1px 2px rgba(30, 20, 15, 0.06), 0 6px 20px -8px rgba(30, 20, 15, 0.12);
+  --radius: 3px;
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #221C18;
+    --bg: #151110;
+    --bg-raised: #1D1815;
+    --ink: #EFE9E4;
+    --ink-soft: #B4A79E;
+    --ink-faint: #84776F;
+    --line: #332B26;
+    --line-strong: #493E37;
+    --accent: #E8944A;
+    --accent-ink: #2A1608;
+    --accent-soft: #30231A;
+    --accent-soft-line: #54392451;
+    --ok: #82CB9C;
+    --ok-soft: #17301F;
+    --pend: #E3B667;
+    --pend-soft: #322916;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -10px rgba(0,0,0,0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #221C18;
+  --bg: #151110;
+  --bg-raised: #1D1815;
+  --ink: #EFE9E4;
+  --ink-soft: #B4A79E;
+  --ink-faint: #84776F;
+  --line: #332B26;
+  --line-strong: #493E37;
+  --accent: #E8944A;
+  --accent-ink: #2A1608;
+  --accent-soft: #30231A;
+  --accent-soft-line: #543924;
+  --ok: #82CB9C;
+  --ok-soft: #17301F;
+  --pend: #E3B667;
+  --pend-soft: #322916;
+  --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -10px rgba(0,0,0,0.55);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ layout ============ */
+.layout {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 0;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 28px 20px 40px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+.brand-sub {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+  margin: 0 0 20px;
+}
+
+#tocFilter {
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+#tocFilter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: block;
+  padding: 5px 10px;
+  margin-bottom: 1px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.toc a:hover { background: var(--accent-soft); color: var(--ink); }
+.toc a.active {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.toc-group-label {
+  margin: 18px 0 6px;
+  padding-left: 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+}
+
+.content { padding: 44px 48px 120px; min-width: 0; }
+
+/* ============ tipografía ============ */
+h1 {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+.lede { font-size: 18px; color: var(--ink-soft); margin: 0 0 12px; max-width: 68ch; }
+
+.doc-section { padding-top: 48px; scroll-margin-top: 12px; }
+.doc-section > h2 {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+h3 { font-size: 16px; margin: 26px 0 8px; }
+p { max-width: 72ch; }
+a { color: var(--accent); }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+}
+pre {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  box-shadow: var(--shadow);
+}
+pre code { background: none; border: none; padding: 0; font-size: 13px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 14.5px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-faint);
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line-strong);
+}
+tr:last-child td { border-bottom: none; }
+.table-wrap { overflow-x: auto; }
+
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.tag-ok { background: var(--ok-soft); color: var(--ok); }
+.tag-pend { background: var(--pend-soft); color: var(--pend); }
+
+.callout {
+  margin: 18px 0;
+  padding: 14px 18px;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.callout p { margin: 0; }
+.callout p + p { margin-top: 8px; }
+
+/* ============ diagramas ============ */
+figure.diagram {
+  position: relative;
+  margin: 20px 0 8px;
+  padding: 18px;
+  /* fondo claro siempre: PlantUML dibuja el texto en negro */
+  background: #FFFFFF;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+figure.diagram .diagram-click { cursor: zoom-in; }
+figure.diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+figure.diagram::after {
+  content: "Click para ampliar";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #6B6259;
+  background: #F2F0ED;
+  border: 1px solid #DED8D2;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+figure.diagram:hover::after { opacity: 1; }
+figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+/* ============ lightbox ============ */
+body.lightbox-locked { overflow: hidden; }
+
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  flex-direction: column;
+  background: rgba(20, 15, 12, 0.86);
+}
+.lightbox.open { display: flex; }
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line);
+}
+.lightbox-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lightbox-zoom-group { display: flex; align-items: center; gap: 6px; }
+.lightbox-zoom-label {
+  min-width: 48px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.lightbox-btn {
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.lightbox-btn:hover { background: var(--accent-soft); border-color: var(--accent-soft-line); }
+
+.lightbox-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  cursor: grab;
+  overscroll-behavior: contain;
+}
+.lightbox-scroll.grabbing { cursor: grabbing; }
+.lightbox-canvas {
+  margin: 0 auto;
+  background: #FFFFFF;
+  border-radius: var(--radius);
+}
+.lightbox-canvas svg { display: block; width: 100%; height: 100%; }
+
+@media (max-width: 640px) {
+  .lightbox-title { display: none; }
+}
+
+/* ============ mobile ============ */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 12px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .menu-toggle { display: block; }
+  .sidebar {
+    position: fixed;
+    z-index: 15;
+    inset: 0 auto 0 0;
+    width: 264px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.open { transform: none; box-shadow: var(--shadow); }
+  .content { padding: 64px 20px 90px; }
+}
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-expanded="false">Índice</button>
+
+<div class="layout">
+
+  <nav class="sidebar" id="sidebar" aria-label="Índice del manual">
+    <p class="brand">Sistema de cine</p>
+    <p class="brand-sub">Aplicaciones Interactivas</p>
+
+    <input type="search" id="tocFilter" placeholder="Filtrar secciones…" aria-label="Filtrar secciones" />
+
+    <nav class="toc" id="toc">
+      <p class="toc-group-label">Qué construimos</p>
+      <ol>
+        <li><a href="#resumen" data-target="resumen">Resumen</a></li>
+        <li><a href="#requerimientos" data-target="requerimientos">Requerimientos</a></li>
+        <li><a href="#reglas" data-target="reglas">Reglas de negocio</a></li>
+        <li><a href="#casos-de-uso" data-target="casos-de-uso">Casos de uso</a></li>
+      </ol>
+
+      <p class="toc-group-label">Cómo está hecho</p>
+      <ol>
+        <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
+        <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
+        <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
+      </ol>
+
+      <p class="toc-group-label">Trabajar en el proyecto</p>
+      <ol>
+        <li><a href="#entorno" data-target="entorno">Entorno: Java y Maven</a></li>
+        <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#estructura" data-target="estructura">Estructura de carpetas</a></li>
+        <li><a href="#estado" data-target="estado">Estado y pendientes</a></li>
+        <li><a href="#decisiones" data-target="decisiones">Decisiones tomadas</a></li>
+      </ol>
+    </nav>
+  </nav>
+
+  <main class="content">
+
+    <h1>Sistema de salas de cine</h1>
+    <p class="lede">Manual del TP de Aplicaciones Interactivas. Java 21 + JDBC + MySQL, aplicando el patrón DAO.</p>
+
+    <section class="doc-section" id="resumen">
+      <h2>Resumen</h2>
+      <p>
+        El sistema administra la cartelera de un cine y la venta de entradas: se cargan películas y salas,
+        se programan funciones, y los clientes reservan y pagan entradas.
+      </p>
+      <p>
+        Está armado en capas para que la lógica de negocio no dependa de dónde se guardan los datos.
+        Hoy la persistencia es MySQL, pero existe una segunda implementación en memoria que se usa en los tests
+        y demuestra que cambiar de tecnología no obliga a tocar las reglas.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Estado:</strong> el circuito de <code>Pelicula</code> está implementado de punta a punta.
+          El resto del modelo está diseñado pero todavía sin persistencia. Ver
+          <a href="#estado">Estado y pendientes</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="requerimientos">
+      <h2>Requerimientos</h2>
+      <ul>
+        <li>Cargar películas (título, duración, uno o más géneros) y salas (nombre, capacidad).</li>
+        <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
+        <li>Registrar clientes.</li>
+        <li>Reservar entradas para una función y luego pagarlas o cancelarlas.</li>
+        <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="reglas">
+      <h2>Reglas de negocio</h2>
+      <p>Viven en la capa de servicio, nunca en el DAO ni en el menú.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Regla</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>R1</td><td>No puede haber dos películas con el mismo título</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R2</td><td>Duración de película y capacidad de sala mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R4</td><td>No se pueden reservar más entradas que los lugares libres</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R6</td><td>Cancelar una reserva libera sus lugares</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="casos-de-uso">
+      <h2>Casos de uso</h2>
+      <p>
+        Dos actores: <strong>Administrador</strong>, que gestiona la cartelera, y <strong>Cliente</strong>,
+        que compra entradas. El menú de consola no distingue usuarios: es un único flujo.
+      </p>
+
+      <figure class="diagram">
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="DESCRIPTION" preserveAspectRatio="none" style="background:#FFFFFF;" version="1.1" viewBox="0 0 396 849" zoomAndPan="magnify"><?plantuml 1.2026.6?><defs/><g><g class="title" data-source-line="1"><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="226.167" x="81.4265" y="23.5352">Casos de uso - Sistema de cine</text></g><!--cluster Sistema--><g class="cluster" data-qualified-name="Sistema" data-source-line="8" id="ent0003"><rect fill="none" height="791" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:1;" width="234.72" x="147.3" y="44.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="56.1504" x="236.5848" y="60.0234">Sistema</text></g><!--entity CU01--><g class="entity" data-qualified-name="Sistema.CU01" data-source-line="9" id="ent0004"><ellipse cx="264.662" cy="102.4907" fill="#F1F1F1" rx="101.362" ry="22.6724" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="178.6162" x="175.3539" y="107.2348">CU-01 Gestionar peliculas</text></g><!--entity CU02--><g class="entity" data-qualified-name="Sistema.CU02" data-source-line="10" id="ent0005"><ellipse cx="264.6635" cy="260.491" fill="#F1F1F1" rx="89.8635" ry="20.3727" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="152.9199" x="188.2036" y="265.2351">CU-02 Gestionar salas</text></g><!--entity CU03--><g class="entity" data-qualified-name="Sistema.CU03" data-source-line="11" id="ent0006"><ellipse cx="264.6562" cy="182.4915" fill="#F1F1F1" rx="100.1162" ry="22.4232" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="175.8682" x="176.7221" y="187.2357">CU-03 Programar funcion</text></g><!--entity CU04--><g class="entity" data-qualified-name="Sistema.CU04" data-source-line="12" id="ent0007"><ellipse cx="264.6603" cy="338.4863" fill="#F1F1F1" rx="101.3403" ry="22.6681" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="178.5684" x="175.3761" y="343.2305">CU-04 Consultar cartelera</text></g><!--entity CU01b--><g class="entity" data-qualified-name="Sistema.CU01b" data-source-line="13" id="ent0008"><ellipse cx="264.6629" cy="796.4869" fill="#F1F1F1" rx="100.9929" ry="22.5986" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="177.8027" x="175.7615" y="801.231">CU-01b Filtrar por genero</text></g><!--entity CU05--><g class="entity" data-qualified-name="Sistema.CU05" data-source-line="14" id="ent0009"><ellipse cx="264.6584" cy="720.488" fill="#F1F1F1" rx="78.0984" ry="18.0197" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="125.5488" x="201.884" y="725.2321">CU-05 Registrarse</text></g><!--entity CU06--><g class="entity" data-qualified-name="Sistema.CU06" data-source-line="15" id="ent0010"><ellipse cx="264.6606" cy="645.4864" fill="#F1F1F1" rx="97.8906" ry="21.9781" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="170.9395" x="179.1908" y="650.2305">CU-06 Reservar entradas</text></g><!--entity CU07--><g class="entity" data-qualified-name="Sistema.CU07" data-source-line="16" id="ent0011"><ellipse cx="264.6554" cy="569.4914" fill="#F1F1F1" rx="84.6154" ry="19.3231" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="140.8818" x="194.2145" y="574.2355">CU-07 Pagar reserva</text></g><!--entity CU08--><g class="entity" data-qualified-name="Sistema.CU08" data-source-line="17" id="ent0012"><ellipse cx="264.6592" cy="494.4881" fill="#F1F1F1" rx="93.7992" ry="21.1598" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="161.8066" x="183.7559" y="499.2323">CU-08 Cancelar reserva</text></g><!--entity CU09--><g class="entity" data-qualified-name="Sistema.CU09" data-source-line="18" id="ent0013"><ellipse cx="264.6627" cy="417.4908" fill="#F1F1F1" rx="93.7627" ry="21.1525" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="161.7246" x="183.8003" y="422.235">CU-09 Ver mis reservas</text></g><!--entity admin--><g class="entity" data-qualified-name="admin" data-source-line="5" id="ent0001"><ellipse cx="54.6479" cy="191.7483" fill="#F1F1F1" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M54.6479,199.7483 L54.6479,226.7483 M41.6479,207.7483 L67.6479,207.7483 M54.6479,226.7483 L41.6479,241.7483 M54.6479,226.7483 L67.6479,241.7483" fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="97.2959" x="6" y="256.7834">Administrador</text></g><!--entity cliente--><g class="entity" data-qualified-name="cliente" data-source-line="6" id="ent0002"><ellipse cx="54.6523" cy="539.7483" fill="#F1F1F1" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M54.6523,547.7483 L54.6523,574.7483 M41.6523,555.7483 L67.6523,555.7483 M54.6523,574.7483 L41.6523,589.7483 M54.6523,574.7483 L67.6523,589.7483" fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47.3047" x="31" y="604.7834">Cliente</text></g><!--link admin to CU01--><g class="link" data-entity-1="ent0001" data-entity-2="ent0004" data-link-type="dependency" data-source-line="21" id="lnk14"><path d="M89.38,183.0083 C103.6,168.6583 121.07,153.2683 139.3,142.4883 C155.89,132.6783 170.4113,126.5027 188.7713,120.5827" fill="none" id="admin-to-CU01" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="193.53,119.0483,183.7367,118.0032,188.7713,120.5827,186.1918,125.6172,193.53,119.0483" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link admin to CU02--><g class="link" data-entity-1="ent0001" data-entity-2="ent0005" data-link-type="dependency" data-source-line="22" id="lnk15"><path d="M103.63,230.4883 C130.51,235.5283 159.5855,240.9775 189.3155,246.5475" fill="none" id="admin-to-CU02" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="194.23,247.4683,186.1205,241.8793,189.3155,246.5475,184.6473,249.7425,194.23,247.4683" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link admin to CU03--><g class="link" data-entity-1="ent0001" data-entity-2="ent0006" data-link-type="dependency" data-source-line="23" id="lnk16"><path d="M103.63,212.4883 C128.23,207.8783 153.8656,203.0693 181.6656,197.8593" fill="none" id="admin-to-CU03" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="186.58,196.9383,176.9972,194.6646,181.6656,197.8593,178.4708,202.5277,186.58,196.9383" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link admin to CU04--><g class="link" data-entity-1="ent0001" data-entity-2="ent0007" data-link-type="dependency" data-source-line="24" id="lnk17"><path d="M90.75,260.1583 C104.76,273.7883 121.73,288.2483 139.3,298.4883 C156.05,308.2483 170.7298,314.4283 189.1798,320.3583" fill="none" id="admin-to-CU04" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="193.94,321.8883,186.5957,315.3262,189.1798,320.3583,184.1477,322.9425,193.94,321.8883" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU04--><g class="link" data-entity-1="ent0002" data-entity-2="ent0007" data-link-type="dependency" data-source-line="26" id="lnk18"><path d="M62.68,530.9783 C72.51,487.9483 94.43,419.0083 139.3,378.4883 C152.17,366.8583 163.7471,360.2782 180.2571,354.4282" fill="none" id="cliente-to-CU04" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="184.97,352.7583,175.1509,351.9938,180.2571,354.4282,177.8227,359.5345,184.97,352.7583" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU01b--><g class="link" data-entity-1="ent0002" data-entity-2="ent0008" data-link-type="dependency" data-source-line="27" id="lnk19"><path d="M63.09,607.9683 C73.21,650.1583 95.33,717.0883 139.3,756.4883 C152.3,768.1383 164.0133,774.7491 180.6433,780.5991" fill="none" id="cliente-to-CU01b" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="185.36,782.2583,178.1973,775.4984,180.6433,780.5991,175.5426,783.0451,185.36,782.2583" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU05--><g class="link" data-entity-1="ent0002" data-entity-2="ent0009" data-link-type="dependency" data-source-line="28" id="lnk20"><path d="M74.96,608.0683 C89.44,633.2583 111.51,664.9883 139.3,684.4883 C156.87,696.8183 173.8044,703.6865 194.1844,709.0465" fill="none" id="cliente-to-CU05" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="199.02,710.3183,191.3334,704.1607,194.1844,709.0465,189.2986,711.8975,199.02,710.3183" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU06--><g class="link" data-entity-1="ent0002" data-entity-2="ent0010" data-link-type="dependency" data-source-line="29" id="lnk21"><path d="M78.79,580.5683 C95.42,588.3183 118.49,598.6483 139.3,606.4883 C159.84,614.2283 177.892,620.2249 198.322,626.5249" fill="none" id="cliente-to-CU06" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="203.1,627.9983,195.6783,621.5238,198.322,626.5249,193.3209,629.1686,203.1,627.9983" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU07--><g class="link" data-entity-1="ent0002" data-entity-2="ent0011" data-link-type="dependency" data-source-line="30" id="lnk22"><path d="M78.7,569.4883 C103.14,569.4883 138.17,569.4883 174.76,569.4883" fill="none" id="cliente-to-CU07" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="179.76,569.4883,170.76,565.4883,174.76,569.4883,170.76,573.4883,179.76,569.4883" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU08--><g class="link" data-entity-1="ent0002" data-entity-2="ent0012" data-link-type="dependency" data-source-line="31" id="lnk23"><path d="M78.77,558.3583 C95.4,550.5883 118.46,540.2483 139.3,532.4883 C160.24,524.6883 178.7891,518.6691 199.5491,512.4691" fill="none" id="cliente-to-CU08" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="204.34,511.0383,194.5717,509.781,199.5491,512.4691,196.861,517.4465,204.34,511.0383" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link cliente to CU09--><g class="link" data-entity-1="ent0002" data-entity-2="ent0013" data-link-type="dependency" data-source-line="32" id="lnk24"><path d="M75.45,530.8383 C90,505.9983 111.97,474.8783 139.3,455.4883 C154.76,444.5183 168.693,438.1248 186.843,432.5148" fill="none" id="cliente-to-CU09" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="191.62,431.0383,181.8402,429.8744,186.843,432.5148,184.2026,437.5176,191.62,431.0383" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><?plantuml-src PPAxRiCm34LtVGMHtK0IvxaKA0oqQz0YtHcPSGN8Ka79NOh-UwacpeFPpAj3NUhIsMLFq62A2Lg28KMeuDsbJ3qMmRf0ndWwPiWHs7MV6Lh7PBEBmHYqEJ8yjxqBqiFOIeK9i0ZdmyOx2fcAR4-VnfH-39quZrO_1iISB2Q2IRElfZDufLHCaE6BlBE3npGfjpJxwKpJyniwuGqvrsGDEuuTOo_aSGXMUaQsrkm2cXZIuBEm5ZcJ9yQHNZnCV80NvoK46LZUtL4WZfU93nfVmXjr_w5neX5RQcebL2B-baibEWdu-hILPjUmmqv0FdMCt5fp6zbtiEGVqOr6j_113BrB8tbntvfVMN_PCrJLqsafT-NylgplouKnvx_XgYX18bFAKWihBQoriD72rlm1?></g></svg>
+        <figcaption>Casos de uso del sistema</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Actor</th><th>Caso de uso</th><th>Reglas</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas</td><td>R2</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Reservar entradas para una función</td><td>R4</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="dominio">
+      <h2>Modelo de dominio</h2>
+      <p>
+        Cada entidad es una interfaz con su implementación. Las asociaciones se guardan como id
+        (<code>peliculaId</code>, <code>salaId</code>), no como referencia al objeto: el DAO resuelve la relación
+        cuando hace falta.
+      </p>
+
+      <figure class="diagram">
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="CLASS" preserveAspectRatio="none" style="background:#FFFFFF;" version="1.1" viewBox="0 0 1109 745" zoomAndPan="magnify"><?plantuml 1.2026.6?><defs/><g><g class="title" data-source-line="1"><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="268.7959" x="416.9947" y="23.5352">Modelo de dominio - Sistema de cine</text></g><!--class Pelicula--><g class="entity" data-qualified-name="Pelicula" data-source-line="7" id="ent0001"><rect fill="#F1F1F1" height="105.9531" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="213.6055" x="7" y="376.3883"/><ellipse cx="83.918" cy="392.3883" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M80.3457,388.6534 L80.3457,386.4952 L87.7251,386.4952 L87.7251,388.6534 L85.2598,388.6534 L85.2598,396.7301 L87.7251,396.7301 L87.7251,398.8883 L80.3457,398.8883 L80.3457,396.7301 L82.811,396.7301 L82.811,388.6534 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="51.2695" x="104.418" y="397.6793">Pelicula</text><line style="stroke:#181818;stroke-width:0.5;" x1="8" x2="219.6055" y1="408.3883" y2="408.3883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="130.2998" x="13" y="425.9234">+getTitulo(): String</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="184.4268" x="13" y="442.4117">+getDuracionMinutos(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="201.6055" x="13" y="458.9">+getGeneros(): List&lt;Genero&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="169.8799" x="13" y="475.3883">+agregarGenero(Genero)</text></g><!--class Sala--><g class="entity" data-qualified-name="Sala" data-source-line="14" id="ent0002"><rect fill="#F1F1F1" height="72.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="157.1816" x="518.21" y="392.8783"/><ellipse cx="579.0259" cy="408.8783" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M575.4537,405.1434 L575.4537,402.9852 L582.833,402.9852 L582.833,405.1434 L580.3677,405.1434 L580.3677,413.2201 L582.833,413.2201 L582.833,415.3783 L575.4537,415.3783 L575.4537,413.2201 L577.919,413.2201 L577.919,405.1434 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="27.0498" x="599.5259" y="414.1693">Sala</text><line style="stroke:#181818;stroke-width:0.5;" x1="519.21" x2="674.3916" y1="424.8783" y2="424.8783"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="145.1816" x="524.21" y="442.4134">+getNombre(): String</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="139.3643" x="524.21" y="458.9017">+getCapacidad(): int</text></g><!--class Funcion--><g class="entity" data-qualified-name="Funcion" data-source-line="19" id="ent0003"><rect fill="#F1F1F1" height="105.9531" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="199.4824" x="497.06" y="210.4383"/><ellipse cx="565.8569" cy="226.4383" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M562.2846,222.7034 L562.2846,220.5452 L569.664,220.5452 L569.664,222.7034 L567.1987,222.7034 L567.1987,230.7801 L569.664,230.7801 L569.664,232.9383 L562.2846,232.9383 L562.2846,230.7801 L564.7499,230.7801 L564.7499,222.7034 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="53.3887" x="586.3569" y="231.7293">Funcion</text><line style="stroke:#181818;stroke-width:0.5;" x1="498.06" x2="695.5424" y1="242.4383" y2="242.4383"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="132.9453" x="503.06" y="259.9734">+getPeliculaId(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108.7256" x="503.06" y="276.4617">+getSalaId(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="187.4824" x="503.06" y="292.95">+getInicio(): LocalDateTime</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="138.7012" x="503.06" y="309.4383">+getPrecio(): double</text></g><!--class Cliente--><g class="entity" data-qualified-name="Cliente" data-source-line="26" id="ent0004"><rect fill="#F1F1F1" height="72.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="157.1816" x="731.21" y="226.9283"/><ellipse cx="781.8985" cy="242.9283" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M778.3262,239.1934 L778.3262,237.0352 L785.7056,237.0352 L785.7056,239.1934 L783.2403,239.1934 L783.2403,247.2701 L785.7056,247.2701 L785.7056,249.4283 L778.3262,249.4283 L778.3262,247.2701 L780.7915,247.2701 L780.7915,239.1934 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="47.3047" x="802.3985" y="248.2193">Cliente</text><line style="stroke:#181818;stroke-width:0.5;" x1="732.21" x2="887.3916" y1="258.9283" y2="258.9283"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="145.1816" x="737.21" y="276.4634">+getNombre(): String</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="127.3125" x="737.21" y="292.9517">+getEmail(): String</text></g><!--class Reserva--><g class="entity" data-qualified-name="Reserva" data-source-line="31" id="ent0005"><rect fill="#F1F1F1" height="105.9531" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="205.3613" x="707.12" y="44.4883"/><ellipse cx="779.4032" cy="60.4883" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M775.8309,56.7534 L775.8309,54.5952 L783.2103,54.5952 L783.2103,56.7534 L780.745,56.7534 L780.745,64.8301 L783.2103,64.8301 L783.2103,66.9883 L775.8309,66.9883 L775.8309,64.8301 L778.2963,64.8301 L778.2963,56.7534 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="52.2949" x="799.9032" y="65.7793">Reserva</text><line style="stroke:#181818;stroke-width:0.5;" x1="708.12" x2="911.4813" y1="76.4883" y2="76.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="135.0645" x="713.12" y="94.0234">+getFuncionId(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="128.9805" x="713.12" y="110.5117">+getClienteId(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="188.2275" x="713.12" y="127">+getCantidadEntradas(): int</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="193.3613" x="713.12" y="143.4883">+getEstado(): EstadoReserva</text></g><!--class Genero--><g class="entity" data-qualified-name="Genero" data-source-line="38" id="ent0006"><rect fill="#F1F1F1" height="188.3945" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="130.1934" x="48.71" y="542.3483"/><ellipse cx="85.967" cy="558.3483" fill="#EB937F" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M89.5812,564.8483 L81.8615,564.8483 L81.8615,552.4552 L89.5812,552.4552 L89.5812,554.6134 L84.3102,554.6134 L84.3102,557.2863 L89.0832,557.2863 L89.0832,559.4445 L84.3102,559.4445 L84.3102,562.6901 L89.5812,562.6901 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="48.7334" x="104.913" y="563.6393">Genero</text><line style="stroke:#181818;stroke-width:0.5;" x1="49.71" x2="177.9034" y1="574.3483" y2="574.3483"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="54.2842" x="54.71" y="591.8834">ACCION</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="64.3877" x="54.71" y="608.3717">COMEDIA</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.7158" x="54.71" y="624.86">DRAMA</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53.874" x="54.71" y="641.3483">TERROR</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118.1934" x="54.71" y="657.8366">CIENCIA_FICCION</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="80.6914" x="54.71" y="674.3248">ANIMACION</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="96.7148" x="54.71" y="690.8131">DOCUMENTAL</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69.0635" x="54.71" y="707.3014">ROMANCE</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68.8652" x="54.71" y="723.7897">SUSPENSO</text></g><!--class EstadoReserva--><g class="entity" data-qualified-name="EstadoReserva" data-source-line="50" id="ent0007"><rect fill="#F1F1F1" height="89.4648" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="129.3984" x="923.1" y="218.6783"/><ellipse cx="938.1" cy="234.6783" fill="#EB937F" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M941.7143,241.1783 L933.9945,241.1783 L933.9945,228.7852 L941.7143,228.7852 L941.7143,230.9434 L936.4433,230.9434 L936.4433,233.6163 L941.2162,233.6163 L941.2162,235.7745 L936.4433,235.7745 L936.4433,239.0201 L941.7143,239.0201 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="97.3984" x="952.1" y="239.9693">EstadoReserva</text><line style="stroke:#181818;stroke-width:0.5;" x1="924.1" x2="1051.4984" y1="250.6783" y2="250.6783"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="79.3789" x="929.1" y="268.2134">RESERVADA</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57.3193" x="929.1" y="284.7017">PAGADA</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="84.2324" x="929.1" y="301.19">CANCELADA</text></g><g class="entity" data-qualified-name="GMN14" data-source-line="65" id="ent0015"><path d="M710.82,409.0583 L710.82,449.6794 L1094.7853,449.6794 L1094.7853,419.0583 L1084.7853,409.0583 L710.82,409.0583" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M1084.7853,409.0583 L1084.7853,419.0583 L1094.7853,419.0583 L1084.7853,409.0583" fill="#FEFFDD" style="stroke:#181818;stroke-width:1;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="355.8179" x="716.82" y="426.6266">Las asociaciones se guardan como id (peliculaId, salaId),</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="362.9653" x="716.82" y="441.9372">no como referencia al objeto: el DAO resuelve la relacion.</text></g><g class="entity" data-qualified-name="GMN17" data-source-line="70" id="ent0018"><path d="M256,409.0583 L256,425.7383 L220.89,429.7383 L256,433.7383 L256,449.6794 A0,0 0 0 0 256,449.6794 L483.6099,449.6794 A0,0 0 0 0 483.6099,449.6794 L483.6099,419.0583 L473.6099,409.0583 L256,409.0583 A0,0 0 0 0 256,409.0583" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M473.6099,409.0583 L473.6099,419.0583 L483.6099,419.0583 L473.6099,409.0583" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="206.6099" x="262" y="426.6266">Implementado de punta a punta.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="189.4268" x="262" y="441.9372">El resto todavia no tiene DAO.</text></g><!--reverse link Pelicula to Genero--><g class="link" data-entity-1="ent0001" data-entity-2="ent0006" data-link-type="composition" data-source-line="56" id="lnk8"><path codeLine="56" d="M113.8,494.7183 C113.8,512.8183 113.8,521.6283 113.8,541.9683" fill="none" id="Pelicula-backto-Genero" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="113.8,482.7183,109.8,488.7183,113.8,494.7183,117.8,488.7183,113.8,482.7183" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="105.3256" y="502.7221">1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="22.7119" x="90.9846" y="531.7332">1..*</text></g><!--link Reserva to EstadoReserva--><g class="link" data-entity-1="ent0005" data-entity-2="ent0007" data-link-type="association" data-source-line="57" id="lnk9"><path codeLine="57" d="M900.44,150.5883 C900.44,184.7383 900.44,222.7383 900.44,222.7383 C900.44,222.7383 910.07,222.7383 922.94,222.7383" fill="none" id="Reserva-EstadoReserva" style="stroke:#181818;stroke-width:1;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="6.2651" x="905.6858" y="170.9439">*</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="906.9909" y="214.7547">1</text></g><!--link Funcion to Pelicula--><g class="link" data-entity-1="ent0003" data-entity-2="ent0001" data-link-type="dependency" data-source-line="59" id="lnk10"><path codeLine="59" d="M507.64,316.6283 C507.64,349.2283 507.64,384.7383 507.64,384.7383 C507.64,384.7383 342.52,384.7383 225.9,384.7383" fill="none" id="Funcion-to-Pelicula" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="220.9,384.7383,229.9,388.7383,225.9,384.7383,229.9,380.7383,220.9,384.7383" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="6.2651" x="489.8488" y="336.9954">*</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="228.7193" y="378.6524">1</text></g><!--link Funcion to Sala--><g class="link" data-entity-1="ent0003" data-entity-2="ent0002" data-link-type="dependency" data-source-line="60" id="lnk11"><path codeLine="60" d="M596.8,316.8383 C596.8,341.5683 596.8,365.3283 596.8,387.5783" fill="none" id="Funcion-to-Sala" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="596.8,392.5783,600.8,383.5783,596.8,387.5783,592.8,383.5783,596.8,392.5783" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="6.2651" x="590.4504" y="336.8506">*</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="588.0826" y="382.0096">1</text></g><!--link Reserva to Funcion--><g class="link" data-entity-1="ent0005" data-entity-2="ent0003" data-link-type="dependency" data-source-line="61" id="lnk12"><path codeLine="61" d="M724.41,150.6083 C724.41,181.6383 724.41,214.7383 724.41,214.7383 C724.41,214.7383 718.02,214.7383 702.04,214.7383" fill="none" id="Reserva-to-Funcion" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="697.04,214.7383,706.04,218.7383,702.04,214.7383,706.04,210.7383,697.04,214.7383" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="6.2651" x="707.1019" y="170.9665">*</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="704.7031" y="208.1926">1</text></g><!--link Reserva to Cliente--><g class="link" data-entity-1="ent0005" data-entity-2="ent0004" data-link-type="dependency" data-source-line="62" id="lnk13"><path codeLine="62" d="M809.8,150.8783 C809.8,175.6183 809.8,199.3683 809.8,221.6283" fill="none" id="Reserva-to-Cliente" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="809.8,226.6283,813.8,217.6283,809.8,221.6283,805.8,217.6283,809.8,226.6283" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="6.2651" x="803.4505" y="170.8894">*</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="8.2202" x="801.0826" y="216.0596">1</text></g><!--link Funcion to GMN14--><g class="link" data-entity-1="ent0003" data-entity-2="ent0015" data-link-type="association" data-source-line="65" id="lnk16"><path d="M696.85,312.7383 C709.22,312.7383 717.62,312.7383 717.62,312.7383 C717.62,312.7383 717.62,375.2983 717.62,408.7883" fill="none" id="Funcion-GMN14" style="stroke:#181818;stroke-width:1;stroke-dasharray:7,7;"/></g><?plantuml-src XLJRRjim37ttLn1vQhiss5wBeO1XkuM1s2xiTAy3OxEfDbqCIIxG3VltKRvaILfWJw9uEUUGeks5bmI5wKWQw0WweuGM1cwW4SwJmk1iXQOeSZ-5xj6YWbQYSx7tLkm6JtbhT2D-4Nm-If5Sujzw0cFzYubU1CEGwlqRA58xiYwAXFPadx4bU2Gfsa4Y_8u0Fkt9RuKVfBcul8M6IVH-TgU3nLOONGWzUED2d47cu0DfifDpmzA_JlUx4CMzfJtQoNCn7PVHdsC93HxHbqRjBBsZJx1d-WwxXVW4uNxGGTi1P6agxqvr1gPpNwu5ruxIJOioHKzReMX1iZH7EpFi99to9b8GN_udFbCev97t1ACcH_Rrtm3cNivbpbJltAXz64kclSKEpzubSnwxKVrapLn10Eb1mVGS8tMS97bLif5KHPRcCLjf7HVXt6PrNTKXb6TbaiVVx_CbEIxp8fxjj4gUYgpSnXk-r5KHbqd6LlFKF6PbKnr8JwICt7NMPFMtE0raZ_73P2IXVXDiBZniwUhB2gvkRlXShwzMSmFH0hPYrnXSdJKSBHioPToDAGleXy6mAcUuKs1E_Z0sFr8KQSDRiJFU6mNc-L03i447w4mhne-973Y2_O2sGmsjKGP41nVzONslmOqhUtdDjTfCAPQUoH8Z8g04i_j1tjm2IKZZYeDk8FbAmCEo94UQDG--Ww1fLcR5_iK7OOSH0EIgbwHOFeyj_7ZwWKt0wLnpGYO3k3VWJOUlJCvwFFTBWVU8uYy0?></g></svg>
+        <figcaption>Entidades, enums y sus relaciones</figcaption>
+      </figure>
+
+      <h3>Por qué los enums no llevan interfaz</h3>
+      <p>
+        <code>Genero</code> y <code>EstadoReserva</code> son catálogos cerrados. Un enum ya es un tipo con valores
+        fijos: no hay una segunda implementación posible, así que no hay nada que abstraer.
+      </p>
+
+      <h3>Reserva y compra son el mismo registro</h3>
+      <p>
+        Una <code>Reserva</code> nace en estado <code>RESERVADA</code> y pasa a <code>PAGADA</code> cuando el cliente
+        abona, o a <code>CANCELADA</code> si se da de baja. Guarda cantidad de entradas, no butacas numeradas.
+      </p>
+    </section>
+
+    <section class="doc-section" id="capas">
+      <h2>Arquitectura en capas</h2>
+      <p>Cada capa tiene una responsabilidad y solo conoce a la de abajo.</p>
+
+      <figure class="diagram">
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="CLASS" preserveAspectRatio="none" style="background:#FFFFFF;" version="1.1" viewBox="0 0 1196 854" zoomAndPan="magnify"><?plantuml 1.2026.6?><defs/><g><g class="title" data-source-line="1"><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="412.8223" x="388.4691" y="23.5352">Arquitectura en capas - patron DAO (circuito de Pelicula)</text></g><!--cluster ui--><g class="cluster" data-qualified-name="ui" data-source-line="6" id="ent0001"><path d="M543.5,43.4883 L558.2471,43.4883 A3.75,3.75 0 0 1 560.7471,45.9883 L567.7471,65.9766 L748.5,65.9766 A2.5,2.5 0 0 1 751,68.4766 L751,172.9683 A2.5,2.5 0 0 1 748.5,175.4683 L543.5,175.4683 A2.5,2.5 0 0 1 541,172.9683 L541,45.9883 A2.5,2.5 0 0 1 543.5,43.4883" fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="541" x2="567.7471" y1="65.9766" y2="65.9766"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="13.7471" x="545" y="59.0234">ui</text></g><!--cluster servicio--><g class="cluster" data-qualified-name="servicio" data-source-line="13" id="ent0003"><path d="M262.5,208.4683 L319.7871,208.4683 A3.75,3.75 0 0 1 322.2871,210.9683 L329.2871,230.9566 L581.5,230.9566 A2.5,2.5 0 0 1 584,233.4566 L584,403.8983 A2.5,2.5 0 0 1 581.5,406.3983 L262.5,406.3983 A2.5,2.5 0 0 1 260,403.8983 L260,210.9683 A2.5,2.5 0 0 1 262.5,208.4683" fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="260" x2="329.2871" y1="230.9566" y2="230.9566"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="56.2871" x="264" y="224.0034">servicio</text></g><!--cluster interfaces--><g class="cluster" data-qualified-name="interfaces" data-source-line="24" id="ent0005"><path d="M111.5,455.3983 L184.0928,455.3983 A3.75,3.75 0 0 1 186.5928,457.8983 L193.5928,477.8866 L527.5,477.8866 A2.5,2.5 0 0 1 530,480.3866 L530,609.8483 A2.5,2.5 0 0 1 527.5,612.3483 L111.5,612.3483 A2.5,2.5 0 0 1 109,609.8483 L109,457.8983 A2.5,2.5 0 0 1 111.5,455.3983" fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="109" x2="193.5928" y1="477.8866" y2="477.8866"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="71.5928" x="113" y="470.9334">interfaces</text></g><!--cluster modelo--><g class="cluster" data-qualified-name="modelo" data-source-line="34" id="ent0008"><path d="M497.5,645.3483 L551.9912,645.3483 A3.75,3.75 0 0 1 554.4912,647.8483 L561.4912,667.8366 L638.5,667.8366 A2.5,2.5 0 0 1 641,670.3366 L641,725.8483 A2.5,2.5 0 0 1 638.5,728.3483 L497.5,728.3483 A2.5,2.5 0 0 1 495,725.8483 L495,647.8483 A2.5,2.5 0 0 1 497.5,645.3483" fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="495" x2="561.4912" y1="667.8366" y2="667.8366"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="53.4912" x="499" y="660.8834">modelo</text></g><!--cluster persistencia--><g class="cluster" data-qualified-name="persistencia" data-source-line="38" id="ent0010"><path d="M8.5,645.3483 L97.0342,645.3483 A3.75,3.75 0 0 1 99.5342,647.8483 L106.5342,667.8366 L403.5,667.8366 A2.5,2.5 0 0 1 406,670.3366 L406,836.8483 A2.5,2.5 0 0 1 403.5,839.3483 L8.5,839.3483 A2.5,2.5 0 0 1 6,836.8483 L6,647.8483 A2.5,2.5 0 0 1 8.5,645.3483" fill="none" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="6" x2="106.5342" y1="667.8366" y2="667.8366"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="87.5342" x="10" y="660.8834">persistencia</text></g><!--class MenuConsola--><g class="entity" data-qualified-name="ui.MenuConsola" data-source-line="7" id="ent0002"><rect fill="#F1F1F1" height="80.9766" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="178.2979" x="556.85" y="78.4883"/><ellipse cx="596.408" cy="94.4883" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M598.8811,100.6313 Q598.3,100.9302 597.6609,101.0796 Q597.0217,101.229 596.3162,101.229 Q593.8093,101.229 592.4895,99.5771 Q591.1697,97.9253 591.1697,94.8042 Q591.1697,91.6748 592.4895,90.0229 Q593.8093,88.3711 596.3162,88.3711 Q597.0217,88.3711 597.6692,88.5205 Q598.3167,88.6699 598.8811,88.9688 L598.8811,91.6914 Q598.2502,91.1104 597.6567,90.8406 Q597.0632,90.5708 596.4324,90.5708 Q595.0876,90.5708 594.4028,91.6375 Q593.718,92.7041 593.718,94.8042 Q593.718,96.896 594.4028,97.9626 Q595.0876,99.0293 596.4324,99.0293 Q597.0632,99.0293 597.6567,98.7595 Q598.2502,98.4897 598.8811,97.9087 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="91.7246" x="615.8653" y="99.7793">MenuConsola</text><line style="stroke:#181818;stroke-width:0.5;" x1="557.85" x2="734.1479" y1="110.4883" y2="110.4883"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="166.2979" x="562.85" y="128.0234">-gestor: GestorCartelera</text><line style="stroke:#181818;stroke-width:0.5;" x1="557.85" x2="734.1479" y1="134.9766" y2="134.9766"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="61.6943" x="562.85" y="152.5117">+iniciar()</text></g><!--class GestorCartelera--><g class="entity" data-qualified-name="servicio.GestorCartelera" data-source-line="14" id="ent0004"><rect fill="#F1F1F1" height="146.9297" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="291.9658" x="276.02" y="243.4683"/><ellipse cx="364.6992" cy="259.4683" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M367.1723,265.6113 Q366.5913,265.9102 365.9521,266.0596 Q365.313,266.209 364.6074,266.209 Q362.1006,266.209 360.7807,264.5571 Q359.4609,262.9053 359.4609,259.7842 Q359.4609,256.6548 360.7807,255.0029 Q362.1006,253.3511 364.6074,253.3511 Q365.313,253.3511 365.9604,253.5005 Q366.6079,253.6499 367.1723,253.9488 L367.1723,256.6714 Q366.5415,256.0904 365.948,255.8206 Q365.3545,255.5508 364.7236,255.5508 Q363.3789,255.5508 362.6941,256.6175 Q362.0093,257.6841 362.0093,259.7842 Q362.0093,261.876 362.6941,262.9426 Q363.3789,264.0093 364.7236,264.0093 Q365.3545,264.0093 365.948,263.7395 Q366.5415,263.4697 367.1723,262.8887 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="106.1074" x="385.1992" y="264.7593">GestorCartelera</text><line style="stroke:#181818;stroke-width:0.5;" x1="277.02" x2="566.9858" y1="275.4683" y2="275.4683"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124.3936" x="282.02" y="293.0034">-dao: PeliculaDAO</text><line style="stroke:#181818;stroke-width:0.5;" x1="277.02" x2="566.9858" y1="299.9566" y2="299.9566"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="239.9346" x="282.02" y="317.4917">+agregar(titulo, duracion, generos)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="160.4326" x="282.02" y="333.98">+listar(): List&lt;Pelicula&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="279.9658" x="282.02" y="350.4683">+listarPorGenero(Genero): List&lt;Pelicula&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="218.7842" x="282.02" y="366.9566">+buscar(id): Optional&lt;Pelicula&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="88.252" x="282.02" y="383.4448">+eliminar(id)</text></g><!--class PeliculaDAO--><g class="entity" data-qualified-name="interfaces.PeliculaDAO" data-source-line="25" id="ent0006"><rect fill="#F1F1F1" height="105.9531" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="270.8086" x="124.6" y="490.3983"/><ellipse cx="214.6088" cy="506.3983" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M211.0365,502.6634 L211.0365,500.5052 L218.4159,500.5052 L218.4159,502.6634 L215.9506,502.6634 L215.9506,510.7401 L218.4159,510.7401 L218.4159,512.8983 L211.0365,512.8983 L211.0365,510.7401 L213.5019,510.7401 L213.5019,502.6634 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="82.291" x="235.1088" y="511.6893">PeliculaDAO</text><line style="stroke:#181818;stroke-width:0.5;" x1="125.6" x2="394.4086" y1="522.3983" y2="522.3983"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124.6533" x="130.6" y="539.9334">+guardar(Pelicula)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="258.8086" x="130.6" y="556.4217">+buscarPorId(int): Optional&lt;Pelicula&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="160.4326" x="130.6" y="572.91">+listar(): List&lt;Pelicula&gt;</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="93.3652" x="130.6" y="589.3983">+eliminar(int)</text></g><!--class Pelicula--><g class="entity" data-qualified-name="interfaces.Pelicula" data-source-line="31" id="ent0007"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="83.2695" x="430.37" y="527.3683"/><ellipse cx="445.37" cy="543.3683" fill="#B4A7E5" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M441.7977,539.6334 L441.7977,537.4752 L449.1771,537.4752 L449.1771,539.6334 L446.7118,539.6334 L446.7118,547.7101 L449.1771,547.7101 L449.1771,549.8683 L441.7977,549.8683 L441.7977,547.7101 L444.2631,547.7101 L444.2631,539.6334 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="51.2695" x="459.37" y="548.6593">Pelicula</text></g><!--class PeliculaImpl--><g class="entity" data-qualified-name="modelo.PeliculaImpl" data-source-line="35" id="ent0009"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="113.2314" x="511.38" y="680.3483"/><ellipse cx="526.38" cy="696.3483" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M528.8531,702.4913 Q528.2721,702.7902 527.6329,702.9396 Q526.9938,703.089 526.2882,703.089 Q523.7814,703.089 522.4615,701.4371 Q521.1417,699.7853 521.1417,696.6642 Q521.1417,693.5348 522.4615,691.8829 Q523.7814,690.2311 526.2882,690.2311 Q526.9938,690.2311 527.6412,690.3805 Q528.2887,690.5299 528.8531,690.8288 L528.8531,693.5514 Q528.2223,692.9704 527.6288,692.7006 Q527.0353,692.4308 526.4044,692.4308 Q525.0597,692.4308 524.3749,693.4975 Q523.6901,694.5641 523.6901,696.6642 Q523.6901,698.756 524.3749,699.8226 Q525.0597,700.8893 526.4044,700.8893 Q527.0353,700.8893 527.6288,700.6195 Q528.2223,700.3497 528.8531,699.7687 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="81.2314" x="540.38" y="701.6393">PeliculaImpl</text></g><!--class PeliculaDAOMemoria--><g class="entity" data-qualified-name="persistencia.PeliculaDAOMemoria" data-source-line="39" id="ent0011"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="173.3262" x="22.34" y="680.3483"/><ellipse cx="37.34" cy="696.3483" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M39.8131,702.4913 Q39.2321,702.7902 38.5929,702.9396 Q37.9538,703.089 37.2482,703.089 Q34.7414,703.089 33.4215,701.4371 Q32.1017,699.7853 32.1017,696.6642 Q32.1017,693.5348 33.4215,691.8829 Q34.7414,690.2311 37.2482,690.2311 Q37.9538,690.2311 38.6012,690.3805 Q39.2487,690.5299 39.8131,690.8288 L39.8131,693.5514 Q39.1823,692.9704 38.5888,692.7006 Q37.9953,692.4308 37.3644,692.4308 Q36.0197,692.4308 35.3349,693.4975 Q34.6501,694.5641 34.6501,696.6642 Q34.6501,698.756 35.3349,699.8226 Q36.0197,700.8893 37.3644,700.8893 Q37.9953,700.8893 38.5888,700.6195 Q39.1823,700.3497 39.8131,699.7687 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="141.3262" x="51.34" y="701.6393">PeliculaDAOMemoria</text></g><!--class PeliculaDAOMySQL--><g class="entity" data-qualified-name="persistencia.PeliculaDAOMySQL" data-source-line="40" id="ent0012"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="159.5449" x="230.23" y="680.3483"/><ellipse cx="245.23" cy="696.3483" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M247.7031,702.4913 Q247.1221,702.7902 246.4829,702.9396 Q245.8438,703.089 245.1382,703.089 Q242.6314,703.089 241.3115,701.4371 Q239.9917,699.7853 239.9917,696.6642 Q239.9917,693.5348 241.3115,691.8829 Q242.6314,690.2311 245.1382,690.2311 Q245.8438,690.2311 246.4912,690.3805 Q247.1387,690.5299 247.7031,690.8288 L247.7031,693.5514 Q247.0723,692.9704 246.4788,692.7006 Q245.8853,692.4308 245.2544,692.4308 Q243.9097,692.4308 243.2249,693.4975 Q242.5401,694.5641 242.5401,696.6642 Q242.5401,698.756 243.2249,699.8226 Q243.9097,700.8893 245.2544,700.8893 Q245.8853,700.8893 246.4788,700.6195 Q247.0723,700.3497 247.7031,699.7687 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="127.5449" x="259.23" y="701.6393">PeliculaDAOMySQL</text></g><!--class ConexionMySQL--><g class="entity" data-qualified-name="persistencia.ConexionMySQL" data-source-line="41" id="ent0013"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="141.9492" x="35.03" y="791.3483"/><ellipse cx="50.03" cy="807.3483" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M52.5031,813.4913 Q51.9221,813.7902 51.2829,813.9396 Q50.6438,814.089 49.9382,814.089 Q47.4314,814.089 46.1115,812.4371 Q44.7917,810.7853 44.7917,807.6642 Q44.7917,804.5348 46.1115,802.8829 Q47.4314,801.2311 49.9382,801.2311 Q50.6438,801.2311 51.2912,801.3805 Q51.9387,801.5299 52.5031,801.8288 L52.5031,804.5514 Q51.8723,803.9704 51.2788,803.7006 Q50.6853,803.4308 50.0544,803.4308 Q48.7097,803.4308 48.0249,804.4975 Q47.3401,805.5641 47.3401,807.6642 Q47.3401,809.756 48.0249,810.8226 Q48.7097,811.8893 50.0544,811.8893 Q50.6853,811.8893 51.2788,811.6195 Q51.8723,811.3497 52.5031,810.7687 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="109.9492" x="64.03" y="812.6393">ConexionMySQL</text></g><!--class PersistenciaException--><g class="entity" data-qualified-name="persistencia.PersistenciaException" data-source-line="42" id="ent0014"><rect fill="#F1F1F1" height="32" rx="2.5" ry="2.5" style="stroke:#181818;stroke-width:0.5;" width="178.7881" x="211.61" y="791.3483"/><ellipse cx="226.61" cy="807.3483" fill="#ADD1B2" rx="11" ry="11" style="stroke:#181818;stroke-width:1;"/><path d="M229.0831,813.4913 Q228.5021,813.7902 227.8629,813.9396 Q227.2238,814.089 226.5182,814.089 Q224.0114,814.089 222.6915,812.4371 Q221.3717,810.7853 221.3717,807.6642 Q221.3717,804.5348 222.6915,802.8829 Q224.0114,801.2311 226.5182,801.2311 Q227.2238,801.2311 227.8712,801.3805 Q228.5187,801.5299 229.0831,801.8288 L229.0831,804.5514 Q228.4523,803.9704 227.8588,803.7006 Q227.2653,803.4308 226.6344,803.4308 Q225.2897,803.4308 224.6049,804.4975 Q223.9201,805.5641 223.9201,807.6642 Q223.9201,809.756 224.6049,810.8226 Q225.2897,811.8893 226.6344,811.8893 Q227.2653,811.8893 227.8588,811.6195 Q228.4523,811.3497 229.0831,810.7687 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="146.7881" x="240.61" y="812.6393">PersistenciaException</text></g><g class="entity" data-qualified-name="GMN26" data-source-line="57" id="ent0027"><path d="M900.24,296.6183 L900.24,337.2394 L1181.7605,337.2394 L1181.7605,306.6183 L1171.7605,296.6183 L900.24,296.6183" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M1171.7605,296.6183 L1171.7605,306.6183 L1181.7605,306.6183 L1171.7605,296.6183" fill="#FEFFDD" style="stroke:#181818;stroke-width:1;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="191.8389" x="906.24" y="314.1866">No conoce java.sql ni Scanner.</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="260.5205" x="906.24" y="329.4972">Cambiar de MySQL a memoria no lo toca.</text></g><g class="entity" data-qualified-name="GMN29" data-source-line="62" id="ent0030"><path d="M602.84,304.2783 L602.84,329.5888 A0,0 0 0 0 602.84,329.5888 L865.1588,329.5888 A0,0 0 0 0 865.1588,329.5888 L865.1588,314.2783 L855.1588,304.2783 L732.66,304.2783 L663.81,159.6283 L724.66,304.2783 L602.84,304.2783 A0,0 0 0 0 602.84,304.2783" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><path d="M855.1588,304.2783 L855.1588,314.2783 L865.1588,314.2783 L855.1588,304.2783" fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="241.3188" x="608.84" y="321.8466">Unico lugar con Scanner y System.out.</text></g><!--link MenuConsola to GestorCartelera--><g class="link" data-entity-1="ent0002" data-entity-2="ent0004" data-link-type="dependency" data-source-line="45" id="lnk15"><path codeLine="45" d="M600.4,159.8683 C573.03,183.8183 541.1335,211.7164 508.8935,239.9164" fill="none" id="MenuConsola-to-GestorCartelera" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="505.13,243.2083,514.5377,240.2937,508.8935,239.9164,509.2707,234.2722,505.13,243.2083" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link GestorCartelera to PeliculaDAO--><g class="link" data-entity-1="ent0004" data-entity-2="ent0006" data-link-type="dependency" data-source-line="46" id="lnk16"><path codeLine="46" d="M369.4,390.7983 C346.03,423.1883 321.9661,456.5239 300.6461,486.0639" fill="none" id="GestorCartelera-to-PeliculaDAO" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="297.72,490.1183,306.2305,485.1614,300.6461,486.0639,299.7436,480.4796,297.72,490.1183" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="165.5215" x="346.86" y="435.9666">depende de la abstraccion</text></g><!--link GestorCartelera to PeliculaImpl--><g class="link" data-entity-1="ent0004" data-entity-2="ent0009" data-link-type="dependency" data-source-line="47" id="lnk17"><path codeLine="47" d="M497.92,390.7383 C506.37,400.8683 514.32,411.5483 521,422.3983 C573.83,508.1683 571.9588,631.3666 569.4288,675.0966" fill="none" id="GestorCartelera-to-PeliculaImpl" style="stroke:#181818;stroke-width:1;stroke-dasharray:7,7;"/><polygon fill="#181818" points="569.14,680.0883,573.6531,671.3343,569.4288,675.0966,565.6665,670.8723,569.14,680.0883" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="56.1577" x="570.81" y="548.4366">instancia</text></g><!--reverse link PeliculaDAO to PeliculaDAOMemoria--><g class="link" data-entity-1="ent0006" data-entity-2="ent0011" data-link-type="extension" data-source-line="49" id="lnk19"><path codeLine="49" d="M194.8821,609.4762 C165.5821,638.7762 143.87,660.4883 124.42,679.9283" fill="none" id="PeliculaDAO-backto-PeliculaDAOMemoria" style="stroke:#181818;stroke-width:1;"/><polygon fill="none" points="207.61,596.7483,190.6394,605.2336,199.1247,613.7188,207.61,596.7483" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--reverse link PeliculaDAO to PeliculaDAOMySQL--><g class="link" data-entity-1="ent0006" data-entity-2="ent0012" data-link-type="extension" data-source-line="50" id="lnk21"><path codeLine="50" d="M283.0071,613.8362 C292.7071,643.1362 298.45,660.4883 304.89,679.9283" fill="none" id="PeliculaDAO-backto-PeliculaDAOMySQL" style="stroke:#181818;stroke-width:1;"/><polygon fill="none" points="277.35,596.7483,277.3111,615.7219,288.7031,611.9505,277.35,596.7483" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--reverse link Pelicula to PeliculaImpl--><g class="link" data-entity-1="ent0007" data-entity-2="ent0009" data-link-type="extension" data-source-line="51" id="lnk23"><path codeLine="51" d="M491.3876,574.8681 C509.7876,603.8081 539.82,651.0283 558.24,679.9983" fill="none" id="Pelicula-backto-PeliculaImpl" style="stroke:#181818;stroke-width:1;"/><polygon fill="none" points="481.73,559.6783,486.3244,578.0873,496.4509,571.6489,481.73,559.6783" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link PeliculaDAOMySQL to ConexionMySQL--><g class="link" data-entity-1="ent0012" data-entity-2="ent0013" data-link-type="dependency" data-source-line="53" id="lnk24"><path codeLine="53" d="M281.2,712.7383 C242.43,733.4483 178.2497,767.7414 139.3897,788.5114" fill="none" id="PeliculaDAOMySQL-to-ConexionMySQL" style="stroke:#181818;stroke-width:1;"/><polygon fill="#181818" points="134.98,790.8683,144.8029,790.1536,139.3897,788.5114,141.0319,783.0982,134.98,790.8683" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/></g><!--link PeliculaDAOMySQL to PersistenciaException--><g class="link" data-entity-1="ent0012" data-entity-2="ent0014" data-link-type="dependency" data-source-line="54" id="lnk25"><path codeLine="54" d="M308.75,712.5083 C307.04,733.2083 304.4017,765.1653 302.6817,785.9853" fill="none" id="PeliculaDAOMySQL-to-PersistenciaException" style="stroke:#181818;stroke-width:1;stroke-dasharray:7,7;"/><polygon fill="#181818" points="302.27,790.9683,306.9974,782.3282,302.6817,785.9853,299.0246,781.6695,302.27,790.9683" style="stroke:#181818;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="33.6362" x="307.04" y="757.9166">lanza</text></g><!--link GestorCartelera to GMN26--><g class="link" data-entity-1="ent0004" data-entity-2="ent0027" data-link-type="association" data-source-line="57" id="lnk28"><path d="M500.9,243.1183 C530.4,221.0283 565.73,200.4283 602.5,191.9683 C630.98,185.4183 837.02,185.4183 865.5,191.9683 C873.93,193.9083 875.6,195.9883 883,200.4683 C932.43,230.3483 985.67,271.7183 1016,296.2583" fill="none" id="GestorCartelera-GMN26" style="stroke:#181818;stroke-width:1;stroke-dasharray:7,7;"/></g><?plantuml-src VLJRRjim37tNL_0nGMkZpy4G8CYA8a0l6O9z02sphbPPSdNfccxzzz5sBehZ1J1WopmyXuUY55JG10lt5bKW6Q9380CI6_IGGOF1MGFV5qymaSf91bae2TQabOmQfqBuLsKQT5Y3rEZz8WIdYXXe9QtPg4-26_6YE8Ng9coXfheWvuLeKBvYHH0L_17Gvy83cRYqnbkDtL-0h28Vh9l1NVTUeWkaoM4Nl596IOLkCkNbb_Wwidfoxnoo2VU0OCzVefqTxB3FdXWhHnKJ1nMYjjTGSb-Opbn3HOQSzTCUfvKFhVuCxldhsvvddaRNrjrrIPF-zHzm4RraAbLo_Aa9B8PwYE5LhKoF6bfM9f1xHac-itPOfkPsfg-gYAvackCs9YLmlQjomlaN2hdi-rWcatHrZjMJ5b_RadIwMtlGgcvq2cnuU5YH3E_x29mzFb1jdSBHq7Rpu_uGu46Z3tPt-dUT2Dn-IEeQq5QGpcPMsjyccvyDvN36zhXq2sPyVXeoV2BuOIuiVE3XQgVhB3_FvoUTu6HbkFDjSKAScuOiDjdV4pqnz7y9qsaCucA4OMVhj8DdiBxwaNQo3OtcawcD3GHELIy1xFF86N-qmDU8vQdvXU-O-pSDHi56ek6Jb3DWYNN1Dq3RoruKsokcwuMnm2CLhCHSSB-XrTef5ZO4MxUIoQuosq--JpWhyj5lTVT2i8NDbatKkOqX8Vi7?></g></svg>
+        <figcaption>Circuito completo de Pelicula, de la UI a la base</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Qué NO hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>ui</code></td><td>Hablar con el usuario</td><td>No decide reglas ni toca SQL</td></tr>
+            <tr><td><code>servicio</code></td><td>Reglas de negocio</td><td>No conoce <code>java.sql</code> ni <code>Scanner</code></td></tr>
+            <tr><td><code>interfaces</code></td><td>Contratos: qué operaciones existen</td><td>No dice cómo se guardan los datos</td></tr>
+            <tr><td><code>persistencia</code></td><td>Leer y escribir en el medio concreto</td><td>No valida reglas ni imprime</td></tr>
+            <tr><td><code>modelo</code></td><td>Datos</td><td>No se guarda ni se muestra a sí mismo</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="dao">
+      <h2>El patrón DAO</h2>
+      <p>
+        DAO significa <em>Data Access Object</em>. Es un objeto que encapsula el acceso a los datos: la aplicación
+        trabaja contra una interfaz y la implementación se ocupa de los detalles.
+      </p>
+
+      <h3>Qué problema resuelve</h3>
+      <p>
+        Si <code>GestorCartelera</code> conociera <code>PreparedStatement</code>, cambiar MySQL por archivos de texto
+        obligaría a reescribir las reglas de negocio, que no tienen nada que ver con el almacenamiento.
+        Con DAO, cambiar de medio es cambiar una línea en <code>Main</code>:
+      </p>
+      <pre><code>PeliculaDAO dao = new PeliculaDAOMySQL();
+// PeliculaDAO dao = new PeliculaDAOMemoria();
+
+GestorCartelera gestor = new GestorCartelera(dao);
+new MenuConsola(gestor).iniciar();</code></pre>
+
+      <h3>Los principios SOLID que aplica</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Principio</th><th>Dónde se ve</th></tr></thead>
+          <tbody>
+            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, el menú muestra. Nadie hace dos cosas.</td></tr>
+            <tr><td>DIP — Inversión de dependencias</td><td><code>GestorCartelera</code> depende de <code>PeliculaDAO</code>, no de la implementación MySQL.</td></tr>
+            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor.</td></tr>
+            <tr><td>ISP — Segregación de interfaces</td><td>Contratos chicos: cuatro operaciones, no un DAO que hace todo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>Errores que este proyecto evita a propósito:</strong> que el DAO imprima por consola
+          (decidiría el formato de salida y haría el dato inutilizable para otra capa), que devuelva
+          <code>void</code> en vez del objeto buscado, y que <code>SQLException</code> se filtre hacia arriba
+          (ataría la lógica a que la persistencia sea SQL). Por eso existe <code>PersistenciaException</code>.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="base-de-datos">
+      <h2>Base de datos</h2>
+      <p>MySQL 8.4 en Docker. El esquema vive en <code>src/main/resources/schema.sql</code>.</p>
+      <pre><code>CREATE TABLE IF NOT EXISTS pelicula (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    duracion_minutos INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pelicula_genero (
+    pelicula_id INT NOT NULL,
+    genero VARCHAR(30) NOT NULL,
+    PRIMARY KEY (pelicula_id, genero),
+    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
+);</code></pre>
+      <p>
+        La relación película–género es N:M y vive en <code>pelicula_genero</code>. El género se guarda con el
+        <strong>nombre</strong> de la constante del enum, no con su posición: si mañana reordenás las constantes,
+        la data sigue siendo correcta. La clave primaria compuesta impide repetir un género en la misma película.
+      </p>
+      <p>
+        El <code>ON DELETE CASCADE</code> hace que borrar una película se lleve sus géneros, sin código Java de por medio.
+      </p>
+
+      <h3>Ver la base con Adminer</h3>
+      <p>
+        El <code>docker-compose.yml</code> levanta, además de MySQL, un <strong>Adminer</strong>: un visualizador
+        web de la base. No hay que instalar nada — arranca junto con el proyecto.
+      </p>
+      <pre><code>docker compose up -d
+open http://localhost:8080</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Campo del login</th><th>Valor</th></tr></thead>
+          <tbody>
+            <tr><td>Motor</td><td>MySQL</td></tr>
+            <tr><td>Servidor</td><td><code>mysql</code> <span class="tag tag-ok">ya viene puesto</span></td></tr>
+            <tr><td>Usuario</td><td><code>root</code></td></tr>
+            <tr><td>Contraseña</td><td><code>root</code></td></tr>
+            <tr><td>Base de datos</td><td><code>appsinteractivas</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Desde ahí podés recorrer las tablas, ver los datos que va cargando la app, y correr consultas SQL a mano
+        para probar antes de escribirlas en un DAO.
+      </p>
+      <div class="callout">
+        <p>
+          El servidor se llama <code>mysql</code>, no <code>localhost</code>: Adminer corre dentro de Docker y
+          alcanza a la base por el nombre del servicio en la red interna. <code>localhost:3306</code> es la
+          dirección que usa la app Java, que corre fuera de Docker.
+        </p>
+      </div>
+
+      <h3>Base nueva desde cero</h3>
+      <p>
+        <code>schema.sql</code> está montado en <code>/docker-entrypoint-initdb.d/</code>: cuando alguien clona el
+        repo y levanta el compose por primera vez, MySQL ejecuta el script solo y las tablas quedan creadas.
+        El script corre únicamente si el volumen está vacío, así que sobre una base ya existente hay que aplicarlo a mano:
+      </p>
+      <pre><code>docker exec -i apps-interactivas-mysql \
+  mysql -uroot -proot -D appsinteractivas &lt; src/main/resources/schema.sql</code></pre>
+      <p>Para empezar de cero y perder todos los datos: <code>docker compose down -v &amp;&amp; docker compose up -d</code></p>
+    </section>
+
+    <section class="doc-section" id="entorno">
+      <h2>Entorno: Java y Maven</h2>
+
+      <h3>Qué hay instalado</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Herramienta</th><th>Versión</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>OpenJDK</td><td>21.0.12 (LTS)</td><td>Compilar y ejecutar el proyecto</td></tr>
+            <tr><td>Maven</td><td>3.9.16</td><td>Dependencias y build</td></tr>
+            <tr><td>Docker</td><td>29.7.2</td><td>Levantar MySQL y Adminer</td></tr>
+            <tr><td>PlantUML</td><td>1.2026.6</td><td>Generar los diagramas del manual</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Todo vino por Homebrew. MySQL <strong>no</strong> está instalado en la Mac: corre dentro de Docker.</p>
+
+      <h3>Por qué Java 21 y no la última</h3>
+      <p>
+        En la máquina conviven tres JDK (17, 21 y 26). El proyecto usa <strong>21</strong> porque es LTS y es lo que
+        soporta sin fricción el ecosistema (Spring, Hibernate, Lombok). La 26 es más nueva pero varias librerías
+        todavía no la acompañan.
+      </p>
+      <p>El pom lo deja explícito, así que el compilador valida contra la API de 21 aunque la máquina tenga otra:</p>
+      <pre><code>&lt;maven.compiler.release&gt;21&lt;/maven.compiler.release&gt;</code></pre>
+
+      <div class="callout">
+        <p>
+          <strong>La trampa de <code>java_home</code>:</strong> <code>/usr/libexec/java_home -v 21</code> no
+          filtra por versión exacta — devuelve la más nueva que cumpla. Con la 26 instalada, pedir "21" devolvía 26.
+          Por eso <code>JAVA_HOME</code> apunta a la ruta del 21 de forma explícita en <code>~/.zshrc</code>:
+        </p>
+        <p><code>export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"</code></p>
+        <p>
+          Además <code>$JAVA_HOME/bin</code> va primero en el <code>PATH</code>, y el JDK 21 quedó registrado en
+          <code>/Library/Java/JavaVirtualMachines/</code> para que cualquier herramienta que enumere JVMs lo vea.
+        </p>
+      </div>
+
+      <h3>Zed</h3>
+      <p>
+        La extensión Java de Zed usa <strong>JDTLS</strong> (Eclipse JDT Language Server) para el autocompletado y los
+        errores en vivo. Necesita un JDK 21+ para correr, y por defecto lo toma del entorno — pero Zed abierto desde
+        el Dock no hereda el <code>JAVA_HOME</code> de la terminal. Por eso está fijado en <code>settings.json</code>:
+      </p>
+      <pre><code>"lsp": {
+  "jdtls": {
+    "settings": {
+      "java_home": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+    },
+    "initialization_options": {
+      "settings": { "java": { "configuration": { "runtimes": [
+        { "name": "JavaSE-21", "path": "…openjdk@21…", "default": true }
+      ] } } }
+    }
+  }
+}</code></pre>
+      <p>Abrí siempre la carpeta raíz del proyecto (donde está el <code>pom.xml</code>): es como JDTLS resuelve el classpath.</p>
+
+      <h3>Qué es Maven y qué hace por vos</h3>
+      <p>Tres cosas:</p>
+      <ol>
+        <li>
+          <strong>Baja las dependencias.</strong> Declarás qué necesitás y las trae de Maven Central a
+          <code>~/.m2/repository</code>, junto con las que esas librerías necesiten a su vez (dependencias transitivas).
+        </li>
+        <li>
+          <strong>Impone una estructura.</strong> <code>src/main/java</code>, <code>src/main/resources</code>,
+          <code>src/test/java</code> y <code>target/</code>. Al respetarla no hay que configurar nada.
+        </li>
+        <li>
+          <strong>Define un ciclo de vida.</strong> Fases ordenadas donde cada una corre las anteriores:
+          <code>compile</code> → <code>test</code> → <code>package</code> → <code>install</code>. Por eso
+          <code>mvn package</code> compila y testea antes de armar el jar.
+        </li>
+      </ol>
+
+      <h3>Las dependencias de este proyecto</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dependencia</th><th>Versión</th><th>Scope</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>mysql-connector-j</code></td><td>9.7.0</td><td>compile</td><td>Driver JDBC de MySQL</td></tr>
+            <tr><td><code>junit-jupiter</code></td><td>5.14.4</td><td>test</td><td>Tests. No viaja en el jar final</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El <strong>scope</strong> define cuándo está disponible cada una: <code>compile</code> en todos lados,
+        <code>test</code> solo al testear, <code>runtime</code> al ejecutar pero no al compilar.
+      </p>
+
+      <h3>Comandos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>mvn exec:java</code></td><td>Corre el <code>main</code> de <code>ar.uade.cine.Main</code></td></tr>
+            <tr><td><code>mvn compile</code></td><td>Compila a <code>target/classes</code></td></tr>
+            <tr><td><code>mvn test</code></td><td>Compila y corre los tests</td></tr>
+            <tr><td><code>mvn package</code></td><td>Compila, testea y genera el jar en <code>target/</code></td></tr>
+            <tr><td><code>mvn clean</code></td><td>Borra <code>target/</code>. El "apagá y prendé" de Maven</td></tr>
+            <tr><td><code>mvn clean package</code></td><td>Build desde cero. Ante cualquier cosa rara, empezá por acá</td></tr>
+            <tr><td><code>mvn dependency:tree</code></td><td>Árbol de dependencias, para pelear conflictos de versiones</td></tr>
+            <tr><td><code>mvn -q …</code></td><td>Modo silencioso: solo la salida de tu programa</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La clase que ejecuta <code>exec:java</code> se define en el pom con la propiedad <code>main.class</code>.
+        Si la renombrás o la movés de paquete, hay que actualizarla ahí.
+      </p>
+
+      <h3>Verificar que está todo bien</h3>
+      <pre><code>java -version     # openjdk 21.0.12
+mvn -v            # Maven 3.9.16, y "Java version: 21.0.12"
+echo $JAVA_HOME   # …/openjdk@21/…
+docker compose ps # mysql y adminer en Up</code></pre>
+      <p>
+        La línea <em>Java version</em> de <code>mvn -v</code> es la que importa: muestra con qué JDK compila Maven
+        realmente, que no siempre es el que creés.
+      </p>
+
+      <h3>Cuando algo falla</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>No se pudo conectar a MySQL</code></td>
+              <td>Docker cerrado o contenedor bajado</td>
+              <td>Abrir Docker Desktop y <code>docker compose up -d</code></td>
+            </tr>
+            <tr>
+              <td><code>invalid target release: 21</code></td>
+              <td>Maven corriendo con un JDK menor</td>
+              <td>Revisar <code>mvn -v</code> y <code>JAVA_HOME</code>; abrir una terminal nueva</td>
+            </tr>
+            <tr>
+              <td>Zed no autocompleta ni marca errores</td>
+              <td>JDTLS no arrancó o no encontró el <code>pom.xml</code></td>
+              <td>Abrir la carpeta raíz del proyecto y recargar la ventana</td>
+            </tr>
+            <tr>
+              <td>Compila pero al correr tira <code>ClassNotFound</code></td>
+              <td>Clases viejas en <code>target/</code></td>
+              <td><code>mvn clean package</code></td>
+            </tr>
+            <tr>
+              <td><code>Table 'pelicula' doesn't exist</code></td>
+              <td>Base creada sin el schema</td>
+              <td>Aplicar <code>schema.sql</code> (ver <a href="#base-de-datos">Base de datos</a>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="correr">
+      <h2>Cómo correrlo</h2>
+      <pre><code>docker compose up -d     # MySQL en localhost:3306 + Adminer en localhost:8080
+mvn exec:java            # menú de consola
+mvn test                 # tests (no necesitan MySQL)</code></pre>
+      <p>Credenciales locales: base <code>appsinteractivas</code>, usuario <code>root</code>, password <code>root</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Servicio</th><th>Dónde</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>MySQL</td><td><code>localhost:3306</code></td><td>Base de datos, se conecta la app</td></tr>
+            <tr><td>Adminer</td><td><a href="http://localhost:8080">localhost:8080</a></td><td>Ver y consultar la base desde el navegador</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Regenerar este manual</h3>
+      <pre><code>cd docs/diagramas &amp;&amp; plantuml -tsvg *.puml
+cd ../manual &amp;&amp; python3 build.py</code></pre>
+      <p>
+        <code>index.html</code> no se edita a mano: se genera desde <code>template.html</code> inyectando los SVG.
+      </p>
+    </section>
+
+    <section class="doc-section" id="estructura">
+      <h2>Estructura de carpetas</h2>
+      <pre><code>Aplicaciones-Interactivas/
+├── docker-compose.yml
+├── pom.xml
+├── docs/
+│   ├── README.md
+│   ├── diagramas/          *.puml + *.svg
+│   └── manual/             template.html + build.py → index.html
+└── src/
+    ├── main/java/ar/uade/cine/
+    │   ├── interfaces/     Pelicula, Sala, Funcion, Cliente, Reserva, PeliculaDAO
+    │   ├── modelo/         *Impl, Genero, EstadoReserva
+    │   ├── persistencia/   PeliculaDAOMemoria, PeliculaDAOMySQL,
+    │   │                   ConexionMySQL, PersistenciaException
+    │   ├── servicio/       GestorCartelera
+    │   ├── ui/             MenuConsola
+    │   └── Main.java
+    ├── main/resources/     schema.sql
+    └── test/java/          GestorCarteleraTest</code></pre>
+    </section>
+
+    <section class="doc-section" id="estado">
+      <h2>Estado y pendientes</h2>
+      <p>
+        Implementado de punta a punta: el circuito de <code>Pelicula</code>. Esa es la plantilla que repite
+        cada entidad nueva.
+      </p>
+
+      <h3>Orden sugerido para seguir</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Qué</th><th>Por qué en ese orden</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>SalaDAO</code> + gestor</td><td>Es igual a Película: fija el patrón sin reglas raras</td></tr>
+            <tr><td>2</td><td><code>FuncionDAO</code> + R3</td><td>Primera relación entre tablas y primera regla con lógica</td></tr>
+            <tr><td>3</td><td><code>ClienteDAO</code></td><td>Simple, pero necesario antes de reservar</td></tr>
+            <tr><td>4</td><td><code>ReservaDAO</code> + R4, R5, R6</td><td>Depende de función y cliente; es la parte con más negocio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Deudas anotadas</h3>
+      <ul>
+        <li><code>PeliculaDAO</code> no tiene <code>actualizar</code>: se puede crear y borrar, pero no editar.</li>
+        <li>El chequeo de título duplicado trae la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE titulo = ?</code>.</li>
+      </ul>
+
+      <div class="callout">
+        <p>
+          Cada DAO se escribe cuando se escribe el gestor que lo usa. Definir los cuatro contratos por adelantado
+          lleva a inventar métodos que después nadie llama.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="decisiones">
+      <h2>Decisiones tomadas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Decisión</th><th>Alternativa descartada</th><th>Motivo</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Cupo por función</td>
+              <td>Butacas numeradas</td>
+              <td>Butacas exigen una tabla más y complican el modelo; el cupo alcanza salvo que la consigna pida elegir asiento</td>
+            </tr>
+            <tr>
+              <td><code>Genero</code> como enum</td>
+              <td>Entidad con ABM</td>
+              <td>Catálogo cerrado y conocido; evita altas con errores de tipeo y ahorra un CRUD entero</td>
+            </tr>
+            <tr>
+              <td>Interfaz + <code>Impl</code> en el modelo</td>
+              <td>Clases sueltas</td>
+              <td>Requisito de la cátedra. Técnicamente no habilita nada: no hay una segunda implementación de "película"</td>
+            </tr>
+            <tr>
+              <td><code>Optional</code> en las búsquedas</td>
+              <td>Devolver <code>null</code></td>
+              <td>Obliga a quien llama a decidir qué hacer si no existe, en vez de comerse un <code>NullPointerException</code></td>
+            </tr>
+            <tr>
+              <td><code>LEFT JOIN</code> + agrupar</td>
+              <td>Una consulta de géneros por película</td>
+              <td>Evita el problema N+1; con <code>INNER</code> una película sin géneros desaparecería del listado</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Diagrama ampliado">
+  <div class="lightbox-bar">
+    <span class="lightbox-title" id="lightboxTitle"></span>
+    <div class="lightbox-zoom-group">
+      <button type="button" class="lightbox-btn" id="lightboxZoomOut" aria-label="Alejar">−</button>
+      <span class="lightbox-zoom-label" id="lightboxZoomLabel">100%</span>
+      <button type="button" class="lightbox-btn" id="lightboxZoomIn" aria-label="Acercar">+</button>
+    </div>
+    <button type="button" class="lightbox-btn" id="lightboxReset">Ajustar</button>
+    <button type="button" class="lightbox-btn" id="lightboxClose" aria-label="Cerrar">Cerrar</button>
+  </div>
+  <div class="lightbox-scroll" id="lightboxScroll">
+    <div class="lightbox-canvas" id="lightboxCanvas"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var sidebar = document.getElementById("sidebar");
+  var menuToggle = document.getElementById("menuToggle");
+  menuToggle.addEventListener("click", function () {
+    var open = sidebar.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.querySelectorAll("#toc a").forEach(function (a) {
+    a.addEventListener("click", function () { sidebar.classList.remove("open"); });
+  });
+
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var filterInput = document.getElementById("tocFilter");
+  filterInput.addEventListener("input", function () {
+    var q = filterInput.value.trim().toLowerCase();
+    tocLinks.forEach(function (a) {
+      var match = !q || a.textContent.toLowerCase().indexOf(q) !== -1;
+      var li = a.closest("li");
+      if (li) li.hidden = !match;
+    });
+  });
+
+  var linkByTarget = {};
+  tocLinks.forEach(function (a) { linkByTarget[a.dataset.target] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll(".doc-section[id]"));
+
+  if ("IntersectionObserver" in window && sections.length) {
+    var current = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var link = linkByTarget[entry.target.id];
+          if (link && link !== current) {
+            if (current) current.classList.remove("active");
+            link.classList.add("active");
+            current = link;
+          }
+        }
+      });
+    }, { rootMargin: "-10% 0px -75% 0px" });
+    sections.forEach(function (s) { observer.observe(s); });
+  }
+
+  /* ---- lightbox: click en un diagrama para verlo grande, con zoom y arrastre ---- */
+  var lightbox = document.getElementById("lightbox");
+  var lbTitle = document.getElementById("lightboxTitle");
+  var lbScroll = document.getElementById("lightboxScroll");
+  var lbCanvas = document.getElementById("lightboxCanvas");
+  var lbZoomLabel = document.getElementById("lightboxZoomLabel");
+
+  var MIN_SCALE = 0.15, MAX_SCALE = 6;
+  var naturalW = 800, naturalH = 600, scale = 1, lastFocused = null;
+
+  function medirSvg(svg) {
+    var vb = svg.getAttribute("viewBox");
+    if (vb) {
+      var p = vb.trim().split(/\s+/).map(Number);
+      if (p.length === 4 && p[2] > 0 && p[3] > 0) return { w: p[2], h: p[3] };
+    }
+    return { w: 800, h: 600 };
+  }
+
+  function aplicarEscala() {
+    lbCanvas.style.width = Math.round(naturalW * scale) + "px";
+    lbCanvas.style.height = Math.round(naturalH * scale) + "px";
+    lbZoomLabel.textContent = Math.round(scale * 100) + "%";
+  }
+
+  function escalaDeAjuste() {
+    var pad = 60;
+    var w = Math.max(lbScroll.clientWidth - pad, 100);
+    var h = Math.max(lbScroll.clientHeight - pad, 100);
+    return Math.min(w / naturalW, h / naturalH, 1) || 1;
+  }
+
+  /* el zoom se ancla al cursor: lo que estabas mirando sigue bajo el mouse */
+  function zoom(factor, clientX, clientY) {
+    var rect = lbScroll.getBoundingClientRect();
+    var ax = clientX != null ? clientX - rect.left : lbScroll.clientWidth / 2;
+    var ay = clientY != null ? clientY - rect.top : lbScroll.clientHeight / 2;
+    var contentX = lbScroll.scrollLeft + ax;
+    var contentY = lbScroll.scrollTop + ay;
+    var previa = scale;
+    scale = Math.min(Math.max(scale * factor, MIN_SCALE), MAX_SCALE);
+    var ratio = scale / previa;
+    aplicarEscala();
+    lbScroll.scrollLeft = contentX * ratio - ax;
+    lbScroll.scrollTop = contentY * ratio - ay;
+  }
+
+  function abrir(svg, titulo) {
+    lastFocused = document.activeElement;
+    var copia = svg.cloneNode(true);
+    var medidas = medirSvg(copia);
+    naturalW = medidas.w;
+    naturalH = medidas.h;
+    lbCanvas.innerHTML = "";
+    lbCanvas.appendChild(copia);
+    lbTitle.textContent = titulo || "Diagrama";
+    lightbox.classList.add("open");
+    document.body.classList.add("lightbox-locked");
+    scale = escalaDeAjuste();
+    aplicarEscala();
+    lbScroll.scrollLeft = 0;
+    lbScroll.scrollTop = 0;
+    document.getElementById("lightboxClose").focus();
+  }
+
+  function cerrar() {
+    lightbox.classList.remove("open");
+    document.body.classList.remove("lightbox-locked");
+    lbCanvas.innerHTML = "";
+    if (lastFocused) lastFocused.focus();
+  }
+
+  document.querySelectorAll("figure.diagram").forEach(function (fig) {
+    var svg = fig.querySelector("svg");
+    if (!svg) return;
+    svg.classList.add("diagram-click");
+    var caption = fig.querySelector("figcaption");
+    svg.addEventListener("click", function () {
+      abrir(svg, caption ? caption.textContent : "");
+    });
+  });
+
+  document.getElementById("lightboxClose").addEventListener("click", cerrar);
+  document.getElementById("lightboxZoomIn").addEventListener("click", function () { zoom(1.25); });
+  document.getElementById("lightboxZoomOut").addEventListener("click", function () { zoom(0.8); });
+  document.getElementById("lightboxReset").addEventListener("click", function () {
+    scale = escalaDeAjuste();
+    aplicarEscala();
+    lbScroll.scrollLeft = 0;
+    lbScroll.scrollTop = 0;
+  });
+
+  var huboArrastre = false;
+  lightbox.addEventListener("click", function (e) {
+    /* soltar un arrastre sobre el fondo no debe cerrar */
+    if (huboArrastre) { huboArrastre = false; return; }
+    if (e.target === lightbox || e.target === lbScroll) cerrar();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!lightbox.classList.contains("open")) return;
+    if (e.key === "Escape") cerrar();
+    if (e.key === "+" || e.key === "=") zoom(1.25);
+    if (e.key === "-") zoom(0.8);
+  });
+
+  lbScroll.addEventListener("wheel", function (e) {
+    if (!lightbox.classList.contains("open")) return;
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 1.12 : 0.89, e.clientX, e.clientY);
+  }, { passive: false });
+
+  /* arrastrar para moverse cuando el diagrama no entra en pantalla */
+  var arrastrando = false, inicioX = 0, inicioY = 0, scrollX = 0, scrollY = 0;
+  lbScroll.addEventListener("pointerdown", function (e) {
+    arrastrando = true;
+    inicioX = e.clientX;
+    inicioY = e.clientY;
+    scrollX = lbScroll.scrollLeft;
+    scrollY = lbScroll.scrollTop;
+    lbScroll.classList.add("grabbing");
+    lbScroll.setPointerCapture(e.pointerId);
+  });
+  lbScroll.addEventListener("pointermove", function (e) {
+    if (!arrastrando) return;
+    var dx = e.clientX - inicioX;
+    var dy = e.clientY - inicioY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) huboArrastre = true;
+    lbScroll.scrollLeft = scrollX - dx;
+    lbScroll.scrollTop = scrollY - dy;
+  });
+  ["pointerup", "pointercancel"].forEach(function (evt) {
+    lbScroll.addEventListener(evt, function () {
+      arrastrando = false;
+      lbScroll.classList.remove("grabbing");
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+@startuml clases-dominio
+title Modelo de dominio - Sistema de cine
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+interface Pelicula {
+  +getTitulo(): String
+  +getDuracionMinutos(): int
+  +getGeneros(): List<Genero>
+  +agregarGenero(Genero)
+}
+
+interface Sala {
+  +getNombre(): String
+  +getCapacidad(): int
+}
+
+interface Funcion {
+  +getPeliculaId(): int
+  +getSalaId(): int
+  +getInicio(): LocalDateTime
+  +getPrecio(): double
+}
+
+interface Cliente {
+  +getNombre(): String
+  +getEmail(): String
+}
+
+interface Reserva {
+  +getFuncionId(): int
+  +getClienteId(): int
+  +getCantidadEntradas(): int
+  +getEstado(): EstadoReserva
+}
+
+enum Genero {
+  ACCION
+  COMEDIA
+  DRAMA
+  TERROR
+  CIENCIA_FICCION
+  ANIMACION
+  DOCUMENTAL
+  ROMANCE
+  SUSPENSO
+}
+
+enum EstadoReserva {
+  RESERVADA
+  PAGADA
+  CANCELADA
+}
+
+Pelicula "1" *-- "1..*" Genero
+Reserva "*" -- "1" EstadoReserva
+
+Funcion "*" --> "1" Pelicula
+Funcion "*" --> "1" Sala
+Reserva "*" --> "1" Funcion
+Reserva "*" --> "1" Cliente
+
+note bottom of Funcion
+  Las asociaciones se guardan como id (peliculaId, salaId),
+  no como referencia al objeto: el DAO resuelve la relacion.
+end note
+
+note right of Pelicula
+  Implementado de punta a punta.
+  El resto todavia no tiene DAO.
+end note
+
+@enduml

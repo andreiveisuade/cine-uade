@@ -1,0 +1,35 @@
+@startuml casos-de-uso
+title Casos de uso - Sistema de cine
+
+left to right direction
+
+actor Administrador as admin
+actor Cliente as cliente
+
+rectangle Sistema {
+  usecase "CU-01 Gestionar peliculas" as CU01
+  usecase "CU-02 Gestionar salas" as CU02
+  usecase "CU-03 Programar funcion" as CU03
+  usecase "CU-04 Consultar cartelera" as CU04
+  usecase "CU-01b Filtrar por genero" as CU01b
+  usecase "CU-05 Registrarse" as CU05
+  usecase "CU-06 Reservar entradas" as CU06
+  usecase "CU-07 Pagar reserva" as CU07
+  usecase "CU-08 Cancelar reserva" as CU08
+  usecase "CU-09 Ver mis reservas" as CU09
+}
+
+admin --> CU01
+admin --> CU02
+admin --> CU03
+admin --> CU04
+
+cliente --> CU04
+cliente --> CU01b
+cliente --> CU05
+cliente --> CU06
+cliente --> CU07
+cliente --> CU08
+cliente --> CU09
+
+@enduml

@@ -1,0 +1,66 @@
+@startuml clases-capas
+title Arquitectura en capas - patron DAO (circuito de Pelicula)
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+package ui {
+  class MenuConsola {
+    -gestor: GestorCartelera
+    +iniciar()
+  }
+}
+
+package servicio {
+  class GestorCartelera {
+    -dao: PeliculaDAO
+    +agregar(titulo, duracion, generos)
+    +listar(): List<Pelicula>
+    +listarPorGenero(Genero): List<Pelicula>
+    +buscar(id): Optional<Pelicula>
+    +eliminar(id)
+  }
+}
+
+package interfaces {
+  interface PeliculaDAO {
+    +guardar(Pelicula)
+    +buscarPorId(int): Optional<Pelicula>
+    +listar(): List<Pelicula>
+    +eliminar(int)
+  }
+  interface Pelicula
+}
+
+package modelo {
+  class PeliculaImpl
+}
+
+package persistencia {
+  class PeliculaDAOMemoria
+  class PeliculaDAOMySQL
+  class ConexionMySQL
+  class PersistenciaException
+}
+
+MenuConsola -down-> GestorCartelera
+GestorCartelera -down-> PeliculaDAO : depende de la abstraccion
+GestorCartelera ..> PeliculaImpl : instancia
+
+PeliculaDAOMemoria -up-|> PeliculaDAO
+PeliculaDAOMySQL -up-|> PeliculaDAO
+PeliculaImpl -up-|> Pelicula
+
+PeliculaDAOMySQL -down-> ConexionMySQL
+PeliculaDAOMySQL ..> PersistenciaException : lanza
+
+note right of GestorCartelera
+  No conoce java.sql ni Scanner.
+  Cambiar de MySQL a memoria no lo toca.
+end note
+
+note bottom of MenuConsola
+  Unico lugar con Scanner y System.out.
+end note
+
+@enduml

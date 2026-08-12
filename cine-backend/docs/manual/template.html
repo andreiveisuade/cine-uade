@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manual — Sistema de cine</title>
+<style>
+
+/* ============ tokens ============ */
+:root {
+  --paper: #FFFFFF;
+  --bg: #F2F0ED;
+  --bg-raised: #FAF8F6;
+  --ink: #201A16;
+  --ink-soft: #574C44;
+  --ink-faint: #857971;
+  --line: #DED8D2;
+  --line-strong: #C2B9B1;
+  --accent: #B4531F;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F7EBE3;
+  --accent-soft-line: #E5C9B5;
+  --ok: #2E7D4F;
+  --ok-soft: #E6F4EB;
+  --pend: #93630F;
+  --pend-soft: #FBF1DC;
+  --shadow: 0 1px 2px rgba(30, 20, 15, 0.06), 0 6px 20px -8px rgba(30, 20, 15, 0.12);
+  --radius: 3px;
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #221C18;
+    --bg: #151110;
+    --bg-raised: #1D1815;
+    --ink: #EFE9E4;
+    --ink-soft: #B4A79E;
+    --ink-faint: #84776F;
+    --line: #332B26;
+    --line-strong: #493E37;
+    --accent: #E8944A;
+    --accent-ink: #2A1608;
+    --accent-soft: #30231A;
+    --accent-soft-line: #54392451;
+    --ok: #82CB9C;
+    --ok-soft: #17301F;
+    --pend: #E3B667;
+    --pend-soft: #322916;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -10px rgba(0,0,0,0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #221C18;
+  --bg: #151110;
+  --bg-raised: #1D1815;
+  --ink: #EFE9E4;
+  --ink-soft: #B4A79E;
+  --ink-faint: #84776F;
+  --line: #332B26;
+  --line-strong: #493E37;
+  --accent: #E8944A;
+  --accent-ink: #2A1608;
+  --accent-soft: #30231A;
+  --accent-soft-line: #543924;
+  --ok: #82CB9C;
+  --ok-soft: #17301F;
+  --pend: #E3B667;
+  --pend-soft: #322916;
+  --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -10px rgba(0,0,0,0.55);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ layout ============ */
+.layout {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 0;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 28px 20px 40px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+.brand-sub {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+  margin: 0 0 20px;
+}
+
+#tocFilter {
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+#tocFilter:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a {
+  display: block;
+  padding: 5px 10px;
+  margin-bottom: 1px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.toc a:hover { background: var(--accent-soft); color: var(--ink); }
+.toc a.active {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.toc-group-label {
+  margin: 18px 0 6px;
+  padding-left: 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-faint);
+}
+
+.content { padding: 44px 48px 120px; min-width: 0; }
+
+/* ============ tipografía ============ */
+h1 {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+.lede { font-size: 18px; color: var(--ink-soft); margin: 0 0 12px; max-width: 68ch; }
+
+.doc-section { padding-top: 48px; scroll-margin-top: 12px; }
+.doc-section > h2 {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+h3 { font-size: 16px; margin: 26px 0 8px; }
+p { max-width: 72ch; }
+a { color: var(--accent); }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-line);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+}
+pre {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  box-shadow: var(--shadow);
+}
+pre code { background: none; border: none; padding: 0; font-size: 13px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 14.5px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+th {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-faint);
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line-strong);
+}
+tr:last-child td { border-bottom: none; }
+.table-wrap { overflow-x: auto; }
+
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.tag-ok { background: var(--ok-soft); color: var(--ok); }
+.tag-pend { background: var(--pend-soft); color: var(--pend); }
+
+.callout {
+  margin: 18px 0;
+  padding: 14px 18px;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.callout p { margin: 0; }
+.callout p + p { margin-top: 8px; }
+
+/* ============ diagramas ============ */
+figure.diagram {
+  position: relative;
+  margin: 20px 0 8px;
+  padding: 18px;
+  /* fondo claro siempre: PlantUML dibuja el texto en negro */
+  background: #FFFFFF;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+figure.diagram .diagram-click { cursor: zoom-in; }
+figure.diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+figure.diagram::after {
+  content: "Click para ampliar";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #6B6259;
+  background: #F2F0ED;
+  border: 1px solid #DED8D2;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+figure.diagram:hover::after { opacity: 1; }
+figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+/* ============ lightbox ============ */
+body.lightbox-locked { overflow: hidden; }
+
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  flex-direction: column;
+  background: rgba(20, 15, 12, 0.86);
+}
+.lightbox.open { display: flex; }
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--line);
+}
+.lightbox-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lightbox-zoom-group { display: flex; align-items: center; gap: 6px; }
+.lightbox-zoom-label {
+  min-width: 48px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.lightbox-btn {
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.lightbox-btn:hover { background: var(--accent-soft); border-color: var(--accent-soft-line); }
+
+.lightbox-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  cursor: grab;
+  overscroll-behavior: contain;
+}
+.lightbox-scroll.grabbing { cursor: grabbing; }
+.lightbox-canvas {
+  margin: 0 auto;
+  background: #FFFFFF;
+  border-radius: var(--radius);
+}
+.lightbox-canvas svg { display: block; width: 100%; height: 100%; }
+
+@media (max-width: 640px) {
+  .lightbox-title { display: none; }
+}
+
+/* ============ mobile ============ */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 12px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .menu-toggle { display: block; }
+  .sidebar {
+    position: fixed;
+    z-index: 15;
+    inset: 0 auto 0 0;
+    width: 264px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.open { transform: none; box-shadow: var(--shadow); }
+  .content { padding: 64px 20px 90px; }
+}
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-expanded="false">Índice</button>
+
+<div class="layout">
+
+  <nav class="sidebar" id="sidebar" aria-label="Índice del manual">
+    <p class="brand">Sistema de cine</p>
+    <p class="brand-sub">Aplicaciones Interactivas</p>
+
+    <input type="search" id="tocFilter" placeholder="Filtrar secciones…" aria-label="Filtrar secciones" />
+
+    <nav class="toc" id="toc">
+      <p class="toc-group-label">Qué construimos</p>
+      <ol>
+        <li><a href="#resumen" data-target="resumen">Resumen</a></li>
+        <li><a href="#requerimientos" data-target="requerimientos">Requerimientos</a></li>
+        <li><a href="#reglas" data-target="reglas">Reglas de negocio</a></li>
+        <li><a href="#casos-de-uso" data-target="casos-de-uso">Casos de uso</a></li>
+      </ol>
+
+      <p class="toc-group-label">Cómo está hecho</p>
+      <ol>
+        <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
+        <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
+        <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
+      </ol>
+
+      <p class="toc-group-label">Trabajar en el proyecto</p>
+      <ol>
+        <li><a href="#entorno" data-target="entorno">Entorno: Java y Maven</a></li>
+        <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#estructura" data-target="estructura">Estructura de carpetas</a></li>
+        <li><a href="#estado" data-target="estado">Estado y pendientes</a></li>
+        <li><a href="#decisiones" data-target="decisiones">Decisiones tomadas</a></li>
+      </ol>
+    </nav>
+  </nav>
+
+  <main class="content">
+
+    <h1>Sistema de salas de cine</h1>
+    <p class="lede">Manual del TP de Aplicaciones Interactivas. Java 21 + JDBC + MySQL, aplicando el patrón DAO.</p>
+
+    <section class="doc-section" id="resumen">
+      <h2>Resumen</h2>
+      <p>
+        El sistema administra la cartelera de un cine y la venta de entradas: se cargan películas y salas,
+        se programan funciones, y los clientes reservan y pagan entradas.
+      </p>
+      <p>
+        Está armado en capas para que la lógica de negocio no dependa de dónde se guardan los datos.
+        Hoy la persistencia es MySQL, pero existe una segunda implementación en memoria que se usa en los tests
+        y demuestra que cambiar de tecnología no obliga a tocar las reglas.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Estado:</strong> el circuito de <code>Pelicula</code> está implementado de punta a punta.
+          El resto del modelo está diseñado pero todavía sin persistencia. Ver
+          <a href="#estado">Estado y pendientes</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="requerimientos">
+      <h2>Requerimientos</h2>
+      <ul>
+        <li>Cargar películas (título, duración, uno o más géneros) y salas (nombre, capacidad).</li>
+        <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
+        <li>Registrar clientes.</li>
+        <li>Reservar entradas para una función y luego pagarlas o cancelarlas.</li>
+        <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="reglas">
+      <h2>Reglas de negocio</h2>
+      <p>Viven en la capa de servicio, nunca en el DAO ni en el menú.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Regla</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>R1</td><td>No puede haber dos películas con el mismo título</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R2</td><td>Duración de película y capacidad de sala mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R4</td><td>No se pueden reservar más entradas que los lugares libres</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R6</td><td>Cancelar una reserva libera sus lugares</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="casos-de-uso">
+      <h2>Casos de uso</h2>
+      <p>
+        Dos actores: <strong>Administrador</strong>, que gestiona la cartelera, y <strong>Cliente</strong>,
+        que compra entradas. El menú de consola no distingue usuarios: es un único flujo.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_CASOS_USO}}
+        <figcaption>Casos de uso del sistema</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Actor</th><th>Caso de uso</th><th>Reglas</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas</td><td>R2</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Reservar entradas para una función</td><td>R4</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-pend">pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="dominio">
+      <h2>Modelo de dominio</h2>
+      <p>
+        Cada entidad es una interfaz con su implementación. Las asociaciones se guardan como id
+        (<code>peliculaId</code>, <code>salaId</code>), no como referencia al objeto: el DAO resuelve la relación
+        cuando hace falta.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_DOMINIO}}
+        <figcaption>Entidades, enums y sus relaciones</figcaption>
+      </figure>
+
+      <h3>Por qué los enums no llevan interfaz</h3>
+      <p>
+        <code>Genero</code> y <code>EstadoReserva</code> son catálogos cerrados. Un enum ya es un tipo con valores
+        fijos: no hay una segunda implementación posible, así que no hay nada que abstraer.
+      </p>
+
+      <h3>Reserva y compra son el mismo registro</h3>
+      <p>
+        Una <code>Reserva</code> nace en estado <code>RESERVADA</code> y pasa a <code>PAGADA</code> cuando el cliente
+        abona, o a <code>CANCELADA</code> si se da de baja. Guarda cantidad de entradas, no butacas numeradas.
+      </p>
+    </section>
+
+    <section class="doc-section" id="capas">
+      <h2>Arquitectura en capas</h2>
+      <p>Cada capa tiene una responsabilidad y solo conoce a la de abajo.</p>
+
+      <figure class="diagram">
+        {{SVG_CAPAS}}
+        <figcaption>Circuito completo de Pelicula, de la UI a la base</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Qué NO hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>ui</code></td><td>Hablar con el usuario</td><td>No decide reglas ni toca SQL</td></tr>
+            <tr><td><code>servicio</code></td><td>Reglas de negocio</td><td>No conoce <code>java.sql</code> ni <code>Scanner</code></td></tr>
+            <tr><td><code>interfaces</code></td><td>Contratos: qué operaciones existen</td><td>No dice cómo se guardan los datos</td></tr>
+            <tr><td><code>persistencia</code></td><td>Leer y escribir en el medio concreto</td><td>No valida reglas ni imprime</td></tr>
+            <tr><td><code>modelo</code></td><td>Datos</td><td>No se guarda ni se muestra a sí mismo</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="dao">
+      <h2>El patrón DAO</h2>
+      <p>
+        DAO significa <em>Data Access Object</em>. Es un objeto que encapsula el acceso a los datos: la aplicación
+        trabaja contra una interfaz y la implementación se ocupa de los detalles.
+      </p>
+
+      <h3>Qué problema resuelve</h3>
+      <p>
+        Si <code>GestorCartelera</code> conociera <code>PreparedStatement</code>, cambiar MySQL por archivos de texto
+        obligaría a reescribir las reglas de negocio, que no tienen nada que ver con el almacenamiento.
+        Con DAO, cambiar de medio es cambiar una línea en <code>Main</code>:
+      </p>
+      <pre><code>PeliculaDAO dao = new PeliculaDAOMySQL();
+// PeliculaDAO dao = new PeliculaDAOMemoria();
+
+GestorCartelera gestor = new GestorCartelera(dao);
+new MenuConsola(gestor).iniciar();</code></pre>
+
+      <h3>Los principios SOLID que aplica</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Principio</th><th>Dónde se ve</th></tr></thead>
+          <tbody>
+            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, el menú muestra. Nadie hace dos cosas.</td></tr>
+            <tr><td>DIP — Inversión de dependencias</td><td><code>GestorCartelera</code> depende de <code>PeliculaDAO</code>, no de la implementación MySQL.</td></tr>
+            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor.</td></tr>
+            <tr><td>ISP — Segregación de interfaces</td><td>Contratos chicos: cuatro operaciones, no un DAO que hace todo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>Errores que este proyecto evita a propósito:</strong> que el DAO imprima por consola
+          (decidiría el formato de salida y haría el dato inutilizable para otra capa), que devuelva
+          <code>void</code> en vez del objeto buscado, y que <code>SQLException</code> se filtre hacia arriba
+          (ataría la lógica a que la persistencia sea SQL). Por eso existe <code>PersistenciaException</code>.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="base-de-datos">
+      <h2>Base de datos</h2>
+      <p>MySQL 8.4 en Docker. El esquema vive en <code>src/main/resources/schema.sql</code>.</p>
+      <pre><code>CREATE TABLE IF NOT EXISTS pelicula (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    duracion_minutos INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pelicula_genero (
+    pelicula_id INT NOT NULL,
+    genero VARCHAR(30) NOT NULL,
+    PRIMARY KEY (pelicula_id, genero),
+    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
+);</code></pre>
+      <p>
+        La relación película–género es N:M y vive en <code>pelicula_genero</code>. El género se guarda con el
+        <strong>nombre</strong> de la constante del enum, no con su posición: si mañana reordenás las constantes,
+        la data sigue siendo correcta. La clave primaria compuesta impide repetir un género en la misma película.
+      </p>
+      <p>
+        El <code>ON DELETE CASCADE</code> hace que borrar una película se lleve sus géneros, sin código Java de por medio.
+      </p>
+
+      <h3>Ver la base con Adminer</h3>
+      <p>
+        El <code>docker-compose.yml</code> levanta, además de MySQL, un <strong>Adminer</strong>: un visualizador
+        web de la base. No hay que instalar nada — arranca junto con el proyecto.
+      </p>
+      <pre><code>docker compose up -d
+open http://localhost:8080</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Campo del login</th><th>Valor</th></tr></thead>
+          <tbody>
+            <tr><td>Motor</td><td>MySQL</td></tr>
+            <tr><td>Servidor</td><td><code>mysql</code> <span class="tag tag-ok">ya viene puesto</span></td></tr>
+            <tr><td>Usuario</td><td><code>root</code></td></tr>
+            <tr><td>Contraseña</td><td><code>root</code></td></tr>
+            <tr><td>Base de datos</td><td><code>appsinteractivas</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Desde ahí podés recorrer las tablas, ver los datos que va cargando la app, y correr consultas SQL a mano
+        para probar antes de escribirlas en un DAO.
+      </p>
+      <div class="callout">
+        <p>
+          El servidor se llama <code>mysql</code>, no <code>localhost</code>: Adminer corre dentro de Docker y
+          alcanza a la base por el nombre del servicio en la red interna. <code>localhost:3306</code> es la
+          dirección que usa la app Java, que corre fuera de Docker.
+        </p>
+      </div>
+
+      <h3>Base nueva desde cero</h3>
+      <p>
+        <code>schema.sql</code> está montado en <code>/docker-entrypoint-initdb.d/</code>: cuando alguien clona el
+        repo y levanta el compose por primera vez, MySQL ejecuta el script solo y las tablas quedan creadas.
+        El script corre únicamente si el volumen está vacío, así que sobre una base ya existente hay que aplicarlo a mano:
+      </p>
+      <pre><code>docker exec -i apps-interactivas-mysql \
+  mysql -uroot -proot -D appsinteractivas &lt; src/main/resources/schema.sql</code></pre>
+      <p>Para empezar de cero y perder todos los datos: <code>docker compose down -v &amp;&amp; docker compose up -d</code></p>
+    </section>
+
+    <section class="doc-section" id="entorno">
+      <h2>Entorno: Java y Maven</h2>
+
+      <h3>Qué hay instalado</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Herramienta</th><th>Versión</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>OpenJDK</td><td>21.0.12 (LTS)</td><td>Compilar y ejecutar el proyecto</td></tr>
+            <tr><td>Maven</td><td>3.9.16</td><td>Dependencias y build</td></tr>
+            <tr><td>Docker</td><td>29.7.2</td><td>Levantar MySQL y Adminer</td></tr>
+            <tr><td>PlantUML</td><td>1.2026.6</td><td>Generar los diagramas del manual</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Todo vino por Homebrew. MySQL <strong>no</strong> está instalado en la Mac: corre dentro de Docker.</p>
+
+      <h3>Por qué Java 21 y no la última</h3>
+      <p>
+        En la máquina conviven tres JDK (17, 21 y 26). El proyecto usa <strong>21</strong> porque es LTS y es lo que
+        soporta sin fricción el ecosistema (Spring, Hibernate, Lombok). La 26 es más nueva pero varias librerías
+        todavía no la acompañan.
+      </p>
+      <p>El pom lo deja explícito, así que el compilador valida contra la API de 21 aunque la máquina tenga otra:</p>
+      <pre><code>&lt;maven.compiler.release&gt;21&lt;/maven.compiler.release&gt;</code></pre>
+
+      <div class="callout">
+        <p>
+          <strong>La trampa de <code>java_home</code>:</strong> <code>/usr/libexec/java_home -v 21</code> no
+          filtra por versión exacta — devuelve la más nueva que cumpla. Con la 26 instalada, pedir "21" devolvía 26.
+          Por eso <code>JAVA_HOME</code> apunta a la ruta del 21 de forma explícita en <code>~/.zshrc</code>:
+        </p>
+        <p><code>export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"</code></p>
+        <p>
+          Además <code>$JAVA_HOME/bin</code> va primero en el <code>PATH</code>, y el JDK 21 quedó registrado en
+          <code>/Library/Java/JavaVirtualMachines/</code> para que cualquier herramienta que enumere JVMs lo vea.
+        </p>
+      </div>
+
+      <h3>Zed</h3>
+      <p>
+        La extensión Java de Zed usa <strong>JDTLS</strong> (Eclipse JDT Language Server) para el autocompletado y los
+        errores en vivo. Necesita un JDK 21+ para correr, y por defecto lo toma del entorno — pero Zed abierto desde
+        el Dock no hereda el <code>JAVA_HOME</code> de la terminal. Por eso está fijado en <code>settings.json</code>:
+      </p>
+      <pre><code>"lsp": {
+  "jdtls": {
+    "settings": {
+      "java_home": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+    },
+    "initialization_options": {
+      "settings": { "java": { "configuration": { "runtimes": [
+        { "name": "JavaSE-21", "path": "…openjdk@21…", "default": true }
+      ] } } }
+    }
+  }
+}</code></pre>
+      <p>Abrí siempre la carpeta raíz del proyecto (donde está el <code>pom.xml</code>): es como JDTLS resuelve el classpath.</p>
+
+      <h3>Qué es Maven y qué hace por vos</h3>
+      <p>Tres cosas:</p>
+      <ol>
+        <li>
+          <strong>Baja las dependencias.</strong> Declarás qué necesitás y las trae de Maven Central a
+          <code>~/.m2/repository</code>, junto con las que esas librerías necesiten a su vez (dependencias transitivas).
+        </li>
+        <li>
+          <strong>Impone una estructura.</strong> <code>src/main/java</code>, <code>src/main/resources</code>,
+          <code>src/test/java</code> y <code>target/</code>. Al respetarla no hay que configurar nada.
+        </li>
+        <li>
+          <strong>Define un ciclo de vida.</strong> Fases ordenadas donde cada una corre las anteriores:
+          <code>compile</code> → <code>test</code> → <code>package</code> → <code>install</code>. Por eso
+          <code>mvn package</code> compila y testea antes de armar el jar.
+        </li>
+      </ol>
+
+      <h3>Las dependencias de este proyecto</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dependencia</th><th>Versión</th><th>Scope</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>mysql-connector-j</code></td><td>9.7.0</td><td>compile</td><td>Driver JDBC de MySQL</td></tr>
+            <tr><td><code>junit-jupiter</code></td><td>5.14.4</td><td>test</td><td>Tests. No viaja en el jar final</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El <strong>scope</strong> define cuándo está disponible cada una: <code>compile</code> en todos lados,
+        <code>test</code> solo al testear, <code>runtime</code> al ejecutar pero no al compilar.
+      </p>
+
+      <h3>Comandos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>mvn exec:java</code></td><td>Corre el <code>main</code> de <code>ar.uade.cine.Main</code></td></tr>
+            <tr><td><code>mvn compile</code></td><td>Compila a <code>target/classes</code></td></tr>
+            <tr><td><code>mvn test</code></td><td>Compila y corre los tests</td></tr>
+            <tr><td><code>mvn package</code></td><td>Compila, testea y genera el jar en <code>target/</code></td></tr>
+            <tr><td><code>mvn clean</code></td><td>Borra <code>target/</code>. El "apagá y prendé" de Maven</td></tr>
+            <tr><td><code>mvn clean package</code></td><td>Build desde cero. Ante cualquier cosa rara, empezá por acá</td></tr>
+            <tr><td><code>mvn dependency:tree</code></td><td>Árbol de dependencias, para pelear conflictos de versiones</td></tr>
+            <tr><td><code>mvn -q …</code></td><td>Modo silencioso: solo la salida de tu programa</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La clase que ejecuta <code>exec:java</code> se define en el pom con la propiedad <code>main.class</code>.
+        Si la renombrás o la movés de paquete, hay que actualizarla ahí.
+      </p>
+
+      <h3>Verificar que está todo bien</h3>
+      <pre><code>java -version     # openjdk 21.0.12
+mvn -v            # Maven 3.9.16, y "Java version: 21.0.12"
+echo $JAVA_HOME   # …/openjdk@21/…
+docker compose ps # mysql y adminer en Up</code></pre>
+      <p>
+        La línea <em>Java version</em> de <code>mvn -v</code> es la que importa: muestra con qué JDK compila Maven
+        realmente, que no siempre es el que creés.
+      </p>
+
+      <h3>Cuando algo falla</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>No se pudo conectar a MySQL</code></td>
+              <td>Docker cerrado o contenedor bajado</td>
+              <td>Abrir Docker Desktop y <code>docker compose up -d</code></td>
+            </tr>
+            <tr>
+              <td><code>invalid target release: 21</code></td>
+              <td>Maven corriendo con un JDK menor</td>
+              <td>Revisar <code>mvn -v</code> y <code>JAVA_HOME</code>; abrir una terminal nueva</td>
+            </tr>
+            <tr>
+              <td>Zed no autocompleta ni marca errores</td>
+              <td>JDTLS no arrancó o no encontró el <code>pom.xml</code></td>
+              <td>Abrir la carpeta raíz del proyecto y recargar la ventana</td>
+            </tr>
+            <tr>
+              <td>Compila pero al correr tira <code>ClassNotFound</code></td>
+              <td>Clases viejas en <code>target/</code></td>
+              <td><code>mvn clean package</code></td>
+            </tr>
+            <tr>
+              <td><code>Table 'pelicula' doesn't exist</code></td>
+              <td>Base creada sin el schema</td>
+              <td>Aplicar <code>schema.sql</code> (ver <a href="#base-de-datos">Base de datos</a>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="doc-section" id="correr">
+      <h2>Cómo correrlo</h2>
+      <pre><code>docker compose up -d     # MySQL en localhost:3306 + Adminer en localhost:8080
+mvn exec:java            # menú de consola
+mvn test                 # tests (no necesitan MySQL)</code></pre>
+      <p>Credenciales locales: base <code>appsinteractivas</code>, usuario <code>root</code>, password <code>root</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Servicio</th><th>Dónde</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td>MySQL</td><td><code>localhost:3306</code></td><td>Base de datos, se conecta la app</td></tr>
+            <tr><td>Adminer</td><td><a href="http://localhost:8080">localhost:8080</a></td><td>Ver y consultar la base desde el navegador</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Regenerar este manual</h3>
+      <pre><code>cd docs/diagramas &amp;&amp; plantuml -tsvg *.puml
+cd ../manual &amp;&amp; python3 build.py</code></pre>
+      <p>
+        <code>index.html</code> no se edita a mano: se genera desde <code>template.html</code> inyectando los SVG.
+      </p>
+    </section>
+
+    <section class="doc-section" id="estructura">
+      <h2>Estructura de carpetas</h2>
+      <pre><code>Aplicaciones-Interactivas/
+├── docker-compose.yml
+├── pom.xml
+├── docs/
+│   ├── README.md
+│   ├── diagramas/          *.puml + *.svg
+│   └── manual/             template.html + build.py → index.html
+└── src/
+    ├── main/java/ar/uade/cine/
+    │   ├── interfaces/     Pelicula, Sala, Funcion, Cliente, Reserva, PeliculaDAO
+    │   ├── modelo/         *Impl, Genero, EstadoReserva
+    │   ├── persistencia/   PeliculaDAOMemoria, PeliculaDAOMySQL,
+    │   │                   ConexionMySQL, PersistenciaException
+    │   ├── servicio/       GestorCartelera
+    │   ├── ui/             MenuConsola
+    │   └── Main.java
+    ├── main/resources/     schema.sql
+    └── test/java/          GestorCarteleraTest</code></pre>
+    </section>
+
+    <section class="doc-section" id="estado">
+      <h2>Estado y pendientes</h2>
+      <p>
+        Implementado de punta a punta: el circuito de <code>Pelicula</code>. Esa es la plantilla que repite
+        cada entidad nueva.
+      </p>
+
+      <h3>Orden sugerido para seguir</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Qué</th><th>Por qué en ese orden</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>SalaDAO</code> + gestor</td><td>Es igual a Película: fija el patrón sin reglas raras</td></tr>
+            <tr><td>2</td><td><code>FuncionDAO</code> + R3</td><td>Primera relación entre tablas y primera regla con lógica</td></tr>
+            <tr><td>3</td><td><code>ClienteDAO</code></td><td>Simple, pero necesario antes de reservar</td></tr>
+            <tr><td>4</td><td><code>ReservaDAO</code> + R4, R5, R6</td><td>Depende de función y cliente; es la parte con más negocio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Deudas anotadas</h3>
+      <ul>
+        <li><code>PeliculaDAO</code> no tiene <code>actualizar</code>: se puede crear y borrar, pero no editar.</li>
+        <li>El chequeo de título duplicado trae la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE titulo = ?</code>.</li>
+      </ul>
+
+      <div class="callout">
+        <p>
+          Cada DAO se escribe cuando se escribe el gestor que lo usa. Definir los cuatro contratos por adelantado
+          lleva a inventar métodos que después nadie llama.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="decisiones">
+      <h2>Decisiones tomadas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Decisión</th><th>Alternativa descartada</th><th>Motivo</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Cupo por función</td>
+              <td>Butacas numeradas</td>
+              <td>Butacas exigen una tabla más y complican el modelo; el cupo alcanza salvo que la consigna pida elegir asiento</td>
+            </tr>
+            <tr>
+              <td><code>Genero</code> como enum</td>
+              <td>Entidad con ABM</td>
+              <td>Catálogo cerrado y conocido; evita altas con errores de tipeo y ahorra un CRUD entero</td>
+            </tr>
+            <tr>
+              <td>Interfaz + <code>Impl</code> en el modelo</td>
+              <td>Clases sueltas</td>
+              <td>Requisito de la cátedra. Técnicamente no habilita nada: no hay una segunda implementación de "película"</td>
+            </tr>
+            <tr>
+              <td><code>Optional</code> en las búsquedas</td>
+              <td>Devolver <code>null</code></td>
+              <td>Obliga a quien llama a decidir qué hacer si no existe, en vez de comerse un <code>NullPointerException</code></td>
+            </tr>
+            <tr>
+              <td><code>LEFT JOIN</code> + agrupar</td>
+              <td>Una consulta de géneros por película</td>
+              <td>Evita el problema N+1; con <code>INNER</code> una película sin géneros desaparecería del listado</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Diagrama ampliado">
+  <div class="lightbox-bar">
+    <span class="lightbox-title" id="lightboxTitle"></span>
+    <div class="lightbox-zoom-group">
+      <button type="button" class="lightbox-btn" id="lightboxZoomOut" aria-label="Alejar">−</button>
+      <span class="lightbox-zoom-label" id="lightboxZoomLabel">100%</span>
+      <button type="button" class="lightbox-btn" id="lightboxZoomIn" aria-label="Acercar">+</button>
+    </div>
+    <button type="button" class="lightbox-btn" id="lightboxReset">Ajustar</button>
+    <button type="button" class="lightbox-btn" id="lightboxClose" aria-label="Cerrar">Cerrar</button>
+  </div>
+  <div class="lightbox-scroll" id="lightboxScroll">
+    <div class="lightbox-canvas" id="lightboxCanvas"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var sidebar = document.getElementById("sidebar");
+  var menuToggle = document.getElementById("menuToggle");
+  menuToggle.addEventListener("click", function () {
+    var open = sidebar.classList.toggle("open");
+    menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.querySelectorAll("#toc a").forEach(function (a) {
+    a.addEventListener("click", function () { sidebar.classList.remove("open"); });
+  });
+
+  var tocLinks = Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  var filterInput = document.getElementById("tocFilter");
+  filterInput.addEventListener("input", function () {
+    var q = filterInput.value.trim().toLowerCase();
+    tocLinks.forEach(function (a) {
+      var match = !q || a.textContent.toLowerCase().indexOf(q) !== -1;
+      var li = a.closest("li");
+      if (li) li.hidden = !match;
+    });
+  });
+
+  var linkByTarget = {};
+  tocLinks.forEach(function (a) { linkByTarget[a.dataset.target] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll(".doc-section[id]"));
+
+  if ("IntersectionObserver" in window && sections.length) {
+    var current = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var link = linkByTarget[entry.target.id];
+          if (link && link !== current) {
+            if (current) current.classList.remove("active");
+            link.classList.add("active");
+            current = link;
+          }
+        }
+      });
+    }, { rootMargin: "-10% 0px -75% 0px" });
+    sections.forEach(function (s) { observer.observe(s); });
+  }
+
+  /* ---- lightbox: click en un diagrama para verlo grande, con zoom y arrastre ---- */
+  var lightbox = document.getElementById("lightbox");
+  var lbTitle = document.getElementById("lightboxTitle");
+  var lbScroll = document.getElementById("lightboxScroll");
+  var lbCanvas = document.getElementById("lightboxCanvas");
+  var lbZoomLabel = document.getElementById("lightboxZoomLabel");
+
+  var MIN_SCALE = 0.15, MAX_SCALE = 6;
+  var naturalW = 800, naturalH = 600, scale = 1, lastFocused = null;
+
+  function medirSvg(svg) {
+    var vb = svg.getAttribute("viewBox");
+    if (vb) {
+      var p = vb.trim().split(/\s+/).map(Number);
+      if (p.length === 4 && p[2] > 0 && p[3] > 0) return { w: p[2], h: p[3] };
+    }
+    return { w: 800, h: 600 };
+  }
+
+  function aplicarEscala() {
+    lbCanvas.style.width = Math.round(naturalW * scale) + "px";
+    lbCanvas.style.height = Math.round(naturalH * scale) + "px";
+    lbZoomLabel.textContent = Math.round(scale * 100) + "%";
+  }
+
+  function escalaDeAjuste() {
+    var pad = 60;
+    var w = Math.max(lbScroll.clientWidth - pad, 100);
+    var h = Math.max(lbScroll.clientHeight - pad, 100);
+    return Math.min(w / naturalW, h / naturalH, 1) || 1;
+  }
+
+  /* el zoom se ancla al cursor: lo que estabas mirando sigue bajo el mouse */
+  function zoom(factor, clientX, clientY) {
+    var rect = lbScroll.getBoundingClientRect();
+    var ax = clientX != null ? clientX - rect.left : lbScroll.clientWidth / 2;
+    var ay = clientY != null ? clientY - rect.top : lbScroll.clientHeight / 2;
+    var contentX = lbScroll.scrollLeft + ax;
+    var contentY = lbScroll.scrollTop + ay;
+    var previa = scale;
+    scale = Math.min(Math.max(scale * factor, MIN_SCALE), MAX_SCALE);
+    var ratio = scale / previa;
+    aplicarEscala();
+    lbScroll.scrollLeft = contentX * ratio - ax;
+    lbScroll.scrollTop = contentY * ratio - ay;
+  }
+
+  function abrir(svg, titulo) {
+    lastFocused = document.activeElement;
+    var copia = svg.cloneNode(true);
+    var medidas = medirSvg(copia);
+    naturalW = medidas.w;
+    naturalH = medidas.h;
+    lbCanvas.innerHTML = "";
+    lbCanvas.appendChild(copia);
+    lbTitle.textContent = titulo || "Diagrama";
+    lightbox.classList.add("open");
+    document.body.classList.add("lightbox-locked");
+    scale = escalaDeAjuste();
+    aplicarEscala();
+    lbScroll.scrollLeft = 0;
+    lbScroll.scrollTop = 0;
+    document.getElementById("lightboxClose").focus();
+  }
+
+  function cerrar() {
+    lightbox.classList.remove("open");
+    document.body.classList.remove("lightbox-locked");
+    lbCanvas.innerHTML = "";
+    if (lastFocused) lastFocused.focus();
+  }
+
+  document.querySelectorAll("figure.diagram").forEach(function (fig) {
+    var svg = fig.querySelector("svg");
+    if (!svg) return;
+    svg.classList.add("diagram-click");
+    var caption = fig.querySelector("figcaption");
+    svg.addEventListener("click", function () {
+      abrir(svg, caption ? caption.textContent : "");
+    });
+  });
+
+  document.getElementById("lightboxClose").addEventListener("click", cerrar);
+  document.getElementById("lightboxZoomIn").addEventListener("click", function () { zoom(1.25); });
+  document.getElementById("lightboxZoomOut").addEventListener("click", function () { zoom(0.8); });
+  document.getElementById("lightboxReset").addEventListener("click", function () {
+    scale = escalaDeAjuste();
+    aplicarEscala();
+    lbScroll.scrollLeft = 0;
+    lbScroll.scrollTop = 0;
+  });
+
+  var huboArrastre = false;
+  lightbox.addEventListener("click", function (e) {
+    /* soltar un arrastre sobre el fondo no debe cerrar */
+    if (huboArrastre) { huboArrastre = false; return; }
+    if (e.target === lightbox || e.target === lbScroll) cerrar();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!lightbox.classList.contains("open")) return;
+    if (e.key === "Escape") cerrar();
+    if (e.key === "+" || e.key === "=") zoom(1.25);
+    if (e.key === "-") zoom(0.8);
+  });
+
+  lbScroll.addEventListener("wheel", function (e) {
+    if (!lightbox.classList.contains("open")) return;
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 1.12 : 0.89, e.clientX, e.clientY);
+  }, { passive: false });
+
+  /* arrastrar para moverse cuando el diagrama no entra en pantalla */
+  var arrastrando = false, inicioX = 0, inicioY = 0, scrollX = 0, scrollY = 0;
+  lbScroll.addEventListener("pointerdown", function (e) {
+    arrastrando = true;
+    inicioX = e.clientX;
+    inicioY = e.clientY;
+    scrollX = lbScroll.scrollLeft;
+    scrollY = lbScroll.scrollTop;
+    lbScroll.classList.add("grabbing");
+    lbScroll.setPointerCapture(e.pointerId);
+  });
+  lbScroll.addEventListener("pointermove", function (e) {
+    if (!arrastrando) return;
+    var dx = e.clientX - inicioX;
+    var dy = e.clientY - inicioY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) huboArrastre = true;
+    lbScroll.scrollLeft = scrollX - dx;
+    lbScroll.scrollTop = scrollY - dy;
+  });
+  ["pointerup", "pointercancel"].forEach(function (evt) {
+    lbScroll.addEventListener(evt, function () {
+      arrastrando = false;
+      lbScroll.classList.remove("grabbing");
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
