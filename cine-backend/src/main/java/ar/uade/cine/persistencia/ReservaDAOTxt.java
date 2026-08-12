@@ -7,26 +7,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import ar.uade.cine.interfaces.Entrada;
 import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.interfaces.ReservaDAO;
+import ar.uade.cine.modelo.EntradaImpl;
 import ar.uade.cine.modelo.EstadoReserva;
 import ar.uade.cine.modelo.ReservaImpl;
 
 /**
  * Misma interfaz que ReservaDAOMySQL, otro medio: un archivo de texto con una
- * reserva por línea, campos separados por "|".
+ * reserva por línea, campos separados por "|". Las butacas van en el mismo campo
+ * separadas por coma, con su id y su código.
  *
  * <pre>
- * 1|3|7|2|RESERVADA
- * 2|3|9|4|PAGADA
+ * 1|3|7|12:A1,13:A2|RESERVADA
+ * 2|3|9|20:B5|PAGADA
  * </pre>
  *
  * Sin motor de base de datos, cualquier cambio implica reescribir el archivo entero:
  * se carga todo a memoria, se modifica la lista y se vuelca de nuevo.
  */
 public class ReservaDAOTxt implements ReservaDAO {
-
-    private static final String SEPARADOR = "\\|";
 
     private final Path archivo;
 
@@ -103,17 +104,28 @@ public class ReservaDAOTxt implements ReservaDAO {
     }
 
     private String aLinea(Reserva r) {
+        String butacas = r.getEntradas().stream()
+                .map(e -> e.getAsientoId() + ":" + e.getCodigoAsiento())
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
         return r.getId() + "|" + r.getFuncionId() + "|" + r.getClienteId()
-                + "|" + r.getCantidadEntradas() + "|" + r.getEstado().name();
+                + "|" + butacas + "|" + r.getEstado().name();
     }
 
     private Reserva desdeLinea(String linea) {
-        String[] campos = linea.split(SEPARADOR);
+        String[] campos = linea.split("\\|");
+        List<Entrada> entradas = new ArrayList<>();
+        if (!campos[3].isBlank()) {
+            for (String butaca : campos[3].split(",")) {
+                String[] partes = butaca.split(":");
+                entradas.add(new EntradaImpl(Integer.parseInt(partes[0]), partes[1]));
+            }
+        }
         return new ReservaImpl(
                 Integer.parseInt(campos[0]),
                 Integer.parseInt(campos[1]),
                 Integer.parseInt(campos[2]),
-                Integer.parseInt(campos[3]),
+                entradas,
                 EstadoReserva.valueOf(campos[4]));
     }
 }

@@ -14,8 +14,10 @@ import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.interfaces.PeliculaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.persistencia.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.SalaDAOMemoria;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -34,7 +36,7 @@ class GestorFuncionesTest {
     @BeforeEach
     void prepararCartelera() {
         new GestorCartelera(peliculaDAO).agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION));
-        new GestorSalas(salaDAO).agregar("Sala 1", 50);
+        new GestorSalas(salaDAO, new AsientoDAOMemoria()).agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), 4500);
     }
@@ -55,7 +57,7 @@ class GestorFuncionesTest {
 
     @Test
     void elMismoHorarioEnOtraSalaNoSePisa() {
-        new GestorSalas(salaDAO).agregar("Sala 2", 30);
+        new GestorSalas(salaDAO, new AsientoDAOMemoria()).agregar("Sala 2", TipoSala.TRES_D, List.of(6, 8));
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0), 4500));
     }

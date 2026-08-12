@@ -7,13 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import ar.uade.cine.interfaces.Asiento;
+import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
+import ar.uade.cine.servicio.SalasDeEjemplo;
 
 /**
  * Única capa que habla con el usuario: acá viven Scanner y System.out, y en ningún
@@ -133,22 +137,52 @@ public class MenuConsola {
 
     private void menuSalas() {
         System.out.println("\n-- Salas --");
-        System.out.println("1. Listar  2. Agregar  3. Eliminar");
+        System.out.println("1. Listar  2. Agregar  3. Ver butacas  4. Eliminar  5. Cargar las 6 salas de ejemplo");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(salas.listar());
             case "2" -> {
                 System.out.print("Nombre: ");
                 String nombre = leer();
-                salas.agregar(nombre, leerEntero("Capacidad: "));
+                TipoSala tipo = elegirTipoSala();
+                System.out.print("Butacas de cada fila, separadas por coma (ej. 8,10,12): ");
+                List<Integer> distribucion = new ArrayList<>();
+                for (String parte : leer().split(",")) {
+                    distribucion.add(Integer.parseInt(parte.trim()));
+                }
+                salas.agregar(nombre, tipo, distribucion);
                 System.out.println("Sala agregada");
             }
-            case "3" -> {
+            case "3" -> mostrarButacas(leerEntero("Id de sala: "));
+            case "4" -> {
                 salas.eliminar(leerEntero("Id: "));
                 System.out.println("Sala eliminada");
             }
+            case "5" -> {
+                new SalasDeEjemplo(salas).cargar();
+                System.out.println("6 salas cargadas");
+            }
             default -> System.out.println("Opción inválida");
         }
+    }
+
+    private TipoSala elegirTipoSala() {
+        TipoSala[] opciones = TipoSala.values();
+        for (int i = 0; i < opciones.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + opciones[i]);
+        }
+        int numero = leerEntero("Tipo de sala: ");
+        if (numero < 1 || numero > opciones.length) {
+            throw new IllegalArgumentException("Tipo inexistente: " + numero);
+        }
+        return opciones[numero - 1];
+    }
+
+    /** Dibuja la sala vacía, fila por fila. */
+    private void mostrarButacas(int salaId) {
+        salas.buscar(salaId).orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
+        List<Asiento> asientos = salas.asientosDe(salaId);
+        imprimirMapa(asientos, List.of());
     }
 
     // ---------- funciones ----------
@@ -205,7 +239,7 @@ public class MenuConsola {
 
     private void menuReservas() {
         System.out.println("\n-- Reservas --");
-        System.out.println("1. Listar  2. Reservar  3. Pagar  4. Cancelar  5. Ver por cliente  6. Lugares libres");
+        System.out.println("1. Listar  2. Reservar  3. Pagar  4. Cancelar  5. Ver por cliente  6. Mapa de butacas");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(reservas.listar());
@@ -214,8 +248,10 @@ public class MenuConsola {
                 int funcionId = leerEntero("Id de función: ");
                 imprimir(clientes.listar());
                 int clienteId = leerEntero("Id de cliente: ");
-                int cantidad = leerEntero("Cantidad de entradas: ");
-                Reserva reserva = reservas.reservar(funcionId, clienteId, cantidad);
+                mostrarMapaDeFuncion(funcionId);
+                System.out.print("Butacas separadas por coma (ej. B4,B5): ");
+                List<String> codigos = List.of(leer().split(","));
+                Reserva reserva = reservas.reservar(funcionId, clienteId, codigos);
                 System.out.println("Reserva confirmada. Ticket en tickets/ticket-" + reserva.getId() + ".txt");
             }
             case "3" -> {
@@ -227,7 +263,7 @@ public class MenuConsola {
                 System.out.println("Reserva cancelada");
             }
             case "5" -> imprimir(reservas.listarPorCliente(leerEntero("Id de cliente: ")));
-            case "6" -> System.out.println("Lugares libres: " + reservas.lugaresLibres(leerEntero("Id de función: ")));
+            case "6" -> mostrarMapaDeFuncion(leerEntero("Id de función: "));
             default -> System.out.println("Opción inválida");
         }
     }
@@ -255,6 +291,49 @@ public class MenuConsola {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Formato de fecha inválido. Ejemplo: 25/12/2026 20:30");
         }
+    }
+
+    /** Muestra las butacas de la función marcando las tomadas. */
+    private void mostrarMapaDeFuncion(int funcionId) {
+        Funcion funcion = funciones.buscar(funcionId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
+        List<Asiento> todos = salas.asientosDe(funcion.getSalaId());
+        List<Asiento> libres = reservas.asientosLibres(funcionId);
+        imprimirMapa(todos, libres);
+        System.out.println("Libres: " + libres.size() + " de " + todos.size());
+    }
+
+    /**
+     * Una línea por fila. libresConocidos vacío = sala sin función, todas disponibles.
+     * [B4] libre, (B4) ocupada, y el tipo se marca con un símbolo.
+     */
+    private void imprimirMapa(List<Asiento> asientos, List<Asiento> libres) {
+        List<Integer> idsLibres = libres.stream().map(Asiento::getId).toList();
+        boolean sinFuncion = libres.isEmpty();
+        System.out.println("        ---------- PANTALLA ----------");
+        int filaActual = -1;
+        StringBuilder linea = new StringBuilder();
+        for (Asiento asiento : asientos) {
+            if (asiento.getFila() != filaActual) {
+                if (filaActual != -1) {
+                    System.out.println(linea);
+                }
+                filaActual = asiento.getFila();
+                linea = new StringBuilder("  " + asiento.getCodigo().charAt(0) + " ");
+            }
+            boolean libre = sinFuncion || idsLibres.contains(asiento.getId());
+            String marca = switch (asiento.getTipo()) {
+                case VIP -> "*";
+                case PAREJA -> "&";
+                case ACCESIBLE -> "+";
+                case ESTANDAR -> "";
+            };
+            linea.append(libre ? "[" : "(").append(asiento.getNumero()).append(marca).append(libre ? "] " : ") ");
+        }
+        if (filaActual != -1) {
+            System.out.println(linea);
+        }
+        System.out.println("  [n] libre  (n) ocupada  * VIP  & pareja  + accesible");
     }
 
     private void imprimir(List<?> elementos) {

@@ -5,8 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ar.uade.cine.interfaces.Cliente;
+import ar.uade.cine.interfaces.Entrada;
 import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.GeneradorTicket;
 import ar.uade.cine.interfaces.Pelicula;
@@ -44,6 +46,7 @@ public class GeneradorTicketTxt implements GeneradorTicket {
                 campo("Sala", sala.getNombre()),
                 campo("Funcion", funcion.getInicio().format(FORMATO_FECHA)),
                 campo("Cliente", cliente.getNombre()),
+                campo("Butacas", butacas(reserva)),
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
                 campo("Precio unit.", String.format("$ %.2f", funcion.getPrecio())),
                 campo("Total", String.format("$ %.2f", total)),
@@ -58,6 +61,12 @@ public class GeneradorTicketTxt implements GeneradorTicket {
         } catch (IOException e) {
             throw new PersistenciaException("No se pudo emitir el ticket de la reserva " + reserva.getId(), e);
         }
+    }
+
+    private String butacas(Reserva reserva) {
+        return reserva.getEntradas().stream()
+                .map(Entrada::getCodigoAsiento)
+                .collect(Collectors.joining(", "));
     }
 
     private String campo(String etiqueta, String valor) {

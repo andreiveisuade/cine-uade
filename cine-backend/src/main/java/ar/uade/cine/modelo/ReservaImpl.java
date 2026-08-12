@@ -1,5 +1,9 @@
 package ar.uade.cine.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import ar.uade.cine.interfaces.Entrada;
 import ar.uade.cine.interfaces.Reserva;
 
 /**
@@ -11,18 +15,18 @@ public class ReservaImpl implements Reserva {
     private int id;
     private int funcionId;
     private int clienteId;
-    private int cantidadEntradas;
+    private final List<Entrada> entradas = new ArrayList<>();
     private EstadoReserva estado;
 
-    public ReservaImpl(int funcionId, int clienteId, int cantidadEntradas) {
+    public ReservaImpl(int funcionId, int clienteId, List<Entrada> entradas) {
         this.funcionId = funcionId;
         this.clienteId = clienteId;
-        this.cantidadEntradas = cantidadEntradas;
+        this.entradas.addAll(entradas);
         this.estado = EstadoReserva.RESERVADA;
     }
 
-    public ReservaImpl(int id, int funcionId, int clienteId, int cantidadEntradas, EstadoReserva estado) {
-        this(funcionId, clienteId, cantidadEntradas);
+    public ReservaImpl(int id, int funcionId, int clienteId, List<Entrada> entradas, EstadoReserva estado) {
+        this(funcionId, clienteId, entradas);
         this.id = id;
         this.estado = estado;
     }
@@ -48,8 +52,18 @@ public class ReservaImpl implements Reserva {
     }
 
     @Override
+    public List<Entrada> getEntradas() {
+        return new ArrayList<>(entradas);
+    }
+
+    @Override
+    public void agregarEntrada(Entrada entrada) {
+        entradas.add(entrada);
+    }
+
+    @Override
     public int getCantidadEntradas() {
-        return cantidadEntradas;
+        return entradas.size();
     }
 
     @Override
@@ -65,6 +79,6 @@ public class ReservaImpl implements Reserva {
     @Override
     public String toString() {
         return "[" + id + "] función " + funcionId + " - cliente " + clienteId
-                + " - " + cantidadEntradas + " entrada(s) - " + estado;
+                + " - butacas " + entradas + " - " + estado;
     }
 }

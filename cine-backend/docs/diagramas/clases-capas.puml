@@ -19,6 +19,7 @@ package servicio {
 package interfaces {
   interface PeliculaDAO
   interface SalaDAO
+  interface AsientoDAO
   interface FuncionDAO
   interface ClienteDAO
   interface ReservaDAO
@@ -29,6 +30,7 @@ package persistencia {
   class PeliculaDAOMySQL
   class PeliculaDAOMemoria
   class SalaDAOMySQL
+  class AsientoDAOMySQL
   class FuncionDAOMySQL
   class ClienteDAOMySQL
   class ReservaDAOMySQL
@@ -44,6 +46,7 @@ MenuConsola -down-> GestorReservas
 
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
+GestorSalas -down-> AsientoDAO
 GestorFunciones -down-> FuncionDAO
 GestorFunciones -down-> PeliculaDAO
 GestorFunciones -down-> SalaDAO
@@ -54,6 +57,7 @@ GestorReservas -down-> GeneradorTicket
 PeliculaDAOMySQL -up-|> PeliculaDAO
 PeliculaDAOMemoria -up-|> PeliculaDAO
 SalaDAOMySQL -up-|> SalaDAO
+AsientoDAOMySQL -up-|> AsientoDAO
 FuncionDAOMySQL -up-|> FuncionDAO
 ClienteDAOMySQL -up-|> ClienteDAO
 ReservaDAOMySQL -up-|> ReservaDAO
@@ -62,9 +66,9 @@ GeneradorTicketTxt -up-|> GeneradorTicket
 
 note right of GestorReservas
   Tambien usa FuncionDAO, SalaDAO,
-  ClienteDAO y PeliculaDAO: el cupo
-  sale de la sala y el ticket lleva
-  datos de todas las entidades.
+  AsientoDAO, ClienteDAO y PeliculaDAO:
+  las butacas libres salen de la sala y
+  el ticket lleva datos de todas.
 end note
 
 note bottom of persistencia

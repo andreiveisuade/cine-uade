@@ -2,19 +2,28 @@
 title Modelo de dominio - Sistema de cine
 
 skinparam classAttributeIconSize 0
-skinparam linetype ortho
 hide empty members
 
 interface Pelicula {
   +getTitulo(): String
   +getDuracionMinutos(): int
   +getGeneros(): List<Genero>
-  +agregarGenero(Genero)
 }
 
 interface Sala {
   +getNombre(): String
-  +getCapacidad(): int
+  +getTipo(): TipoSala
+  +getButacasPorFila(): List<Integer>
+  +getFilas(): int
+  +getCapacidadSala(): int
+}
+
+interface Asiento {
+  +getSalaId(): int
+  +getFila(): int
+  +getNumero(): int
+  +getTipo(): TipoAsiento
+  +getCodigo(): String
 }
 
 interface Funcion {
@@ -32,8 +41,14 @@ interface Cliente {
 interface Reserva {
   +getFuncionId(): int
   +getClienteId(): int
+  +getEntradas(): List<Entrada>
   +getCantidadEntradas(): int
   +getEstado(): EstadoReserva
+}
+
+interface Entrada {
+  +getAsientoId(): int
+  +getCodigoAsiento(): String
 }
 
 enum Genero {
@@ -48,6 +63,21 @@ enum Genero {
   SUSPENSO
 }
 
+enum TipoSala {
+  DOS_D
+  TRES_D
+  IMAX
+  CUATRO_D
+  VIP
+}
+
+enum TipoAsiento {
+  ESTANDAR
+  VIP
+  PAREJA
+  ACCESIBLE
+}
+
 enum EstadoReserva {
   RESERVADA
   PAGADA
@@ -55,22 +85,30 @@ enum EstadoReserva {
 }
 
 Pelicula "1" *-- "1..*" Genero
-Reserva "*" -- "1" EstadoReserva
+Sala "1" -- "1" TipoSala
+Asiento "1" -- "1" TipoAsiento
+Reserva "1" -- "1" EstadoReserva
+
+Sala "1" *-- "1..*" Asiento
+Reserva "1" *-- "1..*" Entrada
+Entrada "1" --> "1" Asiento
 
 Funcion "*" --> "1" Pelicula
 Funcion "*" --> "1" Sala
 Reserva "*" --> "1" Funcion
 Reserva "*" --> "1" Cliente
 
-note bottom of Funcion
-  Las asociaciones se guardan como id (peliculaId, salaId),
-  no como referencia al objeto: el DAO resuelve la relacion.
+note bottom of Asiento
+  El asiento no tiene estado "ocupado":
+  lo esta para una funcion, si alguna
+  reserva no cancelada de esa funcion
+  tiene una Entrada con ese asiento.
 end note
 
-note right of Pelicula
-  Cada entidad tiene su DAO.
-  Reserva ademas se puede guardar
-  en MySQL o en un archivo .txt.
+note bottom of Funcion
+  Las asociaciones se guardan como id
+  (peliculaId, salaId): el DAO resuelve
+  la relacion.
 end note
 
 @enduml

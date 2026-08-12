@@ -1,10 +1,16 @@
 package ar.uade.cine.servicio;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import ar.uade.cine.interfaces.Asiento;
+import ar.uade.cine.interfaces.AsientoDAO;
 import ar.uade.cine.interfaces.Cliente;
 import ar.uade.cine.interfaces.ClienteDAO;
+import ar.uade.cine.interfaces.Entrada;
 import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.interfaces.GeneradorTicket;
@@ -14,48 +20,77 @@ import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.Sala;
 import ar.uade.cine.interfaces.SalaDAO;
+import ar.uade.cine.modelo.EntradaImpl;
 import ar.uade.cine.modelo.EstadoReserva;
 import ar.uade.cine.modelo.ReservaImpl;
 
 /**
- * Reservar, pagar y cancelar. Necesita los otros DAOs porque el cupo depende de la
- * capacidad de la sala de la función, y el ticket lleva los datos de todos.
+ * Reservar, pagar y cancelar. Un asiento no está "ocupado" en sí mismo: lo está
+ * para una función, si alguna reserva no cancelada de esa función lo tomó.
  */
 public class GestorReservas {
 
     private final ReservaDAO reservaDAO;
     private final FuncionDAO funcionDAO;
     private final SalaDAO salaDAO;
+    private final AsientoDAO asientoDAO;
     private final ClienteDAO clienteDAO;
     private final PeliculaDAO peliculaDAO;
     private final GeneradorTicket generadorTicket;
 
     public GestorReservas(ReservaDAO reservaDAO, FuncionDAO funcionDAO, SalaDAO salaDAO,
-                          ClienteDAO clienteDAO, PeliculaDAO peliculaDAO, GeneradorTicket generadorTicket) {
+                          AsientoDAO asientoDAO, ClienteDAO clienteDAO, PeliculaDAO peliculaDAO,
+                          GeneradorTicket generadorTicket) {
         this.reservaDAO = reservaDAO;
         this.funcionDAO = funcionDAO;
         this.salaDAO = salaDAO;
+        this.asientoDAO = asientoDAO;
         this.clienteDAO = clienteDAO;
         this.peliculaDAO = peliculaDAO;
         this.generadorTicket = generadorTicket;
     }
 
-    /** Crea la reserva y emite el ticket. Devuelve la reserva ya con su id. */
-    public Reserva reservar(int funcionId, int clienteId, int cantidad) {
-        Funcion funcion = funcionDAO.buscarPorId(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
+    /** Butacas de la sala que todavía nadie tomó para esa función. */
+    public List<Asiento> asientosLibres(int funcionId) {
+        Funcion funcion = buscarFuncion(funcionId);
+        Set<Integer> ocupados = asientosOcupados(funcionId);
+        return asientoDAO.listarPorSala(funcion.getSalaId()).stream()
+                .filter(a -> !ocupados.contains(a.getId()))
+                .toList();
+    }
+
+    /** Crea la reserva con las butacas elegidas y emite el ticket. */
+    public Reserva reservar(int funcionId, int clienteId, List<String> codigosAsiento) {
+        Funcion funcion = buscarFuncion(funcionId);
         Cliente cliente = clienteDAO.buscarPorId(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
-        if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad de entradas debe ser mayor a cero");
+        if (codigosAsiento == null || codigosAsiento.isEmpty()) {
+            throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
 
-        int libres = lugaresLibres(funcionId);
-        if (cantidad > libres) {
-            throw new IllegalArgumentException("Solo quedan " + libres + " lugares en esa función");
+        List<Asiento> deLaSala = asientoDAO.listarPorSala(funcion.getSalaId());
+        Set<Integer> ocupados = asientosOcupados(funcionId);
+
+        List<Entrada> entradas = new ArrayList<>();
+        List<String> yaElegidos = new ArrayList<>();
+        for (String codigo : codigosAsiento) {
+            String buscado = codigo.trim().toUpperCase();
+            if (yaElegidos.contains(buscado)) {
+                throw new IllegalArgumentException("La butaca " + buscado + " está repetida");
+            }
+            Asiento asiento = deLaSala.stream()
+                    .filter(a -> a.getCodigo().equals(buscado))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "La butaca " + buscado + " no existe en esa sala"));
+            if (ocupados.contains(asiento.getId())) {
+                throw new IllegalArgumentException("La butaca " + buscado + " ya está ocupada");
+            }
+            yaElegidos.add(buscado);
+            entradas.add(new EntradaImpl(asiento.getId(), asiento.getCodigo()));
         }
 
-        Reserva reserva = new ReservaImpl(funcionId, clienteId, cantidad);
+        Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas);
         reservaDAO.guardar(reserva);
 
         Sala sala = salaDAO.buscarPorId(funcion.getSalaId()).orElseThrow();
@@ -83,18 +118,8 @@ public class GestorReservas {
         reservaDAO.actualizar(reserva);
     }
 
-    /** Capacidad de la sala menos lo reservado. Las canceladas no ocupan lugar. */
     public int lugaresLibres(int funcionId) {
-        Funcion funcion = funcionDAO.buscarPorId(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
-        Sala sala = salaDAO.buscarPorId(funcion.getSalaId())
-                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + funcion.getSalaId()));
-
-        int ocupados = reservaDAO.listarPorFuncion(funcionId).stream()
-                .filter(r -> r.getEstado() != EstadoReserva.CANCELADA)
-                .mapToInt(Reserva::getCantidadEntradas)
-                .sum();
-        return sala.getCapacidad() - ocupados;
+        return asientosLibres(funcionId).size();
     }
 
     public List<Reserva> listarPorCliente(int clienteId) {
@@ -107,6 +132,20 @@ public class GestorReservas {
 
     public Optional<Reserva> buscar(int id) {
         return reservaDAO.buscarPorId(id);
+    }
+
+    /** Las reservas canceladas liberan sus butacas (R6). */
+    private Set<Integer> asientosOcupados(int funcionId) {
+        return reservaDAO.listarPorFuncion(funcionId).stream()
+                .filter(r -> r.getEstado() != EstadoReserva.CANCELADA)
+                .flatMap(r -> r.getEntradas().stream())
+                .map(Entrada::getAsientoId)
+                .collect(Collectors.toSet());
+    }
+
+    private Funcion buscarFuncion(int funcionId) {
+        return funcionDAO.buscarPorId(funcionId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
     }
 
     private Reserva buscarOFallar(int id) {

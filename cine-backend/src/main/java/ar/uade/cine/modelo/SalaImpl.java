@@ -1,20 +1,25 @@
 package ar.uade.cine.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ar.uade.cine.interfaces.Sala;
 
 public class SalaImpl implements Sala {
 
     private int id;
     private String nombre;
-    private int capacidad;
+    private TipoSala tipo;
+    private final List<Integer> butacasPorFila = new ArrayList<>();
 
-    public SalaImpl(String nombre, int capacidad) {
+    public SalaImpl(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
         this.nombre = nombre;
-        this.capacidad = capacidad;
+        this.tipo = tipo;
+        this.butacasPorFila.addAll(butacasPorFila);
     }
 
-    public SalaImpl(int id, String nombre, int capacidad) {
-        this(nombre, capacidad);
+    public SalaImpl(int id, String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
+        this(nombre, tipo, butacasPorFila);
         this.id = id;
     }
 
@@ -34,12 +39,28 @@ public class SalaImpl implements Sala {
     }
 
     @Override
-    public int getCapacidad() {
-        return capacidad;
+    public TipoSala getTipo() {
+        return tipo;
+    }
+
+    @Override
+    public List<Integer> getButacasPorFila() {
+        return new ArrayList<>(butacasPorFila);
+    }
+
+    @Override
+    public int getFilas() {
+        return butacasPorFila.size();
+    }
+
+    @Override
+    public int getCapacidadSala() {
+        return butacasPorFila.stream().mapToInt(Integer::intValue).sum();
     }
 
     @Override
     public String toString() {
-        return "[" + id + "] " + nombre + " (" + capacidad + " lugares)";
+        return "[" + id + "] " + nombre + " - " + tipo + " - " + getFilas()
+                + " filas, " + getCapacidadSala() + " butacas";
     }
 }

@@ -412,6 +412,7 @@ body.lightbox-locked { overflow: hidden; }
       <p class="toc-group-label">Cómo está hecho</p>
       <ol>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
+        <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
@@ -457,10 +458,10 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="requerimientos">
       <h2>Requerimientos</h2>
       <ul>
-        <li>Cargar películas (título, duración, uno o más géneros) y salas (nombre, capacidad).</li>
+        <li>Cargar películas (título, duración, uno o más géneros) y salas con su distribución de butacas.</li>
         <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
         <li>Registrar clientes.</li>
-        <li>Reservar entradas para una función y luego pagarlas o cancelarlas.</li>
+        <li>Reservar butacas concretas de una función y luego pagarlas o cancelarlas.</li>
         <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
       </ul>
     </section>
@@ -473,11 +474,11 @@ body.lightbox-locked { overflow: hidden; }
           <thead><tr><th>#</th><th>Regla</th><th>Estado</th></tr></thead>
           <tbody>
             <tr><td>R1</td><td>No puede haber dos películas con el mismo título</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R2</td><td>Duración de película y capacidad de sala mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R2</td><td>Duración de película y butacas de cada fila mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R4</td><td>No se pueden reservar más entradas que los lugares libres</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R4</td><td>No se puede reservar una butaca que ya está tomada en esa función</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R6</td><td>Cancelar una reserva libera sus lugares</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
@@ -502,11 +503,11 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas</td><td>R2</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas con su mapa de butacas</td><td>R2</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-06</td><td>Cliente</td><td>Reservar entradas para una función</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
@@ -537,7 +538,88 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Reserva y compra son el mismo registro</h3>
       <p>
         Una <code>Reserva</code> nace en estado <code>RESERVADA</code> y pasa a <code>PAGADA</code> cuando el cliente
-        abona, o a <code>CANCELADA</code> si se da de baja. Guarda cantidad de entradas, no butacas numeradas.
+        abona, o a <code>CANCELADA</code> si se da de baja. Contiene una <code>Entrada</code> por butaca elegida;
+        la cantidad de entradas se deriva de esa lista, no se guarda aparte.
+      </p>
+    </section>
+
+    <section class="doc-section" id="salas">
+      <h2>Salas y butacas</h2>
+      <p>
+        Las salas de un cine real no son rectángulos iguales: cambian de tamaño, de formato de proyección
+        y de forma. El modelo lo refleja en tres decisiones.
+      </p>
+
+      <h3>La distribución es una lista, no un número</h3>
+      <p>
+        <code>Sala</code> guarda <code>butacasPorFila</code>: <code>[8, 10, 12, 12, 14]</code> significa que la
+        fila A tiene 8 butacas y la E tiene 14 — típico de una sala en cuña, donde las filas de adelante son
+        más cortas. De ahí salen <code>getFilas()</code> y <code>getCapacidadSala()</code>, que se calculan y
+        por eso nunca pueden quedar desincronizados con la realidad.
+      </p>
+
+      <h3>Un asiento no está "ocupado"</h3>
+      <p>
+        Es el punto de diseño que más se equivoca en este dominio. Si <code>Asiento</code> tuviera un
+        <code>boolean ocupado</code>, la butaca A5 quedaría tomada para siempre en todas las funciones.
+        Un asiento está ocupado <strong>en una función</strong>: A5 puede estar vendida a las 20:00 y libre
+        a las 22:30.
+      </p>
+      <p>
+        Por eso <code>Asiento</code> solo describe la butaca física, y la ocupación se calcula: existe una
+        <code>Entrada</code> con ese asiento en alguna reserva no cancelada de esa función.
+      </p>
+
+      <h3>Tipos de sala y de butaca</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>TipoSala</th><th>Multiplicador</th><th>TipoAsiento</th><th>Multiplicador</th></tr></thead>
+          <tbody>
+            <tr><td><code>DOS_D</code></td><td>1.0</td><td><code>ESTANDAR</code></td><td>1.0</td></tr>
+            <tr><td><code>TRES_D</code></td><td>1.3</td><td><code>VIP</code></td><td>1.5</td></tr>
+            <tr><td><code>IMAX</code></td><td>1.6</td><td><code>PAREJA</code></td><td>1.8</td></tr>
+            <tr><td><code>CUATRO_D</code></td><td>1.8</td><td><code>ACCESIBLE</code></td><td>1.0</td></tr>
+            <tr><td><code>VIP</code></td><td>2.0</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Los multiplicadores están declarados en los enums pero todavía no se aplican al precio: hoy la función
+        tiene un precio plano. Es el próximo paso natural.
+      </p>
+
+      <h3>Las seis salas del complejo</h3>
+      <p>
+        <code>SalasDeEjemplo</code> carga un complejo completo de una sola vez (opción 5 del menú de salas),
+        para no dar de alta 694 butacas a mano:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Particularidad</th></tr></thead>
+          <tbody>
+            <tr><td>Sala 1</td><td>2D</td><td>8,10,12,12,14</td><td>56</td><td>En cuña, accesibles en los bordes de la fila A</td></tr>
+            <tr><td>Sala 2</td><td>2D</td><td>14 × 8 filas</td><td>112</td><td>Rectangular clásica</td></tr>
+            <tr><td>Sala 3</td><td>3D</td><td>12…20</td><td>170</td><td>8 butacas VIP en las últimas filas</td></tr>
+            <tr><td>Sala 4</td><td>IMAX</td><td>16…24</td><td>254</td><td>La más grande, 4 accesibles</td></tr>
+            <tr><td>Sala 5</td><td>VIP</td><td>6,6,8,8</td><td>28</td><td>Todas butacas de pareja</td></tr>
+            <tr><td>Sala 6</td><td>4D</td><td>10,12,12,14,14,12</td><td>74</td><td>Butacas móviles</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>El mapa en consola</h3>
+      <p>Al reservar se dibuja la sala con el estado de cada butaca para esa función:</p>
+      <pre><code>        ---------- PANTALLA ----------
+  A (1+) (2) [3] [4] [5] [6] [7] [8+]
+  B [1] [2] (3) [4] [5] [6] [7] [8] [9] [10]
+  C [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12]
+  D [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12]
+  E [1] [2] [3] [4] [5] [6] [7] [8] [9] [10] [11] [12] [13] [14]
+  [n] libre  (n) ocupada  * VIP  &amp; pareja  + accesible
+Libres: 53 de 56</code></pre>
+      <p>
+        Ese dibujo vive en <code>MenuConsola</code>, no en el modelo: es presentación. El día que haya un
+        frontend web, consume los mismos datos (fila, número, tipo, ocupado) y los dibuja como quiera.
       </p>
     </section>
 
