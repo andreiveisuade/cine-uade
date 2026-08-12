@@ -38,6 +38,7 @@ public class GestorReservas {
     private final ClienteDAO clienteDAO;
     private final PeliculaDAO peliculaDAO;
     private final GeneradorTicket generadorTicket;
+    private final CalculadoraPrecio calculadoraPrecio = new CalculadoraPrecio();
 
     public GestorReservas(ReservaDAO reservaDAO, FuncionDAO funcionDAO, SalaDAO salaDAO,
                           AsientoDAO asientoDAO, ClienteDAO clienteDAO, PeliculaDAO peliculaDAO,
@@ -70,6 +71,8 @@ public class GestorReservas {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
 
+        Sala sala = salaDAO.buscarPorId(funcion.getSalaId())
+                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + funcion.getSalaId()));
         List<Asiento> deLaSala = asientoDAO.listarPorSala(funcion.getSalaId());
         Set<Integer> ocupados = asientosOcupados(funcionId);
 
@@ -92,13 +95,13 @@ public class GestorReservas {
                 throw new IllegalArgumentException("La butaca " + buscado + " ya está ocupada");
             }
             yaElegidos.add(buscado);
-            entradas.add(new EntradaImpl(asiento.getId(), asiento.getCodigo()));
+            entradas.add(new EntradaImpl(asiento.getId(), asiento.getCodigo(),
+                    calculadoraPrecio.precioDe(funcion, sala, asiento)));
         }
 
         Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas);
         reservaDAO.guardar(reserva);
 
-        Sala sala = salaDAO.buscarPorId(funcion.getSalaId()).orElseThrow();
         Pelicula pelicula = peliculaDAO.buscarPorId(funcion.getPeliculaId()).orElseThrow();
         generadorTicket.emitir(reserva, funcion, pelicula, sala, cliente);
 

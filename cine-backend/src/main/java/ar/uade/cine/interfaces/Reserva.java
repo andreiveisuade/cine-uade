@@ -23,6 +23,9 @@ public interface Reserva {
     /** Derivada de las entradas: no se guarda por separado. */
     int getCantidadEntradas();
 
+    /** Suma de lo cobrado por cada butaca. */
+    double getTotal();
+
     EstadoReserva getEstado();
 
     /** Pasa de RESERVADA a PAGADA o CANCELADA. */

@@ -17,14 +17,14 @@ public class SalasDeEjemplo {
     }
 
     public void cargar() {
-        // Chica y en cuña: las filas de adelante son más cortas por la forma de la sala.
-        gestorSalas.agregar("Sala 1", TipoSala.DOS_D,
+        // IMAX chica y en cuña: las filas de adelante son más cortas por la forma de la sala.
+        gestorSalas.agregar("Sala 1", TipoSala.IMAX,
                 List.of(8, 10, 12, 12, 14),
                 List.of(),
                 List.of("A1", "A8"));
 
-        // Rectangular clásica, la más usada del complejo.
-        gestorSalas.agregar("Sala 2", TipoSala.DOS_D,
+        // IMAX rectangular, la más usada del complejo.
+        gestorSalas.agregar("Sala 2", TipoSala.IMAX,
                 List.of(14, 14, 14, 14, 14, 14, 14, 14),
                 List.of(),
                 List.of("A1", "A14"));
@@ -35,8 +35,8 @@ public class SalasDeEjemplo {
                 List.of("I1", "I2", "I3", "I4", "J1", "J2", "J3", "J4"),
                 List.of("A1", "A12"));
 
-        // La más grande: pantalla gigante y platea profunda.
-        gestorSalas.agregar("Sala 4", TipoSala.IMAX,
+        // La más grande del complejo: platea profunda.
+        gestorSalas.agregar("Sala 4", TipoSala.TRES_D,
                 List.of(16, 18, 20, 22, 22, 24, 24, 24, 24, 22, 20, 18),
                 List.of(),
                 List.of("A1", "A2", "A15", "A16"));

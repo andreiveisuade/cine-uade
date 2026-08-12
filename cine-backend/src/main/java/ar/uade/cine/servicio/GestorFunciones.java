@@ -8,8 +8,11 @@ import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.interfaces.Pelicula;
 import ar.uade.cine.interfaces.PeliculaDAO;
+import ar.uade.cine.interfaces.Sala;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.FuncionImpl;
+import ar.uade.cine.modelo.Idioma;
+import ar.uade.cine.modelo.Proyeccion;
 
 /**
  * Necesita los tres DAOs porque la regla R3 no se puede validar solo con funciones:
@@ -27,11 +30,17 @@ public class GestorFunciones {
         this.salaDAO = salaDAO;
     }
 
-    public void programar(int peliculaId, int salaId, LocalDateTime inicio, double precio) {
+    public void programar(int peliculaId, int salaId, LocalDateTime inicio,
+                          Idioma idioma, Proyeccion proyeccion, double precio) {
         Pelicula pelicula = peliculaDAO.buscarPorId(peliculaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
-        if (salaDAO.buscarPorId(salaId).isEmpty()) {
-            throw new IllegalArgumentException("No existe la sala " + salaId);
+        Sala sala = salaDAO.buscarPorId(salaId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
+        if (idioma == null || proyeccion == null) {
+            throw new IllegalArgumentException("Falta el idioma o el formato de proyección");
+        }
+        if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
+            throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
         if (inicio == null) {
             throw new IllegalArgumentException("Falta la fecha y hora de la función");
@@ -44,7 +53,7 @@ public class GestorFunciones {
         if (haySuperposicion(salaId, inicio, fin)) {
             throw new IllegalArgumentException("La sala ya tiene una función en ese horario");
         }
-        funcionDAO.guardar(new FuncionImpl(peliculaId, salaId, inicio, precio));
+        funcionDAO.guardar(new FuncionImpl(peliculaId, salaId, inicio, idioma, proyeccion, precio));
     }
 
     /** Dos rangos se pisan si cada uno empieza antes de que termine el otro. */

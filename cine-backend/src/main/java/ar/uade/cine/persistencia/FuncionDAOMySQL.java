@@ -12,21 +12,25 @@ import java.util.Optional;
 import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.modelo.FuncionImpl;
+import ar.uade.cine.modelo.Idioma;
+import ar.uade.cine.modelo.Proyeccion;
 
 public class FuncionDAOMySQL implements FuncionDAO {
 
-    private static final String SELECT = "SELECT id, pelicula_id, sala_id, inicio, precio FROM funcion";
+    private static final String SELECT = "SELECT id, pelicula_id, sala_id, inicio, idioma, proyeccion, precio FROM funcion";
 
     @Override
     public void guardar(Funcion funcion) {
-        String sql = "INSERT INTO funcion (pelicula_id, sala_id, inicio, precio) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO funcion (pelicula_id, sala_id, inicio, idioma, proyeccion, precio) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, funcion.getPeliculaId());
             ps.setInt(2, funcion.getSalaId());
             ps.setTimestamp(3, java.sql.Timestamp.valueOf(funcion.getInicio()));
-            ps.setDouble(4, funcion.getPrecio());
+            ps.setString(4, funcion.getIdioma().name());
+            ps.setString(5, funcion.getProyeccion().name());
+            ps.setDouble(6, funcion.getPrecio());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -109,6 +113,8 @@ public class FuncionDAOMySQL implements FuncionDAO {
                 rs.getInt("pelicula_id"),
                 rs.getInt("sala_id"),
                 rs.getTimestamp("inicio").toLocalDateTime(),
+                Idioma.valueOf(rs.getString("idioma")),
+                Proyeccion.valueOf(rs.getString("proyeccion")),
                 rs.getDouble("precio"));
     }
 }

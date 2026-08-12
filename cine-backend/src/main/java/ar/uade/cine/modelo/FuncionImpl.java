@@ -13,17 +13,23 @@ public class FuncionImpl implements Funcion {
     private int peliculaId;
     private int salaId;
     private LocalDateTime inicio;
+    private Idioma idioma;
+    private Proyeccion proyeccion;
     private double precio;
 
-    public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio, double precio) {
+    public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio,
+                       Idioma idioma, Proyeccion proyeccion, double precio) {
         this.peliculaId = peliculaId;
         this.salaId = salaId;
         this.inicio = inicio;
+        this.idioma = idioma;
+        this.proyeccion = proyeccion;
         this.precio = precio;
     }
 
-    public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio, double precio) {
-        this(peliculaId, salaId, inicio, precio);
+    public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio,
+                       Idioma idioma, Proyeccion proyeccion, double precio) {
+        this(peliculaId, salaId, inicio, idioma, proyeccion, precio);
         this.id = id;
     }
 
@@ -53,12 +59,23 @@ public class FuncionImpl implements Funcion {
     }
 
     @Override
+    public Idioma getIdioma() {
+        return idioma;
+    }
+
+    @Override
+    public Proyeccion getProyeccion() {
+        return proyeccion;
+    }
+
+    @Override
     public double getPrecio() {
         return precio;
     }
 
     @Override
     public String toString() {
-        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio + " ($" + precio + ")";
+        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio
+                + " - " + proyeccion + " " + idioma + " - desde $" + precio;
     }
 }

@@ -14,6 +14,8 @@ import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.interfaces.PeliculaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.Idioma;
+import ar.uade.cine.modelo.Proyeccion;
 import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.persistencia.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.PeliculaDAOMemoria;
@@ -38,20 +40,20 @@ class GestorFuncionesTest {
         new GestorCartelera(peliculaDAO).agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION));
         new GestorSalas(salaDAO, new AsientoDAOMemoria()).agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
-        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), 4500);
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), Idioma.SUBTITULADA, Proyeccion.DOS_D, 4500);
     }
 
     @Test
     void rechazaFuncionQueEmpiezaMientrasCorreOtra() {
         assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 21, 0), 4500));
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 21, 0), Idioma.SUBTITULADA, Proyeccion.DOS_D, 4500));
         assertEquals(1, funciones.listar().size());
     }
 
     @Test
     void aceptaFuncionDespuesDeQueTerminaLaAnterior() {
         assertDoesNotThrow(
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 0), 4500));
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 0), Idioma.SUBTITULADA, Proyeccion.DOS_D, 4500));
         assertEquals(2, funciones.listar().size());
     }
 
@@ -59,12 +61,12 @@ class GestorFuncionesTest {
     void elMismoHorarioEnOtraSalaNoSePisa() {
         new GestorSalas(salaDAO, new AsientoDAOMemoria()).agregar("Sala 2", TipoSala.TRES_D, List.of(6, 8));
         assertDoesNotThrow(
-                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0), 4500));
+                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0), Idioma.DOBLADA, Proyeccion.TRES_D, 4500));
     }
 
     @Test
     void rechazaPeliculaInexistente() {
         assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0), 4500));
+                () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0), Idioma.DOBLADA, Proyeccion.DOS_D, 4500));
     }
 }

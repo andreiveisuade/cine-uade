@@ -6,10 +6,12 @@ public class EntradaImpl implements Entrada {
 
     private final int asientoId;
     private final String codigoAsiento;
+    private final double precio;
 
-    public EntradaImpl(int asientoId, String codigoAsiento) {
+    public EntradaImpl(int asientoId, String codigoAsiento, double precio) {
         this.asientoId = asientoId;
         this.codigoAsiento = codigoAsiento;
+        this.precio = precio;
     }
 
     @Override
@@ -20,6 +22,11 @@ public class EntradaImpl implements Entrada {
     @Override
     public String getCodigoAsiento() {
         return codigoAsiento;
+    }
+
+    @Override
+    public double getPrecio() {
+        return precio;
     }
 
     @Override

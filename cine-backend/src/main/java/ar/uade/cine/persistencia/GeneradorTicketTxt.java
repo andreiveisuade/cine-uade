@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import ar.uade.cine.interfaces.Cliente;
 import ar.uade.cine.interfaces.Entrada;
@@ -36,24 +36,31 @@ public class GeneradorTicketTxt implements GeneradorTicket {
 
     @Override
     public void emitir(Reserva reserva, Funcion funcion, Pelicula pelicula, Sala sala, Cliente cliente) {
-        double total = funcion.getPrecio() * reserva.getCantidadEntradas();
-        List<String> lineas = List.of(
+        List<String> lineas = new ArrayList<>(List.of(
                 LINEA,
                 centrar("CINE UADE"),
                 centrar("TICKET #" + reserva.getId()),
                 LINEA,
                 campo("Pelicula", pelicula.getTitulo()),
-                campo("Sala", sala.getNombre()),
+                campo("Sala", sala.getNombre() + " (" + sala.getTipo() + ")"),
                 campo("Funcion", funcion.getInicio().format(FORMATO_FECHA)),
+                campo("Formato", funcion.getProyeccion() + " " + funcion.getIdioma()),
                 campo("Cliente", cliente.getNombre()),
-                campo("Butacas", butacas(reserva)),
+                LINEA));
+
+        // Detalle butaca por butaca: cada una pudo costar distinto segun su tipo
+        for (Entrada entrada : reserva.getEntradas()) {
+            lineas.add(String.format(" %-13s: $ %.2f", "Butaca " + entrada.getCodigoAsiento(), entrada.getPrecio()));
+        }
+
+        lineas.addAll(List.of(
+                LINEA,
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
-                campo("Precio unit.", String.format("$ %.2f", funcion.getPrecio())),
-                campo("Total", String.format("$ %.2f", total)),
+                campo("Total", String.format("$ %.2f", reserva.getTotal())),
                 campo("Estado", reserva.getEstado().name()),
                 LINEA,
                 centrar("Presentar en boleteria"),
-                LINEA);
+                LINEA));
 
         try {
             Files.createDirectories(directorio);
@@ -61,12 +68,6 @@ public class GeneradorTicketTxt implements GeneradorTicket {
         } catch (IOException e) {
             throw new PersistenciaException("No se pudo emitir el ticket de la reserva " + reserva.getId(), e);
         }
-    }
-
-    private String butacas(Reserva reserva) {
-        return reserva.getEntradas().stream()
-                .map(Entrada::getCodigoAsiento)
-                .collect(Collectors.joining(", "));
     }
 
     private String campo(String etiqueta, String valor) {

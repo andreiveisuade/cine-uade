@@ -23,6 +23,8 @@ import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.EstadoReserva;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.Idioma;
+import ar.uade.cine.modelo.Proyeccion;
 import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.persistencia.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.ClienteDAOMemoria;
@@ -48,6 +50,7 @@ class GestorReservasTest {
 
     private GestorReservas reservas;
     private GestorSalas salas;
+    private GestorFunciones funciones;
     private Path directorioTickets;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función, un cliente. */
@@ -64,8 +67,8 @@ class GestorReservasTest {
         new GestorCartelera(peliculaDAO).agregar("Matrix", 136, List.of(Genero.ACCION));
         salas = new GestorSalas(salaDAO, asientoDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        new GestorFunciones(funcionDAO, peliculaDAO, salaDAO)
-                .programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), 5000);
+        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), Idioma.SUBTITULADA, Proyeccion.DOS_D, 5000);
         new GestorClientes(clienteDAO).registrar("Andrei", "andrei@uade.edu.ar");
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
@@ -143,8 +146,31 @@ class GestorReservasTest {
         assertTrue(contenido.contains("Matrix"), "el ticket no menciona la película");
         assertTrue(contenido.contains("Sala 1"), "el ticket no menciona la sala");
         assertTrue(contenido.contains("Andrei"), "el ticket no menciona al cliente");
-        assertTrue(contenido.contains("B4, B5"), "el ticket no lista las butacas");
+        assertTrue(contenido.contains("Butaca B4"), "el ticket no lista la butaca B4");
+        assertTrue(contenido.contains("Butaca B5"), "el ticket no lista la butaca B5");
         assertTrue(contenido.contains("10000"), "el total deberia ser 2 x 5000");
+    }
+
+    @Test
+    void elPrecioDependeDelTipoDeSalaYDeButaca() {
+        // Sala 2 es IMAX (x1.6) y su butaca A1 es VIP (x1.5); base 5000 => 12000
+        salas.agregar("Sala 2", TipoSala.IMAX, List.of(4), List.of("A1"), List.of());
+        funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
+                Idioma.DOBLADA, Proyeccion.TRES_D, 5000);
+
+        Reserva vip = reservas.reservar(2, 1, List.of("A1"));
+        assertEquals(12000.0, vip.getTotal(), 0.001);
+
+        Reserva estandar = reservas.reservar(2, 1, List.of("A2"));
+        assertEquals(8000.0, estandar.getTotal(), 0.001);
+    }
+
+    @Test
+    void noSePuedeProgramar3DEnUnaSalaQueNoLoSoporta() {
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
+        assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 22, 20, 0),
+                        Idioma.DOBLADA, Proyeccion.TRES_D, 5000));
     }
 
     @Test

@@ -17,11 +17,11 @@ import ar.uade.cine.modelo.ReservaImpl;
 /**
  * Misma interfaz que ReservaDAOMySQL, otro medio: un archivo de texto con una
  * reserva por línea, campos separados por "|". Las butacas van en el mismo campo
- * separadas por coma, con su id y su código.
+ * separadas por coma, con su id, su código y lo que se cobró.
  *
  * <pre>
- * 1|3|7|12:A1,13:A2|RESERVADA
- * 2|3|9|20:B5|PAGADA
+ * 1|3|7|12:A1:5000.0,13:A2:5000.0|RESERVADA
+ * 2|3|9|20:B5:8000.0|PAGADA
  * </pre>
  *
  * Sin motor de base de datos, cualquier cambio implica reescribir el archivo entero:
@@ -105,7 +105,7 @@ public class ReservaDAOTxt implements ReservaDAO {
 
     private String aLinea(Reserva r) {
         String butacas = r.getEntradas().stream()
-                .map(e -> e.getAsientoId() + ":" + e.getCodigoAsiento())
+                .map(e -> e.getAsientoId() + ":" + e.getCodigoAsiento() + ":" + e.getPrecio())
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
         return r.getId() + "|" + r.getFuncionId() + "|" + r.getClienteId()
@@ -118,7 +118,7 @@ public class ReservaDAOTxt implements ReservaDAO {
         if (!campos[3].isBlank()) {
             for (String butaca : campos[3].split(",")) {
                 String[] partes = butaca.split(":");
-                entradas.add(new EntradaImpl(Integer.parseInt(partes[0]), partes[1]));
+                entradas.add(new EntradaImpl(Integer.parseInt(partes[0]), partes[1], Double.parseDouble(partes[2])));
             }
         }
         return new ReservaImpl(

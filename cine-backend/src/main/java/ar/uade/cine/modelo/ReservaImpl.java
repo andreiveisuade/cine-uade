@@ -67,6 +67,11 @@ public class ReservaImpl implements Reserva {
     }
 
     @Override
+    public double getTotal() {
+        return entradas.stream().mapToDouble(Entrada::getPrecio).sum();
+    }
+
+    @Override
     public EstadoReserva getEstado() {
         return estado;
     }

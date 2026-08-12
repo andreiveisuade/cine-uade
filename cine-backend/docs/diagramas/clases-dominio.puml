@@ -31,6 +31,8 @@ interface Funcion {
   +getPeliculaId(): int
   +getSalaId(): int
   +getInicio(): LocalDateTime
+  +getIdioma(): Idioma
+  +getProyeccion(): Proyeccion
   +getPrecio(): double
 }
 
@@ -50,6 +52,7 @@ interface Reserva {
 interface Entrada {
   +getAsientoId(): int
   +getCodigoAsiento(): String
+  +getPrecio(): double
 }
 
 enum Genero {
@@ -84,6 +87,16 @@ enum EstadoAsiento {
   FUERA_DE_SERVICIO
 }
 
+enum Idioma {
+  DOBLADA
+  SUBTITULADA
+}
+
+enum Proyeccion {
+  DOS_D
+  TRES_D
+}
+
 enum EstadoReserva {
   RESERVADA
   PAGADA
@@ -95,6 +108,8 @@ Sala "1" -- "1" TipoSala
 Asiento "1" -- "1" TipoAsiento
 Asiento "1" -- "1" EstadoAsiento
 Reserva "1" -- "1" EstadoReserva
+Funcion "1" -- "1" Idioma
+Funcion "1" -- "1" Proyeccion
 
 Sala "1" *-- "1..*" Asiento
 Reserva "1" *-- "1..*" Entrada
@@ -116,6 +131,49 @@ note bottom of Funcion
   Las asociaciones se guardan como id
   (peliculaId, salaId): el DAO resuelve
   la relacion.
+  Proyeccion es de la funcion, no de la
+  sala: TipoSala dice que PUEDE proyectar,
+  la funcion que se ESTA proyectando.
+end note
+
+package "Pendiente de implementar" <<Cloud>> {
+  interface Pago {
+    +getReservaId(): int
+    +getMedio(): MedioPago
+    +getMonto(): double
+    +getFecha(): LocalDateTime
+  }
+
+  enum MedioPago {
+    EFECTIVO
+    DEBITO
+    CREDITO
+    QR
+  }
+
+  enum Clasificacion {
+    ATP
+    MAS_13
+    MAS_16
+    MAS_18
+  }
+}
+
+Pago "1" --> "1" Reserva
+Pago "1" -- "1" MedioPago
+Clasificacion "1" -- "*" Pelicula
+
+note bottom of Pago
+  Modelado, sin implementar todavia.
+  Hoy PAGADA es solo un estado: no queda
+  registro de cuanto ni como se cobro.
+end note
+
+note bottom of Clasificacion
+  Modelada, sin implementar. Al reservar
+  habria que preguntar "Es mayor de X?",
+  lo que ademas pide fecha de nacimiento
+  en Cliente.
 end note
 
 @enduml

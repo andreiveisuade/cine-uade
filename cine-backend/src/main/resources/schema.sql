@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS funcion (
     pelicula_id INT NOT NULL,
     sala_id INT NOT NULL,
     inicio DATETIME NOT NULL,
+    idioma VARCHAR(15) NOT NULL,
+    proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
     FOREIGN KEY (sala_id) REFERENCES sala(id)
@@ -58,13 +60,16 @@ CREATE TABLE IF NOT EXISTS reserva (
     FOREIGN KEY (cliente_id) REFERENCES cliente(id)
 );
 
--- Una entrada por butaca. El UNIQUE impide vender dos veces el mismo asiento
+-- Una entrada por butaca, con lo que se cobro por ella: si manana cambia el precio
+-- de la funcion, el ticket ya emitido sigue diciendo lo que se pago.
+-- El UNIQUE impide vender dos veces el mismo asiento
 -- en la misma reserva; que no se venda en otra reserva de la misma función lo
 -- valida GestorReservas, porque depende del estado de la reserva.
 CREATE TABLE IF NOT EXISTS entrada (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reserva_id INT NOT NULL,
     asiento_id INT NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
     UNIQUE (reserva_id, asiento_id),
     FOREIGN KEY (reserva_id) REFERENCES reserva(id) ON DELETE CASCADE,
     FOREIGN KEY (asiento_id) REFERENCES asiento(id)

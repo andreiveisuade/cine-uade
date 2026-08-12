@@ -480,6 +480,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R8</td><td>No se puede programar una función 3D en una sala que no lo soporta</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -597,8 +599,32 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
         </table>
       </div>
       <p>
-        Los multiplicadores están declarados en los enums pero todavía no se aplican al precio: hoy la función
-        tiene un precio plano. Es el próximo paso natural.
+        Los multiplicadores <strong>se aplican</strong>: el precio de cada butaca sale de
+        <code>precio base de la función × multiplicador de sala × multiplicador de butaca</code>. Una VIP en
+        IMAX con base $5.000 sale $12.000; una estándar en la misma sala, $8.000.
+      </p>
+      <p>
+        El cálculo vive en <code>CalculadoraPrecio</code>, una clase concreta y no una interfaz: hoy hay una
+        sola forma de calcular. Cuando aparezcan las promociones (miércoles 2x1, jubilados) van a existir
+        varias implementaciones de verdad y ahí se extrae el contrato.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El precio se congela en la entrada.</strong> <code>Entrada.getPrecio()</code> guarda lo que se
+          cobró por esa butaca. Si mañana sube el precio de la función, el ticket ya emitido sigue diciendo lo
+          que el cliente pagó — un ticket que cambia de monto solo no sirve como comprobante.
+        </p>
+      </div>
+
+      <h3>2D/3D está en dos lugares, y no es redundante</h3>
+      <p>
+        <code>TipoSala</code> dice qué <em>puede</em> proyectar la sala; <code>Proyeccion</code>, en la función,
+        dice qué se <em>está</em> proyectando. Una sala 3D también da funciones en 2D. Por eso existe R8: pedir
+        una función 3D en una sala que no lo soporta falla.
+      </p>
+      <p>
+        <code>Idioma</code> (doblada / subtitulada) es de la función por el mismo motivo: la misma película, en
+        la misma sala, va doblada a las 15:00 y subtitulada a las 22:00.
       </p>
 
       <h3>Las seis salas del complejo</h3>
@@ -610,10 +636,10 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
         <table>
           <thead><tr><th>Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Particularidad</th></tr></thead>
           <tbody>
-            <tr><td>Sala 1</td><td>2D</td><td>8,10,12,12,14</td><td>56</td><td>En cuña, accesibles en los bordes de la fila A</td></tr>
-            <tr><td>Sala 2</td><td>2D</td><td>14 × 8 filas</td><td>112</td><td>Rectangular clásica</td></tr>
+            <tr><td>Sala 1</td><td>IMAX</td><td>8,10,12,12,14</td><td>56</td><td>En cuña, accesibles en los bordes de la fila A</td></tr>
+            <tr><td>Sala 2</td><td>IMAX</td><td>14 × 8 filas</td><td>112</td><td>Rectangular clásica</td></tr>
             <tr><td>Sala 3</td><td>3D</td><td>12…20</td><td>170</td><td>8 butacas VIP en las últimas filas</td></tr>
-            <tr><td>Sala 4</td><td>IMAX</td><td>16…24</td><td>254</td><td>La más grande, 4 accesibles</td></tr>
+            <tr><td>Sala 4</td><td>3D</td><td>16…24</td><td>254</td><td>La más grande, 4 accesibles</td></tr>
             <tr><td>Sala 5</td><td>VIP</td><td>6,6,8,8</td><td>28</td><td>Todas butacas de pareja</td></tr>
             <tr><td>Sala 6</td><td>4D</td><td>10,12,12,14,14,12</td><td>74</td><td>Butacas móviles</td></tr>
           </tbody>
@@ -1133,10 +1159,28 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         corridas libres. Es la razón por la que conviene dejarlo escrito ahora y no improvisarlo después.
       </p>
 
+      <p>
+        <strong>Clasificación por edad.</strong> Falta <code>Clasificacion</code> (ATP, +13, +16, +18) en la
+        película. Al reservar habría que preguntar "¿Usted es mayor de X años?" antes de vender, y para
+        validarlo de verdad —no solo preguntarlo— <code>Cliente</code> necesita fecha de nacimiento, que hoy
+        no tiene. Está en el diagrama de dominio, marcado como pendiente.
+      </p>
+      <p>
+        <strong>Pago.</strong> Hoy <code>PAGADA</code> es solo un estado del enum: el sistema no sabe cuánto
+        cobró ni con qué medio. Falta una entidad <code>Pago</code> (reserva, medio, monto, fecha). Está
+        diagramada, sin implementar: la lógica se define cuando se desarrolle el circuito de cobro.
+      </p>
+      <p>
+        <strong>Datos de catálogo de la película.</strong> Director, sinopsis, idioma original, fecha de
+        estreno, si sigue en cartelera. Sin reglas asociadas, pero es lo que el frontend necesita para
+        mostrar algo que parezca un cine.
+      </p>
+
       <h3>Otras mejoras pendientes</h3>
       <ul>
         <li><strong>Limpieza entre funciones:</strong> hoy R3 permite programar una función que arranca en el minuto exacto en que termina la anterior. Faltan 15-20 minutos de vaciado y limpieza.</li>
-        <li><strong>Aplicar los multiplicadores de precio:</strong> <code>TipoSala</code> y <code>TipoAsiento</code> los declaran pero el precio sigue plano. Es el lugar natural para una interfaz <code>PoliticaPrecio</code>.</li>
+        <li><strong>Transacciones:</strong> guardar una reserva son dos INSERT (reserva y entradas) sin <code>setAutoCommit(false)</code>. Si falla el segundo queda una reserva sin butacas.</li>
+        <li><strong>Precios con <code>BigDecimal</code>:</strong> hoy se leen con <code>getDouble</code> sobre columnas <code>DECIMAL</code>, que arrastra error de redondeo.</li>
       </ul>
 
       <div class="callout">

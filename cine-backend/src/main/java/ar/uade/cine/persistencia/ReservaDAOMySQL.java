@@ -25,7 +25,7 @@ import ar.uade.cine.modelo.ReservaImpl;
 public class ReservaDAOMySQL implements ReservaDAO {
 
     private static final String SELECT_CON_ENTRADAS =
-            "SELECT r.id, r.funcion_id, r.cliente_id, r.estado, e.asiento_id, a.fila, a.numero "
+            "SELECT r.id, r.funcion_id, r.cliente_id, r.estado, e.asiento_id, e.precio, a.fila, a.numero "
             + "FROM reserva r "
             + "LEFT JOIN entrada e ON e.reserva_id = r.id "
             + "LEFT JOIN asiento a ON a.id = e.asiento_id";
@@ -92,11 +92,12 @@ public class ReservaDAOMySQL implements ReservaDAO {
     }
 
     private void guardarEntradas(Connection con, Reserva reserva) throws SQLException {
-        String sql = "INSERT INTO entrada (reserva_id, asiento_id) VALUES (?, ?)";
+        String sql = "INSERT INTO entrada (reserva_id, asiento_id, precio) VALUES (?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (Entrada entrada : reserva.getEntradas()) {
                 ps.setInt(1, reserva.getId());
                 ps.setInt(2, entrada.getAsientoId());
+                ps.setDouble(3, entrada.getPrecio());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -136,7 +137,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
             int asientoId = rs.getInt("asiento_id");
             if (!rs.wasNull()) {
                 String codigo = (char) ('A' + rs.getInt("fila") - 1) + String.valueOf(rs.getInt("numero"));
-                reserva.agregarEntrada(new EntradaImpl(asientoId, codigo));
+                reserva.agregarEntrada(new EntradaImpl(asientoId, codigo, rs.getDouble("precio")));
             }
         }
         return new ArrayList<>(porId.values());

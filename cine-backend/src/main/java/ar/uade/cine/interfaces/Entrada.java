@@ -10,4 +10,10 @@ public interface Entrada {
 
     /** Guardado junto con la entrada para que el ticket no dependa de otra consulta. */
     String getCodigoAsiento();
+
+    /**
+     * Lo que se cobró por esta butaca. Se congela al reservar: si mañana sube el precio
+     * de la función, el ticket ya emitido tiene que seguir diciendo lo que se pagó.
+     */
+    double getPrecio();
 }

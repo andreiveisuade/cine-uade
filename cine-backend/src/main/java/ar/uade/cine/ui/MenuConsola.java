@@ -12,6 +12,8 @@ import ar.uade.cine.interfaces.Funcion;
 import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.Idioma;
+import ar.uade.cine.modelo.Proyeccion;
 import ar.uade.cine.modelo.TipoSala;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
@@ -180,6 +182,24 @@ public class MenuConsola {
         }
     }
 
+    private Idioma elegirIdioma() {
+        System.out.println("  1. DOBLADA  2. SUBTITULADA");
+        int numero = leerEntero("Idioma: ");
+        if (numero < 1 || numero > Idioma.values().length) {
+            throw new IllegalArgumentException("Idioma inexistente: " + numero);
+        }
+        return Idioma.values()[numero - 1];
+    }
+
+    private Proyeccion elegirProyeccion() {
+        System.out.println("  1. 2D  2. 3D");
+        int numero = leerEntero("Proyección: ");
+        if (numero < 1 || numero > Proyeccion.values().length) {
+            throw new IllegalArgumentException("Proyección inexistente: " + numero);
+        }
+        return Proyeccion.values()[numero - 1];
+    }
+
     private TipoSala elegirTipoSala() {
         TipoSala[] opciones = TipoSala.values();
         for (int i = 0; i < opciones.length; i++) {
@@ -213,8 +233,10 @@ public class MenuConsola {
                 imprimir(salas.listar());
                 int salaId = leerEntero("Id de sala: ");
                 LocalDateTime inicio = leerFecha();
-                double precio = leerDecimal("Precio de la entrada: ");
-                funciones.programar(peliculaId, salaId, inicio, precio);
+                Idioma idioma = elegirIdioma();
+                Proyeccion proyeccion = elegirProyeccion();
+                double precio = leerDecimal("Precio base de la butaca estándar: ");
+                funciones.programar(peliculaId, salaId, inicio, idioma, proyeccion, precio);
                 System.out.println("Función programada");
             }
             case "3" -> imprimir(funciones.listarPorPelicula(leerEntero("Id de película: ")));
@@ -266,7 +288,8 @@ public class MenuConsola {
                 System.out.print("Butacas separadas por coma (ej. B4,B5): ");
                 List<String> codigos = List.of(leer().split(","));
                 Reserva reserva = reservas.reservar(funcionId, clienteId, codigos);
-                System.out.println("Reserva confirmada. Ticket en tickets/ticket-" + reserva.getId() + ".txt");
+                System.out.printf("Reserva confirmada. Total: $ %.2f%n", reserva.getTotal());
+                System.out.println("Ticket en tickets/ticket-" + reserva.getId() + ".txt");
             }
             case "3" -> {
                 reservas.pagar(leerEntero("Id de reserva: "));
