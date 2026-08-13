@@ -12,7 +12,10 @@ package ui {
 }
 
 package api {
-  class ServidorApi
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasReservas\nRutasSalas, RutasSesion" as RutasHttp
+  class Vistas
+  class Parseo
+  class NoEncontrado
 }
 
 package servicio {
@@ -76,7 +79,7 @@ package persistencia {
 }
 
 MenuConsola -down-> servicio
-ServidorApi -down-> servicio
+RutasHttp -down-> servicio
 
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
@@ -103,8 +106,11 @@ persistencia ..> dominio
 legend bottom
   |= Capa |= De que se ocupa |
   | ui / api | Dos formas de hablar con la misma aplicacion: consola y HTTP. Scanner y System.out |
-  |  | viven solo en MenuConsola; ServidorApi solo traduce a JSON. Ninguna regla vive en estas dos, |
-  |  | y por eso agregar la API no obligo a tocar un solo gestor. |
+  |  | viven solo en MenuConsola; los Rutas* de api/ traducen a JSON, Vistas arma las respuestas |
+  |  | y Parseo lee los parametros. Ninguna regla vive en estas dos, y por eso agregar la API no |
+  |  | obligo a tocar un solo gestor. ServidorApi (no dibujada) solo registra las rutas y arranca |
+  |  | Javalin, igual que Main arma MenuConsola: es composicion, no una capa. GestorCandy es la |
+  |  | unica excepcion — ServidorApi no lo instancia, asi que candy no tiene ruta HTTP todavia. |
   | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
   |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
   |  | GestorFunciones usa PeliculaDAO y SalaDAO para el solapamiento, y ReservaDAO para no borrar |
