@@ -1703,6 +1703,11 @@ open http://127.0.0.1:8081        # Adminer</code></pre>
         <code>web</code> (frontend, backend). El contenedor que sirve la web no tiene ruta hasta la base.
       </p>
       <p>
+        Diagrama de esta misma topología (contenedores, redes, volúmenes) en
+        <a href="#correr">Cómo correrlo</a>. La misma explicación, en prosa, también está en el
+        <code>README.md</code> de <code>cine-docker</code>.
+      </p>
+      <p>
         <code>ConexionMySQL</code> lee <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
         <code>DB_USER</code> y <code>DB_PASSWORD</code> del entorno, con los valores de siempre como default:
         adentro de Docker el host es <code>mysql</code>, y afuera sigue funcionando contra
@@ -1909,6 +1914,10 @@ open http://localhost:8080        # la aplicación</code></pre>
         {{SVG_DOCKER}}
         <figcaption>Los cuatro contenedores, las dos redes internas y qué repo construye a cada uno</figcaption>
       </figure>
+      <p>
+        La misma topología, explicada en prosa: <a href="#base-de-datos">Base de datos → Qué se ve
+        desde afuera</a> acá, y el <code>README.md</code> de <code>cine-docker</code>.
+      </p>
 
       <div class="table-wrap">
         <table>
