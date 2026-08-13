@@ -9,10 +9,6 @@ import ar.uade.cine.ui.MenuConsola;
 public class Main {
 
     public static void main(String[] args) {
-        Aplicacion aplicacion = Aplicacion.enMySQL();
-
-        new MenuConsola(aplicacion.getCartelera(), aplicacion.getSalas(), aplicacion.getFunciones(),
-                aplicacion.getClientes(), aplicacion.getReservas(), aplicacion.getEmpleados(),
-                aplicacion.getPagos(), aplicacion.getCandy()).iniciar();
+        MenuConsola.delCine(Aplicacion.enMySQL()).iniciar();
     }
 }
