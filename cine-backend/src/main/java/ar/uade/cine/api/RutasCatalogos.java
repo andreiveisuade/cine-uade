@@ -9,6 +9,7 @@ import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import io.javalin.Javalin;
 
 /**
@@ -31,6 +32,9 @@ class RutasCatalogos {
     record MedioPagoVista(String nombre, boolean requiereAutorizacion) {
     }
 
+    record TarifaVista(String nombre, double multiplicador, boolean requiereAcreditacion) {
+    }
+
     static void registrar(Javalin app) {
         app.get("/api/generos", ctx -> ctx.json(nombres(Genero.values())));
 
@@ -50,6 +54,14 @@ class RutasCatalogos {
 
         app.get("/api/medios-pago", ctx -> ctx.json(Arrays.stream(MedioPago.values())
                 .map(m -> new MedioPagoVista(m.name(), m.requiereAutorizacion()))
+                .toList()));
+
+        // El multiplicador va porque el front muestra el precio de cada butaca antes de
+        // reservar: sin esto tendría que repetir los factores de su lado, y serían dos
+        // fuentes de verdad para lo mismo. requiereAcreditacion es lo que le permite
+        // avisar "traé el carnet" al elegir la tarifa, y no recién en la puerta.
+        app.get("/api/tarifas", ctx -> ctx.json(Arrays.stream(TipoTarifa.values())
+                .map(t -> new TarifaVista(t.name(), t.getMultiplicadorPrecio(), t.requiereAcreditacion()))
                 .toList()));
     }
 
