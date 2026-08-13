@@ -412,6 +412,7 @@ body.lightbox-locked { overflow: hidden; }
       <p class="toc-group-label">Cómo está hecho</p>
       <ol>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
+        <li><a href="#programaciones" data-target="programaciones">La grilla de funciones</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
@@ -542,6 +543,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas con su mapa de butacas</td><td>R2</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-03b</td><td>Admin</td><td>Programar una grilla: previsualizarla, aplicarla y darla de baja</td><td>R3, R8</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
@@ -670,6 +672,17 @@ body.lightbox-locked { overflow: hidden; }
               <td>La misma película se da muchas veces, y una sala tiene muchas funciones a lo largo del día.</td>
             </tr>
             <tr>
+              <td><code>Funcion "*" → "0..1" Programacion</code></td>
+              <td>Asociación</td>
+              <td>
+                Las dos puntas dicen algo. <code>0..1</code> y no <code>1</code> porque la grilla no reemplaza a
+                CU-03: la función suelta que carga el administrador no pertenece a ninguna. Y el <code>*</code>
+                incluye cero: una grilla cuyas fechas chocan todas se da de alta sin materializar nada.
+                <strong>No es composición</strong>, y ahí está la diferencia con <code>Sala ◆— Asiento</code>:
+                la función no se va con la grilla. Ver <a href="#programaciones">La grilla de funciones</a>.
+              </td>
+            </tr>
+            <tr>
               <td><code>Producto "1" ◆— "0..*" ItemCombo</code> y <code>ItemCombo "*" → "1" Producto</code></td>
               <td>Composición + autoreferencia</td>
               <td>
@@ -762,6 +775,144 @@ body.lightbox-locked { overflow: hidden; }
         Se suma un cuarto estado, <code>EXPIRADA</code>, y dos campos
         de control de acceso, <code>codigo</code> e <code>ingresadaEn</code>. Ambos temas tienen su sección:
         <a href="#vencimiento">Vencimiento de la reserva</a> y <a href="#acceso">Control de acceso</a>.
+      </p>
+    </section>
+
+    <section class="doc-section" id="programaciones">
+      <h2>La grilla de funciones</h2>
+      <p>
+        Con CU-03 el administrador carga las funciones de a una. Un cine no trabaja así: define una grilla
+        —<em>«Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15 de septiembre»</em>— y de ahí salen
+        quince funciones. <code>Programacion</code> es esa grilla, y es la entidad que convierte una decisión
+        de programación en las funciones concretas que después se venden.
+      </p>
+
+      <h3>Materializa funciones, no las calcula al vuelo</h3>
+      <p>
+        Es la decisión que define la entidad, y la alternativa era tentadora: no guardar nada y derivar las
+        funciones de la grilla cada vez que alguien consulta la cartelera. Ahorraba una tabla.
+      </p>
+      <p>
+        No funciona, porque <strong>una función tiene cosas propias que la grilla no sabe</strong>: sus
+        reservas, si se canceló, si se movió de sala porque se rompió el proyector, si esa noche en particular
+        el precio fue otro. Derivarlas obligaría a modelar cada una de esas excepciones como una excepción
+        <em>a la grilla</em> —una lista de fechas suprimidas, otra de fechas mudadas, otra de precios
+        pisados— y a la tercera el modelo sería la grilla más una lista de parches. Materializarlas deja a
+        <code>Funcion</code> siendo exactamente lo que ya era: la grilla la crea y después no la toca más.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Por eso la asociación no es composición.</strong> El asiento no existe fuera de su sala y se
+          va con ella; la función <em>sí</em> existe sin su grilla y le sobrevive. Dar de baja una programación
+          no borra ni una función: pueden tener entradas vendidas, y en este sistema nada que haya producido
+          ventas se borra. Lo que la baja evita es que la grilla genere funciones nuevas.
+        </p>
+      </div>
+      <p>
+        La otra punta importa igual: <code>funcion.programacion_id</code> admite <code>NULL</code>. La grilla
+        <strong>no reemplaza</strong> a CU-03 — el preestreno del jueves, la función especial del ciclo de cine
+        mudo, la que el administrador corrigió a mano — y esas no pertenecen a ninguna.
+      </p>
+
+      <h3>Todo el rango se genera al dar de alta</h3>
+      <p>
+        La alternativa era generarlas de a poco, con una ventana móvil: crear solo las de las próximas dos
+        semanas y que un proceso vaya completando. Se descartó por lo mismo que el
+        <a href="#vencimiento">vencimiento de reservas</a> no usa un proceso de fondo: no hay cron ni
+        scheduler, y sobre todo el administrador tiene que <strong>ver</strong> lo que acaba de programar. Con
+        las quince funciones creadas, las revisa, corrige la que quiera y se olvida. Con una ventana móvil, la
+        mitad de su grilla es una promesa.
+      </p>
+
+      <h3>Previsualizar, y después aplicar</h3>
+      <p>
+        Una grilla de quince días casi siempre pisa algo. R3 dice que dos funciones de la misma sala no se
+        superponen, y el administrador no tiene por qué acordarse de memoria de qué hay cargado en esa sala
+        dentro de once días. Las dos salidas obvias son malas: rechazar la grilla entera porque una sola fecha
+        choca la hace inusable, y guardarla salteando en silencio es peor, porque nadie se entera de qué
+        faltó hasta que un cliente no encuentra la función.
+      </p>
+      <p>
+        La salida es un informe, y dos endpoints que lo producen:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué</th><th>Hace</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>POST /api/programaciones/previsualizar</code></td>
+              <td>Devuelve el informe completo —qué fechas entran, cuáles chocan y contra qué función— sin escribir absolutamente nada</td>
+            </tr>
+            <tr>
+              <td><code>POST /api/programaciones</code></td>
+              <td>Hace la misma cuenta, guarda la grilla y las funciones que entran, y devuelve el mismo informe diciendo cuáles salteó</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Es el mismo par que ya existía en el proyecto: <code>cine-pelis-parser</code> tiene
+        <code>--simular</code> por exactamente este motivo.
+      </p>
+      <p>
+        <strong>La cuenta se escribe una sola vez.</strong> Las dos entran al mismo método privado
+        —<code>planificar(grilla, película, persistir)</code>— y lo único que las diferencia es ese
+        <code>boolean</code>. Dos copias de la misma lógica se irían separando con el tiempo, y el día que se
+        separaran la previsualización dejaría de predecir lo que hace el alta, que es literalmente lo único
+        que tiene que hacer.
+      </p>
+
+      <h3>Al aplicar se valida de nuevo</h3>
+      <p>
+        <code>crear()</code> no recibe el informe que devolvió <code>previsualizar()</code>: recibe los mismos
+        datos y lo <strong>recalcula</strong> desde el DAO. Entre que el administrador miró el informe y apretó
+        confirmar pasa tiempo real, y en ese rato otro pudo haber programado algo en esa sala.
+      </p>
+      <p>
+        Es el mismo argumento que sostiene <a href="#base-de-datos">validar en el gestor <em>y</em> restringir
+        en la base</a>: la validación temprana existe para dar el mensaje claro del caso normal, la tardía para
+        cubrir la carrera que la temprana no puede cerrar. Confiar en la previsualización sería quedarse solo
+        con la primera.
+      </p>
+
+      <h3>Dónde vive cada regla</h3>
+      <p>
+        <code>GestorProgramaciones</code> no reescribe R3 ni R8: se las pide a <code>GestorFunciones</code>,
+        que ya las tenía. Para eso dos métodos que eran privados pasaron a públicos —
+        <code>superpuestaEn()</code>, que ahora devuelve <em>cuál</em> función se pisa y no un booleano, y
+        <code>validarProgramable()</code>— y <code>programar()</code> ganó una variante que recibe el id de la
+        grilla. Duplicarlas habría dejado dos definiciones de cuándo dos funciones se superponen, y con el
+        tiempo dirían cosas distintas.
+      </p>
+      <p>
+        Que <code>superpuestaEn()</code> devuelva la función es lo que permite que el informe diga
+        <em>«el 9 de septiembre la sala ya tiene la función 1 a las 21:00»</em> en vez de <em>«el 9 no se
+        pudo»</em>. Un informe que no dice contra qué chocó no se puede accionar.
+      </p>
+      <p>
+        Lo que sí se valida una sola vez por grilla, antes de recorrer el rango, es lo que no depende de la
+        fecha: que existan la película y la sala, R8 y el precio. Si la sala no proyecta en 3D no hay ninguna
+        fecha de septiembre en la que sí, y preguntarlo por fecha haría que previsualizar mostrara quince
+        funciones perfectas y recién explotara al confirmar.
+      </p>
+
+      <h3>Qué guarda, y qué no</h3>
+      <p>
+        La grilla guarda el patrón temporal —<code>desde</code>, <code>hasta</code>, <code>hora_inicio</code> y
+        los días de <code>programacion_dia</code>— y todo lo que una función necesita para nacer: versión,
+        proyección y precio. Sin filas de días significa <strong>todos los días</strong> del rango, no ninguno:
+        el mismo criterio que <code>promocion_dia</code>.
+      </p>
+      <p>
+        No guarda cuántas funciones generó. Eso se cuenta desde <code>funcion.programacion_id</code>, que es la
+        única fuente de verdad — es el mismo razonamiento por el que <a href="#salas">la sala no guarda su
+        capacidad</a>: dos lugares donde vive el mismo dato son dos lugares que se pueden contradecir, y basta
+        con que el administrador borre una función a mano para que el contador quede mintiendo.
+      </p>
+      <p>
+        Tampoco se edita el patrón temporal: solo se activa o se desactiva. Cambiarle las fechas a una grilla
+        que ya generó funciones la dejaría contradiciendo a las funciones que dice haber creado. Se da de baja
+        y se crea otra, igual que con las promociones.
       </p>
     </section>
 
@@ -1509,7 +1660,9 @@ Total del 2026-08-13: $   27000.00</code></pre>
             <tr><td><code>sala</code></td><td>nombre y tipo. La capacidad no se guarda: se cuenta desde <code>asiento</code></td></tr>
             <tr><td><code>asiento</code></td><td>butaca física: fila, número, tipo y estado</td></tr>
             <tr><td><code>usuario</code></td><td>clientes y administradores, con columna <code>rol</code></td></tr>
-            <tr><td><code>funcion</code></td><td>película + sala + inicio + versión + proyección + precio</td></tr>
+            <tr><td><code>programacion</code></td><td>la grilla: película + sala + rango de fechas + hora + versión, proyección y precio de las funciones que genera</td></tr>
+            <tr><td><code>programacion_dia</code></td><td>qué días de la semana corre la grilla. Sin filas = todos</td></tr>
+            <tr><td><code>funcion</code></td><td>película + sala + inicio + versión + proyección + precio, y de qué grilla salió</td></tr>
             <tr><td><code>reserva</code></td><td>función + cliente + estado + fecha de creación</td></tr>
             <tr><td><code>entrada</code></td><td>una butaca vendida, con el precio congelado. <code>funcion_id</code> sostiene el <code>UNIQUE</code> que impide la doble venta</td></tr>
             <tr><td><code>pago</code></td><td>comprobante de cobro de una reserva (<code>UNIQUE</code> por reserva)</td></tr>
@@ -1531,6 +1684,8 @@ Total del 2026-08-13: $   27000.00</code></pre>
           <thead><tr><th>Tabla</th><th>Cambio</th><th>Por qué</th></tr></thead>
           <tbody>
             <tr><td><code>promocion</code></td><td>tabla nueva</td><td>Tabla única con discriminador de tipo (porcentaje, monto fijo, NxM) y sus condiciones: vigencia, días, horario, medios</td></tr>
+            <tr><td><code>programacion</code> y <code>programacion_dia</code></td><td>tablas nuevas</td><td>La grilla y los días en que corre. Los días van en tabla hija por lo mismo que <code>pelicula_genero</code>: una columna con «MONDAY,WEDNESDAY» adentro no se consulta ni se indexa</td></tr>
+            <tr><td><code>funcion</code></td><td>+ <code>programacion_id</code> <code>NULL</code></td><td>De qué grilla salió. Admite <code>NULL</code> porque la grilla no reemplaza a CU-03: la función suelta no pertenece a ninguna</td></tr>
             <tr><td><code>entrada</code></td><td>+ <code>tarifa</code></td><td>Es por butaca: dos generales y un jubilado conviven en la misma reserva</td></tr>
             <tr><td><code>pago</code></td><td>+ <code>subtotal</code>, <code>descuento</code>, <code>promocion_id</code></td><td>Guardar cuál promoción ganó y cuánto descontó es lo que permite auditar el cobro después</td></tr>
             <tr><td><code>reserva</code></td><td>+ <code>codigo</code> <code>UNIQUE</code>, + <code>ingresada_en</code></td><td>El código del QR y el registro de ingreso. <code>estado</code> además acepta <code>EXPIRADA</code></td></tr>
@@ -1979,7 +2134,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Sistema</strong></td>
               <td>La API completa por HTTP, sin abrir el navegador</td>
-              <td>Los casos CP-01 a CP-08 de acá abajo</td>
+              <td>Los casos CP-01 a CP-09 de acá abajo</td>
               <td>minutos</td>
             </tr>
             <tr>
@@ -2175,6 +2330,64 @@ curl -s http://localhost:8080/api/funciones/3 | head -c 400   # cambiá el 3 por
         se daría vuelta.
       </p>
 
+      <h4>CP-09 · La grilla: previsualizar, aplicar y dar de baja</h4>
+      <p>
+        Primero cargá una función suelta que se pise con la grilla, para que haya algo contra qué chocar.
+        Matrix dura 136 minutos, así que una a las 21:00 se superpone con una a las 20:30 del mismo día:
+      </p>
+      <pre><code>curl -s -X POST http://localhost:8080/api/funciones \
+  -H 'Content-Type: application/json' \
+  -d '{"peliculaId":1,"salaId":1,"inicio":"2026-09-09T21:00:00",
+       "idioma":"SUBTITULADA","proyeccion":"DOS_D","precio":5000}'
+
+# el mismo cuerpo para los dos: primero mirar, después aplicar
+curl -s -X POST http://localhost:8080/api/programaciones/previsualizar \
+  -H 'Content-Type: application/json' \
+  -d '{"peliculaId":1,"salaId":1,"desde":"2026-09-07","hasta":"2026-09-13",
+       "horaInicio":"20:30","diasSemana":[],
+       "idioma":"SUBTITULADA","proyeccion":"DOS_D","precio":5000}'</code></pre>
+      <p>
+        <strong>Esperado:</strong> <code>generadas: 6</code>, <code>salteadas: 1</code>, y la fecha del 9 con
+        <code>choca: true</code> y el motivo diciendo <em>contra qué</em>: «la sala ya tiene la función 1 a las
+        09/09 21:00». Después pedí <code>GET /api/programaciones</code>: tiene que devolver <code>[]</code>.
+        <br><em>Verifica:</em> que previsualizar no escriba nada, y que el informe sea accionable y no un
+        «no se pudo».
+      </p>
+      <p>Ahora el alta, con el mismo cuerpo, contra <code>/api/programaciones</code>:</p>
+      <p>
+        <strong>Esperado:</strong> <code>201</code> con el <em>mismo</em> informe, y
+        <code>GET /api/programaciones/1</code> lista las seis funciones que generó — sin la del 9.
+        <code>GET /api/funciones</code> devuelve siete: las seis de la grilla más la suelta.
+        <br><em>Verifica:</em> CU-03b y R3 fecha por fecha, y que la previsualización predijo exactamente el
+        alta.
+      </p>
+      <p>Y la baja, que es donde se ve la decisión de modelado:</p>
+      <pre><code>curl -s -X POST http://localhost:8080/api/programaciones/1/baja
+curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
+      <p>
+        <strong>Esperado:</strong> la grilla queda <code>activa: false</code> y <strong>las siete funciones
+        siguen ahí</strong>. Es lo que distingue esta asociación de una composición: la función le sobrevive a
+        su grilla porque puede tener entradas vendidas.
+        <br><em>Verifica:</em> que dar de baja no cascadee.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Entrada</th><th>Esperado</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>"proyeccion":"TRES_D"</code> en una sala 2D</td><td>400, ya en <code>previsualizar</code></td><td>R8 no depende de la fecha: si falla, falla para todo el rango, y tiene que fallar antes de confirmar</td></tr>
+            <tr><td><code>desde</code> posterior a <code>hasta</code></td><td>400</td><td>rango imposible</td></tr>
+            <tr><td><code>"horaInicio":"25:99"</code></td><td>400 «tiene que ser una hora válida»</td><td>error de formato, no de servidor</td></tr>
+            <tr><td>rango martes a jueves con <code>diasSemana:["MONDAY"]</code></td><td>400</td><td>se daría de alta una grilla que no generaría ni una función, y nadie sabría por qué</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La primera fila es la que importa: <strong>previsualizar tiene que fallar con el mismo mensaje con el
+        que fallaría el alta</strong>. Si R8 se validara por fecha en vez de una vez por grilla, el informe
+        mostraría siete funciones perfectas y la explosión llegaría recién al confirmar.
+      </p>
+
       <h3>Nivel 4: la aplicación, a mano</h3>
       <p>
         Acá se prueba como usuario, sin mirar el código. Cada caso tiene precondición,
@@ -2333,6 +2546,8 @@ curl -s http://localhost:8080/api/funciones/3 | head -c 400   # cambiá el 3 por
             <tr><td>R18 se ingresa una sola vez</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16</td></tr>
             <tr><td>CU-06 reservar</td><td><code>GestorReservasTest</code></td><td>CP-02, CP-10</td></tr>
             <tr><td>CU-17 promociones</td><td><code>GestorPromocionesTest</code></td><td>CP-04, CP-08, CP-14</td></tr>
+            <tr><td>CU-03b la grilla</td><td><code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
+            <tr><td>R3 sala sin superposición</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>CU-18 validar entrada</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-16</td></tr>
           </tbody>
         </table>
@@ -2763,6 +2978,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
           <tbody>
             <tr><td><code>GestorCarteleraTest</code></td><td>R1 al alta y al editar, R2, R7 y el filtro por género</td></tr>
             <tr><td><code>GestorFuncionesTest</code></td><td>R3 (se pisan, no se pisan, otra sala) y R12 sobre función, sala y película</td></tr>
+            <tr><td><code>GestorProgramacionesTest</code></td><td>que la grilla genere el rango completo, que respete los días elegidos, que previsualizar no escriba nada, que el alta saltee lo que choca contra R3 y que la baja no toque las funciones ya generadas</td></tr>
             <tr><td><code>GestorReservasTest</code></td><td>R4, R6, R9, R13, el redondeo del precio, el recargo premium y la persistencia en txt</td></tr>
             <tr><td><code>GestorPagosTest</code></td><td>R5, R11 y el arqueo de boletería</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
@@ -2966,6 +3182,31 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>Empleado</code> en vez de <code>AdministradorCine</code></td>
               <td>Sumar <code>Acomodador</code> como hermano</td>
               <td>Serían dos clases que solo se diferencian por el rol. El corte de la herencia siempre fue tener contraseña, no el cargo</td>
+            </tr>
+            <tr>
+              <td>La grilla materializa funciones</td>
+              <td>Derivarlas de la grilla al consultar</td>
+              <td>Una función tiene reservas, se cancela y se muda de sala: derivarla obligaría a modelar cada excepción como una excepción a la grilla, y a la tercera el modelo sería la grilla más una lista de parches</td>
+            </tr>
+            <tr>
+              <td><code>Funcion → Programacion</code> como asociación <code>0..1</code></td>
+              <td>Composición <code>1</code>, como <code>Sala ◆— Asiento</code></td>
+              <td>La función le sobrevive a su grilla —dar de baja no borra lo que ya tiene entradas vendidas— y la función suelta de CU-03 no pertenece a ninguna</td>
+            </tr>
+            <tr>
+              <td>Todo el rango se genera al dar de alta</td>
+              <td>Una ventana móvil que va completando</td>
+              <td>Sin cron ni scheduler, por lo mismo que la expiración de reservas; y el administrador tiene que ver lo que programó para poder corregirlo, no la mitad</td>
+            </tr>
+            <tr>
+              <td>Previsualizar y después aplicar, con una sola lógica</td>
+              <td>Rechazar la grilla entera si alguna fecha choca, o saltear en silencio</td>
+              <td>Una grilla de quince días casi siempre pisa algo: rechazarla la hace inusable y saltear sin avisar esconde lo que faltó. La cuenta se escribe una vez y solo cambia si persiste, o la previsualización dejaría de predecir el alta</td>
+            </tr>
+            <tr>
+              <td>Al aplicar se revalida desde el DAO</td>
+              <td>Confiar en el informe previsualizado</td>
+              <td>Entre mirar y confirmar, otro pudo programar algo en esa sala. Mismo criterio que validar en el gestor <em>y</em> restringir en la base</td>
             </tr>
             <tr>
               <td>Seguir sin login de cliente</td>

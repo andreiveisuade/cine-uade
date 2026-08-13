@@ -102,6 +102,32 @@ package "dominio.funciones" {
   }
 }
 
+package "dominio.programaciones" {
+  ' La grilla del cine: "Matrix en la Sala 1, todos los dias a las 20:30, del
+  ' 1 al 15 de septiembre". Una sola alta en vez de quince.
+  ' MATERIALIZA funciones, no las calcula al vuelo: una funcion tiene cosas
+  ' propias que la grilla no sabe —sus reservas, si se cancelo, si se movio de
+  ' sala— y derivarlas obligaria a modelar cada excepcion como una excepcion a
+  ' la grilla. A la tercera, el modelo seria la grilla mas una lista de parches.
+  ' diasSemana va como atributo con cardinalidad por lo mismo que generos en
+  ' Pelicula, pero el minimo es 0 y no 1: vacio significa todos los dias.
+  interface Programacion {
+    +getPeliculaId(): int
+    +getSalaId(): int
+    --patron temporal--
+    +getDesde(): LocalDate
+    +getHasta(): LocalDate
+    +getHoraInicio(): LocalTime
+    diasSemana: DayOfWeek [0..*]
+    +horarios(): List<LocalDateTime>
+    --lo que copia a cada funcion--
+    +getVersion(): Version
+    +getProyeccion(): Proyeccion
+    +getPrecio(): double
+    +estaActiva(): boolean
+  }
+}
+
 package "dominio.usuarios" {
   interface Usuario {
     +getNombre(): String
@@ -284,6 +310,18 @@ note on link
   {R3: dos funciones de la misma
   sala no se superponen}
 end note
+
+' Las dos puntas dicen algo. Del lado de Programacion es 0..1 y no 1 porque la
+' grilla no reemplaza a CU-03: la funcion suelta que carga el admin —el
+' preestreno, la funcion especial— no pertenece a ninguna. Del lado de Funcion
+' el * incluye cero: una grilla cuyas fechas chocan todas contra R3 se da de
+' alta y no materializa ninguna.
+' Es asociacion y NO composicion, que es lo que la distingue de Sala <>- Asiento:
+' la funcion no se va con la grilla. Dar de baja una programacion solo evita que
+' genere nuevas; las ya generadas sobreviven con sus entradas vendidas encima.
+Funcion "*" --> "0..1" Programacion : generada por >
+Programacion "*" --> "1" Pelicula
+Programacion "*" --> "1" Sala
 
 Reserva "*" --> "1" Funcion
 Reserva "*" --> "1" Cliente
