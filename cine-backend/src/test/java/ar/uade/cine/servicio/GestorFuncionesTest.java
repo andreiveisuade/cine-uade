@@ -2,6 +2,8 @@ package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
@@ -16,6 +18,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.funciones.FuncionImpl;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
@@ -123,6 +127,50 @@ class GestorFuncionesTest {
         funciones.eliminar(1);
         assertDoesNotThrow(() -> cartelera.eliminar(1));
         assertDoesNotThrow(() -> salas.eliminar(1));
+    }
+
+
+    // ---------- el paso del tiempo ----------
+
+    /** Matrix dura 136 minutos: una función a las 20:00 termina 22:16. */
+    private static final int DURACION = 136;
+
+    private Funcion funcionDeLas20() {
+        return new FuncionImpl(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+    }
+
+    @Test
+    void unaFuncionNoEmpezoAntesDeSuHorario() {
+        Funcion funcion = funcionDeLas20();
+
+        assertFalse(funcion.yaEmpezo(LocalDateTime.of(2026, 8, 20, 19, 59)));
+        assertTrue(funcion.yaEmpezo(LocalDateTime.of(2026, 8, 20, 20, 0)), "el minuto exacto ya cuenta");
+        assertTrue(funcion.yaEmpezo(LocalDateTime.of(2026, 8, 20, 20, 1)));
+    }
+
+    @Test
+    void estaEnCursoEntreElInicioYElFin() {
+        Funcion funcion = funcionDeLas20();
+
+        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 19, 59), DURACION));
+        assertTrue(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 21, 0), DURACION));
+        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 23, 0), DURACION),
+                "a las 23:00 ya termino: empezo 20:00 y dura 2h16");
+    }
+
+    @Test
+    void elFinSaleDeLaDuracionDeLaPelicula() {
+        assertEquals(LocalDateTime.of(2026, 8, 20, 22, 16), funcionDeLas20().getFin(DURACION));
+    }
+
+    /** El borde: en el minuto exacto del final todavía no terminó. */
+    @Test
+    void enElMinutoDelFinTodaviaNoTermino() {
+        Funcion funcion = funcionDeLas20();
+
+        assertFalse(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 16), DURACION));
+        assertTrue(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 17), DURACION));
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

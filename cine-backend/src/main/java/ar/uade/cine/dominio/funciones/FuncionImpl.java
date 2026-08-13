@@ -76,4 +76,26 @@ public class FuncionImpl implements Funcion {
         return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
     }
+
+    // ---------- el paso del tiempo ----------
+
+    @Override
+    public boolean yaEmpezo(LocalDateTime ahora) {
+        return !inicio.isAfter(ahora);
+    }
+
+    @Override
+    public LocalDateTime getFin(int duracionMinutos) {
+        return inicio.plusMinutes(duracionMinutos);
+    }
+
+    @Override
+    public boolean estaEnCurso(LocalDateTime ahora, int duracionMinutos) {
+        return yaEmpezo(ahora) && !yaTermino(ahora, duracionMinutos);
+    }
+
+    @Override
+    public boolean yaTermino(LocalDateTime ahora, int duracionMinutos) {
+        return getFin(duracionMinutos).isBefore(ahora);
+    }
 }
