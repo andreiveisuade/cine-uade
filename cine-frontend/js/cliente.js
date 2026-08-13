@@ -400,6 +400,14 @@ async function vistaConfirmar(contenedor, id) {
       seleccion.codigos = [];
       ir(`#/ticket/${reserva.id}`);
     } catch (e) {
+      // 409: alguien tomó la butaca en el medio. Dejar el resumen como está sería
+      // mostrarle butacas que ya no puede comprar, así que vuelve al mapa recargado.
+      if (e.status === 409) {
+        seleccion.codigos = [];
+        avisar(e.message, "error");
+        ir(`#/funcion/${funcion.id}`);
+        return;
+      }
       errorForm.textContent = e.message;
       errorForm.classList.remove("hidden");
     }

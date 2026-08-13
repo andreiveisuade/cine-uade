@@ -36,7 +36,11 @@ async function pedir(ruta, opciones = {}) {
   }
 
   if (!respuesta.ok) {
-    throw new Error(datos?.error || `Error ${respuesta.status} del servidor`);
+    const error = new Error(datos?.error || `Error ${respuesta.status} del servidor`);
+    // 409 es una carrera: otro se quedó con la butaca mientras el cliente confirmaba.
+    // Distinto del 400, que es "esa butaca ya estaba tomada, elegí otra".
+    error.status = respuesta.status;
+    throw error;
   }
   return datos;
 }
