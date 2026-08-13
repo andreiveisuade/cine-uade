@@ -10,7 +10,9 @@ import java.util.Scanner;
 import ar.uade.cine.interfaces.AdministradorCine;
 import ar.uade.cine.interfaces.Asiento;
 import ar.uade.cine.interfaces.Funcion;
+import ar.uade.cine.interfaces.Pelicula;
 import ar.uade.cine.interfaces.Reserva;
+import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.Idioma;
@@ -88,6 +90,7 @@ public class MenuConsola {
     private void menuPeliculas() {
         System.out.println("\n-- Películas --");
         System.out.println("1. Listar  2. Agregar  3. Buscar por id  4. Eliminar  5. Filtrar por género");
+        System.out.println("6. Completar datos de catálogo  7. Ver solo cartelera");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(cartelera.listar());
@@ -95,7 +98,8 @@ public class MenuConsola {
                 System.out.print("Título: ");
                 String titulo = leer();
                 int duracion = leerEntero("Duración en minutos: ");
-                cartelera.agregar(titulo, duracion, pedirGeneros());
+                List<Genero> generos = pedirGeneros();
+                cartelera.agregar(titulo, duracion, generos, elegirClasificacion());
                 System.out.println("Película agregada");
             }
             case "3" -> {
@@ -109,8 +113,42 @@ public class MenuConsola {
                 System.out.println("Película eliminada");
             }
             case "5" -> imprimir(cartelera.listarPorGenero(elegirGenero()));
+            case "6" -> completarCatalogo();
+            case "7" -> imprimir(cartelera.listarEnCartelera());
             default -> System.out.println("Opción inválida");
         }
+    }
+
+    private Clasificacion elegirClasificacion() {
+        Clasificacion[] opciones = Clasificacion.values();
+        for (int i = 0; i < opciones.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + opciones[i].getEtiqueta());
+        }
+        int numero = leerEntero("Clasificación: ");
+        if (numero < 1 || numero > opciones.length) {
+            throw new IllegalArgumentException("Clasificación inexistente: " + numero);
+        }
+        return opciones[numero - 1];
+    }
+
+    /** Los datos de catálogo son opcionales: se cargan aparte del alta. */
+    private void completarCatalogo() {
+        int id = leerEntero("Id de película: ");
+        Pelicula pelicula = cartelera.buscar(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
+
+        System.out.print("Director: ");
+        pelicula.setDirector(leer());
+        System.out.print("Sinopsis: ");
+        pelicula.setSinopsis(leer());
+        pelicula.setAnio(leerEntero("Año: "));
+        System.out.print("Idioma original: ");
+        pelicula.setIdiomaOriginal(leer());
+        System.out.print("URL del poster: ");
+        pelicula.setPosterUrl(leer());
+
+        cartelera.actualizar(pelicula);
+        System.out.println("Datos de catálogo guardados");
     }
 
     /** Muestra el enum numerado y acepta varios separados por coma: "1,3". */

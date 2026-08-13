@@ -459,7 +459,7 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="requerimientos">
       <h2>Requerimientos</h2>
       <ul>
-        <li>Cargar películas (título, duración, uno o más géneros) y salas con su distribución de butacas.</li>
+        <li>Cargar películas (título, duración, géneros, clasificación por edad y datos de catálogo) y salas con su distribución de butacas.</li>
         <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
         <li>Registrar clientes.</li>
         <li>Reservar butacas concretas de una función y luego pagarlas o cancelarlas.</li>
@@ -483,6 +483,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R8</td><td>No se puede programar una función 3D en una sala que no lo soporta</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R10</td><td>Toda película tiene clasificación por edad</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -531,6 +532,30 @@ body.lightbox-locked { overflow: hidden; }
         {{SVG_DOMINIO}}
         <figcaption>Entidades, enums y sus relaciones</figcaption>
       </figure>
+
+      <h3>Qué guarda una película</h3>
+      <p>
+        Además de título, duración y géneros, lleva <code>Clasificacion</code> (ATP, +13, +16, +18) y los datos
+        de catálogo: director, sinopsis, año, idioma original, poster y si sigue en cartelera.
+      </p>
+      <p>
+        <code>Clasificacion</code> guarda la <strong>edad mínima</strong>, no solo la etiqueta. Así el día que se
+        valide la edad al vender, la regla es una comparación numérica y no un <code>switch</code> traduciendo
+        "+13" a 13. La etiqueta para mostrar la calcula el propio enum.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Los datos de catálogo se cargan por setter, no por constructor.</strong> Con nueve parámetros,
+          un constructor es imposible de leer y facilísimo de invocar con dos strings cambiados de orden — el
+          compilador no avisa nada. Van en el constructor los datos sin los cuales la película no existe;
+          el resto se completa después.
+        </p>
+      </div>
+      <p>
+        <code>estaEnCartelera()</code> separa el catálogo de la cartelera: una película cargada no
+        necesariamente está en exhibición. <code>listarEnCartelera()</code> es lo que ve el cliente,
+        <code>listar()</code> lo que ve el administrador.
+      </p>
 
       <h3>Por qué los enums no llevan interfaz</h3>
       <p>
@@ -880,7 +905,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
         <table>
           <thead><tr><th>Tabla</th><th>Contenido</th></tr></thead>
           <tbody>
-            <tr><td><code>pelicula</code></td><td>título y duración</td></tr>
+            <tr><td><code>pelicula</code></td><td>título, duración, clasificación y datos de catálogo</td></tr>
             <tr><td><code>pelicula_genero</code></td><td>relación N:M con los géneros</td></tr>
             <tr><td><code>sala</code></td><td>nombre y capacidad</td></tr>
             <tr><td><code>usuario</code></td><td>clientes y administradores, con columna <code>rol</code></td></tr>
@@ -1216,10 +1241,9 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
       </p>
 
       <p>
-        <strong>Clasificación por edad.</strong> Falta <code>Clasificacion</code> (ATP, +13, +16, +18) en la
-        película. Al reservar habría que preguntar "¿Usted es mayor de X años?" antes de vender, y para
-        validarlo de verdad —no solo preguntarlo— <code>Cliente</code> necesita fecha de nacimiento, que hoy
-        no tiene. Está en el diagrama de dominio, marcado como pendiente.
+        <strong>Validar la edad al vender.</strong> La clasificación ya está guardada en la película. Falta
+        usarla: al reservar habría que preguntar "¿Usted es mayor de X años?", y para validarlo de verdad
+        —no solo preguntarlo— <code>Cliente</code> necesita fecha de nacimiento, que hoy no tiene.
       </p>
       <p>
         <strong>Pago.</strong> Hoy <code>PAGADA</code> es solo un estado del enum: el sistema no sabe cuánto

@@ -12,6 +12,9 @@ public interface PeliculaDAO {
 
     void guardar(Pelicula pelicula);
 
+    /** Para editar la película: datos de catálogo, o sacarla de cartelera. */
+    void actualizar(Pelicula pelicula);
+
     Optional<Pelicula> buscarPorId(int id);
 
     List<Pelicula> listar();

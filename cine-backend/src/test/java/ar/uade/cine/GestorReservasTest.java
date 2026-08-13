@@ -22,6 +22,7 @@ import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
 import ar.uade.cine.modelo.EstadoReserva;
+import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.Idioma;
 import ar.uade.cine.modelo.Proyeccion;
@@ -64,7 +65,7 @@ class GestorReservasTest {
         ReservaDAO reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
         directorioTickets = tempDir.resolve("tickets");
 
-        new GestorCartelera(peliculaDAO).agregar("Matrix", 136, List.of(Genero.ACCION));
+        new GestorCartelera(peliculaDAO).agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas = new GestorSalas(salaDAO, asientoDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);

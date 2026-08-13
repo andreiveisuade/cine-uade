@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import ar.uade.cine.interfaces.Pelicula;
 import ar.uade.cine.interfaces.PeliculaDAO;
+import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.PeliculaImpl;
 
@@ -23,17 +24,25 @@ import ar.uade.cine.modelo.PeliculaImpl;
 public class PeliculaDAOMySQL implements PeliculaDAO {
 
     private static final String SELECT_CON_GENEROS =
-            "SELECT p.id, p.titulo, p.duracion_minutos, pg.genero "
+            "SELECT p.id, p.titulo, p.duracion_minutos, p.clasificacion, p.director, p.sinopsis, "
+            + "p.anio, p.idioma_original, p.poster_url, p.en_cartelera, pg.genero "
             + "FROM pelicula p LEFT JOIN pelicula_genero pg ON pg.pelicula_id = p.id";
 
     @Override
     public void guardar(Pelicula pelicula) {
-        String sql = "INSERT INTO pelicula (titulo, duracion_minutos) VALUES (?, ?)";
+        String sql = "INSERT INTO pelicula (titulo, duracion_minutos, clasificacion, director, sinopsis, anio, idioma_original, poster_url, en_cartelera) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, pelicula.getTitulo());
             ps.setInt(2, pelicula.getDuracionMinutos());
+            ps.setString(3, pelicula.getClasificacion().name());
+            ps.setString(4, pelicula.getDirector());
+            ps.setString(5, pelicula.getSinopsis());
+            ps.setInt(6, pelicula.getAnio());
+            ps.setString(7, pelicula.getIdiomaOriginal());
+            ps.setString(8, pelicula.getPosterUrl());
+            ps.setBoolean(9, pelicula.estaEnCartelera());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -44,6 +53,29 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
             guardarGeneros(con, pelicula);
         } catch (SQLException e) {
             throw new PersistenciaException("No se pudo guardar la película", e);
+        }
+    }
+
+    @Override
+    public void actualizar(Pelicula pelicula) {
+        String sql = "UPDATE pelicula SET titulo = ?, duracion_minutos = ?, clasificacion = ?, director = ?, "
+                + "sinopsis = ?, anio = ?, idioma_original = ?, poster_url = ?, en_cartelera = ? WHERE id = ?";
+        try (Connection con = ConexionMySQL.abrir();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, pelicula.getTitulo());
+            ps.setInt(2, pelicula.getDuracionMinutos());
+            ps.setString(3, pelicula.getClasificacion().name());
+            ps.setString(4, pelicula.getDirector());
+            ps.setString(5, pelicula.getSinopsis());
+            ps.setInt(6, pelicula.getAnio());
+            ps.setString(7, pelicula.getIdiomaOriginal());
+            ps.setString(8, pelicula.getPosterUrl());
+            ps.setBoolean(9, pelicula.estaEnCartelera());
+            ps.setInt(10, pelicula.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new PersistenciaException("No se pudo actualizar la película " + pelicula.getId(), e);
         }
     }
 
@@ -109,7 +141,14 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
             int id = rs.getInt("id");
             Pelicula pelicula = porId.get(id);
             if (pelicula == null) {
-                pelicula = new PeliculaImpl(id, rs.getString("titulo"), rs.getInt("duracion_minutos"));
+                pelicula = new PeliculaImpl(id, rs.getString("titulo"), rs.getInt("duracion_minutos"),
+                        Clasificacion.valueOf(rs.getString("clasificacion")));
+                pelicula.setDirector(rs.getString("director"));
+                pelicula.setSinopsis(rs.getString("sinopsis"));
+                pelicula.setAnio(rs.getInt("anio"));
+                pelicula.setIdiomaOriginal(rs.getString("idioma_original"));
+                pelicula.setPosterUrl(rs.getString("poster_url"));
+                pelicula.setEnCartelera(rs.getBoolean("en_cartelera"));
                 porId.put(id, pelicula);
             }
             String genero = rs.getString("genero");

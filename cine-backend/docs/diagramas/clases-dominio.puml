@@ -8,6 +8,14 @@ interface Pelicula {
   +getTitulo(): String
   +getDuracionMinutos(): int
   +getGeneros(): List<Genero>
+  +getClasificacion(): Clasificacion
+  --datos de catalogo--
+  +getDirector(): String
+  +getSinopsis(): String
+  +getAnio(): int
+  +getIdiomaOriginal(): String
+  +getPosterUrl(): String
+  +estaEnCartelera(): boolean
 }
 
 interface Sala {
@@ -70,6 +78,13 @@ interface Entrada {
   +getAsientoId(): int
   +getCodigoAsiento(): String
   +getPrecio(): double
+}
+
+enum Clasificacion {
+  ATP
+  MAS_13
+  MAS_16
+  MAS_18
 }
 
 enum Genero {
@@ -174,18 +189,11 @@ package "Pendiente de implementar" <<Cloud>> {
     CREDITO
     QR
   }
-
-  enum Clasificacion {
-    ATP
-    MAS_13
-    MAS_16
-    MAS_18
-  }
 }
 
 Pago "1" --> "1" Reserva
 Pago "1" -- "1" MedioPago
-Clasificacion "1" -- "*" Pelicula
+Pelicula "*" -- "1" Clasificacion
 
 note bottom of Pago
   Modelado, sin implementar todavia.
@@ -194,10 +202,10 @@ note bottom of Pago
 end note
 
 note bottom of Clasificacion
-  Modelada, sin implementar. Al reservar
-  habria que preguntar "Es mayor de X?",
-  lo que ademas pide fecha de nacimiento
-  en Cliente.
+  Guardada en la pelicula. Falta usarla:
+  al vender habria que preguntar la edad,
+  y validarla de verdad pide fecha de
+  nacimiento en Cliente.
 end note
 
 @enduml

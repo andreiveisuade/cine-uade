@@ -1,7 +1,15 @@
 CREATE TABLE IF NOT EXISTS pelicula (
     id INT PRIMARY KEY AUTO_INCREMENT,
     titulo VARCHAR(100) NOT NULL,
-    duracion_minutos INT NOT NULL
+    duracion_minutos INT NOT NULL,
+    clasificacion VARCHAR(10) NOT NULL,
+    -- datos de catalogo: para mostrar la pelicula, sin reglas asociadas
+    director VARCHAR(100) NOT NULL DEFAULT '',
+    sinopsis TEXT,
+    anio INT NOT NULL DEFAULT 0,
+    idioma_original VARCHAR(40) NOT NULL DEFAULT '',
+    poster_url VARCHAR(255) NOT NULL DEFAULT '',
+    en_cartelera BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Una película tiene varios géneros: tabla aparte con la relación.

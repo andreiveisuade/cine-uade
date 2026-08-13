@@ -24,6 +24,14 @@ public class PeliculaDAOMemoria implements PeliculaDAO {
     }
 
     @Override
+    public void actualizar(Pelicula pelicula) {
+        if (!peliculas.containsKey(pelicula.getId())) {
+            throw new PersistenciaException("No existe la película " + pelicula.getId());
+        }
+        peliculas.put(pelicula.getId(), pelicula);
+    }
+
+    @Override
     public Optional<Pelicula> buscarPorId(int id) {
         return Optional.ofNullable(peliculas.get(id));
     }

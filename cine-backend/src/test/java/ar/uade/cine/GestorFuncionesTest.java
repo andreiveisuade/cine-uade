@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import ar.uade.cine.interfaces.FuncionDAO;
 import ar.uade.cine.interfaces.PeliculaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
+import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.Idioma;
 import ar.uade.cine.modelo.Proyeccion;
@@ -37,7 +38,7 @@ class GestorFuncionesTest {
     /** Película de 120 minutos en la sala 1. */
     @BeforeEach
     void prepararCartelera() {
-        new GestorCartelera(peliculaDAO).agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION));
+        new GestorCartelera(peliculaDAO).agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         new GestorSalas(salaDAO, new AsientoDAOMemoria()).agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0), Idioma.SUBTITULADA, Proyeccion.DOS_D, 4500);
