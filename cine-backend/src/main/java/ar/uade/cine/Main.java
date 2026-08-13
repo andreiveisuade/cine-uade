@@ -1,6 +1,6 @@
 package ar.uade.cine;
 
-import ar.uade.cine.persistencia.AdministradorDAO;
+import ar.uade.cine.persistencia.EmpleadoDAO;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
@@ -14,7 +14,7 @@ import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.mysql.AdministradorDAOMySQL;
+import ar.uade.cine.persistencia.mysql.EmpleadoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
@@ -24,7 +24,7 @@ import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ProductoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
-import ar.uade.cine.servicio.GestorAdministradores;
+import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
@@ -48,7 +48,7 @@ public class Main {
         FuncionDAO funcionDAO = new FuncionDAOMySQL();
         ClienteDAO clienteDAO = new ClienteDAOMySQL();
         AsientoDAO asientoDAO = new AsientoDAOMySQL();
-        AdministradorDAO administradorDAO = new AdministradorDAOMySQL();
+        EmpleadoDAO empleadoDAO = new EmpleadoDAOMySQL();
         PagoDAO pagoDAO = new PagoDAOMySQL();
         ReservaDAO reservaDAO = new ReservaDAOMySQL();
         ProductoDAO productoDAO = new ProductoDAOMySQL();
@@ -61,7 +61,7 @@ public class Main {
         GestorSalas gestorSalas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         GestorClientes gestorClientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
-        GestorAdministradores gestorAdministradores = new GestorAdministradores(administradorDAO);
+        GestorEmpleados gestorAdministradores = new GestorEmpleados(empleadoDAO);
         GestorPagos gestorPagos = new GestorPagos(pagoDAO, reservaDAO);
         GestorReservas gestorReservas = new GestorReservas(
                 reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO, generadorTicket);

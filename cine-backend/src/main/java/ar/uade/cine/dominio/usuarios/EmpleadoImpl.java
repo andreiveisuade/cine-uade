@@ -1,20 +1,22 @@
 package ar.uade.cine.dominio.usuarios;
 
-public class AdministradorCineImpl implements AdministradorCine {
+public class EmpleadoImpl implements Empleado {
 
     private int id;
     private String nombre;
     private String email;
     private String passwordHash;
+    private Rol rol;
 
-    public AdministradorCineImpl(String nombre, String email, String passwordHash) {
+    public EmpleadoImpl(String nombre, String email, String passwordHash, Rol rol) {
         this.nombre = nombre;
         this.email = email;
         this.passwordHash = passwordHash;
+        this.rol = rol;
     }
 
-    public AdministradorCineImpl(int id, String nombre, String email, String passwordHash) {
-        this(nombre, email, passwordHash);
+    public EmpleadoImpl(int id, String nombre, String email, String passwordHash, Rol rol) {
+        this(nombre, email, passwordHash, rol);
         this.id = id;
     }
 
@@ -43,14 +45,18 @@ public class AdministradorCineImpl implements AdministradorCine {
         return passwordHash;
     }
 
+    /**
+     * Dejó de estar fijo en ADMINISTRADOR: ahora un empleado puede ser también
+     * ACOMODADOR, y el rol es lo que los distingue dentro de la misma clase.
+     */
     @Override
     public Rol getRol() {
-        return Rol.ADMINISTRADOR;
+        return rol;
     }
 
     /** Sin el hash: un toString no debería filtrar credenciales, ni siquiera hasheadas. */
     @Override
     public String toString() {
-        return "[" + id + "] " + nombre + " <" + email + "> (administrador)";
+        return "[" + id + "] " + nombre + " <" + email + "> (" + rol.name().toLowerCase() + ")";
     }
 }

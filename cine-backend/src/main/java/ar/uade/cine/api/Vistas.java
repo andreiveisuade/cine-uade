@@ -13,7 +13,7 @@ import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.Sala;
-import ar.uade.cine.dominio.usuarios.AdministradorCine;
+import ar.uade.cine.dominio.usuarios.Empleado;
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.Pago;
@@ -97,10 +97,17 @@ public class Vistas {
     }
 
     /** El administrador que devuelve el login: sin el hash de la contraseña. */
-    public record AdministradorVista(int id, String nombre, String email, String rol) {
+    public record EmpleadoVista(int id, String nombre, String email, String rol) {
     }
 
+    /**
+     * {@code codigo} es el del QR y {@code ingresadaEn} cuándo se usó, en null si todavía
+     * no entraron: son los dos datos que necesita el que valida en la puerta, y los que
+     * va a leer la app del escáner.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ReservaVista(int id, int funcionId, int clienteId, String estado, String creadaEn,
+                               String codigo, String ingresadaEn,
                                List<EntradaVista> entradas, int cantidadEntradas, double total,
                                FuncionVista funcion, PeliculaVista pelicula, SalaVista sala,
                                ClienteVista cliente, PagoVista pago) {
@@ -210,7 +217,9 @@ public class Vistas {
         Sala sala = salas.buscar(f.getSalaId())
                 .orElseThrow(() -> new NoEncontrado("No existe la sala " + f.getSalaId()));
         return new ReservaVista(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
-                fecha(r.getCreadaEn()), r.getEntradas().stream().map(this::entrada).toList(),
+                fecha(r.getCreadaEn()), r.getCodigo(),
+                r.getIngresadaEn() == null ? null : fecha(r.getIngresadaEn()),
+                r.getEntradas().stream().map(this::entrada).toList(),
                 r.getCantidadEntradas(), r.getTotal(),
                 funcion(f),
                 cartelera.buscar(f.getPeliculaId()).map(this::pelicula).orElse(null),
@@ -227,8 +236,8 @@ public class Vistas {
         return new ClienteVista(c.getId(), c.getNombre(), c.getEmail());
     }
 
-    public AdministradorVista administrador(AdministradorCine a) {
-        return new AdministradorVista(a.getId(), a.getNombre(), a.getEmail(), a.getRol().name());
+    public EmpleadoVista administrador(Empleado a) {
+        return new EmpleadoVista(a.getId(), a.getNombre(), a.getEmail(), a.getRol().name());
     }
 
     public PagoVista pago(Pago p) {

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
-import ar.uade.cine.persistencia.AdministradorDAO;
+import ar.uade.cine.persistencia.EmpleadoDAO;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.persistencia.ClienteDAO;
@@ -18,7 +18,7 @@ import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.mysql.AdministradorDAOMySQL;
+import ar.uade.cine.persistencia.mysql.EmpleadoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
@@ -27,7 +27,7 @@ import ar.uade.cine.persistencia.mysql.PagoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
-import ar.uade.cine.servicio.GestorAdministradores;
+import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -66,7 +66,7 @@ public class ServidorApi {
         FuncionDAO funcionDAO = new FuncionDAOMySQL();
         ClienteDAO clienteDAO = new ClienteDAOMySQL();
         AsientoDAO asientoDAO = new AsientoDAOMySQL();
-        AdministradorDAO administradorDAO = new AdministradorDAOMySQL();
+        EmpleadoDAO empleadoDAO = new EmpleadoDAOMySQL();
         PagoDAO pagoDAO = new PagoDAOMySQL();
         ReservaDAO reservaDAO = new ReservaDAOMySQL();
         // GestorClientes lo necesita para R12: no se borra un cliente con historial
@@ -77,7 +77,7 @@ public class ServidorApi {
         GestorSalas salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         GestorFunciones funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         GestorClientes clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
-        GestorAdministradores administradores = new GestorAdministradores(administradorDAO);
+        GestorEmpleados empleados = new GestorEmpleados(empleadoDAO);
         GestorPagos pagos = new GestorPagos(pagoDAO, reservaDAO);
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
                 clienteDAO, peliculaDAO, generadorTicket);
@@ -99,7 +99,7 @@ public class ServidorApi {
         RutasClientes.registrar(app, clientes, vistas);
         RutasReservas.registrar(app, reservas, clientes, vistas);
         RutasPagos.registrar(app, pagos, reservas, vistas);
-        RutasSesion.registrar(app, administradores, vistas);
+        RutasSesion.registrar(app, empleados, vistas);
 
         registrarErrores(app);
         app.start(puerto());

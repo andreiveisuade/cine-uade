@@ -23,13 +23,15 @@ import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.EstadoAsiento;
 import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.dominio.salas.TipoSala;
-import ar.uade.cine.dominio.usuarios.AdministradorCine;
+import ar.uade.cine.dominio.usuarios.Empleado;
+import ar.uade.cine.dominio.usuarios.Rol;
+import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
-import ar.uade.cine.servicio.GestorAdministradores;
+import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
@@ -51,20 +53,20 @@ public class MenuConsola {
     private final GestorFunciones funciones;
     private final GestorClientes clientes;
     private final GestorReservas reservas;
-    private final GestorAdministradores administradores;
+    private final GestorEmpleados empleados;
     private final GestorPagos pagos;
     private final GestorCandy candy;
     private final Scanner scanner = new Scanner(System.in);
 
     public MenuConsola(GestorCartelera cartelera, GestorSalas salas, GestorFunciones funciones,
                        GestorClientes clientes, GestorReservas reservas,
-                       GestorAdministradores administradores, GestorPagos pagos, GestorCandy candy) {
+                       GestorEmpleados empleados, GestorPagos pagos, GestorCandy candy) {
         this.cartelera = cartelera;
         this.salas = salas;
         this.funciones = funciones;
         this.clientes = clientes;
         this.reservas = reservas;
-        this.administradores = administradores;
+        this.empleados = empleados;
         this.pagos = pagos;
         this.candy = candy;
     }
@@ -80,7 +82,7 @@ public class MenuConsola {
             System.out.println("5. Reservas");
             System.out.println("6. Candy");
             System.out.println("7. Arqueo del día");
-            System.out.println("8. Administradores");
+            System.out.println("8. Empleados");
             System.out.println("0. Salir");
             System.out.print("Opción: ");
 
@@ -93,7 +95,7 @@ public class MenuConsola {
                     case "5" -> menuReservas();
                     case "6" -> menuCandy();
                     case "7" -> arqueoDelDia();
-                    case "8" -> menuAdministradores();
+                    case "8" -> menuEmpleados();
                     case "0" -> salir = true;
                     default -> System.out.println("Opción inválida");
                 }
@@ -424,31 +426,57 @@ public class MenuConsola {
         System.out.printf("Total del %s: $ %10.2f%n", dia, boleteria + barra);
     }
 
-    // ---------- administradores ----------
+    // ---------- empleados ----------
 
-    private void menuAdministradores() {
-        System.out.println("\n-- Administradores --");
-        System.out.println("1. Listar  2. Registrar  3. Iniciar sesión");
+    private void menuEmpleados() {
+        System.out.println("\n-- Empleados --");
+        System.out.println("1. Listar  2. Registrar  3. Iniciar sesión  4. Validar entrada en la puerta");
         System.out.print("Opción: ");
         switch (leer()) {
-            case "1" -> imprimir(administradores.listar());
+            case "1" -> imprimir(empleados.listar());
             case "2" -> {
                 System.out.print("Nombre: ");
                 String nombre = leer();
                 System.out.print("Email: ");
                 String email = leer();
                 System.out.print("Contraseña (mínimo 6): ");
-                administradores.registrar(nombre, email, leer());
-                System.out.println("Administrador registrado");
+                String password = leer();
+                empleados.registrar(nombre, email, password,
+                        elegir("Rol", new Rol[] {Rol.ADMINISTRADOR, Rol.ACOMODADOR}));
+                System.out.println("Empleado registrado");
             }
             case "3" -> {
                 System.out.print("Email: ");
                 String email = leer();
                 System.out.print("Contraseña: ");
-                AdministradorCine admin = administradores.iniciarSesion(email, leer());
-                System.out.println("Bienvenido, " + admin.getNombre());
+                Empleado empleado = empleados.iniciarSesion(email, leer());
+                System.out.println("Bienvenido, " + empleado.getNombre()
+                        + " (" + empleado.getRol().name().toLowerCase() + ")");
             }
+            case "4" -> validarEntrada();
             default -> System.out.println("Opción inválida");
+        }
+    }
+
+    /**
+     * CU-18: lo que hace el acomodador en la puerta. El código es el del QR del ticket;
+     * si el escáner no lee, se tipea, y por eso el alfabeto del código no tiene O ni 0.
+     */
+    private void validarEntrada() {
+        System.out.print("Código de la reserva: ");
+        Reserva reserva = reservas.registrarIngreso(leer());
+
+        System.out.println("ENTRADA VÁLIDA - " + reserva.getCantidadEntradas() + " butaca(s)");
+        funciones.buscar(reserva.getFuncionId()).ifPresent(f -> {
+            cartelera.buscar(f.getPeliculaId())
+                    .ifPresent(p -> System.out.println("  " + p.getTitulo()));
+            salas.buscar(f.getSalaId())
+                    .ifPresent(s -> System.out.println("  " + s.getNombre()
+                            + " - " + f.getInicio().format(FORMATO_FECHA)));
+        });
+        for (Entrada entrada : reserva.getEntradas()) {
+            String acreditar = entrada.tarifa().requiereAcreditacion() ? "  <-- PEDIR CARNET" : "";
+            System.out.println("  " + entrada.codigoAsiento() + "  " + entrada.tarifa() + acreditar);
         }
     }
 

@@ -28,6 +28,10 @@ class RutasReservas {
                          List<String> codigos, Map<String, TipoTarifa> butacas) {
     }
 
+    /** El código del QR, que es lo único que tiene el acomodador en la puerta. */
+    record PedidoAcceso(String codigo) {
+    }
+
     static void registrar(Javalin app, GestorReservas reservas, GestorClientes clientes,
                           Vistas vistas) {
 
@@ -61,6 +65,19 @@ class RutasReservas {
                     cliente.getId(),
                     butacasPedidas(pedido));
             ctx.status(HttpStatus.CREATED).json(vistas.reserva(reserva));
+        });
+
+        /*
+         * CU-18: lo que llama el acomodador al escanear el QR. Va por código y no por id
+         * porque el código es lo que trae el QR y, como el cliente no inicia sesión, es
+         * la única credencial: con el id se entraría probando números.
+         *
+         * Es POST y no GET porque no es una consulta: marca la entrada como usada, y
+         * repetirlo falla a propósito (R18).
+         */
+        app.post("/api/acceso", ctx -> {
+            PedidoAcceso pedido = ctx.bodyAsClass(PedidoAcceso.class);
+            ctx.json(vistas.reserva(reservas.registrarIngreso(pedido.codigo())));
         });
 
         // R6: cancelar libera las butacas, y el cupo de la función deja de contarlas.
