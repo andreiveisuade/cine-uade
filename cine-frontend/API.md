@@ -186,6 +186,93 @@ el front pregunta si ya está paga. Mismos campos que el `pago` embebido en `GET
               "pelicula": {…}, "cliente": {…}, "entradas": 3 }] }
 ```
 
+## Programaciones (CU-03b)
+
+La grilla: *«Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15 de septiembre»*.
+Una sola alta en vez de quince. **Genera funciones de verdad**, no las calcula al vuelo:
+una función tiene reservas, se cancela y se muda de sala, y nada de eso lo sabe la grilla.
+
+### `POST /api/programaciones/previsualizar` y `POST /api/programaciones`
+
+Los dos reciben **exactamente el mismo cuerpo** y devuelven **exactamente el mismo
+informe**. El primero no escribe nada; el segundo guarda la grilla y las funciones que
+entran. Esa simetría es el contrato: lo que se ve antes de confirmar es lo que se va a
+guardar.
+
+```json
+{ "peliculaId": 1, "salaId": 1,
+  "desde": "2026-09-07", "hasta": "2026-09-13", "horaInicio": "20:30",
+  "diasSemana": [], "idioma": "SUBTITULADA", "proyeccion": "DOS_D", "precio": 5000 }
+```
+
+**`diasSemana` vacío no restringe**: corre todos los días del rango, no ninguno. Mismo
+criterio que en promociones.
+
+⚠️ **`idioma`, no `version`.** El enum del dominio se llama `Version`, pero toda la API le
+dice `idioma` —igual que `POST /api/funciones`— porque «versión» en una interfaz se lee
+como versión del software. Y el endpoint es `/previsualizar`, verbo: es la acción de
+mirar, no un recurso llamado «previsualización».
+
+Respuesta (`200` al previsualizar, `201` al crear):
+
+```json
+{ "programacion": { "id": 1, "peliculaId": 1, "salaId": 1, "desde": "2026-09-07",
+                    "hasta": "2026-09-13", "horaInicio": "20:30", "diasSemana": [],
+                    "idioma": "SUBTITULADA", "proyeccion": "DOS_D",
+                    "precio": 5000.0, "activa": true },
+  "funciones": [
+    { "inicio": "2026-09-07T20:30:00", "choca": false },
+    { "inicio": "2026-09-09T20:30:00", "choca": true,
+      "motivo": "la sala ya tiene la función 1 a las 09/09 21:00" }
+  ],
+  "generadas": 6, "salteadas": 1 }
+```
+
+Al **previsualizar**, `programacion.id` viene en `0`: esa grilla existe solo en memoria.
+
+`motivo` viaja únicamente cuando `choca` es `true`, y dice **contra qué** se pisa. Es lo
+que hace que el informe se pueda accionar: el administrador ve que el miércoles ya hay
+algo a las 21:00 y decide si mueve la grilla o la deja así.
+
+`generadas` y `salteadas` son cuentas que el front podría hacer solo, pero son justo lo
+que se muestra arriba de todo —*«12 funciones, 3 se saltearon»*— y contarlas del lado del
+servidor evita que cada pantalla las cuente a su manera.
+
+> **Al aplicar se valida de nuevo.** `POST /api/programaciones` no recibe el informe
+> previsualizado: lo recalcula. Entre que el administrador mira y confirma, otro pudo
+> haber programado algo en esa sala. Por eso el front no debe cachear el informe ni
+> asumir que confirmar da el mismo resultado — tiene que repintar con lo que devuelve.
+
+Lo que **no depende de la fecha** —que existan película y sala, R8 y el precio— falla con
+`400` ya en `/previsualizar`, no recién al confirmar: si la sala no proyecta en 3D, no hay
+ninguna fecha del rango en la que sí.
+
+| Entrada | Respuesta |
+|---|---|
+| `proyeccion: "TRES_D"` en una sala 2D | `400` «La sala Sala 1 no puede proyectar en 3D» |
+| `desde` posterior a `hasta` | `400` «El rango tiene que empezar antes de terminar» |
+| `horaInicio` mal formada | `400` «la hora de la función tiene que ser una hora válida» |
+| Rango que no cae en ningún `diasSemana` | `400` — se daría de alta una grilla que no generaría nada |
+
+### `GET /api/programaciones`
+Todas las grillas, activas e inactivas. **Sin** las funciones que generaron: traerlas sería
+una consulta por fila para una pantalla donde no se leen.
+
+### `GET /api/programaciones/{id}`
+La grilla con un campo `funciones` extra: `[{"id": 2, "inicio": "2026-09-07T20:30:00"}, …]`.
+
+### `POST /api/programaciones/{id}/baja` y `/alta`
+Desactiva o reactiva. **No hay `DELETE` a propósito**, y la baja **no toca las funciones ya
+generadas**: pueden tener entradas vendidas. Solo evita que la grilla genere nuevas.
+
+> **La asociación se navega en un solo sentido.** El backend guarda de qué grilla salió
+> cada función —`funcion.programacion_id`, en `null` cuando la cargó el administrador a
+> mano con `POST /api/funciones` (CU-03), que sigue existiendo— pero **`FuncionVista` no
+> expone ese campo**: `GET /api/funciones` no dice a qué grilla pertenece cada una. Para
+> ir de la grilla a sus funciones está `GET /api/programaciones/{id}`; para el camino
+> inverso, hoy no hay endpoint. Si el front alguna vez necesita marcar en el listado de
+> funciones cuáles vienen de una grilla, hay que sumar `programacionId` a esa vista.
+
 ## Promociones (CU-17)
 
 El ABM del administrador. Es lo que justifica que la promoción sea una entidad y no tres
