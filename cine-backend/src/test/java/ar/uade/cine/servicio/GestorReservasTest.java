@@ -62,6 +62,7 @@ class GestorReservasTest {
     Path tempDir;
 
     private GestorReservas reservas;
+    private Ocupacion ocupacion;
     private FuncionDAO funcionDAO;
     private GestorSalas salas;
     private GestorFunciones funciones;
@@ -89,8 +90,9 @@ class GestorReservasTest {
                 Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
 
+        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(directorioTickets), new CalculadoraPrecio());
+                new GeneradorTicketTxt(directorioTickets), new CalculadoraPrecio(), ocupacion);
         pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO, funcionDAO,
                 new GestorPromociones(new PromocionDAOMemoria()));
     }
@@ -99,9 +101,9 @@ class GestorReservasTest {
     void reservarOcupaSoloLasButacasElegidas() {
         reservas.reservar(1, 1, generales("A1", "A2"));
 
-        assertEquals(8, reservas.lugaresLibres(1));
-        assertTrue(reservas.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A1")));
-        assertTrue(reservas.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A3")));
+        assertEquals(8, ocupacion.lugaresLibres(1));
+        assertTrue(ocupacion.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A1")));
+        assertTrue(ocupacion.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A3")));
     }
 
     @Test
@@ -165,8 +167,8 @@ class GestorReservasTest {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"));
         reservas.cancelar(reserva.getId());
 
-        assertEquals(10, reservas.lugaresLibres(1));
-        assertTrue(reservas.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A1")));
+        assertEquals(10, ocupacion.lugaresLibres(1));
+        assertTrue(ocupacion.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A1")));
     }
 
     /** R13: si se cancelara, el pago seguiría contando en el arqueo del día. */
@@ -176,7 +178,7 @@ class GestorReservasTest {
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
-        assertEquals(9, reservas.lugaresLibres(1), "la butaca cobrada sigue ocupada");
+        assertEquals(9, ocupacion.lugaresLibres(1), "la butaca cobrada sigue ocupada");
     }
 
     @Test
@@ -191,8 +193,8 @@ class GestorReservasTest {
     void unaButacaFueraDeServicioNoSePuedeReservar() {
         salas.marcarFueraDeServicio(1, "A3");
 
-        assertEquals(9, reservas.lugaresLibres(1));
-        assertTrue(reservas.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A3")));
+        assertEquals(9, ocupacion.lugaresLibres(1));
+        assertTrue(ocupacion.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A3")));
         assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("A3")));
     }
 
@@ -201,7 +203,7 @@ class GestorReservasTest {
         salas.marcarFueraDeServicio(1, "A3");
         salas.reponer(1, "A3");
 
-        assertEquals(10, reservas.lugaresLibres(1));
+        assertEquals(10, ocupacion.lugaresLibres(1));
         assertEquals(1, reservas.reservar(1, 1, generales("A3")).getCantidadEntradas());
     }
 
@@ -305,11 +307,11 @@ class GestorReservasTest {
     @Test
     void unaReservaSinPagarVencidaLiberaSusButacas() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
-        assertEquals(8, reservas.lugaresLibres(1));
+        assertEquals(8, ocupacion.lugaresLibres(1));
 
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertEquals(10, reservas.lugaresLibres(1), "las butacas vuelven a la venta");
+        assertEquals(10, ocupacion.lugaresLibres(1), "las butacas vuelven a la venta");
         assertEquals(EstadoReserva.EXPIRADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
     }
 
@@ -320,7 +322,7 @@ class GestorReservasTest {
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
         assertEquals(EstadoReserva.RESERVADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
-        reservas.lugaresLibres(1);
+        ocupacion.lugaresLibres(1);
         assertEquals(EstadoReserva.EXPIRADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
     }
 
@@ -330,7 +332,7 @@ class GestorReservasTest {
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertEquals(9, reservas.lugaresLibres(1), "la butaca cobrada sigue ocupada");
+        assertEquals(9, ocupacion.lugaresLibres(1), "la butaca cobrada sigue ocupada");
     }
 
     /** R17: si venció, sus butacas ya se pueden estar vendiendo a otro. */

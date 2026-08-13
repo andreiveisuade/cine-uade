@@ -31,7 +31,7 @@ public class MenuConsola {
     public static MenuConsola delCine(Aplicacion aplicacion) {
         Consola consola = new Consola();
         MapaDeButacas mapa = new MapaDeButacas(consola, aplicacion.getSalas(),
-                aplicacion.getFunciones(), aplicacion.getReservas());
+                aplicacion.getFunciones(), aplicacion.getOcupacion());
 
         return new MenuConsola(consola, List.of(
                 new MenuPeliculas(consola, aplicacion.getCartelera()),

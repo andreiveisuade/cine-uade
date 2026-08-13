@@ -13,8 +13,8 @@ import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCartelera;
-import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
+import ar.uade.cine.servicio.Ocupacion;
 
 /**
  * Las películas y las funciones, en la forma que espera el front.
@@ -22,7 +22,7 @@ import ar.uade.cine.servicio.GestorSalas;
  * <p>Una función arrastra más de lo que guarda: la sala donde va, la película que
  * proyecta, el precio de cada butaca y cuáles están tomadas. Nada de eso vive en la
  * función, así que hay que ir a buscarlo. Qué butaca está ocupada se le pregunta a
- * GestorReservas y no se recalcula acá: es una regla de negocio, no una cuestión de
+ * {@link Ocupacion} y no se recalcula acá: es una regla de negocio, no una cuestión de
  * formato.
  */
 public class VistasCartelera {
@@ -40,15 +40,15 @@ public class VistasCartelera {
 
     private final GestorCartelera cartelera;
     private final GestorSalas salas;
-    private final GestorReservas reservas;
+    private final Ocupacion ocupacion;
     private final CalculadoraPrecio calculadora;
     private final VistasSalas vistasSalas;
 
-    public VistasCartelera(GestorCartelera cartelera, GestorSalas salas, GestorReservas reservas,
+    public VistasCartelera(GestorCartelera cartelera, GestorSalas salas, Ocupacion ocupacion,
                            CalculadoraPrecio calculadora, VistasSalas vistasSalas) {
         this.cartelera = cartelera;
         this.salas = salas;
-        this.reservas = reservas;
+        this.ocupacion = ocupacion;
         this.calculadora = calculadora;
         this.vistasSalas = vistasSalas;
     }
@@ -73,11 +73,11 @@ public class VistasCartelera {
     /** El mapa de butacas: cada asiento de la sala con su precio y si está tomado acá. */
     public FuncionVista funcionConButacas(Funcion f) {
         Sala sala = salaDe(f);
-        Set<Integer> ocupados = reservas.asientosOcupados(f.getId());
+        Set<Integer> ocupados = ocupacion.asientosOcupados(f.getId());
         List<AsientoVista> butacas = salas.asientosDe(sala.getId()).stream()
                 .map(a -> vistasSalas.asiento(a, f, sala, ocupados))
                 .toList();
-        return armar(f, peliculaDe(f), butacas, reservas.lugaresLibres(f.getId()));
+        return armar(f, peliculaDe(f), butacas, ocupacion.lugaresLibres(f.getId()));
     }
 
     private FuncionVista armar(Funcion f, PeliculaVista pelicula, List<AsientoVista> butacas,

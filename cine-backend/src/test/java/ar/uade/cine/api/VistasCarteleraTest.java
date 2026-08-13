@@ -72,7 +72,7 @@ class VistasCarteleraTest {
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
 
         vistas = new VistasCartelera(aplicacion.getCartelera(), aplicacion.getSalas(),
-                aplicacion.getReservas(), aplicacion.getCalculadoraPrecio(),
+                aplicacion.getOcupacion(), aplicacion.getCalculadoraPrecio(),
                 new VistasSalas(aplicacion.getSalas(), aplicacion.getCalculadoraPrecio()));
     }
 
@@ -146,7 +146,7 @@ class VistasCarteleraTest {
     }
 
     /**
-     * Qué butaca está tomada se le pregunta a GestorReservas: es una regla de negocio y
+     * Qué butaca está tomada se le pregunta a Ocupacion: es una regla de negocio y
      * no una cuestión de formato. Si la vista lo recalculara por su cuenta, el mapa y la
      * validación de la reserva podrían no coincidir.
      */

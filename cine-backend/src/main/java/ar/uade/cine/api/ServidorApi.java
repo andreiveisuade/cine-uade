@@ -61,7 +61,7 @@ public class ServidorApi {
         VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
                 aplicacion.getCalculadoraPrecio());
         VistasCartelera vistasCartelera = new VistasCartelera(aplicacion.getCartelera(),
-                aplicacion.getSalas(), aplicacion.getReservas(), aplicacion.getCalculadoraPrecio(),
+                aplicacion.getSalas(), aplicacion.getOcupacion(), aplicacion.getCalculadoraPrecio(),
                 vistasSalas);
         VistasUsuarios vistasUsuarios = new VistasUsuarios();
         VistasPromociones vistasPromociones = new VistasPromociones();

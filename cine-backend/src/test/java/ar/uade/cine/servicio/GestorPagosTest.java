@@ -77,7 +77,8 @@ class GestorPagosTest {
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio());
+                new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio(),
+                new Ocupacion(reservaDAO, funcionDAO, asientoDAO));
         promociones = new GestorPromociones(new PromocionDAOMemoria());
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
     }

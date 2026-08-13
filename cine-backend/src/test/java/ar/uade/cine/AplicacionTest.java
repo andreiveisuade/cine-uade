@@ -51,7 +51,7 @@ import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
  * <p>Esto es lo que faltaba cuando cada arranque armaba su propia aplicación. Un gestor
  * que quedaba afuera —o dos gestores conectados a DAOs distintos, que es peor porque no
  * falla, simplemente no se ven entre sí— no rompía ningún test: se descubría usando la
- * app. Acá el circuito completo pasa por los diez.
+ * app. Acá el circuito completo los atraviesa a todos.
  */
 class AplicacionTest {
 
@@ -86,6 +86,7 @@ class AplicacionTest {
         // El que faltaba en la puerta HTTP cuando el armado estaba duplicado.
         assertNotNull(aplicacion.getCandy());
         assertNotNull(aplicacion.getProductos());
+        assertNotNull(aplicacion.getOcupacion());
     }
 
     /**

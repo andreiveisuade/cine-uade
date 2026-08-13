@@ -40,9 +40,10 @@ import ar.uade.cine.servicio.GestorProgramaciones;
 import ar.uade.cine.servicio.GestorPromociones;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
+import ar.uade.cine.servicio.Ocupacion;
 
 /**
- * La aplicación armada: los diez gestores, ya conectados a dónde se guarda cada cosa.
+ * La aplicación armada: los gestores, ya conectados a dónde se guarda cada cosa.
  *
  * <p>Es el <strong>único</strong> lugar del sistema donde se nombra una implementación
  * concreta. Los gestores solo conocen las interfaces de <code>persistencia</code>, así que
@@ -66,6 +67,7 @@ public class Aplicacion {
     private final GestorPromociones promociones;
     private final GestorPagos pagos;
     private final GestorReservas reservas;
+    private final Ocupacion ocupacion;
     private final GestorProductos productos;
     private final GestorCandy candy;
     private final CalculadoraPrecio calculadoraPrecio;
@@ -113,8 +115,9 @@ public class Aplicacion {
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
+        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
-                peliculaDAO, generadorTicket, calculadoraPrecio);
+                peliculaDAO, generadorTicket, calculadoraPrecio, ocupacion);
         productos = new GestorProductos(productoDAO);
         candy = new GestorCandy(compraCandyDAO, clienteDAO, reservaDAO, generadorTicketCandy,
                 productos);
@@ -154,6 +157,11 @@ public class Aplicacion {
 
     public GestorReservas getReservas() {
         return reservas;
+    }
+
+    /** Qué butacas están tomadas en cada función: lo que necesita el mapa de la sala. */
+    public Ocupacion getOcupacion() {
+        return ocupacion;
     }
 
     /** La carta del candy: el ABM de productos y combos. */

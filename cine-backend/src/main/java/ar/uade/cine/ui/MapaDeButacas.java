@@ -6,8 +6,8 @@ import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.EstadoAsiento;
 import ar.uade.cine.servicio.GestorFunciones;
-import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
+import ar.uade.cine.servicio.Ocupacion;
 
 /**
  * Dibuja la sala en caracteres. Lo usan el menú de salas —para ver cómo quedó una sala
@@ -19,14 +19,14 @@ class MapaDeButacas {
     private final Consola consola;
     private final GestorSalas salas;
     private final GestorFunciones funciones;
-    private final GestorReservas reservas;
+    private final Ocupacion ocupacion;
 
     MapaDeButacas(Consola consola, GestorSalas salas, GestorFunciones funciones,
-                  GestorReservas reservas) {
+                  Ocupacion ocupacion) {
         this.consola = consola;
         this.salas = salas;
         this.funciones = funciones;
-        this.reservas = reservas;
+        this.ocupacion = ocupacion;
     }
 
     /** La sala vacía, fila por fila: todas las butacas cuentan como libres. */
@@ -41,7 +41,7 @@ class MapaDeButacas {
         Funcion funcion = funciones.buscar(funcionId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
         List<Asiento> todos = salas.asientosDe(funcion.getSalaId());
-        List<Asiento> libres = reservas.asientosLibres(funcionId);
+        List<Asiento> libres = ocupacion.asientosLibres(funcionId);
         dibujar(todos, libres);
         consola.mostrar("Libres: " + libres.size() + " de " + todos.size());
     }

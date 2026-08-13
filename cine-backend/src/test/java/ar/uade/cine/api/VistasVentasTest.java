@@ -76,7 +76,7 @@ class VistasVentasTest {
         VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
                 aplicacion.getCalculadoraPrecio());
         VistasCartelera vistasCartelera = new VistasCartelera(aplicacion.getCartelera(),
-                aplicacion.getSalas(), aplicacion.getReservas(),
+                aplicacion.getSalas(), aplicacion.getOcupacion(),
                 aplicacion.getCalculadoraPrecio(), vistasSalas);
         vistas = new VistasVentas(aplicacion.getFunciones(), aplicacion.getSalas(),
                 aplicacion.getCartelera(), aplicacion.getClientes(), aplicacion.getPagos(),

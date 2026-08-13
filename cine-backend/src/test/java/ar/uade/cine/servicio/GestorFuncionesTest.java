@@ -104,7 +104,8 @@ class GestorFuncionesTest {
     @Test
     void noSeBorraUnaFuncionConReservas() {
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
-                clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio());
+                clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")),
+                new CalculadoraPrecio(), new Ocupacion(reservaDAO, funcionDAO, asientoDAO));
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"));
 
