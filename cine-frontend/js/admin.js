@@ -106,7 +106,9 @@ async function vistaPeliculas(contenedor, editandoId = null) {
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Películas</h1>
     <p class="mb-5 text-sm text-slate-500">
-      ${peliculas.length} cargadas · ${peliculas.filter((p) => p.enCartelera).length} en cartelera
+      ${peliculas.length} cargadas · ${peliculas.filter((p) => p.enCartelera).length} publicadas.
+      Una película llega a la cartelera cuando tiene funciones por delante; despublicarla
+      la baja aunque las tenga.
     </p>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
@@ -131,10 +133,13 @@ async function vistaPeliculas(contenedor, editandoId = null) {
                   <div class="flex flex-wrap gap-1">${p.generos.map((g) => chip(etiqueta(g))).join("")}</div>
                 </td>
                 <td>
-                  <button type="button" data-cartelera="${p.id}" title="Clic para cambiar"
+                  <button type="button" data-cartelera="${p.id}"
+                    title="${p.enCartelera
+                      ? "Publicada: aparece en la cartelera si tiene funciones por delante"
+                      : "Despublicada: no aparece aunque tenga funciones"}"
                     class="rounded-full px-2 py-0.5 text-xs font-medium ${p.enCartelera
                       ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}">
-                    ${p.enCartelera ? "En cartelera" : "Fuera"}
+                    ${p.enCartelera ? "Publicada" : "Despublicada"}
                   </button>
                 </td>
                 <td class="p-2 text-right whitespace-nowrap">
@@ -214,7 +219,7 @@ async function vistaPeliculas(contenedor, editandoId = null) {
           </fieldset>
           <label class="flex items-center gap-2 text-sm">
             <input type="checkbox" name="enCartelera" ${!editando || editando.enCartelera ? "checked" : ""} />
-            <span class="text-slate-600">En cartelera</span>
+            <span class="text-slate-600">Publicada</span>
           </label>
           <div class="flex gap-2">
             <button type="submit"
@@ -274,7 +279,7 @@ async function vistaPeliculas(contenedor, editandoId = null) {
       const pelicula = peliculas.find((p) => p.id === Number(alternar.dataset.cartelera));
       try {
         await api.actualizarPelicula(pelicula.id, { enCartelera: !pelicula.enCartelera });
-        avisar(pelicula.enCartelera ? "Sacada de cartelera" : "Puesta en cartelera");
+        avisar(pelicula.enCartelera ? "Despublicada" : "Publicada");
         vistaPeliculas(contenedor, editandoId);
       } catch (e) {
         avisar(e.message, "error");
