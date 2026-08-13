@@ -37,6 +37,44 @@ public class GestorFunciones {
     /** Devuelve la función ya con su id, igual que GestorCartelera.agregar. */
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
                              Version version, Proyeccion proyeccion, double precio) {
+        return programar(peliculaId, salaId, inicio, version, proyeccion, precio, null);
+    }
+
+    /**
+     * La misma alta, dejando escrito de qué grilla salió. La usa
+     * {@link GestorProgramaciones} al materializar una programación; con
+     * {@code programacionId} en null es la función suelta que carga el administrador.
+     */
+    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+                             Proyeccion proyeccion, double precio, Integer programacionId) {
+        Pelicula pelicula = validarProgramable(peliculaId, salaId, version, proyeccion, precio);
+        if (inicio == null) {
+            throw new IllegalArgumentException("Falta la fecha y hora de la función");
+        }
+
+        // R3: una sala no puede tener dos funciones superpuestas.
+        LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
+        if (superpuestaEn(salaId, inicio, fin).isPresent()) {
+            throw new IllegalArgumentException("La sala ya tiene una función en ese horario");
+        }
+        Funcion funcion = new FuncionImpl(peliculaId, salaId, inicio, version, proyeccion, precio,
+                programacionId);
+        funcionDAO.guardar(funcion);
+        return funcion;
+    }
+
+    /**
+     * Todo lo que tiene que valer sin mirar el horario, y la película que se va a
+     * proyectar —que es de donde sale la duración, y por eso la devuelve en vez de
+     * limitarse a un boolean.
+     *
+     * <p>Es público porque la grilla necesita validar estas mismas condiciones
+     * <strong>una vez</strong>, antes de recorrer el rango: si la sala no proyecta en 3D,
+     * no hay ninguna fecha del mes en la que sí. Sin esto, previsualizar una grilla
+     * imposible mostraría quince funciones perfectas y recién explotaría al confirmar.
+     */
+    public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
+                                       Proyeccion proyeccion, double precio) {
         Pelicula pelicula = peliculaDAO.buscarPorId(peliculaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
         Sala sala = salaDAO.buscarPorId(salaId)
@@ -48,35 +86,31 @@ public class GestorFunciones {
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
-        if (inicio == null) {
-            throw new IllegalArgumentException("Falta la fecha y hora de la función");
-        }
         if (precio <= 0) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
-
-        // R3: una sala no puede tener dos funciones superpuestas.
-        LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
-        if (haySuperposicion(salaId, inicio, fin)) {
-            throw new IllegalArgumentException("La sala ya tiene una función en ese horario");
-        }
-        Funcion funcion = new FuncionImpl(peliculaId, salaId, inicio, version, proyeccion, precio);
-        funcionDAO.guardar(funcion);
-        return funcion;
+        return pelicula;
     }
 
-    /** Dos rangos se pisan si cada uno empieza antes de que termine el otro. */
-    private boolean haySuperposicion(int salaId, LocalDateTime inicio, LocalDateTime fin) {
+    /**
+     * R3: la función de esa sala que se pisa con ese rango, si hay alguna. Dos rangos se
+     * pisan si cada uno empieza antes de que termine el otro.
+     *
+     * <p>Devuelve cuál y no un boolean porque la grilla tiene que poder decir contra qué
+     * choca cada fecha: "el 8 de septiembre ya hay algo a las 20:30" es un informe que se
+     * puede leer, "el 8 no se pudo" no.
+     */
+    public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
         for (Funcion existente : funcionDAO.listarPorSala(salaId)) {
             int duracion = peliculaDAO.buscarPorId(existente.getPeliculaId())
                     .map(Pelicula::getDuracionMinutos)
                     .orElse(0);
             LocalDateTime finExistente = existente.getInicio().plusMinutes(duracion);
             if (inicio.isBefore(finExistente) && existente.getInicio().isBefore(fin)) {
-                return true;
+                return Optional.of(existente);
             }
         }
-        return false;
+        return Optional.empty();
     }
 
     public List<Funcion> listar() {

@@ -54,18 +54,63 @@ CREATE TABLE IF NOT EXISTS usuario (
     password_hash VARCHAR(64) NULL
 );
 
+-- La grilla con la que un cine arma su cartelera: "Matrix en la Sala 1, todos los dias a
+-- las 20:30, del 1 al 15 de septiembre". Una sola alta en vez de quince.
+--
+-- Guarda el patron temporal (desde/hasta + hora_inicio + los dias de programacion_dia) y
+-- todo lo que cada funcion necesita para nacer: version, proyeccion y precio. No guarda
+-- cuantas funciones genero: eso se cuenta desde funcion.programacion_id, que es la unica
+-- fuente de verdad. Es el mismo criterio que sala, que no guarda su capacidad.
+--
+-- activa reemplaza al borrado, igual que promocion.activa: dar de baja una grilla evita
+-- que genere funciones nuevas, pero las ya generadas quedan — pueden tener entradas
+-- vendidas, y en este sistema nada que haya producido ventas se borra.
+CREATE TABLE IF NOT EXISTS programacion (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pelicula_id INT NOT NULL,
+    sala_id INT NOT NULL,
+    desde DATE NOT NULL,
+    hasta DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
+    version VARCHAR(15) NOT NULL,
+    proyeccion VARCHAR(10) NOT NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
+    FOREIGN KEY (sala_id) REFERENCES sala(id)
+);
+
+-- Que dias de la semana corre la grilla, con el nombre de la constante de DayOfWeek. Va
+-- en tabla aparte por lo mismo que promocion_dia y pelicula_genero: una columna con
+-- "MONDAY,WEDNESDAY" adentro no se puede consultar ni indexar.
+-- Sin filas = todos los dias del rango.
+CREATE TABLE IF NOT EXISTS programacion_dia (
+    programacion_id INT NOT NULL,
+    dia VARCHAR(10) NOT NULL,
+    PRIMARY KEY (programacion_id, dia),
+    FOREIGN KEY (programacion_id) REFERENCES programacion(id) ON DELETE CASCADE
+);
+
 -- version es DOBLADA o SUBTITULADA: cómo se escucha esta copia. No es el idioma hablado
 -- de la película, que es un dato de catálogo suyo.
+--
+-- programacion_id dice de que grilla salio la funcion, y admite NULL porque la grilla no
+-- reemplaza a CU-03: la funcion suelta que carga el administrador —el preestreno, la
+-- funcion especial— no pertenece a ninguna. Es lo que hace que la relacion sea 0..1 y no
+-- 1, y por lo que la asociacion es asociacion y no composicion: la funcion no se va con
+-- la grilla, sobrevive a su baja con sus reservas encima.
 CREATE TABLE IF NOT EXISTS funcion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
     sala_id INT NOT NULL,
+    programacion_id INT NULL,
     inicio DATETIME NOT NULL,
     version VARCHAR(15) NOT NULL,
     proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
-    FOREIGN KEY (sala_id) REFERENCES sala(id)
+    FOREIGN KEY (sala_id) REFERENCES sala(id),
+    FOREIGN KEY (programacion_id) REFERENCES programacion(id)
 );
 
 -- estado: RESERVADA, PAGADA, CANCELADA o EXPIRADA. La ultima no la escribe ningun

@@ -40,6 +40,7 @@ import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
@@ -50,7 +51,7 @@ import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
  * <p>Esto es lo que faltaba cuando cada arranque armaba su propia aplicación. Un gestor
  * que quedaba afuera —o dos gestores conectados a DAOs distintos, que es peor porque no
  * falla, simplemente no se ven entre sí— no rompía ningún test: se descubría usando la
- * app. Acá el circuito completo pasa por los nueve.
+ * app. Acá el circuito completo pasa por los diez.
  */
 class AplicacionTest {
 
@@ -65,16 +66,18 @@ class AplicacionTest {
                 new PeliculaDAOMemoria(), new SalaDAOMemoria(), new AsientoDAOMemoria(),
                 new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
                 new ReservaDAOTxt(tempDir.resolve("reservas.txt")), new PagoDAOMemoria(),
-                new PromocionDAOMemoria(), new ProductoDAOMemoria(), new CompraCandyDAOMemoria(),
+                new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
+                new CompraCandyDAOMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
     }
 
     @Test
-    void quedanArmadosLosNueveGestores() {
+    void quedanArmadosLosDiezGestores() {
         assertNotNull(aplicacion.getCartelera());
         assertNotNull(aplicacion.getSalas());
         assertNotNull(aplicacion.getFunciones());
+        assertNotNull(aplicacion.getProgramaciones());
         assertNotNull(aplicacion.getClientes());
         assertNotNull(aplicacion.getEmpleados());
         assertNotNull(aplicacion.getPromociones());

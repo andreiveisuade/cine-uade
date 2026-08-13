@@ -22,5 +22,8 @@ public interface FuncionDAO {
     /** Para detectar funciones superpuestas antes de programar una nueva. */
     List<Funcion> listarPorSala(int salaId);
 
+    /** Qué generó una grilla. Es el lado navegable de Funcion -> Programacion. */
+    List<Funcion> listarPorProgramacion(int programacionId);
+
     void eliminar(int id);
 }

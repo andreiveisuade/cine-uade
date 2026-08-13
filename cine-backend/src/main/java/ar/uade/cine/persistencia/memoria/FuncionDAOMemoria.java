@@ -42,6 +42,13 @@ public class FuncionDAOMemoria implements FuncionDAO {
     }
 
     @Override
+    public List<Funcion> listarPorProgramacion(int programacionId) {
+        return funciones.values().stream()
+                .filter(f -> f.getProgramacionId() != null && f.getProgramacionId() == programacionId)
+                .toList();
+    }
+
+    @Override
     public void eliminar(int id) {
         funciones.remove(id);
     }
