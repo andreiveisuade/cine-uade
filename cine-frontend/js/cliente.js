@@ -9,8 +9,38 @@ import {
   hora, imagenPoster, porDia, precio, precioExacto,
 } from "./ui.js";
 
-// Lo elegido en el mapa de butacas, para que lo lea la confirmación.
-const seleccion = { funcionId: null, codigos: [] };
+// Lo elegido en el mapa de butacas, para que lo lea la confirmación. Es un mapa de
+// código a tarifa y no una lista, porque la tarifa es por persona: en una reserva de
+// cuatro puede haber dos generales, un menor y un jubilado. De paso, elegir dos veces
+// la misma butaca es imposible de expresar.
+const seleccion = { funcionId: null, butacas: {} };
+
+// El catálogo de tarifas sale del backend y no se repite acá: el multiplicador vive en
+// el enum del dominio, y tenerlo duplicado serían dos fuentes de verdad para el precio.
+let tarifas = null;
+
+async function catalogoTarifas() {
+  if (!tarifas) tarifas = await api.obtenerTarifas();
+  return tarifas;
+}
+
+function tarifaPorNombre(nombre) {
+  return (tarifas || []).find((t) => t.nombre === nombre) || { multiplicador: 1, requiereAcreditacion: false };
+}
+
+/** El precio de esa butaca con esa tarifa. asiento.precio siempre viene en GENERAL. */
+function precioConTarifa(asiento, nombreTarifa) {
+  return Math.round(asiento.precio * tarifaPorNombre(nombreTarifa).multiplicador * 100) / 100;
+}
+
+/** Un <select> de tarifas para una butaca. */
+function selectorTarifa(codigo, elegida) {
+  const opciones = (tarifas || []).map((t) =>
+    `<option value="${t.nombre}" ${t.nombre === elegida ? "selected" : ""}>${etiqueta(t.nombre)}</option>`,
+  ).join("");
+  return `<select data-tarifa-de="${codigo}"
+    class="rounded border border-slate-400 px-1 py-0.5 text-xs">${opciones}</select>`;
+}
 
 // El cliente no inicia sesión. Recordar sus datos en el navegador es lo que hace que
 // registrarse sirva de algo: no vuelve a tipearlos al comprar ni al buscar sus reservas.
@@ -225,10 +255,10 @@ function pintarParaComprar(asiento, elegidas) {
 }
 
 async function vistaFuncion(contenedor, id) {
-  const funcion = await api.obtenerFuncion(id);
+  const [funcion] = await Promise.all([api.obtenerFuncion(id), catalogoTarifas()]);
   if (seleccion.funcionId !== funcion.id) {
     seleccion.funcionId = funcion.id;
-    seleccion.codigos = [];
+    seleccion.butacas = {};
   }
 
   contenedor.innerHTML = `
@@ -268,16 +298,29 @@ async function vistaFuncion(contenedor, id) {
   const resumen = contenedor.querySelector("#resumen");
 
   function refrescar() {
+    const codigos = Object.keys(seleccion.butacas);
     mapa.innerHTML = dibujarMapa(funcion.sala, funcion.asientos,
-      (a) => pintarParaComprar(a, seleccion.codigos));
-    const elegidas = funcion.asientos.filter((a) => seleccion.codigos.includes(a.codigo));
-    const total = elegidas.reduce((suma, a) => suma + a.precio, 0);
+      (a) => pintarParaComprar(a, codigos));
+    const elegidas = funcion.asientos.filter((a) => codigos.includes(a.codigo));
+    const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, seleccion.butacas[a.codigo]), 0);
+
+    // Cada butaca lleva su propia tarifa: quien compra elige acá y ve el precio cambiar,
+    // en vez de enterarse del descuento recién en el ticket.
+    const detalle = elegidas.map((a) => `
+      <div class="flex items-center justify-between gap-2 border-t border-slate-200 py-1">
+        <span class="font-medium">${a.codigo}</span>
+        <span class="flex items-center gap-2">
+          ${selectorTarifa(a.codigo, seleccion.butacas[a.codigo])}
+          <span class="w-20 text-right">${precio(precioConTarifa(a, seleccion.butacas[a.codigo]))}</span>
+        </span>
+      </div>`).join("");
+
     resumen.innerHTML = `
+      ${elegidas.length ? `<div class="mb-2 max-h-40 overflow-y-auto text-sm">${detalle}</div>` : ""}
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="text-sm">
           ${elegidas.length
-            ? `<span class="font-semibold">${elegidas.length} butaca${elegidas.length > 1 ? "s" : ""}:</span>
-               ${escapar(elegidas.map((a) => a.codigo).join(", "))}
+            ? `<span class="font-semibold">${elegidas.length} butaca${elegidas.length > 1 ? "s" : ""}</span>
                <span class="ml-2 font-semibold">${precio(total)}</span>`
             : '<span class="text-slate-500">Elegí una o más butacas</span>'}
         </div>
@@ -287,15 +330,22 @@ async function vistaFuncion(contenedor, id) {
         </button>
       </div>`;
     resumen.querySelector("#continuar").addEventListener("click", () => ir(`#/confirmar/${funcion.id}`));
+    resumen.querySelectorAll("select[data-tarifa-de]").forEach((select) => {
+      select.addEventListener("change", () => {
+        seleccion.butacas[select.dataset.tarifaDe] = select.value;
+        refrescar();
+      });
+    });
   }
 
   mapa.addEventListener("click", (evento) => {
     const boton = evento.target.closest("button[data-codigo]");
     if (!boton || boton.disabled) return;
     const codigo = boton.dataset.codigo;
-    const indice = seleccion.codigos.indexOf(codigo);
-    if (indice === -1) seleccion.codigos.push(codigo);
-    else seleccion.codigos.splice(indice, 1);
+    // Arranca en GENERAL: la tarifa reducida hay que elegirla a propósito, porque
+    // después hay que acreditarla en la puerta.
+    if (seleccion.butacas[codigo]) delete seleccion.butacas[codigo];
+    else seleccion.butacas[codigo] = "GENERAL";
     refrescar();
   });
 
@@ -305,16 +355,68 @@ async function vistaFuncion(contenedor, id) {
 /* ------------------------------------------------------------- confirmación */
 
 async function vistaConfirmar(contenedor, id) {
-  const funcion = await api.obtenerFuncion(id);
+  const [funcion] = await Promise.all([api.obtenerFuncion(id), catalogoTarifas()]);
   // Si se recargó la página la selección se perdió: volver al mapa.
-  if (seleccion.funcionId !== funcion.id || seleccion.codigos.length === 0) {
+  if (seleccion.funcionId !== funcion.id || Object.keys(seleccion.butacas).length === 0) {
     ir(`#/funcion/${funcion.id}`);
     return;
   }
 
-  const elegidas = funcion.asientos.filter((a) => seleccion.codigos.includes(a.codigo));
-  const total = elegidas.reduce((suma, a) => suma + a.precio, 0);
+  const codigos = Object.keys(seleccion.butacas);
+  const elegidas = funcion.asientos.filter((a) => codigos.includes(a.codigo));
   const recordado = clienteRecordado();
+
+  const totalDe = () => elegidas.reduce(
+    (suma, a) => suma + precioConTarifa(a, seleccion.butacas[a.codigo]), 0);
+  const aAcreditar = () => elegidas.filter(
+    (a) => tarifaPorNombre(seleccion.butacas[a.codigo]).requiereAcreditacion);
+
+  // El resumen se repinta solo cuando cambia una tarifa, sin tocar el formulario.
+  const resumenCompra = () => `
+  <section id="resumenCompra" class="rounded border border-slate-300 bg-white p-4">
+    <h2 class="mb-1 font-semibold">${escapar(funcion.pelicula.titulo)}</h2>
+    <p class="mb-3 text-sm text-slate-600">
+      ${escapar(dia(funcion.inicio))} ${hora(funcion.inicio)} ·
+      ${escapar(funcion.sala.nombre)} (${etiqueta(funcion.sala.tipo)}) ·
+      ${etiqueta(funcion.proyeccion)} · ${etiqueta(funcion.idioma)}
+    </p>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-300 text-left text-xs uppercase text-slate-500">
+          <th class="py-1">Butaca</th><th>Tipo</th><th>Tarifa</th><th class="text-right">Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${elegidas.map((a) => `
+          <tr class="border-b border-slate-200">
+            <td class="py-1 font-medium">${a.codigo}</td>
+            <td>${etiqueta(a.tipo)}</td>
+            <td>${selectorTarifa(a.codigo, seleccion.butacas[a.codigo])}</td>
+            <td class="text-right">${precio(precioConTarifa(a, seleccion.butacas[a.codigo]))}</td>
+          </tr>`).join("")}
+      </tbody>
+      <tfoot>
+        <tr class="font-semibold">
+          <td class="py-2" colspan="3">Total</td>
+          <td class="py-2 text-right">${precio(totalDe())}</td>
+        </tr>
+      </tfoot>
+    </table>
+    <p class="mt-2 text-xs text-slate-500">
+      Precio base ${precio(funcion.precio)} × sala ${etiqueta(funcion.sala.tipo)} ×
+      tipo de butaca × tarifa.
+    </p>
+    <p class="mt-1 text-xs text-slate-500">
+      Si hay promociones vigentes, el descuento se aplica al pagar: depende del medio
+      de pago, así que el total definitivo aparece recién ahí.
+    </p>
+    ${aAcreditar().length ? `
+      <p class="mt-3 rounded bg-amber-50 p-2 text-xs text-amber-900">
+        <strong>Acordate del carnet.</strong> En la puerta te van a pedir que acredites
+        la tarifa de ${escapar(aAcreditar().map((a) => `${a.codigo} (${etiqueta(seleccion.butacas[a.codigo]).toLowerCase()})`).join(", "))}.
+      </p>` : ""}
+  </section>
+  `;
 
   contenedor.innerHTML = `
     <a href="#/funcion/${funcion.id}" class="text-sm text-slate-500 hover:text-slate-900">&larr; Cambiar butacas</a>
@@ -347,43 +449,21 @@ async function vistaConfirmar(contenedor, id) {
         </form>
       </section>
 
-      <section class="rounded border border-slate-300 bg-white p-4">
-        <h2 class="mb-1 font-semibold">${escapar(funcion.pelicula.titulo)}</h2>
-        <p class="mb-3 text-sm text-slate-600">
-          ${escapar(dia(funcion.inicio))} ${hora(funcion.inicio)} ·
-          ${escapar(funcion.sala.nombre)} (${etiqueta(funcion.sala.tipo)}) ·
-          ${etiqueta(funcion.proyeccion)} · ${etiqueta(funcion.idioma)}
-        </p>
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="border-b border-slate-300 text-left text-xs uppercase text-slate-500">
-              <th class="py-1">Butaca</th><th>Tipo</th><th class="text-right">Precio</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${elegidas.map((a) => `
-              <tr class="border-b border-slate-200">
-                <td class="py-1 font-medium">${a.codigo}</td>
-                <td>${etiqueta(a.tipo)}</td>
-                <td class="text-right">${precio(a.precio)}</td>
-              </tr>`).join("")}
-          </tbody>
-          <tfoot>
-            <tr class="font-semibold">
-              <td class="py-2" colspan="2">Total</td>
-              <td class="py-2 text-right">${precio(total)}</td>
-            </tr>
-          </tfoot>
-        </table>
-        <p class="mt-2 text-xs text-slate-500">
-          Precio base ${precio(funcion.precio)} × sala ${etiqueta(funcion.sala.tipo)} × tipo de butaca.
-        </p>
-      </section>
+      ${resumenCompra()}
     </div>
   `;
 
   const formulario = contenedor.querySelector("#datos");
   const errorForm = contenedor.querySelector("#errorForm");
+
+  // Cambiar una tarifa acá repinta solo el resumen y no el formulario: si repintara la
+  // vista entera, se perdería lo que la persona ya tipeó en nombre y email.
+  contenedor.addEventListener("change", (evento) => {
+    const select = evento.target.closest("select[data-tarifa-de]");
+    if (!select) return;
+    seleccion.butacas[select.dataset.tarifaDe] = select.value;
+    contenedor.querySelector("#resumenCompra").outerHTML = resumenCompra();
+  });
   formulario.addEventListener("submit", async (evento) => {
     evento.preventDefault();
     const datos = new FormData(formulario);
@@ -392,18 +472,18 @@ async function vistaConfirmar(contenedor, id) {
         funcionId: funcion.id,
         nombre: datos.get("nombre"),
         email: datos.get("email"),
-        codigos: seleccion.codigos,
+        butacas: seleccion.butacas,
       });
       // Comprar sin registrarse igual deja los datos listos para la próxima.
       recordarCliente({ nombre: datos.get("nombre").trim(), email: datos.get("email").trim() });
       seleccion.funcionId = null;
-      seleccion.codigos = [];
+      seleccion.butacas = {};
       ir(`#/ticket/${reserva.id}`);
     } catch (e) {
       // 409: alguien tomó la butaca en el medio. Dejar el resumen como está sería
       // mostrarle butacas que ya no puede comprar, así que vuelve al mapa recargado.
       if (e.status === 409) {
-        seleccion.codigos = [];
+        seleccion.butacas = {};
         avisar(e.message, "error");
         ir(`#/funcion/${funcion.id}`);
         return;
@@ -516,6 +596,30 @@ function centrar(texto) {
 }
 
 /** Mismo contenido y formato que tickets/ticket-<id>.txt del backend. */
+/**
+ * El código de acceso, grande y separado en dos grupos de cuatro para poder leerlo de
+ * un renglón. No es un QR dibujado: generarlo de verdad pide una librería, y el código
+ * en claro cumple la misma función —el acomodador lo escanea o lo tipea— sin sumar una
+ * dependencia al proyecto. Cuando exista la app del escáner, el QR se arma con esto.
+ */
+function tarjetaCodigo(reserva) {
+  if (!reserva.codigo) return "";
+  const legible = `${reserva.codigo.slice(0, 4)} ${reserva.codigo.slice(4)}`;
+  const usada = reserva.ingresadaEn;
+  return `
+    <div class="mt-4 rounded border-2 ${usada ? "border-slate-300 bg-slate-100" : "border-slate-900 bg-white"} p-4 text-center">
+      <p class="text-xs uppercase tracking-widest text-slate-500">Código de acceso</p>
+      <p class="mt-1 font-mono text-3xl font-bold tracking-[0.2em] ${usada ? "text-slate-400 line-through" : ""}">
+        ${escapar(legible)}
+      </p>
+      <p class="mt-2 text-xs text-slate-500">
+        ${usada
+          ? `Ya se usó el ${escapar(fechaHora(usada))}`
+          : "Mostralo en la puerta. Sirve una sola vez."}
+      </p>
+    </div>`;
+}
+
 function armarTicket(reserva) {
   return [
     LINEA,
@@ -528,11 +632,16 @@ function armarTicket(reserva) {
     campo("Formato", `${reserva.funcion.proyeccion} ${reserva.funcion.idioma}`),
     campo("Cliente", reserva.cliente.nombre),
     LINEA,
-    ...reserva.entradas.map((e) => campo("Butaca " + e.codigo, precioExacto(e.precio))),
+    ...reserva.entradas.map((e) => campo(
+      "Butaca " + e.codigo,
+      precioExacto(e.precio) + (e.tarifa && e.tarifa !== "GENERAL" ? "  " + e.tarifa : ""))),
     LINEA,
     campo("Entradas", String(reserva.entradas.length)),
     campo("Total", precioExacto(reserva.total)),
     campo("Estado", reserva.estado),
+    LINEA,
+    centrar("CODIGO DE ACCESO"),
+    centrar(reserva.codigo || ""),
     LINEA,
     centrar("Presentar en boleteria"),
     LINEA,
@@ -541,11 +650,22 @@ function armarTicket(reserva) {
 
 async function vistaTicket(contenedor, id) {
   const reserva = await api.obtenerReserva(id);
+  const conAcreditacion = reserva.entradas.filter(
+    (e) => e.tarifa && e.tarifa !== "GENERAL");
 
   contenedor.innerHTML = `
     <div class="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
       Reserva confirmada. Presentá este comprobante en boletería.
     </div>
+
+    ${tarjetaCodigo(reserva)}
+
+    ${conAcreditacion.length ? `
+      <div class="mt-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <strong>Traé el carnet.</strong> En la puerta se acredita la tarifa de
+        ${escapar(conAcreditacion.map((e) => `${e.codigo} (${etiqueta(e.tarifa).toLowerCase()})`).join(", "))}.
+      </div>` : ""}
+
     <pre class="mt-4 overflow-x-auto rounded border border-slate-300 bg-white p-4 text-xs leading-5">${escapar(armarTicket(reserva))}</pre>
     <div class="mt-4 flex gap-2">
       <a href="#/" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">Volver a la cartelera</a>

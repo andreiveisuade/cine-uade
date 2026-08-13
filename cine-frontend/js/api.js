@@ -20,6 +20,7 @@ export const {
   obtenerIdiomas,
   obtenerProyecciones,
   obtenerMediosPago,
+  obtenerTarifas,
   // cliente
   obtenerCartelera,
   obtenerPelicula,
@@ -49,4 +50,11 @@ export const {
   cobrar,
   obtenerPagoDeReserva,
   obtenerArqueo,
+  // promociones
+  obtenerPromociones,
+  crearPromocion,
+  darDeBajaPromocion,
+  darDeAltaPromocion,
+  // control de acceso
+  validarEntrada,
 } = impl;

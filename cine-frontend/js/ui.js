@@ -26,6 +26,23 @@ const ETIQUETAS = {
   RESERVADA: "Reservada",
   PAGADA: "Pagada",
   CANCELADA: "Cancelada",
+  EXPIRADA: "Vencida",
+  GENERAL: "General",
+  MENOR: "Menor",
+  JUBILADO: "Jubilado",
+  ESTUDIANTE: "Estudiante",
+  PORCENTAJE: "Porcentaje",
+  MONTO_FIJO: "Monto fijo",
+  NXM: "NxM",
+  ADMINISTRADOR: "Administrador",
+  ACOMODADOR: "Acomodador",
+  MONDAY: "Lunes",
+  TUESDAY: "Martes",
+  WEDNESDAY: "Miércoles",
+  THURSDAY: "Jueves",
+  FRIDAY: "Viernes",
+  SATURDAY: "Sábado",
+  SUNDAY: "Domingo",
   ATP: "ATP",
   MAS_13: "+13",
   MAS_16: "+16",
@@ -52,6 +69,8 @@ const COLOR_ESTADO = {
   RESERVADA: "bg-amber-100 text-amber-800",
   PAGADA: "bg-emerald-100 text-emerald-800",
   CANCELADA: "bg-slate-200 text-slate-600",
+  // Vencida no es cancelada: al cliente no se le puede decir que canceló algo que no canceló.
+  EXPIRADA: "bg-slate-200 text-slate-500",
 };
 
 export function chipEstado(estado) {

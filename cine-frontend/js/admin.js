@@ -28,12 +28,22 @@ function cerrarSesion() {
   ir("#/login");
 }
 
+/** El acomodador solo valida entradas: no tiene por qué ver el ABM de la cartelera. */
+function esAdministrador() {
+  return sesionActual()?.rol !== "ACOMODADOR";
+}
+
 function pintarEncabezado() {
   const sesion = sesionActual();
   document.getElementById("nav").classList.toggle("hidden", !sesion);
   document.getElementById("nav").classList.toggle("flex", !!sesion);
   document.getElementById("salir").classList.toggle("hidden", !sesion);
-  document.getElementById("sesion").textContent = sesion ? sesion.nombre : "";
+  document.getElementById("sesion").textContent = sesion
+    ? `${sesion.nombre}${sesion.rol === "ACOMODADOR" ? " · acomodador" : ""}`
+    : "";
+  document.querySelectorAll("#nav a[data-rol=ADMINISTRADOR]").forEach((enlace) => {
+    enlace.classList.toggle("hidden", !!sesion && !esAdministrador());
+  });
 }
 
 /* -------------------------------------------------------------------- login */
@@ -71,7 +81,8 @@ async function vistaLogin(contenedor) {
     try {
       abrirSesion(await api.login(datos.get("email"), datos.get("password")));
       pintarEncabezado();
-      ir("#/peliculas");
+      // El acomodador entra directo a la puerta: es lo único que puede hacer.
+      ir(esAdministrador() ? "#/peliculas" : "#/puerta");
     } catch (e) {
       errorLogin.textContent = e.message;
       errorLogin.classList.remove("hidden");
@@ -723,7 +734,10 @@ async function vistaCobrar(contenedor, id) {
       <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-900">
         La reserva ${reserva.id} está ${etiqueta(reserva.estado).toLowerCase()}, no se puede cobrar.
         ${reserva.pago
-          ? `Se cobró ${precio(reserva.pago.monto)} con ${etiqueta(reserva.pago.medio)}
+          ? `Se cobró ${precio(reserva.pago.monto)} con ${etiqueta(reserva.pago.medio)}${
+              reserva.pago.descuento > 0
+                ? ` (subtotal ${precio(reserva.pago.subtotal)} − ${precio(reserva.pago.descuento)} de promoción)`
+                : ""}
              el ${escapar(fechaHora(reserva.pago.fecha))}.`
           : ""}
       </div>`;
@@ -753,7 +767,8 @@ async function vistaCobrar(contenedor, id) {
             <span class="text-slate-600">A cobrar</span>
             <p class="text-xl font-bold">${precio(reserva.total)}</p>
             <p class="text-xs text-slate-500">
-              Sale del total de las butacas: no se puede cobrar otro importe.
+              Sale del total de las butacas: no se puede cobrar otro importe. Si hay una
+              promoción vigente para este medio de pago, el descuento se aplica al cobrar.
             </p>
           </div>
           <button type="submit"
@@ -778,19 +793,22 @@ async function vistaCobrar(contenedor, id) {
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-slate-300 text-left text-xs uppercase text-slate-500">
-              <th class="py-1">Butaca</th><th class="text-right">Precio</th>
+              <th class="py-1">Butaca</th><th>Tarifa</th><th class="text-right">Precio</th>
             </tr>
           </thead>
           <tbody>
             ${reserva.entradas.map((e) => `
               <tr class="border-b border-slate-200">
                 <td class="py-1 font-medium">${e.codigo}</td>
+                <td class="text-xs ${e.tarifa && e.tarifa !== "GENERAL" ? "font-semibold text-amber-800" : "text-slate-500"}">
+                  ${etiqueta(e.tarifa || "GENERAL")}
+                </td>
                 <td class="text-right">${precio(e.precio)}</td>
               </tr>`).join("")}
           </tbody>
           <tfoot>
             <tr class="font-semibold">
-              <td class="py-2">Total</td>
+              <td class="py-2" colspan="2">Subtotal</td>
               <td class="py-2 text-right">${precio(reserva.total)}</td>
             </tr>
           </tfoot>
@@ -816,7 +834,11 @@ async function vistaCobrar(contenedor, id) {
     const datos = new FormData(formulario);
     try {
       const pago = await api.cobrar(reserva.id, datos.get("medio"), datos.get("codigo"));
-      avisar(`Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)}`);
+      // Con descuento no alcanza con decir cuánto entró: hay que poder explicar por qué
+      // se cobró menos que el subtotal, que es justo lo que el cliente va a preguntar.
+      avisar(pago.descuento > 0
+        ? `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)} · ${precio(pago.descuento)} de descuento`
+        : `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)}`);
       ir("#/caja");
     } catch (e) {
       avisar(e.message, "error");
@@ -875,7 +897,8 @@ async function vistaCaja(contenedor, fecha = hoyISO()) {
         <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
           <tr>
             <th class="p-2">Hora</th><th>Reserva</th><th>Película</th><th>Cliente</th>
-            <th>Medio</th><th>Autorización</th><th class="text-right">Monto</th>
+            <th>Medio</th><th>Autorización</th><th class="text-right">Descuento</th>
+            <th class="text-right">Monto</th>
           </tr>
         </thead>
         <tbody>
@@ -887,9 +910,12 @@ async function vistaCaja(contenedor, fecha = hoyISO()) {
               <td>${escapar(p.cliente?.nombre || "—")}</td>
               <td>${etiqueta(p.medio)}</td>
               <td class="font-mono text-xs">${escapar(p.codigoAutorizacion || "—")}</td>
+              <td class="text-right whitespace-nowrap text-xs ${p.descuento > 0 ? "text-emerald-700" : "text-slate-400"}">
+                ${p.descuento > 0 ? "−" + precio(p.descuento) : "—"}
+              </td>
               <td class="text-right whitespace-nowrap font-medium">${precio(p.monto)}</td>
             </tr>`).join("")
-            : '<tr><td colspan="7" class="p-6 text-center text-slate-500">No se cobró nada ese día.</td></tr>'}
+            : '<tr><td colspan="8" class="p-6 text-center text-slate-500">No se cobró nada ese día.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -900,6 +926,320 @@ async function vistaCaja(contenedor, fecha = hoyISO()) {
   });
 }
 
+
+
+/* -------------------------------------------------------------- promociones */
+
+const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+/** Cómo se lee el beneficio de cada tipo, que es lo que las diferencia. */
+function beneficioDe(promocion) {
+  if (promocion.tipo === "PORCENTAJE") return `${promocion.porcentaje}% off`;
+  if (promocion.tipo === "MONTO_FIJO") return `${precio(promocion.monto)} off`;
+  return `${promocion.lleva}x${promocion.paga}`;
+}
+
+function condicionesDe(promocion) {
+  const partes = [];
+  if (promocion.diasSemana?.length) {
+    partes.push(promocion.diasSemana.map((d) => etiqueta(d).slice(0, 3)).join(", "));
+  }
+  if (promocion.horaDesde || promocion.horaHasta) {
+    partes.push(`${(promocion.horaDesde || "00:00").slice(0, 5)}–${(promocion.horaHasta || "23:59").slice(0, 5)}`);
+  }
+  if (promocion.mediosPago?.length) partes.push(promocion.mediosPago.map(etiqueta).join(", "));
+  // Sin condiciones no quiere decir "ninguna": quiere decir que corre siempre.
+  return partes.length ? partes.join(" · ") : "todos los días, cualquier medio";
+}
+
+async function vistaPromociones(contenedor) {
+  const [promociones, mediosPago] = await Promise.all([
+    api.obtenerPromociones(),
+    api.obtenerMediosPago(),
+  ]);
+
+  contenedor.innerHTML = `
+    <h1 class="mb-1 text-2xl font-bold">Promociones</h1>
+    <p class="mb-5 text-sm text-slate-500">
+      ${promociones.filter((p) => p.activa).length} activas de ${promociones.length}.
+      No se acumulan: en cada cobro se aplica la que más descuenta.
+    </p>
+
+    <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
+      <section class="overflow-x-auto rounded border border-slate-300 bg-white">
+        <table class="w-full text-sm">
+          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <tr><th class="p-2">Nombre</th><th>Beneficio</th><th>Vigencia</th><th>Cuándo</th><th></th></tr>
+          </thead>
+          <tbody>
+            ${promociones.length ? promociones.map((p) => `
+              <tr class="border-b border-slate-200 ${p.activa ? "" : "text-slate-400"}">
+                <td class="p-2 font-medium">${escapar(p.nombre)}</td>
+                <td class="whitespace-nowrap font-semibold">${escapar(beneficioDe(p))}</td>
+                <td class="whitespace-nowrap text-xs">
+                  ${escapar(p.vigenciaDesde)} al ${escapar(p.vigenciaHasta)}
+                </td>
+                <td class="text-xs">${escapar(condicionesDe(p))}</td>
+                <td class="p-2 text-right whitespace-nowrap">
+                  <button type="button" data-${p.activa ? "baja" : "alta"}="${p.id}"
+                    class="text-xs ${p.activa ? "text-red-700" : "text-emerald-700"} hover:underline">
+                    ${p.activa ? "Dar de baja" : "Reactivar"}
+                  </button>
+                </td>
+              </tr>`).join("")
+              : '<tr><td colspan="5" class="p-6 text-center text-slate-500">Todavía no hay promociones.</td></tr>'}
+          </tbody>
+        </table>
+        <p class="border-t border-slate-200 p-2 text-xs text-slate-500">
+          Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro
+          tiene que seguir existiendo para poder explicar por qué se cobró ese monto.
+        </p>
+      </section>
+
+      <section class="rounded border border-slate-300 bg-white p-4">
+        <h2 class="mb-3 font-semibold">Nueva promoción</h2>
+        <form id="alta" class="space-y-3">
+          <label class="block text-sm">
+            <span class="text-slate-600">Nombre</span>
+            <input name="nombre" required placeholder="Miércoles 2x1"
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+          </label>
+
+          <label class="block text-sm">
+            <span class="text-slate-600">Tipo</span>
+            <select name="tipo" id="tipo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">
+              <option value="PORCENTAJE">Porcentaje</option>
+              <option value="MONTO_FIJO">Monto fijo</option>
+              <option value="NXM">NxM (2x1)</option>
+            </select>
+          </label>
+
+          <div data-campos="PORCENTAJE">
+            <label class="block text-sm">
+              <span class="text-slate-600">Porcentaje de descuento</span>
+              <input name="porcentaje" type="number" min="1" max="99" value="30"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+          </div>
+          <div data-campos="MONTO_FIJO" class="hidden">
+            <label class="block text-sm">
+              <span class="text-slate-600">Monto a descontar</span>
+              <input name="monto" type="number" min="1" value="2000"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+          </div>
+          <div data-campos="NXM" class="hidden grid-cols-2 gap-2">
+            <label class="block text-sm">
+              <span class="text-slate-600">Lleva</span>
+              <input name="lleva" type="number" min="2" value="2"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-600">Paga</span>
+              <input name="paga" type="number" min="1" value="1"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-sm">
+              <span class="text-slate-600">Desde</span>
+              <input name="vigenciaDesde" type="date" required value="${hoyISO()}"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-600">Hasta</span>
+              <input name="vigenciaHasta" type="date" required
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+          </div>
+
+          <fieldset class="text-sm">
+            <legend class="text-slate-600">Días (ninguno = todos)</legend>
+            <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              ${DIAS_SEMANA.map((d) => `
+                <label class="flex items-center gap-1 text-xs">
+                  <input type="checkbox" name="dia" value="${d}" /> ${etiqueta(d).slice(0, 3)}
+                </label>`).join("")}
+            </div>
+          </fieldset>
+
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-sm">
+              <span class="text-slate-600">Desde hora</span>
+              <input name="horaDesde" type="time"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+            <label class="block text-sm">
+              <span class="text-slate-600">Hasta hora</span>
+              <input name="horaHasta" type="time"
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            </label>
+          </div>
+
+          <fieldset class="text-sm">
+            <legend class="text-slate-600">Medios (ninguno = cualquiera)</legend>
+            <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              ${mediosPago.map((m) => `
+                <label class="flex items-center gap-1 text-xs">
+                  <input type="checkbox" name="medio" value="${m.nombre}" /> ${etiqueta(m.nombre)}
+                </label>`).join("")}
+            </div>
+          </fieldset>
+
+          <button type="submit"
+            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+            Crear promoción
+          </button>
+          <p id="errorAlta" class="hidden text-sm text-red-700"></p>
+        </form>
+        <p class="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">
+          Las condiciones se evalúan contra el horario de la <strong>función</strong>, no
+          contra el momento de la compra: un 2x1 de los miércoles vale para la función del
+          miércoles aunque las entradas se compren el lunes.
+        </p>
+      </section>
+    </div>
+  `;
+
+  const formulario = contenedor.querySelector("#alta");
+  const errorAlta = contenedor.querySelector("#errorAlta");
+  const selectorTipo = contenedor.querySelector("#tipo");
+
+  // El formulario es uno solo y muestra los campos del tipo elegido, igual que la tabla
+  // tiene una columna por beneficio y deja en null las que no aplican.
+  function mostrarCamposDelTipo() {
+    contenedor.querySelectorAll("[data-campos]").forEach((bloque) => {
+      const visible = bloque.dataset.campos === selectorTipo.value;
+      bloque.classList.toggle("hidden", !visible);
+      if (bloque.dataset.campos === "NXM") bloque.classList.toggle("grid", visible);
+    });
+  }
+  selectorTipo.addEventListener("change", mostrarCamposDelTipo);
+  mostrarCamposDelTipo();
+
+  formulario.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const datos = new FormData(formulario);
+    const tipo = datos.get("tipo");
+    const marcados = (nombre) => datos.getAll(nombre);
+    try {
+      await api.crearPromocion({
+        nombre: datos.get("nombre"),
+        tipo,
+        porcentaje: tipo === "PORCENTAJE" ? Number(datos.get("porcentaje")) : null,
+        monto: tipo === "MONTO_FIJO" ? Number(datos.get("monto")) : null,
+        lleva: tipo === "NXM" ? Number(datos.get("lleva")) : null,
+        paga: tipo === "NXM" ? Number(datos.get("paga")) : null,
+        vigenciaDesde: datos.get("vigenciaDesde"),
+        vigenciaHasta: datos.get("vigenciaHasta"),
+        diasSemana: marcados("dia"),
+        horaDesde: datos.get("horaDesde") || null,
+        horaHasta: datos.get("horaHasta") || null,
+        mediosPago: marcados("medio"),
+      });
+      avisar("Promoción creada");
+      vistaPromociones(contenedor);
+    } catch (e) {
+      errorAlta.textContent = e.message;
+      errorAlta.classList.remove("hidden");
+    }
+  });
+
+  contenedor.addEventListener("click", async (evento) => {
+    const baja = evento.target.closest("button[data-baja]");
+    const alta = evento.target.closest("button[data-alta]");
+    if (!baja && !alta) return;
+    try {
+      if (baja) await api.darDeBajaPromocion(baja.dataset.baja);
+      else await api.darDeAltaPromocion(alta.dataset.alta);
+      vistaPromociones(contenedor);
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+  });
+}
+
+/* -------------------------------------------------------------------- puerta */
+
+/**
+ * CU-18: lo que usa el acomodador. Se escanea o se tipea el código de la reserva y se
+ * marca la entrada como usada.
+ *
+ * El foco vuelve al campo después de cada validación porque en la puerta se encadenan
+ * una atrás de otra: obligar a hacer clic entre persona y persona sería insufrible.
+ */
+async function vistaPuerta(contenedor) {
+  contenedor.innerHTML = `
+    <h1 class="mb-1 text-2xl font-bold">Validar entrada</h1>
+    <p class="mb-5 text-sm text-slate-500">
+      Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.
+    </p>
+
+    <form id="validar" class="flex flex-wrap gap-2">
+      <input name="codigo" required autocomplete="off" autofocus placeholder="A1B2C3D4"
+        class="w-48 rounded border border-slate-400 px-3 py-2 font-mono text-lg uppercase tracking-widest" />
+      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+        Validar
+      </button>
+    </form>
+
+    <div id="resultado" class="mt-5"></div>
+  `;
+
+  const formulario = contenedor.querySelector("#validar");
+  const campoCodigo = formulario.querySelector("input[name=codigo]");
+  const resultado = contenedor.querySelector("#resultado");
+
+  formulario.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const codigo = campoCodigo.value.trim().toUpperCase();
+    if (!codigo) return;
+    try {
+      const reserva = await api.validarEntrada(codigo);
+      resultado.innerHTML = entradaValida(reserva);
+    } catch (e) {
+      // Los tres motivos —código inexistente, sin pagar y ya usada— se muestran igual
+      // de fuerte: en la puerta lo único que importa es que no pasa.
+      resultado.innerHTML = `
+        <div class="rounded border-2 border-red-400 bg-red-50 p-4">
+          <p class="text-lg font-bold text-red-900">NO PASA</p>
+          <p class="mt-1 text-sm text-red-900">${escapar(e.message)}</p>
+        </div>`;
+    }
+    campoCodigo.value = "";
+    campoCodigo.focus();
+  });
+}
+
+function entradaValida(reserva) {
+  const butacas = reserva.entradas.map((e) => {
+    const pideCarnet = e.tarifa && e.tarifa !== "GENERAL";
+    return `
+      <li class="flex items-center justify-between border-t border-emerald-200 py-1">
+        <span class="font-mono font-semibold">${escapar(e.codigo)}</span>
+        <span class="${pideCarnet ? "font-semibold text-amber-800" : "text-slate-600"}">
+          ${etiqueta(e.tarifa || "GENERAL")}${pideCarnet ? " · pedir carnet" : ""}
+        </span>
+      </li>`;
+  }).join("");
+
+  return `
+    <div class="rounded border-2 border-emerald-500 bg-emerald-50 p-4">
+      <p class="text-lg font-bold text-emerald-900">ADELANTE</p>
+      <p class="mt-2 font-semibold">${escapar(reserva.pelicula?.titulo || "")}</p>
+      <p class="text-sm text-slate-700">
+        ${escapar(reserva.sala?.nombre || "")} ·
+        ${escapar(fechaHora(reserva.funcion?.inicio))}
+      </p>
+      <ul class="mt-3 text-sm">${butacas}</ul>
+      <p class="mt-3 text-xs text-slate-600">
+        ${reserva.entradas.length} persona${reserva.entradas.length === 1 ? "" : "s"} ·
+        ingreso registrado ${escapar(fechaHora(reserva.ingresadaEn))}
+      </p>
+    </div>`;
+}
+
 /* ------------------------------------------------------------------- arranque */
 
 document.getElementById("salir").addEventListener("click", cerrarSesion);
@@ -907,10 +1247,12 @@ pintarEncabezado();
 
 iniciarRouter({
   contenedor: document.getElementById("app"),
-  inicial: sesionActual() ? "peliculas" : "login",
+  inicial: sesionActual() ? (esAdministrador() ? "peliculas" : "puerta") : "login",
   guardia: (ruta) => {
     if (!sesionActual() && ruta !== "login") return "#/login";
-    if (sesionActual() && ruta === "login") return "#/peliculas";
+    if (sesionActual() && ruta === "login") return esAdministrador() ? "#/peliculas" : "#/puerta";
+    // El rol no es solo cosmético: escondemos el menú y además cerramos la ruta.
+    if (sesionActual() && !esAdministrador() && ruta !== "puerta") return "#/puerta";
     return null;
   },
   rutas: {
@@ -921,5 +1263,7 @@ iniciarRouter({
     reservas: vistaReservas,
     cobrar: vistaCobrar,
     caja: vistaCaja,
+    promociones: vistaPromociones,
+    puerta: vistaPuerta,
   },
 });

@@ -21,10 +21,32 @@ function siguienteId(lista) {
 }
 
 // precio base de la función × multiplicador de sala × multiplicador de butaca
-function precioDeAsiento(funcion, sala, asiento) {
-  return funcion.precio
+const TARIFAS = {
+  GENERAL: { multiplicador: 1.0, requiereAcreditacion: false },
+  MENOR: { multiplicador: 0.6, requiereAcreditacion: true },
+  JUBILADO: { multiplicador: 0.5, requiereAcreditacion: true },
+  ESTUDIANTE: { multiplicador: 0.7, requiereAcreditacion: true },
+};
+
+function precioDeAsiento(funcion, sala, asiento, tarifa = "GENERAL") {
+  return redondear(funcion.precio
     * datos.TIPOS_SALA[sala.tipo].multiplicador
-    * datos.TIPOS_ASIENTO[asiento.tipo].multiplicador;
+    * datos.TIPOS_ASIENTO[asiento.tipo].multiplicador
+    * (TARIFAS[tarifa] || TARIFAS.GENERAL).multiplicador);
+}
+
+function redondear(monto) {
+  return Math.round(monto * 100) / 100;
+}
+
+// Mismo alfabeto que el backend: sin O, I, 0 ni 1, que se confunden al tipearlos.
+function generarCodigo() {
+  const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let codigo = "";
+  for (let i = 0; i < 8; i++) {
+    codigo += alfabeto.charAt(Math.floor(Math.random() * alfabeto.length));
+  }
+  return codigo;
 }
 
 // Un asiento no está ocupado en sí mismo: lo está en una función, si alguna
@@ -158,31 +180,31 @@ export function buscarClientePorEmail(email) {
  * Crea la reserva con las butacas elegidas. Si el email no existe, da de alta el cliente.
  * Replica las validaciones de GestorReservas.
  */
-export function crearReserva({ funcionId, nombre, email, codigos }) {
+export function crearReserva({ funcionId, nombre, email, butacas }) {
   const funcion = datos.funciones.find((f) => f.id === Number(funcionId));
   if (!funcion) return fallar(`No existe la función ${funcionId}`);
   if (!nombre || !nombre.trim()) return fallar("Falta el nombre del cliente");
   if (!email || !email.includes("@")) return fallar("El email no es válido");
-  if (!codigos || codigos.length === 0) return fallar("Hay que elegir al menos una butaca");
+  const pedido = Object.entries(butacas || {});
+  if (pedido.length === 0) return fallar("Hay que elegir al menos una butaca");
 
   const sala = salaDe(funcion.salaId);
   const deLaSala = datos.asientos.filter((a) => a.salaId === sala.id);
   const ocupados = asientosOcupados(funcion.id);
 
+  // Al venir como mapa, una butaca repetida es imposible de expresar: no hay que validarla.
   const entradas = [];
-  const yaElegidos = [];
-  for (const codigo of codigos) {
+  for (const [codigo, tarifa] of pedido) {
     const buscado = String(codigo).trim().toUpperCase();
-    if (yaElegidos.includes(buscado)) return fallar(`La butaca ${buscado} está repetida`);
     const asiento = deLaSala.find((a) => a.codigo === buscado);
     if (!asiento) return fallar(`La butaca ${buscado} no existe en esa sala`);
     if (asiento.estado === "FUERA_DE_SERVICIO") return fallar(`La butaca ${buscado} está fuera de servicio`);
     if (ocupados.has(asiento.id)) return fallar(`La butaca ${buscado} ya está ocupada`);
-    yaElegidos.push(buscado);
     entradas.push({
       asientoId: asiento.id,
       codigo: asiento.codigo,
-      precio: precioDeAsiento(funcion, sala, asiento),
+      tarifa: tarifa || "GENERAL",
+      precio: precioDeAsiento(funcion, sala, asiento, tarifa),
     });
   }
 
@@ -202,6 +224,8 @@ export function crearReserva({ funcionId, nombre, email, codigos }) {
     funcionId: funcion.id,
     clienteId: cliente.id,
     estado: "RESERVADA",
+    codigo: generarCodigo(),
+    ingresadaEn: null,
     entradas,
   };
   datos.reservas.push(reserva);
@@ -515,10 +539,18 @@ export function cobrar(reservaId, medio, codigoAutorizacion) {
 
   const ahora = new Date();
   const pad = (n) => String(n).padStart(2, "0");
+  // El descuento se resuelve acá y no al reservar: recién ahora se sabe el medio de
+  // pago, y hay promociones que dependen de él.
+  const subtotal = reserva.entradas.reduce((suma, e) => suma + e.precio, 0);
+  const ganadora = mejorPromocion(reserva, funcionDe(reserva), medio);
+  const descuento = ganadora ? descuentoDe(ganadora, reserva.entradas) : 0;
   const pago = {
     id: siguienteId(datos.pagos),
     reservaId: reserva.id,
-    monto: reserva.entradas.reduce((suma, e) => suma + e.precio, 0),
+    subtotal: redondear(subtotal),
+    promocionId: ganadora ? ganadora.id : null,
+    descuento: redondear(descuento),
+    monto: redondear(subtotal - descuento),
     medio,
     fecha: `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`
       + `T${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`,
@@ -564,3 +596,119 @@ export function obtenerArqueo(fecha) {
     porMedio,
   });
 }
+
+/* -------------------------------------------------------------- promociones */
+
+// R15: no se acumulan, gana la que más descuenta. R16: las entradas de tarifa reducida
+// no participan del cálculo. Es el mismo criterio que GestorPromociones del backend.
+
+function funcionDe(reserva) {
+  return datos.funciones.find((f) => f.id === reserva.funcionId);
+}
+
+function aplicaA(promocion, funcion, medio) {
+  if (!promocion.activa || !funcion) return false;
+  const inicio = new Date(funcion.inicio);
+  const dia = inicio.toISOString().slice(0, 10);
+  if (dia < promocion.vigenciaDesde || dia > promocion.vigenciaHasta) return false;
+
+  const DIAS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+  if (promocion.diasSemana?.length && !promocion.diasSemana.includes(DIAS[inicio.getDay()])) {
+    return false;
+  }
+  if (promocion.mediosPago?.length && !promocion.mediosPago.includes(medio)) return false;
+
+  const hora = funcion.inicio.slice(11, 16);
+  if (promocion.horaDesde && hora < promocion.horaDesde.slice(0, 5)) return false;
+  if (promocion.horaHasta && hora > promocion.horaHasta.slice(0, 5)) return false;
+  return true;
+}
+
+/** Solo sobre las entradas de tarifa general (R16). */
+function descuentoDe(promocion, entradas) {
+  const alcanzadas = entradas.filter((e) => (e.tarifa || "GENERAL") === "GENERAL");
+  if (!alcanzadas.length) return 0;
+  const subtotal = alcanzadas.reduce((suma, e) => suma + e.precio, 0);
+
+  let bruto = 0;
+  if (promocion.tipo === "PORCENTAJE") bruto = subtotal * promocion.porcentaje / 100;
+  else if (promocion.tipo === "MONTO_FIJO") bruto = promocion.monto;
+  else if (promocion.tipo === "NXM") {
+    const gratis = Math.floor(alcanzadas.length / promocion.lleva) * (promocion.lleva - promocion.paga);
+    // Regala las más baratas, igual que el backend.
+    bruto = alcanzadas.map((e) => e.precio).sort((a, b) => a - b).slice(0, gratis)
+      .reduce((suma, precio) => suma + precio, 0);
+  }
+  return Math.min(Math.max(redondear(bruto), 0), subtotal);
+}
+
+function mejorPromocion(reserva, funcion, medio) {
+  return (datos.promociones || [])
+    .filter((p) => aplicaA(p, funcion, medio))
+    .filter((p) => descuentoDe(p, reserva.entradas) > 0)
+    // Empate: la de menor id, igual que el backend.
+    .sort((a, b) => descuentoDe(b, reserva.entradas) - descuentoDe(a, reserva.entradas) || a.id - b.id)[0];
+}
+
+export function obtenerPromociones() {
+  return responder((datos.promociones || []).map((p) => ({ ...p })));
+}
+
+export function crearPromocion(promocion) {
+  if (!promocion.nombre?.trim()) return fallar("La promoción necesita un nombre");
+  if (!promocion.vigenciaDesde || !promocion.vigenciaHasta
+      || promocion.vigenciaHasta < promocion.vigenciaDesde) {
+    return fallar("La vigencia tiene que empezar antes de terminar");
+  }
+  if ((datos.promociones || []).some(
+        (p) => p.nombre.toLowerCase() === promocion.nombre.trim().toLowerCase())) {
+    return fallar(`Ya hay una promoción llamada ${promocion.nombre}`);
+  }
+  if (promocion.tipo === "PORCENTAJE" && !(promocion.porcentaje > 0 && promocion.porcentaje < 100)) {
+    return fallar("El porcentaje tiene que estar entre 1 y 99");
+  }
+  if (promocion.tipo === "MONTO_FIJO" && !(promocion.monto > 0)) {
+    return fallar("El monto del descuento debe ser mayor a cero");
+  }
+  if (promocion.tipo === "NXM" && !(promocion.lleva > promocion.paga && promocion.paga > 0)) {
+    return fallar("En un NxM hay que llevar más de lo que se paga");
+  }
+
+  datos.promociones = datos.promociones || [];
+  const nueva = { ...promocion, nombre: promocion.nombre.trim(),
+                  id: siguienteId(datos.promociones), activa: true };
+  datos.promociones.push(nueva);
+  return responder({ ...nueva });
+}
+
+const cambiarEstadoPromocion = (id, activa) => {
+  const promocion = (datos.promociones || []).find((p) => p.id === Number(id));
+  if (!promocion) return fallar(`No existe la promoción ${id}`);
+  promocion.activa = activa;
+  return responder({ ...promocion });
+};
+
+export const darDeBajaPromocion = (id) => cambiarEstadoPromocion(id, false);
+export const darDeAltaPromocion = (id) => cambiarEstadoPromocion(id, true);
+
+/* ----------------------------------------------------------- control de acceso */
+
+/** R18: solo pasa una reserva pagada, y una sola vez. */
+export function validarEntrada(codigo) {
+  const buscado = String(codigo || "").trim().toUpperCase();
+  const reserva = datos.reservas.find((r) => r.codigo === buscado);
+  if (!reserva) return fallar("No existe ninguna reserva con ese código");
+  if (reserva.estado !== "PAGADA") {
+    return fallar(`La reserva está ${reserva.estado}: solo se ingresa con una reserva pagada`);
+  }
+  if (reserva.ingresadaEn) return fallar(`Esa entrada ya se usó el ${reserva.ingresadaEn}`);
+
+  const ahora = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  reserva.ingresadaEn = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`
+    + `T${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`;
+  return obtenerReserva(reserva.id);
+}
+
+export const obtenerTarifas = () => responder(
+  Object.entries(TARIFAS).map(([nombre, t]) => ({ nombre, ...t })));

@@ -12,12 +12,16 @@
   <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
     <span class="text-lg font-bold tracking-tight">CINE UADE</span>
     <span class="rounded bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">Encargado</span>
+    <!-- El acomodador solo ve "Puerta": no administra la cartelera. admin.js esconde
+         el resto según el rol que devuelve el login. -->
     <nav id="nav" class="hidden flex-1 flex-wrap gap-4 text-sm">
-      <a href="#/peliculas" class="hover:underline">Películas</a>
-      <a href="#/salas" class="hover:underline">Salas</a>
-      <a href="#/funciones" class="hover:underline">Funciones</a>
-      <a href="#/reservas" class="hover:underline">Reservas</a>
-      <a href="#/caja" class="hover:underline">Caja</a>
+      <a href="#/peliculas" data-rol="ADMINISTRADOR" class="hover:underline">Películas</a>
+      <a href="#/salas" data-rol="ADMINISTRADOR" class="hover:underline">Salas</a>
+      <a href="#/funciones" data-rol="ADMINISTRADOR" class="hover:underline">Funciones</a>
+      <a href="#/reservas" data-rol="ADMINISTRADOR" class="hover:underline">Reservas</a>
+      <a href="#/promociones" data-rol="ADMINISTRADOR" class="hover:underline">Promociones</a>
+      <a href="#/caja" data-rol="ADMINISTRADOR" class="hover:underline">Caja</a>
+      <a href="#/puerta" class="font-medium hover:underline">Puerta</a>
     </nav>
     <div class="ml-auto flex items-center gap-3 text-sm">
       <span id="sesion" class="text-slate-500"></span>

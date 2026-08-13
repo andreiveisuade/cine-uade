@@ -58,6 +58,7 @@ export const obtenerTiposSala = () => get("/tipos-sala");
 export const obtenerIdiomas = () => get("/idiomas");
 export const obtenerProyecciones = () => get("/proyecciones");
 export const obtenerMediosPago = () => get("/medios-pago");
+export const obtenerTarifas = () => get("/tarifas");
 
 /* ------------------------------------------------------------------ cliente */
 
@@ -73,8 +74,10 @@ export const registrarCliente = ({ nombre, email }) => post("/clientes", { nombr
 export const buscarClientePorEmail = (email) =>
   get(`/clientes?email=${encodeURIComponent(String(email || "").trim())}`);
 
-export const crearReserva = ({ funcionId, nombre, email, codigos }) =>
-  post("/reservas", { funcionId: Number(funcionId), nombre, email, codigos });
+// butacas es { "C5": "GENERAL", "C6": "JUBILADO" }: la tarifa es por persona, así que
+// va por butaca y no por reserva.
+export const crearReserva = ({ funcionId, nombre, email, butacas }) =>
+  post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas });
 
 export const obtenerReserva = (id) => get(`/reservas/${id}`);
 
@@ -135,3 +138,15 @@ export const cobrar = (reservaId, medio, codigoAutorizacion) =>
 export const obtenerPagoDeReserva = (reservaId) => get(`/reservas/${reservaId}/pago`);
 
 export const obtenerArqueo = (fecha) => get(`/arqueo?fecha=${encodeURIComponent(fecha)}`);
+
+/* -------------------------------------------------------------- promociones */
+
+export const obtenerPromociones = () => get("/promociones");
+export const crearPromocion = (promocion) => post("/promociones", promocion);
+export const darDeBajaPromocion = (id) => post(`/promociones/${id}/baja`);
+export const darDeAltaPromocion = (id) => post(`/promociones/${id}/alta`);
+
+/* ----------------------------------------------------------- control de acceso */
+
+// POST y no GET porque marca la entrada como usada: repetirlo falla a propósito.
+export const validarEntrada = (codigo) => post("/acceso", { codigo });
