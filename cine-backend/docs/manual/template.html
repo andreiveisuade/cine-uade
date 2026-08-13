@@ -418,6 +418,9 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#pagos" data-target="pagos">Pagos</a></li>
+        <li><a href="#precios" data-target="precios">Precios y promociones</a></li>
+        <li><a href="#acceso" data-target="acceso">Control de acceso</a></li>
+        <li><a href="#vencimiento" data-target="vencimiento">Vencimiento de la reserva</a></li>
         <li><a href="#candy" data-target="candy">Candy</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
@@ -453,8 +456,15 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta, con 60 tests en verde. Ver
-          <a href="#estado">Estado y pendientes</a>.
+          implementados de punta a punta en el gestor y el menú de consola, con 60 tests en verde. La API HTTP
+          todavía no expone candy —<code>ServidorApi</code> no instancia <code>GestorCandy</code>—, así que el
+          frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
+        </p>
+        <p>
+          <strong>En curso — segunda vuelta de modelado.</strong> El modelo de dominio se amplió con tarifas por
+          tipo de público, promociones, control de acceso con QR y vencimiento de reservas. Todo eso está
+          <em>modelado y dibujado</em>, no implementado: en las tablas de este manual se distingue con la
+          etiqueta <span class="tag tag-pend">modelado</span>. El código sigue siendo el de la primera vuelta.
         </p>
       </div>
     </section>
@@ -469,6 +479,10 @@ body.lightbox-locked { overflow: hidden; }
         <li>Vender productos del candy y combos promocionales, con su comprobante en <code>.txt</code>.</li>
         <li>Arqueo del día, separando lo que entró por boletería de lo que entró por el candy.</li>
         <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
+        <li><span class="tag tag-pend">modelado</span> Cobrar cada entrada según quién la compra: general, menor, jubilado o estudiante.</li>
+        <li><span class="tag tag-pend">modelado</span> Promociones administrables por el cine: porcentaje, monto fijo y 2x1, con vigencia, días, horarios y medios de pago.</li>
+        <li><span class="tag tag-pend">modelado</span> Control de acceso: cada reserva lleva un código para validar en la puerta.</li>
+        <li><span class="tag tag-pend">modelado</span> Las reservas sin pagar no retienen butacas para siempre.</li>
       </ul>
     </section>
 
@@ -493,6 +507,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R12</td><td>No se elimina una película o sala con funciones, ni una función con reservas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar: si ya se pagó, hace falta una devolución</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R14</td><td>Un combo tiene que costar menos que sus componentes sueltos</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento, y si empatan la de menor id</td><td><span class="tag tag-pend">modelada</span></td></tr>
+            <tr><td>R16</td><td>Las entradas de tarifa reducida no participan del descuento de la promoción</td><td><span class="tag tag-pend">modelada</span></td></tr>
+            <tr><td>R17</td><td>No se cobra una reserva vencida</td><td><span class="tag tag-pend">modelada</span></td></tr>
+            <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td><td><span class="tag tag-pend">modelada</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -503,6 +521,11 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         Dos actores: <strong>Administrador</strong>, que gestiona la cartelera, y <strong>Cliente</strong>,
         que compra entradas. El menú de consola no distingue usuarios: es un único flujo.
+      </p>
+      <p>
+        <span class="tag tag-pend">modelado</span> Se suma un tercer actor, el <strong>Acomodador</strong>, que
+        solo valida entradas en la puerta. No es un cargo con privilegios de administración: es el que escanea
+        el código de la reserva y ve qué butacas son y qué tarifa declaró cada una.
       </p>
 
       <figure class="diagram">
@@ -531,8 +554,20 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-14</td><td>Admin</td><td>Armar un combo promocional</td><td>R14</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-15b</td><td>Cliente</td><td>Agregar candy a una compra recién hecha por la web</td><td>R11</td><td><span class="tag tag-pend">modelado</span></td></tr>
+            <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td><td><span class="tag tag-pend">modelado</span></td></tr>
+            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada en la puerta escaneando el código</td><td>R18</td><td><span class="tag tag-pend">modelado</span></td></tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>«hecho» no es lo mismo que «en la web».</strong> CU-13 a CU-16 (candy) están implementados en
+          <code>GestorCandy</code> y se usan desde <code>MenuConsola</code>, pero <code>ServidorApi</code> nunca
+          lo instancia: no hay <code>RutasCandy</code>. La API HTTP —y por lo tanto <code>cine-frontend</code>—
+          no tiene candy todavía. CU-15b ya modela cómo se integraría a la compra web.
+        </p>
       </div>
     </section>
 
@@ -589,7 +624,14 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         Si igual se quisieran dibujar, la multiplicidad correcta es <code>"*" → "1"</code>: muchas salas son IMAX,
         una sala tiene un solo tipo. Por eso en el diagrama los enums aparecen dentro de su paquete pero
-        sin ninguna línea: nueve flechas que no aportan nada tapan las seis relaciones que sí importan.
+        sin ninguna línea: nueve flechas que no aportan nada tapan las relaciones que sí importan.
+      </p>
+      <p>
+        <strong><code>Genero</code> es la excepción que confirma la regla.</strong> A diferencia de los demás
+        enums, es <em>multivaluado</em> y tiene mínimo uno (R7): una película tiene uno o varios géneros. Esa
+        cardinalidad <code>[1..*]</code> es información del negocio, y se pierde entera si queda escondida
+        dentro de un <code>List&lt;Genero&gt;</code>. La salida no es romper la regla y dibujarle una flecha,
+        sino escribirla como atributo con multiplicidad: <code>generos: Genero [1..*]</code>.
       </p>
 
       <h3>Las multiplicidades que sí importan</h3>
@@ -631,12 +673,58 @@ body.lightbox-locked { overflow: hidden; }
               <td>Composición + autoreferencia</td>
               <td>
                 Un combo es un producto que contiene otros productos. <code>0..*</code> porque un producto suelto
-                no tiene componentes; un combo tiene dos o más.
+                no tiene componentes; un combo tiene dos o más. Las dos líneas llevan rol
+                (<code>contiene</code> y <code>refiere a</code>): sin nombrarlas, dos flechas entre las mismas
+                clases no dicen cuál es cuál.
+              </td>
+            </tr>
+            <tr>
+              <td><code>Pago "*" → "0..1" Promocion</code> <span class="tag tag-pend">modelado</span></td>
+              <td>Asociación</td>
+              <td>
+                Un cobro puede no tener promoción, y nunca tiene dos: no se acumulan (R15). Del otro lado,
+                una promoción se usa en muchos cobros. Guardar cuál ganó es lo que permite auditar por qué
+                se cobró ese monto meses después, aunque la promoción ya no exista.
+              </td>
+            </tr>
+            <tr>
+              <td><code>CompraCandy "*" → "0..1" Cliente</code> y <code>"*" → "0..1" Reserva</code> <span class="tag tag-pend">modelado</span></td>
+              <td>Asociación</td>
+              <td>
+                Las dos en <code>0..1</code> y no es redundante: la venta de mostrador no tiene ninguna de las
+                dos, y la del <em>«¿desea agregar pochoclos?»</em> posterior a la compra web tiene reserva, de
+                donde sale el cliente sin volver a pedírselo.
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <h3>Lo que las cardinalidades no pueden decir</h3>
+      <p>
+        Tres restricciones del modelo no entran en ninguna multiplicidad, y por eso van dibujadas como
+        <em>constraints</em> sobre la asociación, entre llaves:
+      </p>
+      <ul>
+        <li>
+          <code>{entrada.asiento.sala = entrada.reserva.funcion.sala}</code> — el modelo cierra un ciclo
+          <code>Reserva → Funcion → Sala ◆— Asiento ← Entrada</code>, y ninguna cardinalidad impide que una
+          entrada tome una butaca de <em>otra</em> sala. Lo garantiza <code>GestorReservas</code>, que busca el
+          asiento entre los de la sala de la función; la base no lo puede expresar.
+        </li>
+        <li>
+          <code>{R3: dos funciones de la misma sala no se superponen}</code> — es una restricción
+          <strong>temporal</strong> sobre <code>Funcion → Sala</code>. El <code>*</code> dice cuántas, no cuándo.
+        </li>
+        <li>
+          <code>{0 si tipo ≠ COMBO, ≥ 2 si tipo = COMBO}</code> — el <code>0..*</code> de <code>ItemCombo</code>
+          es cierto pero impreciso: nunca vale 1, porque un combo de un solo producto es el producto.
+        </li>
+      </ul>
+      <p>
+        Saber dónde termina la notación es parte del modelado: una cardinalidad mal puesta es un error, pero
+        una restricción que no se puede escribir y no se anota se pierde igual.
+      </p>
       <p>
         Las asociaciones que en el diagrama son navegables en un sentido se guardan siempre como id
         (<code>peliculaId</code>, <code>salaId</code>, <code>asientoId</code>): no hay grafo de objetos en memoria,
@@ -668,6 +756,11 @@ body.lightbox-locked { overflow: hidden; }
         Cancelar solo vale si está <code>RESERVADA</code> (R13). Cancelar una ya cobrada liberaría las butacas
         pero dejaría el pago vivo, y el arqueo del día seguiría contando plata que se devolvió. Modelar la
         devolución es lo que faltaría para permitirlo.
+      </p>
+      <p>
+        <span class="tag tag-pend">modelado</span> Se suma un cuarto estado, <code>EXPIRADA</code>, y dos campos
+        de control de acceso, <code>codigo</code> e <code>ingresadaEn</code>. Ambos temas tienen su sección:
+        <a href="#vencimiento">Vencimiento de la reserva</a> y <a href="#acceso">Control de acceso</a>.
       </p>
     </section>
 
@@ -828,19 +921,42 @@ Libres: 52 de 56</code></pre>
       <p>
         Dos roles: el <strong>cliente</strong>, que compra entradas sin registrarse con contraseña, y el
         <strong>administrador del cine</strong>, que carga películas, salas y programa funciones, y para eso
-        sí necesita iniciar sesión.
+        sí necesita iniciar sesión. <span class="tag tag-pend">modelado</span> Se suma el
+        <strong>acomodador</strong>, que inicia sesión pero solo para validar entradas en la puerta.
       </p>
+      <div class="callout">
+        <p>
+          <strong>Que el cliente no tenga login es una decisión, y tiene un costo.</strong> Hoy «ver mis
+          reservas» se resuelve con el email, así que cualquiera que conozca un email ajeno ve reservas ajenas.
+          Se sostiene porque el sistema no guarda nada más sensible que eso, y porque el
+          <a href="#acceso">código de la reserva</a> —que sí es secreto— es lo que realmente habilita a entrar
+          al cine. El día que haga falta login de cliente, <code>passwordHash</code> sube a
+          <code>Usuario</code> y la herencia hay que rejustificarla con datos propios de cada subtipo:
+          <code>fechaNacimiento</code> en el cliente, legajo en el empleado.
+        </p>
+      </div>
 
       <h3>Herencia, no un enum suelto</h3>
       <pre><code>Usuario (interfaz)      nombre, email, rol
    ├── Cliente          sin credenciales
-   └── AdministradorCine  + passwordHash</code></pre>
+   └── Empleado         + passwordHash     (antes: AdministradorCine)</code></pre>
       <p>
         Podría haberse resuelto con un solo tipo <code>Usuario</code> y un campo <code>rol</code>. Se eligió la
-        jerarquía porque los subtipos <strong>difieren en datos</strong>, no solo en una etiqueta: el
-        administrador tiene contraseña y el cliente no. Cuando la única diferencia es el valor de un campo, un
+        jerarquía porque los subtipos <strong>difieren en datos</strong>, no solo en una etiqueta: el empleado
+        tiene contraseña y el cliente no. Cuando la única diferencia es el valor de un campo, un
         enum alcanza; cuando cambia la estructura, corresponde herencia.
       </p>
+      <div class="callout">
+        <p>
+          <span class="tag tag-pend">modelado</span> <strong>Por qué dejó de llamarse
+          <code>AdministradorCine</code>.</strong> La justificación original era «solo el administrador tiene
+          credenciales». Al aparecer el <a href="#acceso">acomodador</a>, que también inicia sesión para
+          validar entradas, esa frase deja de ser cierta y el nombre pasa a mentir. Pero la herencia no se
+          cae: el corte real nunca fue el <em>cargo</em>, sino <em>tener contraseña</em>. Generalizar a
+          <code>Empleado</code> mantiene intacto el argumento y evita una clase vacía por cada rol que
+          aparezca. <code>Rol</code> distingue adentro: <code>ADMINISTRADOR</code> o <code>ACOMODADOR</code>.
+        </p>
+      </div>
       <p>
         El enum <code>Rol</code> igual existe, pero con otro propósito: es el <em>discriminador</em> que permite
         saber, al leer una fila de la base, qué implementación construir.
@@ -1081,7 +1197,8 @@ new MenuConsola(gestor).iniciar();</code></pre>
       </p>
       <pre><code>Reserva  →  RESERVADA        (reservar butacas)
          →  PAGADA          (GestorPagos.cobrar, deja el comprobante)
-         →  CANCELADA       (libera las butacas)</code></pre>
+         →  CANCELADA       (libera las butacas)
+         →  EXPIRADA        (modelado: nadie la pagó a tiempo)</code></pre>
 
       <div class="callout">
         <p>
@@ -1092,6 +1209,202 @@ new MenuConsola(gestor).iniciar();</code></pre>
           impide a propósito), ni pagos rechazados: acá un pago registrado es un pago exitoso.
         </p>
       </div>
+    </section>
+
+    <section class="doc-section" id="precios">
+      <h2>Precios y promociones</h2>
+      <div class="callout">
+        <p>
+          <span class="tag tag-pend">modelado</span> Toda esta sección está diseñada y dibujada en el modelo de
+          dominio, pero todavía no implementada. Hoy <code>CalculadoraPrecio</code> hace solo la primera mitad:
+          precio base por tecnología de sala y tipo de butaca.
+        </p>
+      </div>
+
+      <h3>Los tres ejes del precio</h3>
+      <p>
+        Lo que sale una entrada depende de tres cosas distintas, y conviene no mezclarlas porque cambian en
+        momentos distintos:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Eje</th><th>Quién lo define</th><th>Cuándo se conoce</th></tr></thead>
+          <tbody>
+            <tr><td>Qué se proyecta y dónde</td><td><code>Funcion.precio</code> × <code>TipoSala</code></td><td>al programar la función</td></tr>
+            <tr><td>Dónde se sienta</td><td><code>TipoAsiento</code></td><td>al elegir la butaca</td></tr>
+            <tr><td>Quién compra</td><td><code>TipoTarifa</code></td><td>al elegir la butaca</td></tr>
+            <tr><td>Cómo y cuándo paga</td><td><code>Promocion</code></td><td><strong>al cobrar</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>La tarifa va en la entrada, no en la reserva</h3>
+      <p>
+        <code>TipoTarifa</code> (general, menor, jubilado, estudiante) es <strong>por persona</strong>: en una
+        reserva de cuatro butacas puede haber dos generales, un menor y un jubilado. Por eso el campo vive en
+        <code>Entrada</code>, que es la unidad que representa a una persona entrando, y el precio de lista de
+        esa entrada queda congelado al reservar:
+      </p>
+      <pre><code>precio de lista = Funcion.precio
+                × TipoSala.multiplicador
+                × TipoAsiento.multiplicador
+                × TipoTarifa.multiplicador</code></pre>
+      <p>
+        Como el cliente no inicia sesión, el sistema no tiene fecha de nacimiento ni forma de comprobar que
+        alguien es jubilado. La tarifa entonces se <strong>declara</strong> al comprar y se
+        <strong>acredita en la puerta</strong>, que es exactamente lo que hace un cine real. Por eso el enum
+        sabe cuál requiere acreditación: el acomodador ve en pantalla qué carnet pedir. Es la decisión de
+        <a href="#usuarios">no tener login de cliente</a> apoyándose en la de
+        <a href="#acceso">controlar el acceso</a>: ninguna de las dos se sostendría sola.
+      </p>
+
+      <h3>Por qué el descuento no puede vivir en la entrada</h3>
+      <p>
+        La tentación es aplicar la promoción sobre el precio de cada butaca, como un multiplicador más al final
+        de la cadena. No funciona, y el motivo es el 2x1: <em>«cada dos entradas, una gratis»</em> es una regla
+        sobre el <strong>conjunto</strong>, no sobre la unidad. No hay factor por butaca que lo exprese.
+      </p>
+      <p>
+        Y como las promociones no se acumulan y gana la mejor (R15), todas tienen que ser
+        <strong>comparables entre sí</strong>. Para poder comparar «miércoles 30%» contra «2x1» contra «15% con
+        Galicia», las tres tienen que producir la misma unidad: <strong>un monto de descuento sobre la
+        reserva</strong>. Eso decide dónde va cada cosa:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Dónde vive</th><th>Cuándo se fija</th></tr></thead>
+          <tbody>
+            <tr><td>Precio de lista de cada butaca</td><td><code>Entrada.precio</code></td><td>al reservar, y no lo toca ninguna promoción</td></tr>
+            <tr><td>Suma de las entradas</td><td><code>Reserva.getSubtotal()</code></td><td>derivado, no se guarda</td></tr>
+            <tr><td>Promoción ganadora y su descuento</td><td><code>Pago.promocionId</code> y <code>Pago.descuento</code></td><td>al cobrar</td></tr>
+            <tr><td>Lo que entró de verdad</td><td><code>Pago.monto</code></td><td>al cobrar</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <p>
+          <strong>La consecuencia que hay que aceptar:</strong> el total definitivo de una reserva
+          <em>no existe hasta que se paga</em>, porque el descuento bancario depende de un medio de pago que se
+          elige al cobrar. Antes de eso la reserva solo tiene subtotal. No es una limitación del diseño: es lo
+          que hace cualquier cine online, donde el precio final aparece recién cuando elegís cómo pagás. El
+          arqueo del día no se entera de nada, porque sigue sumando <code>Pago.monto</code>.
+        </p>
+      </div>
+
+      <h3>Una jerarquía, no un switch</h3>
+      <p>
+        Todas las promociones exponen lo mismo —si aplican y cuánto descuentan— y varían solo en el cálculo.
+        Eso es una jerarquía con tabla única y discriminador, el mismo patrón que ya usa
+        <a href="#usuarios"><code>Usuario</code></a>:
+      </p>
+      <pre><code>Promocion (interfaz)     nombre, vigencia, díasSemana, horario, mediosPago
+  └─ PromocionBase       las condiciones comunes, para no repetirlas
+      ├─ PromocionPorcentaje   30% → subtotal × 0.30
+      ├─ PromocionMontoFijo    $2000 off
+      └─ PromocionNxM          2x1 → las (cant/n)×(n-m) entradas más baratas</code></pre>
+      <p>
+        Agregar un tipo de beneficio nuevo es una clase, no un <code>case</code> más en un <code>switch</code>
+        que hay que ir a buscar. Y como hay tres implementaciones de verdad, la interfaz sí paga: es el mismo
+        criterio con el que <code>Entrada</code> es un <code>record</code> y no interfaz + impl.
+      </p>
+      <p>
+        <code>calcularDescuento()</code> recibe una <strong>lista de entradas</strong> y no la reserva entera, y
+        eso no es un detalle: es R16 hecho firma. Las entradas de tarifa reducida no participan del descuento
+        —un jubilado ya tiene su precio especial y no entra además al 2x1—, así que el gestor le pasa solo las
+        que corresponden. Si el método recibiera la reserva, la regla quedaría escondida adentro de cada
+        implementación y habría que acordarse de repetirla en todas.
+      </p>
+    </section>
+
+    <section class="doc-section" id="acceso">
+      <h2>Control de acceso</h2>
+      <div class="callout">
+        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
+      </div>
+      <p>
+        Vender no es entrar. Hasta acá el circuito terminaba en el cobro, y eso deja afuera la mitad del
+        trabajo de un cine: alguien tiene que validar en la puerta que esa entrada existe, que está pagada y
+        que no se usó antes.
+      </p>
+
+      <h3>Un código por reserva, no por butaca</h3>
+      <p>
+        La reserva lleva un <code>codigo</code> único, que es lo que va en el QR. La alternativa era un código
+        por entrada, y se descartó: el grupo entra junto, y con un solo código el acomodador ve de una las
+        cuatro butacas y las tarifas declaradas. Lo que se pierde con esta decisión, y conviene tenerlo
+        anotado, es poder registrar <strong>ingresos parciales</strong>: si de cuatro personas entran tres, el
+        sistema no lo puede representar.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El código no puede ser el id.</strong> Como el cliente no inicia sesión, ese código es la
+          <em>única credencial</em> que existe en todo el sistema: con la reserva 5 en la mano, un id
+          autoincremental deja imprimir la 6. Tiene que ser único y no adivinable.
+        </p>
+      </div>
+
+      <h3>Un timestamp, no un estado</h3>
+      <p>
+        El ingreso se registra en <code>ingresadaEn</code>, que es <code>null</code> hasta que entran, y no como
+        un valor más de <code>EstadoReserva</code>. El motivo es que ese enum modela el eje del
+        <em>cobro</em> (reservada, pagada, cancelada, expirada) y meterle el ingreso mezclaría dos ejes que
+        avanzan por separado. De paso, el timestamp da auditoría gratis —a qué hora entraron— y no obliga a
+        revisar R5 ni R13, que miran el estado.
+      </p>
+
+      <h3>El acomodador, y por qué el administrador dejó de ser el único con contraseña</h3>
+      <p>
+        Validar entradas no es una tarea de administración: no toca la cartelera ni cobra. Es un rol propio,
+        <code>ACOMODADOR</code>, y su aparición rompe la frase que justificaba la herencia de usuarios —«solo
+        el administrador tiene credenciales»—. La salida es
+        <a href="#usuarios">generalizar <code>AdministradorCine</code> a <code>Empleado</code></a>: el corte
+        nunca fue el cargo, sino tener contraseña.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Anotado para más adelante:</strong> una app de celular mínima en Expo Go que escanee el QR y
+          muestre en pantalla el cine, la película, la sala, el horario y las butacas. El backend no necesita
+          nada especial para eso más allá de lo que ya está acá: el código en la reserva y un endpoint de
+          lectura que lo resuelva. Es trabajo de app, no de modelo.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="vencimiento">
+      <h2>Vencimiento de la reserva</h2>
+      <div class="callout">
+        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
+      </div>
+      <p>
+        Una reserva sin pagar retiene sus butacas para siempre. En consola casi no se nota; con venta web, un
+        puñado de clientes que abandonan el carrito deja una función entera sin butacas disponibles que en
+        realidad nadie compró.
+      </p>
+      <p>
+        La solución barata es <strong>no persistir un estado sino derivarlo</strong>: una reserva está vencida
+        si está <code>RESERVADA</code> y <code>creadaEn</code> quedó fuera de la ventana.
+        <code>creadaEn</code> ya existe, así que es una constante y un filtro. Pero derivarlo no alcanza, y el
+        motivo está en la base:
+      </p>
+      <pre><code>UNIQUE (funcion_id, asiento_id)</code></pre>
+      <p>
+        Ese índice es lo que impide vender dos veces la misma butaca, y <strong>no sabe nada de
+        vencimientos</strong>. Si el gestor considera libre la butaca de una reserva vencida pero la fila de
+        <code>entrada</code> sigue con su <code>funcion_id</code>, el <code>INSERT</code> de la reserva nueva
+        explota: la butaca queda libre en teoría y bloqueada en la práctica.
+      </p>
+      <p>
+        Por eso la expiración es <strong>perezosa pero con escritura</strong>: la primera operación que se cruza
+        con una reserva vencida la cierra al pasar, y el DAO le pone <code>funcion_id = NULL</code> —el mismo
+        mecanismo que ya usa la cancelación— para liberar la butaca de verdad. No hace falta ningún proceso de
+        fondo: la limpieza la hace quien consulta.
+      </p>
+      <p>
+        El estado <code>EXPIRADA</code> es propio y no reusa <code>CANCELADA</code> por una razón de honestidad
+        con el cliente: en su historial no se le puede mostrar «cancelada» a algo que él no canceló. El costo
+        de distinguirlas es un valor de enum y una condición, porque
+        <code>ReservaDAOMySQL</code> hay que tocarlo igual para que la expiración libere la butaca.
+      </p>
     </section>
 
     <section class="doc-section" id="candy">
@@ -1138,6 +1451,31 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <p>
         Sí comparte dos reglas con las reservas: el total sale de la carta y no se ingresa a mano, y los
         medios electrónicos exigen código de autorización (R11).
+      </p>
+
+      <h3>De quién es una compra del candy</h3>
+      <div class="callout">
+        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
+      </div>
+      <p>
+        Hoy <code>cliente_id</code> es obligatorio, y eso obliga a pedir el nombre para vender pochoclos. En el
+        modelo nuevo la compra puede llegar por dos caminos distintos, y por eso <strong>las dos asociaciones
+        quedan en <code>0..1</code></strong>:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Camino</th><th>Cliente</th><th>Reserva</th></tr></thead>
+          <tbody>
+            <tr><td>Mostrador: alguien compra y se va</td><td>—</td><td>—</td></tr>
+            <tr><td>Web: «¿desea agregar pochoclos + gaseosa?» al terminar de comprar la entrada</td><td>sale de la reserva</td><td>sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Que la compra conozca su reserva no es decorativo: permite retirar el pedido en el candy mostrando el
+        <a href="#acceso">mismo QR</a> de la entrada, y le da al arqueo un número que hoy no existe —cuánto
+        candy vende el <em>upsell</em> contra el mostrador—, que es justamente el número que justifica haber
+        puesto la pregunta. CU-16, «ver mis compras», lista solo las que sí tienen cliente.
       </p>
 
       <h3>Los productos no se borran</h3>
@@ -1188,6 +1526,25 @@ Total del 2026-08-13: $   27000.00</code></pre>
             <tr><td><code>combo_item</code></td><td>qué trae cada combo: apunta dos veces a <code>producto</code></td></tr>
             <tr><td><code>compra_candy</code></td><td>venta de mostrador, con su medio de pago</td></tr>
             <tr><td><code>item_compra</code></td><td>línea de la compra, con nombre y precio congelados</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Lo que le falta al esquema <span class="tag tag-pend">modelado</span></h3>
+      <p>
+        <code>schema.sql</code> todavía es el de la primera vuelta. Para sostener el modelo de dominio actual
+        le falta esto, y ninguno de estos cambios rompe datos existentes:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tabla</th><th>Cambio</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>promocion</code></td><td>tabla nueva</td><td>Tabla única con discriminador de tipo (porcentaje, monto fijo, NxM) y sus condiciones: vigencia, días, horario, medios</td></tr>
+            <tr><td><code>entrada</code></td><td>+ <code>tarifa</code></td><td>Es por butaca: dos generales y un jubilado conviven en la misma reserva</td></tr>
+            <tr><td><code>pago</code></td><td>+ <code>subtotal</code>, <code>descuento</code>, <code>promocion_id</code></td><td>Guardar cuál promoción ganó y cuánto descontó es lo que permite auditar el cobro después</td></tr>
+            <tr><td><code>reserva</code></td><td>+ <code>codigo</code> <code>UNIQUE</code>, + <code>ingresada_en</code></td><td>El código del QR y el registro de ingreso. <code>estado</code> además acepta <code>EXPIRADA</code></td></tr>
+            <tr><td><code>compra_candy</code></td><td><code>cliente_id</code> pasa a <code>NULL</code>, + <code>reserva_id</code></td><td>Venta de mostrador anónima, y la del upsell web atada a su reserva</td></tr>
+            <tr><td><code>usuario</code></td><td><code>rol</code> acepta <code>ACOMODADOR</code></td><td>La tabla no cambia de forma: el rol nuevo es un valor más del discriminador</td></tr>
           </tbody>
         </table>
       </div>
@@ -1447,6 +1804,9 @@ docker compose up -d --build</code></pre>
           <thead><tr><th>Dependencia</th><th>Versión</th><th>Scope</th><th>Para qué</th></tr></thead>
           <tbody>
             <tr><td><code>mysql-connector-j</code></td><td>9.7.0</td><td>compile</td><td>Driver JDBC de MySQL</td></tr>
+            <tr><td><code>javalin</code></td><td>6.7.0</td><td>compile</td><td>Servidor HTTP de la capa <code>api/</code></td></tr>
+            <tr><td><code>jackson-databind</code></td><td>2.18.3</td><td>compile</td><td>JSON de Javalin. Versión explícita porque Javalin la trae opcional</td></tr>
+            <tr><td><code>slf4j-simple</code></td><td>2.0.17</td><td>compile</td><td>Logging de Javalin. Misma razón que Jackson</td></tr>
             <tr><td><code>junit-jupiter</code></td><td>5.14.4</td><td>test</td><td>Tests. No viaja en el jar final</td></tr>
           </tbody>
         </table>
@@ -1544,6 +1904,12 @@ cp .env.example .env
 docker compose up -d --build
 
 open http://localhost:8080        # la aplicación</code></pre>
+
+      <figure class="diagram">
+        {{SVG_DOCKER}}
+        <figcaption>Los cuatro contenedores, las dos redes internas y qué repo construye a cada uno</figcaption>
+      </figure>
+
       <div class="table-wrap">
         <table>
           <thead><tr><th>Servicio</th><th>Dónde</th><th>Para qué</th></tr></thead>
@@ -1602,6 +1968,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
     │   │   ├── memoria/        *DAOMemoria, para testear sin base
     │   │   └── archivo/        ReservaDAOTxt, GeneradorTicketTxt, GeneradorTicketCandyTxt
     │   ├── ui/                 MenuConsola
+    │   ├── api/                HTTP: ServidorApi + 8 Rutas*, Vistas, Parseo, NoEncontrado
     │   └── Main.java           elige las implementaciones
     ├── main/resources/     schema.sql
     └── test/java/ar/uade/cine/servicio/    un test por gestor</code></pre>
@@ -1633,6 +2000,31 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         Los dieciséis casos de uso y las catorce reglas funcionan contra MySQL, con 60 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y tanto el ticket de butacas como el del
         candy se emiten en <code>.txt</code>.
+      </p>
+
+      <h3>Modelado, falta implementar</h3>
+      <p>
+        La segunda vuelta de modelado agregó cuatro reglas (R15 a R18), tres casos de uso y un paquete de
+        dominio entero. Está todo dibujado en el modelo de dominio y explicado en este manual, pero
+        <strong>nada de esto existe todavía en el código</strong>:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué</th><th>Dónde está explicado</th><th>Tamaño</th></tr></thead>
+          <tbody>
+            <tr><td>Tarifas por tipo de público</td><td><a href="#precios">Precios y promociones</a></td><td>medio</td></tr>
+            <tr><td>Motor de promociones y su ABM</td><td><a href="#precios">Precios y promociones</a></td><td><strong>grande</strong>: se lleva una jerarquía, un DAO, un ABM y sus tests</td></tr>
+            <tr><td>Control de acceso con código por reserva</td><td><a href="#acceso">Control de acceso</a></td><td>medio</td></tr>
+            <tr><td>Vencimiento de reservas</td><td><a href="#vencimiento">Vencimiento de la reserva</a></td><td>chico</td></tr>
+            <tr><td>Candy anónimo y ligado a la reserva</td><td><a href="#candy">Candy</a></td><td>chico</td></tr>
+            <tr><td><code>Empleado</code> y el rol acomodador</td><td><a href="#usuarios">Usuarios y roles</a></td><td>chico</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Los diagramas de <a href="#capas">capas</a> y de <a href="#casos-de-uso">casos de uso</a> todavía no
+        reflejan este modelo: les falta <code>GestorPromociones</code>, <code>PromocionDAO</code>, el actor
+        acomodador y los CU nuevos. El de dominio sí está al día.
       </p>
 
       <h3>Tests</h3>
@@ -1690,18 +2082,18 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         puede ser parcial, y qué pasa con el arqueo del día en que se cobró contra el día en que se devolvió.
       </p>
       <p>
-        <strong>Vencimiento de la reserva.</strong> <code>Reserva</code> ya guarda <code>creadaEn</code>, que es
-        la mitad del trabajo. Falta un estado <code>EXPIRADA</code> y algo que lo dispare: en un cine una
-        reserva sin pagar no puede retener butacas para siempre. No lo agregamos todavía porque un estado que
-        nada produce es un estado muerto.
+        <strong>Vencimiento de la reserva.</strong> Dejó de ser una idea anotada: está resuelto en el modelo y
+        tiene su propia sección, <a href="#vencimiento">Vencimiento de la reserva</a>. El estado
+        <code>EXPIRADA</code> ya no es un estado muerto porque produce algo concreto —libera butacas— y el
+        disparador resultó no ser un proceso de fondo sino la propia consulta.
       </p>
 
       <h3>Otras mejoras pendientes</h3>
       <ul>
         <li><strong>Limpieza entre funciones:</strong> hoy R3 permite programar una función que arranca en el minuto exacto en que termina la anterior. Faltan 15-20 minutos de vaciado y limpieza.</li>
         <li><strong>Precios con <code>BigDecimal</code>:</strong> hoy se leen con <code>getDouble</code> sobre columnas <code>DECIMAL</code>. El redondeo a dos decimales en <code>CalculadoraPrecio</code> tapa el síntoma en el precio de cada butaca, pero el tipo correcto para plata sigue siendo <code>BigDecimal</code>.</li>
-        <li><strong>Tarifas por tipo de público:</strong> hoy el precio depende de la sala y de la butaca. En un cine también depende de quién compra (general, menor, jubilado, estudiante) y de cuándo (el miércoles). Ese eje no existe en el modelo: la <code>Entrada</code> tendría que llevar una tarifa además del asiento.</li>
-        <li><strong>Validar la edad al vender:</strong> la clasificación está guardada pero no se usa. Para validarla de verdad —no solo preguntar— <code>Cliente</code> necesita fecha de nacimiento.</li>
+        <li><strong>Validar la edad al vender:</strong> la clasificación está guardada pero no se usa. Para validarla de verdad —no solo preguntar— <code>Cliente</code> necesita fecha de nacimiento. Es el mismo dato que haría falta para dejar de confiar en la tarifa declarada por el que compra.</li>
+        <li><strong>Pago dividido:</strong> <code>Pago "0..1"</code> impide pagar mitad efectivo y mitad tarjeta, que en boletería pasa todo el tiempo. Soportarlo pediría pasar a <code>0..*</code> con la restricción de que los montos sumen el total, y decidir cuál de los medios define el descuento.</li>
       </ul>
 
       <h3>Fuera de alcance, a propósito</h3>
@@ -1711,9 +2103,11 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
       </p>
       <ul>
         <li><strong>Complejo o sucursal:</strong> hoy hay un solo cine implícito. Varias sedes obligarían a que <code>Sala</code> pertenezca a un <code>Cine</code> y a filtrar la cartelera por sede.</li>
-        <li><strong>Reserva temporal de butaca durante la compra:</strong> el "tenés 10 minutos para pagar" de los cines online. Es lo que faltaría para que dos clientes web no elijan la misma butaca, y está emparentado con la deuda de concurrencia de arriba.</li>
         <li><strong>Abonos, membresías y puntos:</strong> otro agregado entero, con su propio ciclo de vida.</li>
-        <li><strong>Caja por turno y por empleado:</strong> el arqueo hoy es del día completo. En un cine real cada boletero cierra su caja, lo que pediría un rol <code>BOLETERO</code> y asociar cada pago a quien lo cobró.</li>
+        <li><strong>Caja por turno y por empleado:</strong> el arqueo hoy es del día completo. En un cine real cada boletero cierra su caja, lo que pediría asociar cada pago a quien lo cobró. Con <code>Empleado</code> ya modelado, esto quedó a un campo de distancia, pero sigue afuera.</li>
+        <li><strong>Devolución y cancelación de función:</strong> son el mismo problema. Un cine cancela funciones con entradas vendidas —se rompió el proyector, no llegó la copia— y sin devolución no hay forma de cerrar ese circuito. Haría falta <code>EstadoFuncion</code> y decidir el efecto en cascada sobre las reservas.</li>
+        <li><strong>Ingresos parciales:</strong> con un código por reserva y no por butaca, si de cuatro personas entran tres el sistema no lo puede representar. Es el costo consciente de la decisión del <a href="#acceso">QR por reserva</a>.</li>
+        <li><strong>Stock del candy:</strong> <code>Producto</code> tiene un flag <code>disponible</code>, no una cantidad. Descontar stock obligaría además a decidir qué pasa con los componentes cuando se vende un combo.</li>
       </ul>
 
       <div class="callout">
@@ -1800,6 +2194,54 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
               <td><code>LEFT JOIN</code> + agrupar</td>
               <td>Una consulta de géneros por película</td>
               <td>Evita el problema N+1; con <code>INNER</code> una película sin géneros desaparecería del listado</td>
+            </tr>
+            <tr>
+              <td colspan="3" style="font-weight:600">Segunda vuelta de modelado <span class="tag tag-pend">modelado</span></td>
+            </tr>
+            <tr>
+              <td>El descuento vive en el <code>Pago</code></td>
+              <td>Aplicarlo sobre <code>Entrada.precio</code></td>
+              <td>El 2x1 no se puede escribir como factor sobre una butaca, y si gana la mejor promo (R15) todas tienen que producir la misma unidad: un monto sobre la reserva</td>
+            </tr>
+            <tr>
+              <td>La tarifa va en la <code>Entrada</code></td>
+              <td>Una tarifa por reserva</td>
+              <td>Es por persona: en una reserva de cuatro puede haber dos generales, un menor y un jubilado</td>
+            </tr>
+            <tr>
+              <td><code>TipoTarifa</code> como enum</td>
+              <td>Entidad con ABM</td>
+              <td>Catálogo cerrado, mismo criterio que <code>Genero</code> y <code>TipoAsiento</code>. Cambiar el descuento de jubilado es recompilar, y se aceptó</td>
+            </tr>
+            <tr>
+              <td><code>Promocion</code> como jerarquía con ABM</td>
+              <td>Tres constantes en el código</td>
+              <td>Sin alta desde el sistema no habría por qué modelarla como entidad; con ABM, agregar un tipo de beneficio es una clase y no un <code>case</code></td>
+            </tr>
+            <tr>
+              <td>Un código de QR por reserva</td>
+              <td>Uno por butaca</td>
+              <td>El grupo entra junto y el acomodador ve todo de una. Se pierden los ingresos parciales, y se aceptó</td>
+            </tr>
+            <tr>
+              <td><code>ingresadaEn</code> como timestamp</td>
+              <td>Un estado <code>UTILIZADA</code></td>
+              <td><code>EstadoReserva</code> modela el eje del cobro; el ingreso es otro eje. Además el timestamp da auditoría y no obliga a revisar R5 ni R13</td>
+            </tr>
+            <tr>
+              <td>Expiración perezosa con escritura</td>
+              <td>Un proceso de fondo que expire reservas</td>
+              <td>Sin cron ni scheduler: la primera consulta que se cruza con una vencida la cierra. Escribe, y no solo deriva, porque el <code>UNIQUE</code> de la base no sabe de vencimientos</td>
+            </tr>
+            <tr>
+              <td><code>Empleado</code> en vez de <code>AdministradorCine</code></td>
+              <td>Sumar <code>Acomodador</code> como hermano</td>
+              <td>Serían dos clases que solo se diferencian por el rol. El corte de la herencia siempre fue tener contraseña, no el cargo</td>
+            </tr>
+            <tr>
+              <td>Seguir sin login de cliente</td>
+              <td>Cuenta con email y contraseña</td>
+              <td>Mantiene la compra sin fricción y la herencia justificada. El costo es que el email alcanza para ver reservas ajenas, y que la tarifa reducida no se puede validar al vender</td>
             </tr>
           </tbody>
         </table>

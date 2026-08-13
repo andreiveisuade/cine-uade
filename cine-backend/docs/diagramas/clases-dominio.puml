@@ -5,12 +5,21 @@ skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 hide empty members
 
+' Este diagrama muestra QUE ES un cine: entidades, value objects y sus relaciones.
+' COMO funciona el sistema (gestores, DAO, API) esta en clases-capas.puml.
+' Los comentarios ' que siguen son el razonamiento de cada decision: no se renderizan,
+' y son la materia prima de las secciones del manual.
+
 package "dominio.cartelera" {
+  ' generos va como atributo con cardinalidad y no como flecha: es la unica
+  ' relacion multivaluada del modelo (R7 exige minimo uno) y ese [1..*] se
+  ' perderia si quedara escondido dentro de un List<Genero>.
   interface Pelicula {
     +getTitulo(): String
     +getDuracionMinutos(): int
-    +getGeneros(): List<Genero>
     +getClasificacion(): Clasificacion
+    --
+    generos: Genero [1..*]
     --datos de catalogo--
     +getDirector(): String
     +getSinopsis(): String
@@ -33,10 +42,15 @@ package "dominio.cartelera" {
 }
 
 package "dominio.salas" {
+  ' Sala no guarda su distribucion de butacas: serian dos fuentes de verdad
+  ' para lo mismo. La capacidad se cuenta desde los asientos.
   interface Sala {
     +getNombre(): String
     +getTipo(): TipoSala
   }
+  ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
+  ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
+  ' butaca rota lo esta siempre.
   interface Asiento {
     +getSalaId(): int
     +getFila(): int
@@ -45,6 +59,8 @@ package "dominio.salas" {
     +getEstado(): EstadoAsiento
     +getCodigo(): String
   }
+  ' TipoSala es tecnologia, no precio premium: cuando el recargo estaba tambien
+  ' aca, una butaca VIP en sala VIP pagaba 2.0 x 1.5, tres veces la base.
   enum TipoSala <<enum>> {
     DOS_D / TRES_D / IMAX / CUATRO_D
     --
@@ -63,10 +79,15 @@ package "dominio.salas" {
 }
 
 package "dominio.funciones" {
+  ' Proyeccion es de la funcion, no de la sala: TipoSala dice que PUEDE
+  ' proyectar en 3D, la funcion dice que se ESTA proyectando.
+  ' getFin() es derivado (inicio + duracion de la pelicula) y es lo que hace
+  ' legible la restriccion de superposicion R3.
   interface Funcion {
     +getPeliculaId(): int
     +getSalaId(): int
     +getInicio(): LocalDateTime
+    +getFin(): LocalDateTime
     +getVersion(): Version
     +getProyeccion(): Proyeccion
     +getPrecio(): double
@@ -88,45 +109,118 @@ package "dominio.usuarios" {
     +getRol(): Rol
   }
   interface Cliente
-  interface AdministradorCine {
+  ' Antes era AdministradorCine. El corte nunca fue el cargo sino tener
+  ' contrasena: el empleado la tiene, el cliente no. Al entrar el acomodador
+  ' el nombre viejo mentia; la herencia no. Rol discrimina la tabla unica.
+  interface Empleado {
     +getPasswordHash(): String
   }
   enum Rol <<enum>> {
     CLIENTE
     ADMINISTRADOR
+    ACOMODADOR
   }
 }
 
 package "dominio.ventas" {
+  ' Nace RESERVADA, pasa a PAGADA al cobrar, CANCELADA si el cliente la da de
+  ' baja y EXPIRADA si nadie la pago a tiempo. Expira sin proceso de fondo: la
+  ' primera operacion que se cruza con una vencida la cierra al pasar.
+  ' codigo es el del QR y, como el cliente no inicia sesion, es su unica
+  ' credencial: por eso no puede ser el id. ingresadaEn null = no entraron aun.
   interface Reserva {
     +getFuncionId(): int
     +getClienteId(): int
     +getCreadaEn(): LocalDateTime
     +getEntradas(): List<Entrada>
     +getCantidadEntradas(): int
-    +getTotal(): double
+    +getSubtotal(): double
     +getEstado(): EstadoReserva
+    +estaVigente(): boolean
+    --control de acceso--
+    +getCodigo(): String
+    +getIngresadaEn(): LocalDateTime
   }
+  ' Value object: sin identidad ni DAO, vive y muere con su reserva.
+  ' precio es el de lista (funcion x TipoSala x TipoAsiento x TipoTarifa), se
+  ' congela al reservar y ninguna promocion lo toca.
+  ' La tarifa va aca porque es por persona: en una reserva de cuatro puede
+  ' haber dos generales, un menor y un jubilado.
   class Entrada <<record>> {
     +asientoId(): int
     +codigoAsiento(): String
+    +tarifa(): TipoTarifa
     +precio(): double
   }
+  ' El descuento vive aca y no en la entrada: el 2x1 no se puede escribir como
+  ' factor sobre una butaca, y como las promociones no se acumulan y gana la
+  ' mejor (R15), todas tienen que producir la misma unidad: un monto sobre la
+  ' reserva. Consecuencia: el total definitivo no existe hasta el pago, porque
+  ' el descuento bancario depende del medio que se elige al cobrar.
   interface Pago {
     +getReservaId(): int
+    +getSubtotal(): double
+    +getPromocionId(): Integer
+    +getDescuento(): double
     +getMonto(): double
     +getMedio(): MedioPago
     +getFecha(): LocalDateTime
     +getCodigoAutorizacion(): String
   }
   enum EstadoReserva <<enum>> {
-    RESERVADA / PAGADA / CANCELADA
+    RESERVADA / PAGADA
+    CANCELADA / EXPIRADA
+  }
+  ' Quien compra, no donde se sienta. Sin login no hay como validar "jubilado"
+  ' al vender: la tarifa se declara al comprar y se acredita en la puerta, y
+  ' por eso el enum sabe cual requiere acreditacion.
+  enum TipoTarifa <<enum>> {
+    GENERAL / MENOR
+    JUBILADO / ESTUDIANTE
+    --
+    +getMultiplicadorPrecio(): double
+    +requiereAcreditacion(): boolean
   }
   enum MedioPago <<enum>> {
     EFECTIVO / DEBITO / CREDITO
     QR / TRANSFERENCIA
     --
     +requiereAutorizacion(): boolean
+  }
+}
+
+package "dominio.promociones" {
+  ' Interfaz con tres implementaciones de verdad, que es cuando la abstraccion
+  ' paga: un tipo de beneficio nuevo es una clase, no un case mas en un switch.
+  ' Van a tabla unica con discriminador, igual que Usuario.
+  ' calcularDescuento recibe una lista de entradas y no la reserva entera
+  ' porque las de tarifa reducida no participan del descuento (R16).
+  interface Promocion {
+    --condiciones--
+    +getNombre(): String
+    +getVigenciaDesde(): LocalDate
+    +getVigenciaHasta(): LocalDate
+    +getDiasSemana(): Set<DayOfWeek>
+    +getHoraDesde(): LocalTime
+    +getHoraHasta(): LocalTime
+    +getMediosPago(): Set<MedioPago>
+    +estaActiva(): boolean
+    +aplicaA(Funcion, MedioPago, LocalDateTime): boolean
+    --beneficio--
+    +calcularDescuento(List<Entrada>): double
+  }
+  abstract class PromocionBase {
+    #cumpleCondiciones(...): boolean
+  }
+  class PromocionPorcentaje {
+    +getPorcentaje(): double
+  }
+  class PromocionMontoFijo {
+    +getMonto(): double
+  }
+  class PromocionNxM {
+    +getN(): int
+    +getM(): int
   }
 }
 
@@ -139,15 +233,25 @@ package "dominio.candy" {
     +getComponentes(): List<ItemCombo>
     +esCombo(): boolean
   }
+  ' La autoreferencia es lo que hace al combo una promocion y no un producto
+  ' con nombre bonito: sabiendo que trae se valida que cueste menos que
+  ' comprarlo suelto (R14).
   class ItemCombo <<record>> {
     +productoId(): int
     +nombre(): String
     +cantidad(): int
   }
+  ' No pasa por Pago y no tiene estados: en el mostrador se cobra en el acto,
+  ' asi que nace pagada y lleva encima el medio.
+  ' Las dos asociaciones en 0..1 no son redundantes: la venta de mostrador no
+  ' tiene ninguna, y la del "desea agregar pochoclos?" posterior a la compra
+  ' web tiene reserva, de donde sale el cliente sin volver a pedirlo.
   interface CompraCandy {
-    +getClienteId(): int
+    +getClienteId(): Integer
+    +getReservaId(): Integer
     +getFecha(): LocalDateTime
     +getMedio(): MedioPago
+    +getCodigoAutorizacion(): String
     +getItems(): List<ItemCompra>
     +getTotal(): double
   }
@@ -165,96 +269,57 @@ package "dominio.candy" {
 }
 
 Cliente --|> Usuario
-AdministradorCine --|> Usuario
+Empleado --|> Usuario
+
+PromocionBase ..|> Promocion
+PromocionPorcentaje --|> PromocionBase
+PromocionMontoFijo --|> PromocionBase
+PromocionNxM --|> PromocionBase
 
 Sala "1" *-- "1..*" Asiento
 Funcion "*" --> "1" Pelicula
+
 Funcion "*" --> "1" Sala
+note on link
+  {R3: dos funciones de la misma
+  sala no se superponen}
+end note
 
 Reserva "*" --> "1" Funcion
 Reserva "*" --> "1" Cliente
 Reserva "1" *-- "1..*" Entrada
-Entrada "*" --> "1" Asiento
-Pago "0..1" --> "1" Reserva
 
-Producto "1" *-- "0..*" ItemCombo
-ItemCombo "*" --> "1" Producto
-CompraCandy "*" --> "1" Cliente
+Entrada "*" --> "1" Asiento
+note on link
+  {entrada.asiento.sala =
+   entrada.reserva.funcion.sala}
+end note
+
+Pago "0..1" --> "1" Reserva
+Pago "*" --> "0..1" Promocion
+
+Producto "1" *-- "0..*" ItemCombo : contiene >
+note on link
+  {0 si tipo != COMBO,
+   >= 2 si tipo = COMBO}
+end note
+
+ItemCombo "*" --> "1" Producto : refiere a >
+CompraCandy "*" --> "0..1" Cliente
+CompraCandy "*" --> "0..1" Reserva
 CompraCandy "1" *-- "1..*" ItemCompra
 ItemCompra "*" --> "1" Producto
 
 note as N1
   **Los enums no llevan asociacion.**
-  Un enum es un tipo, no una entidad: se
-  modela como atributo (getTipo(): TipoSala),
-  igual que un String. Dibujarle una flecha
-  "1 a 1" diria que cada sala tiene su propio
-  IMAX, cuando IMAX es un valor compartido.
-end note
-
-note bottom of Entrada
-  Value object: no tiene identidad ni DAO,
-  vive y muere con su reserva. Por eso es un
-  record y no interfaz + implementacion.
-  precio se congela al reservar: si manana
-  sube la funcion, el ticket ya emitido
-  sigue diciendo lo que se pago.
-end note
-
-note bottom of Asiento
-  Un asiento tiene MUCHAS entradas a lo largo
-  del tiempo: una por cada funcion en la que
-  se vendio. De ahi el "*" del lado de Entrada.
-  No tiene estado "ocupado": lo esta para una
-  funcion, si alguna reserva no cancelada de
-  esa funcion lo tomo. Si tiene estado fisico,
-  porque una butaca rota lo esta siempre.
-end note
-
-note bottom of Sala
-  No guarda su distribucion de butacas. Serian
-  dos fuentes de verdad para lo mismo: la
-  capacidad se cuenta desde los asientos.
-end note
-
-note bottom of Funcion
-  Las asociaciones se guardan como id
-  (peliculaId, salaId): el DAO resuelve la
-  relacion. Vale para todo el modelo.
-  Proyeccion es de la funcion, no de la sala:
-  TipoSala dice que PUEDE proyectar, la
-  funcion que se ESTA proyectando.
-end note
-
-note bottom of TipoAsiento
-  El recargo premium esta solo aca. TipoSala
-  tenia tambien un VIP, y una butaca VIP en
-  sala VIP pagaba 2.0 x 1.5: tres veces la
-  base. TipoSala quedo como tecnologia.
-end note
-
-note bottom of AdministradorCine
-  Solo el administrador tiene credenciales:
-  el cliente compra sin iniciar sesion.
-  Esa diferencia de datos es lo que justifica
-  la herencia en vez de un simple enum de rol.
-  Rol es el discriminador de la tabla unica.
-end note
-
-note bottom of ItemCombo
-  La autoreferencia es lo que hace al combo
-  una promocion y no un producto con nombre
-  bonito: sabiendo que trae se puede validar
-  que cueste menos que comprarlo suelto (R14).
-  0..* porque un producto suelto no tiene
-  componentes; un combo tiene 2 o mas.
-end note
-
-note bottom of CompraCandy
-  No pasa por Pago y no tiene estados: en el
-  mostrador se cobra en el acto, asi que nace
-  pagada y lleva encima el medio. Reservar y
-  cobrar despues es el circuito de las butacas.
+  Un enum es un tipo, no una entidad: se modela
+  como atributo (getTipo(): TipoSala), igual que
+  un String. Dibujarle una flecha "1 a 1" diria
+  que cada sala tiene su propio IMAX, cuando IMAX
+  es un valor compartido por todas.
+  Genero es la excepcion: es multivaluado y tiene
+  minimo uno, y esa cardinalidad se pierde si no
+  se escribe. Por eso va como atributo.
 end note
 
 @enduml
