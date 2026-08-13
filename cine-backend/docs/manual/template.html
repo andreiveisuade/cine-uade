@@ -2484,6 +2484,22 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         <br><em>Verifica:</em> que dar de baja no cascadee.
       </p>
 
+      <figure class="diagram">
+        <img src="{{IMG_GRILLA}}" alt="La pantalla de grilla con el informe de previsualización" />
+        <figcaption>
+          CP-09 en la web: el informe dice que de dos fechas entra una, y la que se saltea nombra
+          contra qué se pisa. <strong>Confirmar</strong> está habilitado porque hay una previsualización
+          vigente: tocar cualquier campo lo apaga y borra el informe.
+        </figcaption>
+      </figure>
+      <p>
+        <strong>Un defecto cosmético que dejó ver esta captura:</strong> el informe dice «Se van a generar
+        <em>1 funciones</em>, 1 se <em>saltean</em>». Los textos están escritos siempre en plural y con una
+        sola función quedan mal concordados. No afecta ningún cálculo —los números son correctos— y queda
+        anotado en vez de corregido porque <code>admin.js</code> está siendo reestructurado en paralelo:
+        tocarlo ahora chocaría con ese trabajo. Es una línea en <code>dibujarInforme</code>.
+      </p>
+
       <div class="table-wrap">
         <table>
           <thead><tr><th>Entrada</th><th>Esperado</th><th>Por qué</th></tr></thead>
