@@ -590,8 +590,35 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Qué guarda una película</h3>
       <p>
         Además de título, duración y géneros, lleva <code>Clasificacion</code> (ATP, +13, +16, +18) y los datos
-        de catálogo: director, sinopsis, año, idioma original, poster y si sigue en cartelera.
+        de catálogo: director, sinopsis, año, idioma original, poster y si está publicada.
       </p>
+
+      <h4>Estar en cartelera se deriva, no se declara</h4>
+      <p>
+        Una película está en cartelera si tiene <strong>alguna función por delante</strong>. No es un dato que
+        alguien prenda o apague: sale de la programación, que es donde vive el hecho.
+      </p>
+      <p>
+        Antes era un flag que había que mantener a mano, y un flag así siempre termina mintiendo: se programan
+        funciones y nadie lo prende, o la última función pasó hace un mes y la película sigue anunciada. Es el
+        mismo argumento por el que la sala no guarda su capacidad y la reserva no guarda su total: dos fuentes
+        de verdad para el mismo hecho se separan solas.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El flag no desapareció, cambió de rol.</strong> Pasó de <em>anuncio</em> a <em>veto</em>:
+          puede sacar de la cartelera una película que tiene funciones, pero no puede meter una que no las
+          tiene. Eso lo deja como interruptor del administrador —para bajar algo de la web sin tocar la
+          programación— sin volver a ser una fuente de verdad paralela. Cuando los dos hablan, manda la
+          programación.
+        </p>
+        <p>
+          La asimetría es la regla, y es lo que hay que conservar si algún día se reescribe el método: el
+          filtro es un <em>y</em>, no un <em>o</em>. Por eso en el panel del encargado la etiqueta dice
+          «Publicada / Despublicada» y no «En cartelera / Fuera»: con el significado nuevo, una película podía
+          figurar «En cartelera» sin una sola función programada.
+        </p>
+      </div>
       <p>
         <code>Clasificacion</code> guarda la <strong>edad mínima</strong>, no solo la etiqueta. Así el día que se
         valide la edad al vender, la regla es una comparación numérica y no un <code>switch</code> traduciendo
