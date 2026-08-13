@@ -107,10 +107,11 @@ public class Aplicacion {
 
         calculadoraPrecio = new CalculadoraPrecio();
 
-        cartelera = new GestorCartelera(peliculaDAO, funcionDAO);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         programaciones = new GestorProgramaciones(programacionDAO, funcionDAO, funciones);
+        // Después de programaciones: la cartelera las extiende antes de listar.
+        cartelera = new GestorCartelera(peliculaDAO, funcionDAO, programaciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);

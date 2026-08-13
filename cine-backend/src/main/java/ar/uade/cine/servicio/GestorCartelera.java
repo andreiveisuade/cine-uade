@@ -22,10 +22,20 @@ public class GestorCartelera {
 
     private final PeliculaDAO peliculaDAO;
     private final FuncionDAO funcionDAO;
+    private final GestorProgramaciones programaciones;
 
-    public GestorCartelera(PeliculaDAO peliculaDAO, FuncionDAO funcionDAO) {
+    /**
+     * Recibe el gestor de grillas porque la cartelera es la lectura de la que cuelga la
+     * extensión: antes de decir qué hay en cartel hay que asegurarse de que las grillas
+     * activas hayan materializado lo que les toca. Es la misma dependencia entre gestores
+     * que ya tienen {@code GestorPagos} con {@code GestorPromociones}, y va en esta
+     * dirección y no en la otra: las grillas no necesitan saber nada de la cartelera.
+     */
+    public GestorCartelera(PeliculaDAO peliculaDAO, FuncionDAO funcionDAO,
+                           GestorProgramaciones programaciones) {
         this.peliculaDAO = peliculaDAO;
         this.funcionDAO = funcionDAO;
+        this.programaciones = programaciones;
     }
 
     /** El alta mínima: título, duración, géneros y clasificación. */
@@ -167,6 +177,12 @@ public class GestorCartelera {
      */
     public List<Pelicula> listarEnCartelera() {
         LocalDateTime ahora = LocalDateTime.now();
+        // Las grillas activas materializan acá lo que les falta. Sin esto un cine con
+        // grillas abiertas amanecería vacío el día que se pasara el último rango generado:
+        // la cartelera se deriva de las funciones, y las funciones alguien las tiene que
+        // crear. Es el mismo momento que elige GestorReservas para expirar las vencidas —
+        // el trabajo lo hace quien consulta, no un proceso de fondo.
+        programaciones.extenderActivas(ahora.toLocalDate());
         Set<Integer> conFuncionesPorDelante = funcionDAO.listar().stream()
                 .filter(funcion -> !funcion.yaEmpezo(ahora))
                 .map(Funcion::getPeliculaId)

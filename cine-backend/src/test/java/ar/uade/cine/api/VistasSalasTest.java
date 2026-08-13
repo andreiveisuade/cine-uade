@@ -28,6 +28,7 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 import ar.uade.cine.persistencia.AsientoDAO;
@@ -37,6 +38,7 @@ import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorFunciones;
+import ar.uade.cine.servicio.GestorProgramaciones;
 import ar.uade.cine.servicio.GestorSalas;
 
 /**
@@ -63,7 +65,8 @@ class VistasSalasTest {
         calculadora = new CalculadoraPrecio();
         vistas = new VistasSalas(salas, calculadora);
 
-        new GestorCartelera(peliculaDAO, funcionDAO)
+        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                new ProgramacionDAOMemoria(), funcionDAO, funciones))
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
     }
 

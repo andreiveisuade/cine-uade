@@ -50,8 +50,8 @@ class RutasProgramaciones {
     /** {@code funciones} solo viaja en el detalle: el listado no arrastra lo que generó. */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     record ProgramacionVista(int id, int peliculaId, int salaId, String desde, String hasta,
-                             String horaInicio, List<String> diasSemana, String idioma,
-                             String proyeccion, double precio, boolean activa,
+                             String generadaHasta, String horaInicio, List<String> diasSemana,
+                             String idioma, String proyeccion, double precio, boolean activa,
                              List<FuncionGeneradaVista> funciones) {
     }
 
@@ -125,7 +125,10 @@ class RutasProgramaciones {
         int peliculaId = pedido.peliculaId() == null ? 0 : pedido.peliculaId();
         int salaId = pedido.salaId() == null ? 0 : pedido.salaId();
         var desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
-        var hasta = Parseo.dia(pedido.hasta(), "la fecha de fin");
+        // Sin fecha de fin la grilla es abierta: corre hasta que la den de baja. Por eso
+        // no se exige, a diferencia de desde.
+        var hasta = pedido.hasta() == null || pedido.hasta().isBlank()
+                ? null : Parseo.dia(pedido.hasta(), "la fecha de fin");
         var hora = Parseo.hora(pedido.horaInicio(), "la hora de la función");
         Set<DayOfWeek> dias = Set.copyOf(
                 Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "los días de la semana"));
@@ -151,12 +154,18 @@ class RutasProgramaciones {
     /** {@code generadas} en null deja el campo afuera: es el listado, no el detalle. */
     private static ProgramacionVista programacion(Programacion p, List<Funcion> generadas) {
         return new ProgramacionVista(p.getId(), p.getPeliculaId(), p.getSalaId(),
-                p.getDesde().toString(), p.getHasta().toString(), p.getHoraInicio().toString(),
+                p.getDesde().toString(), texto(p.getHasta()), texto(p.getGeneradaHasta()),
+                p.getHoraInicio().toString(),
                 p.getDiasSemana().stream().map(Enum::name).toList(),
                 p.getVersion().name(), p.getProyeccion().name(), p.getPrecio(), p.estaActiva(),
                 generadas == null ? null : generadas.stream()
                         .map(f -> new FuncionGeneradaVista(f.getId(), fecha(f.getInicio())))
                         .toList());
+    }
+
+    /** Las fechas que admiten null viajan como null, no como cadena vacía. */
+    private static String texto(java.time.LocalDate fecha) {
+        return fecha == null ? null : fecha.toString();
     }
 
     private static String fecha(LocalDateTime momento) {

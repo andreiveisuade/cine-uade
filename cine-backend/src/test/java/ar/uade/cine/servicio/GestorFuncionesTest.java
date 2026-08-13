@@ -36,6 +36,7 @@ import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
@@ -60,7 +61,9 @@ class GestorFuncionesTest {
     @BeforeEach
     void prepararCartelera() {
         reservaDAO = new ReservaDAOMemoria();
-        cartelera = new GestorCartelera(peliculaDAO, funcionDAO);
+        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
+        cartelera = new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                new ProgramacionDAOMemoria(), funcionDAO, funciones));
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));

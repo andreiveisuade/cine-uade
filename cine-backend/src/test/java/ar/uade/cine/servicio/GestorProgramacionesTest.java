@@ -61,7 +61,9 @@ class GestorProgramacionesTest {
     @BeforeEach
     void prepararCartelera() {
         ReservaDAO reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
-        new GestorCartelera(peliculaDAO, funcionDAO)
+        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                programacionDAO, funcionDAO,
+                new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO)))
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         GestorSalas salas = new GestorSalas(salaDAO, new AsientoDAOMemoria(), funcionDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
@@ -263,7 +265,98 @@ class GestorProgramacionesTest {
                         LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, 5000));
     }
 
+    // ---------- la grilla abierta, que rueda sola ----------
+
+    /**
+     * Sin {@code hasta}, el alta no puede generar "todo el rango": el rango no termina.
+     * Genera hasta el horizonte y ahí se detiene.
+     */
+    @Test
+    void unaGrillaAbiertaGeneraSoloHastaElHorizonte() {
+        PlanProgramacion plan = crearAbierta();
+
+        // 14 días de horizonte contados desde hoy, más el de hoy mismo si entra en el rango.
+        assertFalse(plan.funciones().isEmpty(), "una grilla abierta tiene que generar algo");
+        LocalDate ultima = plan.funciones().get(plan.funciones().size() - 1).inicio().toLocalDate();
+        assertFalse(ultima.isAfter(LocalDate.now().plusDays(14)),
+                "no puede generar más allá del horizonte");
+    }
+
+    /** Una grilla cerrada no se recorta: el administrador ya dijo hasta cuándo. */
+    @Test
+    void unaGrillaCerradaGeneraTodoSuRangoAunqueSeaLejano() {
+        // El rango de LUNES a DOMINGO cae bastante más allá de dos semanas desde hoy.
+        assertEquals(7, crearSemana(Set.of()).funciones().size());
+    }
+
+    /** Llamar a extender mil veces en el mismo día tiene que hacer trabajo una sola vez. */
+    @Test
+    void extenderEsIdempotente() {
+        crearAbierta();
+        int despuesDelAlta = funcionDAO.listar().size();
+
+        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
+        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
+        assertEquals(despuesDelAlta, funcionDAO.listar().size());
+    }
+
+    /** El día que el horizonte se corre, aparecen las funciones nuevas y solo esas. */
+    @Test
+    void alPasarLosDiasExtiendeLasQueFaltan() {
+        crearAbierta();
+        int despuesDelAlta = funcionDAO.listar().size();
+
+        int generadas = programaciones.extenderActivas(LocalDate.now().plusDays(3));
+
+        assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
+        assertEquals(despuesDelAlta + 3, funcionDAO.listar().size());
+    }
+
+    /**
+     * Acá {@code activa} deja de ser decorativo. Antes, con toda grilla cerrada y generada
+     * de una vez, dar de baja no evitaba ninguna función: ya estaban todas.
+     */
+    @Test
+    void unaGrillaDadaDeBajaNoExtiende() {
+        PlanProgramacion plan = crearAbierta();
+        int despuesDelAlta = funcionDAO.listar().size();
+
+        programaciones.desactivar(plan.programacion().getId());
+
+        assertEquals(0, programaciones.extenderActivas(LocalDate.now().plusDays(30)));
+        assertEquals(despuesDelAlta, funcionDAO.listar().size(),
+                "las que ya generó siguen; nuevas no aparecen");
+    }
+
+    /** Reactivarla la pone al día de una vez: no perdió las fechas que no generó. */
+    @Test
+    void reactivarlaVuelveAExtender() {
+        PlanProgramacion plan = crearAbierta();
+        programaciones.desactivar(plan.programacion().getId());
+        programaciones.extenderActivas(LocalDate.now().plusDays(10));
+
+        programaciones.activar(plan.programacion().getId());
+
+        assertEquals(10, programaciones.extenderActivas(LocalDate.now().plusDays(10)));
+    }
+
+    /** Una grilla cerrada ya generada no vuelve a generar por más que pase el tiempo. */
+    @Test
+    void unaGrillaCerradaNoSePasaDeSuHasta() {
+        crearSemana(Set.of());
+        int delAlta = funcionDAO.listar().size();
+
+        assertEquals(0, programaciones.extenderActivas(DOMINGO.plusMonths(6)));
+        assertEquals(delAlta, funcionDAO.listar().size());
+    }
+
     // ---------- helpers ----------
+
+    /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
+    private PlanProgramacion crearAbierta() {
+        return programaciones.crear(1, 1, LocalDate.now(), null, LAS_2030, Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+    }
 
     private PlanProgramacion crearSemana(Set<DayOfWeek> dias) {
         return programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, dias,

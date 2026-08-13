@@ -65,17 +65,27 @@ CREATE TABLE IF NOT EXISTS usuario (
 -- activa reemplaza al borrado, igual que promocion.activa: dar de baja una grilla evita
 -- que genere funciones nuevas, pero las ya generadas quedan — pueden tener entradas
 -- vendidas, y en este sistema nada que haya producido ventas se borra.
+--
+-- hasta NULL = grilla abierta: corre hasta que la den de baja, que es lo normal en un
+-- cine. Es lo que le da sentido a activa: si toda grilla tuviera fin y generara su rango
+-- entero al darse de alta, dar de baja no evitaria ninguna funcion.
+--
+-- generada_hasta es lo unico de la tabla que no describe la intencion sino lo que ya
+-- paso: hasta que fecha se materializaron las funciones. Se guarda en vez de derivarse
+-- de funcion.programacion_id porque una funcion se puede cancelar o mover de sala, y
+-- entonces la cuenta daria de menos y se volverian a generar fechas ya procesadas.
 CREATE TABLE IF NOT EXISTS programacion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
     sala_id INT NOT NULL,
     desde DATE NOT NULL,
-    hasta DATE NOT NULL,
+    hasta DATE NULL,
     hora_inicio TIME NOT NULL,
     version VARCHAR(15) NOT NULL,
     proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     activa BOOLEAN NOT NULL DEFAULT TRUE,
+    generada_hasta DATE NULL,
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
     FOREIGN KEY (sala_id) REFERENCES sala(id)
 );

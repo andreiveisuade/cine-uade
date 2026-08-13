@@ -19,8 +19,13 @@ import ar.uade.cine.dominio.funciones.FuncionImpl;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /**
  * Gracias a que GestorCartelera depende de la interfaz, se puede testear la lógica
@@ -31,7 +36,13 @@ class GestorCarteleraTest {
     // El DAO de funciones queda accesible porque estar en cartelera se deriva de tener
     // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
     private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-    private final GestorCartelera gestor = new GestorCartelera(new PeliculaDAOMemoria(), funcionDAO);
+    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
+    // Sin grillas cargadas, extenderActivas no encuentra nada que hacer: acá el gestor de
+    // programaciones está para que la cartelera pueda pedírselo, no para que genere.
+    private final GestorCartelera gestor = new GestorCartelera(peliculaDAO, funcionDAO,
+            new GestorProgramaciones(new ProgramacionDAOMemoria(), funcionDAO,
+                    new GestorFunciones(funcionDAO, peliculaDAO, new SalaDAOMemoria(),
+                            new ReservaDAOMemoria())));
 
     /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
     private void programarProxima(int peliculaId) {

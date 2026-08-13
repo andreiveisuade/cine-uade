@@ -28,6 +28,7 @@ public class ProgramacionImpl implements Programacion {
     private final Proyeccion proyeccion;
     private final double precio;
     private boolean activa = true;
+    private LocalDate generadaHasta;
 
     public ProgramacionImpl(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
                             LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
@@ -55,16 +56,31 @@ public class ProgramacionImpl implements Programacion {
      * Recorre el rango día por día y se queda con los que la grilla habilita. Vive acá y
      * no en el gestor porque no consulta nada ni decide nada del negocio: es cómo se lee
      * el patrón temporal que la propia programación guarda.
+     *
+     * <p>El final es el más cercano entre el {@code hasta} de la grilla y el tope que pide
+     * quien llama. Una grilla abierta no tiene el primero, así que manda el tope; una
+     * cerrada no se pasa del suyo ni aunque el tope sea posterior.
      */
     @Override
-    public List<LocalDateTime> horarios() {
+    public List<LocalDateTime> horarios(LocalDate tope) {
+        LocalDate fin = hasta == null || tope.isBefore(hasta) ? tope : hasta;
         List<LocalDateTime> momentos = new ArrayList<>();
-        for (LocalDate dia = desde; !dia.isAfter(hasta); dia = dia.plusDays(1)) {
+        for (LocalDate dia = desde; !dia.isAfter(fin); dia = dia.plusDays(1)) {
             if (diasSemana.isEmpty() || diasSemana.contains(dia.getDayOfWeek())) {
                 momentos.add(LocalDateTime.of(dia, horaInicio));
             }
         }
         return momentos;
+    }
+
+    @Override
+    public LocalDate getGeneradaHasta() {
+        return generadaHasta;
+    }
+
+    @Override
+    public void setGeneradaHasta(LocalDate generadaHasta) {
+        this.generadaHasta = generadaHasta;
     }
 
     @Override
@@ -135,6 +151,7 @@ public class ProgramacionImpl implements Programacion {
     @Override
     public String toString() {
         return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + horaInicio
-                + " del " + desde + " al " + hasta + " - " + horarios().size() + " funciones";
+                + " del " + desde + (hasta == null ? " en adelante" : " al " + hasta)
+                + " - generada hasta " + (generadaHasta == null ? "nunca" : generadaHasta);
     }
 }

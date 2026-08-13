@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,24 +34,27 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
 
     private static final String SELECT =
             "SELECT id, pelicula_id, sala_id, desde, hasta, hora_inicio, version, proyeccion, "
-            + "precio, activa FROM programacion";
+            + "precio, activa, generada_hasta FROM programacion";
 
     @Override
     public void guardar(Programacion programacion) {
         String sql = "INSERT INTO programacion (pelicula_id, sala_id, desde, hasta, hora_inicio, "
-                + "version, proyeccion, precio, activa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "version, proyeccion, precio, activa, generada_hasta) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, programacion.getPeliculaId());
                 ps.setInt(2, programacion.getSalaId());
                 ps.setDate(3, Date.valueOf(programacion.getDesde()));
-                ps.setDate(4, Date.valueOf(programacion.getHasta()));
+                // hasta null es una grilla abierta: corre hasta que la den de baja.
+                ps.setDate(4, fecha(programacion.getHasta()));
                 ps.setTime(5, Time.valueOf(programacion.getHoraInicio()));
                 ps.setString(6, programacion.getVersion().name());
                 ps.setString(7, programacion.getProyeccion().name());
                 ps.setDouble(8, programacion.getPrecio());
                 ps.setBoolean(9, programacion.estaActiva());
+                ps.setDate(10, fecha(programacion.getGeneradaHasta()));
                 ps.executeUpdate();
 
                 try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -76,10 +80,12 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
     @Override
     public void actualizar(Programacion programacion) {
         try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement("UPDATE programacion SET activa = ? WHERE id = ?")) {
+             PreparedStatement ps = con.prepareStatement(
+                     "UPDATE programacion SET activa = ?, generada_hasta = ? WHERE id = ?")) {
 
             ps.setBoolean(1, programacion.estaActiva());
-            ps.setInt(2, programacion.getId());
+            ps.setDate(2, fecha(programacion.getGeneradaHasta()));
+            ps.setInt(3, programacion.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new PersistenciaException(
@@ -147,14 +153,25 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
                 rs.getInt("pelicula_id"),
                 rs.getInt("sala_id"),
                 rs.getDate("desde").toLocalDate(),
-                rs.getDate("hasta").toLocalDate(),
+                fechaDe(rs, "hasta"),
                 rs.getTime("hora_inicio").toLocalTime(),
                 diasDe(con, id),
                 Version.valueOf(rs.getString("version")),
                 Proyeccion.valueOf(rs.getString("proyeccion")),
                 rs.getDouble("precio"));
         programacion.setActiva(rs.getBoolean("activa"));
+        programacion.setGeneradaHasta(fechaDe(rs, "generada_hasta"));
         return programacion;
+    }
+
+    /** Las fechas que admiten null viajan asi en las dos direcciones. */
+    private static Date fecha(LocalDate valor) {
+        return valor == null ? null : Date.valueOf(valor);
+    }
+
+    private static LocalDate fechaDe(ResultSet rs, String columna) throws SQLException {
+        Date valor = rs.getDate(columna);
+        return valor == null ? null : valor.toLocalDate();
     }
 
     private Set<DayOfWeek> diasDe(Connection con, int programacionId) throws SQLException {

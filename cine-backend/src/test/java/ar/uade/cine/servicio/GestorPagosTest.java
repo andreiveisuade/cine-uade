@@ -42,6 +42,7 @@ import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
@@ -68,12 +69,13 @@ class GestorPagosTest {
         PagoDAO pagoDAO = new PagoDAOMemoria();
         reservaDAO = new ReservaDAOMemoria();
 
-        new GestorCartelera(peliculaDAO, funcionDAO)
+        GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
+        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                new ProgramacionDAOMemoria(), funcionDAO, gestorFunciones))
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         new GestorSalas(salaDAO, asientoDAO, funcionDAO).agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO)
-                .programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                        Version.DOBLADA, Proyeccion.DOS_D, 5000);
+        gestorFunciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.DOBLADA, Proyeccion.DOS_D, 5000);
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,

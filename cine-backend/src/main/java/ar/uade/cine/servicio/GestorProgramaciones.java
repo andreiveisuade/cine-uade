@@ -47,6 +47,17 @@ public class GestorProgramaciones {
     /** Para nombrar contra qué choca cada fecha en un mensaje que se pueda leer. */
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
+    /**
+     * Cuántos días adelante se materializan las funciones de una grilla.
+     *
+     * <p>Una grilla abierta no tiene final, así que "generar todo el rango" deja de ser
+     * posible: hay que elegir hasta dónde. Dos semanas es lo que hace falta para que la
+     * cartelera se vea llena y el cliente pueda comprar con anticipación, y lo bastante
+     * poco como para que cambiar de opinión —dar de baja la grilla, subir el precio— no
+     * obligue a tocar cientos de funciones ya vendidas.
+     */
+    private static final int HORIZONTE_DIAS = 14;
+
     private final ProgramacionDAO programacionDAO;
     private final FuncionDAO funcionDAO;
     private final GestorFunciones funciones;
@@ -67,7 +78,7 @@ public class GestorProgramaciones {
                                           Version version, Proyeccion proyeccion, double precio) {
         Programacion grilla = armar(peliculaId, salaId, desde, hasta, horaInicio, diasSemana,
                 version, proyeccion, precio);
-        return planificar(grilla, peliculaDe(grilla), false);
+        return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, LocalDate.now()));
     }
 
     /**
@@ -93,7 +104,62 @@ public class GestorProgramaciones {
         // quedar en la base para que alguien la descubra después.
         Pelicula pelicula = peliculaDe(grilla);
         programacionDAO.guardar(grilla);
-        return planificar(grilla, pelicula, true);
+        return planificar(grilla, pelicula, true, topeDe(grilla, LocalDate.now()));
+    }
+
+    /**
+     * Materializa lo que las grillas activas todavía no generaron, hasta el horizonte.
+     *
+     * <p>No hay proceso de fondo ni scheduler: la extensión la hace quien consulta, igual
+     * que la expiración de reservas en {@code GestorReservas}. Un cine cuya cartelera nadie
+     * mira no necesita funciones nuevas; el día que alguien la mira, aparecen.
+     *
+     * <p>Es <strong>idempotente</strong>: cada grilla recuerda hasta qué fecha se procesó,
+     * así que llamarlo mil veces en el mismo día hace trabajo una sola vez. Eso es lo que
+     * permite colgarlo de una lectura sin pensar en cuántas veces se lee.
+     *
+     * <p>Acá es donde {@code activa} deja de ser decorativo: una grilla dada de baja se
+     * saltea, y con eso deja de generar funciones nuevas sin tocar las que ya vendió.
+     *
+     * @return cuántas funciones se generaron
+     */
+    public int extenderActivas(LocalDate hoy) {
+        int generadas = 0;
+        for (Programacion grilla : programacionDAO.listar()) {
+            if (!grilla.estaActiva() || estaAlDia(grilla, hoy)) {
+                continue;
+            }
+            try {
+                generadas += planificar(grilla, peliculaDe(grilla), true, topeDe(grilla, hoy))
+                        .programables().size();
+            } catch (RuntimeException e) {
+                // Una grilla que dejó de ser válida —la película se dio de baja, la sala
+                // cambió de tipo— no puede romper la pantalla de quien pasaba por acá a
+                // mirar la cartelera. Se saltea y sigue; el ABM de grillas es donde eso se
+                // ve y se corrige.
+                continue;
+            }
+        }
+        return generadas;
+    }
+
+    /** Ya se procesaron todas las fechas que le tocan. */
+    private boolean estaAlDia(Programacion grilla, LocalDate hoy) {
+        LocalDate hecho = grilla.getGeneradaHasta();
+        return hecho != null && !hecho.isBefore(topeDe(grilla, hoy));
+    }
+
+    /**
+     * Hasta qué fecha materializar esta grilla.
+     *
+     * <p>El horizonte se aplica <strong>solo a las grillas abiertas</strong>, que son las
+     * únicas que lo necesitan: sin final, "generar todo el rango" no significa nada. Una
+     * grilla cerrada genera el suyo entero de una vez, como siempre. Recortarla sería
+     * peor que inútil: el administrador puso las fechas a mano —una temporada, un ciclo—
+     * y el informe de choques le sirve justo en ese momento, no dentro de dos semanas.
+     */
+    private LocalDate topeDe(Programacion grilla, LocalDate hoy) {
+        return grilla.getHasta() != null ? grilla.getHasta() : hoy.plusDays(HORIZONTE_DIAS);
     }
 
     /**
@@ -103,9 +169,18 @@ public class GestorProgramaciones {
      * <p>Cuando persiste, cada función guardada la ve la fecha siguiente: la consulta de
      * superposición sale del DAO en cada vuelta y no de una foto tomada al principio.
      */
-    private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir) {
+    private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir,
+                                        LocalDate tope) {
+        LocalDate yaProcesado = grilla.getGeneradaHasta();
         List<FuncionPlanificada> plan = new ArrayList<>();
-        for (LocalDateTime inicio : grilla.horarios()) {
+        for (LocalDateTime inicio : grilla.horarios(tope)) {
+            // Las fechas de vueltas anteriores no se vuelven a mirar. Se filtra por fecha
+            // procesada y no por "¿existe ya la función?" porque una que chocó no generó
+            // nada: preguntarle al DAO la daría por pendiente y se reintentaría para
+            // siempre, y el informe la volvería a listar cada vez.
+            if (yaProcesado != null && !inicio.toLocalDate().isAfter(yaProcesado)) {
+                continue;
+            }
             LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
             Optional<Funcion> choque = funciones.superpuestaEn(grilla.getSalaId(), inicio, fin);
             if (choque.isPresent()) {
@@ -120,6 +195,13 @@ public class GestorProgramaciones {
                         grilla.getId());
             }
             plan.add(new FuncionPlanificada(inicio, false, null));
+        }
+        if (persistir) {
+            // Se marca el tope y no la última función generada: las fechas que chocaron
+            // también quedan procesadas. Si se guardara la última que entró, la próxima
+            // vuelta volvería a evaluar los choques y a listarlos como si fueran nuevos.
+            grilla.setGeneradaHasta(tope);
+            programacionDAO.actualizar(grilla);
         }
         return new PlanProgramacion(grilla, plan);
     }
@@ -140,17 +222,24 @@ public class GestorProgramaciones {
     private Programacion armar(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
                                LocalTime horaInicio, Set<DayOfWeek> diasSemana,
                                Version version, Proyeccion proyeccion, double precio) {
-        if (desde == null || hasta == null || hasta.isBefore(desde)) {
+        if (desde == null) {
+            throw new IllegalArgumentException("Falta la fecha de inicio");
+        }
+        // hasta null es una grilla abierta y es válido; lo que no se admite es un rango
+        // dado vuelta.
+        if (hasta != null && hasta.isBefore(desde)) {
             throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
         }
         if (horaInicio == null) {
             throw new IllegalArgumentException("Falta la hora de la función");
         }
         // Sin esto, una grilla de miércoles y jueves sobre un rango de lunes a martes se
-        // daría de alta sin generar nada y sin que nadie sepa por qué.
+        // daría de alta sin generar nada y sin que nadie sepa por qué. Se mira contra el
+        // propio hasta y no contra el horizonte: el error es del rango que eligió el
+        // administrador, y una grilla abierta siempre termina cayendo en algún día.
         Programacion grilla = new ProgramacionImpl(peliculaId, salaId, desde, hasta, horaInicio,
                 diasSemana, version, proyeccion, precio);
-        if (grilla.horarios().isEmpty()) {
+        if (hasta != null && grilla.horarios(hasta).isEmpty()) {
             throw new IllegalArgumentException(
                     "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
         }

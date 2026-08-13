@@ -39,6 +39,12 @@ public interface Programacion {
 
     LocalDate getDesde();
 
+    /**
+     * Cuándo termina, o {@code null} si la grilla es <strong>abierta</strong>: corre hasta
+     * que alguien la dé de baja. Es lo normal en un cine —la función de las 20:30 no tiene
+     * fecha de vencimiento— y es lo que le da sentido a {@link #estaActiva()}: sin grillas
+     * abiertas, dar de baja no evita nada, porque no quedaba nada por generar.
+     */
     LocalDate getHasta();
 
     /** La hora a la que arranca cada función de la grilla. */
@@ -51,8 +57,28 @@ public interface Programacion {
      */
     Set<DayOfWeek> getDiasSemana();
 
-    /** Las fechas y horas que la grilla quiere ocupar, en orden. */
-    List<LocalDateTime> horarios();
+    /**
+     * Hasta qué fecha ya se materializaron las funciones, o {@code null} si todavía
+     * ninguna.
+     *
+     * <p>Es lo único de la grilla que no describe la intención sino lo que efectivamente
+     * pasó, y se guarda en vez de derivarse a propósito: mirar la última función generada
+     * no sirve, porque una función se puede cancelar o mover de sala y entonces la cuenta
+     * daría de menos y se volverían a generar las mismas fechas.
+     */
+    LocalDate getGeneradaHasta();
+
+    void setGeneradaHasta(LocalDate generadaHasta);
+
+    /**
+     * Las fechas y horas que la grilla quiere ocupar, en orden, sin pasarse del
+     * {@code tope}.
+     *
+     * <p>El tope entra por parámetro y no lo decide la grilla porque una grilla abierta no
+     * tiene final: quien pregunta es el que sabe hasta dónde le interesa materializar. Una
+     * grilla cerrada nunca se pasa de su propio {@code hasta}, aunque el tope sea posterior.
+     */
+    List<LocalDateTime> horarios(LocalDate tope);
 
     // ---------- lo que se copia a cada función ----------
 

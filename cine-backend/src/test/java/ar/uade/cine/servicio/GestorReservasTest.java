@@ -49,6 +49,7 @@ import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /**
@@ -81,7 +82,9 @@ class GestorReservasTest {
         reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
         directorioTickets = tempDir.resolve("tickets");
 
-        new GestorCartelera(peliculaDAO, funcionDAO)
+        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                new ProgramacionDAOMemoria(), funcionDAO,
+                new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO)))
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
