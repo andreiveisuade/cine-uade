@@ -5,6 +5,7 @@ left to right direction
 
 actor Cliente as cliente
 actor "Administrador\ndel cine" as admin
+actor Acomodador as acomodador
 
 rectangle Sistema {
   usecase "CU-01 Gestionar peliculas" as CU01
@@ -24,6 +25,9 @@ rectangle Sistema {
   usecase "CU-14 Armar combo\npromocional" as CU14
   usecase "CU-15 Comprar en el candy" as CU15
   usecase "CU-16 Ver mis compras\ndel candy" as CU16
+  usecase "CU-15b Agregar candy\na mi compra web" as CU15b
+  usecase "CU-17 Gestionar\npromociones" as CU17
+  usecase "CU-18 Validar entrada\nen la puerta" as CU18
 }
 
 cliente --> CU04
@@ -34,6 +38,7 @@ cliente --> CU08
 cliente --> CU09
 cliente --> CU15
 cliente --> CU16
+cliente --> CU15b
 
 admin --> CU10
 admin --> CU01
@@ -45,6 +50,8 @@ admin --> CU07
 admin --> CU12
 admin --> CU13
 admin --> CU14
+admin --> CU17
+acomodador --> CU18
 
 note bottom of CU10
   Solo el administrador inicia sesion.
@@ -80,6 +87,29 @@ note bottom of CU15
   Se paga en el acto y se emite el ticket.
   No hay reserva previa: eso es solo para
   las butacas.
+end note
+
+note bottom of CU15b
+  El "desea agregar pochoclos?" de despues
+  de comprar la entrada. El cliente sale de
+  la reserva, no se vuelve a pedir, y el
+  pedido se retira con el mismo QR.
+end note
+
+note bottom of CU17
+  Porcentaje, monto fijo o 2x1, con vigencia,
+  dias, horarios y medios de pago. No se
+  acumulan: gana la que mas descuenta (R15),
+  y las entradas de tarifa reducida quedan
+  afuera del descuento (R16).
+end note
+
+note bottom of CU18
+  El acomodador escanea el codigo de la
+  reserva. Solo pasa una pagada, y una sola
+  vez (R18). Ve las butacas y que tarifa
+  declaro cada una, para pedir el carnet
+  cuando corresponde.
 end note
 
 @enduml

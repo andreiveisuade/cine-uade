@@ -26,7 +26,8 @@ package servicio {
   class GestorReservas
   class GestorPagos
   class GestorCandy
-  class GestorAdministradores
+  class GestorEmpleados
+  class GestorPromociones
   class CalculadoraPrecio
   class Password
 }
@@ -47,8 +48,11 @@ package dominio {
   package candy as dom_candy {
     class "Producto, CompraCandy + Impl\nItemCombo, ItemCompra, TipoProducto" as DomCandy
   }
+  package promociones as dom_promociones {
+    class "Promocion + PromocionBase\nPorcentaje, MontoFijo, NxM\nTipoPromocion" as DomPromociones
+  }
   package usuarios as dom_usuarios {
-    class "Usuario, Cliente, AdministradorCine\n+ Impl, Rol" as DomUsuarios
+    class "Usuario, Cliente, Empleado\n+ Impl, Rol" as DomUsuarios
   }
 }
 
@@ -62,13 +66,14 @@ package persistencia {
   interface PagoDAO
   interface ProductoDAO
   interface CompraCandyDAO
-  interface AdministradorDAO
+  interface EmpleadoDAO
+  interface PromocionDAO
   interface GeneradorTicket
   interface GeneradorTicketCandy
   class PersistenciaException
 
   package mysql {
-    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, AdministradorDAOMySQL\nConexionMySQL" as DaosMySQL
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL\nConexionMySQL" as DaosMySQL
   }
   package memoria {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
@@ -81,6 +86,10 @@ package persistencia {
 MenuConsola -down-> servicio
 RutasHttp -down-> servicio
 
+' El unico gestor que usa a otro: el descuento se resuelve al cobrar,
+' que es cuando recien se conoce el medio de pago.
+GestorPagos -right-> GestorPromociones
+GestorPromociones -down-> PromocionDAO
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
 GestorSalas -down-> AsientoDAO
@@ -92,9 +101,9 @@ GestorPagos -down-> PagoDAO
 GestorCandy -down-> ProductoDAO
 GestorCandy -down-> CompraCandyDAO
 GestorCandy -down-> GeneradorTicketCandy
-GestorAdministradores -down-> AdministradorDAO
+GestorEmpleados -down-> EmpleadoDAO
 GestorReservas ..> CalculadoraPrecio
-GestorAdministradores ..> Password
+GestorEmpleados ..> Password
 
 DaosMySQL ..up|> persistencia
 DaosMemoria ..up|> persistencia

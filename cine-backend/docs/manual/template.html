@@ -461,10 +461,9 @@ body.lightbox-locked { overflow: hidden; }
           frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
-          <strong>En curso — segunda vuelta de modelado.</strong> El modelo de dominio se amplió con tarifas por
-          tipo de público, promociones, control de acceso con QR y vencimiento de reservas. Todo eso está
-          <em>modelado y dibujado</em>, no implementado: en las tablas de este manual se distingue con la
-          etiqueta <span class="tag tag-pend">modelado</span>. El código sigue siendo el de la primera vuelta.
+          <strong>Segunda vuelta, ya implementada.</strong> El modelo se amplió con tarifas por tipo de
+          público, promociones, control de acceso con QR, vencimiento de reservas y venta de candy anónima o
+          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 97 tests en verde.
         </p>
       </div>
     </section>
@@ -479,10 +478,10 @@ body.lightbox-locked { overflow: hidden; }
         <li>Vender productos del candy y combos promocionales, con su comprobante en <code>.txt</code>.</li>
         <li>Arqueo del día, separando lo que entró por boletería de lo que entró por el candy.</li>
         <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
-        <li><span class="tag tag-pend">modelado</span> Cobrar cada entrada según quién la compra: general, menor, jubilado o estudiante.</li>
-        <li><span class="tag tag-pend">modelado</span> Promociones administrables por el cine: porcentaje, monto fijo y 2x1, con vigencia, días, horarios y medios de pago.</li>
-        <li><span class="tag tag-pend">modelado</span> Control de acceso: cada reserva lleva un código para validar en la puerta.</li>
-        <li><span class="tag tag-pend">modelado</span> Las reservas sin pagar no retienen butacas para siempre.</li>
+        <li><span class="tag tag-ok">hecho</span> Cobrar cada entrada según quién la compra: general, menor, jubilado o estudiante.</li>
+        <li><span class="tag tag-ok">hecho</span> Promociones administrables por el cine: porcentaje, monto fijo y 2x1, con vigencia, días, horarios y medios de pago.</li>
+        <li><span class="tag tag-ok">hecho</span> Control de acceso: cada reserva lleva un código para validar en la puerta.</li>
+        <li><span class="tag tag-ok">hecho</span> Las reservas sin pagar no retienen butacas para siempre.</li>
       </ul>
     </section>
 
@@ -507,10 +506,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R12</td><td>No se elimina una película o sala con funciones, ni una función con reservas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar: si ya se pagó, hace falta una devolución</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R14</td><td>Un combo tiene que costar menos que sus componentes sueltos</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento, y si empatan la de menor id</td><td><span class="tag tag-pend">modelada</span></td></tr>
-            <tr><td>R16</td><td>Las entradas de tarifa reducida no participan del descuento de la promoción</td><td><span class="tag tag-pend">modelada</span></td></tr>
-            <tr><td>R17</td><td>No se cobra una reserva vencida</td><td><span class="tag tag-pend">modelada</span></td></tr>
-            <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td><td><span class="tag tag-pend">modelada</span></td></tr>
+            <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento, y si empatan la de menor id</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R16</td><td>Las entradas de tarifa reducida no participan del descuento de la promoción</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R17</td><td>No se cobra una reserva vencida</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -523,7 +522,7 @@ body.lightbox-locked { overflow: hidden; }
         que compra entradas. El menú de consola no distingue usuarios: es un único flujo.
       </p>
       <p>
-        <span class="tag tag-pend">modelado</span> Se suma un tercer actor, el <strong>Acomodador</strong>, que
+        Se suma un tercer actor, el <strong>Acomodador</strong>, que
         solo valida entradas en la puerta. No es un cargo con privilegios de administración: es el que escanea
         el código de la reserva y ve qué butacas son y qué tarifa declaró cada una.
       </p>
@@ -554,9 +553,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-14</td><td>Admin</td><td>Armar un combo promocional</td><td>R14</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-15b</td><td>Cliente</td><td>Agregar candy a una compra recién hecha por la web</td><td>R11</td><td><span class="tag tag-pend">modelado</span></td></tr>
-            <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td><td><span class="tag tag-pend">modelado</span></td></tr>
-            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada en la puerta escaneando el código</td><td>R18</td><td><span class="tag tag-pend">modelado</span></td></tr>
+            <tr><td>CU-15b</td><td>Cliente</td><td>Agregar candy a una compra recién hecha por la web</td><td>R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada en la puerta escaneando el código</td><td>R18</td><td><span class="tag tag-ok">hecho</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -679,7 +678,7 @@ body.lightbox-locked { overflow: hidden; }
               </td>
             </tr>
             <tr>
-              <td><code>Pago "*" → "0..1" Promocion</code> <span class="tag tag-pend">modelado</span></td>
+              <td><code>Pago "*" → "0..1" Promocion</code></td>
               <td>Asociación</td>
               <td>
                 Un cobro puede no tener promoción, y nunca tiene dos: no se acumulan (R15). Del otro lado,
@@ -688,7 +687,7 @@ body.lightbox-locked { overflow: hidden; }
               </td>
             </tr>
             <tr>
-              <td><code>CompraCandy "*" → "0..1" Cliente</code> y <code>"*" → "0..1" Reserva</code> <span class="tag tag-pend">modelado</span></td>
+              <td><code>CompraCandy "*" → "0..1" Cliente</code> y <code>"*" → "0..1" Reserva</code></td>
               <td>Asociación</td>
               <td>
                 Las dos en <code>0..1</code> y no es redundante: la venta de mostrador no tiene ninguna de las
@@ -758,7 +757,7 @@ body.lightbox-locked { overflow: hidden; }
         devolución es lo que faltaría para permitirlo.
       </p>
       <p>
-        <span class="tag tag-pend">modelado</span> Se suma un cuarto estado, <code>EXPIRADA</code>, y dos campos
+        Se suma un cuarto estado, <code>EXPIRADA</code>, y dos campos
         de control de acceso, <code>codigo</code> e <code>ingresadaEn</code>. Ambos temas tienen su sección:
         <a href="#vencimiento">Vencimiento de la reserva</a> y <a href="#acceso">Control de acceso</a>.
       </p>
@@ -921,7 +920,7 @@ Libres: 52 de 56</code></pre>
       <p>
         Dos roles: el <strong>cliente</strong>, que compra entradas sin registrarse con contraseña, y el
         <strong>administrador del cine</strong>, que carga películas, salas y programa funciones, y para eso
-        sí necesita iniciar sesión. <span class="tag tag-pend">modelado</span> Se suma el
+        sí necesita iniciar sesión. Se suma el
         <strong>acomodador</strong>, que inicia sesión pero solo para validar entradas en la puerta.
       </p>
       <div class="callout">
@@ -948,7 +947,7 @@ Libres: 52 de 56</code></pre>
       </p>
       <div class="callout">
         <p>
-          <span class="tag tag-pend">modelado</span> <strong>Por qué dejó de llamarse
+          <strong>Por qué dejó de llamarse
           <code>AdministradorCine</code>.</strong> La justificación original era «solo el administrador tiene
           credenciales». Al aparecer el <a href="#acceso">acomodador</a>, que también inicia sesión para
           validar entradas, esa frase deja de ser cierta y el nombre pasa a mentir. Pero la herencia no se
@@ -1198,7 +1197,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <pre><code>Reserva  →  RESERVADA        (reservar butacas)
          →  PAGADA          (GestorPagos.cobrar, deja el comprobante)
          →  CANCELADA       (libera las butacas)
-         →  EXPIRADA        (modelado: nadie la pagó a tiempo)</code></pre>
+         →  EXPIRADA        (nadie la pagó a tiempo)</code></pre>
 
       <div class="callout">
         <p>
@@ -1215,9 +1214,8 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <h2>Precios y promociones</h2>
       <div class="callout">
         <p>
-          <span class="tag tag-pend">modelado</span> Toda esta sección está diseñada y dibujada en el modelo de
-          dominio, pero todavía no implementada. Hoy <code>CalculadoraPrecio</code> hace solo la primera mitad:
-          precio base por tecnología de sala y tipo de butaca.
+          Los cuatro ejes del precio están implementados. <code>CalculadoraPrecio</code> resuelve el precio de
+          lista de cada butaca y <code>GestorPromociones</code> el descuento del total, que se aplica al cobrar.
         </p>
       </div>
 
@@ -1318,9 +1316,6 @@ new MenuConsola(gestor).iniciar();</code></pre>
 
     <section class="doc-section" id="acceso">
       <h2>Control de acceso</h2>
-      <div class="callout">
-        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
-      </div>
       <p>
         Vender no es entrar. Hasta acá el circuito terminaba en el cobro, y eso deja afuera la mitad del
         trabajo de un cine: alguien tiene que validar en la puerta que esa entrada existe, que está pagada y
@@ -1372,9 +1367,6 @@ new MenuConsola(gestor).iniciar();</code></pre>
 
     <section class="doc-section" id="vencimiento">
       <h2>Vencimiento de la reserva</h2>
-      <div class="callout">
-        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
-      </div>
       <p>
         Una reserva sin pagar retiene sus butacas para siempre. En consola casi no se nota; con venta web, un
         puñado de clientes que abandonan el carrito deja una función entera sin butacas disponibles que en
@@ -1454,9 +1446,6 @@ new MenuConsola(gestor).iniciar();</code></pre>
       </p>
 
       <h3>De quién es una compra del candy</h3>
-      <div class="callout">
-        <p><span class="tag tag-pend">modelado</span> Diseñado, todavía no implementado.</p>
-      </div>
       <p>
         Hoy <code>cliente_id</code> es obligatorio, y eso obliga a pedir el nombre para vender pochoclos. En el
         modelo nuevo la compra puede llegar por dos caminos distintos, y por eso <strong>las dos asociaciones
@@ -1530,10 +1519,10 @@ Total del 2026-08-13: $   27000.00</code></pre>
         </table>
       </div>
 
-      <h3>Lo que le falta al esquema <span class="tag tag-pend">modelado</span></h3>
+      <h3>Lo que sumó el esquema</h3>
       <p>
-        <code>schema.sql</code> todavía es el de la primera vuelta. Para sostener el modelo de dominio actual
-        le falta esto, y ninguno de estos cambios rompe datos existentes:
+        Esto es lo que sumó <code>schema.sql</code> para sostener el modelo actual. Ninguno de estos cambios
+        rompe datos ya cargados:
       </p>
       <div class="table-wrap">
         <table>
@@ -2205,7 +2194,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
               <td>Evita el problema N+1; con <code>INNER</code> una película sin géneros desaparecería del listado</td>
             </tr>
             <tr>
-              <td colspan="3" style="font-weight:600">Segunda vuelta de modelado <span class="tag tag-pend">modelado</span></td>
+              <td colspan="3" style="font-weight:600">Segunda vuelta de modelado</td>
             </tr>
             <tr>
               <td>El descuento vive en el <code>Pago</code></td>
