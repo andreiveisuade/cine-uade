@@ -5,16 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cine UADE</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
+<script>
+  if (localStorage.getItem("cine-tema") === "dark" ||
+      (!localStorage.getItem("cine-tema") && matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.documentElement.classList.add("dark");
+  }
+</script>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
 
-<header class="border-b border-slate-300 bg-white">
+<header class="border-b border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
   <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
     <a href="#/" class="text-lg font-bold tracking-tight">CINE UADE</a>
     <nav class="flex items-center gap-4 text-sm">
-      <a href="#/mis-reservas" class="text-slate-600 hover:text-slate-900">Mis reservas</a>
-      <a href="#/registro" class="text-slate-600 hover:text-slate-900">Registrarme</a>
-      <a href="admin.html" class="text-slate-500 hover:text-slate-900">Acceso encargado</a>
+      <a href="#/mis-reservas" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Mis reservas</a>
+      <a href="#/registro" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Registrarme</a>
+      <a href="admin.html" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Acceso encargado</a>
+      <button id="theme-toggle" type="button"
+        class="rounded border border-slate-300 px-2 py-1 text-sm leading-none hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"></button>
     </nav>
   </div>
 </header>

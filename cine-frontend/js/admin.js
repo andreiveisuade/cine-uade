@@ -5,6 +5,7 @@
 // mismo criterio con el que la consola arma su menú.
 
 import { iniciarRouter } from "./router.js";
+import { wireToggle } from "./theme.js";
 import { cerrarSesion, esAdministrador, pintarEncabezado, sesionActual } from "./admin/sesion.js";
 import { vistaLogin } from "./admin/login.js";
 import { vistaPeliculas } from "./admin/peliculas.js";
@@ -18,6 +19,7 @@ import { vistaPuerta } from "./admin/puerta.js";
 
 document.getElementById("salir").addEventListener("click", cerrarSesion);
 pintarEncabezado();
+wireToggle();
 
 iniciarRouter({
   contenedor: document.getElementById("app"),

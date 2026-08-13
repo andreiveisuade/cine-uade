@@ -6,6 +6,7 @@
 // es el estado de la compra en curso.
 
 import { iniciarRouter } from "./router.js";
+import { wireToggle } from "./theme.js";
 import { vistaCartelera } from "./cliente/cartelera.js";
 import { vistaPelicula } from "./cliente/pelicula.js";
 import { vistaFuncion } from "./cliente/funcion.js";
@@ -27,3 +28,5 @@ iniciarRouter({
     registro: vistaRegistro,
   },
 });
+
+wireToggle();

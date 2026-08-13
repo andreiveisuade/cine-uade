@@ -17,25 +17,25 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Películas</h1>
-    <p class="mb-5 text-sm text-slate-500">
+    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
       ${peliculas.length} cargadas · ${peliculas.filter((p) => p.enCartelera).length} publicadas.
       Una película llega a la cartelera cuando tiene funciones por delante; despublicarla
       la baja aunque las tenga.
     </p>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white">
+      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
             <tr><th class="p-2"></th><th>Título</th><th>Duración</th><th>Edad</th><th>Géneros</th><th>Estado</th><th></th></tr>
           </thead>
           <tbody>
             ${peliculas.map((p) => `
-              <tr class="border-b border-slate-200 ${p.id === editando?.id ? "bg-amber-50" : ""}">
+              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.id === editando?.id ? "bg-amber-50 dark:bg-amber-900/20" : ""}">
                 <td class="p-2">${imagenPoster(p, "h-12 w-8 rounded")}</td>
                 <td>
                   <span class="font-medium">${escapar(p.titulo)}</span>
-                  <span class="block text-xs text-slate-500">
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">
                     ${[p.anio || null, p.director || null].filter(Boolean).map(escapar).join(" · ")}
                   </span>
                 </td>
@@ -50,47 +50,48 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
                       ? "Publicada: aparece en la cartelera si tiene funciones por delante"
                       : "Despublicada: no aparece aunque tenga funciones"}"
                     class="rounded-full px-2 py-0.5 text-xs font-medium ${p.enCartelera
-                      ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}">
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}">
                     ${p.enCartelera ? "Publicada" : "Despublicada"}
                   </button>
                 </td>
                 <td class="p-2 text-right whitespace-nowrap">
                   <button type="button" data-editar="${p.id}"
-                    class="text-xs text-slate-700 hover:underline">Editar</button>
+                    class="text-xs text-slate-700 hover:underline dark:text-slate-200">Editar</button>
                   <button type="button" data-borrar="${p.id}"
-                    class="ml-2 text-xs text-red-700 hover:underline">Borrar</button>
+                    class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
                 </td>
               </tr>`).join("")}
           </tbody>
         </table>
       </section>
 
-      <section class="rounded border border-slate-300 bg-white p-4">
+      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
         <h2 class="mb-3 font-semibold">
           ${editando ? `Editar ${escapar(editando.titulo)}` : "Nueva película"}
         </h2>
         <form id="alta" class="space-y-3">
           <label class="block text-sm">
-            <span class="text-slate-600">Título</span>
+            <span class="text-slate-600 dark:text-slate-300">Título</span>
             <input name="titulo" required value="${valor("titulo")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
           </label>
           <div class="grid grid-cols-2 gap-2">
             <label class="block text-sm">
-              <span class="text-slate-600">Duración (min)</span>
+              <span class="text-slate-600 dark:text-slate-300">Duración (min)</span>
               <input name="duracion" type="number" min="1" required
                 value="${editando ? editando.duracionMinutos : ""}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
             <label class="block text-sm">
-              <span class="text-slate-600">Año</span>
+              <span class="text-slate-600 dark:text-slate-300">Año</span>
               <input name="anio" type="number" min="1888" value="${editando?.anio || ""}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
           <label class="block text-sm">
-            <span class="text-slate-600">Clasificación</span>
-            <select name="clasificacion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">
+            <span class="text-slate-600 dark:text-slate-300">Clasificación</span>
+            <select name="clasificacion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
               ${clasificaciones.map((c) => `
                 <option value="${c.nombre}" ${c.nombre === editando?.clasificacion ? "selected" : ""}>
                   ${etiqueta(c.nombre)}${c.edadMinima ? ` — desde ${c.edadMinima} años` : " — todo público"}
@@ -98,29 +99,29 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
             </select>
           </label>
           <label class="block text-sm">
-            <span class="text-slate-600">Dirección</span>
+            <span class="text-slate-600 dark:text-slate-300">Dirección</span>
             <input name="director" value="${valor("director")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
           </label>
           <label class="block text-sm">
-            <span class="text-slate-600">Idioma original</span>
+            <span class="text-slate-600 dark:text-slate-300">Idioma original</span>
             <input name="idiomaOriginal" value="${valor("idiomaOriginal")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
-            <span class="text-xs text-slate-500">El de la película, no el de la función.</span>
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
+            <span class="text-xs text-slate-500 dark:text-slate-400">El de la película, no el de la función.</span>
           </label>
           <label class="block text-sm">
-            <span class="text-slate-600">Sinopsis</span>
+            <span class="text-slate-600 dark:text-slate-300">Sinopsis</span>
             <textarea name="sinopsis" rows="3"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">${valor("sinopsis")}</textarea>
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">${valor("sinopsis")}</textarea>
           </label>
           <label class="block text-sm">
-            <span class="text-slate-600">Poster (URL)</span>
+            <span class="text-slate-600 dark:text-slate-300">Poster (URL)</span>
             <input name="posterUrl" value="${valor("posterUrl")}" placeholder="https://…"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
-            <span class="text-xs text-slate-500">Opcional. Sin poster se muestra la inicial del título.</span>
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
+            <span class="text-xs text-slate-500 dark:text-slate-400">Opcional. Sin poster se muestra la inicial del título.</span>
           </label>
           <fieldset class="text-sm">
-            <legend class="text-slate-600">Géneros (al menos uno)</legend>
+            <legend class="text-slate-600 dark:text-slate-300">Géneros (al menos uno)</legend>
             <div class="mt-1 grid grid-cols-2 gap-1">
               ${generos.map((g) => `
                 <label class="flex items-center gap-1 text-xs">
@@ -131,16 +132,16 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
           </fieldset>
           <label class="flex items-center gap-2 text-sm">
             <input type="checkbox" name="enCartelera" ${!editando || editando.enCartelera ? "checked" : ""} />
-            <span class="text-slate-600">Publicada</span>
+            <span class="text-slate-600 dark:text-slate-300">Publicada</span>
           </label>
           <div class="flex gap-2">
             <button type="submit"
-              class="flex-1 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+              class="flex-1 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
               ${editando ? "Guardar cambios" : "Agregar"}
             </button>
             ${editando
               ? `<button type="button" id="cancelar"
-                   class="rounded border border-slate-400 px-4 py-2 text-sm">Cancelar</button>`
+                   class="rounded border border-slate-400 px-4 py-2 text-sm dark:border-slate-600">Cancelar</button>`
               : ""}
           </div>
         </form>

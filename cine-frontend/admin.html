@@ -5,14 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cine UADE — Encargado</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: "class" };</script>
+<script>
+  if (localStorage.getItem("cine-tema") === "dark" ||
+      (!localStorage.getItem("cine-tema") && matchMedia("(prefers-color-scheme: dark)").matches)) {
+    document.documentElement.classList.add("dark");
+  }
+</script>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
 
-<header class="border-b border-slate-300 bg-white">
+<header class="border-b border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
   <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
     <span class="text-lg font-bold tracking-tight">CINE UADE</span>
     <!-- Lo completa admin.js con el rol de la sesión: el acomodador no es un encargado. -->
-    <span id="rol" class="rounded bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">Panel</span>
+    <span id="rol" class="rounded bg-slate-900 px-2 py-0.5 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900">Panel</span>
     <!-- El acomodador solo ve "Puerta": no administra la cartelera. admin.js esconde
          el resto según el rol que devuelve el login. -->
     <nav id="nav" class="hidden flex-1 flex-wrap gap-4 text-sm">
@@ -26,9 +33,11 @@
       <a href="#/puerta" class="font-medium hover:underline">Puerta</a>
     </nav>
     <div class="ml-auto flex items-center gap-3 text-sm">
-      <span id="sesion" class="text-slate-500"></span>
-      <button id="salir" type="button" class="hidden text-slate-500 hover:text-slate-900">Salir</button>
-      <a href="index.html" class="text-slate-500 hover:text-slate-900">Ver cartelera</a>
+      <span id="sesion" class="text-slate-500 dark:text-slate-400"></span>
+      <button id="salir" type="button" class="hidden text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Salir</button>
+      <a href="index.html" class="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">Ver cartelera</a>
+      <button id="theme-toggle" type="button"
+        class="rounded border border-slate-300 px-2 py-1 text-sm leading-none hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"></button>
     </div>
   </div>
 </header>

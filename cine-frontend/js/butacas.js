@@ -5,10 +5,10 @@
 export const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
 export const CLASES_TIPO = {
-  VIP: "border-amber-500 bg-amber-50 text-amber-900",
-  PAREJA: "border-pink-500 bg-pink-50 text-pink-900",
-  ACCESIBLE: "border-sky-500 bg-sky-50 text-sky-900",
-  ESTANDAR: "border-slate-400 bg-white text-slate-700",
+  VIP: "border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  PAREJA: "border-pink-500 bg-pink-50 text-pink-900 dark:border-pink-700 dark:bg-pink-950 dark:text-pink-300",
+  ACCESIBLE: "border-sky-500 bg-sky-50 text-sky-900 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  ESTANDAR: "border-slate-400 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200",
 };
 
 /**
@@ -34,7 +34,7 @@ export function dibujarMapa(sala, asientos, pintar) {
     }).join("");
     filas.push(`
       <div class="flex items-center justify-center gap-1">
-        <span class="w-4 shrink-0 text-right text-xs font-semibold text-slate-500">${letra}</span>
+        <span class="w-4 shrink-0 text-right text-xs font-semibold text-slate-500 dark:text-slate-400">${letra}</span>
         ${butacas}
       </div>`);
   }
@@ -42,13 +42,13 @@ export function dibujarMapa(sala, asientos, pintar) {
 }
 
 export function pantalla() {
-  return `<div class="mb-4 rounded bg-slate-800 py-1 text-center text-xs tracking-[0.3em] text-white">
+  return `<div class="mb-4 rounded bg-slate-800 py-1 text-center text-xs tracking-[0.3em] text-white dark:bg-slate-700">
     PANTALLA
   </div>`;
 }
 
 export function referencia(items) {
-  return `<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+  return `<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
     ${items.map(([clases, texto]) =>
       `<span><span class="mr-1 inline-block h-3 w-3 rounded ${clases} align-middle"></span>${texto}</span>`,
     ).join("")}

@@ -54,10 +54,10 @@ export function etiqueta(valor) {
 }
 
 const COLOR_CLASIFICACION = {
-  ATP: "bg-emerald-100 text-emerald-800",
-  MAS_13: "bg-amber-100 text-amber-800",
-  MAS_16: "bg-orange-100 text-orange-800",
-  MAS_18: "bg-red-100 text-red-800",
+  ATP: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  MAS_13: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  MAS_16: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  MAS_18: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
 /** La clasificación se lee de un vistazo: verde ATP, rojo +18. */
@@ -66,11 +66,11 @@ export function chipClasificacion(clasificacion) {
 }
 
 const COLOR_ESTADO = {
-  RESERVADA: "bg-amber-100 text-amber-800",
-  PAGADA: "bg-emerald-100 text-emerald-800",
-  CANCELADA: "bg-slate-200 text-slate-600",
+  RESERVADA: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  PAGADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  CANCELADA: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
   // Vencida no es cancelada: al cliente no se le puede decir que canceló algo que no canceló.
-  EXPIRADA: "bg-slate-200 text-slate-500",
+  EXPIRADA: "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
 };
 
 export function chipEstado(estado) {
@@ -87,8 +87,8 @@ export function imagenPoster(pelicula, clases) {
     ? `<img src="${escapar(pelicula.posterUrl)}" alt="" loading="lazy"
         class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()" />`
     : "";
-  return `<div class="relative overflow-hidden bg-slate-300 ${clases}">
-    <span class="flex h-full w-full items-center justify-center text-2xl font-bold text-slate-500">${inicial}</span>
+  return `<div class="relative overflow-hidden bg-slate-300 dark:bg-slate-700 ${clases}">
+    <span class="flex h-full w-full items-center justify-center text-2xl font-bold text-slate-500 dark:text-slate-400">${inicial}</span>
     ${imagen}
   </div>`;
 }
@@ -153,23 +153,23 @@ export function escapar(texto) {
   ));
 }
 
-export function chip(texto, clases = "bg-slate-200 text-slate-700") {
+export function chip(texto, clases = "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200") {
   return `<span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium ${clases}">${escapar(texto)}</span>`;
 }
 
 export function cargando(mensaje = "Cargando…") {
-  return `<p class="py-12 text-center text-slate-500">${escapar(mensaje)}</p>`;
+  return `<p class="py-12 text-center text-slate-500 dark:text-slate-400">${escapar(mensaje)}</p>`;
 }
 
 export function error(mensaje) {
-  return `<div class="rounded border border-red-300 bg-red-50 p-4 text-red-800">${escapar(mensaje)}</div>`;
+  return `<div class="rounded border border-red-300 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300">${escapar(mensaje)}</div>`;
 }
 
 /** Aviso efímero arriba de todo, para el resultado de una acción. */
 export function avisar(mensaje, tipo = "ok") {
   const colores = tipo === "ok"
-    ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-    : "border-red-300 bg-red-50 text-red-900";
+    ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+    : "border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-300";
   const caja = document.createElement("div");
   caja.className = `fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded border px-4 py-2 shadow ${colores}`;
   caja.textContent = mensaje;

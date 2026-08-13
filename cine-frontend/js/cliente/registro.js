@@ -11,32 +11,32 @@ export async function vistaRegistro(contenedor) {
   contenedor.innerHTML = `
     <div class="mx-auto max-w-md">
       <h1 class="mb-1 text-2xl font-bold">Registrarme</h1>
-      <p class="mb-5 text-sm text-slate-500">
+      <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
         No hace falta para comprar: es para no tener que cargar tus datos cada vez.
       </p>
 
       ${recordado ? `
-        <div class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm">
+        <div class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
           Este navegador ya recuerda a <strong>${escapar(recordado.nombre)}</strong>
           (${escapar(recordado.email)}).
-          <button type="button" id="olvidar" class="ml-1 text-slate-500 underline">Olvidar</button>
+          <button type="button" id="olvidar" class="ml-1 text-slate-500 underline dark:text-slate-400">Olvidar</button>
         </div>` : ""}
 
-      <form id="registro" class="space-y-3 rounded border border-slate-300 bg-white p-4">
+      <form id="registro" class="space-y-3 rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
         <label class="block text-sm">
-          <span class="text-slate-600">Nombre</span>
-          <input name="nombre" required class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+          <span class="text-slate-600 dark:text-slate-300">Nombre</span>
+          <input name="nombre" required class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
         <label class="block text-sm">
-          <span class="text-slate-600">Email</span>
+          <span class="text-slate-600 dark:text-slate-300">Email</span>
           <input name="email" type="email" required
-            class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
         <button type="submit"
-          class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+          class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
           Registrarme
         </button>
-        <p id="errorRegistro" class="hidden text-sm text-red-700"></p>
+        <p id="errorRegistro" class="hidden text-sm text-red-700 dark:text-red-400"></p>
       </form>
     </div>
   `;

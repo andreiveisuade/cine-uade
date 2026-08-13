@@ -70,6 +70,7 @@ js/
   api-http.js     implementación contra la API REST
   api-mock.js     implementación contra el mock
   router.js       ruteo por hash (#/pelicula/3)
+  theme.js        toggle claro/oscuro, persistido en localStorage
   butacas.js      dibujo del mapa de la sala, compartido por cliente y encargado
   ui.js           formatos y etiquetas de los enums del dominio
   cliente.js      vistas del cliente

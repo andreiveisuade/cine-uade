@@ -14,11 +14,11 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
   const reservas = email ? await api.obtenerReservasDe(email) : null;
 
   const tarjetas = (reservas || []).map((r) => `
-    <article class="rounded border border-slate-300 bg-white p-4 ${r.estado === "CANCELADA" ? "opacity-60" : ""}">
+    <article class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 ${r.estado === "CANCELADA" ? "opacity-60" : ""}">
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 class="font-semibold">${escapar(r.pelicula?.titulo || "—")}</h2>
-          <p class="text-sm text-slate-600">
+          <p class="text-sm text-slate-600 dark:text-slate-300">
             ${r.funcion
               ? `${escapar(dia(r.funcion.inicio))} ${hora(r.funcion.inicio)} ·
                  ${escapar(r.sala.nombre)} (${etiqueta(r.sala.tipo)}) ·
@@ -32,18 +32,18 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
         </div>
       </div>
       <p class="mt-2 text-sm">
-        <span class="text-slate-500">Butacas:</span>
+        <span class="text-slate-500 dark:text-slate-400">Butacas:</span>
         <span class="font-mono">${r.entradas.map((e) => e.codigo).join(", ")}</span>
       </p>
       ${r.pago
-        ? `<p class="mt-1 text-xs text-slate-500">
+        ? `<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
              Pagada con ${etiqueta(r.pago.medio)} el ${escapar(fechaHora(r.pago.fecha))}</p>`
         : ""}
       <div class="mt-3 flex gap-2">
-        <a href="#/ticket/${r.id}" class="rounded border border-slate-400 px-3 py-1 text-sm">Ver ticket</a>
+        <a href="#/ticket/${r.id}" class="rounded border border-slate-400 px-3 py-1 text-sm dark:border-slate-600 dark:text-slate-100">Ver ticket</a>
         ${r.estado === "RESERVADA"
           ? `<button type="button" data-cancelar="${r.id}"
-               class="rounded border border-red-300 px-3 py-1 text-sm text-red-700">Cancelar</button>`
+               class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-400">Cancelar</button>`
           : ""}
       </div>
     </article>
@@ -51,15 +51,15 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Mis reservas</h1>
-    <p class="mb-5 text-sm text-slate-500">
+    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
       Buscá con el email que dejaste al comprar.
     </p>
 
     <form id="buscar" class="mb-5 flex flex-wrap gap-2">
       <input name="email" type="email" required value="${escapar(email)}"
         placeholder="tu@email.com"
-        class="min-w-64 flex-1 rounded border border-slate-400 px-2 py-1.5" />
-      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+        class="min-w-64 flex-1 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
         Buscar
       </button>
     </form>
@@ -68,7 +68,7 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
       ? ""
       : reservas.length
         ? `<div class="space-y-3">${tarjetas}</div>`
-        : `<p class="py-8 text-center text-slate-500">
+        : `<p class="py-8 text-center text-slate-500 dark:text-slate-400">
              No hay reservas a nombre de ${escapar(email)}.</p>`}
   `;
 

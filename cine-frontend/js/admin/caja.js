@@ -9,24 +9,24 @@ export async function vistaCaja(contenedor, fecha = hoyISO()) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Arqueo</h1>
-    <p class="mb-5 text-sm text-slate-500">Lo cobrado en el día, por medio de pago.</p>
+    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">Lo cobrado en el día, por medio de pago.</p>
 
     <div class="mb-5 flex flex-wrap items-end gap-4">
       <label class="text-sm">
-        <span class="text-slate-600">Fecha</span>
+        <span class="text-slate-600 dark:text-slate-300">Fecha</span>
         <input type="date" id="fecha" value="${arqueo.fecha}"
-          class="mt-1 block rounded border border-slate-400 px-2 py-1.5" />
+          class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
       </label>
-      <div class="rounded border border-slate-300 bg-white px-4 py-2">
-        <span class="text-xs uppercase text-slate-500">Total cobrado</span>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
+        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Total cobrado</span>
         <p class="text-2xl font-bold">${precio(arqueo.total)}</p>
       </div>
-      <div class="rounded border border-slate-300 bg-white px-4 py-2">
-        <span class="text-xs uppercase text-slate-500">Operaciones</span>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
+        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Operaciones</span>
         <p class="text-2xl font-bold">${arqueo.pagos.length}</p>
       </div>
-      <div class="rounded border border-slate-300 bg-white px-4 py-2">
-        <span class="text-xs uppercase text-slate-500">Entradas</span>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
+        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Entradas</span>
         <p class="text-2xl font-bold">${arqueo.entradas}</p>
       </div>
     </div>
@@ -34,16 +34,16 @@ export async function vistaCaja(contenedor, fecha = hoyISO()) {
     ${medios.length ? `
       <div class="mb-5 flex flex-wrap gap-2">
         ${medios.map(([medio, datos]) => `
-          <div class="rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+          <div class="rounded border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
             <span class="font-medium">${etiqueta(medio)}</span>
-            <span class="text-slate-500">· ${datos.cantidad}</span>
+            <span class="text-slate-500 dark:text-slate-400">· ${datos.cantidad}</span>
             <span class="ml-2 font-semibold">${precio(datos.total)}</span>
           </div>`).join("")}
       </div>` : ""}
 
-    <div class="overflow-x-auto rounded border border-slate-300 bg-white">
+    <div class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
       <table class="w-full text-sm">
-        <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
           <tr>
             <th class="p-2">Hora</th><th>Reserva</th><th>Película</th><th>Cliente</th>
             <th>Medio</th><th>Autorización</th><th class="text-right">Descuento</th>
@@ -52,19 +52,19 @@ export async function vistaCaja(contenedor, fecha = hoyISO()) {
         </thead>
         <tbody>
           ${arqueo.pagos.length ? arqueo.pagos.map((p) => `
-            <tr class="border-b border-slate-200">
+            <tr class="border-b border-slate-200 dark:border-slate-800">
               <td class="p-2 whitespace-nowrap">${hora(p.fecha)}</td>
               <td>#${p.reservaId}</td>
               <td>${escapar(p.pelicula?.titulo || "—")}</td>
               <td>${escapar(p.cliente?.nombre || "—")}</td>
               <td>${etiqueta(p.medio)}</td>
               <td class="font-mono text-xs">${escapar(p.codigoAutorizacion || "—")}</td>
-              <td class="text-right whitespace-nowrap text-xs ${p.descuento > 0 ? "text-emerald-700" : "text-slate-400"}">
+              <td class="text-right whitespace-nowrap text-xs ${p.descuento > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}">
                 ${p.descuento > 0 ? "−" + precio(p.descuento) : "—"}
               </td>
               <td class="text-right whitespace-nowrap font-medium">${precio(p.monto)}</td>
             </tr>`).join("")
-            : '<tr><td colspan="8" class="p-6 text-center text-slate-500">No se cobró nada ese día.</td></tr>'}
+            : '<tr><td colspan="8" class="p-6 text-center text-slate-500 dark:text-slate-400">No se cobró nada ese día.</td></tr>'}
         </tbody>
       </table>
     </div>

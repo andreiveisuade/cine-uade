@@ -31,7 +31,7 @@ export function selectorTarifa(codigo, elegida) {
     `<option value="${t.nombre}" ${t.nombre === elegida ? "selected" : ""}>${etiqueta(t.nombre)}</option>`,
   ).join("");
   return `<select data-tarifa-de="${codigo}"
-    class="rounded border border-slate-400 px-1 py-0.5 text-xs">${opciones}</select>`;
+    class="rounded border border-slate-400 px-1 py-0.5 text-xs dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">${opciones}</select>`;
 }
 
 // El cliente no inicia sesión. Recordar sus datos en el navegador es lo que hace que

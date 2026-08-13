@@ -31,20 +31,20 @@ export async function vistaPromociones(contenedor) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Promociones</h1>
-    <p class="mb-5 text-sm text-slate-500">
+    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
       ${promociones.filter((p) => p.activa).length} activas de ${promociones.length}.
       No se acumulan: en cada cobro se aplica la que más descuenta.
     </p>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white">
+      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
             <tr><th class="p-2">Nombre</th><th>Beneficio</th><th>Vigencia</th><th>Cuándo</th><th></th></tr>
           </thead>
           <tbody>
             ${promociones.length ? promociones.map((p) => `
-              <tr class="border-b border-slate-200 ${p.activa ? "" : "text-slate-400"}">
+              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}">
                 <td class="p-2 font-medium">${escapar(p.nombre)}</td>
                 <td class="whitespace-nowrap font-semibold">${escapar(beneficioDe(p))}</td>
                 <td class="whitespace-nowrap text-xs">
@@ -53,32 +53,32 @@ export async function vistaPromociones(contenedor) {
                 <td class="text-xs">${escapar(condicionesDe(p))}</td>
                 <td class="p-2 text-right whitespace-nowrap">
                   <button type="button" data-${p.activa ? "baja" : "alta"}="${p.id}"
-                    class="text-xs ${p.activa ? "text-red-700" : "text-emerald-700"} hover:underline">
+                    class="text-xs ${p.activa ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"} hover:underline">
                     ${p.activa ? "Dar de baja" : "Reactivar"}
                   </button>
                 </td>
               </tr>`).join("")
-              : '<tr><td colspan="5" class="p-6 text-center text-slate-500">Todavía no hay promociones.</td></tr>'}
+              : '<tr><td colspan="5" class="p-6 text-center text-slate-500 dark:text-slate-400">Todavía no hay promociones.</td></tr>'}
           </tbody>
         </table>
-        <p class="border-t border-slate-200 p-2 text-xs text-slate-500">
+        <p class="border-t border-slate-200 p-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro
           tiene que seguir existiendo para poder explicar por qué se cobró ese monto.
         </p>
       </section>
 
-      <section class="rounded border border-slate-300 bg-white p-4">
+      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
         <h2 class="mb-3 font-semibold">Nueva promoción</h2>
         <form id="alta" class="space-y-3">
           <label class="block text-sm">
-            <span class="text-slate-600">Nombre</span>
+            <span class="text-slate-600 dark:text-slate-300">Nombre</span>
             <input name="nombre" required placeholder="Miércoles 2x1"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
           </label>
 
           <label class="block text-sm">
-            <span class="text-slate-600">Tipo</span>
-            <select name="tipo" id="tipo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">
+            <span class="text-slate-600 dark:text-slate-300">Tipo</span>
+            <select name="tipo" id="tipo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
               <option value="PORCENTAJE">Porcentaje</option>
               <option value="MONTO_FIJO">Monto fijo</option>
               <option value="NXM">NxM (2x1)</option>
@@ -87,46 +87,46 @@ export async function vistaPromociones(contenedor) {
 
           <div data-campos="PORCENTAJE">
             <label class="block text-sm">
-              <span class="text-slate-600">Porcentaje de descuento</span>
+              <span class="text-slate-600 dark:text-slate-300">Porcentaje de descuento</span>
               <input name="porcentaje" type="number" min="1" max="99" value="30"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
           <div data-campos="MONTO_FIJO" class="hidden">
             <label class="block text-sm">
-              <span class="text-slate-600">Monto a descontar</span>
+              <span class="text-slate-600 dark:text-slate-300">Monto a descontar</span>
               <input name="monto" type="number" min="1" value="2000"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
           <div data-campos="NXM" class="hidden grid-cols-2 gap-2">
             <label class="block text-sm">
-              <span class="text-slate-600">Lleva</span>
+              <span class="text-slate-600 dark:text-slate-300">Lleva</span>
               <input name="lleva" type="number" min="2" value="2"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
             <label class="block text-sm">
-              <span class="text-slate-600">Paga</span>
+              <span class="text-slate-600 dark:text-slate-300">Paga</span>
               <input name="paga" type="number" min="1" value="1"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <label class="block text-sm">
-              <span class="text-slate-600">Desde</span>
+              <span class="text-slate-600 dark:text-slate-300">Desde</span>
               <input name="vigenciaDesde" type="date" required value="${hoyISO()}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
             <label class="block text-sm">
-              <span class="text-slate-600">Hasta</span>
+              <span class="text-slate-600 dark:text-slate-300">Hasta</span>
               <input name="vigenciaHasta" type="date" required
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
 
           <fieldset class="text-sm">
-            <legend class="text-slate-600">Días (ninguno = todos)</legend>
+            <legend class="text-slate-600 dark:text-slate-300">Días (ninguno = todos)</legend>
             <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               ${DIAS_SEMANA.map((d) => `
                 <label class="flex items-center gap-1 text-xs">
@@ -137,19 +137,19 @@ export async function vistaPromociones(contenedor) {
 
           <div class="grid grid-cols-2 gap-2">
             <label class="block text-sm">
-              <span class="text-slate-600">Desde hora</span>
+              <span class="text-slate-600 dark:text-slate-300">Desde hora</span>
               <input name="horaDesde" type="time"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
             <label class="block text-sm">
-              <span class="text-slate-600">Hasta hora</span>
+              <span class="text-slate-600 dark:text-slate-300">Hasta hora</span>
               <input name="horaHasta" type="time"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
 
           <fieldset class="text-sm">
-            <legend class="text-slate-600">Medios (ninguno = cualquiera)</legend>
+            <legend class="text-slate-600 dark:text-slate-300">Medios (ninguno = cualquiera)</legend>
             <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1">
               ${mediosPago.map((m) => `
                 <label class="flex items-center gap-1 text-xs">
@@ -159,12 +159,12 @@ export async function vistaPromociones(contenedor) {
           </fieldset>
 
           <button type="submit"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
             Crear promoción
           </button>
-          <p id="errorAlta" class="hidden text-sm text-red-700"></p>
+          <p id="errorAlta" class="hidden text-sm text-red-700 dark:text-red-400"></p>
         </form>
-        <p class="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500">
+        <p class="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Las condiciones se evalúan contra el horario de la <strong>función</strong>, no
           contra el momento de la compra: un 2x1 de los miércoles vale para la función del
           miércoles aunque las entradas se compren el lunes.
