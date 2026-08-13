@@ -14,8 +14,21 @@ const seleccion = { funcionId: null, codigos: [] };
 
 /* ---------------------------------------------------------------- cartelera */
 
-async function vistaCartelera(contenedor) {
-  const peliculas = await api.obtenerCartelera();
+async function vistaCartelera(contenedor, generoFiltrado) {
+  const [peliculas, generos] = await Promise.all([
+    api.obtenerCartelera(generoFiltrado),
+    api.obtenerGeneros(),
+  ]);
+
+  const filtros = [
+    `<a href="#/cartelera" class="rounded-full px-3 py-1 text-xs font-medium ${
+      generoFiltrado ? "bg-slate-200 text-slate-700" : "bg-slate-900 text-white"}">Todos</a>`,
+    ...generos.map((g) => `
+      <a href="#/cartelera/${g}" class="rounded-full px-3 py-1 text-xs font-medium ${
+        g === generoFiltrado ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-700"}">
+        ${etiqueta(g)}
+      </a>`),
+  ].join("");
 
   const tarjetas = peliculas.map((p) => `
     <a href="#/pelicula/${p.id}"
@@ -34,8 +47,14 @@ async function vistaCartelera(contenedor) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Cartelera</h1>
-    <p class="mb-5 text-sm text-slate-500">${peliculas.length} películas en cartel</p>
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">${tarjetas}</div>
+    <p class="mb-3 text-sm text-slate-500">
+      ${peliculas.length} película${peliculas.length === 1 ? "" : "s"}
+      ${generoFiltrado ? `de ${etiqueta(generoFiltrado).toLowerCase()}` : "en cartel"}
+    </p>
+    <div class="mb-5 flex flex-wrap gap-1">${filtros}</div>
+    ${peliculas.length
+      ? `<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">${tarjetas}</div>`
+      : '<p class="py-8 text-center text-slate-500">No hay películas de ese género en cartelera.</p>'}
   `;
 }
 
@@ -78,15 +97,24 @@ async function vistaPelicula(contenedor, id) {
 
   contenedor.innerHTML = `
     <a href="#/" class="text-sm text-slate-500 hover:text-slate-900">&larr; Cartelera</a>
-    <div class="mt-2 mb-6 flex gap-4">
+    <div class="mt-2 mb-6 flex flex-wrap gap-4">
       ${imagenPoster(pelicula, "h-48 w-32 shrink-0 rounded")}
-      <div>
+      <div class="min-w-64 flex-1">
         <h1 class="text-2xl font-bold">${escapar(pelicula.titulo)}</h1>
-        <p class="mt-1 text-sm text-slate-500">${duracion(pelicula.duracionMinutos)}</p>
+        <p class="mt-1 text-sm text-slate-500">
+          ${[pelicula.anio || null, duracion(pelicula.duracionMinutos),
+             pelicula.idiomaOriginal || null].filter(Boolean).map(escapar).join(" · ")}
+        </p>
+        ${pelicula.director
+          ? `<p class="mt-1 text-sm text-slate-600">Dirección: ${escapar(pelicula.director)}</p>`
+          : ""}
         <div class="mt-2">${chipClasificacion(pelicula.clasificacion)}</div>
         <div class="mt-2 flex flex-wrap gap-1">
           ${pelicula.generos.map((g) => chip(etiqueta(g))).join("")}
         </div>
+        ${pelicula.sinopsis
+          ? `<p class="mt-3 max-w-prose text-sm text-slate-700">${escapar(pelicula.sinopsis)}</p>`
+          : ""}
       </div>
     </div>
     <h2 class="mb-3 text-lg font-semibold">Funciones</h2>

@@ -83,10 +83,14 @@ export function obtenerProyecciones() {
 
 /* ------------------------------------------------------------------ cliente */
 
-export function obtenerCartelera() {
-  const conFunciones = datos.peliculas.filter((p) =>
-    datos.funciones.some((f) => f.peliculaId === p.id));
-  return responder(conFunciones);
+/**
+ * Solo lo que está en exhibición: una película cargada no está necesariamente en
+ * cartelera. Opcionalmente filtra por género (CU-01b).
+ */
+export function obtenerCartelera(genero) {
+  let lista = datos.peliculas.filter((p) => p.enCartelera);
+  if (genero) lista = lista.filter((p) => p.generos.includes(genero));
+  return responder(lista);
 }
 
 export function obtenerPelicula(id) {
@@ -213,7 +217,8 @@ export function obtenerPeliculas() {
   return responder(datos.peliculas);
 }
 
-export function crearPelicula({ titulo, duracionMinutos, generos, clasificacion, posterUrl }) {
+export function crearPelicula({ titulo, duracionMinutos, generos, clasificacion,
+                                posterUrl, ...catalogo }) {
   const nombre = (titulo || "").trim();
   if (!nombre) return fallar("El título no puede estar vacío");
   if (datos.peliculas.some((p) => p.titulo.toLowerCase() === nombre.toLowerCase())) {
@@ -233,8 +238,46 @@ export function crearPelicula({ titulo, duracionMinutos, generos, clasificacion,
     generos: [...generos],
     clasificacion,
     posterUrl: (posterUrl || "").trim(),
+    director: (catalogo.director || "").trim(),
+    anio: Number(catalogo.anio) || 0,
+    idiomaOriginal: (catalogo.idiomaOriginal || "").trim(),
+    sinopsis: (catalogo.sinopsis || "").trim(),
+    enCartelera: catalogo.enCartelera !== false,
   };
   datos.peliculas.push(pelicula);
+  return responder(pelicula);
+}
+
+/** Las mismas reglas que el alta, salvo el título repetido, que se compara contra las otras. */
+export function actualizarPelicula(id, cambios) {
+  const pelicula = peliculaDe(Number(id));
+  if (!pelicula) return fallar(`No existe la película ${id}`);
+
+  const nombre = (cambios.titulo ?? pelicula.titulo).trim();
+  if (!nombre) return fallar("El título no puede estar vacío");
+  if (datos.peliculas.some((p) => p.id !== pelicula.id
+      && p.titulo.toLowerCase() === nombre.toLowerCase())) {
+    return fallar("Ya existe una película con ese título");
+  }
+  const duracion = Number(cambios.duracionMinutos ?? pelicula.duracionMinutos);
+  if (!(duracion > 0)) return fallar("La duración debe ser mayor a cero");
+  const generos = cambios.generos ?? pelicula.generos;
+  if (!generos.length) return fallar("La película necesita al menos un género");
+  const clasificacion = cambios.clasificacion ?? pelicula.clasificacion;
+  if (!(clasificacion in datos.CLASIFICACIONES)) return fallar("Falta la clasificación por edad");
+
+  Object.assign(pelicula, {
+    titulo: nombre,
+    duracionMinutos: duracion,
+    generos: [...generos],
+    clasificacion,
+    posterUrl: (cambios.posterUrl ?? pelicula.posterUrl).trim(),
+    director: (cambios.director ?? pelicula.director).trim(),
+    anio: Number(cambios.anio ?? pelicula.anio) || 0,
+    idiomaOriginal: (cambios.idiomaOriginal ?? pelicula.idiomaOriginal).trim(),
+    sinopsis: (cambios.sinopsis ?? pelicula.sinopsis).trim(),
+    enCartelera: cambios.enCartelera ?? pelicula.enCartelera,
+  });
   return responder(pelicula);
 }
 
