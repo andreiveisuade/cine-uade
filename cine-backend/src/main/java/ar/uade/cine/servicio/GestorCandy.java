@@ -19,7 +19,7 @@ import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
-import ar.uade.cine.persistencia.GeneradorTicketCandy;
+import ar.uade.cine.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.ProductoDAO;
 

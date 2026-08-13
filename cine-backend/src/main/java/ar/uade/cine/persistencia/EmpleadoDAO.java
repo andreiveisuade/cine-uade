@@ -10,7 +10,7 @@ import ar.uade.cine.dominio.usuarios.Empleado;
  */
 public interface EmpleadoDAO {
 
-    void guardar(Empleado administrador);
+    void guardar(Empleado empleado);
 
     Optional<Empleado> buscarPorId(int id);
 

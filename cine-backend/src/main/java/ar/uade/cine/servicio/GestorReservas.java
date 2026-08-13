@@ -22,7 +22,7 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
-import ar.uade.cine.persistencia.GeneradorTicket;
+import ar.uade.cine.comprobantes.GeneradorTicket;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;

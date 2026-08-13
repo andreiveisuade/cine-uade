@@ -6,6 +6,7 @@ import ar.uade.cine.dominio.usuarios.Empleado;
 import ar.uade.cine.dominio.usuarios.EmpleadoImpl;
 import ar.uade.cine.dominio.usuarios.Rol;
 import ar.uade.cine.persistencia.EmpleadoDAO;
+import ar.uade.cine.seguridad.Password;
 
 /**
  * Alta e inicio de sesión de los empleados. El cliente no pasa por acá: compra

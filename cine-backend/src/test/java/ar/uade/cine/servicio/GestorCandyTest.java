@@ -28,7 +28,7 @@ import ar.uade.cine.dominio.ventas.ReservaImpl;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
-import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
+import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;

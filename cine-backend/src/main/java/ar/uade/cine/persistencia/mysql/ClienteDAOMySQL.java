@@ -16,7 +16,7 @@ import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
 /**
- * Misma interfaz, otra tecnología. Comparte la tabla usuario con AdministradorDAOMySQL:
+ * Misma interfaz, otra tecnología. Comparte la tabla usuario con EmpleadoDAOMySQL:
  * rol la discrimina, y por eso ninguna consulta acá trae password_hash. El cliente no
  * inicia sesión, así que tampoco tiene actualizar().
  */

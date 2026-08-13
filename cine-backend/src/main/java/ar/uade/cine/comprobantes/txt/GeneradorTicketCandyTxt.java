@@ -1,4 +1,4 @@
-package ar.uade.cine.persistencia.archivo;
+package ar.uade.cine.comprobantes.txt;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,7 +10,7 @@ import java.util.List;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.ItemCompra;
 import ar.uade.cine.dominio.usuarios.Cliente;
-import ar.uade.cine.persistencia.GeneradorTicketCandy;
+import ar.uade.cine.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.persistencia.PersistenciaException;
 
 /**

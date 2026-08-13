@@ -1,4 +1,4 @@
-package ar.uade.cine.persistencia;
+package ar.uade.cine.comprobantes;
 
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.usuarios.Cliente;

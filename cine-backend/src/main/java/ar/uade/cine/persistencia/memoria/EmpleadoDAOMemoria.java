@@ -16,9 +16,9 @@ public class EmpleadoDAOMemoria implements EmpleadoDAO {
     private int proximoId = 1;
 
     @Override
-    public void guardar(Empleado administrador) {
-        administrador.setId(proximoId++);
-        empleados.put(administrador.getId(), administrador);
+    public void guardar(Empleado empleado) {
+        empleado.setId(proximoId++);
+        empleados.put(empleado.getId(), empleado);
     }
 
     @Override
