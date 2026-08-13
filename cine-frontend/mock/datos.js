@@ -24,15 +24,61 @@ export const TIPOS_ASIENTO = {
 export const IDIOMAS = ["DOBLADA", "SUBTITULADA"];
 export const PROYECCIONES = ["DOS_D", "TRES_D"];
 
+// La clasificación guarda la edad mínima, no solo la etiqueta: cuando se valide la
+// edad al vender va a ser una comparación numérica.
+export const CLASIFICACIONES = {
+  ATP: 0,
+  MAS_13: 13,
+  MAS_16: 16,
+  MAS_18: 18,
+};
+
+/**
+ * Poster de relleno como SVG embebido: el backend va a mandar una URL de verdad en
+ * este mismo campo, y el <img> la consume igual.
+ */
+function poster(titulo, fondo) {
+  const palabras = titulo.split(" ");
+  const lineas = [];
+  let actual = "";
+  for (const palabra of palabras) {
+    if ((actual + " " + palabra).trim().length > 13) {
+      if (actual) lineas.push(actual.trim());
+      actual = palabra;
+    } else {
+      actual += " " + palabra;
+    }
+  }
+  if (actual.trim()) lineas.push(actual.trim());
+
+  const primeraY = 150 - (lineas.length - 1) * 13;
+  const texto = lineas
+    .map((linea, i) => `<tspan x="100" y="${primeraY + i * 26}">${linea}</tspan>`)
+    .join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300">`
+    + `<rect width="200" height="300" fill="${fondo}"/>`
+    + `<text fill="#ffffff" font-family="Helvetica,Arial,sans-serif" font-size="19"`
+    + ` font-weight="bold" text-anchor="middle">${texto}</text></svg>`;
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
 export const peliculas = [
-  { id: 1, titulo: "Matrix", duracionMinutos: 136, generos: ["ACCION", "CIENCIA_FICCION"] },
-  { id: 2, titulo: "El Padrino", duracionMinutos: 175, generos: ["DRAMA", "SUSPENSO"] },
-  { id: 3, titulo: "Intensa-Mente 2", duracionMinutos: 96, generos: ["ANIMACION", "COMEDIA"] },
-  { id: 4, titulo: "Duna: Parte Dos", duracionMinutos: 166, generos: ["CIENCIA_FICCION", "ACCION"] },
-  { id: 5, titulo: "El Resplandor", duracionMinutos: 146, generos: ["TERROR", "SUSPENSO"] },
-  { id: 6, titulo: "Cuando Harry conoció a Sally", duracionMinutos: 96, generos: ["ROMANCE", "COMEDIA"] },
-  { id: 7, titulo: "Nuestro planeta", duracionMinutos: 88, generos: ["DOCUMENTAL"] },
-  { id: 8, titulo: "Oppenheimer", duracionMinutos: 180, generos: ["DRAMA"] },
+  { id: 1, titulo: "Matrix", duracionMinutos: 136, generos: ["ACCION", "CIENCIA_FICCION"],
+    clasificacion: "MAS_16", posterUrl: poster("Matrix", "#1f4d3d") },
+  { id: 2, titulo: "El Padrino", duracionMinutos: 175, generos: ["DRAMA", "SUSPENSO"],
+    clasificacion: "MAS_16", posterUrl: poster("El Padrino", "#3b2a1a") },
+  { id: 3, titulo: "Intensa-Mente 2", duracionMinutos: 96, generos: ["ANIMACION", "COMEDIA"],
+    clasificacion: "ATP", posterUrl: poster("Intensa-Mente 2", "#b4531f") },
+  { id: 4, titulo: "Duna: Parte Dos", duracionMinutos: 166, generos: ["CIENCIA_FICCION", "ACCION"],
+    clasificacion: "MAS_13", posterUrl: poster("Duna: Parte Dos", "#8a5a2b") },
+  { id: 5, titulo: "El Resplandor", duracionMinutos: 146, generos: ["TERROR", "SUSPENSO"],
+    clasificacion: "MAS_18", posterUrl: poster("El Resplandor", "#5b1c1c") },
+  { id: 6, titulo: "Cuando Harry conoció a Sally", duracionMinutos: 96, generos: ["ROMANCE", "COMEDIA"],
+    clasificacion: "MAS_13", posterUrl: poster("Cuando Harry conoció a Sally", "#7a3350") },
+  { id: 7, titulo: "Nuestro planeta", duracionMinutos: 88, generos: ["DOCUMENTAL"],
+    clasificacion: "ATP", posterUrl: poster("Nuestro planeta", "#1e4763") },
+  { id: 8, titulo: "Oppenheimer", duracionMinutos: 180, generos: ["DRAMA"],
+    clasificacion: "MAS_16", posterUrl: poster("Oppenheimer", "#2d2d33") },
 ];
 
 // Las seis salas del complejo, igual que SalasDeEjemplo.java.

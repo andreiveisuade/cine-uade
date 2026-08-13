@@ -5,8 +5,8 @@ import * as api from "./api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "./butacas.js";
 import { iniciarRouter, ir } from "./router.js";
 import {
-  avisar, chip, dia, duracion, escapar, etiqueta, fechaHora,
-  hora, porDia, precio, precioExacto,
+  avisar, chip, chipClasificacion, dia, duracion, escapar, etiqueta, fechaHora,
+  hora, imagenPoster, porDia, precio, precioExacto,
 } from "./ui.js";
 
 // Lo elegido en el mapa de butacas, para que lo lea la confirmación.
@@ -19,11 +19,15 @@ async function vistaCartelera(contenedor) {
 
   const tarjetas = peliculas.map((p) => `
     <a href="#/pelicula/${p.id}"
-       class="block rounded border border-slate-300 bg-white p-4 hover:border-slate-500">
-      <h2 class="font-semibold leading-tight">${escapar(p.titulo)}</h2>
-      <p class="mt-1 text-sm text-slate-500">${duracion(p.duracionMinutos)}</p>
-      <div class="mt-3 flex flex-wrap gap-1">
-        ${p.generos.map((g) => chip(etiqueta(g))).join("")}
+       class="flex gap-3 rounded border border-slate-300 bg-white p-3 hover:border-slate-500">
+      ${imagenPoster(p, "h-32 w-[5.5rem] shrink-0 rounded")}
+      <div class="min-w-0">
+        <h2 class="font-semibold leading-tight">${escapar(p.titulo)}</h2>
+        <p class="mt-1 text-sm text-slate-500">${duracion(p.duracionMinutos)}</p>
+        <div class="mt-2">${chipClasificacion(p.clasificacion)}</div>
+        <div class="mt-2 flex flex-wrap gap-1">
+          ${p.generos.map((g) => chip(etiqueta(g))).join("")}
+        </div>
       </div>
     </a>
   `).join("");
@@ -74,10 +78,16 @@ async function vistaPelicula(contenedor, id) {
 
   contenedor.innerHTML = `
     <a href="#/" class="text-sm text-slate-500 hover:text-slate-900">&larr; Cartelera</a>
-    <h1 class="mt-2 text-2xl font-bold">${escapar(pelicula.titulo)}</h1>
-    <p class="mt-1 text-sm text-slate-500">${duracion(pelicula.duracionMinutos)}</p>
-    <div class="mt-2 mb-6 flex flex-wrap gap-1">
-      ${pelicula.generos.map((g) => chip(etiqueta(g))).join("")}
+    <div class="mt-2 mb-6 flex gap-4">
+      ${imagenPoster(pelicula, "h-48 w-32 shrink-0 rounded")}
+      <div>
+        <h1 class="text-2xl font-bold">${escapar(pelicula.titulo)}</h1>
+        <p class="mt-1 text-sm text-slate-500">${duracion(pelicula.duracionMinutos)}</p>
+        <div class="mt-2">${chipClasificacion(pelicula.clasificacion)}</div>
+        <div class="mt-2 flex flex-wrap gap-1">
+          ${pelicula.generos.map((g) => chip(etiqueta(g))).join("")}
+        </div>
+      </div>
     </div>
     <h2 class="mb-3 text-lg font-semibold">Funciones</h2>
     ${funciones.length ? dias : '<p class="text-slate-500">No hay funciones programadas.</p>'}

@@ -61,6 +61,12 @@ export function obtenerGeneros() {
   return responder(datos.GENEROS);
 }
 
+/** Cada clasificación con su edad mínima. */
+export function obtenerClasificaciones() {
+  return responder(Object.entries(datos.CLASIFICACIONES)
+    .map(([nombre, edadMinima]) => ({ nombre, edadMinima })));
+}
+
 /** Cada tipo con su multiplicador y si puede proyectar en 3D, para anticipar R8. */
 export function obtenerTiposSala() {
   return responder(Object.entries(datos.TIPOS_SALA)
@@ -207,7 +213,7 @@ export function obtenerPeliculas() {
   return responder(datos.peliculas);
 }
 
-export function crearPelicula({ titulo, duracionMinutos, generos }) {
+export function crearPelicula({ titulo, duracionMinutos, generos, clasificacion, posterUrl }) {
   const nombre = (titulo || "").trim();
   if (!nombre) return fallar("El título no puede estar vacío");
   if (datos.peliculas.some((p) => p.titulo.toLowerCase() === nombre.toLowerCase())) {
@@ -215,12 +221,18 @@ export function crearPelicula({ titulo, duracionMinutos, generos }) {
   }
   if (!(duracionMinutos > 0)) return fallar("La duración debe ser mayor a cero");
   if (!generos || generos.length === 0) return fallar("La película necesita al menos un género");
+  // R10
+  if (!clasificacion || !(clasificacion in datos.CLASIFICACIONES)) {
+    return fallar("Falta la clasificación por edad");
+  }
 
   const pelicula = {
     id: siguienteId(datos.peliculas),
     titulo: nombre,
     duracionMinutos: Number(duracionMinutos),
     generos: [...generos],
+    clasificacion,
+    posterUrl: (posterUrl || "").trim(),
   };
   datos.peliculas.push(pelicula);
   return responder(pelicula);

@@ -4,7 +4,10 @@
 import * as api from "./api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "./butacas.js";
 import { iniciarRouter, ir } from "./router.js";
-import { avisar, chip, dia, duracion, escapar, etiqueta, hora, precio } from "./ui.js";
+import {
+  avisar, chip, chipClasificacion, dia, duracion, escapar, etiqueta,
+  hora, imagenPoster, precio,
+} from "./ui.js";
 
 /* ------------------------------------------------------------------- sesión */
 
@@ -79,9 +82,10 @@ async function vistaLogin(contenedor) {
 /* ---------------------------------------------------------- ABM de películas */
 
 async function vistaPeliculas(contenedor) {
-  const [peliculas, generos] = await Promise.all([
+  const [peliculas, generos, clasificaciones] = await Promise.all([
     api.obtenerPeliculas(),
     api.obtenerGeneros(),
+    api.obtenerClasificaciones(),
   ]);
 
   contenedor.innerHTML = `
@@ -91,13 +95,15 @@ async function vistaPeliculas(contenedor) {
       <section class="overflow-x-auto rounded border border-slate-300 bg-white">
         <table class="w-full text-sm">
           <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
-            <tr><th class="p-2">Título</th><th>Duración</th><th>Géneros</th><th></th></tr>
+            <tr><th class="p-2"></th><th>Título</th><th>Duración</th><th>Edad</th><th>Géneros</th><th></th></tr>
           </thead>
           <tbody>
             ${peliculas.map((p) => `
               <tr class="border-b border-slate-200">
-                <td class="p-2 font-medium">${escapar(p.titulo)}</td>
+                <td class="p-2">${imagenPoster(p, "h-12 w-8 rounded")}</td>
+                <td class="font-medium">${escapar(p.titulo)}</td>
                 <td class="whitespace-nowrap">${duracion(p.duracionMinutos)}</td>
+                <td>${chipClasificacion(p.clasificacion)}</td>
                 <td class="py-1">
                   <div class="flex flex-wrap gap-1">${p.generos.map((g) => chip(etiqueta(g))).join("")}</div>
                 </td>
@@ -121,6 +127,20 @@ async function vistaPeliculas(contenedor) {
             <span class="text-slate-600">Duración (minutos)</span>
             <input name="duracion" type="number" min="1" required
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+          </label>
+          <label class="block text-sm">
+            <span class="text-slate-600">Clasificación</span>
+            <select name="clasificacion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">
+              ${clasificaciones.map((c) => `
+                <option value="${c.nombre}">${etiqueta(c.nombre)}${c.edadMinima ? ` — desde ${c.edadMinima} años` : " — todo público"}</option>
+              `).join("")}
+            </select>
+          </label>
+          <label class="block text-sm">
+            <span class="text-slate-600">Poster (URL)</span>
+            <input name="posterUrl" type="url" placeholder="https://…"
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            <span class="text-xs text-slate-500">Opcional. Sin poster se muestra la inicial del título.</span>
           </label>
           <fieldset class="text-sm">
             <legend class="text-slate-600">Géneros (al menos uno)</legend>
@@ -146,6 +166,8 @@ async function vistaPeliculas(contenedor) {
         titulo: datos.get("titulo"),
         duracionMinutos: Number(datos.get("duracion")),
         generos: datos.getAll("genero"),
+        clasificacion: datos.get("clasificacion"),
+        posterUrl: datos.get("posterUrl"),
       });
       avisar("Película agregada");
       vistaPeliculas(contenedor);

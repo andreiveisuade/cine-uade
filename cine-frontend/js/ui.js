@@ -26,10 +26,42 @@ const ETIQUETAS = {
   RESERVADA: "Reservada",
   PAGADA: "Pagada",
   CANCELADA: "Cancelada",
+  ATP: "ATP",
+  MAS_13: "+13",
+  MAS_16: "+16",
+  MAS_18: "+18",
 };
 
 export function etiqueta(valor) {
   return ETIQUETAS[valor] || valor;
+}
+
+const COLOR_CLASIFICACION = {
+  ATP: "bg-emerald-100 text-emerald-800",
+  MAS_13: "bg-amber-100 text-amber-800",
+  MAS_16: "bg-orange-100 text-orange-800",
+  MAS_18: "bg-red-100 text-red-800",
+};
+
+/** La clasificación se lee de un vistazo: verde ATP, rojo +18. */
+export function chipClasificacion(clasificacion) {
+  return chip(etiqueta(clasificacion), COLOR_CLASIFICACION[clasificacion] || "");
+}
+
+/**
+ * posterUrl es un String que puede venir vacío o con una URL que no carga: la inicial
+ * del título queda siempre debajo y la imagen la tapa solo si llega bien.
+ */
+export function imagenPoster(pelicula, clases) {
+  const inicial = escapar(pelicula.titulo.charAt(0).toUpperCase());
+  const imagen = pelicula.posterUrl
+    ? `<img src="${escapar(pelicula.posterUrl)}" alt="" loading="lazy"
+        class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()" />`
+    : "";
+  return `<div class="relative overflow-hidden bg-slate-300 ${clases}">
+    <span class="flex h-full w-full items-center justify-center text-2xl font-bold text-slate-500">${inicial}</span>
+    ${imagen}
+  </div>`;
 }
 
 export function precio(monto) {
