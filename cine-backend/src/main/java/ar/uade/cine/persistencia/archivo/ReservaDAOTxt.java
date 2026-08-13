@@ -12,17 +12,18 @@ import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ReservaDAO;
 
 /**
  * Misma interfaz que ReservaDAOMySQL, otro medio: un archivo de texto con una
  * reserva por línea, campos separados por "|". Las butacas van en el mismo campo
- * separadas por coma, con su id, su código y lo que se cobró.
+ * separadas por coma, con su id, su código, su tarifa y lo que se cobró.
  *
  * <pre>
- * 1|3|7|12:A1:5000.0,13:A2:5000.0|RESERVADA|2026-08-13T20:15:00
- * 2|3|9|20:B5:8000.0|PAGADA|2026-08-13T20:41:12
+ * 1|3|7|12:A1:GENERAL:5000.0,13:A2:JUBILADO:2500.0|RESERVADA|2026-08-13T20:15:00
+ * 2|3|9|20:B5:GENERAL:8000.0|PAGADA|2026-08-13T20:41:12
  * </pre>
  *
  * Sin motor de base de datos, cualquier cambio implica reescribir el archivo entero:
@@ -110,7 +111,7 @@ public class ReservaDAOTxt implements ReservaDAO {
 
     private String aLinea(Reserva r) {
         String butacas = r.getEntradas().stream()
-                .map(e -> e.asientoId() + ":" + e.codigoAsiento() + ":" + e.precio())
+                .map(e -> e.asientoId() + ":" + e.codigoAsiento() + ":" + e.tarifa().name() + ":" + e.precio())
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
         return r.getId() + "|" + r.getFuncionId() + "|" + r.getClienteId()
@@ -123,7 +124,8 @@ public class ReservaDAOTxt implements ReservaDAO {
         if (!campos[3].isBlank()) {
             for (String butaca : campos[3].split(",")) {
                 String[] partes = butaca.split(":");
-                entradas.add(new Entrada(Integer.parseInt(partes[0]), partes[1], Double.parseDouble(partes[2])));
+                entradas.add(new Entrada(Integer.parseInt(partes[0]), partes[1],
+                        TipoTarifa.valueOf(partes[2]), Double.parseDouble(partes[3])));
             }
         }
         return new ReservaImpl(

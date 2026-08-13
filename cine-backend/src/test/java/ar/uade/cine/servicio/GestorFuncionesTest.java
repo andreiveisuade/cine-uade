@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
@@ -99,7 +102,7 @@ class GestorFuncionesTest {
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
                 clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")));
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
-        reservas.reservar(1, 1, List.of("A1"));
+        reservas.reservar(1, 1, generales("A1"));
 
         assertThrows(IllegalArgumentException.class, () -> funciones.eliminar(1));
         assertEquals(1, funciones.listar().size());
@@ -120,5 +123,14 @@ class GestorFuncionesTest {
         funciones.eliminar(1);
         assertDoesNotThrow(() -> cartelera.eliminar(1));
         assertDoesNotThrow(() -> salas.eliminar(1));
+    }
+
+    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
+    private static Map<String, TipoTarifa> generales(String... codigos) {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        for (String codigo : codigos) {
+            butacas.put(codigo, TipoTarifa.GENERAL);
+        }
+        return butacas;
     }
 }

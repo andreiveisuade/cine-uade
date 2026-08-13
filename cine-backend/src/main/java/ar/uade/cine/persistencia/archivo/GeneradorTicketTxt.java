@@ -13,6 +13,7 @@ import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.GeneradorTicket;
 import ar.uade.cine.persistencia.PersistenciaException;
 
@@ -50,9 +51,13 @@ public class GeneradorTicketTxt implements GeneradorTicket {
                 campo("Emitido", reserva.getCreadaEn().format(FORMATO_FECHA)),
                 LINEA));
 
-        // Detalle butaca por butaca: cada una pudo costar distinto segun su tipo
+        // Detalle butaca por butaca: cada una pudo costar distinto segun su tipo y su
+        // tarifa. La tarifa se imprime porque es lo que hay que acreditar en la puerta:
+        // el ticket es el que dice que esa butaca se vendio como jubilado.
         for (Entrada entrada : reserva.getEntradas()) {
-            lineas.add(String.format(" %-13s: $ %.2f", "Butaca " + entrada.codigoAsiento(), entrada.precio()));
+            String butaca = "Butaca " + entrada.codigoAsiento();
+            String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + entrada.tarifa();
+            lineas.add(String.format(" %-13s: $ %.2f%s", butaca, entrada.precio(), tarifa));
         }
 
         lineas.addAll(List.of(

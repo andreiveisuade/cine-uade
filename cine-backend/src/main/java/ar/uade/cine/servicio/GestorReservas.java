@@ -3,6 +3,7 @@ package ar.uade.cine.servicio;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
@@ -62,12 +64,21 @@ public class GestorReservas {
                 .toList();
     }
 
-    /** Crea la reserva con las butacas elegidas y emite el ticket. */
-    public Reserva reservar(int funcionId, int clienteId, List<String> codigosAsiento) {
+    /**
+     * Crea la reserva con las butacas elegidas y emite el ticket.
+     *
+     * <p>Las butacas vienen como código a tarifa porque la tarifa es por persona: en una
+     * reserva de cuatro puede haber dos generales, un menor y un jubilado. Que sea un mapa
+     * y no una lista hace además que una butaca repetida sea imposible por construcción,
+     * en vez de un error que hay que validar.
+     *
+     * @param butacas código de butaca a tarifa de quien la ocupa
+     */
+    public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
         Funcion funcion = buscarFuncion(funcionId);
         Cliente cliente = clienteDAO.buscarPorId(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
-        if (codigosAsiento == null || codigosAsiento.isEmpty()) {
+        if (butacas == null || butacas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
 
@@ -77,12 +88,9 @@ public class GestorReservas {
         Set<Integer> ocupados = asientosOcupados(funcionId);
 
         List<Entrada> entradas = new ArrayList<>();
-        List<String> yaElegidos = new ArrayList<>();
-        for (String codigo : codigosAsiento) {
-            String buscado = codigo.trim().toUpperCase();
-            if (yaElegidos.contains(buscado)) {
-                throw new IllegalArgumentException("La butaca " + buscado + " está repetida");
-            }
+        for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
+            String buscado = pedido.getKey().trim().toUpperCase();
+            TipoTarifa tarifa = pedido.getValue() == null ? TipoTarifa.GENERAL : pedido.getValue();
             // Buscar el asiento entre los de esta sala es lo que garantiza que la butaca
             // pertenezca a la sala de la función: la base no lo puede validar sola.
             Asiento asiento = deLaSala.stream()
@@ -90,15 +98,16 @@ public class GestorReservas {
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException(
                             "La butaca " + buscado + " no existe en esa sala"));
+            // R9: una butaca fuera de servicio no se vende en ninguna función.
             if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
                 throw new IllegalArgumentException("La butaca " + buscado + " está fuera de servicio");
             }
+            // R4: no se puede reservar una butaca ya tomada en esa función.
             if (ocupados.contains(asiento.getId())) {
                 throw new IllegalArgumentException("La butaca " + buscado + " ya está ocupada");
             }
-            yaElegidos.add(buscado);
-            entradas.add(new Entrada(asiento.getId(), asiento.getCodigo(),
-                    calculadoraPrecio.precioDe(funcion, sala, asiento)));
+            entradas.add(new Entrada(asiento.getId(), asiento.getCodigo(), tarifa,
+                    calculadoraPrecio.precioDe(funcion, sala, asiento, tarifa)));
         }
 
         Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas, LocalDateTime.now());

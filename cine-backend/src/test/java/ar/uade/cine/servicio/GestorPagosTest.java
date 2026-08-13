@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
@@ -75,7 +78,7 @@ class GestorPagosTest {
 
     @Test
     void elMontoSaleDeLaReservaYNoDeQuienCobra() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1", "A2"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
 
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -85,7 +88,7 @@ class GestorPagosTest {
 
     @Test
     void cobrarDejaLaReservaPagada() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         pagos.cobrar(reserva.getId(), MedioPago.DEBITO, "AUT-123");
 
         assertEquals(EstadoReserva.PAGADA,
@@ -94,7 +97,7 @@ class GestorPagosTest {
 
     @Test
     void noSeCobraDosVecesLaMismaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class,
@@ -103,7 +106,7 @@ class GestorPagosTest {
 
     @Test
     void noSeCobraUnaReservaCancelada() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         reservas.cancelar(reserva.getId());
 
         assertThrows(IllegalArgumentException.class,
@@ -112,7 +115,7 @@ class GestorPagosTest {
 
     @Test
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "  "));
@@ -120,7 +123,7 @@ class GestorPagosTest {
 
     @Test
     void elEfectivoNoNecesitaCodigo() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertEquals("", pago.getCodigoAutorizacion());
@@ -128,13 +131,22 @@ class GestorPagosTest {
 
     @Test
     void elArqueoDeBoleteriaSumaLoCobradoEnElDia() {
-        Reserva primera = reservas.reservar(1, 1, List.of("A1", "A2"));
-        Reserva segunda = reservas.reservar(1, 1, List.of("B1"));
+        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"));
+        Reserva segunda = reservas.reservar(1, 1, generales("B1"));
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
         assertEquals(2, pagos.listarDelDia(LocalDate.now()).size());
         assertEquals(15000.0, pagos.totalCobrado(LocalDate.now()), 0.001);
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
+    }
+
+    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
+    private static Map<String, TipoTarifa> generales(String... codigos) {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        for (String codigo : codigos) {
+            butacas.put(codigo, TipoTarifa.GENERAL);
+        }
+        return butacas;
     }
 }

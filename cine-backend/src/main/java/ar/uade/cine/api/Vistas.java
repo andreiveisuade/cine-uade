@@ -18,6 +18,7 @@ import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
@@ -88,7 +89,8 @@ public class Vistas {
                                PeliculaVista pelicula, List<AsientoVista> asientos, Integer libres) {
     }
 
-    public record EntradaVista(int asientoId, String codigo, double precio) {
+    /** tarifa viaja para que el acomodador sepa si tiene que pedir un carnet. */
+    public record EntradaVista(int asientoId, String codigo, String tarifa, double precio) {
     }
 
     public record ClienteVista(int id, String nombre, String email) {
@@ -155,11 +157,13 @@ public class Vistas {
                 a.getTipo().name(), a.getEstado().name(), null, null);
     }
 
+    // El mapa de butacas muestra el precio de tarifa general: la tarifa de cada persona
+    // se elige recién al reservar, y de ahí para abajo el precio solo puede bajar.
     private AsientoVista asiento(Asiento a, Funcion funcion, Sala sala, Set<Integer> ocupados) {
         return new AsientoVista(a.getId(), a.getSalaId(), a.getFila(), a.getNumero(), a.getCodigo(),
                 a.getTipo().name(), a.getEstado().name(),
                 ocupados.contains(a.getId()),
-                calculadora.precioDe(funcion, sala, a));
+                calculadora.precioDe(funcion, sala, a, TipoTarifa.GENERAL));
     }
 
     /** Para el listado del cliente: la función con su sala, sin el mapa de butacas. */
@@ -216,7 +220,7 @@ public class Vistas {
     }
 
     private EntradaVista entrada(Entrada e) {
-        return new EntradaVista(e.asientoId(), e.codigoAsiento(), e.precio());
+        return new EntradaVista(e.asientoId(), e.codigoAsiento(), e.tarifa().name(), e.precio());
     }
 
     public ClienteVista cliente(Cliente c) {

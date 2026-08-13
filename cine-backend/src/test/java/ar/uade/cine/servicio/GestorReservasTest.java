@@ -1,6 +1,7 @@
 package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +24,10 @@ import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.dominio.salas.TipoSala;
+import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
@@ -83,7 +87,7 @@ class GestorReservasTest {
 
     @Test
     void reservarOcupaSoloLasButacasElegidas() {
-        reservas.reservar(1, 1, List.of("A1", "A2"));
+        reservas.reservar(1, 1, generales("A1", "A2"));
 
         assertEquals(8, reservas.lugaresLibres(1));
         assertTrue(reservas.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A1")));
@@ -92,23 +96,63 @@ class GestorReservasTest {
 
     @Test
     void rechazaButacaYaOcupada() {
-        reservas.reservar(1, 1, List.of("B3"));
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, List.of("B3")));
+        reservas.reservar(1, 1, generales("B3"));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("B3")));
     }
 
     @Test
     void rechazaButacaInexistente() {
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, List.of("Z9")));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("Z9")));
+    }
+
+    /**
+     * Antes esto era un error validado a mano. Con las butacas como mapa de código a
+     * tarifa, pedir A1 dos veces es imposible de expresar: queda una sola entrada. La
+     * regla no desapareció, se volvió estructural.
+     */
+    @Test
+    void laMismaButacaDosVecesEsUnaSolaEntrada() {
+        assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1")).getCantidadEntradas());
     }
 
     @Test
-    void rechazaLaMismaButacaDosVecesEnUnaReserva() {
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, List.of("A1", "A1")));
+    void laTarifaReducidaAbarataSoloSuButaca() {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        butacas.put("A1", TipoTarifa.GENERAL);
+        butacas.put("A2", TipoTarifa.JUBILADO);
+
+        Reserva reserva = reservas.reservar(1, 1, butacas);
+        double general = precioDe(reserva, "A1");
+        double jubilado = precioDe(reserva, "A2");
+
+        assertEquals(general * TipoTarifa.JUBILADO.getMultiplicadorPrecio(), jubilado, 0.001);
+        assertEquals(general + jubilado, reserva.getTotal(), 0.001);
+    }
+
+    @Test
+    void cadaEntradaRecuerdaConQueTarifaSeVendio() {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        butacas.put("A1", TipoTarifa.MENOR);
+        butacas.put("A2", TipoTarifa.ESTUDIANTE);
+
+        Reserva reserva = reservas.reservar(1, 1, butacas);
+
+        assertEquals(TipoTarifa.MENOR, tarifaDe(reserva, "A1"));
+        assertEquals(TipoTarifa.ESTUDIANTE, tarifaDe(reserva, "A2"));
+    }
+
+    /** Sin login no se puede validar quién es: la tarifa se acredita en la puerta. */
+    @Test
+    void soloLaTarifaGeneralNoPideAcreditacion() {
+        assertFalse(TipoTarifa.GENERAL.requiereAcreditacion());
+        assertTrue(TipoTarifa.JUBILADO.requiereAcreditacion());
+        assertTrue(TipoTarifa.MENOR.requiereAcreditacion());
+        assertTrue(TipoTarifa.ESTUDIANTE.requiereAcreditacion());
     }
 
     @Test
     void cancelarLiberaLasButacas() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1", "A2", "A3"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"));
         reservas.cancelar(reserva.getId());
 
         assertEquals(10, reservas.lugaresLibres(1));
@@ -118,7 +162,7 @@ class GestorReservasTest {
     /** R13: si se cancelara, el pago seguiría contando en el arqueo del día. */
     @Test
     void noSePuedeCancelarUnaReservaYaCobrada() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
@@ -127,7 +171,7 @@ class GestorReservasTest {
 
     @Test
     void noSeCancelaDosVecesLaMismaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         reservas.cancelar(reserva.getId());
 
         assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
@@ -139,7 +183,7 @@ class GestorReservasTest {
 
         assertEquals(9, reservas.lugaresLibres(1));
         assertTrue(reservas.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A3")));
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, List.of("A3")));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("A3")));
     }
 
     @Test
@@ -148,12 +192,12 @@ class GestorReservasTest {
         salas.reponer(1, "A3");
 
         assertEquals(10, reservas.lugaresLibres(1));
-        assertEquals(1, reservas.reservar(1, 1, List.of("A3")).getCantidadEntradas());
+        assertEquals(1, reservas.reservar(1, 1, generales("A3")).getCantidadEntradas());
     }
 
     @Test
     void emiteElTicketConLasButacas() throws IOException {
-        Reserva reserva = reservas.reservar(1, 1, List.of("B4", "B5"));
+        Reserva reserva = reservas.reservar(1, 1, generales("B4", "B5"));
 
         Path ticket = directorioTickets.resolve("ticket-" + reserva.getId() + ".txt");
         assertTrue(Files.exists(ticket), "no se generó el ticket");
@@ -174,10 +218,10 @@ class GestorReservasTest {
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.DOBLADA, Proyeccion.TRES_D, 5000);
 
-        Reserva vip = reservas.reservar(2, 1, List.of("A1"));
+        Reserva vip = reservas.reservar(2, 1, generales("A1"));
         assertEquals(12000.0, vip.getTotal(), 0.001);
 
-        Reserva estandar = reservas.reservar(2, 1, List.of("A2"));
+        Reserva estandar = reservas.reservar(2, 1, generales("A2"));
         assertEquals(8000.0, estandar.getTotal(), 0.001);
     }
 
@@ -192,7 +236,7 @@ class GestorReservasTest {
                 Version.DOBLADA, Proyeccion.DOS_D, 5000);
 
         // 5000 x 1.6 (IMAX) x 1.5 (butaca VIP), y nada más
-        assertEquals(12000.0, reservas.reservar(2, 1, List.of("A1")).getTotal(), 0.001);
+        assertEquals(12000.0, reservas.reservar(2, 1, generales("A1")).getTotal(), 0.001);
     }
 
     /** Sin redondeo, 5250.50 x 1.3 da 6825.650000000001 y eso llega al ticket. */
@@ -202,12 +246,12 @@ class GestorReservasTest {
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 23, 20, 0),
                 Version.DOBLADA, Proyeccion.TRES_D, 5250.50);
 
-        assertEquals(6825.65, reservas.reservar(2, 1, List.of("A1")).getTotal());
+        assertEquals(6825.65, reservas.reservar(2, 1, generales("A1")).getTotal());
     }
 
     @Test
     void guardaCuandoSeHizoLaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
 
         assertEquals(LocalDate.now(), reserva.getCreadaEn().toLocalDate());
     }
@@ -222,12 +266,36 @@ class GestorReservasTest {
 
     @Test
     void elDaoDeTextoPersisteLasButacasYLaFecha() {
-        reservas.reservar(1, 1, List.of("A1", "B2"));
+        reservas.reservar(1, 1, generales("A1", "B2"));
 
         ReservaDAO otraInstancia = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
         Reserva leida = otraInstancia.buscarPorId(1).orElseThrow();
         assertEquals(2, leida.getCantidadEntradas());
         assertEquals("A1", leida.getEntradas().get(0).codigoAsiento());
         assertEquals(LocalDate.now(), leida.getCreadaEn().toLocalDate());
+    }
+
+    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
+    private static Map<String, TipoTarifa> generales(String... codigos) {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        for (String codigo : codigos) {
+            butacas.put(codigo, TipoTarifa.GENERAL);
+        }
+        return butacas;
+    }
+
+    private static double precioDe(Reserva reserva, String codigo) {
+        return buscarEntrada(reserva, codigo).precio();
+    }
+
+    private static TipoTarifa tarifaDe(Reserva reserva, String codigo) {
+        return buscarEntrada(reserva, codigo).tarifa();
+    }
+
+    private static Entrada buscarEntrada(Reserva reserva, String codigo) {
+        return reserva.getEntradas().stream()
+                .filter(e -> e.codigoAsiento().equals(codigo))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("La reserva no tiene la butaca " + codigo));
     }
 }

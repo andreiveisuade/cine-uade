@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import ar.uade.cine.dominio.usuarios.AdministradorCine;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.servicio.GestorAdministradores;
 import ar.uade.cine.servicio.GestorCandy;
@@ -308,9 +310,9 @@ public class MenuConsola {
                 imprimir(clientes.listar());
                 int clienteId = leerEntero("Id de cliente: ");
                 mostrarMapaDeFuncion(funcionId);
-                System.out.print("Butacas separadas por coma (ej. B4,B5): ");
-                List<String> codigos = List.of(leer().split(","));
-                Reserva reserva = reservas.reservar(funcionId, clienteId, codigos);
+                System.out.println("Tarifas: " + Arrays.toString(TipoTarifa.values()) + ", GENERAL si no se aclara");
+                System.out.print("Butacas separadas por coma (ej. B4,B5:JUBILADO): ");
+                Reserva reserva = reservas.reservar(funcionId, clienteId, leerButacas());
                 System.out.printf("Reserva confirmada. Total: $ %.2f%n", reserva.getTotal());
                 System.out.println("Ticket en tickets/ticket-" + reserva.getId() + ".txt");
             }
@@ -451,6 +453,23 @@ public class MenuConsola {
     }
 
     // ---------- entrada y salida ----------
+
+    /**
+     * Butacas separadas por coma, con la tarifa opcional detrás de ":". En
+     * <code>B4,B5:JUBILADO</code> van dos butacas y solo la segunda paga reducida.
+     * Pedir la tarifa de a una por pantalla era insufrible para una reserva de cuatro.
+     */
+    private Map<String, TipoTarifa> leerButacas() {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        for (String parte : leer().split(",")) {
+            String[] campos = parte.trim().split(":");
+            TipoTarifa tarifa = campos.length > 1
+                    ? TipoTarifa.valueOf(campos[1].trim().toUpperCase())
+                    : TipoTarifa.GENERAL;
+            butacas.put(campos[0].trim().toUpperCase(), tarifa);
+        }
+        return butacas;
+    }
 
     private String leer() {
         return scanner.nextLine().trim();

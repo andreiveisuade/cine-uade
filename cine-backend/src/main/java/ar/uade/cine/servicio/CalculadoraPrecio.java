@@ -3,22 +3,25 @@ package ar.uade.cine.servicio;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.Sala;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 
 /**
- * El precio de una butaca sale del precio base de la función, ajustado por la tecnología
- * de la sala y por el tipo de butaca: una VIP en IMAX no vale lo mismo que una estándar
- * en 2D.
+ * El precio <strong>de lista</strong> de una butaca: el precio base de la función ajustado
+ * por la tecnología de la sala, por el tipo de butaca y por quién la compra. Una VIP en
+ * IMAX no vale lo mismo que una estándar en 2D, y un jubilado no paga lo mismo que un
+ * adulto en la misma butaca.
  *
- * <p>Es una clase concreta y no una interfaz porque hoy hay una sola forma de calcular.
- * Cuando aparezcan promociones (miércoles 2x1, jubilados) va a haber varias implementaciones
- * de verdad y ahí se extrae el contrato.
+ * <p>Acá termina el cálculo por butaca. Los descuentos por promoción <em>no</em> pasan por
+ * esta clase: se calculan sobre el total de la reserva al cobrar, porque un 2x1 no se
+ * puede expresar como un factor sobre una butaca sola.
  */
 public class CalculadoraPrecio {
 
-    public double precioDe(Funcion funcion, Sala sala, Asiento asiento) {
+    public double precioDe(Funcion funcion, Sala sala, Asiento asiento, TipoTarifa tarifa) {
         double bruto = funcion.getPrecio()
                 * sala.getTipo().getMultiplicadorPrecio()
-                * asiento.getTipo().getMultiplicadorPrecio();
+                * asiento.getTipo().getMultiplicadorPrecio()
+                * tarifa.getMultiplicadorPrecio();
         return redondear(bruto);
     }
 

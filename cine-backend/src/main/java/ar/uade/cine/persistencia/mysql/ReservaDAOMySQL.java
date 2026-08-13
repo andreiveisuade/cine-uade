@@ -17,6 +17,7 @@ import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ReservaDAO;
@@ -37,7 +38,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
 
     private static final String SELECT_CON_ENTRADAS =
             "SELECT r.id, r.funcion_id, r.cliente_id, r.estado, r.creada_en, "
-            + "e.asiento_id, e.precio, a.fila, a.numero "
+            + "e.asiento_id, e.tarifa, e.precio, a.fila, a.numero "
             + "FROM reserva r "
             + "LEFT JOIN entrada e ON e.reserva_id = r.id "
             + "LEFT JOIN asiento a ON a.id = e.asiento_id";
@@ -160,13 +161,15 @@ public class ReservaDAOMySQL implements ReservaDAO {
 
     /** funcion_id sale de la reserva: no es un dato extra, es lo que sostiene el UNIQUE. */
     private void guardarEntradas(Connection con, Reserva reserva) throws SQLException {
-        String sql = "INSERT INTO entrada (reserva_id, asiento_id, funcion_id, precio) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO entrada (reserva_id, asiento_id, funcion_id, tarifa, precio) "
+                + "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (Entrada entrada : reserva.getEntradas()) {
                 ps.setInt(1, reserva.getId());
                 ps.setInt(2, entrada.asientoId());
                 ps.setInt(3, reserva.getFuncionId());
-                ps.setDouble(4, entrada.precio());
+                ps.setString(4, entrada.tarifa().name());
+                ps.setDouble(5, entrada.precio());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -207,7 +210,8 @@ public class ReservaDAOMySQL implements ReservaDAO {
             int asientoId = rs.getInt("asiento_id");
             if (!rs.wasNull()) {
                 String codigo = (char) ('A' + rs.getInt("fila") - 1) + String.valueOf(rs.getInt("numero"));
-                reserva.agregarEntrada(new Entrada(asientoId, codigo, rs.getDouble("precio")));
+                reserva.agregarEntrada(new Entrada(asientoId, codigo,
+                        TipoTarifa.valueOf(rs.getString("tarifa")), rs.getDouble("precio")));
             }
         }
         return new ArrayList<>(porId.values());

@@ -1,10 +1,13 @@
 package ar.uade.cine.api;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorReservas;
 import io.javalin.Javalin;
@@ -16,7 +19,13 @@ import io.javalin.http.HttpStatus;
  */
 class RutasReservas {
 
-    record PedidoReserva(Integer funcionId, String nombre, String email, List<String> codigos) {
+    /**
+     * {@code butacas} es el pedido completo: código de butaca a tarifa de quien la ocupa.
+     * {@code codigos} es la forma vieja, sin tarifas, y se sigue aceptando para no romper
+     * a quien ya la use: se interpreta como todas GENERAL.
+     */
+    record PedidoReserva(Integer funcionId, String nombre, String email,
+                         List<String> codigos, Map<String, TipoTarifa> butacas) {
     }
 
     static void registrar(Javalin app, GestorReservas reservas, GestorClientes clientes,
@@ -50,7 +59,7 @@ class RutasReservas {
             Reserva reserva = reservas.reservar(
                     pedido.funcionId() == null ? 0 : pedido.funcionId(),
                     cliente.getId(),
-                    pedido.codigos());
+                    butacasPedidas(pedido));
             ctx.status(HttpStatus.CREATED).json(vistas.reserva(reserva));
         });
 
@@ -61,6 +70,19 @@ class RutasReservas {
             reservas.cancelar(id);
             ctx.json(vistas.reserva(buscar(reservas, id)));
         });
+    }
+
+    /** Sin tarifas explícitas, la lista vieja de códigos vale como todas GENERAL. */
+    private static Map<String, TipoTarifa> butacasPedidas(PedidoReserva pedido) {
+        if (pedido.butacas() != null && !pedido.butacas().isEmpty()) {
+            return pedido.butacas();
+        }
+        if (pedido.codigos() == null) {
+            return Map.of();
+        }
+        Map<String, TipoTarifa> generales = new LinkedHashMap<>();
+        pedido.codigos().forEach(codigo -> generales.put(codigo, TipoTarifa.GENERAL));
+        return generales;
     }
 
     private static Reserva buscar(GestorReservas reservas, int id) {
