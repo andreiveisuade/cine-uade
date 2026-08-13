@@ -10,6 +10,7 @@ import ar.uade.cine.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ProductoDAO;
+import ar.uade.cine.persistencia.ProgramacionDAO;
 import ar.uade.cine.persistencia.PromocionDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
@@ -23,6 +24,7 @@ import ar.uade.cine.persistencia.mysql.FuncionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PagoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ProductoDAOMySQL;
+import ar.uade.cine.persistencia.mysql.ProgramacionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PromocionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
@@ -33,12 +35,13 @@ import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorPagos;
+import ar.uade.cine.servicio.GestorProgramaciones;
 import ar.uade.cine.servicio.GestorPromociones;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
 
 /**
- * La aplicación armada: los nueve gestores, ya conectados a dónde se guarda cada cosa.
+ * La aplicación armada: los diez gestores, ya conectados a dónde se guarda cada cosa.
  *
  * <p>Es el <strong>único</strong> lugar del sistema donde se nombra una implementación
  * concreta. Los gestores solo conocen las interfaces de <code>persistencia</code>, así que
@@ -56,6 +59,7 @@ public class Aplicacion {
     private final GestorCartelera cartelera;
     private final GestorSalas salas;
     private final GestorFunciones funciones;
+    private final GestorProgramaciones programaciones;
     private final GestorClientes clientes;
     private final GestorEmpleados empleados;
     private final GestorPromociones promociones;
@@ -77,7 +81,7 @@ public class Aplicacion {
                 new PeliculaDAOMySQL(), new SalaDAOMySQL(), new AsientoDAOMySQL(),
                 new FuncionDAOMySQL(), new ClienteDAOMySQL(), new EmpleadoDAOMySQL(),
                 new ReservaDAOMySQL(), new PagoDAOMySQL(), new PromocionDAOMySQL(),
-                new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
+                new ProgramacionDAOMySQL(), new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt());
     }
 
@@ -93,7 +97,8 @@ public class Aplicacion {
     public Aplicacion(PeliculaDAO peliculaDAO, SalaDAO salaDAO, AsientoDAO asientoDAO,
                       FuncionDAO funcionDAO, ClienteDAO clienteDAO, EmpleadoDAO empleadoDAO,
                       ReservaDAO reservaDAO, PagoDAO pagoDAO, PromocionDAO promocionDAO,
-                      ProductoDAO productoDAO, CompraCandyDAO compraCandyDAO,
+                      ProgramacionDAO programacionDAO, ProductoDAO productoDAO,
+                      CompraCandyDAO compraCandyDAO,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy) {
 
         calculadoraPrecio = new CalculadoraPrecio();
@@ -101,6 +106,7 @@ public class Aplicacion {
         cartelera = new GestorCartelera(peliculaDAO, funcionDAO);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
+        programaciones = new GestorProgramaciones(programacionDAO, funcionDAO, funciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);
@@ -121,6 +127,10 @@ public class Aplicacion {
 
     public GestorFunciones getFunciones() {
         return funciones;
+    }
+
+    public GestorProgramaciones getProgramaciones() {
+        return programaciones;
     }
 
     public GestorClientes getClientes() {

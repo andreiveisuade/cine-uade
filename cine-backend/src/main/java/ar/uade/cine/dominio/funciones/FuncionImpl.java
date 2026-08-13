@@ -10,24 +10,32 @@ public class FuncionImpl implements Funcion {
     private int id;
     private final int peliculaId;
     private final int salaId;
+    private final Integer programacionId;
     private final LocalDateTime inicio;
     private final Version version;
     private final Proyeccion proyeccion;
     private final double precio;
 
+    /** La función suelta de CU-03: no salió de ninguna grilla. */
     public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio,
                        Version version, Proyeccion proyeccion, double precio) {
+        this(peliculaId, salaId, inicio, version, proyeccion, precio, null);
+    }
+
+    public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+                       Proyeccion proyeccion, double precio, Integer programacionId) {
         this.peliculaId = peliculaId;
         this.salaId = salaId;
         this.inicio = inicio;
         this.version = version;
         this.proyeccion = proyeccion;
         this.precio = precio;
+        this.programacionId = programacionId;
     }
 
-    public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio,
-                       Version version, Proyeccion proyeccion, double precio) {
-        this(peliculaId, salaId, inicio, version, proyeccion, precio);
+    public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio, Version version,
+                       Proyeccion proyeccion, double precio, Integer programacionId) {
+        this(peliculaId, salaId, inicio, version, proyeccion, precio, programacionId);
         this.id = id;
     }
 
@@ -49,6 +57,11 @@ public class FuncionImpl implements Funcion {
     @Override
     public int getSalaId() {
         return salaId;
+    }
+
+    @Override
+    public Integer getProgramacionId() {
+        return programacionId;
     }
 
     @Override

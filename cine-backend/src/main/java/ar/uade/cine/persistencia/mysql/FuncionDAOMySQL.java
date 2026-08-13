@@ -23,20 +23,22 @@ import ar.uade.cine.persistencia.PersistenciaException;
  */
 public class FuncionDAOMySQL implements FuncionDAO {
 
-    private static final String SELECT = "SELECT id, pelicula_id, sala_id, inicio, version, proyeccion, precio FROM funcion";
+    private static final String SELECT = "SELECT id, pelicula_id, sala_id, programacion_id, inicio, version, proyeccion, precio FROM funcion";
 
     @Override
     public void guardar(Funcion funcion) {
-        String sql = "INSERT INTO funcion (pelicula_id, sala_id, inicio, version, proyeccion, precio) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO funcion (pelicula_id, sala_id, programacion_id, inicio, version, proyeccion, precio) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, funcion.getPeliculaId());
             ps.setInt(2, funcion.getSalaId());
-            ps.setTimestamp(3, java.sql.Timestamp.valueOf(funcion.getInicio()));
-            ps.setString(4, funcion.getVersion().name());
-            ps.setString(5, funcion.getProyeccion().name());
-            ps.setDouble(6, funcion.getPrecio());
+            // null cuando la cargó el administrador a mano: no toda función sale de una grilla.
+            ps.setObject(3, funcion.getProgramacionId());
+            ps.setTimestamp(4, java.sql.Timestamp.valueOf(funcion.getInicio()));
+            ps.setString(5, funcion.getVersion().name());
+            ps.setString(6, funcion.getProyeccion().name());
+            ps.setDouble(7, funcion.getPrecio());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -81,6 +83,12 @@ public class FuncionDAOMySQL implements FuncionDAO {
     }
 
     @Override
+    public List<Funcion> listarPorProgramacion(int programacionId) {
+        return consultar(SELECT + " WHERE programacion_id = ? ORDER BY inicio", programacionId,
+                "No se pudieron listar las funciones de la programación " + programacionId);
+    }
+
+    @Override
     public void eliminar(int id) {
         String sql = "DELETE FROM funcion WHERE id = ?";
         try (Connection con = ConexionMySQL.abrir();
@@ -93,7 +101,7 @@ public class FuncionDAOMySQL implements FuncionDAO {
         }
     }
 
-    /** Los tres listados son la misma consulta con distinto filtro. filtro null = sin WHERE. */
+    /** Los cuatro listados son la misma consulta con distinto filtro. filtro null = sin WHERE. */
     private List<Funcion> consultar(String sql, Integer filtro, String mensajeError) {
         List<Funcion> funciones = new ArrayList<>();
         try (Connection con = ConexionMySQL.abrir();
@@ -121,6 +129,8 @@ public class FuncionDAOMySQL implements FuncionDAO {
                 rs.getTimestamp("inicio").toLocalDateTime(),
                 Version.valueOf(rs.getString("version")),
                 Proyeccion.valueOf(rs.getString("proyeccion")),
-                rs.getDouble("precio"));
+                rs.getDouble("precio"),
+                // getInt devolvería 0 en vez de null, y la función parecería de la grilla 0.
+                (Integer) rs.getObject("programacion_id"));
     }
 }

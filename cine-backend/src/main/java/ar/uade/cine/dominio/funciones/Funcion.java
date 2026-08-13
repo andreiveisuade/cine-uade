@@ -17,6 +17,16 @@ public interface Funcion {
 
     int getSalaId();
 
+    /**
+     * De qué grilla salió, o {@code null} si la cargó el administrador a mano. Es lo que
+     * materializa la asociación con {@link ar.uade.cine.dominio.programaciones.Programacion}.
+     *
+     * <p>Admite null y no es un {@code int} porque la programación no reemplaza a CU-03:
+     * una función suelta —el preestreno del jueves, la función especial— sigue siendo
+     * válida y no pertenece a ninguna grilla.
+     */
+    Integer getProgramacionId();
+
     LocalDateTime getInicio();
 
     /** Doblada o subtitulada: es de esta proyección, no de la película. */
