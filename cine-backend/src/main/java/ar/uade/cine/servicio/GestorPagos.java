@@ -44,6 +44,7 @@ public class GestorPagos {
         Reserva reserva = reservaDAO.buscarPorId(reservaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + reservaId));
 
+        // R5: solo se cobra una reserva en estado RESERVADA.
         if (reserva.getEstado() != EstadoReserva.RESERVADA) {
             throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
         }
@@ -57,9 +58,11 @@ public class GestorPagos {
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
         }
+        // R11: los medios electrónicos exigen código de autorización.
         if (medio.requiereAutorizacion() && (codigoAutorizacion == null || codigoAutorizacion.isBlank())) {
             throw new IllegalArgumentException("El pago con " + medio + " necesita código de autorización");
         }
+        // R5, la otra mitad: y una sola vez.
         if (pagoDAO.buscarPorReserva(reservaId).isPresent()) {
             throw new IllegalArgumentException("La reserva " + reservaId + " ya tiene un pago registrado");
         }

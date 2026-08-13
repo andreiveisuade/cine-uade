@@ -44,6 +44,7 @@ public class GestorFunciones {
         if (version == null || proyeccion == null) {
             throw new IllegalArgumentException("Falta la versión o el formato de proyección");
         }
+        // R8: no programar 3D en una sala que no lo soporta.
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
@@ -54,6 +55,7 @@ public class GestorFunciones {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
 
+        // R3: una sala no puede tener dos funciones superpuestas.
         LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
         if (haySuperposicion(salaId, inicio, fin)) {
             throw new IllegalArgumentException("La sala ya tiene una función en ese horario");

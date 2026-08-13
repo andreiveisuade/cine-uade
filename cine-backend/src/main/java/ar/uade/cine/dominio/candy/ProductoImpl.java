@@ -3,6 +3,11 @@ package ar.uade.cine.dominio.candy;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Igual que PeliculaImpl: el constructor corto da de alta un producto nuevo (sin id,
+ * disponible por defecto); el que recibe id y disponible es el que usa el DAO para
+ * reconstruirlo desde la base.
+ */
 public class ProductoImpl implements Producto {
 
     private int id;
@@ -65,6 +70,7 @@ public class ProductoImpl implements Producto {
         this.disponible = disponible;
     }
 
+    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     @Override
     public List<ItemCombo> getComponentes() {
         return new ArrayList<>(componentes);

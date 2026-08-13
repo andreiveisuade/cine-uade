@@ -1,5 +1,10 @@
 package ar.uade.cine.dominio.salas;
 
+/**
+ * El id llega vacío al construir de alta —recién generada por {@code GestorSalas} al
+ * repartir la sala en filas— y con valor al reconstruir desde el DAO, junto con el
+ * estado que tenga guardado.
+ */
 public class AsientoImpl implements Asiento {
 
     private int id;

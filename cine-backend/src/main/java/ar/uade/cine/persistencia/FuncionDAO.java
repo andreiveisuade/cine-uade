@@ -5,6 +5,9 @@ import java.util.Optional;
 
 import ar.uade.cine.dominio.funciones.Funcion;
 
+/**
+ * El contrato: qué operaciones existen. No dice dónde ni cómo se guardan los datos.
+ */
 public interface FuncionDAO {
 
     void guardar(Funcion funcion);

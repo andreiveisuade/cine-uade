@@ -5,6 +5,9 @@ import java.util.Optional;
 
 import ar.uade.cine.dominio.usuarios.Empleado;
 
+/**
+ * El contrato: qué operaciones existen. No dice dónde ni cómo se guardan los datos.
+ */
 public interface EmpleadoDAO {
 
     void guardar(Empleado administrador);

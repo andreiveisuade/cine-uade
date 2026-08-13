@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.persistencia.ClienteDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class ClienteDAOMemoria implements ClienteDAO {
 
     private final Map<Integer, Cliente> clientes = new LinkedHashMap<>();

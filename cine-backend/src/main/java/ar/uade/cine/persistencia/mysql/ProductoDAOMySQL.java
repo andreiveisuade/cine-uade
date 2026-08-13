@@ -144,6 +144,7 @@ public class ProductoDAOMySQL implements ProductoDAO {
         }
     }
 
+    /** El JOIN devuelve una fila por cada componente: se agrupa por id de producto. */
     private List<Producto> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, Producto> porId = new LinkedHashMap<>();
         while (rs.next()) {

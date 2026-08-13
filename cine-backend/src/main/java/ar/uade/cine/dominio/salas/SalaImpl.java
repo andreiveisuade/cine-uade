@@ -1,5 +1,9 @@
 package ar.uade.cine.dominio.salas;
 
+/**
+ * El id llega vacío al construir de alta y con valor al reconstruir desde el DAO —
+ * mismo patrón que el resto del dominio.
+ */
 public class SalaImpl implements Sala {
 
     private int id;

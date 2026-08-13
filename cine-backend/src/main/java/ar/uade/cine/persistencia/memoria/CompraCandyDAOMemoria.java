@@ -8,6 +8,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class CompraCandyDAOMemoria implements CompraCandyDAO {
 
     private final List<CompraCandy> compras = new ArrayList<>();

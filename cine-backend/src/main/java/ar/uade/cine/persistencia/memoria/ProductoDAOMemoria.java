@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.persistencia.ProductoDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class ProductoDAOMemoria implements ProductoDAO {
 
     private final Map<Integer, Producto> productos = new LinkedHashMap<>();

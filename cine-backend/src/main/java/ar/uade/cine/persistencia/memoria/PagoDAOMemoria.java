@@ -8,6 +8,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.persistencia.PagoDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class PagoDAOMemoria implements PagoDAO {
 
     private final List<Pago> pagos = new ArrayList<>();

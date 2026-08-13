@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.persistencia.FuncionDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class FuncionDAOMemoria implements FuncionDAO {
 
     private final Map<Integer, Funcion> funciones = new LinkedHashMap<>();

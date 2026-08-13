@@ -6,6 +6,10 @@ import java.util.List;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
 
+/**
+ * Igual que PeliculaImpl: el constructor corto arma la compra al venderla (sin id
+ * todavía); el que recibe id es el que usa el DAO al reconstruirla desde la base.
+ */
 public class CompraCandyImpl implements CompraCandy {
 
     private int id;
@@ -67,6 +71,7 @@ public class CompraCandyImpl implements CompraCandy {
         return codigoAutorizacion;
     }
 
+    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     @Override
     public List<ItemCompra> getItems() {
         return new ArrayList<>(items);

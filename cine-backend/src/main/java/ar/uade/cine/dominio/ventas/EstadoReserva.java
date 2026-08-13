@@ -1,8 +1,12 @@
 package ar.uade.cine.dominio.ventas;
 
 /**
- * El eje del cobro de una reserva. El ingreso al cine es otro eje y no vive acá: lo
- * lleva {@code Reserva.ingresadaEn}, porque una reserva puede estar PAGADA y todavía
+ * Estados por los que pasa una {@link Reserva}, siempre en un solo sentido: nace
+ * RESERVADA y de ahí avanza a PAGADA, CANCELADA o EXPIRADA. Cancelar una ya pagada no
+ * está contemplado acá —hace falta una devolución, que es otro circuito.
+ *
+ * <p>Es el eje del <strong>cobro</strong>. El ingreso al cine es otro eje y no vive acá:
+ * lo lleva {@code Reserva.ingresadaEn}, porque una reserva puede estar PAGADA y todavía
  * no usada, y mezclarlos obligaría a revisar cada regla que mira el estado.
  */
 public enum EstadoReserva {

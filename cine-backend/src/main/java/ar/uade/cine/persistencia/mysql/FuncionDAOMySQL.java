@@ -16,6 +16,11 @@ import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
+/**
+ * Misma interfaz, otra tecnología. La función guarda sus asociaciones como
+ * pelicula_id/sala_id, no como filas embebidas: por eso no necesita transacción para
+ * guardarse, a diferencia de Pelicula.
+ */
 public class FuncionDAOMySQL implements FuncionDAO {
 
     private static final String SELECT = "SELECT id, pelicula_id, sala_id, inicio, version, proyeccion, precio FROM funcion";

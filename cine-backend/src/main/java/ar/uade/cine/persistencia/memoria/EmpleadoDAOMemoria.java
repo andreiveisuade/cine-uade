@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.usuarios.Empleado;
 import ar.uade.cine.persistencia.EmpleadoDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class EmpleadoDAOMemoria implements EmpleadoDAO {
 
     private final Map<Integer, Empleado> empleados = new LinkedHashMap<>();
