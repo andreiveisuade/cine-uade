@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 import ar.uade.cine.dominio.usuarios.Cliente;
+import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.servicio.GestorClientes;
+import ar.uade.cine.servicio.CriteriosReserva;
 import ar.uade.cine.servicio.GestorReservas;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -36,10 +38,19 @@ class RutasReservas {
                           VistasVentas vistas) {
 
         // Sin email es el listado del encargado; con email, las reservas de ese cliente.
+        // El listado, con los filtros del panel como query params. Que el criterio viaje
+        // en la URL y no se resuelva en la pantalla tiene dos consecuencias que se pagan
+        // solas: el filtro se puede probar con un curl, y una búsqueda se puede compartir
+        // pegando el link.
         app.get("/api/reservas", ctx -> {
             String email = ctx.queryParam("email");
             List<Reserva> lista = email == null || email.isBlank()
-                    ? reservas.listar()
+                    ? reservas.buscar(new CriteriosReserva(
+                            Parseo.constanteOpcional(EstadoReserva.class, ctx.queryParam("estado"), "el estado"),
+                            Parseo.diaOpcional(ctx.queryParam("dia"), "el día"),
+                            ctx.queryParam("q")))
+                    // `email` es aparte: es el buscador del cliente en la web pública, que
+                    // pide la coincidencia exacta y no la parcial de `q`.
                     : clientes.buscarPorEmail(email.trim())
                             .map(c -> reservas.listarPorCliente(c.getId()))
                             // Que el email no exista y que no tenga reservas son lo mismo

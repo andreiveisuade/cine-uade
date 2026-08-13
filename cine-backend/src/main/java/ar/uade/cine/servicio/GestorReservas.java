@@ -1,5 +1,6 @@
 package ar.uade.cine.servicio;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -198,6 +199,67 @@ public class GestorReservas {
 
     public List<Reserva> listar() {
         return reservaDAO.listar();
+    }
+
+    /**
+     * Las reservas que cumplen los criterios.
+     *
+     * <p>El filtrado se hace acá y no en la pantalla porque los criterios son del
+     * negocio: «pendientes de cobro» tiene una definición y tiene que ser la misma para
+     * la web, para la consola y para cualquier cosa que venga después.
+     *
+     * <p>Se resuelve sobre la lista en memoria y no con un {@code WHERE} en SQL. Es una
+     * decisión consciente y tiene un techo: con decenas de miles de reservas habría que
+     * bajarlo al DAO. Hoy la búsqueda cruza datos de cuatro tablas —el nombre del
+     * cliente, el título de la película, los códigos de butaca— y escribir ese JOIN a
+     * mano dejaría el criterio partido entre el gestor y una cadena de SQL, que es
+     * justamente lo que el patrón DAO viene a evitar.
+     */
+    public List<Reserva> buscar(CriteriosReserva criterios) {
+        if (criterios == null || criterios.sinFiltros()) {
+            return listar();
+        }
+        return reservaDAO.listar().stream()
+                .filter(r -> criterios.estado() == null || r.getEstado() == criterios.estado())
+                .filter(r -> criterios.dia() == null || esDelDia(r, criterios.dia()))
+                .filter(r -> coincideElTexto(r, criterios.textoNormalizado()))
+                .toList();
+    }
+
+    private boolean esDelDia(Reserva reserva, LocalDate dia) {
+        return funcionDAO.buscarPorId(reserva.getFuncionId())
+                .map(f -> f.getInicio().toLocalDate().equals(dia))
+                .orElse(false);
+    }
+
+    /**
+     * Busca por lo que la persona tiene a mano cuando pregunta: su nombre, su mail, la
+     * película que vino a ver, el código del ticket o la butaca que dice tener.
+     */
+    private boolean coincideElTexto(Reserva reserva, String texto) {
+        if (texto.isEmpty()) {
+            return true;
+        }
+        if (contiene(reserva.getCodigo(), texto)) {
+            return true;
+        }
+        if (reserva.getEntradas().stream().anyMatch(e -> contiene(e.codigoAsiento(), texto))) {
+            return true;
+        }
+        boolean porCliente = clienteDAO.buscarPorId(reserva.getClienteId())
+                .map(c -> contiene(c.getNombre(), texto) || contiene(c.getEmail(), texto))
+                .orElse(false);
+        if (porCliente) {
+            return true;
+        }
+        return funcionDAO.buscarPorId(reserva.getFuncionId())
+                .flatMap(f -> peliculaDAO.buscarPorId(f.getPeliculaId()))
+                .map(p -> contiene(p.getTitulo(), texto))
+                .orElse(false);
+    }
+
+    private static boolean contiene(String campo, String texto) {
+        return campo != null && campo.toLowerCase().contains(texto);
     }
 
     public Optional<Reserva> buscar(int id) {

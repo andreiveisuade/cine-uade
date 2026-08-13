@@ -22,8 +22,15 @@ class RutasFunciones {
 
     static void registrar(Javalin app, GestorFunciones funciones, VistasCartelera vistas) {
 
+        // Es la lista más larga del sistema: una semana de seis salas pasa de cien
+        // funciones. Los filtros son los que usa quien programa.
         app.get("/api/funciones", ctx ->
-                ctx.json(funciones.listar().stream()
+                ctx.json(funciones.buscar(
+                                Parseo.numeroOpcional(ctx.queryParam("peliculaId"), "la película"),
+                                Parseo.numeroOpcional(ctx.queryParam("salaId"), "la sala"),
+                                Parseo.diaOpcional(ctx.queryParam("desde"), "la fecha de inicio"),
+                                Parseo.diaOpcional(ctx.queryParam("hasta"), "la fecha de fin"))
+                        .stream()
                         .sorted(Comparator.comparing(Funcion::getInicio))
                         .map(vistas::funcionConPelicula)
                         .toList()));

@@ -78,4 +78,36 @@ class Parseo {
             throw new IllegalArgumentException(queEs + " tiene que ser una fecha válida");
         }
     }
+
+    /* ------------------------------------------------------- filtros opcionales */
+    /*
+     * Los tres de abajo son para query params de búsqueda, donde "no vino" y "no filtres
+     * por eso" son lo mismo. Por eso devuelven null en vez de fallar, al revés que los de
+     * arriba: un campo que falta en un alta es un error del que manda, pero un filtro que
+     * falta es lo normal.
+     */
+
+    /** Una fecha de filtro, o null si no vino. Si vino mal escrita sí falla. */
+    static LocalDate diaOpcional(String valor, String queEs) {
+        return vacio(valor) ? null : dia(valor, queEs);
+    }
+
+    static Integer numeroOpcional(String valor, String queEs) {
+        if (vacio(valor)) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(valor.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(queEs + " tiene que ser un número");
+        }
+    }
+
+    static <T extends Enum<T>> T constanteOpcional(Class<T> tipo, String valor, String queEs) {
+        return vacio(valor) ? null : constante(tipo, valor, queEs);
+    }
+
+    private static boolean vacio(String valor) {
+        return valor == null || valor.isBlank();
+    }
 }

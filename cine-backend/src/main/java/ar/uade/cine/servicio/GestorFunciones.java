@@ -1,5 +1,6 @@
 package ar.uade.cine.servicio;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -115,6 +116,26 @@ public class GestorFunciones {
 
     public List<Funcion> listar() {
         return funcionDAO.listar();
+    }
+
+    /**
+     * Las funciones que cumplen los criterios. Cualquier parámetro en {@code null} no
+     * filtra, así que {@code buscar(null, null, null, null)} es el listado completo.
+     *
+     * <p>Es la lista más larga del sistema —una semana de seis salas son más de cien
+     * funciones— y por eso es la que más necesita poder acotarse. Los tres criterios son
+     * los que usa quien programa: qué película, en qué sala, entre qué fechas.
+     *
+     * @param desde incluye ese día completo; {@code hasta} también, no es un rango
+     *              semiabierto: quien filtra «del 16 al 20» espera ver el 20
+     */
+    public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
+        return funcionDAO.listar().stream()
+                .filter(f -> peliculaId == null || f.getPeliculaId() == peliculaId)
+                .filter(f -> salaId == null || f.getSalaId() == salaId)
+                .filter(f -> desde == null || !f.getInicio().toLocalDate().isBefore(desde))
+                .filter(f -> hasta == null || !f.getInicio().toLocalDate().isAfter(hasta))
+                .toList();
     }
 
     public List<Funcion> listarPorPelicula(int peliculaId) {
