@@ -12,6 +12,87 @@ import {
 // Lo elegido en el mapa de butacas, para que lo lea la confirmación.
 const seleccion = { funcionId: null, codigos: [] };
 
+// El cliente no inicia sesión. Recordar sus datos en el navegador es lo que hace que
+// registrarse sirva de algo: no vuelve a tipearlos al comprar ni al buscar sus reservas.
+const CLAVE_CLIENTE = "cine.cliente";
+
+function clienteRecordado() {
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_CLIENTE)) || null;
+  } catch {
+    return null;
+  }
+}
+
+function recordarCliente(cliente) {
+  localStorage.setItem(CLAVE_CLIENTE,
+    JSON.stringify({ nombre: cliente.nombre, email: cliente.email }));
+}
+
+/* ------------------------------------------------------------------- registro */
+
+async function vistaRegistro(contenedor) {
+  const recordado = clienteRecordado();
+
+  contenedor.innerHTML = `
+    <div class="mx-auto max-w-md">
+      <h1 class="mb-1 text-2xl font-bold">Registrarme</h1>
+      <p class="mb-5 text-sm text-slate-500">
+        No hace falta para comprar: es para no tener que cargar tus datos cada vez.
+      </p>
+
+      ${recordado ? `
+        <div class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm">
+          Este navegador ya recuerda a <strong>${escapar(recordado.nombre)}</strong>
+          (${escapar(recordado.email)}).
+          <button type="button" id="olvidar" class="ml-1 text-slate-500 underline">Olvidar</button>
+        </div>` : ""}
+
+      <form id="registro" class="space-y-3 rounded border border-slate-300 bg-white p-4">
+        <label class="block text-sm">
+          <span class="text-slate-600">Nombre</span>
+          <input name="nombre" required class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+        </label>
+        <label class="block text-sm">
+          <span class="text-slate-600">Email</span>
+          <input name="email" type="email" required
+            class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+        </label>
+        <button type="submit"
+          class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+          Registrarme
+        </button>
+        <p id="errorRegistro" class="hidden text-sm text-red-700"></p>
+      </form>
+    </div>
+  `;
+
+  const formulario = contenedor.querySelector("#registro");
+  const errorRegistro = contenedor.querySelector("#errorRegistro");
+
+  contenedor.querySelector("#olvidar")?.addEventListener("click", () => {
+    localStorage.removeItem(CLAVE_CLIENTE);
+    vistaRegistro(contenedor);
+  });
+
+  formulario.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const datos = new FormData(formulario);
+    try {
+      const cliente = await api.registrarCliente({
+        nombre: datos.get("nombre"),
+        email: datos.get("email"),
+      });
+      recordarCliente(cliente);
+      avisar(`Listo, ${cliente.nombre}`);
+      ir("#/");
+    } catch (e) {
+      errorRegistro.textContent = e.message;
+      errorRegistro.classList.remove("hidden");
+    }
+  });
+}
+
 /* ---------------------------------------------------------------- cartelera */
 
 async function vistaCartelera(contenedor, generoFiltrado) {
@@ -233,6 +314,7 @@ async function vistaConfirmar(contenedor, id) {
 
   const elegidas = funcion.asientos.filter((a) => seleccion.codigos.includes(a.codigo));
   const total = elegidas.reduce((suma, a) => suma + a.precio, 0);
+  const recordado = clienteRecordado();
 
   contenedor.innerHTML = `
     <a href="#/funcion/${funcion.id}" class="text-sm text-slate-500 hover:text-slate-900">&larr; Cambiar butacas</a>
@@ -244,12 +326,12 @@ async function vistaConfirmar(contenedor, id) {
         <form id="datos" class="space-y-3">
           <label class="block text-sm">
             <span class="text-slate-600">Nombre</span>
-            <input name="nombre" required
+            <input name="nombre" required value="${escapar(recordado?.nombre || "")}"
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
           </label>
           <label class="block text-sm">
             <span class="text-slate-600">Email</span>
-            <input name="email" type="email" required
+            <input name="email" type="email" required value="${escapar(recordado?.email || "")}"
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
           </label>
           <button type="submit"
@@ -257,6 +339,11 @@ async function vistaConfirmar(contenedor, id) {
             Confirmar reserva
           </button>
           <p id="errorForm" class="hidden text-sm text-red-700"></p>
+          ${recordado ? "" : `
+            <p class="text-xs text-slate-500">
+              ¿Ya compraste antes? <a href="#/registro" class="underline">Registrate</a>
+              para no cargar los datos cada vez.
+            </p>`}
         </form>
       </section>
 
@@ -307,6 +394,8 @@ async function vistaConfirmar(contenedor, id) {
         email: datos.get("email"),
         codigos: seleccion.codigos,
       });
+      // Comprar sin registrarse igual deja los datos listos para la próxima.
+      recordarCliente({ nombre: datos.get("nombre").trim(), email: datos.get("email").trim() });
       seleccion.funcionId = null;
       seleccion.codigos = [];
       ir(`#/ticket/${reserva.id}`);
@@ -321,7 +410,10 @@ async function vistaConfirmar(contenedor, id) {
 
 // El cliente no inicia sesión: recupera sus reservas con el email que dejó al comprar.
 async function vistaMisReservas(contenedor, emailBuscado) {
-  const email = emailBuscado ? decodeURIComponent(emailBuscado) : "";
+  // Sin email en la URL, se usa el del navegador: quien ya compró no vuelve a tipearlo.
+  const email = emailBuscado
+    ? decodeURIComponent(emailBuscado)
+    : (clienteRecordado()?.email || "");
   const reservas = email ? await api.obtenerReservasDe(email) : null;
 
   const tarjetas = (reservas || []).map((r) => `
@@ -471,5 +563,6 @@ iniciarRouter({
     confirmar: vistaConfirmar,
     ticket: vistaTicket,
     "mis-reservas": vistaMisReservas,
+    registro: vistaRegistro,
   },
 });

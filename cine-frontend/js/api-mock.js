@@ -128,6 +128,32 @@ export function obtenerFuncion(id) {
   });
 }
 
+/** Alta de cliente (CU-05). El email identifica al cliente, así que es único. */
+export function registrarCliente({ nombre, email }) {
+  const nombreLimpio = (nombre || "").trim();
+  const emailLimpio = (email || "").trim();
+  if (!nombreLimpio) return fallar("El nombre no puede estar vacío");
+  if (!emailLimpio.includes("@")) return fallar("El email no es válido");
+  if (datos.clientes.some((c) => c.email.toLowerCase() === emailLimpio.toLowerCase())) {
+    return fallar("Ya hay un cliente registrado con ese email");
+  }
+  const cliente = {
+    id: siguienteId([...datos.clientes, ...datos.administradores]),
+    nombre: nombreLimpio,
+    email: emailLimpio,
+    rol: "CLIENTE",
+  };
+  datos.clientes.push(cliente);
+  return responder(cliente);
+}
+
+/** Para reconocer a quien ya se registró y no pedirle los datos de nuevo. */
+export function buscarClientePorEmail(email) {
+  const buscado = String(email || "").trim().toLowerCase();
+  return responder(
+    datos.clientes.find((c) => c.email.toLowerCase() === buscado) || null);
+}
+
 /**
  * Crea la reserva con las butacas elegidas. Si el email no existe, da de alta el cliente.
  * Replica las validaciones de GestorReservas.

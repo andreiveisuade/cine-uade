@@ -80,6 +80,14 @@ una con su precio ya calculado y si está ocupada **en esa función**:
 de esta función. `estado` es del asiento y vale para todas las funciones. Los dos tienen
 que venir separados: el front los pinta distinto.
 
+### `POST /api/clientes`
+`{ "nombre": "Andrei Veis", "email": "andrei@uade.edu.ar" }` → el cliente creado (CU-05).
+El email es único: si ya existe, 400 con "Ya hay un cliente registrado con ese email".
+Registrarse es opcional — reservar da de alta al cliente igual.
+
+### `GET /api/clientes?email=andrei@uade.edu.ar`
+El cliente con ese email, o `null` si no existe. Sin distinguir mayúsculas.
+
 ### `POST /api/reservas`
 ```json
 { "funcionId": 1, "nombre": "Andrei Veis", "email": "andrei@uade.edu.ar",

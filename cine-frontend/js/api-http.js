@@ -64,6 +64,11 @@ export const obtenerPelicula = (id) => get(`/peliculas/${id}`);
 export const obtenerFuncionesDePelicula = (peliculaId) => get(`/peliculas/${peliculaId}/funciones`);
 export const obtenerFuncion = (id) => get(`/funciones/${id}`);
 
+export const registrarCliente = ({ nombre, email }) => post("/clientes", { nombre, email });
+
+export const buscarClientePorEmail = (email) =>
+  get(`/clientes?email=${encodeURIComponent(String(email || "").trim())}`);
+
 export const crearReserva = ({ funcionId, nombre, email, codigos }) =>
   post("/reservas", { funcionId: Number(funcionId), nombre, email, codigos });
 

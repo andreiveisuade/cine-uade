@@ -25,6 +25,8 @@ export const {
   obtenerPelicula,
   obtenerFuncionesDePelicula,
   obtenerFuncion,
+  registrarCliente,
+  buscarClientePorEmail,
   crearReserva,
   obtenerReserva,
   obtenerReservasDe,
