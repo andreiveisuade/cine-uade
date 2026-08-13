@@ -2164,7 +2164,7 @@ docker compose up -d --build</code></pre>
             <tr><td><code>mysql-connector-j</code></td><td>9.7.0</td><td>compile</td><td>Driver JDBC de MySQL</td></tr>
             <tr><td><code>javalin</code></td><td>6.7.0</td><td>compile</td><td>Servidor HTTP de la capa <code>api/</code></td></tr>
             <tr><td><code>jackson-databind</code></td><td>2.18.3</td><td>compile</td><td>JSON de Javalin. Versión explícita porque Javalin la trae opcional</td></tr>
-            <tr><td><code>slf4j-simple</code></td><td>2.0.17</td><td>compile</td><td>Logging de Javalin. Misma razón que Jackson</td></tr>
+            <tr><td><code>slf4j-simple</code></td><td>2.0.17</td><td>compile</td><td>Logging. Entró por Javalin —misma razón que Jackson— y hoy la usan también los gestores para la <a href="#bitacora">bitácora del negocio</a></td></tr>
             <tr><td><code>junit-jupiter</code></td><td>5.14.4</td><td>test</td><td>Tests. No viaja en el jar final</td></tr>
           </tbody>
         </table>
@@ -2402,6 +2402,76 @@ docker compose --profile importador up -d parser</code></pre>
           regla funcionando, no un dato que falta.
         </p>
       </div>
+
+      <h3 id="bitacora">La bitácora: qué deja escrito el sistema mientras corre</h3>
+      <p>
+        Durante casi todo el desarrollo el backend no dejaba rastro de lo que hacía. Los tests decían que las
+        reglas funcionaban y la pantalla decía que la operación salió bien, pero cuando algo no cerraba —¿por
+        qué esta reserva no aplicó el 2x1?, ¿de dónde salieron estas funciones?— la única forma de averiguarlo
+        era entrar a la base. El log del contenedor eran nueve líneas de arranque de Jetty y nada más.
+      </p>
+      <p>Ahora cada operación con efecto deja una línea:</p>
+      <pre><code>17:21:54 INFO GestorReservas - reserva 43 creada · funcion 1 · E6(JUBILADO) E7(GENERAL) · total 12000.0
+17:21:54 INFO GestorPagos - pago reserva 43 · EFECTIVO · subtotal 12000.0 · promo 3 -2400.0 · cobrado 9600.0
+17:22:25 INFO GestorReservas - ingreso reserva 43 · codigo FL762W5W · 2 personas
+17:22:41 INFO Ocupacion - reserva 44 EXPIRADA · creada 2026-08-13T16:42:25 · 1 butacas vuelven a la venta
+17:23:33 INFO GestorProgramaciones - grilla 22 extendida · 2 funciones nuevas · generada hasta 2026-08-27</code></pre>
+      <pre><code>cd ../cine-docker
+docker compose logs -f            # los cinco servicios, cada línea con el suyo adelante
+docker compose logs -f backend    # solo el negocio</code></pre>
+
+      <h4>Qué se registra: lo que pasó, no por dónde pasó el código</h4>
+      <p>
+        No hay una sola línea que diga «entrando a <code>reservar()</code>». Un log de trazas crece con cada
+        método y se vuelve ilegible justo el día que hay que usarlo; lo que sirve el día del incidente es el
+        hecho del negocio, con los datos que hacen falta para explicarlo. Por eso la reserva lista
+        <strong>cada butaca con su tarifa</strong> y no solo el total: cuando haya que justificar por qué salió
+        ese precio, la tarifa de cada una es la mitad de la respuesta. Y el pago lleva el desglose entero
+        —subtotal, qué promoción entró, cuánto se cobró—, que es exactamente la pregunta del arqueo cuando la
+        caja no da.
+      </p>
+
+      <h4>Las líneas van en el gestor, no en la capa HTTP</h4>
+      <p>
+        Es la misma razón por la que las reglas viven ahí: cobrar por la API y cobrar por el
+        <code>MenuConsola</code> son <em>la misma operación del cine</em>, y tienen que dejar el mismo
+        registro. Si el log estuviera en las rutas, todo lo que pasa por la consola sería invisible, y habría
+        que acordarse de escribir la línea dos veces cada vez que se agrega una operación.
+      </p>
+      <p>
+        SLF4J ya estaba en el <code>pom.xml</code> —lo arrastra Javalin— y es una <strong>fachada</strong>, no
+        una implementación: eso es lo que permite que llegue hasta <code>servicio</code> sin atarlo a una
+        biblioteca concreta. El paquete <code>dominio</code> sigue sin importar nada externo, que es la
+        propiedad que sostiene toda la <a href="#arquitectura">arquitectura en capas</a>.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Las dos líneas que más valen son las que no tienen a nadie del otro lado.</strong> La
+          expiración de una reserva y la extensión de una grilla ocurren <em>solas</em>, colgadas de una
+          lectura que hizo otro. Sin registro, una butaca que vuelve a estar libre o un cine que amanece con
+          funciones nuevas parecen magia — y son justo las dos cosas que hay que poder explicar si alguien las
+          cuestiona. Por eso también se registra el error que la extensión se traga: una grilla que deja de
+          generar en silencio no se descubre hasta que falta la función.
+        </p>
+      </div>
+
+      <h4>Callar para que se escuche</h4>
+      <p>
+        Un log solo sirve si se puede leer de corrido, así que hubo que sacar dos fuentes de ruido.
+        <code>simplelogger.properties</code> le saca el andamiaje a cada línea —el
+        <code>[main]</code> que siempre es el mismo, el <code>ar.uade.cine.servicio.</code> que siempre es el
+        mismo— y baja Jetty y Javalin a <code>WARN</code>. Importa más de lo que parece:
+        <code>docker compose logs</code> mezcla los cinco contenedores en una sola columna, y cada carácter de
+        prefijo es uno menos de la línea que interesa.
+      </p>
+      <p>
+        Del lado de nginx, <code>access_log off</code> para <code>.js</code>, <code>.css</code> e imágenes.
+        Abrir una pantalla del panel son quince <code>GET</code> a módulos que no dicen nada, y con el frontend
+        partido en un módulo por pantalla el problema empeoró. Una navegación pasó de unas veinte líneas a
+        cuatro: la página y las llamadas a la API. Los errores de esos archivos siguen apareciendo en
+        <code>error_log</code>, que no se tocó.
+      </p>
 
       <h3>Sin Docker</h3>
       <pre><code>mvn test                 # los 198 tests, no necesitan base
@@ -2900,6 +2970,13 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         <li><strong>Los pasos mínimos</strong> para que vuelva a pasar. Si no se puede repetir, no se puede arreglar.</li>
         <li><strong>Dónde</strong>: ¿la API devuelve mal el dato, o la pantalla lo muestra mal? Se responde con un <code>curl</code> al mismo endpoint que usa la pantalla. Ese solo paso parte el problema al medio.</li>
         <li><strong>La consola del navegador</strong> (F12): un error de JavaScript ahí explica la mitad de las pantallas en blanco.</li>
+        <li>
+          <strong>La <a href="#bitacora">bitácora del backend</a></strong>
+          (<code>docker compose logs -f backend</code>): dice qué hizo el sistema de verdad, que no siempre es
+          lo que la pantalla dice que hizo. Si el log tiene la línea del cobro con el descuento aplicado y la
+          pantalla muestra otro monto, el problema es de la vista y no de la regla — y eso descarta media
+          búsqueda.
+        </li>
       </ol>
       <div class="callout">
         <p>
