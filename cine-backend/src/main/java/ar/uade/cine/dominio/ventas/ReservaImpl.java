@@ -94,11 +94,6 @@ public class ReservaImpl implements Reserva {
     }
 
     @Override
-    public void agregarEntrada(Entrada entrada) {
-        entradas.add(entrada);
-    }
-
-    @Override
     public int getCantidadEntradas() {
         return entradas.size();
     }

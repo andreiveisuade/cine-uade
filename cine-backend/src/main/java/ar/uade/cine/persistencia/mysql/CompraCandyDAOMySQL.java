@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -126,29 +127,46 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
         }
     }
 
-    /** El JOIN devuelve una fila por cada item: se agrupa por id de compra. */
+    /**
+     * El JOIN devuelve una fila por cada item: se agrupa por id de compra.
+     *
+     * <p>Los items se juntan primero y la compra se construye al final, ya completa. Así
+     * {@code CompraCandy} no necesita publicar un <code>agregarItem</code> que solo servía
+     * para este armado: una venta cerrada no admite items nuevos.
+     */
     private List<CompraCandy> agrupar(ResultSet rs) throws SQLException {
-        Map<Integer, CompraCandy> porId = new LinkedHashMap<>();
+        Map<Integer, FilasDeCompra> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
-            CompraCandy compra = porId.get(id);
-            if (compra == null) {
-                compra = new CompraCandyImpl(
+            FilasDeCompra filas = porId.get(id);
+            if (filas == null) {
+                filas = new FilasDeCompra(
                         id,
                         (Integer) rs.getObject("cliente_id"),
                         (Integer) rs.getObject("reserva_id"),
                         rs.getTimestamp("fecha").toLocalDateTime(),
                         MedioPago.valueOf(rs.getString("medio")),
                         rs.getString("codigo_autorizacion"),
-                        List.of());
-                porId.put(id, compra);
+                        new ArrayList<>());
+                porId.put(id, filas);
             }
             int productoId = rs.getInt("producto_id");
             if (!rs.wasNull()) {
-                compra.agregarItem(new ItemCompra(productoId, rs.getString("nombre"),
+                filas.items().add(new ItemCompra(productoId, rs.getString("nombre"),
                         rs.getInt("cantidad"), rs.getDouble("precio_unitario")));
             }
         }
-        return new ArrayList<>(porId.values());
+        return porId.values().stream().map(FilasDeCompra::aCompra).toList();
+    }
+
+    /** Lo leído de una compra mientras se juntan sus filas, antes de poder construirla. */
+    private record FilasDeCompra(int id, Integer clienteId, Integer reservaId, LocalDateTime fecha,
+                                 MedioPago medio, String codigoAutorizacion,
+                                 List<ItemCompra> items) {
+
+        CompraCandy aCompra() {
+            return new CompraCandyImpl(id, clienteId, reservaId, fecha, medio,
+                    codigoAutorizacion, items);
+        }
     }
 }

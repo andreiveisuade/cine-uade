@@ -26,6 +26,7 @@ import ar.uade.cine.persistencia.mysql.ProductoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PromocionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
+import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
@@ -61,6 +62,7 @@ public class Aplicacion {
     private final GestorPagos pagos;
     private final GestorReservas reservas;
     private final GestorCandy candy;
+    private final CalculadoraPrecio calculadoraPrecio;
 
     /**
      * Todo en MySQL, con los comprobantes en archivos de texto: es como corren la consola
@@ -94,6 +96,8 @@ public class Aplicacion {
                       ProductoDAO productoDAO, CompraCandyDAO compraCandyDAO,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy) {
 
+        calculadoraPrecio = new CalculadoraPrecio();
+
         cartelera = new GestorCartelera(peliculaDAO, funcionDAO);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
@@ -102,7 +106,7 @@ public class Aplicacion {
         promociones = new GestorPromociones(promocionDAO);
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
-                peliculaDAO, generadorTicket);
+                peliculaDAO, generadorTicket, calculadoraPrecio);
         candy = new GestorCandy(productoDAO, compraCandyDAO, clienteDAO, reservaDAO,
                 generadorTicketCandy);
     }
@@ -141,5 +145,10 @@ public class Aplicacion {
 
     public GestorCandy getCandy() {
         return candy;
+    }
+
+    /** La usa la capa HTTP para mostrar el precio de cada butaca en el mapa de la sala. */
+    public CalculadoraPrecio getCalculadoraPrecio() {
+        return calculadoraPrecio;
     }
 }

@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.dominio.usuarios.Cliente;
-import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 
 /**
  * El cliente compra sin registrarse: se identifica con su email y, si es la primera vez,
@@ -31,7 +31,7 @@ class GestorClientesTest {
     @BeforeEach
     void prepararEscenario() {
         gestor = new GestorClientes(new ClienteDAOMemoria(),
-                new ReservaDAOTxt(tempDir.resolve("reservas.txt")), new CompraCandyDAOMemoria());
+                new ReservaDAOMemoria(), new CompraCandyDAOMemoria());
     }
 
     @Test

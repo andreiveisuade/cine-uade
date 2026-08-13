@@ -31,7 +31,6 @@ import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -41,6 +40,7 @@ import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /**
@@ -64,7 +64,7 @@ class AplicacionTest {
         aplicacion = new Aplicacion(
                 new PeliculaDAOMemoria(), new SalaDAOMemoria(), new AsientoDAOMemoria(),
                 new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
-                new ReservaDAOTxt(tempDir.resolve("reservas.txt")), new PagoDAOMemoria(),
+                new ReservaDAOMemoria(), new PagoDAOMemoria(),
                 new PromocionDAOMemoria(), new ProductoDAOMemoria(), new CompraCandyDAOMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));

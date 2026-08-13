@@ -36,7 +36,6 @@ import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -44,6 +43,7 @@ import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /** R5: solo se cobra una reserva en estado RESERVADA, y una sola vez. */
@@ -66,7 +66,7 @@ class GestorPagosTest {
         FuncionDAO funcionDAO = new FuncionDAOMemoria();
         ClienteDAO clienteDAO = new ClienteDAOMemoria();
         PagoDAO pagoDAO = new PagoDAOMemoria();
-        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
+        reservaDAO = new ReservaDAOMemoria();
 
         new GestorCartelera(peliculaDAO, funcionDAO)
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -77,7 +77,7 @@ class GestorPagosTest {
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(tempDir.resolve("tickets")));
+                new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio());
         promociones = new GestorPromociones(new PromocionDAOMemoria());
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
     }

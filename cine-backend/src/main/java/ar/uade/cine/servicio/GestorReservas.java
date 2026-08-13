@@ -40,11 +40,16 @@ public class GestorReservas {
     private final ClienteDAO clienteDAO;
     private final PeliculaDAO peliculaDAO;
     private final GeneradorTicket generadorTicket;
-    private final CalculadoraPrecio calculadoraPrecio = new CalculadoraPrecio();
+    private final CalculadoraPrecio calculadoraPrecio;
 
+    /**
+     * La calculadora entra por el constructor como todo lo demás. Creándola adentro, el
+     * precio quedaba fijado por dentro de una regla de negocio y esta clase decidía sola
+     * cómo se cobra; recibida, es una pieza que se puede cambiar sin tocar el gestor.
+     */
     public GestorReservas(ReservaDAO reservaDAO, FuncionDAO funcionDAO, SalaDAO salaDAO,
                           AsientoDAO asientoDAO, ClienteDAO clienteDAO, PeliculaDAO peliculaDAO,
-                          GeneradorTicket generadorTicket) {
+                          GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio) {
         this.reservaDAO = reservaDAO;
         this.funcionDAO = funcionDAO;
         this.salaDAO = salaDAO;
@@ -52,6 +57,7 @@ public class GestorReservas {
         this.clienteDAO = clienteDAO;
         this.peliculaDAO = peliculaDAO;
         this.generadorTicket = generadorTicket;
+        this.calculadoraPrecio = calculadoraPrecio;
     }
 
     /** Butacas de la sala que todavía nadie tomó para esa función. */

@@ -27,12 +27,12 @@ import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /** R3: una sala no puede tener dos funciones superpuestas. R12: no se borra lo que está en uso. */
@@ -55,7 +55,7 @@ class GestorFuncionesTest {
     /** Película de 120 minutos en la sala 1, con una función a las 20:00. */
     @BeforeEach
     void prepararCartelera() {
-        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
+        reservaDAO = new ReservaDAOMemoria();
         cartelera = new GestorCartelera(peliculaDAO, funcionDAO);
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
@@ -100,7 +100,7 @@ class GestorFuncionesTest {
     @Test
     void noSeBorraUnaFuncionConReservas() {
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
-                clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")));
+                clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio());
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"));
 

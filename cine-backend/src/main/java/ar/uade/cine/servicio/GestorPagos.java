@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import ar.uade.cine.dominio.funciones.Funcion;
-import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
@@ -27,10 +26,14 @@ public class GestorPagos {
     private final PagoDAO pagoDAO;
     private final ReservaDAO reservaDAO;
     private final FuncionDAO funcionDAO;
-    private final GestorPromociones promociones;
+    private final PoliticaPromociones promociones;
 
+    /**
+     * Recibe la política de descuentos por contrato y no el gestor de promociones: cobrar
+     * necesita un monto, no el ABM entero.
+     */
     public GestorPagos(PagoDAO pagoDAO, ReservaDAO reservaDAO, FuncionDAO funcionDAO,
-                       GestorPromociones promociones) {
+                       PoliticaPromociones promociones) {
         this.pagoDAO = pagoDAO;
         this.reservaDAO = reservaDAO;
         this.funcionDAO = funcionDAO;
@@ -75,11 +78,11 @@ public class GestorPagos {
                 .map(Funcion::getInicio)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No existe la función " + reserva.getFuncionId()));
-        Optional<Promocion> ganadora = promociones.mejorPara(reserva.getEntradas(), inicioFuncion, medio);
-        double descuento = ganadora.map(p -> promociones.descuentoDe(p, reserva.getEntradas())).orElse(0.0);
+        PoliticaPromociones.Descuento descuento =
+                promociones.calcularPara(reserva.getEntradas(), inicioFuncion, medio);
 
         Pago pago = new PagoImpl(reservaId, reserva.getTotal(),
-                ganadora.map(Promocion::getId).orElse(null), descuento,
+                descuento.promocionId(), descuento.monto(),
                 medio, LocalDateTime.now(),
                 codigoAutorizacion == null ? "" : codigoAutorizacion.trim());
         pagoDAO.guardar(pago);

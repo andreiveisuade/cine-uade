@@ -78,11 +78,6 @@ public class CompraCandyImpl implements CompraCandy {
     }
 
     @Override
-    public void agregarItem(ItemCompra item) {
-        items.add(item);
-    }
-
-    @Override
     public double getTotal() {
         return items.stream().mapToDouble(ItemCompra::getSubtotal).sum();
     }

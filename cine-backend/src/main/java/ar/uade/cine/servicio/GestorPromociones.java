@@ -26,7 +26,7 @@ import ar.uade.cine.persistencia.PromocionDAO;
  * cliente. Aplicar varias en cadena obligaría a definir un orden —que cambia el
  * resultado— y a poner un piso para que el precio no llegue a cero.
  */
-public class GestorPromociones {
+public class GestorPromociones implements PoliticaPromociones {
 
     private final PromocionDAO dao;
 
@@ -104,6 +104,18 @@ public class GestorPromociones {
                 .filter(p -> p.calcularDescuento(alcanzadas) > 0)
                 .max(Comparator.comparingDouble((Promocion p) -> p.calcularDescuento(alcanzadas))
                         .thenComparing(Comparator.comparingInt(Promocion::getId).reversed()));
+    }
+
+    /**
+     * Lo que ve quien cobra: el monto a descontar y de qué promoción salió. Que se elija
+     * la que más descuenta, y que las tarifas reducidas queden afuera, es asunto de acá.
+     */
+    @Override
+    public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
+                                  MedioPago medio) {
+        return mejorPara(entradas, inicioFuncion, medio)
+                .map(promocion -> new Descuento(promocion.getId(), descuentoDe(promocion, entradas)))
+                .orElseGet(Descuento::ninguno);
     }
 
     /** Cuánto descuenta esa promoción sobre esas entradas, respetando R16. */

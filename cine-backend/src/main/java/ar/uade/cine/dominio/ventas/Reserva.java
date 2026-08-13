@@ -28,11 +28,11 @@ public interface Reserva {
     /** Cuándo se hizo. Sin esto no se puede ordenar el historial ni auditar una venta. */
     LocalDateTime getCreadaEn();
 
-    /** Una entrada por butaca elegida. */
+    /**
+     * Una entrada por butaca elegida. Se fijan al crear la reserva y no se tocan más: una
+     * butaca de menos o de más cambiaría el total de algo que ya se cobró.
+     */
     List<Entrada> getEntradas();
-
-    /** Lo usa el DAO al reconstruir la reserva desde la base. */
-    void agregarEntrada(Entrada entrada);
 
     /** Derivada de las entradas: no se guarda por separado. */
     int getCantidadEntradas();

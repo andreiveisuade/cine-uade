@@ -39,10 +39,11 @@ public interface CompraCandy {
     /** Código del procesador. Vacío cuando se pagó en efectivo. */
     String getCodigoAutorizacion();
 
+    /**
+     * Qué se llevó. Se fijan al vender y no cambian: en el mostrador se paga en el acto,
+     * así que la compra nace cerrada.
+     */
     List<ItemCompra> getItems();
-
-    /** Lo usa el DAO al reconstruir la compra desde la base. */
-    void agregarItem(ItemCompra item);
 
     /** Derivado de los items: no se guarda por separado. */
     double getTotal();

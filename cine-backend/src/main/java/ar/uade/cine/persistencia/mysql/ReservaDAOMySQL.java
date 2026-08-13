@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -210,34 +211,54 @@ public class ReservaDAOMySQL implements ReservaDAO {
         }
     }
 
-    /** El JOIN trae una fila por entrada: la misma reserva se repite y se le suman las butacas. */
+    /**
+     * El JOIN trae una fila por entrada: la misma reserva se repite y se le suman las
+     * butacas.
+     *
+     * <p>Las filas se juntan primero y la reserva se construye al final, ya con todas sus
+     * entradas. Antes se creaba vacía y se le iban agregando, lo que obligaba a que
+     * {@code Reserva} publicara un <code>agregarEntrada</code> que ninguna regla de
+     * negocio usa: existía solo para este armado, y de paso dejaba que cualquiera le
+     * sumara butacas a una reserva ya cobrada.
+     */
     private List<Reserva> agrupar(ResultSet rs) throws SQLException {
-        Map<Integer, Reserva> porId = new LinkedHashMap<>();
+        Map<Integer, FilasDeReserva> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
-            Reserva reserva = porId.get(id);
-            if (reserva == null) {
-                reserva = new ReservaImpl(
+            FilasDeReserva filas = porId.get(id);
+            if (filas == null) {
+                Timestamp ingreso = rs.getTimestamp("ingresada_en");
+                filas = new FilasDeReserva(
                         id,
                         rs.getInt("funcion_id"),
                         rs.getInt("cliente_id"),
-                        List.of(),
                         EstadoReserva.valueOf(rs.getString("estado")),
                         rs.getTimestamp("creada_en").toLocalDateTime(),
-                        rs.getString("codigo"));
-                Timestamp ingreso = rs.getTimestamp("ingresada_en");
-                if (ingreso != null) {
-                    reserva.setIngresadaEn(ingreso.toLocalDateTime());
-                }
-                porId.put(id, reserva);
+                        rs.getString("codigo"),
+                        ingreso == null ? null : ingreso.toLocalDateTime(),
+                        new ArrayList<>());
+                porId.put(id, filas);
             }
             int asientoId = rs.getInt("asiento_id");
             if (!rs.wasNull()) {
                 String codigo = (char) ('A' + rs.getInt("fila") - 1) + String.valueOf(rs.getInt("numero"));
-                reserva.agregarEntrada(new Entrada(asientoId, codigo,
+                filas.entradas().add(new Entrada(asientoId, codigo,
                         TipoTarifa.valueOf(rs.getString("tarifa")), rs.getDouble("precio")));
             }
         }
-        return new ArrayList<>(porId.values());
+        return porId.values().stream().map(FilasDeReserva::aReserva).toList();
+    }
+
+    /** Lo leído de una reserva mientras se juntan sus filas, antes de poder construirla. */
+    private record FilasDeReserva(int id, int funcionId, int clienteId, EstadoReserva estado,
+                                  LocalDateTime creadaEn, String codigo,
+                                  LocalDateTime ingresadaEn, List<Entrada> entradas) {
+
+        Reserva aReserva() {
+            Reserva reserva = new ReservaImpl(id, funcionId, clienteId, entradas, estado,
+                    creadaEn, codigo);
+            reserva.setIngresadaEn(ingresadaEn);
+            return reserva;
+        }
     }
 }

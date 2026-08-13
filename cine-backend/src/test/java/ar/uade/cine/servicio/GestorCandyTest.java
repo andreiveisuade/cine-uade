@@ -29,10 +29,10 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
-import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 
 /** R14: un combo tiene que costar menos que sus componentes sueltos. */
 class GestorCandyTest {
@@ -50,7 +50,7 @@ class GestorCandyTest {
     @BeforeEach
     void prepararCarta() {
         ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
+        reservaDAO = new ReservaDAOMemoria();
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria())
                 .registrar("Andrei", "andrei@uade.edu.ar");
         directorioTickets = tempDir.resolve("tickets");
