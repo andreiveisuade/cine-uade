@@ -45,6 +45,10 @@ se los alcanza desde adentro de la red de Docker.
 | mysql | — | `mysql:3306`, desde el backend y Adminer |
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
 
+Diagrama de esta misma topología (contenedores, redes, volúmenes) en
+[`cine-backend/docs/manual/index.html`](../cine-backend/docs/manual/index.html#correr), sección
+"Cómo correrlo".
+
 El navegador nunca habla con el backend directo: `backend` es un nombre que solo resuelve
 adentro de Docker. nginx reenvía `/api` por la red interna, así que para el navegador todo
 sale del mismo origen y no hace falta CORS.
