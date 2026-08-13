@@ -430,6 +430,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#entorno" data-target="entorno">Entorno: Java y Maven</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
         <li><a href="#probar" data-target="probar">Cómo probarlo</a></li>
+        <li><a href="#corrida" data-target="corrida">La corrida del 13/08</a></li>
         <li><a href="#estructura" data-target="estructura">Estructura de carpetas</a></li>
         <li><a href="#estado" data-target="estado">Estado y pendientes</a></li>
         <li><a href="#decisiones" data-target="decisiones">Decisiones tomadas</a></li>
@@ -2421,6 +2422,253 @@ curl -s http://localhost:8080/api/funciones/3 | head -c 400   # cambiá el 3 por
           integración</em> con una base efímera, y herramientas de automatización de
           navegador— y son el paso siguiente natural. Reconocer los huecos de la estrategia
           de pruebas es parte de tenerla.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="corrida">
+      <h2>La corrida del 13/08/2026</h2>
+      <p>
+        El plan de la sección anterior no quedó en el papel: se ejecutó completo contra la
+        aplicación real, con el navegador manejado desde la terminal. Esto es el
+        <strong>registro de esa ejecución</strong> — qué se probó, qué se vio y qué apareció
+        roto. Un plan de pruebas sin evidencia de haberse corrido es una intención; con
+        evidencia, es un entregable.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Caso</th><th>Qué verifica</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td>CP-10</td><td>Comprar con tarifas mixtas</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-11</td><td>Las butacas quedan ocupadas</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-13</td><td>Cobrar y ver el descuento</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-14</td><td>ABM de promociones</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-15</td><td>El acomodador solo ve la puerta</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-16</td><td>Validar entrada y rechazar la repetida</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-07</td><td>Los tres rechazos de la puerta</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-17</td><td>El ticket usado se ve tachado</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr><td>CP-18</td><td>Vencimiento de reserva</td><td><span class="tag tag-ok">pasa</span></td></tr>
+            <tr>
+              <td colspan="2"><strong>Defectos encontrados</strong></td>
+              <td><span class="tag tag-pend">1, corregido</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>CP-10 · Comprar con dos tarifas distintas</h3>
+      <p>
+        El punto de partida: la cartelera con las cuatro películas cargadas por el seed, su
+        clasificación por edad y sus géneros.
+      </p>
+      <figure class="diagram">
+        <img src="{{IMG_CARTELERA}}" alt="Cartelera con cuatro películas" />
+        <figcaption>Cartelera — el listado que ve el cliente, sin iniciar sesión</figcaption>
+      </figure>
+      <p>
+        Elegida la función, se eligen dos butacas y se le cambia la tarifa a una. Acá está
+        lo que importa: <strong>C6 pasó a Jubilado y su precio cayó de $8.000 a $4.000 en el
+        acto</strong>, con el total recalculándose solo. La otra butaca no se tocó.
+      </p>
+      <figure class="diagram">
+        <img src="{{IMG_MAPA}}" alt="Mapa de butacas con el selector de tarifa por butaca" />
+        <figcaption>Mapa de butacas — cada butaca elegida lleva su propio selector de tarifa</figcaption>
+      </figure>
+      <div class="callout">
+        <p>
+          <strong>La prueba fina de esta pantalla no es que el precio cambie.</strong> Es que
+          en la confirmación, con el nombre y el email ya tipeados, cambiar una tarifa
+          <em>no borre lo escrito</em>. Por eso el resumen se repinta solo a sí mismo y no la
+          vista entera. Se verificó: se cambió la segunda butaca a Menor con el formulario
+          completo y los dos campos quedaron intactos.
+        </p>
+      </div>
+      <p>
+        Confirmada la compra, el ticket muestra el código de acceso, el aviso de acreditación
+        nombrando cada butaca con su tarifa, y el comprobante con el detalle.
+      </p>
+      <figure class="diagram">
+        <img src="{{IMG_TICKET}}" alt="Ticket con el código de acceso y el aviso de carnet" />
+        <figcaption>Ticket — código de acceso, aviso de acreditación y comprobante</figcaption>
+      </figure>
+
+      <h3>CP-13 · El caso que parece un bug y no lo es</h3>
+      <p>
+        Con el «Jueves 2x1» activo se cobró la reserva de arriba —una butaca Menor y una
+        Jubilado— y el descuento dio <strong>cero</strong>.
+      </p>
+      <p>
+        Es correcto, y es el caso más instructivo de toda la corrida: por <strong>R16</strong>
+        las tarifas reducidas no participan del descuento, así que no quedó ninguna entrada
+        general y el 2x1 nunca llegó a formar un grupo de dos. Para verificar el otro lado se
+        reservaron <strong>dos butacas generales</strong> y ahí sí:
+      </p>
+      <pre><code>subtotal   $ 16.000
+descuento  $  8.000     ← el 2x1 regala una de las dos
+cobrado    $  8.000
+promocion  1            ← queda registrado cuál ganó</code></pre>
+      <p>
+        Quien pruebe sin conocer R16 va a reportar el primer caso como defecto. Por eso la
+        regla está escrita en el plan de pruebas: <strong>un resultado inesperado no es un
+        error si el requisito dice que tiene que pasar</strong> — y para saberlo hay que tener
+        el requisito escrito.
+      </p>
+
+      <h3>CP-14 · El ABM de promociones</h3>
+      <figure class="diagram">
+        <img src="{{IMG_PROMOCIONES}}" alt="Panel de promociones con el listado y el formulario de alta" />
+        <figcaption>Promociones — el listado, y el formulario que cambia de campos según el tipo</figcaption>
+      </figure>
+      <p>
+        Se verificó que al cambiar el tipo a <code>NXM</code> el formulario esconde el campo
+        de porcentaje y muestra <em>lleva</em> y <em>paga</em>. Y que no hay botón de borrar:
+        solo baja y reactivación.
+      </p>
+
+      <h3>CP-15 y CP-16 · El acomodador</h3>
+      <p>
+        Con la sesión de acomodador el menú mostró <strong>solo «Puerta»</strong>. Después se
+        escribió <code>#/peliculas</code> a mano en la barra de direcciones y la guardia del
+        router devolvió a la puerta. Las dos cosas hacían falta: esconder una opción del menú
+        no impide llegar por URL.
+      </p>
+      <p>
+        Validando un código real, la pantalla muestra qué butacas son y a cuáles pedirles
+        carnet. El campo se vacía y recupera el foco solo, para poder encadenar personas.
+      </p>
+      <figure class="diagram">
+        <img src="{{IMG_PUERTA_OK}}" alt="Pantalla de puerta mostrando ADELANTE con las butacas y sus tarifas" />
+        <figcaption>Puerta — entrada válida, con las dos tarifas marcadas para pedir carnet</figcaption>
+      </figure>
+      <p>
+        Con el mismo código por segunda vez, R18 hace su trabajo:
+      </p>
+      <figure class="diagram">
+        <img src="{{IMG_PUERTA_RECHAZO}}" alt="Pantalla de puerta mostrando NO PASA por entrada ya usada" />
+        <figcaption>Puerta — la misma entrada, la segunda vez</figcaption>
+      </figure>
+      <p>
+        Se probaron también los otros dos rechazos: código inexistente y reserva sin pagar.
+        Los tres se ven igual de contundentes, porque en la puerta lo único que importa es
+        que no pasa.
+      </p>
+
+      <h3>CP-18 · La expiración se ve funcionar</h3>
+      <p>
+        Se envejeció una reserva cuarenta minutos con un <code>UPDATE</code> y se miró la base
+        <strong>antes</strong> de tocar la aplicación: seguía en <code>RESERVADA</code>.
+        Recién al recargar el mapa de la función pasó a <code>EXPIRADA</code> y su butaca
+        volvió a estar libre.
+      </p>
+      <p>
+        Esa secuencia es la demostración de que la expiración es perezosa: no hay proceso de
+        fondo, la dispara la consulta. Verlo en ese orden vale más que leerlo.
+      </p>
+
+      <h3>El defecto que apareció</h3>
+      <div class="callout">
+        <p>
+          <strong>Síntoma:</strong> con la sesión de acomodador, el distintivo del encabezado
+          seguía diciendo «Encargado».
+          <br><strong>Causa:</strong> el texto estaba fijo en <code>admin.html</code>, no salía
+          de la sesión.
+          <br><strong>Corrección:</strong> <code>admin.js</code> lo completa con el rol.
+          Verificado después del arreglo: dice «Acomodador».
+        </p>
+      </div>
+      <p>
+        Vale la pena entender <strong>por qué ninguno de los 110 tests automáticos lo
+        encontró</strong>, y por qué eso no es una falla de los tests. No había ninguna lógica
+        rota: el rol se leía bien, la sesión se guardaba bien, las rutas se cerraban bien. Lo
+        único mal era una palabra en una plantilla. Los tests unitarios prueban
+        <em>comportamiento</em>; que la pantalla diga la verdad es otra cosa, y se ve mirando.
+      </p>
+      <p>
+        Es exactamente el argumento de por qué existe el nivel 4 del plan de pruebas. Un
+        proyecto con cobertura alta y sin pruebas de aceptación puede tener toda su lógica
+        correcta y aun así mostrarle datos equivocados a quien lo usa.
+      </p>
+
+      <h3>Qué quedó sin cubrir</h3>
+      <p>
+        Los mismos huecos que ya estaban anotados, ahora confirmados por la corrida: no hay
+        pruebas automáticas de los DAO contra MySQL —el JDBC se ejercitó a mano— ni de la
+        interfaz. La novedad es que ahora se sabe que <strong>se pueden automatizar</strong>:
+        los nueve casos de esta corrida se ejecutaron con comandos, no con clics, así que
+        convertirlos en un script que corra solo es trabajo conocido y no investigación.
+      </p>
+
+      <h3>Lo que dejó esta forma de trabajar</h3>
+      <p>Palabras de Andrei al terminar la corrida:</p>
+      <blockquote class="callout">
+        <p>
+          «Me encantó la corrida que hiciste de este software, porque pude entender los
+          requerimientos y pude correr el plan de testeo de requerimientos sobre todo el
+          producto.
+        </p>
+        <p>
+          Y lo que aprendí es que es fundamental armarse un manual para entender el software,
+          ser ordenado, y buscarle la vuelta con la IA para armarte todas estas herramientas
+          de automatización — pero siempre con la conciencia de cómo construir las cosas
+          correctamente, y entendiendo los pasos, las herramientas y el proceso de desarrollo
+          de software.»
+        </p>
+      </blockquote>
+      <p>
+        Conviene dejar anotado por qué esa conclusión no es una frase de compromiso, sino la
+        descripción de lo que efectivamente pasó en este proyecto:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>La idea</th><th>Dónde se ve en este proyecto</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>El manual primero</strong></td>
+              <td>
+                Cada decisión de modelado se escribió con su alternativa descartada y su
+                motivo <em>antes</em> de codearla. Cuando apareció el acomodador y rompió el
+                argumento de la herencia, se pudo ver enseguida qué frase dejaba de ser cierta
+                — porque estaba escrita. Sin ese registro, el cambio se habría hecho igual,
+                pero nadie habría sabido qué se estaba rompiendo.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>El orden habilita la automatización</strong></td>
+              <td>
+                Los tests corren sin MySQL porque los DAO se inyectan por constructor. La
+                arquitectura en capas no es un dibujo lindo: es lo que hace que probar sea
+                barato. Un diseño desordenado no se puede automatizar por más herramientas que
+                se le tiren encima.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>La herramienta no reemplaza el criterio</strong></td>
+              <td>
+                La corrida encontró un descuento en cero y podría haberlo reportado como
+                defecto. No lo era: R16 dice que tenía que pasar. La diferencia entre un bug y
+                un comportamiento correcto no la resuelve la herramienta, la resuelve saber
+                qué se pidió.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Entender los pasos</strong></td>
+              <td>
+                Los 110 tests en verde no dijeron nada del badge equivocado. Saber qué prueba
+                cada nivel —y qué no prueba— es lo que evita confundir «todo verde» con «todo
+                bien».
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <p>
+          Todo esto es <strong>proceso de desarrollo de software</strong>, no accesorios del
+          código: relevar y escribir requisitos, modelar antes de implementar, registrar las
+          decisiones con su motivo, versionar, probar en niveles, dejar evidencia y anotar lo
+          que quedó afuera. El código es el resultado; el proceso es lo que hace que el
+          resultado se pueda explicar, defender y cambiar sin romperlo.
         </p>
       </div>
     </section>
