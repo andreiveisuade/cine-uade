@@ -8,7 +8,7 @@
 import * as http from "./api-http.js";
 import * as mock from "./api-mock.js";
 
-export const FUENTE = "mock"; // "mock" | "http"
+export const FUENTE = "http"; // "mock" | "http"
 
 const impl = FUENTE === "http" ? http : mock;
 

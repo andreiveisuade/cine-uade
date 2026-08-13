@@ -677,7 +677,7 @@ async function vistaReservas(contenedor) {
                 ${escapar(r.cliente?.nombre || "—")}
                 <span class="block text-xs text-slate-500">${escapar(r.cliente?.email || "")}</span>
               </td>
-              <td class="font-mono text-xs">${r.entradas.map((e) => e.codigoAsiento).join(", ")}</td>
+              <td class="font-mono text-xs">${r.entradas.map((e) => e.codigo).join(", ")}</td>
               <td class="text-right whitespace-nowrap">${precio(r.total)}</td>
               <td class="p-2">
                 ${chipEstado(r.estado)}
@@ -784,7 +784,7 @@ async function vistaCobrar(contenedor, id) {
           <tbody>
             ${reserva.entradas.map((e) => `
               <tr class="border-b border-slate-200">
-                <td class="py-1 font-medium">${e.codigoAsiento}</td>
+                <td class="py-1 font-medium">${e.codigo}</td>
                 <td class="text-right">${precio(e.precio)}</td>
               </tr>`).join("")}
           </tbody>

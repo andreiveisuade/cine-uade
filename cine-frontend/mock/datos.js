@@ -266,7 +266,7 @@ function entrada(funcionId, codigo) {
   const asiento = asientoDe(sala.id, codigo);
   return {
     asientoId: asiento.id,
-    codigoAsiento: asiento.codigo,
+    codigo: asiento.codigo,
     precio: funcion.precio
       * TIPOS_SALA[sala.tipo].multiplicador
       * TIPOS_ASIENTO[asiento.tipo].multiplicador,

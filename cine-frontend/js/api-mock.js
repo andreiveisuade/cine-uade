@@ -181,7 +181,7 @@ export function crearReserva({ funcionId, nombre, email, codigos }) {
     yaElegidos.push(buscado);
     entradas.push({
       asientoId: asiento.id,
-      codigoAsiento: asiento.codigo,
+      codigo: asiento.codigo,
       precio: precioDeAsiento(funcion, sala, asiento),
     });
   }

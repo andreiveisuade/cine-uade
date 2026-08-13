@@ -436,7 +436,7 @@ async function vistaMisReservas(contenedor, emailBuscado) {
       </div>
       <p class="mt-2 text-sm">
         <span class="text-slate-500">Butacas:</span>
-        <span class="font-mono">${r.entradas.map((e) => e.codigoAsiento).join(", ")}</span>
+        <span class="font-mono">${r.entradas.map((e) => e.codigo).join(", ")}</span>
       </p>
       ${r.pago
         ? `<p class="mt-1 text-xs text-slate-500">
@@ -520,7 +520,7 @@ function armarTicket(reserva) {
     campo("Formato", `${reserva.funcion.proyeccion} ${reserva.funcion.idioma}`),
     campo("Cliente", reserva.cliente.nombre),
     LINEA,
-    ...reserva.entradas.map((e) => campo("Butaca " + e.codigoAsiento, precioExacto(e.precio))),
+    ...reserva.entradas.map((e) => campo("Butaca " + e.codigo, precioExacto(e.precio))),
     LINEA,
     campo("Entradas", String(reserva.entradas.length)),
     campo("Total", precioExacto(reserva.total)),
