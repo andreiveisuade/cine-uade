@@ -473,9 +473,16 @@ const DIAS_ISO = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDA
  * ProgramacionImpl.horarios(): día por día, quedándose con los que la grilla habilita.
  * Sin días elegidos son todos, no ninguno.
  */
+/**
+ * Sin `hasta` la grilla es abierta y no tiene final: se materializa hasta el horizonte,
+ * los mismos 14 dias que usa GestorProgramaciones. Una grilla cerrada genera su rango
+ * entero, porque el administrador ya dijo hasta cuando.
+ */
 function horariosDe({ desde, hasta, horaInicio, diasSemana }) {
   const momentos = [];
-  const fin = new Date(`${hasta}T00:00:00`);
+  const horizonte = new Date();
+  horizonte.setDate(horizonte.getDate() + 14);
+  const fin = hasta ? new Date(`${hasta}T00:00:00`) : horizonte;
   for (let dia = new Date(`${desde}T00:00:00`); dia <= fin; dia.setDate(dia.getDate() + 1)) {
     if (!diasSemana?.length || diasSemana.includes(DIAS_ISO[dia.getDay()])) {
       const iso = `${dia.getFullYear()}-${dos(dia.getMonth() + 1)}-${dos(dia.getDate())}`;
@@ -515,7 +522,10 @@ function planificar(grilla, persistir) {
     return fallar(`La sala ${sala.nombre} no puede proyectar en 3D`);
   }
   if (!(grilla.precio > 0)) return fallar("El precio debe ser mayor a cero");
-  if (!grilla.desde || !grilla.hasta || grilla.hasta < grilla.desde) {
+  if (!grilla.desde) return fallar("Falta la fecha de inicio");
+  // hasta vacio es una grilla abierta y es valido; lo que no se admite es un rango dado
+  // vuelta.
+  if (grilla.hasta && grilla.hasta < grilla.desde) {
     return fallar("El rango tiene que empezar antes de terminar");
   }
   if (!grilla.horaInicio) return fallar("Falta la hora de la función");

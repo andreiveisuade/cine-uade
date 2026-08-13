@@ -43,7 +43,8 @@ export async function vistaProgramaciones(contenedor) {
                 <td class="p-2 font-medium">${escapar(tituloDe(peliculas, p.peliculaId))}</td>
                 <td class="whitespace-nowrap">${escapar(nombreDeSala(salas, p.salaId))}</td>
                 <td class="whitespace-nowrap text-xs">
-                  ${escapar(p.desde)} al ${escapar(p.hasta)} · <span class="font-medium">${escapar(p.horaInicio.slice(0, 5))}</span>
+                  ${escapar(p.desde)} ${p.hasta ? `al ${escapar(p.hasta)}` : "<span class=\"font-medium\">en adelante</span>"} · <span class="font-medium">${escapar(p.horaInicio.slice(0, 5))}</span>
+                  ${p.hasta ? "" : `<span class="block text-slate-500 dark:text-slate-400">generada hasta ${escapar(p.generadaHasta || "—")}</span>`}
                 </td>
                 <td class="text-xs">${escapar(diasDeLaGrilla(p))}</td>
                 <td class="text-right whitespace-nowrap">${precio(p.precio)}</td>
@@ -88,8 +89,8 @@ export async function vistaProgramaciones(contenedor) {
                 class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
             <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Hasta</span>
-              <input name="hasta" type="date" required
+              <span class="text-slate-600 dark:text-slate-300">Hasta <span class="text-slate-400 dark:text-slate-500">(vacío = sin fin)</span></span>
+              <input name="hasta" type="date"
                 class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
             </label>
           </div>
@@ -163,7 +164,8 @@ export async function vistaProgramaciones(contenedor) {
       peliculaId: datos.get("peliculaId"),
       salaId: datos.get("salaId"),
       desde: datos.get("desde"),
-      hasta: datos.get("hasta"),
+      // Vacío viaja como null: es una grilla abierta, no una fecha que falta.
+      hasta: datos.get("hasta") || null,
       horaInicio: datos.get("horaInicio"),
       diasSemana: datos.getAll("dia"),
       idioma: datos.get("idioma"),
