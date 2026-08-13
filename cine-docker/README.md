@@ -1,6 +1,6 @@
 # cine-docker
 
-Orquestación del TP. Levanta los tres servicios del sistema desde los repos hermanos.
+Orquestación del TP. Levanta los servicios del sistema desde los repos hermanos.
 
 ```
 TPO/
@@ -44,6 +44,7 @@ se los alcanza desde adentro de la red de Docker.
 | backend | — | `http://backend:8080`, desde nginx |
 | mysql | — | `mysql:3306`, desde el backend y Adminer |
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
+| parser | — | no recibe nada: sale a TMDB y le pega al backend |
 
 Diagrama de esta misma topología (contenedores, redes, volúmenes) en
 [`cine-backend/docs/manual/index.html`](../cine-backend/docs/manual/index.html#correr), sección
@@ -55,6 +56,31 @@ sale del mismo origen y no hace falta CORS.
 
 Las dos redes están separadas: el contenedor que sirve la web no tiene ruta hasta la base.
 El backend es el único que está en las dos.
+
+## El importador de cartelera
+
+`parser` trae de TMDB las películas que están hoy en cartelera en Argentina y las carga
+por HTTP contra `POST /api/peliculas`. Vive en su propio repo, `cine-pelis-parser`.
+
+No arranca con el resto: está detrás del perfil `importador`, para no gastar llamadas a
+TMDB cada vez que se levanta el compose.
+
+```bash
+docker compose --profile importador run --rm parser --simular   # qué traería
+docker compose --profile importador up -d parser                # queda corriendo cada 6h
+docker compose logs -f parser                                   # qué está haciendo
+```
+
+Necesita `TMDB_TOKEN` en el `.env` — se saca gratis en
+[themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) y es el
+*API Read Access Token*, el largo. Sin el token los demás servicios levantan igual: el
+parser falla solo, al arrancar, diciendo qué le falta.
+
+**Está solo en la red `web`, a propósito.** No tiene ruta hasta MySQL, así que no puede
+escribir en la base ni queriendo: todo lo que carga pasa por las reglas de
+`GestorCartelera` — R1 título único, R2 duración, R7 al menos un género, R10
+clasificación. Es la misma razón por la que `seed/datos-de-ejemplo.sh` siembra por la API
+y no por SQL.
 
 ## La base
 

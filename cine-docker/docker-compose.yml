@@ -105,6 +105,44 @@ services:
     networks:
       - datos
 
+  # Importa la cartelera real de Argentina desde TMDB. Vive en su propio repo porque no
+  # es parte del sistema: es un cliente más, que además está escrito en otro lenguaje.
+  #
+  # Va en la red `web` y no en `datos`: escribe por HTTP contra el backend, no toca
+  # MySQL. Que no tenga ruta hasta la base es justamente lo que garantiza que ninguna
+  # película entre sin pasar por las reglas de GestorCartelera.
+  #
+  # No arranca solo: está detrás del perfil `importador` para no gastar llamadas a TMDB
+  # cada vez que se levanta el compose.
+  #     docker compose --profile importador up -d parser
+  #     docker compose run --rm parser --simular
+  parser:
+    build:
+      context: ../cine-pelis-parser
+    container_name: cine-parser
+    profiles: ["importador"]
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
+    volumes:
+      - ../cine-pelis-parser/entrypoint.sh:/app/entrypoint.sh:ro
+    environment:
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
+      # Sin `:?` a propósito, aunque el token sea obligatorio: Compose interpola las
+      # variables al parsear el archivo, ignorando los perfiles, así que un `:?` acá
+      # impediría levantar MySQL y el backend a quien no use el importador. El parser
+      # valida el token al arrancar y falla con un mensaje que dice de dónde sacarlo.
+      TMDB_TOKEN: ${TMDB_TOKEN}
+      TMDB_REGION: ${TMDB_REGION:-AR}
+      CINE_API: http://backend:8080/api
+      INTERVALO_SEGUNDOS: ${INTERVALO_IMPORTADOR:-21600}
+    depends_on:
+      backend:
+        # El healthcheck del backend pega a /api/generos: si responde, la API está
+        # lista para recibir el POST de películas.
+        condition: service_healthy
+    networks:
+      - web
+
 volumes:
   mysql_data:
 
