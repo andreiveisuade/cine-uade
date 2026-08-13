@@ -429,6 +429,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#entorno" data-target="entorno">Entorno: Java y Maven</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#probar" data-target="probar">Cómo probarlo</a></li>
         <li><a href="#estructura" data-target="estructura">Estructura de carpetas</a></li>
         <li><a href="#estado" data-target="estado">Estado y pendientes</a></li>
         <li><a href="#decisiones" data-target="decisiones">Decisiones tomadas</a></li>
@@ -1940,6 +1941,488 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
       <p>
         <code>index.html</code> no se edita a mano: se genera desde <code>template.html</code> inyectando los SVG.
       </p>
+    </section>
+
+    <section class="doc-section" id="probar">
+      <h2>Cómo probarlo</h2>
+      <p>
+        Esta sección es el <strong>plan de pruebas</strong> del sistema: qué hay que
+        verificar, en qué orden y qué tiene que pasar en cada paso. Sirve para dos cosas
+        distintas — recorrer la aplicación de punta a punta antes de una entrega, y
+        entender qué tipo de prueba es cada cosa que ya está hecha.
+      </p>
+
+      <h3>Los cuatro niveles, y por qué son cuatro</h3>
+      <p>
+        Probar no es una sola actividad. La <strong>pirámide de pruebas</strong> dice que
+        conviene tener muchas pruebas chicas y rápidas abajo, y pocas grandes y lentas
+        arriba: las de abajo dicen <em>dónde</em> está el error, las de arriba dicen
+        <em>si el sistema sirve</em>. Este proyecto tiene los cuatro niveles:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nivel</th><th>Qué prueba</th><th>Acá es</th><th>Cuánto tarda</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Unitaria</strong></td>
+              <td>Una regla de negocio aislada, sin base ni red</td>
+              <td>Los 97 tests de JUnit sobre los gestores</td>
+              <td>menos de un segundo</td>
+            </tr>
+            <tr>
+              <td><strong>Integración</strong></td>
+              <td>Que las piezas se entiendan entre sí: el DDL y los DAO contra MySQL de verdad</td>
+              <td>Correr <code>schema.sql</code> en una base limpia</td>
+              <td>segundos</td>
+            </tr>
+            <tr>
+              <td><strong>Sistema</strong></td>
+              <td>La API completa por HTTP, sin abrir el navegador</td>
+              <td>Los casos CP-01 a CP-08 de acá abajo</td>
+              <td>minutos</td>
+            </tr>
+            <tr>
+              <td><strong>Aceptación</strong></td>
+              <td>Que un usuario pueda hacer lo que el caso de uso promete</td>
+              <td>Los casos CP-10 a CP-18, a mano en el navegador</td>
+              <td>media hora</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <p>
+          <strong>Caja blanca y caja negra.</strong> Los tests de JUnit son de
+          <em>caja blanca</em>: se escribieron mirando el código, conociendo sus caminos
+          internos. Todo lo que sigue en esta sección es de <em>caja negra</em>: se prueba
+          por afuera, contra lo que el sistema promete, sin importar cómo está hecho por
+          dentro. Los dos hacen falta y ninguno reemplaza al otro — un método puede estar
+          perfectamente cubierto por sus tests y la pantalla que lo usa estar rota.
+        </p>
+      </div>
+
+      <h3>Paso 0: dejar todo levantado</h3>
+      <p>Sin esto no se puede probar nada. Es la <em>precondición</em> de todos los casos.</p>
+      <pre><code>cd TPO/cine-docker
+docker compose up -d --build     # los 4 contenedores, con el código actual
+docker compose ps                # los 4 en Up; mysql y backend en (healthy)</code></pre>
+      <p>Si es una base recién creada, cargá los datos de ejemplo:</p>
+      <pre><code>./seed/datos-de-ejemplo.sh        # películas, salas y funciones por la API</code></pre>
+      <p>Y comprobá que responde antes de seguir:</p>
+      <pre><code>curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/peliculas   # 200</code></pre>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué</th><th>Dónde</th><th>Credenciales</th></tr></thead>
+          <tbody>
+            <tr><td>Web del cliente</td><td><code>http://localhost:8080</code></td><td>no hace falta iniciar sesión</td></tr>
+            <tr><td>Panel</td><td><code>http://localhost:8080/admin.html</code></td><td><code>encargado@cine.uade.ar</code> / <code>cine2026</code></td></tr>
+            <tr><td>Puerta</td><td>el mismo panel</td><td><code>puerta@cine.uade.ar</code> / <code>cine2026</code></td></tr>
+            <tr><td>Base</td><td><code>http://localhost:8081</code> (Adminer)</td><td>ver <code>cine-docker/.env</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Nivel 1: las pruebas que corren solas</h3>
+      <pre><code>cd TPO/cine-backend
+mvn clean test                    # 97 tests, todos en verde</code></pre>
+      <div class="callout">
+        <p>
+          <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
+          ejecutar clases de test viejas que quedaron compiladas en <code>target/</code> y
+          ya no existen en el código. Pasó en este proyecto: después de renombrar
+          <code>GestorAdministradoresTest</code> a <code>GestorEmpleadosTest</code>, la
+          corrida informaba 103 tests en vez de 97 — seis eran un fantasma. Un número que
+          sube sin que hayas escrito tests es tan sospechoso como uno que baja.
+        </p>
+      </div>
+      <p>
+        Estos tests no tocan MySQL: usan los <code>DAOMemoria</code>. Eso es un
+        <strong>test double</strong> — una implementación falsa del contrato que sirve para
+        aislar lo que se quiere probar. Es el beneficio concreto de haber inyectado los DAO
+        por constructor: sin inversión de dependencias, probar una regla exigiría levantar
+        una base.
+      </p>
+
+      <h3>Nivel 2: que el esquema sea válido</h3>
+      <p>
+        El <code>schema.sql</code> solo se ejecuta cuando el volumen de MySQL está vacío.
+        Para verificarlo sin tocar los datos que ya tenés, se corre contra una base
+        descartable:
+      </p>
+      <pre><code>cd TPO/cine-backend
+docker cp src/main/resources/schema.sql cine-mysql:/tmp/check.sql
+docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" \
+  -e "DROP DATABASE IF EXISTS check_schema; CREATE DATABASE check_schema;" \
+  && mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema &lt; /tmp/check.sql'
+docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema -e "SHOW TABLES;"'
+docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE check_schema;"'</code></pre>
+      <p><strong>Esperado:</strong> 16 tablas, sin un solo error de sintaxis.</p>
+
+      <h3>Nivel 3: la API, sin navegador</h3>
+      <p>
+        Cada caso dice qué verifica. La columna <em>Verifica</em> es la
+        <strong>trazabilidad</strong>: la línea que une un caso de prueba con el caso de
+        uso o la regla de negocio que le da sentido. Un caso de prueba que no traza a
+        ningún requisito es un caso que nadie pidió; un requisito sin ningún caso que lo
+        trace es un requisito que nadie probó.
+      </p>
+
+      <h4>CP-01 · El catálogo de tarifas responde</h4>
+      <pre><code>curl -s http://localhost:8080/api/tarifas</code></pre>
+      <p>
+        <strong>Esperado:</strong> cuatro tarifas. <code>GENERAL</code> con multiplicador
+        <code>1.0</code> y <code>requiereAcreditacion: false</code>; las otras tres con
+        multiplicador menor a 1 y acreditación en <code>true</code>.
+        <br><em>Verifica:</em> que el front pueda mostrar precios sin repetir los factores.
+      </p>
+
+      <h4>CP-02 · Reservar con dos tarifas distintas</h4>
+      <p>Primero mirá qué funciones hay y elegí una con butacas libres:</p>
+      <pre><code>curl -s http://localhost:8080/api/funciones | head -c 400
+curl -s http://localhost:8080/api/funciones/3 | head -c 400   # cambiá el 3 por un id real</code></pre>
+      <pre><code>curl -s -X POST http://localhost:8080/api/reservas \
+  -H 'Content-Type: application/json' \
+  -d '{"funcionId":3,"nombre":"Prueba","email":"prueba@cine.com",
+       "butacas":{"A1":"GENERAL","A2":"JUBILADO"}}'</code></pre>
+      <p>
+        <strong>Esperado:</strong> <code>201</code>. La entrada de <code>A2</code> cuesta
+        la mitad que la de <code>A1</code>, cada una trae su <code>tarifa</code>, y la
+        reserva trae un <code>codigo</code> de 8 caracteres.
+        <strong>Anotá ese código</strong>, lo vas a usar en CP-06.
+        <br><em>Verifica:</em> CU-06, y que la tarifa sea por butaca y no por reserva.
+      </p>
+
+      <h4>CP-03 · El código no es adivinable</h4>
+      <p>
+        Repetí CP-02 y compará los dos códigos.
+        <br><strong>Esperado:</strong> no son consecutivos ni tienen relación con el id de
+        la reserva, y no contienen <code>O</code>, <code>I</code>, <code>0</code> ni
+        <code>1</code>.
+        <br><em>Verifica:</em> que el código sirva como credencial. Si fuera el id, quien
+        tiene la reserva 5 imprime la 6.
+      </p>
+
+      <h4>CP-04 · Cargar una promoción</h4>
+      <pre><code>curl -s -X POST http://localhost:8080/api/promociones \
+  -H 'Content-Type: application/json' \
+  -d '{"nombre":"Prueba 2x1","tipo":"NXM","lleva":2,"paga":1,
+       "vigenciaDesde":"2026-01-01","vigenciaHasta":"2026-12-31",
+       "diasSemana":[],"mediosPago":[]}'</code></pre>
+      <p>
+        <strong>Esperado:</strong> <code>201</code>, <code>activa: true</code>, y
+        <code>diasSemana: []</code> — que significa <em>todos los días</em>, no ninguno.
+        <br><em>Verifica:</em> CU-17.
+      </p>
+
+      <h4>CP-05 · El descuento se aplica al cobrar, y R16 lo limita</h4>
+      <p>Cobrá la reserva de CP-02, que tiene una general y una jubilado:</p>
+      <pre><code>curl -s -X POST http://localhost:8080/api/reservas/{id}/pago \
+  -H 'Content-Type: application/json' -d '{"medio":"EFECTIVO"}'</code></pre>
+      <p>
+        <strong>Esperado:</strong> <code>descuento: 0</code>. Es correcto y es el caso más
+        interesante de toda la guía: el 2x1 necesita dos entradas <em>generales</em> para
+        formar un grupo, y la de jubilado no participa (R16). Ahora reservá y cobrá
+        <strong>dos butacas generales</strong>: ahí sí el descuento tiene que ser igual al
+        precio de una de las dos, y <code>monto = subtotal − descuento</code>.
+        <br><em>Verifica:</em> R15, R16, y que el total definitivo no exista hasta el cobro.
+      </p>
+
+      <h4>CP-06 · Validar la entrada en la puerta</h4>
+      <pre><code>curl -s -X POST http://localhost:8080/api/acceso \
+  -H 'Content-Type: application/json' -d '{"codigo":"EL-CODIGO-DE-CP-02"}'</code></pre>
+      <p>
+        <strong>Esperado la primera vez:</strong> devuelve la reserva con
+        <code>ingresadaEn</code> completo.
+        <br><strong>Esperado la segunda:</strong> <code>400</code> con «Esa entrada ya se
+        usó el…».
+        <br><em>Verifica:</em> CU-18, R18.
+      </p>
+
+      <h4>CP-07 · Los tres rechazos de la puerta</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Caso</th><th>Cómo</th><th>Esperado</th></tr></thead>
+          <tbody>
+            <tr><td>Código inexistente</td><td><code>{"codigo":"XXXXXXXX"}</code></td><td>400 «No existe ninguna reserva con ese código»</td></tr>
+            <tr><td>Reserva sin pagar</td><td>el código de una reserva recién creada</td><td>400 «solo se ingresa con una reserva pagada»</td></tr>
+            <tr><td>Entrada ya usada</td><td>repetir CP-06</td><td>400 «ya se usó el…»</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <em>Verifica:</em> R18 por sus tres caminos alternativos. Probar solo el
+        <strong>camino feliz</strong> —el que funciona— es el error más común: los defectos
+        viven casi siempre en los caminos alternativos.
+      </p>
+
+      <h4>CP-08 · Las validaciones del alta de promoción</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Entrada</th><th>Esperado</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>"tipo":"NXM","lleva":2,"paga":2</code></td><td>400</td><td>un 2x2 no descuenta nada</td></tr>
+            <tr><td><code>"tipo":"PORCENTAJE","porcentaje":100</code></td><td>400</td><td>regalaría la entrada</td></tr>
+            <tr><td>un nombre ya usado</td><td>400</td><td>el nombre es único</td></tr>
+            <tr><td><code>vigenciaHasta</code> anterior a <code>vigenciaDesde</code></td><td>400</td><td>vigencia imposible</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Esto es <strong>prueba de valores límite</strong>: los errores se esconden en los
+        bordes. Con <code>lleva</code> y <code>paga</code>, el borde exacto está en
+        <code>2x2</code> —donde el descuento pasa a ser cero— y en <code>2x3</code>, donde
+        se daría vuelta.
+      </p>
+
+      <h3>Nivel 4: la aplicación, a mano</h3>
+      <p>
+        Acá se prueba como usuario, sin mirar el código. Cada caso tiene precondición,
+        pasos y resultado esperado, que es la forma estándar de escribir un caso de prueba:
+        si otra persona no puede ejecutarlo sin preguntarte nada, está mal escrito.
+      </p>
+
+      <h4>CP-10 · Comprar con tarifas mixtas <span class="tag tag-ok">cliente</span></h4>
+      <ol>
+        <li>Entrá a <code>http://localhost:8080</code>.</li>
+        <li>Elegí una película de la cartelera y después una función.</li>
+        <li>En el mapa, clickeá <strong>dos butacas libres</strong>.</li>
+        <li>En el resumen de abajo, cambiá la tarifa de una a <strong>Jubilado</strong>.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> el precio de esa butaca baja a la mitad en el acto, y el
+        total se actualiza solo. La otra no cambia.
+      </p>
+      <ol start="5">
+        <li>Continuar. En la confirmación, cambiá la segunda a <strong>Menor</strong>.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> la tabla y el total se actualizan <em>sin</em> que se
+        borre lo que ya escribiste en nombre y email. Aparece el aviso ámbar de traer
+        carnet, nombrando las dos butacas.
+      </p>
+      <ol start="6">
+        <li>Completá nombre y email, y confirmá.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> el ticket muestra el código de acceso en grande, en dos
+        grupos de cuatro, y el detalle de cada butaca con su tarifa.
+        <br><em>Verifica:</em> CU-06 de punta a punta.
+      </p>
+
+      <h4>CP-11 · La butaca ocupada desaparece <span class="tag tag-ok">cliente</span></h4>
+      <p>
+        Volvé a la función de CP-10.
+        <br><strong>Esperado:</strong> las butacas que compraste ahora están en gris oscuro
+        y no se pueden clickear, y el contador de libres bajó en dos.
+        <br><em>Verifica:</em> R4.
+      </p>
+
+      <h4>CP-12 · Mis reservas sin iniciar sesión <span class="tag tag-ok">cliente</span></h4>
+      <p>
+        Andá a «Mis reservas» y buscá con el email de CP-10.
+        <br><strong>Esperado:</strong> aparece la reserva con su estado. Con un email que no
+        existe: lista vacía, <strong>no</strong> un error.
+        <br><em>Verifica:</em> CU-09. Que no sea un error es a propósito: para quien
+        pregunta, «no tenés reservas» y «ese email no existe» son lo mismo.
+      </p>
+
+      <h4>CP-13 · Cobrar y ver el descuento <span class="tag tag-ok">panel</span></h4>
+      <ol>
+        <li>Entrá al panel con <code>encargado@cine.uade.ar</code>.</li>
+        <li>Andá a <strong>Promociones</strong> y creá una de tipo <em>Porcentaje</em>, 30%, vigente hoy, sin días ni medios marcados.</li>
+        <li>Andá a <strong>Reservas</strong>, buscá la de CP-10 y cobrala en efectivo.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> el aviso dice cuánto se cobró <em>y</em> cuánto se
+        descontó. Ojo con el detalle: si la reserva tiene tarifas reducidas, el 30% corre
+        <strong>solo</strong> sobre las generales (R16), así que el descuento va a ser menor
+        al 30% del subtotal. Eso no es un error.
+      </p>
+      <ol start="4">
+        <li>Andá a <strong>Caja</strong>.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> el pago aparece con su columna de descuento, y el total
+        recaudado suma lo <em>cobrado</em>, no el precio de lista.
+        <br><em>Verifica:</em> CU-07, CU-12, CU-17, R15, R16.
+      </p>
+
+      <h4>CP-14 · Dar de baja una promoción <span class="tag tag-ok">panel</span></h4>
+      <p>
+        En Promociones, dale de baja a la que creaste.
+        <br><strong>Esperado:</strong> queda en gris y el botón pasa a «Reactivar».
+        <strong>No hay botón de borrar</strong>, y eso es una decisión de diseño: una
+        promoción usada en un cobro tiene que seguir existiendo para poder explicar por qué
+        se cobró ese monto. Cobrá otra reserva y verificá que ya no se aplica.
+      </p>
+
+      <h4>CP-15 · El acomodador solo ve la puerta <span class="tag tag-ok">rol</span></h4>
+      <ol>
+        <li>Salí de la sesión y entrá con <code>puerta@cine.uade.ar</code>.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> caés directo en la pantalla de puerta, y en el menú
+        <em>solo</em> está «Puerta».
+      </p>
+      <ol start="2">
+        <li>Escribí <code>#/peliculas</code> a mano en la barra de direcciones.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> te devuelve a la puerta. Esconder el menú no alcanza — el
+        control tiene que estar también en la guardia del router. Es la diferencia entre
+        <em>ocultar</em> una opción y <em>impedir</em> una acción.
+        <br><em>Verifica:</em> el rol ACOMODADOR.
+      </p>
+
+      <h4>CP-16 · Validar una entrada de verdad <span class="tag tag-ok">puerta</span></h4>
+      <ol>
+        <li>Con la sesión de acomodador, tipeá el código del ticket de CP-10.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> cartel verde <em>ADELANTE</em>, con película, sala,
+        horario y las butacas. Las de tarifa reducida aparecen resaltadas con «pedir
+        carnet». El campo se vacía solo y queda con el foco, listo para la próxima persona.
+      </p>
+      <ol start="2">
+        <li>Volvé a ingresar el mismo código.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> cartel rojo <em>NO PASA</em> diciendo cuándo se usó.
+        <br><em>Verifica:</em> CU-18, R18.
+      </p>
+
+      <h4>CP-17 · El ticket ya usado se ve distinto <span class="tag tag-ok">cliente</span></h4>
+      <p>
+        Volvé al ticket de esa reserva en la web del cliente.
+        <br><strong>Esperado:</strong> el código aparece tachado y en gris, con la fecha en
+        que se usó.
+      </p>
+
+      <h4>CP-18 · Una reserva sin pagar vence <span class="tag tag-ok">regla</span></h4>
+      <p>
+        Este no se puede probar esperando media hora, así que se envejece la reserva en la
+        base — que es exactamente lo que hace el test automático, pero a mano:
+      </p>
+      <pre><code>docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" appsinteractivas \
+  -e "UPDATE reserva SET creada_en = creada_en - INTERVAL 40 MINUTE WHERE id = {id};"'</code></pre>
+      <p>
+        Después recargá el mapa de esa función.
+        <br><strong>Esperado:</strong> las butacas volvieron a estar libres, y la reserva
+        quedó en estado <code>EXPIRADA</code> —no cancelada—. Intentar cobrarla da error.
+        <br><em>Verifica:</em> R17. Fijate en el orden: la reserva <em>no</em> cambia de
+        estado sola, cambia cuando alguien consulta. Si mirás la base antes de recargar el
+        mapa, sigue en <code>RESERVADA</code>.
+      </p>
+
+      <h3>Matriz de trazabilidad</h3>
+      <p>
+        Sirve para dos preguntas: «este caso de prueba, ¿para qué está?» y —más
+        importante— «esta regla, ¿alguien la probó?».
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Requisito</th><th>Prueba automática</th><th>Prueba manual</th></tr></thead>
+          <tbody>
+            <tr><td>R4 butaca ocupada</td><td><code>GestorReservasTest</code></td><td>CP-11</td></tr>
+            <tr><td>R5 se cobra una sola vez</td><td><code>GestorPagosTest</code></td><td>CP-13</td></tr>
+            <tr><td>R11 autorización</td><td><code>GestorPagosTest</code></td><td>CP-13</td></tr>
+            <tr><td>R15 gana la mejor promo</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
+            <tr><td>R16 tarifa reducida afuera</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
+            <tr><td>R17 no se cobra vencida</td><td><code>GestorReservasTest</code></td><td>CP-18</td></tr>
+            <tr><td>R18 se ingresa una sola vez</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16</td></tr>
+            <tr><td>CU-06 reservar</td><td><code>GestorReservasTest</code></td><td>CP-02, CP-10</td></tr>
+            <tr><td>CU-17 promociones</td><td><code>GestorPromocionesTest</code></td><td>CP-04, CP-08, CP-14</td></tr>
+            <tr><td>CU-18 validar entrada</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-16</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cuando algo falla</h3>
+      <p>
+        Un defecto sin reproducción es una anécdota. Antes de tocar código, anotá:
+      </p>
+      <ol>
+        <li><strong>Qué esperabas</strong> y <strong>qué pasó</strong>, por separado.</li>
+        <li><strong>Los pasos mínimos</strong> para que vuelva a pasar. Si no se puede repetir, no se puede arreglar.</li>
+        <li><strong>Dónde</strong>: ¿la API devuelve mal el dato, o la pantalla lo muestra mal? Se responde con un <code>curl</code> al mismo endpoint que usa la pantalla. Ese solo paso parte el problema al medio.</li>
+        <li><strong>La consola del navegador</strong> (F12): un error de JavaScript ahí explica la mitad de las pantallas en blanco.</li>
+      </ol>
+      <div class="callout">
+        <p>
+          <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
+          <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
+          antes andaba. Los 97 tests automáticos existen justamente para que eso cueste
+          treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
+        </p>
+      </div>
+
+      <h3>Qué de todo esto es materia</h3>
+      <p>
+        Lo de arriba no es una lista de pasos improvisada: cada parte tiene nombre en
+        ingeniería de software, y conviene saber cuál es.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concepto</th><th>Dónde aparece acá</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Verificación</strong> vs <strong>validación</strong></td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 97 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+            </tr>
+            <tr>
+              <td>Pirámide de pruebas</td>
+              <td>97 unitarias, un puñado de integración, ~8 de sistema, ~9 de aceptación. La proporción es intencional</td>
+            </tr>
+            <tr>
+              <td>Caja blanca / caja negra</td>
+              <td>JUnit mira el código; los CP-xx miran el contrato</td>
+            </tr>
+            <tr>
+              <td>Test double</td>
+              <td>Los <code>DAOMemoria</code>: reemplazan la base para poder probar las reglas aisladas</td>
+            </tr>
+            <tr>
+              <td>Inyección de dependencias</td>
+              <td>Es lo que hace posible el punto anterior. Los gestores reciben sus DAO por constructor y no los instancian</td>
+            </tr>
+            <tr>
+              <td>Trazabilidad</td>
+              <td>La matriz de arriba, y la columna «Reglas» de la tabla de casos de uso</td>
+            </tr>
+            <tr>
+              <td>Camino feliz y caminos alternativos</td>
+              <td>CP-06 es el feliz; CP-07 son los tres alternativos. Los defectos viven en los segundos</td>
+            </tr>
+            <tr>
+              <td>Valores límite</td>
+              <td>CP-08: el borde entre 2x1 y 2x2 es donde el descuento se vuelve cero</td>
+            </tr>
+            <tr>
+              <td>Prueba de regresión</td>
+              <td>Correr <code>mvn test</code> después de cada arreglo</td>
+            </tr>
+            <tr>
+              <td>Smoke test</td>
+              <td>El paso 0: si la API no responde, no tiene sentido probar nada más</td>
+            </tr>
+            <tr>
+              <td>Datos de prueba</td>
+              <td><code>seed/datos-de-ejemplo.sh</code>, que además pasa por las mismas reglas que la app: es imposible sembrar algo que el sistema rechazaría</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <p>
+          <strong>Lo que este proyecto no tiene, y conviene saberlo.</strong> No hay pruebas
+          automáticas de los DAO contra MySQL: el DDL está verificado y los tests cubren la
+          lógica, pero el código JDBC solo se ejercita a mano con los casos CP-01 a CP-08.
+          Tampoco hay pruebas automáticas de la interfaz. Las dos cosas existen —<em>test de
+          integración</em> con una base efímera, y herramientas de automatización de
+          navegador— y son el paso siguiente natural. Reconocer los huecos de la estrategia
+          de pruebas es parte de tenerla.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="estructura">
