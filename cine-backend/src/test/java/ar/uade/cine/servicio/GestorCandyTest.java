@@ -41,6 +41,7 @@ class GestorCandyTest {
     Path tempDir;
 
     private GestorCandy candy;
+    private GestorProductos carta;
     private ReservaDAO reservaDAO;
     private Path directorioTickets;
     private int pochoclos;
@@ -55,10 +56,11 @@ class GestorCandyTest {
                 .registrar("Andrei", "andrei@uade.edu.ar");
         directorioTickets = tempDir.resolve("tickets");
 
-        candy = new GestorCandy(new ProductoDAOMemoria(), new CompraCandyDAOMemoria(), clienteDAO,
-                reservaDAO, new GeneradorTicketCandyTxt(directorioTickets));
-        pochoclos = candy.agregarProducto("Pochoclos grandes", TipoProducto.POCHOCLOS, 4000).getId();
-        gaseosa = candy.agregarProducto("Gaseosa 500ml", TipoProducto.BEBIDA, 2500).getId();
+        carta = new GestorProductos(new ProductoDAOMemoria());
+        candy = new GestorCandy(new CompraCandyDAOMemoria(), clienteDAO, reservaDAO,
+                new GeneradorTicketCandyTxt(directorioTickets), carta);
+        pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, 4000).getId();
+        gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, 2500).getId();
     }
 
     private Map<Integer, Integer> pedido(int idA, int cantidadA) {
@@ -77,14 +79,14 @@ class GestorCandyTest {
     void elComboTieneQueSalirMenosQueSusComponentes() {
         // sueltos son 6500: a 6500 o más no es una promoción
         assertThrows(IllegalArgumentException.class,
-                () -> candy.armarCombo("Combo caro", 6500, pochoclosYGaseosa()));
+                () -> carta.armarCombo("Combo caro", 6500, pochoclosYGaseosa()));
         assertThrows(IllegalArgumentException.class,
-                () -> candy.armarCombo("Combo carísimo", 7000, pochoclosYGaseosa()));
+                () -> carta.armarCombo("Combo carísimo", 7000, pochoclosYGaseosa()));
     }
 
     @Test
     void armaElComboYGuardaQueTrae() {
-        Producto combo = candy.armarCombo("Combo pareja", 5500, pochoclosYGaseosa());
+        Producto combo = carta.armarCombo("Combo pareja", 5500, pochoclosYGaseosa());
 
         assertTrue(combo.esCombo());
         assertEquals(2, combo.getComponentes().size());
@@ -94,27 +96,27 @@ class GestorCandyTest {
     @Test
     void unComboNecesitaAlMenosDosProductos() {
         assertThrows(IllegalArgumentException.class,
-                () -> candy.armarCombo("Combo de uno", 3000, pedido(pochoclos, 1)));
+                () -> carta.armarCombo("Combo de uno", 3000, pedido(pochoclos, 1)));
     }
 
     @Test
     void unComboNoPuedeContenerOtroCombo() {
-        int combo = candy.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
 
         Map<Integer, Integer> anidado = pedido(combo, 1);
         anidado.put(gaseosa, 1);
         assertThrows(IllegalArgumentException.class,
-                () -> candy.armarCombo("Combo del combo", 6000, anidado));
+                () -> carta.armarCombo("Combo del combo", 6000, anidado));
     }
 
     @Test
     void elAhorroEsLaDiferenciaContraComprarloSuelto() {
-        int combo = candy.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
 
         CompraCandy compra = candy.vender(1, pedido(combo, 2), MedioPago.EFECTIVO, "");
 
         assertEquals(11000.0, compra.getTotal(), 0.001);
-        assertEquals(2000.0, candy.ahorroDe(compra), 0.001, "6500 sueltos contra 5500, por dos combos");
+        assertEquals(2000.0, carta.ahorroDe(compra), 0.001, "6500 sueltos contra 5500, por dos combos");
     }
 
     @Test
@@ -127,12 +129,12 @@ class GestorCandyTest {
 
     @Test
     void noSeVendeUnProductoQueSeSacoDeLaCarta() {
-        candy.cambiarDisponibilidad(gaseosa, false);
+        carta.cambiarDisponibilidad(gaseosa, false);
 
         assertThrows(IllegalArgumentException.class,
                 () -> candy.vender(1, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
-        assertEquals(1, candy.listarDisponibles().size());
-        assertEquals(2, candy.listar().size(), "sacarlo de la carta no lo borra");
+        assertEquals(1, carta.listarDisponibles().size());
+        assertEquals(2, carta.listar().size(), "sacarlo de la carta no lo borra");
     }
 
     @Test
@@ -151,7 +153,7 @@ class GestorCandyTest {
 
     @Test
     void emiteElTicketConElDetalleYElAhorro() throws IOException {
-        int combo = candy.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", 5500, pochoclosYGaseosa()).getId();
         CompraCandy compra = candy.vender(1, pedido(combo, 1), MedioPago.DEBITO, "AUT-77");
 
         Path ticket = directorioTickets.resolve("candy-" + compra.getId() + ".txt");
@@ -177,21 +179,21 @@ class GestorCandyTest {
     @Test
     void rechazaProductoRepetidoOPrecioInvalido() {
         assertThrows(IllegalArgumentException.class,
-                () -> candy.agregarProducto("pochoclos grandes", TipoProducto.POCHOCLOS, 4000));
+                () -> carta.agregar("pochoclos grandes", TipoProducto.POCHOCLOS, 4000));
         assertThrows(IllegalArgumentException.class,
-                () -> candy.agregarProducto("Agua", TipoProducto.BEBIDA, 0));
+                () -> carta.agregar("Agua", TipoProducto.BEBIDA, 0));
     }
 
     @Test
     void unComboNoSeDaDeAltaComoProductoSuelto() {
         assertThrows(IllegalArgumentException.class,
-                () -> candy.agregarProducto("Combo trucho", TipoProducto.COMBO, 5000));
+                () -> carta.agregar("Combo trucho", TipoProducto.COMBO, 5000));
     }
 
     /** En el mostrador se compra sin dar el nombre, como en cualquier kiosco. */
     @Test
     void seVendeSinClienteIdentificado() {
-        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, 3000);
 
         CompraCandy compra = candy.vender(null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
@@ -204,7 +206,7 @@ class GestorCandyTest {
     /** El "¿desea agregar pochoclos?" de después de comprar la entrada por la web. */
     @Test
     void laCompraDesdeUnaReservaHeredaSuCliente() {
-        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, 3000);
         Reserva reserva = new ReservaImpl(1, 1,
                 List.of(new Entrada(1, "A1", TipoTarifa.GENERAL, 5000)), LocalDateTime.now());
         reservaDAO.guardar(reserva);
@@ -218,7 +220,7 @@ class GestorCandyTest {
 
     @Test
     void noSeAgregaCandyAUnaReservaInexistente() {
-        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, 3000);
 
         assertThrows(IllegalArgumentException.class, () -> candy.venderParaReserva(999,
                 Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, ""));

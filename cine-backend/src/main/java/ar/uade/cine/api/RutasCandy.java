@@ -9,6 +9,7 @@ import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.servicio.GestorCandy;
+import ar.uade.cine.servicio.GestorProductos;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 
@@ -44,21 +45,21 @@ class RutasCandy {
     record PedidoDisponibilidad(Boolean disponible) {
     }
 
-    static void registrar(Javalin app, GestorCandy candy, VistasCandy vistas) {
+    static void registrar(Javalin app, GestorCandy candy, GestorProductos carta, VistasCandy vistas) {
 
         // La carta que ve el cliente: solo lo que está a la venta.
         app.get("/api/candy/productos", ctx -> {
             boolean todos = "true".equalsIgnoreCase(ctx.queryParam("todos"));
-            List<Producto> productos = todos ? candy.listar() : candy.listarDisponibles();
+            List<Producto> productos = todos ? carta.listar() : carta.listarDisponibles();
             ctx.json(productos.stream().map(vistas::producto).toList());
         });
 
         app.get("/api/candy/productos/{id}", ctx ->
-                ctx.json(vistas.producto(buscar(candy, Parseo.id(ctx)))));
+                ctx.json(vistas.producto(buscar(carta, Parseo.id(ctx)))));
 
         app.post("/api/candy/productos", ctx -> {
             PedidoProducto pedido = ctx.bodyAsClass(PedidoProducto.class);
-            Producto producto = candy.agregarProducto(pedido.nombre(),
+            Producto producto = carta.agregar(pedido.nombre(),
                     pedido.tipo() == null
                             ? null : Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
                     pedido.precio() == null ? 0 : pedido.precio());
@@ -69,7 +70,7 @@ class RutasCandy {
         // el gestor contra la lista de precios.
         app.post("/api/candy/combos", ctx -> {
             PedidoCombo pedido = ctx.bodyAsClass(PedidoCombo.class);
-            Producto combo = candy.armarCombo(pedido.nombre(),
+            Producto combo = carta.armarCombo(pedido.nombre(),
                     pedido.precio() == null ? 0 : pedido.precio(), pedido.componentes());
             ctx.status(HttpStatus.CREATED).json(vistas.producto(combo));
         });
@@ -78,13 +79,13 @@ class RutasCandy {
         // esos tickets apuntando a la nada. Se saca de la carta y se repone.
         app.put("/api/candy/productos/{id}/disponibilidad", ctx -> {
             int id = Parseo.id(ctx);
-            buscar(candy, id);
+            buscar(carta, id);
             Boolean disponible = ctx.bodyAsClass(PedidoDisponibilidad.class).disponible();
             if (disponible == null) {
                 throw new IllegalArgumentException("Falta decir si el producto queda disponible");
             }
-            candy.cambiarDisponibilidad(id, disponible);
-            ctx.json(vistas.producto(buscar(candy, id)));
+            carta.cambiarDisponibilidad(id, disponible);
+            ctx.json(vistas.producto(buscar(carta, id)));
         });
 
         app.post("/api/candy/compras", ctx -> {
@@ -99,7 +100,7 @@ class RutasCandy {
                     : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,
                             pedido.codigoAutorizacion());
 
-            ctx.status(HttpStatus.CREATED).json(vistas.compra(compra, candy.ahorroDe(compra)));
+            ctx.status(HttpStatus.CREATED).json(vistas.compra(compra, carta.ahorroDe(compra)));
         });
 
         // El arqueo del candy es la otra caja del cine, aparte de la boletería.
@@ -109,14 +110,14 @@ class RutasCandy {
             List<CompraCandy> compras = email != null && !email.isBlank()
                     ? candy.listarComprasDe(Integer.parseInt(email.trim()))
                     : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
-            ctx.json(compras.stream().map(c -> vistas.compra(c, candy.ahorroDe(c))).toList());
+            ctx.json(compras.stream().map(c -> vistas.compra(c, carta.ahorroDe(c))).toList());
         });
 
         app.get("/api/candy/arqueo", ctx -> {
             LocalDate fecha = Parseo.dia(ctx.queryParam("fecha"), "la fecha");
             ctx.json(new ArqueoCandyVista(fecha.toString(), candy.totalVendido(fecha),
                     candy.listarComprasDelDia(fecha).stream()
-                            .map(c -> vistas.compra(c, candy.ahorroDe(c)))
+                            .map(c -> vistas.compra(c, carta.ahorroDe(c)))
                             .toList()));
         });
     }
@@ -124,7 +125,7 @@ class RutasCandy {
     record ArqueoCandyVista(String fecha, double total, List<VistasCandy.CompraCandyVista> compras) {
     }
 
-    private static Producto buscar(GestorCandy candy, int id) {
-        return candy.buscar(id).orElseThrow(() -> new NoEncontrado("No existe el producto " + id));
+    private static Producto buscar(GestorProductos carta, int id) {
+        return carta.buscar(id).orElseThrow(() -> new NoEncontrado("No existe el producto " + id));
     }
 }

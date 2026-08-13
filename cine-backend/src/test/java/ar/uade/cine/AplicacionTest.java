@@ -73,7 +73,7 @@ class AplicacionTest {
     }
 
     @Test
-    void quedanArmadosLosDiezGestores() {
+    void quedanArmadosLosOnceGestores() {
         assertNotNull(aplicacion.getCartelera());
         assertNotNull(aplicacion.getSalas());
         assertNotNull(aplicacion.getFunciones());
@@ -85,6 +85,7 @@ class AplicacionTest {
         assertNotNull(aplicacion.getReservas());
         // El que faltaba en la puerta HTTP cuando el armado estaba duplicado.
         assertNotNull(aplicacion.getCandy());
+        assertNotNull(aplicacion.getProductos());
     }
 
     /**
@@ -126,8 +127,8 @@ class AplicacionTest {
         Reserva reserva = aplicacion.getReservas().reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL));
 
-        Producto pochoclos = aplicacion.getCandy()
-                .agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        Producto pochoclos = aplicacion.getProductos()
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, 3000);
         CompraCandy compra = aplicacion.getCandy().venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 

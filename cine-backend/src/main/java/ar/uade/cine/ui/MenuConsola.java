@@ -41,7 +41,8 @@ public class MenuConsola {
                 new MenuClientes(consola, aplicacion.getClientes()),
                 new MenuReservas(consola, aplicacion.getReservas(), aplicacion.getPagos(),
                         aplicacion.getFunciones(), aplicacion.getClientes(), mapa),
-                new MenuCandy(consola, aplicacion.getCandy(), aplicacion.getClientes()),
+                new MenuCandy(consola, aplicacion.getCandy(), aplicacion.getProductos(),
+                        aplicacion.getClientes()),
                 new MenuArqueo(consola, aplicacion.getPagos(), aplicacion.getCandy()),
                 new MenuEmpleados(consola, aplicacion.getEmpleados(), aplicacion.getReservas(),
                         aplicacion.getFunciones(), aplicacion.getCartelera(), aplicacion.getSalas())));

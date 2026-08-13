@@ -8,17 +8,20 @@ import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorClientes;
+import ar.uade.cine.servicio.GestorProductos;
 
 /** La barra del cine por consola: carta, combos y ventas de mostrador. */
 class MenuCandy implements Menu {
 
     private final Consola consola;
     private final GestorCandy candy;
+    private final GestorProductos carta;
     private final GestorClientes clientes;
 
-    MenuCandy(Consola consola, GestorCandy candy, GestorClientes clientes) {
+    MenuCandy(Consola consola, GestorCandy candy, GestorProductos carta, GestorClientes clientes) {
         this.consola = consola;
         this.candy = candy;
+        this.carta = carta;
         this.clientes = clientes;
     }
 
@@ -34,16 +37,16 @@ class MenuCandy implements Menu {
         consola.mostrar("5. Sacar de la carta  6. Reponer  7. Ver compras de un cliente");
         consola.pedir("Opción: ");
         switch (consola.leer()) {
-            case "1" -> consola.imprimir(candy.listar());
+            case "1" -> consola.imprimir(carta.listar());
             case "2" -> agregarProducto();
             case "3" -> armarCombo();
             case "4" -> vender();
             case "5" -> {
-                candy.cambiarDisponibilidad(consola.leerEntero("Id de producto: "), false);
+                carta.cambiarDisponibilidad(consola.leerEntero("Id de producto: "), false);
                 consola.mostrar("Producto fuera de la carta");
             }
             case "6" -> {
-                candy.cambiarDisponibilidad(consola.leerEntero("Id de producto: "), true);
+                carta.cambiarDisponibilidad(consola.leerEntero("Id de producto: "), true);
                 consola.mostrar("Producto de nuevo en la carta");
             }
             case "7" -> consola.imprimir(
@@ -56,20 +59,20 @@ class MenuCandy implements Menu {
         String nombre = consola.leerTexto("Nombre: ");
         TipoProducto tipo = consola.elegir("Tipo", TipoProducto.POCHOCLOS, TipoProducto.BEBIDA,
                 TipoProducto.GOLOSINA);
-        candy.agregarProducto(nombre, tipo, consola.leerDecimal("Precio: "));
+        carta.agregar(nombre, tipo, consola.leerDecimal("Precio: "));
         consola.mostrar("Producto agregado");
     }
 
     private void armarCombo() {
-        consola.imprimir(candy.listar());
+        consola.imprimir(carta.listar());
         String nombre = consola.leerTexto("Nombre del combo: ");
         Map<Integer, Integer> componentes = pedirCantidades("Qué trae (id:cantidad, ej. 1:1,2:1): ");
-        candy.armarCombo(nombre, consola.leerDecimal("Precio promocional: "), componentes);
+        carta.armarCombo(nombre, consola.leerDecimal("Precio promocional: "), componentes);
         consola.mostrar("Combo armado");
     }
 
     private void vender() {
-        consola.imprimir(candy.listarDisponibles());
+        consola.imprimir(carta.listarDisponibles());
         consola.imprimir(clientes.listar());
         int clienteId = consola.leerEntero("Id de cliente: ");
         Map<Integer, Integer> pedido = pedirCantidades("Productos (id:cantidad, ej. 1:2,3:1): ");
@@ -79,7 +82,7 @@ class MenuCandy implements Menu {
                 PedidoDeAutorizacion.pedir(consola, medio));
         consola.mostrar(String.format("Compra registrada. Total: $ %.2f", compra.getTotal()));
 
-        double ahorro = candy.ahorroDe(compra);
+        double ahorro = carta.ahorroDe(compra);
         if (ahorro > 0) {
             consola.mostrar(String.format("Se ahorró $ %.2f con los combos", ahorro));
         }

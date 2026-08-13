@@ -35,6 +35,7 @@ import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorPagos;
+import ar.uade.cine.servicio.GestorProductos;
 import ar.uade.cine.servicio.GestorProgramaciones;
 import ar.uade.cine.servicio.GestorPromociones;
 import ar.uade.cine.servicio.GestorReservas;
@@ -65,6 +66,7 @@ public class Aplicacion {
     private final GestorPromociones promociones;
     private final GestorPagos pagos;
     private final GestorReservas reservas;
+    private final GestorProductos productos;
     private final GestorCandy candy;
     private final CalculadoraPrecio calculadoraPrecio;
 
@@ -113,8 +115,9 @@ public class Aplicacion {
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
                 peliculaDAO, generadorTicket, calculadoraPrecio);
-        candy = new GestorCandy(productoDAO, compraCandyDAO, clienteDAO, reservaDAO,
-                generadorTicketCandy);
+        productos = new GestorProductos(productoDAO);
+        candy = new GestorCandy(compraCandyDAO, clienteDAO, reservaDAO, generadorTicketCandy,
+                productos);
     }
 
     public GestorCartelera getCartelera() {
@@ -153,6 +156,12 @@ public class Aplicacion {
         return reservas;
     }
 
+    /** La carta del candy: el ABM de productos y combos. */
+    public GestorProductos getProductos() {
+        return productos;
+    }
+
+    /** Las ventas del candy, que le preguntan los precios a {@link #getProductos()}. */
     public GestorCandy getCandy() {
         return candy;
     }
