@@ -471,11 +471,16 @@ export function obtenerReservasDe(email) {
     .map(conDatosDeLaReserva));
 }
 
-/** R6: cancelar libera las butacas de esa función. */
+/**
+ * R6: cancelar libera las butacas de esa función.
+ * R13: solo se cancela una reserva sin cobrar; una pagada necesita una devolución.
+ */
 export function cancelarReserva(id) {
   const reserva = datos.reservas.find((r) => r.id === Number(id));
   if (!reserva) return fallar(`No existe la reserva ${id}`);
-  if (reserva.estado === "CANCELADA") return fallar("La reserva ya está cancelada");
+  if (reserva.estado !== "RESERVADA") {
+    return fallar(`La reserva está ${reserva.estado}, solo se puede cancelar una reserva sin cobrar`);
+  }
   reserva.estado = "CANCELADA";
   return responder(reserva);
 }

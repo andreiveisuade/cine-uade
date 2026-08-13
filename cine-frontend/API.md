@@ -135,7 +135,7 @@ Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el e
 | POST | `/api/funciones` | R3 superposición, R8 3D en sala que no soporta |
 | DELETE | `/api/funciones/{id}` | 400 si tiene reservas activas |
 | GET | `/api/reservas` | Con `funcion`, `pelicula`, `sala`, `cliente`, `total` y `pago` (o `null`) |
-| POST | `/api/reservas/{id}/cancelacion` | R6: libera las butacas |
+| POST | `/api/reservas/{id}/cancelacion` | R6: libera las butacas. R13: solo si está `RESERVADA` |
 
 ### `POST /api/reservas/{id}/pago`
 ```json
