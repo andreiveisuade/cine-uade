@@ -16,7 +16,7 @@ package ui {
 }
 
 package api {
-  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasReservas\nRutasSalas, RutasSesion, RutasPromociones\nRutasCandy" as RutasHttp
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy" as RutasHttp
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
   class Parseo
   class Fechas
@@ -27,6 +27,7 @@ package servicio {
   class GestorCartelera
   class GestorSalas
   class GestorFunciones
+  class GestorProgramaciones
   class GestorClientes
   class GestorReservas
   class GestorPagos
@@ -61,6 +62,9 @@ package dominio {
   package funciones as dom_funciones {
     class "Funcion + FuncionImpl\nVersion, Proyeccion" as DomFunciones
   }
+  package programaciones as dom_programaciones {
+    class "Programacion\n+ ProgramacionImpl" as DomProgramaciones
+  }
   package ventas as dom_ventas {
     class "Reserva, Pago + Impl\nEntrada, EstadoReserva, MedioPago" as DomVentas
   }
@@ -80,6 +84,7 @@ package persistencia {
   interface SalaDAO
   interface AsientoDAO
   interface FuncionDAO
+  interface ProgramacionDAO
   interface ClienteDAO
   interface ReservaDAO
   interface PagoDAO
@@ -90,7 +95,7 @@ package persistencia {
   class PersistenciaException
 
   package mysql {
-    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL\nConexionMySQL" as DaosMySQL
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nConexionMySQL" as DaosMySQL
   }
   package memoria {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
@@ -120,6 +125,15 @@ GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
 GestorSalas -down-> AsientoDAO
 GestorFunciones -down-> FuncionDAO
+
+' La grilla se apoya en GestorFunciones y no reescribe R3 ni R8: serian dos
+' definiciones de cuando dos funciones se pisan. Es la segunda dependencia
+' entre gestores, pero la unica que sigue siendo contra la clase concreta:
+' GestorPagos ya pasa por PoliticaPromociones. Extraerle un contrato a lo que
+' la grilla necesita —validar y detectar superposicion— es el mismo
+' movimiento, y queda pendiente.
+GestorProgramaciones -right-> GestorFunciones
+GestorProgramaciones -down-> ProgramacionDAO
 GestorClientes -down-> ClienteDAO
 GestorReservas -down-> ReservaDAO
 GestorReservas -down-> GeneradorTicket
@@ -146,7 +160,7 @@ legend bottom
   |  | JSON, las seis Vistas* arman las respuestas y Parseo lee los parametros. Ninguna regla vive |
   |  | en estas dos capas. Main y ServidorApi (no dibujadas) solo eligen que interfaz levantar. |
   | Aplicacion | El unico lugar del sistema donde se nombra una implementacion concreta: arma los |
-  |  | nueve gestores y decide en que medio se guarda cada cosa. Las dos puertas comparten ese |
+  |  | diez gestores y decide en que medio se guarda cada cosa. Las dos puertas comparten ese |
   |  | armado, y por eso son la misma aplicacion y no dos parecidas. |
   | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
   |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
