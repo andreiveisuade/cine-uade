@@ -108,15 +108,7 @@ public class GestorReservas {
         return reserva;
     }
 
-    public void pagar(int reservaId) {
-        Reserva reserva = buscarOFallar(reservaId);
-        if (reserva.getEstado() != EstadoReserva.RESERVADA) {
-            throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede pagar");
-        }
-        reserva.setEstado(EstadoReserva.PAGADA);
-        reservaDAO.actualizar(reserva);
-    }
-
+    /** Cobrar es responsabilidad de GestorPagos: acá solo se reserva y se cancela. */
     public void cancelar(int reservaId) {
         Reserva reserva = buscarOFallar(reservaId);
         if (reserva.getEstado() == EstadoReserva.CANCELADA) {

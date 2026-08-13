@@ -87,3 +87,15 @@ CREATE TABLE IF NOT EXISTS entrada (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id) ON DELETE CASCADE,
     FOREIGN KEY (asiento_id) REFERENCES asiento(id)
 );
+
+-- Comprobante de cobro. Una reserva tiene a lo sumo un pago: el UNIQUE lo garantiza
+-- desde la base, no solo desde el codigo.
+CREATE TABLE IF NOT EXISTS pago (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    reserva_id INT NOT NULL UNIQUE,
+    monto DECIMAL(10,2) NOT NULL,
+    medio VARCHAR(15) NOT NULL,
+    fecha DATETIME NOT NULL,
+    codigo_autorizacion VARCHAR(50) NOT NULL DEFAULT '',
+    FOREIGN KEY (reserva_id) REFERENCES reserva(id)
+);

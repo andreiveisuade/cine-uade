@@ -175,30 +175,30 @@ note bottom of Funcion
   la funcion que se ESTA proyectando.
 end note
 
-package "Pendiente de implementar" <<Cloud>> {
-  interface Pago {
-    +getReservaId(): int
-    +getMedio(): MedioPago
-    +getMonto(): double
-    +getFecha(): LocalDateTime
-  }
-
-  enum MedioPago {
-    EFECTIVO
-    DEBITO
-    CREDITO
-    QR
-  }
+interface Pago {
+  +getReservaId(): int
+  +getMonto(): double
+  +getMedio(): MedioPago
+  +getFecha(): LocalDateTime
+  +getCodigoAutorizacion(): String
 }
 
-Pago "1" --> "1" Reserva
+enum MedioPago {
+  EFECTIVO
+  DEBITO
+  CREDITO
+  QR
+  TRANSFERENCIA
+}
+
+Pago "0..1" --> "1" Reserva
 Pago "1" -- "1" MedioPago
 Pelicula "*" -- "1" Clasificacion
 
 note bottom of Pago
-  Modelado, sin implementar todavia.
-  Hoy PAGADA es solo un estado: no queda
-  registro de cuanto ni como se cobro.
+  El monto no se recibe: sale del total de
+  la reserva, asi nadie cobra otro importe.
+  Una reserva tiene a lo sumo un pago.
 end note
 
 note bottom of Clasificacion

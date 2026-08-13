@@ -417,6 +417,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
+        <li><a href="#pagos" data-target="pagos">Pagos</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
 
@@ -462,7 +463,7 @@ body.lightbox-locked { overflow: hidden; }
         <li>Cargar películas (título, duración, géneros, clasificación por edad y datos de catálogo) y salas con su distribución de butacas.</li>
         <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
         <li>Registrar clientes.</li>
-        <li>Reservar butacas concretas de una función y luego pagarlas o cancelarlas.</li>
+        <li>Reservar butacas concretas de una función, cobrarlas con distintos medios de pago o cancelarlas.</li>
         <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
       </ul>
     </section>
@@ -478,12 +479,13 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R2</td><td>Duración de película y butacas de cada fila mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R4</td><td>No se puede reservar una butaca que ya está tomada en esa función</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R5</td><td>Solo se puede pagar una reserva en estado RESERVADA</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R5</td><td>Solo se cobra una reserva en estado RESERVADA, y una sola vez</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R7</td><td>Una película debe tener al menos un género</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R8</td><td>No se puede programar una función 3D en una sala que no lo soporta</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R10</td><td>Toda película tiene clasificación por edad</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R11</td><td>Los medios electrónicos exigen código de autorización</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -896,6 +898,66 @@ new MenuConsola(gestor).iniciar();</code></pre>
         <code>GestorReservas</code> recibe seis dependencias, más que ningún otro gestor. No es capricho: el cupo
         sale de la capacidad de la sala de la función, y el ticket lleva datos de película, sala y cliente.
       </p>
+    </section>
+
+    <section class="doc-section" id="pagos">
+      <h2>Pagos</h2>
+      <p>
+        Antes, <code>PAGADA</code> era solo un estado del enum: el sistema no sabía cuánto había cobrado ni
+        con qué medio. <code>Pago</code> es el comprobante de ese cobro.
+      </p>
+
+      <h3>Por qué es una entidad y no un campo de la reserva</h3>
+      <p>
+        Se consulta por sí mismo. Para un arqueo hay que poder preguntar "cuánto entró hoy" sin recorrer todas
+        las reservas buscando cuáles están pagadas. Tiene identidad, fecha propia y datos que no le pertenecen
+        a la reserva.
+      </p>
+      <pre><code>Pago
+  reservaId, monto, medio, fecha, codigoAutorizacion</code></pre>
+
+      <h3>El monto no se recibe por parámetro</h3>
+      <p>
+        <code>cobrar(reservaId, medio, codigo)</code> — no hay un argumento <code>monto</code>. Sale de
+        <code>reserva.getTotal()</code>, que a su vez suma lo que se congeló en cada entrada al reservar.
+        Si el monto fuera input, alguien podría cobrar $100 por una reserva de $16.000 y el sistema lo
+        aceptaría sin chistar.
+      </p>
+
+      <h3>El medio decide si hace falta autorización</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Medio</th><th>Código de autorización</th></tr></thead>
+          <tbody>
+            <tr><td><code>EFECTIVO</code></td><td>no</td></tr>
+            <tr><td><code>DEBITO</code>, <code>CREDITO</code>, <code>QR</code>, <code>TRANSFERENCIA</code></td><td>sí (R11)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El enum <code>MedioPago</code> lleva ese dato: <code>requiereAutorizacion()</code>. La regla no vive en
+        un <code>if</code> con una lista de medios que hay que actualizar cada vez que se agrega uno — agregar
+        <code>BILLETERA_VIRTUAL</code> es sumar una constante y su flag.
+      </p>
+
+      <h3>Gestor propio</h3>
+      <p>
+        Cobrar no vive en <code>GestorReservas</code>: hay un <code>GestorPagos</code> con
+        <code>PagoDAO</code> y <code>ReservaDAO</code>. Reservar butacas y cobrar son circuitos distintos, y
+        <code>GestorReservas</code> ya tenía siete dependencias.
+      </p>
+      <pre><code>Reserva  →  RESERVADA        (reservar butacas)
+         →  PAGADA          (GestorPagos.cobrar, deja el comprobante)
+         →  CANCELADA       (libera las butacas)</code></pre>
+
+      <div class="callout">
+        <p>
+          <strong>Lo que este modelo todavía no resuelve:</strong> cancelar una reserva ya pagada no genera
+          ningún reembolso — el pago queda registrado y la plata, en teoría, cobrada. Tampoco hay pagos
+          parciales ni pago con dos medios a la vez (el <code>UNIQUE</code> sobre <code>reserva_id</code> lo
+          impide a propósito), ni pagos rechazados: acá un pago registrado es un pago exitoso.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="base-de-datos">

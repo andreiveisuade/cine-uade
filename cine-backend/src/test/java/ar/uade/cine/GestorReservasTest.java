@@ -21,7 +21,6 @@ import ar.uade.cine.interfaces.PeliculaDAO;
 import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.interfaces.ReservaDAO;
 import ar.uade.cine.interfaces.SalaDAO;
-import ar.uade.cine.modelo.EstadoReserva;
 import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.Genero;
 import ar.uade.cine.modelo.Idioma;
@@ -108,14 +107,6 @@ class GestorReservasTest {
 
         assertEquals(10, reservas.lugaresLibres(1));
         assertTrue(reservas.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A1")));
-    }
-
-    @Test
-    void noSePuedePagarDosVeces() {
-        Reserva reserva = reservas.reservar(1, 1, List.of("A4"));
-        reservas.pagar(reserva.getId());
-        assertEquals(EstadoReserva.PAGADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
-        assertThrows(IllegalArgumentException.class, () -> reservas.pagar(reserva.getId()));
     }
 
     @Test

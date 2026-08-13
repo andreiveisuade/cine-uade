@@ -2,6 +2,7 @@
 // confirmación y ticket. Sin login.
 
 import * as api from "./api.js";
+import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "./butacas.js";
 import { iniciarRouter, ir } from "./router.js";
 import {
   avisar, chip, dia, duracion, escapar, etiqueta, fechaHora,
@@ -86,46 +87,22 @@ async function vistaPelicula(contenedor, id) {
 /* ------------------------------------------------------- mapa de butacas */
 
 // El fondo dice el estado; el borde y el símbolo, el tipo de butaca.
-function clasesButaca(asiento, elegida) {
+function pintarParaComprar(asiento, elegidas) {
+  const titulo = `${asiento.codigo} · ${etiqueta(asiento.tipo)} · ${precio(asiento.precio)}`;
   if (asiento.estado === "FUERA_DE_SERVICIO") {
-    return "bg-slate-300 text-slate-500 line-through cursor-not-allowed";
+    return { clases: "bg-slate-300 text-slate-500 line-through cursor-not-allowed",
+             deshabilitado: true, titulo: `${asiento.codigo} · fuera de servicio` };
   }
-  if (asiento.ocupado) return "bg-slate-600 text-white cursor-not-allowed";
-  if (elegida) return "bg-emerald-600 text-white border border-emerald-800";
-  const porTipo = {
-    VIP: "border-amber-500 bg-amber-50 text-amber-900",
-    PAREJA: "border-pink-500 bg-pink-50 text-pink-900",
-    ACCESIBLE: "border-sky-500 bg-sky-50 text-sky-900",
-    ESTANDAR: "border-slate-400 bg-white text-slate-700",
-  };
-  return `border ${porTipo[asiento.tipo]} hover:bg-emerald-100`;
-}
-
-const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
-
-function dibujarSala(funcion, elegidas) {
-  const filas = [];
-  for (let fila = 1; fila <= funcion.sala.filas; fila++) {
-    const deLaFila = funcion.asientos.filter((a) => a.fila === fila);
-    const letra = deLaFila[0]?.codigo.charAt(0) || "";
-    const butacas = deLaFila.map((a) => {
-      const elegida = elegidas.includes(a.codigo);
-      const bloqueada = a.ocupado || a.estado === "FUERA_DE_SERVICIO";
-      const ancho = a.tipo === "PAREJA" ? "w-12" : "w-7";
-      return `
-        <button type="button" data-codigo="${a.codigo}" ${bloqueada ? "disabled" : ""}
-          title="${a.codigo} · ${etiqueta(a.tipo)} · ${precio(a.precio)}"
-          class="h-7 ${ancho} shrink-0 rounded text-[10px] font-medium ${clasesButaca(a, elegida)}">
-          ${a.numero}${SIMBOLO[a.tipo]}
-        </button>`;
-    }).join("");
-    filas.push(`
-      <div class="flex items-center justify-center gap-1">
-        <span class="w-4 shrink-0 text-right text-xs font-semibold text-slate-500">${letra}</span>
-        ${butacas}
-      </div>`);
+  if (asiento.ocupado) {
+    return { clases: "bg-slate-600 text-white cursor-not-allowed",
+             deshabilitado: true, titulo: `${asiento.codigo} · ocupada` };
   }
-  return filas.join("");
+  if (elegidas.includes(asiento.codigo)) {
+    return { clases: "bg-emerald-600 text-white border border-emerald-800",
+             deshabilitado: false, titulo };
+  }
+  return { clases: `border ${CLASES_TIPO[asiento.tipo]} hover:bg-emerald-100`,
+           deshabilitado: false, titulo };
 }
 
 async function vistaFuncion(contenedor, id) {
@@ -151,21 +128,19 @@ async function vistaFuncion(contenedor, id) {
     </p>
 
     <div class="mt-5 overflow-x-auto rounded border border-slate-300 bg-white p-4">
-      <div class="mb-4 rounded bg-slate-800 py-1 text-center text-xs tracking-[0.3em] text-white">
-        PANTALLA
-      </div>
+      ${pantalla()}
       <div id="mapa" class="flex flex-col gap-1"></div>
     </div>
 
-    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-      <span><span class="mr-1 inline-block h-3 w-3 rounded border border-slate-400 bg-white align-middle"></span>libre</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded bg-emerald-600 align-middle"></span>elegida</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded bg-slate-600 align-middle"></span>ocupada</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded bg-slate-300 align-middle"></span>fuera de servicio</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded border border-amber-500 bg-amber-50 align-middle"></span>* VIP</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded border border-pink-500 bg-pink-50 align-middle"></span>&amp; pareja</span>
-      <span><span class="mr-1 inline-block h-3 w-3 rounded border border-sky-500 bg-sky-50 align-middle"></span>+ accesible</span>
-    </div>
+    ${referencia([
+      ["border border-slate-400 bg-white", "libre"],
+      ["bg-emerald-600", "elegida"],
+      ["bg-slate-600", "ocupada"],
+      ["bg-slate-300", "fuera de servicio"],
+      [`border ${CLASES_TIPO.VIP}`, "* VIP"],
+      [`border ${CLASES_TIPO.PAREJA}`, "&amp; pareja"],
+      [`border ${CLASES_TIPO.ACCESIBLE}`, "+ accesible"],
+    ])}
 
     <div id="resumen" class="sticky bottom-0 mt-4 rounded border border-slate-300 bg-white p-3"></div>
   `;
@@ -174,7 +149,8 @@ async function vistaFuncion(contenedor, id) {
   const resumen = contenedor.querySelector("#resumen");
 
   function refrescar() {
-    mapa.innerHTML = dibujarSala(funcion, seleccion.codigos);
+    mapa.innerHTML = dibujarMapa(funcion.sala, funcion.asientos,
+      (a) => pintarParaComprar(a, seleccion.codigos));
     const elegidas = funcion.asientos.filter((a) => seleccion.codigos.includes(a.codigo));
     const total = elegidas.reduce((suma, a) => suma + a.precio, 0);
     resumen.innerHTML = `

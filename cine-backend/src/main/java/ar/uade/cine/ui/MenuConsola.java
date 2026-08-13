@@ -1,5 +1,6 @@
 package ar.uade.cine.ui;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -10,11 +11,13 @@ import java.util.Scanner;
 import ar.uade.cine.interfaces.AdministradorCine;
 import ar.uade.cine.interfaces.Asiento;
 import ar.uade.cine.interfaces.Funcion;
+import ar.uade.cine.interfaces.Pago;
 import ar.uade.cine.interfaces.Pelicula;
 import ar.uade.cine.interfaces.Reserva;
 import ar.uade.cine.modelo.Clasificacion;
 import ar.uade.cine.modelo.EstadoAsiento;
 import ar.uade.cine.modelo.Genero;
+import ar.uade.cine.modelo.MedioPago;
 import ar.uade.cine.modelo.Idioma;
 import ar.uade.cine.modelo.Proyeccion;
 import ar.uade.cine.modelo.TipoSala;
@@ -22,6 +25,7 @@ import ar.uade.cine.servicio.GestorAdministradores;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
+import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
 import ar.uade.cine.servicio.SalasDeEjemplo;
@@ -40,17 +44,19 @@ public class MenuConsola {
     private final GestorClientes clientes;
     private final GestorReservas reservas;
     private final GestorAdministradores administradores;
+    private final GestorPagos pagos;
     private final Scanner scanner = new Scanner(System.in);
 
     public MenuConsola(GestorCartelera cartelera, GestorSalas salas, GestorFunciones funciones,
                        GestorClientes clientes, GestorReservas reservas,
-                       GestorAdministradores administradores) {
+                       GestorAdministradores administradores, GestorPagos pagos) {
         this.cartelera = cartelera;
         this.salas = salas;
         this.funciones = funciones;
         this.clientes = clientes;
         this.reservas = reservas;
         this.administradores = administradores;
+        this.pagos = pagos;
     }
 
     public void iniciar() {
@@ -320,7 +326,8 @@ public class MenuConsola {
 
     private void menuReservas() {
         System.out.println("\n-- Reservas --");
-        System.out.println("1. Listar  2. Reservar  3. Pagar  4. Cancelar  5. Ver por cliente  6. Mapa de butacas");
+        System.out.println("1. Listar  2. Reservar  3. Cobrar  4. Cancelar  5. Ver por cliente  6. Mapa de butacas");
+        System.out.println("7. Ver pago de una reserva  8. Arqueo del día");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(reservas.listar());
@@ -337,8 +344,15 @@ public class MenuConsola {
                 System.out.println("Ticket en tickets/ticket-" + reserva.getId() + ".txt");
             }
             case "3" -> {
-                reservas.pagar(leerEntero("Id de reserva: "));
-                System.out.println("Reserva pagada");
+                int reservaId = leerEntero("Id de reserva: ");
+                MedioPago medio = elegirMedioPago();
+                String codigo = "";
+                if (medio.requiereAutorizacion()) {
+                    System.out.print("Código de autorización: ");
+                    codigo = leer();
+                }
+                Pago pago = pagos.cobrar(reservaId, medio, codigo);
+                System.out.printf("Cobrado $ %.2f con %s%n", pago.getMonto(), pago.getMedio());
             }
             case "4" -> {
                 reservas.cancelar(leerEntero("Id de reserva: "));
@@ -346,8 +360,31 @@ public class MenuConsola {
             }
             case "5" -> imprimir(reservas.listarPorCliente(leerEntero("Id de cliente: ")));
             case "6" -> mostrarMapaDeFuncion(leerEntero("Id de función: "));
+            case "7" -> {
+                int reservaId = leerEntero("Id de reserva: ");
+                pagos.buscarPorReserva(reservaId).ifPresentOrElse(
+                        System.out::println,
+                        () -> System.out.println("La reserva " + reservaId + " todavía no se cobró"));
+            }
+            case "8" -> {
+                LocalDate dia = LocalDate.now();
+                imprimir(pagos.listarDelDia(dia));
+                System.out.printf("Total cobrado el %s: $ %.2f%n", dia, pagos.totalCobrado(dia));
+            }
             default -> System.out.println("Opción inválida");
         }
+    }
+
+    private MedioPago elegirMedioPago() {
+        MedioPago[] opciones = MedioPago.values();
+        for (int i = 0; i < opciones.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + opciones[i]);
+        }
+        int numero = leerEntero("Medio de pago: ");
+        if (numero < 1 || numero > opciones.length) {
+            throw new IllegalArgumentException("Medio de pago inexistente: " + numero);
+        }
+        return opciones[numero - 1];
     }
 
     // ---------- administradores ----------

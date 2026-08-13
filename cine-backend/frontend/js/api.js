@@ -61,8 +61,18 @@ export function obtenerGeneros() {
   return responder(datos.GENEROS);
 }
 
+/** Cada tipo con su multiplicador y si puede proyectar en 3D, para anticipar R8. */
 export function obtenerTiposSala() {
-  return responder(Object.keys(datos.TIPOS_SALA));
+  return responder(Object.entries(datos.TIPOS_SALA)
+    .map(([nombre, tipo]) => ({ nombre, ...tipo })));
+}
+
+export function obtenerIdiomas() {
+  return responder(datos.IDIOMAS);
+}
+
+export function obtenerProyecciones() {
+  return responder(datos.PROYECCIONES);
 }
 
 /* ------------------------------------------------------------------ cliente */
