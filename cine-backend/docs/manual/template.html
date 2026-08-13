@@ -2973,6 +2973,35 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
         correcta y aun así mostrarle datos equivocados a quien lo usa.
       </p>
 
+      <h3>El segundo defecto: cuando el backend tapa al frontend</h3>
+      <div class="callout">
+        <p>
+          <strong>Síntoma:</strong> ninguno. La pantalla se comportaba bien.
+          <br><strong>Qué pasaba en realidad:</strong> un solo clic en «Cancelar», en
+          <em>Mis reservas</em>, disparaba <strong>cuatro</strong> llamadas a la API.
+          <br><strong>Causa:</strong> el listener se enganchaba al contenedor, pero
+          <code>innerHTML</code> reemplaza a los hijos y no al contenedor: cada visita a la
+          vista dejaba otro listener sobre el mismo elemento vivo.
+          <br><strong>Corrección:</strong> el listener va en cada botón, que sí muere con el
+          <code>innerHTML</code>. Verificado después: un clic, una llamada.
+        </p>
+      </div>
+      <p>
+        Este caso es más interesante que el del distintivo, porque acá <strong>ni siquiera
+        mirar la pantalla alcanzaba</strong>. R13 rechaza cancelar una reserva que ya está
+        cancelada, así que las cuatro llamadas terminaban en una sola reserva
+        <code>CANCELADA</code> y ningún dato quedaba mal. Una regla de negocio bien puesta
+        del lado del servidor estaba absorbiendo un defecto del cliente.
+      </p>
+      <p>
+        Apareció recién al <em>medir los pedidos</em> —espiando <code>window.fetch</code>—,
+        que es un nivel de observación que ni los tests unitarios ni la prueba de aceptación
+        a ojo cubren. Vale como advertencia en las dos direcciones: un backend defensivo
+        protege los datos, pero también puede esconder cuánto trabajo de más está haciendo el
+        sistema. Si esa misma acumulación hubiera estado en una operación que <em>no</em> es
+        idempotente, el destrozo habría sido real.
+      </p>
+
       <h3>Qué quedó sin cubrir</h3>
       <p>
         Los mismos huecos que ya estaban anotados, ahora confirmados por la corrida: no hay
