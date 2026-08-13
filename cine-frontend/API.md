@@ -25,6 +25,7 @@ red interna de Docker, así que no hace falta CORS.
 | GET | `/api/generos` | `["ACCION", "COMEDIA", …]` |
 | GET | `/api/clasificaciones` | `[{"nombre":"ATP","edadMinima":0}, …]` |
 | GET | `/api/tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true}, …]` |
+| | | Valores: `DOS_D`, `TRES_D`, `IMAX`, `CUATRO_D`. No hay tipo `VIP`: lo premium lo dice el tipo de butaca |
 | GET | `/api/idiomas` | `["DOBLADA","SUBTITULADA"]` |
 | GET | `/api/proyecciones` | `["DOS_D","TRES_D"]` |
 | GET | `/api/medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
@@ -71,7 +72,7 @@ una con su precio ya calculado y si está ocupada **en esa función**:
 { "id": 1, "…": "…",
   "asientos": [
     { "id": 5, "salaId": 1, "fila": 1, "numero": 5, "codigo": "A5",
-      "tipo": "ESTANDAR", "estado": "DISPONIBLE", "ocupado": false, "precio": 8000 }],
+      "tipo": "ESTANDAR", "estado": "HABILITADO", "ocupado": false, "precio": 8000 }],
   "libres": 50 }
 ```
 
@@ -110,9 +111,9 @@ y `total`.
 | DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas |
 | GET | `/api/salas` | |
 | GET | `/api/salas/{id}` | Con `asientos` |
-| POST | `/api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosAccesibles}` |
+| POST | `/api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles}` |
 | DELETE | `/api/salas/{id}` | 400 si tiene funciones |
-| PUT | `/api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `DISPONIBLE` |
+| PUT | `/api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` |
 | GET | `/api/funciones` | Todas, con `pelicula` y `sala` embebidas |
 | POST | `/api/funciones` | R3 superposición, R8 3D en sala que no soporta |
 | DELETE | `/api/funciones/{id}` | 400 si tiene reservas activas |

@@ -349,10 +349,14 @@ async function vistaSalas(contenedor, id) {
             <span class="text-xs text-slate-500">Una fila por número. La primera es la A.</span>
           </label>
           <label class="block text-sm">
-            <span class="text-slate-600">Butacas premium</span>
+            <span class="text-slate-600">Butacas VIP</span>
             <input name="vip" placeholder="I1,I2,J1"
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono" />
-            <span class="text-xs text-slate-500">VIP, o de pareja si la sala es VIP.</span>
+          </label>
+          <label class="block text-sm">
+            <span class="text-slate-600">Butacas de pareja</span>
+            <input name="pareja" placeholder="A1,A2"
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono" />
           </label>
           <label class="block text-sm">
             <span class="text-slate-600">Butacas accesibles</span>
@@ -386,6 +390,7 @@ async function vistaSalas(contenedor, id) {
         tipo: datos.get("tipo"),
         butacasPorFila: parsearNumeros(datos.get("distribucion")),
         codigosVip: parsearCodigos(datos.get("vip")),
+        codigosPareja: parsearCodigos(datos.get("pareja")),
         codigosAccesibles: parsearCodigos(datos.get("accesibles")),
       });
       avisar(`${sala.nombre} creada con ${sala.capacidadSala} butacas`);
@@ -462,7 +467,7 @@ async function vistaMapaSala(contenedor, id) {
     const boton = evento.target.closest("button[data-codigo]");
     if (!boton) return;
     const asiento = sala.asientos.find((a) => a.codigo === boton.dataset.codigo);
-    const nuevo = asiento.estado === "FUERA_DE_SERVICIO" ? "DISPONIBLE" : "FUERA_DE_SERVICIO";
+    const nuevo = asiento.estado === "FUERA_DE_SERVICIO" ? "HABILITADO" : "FUERA_DE_SERVICIO";
     try {
       await api.cambiarEstadoAsiento(sala.id, asiento.codigo, nuevo);
       avisar(`${asiento.codigo}: ${etiqueta(nuevo).toLowerCase()}`);

@@ -90,8 +90,10 @@ export const eliminarPelicula = (id) => borrar(`/peliculas/${id}`);
 export const obtenerSalas = () => get("/salas");
 export const obtenerSala = (id) => get(`/salas/${id}`);
 
-export const crearSala = ({ nombre, tipo, butacasPorFila, codigosVip, codigosAccesibles }) =>
-  post("/salas", { nombre, tipo, butacasPorFila, codigosVip, codigosAccesibles });
+export const crearSala = ({ nombre, tipo, butacasPorFila,
+                            codigosVip, codigosPareja, codigosAccesibles }) =>
+  post("/salas", { nombre, tipo, butacasPorFila,
+                   codigosVip, codigosPareja, codigosAccesibles });
 
 export const eliminarSala = (id) => borrar(`/salas/${id}`);
 

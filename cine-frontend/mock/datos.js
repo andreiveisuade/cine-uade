@@ -6,12 +6,13 @@ export const GENEROS = [
   "ANIMACION", "DOCUMENTAL", "ROMANCE", "SUSPENSO",
 ];
 
+// No hay tipo de sala VIP: lo premium lo dice el tipo de butaca. Cuando existían los
+// dos, una butaca de pareja en sala VIP pagaba el recargo dos veces.
 export const TIPOS_SALA = {
   DOS_D: { multiplicador: 1.0, soportaTresD: false },
   TRES_D: { multiplicador: 1.3, soportaTresD: true },
   IMAX: { multiplicador: 1.6, soportaTresD: true },
   CUATRO_D: { multiplicador: 1.8, soportaTresD: true },
-  VIP: { multiplicador: 2.0, soportaTresD: true },
 };
 
 export const TIPOS_ASIENTO = {
@@ -124,38 +125,42 @@ export const peliculas = [
     enCartelera: false },
 ];
 
-// Las seis salas del complejo, igual que SalasDeEjemplo.java.
+// Las seis salas del complejo. Cada tipo de butaca se declara por código: sin TipoSala
+// VIP no hay de dónde inferir que una sala es "la de las butacas de pareja".
 const definicionSalas = [
   { id: 1, nombre: "Sala 1", tipo: "IMAX",
     butacasPorFila: [8, 10, 12, 12, 14],
-    vip: [], accesibles: ["A1", "A8"] },
+    vip: [], pareja: [], accesibles: ["A1", "A8"] },
   { id: 2, nombre: "Sala 2", tipo: "IMAX",
     butacasPorFila: [14, 14, 14, 14, 14, 14, 14, 14],
-    vip: [], accesibles: ["A1", "A14"] },
+    vip: [], pareja: [], accesibles: ["A1", "A14"] },
   { id: 3, nombre: "Sala 3", tipo: "TRES_D",
     butacasPorFila: [12, 14, 16, 18, 18, 20, 20, 20, 16, 16],
-    vip: ["I1", "I2", "I3", "I4", "J1", "J2", "J3", "J4"], accesibles: ["A1", "A12"] },
+    vip: ["I1", "I2", "I3", "I4", "J1", "J2", "J3", "J4"],
+    pareja: [], accesibles: ["A1", "A12"] },
   { id: 4, nombre: "Sala 4", tipo: "TRES_D",
     butacasPorFila: [16, 18, 20, 22, 22, 24, 24, 24, 24, 22, 20, 18],
-    vip: [], accesibles: ["A1", "A2", "A15", "A16"] },
-  { id: 5, nombre: "Sala 5", tipo: "VIP",
+    vip: [], pareja: [], accesibles: ["A1", "A2", "A15", "A16"] },
+  // La boutique: chica y con todas las butacas de pareja.
+  { id: 5, nombre: "Sala 5", tipo: "DOS_D",
     butacasPorFila: [6, 6, 8, 8],
-    vip: ["A1", "A2", "A3", "A4", "A5", "A6",
-          "B1", "B2", "B3", "B4", "B5", "B6",
-          "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8",
-          "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"], accesibles: [] },
+    vip: [],
+    pareja: ["A1", "A2", "A3", "A4", "A5", "A6",
+             "B1", "B2", "B3", "B4", "B5", "B6",
+             "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8",
+             "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"],
+    accesibles: [] },
   { id: 6, nombre: "Sala 6", tipo: "CUATRO_D",
     butacasPorFila: [10, 12, 12, 14, 14, 12],
-    vip: [], accesibles: ["A1", "A10"] },
+    vip: [], pareja: [], accesibles: ["A1", "A10"] },
 ];
 
 export function letraFila(fila) {
   return String.fromCharCode("A".charCodeAt(0) + fila - 1);
 }
 
-// Misma lógica que GestorSalas.generarAsientos: en una sala VIP las butacas
-// marcadas como premium son de pareja, en el resto son VIP.
-export function generarAsientos(sala, vip, accesibles, primerId) {
+/** Cada butaca es estándar salvo que su código esté en una de las listas. */
+export function generarAsientos(sala, vip, pareja, accesibles, primerId) {
   const asientos = [];
   let id = primerId;
   sala.butacasPorFila.forEach((cantidad, indice) => {
@@ -164,13 +169,15 @@ export function generarAsientos(sala, vip, accesibles, primerId) {
       const codigo = letraFila(fila) + numero;
       let tipo = "ESTANDAR";
       if (vip.includes(codigo)) {
-        tipo = sala.tipo === "VIP" ? "PAREJA" : "VIP";
+        tipo = "VIP";
+      } else if (pareja.includes(codigo)) {
+        tipo = "PAREJA";
       } else if (accesibles.includes(codigo)) {
         tipo = "ACCESIBLE";
       }
       asientos.push({
         id: id++, salaId: sala.id, fila, numero, codigo,
-        tipo, estado: "DISPONIBLE",
+        tipo, estado: "HABILITADO",
       });
     }
   });
@@ -191,7 +198,8 @@ for (const def of definicionSalas) {
     capacidadSala: def.butacasPorFila.reduce((a, b) => a + b, 0),
   };
   salas.push(sala);
-  const generados = generarAsientos(sala, def.vip, def.accesibles, siguienteAsientoId);
+  const generados = generarAsientos(
+    sala, def.vip, def.pareja, def.accesibles, siguienteAsientoId);
   siguienteAsientoId += generados.length;
   asientos.push(...generados);
 }

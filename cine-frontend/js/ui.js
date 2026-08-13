@@ -21,7 +21,7 @@ const ETIQUETAS = {
   ACCESIBLE: "Accesible",
   DOBLADA: "Doblada",
   SUBTITULADA: "Subtitulada",
-  DISPONIBLE: "Disponible",
+  HABILITADO: "Habilitada",
   FUERA_DE_SERVICIO: "Fuera de servicio",
   RESERVADA: "Reservada",
   PAGADA: "Pagada",

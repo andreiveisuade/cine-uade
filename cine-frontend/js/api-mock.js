@@ -305,7 +305,8 @@ export function obtenerSala(id) {
   });
 }
 
-export function crearSala({ nombre, tipo, butacasPorFila, codigosVip, codigosAccesibles }) {
+export function crearSala({ nombre, tipo, butacasPorFila,
+                            codigosVip, codigosPareja, codigosAccesibles }) {
   const nombreSala = (nombre || "").trim();
   if (!nombreSala) return fallar("El nombre no puede estar vacío");
   if (!datos.TIPOS_SALA[tipo]) return fallar("Falta el tipo de sala");
@@ -328,7 +329,7 @@ export function crearSala({ nombre, tipo, butacasPorFila, codigosVip, codigosAcc
 
   const primerId = datos.asientos.reduce((max, a) => Math.max(max, a.id), 0) + 1;
   datos.asientos.push(...datos.generarAsientos(
-    sala, codigosVip || [], codigosAccesibles || [], primerId));
+    sala, codigosVip || [], codigosPareja || [], codigosAccesibles || [], primerId));
   return responder(sala);
 }
 
@@ -350,7 +351,7 @@ export function cambiarEstadoAsiento(salaId, codigo, estado) {
   const asiento = datos.asientos.find(
     (a) => a.salaId === Number(salaId) && a.codigo === String(codigo).trim().toUpperCase());
   if (!asiento) return fallar(`La butaca ${codigo} no existe en la sala ${salaId}`);
-  if (estado !== "DISPONIBLE" && estado !== "FUERA_DE_SERVICIO") {
+  if (estado !== "HABILITADO" && estado !== "FUERA_DE_SERVICIO") {
     return fallar("Estado de butaca inválido");
   }
   asiento.estado = estado;
