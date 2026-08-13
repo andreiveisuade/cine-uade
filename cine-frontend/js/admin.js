@@ -12,6 +12,7 @@ import { vistaPeliculas } from "./admin/peliculas.js";
 import { vistaSalas } from "./admin/salas.js";
 import { vistaFunciones } from "./admin/funciones.js";
 import { vistaProgramaciones } from "./admin/programaciones.js";
+import { vistaAgenda } from "./admin/agenda.js";
 import { vistaReservas, vistaCobrar } from "./admin/reservas.js";
 import { vistaCaja } from "./admin/caja.js";
 import { vistaPromociones } from "./admin/promociones.js";
@@ -37,6 +38,7 @@ iniciarRouter({
     salas: vistaSalas,
     funciones: vistaFunciones,
     programaciones: vistaProgramaciones,
+    agenda: vistaAgenda,
     reservas: vistaReservas,
     cobrar: vistaCobrar,
     caja: vistaCaja,
