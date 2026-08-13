@@ -7,26 +7,27 @@ hide footbox
 actor Cliente
 participant "MenuConsola" as UI
 participant "GestorCandy" as Gestor
+participant "GestorProductos" as Carta
 participant "ProductoDAO" as Productos <<interface>>
 participant "CompraCandyDAO" as DAO <<interface>>
 participant "GeneradorTicketCandy" as Ticket <<interface>>
 
 == Antes: el administrador arma la promocion ==
 
-UI -> Gestor : armarCombo("Combo pareja", 5500,\n{pochoclos:1, gaseosa:1})
-activate Gestor
-Gestor -> Productos : buscarPorId por cada componente
+UI -> Carta : armarCombo("Combo pareja", 5500,\n{pochoclos:1, gaseosa:1})
+activate Carta
+Carta -> Productos : buscarPorId por cada componente
 activate Productos
-Productos --> Gestor : pochoclos $4000, gaseosa $2500
+Productos --> Carta : pochoclos $4000, gaseosa $2500
 deactivate Productos
 
 alt el combo cuesta igual o mas que sus componentes
-  Gestor --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
+  Carta --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
 else 5500 < 6500
-  Gestor -> Productos : guardar(combo con sus componentes)
-  Gestor --> UI : combo
+  Carta -> Productos : guardar(combo con sus componentes)
+  Carta --> UI : combo
 end
-deactivate Gestor
+deactivate Carta
 
 == Despues: el cliente compra ==
 
@@ -39,16 +40,20 @@ alt el producto no esta disponible, la cantidad\nno es valida o falta la autoriz
   Gestor --> UI : IllegalArgumentException
   UI --> Cliente : motivo del rechazo
 else todo en orden
-  Gestor -> Productos : buscarPorId(productoId)
+  Gestor -> Carta : buscarOFallar(productoId)
+  activate Carta
+  Carta -> Productos : buscarPorId(productoId)
   activate Productos
-  Productos --> Gestor : producto con su precio
+  Productos --> Carta : producto con su precio
   deactivate Productos
+  Carta --> Gestor : producto con su precio
+  deactivate Carta
 
   note right of Gestor
-    El precio sale de la carta, no se ingresa:
-    la misma razon por la que el pago de una
-    reserva toma el monto de la reserva.
-    Cada ItemCompra lo congela.
+    El precio se lo pregunta a la carta, no lo
+    sabe ni lo recibe: la misma razon por la que
+    el pago de una reserva toma el monto de la
+    reserva. Cada ItemCompra lo congela.
   end note
 
   Gestor -> DAO : guardar(compra)
@@ -56,7 +61,10 @@ else todo en orden
   DAO --> Gestor : compra con id asignado
   deactivate DAO
 
-  Gestor -> Gestor : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
+  Gestor -> Carta : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
+  activate Carta
+  Carta --> Gestor : $ 2000
+  deactivate Carta
   Gestor -> Ticket : emitir(compra, cliente, ahorro)
   activate Ticket
   Ticket -> Ticket : escribe\ntickets/candy-N.txt

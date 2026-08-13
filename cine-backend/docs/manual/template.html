@@ -1384,8 +1384,31 @@ new MenuConsola(gestor).iniciar();</code></pre>
         </table>
       </div>
       <p>
-        <code>GestorReservas</code> recibe seis dependencias, más que ningún otro gestor. No es capricho: el cupo
-        sale de la capacidad de la sala de la función, y el ticket lleva datos de película, sala y cliente.
+        <code>GestorReservas</code> recibe nueve dependencias, más que ningún otro gestor. No es capricho: el
+        ticket lleva datos de película, sala y cliente, así que reservar tiene que ir a buscarlos.
+      </p>
+
+      <h3>Qué butacas están tomadas no es asunto de la reserva</h3>
+      <p>
+        La novena dependencia es <code>Ocupacion</code>, y es una clase aparte por un motivo de sujeto: una
+        butaca no está ocupada <em>en sí misma</em>, lo está <strong>para una función</strong>, si alguna
+        reserva vigente de esa función la tomó. La pregunta es sobre la función, no sobre una reserva.
+      </p>
+      <p>
+        Se notaba en quiénes la usaban: <code>VistasCartelera</code> y <code>MapaDeButacas</code> pedían el
+        gestor de reservas entero para dibujar un mapa, sin reservar ni cancelar nada. Ahora reciben
+        <code>Ocupacion</code>, que es lo único que necesitan.
+      </p>
+      <p>
+        <code>Ocupacion</code> se lleva también el vencimiento de las reservas impagas, que es la parte que
+        <strong>escribe</strong>: cerrarlas devuelve sus butacas a la venta, así que tiene que pasar antes de
+        contestar quién está ocupado. Adentro de <code>GestorReservas</code> esa escritura parecía un efecto
+        raro de una consulta; como concepto propio, es su regla central.
+      </p>
+      <p>
+        Lo importante es que ahora hay <strong>una sola</strong> definición de «ocupado»: la usan el que vende
+        y los dos que dibujan el mapa. Si cada uno la calculara por su cuenta, el mapa podría ofrecer una
+        butaca que la reserva después rechaza.
       </p>
     </section>
 
@@ -1433,7 +1456,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <p>
         Cobrar no vive en <code>GestorReservas</code>: hay un <code>GestorPagos</code> con
         <code>PagoDAO</code> y <code>ReservaDAO</code>. Reservar butacas y cobrar son circuitos distintos, y
-        <code>GestorReservas</code> ya tenía siete dependencias.
+        <code>GestorReservas</code> ya era el gestor con más dependencias del sistema.
       </p>
       <pre><code>Reserva  →  RESERVADA        (reservar butacas)
          →  PAGADA          (GestorPagos.cobrar, deja el comprobante)
@@ -1684,6 +1707,22 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <p>
         Sí comparte dos reglas con las reservas: el total sale de la carta y no se ingresa a mano, y los
         medios electrónicos exigen código de autorización (R11).
+      </p>
+
+      <h3>La carta y las ventas son dos gestores</h3>
+      <p>
+        <code>GestorProductos</code> mantiene la carta —alta de productos, armado de combos, sacar algo de
+        circulación— y <code>GestorCandy</code> registra las ventas. Estaban juntos, y ahí un cambio de precios
+        y un cambio de cómo se factura tocaban el mismo archivo sin tener nada que ver entre sí.
+      </p>
+      <p>
+        La venta le <em>pregunta</em> los precios a la carta en vez de saberlos, que es la misma relación que
+        ya tenían <code>GestorPagos</code> y <code>GestorReservas</code>: el que cobra no decide cuánto.
+      </p>
+      <p>
+        El cálculo del ahorro se fue con la carta y no con la venta. Sale de comparar lo que salen los
+        componentes sueltos contra lo que salió el combo, y esos precios los sabe la carta: la compra guarda
+        lo que se cobró, no lo que habría costado de otra manera.
       </p>
 
       <h3>De quién es una compra del candy</h3>

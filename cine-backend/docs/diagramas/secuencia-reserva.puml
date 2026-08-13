@@ -6,6 +6,7 @@ hide footbox
 
 actor Cliente
 participant "MenuConsola" as UI
+participant "Ocupacion" as Ocupacion
 participant "GestorReservas" as Gestor
 participant "AsientoDAO" as Asientos <<interface>>
 participant "ReservaDAO" as DAO <<interface>>
@@ -15,19 +16,19 @@ participant "GeneradorTicket" as Ticket <<interface>>
 Cliente -> UI : elige funcion y cliente
 activate UI
 
-UI -> Gestor : asientosLibres(funcionId)
-activate Gestor
-Gestor -> Asientos : listarPorSala(salaId)
+UI -> Ocupacion : asientosLibres(funcionId)
+activate Ocupacion
+Ocupacion -> Asientos : listarPorSala(salaId)
 activate Asientos
-Asientos --> Gestor : butacas de la sala
+Asientos --> Ocupacion : butacas de la sala
 deactivate Asientos
-Gestor -> DAO : listarPorFuncion(funcionId)
+Ocupacion -> DAO : listarPorFuncion(funcionId)
 activate DAO
-DAO --> Gestor : reservas de esa funcion
+DAO --> Ocupacion : reservas de esa funcion
 deactivate DAO
-Gestor -> Gestor : descarta las tomadas por reservas\nno canceladas y las fuera de servicio
-Gestor --> UI : butacas libres
-deactivate Gestor
+Ocupacion -> Ocupacion : descarta las tomadas por reservas\nno canceladas y las fuera de servicio
+Ocupacion --> UI : butacas libres
+deactivate Ocupacion
 
 UI --> Cliente : dibuja el mapa de la sala
 Cliente -> UI : "A1,A2"
