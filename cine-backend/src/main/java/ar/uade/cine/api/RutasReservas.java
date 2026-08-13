@@ -56,9 +56,9 @@ class RutasReservas {
 
         app.post("/api/reservas", ctx -> {
             PedidoReserva pedido = ctx.bodyAsClass(PedidoReserva.class);
-            String email = pedido.email() == null ? "" : pedido.email().trim();
-            Cliente cliente = clientes.buscarPorEmail(email)
-                    .orElseGet(() -> clientes.registrar(pedido.nombre(), pedido.email()));
+            // Que al cliente nuevo se lo dé de alta acá mismo es la regla de comprar sin
+            // registrarse, y vive en el gestor: esta capa solo pasa lo que llegó.
+            Cliente cliente = clientes.identificar(pedido.nombre(), pedido.email());
 
             Reserva reserva = reservas.reservar(
                     pedido.funcionId() == null ? 0 : pedido.funcionId(),

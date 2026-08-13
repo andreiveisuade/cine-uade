@@ -2,7 +2,9 @@ package ar.uade.cine.servicio;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import ar.uade.cine.dominio.funciones.Funcion;
@@ -98,7 +100,43 @@ public class GestorPagos {
 
     /** Arqueo: cuánto se cobró en el día. */
     public double totalCobrado(LocalDate fecha) {
-        return pagoDAO.listarPorFecha(fecha).stream().mapToDouble(Pago::getMonto).sum();
+        return CalculadoraPrecio.redondear(
+                pagoDAO.listarPorFecha(fecha).stream().mapToDouble(Pago::getMonto).sum());
+    }
+
+    /**
+     * El cierre de caja del día entero: el total, cuántas entradas se vendieron y cuánto
+     * entró por cada medio de pago.
+     *
+     * <p>La cuenta vive acá y no en quien la muestra porque es la misma para la consola y
+     * para la API, y porque cuánto se cobró es una pregunta del negocio. Se recorre una
+     * sola vez la lista de cobros del día: los tres números salen de la misma pasada.
+     */
+    public Arqueo arqueoDe(LocalDate fecha) {
+        List<Pago> delDia = pagoDAO.listarPorFecha(fecha);
+
+        Map<MedioPago, Arqueo.TotalPorMedio> porMedio = new EnumMap<>(MedioPago.class);
+        double total = 0;
+        int entradas = 0;
+        for (Pago pago : delDia) {
+            Arqueo.TotalPorMedio acumulado = porMedio.getOrDefault(pago.getMedio(),
+                    new Arqueo.TotalPorMedio(0, 0));
+            porMedio.put(pago.getMedio(), new Arqueo.TotalPorMedio(acumulado.cantidad() + 1,
+                    CalculadoraPrecio.redondear(acumulado.total() + pago.getMonto())));
+            total += pago.getMonto();
+            entradas += entradasDe(pago);
+        }
+        return new Arqueo(fecha, CalculadoraPrecio.redondear(total), entradas, porMedio, delDia);
+    }
+
+    /**
+     * Cuántas butacas se llevó ese cobro. El pago no lo guarda —sería el mismo dato en dos
+     * lados— así que se cuenta sobre las entradas de su reserva.
+     */
+    private int entradasDe(Pago pago) {
+        return reservaDAO.buscarPorId(pago.getReservaId())
+                .map(Reserva::getCantidadEntradas)
+                .orElse(0);
     }
 
     public List<Pago> listar() {

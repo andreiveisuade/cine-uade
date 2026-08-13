@@ -42,6 +42,21 @@ public class GestorClientes {
         return cliente;
     }
 
+    /**
+     * Reconoce al cliente por su email y, si es la primera vez que compra, lo da de alta
+     * en el momento.
+     *
+     * <p>Es una regla del negocio —comprar no exige registrarse antes— y no un atajo de
+     * quien la llama: si la resolviera cada interfaz por su cuenta, una podría exigir el
+     * registro previo y la otra no. Por eso el email se normaliza acá también: el que se
+     * busca y el que se guarda tienen que ser el mismo, o el segundo intento de compra
+     * daría de alta un cliente repetido.
+     */
+    public Cliente identificar(String nombre, String email) {
+        String buscado = email == null ? "" : email.trim();
+        return buscarPorEmail(buscado).orElseGet(() -> registrar(nombre, buscado));
+    }
+
     public List<Cliente> listar() {
         return clienteDAO.listar();
     }

@@ -210,6 +210,57 @@ class GestorPagosTest {
         assertTrue(arqueo < pago.getSubtotal());
     }
 
+    // ---------- el cierre de caja ----------
+
+    /**
+     * El arqueo es una cuenta del gestor y no de quien lo muestra: la consola y la API
+     * tienen que dar estos mismos tres números.
+     */
+    @Test
+    void elArqueoResumeTotalEntradasYRepartoPorMedio() {
+        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"));
+        Reserva segunda = reservas.reservar(1, 1, generales("B1"));
+        pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
+
+        Arqueo arqueo = pagos.arqueoDe(LocalDate.now());
+
+        assertEquals(15000.0, arqueo.total(), 0.001);
+        // Tres butacas vendidas en dos cobros: el número no sale de la cantidad de pagos.
+        assertEquals(3, arqueo.entradas());
+        assertEquals(2, arqueo.pagos().size());
+        assertEquals(1, arqueo.porMedio().get(MedioPago.EFECTIVO).cantidad());
+        assertEquals(10000.0, arqueo.porMedio().get(MedioPago.EFECTIVO).total(), 0.001);
+        assertEquals(5000.0, arqueo.porMedio().get(MedioPago.QR).total(), 0.001);
+    }
+
+    /** Un día sin cobros no es un error: es una caja en cero. */
+    @Test
+    void elArqueoDeUnDiaSinCobrosDaEnCero() {
+        Arqueo arqueo = pagos.arqueoDe(LocalDate.now().minusDays(1));
+
+        assertEquals(0, arqueo.total(), 0.001);
+        assertEquals(0, arqueo.entradas());
+        assertTrue(arqueo.pagos().isEmpty());
+        assertTrue(arqueo.porMedio().isEmpty());
+    }
+
+    /** Lo que entró por caja es lo cobrado, con el descuento ya aplicado. */
+    @Test
+    void elRepartoPorMedioCuentaElMontoConDescuento() {
+        promociones.crearPorcentaje("50 off", 50,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of());
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        Arqueo arqueo = pagos.arqueoDe(LocalDate.now());
+
+        assertEquals(pago.getMonto(), arqueo.total(), 0.001);
+        assertEquals(pago.getMonto(), arqueo.porMedio().get(MedioPago.EFECTIVO).total(), 0.001);
+        assertTrue(arqueo.total() < pago.getSubtotal());
+    }
+
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();

@@ -6,8 +6,8 @@ import java.util.List;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
-import ar.uade.cine.dominio.cartelera.PeliculaImpl;
 import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.servicio.DatosPelicula;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorFunciones;
 import io.javalin.Javalin;
@@ -58,37 +58,16 @@ class RutasPeliculas {
 
         app.post("/api/peliculas", ctx -> {
             PedidoPelicula pedido = ctx.bodyAsClass(PedidoPelicula.class);
-            Pelicula pelicula = cartelera.agregar(pedido.titulo(),
-                    pedido.duracionMinutos() == null ? 0 : pedido.duracionMinutos(),
-                    Parseo.constantes(Genero.class, pedido.generos(), "el género"),
-                    clasificacionDe(pedido, null));
-            // El alta solo recibe lo que hace a la película; el catálogo va por setter y
-            // necesita un guardado más.
-            aplicarCatalogo(pelicula, pedido);
-            cartelera.actualizar(pelicula);
-            ctx.status(HttpStatus.CREATED).json(vistas.pelicula(pelicula));
+            ctx.status(HttpStatus.CREATED).json(vistas.pelicula(cartelera.agregar(datosDe(pedido))));
         });
 
         app.put("/api/peliculas/{id}", ctx -> {
             int id = Parseo.id(ctx);
-            Pelicula actual = buscar(cartelera, id);
+            // El gestor rechaza el id inexistente como dato inválido; acá se pregunta
+            // antes para poder responder 404 y no 400.
+            buscar(cartelera, id);
             PedidoPelicula pedido = ctx.bodyAsClass(PedidoPelicula.class);
-
-            // Pelicula no tiene setTitulo: para editarla se arma una nueva con el mismo
-            // id y lo que no vino en el pedido se copia de la que ya estaba.
-            Pelicula editada = new PeliculaImpl(id,
-                    pedido.titulo() == null ? actual.getTitulo() : pedido.titulo(),
-                    pedido.duracionMinutos() == null ? actual.getDuracionMinutos() : pedido.duracionMinutos(),
-                    clasificacionDe(pedido, actual.getClasificacion()));
-            List<Genero> generos = pedido.generos() == null
-                    ? actual.getGeneros()
-                    : Parseo.constantes(Genero.class, pedido.generos(), "el género");
-            generos.forEach(editada::agregarGenero);
-            copiarCatalogo(actual, editada);
-            aplicarCatalogo(editada, pedido);
-
-            cartelera.actualizar(editada);
-            ctx.json(vistas.pelicula(editada));
+            ctx.json(vistas.pelicula(cartelera.editar(id, datosDe(pedido))));
         });
 
         app.delete("/api/peliculas/{id}", ctx -> {
@@ -104,40 +83,24 @@ class RutasPeliculas {
                 .orElseThrow(() -> new NoEncontrado("No existe la película " + id));
     }
 
-    /** Sin clasificación en el pedido vale la de antes; en el alta, el null que valida R10. */
-    private static Clasificacion clasificacionDe(PedidoPelicula pedido, Clasificacion actual) {
-        return pedido.clasificacion() == null
-                ? actual
-                : Parseo.constante(Clasificacion.class, pedido.clasificacion(), "la clasificación");
-    }
-
-    private static void copiarCatalogo(Pelicula desde, Pelicula hacia) {
-        hacia.setDirector(desde.getDirector());
-        hacia.setSinopsis(desde.getSinopsis());
-        hacia.setAnio(desde.getAnio());
-        hacia.setIdiomaOriginal(desde.getIdiomaOriginal());
-        hacia.setPosterUrl(desde.getPosterUrl());
-        hacia.setEnCartelera(desde.estaEnCartelera());
-    }
-
-    private static void aplicarCatalogo(Pelicula pelicula, PedidoPelicula pedido) {
-        if (pedido.director() != null) {
-            pelicula.setDirector(pedido.director());
-        }
-        if (pedido.sinopsis() != null) {
-            pelicula.setSinopsis(pedido.sinopsis());
-        }
-        if (pedido.anio() != null) {
-            pelicula.setAnio(pedido.anio());
-        }
-        if (pedido.idiomaOriginal() != null) {
-            pelicula.setIdiomaOriginal(pedido.idiomaOriginal());
-        }
-        if (pedido.posterUrl() != null) {
-            pelicula.setPosterUrl(pedido.posterUrl());
-        }
-        if (pedido.enCartelera() != null) {
-            pelicula.setEnCartelera(pedido.enCartelera());
-        }
+    /**
+     * Lo único que hace esta capa con el pedido: pasar el texto que llegó a los tipos del
+     * dominio. Qué campos son obligatorios, cuáles pisan a los guardados y cuáles se
+     * conservan lo decide el gestor, que es donde ese criterio sirve para las dos
+     * interfaces.
+     *
+     * <p>Un campo ausente viaja en null a propósito: es lo que el gestor lee como "no lo
+     * mandé". En el alta, ese mismo null es el que dispara el error de dato faltante, con
+     * el mensaje del gestor y no con uno que invente esta capa.
+     */
+    private static DatosPelicula datosDe(PedidoPelicula pedido) {
+        return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
+                pedido.generos() == null
+                        ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"),
+                pedido.clasificacion() == null
+                        ? null : Parseo.constante(Clasificacion.class, pedido.clasificacion(),
+                                "la clasificación"),
+                pedido.director(), pedido.sinopsis(), pedido.anio(), pedido.idiomaOriginal(),
+                pedido.posterUrl(), pedido.enCartelera());
     }
 }

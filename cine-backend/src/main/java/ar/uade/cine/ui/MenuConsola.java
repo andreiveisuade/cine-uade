@@ -15,7 +15,6 @@ import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
-import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
@@ -31,6 +30,8 @@ import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
+import ar.uade.cine.servicio.Arqueo;
+import ar.uade.cine.servicio.DatosPelicula;
 import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
@@ -147,20 +148,17 @@ public class MenuConsola {
     /** Los datos de catálogo son opcionales: se cargan aparte del alta. */
     private void completarCatalogo() {
         int id = leerEntero("Id de película: ");
-        Pelicula pelicula = cartelera.buscar(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
-
         System.out.print("Director: ");
-        pelicula.setDirector(leer());
+        String director = leer();
         System.out.print("Sinopsis: ");
-        pelicula.setSinopsis(leer());
-        pelicula.setAnio(leerEntero("Año: "));
+        String sinopsis = leer();
+        int anio = leerEntero("Año: ");
         System.out.print("Idioma original: ");
-        pelicula.setIdiomaOriginal(leer());
+        String idiomaOriginal = leer();
         System.out.print("URL del poster: ");
-        pelicula.setPosterUrl(leer());
+        String posterUrl = leer();
 
-        cartelera.actualizar(pelicula);
+        cartelera.editar(id, DatosPelicula.deCatalogo(director, sinopsis, anio, idiomaOriginal, posterUrl));
         System.out.println("Datos de catálogo guardados");
     }
 
@@ -414,12 +412,14 @@ public class MenuConsola {
     /** Las dos cajas del cine son distintas: la boletería cobra reservas y el candy vende. */
     private void arqueoDelDia() {
         LocalDate dia = LocalDate.now();
+        Arqueo arqueo = pagos.arqueoDe(dia);
+
         System.out.println("\n-- Boletería --");
-        imprimir(pagos.listarDelDia(dia));
+        imprimir(arqueo.pagos());
         System.out.println("\n-- Candy --");
         imprimir(candy.listarComprasDelDia(dia));
 
-        double boleteria = pagos.totalCobrado(dia);
+        double boleteria = arqueo.total();
         double barra = candy.totalVendido(dia);
         System.out.printf("%nBoletería : $ %10.2f%n", boleteria);
         System.out.printf("Candy     : $ %10.2f%n", barra);

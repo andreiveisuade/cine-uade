@@ -1,6 +1,5 @@
 package ar.uade.cine.api;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -9,6 +8,7 @@ import java.util.TreeMap;
 import ar.uade.cine.api.Vistas.PagoVista;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
+import ar.uade.cine.servicio.Arqueo;
 import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorReservas;
 import io.javalin.Javalin;
@@ -67,32 +67,20 @@ class RutasPagos {
         });
 
         app.get("/api/arqueo", ctx -> {
-            LocalDate fecha = Parseo.dia(ctx.queryParam("fecha"), "la fecha");
-            List<PagoVista> delDia = pagos.listarDelDia(fecha).stream()
-                    .map(vistas::pagoDeArqueo)
-                    .toList();
-
-            int entradas = delDia.stream()
-                    .mapToInt(p -> p.entradas() == null ? 0 : p.entradas())
-                    .sum();
-            ctx.json(new ArqueoVista(fecha.toString(), pagos.totalCobrado(fecha), entradas,
-                    porMedio(delDia), delDia));
+            Arqueo arqueo = pagos.arqueoDe(Parseo.dia(ctx.queryParam("fecha"), "la fecha"));
+            ctx.json(new ArqueoVista(arqueo.fecha().toString(), arqueo.total(), arqueo.entradas(),
+                    porMedio(arqueo), arqueo.pagos().stream().map(vistas::pagoDeArqueo).toList()));
         });
     }
 
-    /** Cuánto entró por caja y cuánto por cada medio electrónico. */
-    private static Map<String, TotalMedio> porMedio(List<PagoVista> pagos) {
+    /**
+     * El reparto por medio, con el nombre de la constante como clave. En TreeMap porque el
+     * front lista los medios en el orden en que vienen y alfabético es un orden estable.
+     */
+    private static Map<String, TotalMedio> porMedio(Arqueo arqueo) {
         Map<String, TotalMedio> resumen = new TreeMap<>();
-        for (PagoVista pago : pagos) {
-            TotalMedio acumulado = resumen.getOrDefault(pago.medio(), new TotalMedio(0, 0));
-            resumen.put(pago.medio(), new TotalMedio(acumulado.cantidad() + 1,
-                    redondear(acumulado.total() + pago.monto())));
-        }
+        arqueo.porMedio().forEach((medio, acumulado) ->
+                resumen.put(medio.name(), new TotalMedio(acumulado.cantidad(), acumulado.total())));
         return resumen;
-    }
-
-    /** Sumar doubles arrastra centavos que no existen; el arqueo se muestra tal cual. */
-    private static double redondear(double monto) {
-        return Math.round(monto * 100) / 100.0;
     }
 }

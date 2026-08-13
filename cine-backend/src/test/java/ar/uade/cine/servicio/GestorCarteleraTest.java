@@ -2,6 +2,7 @@ package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -113,6 +114,68 @@ class GestorCarteleraTest {
         dune.setDirector("Denis Villeneuve");
 
         assertDoesNotThrow(() -> gestor.actualizar(dune));
+    }
+
+    // ---------- editar: lo que no viene se conserva ----------
+
+    /**
+     * La edición parcial vive en el gestor y no en cada interfaz: es lo que hace que
+     * editar por la web y editar por consola signifiquen lo mismo.
+     */
+    @Test
+    void editarSoloPisaLoQueVieneEnElPedido() {
+        Pelicula dune = gestor.agregar(new DatosPelicula("Dune", 155,
+                List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13, "Denis Villeneuve",
+                "Arrakis", 2021, "Inglés", "dune.jpg", true));
+
+        gestor.editar(dune.getId(), DatosPelicula.deCatalogo(null, "Otra sinopsis", null, null, null));
+
+        Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
+        assertEquals("Otra sinopsis", leida.getSinopsis());
+        assertEquals("Dune", leida.getTitulo());
+        assertEquals(155, leida.getDuracionMinutos());
+        assertEquals("Denis Villeneuve", leida.getDirector());
+        assertEquals(2021, leida.getAnio());
+        assertEquals(List.of(Genero.CIENCIA_FICCION), leida.getGeneros());
+        assertEquals(Clasificacion.MAS_13, leida.getClasificacion());
+    }
+
+    @Test
+    void elAltaCompletaGuardaElCatalogoDeUnaSolaVez() {
+        Pelicula matrix = gestor.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION),
+                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "matrix.jpg", false));
+
+        Pelicula leida = gestor.buscar(matrix.getId()).orElseThrow();
+        assertEquals("Wachowski", leida.getDirector());
+        assertEquals(1999, leida.getAnio());
+        assertFalse(leida.estaEnCartelera());
+        assertTrue(gestor.listarEnCartelera().isEmpty());
+    }
+
+    @Test
+    void editarNoDejaRenombrarConElTituloDeOtra() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null)));
+    }
+
+    /** Una edición no es una puerta de atrás: valida con las mismas reglas que el alta. */
+    @Test
+    void editarNoDejaUnaPeliculaSinTituloNiConDuracionCero() {
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula("  ", null, null, null, null, null, null, null, null, null)));
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula(null, 0, null, null, null, null, null, null, null, null)));
+    }
+
+    @Test
+    void editarUnaPeliculaInexistenteFalla() {
+        assertThrows(IllegalArgumentException.class,
+                () -> gestor.editar(99, DatosPelicula.deCatalogo("Alguien", null, null, null, null)));
     }
 
     @Test
