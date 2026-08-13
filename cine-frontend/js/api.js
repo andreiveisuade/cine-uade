@@ -423,21 +423,97 @@ export function obtenerReservas() {
       sala: funcion ? salaDe(funcion.salaId) : null,
       cliente: datos.clientes.find((c) => c.id === r.clienteId),
       total: r.entradas.reduce((suma, e) => suma + e.precio, 0),
+      pago: datos.pagos.find((p) => p.reservaId === r.id) || null,
     };
   });
   return responder(lista);
 }
 
-export function cambiarEstadoReserva(id, estado) {
+/** R6: cancelar libera las butacas de esa función. */
+export function cancelarReserva(id) {
   const reserva = datos.reservas.find((r) => r.id === Number(id));
   if (!reserva) return fallar(`No existe la reserva ${id}`);
-  // R5
-  if (estado === "PAGADA" && reserva.estado !== "RESERVADA") {
-    return fallar(`La reserva está ${reserva.estado}, no se puede pagar`);
-  }
-  if (estado === "CANCELADA" && reserva.estado === "CANCELADA") {
-    return fallar("La reserva ya está cancelada");
-  }
-  reserva.estado = estado;
+  if (reserva.estado === "CANCELADA") return fallar("La reserva ya está cancelada");
+  reserva.estado = "CANCELADA";
   return responder(reserva);
+}
+
+/* --------------------------------------------------------------------- pagos */
+
+export function obtenerMediosPago() {
+  return responder(Object.entries(datos.MEDIOS_PAGO)
+    .map(([nombre, medio]) => ({ nombre, ...medio })));
+}
+
+/**
+ * Registra el cobro y deja la reserva PAGADA. El monto no se recibe: sale del total
+ * de la reserva, así es imposible cobrar un importe distinto al de las butacas.
+ */
+export function cobrar(reservaId, medio, codigoAutorizacion) {
+  const reserva = datos.reservas.find((r) => r.id === Number(reservaId));
+  if (!reserva) return fallar(`No existe la reserva ${reservaId}`);
+  // R5
+  if (reserva.estado !== "RESERVADA") {
+    return fallar(`La reserva está ${reserva.estado}, no se puede cobrar`);
+  }
+  const definicion = datos.MEDIOS_PAGO[medio];
+  if (!definicion) return fallar("Falta el medio de pago");
+  // R11
+  if (definicion.requiereAutorizacion && !String(codigoAutorizacion || "").trim()) {
+    return fallar(`El pago con ${medio} necesita código de autorización`);
+  }
+  if (datos.pagos.some((p) => p.reservaId === reserva.id)) {
+    return fallar(`La reserva ${reserva.id} ya tiene un pago registrado`);
+  }
+
+  const ahora = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const pago = {
+    id: siguienteId(datos.pagos),
+    reservaId: reserva.id,
+    monto: reserva.entradas.reduce((suma, e) => suma + e.precio, 0),
+    medio,
+    fecha: `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`
+      + `T${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`,
+    codigoAutorizacion: String(codigoAutorizacion || "").trim(),
+  };
+  datos.pagos.push(pago);
+  reserva.estado = "PAGADA";
+  return responder(pago);
+}
+
+export function obtenerPagoDeReserva(reservaId) {
+  const pago = datos.pagos.find((p) => p.reservaId === Number(reservaId));
+  return responder(pago || null);
+}
+
+/** Arqueo: qué se cobró en un día, cuánto, y abierto por medio de pago. */
+export function obtenerArqueo(fecha) {
+  const delDia = datos.pagos.filter((p) => p.fecha.slice(0, 10) === fecha);
+  const porMedio = {};
+  for (const pago of delDia) {
+    if (!porMedio[pago.medio]) porMedio[pago.medio] = { cantidad: 0, total: 0 };
+    porMedio[pago.medio].cantidad += 1;
+    porMedio[pago.medio].total += pago.monto;
+  }
+
+  const detalle = delDia.map((pago) => {
+    const reserva = datos.reservas.find((r) => r.id === pago.reservaId);
+    const funcion = reserva && datos.funciones.find((f) => f.id === reserva.funcionId);
+    return {
+      ...pago,
+      reserva,
+      pelicula: funcion ? peliculaDe(funcion.peliculaId) : null,
+      cliente: reserva && datos.clientes.find((c) => c.id === reserva.clienteId),
+      entradas: reserva ? reserva.entradas.length : 0,
+    };
+  });
+
+  return responder({
+    fecha,
+    pagos: detalle,
+    total: delDia.reduce((suma, p) => suma + p.monto, 0),
+    entradas: detalle.reduce((suma, p) => suma + p.entradas, 0),
+    porMedio,
+  });
 }

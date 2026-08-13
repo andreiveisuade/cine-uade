@@ -24,6 +24,16 @@ export const TIPOS_ASIENTO = {
 export const IDIOMAS = ["DOBLADA", "SUBTITULADA"];
 export const PROYECCIONES = ["DOS_D", "TRES_D"];
 
+// Los medios electrónicos devuelven un código de autorización del procesador; el
+// efectivo no. Saberlo acá evita un if con lista de casos en cada pantalla (R11).
+export const MEDIOS_PAGO = {
+  EFECTIVO: { requiereAutorizacion: false },
+  DEBITO: { requiereAutorizacion: true },
+  CREDITO: { requiereAutorizacion: true },
+  QR: { requiereAutorizacion: true },
+  TRANSFERENCIA: { requiereAutorizacion: true },
+};
+
 // La clasificación guarda la edad mínima, no solo la etiqueta: cuando se valide la
 // edad al vender va a ser una comparación numérica.
 export const CLASIFICACIONES = {
@@ -271,4 +281,20 @@ export const reservas = [
   reserva(5, 4, 1, "RESERVADA", ["C3", "C4"]),
   reserva(6, 6, 3, "PAGADA", ["F10", "F11", "F12", "F13"]),
   reserva(7, 9, 2, "RESERVADA", ["D6"]),
+];
+
+function totalDe(reservaId) {
+  return reservas.find((r) => r.id === reservaId)
+    .entradas.reduce((suma, e) => suma + e.precio, 0);
+}
+
+// Un pago por cada reserva pagada: el monto sale del total de la reserva, nunca
+// se carga a mano. Hay uno de ayer para que el arqueo del día no los junte a todos.
+export const pagos = [
+  { id: 1, reservaId: 1, monto: totalDe(1), medio: "EFECTIVO",
+    fecha: fecha(0, "14:22"), codigoAutorizacion: "" },
+  { id: 2, reservaId: 4, monto: totalDe(4), medio: "CREDITO",
+    fecha: fecha(0, "18:05"), codigoAutorizacion: "AUTH-40219" },
+  { id: 3, reservaId: 6, monto: totalDe(6), medio: "QR",
+    fecha: fecha(-1, "12:40"), codigoAutorizacion: "QR-88371" },
 ];

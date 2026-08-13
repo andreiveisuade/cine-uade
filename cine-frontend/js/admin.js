@@ -6,7 +6,7 @@ import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "./butacas.js";
 import { iniciarRouter, ir } from "./router.js";
 import {
   avisar, chip, chipClasificacion, dia, duracion, escapar, etiqueta,
-  hora, imagenPoster, precio,
+  fechaHora, hora, imagenPoster, precio,
 } from "./ui.js";
 
 /* ------------------------------------------------------------------- sesión */
@@ -646,14 +646,14 @@ const COLOR_ESTADO = {
 async function vistaReservas(contenedor) {
   const reservas = await api.obtenerReservas();
   const activas = reservas.filter((r) => r.estado !== "CANCELADA");
-  const recaudado = reservas
-    .filter((r) => r.estado === "PAGADA")
-    .reduce((suma, r) => suma + r.total, 0);
+  const aCobrar = reservas.filter((r) => r.estado === "RESERVADA");
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Reservas</h1>
     <p class="mb-5 text-sm text-slate-500">
-      ${reservas.length} reservas · ${activas.length} activas · ${precio(recaudado)} cobrado
+      ${reservas.length} reservas · ${activas.length} activas ·
+      ${aCobrar.length} pendientes de cobro
+      ${aCobrar.length ? `(${precio(aCobrar.reduce((s, r) => s + r.total, 0))})` : ""}
     </p>
 
     <div class="overflow-x-auto rounded border border-slate-300 bg-white">
@@ -661,7 +661,7 @@ async function vistaReservas(contenedor) {
         <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
           <tr>
             <th class="p-2">#</th><th>Función</th><th>Cliente</th>
-            <th>Butacas</th><th class="text-right">Total</th><th>Estado</th>
+            <th>Butacas</th><th class="text-right">Total</th><th>Estado</th><th></th>
           </tr>
         </thead>
         <tbody>
@@ -680,12 +680,225 @@ async function vistaReservas(contenedor) {
               </td>
               <td class="font-mono text-xs">${r.entradas.map((e) => e.codigoAsiento).join(", ")}</td>
               <td class="text-right whitespace-nowrap">${precio(r.total)}</td>
-              <td class="p-2">${chip(etiqueta(r.estado), COLOR_ESTADO[r.estado])}</td>
+              <td class="p-2">
+                ${chip(etiqueta(r.estado), COLOR_ESTADO[r.estado])}
+                ${r.pago
+                  ? `<span class="block text-xs text-slate-500">${etiqueta(r.pago.medio)} · ${hora(r.pago.fecha)}</span>`
+                  : ""}
+              </td>
+              <td class="p-2 text-right whitespace-nowrap">
+                ${r.estado === "RESERVADA" ? `
+                  <a href="#/cobrar/${r.id}" class="text-xs font-medium text-slate-900 hover:underline">Cobrar</a>
+                  <button type="button" data-cancelar="${r.id}"
+                    class="ml-2 text-xs text-red-700 hover:underline">Cancelar</button>` : ""}
+              </td>
             </tr>`).join("")}
         </tbody>
       </table>
     </div>
   `;
+
+  contenedor.querySelector("tbody").addEventListener("click", async (evento) => {
+    const boton = evento.target.closest("button[data-cancelar]");
+    if (!boton) return;
+    try {
+      await api.cancelarReserva(boton.dataset.cancelar);
+      avisar("Reserva cancelada, las butacas quedaron libres");
+      vistaReservas(contenedor);
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+  });
+}
+
+/* ------------------------------------------------------------------- cobrar */
+
+async function vistaCobrar(contenedor, id) {
+  const [reservas, medios] = await Promise.all([api.obtenerReservas(), api.obtenerMediosPago()]);
+  const reserva = reservas.find((r) => r.id === Number(id));
+  if (!reserva) throw new Error(`No existe la reserva ${id}`);
+
+  if (reserva.estado !== "RESERVADA") {
+    contenedor.innerHTML = `
+      <a href="#/reservas" class="text-sm text-slate-500 hover:text-slate-900">&larr; Reservas</a>
+      <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-900">
+        La reserva ${reserva.id} está ${etiqueta(reserva.estado).toLowerCase()}, no se puede cobrar.
+        ${reserva.pago
+          ? `Se cobró ${precio(reserva.pago.monto)} con ${etiqueta(reserva.pago.medio)}
+             el ${escapar(fechaHora(reserva.pago.fecha))}.`
+          : ""}
+      </div>`;
+    return;
+  }
+
+  contenedor.innerHTML = `
+    <a href="#/reservas" class="text-sm text-slate-500 hover:text-slate-900">&larr; Reservas</a>
+    <h1 class="mt-2 mb-5 text-2xl font-bold">Cobrar reserva #${reserva.id}</h1>
+
+    <div class="grid gap-4 md:grid-cols-2">
+      <section class="rounded border border-slate-300 bg-white p-4">
+        <h2 class="mb-3 font-semibold">Cobro</h2>
+        <form id="cobro" class="space-y-3">
+          <label class="block text-sm">
+            <span class="text-slate-600">Medio de pago</span>
+            <select name="medio" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5">
+              ${medios.map((m) => `<option value="${m.nombre}">${etiqueta(m.nombre)}</option>`).join("")}
+            </select>
+          </label>
+          <label id="campoCodigo" class="block text-sm">
+            <span class="text-slate-600">Código de autorización</span>
+            <input name="codigo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
+            <span class="text-xs text-slate-500">Lo devuelve el procesador. El efectivo no lleva.</span>
+          </label>
+          <div class="rounded bg-slate-100 p-3 text-sm">
+            <span class="text-slate-600">A cobrar</span>
+            <p class="text-xl font-bold">${precio(reserva.total)}</p>
+            <p class="text-xs text-slate-500">
+              Sale del total de las butacas: no se puede cobrar otro importe.
+            </p>
+          </div>
+          <button type="submit"
+            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+            Registrar cobro
+          </button>
+        </form>
+      </section>
+
+      <section class="rounded border border-slate-300 bg-white p-4">
+        <h2 class="mb-1 font-semibold">${escapar(reserva.pelicula?.titulo || "—")}</h2>
+        <p class="mb-3 text-sm text-slate-600">
+          ${reserva.funcion
+            ? `${escapar(dia(reserva.funcion.inicio))} ${hora(reserva.funcion.inicio)} ·
+               ${escapar(reserva.sala.nombre)} (${etiqueta(reserva.sala.tipo)})`
+            : ""}
+        </p>
+        <p class="mb-3 text-sm">
+          ${escapar(reserva.cliente?.nombre || "—")}
+          <span class="block text-xs text-slate-500">${escapar(reserva.cliente?.email || "")}</span>
+        </p>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-300 text-left text-xs uppercase text-slate-500">
+              <th class="py-1">Butaca</th><th class="text-right">Precio</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reserva.entradas.map((e) => `
+              <tr class="border-b border-slate-200">
+                <td class="py-1 font-medium">${e.codigoAsiento}</td>
+                <td class="text-right">${precio(e.precio)}</td>
+              </tr>`).join("")}
+          </tbody>
+          <tfoot>
+            <tr class="font-semibold">
+              <td class="py-2">Total</td>
+              <td class="py-2 text-right">${precio(reserva.total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+    </div>
+  `;
+
+  const formulario = contenedor.querySelector("#cobro");
+  const campoCodigo = contenedor.querySelector("#campoCodigo");
+
+  // R11: el código solo se pide cuando el medio lo exige.
+  function ajustarCodigo() {
+    const medio = medios.find((m) => m.nombre === formulario.medio.value);
+    campoCodigo.classList.toggle("hidden", !medio.requiereAutorizacion);
+    formulario.codigo.required = medio.requiereAutorizacion;
+  }
+  formulario.medio.addEventListener("change", ajustarCodigo);
+  ajustarCodigo();
+
+  formulario.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const datos = new FormData(formulario);
+    try {
+      const pago = await api.cobrar(reserva.id, datos.get("medio"), datos.get("codigo"));
+      avisar(`Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)}`);
+      ir("#/caja");
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+  });
+}
+
+/* ------------------------------------------------------------ arqueo del día */
+
+function hoyISO() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+async function vistaCaja(contenedor, fecha = hoyISO()) {
+  const arqueo = await api.obtenerArqueo(fecha);
+  const medios = Object.entries(arqueo.porMedio);
+
+  contenedor.innerHTML = `
+    <h1 class="mb-1 text-2xl font-bold">Arqueo</h1>
+    <p class="mb-5 text-sm text-slate-500">Lo cobrado en el día, por medio de pago.</p>
+
+    <div class="mb-5 flex flex-wrap items-end gap-4">
+      <label class="text-sm">
+        <span class="text-slate-600">Fecha</span>
+        <input type="date" id="fecha" value="${arqueo.fecha}"
+          class="mt-1 block rounded border border-slate-400 px-2 py-1.5" />
+      </label>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2">
+        <span class="text-xs uppercase text-slate-500">Total cobrado</span>
+        <p class="text-2xl font-bold">${precio(arqueo.total)}</p>
+      </div>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2">
+        <span class="text-xs uppercase text-slate-500">Operaciones</span>
+        <p class="text-2xl font-bold">${arqueo.pagos.length}</p>
+      </div>
+      <div class="rounded border border-slate-300 bg-white px-4 py-2">
+        <span class="text-xs uppercase text-slate-500">Entradas</span>
+        <p class="text-2xl font-bold">${arqueo.entradas}</p>
+      </div>
+    </div>
+
+    ${medios.length ? `
+      <div class="mb-5 flex flex-wrap gap-2">
+        ${medios.map(([medio, datos]) => `
+          <div class="rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+            <span class="font-medium">${etiqueta(medio)}</span>
+            <span class="text-slate-500">· ${datos.cantidad}</span>
+            <span class="ml-2 font-semibold">${precio(datos.total)}</span>
+          </div>`).join("")}
+      </div>` : ""}
+
+    <div class="overflow-x-auto rounded border border-slate-300 bg-white">
+      <table class="w-full text-sm">
+        <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <tr>
+            <th class="p-2">Hora</th><th>Reserva</th><th>Película</th><th>Cliente</th>
+            <th>Medio</th><th>Autorización</th><th class="text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${arqueo.pagos.length ? arqueo.pagos.map((p) => `
+            <tr class="border-b border-slate-200">
+              <td class="p-2 whitespace-nowrap">${hora(p.fecha)}</td>
+              <td>#${p.reservaId}</td>
+              <td>${escapar(p.pelicula?.titulo || "—")}</td>
+              <td>${escapar(p.cliente?.nombre || "—")}</td>
+              <td>${etiqueta(p.medio)}</td>
+              <td class="font-mono text-xs">${escapar(p.codigoAutorizacion || "—")}</td>
+              <td class="text-right whitespace-nowrap font-medium">${precio(p.monto)}</td>
+            </tr>`).join("")
+            : '<tr><td colspan="7" class="p-6 text-center text-slate-500">No se cobró nada ese día.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  contenedor.querySelector("#fecha").addEventListener("change", (evento) => {
+    vistaCaja(contenedor, evento.target.value);
+  });
 }
 
 /* ------------------------------------------------------------------- arranque */
@@ -707,5 +920,7 @@ iniciarRouter({
     salas: vistaSalas,
     funciones: vistaFunciones,
     reservas: vistaReservas,
+    cobrar: vistaCobrar,
+    caja: vistaCaja,
   },
 });
