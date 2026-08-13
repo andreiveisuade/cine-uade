@@ -855,6 +855,29 @@ body.lightbox-locked { overflow: hidden; }
         <code>--simular</code> por exactamente este motivo.
       </p>
       <p>
+        Los dos reciben <strong>exactamente el mismo cuerpo</strong>, y en la capa HTTP lo lee un solo método.
+        Si cada uno lo parseara por su cuenta, un día uno aceptaría algo que el otro rechaza y el informe
+        dejaría de predecir el alta. Dos nombres que conviene tener a mano, porque ya hicieron tropezar a
+        alguien:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>En el JSON</th><th>En el dominio</th><th>Por qué no coinciden</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>idioma</code></td>
+              <td><code>Version</code></td>
+              <td>No es de esta grilla: toda la API viene diciéndole <code>idioma</code> al enum <code>Version</code> —lo mismo hace <code>POST /api/funciones</code>— porque «versión» en una interfaz se lee como versión del software. La asimetría es vieja, y acá se hereda a propósito para no tener dos nombres para lo mismo según el endpoint</td>
+            </tr>
+            <tr>
+              <td><code>/previsualizar</code></td>
+              <td>—</td>
+              <td>Verbo, no sustantivo: es la acción de mirar, no un recurso llamado «previsualización»</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
         <strong>La cuenta se escribe una sola vez.</strong> Las dos entran al mismo método privado
         —<code>planificar(grilla, película, persistir)</code>— y lo único que las diferencia es ese
         <code>boolean</code>. Dos copias de la misma lógica se irían separando con el tiempo, y el día que se
