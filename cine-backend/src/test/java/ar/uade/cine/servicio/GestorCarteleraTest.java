@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,10 @@ import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
+import ar.uade.cine.dominio.funciones.FuncionImpl;
+import ar.uade.cine.dominio.funciones.Proyeccion;
+import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 
@@ -23,8 +28,21 @@ import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
  */
 class GestorCarteleraTest {
 
-    private final GestorCartelera gestor =
-            new GestorCartelera(new PeliculaDAOMemoria(), new FuncionDAOMemoria());
+    // El DAO de funciones queda accesible porque estar en cartelera se deriva de tener
+    // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
+    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
+    private final GestorCartelera gestor = new GestorCartelera(new PeliculaDAOMemoria(), funcionDAO);
+
+    /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
+    private void programarProxima(int peliculaId) {
+        funcionDAO.guardar(new FuncionImpl(peliculaId, 1, LocalDateTime.now().plusDays(7),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000));
+    }
+
+    private void programarPasada(int peliculaId) {
+        funcionDAO.guardar(new FuncionImpl(peliculaId, 1, LocalDateTime.now().minusDays(1),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000));
+    }
 
     @Test
     void agregaYLista() {
@@ -82,10 +100,15 @@ class GestorCarteleraTest {
         assertEquals(2021, leida.getAnio());
     }
 
+    // ---------- la cartelera se deriva de la programación ----------
+
+    /** El flag sigue pudiendo bajar una película, aunque tenga funciones programadas. */
     @Test
     void laCarteleraExcluyeLasPeliculasDadasDeBaja() {
         Pelicula vieja = gestor.agregar("Titanic", 194, List.of(Genero.ROMANCE), Clasificacion.MAS_13);
-        gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        Pelicula actual = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        programarProxima(vieja.getId());
+        programarProxima(actual.getId());
 
         vieja.setEnCartelera(false);
         gestor.actualizar(vieja);
@@ -93,6 +116,45 @@ class GestorCarteleraTest {
         assertEquals(2, gestor.listar().size());
         assertEquals(1, gestor.listarEnCartelera().size());
         assertEquals("Dune", gestor.listarEnCartelera().get(0).getTitulo());
+    }
+
+    /**
+     * Lo que antes había que declarar a mano: una película cargada pero sin funciones no
+     * está en cartelera, por más que el flag venga en true al darla de alta.
+     */
+    @Test
+    void unaPeliculaSinFuncionesNoEstaEnCartelera() {
+        Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        assertTrue(pelicula.estaEnCartelera(), "el flag arranca en true");
+        assertEquals(0, gestor.listarEnCartelera().size(), "pero sin funciones no está en cartelera");
+    }
+
+    @Test
+    void programarUnaFuncionLaPoneEnCartelera() {
+        Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        programarProxima(pelicula.getId());
+
+        assertEquals(1, gestor.listarEnCartelera().size());
+    }
+
+    /** El caso que el flag manual nunca resolvía: la última función ya pasó. */
+    @Test
+    void saleDeCarteleraSolaCuandoSusFuncionesQuedaronAtras() {
+        Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        programarPasada(pelicula.getId());
+
+        assertTrue(pelicula.estaEnCartelera(), "nadie tocó el flag");
+        assertEquals(0, gestor.listarEnCartelera().size(), "y aun así ya no está en cartelera");
+    }
+
+    @Test
+    void conUnaFuncionPasadaYOtraFuturaSigueEnCartelera() {
+        Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        programarPasada(pelicula.getId());
+        programarProxima(pelicula.getId());
+
+        assertEquals(1, gestor.listarEnCartelera().size());
     }
 
     /**

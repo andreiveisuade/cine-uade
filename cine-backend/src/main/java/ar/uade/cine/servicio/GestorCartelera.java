@@ -1,5 +1,8 @@
 package ar.uade.cine.servicio;
 
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 
@@ -7,6 +10,7 @@ import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
+import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 
@@ -146,9 +150,32 @@ public class GestorCartelera {
         }
     }
 
-    /** Solo películas en cartelera: es lo que ve el cliente. */
+    /**
+     * Lo que ve el cliente: las películas que tienen alguna función por delante.
+     *
+     * <p>Estar en cartelera <strong>se deriva</strong>, no se declara. Antes era un flag
+     * que alguien tenía que mantener a mano, y un flag así siempre termina mintiendo: se
+     * programan funciones y nadie lo prende, o la última función pasó hace un mes y sigue
+     * anunciada. Es el mismo argumento por el que la sala no guarda su capacidad — dos
+     * fuentes de verdad para el mismo hecho se separan solas.
+     *
+     * <p>El flag no desapareció, cambió de rol: pasó de <em>anuncio</em> a <em>veto</em>.
+     * Puede sacar de la cartelera una película que tiene funciones, pero no puede meter
+     * una que no las tiene. Eso lo deja como interruptor del administrador —para bajar
+     * algo de la web sin tocar la programación— sin volver a ser una fuente de verdad
+     * paralela: cuando los dos hablan, manda la programación.
+     */
     public List<Pelicula> listarEnCartelera() {
-        return peliculaDAO.listar().stream().filter(Pelicula::estaEnCartelera).toList();
+        LocalDateTime ahora = LocalDateTime.now();
+        Set<Integer> conFuncionesPorDelante = funcionDAO.listar().stream()
+                .filter(funcion -> !funcion.yaEmpezo(ahora))
+                .map(Funcion::getPeliculaId)
+                .collect(Collectors.toSet());
+
+        return peliculaDAO.listar().stream()
+                .filter(Pelicula::estaEnCartelera)
+                .filter(pelicula -> conFuncionesPorDelante.contains(pelicula.getId()))
+                .toList();
     }
 
     public List<Pelicula> listarPorGenero(Genero genero) {
