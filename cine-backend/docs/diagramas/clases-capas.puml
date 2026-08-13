@@ -32,9 +32,11 @@ package servicio {
   class GestorReservas
   class GestorPagos
   class GestorCandy
+  class GestorProductos
   class GestorEmpleados
   class GestorPromociones
   class CalculadoraPrecio
+  class Ocupacion
   interface PoliticaPromociones
   class "DatosPelicula, Arqueo" as DatosDeServicio
 }
@@ -137,8 +139,22 @@ GestorProgramaciones -down-> ProgramacionDAO
 GestorClientes -down-> ClienteDAO
 GestorReservas -down-> ReservaDAO
 GestorReservas -down-> GeneradorTicket
+
+' Que butacas estan tomadas es una pregunta sobre la funcion, no sobre una
+' reserva: por eso Ocupacion es una clase y no un metodo de GestorReservas.
+' Es la unica definicion de "ocupado" del sistema, y la comparten el que
+' vende y los dos que dibujan el mapa —la consola y la API—.
+GestorReservas -right-> Ocupacion
+Ocupacion -down-> ReservaDAO
+Ocupacion -down-> AsientoDAO
 GestorPagos -down-> PagoDAO
-GestorCandy -down-> ProductoDAO
+
+' La carta y las ventas del candy cambian por motivos distintos: una cuando
+' el cine suma un producto, la otra cuando cambia como se cobra. La venta le
+' pregunta los precios a la carta en vez de saberlos, igual que el pago de
+' una reserva toma el monto de la reserva y no de quien cobra.
+GestorCandy -right-> GestorProductos
+GestorProductos -down-> ProductoDAO
 GestorCandy -down-> CompraCandyDAO
 GestorCandy -down-> GeneradorTicketCandy
 GestorEmpleados -down-> EmpleadoDAO
