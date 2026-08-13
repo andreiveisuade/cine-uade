@@ -1,33 +1,33 @@
 package ar.uade.cine.servicio;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import ar.uade.cine.interfaces.Asiento;
-import ar.uade.cine.interfaces.AsientoDAO;
-import ar.uade.cine.interfaces.Cliente;
-import ar.uade.cine.interfaces.ClienteDAO;
-import ar.uade.cine.interfaces.Entrada;
-import ar.uade.cine.interfaces.Funcion;
-import ar.uade.cine.interfaces.FuncionDAO;
-import ar.uade.cine.interfaces.GeneradorTicket;
-import ar.uade.cine.interfaces.Pelicula;
-import ar.uade.cine.interfaces.PeliculaDAO;
-import ar.uade.cine.interfaces.Reserva;
-import ar.uade.cine.interfaces.ReservaDAO;
-import ar.uade.cine.interfaces.Sala;
-import ar.uade.cine.interfaces.SalaDAO;
-import ar.uade.cine.modelo.EntradaImpl;
-import ar.uade.cine.modelo.EstadoAsiento;
-import ar.uade.cine.modelo.EstadoReserva;
-import ar.uade.cine.modelo.ReservaImpl;
+import ar.uade.cine.dominio.cartelera.Pelicula;
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.salas.Asiento;
+import ar.uade.cine.dominio.salas.EstadoAsiento;
+import ar.uade.cine.dominio.salas.Sala;
+import ar.uade.cine.dominio.usuarios.Cliente;
+import ar.uade.cine.dominio.ventas.Entrada;
+import ar.uade.cine.dominio.ventas.EstadoReserva;
+import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.persistencia.AsientoDAO;
+import ar.uade.cine.persistencia.ClienteDAO;
+import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.GeneradorTicket;
+import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.ReservaDAO;
+import ar.uade.cine.persistencia.SalaDAO;
 
 /**
- * Reservar, pagar y cancelar. Un asiento no está "ocupado" en sí mismo: lo está
- * para una función, si alguna reserva no cancelada de esa función lo tomó.
+ * Reservar y cancelar. Un asiento no está "ocupado" en sí mismo: lo está para una
+ * función, si alguna reserva no cancelada de esa función lo tomó.
  */
 public class GestorReservas {
 
@@ -83,6 +83,8 @@ public class GestorReservas {
             if (yaElegidos.contains(buscado)) {
                 throw new IllegalArgumentException("La butaca " + buscado + " está repetida");
             }
+            // Buscar el asiento entre los de esta sala es lo que garantiza que la butaca
+            // pertenezca a la sala de la función: la base no lo puede validar sola.
             Asiento asiento = deLaSala.stream()
                     .filter(a -> a.getCodigo().equals(buscado))
                     .findFirst()
@@ -95,11 +97,11 @@ public class GestorReservas {
                 throw new IllegalArgumentException("La butaca " + buscado + " ya está ocupada");
             }
             yaElegidos.add(buscado);
-            entradas.add(new EntradaImpl(asiento.getId(), asiento.getCodigo(),
+            entradas.add(new Entrada(asiento.getId(), asiento.getCodigo(),
                     calculadoraPrecio.precioDe(funcion, sala, asiento)));
         }
 
-        Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas);
+        Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas, LocalDateTime.now());
         reservaDAO.guardar(reserva);
 
         Pelicula pelicula = peliculaDAO.buscarPorId(funcion.getPeliculaId()).orElseThrow();
@@ -108,11 +110,16 @@ public class GestorReservas {
         return reserva;
     }
 
-    /** Cobrar es responsabilidad de GestorPagos: acá solo se reserva y se cancela. */
+    /**
+     * R6: las butacas vuelven a estar disponibles. R13: una reserva ya cobrada no se
+     * cancela sin más, porque el pago seguiría contando en el arqueo del día; devolver
+     * la plata es un circuito de boletería que este sistema todavía no modela.
+     */
     public void cancelar(int reservaId) {
         Reserva reserva = buscarOFallar(reservaId);
-        if (reserva.getEstado() == EstadoReserva.CANCELADA) {
-            throw new IllegalArgumentException("La reserva ya está cancelada");
+        if (reserva.getEstado() != EstadoReserva.RESERVADA) {
+            throw new IllegalArgumentException("La reserva está " + reserva.getEstado()
+                    + ", solo se puede cancelar una reserva sin cobrar");
         }
         reserva.setEstado(EstadoReserva.CANCELADA);
         reservaDAO.actualizar(reserva);
@@ -134,12 +141,16 @@ public class GestorReservas {
         return reservaDAO.buscarPorId(id);
     }
 
-    /** Las reservas canceladas liberan sus butacas (R6). */
-    private Set<Integer> asientosOcupados(int funcionId) {
+    /**
+     * Ids de las butacas tomadas en esa función. Las reservas canceladas liberan las
+     * suyas (R6). Es público porque es la regla que define "ocupado", y quien dibuje el
+     * mapa de la sala —la consola o una API— tiene que preguntarla acá y no rehacerla.
+     */
+    public Set<Integer> asientosOcupados(int funcionId) {
         return reservaDAO.listarPorFuncion(funcionId).stream()
                 .filter(r -> r.getEstado() != EstadoReserva.CANCELADA)
                 .flatMap(r -> r.getEntradas().stream())
-                .map(Entrada::getAsientoId)
+                .map(Entrada::asientoId)
                 .collect(Collectors.toSet());
     }
 

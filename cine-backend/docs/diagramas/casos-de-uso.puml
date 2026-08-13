@@ -20,6 +20,10 @@ rectangle Sistema {
   usecase "CU-10 Iniciar sesion" as CU10
   usecase "CU-11 Marcar butaca\nfuera de servicio" as CU11
   usecase "CU-12 Arqueo del dia" as CU12
+  usecase "CU-13 Gestionar la carta\ndel candy" as CU13
+  usecase "CU-14 Armar combo\npromocional" as CU14
+  usecase "CU-15 Comprar en el candy" as CU15
+  usecase "CU-16 Ver mis compras\ndel candy" as CU16
 }
 
 cliente --> CU04
@@ -28,6 +32,8 @@ cliente --> CU05
 cliente --> CU06
 cliente --> CU08
 cliente --> CU09
+cliente --> CU15
+cliente --> CU16
 
 admin --> CU10
 admin --> CU01
@@ -37,6 +43,8 @@ admin --> CU04
 admin --> CU11
 admin --> CU07
 admin --> CU12
+admin --> CU13
+admin --> CU14
 
 note bottom of CU10
   Solo el administrador inicia sesion.
@@ -48,6 +56,30 @@ note bottom of CU07
   El cobro lo registra la boleteria.
   El monto sale de la reserva, no
   se ingresa a mano.
+end note
+
+note bottom of CU08
+  Solo se cancela una reserva sin cobrar.
+  Si ya se pago hace falta una devolucion,
+  que es un circuito que no modelamos.
+end note
+
+note bottom of CU12
+  Dos cajas distintas: boleteria (pagos de
+  reservas) y candy (ventas de mostrador).
+  El arqueo las muestra por separado y suma.
+end note
+
+note bottom of CU14
+  Un combo tiene que costar menos que sus
+  componentes sueltos: si no, no es promocion.
+  El sistema lo valida contra la carta.
+end note
+
+note bottom of CU15
+  Se paga en el acto y se emite el ticket.
+  No hay reserva previa: eso es solo para
+  las butacas.
 end note
 
 @enduml

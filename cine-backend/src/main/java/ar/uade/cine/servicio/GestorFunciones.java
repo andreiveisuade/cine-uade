@@ -4,18 +4,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import ar.uade.cine.interfaces.Funcion;
-import ar.uade.cine.interfaces.FuncionDAO;
-import ar.uade.cine.interfaces.Pelicula;
-import ar.uade.cine.interfaces.PeliculaDAO;
-import ar.uade.cine.interfaces.Sala;
-import ar.uade.cine.interfaces.SalaDAO;
-import ar.uade.cine.modelo.FuncionImpl;
-import ar.uade.cine.modelo.Idioma;
-import ar.uade.cine.modelo.Proyeccion;
+import ar.uade.cine.dominio.cartelera.Pelicula;
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.funciones.FuncionImpl;
+import ar.uade.cine.dominio.funciones.Proyeccion;
+import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.dominio.salas.Sala;
+import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.ReservaDAO;
+import ar.uade.cine.persistencia.SalaDAO;
 
 /**
- * Necesita los tres DAOs porque la regla R3 no se puede validar solo con funciones:
+ * Necesita película y sala porque la regla R3 no se puede validar solo con funciones:
  * cuánto dura cada una sale de la película que proyecta.
  */
 public class GestorFunciones {
@@ -23,21 +24,25 @@ public class GestorFunciones {
     private final FuncionDAO funcionDAO;
     private final PeliculaDAO peliculaDAO;
     private final SalaDAO salaDAO;
+    private final ReservaDAO reservaDAO;
 
-    public GestorFunciones(FuncionDAO funcionDAO, PeliculaDAO peliculaDAO, SalaDAO salaDAO) {
+    public GestorFunciones(FuncionDAO funcionDAO, PeliculaDAO peliculaDAO, SalaDAO salaDAO,
+                           ReservaDAO reservaDAO) {
         this.funcionDAO = funcionDAO;
         this.peliculaDAO = peliculaDAO;
         this.salaDAO = salaDAO;
+        this.reservaDAO = reservaDAO;
     }
 
-    public void programar(int peliculaId, int salaId, LocalDateTime inicio,
-                          Idioma idioma, Proyeccion proyeccion, double precio) {
+    /** Devuelve la función ya con su id, igual que GestorCartelera.agregar. */
+    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
+                             Version version, Proyeccion proyeccion, double precio) {
         Pelicula pelicula = peliculaDAO.buscarPorId(peliculaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
         Sala sala = salaDAO.buscarPorId(salaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
-        if (idioma == null || proyeccion == null) {
-            throw new IllegalArgumentException("Falta el idioma o el formato de proyección");
+        if (version == null || proyeccion == null) {
+            throw new IllegalArgumentException("Falta la versión o el formato de proyección");
         }
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
@@ -53,7 +58,9 @@ public class GestorFunciones {
         if (haySuperposicion(salaId, inicio, fin)) {
             throw new IllegalArgumentException("La sala ya tiene una función en ese horario");
         }
-        funcionDAO.guardar(new FuncionImpl(peliculaId, salaId, inicio, idioma, proyeccion, precio));
+        Funcion funcion = new FuncionImpl(peliculaId, salaId, inicio, version, proyeccion, precio);
+        funcionDAO.guardar(funcion);
+        return funcion;
     }
 
     /** Dos rangos se pisan si cada uno empieza antes de que termine el otro. */
@@ -82,9 +89,14 @@ public class GestorFunciones {
         return funcionDAO.buscarPorId(id);
     }
 
+    /** R12: si tiene entradas vendidas, borrarla dejaría reservas apuntando a la nada. */
     public void eliminar(int id) {
         if (funcionDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe la función " + id);
+        }
+        if (!reservaDAO.listarPorFuncion(id).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "La función " + id + " tiene reservas: no se puede eliminar");
         }
         funcionDAO.eliminar(id);
     }

@@ -2,210 +2,259 @@
 title Modelo de dominio - Sistema de cine
 
 skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
 hide empty members
 
-interface Pelicula {
-  +getTitulo(): String
-  +getDuracionMinutos(): int
-  +getGeneros(): List<Genero>
-  +getClasificacion(): Clasificacion
-  --datos de catalogo--
-  +getDirector(): String
-  +getSinopsis(): String
-  +getAnio(): int
-  +getIdiomaOriginal(): String
-  +getPosterUrl(): String
-  +estaEnCartelera(): boolean
+package "dominio.cartelera" {
+  interface Pelicula {
+    +getTitulo(): String
+    +getDuracionMinutos(): int
+    +getGeneros(): List<Genero>
+    +getClasificacion(): Clasificacion
+    --datos de catalogo--
+    +getDirector(): String
+    +getSinopsis(): String
+    +getAnio(): int
+    +getIdiomaOriginal(): String
+    +getPosterUrl(): String
+    +estaEnCartelera(): boolean
+  }
+  enum Genero <<enum>> {
+    ACCION / COMEDIA / DRAMA
+    TERROR / CIENCIA_FICCION
+    ANIMACION / DOCUMENTAL
+    ROMANCE / SUSPENSO
+  }
+  enum Clasificacion <<enum>> {
+    ATP / MAS_13 / MAS_16 / MAS_18
+    --
+    +getEdadMinima(): int
+  }
 }
 
-interface Sala {
-  +getNombre(): String
-  +getTipo(): TipoSala
-  +getButacasPorFila(): List<Integer>
-  +getFilas(): int
-  +getCapacidadSala(): int
+package "dominio.salas" {
+  interface Sala {
+    +getNombre(): String
+    +getTipo(): TipoSala
+  }
+  interface Asiento {
+    +getSalaId(): int
+    +getFila(): int
+    +getNumero(): int
+    +getTipo(): TipoAsiento
+    +getEstado(): EstadoAsiento
+    +getCodigo(): String
+  }
+  enum TipoSala <<enum>> {
+    DOS_D / TRES_D / IMAX / CUATRO_D
+    --
+    +getMultiplicadorPrecio(): double
+    +soportaTresD(): boolean
+  }
+  enum TipoAsiento <<enum>> {
+    ESTANDAR / VIP / PAREJA / ACCESIBLE
+    --
+    +getMultiplicadorPrecio(): double
+  }
+  enum EstadoAsiento <<enum>> {
+    HABILITADO
+    FUERA_DE_SERVICIO
+  }
 }
 
-interface Asiento {
-  +getSalaId(): int
-  +getFila(): int
-  +getNumero(): int
-  +getTipo(): TipoAsiento
-  +getEstado(): EstadoAsiento
-  +getCodigo(): String
+package "dominio.funciones" {
+  interface Funcion {
+    +getPeliculaId(): int
+    +getSalaId(): int
+    +getInicio(): LocalDateTime
+    +getVersion(): Version
+    +getProyeccion(): Proyeccion
+    +getPrecio(): double
+  }
+  enum Version <<enum>> {
+    DOBLADA
+    SUBTITULADA
+  }
+  enum Proyeccion <<enum>> {
+    DOS_D
+    TRES_D
+  }
 }
 
-interface Funcion {
-  +getPeliculaId(): int
-  +getSalaId(): int
-  +getInicio(): LocalDateTime
-  +getIdioma(): Idioma
-  +getProyeccion(): Proyeccion
-  +getPrecio(): double
+package "dominio.usuarios" {
+  interface Usuario {
+    +getNombre(): String
+    +getEmail(): String
+    +getRol(): Rol
+  }
+  interface Cliente
+  interface AdministradorCine {
+    +getPasswordHash(): String
+  }
+  enum Rol <<enum>> {
+    CLIENTE
+    ADMINISTRADOR
+  }
 }
 
-interface Usuario {
-  +getNombre(): String
-  +getEmail(): String
-  +getRol(): Rol
+package "dominio.ventas" {
+  interface Reserva {
+    +getFuncionId(): int
+    +getClienteId(): int
+    +getCreadaEn(): LocalDateTime
+    +getEntradas(): List<Entrada>
+    +getCantidadEntradas(): int
+    +getTotal(): double
+    +getEstado(): EstadoReserva
+  }
+  class Entrada <<record>> {
+    +asientoId(): int
+    +codigoAsiento(): String
+    +precio(): double
+  }
+  interface Pago {
+    +getReservaId(): int
+    +getMonto(): double
+    +getMedio(): MedioPago
+    +getFecha(): LocalDateTime
+    +getCodigoAutorizacion(): String
+  }
+  enum EstadoReserva <<enum>> {
+    RESERVADA / PAGADA / CANCELADA
+  }
+  enum MedioPago <<enum>> {
+    EFECTIVO / DEBITO / CREDITO
+    QR / TRANSFERENCIA
+    --
+    +requiereAutorizacion(): boolean
+  }
 }
 
-interface Cliente {
-}
-
-interface AdministradorCine {
-  +getPasswordHash(): String
-}
-
-enum Rol {
-  CLIENTE
-  ADMINISTRADOR
+package "dominio.candy" {
+  interface Producto {
+    +getNombre(): String
+    +getTipo(): TipoProducto
+    +getPrecio(): double
+    +estaDisponible(): boolean
+    +getComponentes(): List<ItemCombo>
+    +esCombo(): boolean
+  }
+  class ItemCombo <<record>> {
+    +productoId(): int
+    +nombre(): String
+    +cantidad(): int
+  }
+  interface CompraCandy {
+    +getClienteId(): int
+    +getFecha(): LocalDateTime
+    +getMedio(): MedioPago
+    +getItems(): List<ItemCompra>
+    +getTotal(): double
+  }
+  class ItemCompra <<record>> {
+    +productoId(): int
+    +nombre(): String
+    +cantidad(): int
+    +precioUnitario(): double
+    +getSubtotal(): double
+  }
+  enum TipoProducto <<enum>> {
+    POCHOCLOS / BEBIDA
+    GOLOSINA / COMBO
+  }
 }
 
 Cliente --|> Usuario
 AdministradorCine --|> Usuario
-Usuario "1" -- "1" Rol
-
-interface Reserva {
-  +getFuncionId(): int
-  +getClienteId(): int
-  +getEntradas(): List<Entrada>
-  +getCantidadEntradas(): int
-  +getEstado(): EstadoReserva
-}
-
-interface Entrada {
-  +getAsientoId(): int
-  +getCodigoAsiento(): String
-  +getPrecio(): double
-}
-
-enum Clasificacion {
-  ATP
-  MAS_13
-  MAS_16
-  MAS_18
-}
-
-enum Genero {
-  ACCION
-  COMEDIA
-  DRAMA
-  TERROR
-  CIENCIA_FICCION
-  ANIMACION
-  DOCUMENTAL
-  ROMANCE
-  SUSPENSO
-}
-
-enum TipoSala {
-  DOS_D
-  TRES_D
-  IMAX
-  CUATRO_D
-  VIP
-}
-
-enum TipoAsiento {
-  ESTANDAR
-  VIP
-  PAREJA
-  ACCESIBLE
-}
-
-enum EstadoAsiento {
-  DISPONIBLE
-  FUERA_DE_SERVICIO
-}
-
-enum Idioma {
-  DOBLADA
-  SUBTITULADA
-}
-
-enum Proyeccion {
-  DOS_D
-  TRES_D
-}
-
-enum EstadoReserva {
-  RESERVADA
-  PAGADA
-  CANCELADA
-}
-
-Pelicula "1" *-- "1..*" Genero
-Sala "1" -- "1" TipoSala
-Asiento "1" -- "1" TipoAsiento
-Asiento "1" -- "1" EstadoAsiento
-Reserva "1" -- "1" EstadoReserva
-Funcion "1" -- "1" Idioma
-Funcion "1" -- "1" Proyeccion
 
 Sala "1" *-- "1..*" Asiento
-Reserva "1" *-- "1..*" Entrada
-Entrada "1" --> "1" Asiento
-
 Funcion "*" --> "1" Pelicula
 Funcion "*" --> "1" Sala
+
 Reserva "*" --> "1" Funcion
 Reserva "*" --> "1" Cliente
+Reserva "1" *-- "1..*" Entrada
+Entrada "*" --> "1" Asiento
+Pago "0..1" --> "1" Reserva
+
+Producto "1" *-- "0..*" ItemCombo
+ItemCombo "*" --> "1" Producto
+CompraCandy "*" --> "1" Cliente
+CompraCandy "1" *-- "1..*" ItemCompra
+ItemCompra "*" --> "1" Producto
+
+note as N1
+  **Los enums no llevan asociacion.**
+  Un enum es un tipo, no una entidad: se
+  modela como atributo (getTipo(): TipoSala),
+  igual que un String. Dibujarle una flecha
+  "1 a 1" diria que cada sala tiene su propio
+  IMAX, cuando IMAX es un valor compartido.
+end note
+
+note bottom of Entrada
+  Value object: no tiene identidad ni DAO,
+  vive y muere con su reserva. Por eso es un
+  record y no interfaz + implementacion.
+  precio se congela al reservar: si manana
+  sube la funcion, el ticket ya emitido
+  sigue diciendo lo que se pago.
+end note
+
+note bottom of Asiento
+  Un asiento tiene MUCHAS entradas a lo largo
+  del tiempo: una por cada funcion en la que
+  se vendio. De ahi el "*" del lado de Entrada.
+  No tiene estado "ocupado": lo esta para una
+  funcion, si alguna reserva no cancelada de
+  esa funcion lo tomo. Si tiene estado fisico,
+  porque una butaca rota lo esta siempre.
+end note
+
+note bottom of Sala
+  No guarda su distribucion de butacas. Serian
+  dos fuentes de verdad para lo mismo: la
+  capacidad se cuenta desde los asientos.
+end note
+
+note bottom of Funcion
+  Las asociaciones se guardan como id
+  (peliculaId, salaId): el DAO resuelve la
+  relacion. Vale para todo el modelo.
+  Proyeccion es de la funcion, no de la sala:
+  TipoSala dice que PUEDE proyectar, la
+  funcion que se ESTA proyectando.
+end note
+
+note bottom of TipoAsiento
+  El recargo premium esta solo aca. TipoSala
+  tenia tambien un VIP, y una butaca VIP en
+  sala VIP pagaba 2.0 x 1.5: tres veces la
+  base. TipoSala quedo como tecnologia.
+end note
 
 note bottom of AdministradorCine
   Solo el administrador tiene credenciales:
   el cliente compra sin iniciar sesion.
   Esa diferencia de datos es lo que justifica
   la herencia en vez de un simple enum de rol.
+  Rol es el discriminador de la tabla unica.
 end note
 
-note bottom of Asiento
-  El asiento no tiene estado "ocupado":
-  lo esta para una funcion, si alguna
-  reserva no cancelada de esa funcion
-  tiene una Entrada con ese asiento.
+note bottom of ItemCombo
+  La autoreferencia es lo que hace al combo
+  una promocion y no un producto con nombre
+  bonito: sabiendo que trae se puede validar
+  que cueste menos que comprarlo suelto (R14).
+  0..* porque un producto suelto no tiene
+  componentes; un combo tiene 2 o mas.
 end note
 
-note bottom of Funcion
-  Las asociaciones se guardan como id
-  (peliculaId, salaId): el DAO resuelve
-  la relacion.
-  Proyeccion es de la funcion, no de la
-  sala: TipoSala dice que PUEDE proyectar,
-  la funcion que se ESTA proyectando.
-end note
-
-interface Pago {
-  +getReservaId(): int
-  +getMonto(): double
-  +getMedio(): MedioPago
-  +getFecha(): LocalDateTime
-  +getCodigoAutorizacion(): String
-}
-
-enum MedioPago {
-  EFECTIVO
-  DEBITO
-  CREDITO
-  QR
-  TRANSFERENCIA
-}
-
-Pago "0..1" --> "1" Reserva
-Pago "1" -- "1" MedioPago
-Pelicula "*" -- "1" Clasificacion
-
-note bottom of Pago
-  El monto no se recibe: sale del total de
-  la reserva, asi nadie cobra otro importe.
-  Una reserva tiene a lo sumo un pago.
-end note
-
-note bottom of Clasificacion
-  Guardada en la pelicula. Falta usarla:
-  al vender habria que preguntar la edad,
-  y validarla de verdad pide fecha de
-  nacimiento en Cliente.
+note bottom of CompraCandy
+  No pasa por Pago y no tiene estados: en el
+  mostrador se cobra en el acto, asi que nace
+  pagada y lleva encima el medio. Reservar y
+  cobrar despues es el circuito de las butacas.
 end note
 
 @enduml

@@ -418,6 +418,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#pagos" data-target="pagos">Pagos</a></li>
+        <li><a href="#candy" data-target="candy">Candy</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
 
@@ -440,8 +441,9 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="resumen">
       <h2>Resumen</h2>
       <p>
-        El sistema administra la cartelera de un cine y la venta de entradas: se cargan películas y salas,
-        se programan funciones, y los clientes reservan y pagan entradas.
+        El sistema administra la cartelera de un cine y su venta: se cargan películas y salas,
+        se programan funciones, los clientes reservan y pagan entradas, y el candy vende productos
+        y combos promocionales.
       </p>
       <p>
         Está armado en capas para que la lógica de negocio no dependa de dónde se guardan los datos.
@@ -450,8 +452,8 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <div class="callout">
         <p>
-          <strong>Estado:</strong> el circuito de <code>Pelicula</code> está implementado de punta a punta.
-          El resto del modelo está diseñado pero todavía sin persistencia. Ver
+          <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
+          implementados de punta a punta, con 60 tests en verde. Ver
           <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
@@ -464,6 +466,8 @@ body.lightbox-locked { overflow: hidden; }
         <li>Programar funciones: una película en una sala, a una fecha y hora, con un precio.</li>
         <li>Registrar clientes.</li>
         <li>Reservar butacas concretas de una función, cobrarlas con distintos medios de pago o cancelarlas.</li>
+        <li>Vender productos del candy y combos promocionales, con su comprobante en <code>.txt</code>.</li>
+        <li>Arqueo del día, separando lo que entró por boletería de lo que entró por el candy.</li>
         <li>Los datos persisten en MySQL; la lógica no depende de la tecnología de persistencia.</li>
       </ul>
     </section>
@@ -486,6 +490,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R10</td><td>Toda película tiene clasificación por edad</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R11</td><td>Los medios electrónicos exigen código de autorización</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R12</td><td>No se elimina una película o sala con funciones, ni una función con reservas</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar: si ya se pagó, hace falta una devolución</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R14</td><td>Un combo tiene que costar menos que sus componentes sueltos</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -515,11 +522,15 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6, R13</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-10</td><td>Admin</td><td>Iniciar sesión</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-11</td><td>Admin</td><td>Marcar o reponer una butaca fuera de servicio</td><td>R9</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día: boletería y candy por separado</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy: alta, precio, sacar y reponer</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-14</td><td>Admin</td><td>Armar un combo promocional</td><td>R14</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -568,11 +579,95 @@ body.lightbox-locked { overflow: hidden; }
         fijos: no hay una segunda implementación posible, así que no hay nada que abstraer.
       </p>
 
+      <h3>Y por qué tampoco llevan asociación en el diagrama</h3>
+      <p>
+        Un enum es un <strong>tipo</strong>, no una entidad: se modela como atributo
+        (<code>getTipo(): TipoSala</code>), igual que un <code>String</code>. Dibujarle una flecha
+        <code>"1" — "1"</code> desde <code>Sala</code> afirma que cada sala tiene <em>su propio</em> IMAX, cuando
+        <code>IMAX</code> es un valor compartido por todas las salas de ese tipo.
+      </p>
+      <p>
+        Si igual se quisieran dibujar, la multiplicidad correcta es <code>"*" → "1"</code>: muchas salas son IMAX,
+        una sala tiene un solo tipo. Por eso en el diagrama los enums aparecen dentro de su paquete pero
+        sin ninguna línea: nueve flechas que no aportan nada tapan las seis relaciones que sí importan.
+      </p>
+
+      <h3>Las multiplicidades que sí importan</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Relación</th><th>Tipo</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Sala "1" ◆— "1..*" Asiento</code></td>
+              <td>Composición</td>
+              <td>La butaca no existe fuera de su sala y se va con ella: la FK tiene <code>ON DELETE CASCADE</code>.</td>
+            </tr>
+            <tr>
+              <td><code>Reserva "1" ◆— "1..*" Entrada</code></td>
+              <td>Composición</td>
+              <td>Una entrada no tiene sentido sin su reserva. No hay reserva de cero butacas.</td>
+            </tr>
+            <tr>
+              <td><code>Entrada "*" → "1" Asiento</code></td>
+              <td>Asociación</td>
+              <td>
+                La butaca A1 se vende <strong>una vez por función</strong>: a lo largo del tiempo acumula
+                muchas entradas. Poner <code>"1" → "1"</code> diría que cada asiento se vendió una sola vez
+                en la historia del cine.
+              </td>
+            </tr>
+            <tr>
+              <td><code>Pago "0..1" → "1" Reserva</code></td>
+              <td>Asociación</td>
+              <td>Una reserva puede no estar cobrada todavía, y nunca tiene dos pagos: el <code>UNIQUE</code> lo garantiza.</td>
+            </tr>
+            <tr>
+              <td><code>Funcion "*" → "1" Pelicula</code>, <code>"*" → "1" Sala</code></td>
+              <td>Asociación</td>
+              <td>La misma película se da muchas veces, y una sala tiene muchas funciones a lo largo del día.</td>
+            </tr>
+            <tr>
+              <td><code>Producto "1" ◆— "0..*" ItemCombo</code> y <code>ItemCombo "*" → "1" Producto</code></td>
+              <td>Composición + autoreferencia</td>
+              <td>
+                Un combo es un producto que contiene otros productos. <code>0..*</code> porque un producto suelto
+                no tiene componentes; un combo tiene dos o más.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Las asociaciones que en el diagrama son navegables en un sentido se guardan siempre como id
+        (<code>peliculaId</code>, <code>salaId</code>, <code>asientoId</code>): no hay grafo de objetos en memoria,
+        el DAO resuelve la relación cuando hace falta.
+      </p>
+
+      <h3>Entidades y value objects</h3>
+      <p>
+        No todo lo del modelo es una entidad. <code>Entrada</code>, <code>ItemCombo</code> e
+        <code>ItemCompra</code> no tienen identidad propia, ni DAO, ni ciclo de vida separado del agregado que
+        los contiene: son <strong>value objects</strong>, y por eso son <code>record</code> y no interfaz con
+        implementación. Una interfaz de una sola implementación posible para un dato inmutable es puro
+        andamiaje.
+      </p>
+      <p>
+        Las que sí son entidades —<code>Pelicula</code>, <code>Sala</code>, <code>Reserva</code>,
+        <code>Producto</code>— tienen id, DAO y su propia interfaz, porque ahí la abstracción sí paga: cada una
+        tiene implementación en MySQL y en memoria.
+      </p>
+
       <h3>Reserva y compra son el mismo registro</h3>
       <p>
         Una <code>Reserva</code> nace en estado <code>RESERVADA</code> y pasa a <code>PAGADA</code> cuando el cliente
         abona, o a <code>CANCELADA</code> si se da de baja. Contiene una <code>Entrada</code> por butaca elegida;
-        la cantidad de entradas se deriva de esa lista, no se guarda aparte.
+        la cantidad de entradas se deriva de esa lista, no se guarda aparte. Guarda además
+        <code>creadaEn</code>: sin la fecha no se puede ordenar el historial del cliente ni auditar una venta.
+      </p>
+      <p>
+        Cancelar solo vale si está <code>RESERVADA</code> (R13). Cancelar una ya cobrada liberaría las butacas
+        pero dejaría el pago vivo, y el arqueo del día seguiría contando plata que se devolvió. Modelar la
+        devolución es lo que faltaría para permitirlo.
       </p>
     </section>
 
@@ -583,13 +678,22 @@ body.lightbox-locked { overflow: hidden; }
         y de forma. El modelo lo refleja en tres decisiones.
       </p>
 
-      <h3>La distribución es una lista, no un número</h3>
+      <h3>La distribución es una lista, y la sala no la guarda</h3>
       <p>
-        <code>Sala</code> guarda <code>butacasPorFila</code>: <code>[8, 10, 12, 12, 14]</code> significa que la
-        fila A tiene 8 butacas y la E tiene 14 — típico de una sala en cuña, donde las filas de adelante son
-        más cortas. De ahí salen <code>getFilas()</code> y <code>getCapacidadSala()</code>, que se calculan y
-        por eso nunca pueden quedar desincronizados con la realidad.
+        Al crear una sala se pasa <code>[8, 10, 12, 12, 14]</code>: la fila A tiene 8 butacas y la E tiene 14
+        — típico de una sala en cuña, donde las filas de adelante son más cortas. Con esa lista
+        <code>GestorSalas</code> genera los <code>Asiento</code>, y ahí termina su trabajo:
+        <strong><code>Sala</code> no la almacena</strong>.
       </p>
+      <div class="callout">
+        <p>
+          <strong>Por qué no guardarla.</strong> Si la sala tuviera <code>butacasPorFila</code> <em>y</em>
+          existiera la tabla <code>asiento</code>, habría dos fuentes de verdad para lo mismo. Marcar una butaca
+          fuera de servicio, agregar una fila o borrar un asiento dejaría la lista mintiendo sin que nada avise.
+          La capacidad se cuenta desde los asientos, que son los que existen de verdad:
+          <code>GestorSalas.capacidad(salaId)</code>.
+        </p>
+      </div>
 
       <h3>Un asiento no está "ocupado"</h3>
       <p>
@@ -619,13 +723,12 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
       <h3>Tipos de sala y de butaca</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>TipoSala</th><th>Multiplicador</th><th>TipoAsiento</th><th>Multiplicador</th></tr></thead>
+          <thead><tr><th>TipoSala (tecnología)</th><th>Multiplicador</th><th>TipoAsiento (categoría)</th><th>Multiplicador</th></tr></thead>
           <tbody>
             <tr><td><code>DOS_D</code></td><td>1.0</td><td><code>ESTANDAR</code></td><td>1.0</td></tr>
             <tr><td><code>TRES_D</code></td><td>1.3</td><td><code>VIP</code></td><td>1.5</td></tr>
             <tr><td><code>IMAX</code></td><td>1.6</td><td><code>PAREJA</code></td><td>1.8</td></tr>
             <tr><td><code>CUATRO_D</code></td><td>1.8</td><td><code>ACCESIBLE</code></td><td>1.0</td></tr>
-            <tr><td><code>VIP</code></td><td>2.0</td><td></td><td></td></tr>
           </tbody>
         </table>
       </div>
@@ -634,10 +737,26 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
         <code>precio base de la función × multiplicador de sala × multiplicador de butaca</code>. Una VIP en
         IMAX con base $5.000 sale $12.000; una estándar en la misma sala, $8.000.
       </p>
+      <div class="callout">
+        <p>
+          <strong>Los dos ejes tienen que ser independientes.</strong> <code>TipoSala</code> tenía además un
+          valor <code>VIP</code> con multiplicador 2.0, y como <code>TipoAsiento</code> también tiene
+          <code>VIP</code> (1.5), una butaca VIP en sala VIP terminaba pagando <code>2.0 × 1.5 = 3</code> veces
+          la base: el mismo recargo premium cobrado dos veces. El problema de fondo era que
+          <code>TipoSala</code> mezclaba dos cosas distintas —tecnología de proyección y categoría comercial— y
+          las multiplicaba como si fueran ortogonales. Ahora <code>TipoSala</code> es solo tecnología y lo
+          premium lo dice únicamente la butaca.
+        </p>
+      </div>
       <p>
         El cálculo vive en <code>CalculadoraPrecio</code>, una clase concreta y no una interfaz: hoy hay una
         sola forma de calcular. Cuando aparezcan las promociones (miércoles 2x1, jubilados) van a existir
         varias implementaciones de verdad y ahí se extrae el contrato.
+      </p>
+      <p>
+        El resultado se <strong>redondea a dos decimales</strong>. Multiplicar <code>double</code> arrastra error
+        en cuanto el precio tiene centavos: <code>5250.50 × 1.3</code> da <code>6825.650000000001</code>, y ese
+        resto terminaría impreso en el ticket y sumado al total de la reserva.
       </p>
       <div class="callout">
         <p>
@@ -654,28 +773,31 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
         una función 3D en una sala que no lo soporta falla.
       </p>
       <p>
-        <code>Idioma</code> (doblada / subtitulada) es de la función por el mismo motivo: la misma película, en
+        <code>Version</code> (doblada / subtitulada) es de la función por el mismo motivo: la misma película, en
         la misma sala, va doblada a las 15:00 y subtitulada a las 22:00.
       </p>
-
-      <h3>Las seis salas del complejo</h3>
-      <p>
-        <code>SalasDeEjemplo</code> carga un complejo completo de una sola vez (opción 5 del menú de salas),
-        para no dar de alta 694 butacas a mano:
-      </p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Particularidad</th></tr></thead>
-          <tbody>
-            <tr><td>Sala 1</td><td>IMAX</td><td>8,10,12,12,14</td><td>56</td><td>En cuña, accesibles en los bordes de la fila A</td></tr>
-            <tr><td>Sala 2</td><td>IMAX</td><td>14 × 8 filas</td><td>112</td><td>Rectangular clásica</td></tr>
-            <tr><td>Sala 3</td><td>3D</td><td>12…20</td><td>170</td><td>8 butacas VIP en las últimas filas</td></tr>
-            <tr><td>Sala 4</td><td>3D</td><td>16…24</td><td>254</td><td>La más grande, 4 accesibles</td></tr>
-            <tr><td>Sala 5</td><td>VIP</td><td>6,6,8,8</td><td>28</td><td>Todas butacas de pareja</td></tr>
-            <tr><td>Sala 6</td><td>4D</td><td>10,12,12,14,14,12</td><td>74</td><td>Butacas móviles</td></tr>
-          </tbody>
-        </table>
+      <div class="callout">
+        <p>
+          <strong>El enum se llamaba <code>Idioma</code> y no contenía idiomas.</strong> <code>DOBLADA</code> y
+          <code>SUBTITULADA</code> describen la versión de la copia, no en qué lengua está hablada — eso es
+          <code>Pelicula.getIdiomaOriginal()</code>, un dato de catálogo distinto. Un tipo cuyo nombre no
+          describe sus valores obliga a leer el código para entender el modelo.
+        </p>
       </div>
+
+      <h3>Butacas especiales al crear la sala</h3>
+      <p>
+        Todas las butacas nacen <code>ESTANDAR</code> salvo las que se marquen por código:
+      </p>
+      <pre><code>salas.agregar("Sala 3", TipoSala.IMAX, List.of(8, 10, 12),
+             Map.of("A1", TipoAsiento.ACCESIBLE,
+                    "C7", TipoAsiento.VIP));</code></pre>
+      <p>
+        Un <code>Map</code> de código a tipo, y no dos listas paralelas (una de VIP y otra de accesibles):
+        con listas separadas había que inventar en qué lista cae cada tipo nuevo, y el gestor terminaba
+        adivinando —si la sala era VIP, la butaca marcada era de pareja; si no, VIP—. Adivinar el tipo a
+        partir de otro dato es exactamente el tipo de regla implícita que después nadie entiende.
+      </p>
 
       <h3>El mapa en consola</h3>
       <p>Al reservar se dibuja la sala con el estado de cada butaca para esa función:</p>
@@ -688,9 +810,17 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
   [n] libre  (n) ocupada  {n} fuera de servicio  * VIP  &amp; pareja  + accesible
 Libres: 52 de 56</code></pre>
       <p>
-        Ese dibujo vive en <code>MenuConsola</code>, no en el modelo: es presentación. El día que haya un
-        frontend web, consume los mismos datos (fila, número, tipo, ocupado) y los dibuja como quiera.
+        Ese dibujo vive en <code>MenuConsola</code>, no en el modelo: es presentación. El frontend web consume
+        los mismos datos (fila, número, tipo, ocupado) y los dibuja como quiera.
       </p>
+      <div class="callout">
+        <p>
+          <strong>La separación se puso a prueba.</strong> Cuando se sumó la API REST, la capa de servicio no
+          cambió: <code>ServidorApi</code> se colgó de los mismos gestores que usa el menú y solo tradujo a
+          JSON. Hoy conviven las dos interfaces sobre la misma lógica, y ninguna regla está duplicada. Eso es
+          lo que compra tener la lógica fuera de la capa que habla con el usuario.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="usuarios">
@@ -955,12 +1085,87 @@ new MenuConsola(gestor).iniciar();</code></pre>
 
       <div class="callout">
         <p>
-          <strong>Lo que este modelo todavía no resuelve:</strong> cancelar una reserva ya pagada no genera
-          ningún reembolso — el pago queda registrado y la plata, en teoría, cobrada. Tampoco hay pagos
+          <strong>Lo que este modelo todavía no resuelve:</strong> no existe la devolución, y por eso R13
+          prohíbe cancelar una reserva ya cobrada — antes se permitía, y el resultado era que las butacas se
+          liberaban, el pago seguía vivo y el arqueo del día contaba plata devuelta. Tampoco hay pagos
           parciales ni pago con dos medios a la vez (el <code>UNIQUE</code> sobre <code>reserva_id</code> lo
           impide a propósito), ni pagos rechazados: acá un pago registrado es un pago exitoso.
         </p>
       </div>
+    </section>
+
+    <section class="doc-section" id="candy">
+      <h2>Candy</h2>
+      <p>
+        El cine no vive solo de entradas. El candy vende productos sueltos y combos, cada venta emite su
+        comprobante, y lo recaudado entra al arqueo del día como una caja aparte de la boletería.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_SECUENCIA_CANDY}}
+        <figcaption>De armar el combo a emitir el ticket</figcaption>
+      </figure>
+
+      <h3>Un combo es un producto que contiene productos</h3>
+      <p>
+        <code>Producto</code> tiene nombre, tipo (<code>POCHOCLOS</code>, <code>BEBIDA</code>,
+        <code>GOLOSINA</code>, <code>COMBO</code>) y precio. Un combo no es una entidad aparte: es un
+        <code>Producto</code> de tipo <code>COMBO</code> que además declara sus <code>ItemCombo</code>. La
+        tabla <code>combo_item</code> apunta dos veces a <code>producto</code> — al combo y a lo que contiene.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Por qué el combo declara qué trae.</strong> Se podría haber modelado como un producto más,
+          con nombre "Combo pochoclos + gaseosa" y precio propio, sin componentes. Pero entonces nada
+          distinguiría una promoción de un producto con nombre largo, y no habría forma de validar que
+          convenga. Sabiendo qué contiene, R14 es comprobable contra la lista de precios: pochoclos $4.000 +
+          gaseosa $2.500 son $6.500 sueltos, así que un combo a $6.500 o más no es una promoción y el sistema
+          lo rechaza.
+        </p>
+      </div>
+      <p>
+        De ahí sale también el ahorro que se imprime en el ticket: <code>lo que costaría suelto − lo que se
+        pagó</code>. Un combo no puede contener otro combo, para que ese cálculo no sea recursivo.
+      </p>
+
+      <h3>En el mostrador se paga en el acto</h3>
+      <p>
+        <code>CompraCandy</code> no tiene estados y no pasa por <code>Pago</code>: nace cobrada y lleva encima
+        el <code>MedioPago</code>. Reservar primero y cobrar después es el circuito de las butacas, donde el
+        cliente elige asiento y puede pagar en boletería un rato más tarde; en el candy no hay nada que
+        reservar.
+      </p>
+      <p>
+        Sí comparte dos reglas con las reservas: el total sale de la carta y no se ingresa a mano, y los
+        medios electrónicos exigen código de autorización (R11).
+      </p>
+
+      <h3>Los productos no se borran</h3>
+      <p>
+        <code>ProductoDAO</code> no tiene <code>eliminar</code>: un producto puede estar en compras ya
+        emitidas, y borrarlo dejaría esos tickets apuntando a la nada. Se saca de la carta con
+        <code>estaDisponible</code>, igual que <code>estaEnCartelera</code> en las películas. Es la misma
+        lección que dejó R12.
+      </p>
+      <p>
+        Y como en las entradas, el nombre y el precio quedan <strong>congelados</strong> en cada
+        <code>ItemCompra</code>: si mañana sube el pochoclo, el ticket de ayer sigue diciendo lo que se cobró.
+      </p>
+
+      <h3>El arqueo son dos cajas</h3>
+      <pre><code>-- Boletería --
+[1] reserva 3 - $16000.0 - EFECTIVO - 2026-08-13T20:15
+-- Candy --
+[1] cliente 1 - [2x Combo pareja] - $11000.0 - DEBITO - 2026-08-13T20:18
+
+Boletería : $   16000.00
+Candy     : $   11000.00
+Total del 2026-08-13: $   27000.00</code></pre>
+      <p>
+        Se muestran separadas y después se suman, que es como funciona un cine real: la boletería y el candy
+        cierran caja por su cuenta. Unificarlas habría obligado a que <code>Pago</code> apuntara a veces a una
+        reserva y a veces a una compra —una clave foránea polimórfica— para no ganar nada.
+      </p>
     </section>
 
     <section class="doc-section" id="base-de-datos">
@@ -972,10 +1177,17 @@ new MenuConsola(gestor).iniciar();</code></pre>
           <tbody>
             <tr><td><code>pelicula</code></td><td>título, duración, clasificación y datos de catálogo</td></tr>
             <tr><td><code>pelicula_genero</code></td><td>relación N:M con los géneros</td></tr>
-            <tr><td><code>sala</code></td><td>nombre y capacidad</td></tr>
+            <tr><td><code>sala</code></td><td>nombre y tipo. La capacidad no se guarda: se cuenta desde <code>asiento</code></td></tr>
+            <tr><td><code>asiento</code></td><td>butaca física: fila, número, tipo y estado</td></tr>
             <tr><td><code>usuario</code></td><td>clientes y administradores, con columna <code>rol</code></td></tr>
-            <tr><td><code>funcion</code></td><td>película + sala + inicio + precio</td></tr>
-            <tr><td><code>reserva</code></td><td>función + cliente + cantidad + estado</td></tr>
+            <tr><td><code>funcion</code></td><td>película + sala + inicio + versión + proyección + precio</td></tr>
+            <tr><td><code>reserva</code></td><td>función + cliente + estado + fecha de creación</td></tr>
+            <tr><td><code>entrada</code></td><td>una butaca vendida, con el precio congelado. <code>funcion_id</code> sostiene el <code>UNIQUE</code> que impide la doble venta</td></tr>
+            <tr><td><code>pago</code></td><td>comprobante de cobro de una reserva (<code>UNIQUE</code> por reserva)</td></tr>
+            <tr><td><code>producto</code></td><td>la carta del candy, combos incluidos</td></tr>
+            <tr><td><code>combo_item</code></td><td>qué trae cada combo: apunta dos veces a <code>producto</code></td></tr>
+            <tr><td><code>compra_candy</code></td><td>venta de mostrador, con su medio de pago</td></tr>
+            <tr><td><code>item_compra</code></td><td>línea de la compra, con nombre y precio congelados</td></tr>
           </tbody>
         </table>
       </div>
@@ -984,6 +1196,8 @@ new MenuConsola(gestor).iniciar();</code></pre>
     pelicula_id INT NOT NULL,
     sala_id INT NOT NULL,
     inicio DATETIME NOT NULL,
+    version VARCHAR(15) NOT NULL,
+    proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
     FOREIGN KEY (sala_id) REFERENCES sala(id)
@@ -993,14 +1207,93 @@ CREATE TABLE IF NOT EXISTS reserva (
     id INT PRIMARY KEY AUTO_INCREMENT,
     funcion_id INT NOT NULL,
     cliente_id INT NOT NULL,
-    cantidad_entradas INT NOT NULL,
     estado VARCHAR(15) NOT NULL,
+    creada_en DATETIME NOT NULL,
     FOREIGN KEY (funcion_id) REFERENCES funcion(id),
-    FOREIGN KEY (cliente_id) REFERENCES cliente(id)
+    FOREIGN KEY (cliente_id) REFERENCES usuario(id)
 );</code></pre>
       <p>
         Las <code>FOREIGN KEY</code> impiden que quede una función apuntando a una película borrada, o una
-        reserva sin función. La base rechaza esos casos aunque el código se olvide de validarlos.
+        reserva sin función. La base rechaza esos casos aunque el código se olvide de validarlos —pero rechazar
+        no es lo mismo que resolver: si el gestor intenta el borrado igual, el usuario recibe un error de SQL
+        en vez de un mensaje entendible. Por eso R12 valida antes, en la capa de servicio.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Lo que la base no puede validar sola.</strong> Que la butaca de una entrada pertenezca a la
+          sala de la función de esa reserva cierra un triángulo entre cuatro tablas: ninguna
+          <code>FOREIGN KEY</code> lo expresa. Lo garantiza <code>GestorReservas</code>, que busca el asiento
+          entre los de esa sala. Lo mismo con R14: comparar el precio de un combo contra la suma de sus
+          componentes son filas distintas de la misma tabla.
+        </p>
+      </div>
+
+      <h3>Que una butaca no se venda dos veces</h3>
+      <p>
+        Es el único caso donde la validación del gestor <strong>no alcanza</strong>, y vale la pena entender
+        por qué. <code>GestorReservas.reservar()</code> hace dos cosas en orden: lee qué butacas están tomadas
+        y después inserta las entradas. Entre esas dos operaciones hay una ventana, y dos clientes
+        simultáneos pueden leer <em>los dos</em> que A1 está libre antes de que cualquiera escriba. Ninguna
+        cantidad de validación en Java cierra esa ventana: quien tiene que arbitrar es la base.
+      </p>
+      <pre><code>Ana                              Beto
+lee: A1 libre  ─┐
+                │                lee: A1 libre     ← los dos ven lo mismo
+inserta A1  ────┘
+                                 inserta A1        ← acá tiene que fallar</code></pre>
+      <p>
+        La garantía es <code>UNIQUE (funcion_id, asiento_id)</code> sobre <code>entrada</code>.
+        <code>funcion_id</code> no es información nueva —sale de la reserva— pero sin tenerla en la misma fila
+        no hay forma de expresar la restricción. El <code>UNIQUE</code> anterior era
+        <code>(reserva_id, asiento_id)</code>, que solo impedía repetir una butaca <em>dentro de la misma
+        reserva</em>: entre reservas distintas no decía nada.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El truco está en cómo se libera.</strong> Cancelar tiene que devolver la butaca al mercado
+          (R6), pero si la entrada sigue en la tabla el <code>UNIQUE</code> bloquearía la reventa. La solución
+          es poner <code>funcion_id = NULL</code> al cancelar: MySQL no aplica un índice único a las filas que
+          tienen NULL en alguna de sus columnas, así que <strong>muchas entradas canceladas de la misma butaca
+          conviven sin problema</strong>, mientras que solo una puede retenerla de verdad.
+        </p>
+        <p>
+          La alternativa era borrar las entradas al cancelar, y costaba el historial: la reserva cancelada
+          perdía qué butacas tenía y a qué precio. Con el NULL se conserva todo y se libera igual.
+        </p>
+      </div>
+      <p>
+        El gestor <strong>sigue validando antes</strong>, y eso no es redundante: en el 99,9% de los casos el
+        conflicto no existe y el usuario merece un mensaje claro ("la butaca B4 ya está ocupada") en vez de un
+        error de base. El <code>UNIQUE</code> es la red de seguridad para el caso raro. Cuando salta,
+        <code>ReservaDAOMySQL</code> traduce la violación a <code>ButacaOcupadaException</code> —que no es una
+        falla técnica sino una carrera perdida— y el menú vuelve a mostrar el mapa actualizado. La API REST
+        responde 409 y no 500.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Detectar la violación tiene una trampa.</strong> Lo natural es escribir
+          <code>catch (SQLIntegrityConstraintViolationException)</code>, y no funciona: las entradas se
+          insertan con <code>executeBatch()</code>, y cuando falla un lote JDBC lanza un
+          <code>BatchUpdateException</code>, que hereda de <code>SQLException</code> pero <strong>no</strong>
+          de la de integridad. Son ramas hermanas de la jerarquía, así que ese catch no se ejecuta nunca y el
+          error sale como falla genérica: por HTTP, un 500 donde correspondía un 409.
+        </p>
+        <p>
+          Por eso la detección recorre las causas encadenadas y además mira el <code>SQLState</code>
+          <code>23000</code>, que es el código estándar de "integrity constraint violation" y sí viaja en la
+          excepción de arriba. La lección general: <em>el catch mira el tipo de lo que se lanzó, no el de su
+          causa</em>.
+        </p>
+      </div>
+      <p>
+        <code>ReservaDAOTxt</code> no tiene esta garantía: no hay constraints en un archivo de texto. Alcanza
+        porque es para un solo proceso —los tests y la demo—, y está anotado en su javadoc.
+      </p>
+      <p>
+        Guardar una película o una reserva toca <strong>dos tablas</strong> (la entidad y su detalle), así que
+        esas operaciones van en una transacción con <code>setAutoCommit(false)</code> y
+        <code>commit</code>/<code>rollback</code>. Sin eso, una falla en el segundo paso dejaría una película
+        sin géneros —violando R7 desde la base— o una reserva sin butacas.
       </p>
       <p>
         La relación película–género es N:M y vive en <code>pelicula_genero</code>. El género se guarda con el
@@ -1013,44 +1306,62 @@ CREATE TABLE IF NOT EXISTS reserva (
 
       <h3>Ver la base con Adminer</h3>
       <p>
-        El <code>docker-compose.yml</code> levanta, además de MySQL, un <strong>Adminer</strong>: un visualizador
-        web de la base. No hay que instalar nada — arranca junto con el proyecto.
+        La orquestación no vive en este repo: está en <code>TPO/cine-docker/</code>, que levanta los cuatro
+        servicios juntos. Entre ellos hay un <strong>Adminer</strong>, un visualizador web de la base.
       </p>
-      <pre><code>docker compose up -d
-open http://localhost:8080</code></pre>
+      <pre><code>cd ../cine-docker
+cp .env.example .env
+docker compose up -d --build
+open http://127.0.0.1:8081        # Adminer</code></pre>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Campo del login</th><th>Valor</th></tr></thead>
           <tbody>
             <tr><td>Motor</td><td>MySQL</td></tr>
             <tr><td>Servidor</td><td><code>mysql</code> <span class="tag tag-ok">ya viene puesto</span></td></tr>
-            <tr><td>Usuario</td><td><code>root</code></td></tr>
-            <tr><td>Contraseña</td><td><code>root</code></td></tr>
+            <tr><td>Usuario</td><td><code>cine</code> <span class="tag">del <code>.env</code></span></td></tr>
+            <tr><td>Contraseña</td><td>la del <code>.env</code></td></tr>
             <tr><td>Base de datos</td><td><code>appsinteractivas</code></td></tr>
           </tbody>
         </table>
       </div>
-      <p>
-        Desde ahí podés recorrer las tablas, ver los datos que va cargando la app, y correr consultas SQL a mano
-        para probar antes de escribirlas en un DAO.
-      </p>
       <div class="callout">
         <p>
-          El servidor se llama <code>mysql</code>, no <code>localhost</code>: Adminer corre dentro de Docker y
-          alcanza a la base por el nombre del servicio en la red interna. <code>localhost:3306</code> es la
-          dirección que usa la app Java, que corre fuera de Docker.
+          <strong>Ya no se entra con root.</strong> La aplicación tiene un usuario propio con permisos solo
+          sobre <code>appsinteractivas</code>: si esas credenciales se filtran, no alcanzan para tocar otras
+          bases del motor. Los defaults <code>root/root</code> que quedaron en <code>ConexionMySQL</code> son
+          para correr fuera de Docker, contra una base local de desarrollo.
         </p>
       </div>
+      <p>
+        El servidor se llama <code>mysql</code> y no <code>localhost</code> porque Adminer corre dentro de
+        Docker y alcanza la base por el nombre del servicio en la red interna.
+      </p>
+
+      <h3>Qué se ve desde afuera</h3>
+      <p>
+        Solo dos puertos salen al host: la aplicación en <code>localhost:8080</code> y Adminer en
+        <code>127.0.0.1:8081</code>. <strong>MySQL y el backend no publican nada</strong> —ya no existe
+        <code>localhost:3306</code>—, y hay dos redes separadas: <code>datos</code> (mysql, backend, adminer) y
+        <code>web</code> (frontend, backend). El contenedor que sirve la web no tiene ruta hasta la base.
+      </p>
+      <p>
+        <code>ConexionMySQL</code> lee <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
+        <code>DB_USER</code> y <code>DB_PASSWORD</code> del entorno, con los valores de siempre como default:
+        adentro de Docker el host es <code>mysql</code>, y afuera sigue funcionando contra
+        <code>localhost:3306</code> sin configurar nada.
+      </p>
 
       <h3>Base nueva desde cero</h3>
       <p>
-        <code>schema.sql</code> está montado en <code>/docker-entrypoint-initdb.d/</code>: cuando alguien clona el
-        repo y levanta el compose por primera vez, MySQL ejecuta el script solo y las tablas quedan creadas.
-        El script corre únicamente si el volumen está vacío, así que sobre una base ya existente hay que aplicarlo a mano:
+        <code>schema.sql</code> —este archivo, el de este repo— se monta en
+        <code>/docker-entrypoint-initdb.d/</code>, así que al levantar el compose por primera vez MySQL crea las
+        tablas solo. El script corre <strong>únicamente si el volumen está vacío</strong>: si el esquema cambia,
+        sobre una base ya creada no se vuelve a aplicar y hay que rehacerla.
       </p>
-      <pre><code>docker exec -i apps-interactivas-mysql \
-  mysql -uroot -proot -D appsinteractivas &lt; src/main/resources/schema.sql</code></pre>
-      <p>Para empezar de cero y perder todos los datos: <code>docker compose down -v &amp;&amp; docker compose up -d</code></p>
+      <pre><code>cd ../cine-docker
+docker compose down -v          # -v borra el volumen: se pierden los datos
+docker compose up -d --build</code></pre>
     </section>
 
     <section class="doc-section" id="entorno">
@@ -1170,7 +1481,8 @@ open http://localhost:8080</code></pre>
       <pre><code>java -version     # openjdk 21.0.12
 mvn -v            # Maven 3.9.16, y "Java version: 21.0.12"
 echo $JAVA_HOME   # …/openjdk@21/…
-docker compose ps # mysql y adminer en Up</code></pre>
+
+cd ../cine-docker &amp;&amp; docker compose ps   # los 4 servicios en Up</code></pre>
       <p>
         La línea <em>Java version</em> de <code>mvn -v</code> es la que importa: muestra con qué JDK compila Maven
         realmente, que no siempre es el que creés.
@@ -1183,8 +1495,18 @@ docker compose ps # mysql y adminer en Up</code></pre>
           <tbody>
             <tr>
               <td><code>No se pudo conectar a MySQL</code></td>
-              <td>Docker cerrado o contenedor bajado</td>
-              <td>Abrir Docker Desktop y <code>docker compose up -d</code></td>
+              <td>Docker cerrado o contenedores bajados</td>
+              <td>Abrir Docker Desktop y <code>docker compose up -d</code> desde <code>cine-docker/</code></td>
+            </tr>
+            <tr>
+              <td><code>Connection refused</code> al correr <code>mvn exec:java</code></td>
+              <td>El compose ya no publica el 3306: fuera de Docker no hay base en <code>localhost</code></td>
+              <td>Usar el menú dentro del contenedor, o levantar un MySQL local aparte</td>
+            </tr>
+            <tr>
+              <td><code>Unknown column</code> o <code>Table … doesn't exist</code> después de un cambio de schema</td>
+              <td>El volumen ya existía: <code>docker-entrypoint-initdb.d</code> solo corre con el volumen vacío</td>
+              <td><code>docker compose down -v</code> y volver a levantar</td>
             </tr>
             <tr>
               <td><code>invalid target release: 21</code></td>
@@ -1213,19 +1535,40 @@ docker compose ps # mysql y adminer en Up</code></pre>
 
     <section class="doc-section" id="correr">
       <h2>Cómo correrlo</h2>
-      <pre><code>docker compose up -d     # MySQL en localhost:3306 + Adminer en localhost:8080
-mvn exec:java            # menú de consola
-mvn test                 # tests (no necesitan MySQL)</code></pre>
-      <p>Credenciales locales: base <code>appsinteractivas</code>, usuario <code>root</code>, password <code>root</code>.</p>
+      <p>
+        Todo el sistema —base, backend y frontend— se levanta desde el repo hermano
+        <code>cine-docker/</code>:
+      </p>
+      <pre><code>cd ../cine-docker
+cp .env.example .env
+docker compose up -d --build
+
+open http://localhost:8080        # la aplicación</code></pre>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Servicio</th><th>Dónde</th><th>Para qué</th></tr></thead>
           <tbody>
-            <tr><td>MySQL</td><td><code>localhost:3306</code></td><td>Base de datos, se conecta la app</td></tr>
-            <tr><td>Adminer</td><td><a href="http://localhost:8080">localhost:8080</a></td><td>Ver y consultar la base desde el navegador</td></tr>
+            <tr><td>Aplicación</td><td><a href="http://localhost:8080">localhost:8080</a></td><td>El frontend servido por nginx, que reenvía <code>/api</code> al backend</td></tr>
+            <tr><td>Adminer</td><td><a href="http://127.0.0.1:8081">127.0.0.1:8081</a></td><td>Ver y consultar la base desde el navegador</td></tr>
+            <tr><td>Backend</td><td><code>backend:8080</code></td><td>Solo en la red interna: no se llega desde el host</td></tr>
+            <tr><td>MySQL</td><td><code>mysql:3306</code></td><td>Solo en la red interna: ya no hay <code>localhost:3306</code></td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        Como nginx sirve el frontend y reenvía <code>/api</code> al backend, todo sale del mismo origen y no
+        hace falta configurar CORS.
+      </p>
+
+      <h3>Sin Docker</h3>
+      <pre><code>mvn test                 # los 60 tests, no necesitan base
+mvn exec:java            # menú de consola, necesita un MySQL en localhost:3306</code></pre>
+      <p>
+        El menú sigue existiendo y no se tocó: son dos interfaces —<code>MenuConsola</code> y la API HTTP—
+        sobre los mismos gestores. Contra la base de los contenedores se usa así:
+      </p>
+      <pre><code>cd ../cine-docker
+docker compose exec backend java -cp /app/cine-api.jar ar.uade.cine.Main</code></pre>
 
       <h3>Regenerar este manual</h3>
       <pre><code>cd docs/diagramas &amp;&amp; plantuml -tsvg *.puml
@@ -1237,34 +1580,59 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
 
     <section class="doc-section" id="estructura">
       <h2>Estructura de carpetas</h2>
-      <pre><code>Aplicaciones-Interactivas/
-├── docker-compose.yml
+      <pre><code>cine-backend/
 ├── pom.xml
 ├── docs/
 │   ├── README.md
 │   ├── diagramas/          *.puml + *.svg
 │   └── manual/             template.html + build.py → index.html
-├── tickets/                (generado) ticket-1.txt, ticket-2.txt…
+├── tickets/                (generado) ticket-1.txt, candy-1.txt…
 └── src/
     ├── main/java/ar/uade/cine/
-    │   ├── interfaces/     entidades + los 5 DAO + GeneradorTicket
-    │   ├── modelo/         *Impl, Genero, EstadoReserva
-    │   ├── persistencia/   *DAOMySQL, *DAOMemoria, ReservaDAOTxt,
-    │   │                   GeneradorTicketTxt, ConexionMySQL, PersistenciaException
-    │   ├── servicio/       GestorCartelera, GestorSalas, GestorFunciones,
-    │   │                   GestorClientes, GestorReservas
-    │   ├── ui/             MenuConsola
-    │   └── Main.java       elige las implementaciones
+    │   ├── dominio/            qué es un cine. No depende de ninguna otra capa
+    │   │   ├── cartelera/      Pelicula + Impl, Genero, Clasificacion
+    │   │   ├── salas/          Sala, Asiento + Impl, TipoSala, TipoAsiento, EstadoAsiento
+    │   │   ├── funciones/      Funcion + Impl, Version, Proyeccion
+    │   │   ├── ventas/         Reserva, Pago + Impl, Entrada, EstadoReserva, MedioPago
+    │   │   ├── candy/          Producto, CompraCandy + Impl, ItemCombo, ItemCompra
+    │   │   └── usuarios/       Usuario, Cliente, AdministradorCine + Impl, Rol
+    │   ├── servicio/           las reglas: los 8 Gestor*, CalculadoraPrecio, Password
+    │   ├── persistencia/       los 12 contratos (*DAO, GeneradorTicket*)
+    │   │   ├── mysql/          *DAOMySQL + ConexionMySQL
+    │   │   ├── memoria/        *DAOMemoria, para testear sin base
+    │   │   └── archivo/        ReservaDAOTxt, GeneradorTicketTxt, GeneradorTicketCandyTxt
+    │   ├── ui/                 MenuConsola
+    │   └── Main.java           elige las implementaciones
     ├── main/resources/     schema.sql
-    └── test/java/          GestorCarteleraTest, GestorFuncionesTest, GestorReservasTest</code></pre>
+    └── test/java/ar/uade/cine/servicio/    un test por gestor</code></pre>
+      <div class="callout">
+        <p>
+          <strong>Antes había un paquete <code>interfaces/</code> y otro <code>modelo/</code>, y era el error de
+          organización más grande del proyecto.</strong> Agrupaban por tipo de construcción de Java, no por
+          responsabilidad: <code>Pelicula</code> quedaba en una carpeta y <code>PeliculaImpl</code> en otra,
+          siendo la misma cosa del negocio. Peor todavía, <code>interfaces/</code> mezclaba contratos de
+          entidad (<code>Pelicula</code>, <code>Sala</code>) con contratos de persistencia
+          (<code>PeliculaDAO</code>, <code>SalaDAO</code>), que pertenecen a capas distintas.
+        </p>
+        <p>
+          El criterio ahora es: <strong>la carpeta dice de qué se ocupa el código, no de qué tipo de archivo
+          es</strong>. Cada entidad vive junto a su implementación y sus enums; los contratos de persistencia
+          están con la persistencia, y las tecnologías concretas un nivel más abajo.
+        </p>
+      </div>
+      <p>
+        Los tests espejan el paquete de lo que prueban (<code>test/java/ar/uade/cine/servicio/</code>): todos
+        prueban gestores, que es donde viven las reglas.
+      </p>
       <p><code>tickets/</code> y <code>reservas.txt</code> están en el <code>.gitignore</code>: son datos que genera la app, no código.</p>
     </section>
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Las cinco entidades están implementadas de punta a punta: los nueve casos de uso y las siete reglas
-        funcionan contra MySQL, y las reservas además pueden guardarse en un archivo de texto.
+        Los dieciséis casos de uso y las catorce reglas funcionan contra MySQL, con 60 tests en verde. Las
+        reservas además pueden guardarse en un archivo de texto, y tanto el ticket de butacas como el del
+        candy se emiten en <code>.txt</code>.
       </p>
 
       <h3>Tests</h3>
@@ -1272,23 +1640,29 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         <table>
           <thead><tr><th>Clase</th><th>Cubre</th></tr></thead>
           <tbody>
-            <tr><td><code>GestorCarteleraTest</code></td><td>R1, R2, R7 y el filtro por género</td></tr>
-            <tr><td><code>GestorFuncionesTest</code></td><td>R3: se pisan, no se pisan, otra sala, película inexistente</td></tr>
-            <tr><td><code>GestorReservasTest</code></td><td>R4, R5, R6, la emisión del ticket y la persistencia en txt</td></tr>
+            <tr><td><code>GestorCarteleraTest</code></td><td>R1 al alta y al editar, R2, R7 y el filtro por género</td></tr>
+            <tr><td><code>GestorFuncionesTest</code></td><td>R3 (se pisan, no se pisan, otra sala) y R12 sobre función, sala y película</td></tr>
+            <tr><td><code>GestorReservasTest</code></td><td>R4, R6, R9, R13, el redondeo del precio, el recargo premium y la persistencia en txt</td></tr>
+            <tr><td><code>GestorPagosTest</code></td><td>R5, R11 y el arqueo de boletería</td></tr>
+            <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
+            <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        Corren sin MySQL: usan los DAO en memoria, y el de reservas escribe en un directorio temporal.
-        Es el beneficio concreto de haber inyectado los DAO por constructor.
+        Corren sin MySQL: usan los DAO en memoria, y los que escriben archivos lo hacen en un directorio
+        temporal. Es el beneficio concreto de haber inyectado los DAO por constructor.
       </p>
 
       <h3>Deudas anotadas</h3>
       <ul>
-        <li>Ningún DAO tiene <code>actualizar</code> salvo <code>ReservaDAO</code>: no se puede editar una película ni una sala, solo crear y borrar.</li>
         <li>Varios chequeos de duplicados traen la tabla entera con <code>listar()</code> en vez de hacer un <code>WHERE</code>.</li>
-        <li>Borrar una sala o una película con funciones asociadas falla por la <code>FOREIGN KEY</code>, con un mensaje de MySQL poco amigable en vez de una validación previa.</li>
         <li>Solo <code>Reserva</code> tiene implementación en TXT. Las demás entidades siguen atadas a MySQL.</li>
+        <li>
+          <code>reserva.cliente_id</code> apunta a <code>usuario(id)</code> sin filtrar por rol: la base
+          aceptaría una reserva a nombre de un administrador. Es el costo de la tabla única; lo evita
+          <code>ClienteDAO</code>, que filtra por <code>rol = 'CLIENTE'</code> en todas sus consultas.
+        </li>
       </ul>
 
       <h3>Ideas anotadas para más adelante</h3>
@@ -1311,21 +1685,35 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         —no solo preguntarlo— <code>Cliente</code> necesita fecha de nacimiento, que hoy no tiene.
       </p>
       <p>
-        <strong>Pago.</strong> Hoy <code>PAGADA</code> es solo un estado del enum: el sistema no sabe cuánto
-        cobró ni con qué medio. Falta una entidad <code>Pago</code> (reserva, medio, monto, fecha). Está
-        diagramada, sin implementar: la lógica se define cuando se desarrolle el circuito de cobro.
+        <strong>Devolución.</strong> Es lo que falta para poder cancelar una reserva ya cobrada (hoy R13 lo
+        prohíbe). No alcanza con marcar el pago: hay que decidir si la devolución es una entidad propia, si
+        puede ser parcial, y qué pasa con el arqueo del día en que se cobró contra el día en que se devolvió.
       </p>
       <p>
-        <strong>Datos de catálogo de la película.</strong> Director, sinopsis, idioma original, fecha de
-        estreno, si sigue en cartelera. Sin reglas asociadas, pero es lo que el frontend necesita para
-        mostrar algo que parezca un cine.
+        <strong>Vencimiento de la reserva.</strong> <code>Reserva</code> ya guarda <code>creadaEn</code>, que es
+        la mitad del trabajo. Falta un estado <code>EXPIRADA</code> y algo que lo dispare: en un cine una
+        reserva sin pagar no puede retener butacas para siempre. No lo agregamos todavía porque un estado que
+        nada produce es un estado muerto.
       </p>
 
       <h3>Otras mejoras pendientes</h3>
       <ul>
         <li><strong>Limpieza entre funciones:</strong> hoy R3 permite programar una función que arranca en el minuto exacto en que termina la anterior. Faltan 15-20 minutos de vaciado y limpieza.</li>
-        <li><strong>Transacciones:</strong> guardar una reserva son dos INSERT (reserva y entradas) sin <code>setAutoCommit(false)</code>. Si falla el segundo queda una reserva sin butacas.</li>
-        <li><strong>Precios con <code>BigDecimal</code>:</strong> hoy se leen con <code>getDouble</code> sobre columnas <code>DECIMAL</code>, que arrastra error de redondeo.</li>
+        <li><strong>Precios con <code>BigDecimal</code>:</strong> hoy se leen con <code>getDouble</code> sobre columnas <code>DECIMAL</code>. El redondeo a dos decimales en <code>CalculadoraPrecio</code> tapa el síntoma en el precio de cada butaca, pero el tipo correcto para plata sigue siendo <code>BigDecimal</code>.</li>
+        <li><strong>Tarifas por tipo de público:</strong> hoy el precio depende de la sala y de la butaca. En un cine también depende de quién compra (general, menor, jubilado, estudiante) y de cuándo (el miércoles). Ese eje no existe en el modelo: la <code>Entrada</code> tendría que llevar una tarifa además del asiento.</li>
+        <li><strong>Validar la edad al vender:</strong> la clasificación está guardada pero no se usa. Para validarla de verdad —no solo preguntar— <code>Cliente</code> necesita fecha de nacimiento.</li>
+      </ul>
+
+      <h3>Fuera de alcance, a propósito</h3>
+      <p>
+        Un cine "completo" tiene más cosas que estas. Las siguientes quedaron afuera por decisión, no por
+        olvido, y anotarlas es parte del modelado:
+      </p>
+      <ul>
+        <li><strong>Complejo o sucursal:</strong> hoy hay un solo cine implícito. Varias sedes obligarían a que <code>Sala</code> pertenezca a un <code>Cine</code> y a filtrar la cartelera por sede.</li>
+        <li><strong>Reserva temporal de butaca durante la compra:</strong> el "tenés 10 minutos para pagar" de los cines online. Es lo que faltaría para que dos clientes web no elijan la misma butaca, y está emparentado con la deuda de concurrencia de arriba.</li>
+        <li><strong>Abonos, membresías y puntos:</strong> otro agregado entero, con su propio ciclo de vida.</li>
+        <li><strong>Caja por turno y por empleado:</strong> el arqueo hoy es del día completo. En un cine real cada boletero cierra su caja, lo que pediría un rol <code>BOLETERO</code> y asociar cada pago a quien lo cobró.</li>
       </ul>
 
       <div class="callout">
@@ -1344,9 +1732,34 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
           <thead><tr><th>Decisión</th><th>Alternativa descartada</th><th>Motivo</th></tr></thead>
           <tbody>
             <tr>
-              <td>Cupo por función</td>
+              <td>Paquetes por capa y sub-dominio</td>
+              <td><code>interfaces/</code> + <code>modelo/</code></td>
+              <td>Agrupar por tipo de archivo separaba <code>Pelicula</code> de <code>PeliculaImpl</code> y juntaba contratos de entidad con contratos de DAO. La carpeta tiene que decir de qué se ocupa el código</td>
+            </tr>
+            <tr>
               <td>Butacas numeradas</td>
-              <td>Butacas exigen una tabla más y complican el modelo; el cupo alcanza salvo que la consigna pida elegir asiento</td>
+              <td>Cupo por función</td>
+              <td>El cupo alcanzaba para contar lugares, pero no permite elegir asiento ni marcar una butaca rota, que es la mitad de lo que hace un cine</td>
+            </tr>
+            <tr>
+              <td>La capacidad se cuenta desde <code>asiento</code></td>
+              <td>Guardarla en <code>sala</code></td>
+              <td>Tener las dos serían dos fuentes de verdad: marcar una butaca fuera de servicio dejaría la capacidad mintiendo</td>
+            </tr>
+            <tr>
+              <td>Recargo premium solo en <code>TipoAsiento</code></td>
+              <td>También en <code>TipoSala</code></td>
+              <td>Con <code>VIP</code> en los dos enums, una butaca VIP en sala VIP pagaba el recargo dos veces (2.0 × 1.5)</td>
+            </tr>
+            <tr>
+              <td>Combo con sus componentes declarados</td>
+              <td>Combo como producto con precio propio</td>
+              <td>Sin saber qué trae, nada distingue una promoción de un producto con nombre largo, y R14 no se puede validar</td>
+            </tr>
+            <tr>
+              <td>El candy cobra en el acto</td>
+              <td>Reutilizar <code>Pago</code></td>
+              <td><code>pago.reserva_id</code> es <code>NOT NULL UNIQUE</code>: unificarlos pedía una clave foránea polimórfica para no ganar nada</td>
             </tr>
             <tr>
               <td><code>Genero</code> como enum</td>
@@ -1354,9 +1767,29 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
               <td>Catálogo cerrado y conocido; evita altas con errores de tipeo y ahorra un CRUD entero</td>
             </tr>
             <tr>
-              <td>Interfaz + <code>Impl</code> en el modelo</td>
+              <td>Interfaz + <code>Impl</code> en las entidades</td>
               <td>Clases sueltas</td>
-              <td>Requisito de la cátedra. Técnicamente no habilita nada: no hay una segunda implementación de "película"</td>
+              <td>Requisito de la cátedra, y en las entidades sí paga: cada DAO tiene versión MySQL y en memoria</td>
+            </tr>
+            <tr>
+              <td><code>record</code> en los value objects</td>
+              <td>Interfaz + <code>Impl</code> también acá</td>
+              <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>Validar antes de borrar (R12)</td>
+              <td>Dejar que falle la <code>FOREIGN KEY</code></td>
+              <td>La base rechaza igual, pero el usuario recibiría un error de SQL en vez de un mensaje entendible</td>
+            </tr>
+            <tr>
+              <td>Liberar la butaca con <code>funcion_id = NULL</code></td>
+              <td>Borrar las entradas al cancelar</td>
+              <td>Las dos liberan la butaca para el <code>UNIQUE</code>, pero borrar pierde qué butacas tenía la reserva cancelada y a qué precio</td>
+            </tr>
+            <tr>
+              <td>Validar en el gestor <em>y</em> restringir en la base</td>
+              <td>Solo una de las dos</td>
+              <td>El gestor da el mensaje claro del caso normal; el <code>UNIQUE</code> cubre la carrera que ninguna validación en Java puede cerrar</td>
             </tr>
             <tr>
               <td><code>Optional</code> en las búsquedas</td>

@@ -25,7 +25,7 @@ Gestor -> DAO : listarPorFuncion(funcionId)
 activate DAO
 DAO --> Gestor : reservas de esa funcion
 deactivate DAO
-Gestor -> Gestor : descarta las tomadas y\nlas fuera de servicio
+Gestor -> Gestor : descarta las tomadas por reservas\nno canceladas y las fuera de servicio
 Gestor --> UI : butacas libres
 deactivate Gestor
 
@@ -35,16 +35,22 @@ Cliente -> UI : "A1,A2"
 UI -> Gestor : reservar(funcionId, clienteId,\ncodigos)
 activate Gestor
 
-alt alguna butaca no existe, esta ocupada\no esta fuera de servicio
+alt alguna butaca no existe, no es de esa sala,\nesta ocupada o esta fuera de servicio
   Gestor --> UI : IllegalArgumentException
   UI --> Cliente : motivo del rechazo
 else todas disponibles
   loop por cada butaca
     Gestor -> Precio : precioDe(funcion, sala, asiento)
     activate Precio
-    Precio --> Gestor : base x tipo de sala\nx tipo de butaca
+    Precio --> Gestor : base x tipo de sala x tipo de\nbutaca, redondeado a 2 decimales
     deactivate Precio
   end
+
+  note right of Gestor
+    El precio queda congelado en cada Entrada.
+    La reserva nace RESERVADA y con la fecha
+    en que se hizo.
+  end note
 
   Gestor -> DAO : guardar(reserva)
   activate DAO

@@ -2,12 +2,17 @@
 title Arquitectura en capas - patron DAO
 
 skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
 skinparam nodesep 12
 skinparam ranksep 45
 hide members
 
 package ui {
   class MenuConsola
+}
+
+package api {
+  class ServidorApi
 }
 
 package servicio {
@@ -17,12 +22,34 @@ package servicio {
   class GestorClientes
   class GestorReservas
   class GestorPagos
+  class GestorCandy
   class GestorAdministradores
   class CalculadoraPrecio
   class Password
 }
 
-package interfaces {
+package dominio {
+  package cartelera as dom_cartelera {
+    class "Pelicula + PeliculaImpl\nGenero, Clasificacion" as DomCartelera
+  }
+  package salas as dom_salas {
+    class "Sala, Asiento + Impl\nTipoSala, TipoAsiento, EstadoAsiento" as DomSalas
+  }
+  package funciones as dom_funciones {
+    class "Funcion + FuncionImpl\nVersion, Proyeccion" as DomFunciones
+  }
+  package ventas as dom_ventas {
+    class "Reserva, Pago + Impl\nEntrada, EstadoReserva, MedioPago" as DomVentas
+  }
+  package candy as dom_candy {
+    class "Producto, CompraCandy + Impl\nItemCombo, ItemCompra, TipoProducto" as DomCandy
+  }
+  package usuarios as dom_usuarios {
+    class "Usuario, Cliente, AdministradorCine\n+ Impl, Rol" as DomUsuarios
+  }
+}
+
+package persistencia {
   interface PeliculaDAO
   interface SalaDAO
   interface AsientoDAO
@@ -30,32 +57,26 @@ package interfaces {
   interface ClienteDAO
   interface ReservaDAO
   interface PagoDAO
+  interface ProductoDAO
+  interface CompraCandyDAO
   interface AdministradorDAO
   interface GeneradorTicket
-}
-
-package persistencia {
-  class PeliculaDAOMySQL
-  class SalaDAOMySQL
-  class AsientoDAOMySQL
-  class FuncionDAOMySQL
-  class ClienteDAOMySQL
-  class ReservaDAOMySQL
-  class PagoDAOMySQL
-  class AdministradorDAOMySQL
-  class ReservaDAOTxt
-  class GeneradorTicketTxt
-  class ConexionMySQL
+  interface GeneradorTicketCandy
   class PersistenciaException
+
+  package mysql {
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, AdministradorDAOMySQL\nConexionMySQL" as DaosMySQL
+  }
+  package memoria {
+    class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
+  }
+  package archivo {
+    class "ReservaDAOTxt\nGeneradorTicketTxt\nGeneradorTicketCandyTxt" as DaosArchivo
+  }
 }
 
-MenuConsola -down-> GestorCartelera
-MenuConsola -down-> GestorSalas
-MenuConsola -down-> GestorFunciones
-MenuConsola -down-> GestorClientes
-MenuConsola -down-> GestorReservas
-MenuConsola -down-> GestorPagos
-MenuConsola -down-> GestorAdministradores
+MenuConsola -down-> servicio
+ServidorApi -down-> servicio
 
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
@@ -64,30 +85,43 @@ GestorFunciones -down-> FuncionDAO
 GestorClientes -down-> ClienteDAO
 GestorReservas -down-> ReservaDAO
 GestorReservas -down-> GeneradorTicket
-GestorReservas ..> CalculadoraPrecio
 GestorPagos -down-> PagoDAO
-GestorPagos -down-> ReservaDAO
+GestorCandy -down-> ProductoDAO
+GestorCandy -down-> CompraCandyDAO
+GestorCandy -down-> GeneradorTicketCandy
 GestorAdministradores -down-> AdministradorDAO
+GestorReservas ..> CalculadoraPrecio
 GestorAdministradores ..> Password
 
-PeliculaDAOMySQL -up-|> PeliculaDAO
-SalaDAOMySQL -up-|> SalaDAO
-AsientoDAOMySQL -up-|> AsientoDAO
-FuncionDAOMySQL -up-|> FuncionDAO
-ClienteDAOMySQL -up-|> ClienteDAO
-ReservaDAOMySQL -up-|> ReservaDAO
-ReservaDAOTxt -up-|> ReservaDAO
-PagoDAOMySQL -up-|> PagoDAO
-AdministradorDAOMySQL -up-|> AdministradorDAO
-GeneradorTicketTxt -up-|> GeneradorTicket
+DaosMySQL ..up|> persistencia
+DaosMemoria ..up|> persistencia
+DaosArchivo ..up|> persistencia
+
+servicio ..> dominio
+persistencia ..> dominio
 
 legend bottom
-  |= Capa |= Detalle |
-  | ui | Unica capa con Scanner y System.out. Reemplazarla por una API REST no toca ninguna regla. |
-  | servicio | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO. |
-  |  | GestorFunciones usa tambien PeliculaDAO y SalaDAO, para validar el solapamiento. |
-  | persistencia | Cada DAO tiene ademas una implementacion en memoria, para testear sin base de datos. |
-  |  | Ninguna clase de esta capa imprime ni valida reglas de negocio. |
+  |= Capa |= De que se ocupa |
+  | ui / api | Dos formas de hablar con la misma aplicacion: consola y HTTP. Scanner y System.out |
+  |  | viven solo en MenuConsola; ServidorApi solo traduce a JSON. Ninguna regla vive en estas dos, |
+  |  | y por eso agregar la API no obligo a tocar un solo gestor. |
+  | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
+  |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
+  |  | GestorFunciones usa PeliculaDAO y SalaDAO para el solapamiento, y ReservaDAO para no borrar |
+  |  | una funcion vendida; GestorCartelera y GestorSalas usan FuncionDAO por el mismo motivo. |
+  | dominio | Que es un cine. Cada entidad con su implementacion y sus enums, agrupadas por |
+  |  | sub-dominio. No depende de ninguna otra capa: no sabe que existen MySQL ni la consola. |
+  | persistencia | Los contratos arriba, las tecnologias en subpaquetes. Ninguna clase de acá |
+  |  | imprime ni valida reglas de negocio: solo traduce entre el dominio y el medio. |
 endlegend
+
+note bottom of dominio
+  No hay paquete "interfaces" ni "modelo":
+  agrupaban por tipo de archivo Java y dejaban
+  Pelicula y PeliculaImpl en carpetas distintas,
+  siendo la misma cosa del negocio. Y mezclaban
+  contratos de entidad con contratos de DAO,
+  que son capas distintas.
+end note
 
 @enduml

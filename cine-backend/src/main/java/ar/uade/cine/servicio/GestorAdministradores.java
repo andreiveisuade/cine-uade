@@ -2,9 +2,9 @@ package ar.uade.cine.servicio;
 
 import java.util.List;
 
-import ar.uade.cine.interfaces.AdministradorCine;
-import ar.uade.cine.interfaces.AdministradorDAO;
-import ar.uade.cine.modelo.AdministradorCineImpl;
+import ar.uade.cine.dominio.usuarios.AdministradorCine;
+import ar.uade.cine.dominio.usuarios.AdministradorCineImpl;
+import ar.uade.cine.persistencia.AdministradorDAO;
 
 /**
  * Alta e inicio de sesión de los administradores. El cliente no pasa por acá: compra

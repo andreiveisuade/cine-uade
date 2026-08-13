@@ -1,0 +1,79 @@
+package ar.uade.cine.dominio.funciones;
+
+import java.time.LocalDateTime;
+
+/**
+ * Referencia a película y sala por id: el DAO trae el objeto completo cuando hace falta.
+ */
+public class FuncionImpl implements Funcion {
+
+    private int id;
+    private final int peliculaId;
+    private final int salaId;
+    private final LocalDateTime inicio;
+    private final Version version;
+    private final Proyeccion proyeccion;
+    private final double precio;
+
+    public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio,
+                       Version version, Proyeccion proyeccion, double precio) {
+        this.peliculaId = peliculaId;
+        this.salaId = salaId;
+        this.inicio = inicio;
+        this.version = version;
+        this.proyeccion = proyeccion;
+        this.precio = precio;
+    }
+
+    public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio,
+                       Version version, Proyeccion proyeccion, double precio) {
+        this(peliculaId, salaId, inicio, version, proyeccion, precio);
+        this.id = id;
+    }
+
+    @Override
+    public int getId() {
+        return id;
+    }
+
+    @Override
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public int getPeliculaId() {
+        return peliculaId;
+    }
+
+    @Override
+    public int getSalaId() {
+        return salaId;
+    }
+
+    @Override
+    public LocalDateTime getInicio() {
+        return inicio;
+    }
+
+    @Override
+    public Version getVersion() {
+        return version;
+    }
+
+    @Override
+    public Proyeccion getProyeccion() {
+        return proyeccion;
+    }
+
+    @Override
+    public double getPrecio() {
+        return precio;
+    }
+
+    @Override
+    public String toString() {
+        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio
+                + " - " + proyeccion + " " + version + " - desde $" + precio;
+    }
+}

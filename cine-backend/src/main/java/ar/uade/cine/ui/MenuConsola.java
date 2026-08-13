@@ -5,30 +5,36 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
-import ar.uade.cine.interfaces.AdministradorCine;
-import ar.uade.cine.interfaces.Asiento;
-import ar.uade.cine.interfaces.Funcion;
-import ar.uade.cine.interfaces.Pago;
-import ar.uade.cine.interfaces.Pelicula;
-import ar.uade.cine.interfaces.Reserva;
-import ar.uade.cine.modelo.Clasificacion;
-import ar.uade.cine.modelo.EstadoAsiento;
-import ar.uade.cine.modelo.Genero;
-import ar.uade.cine.modelo.MedioPago;
-import ar.uade.cine.modelo.Idioma;
-import ar.uade.cine.modelo.Proyeccion;
-import ar.uade.cine.modelo.TipoSala;
+import ar.uade.cine.dominio.candy.CompraCandy;
+import ar.uade.cine.dominio.candy.TipoProducto;
+import ar.uade.cine.dominio.cartelera.Clasificacion;
+import ar.uade.cine.dominio.cartelera.Genero;
+import ar.uade.cine.dominio.cartelera.Pelicula;
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.funciones.Proyeccion;
+import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.dominio.salas.Asiento;
+import ar.uade.cine.dominio.salas.EstadoAsiento;
+import ar.uade.cine.dominio.salas.TipoAsiento;
+import ar.uade.cine.dominio.salas.TipoSala;
+import ar.uade.cine.dominio.usuarios.AdministradorCine;
+import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.ventas.Pago;
+import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.servicio.GestorAdministradores;
+import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
-import ar.uade.cine.servicio.SalasDeEjemplo;
 
 /**
  * Única capa que habla con el usuario: acá viven Scanner y System.out, y en ningún
@@ -45,11 +51,12 @@ public class MenuConsola {
     private final GestorReservas reservas;
     private final GestorAdministradores administradores;
     private final GestorPagos pagos;
+    private final GestorCandy candy;
     private final Scanner scanner = new Scanner(System.in);
 
     public MenuConsola(GestorCartelera cartelera, GestorSalas salas, GestorFunciones funciones,
                        GestorClientes clientes, GestorReservas reservas,
-                       GestorAdministradores administradores, GestorPagos pagos) {
+                       GestorAdministradores administradores, GestorPagos pagos, GestorCandy candy) {
         this.cartelera = cartelera;
         this.salas = salas;
         this.funciones = funciones;
@@ -57,6 +64,7 @@ public class MenuConsola {
         this.reservas = reservas;
         this.administradores = administradores;
         this.pagos = pagos;
+        this.candy = candy;
     }
 
     public void iniciar() {
@@ -68,7 +76,9 @@ public class MenuConsola {
             System.out.println("3. Funciones");
             System.out.println("4. Clientes");
             System.out.println("5. Reservas");
-            System.out.println("6. Administradores");
+            System.out.println("6. Candy");
+            System.out.println("7. Arqueo del día");
+            System.out.println("8. Administradores");
             System.out.println("0. Salir");
             System.out.print("Opción: ");
 
@@ -79,7 +89,9 @@ public class MenuConsola {
                     case "3" -> menuFunciones();
                     case "4" -> menuClientes();
                     case "5" -> menuReservas();
-                    case "6" -> menuAdministradores();
+                    case "6" -> menuCandy();
+                    case "7" -> arqueoDelDia();
+                    case "8" -> menuAdministradores();
                     case "0" -> salir = true;
                     default -> System.out.println("Opción inválida");
                 }
@@ -87,6 +99,9 @@ public class MenuConsola {
                 System.out.println("Se esperaba un número");
             } catch (IllegalArgumentException e) {
                 System.out.println(e.getMessage());
+            } catch (ButacaOcupadaException e) {
+                // Se la ganaron por milisegundos: no es un error de quien opera.
+                System.out.println(e.getMessage() + ". Volvé a elegir sobre el mapa actualizado.");
             }
         }
     }
@@ -105,7 +120,7 @@ public class MenuConsola {
                 String titulo = leer();
                 int duracion = leerEntero("Duración en minutos: ");
                 List<Genero> generos = pedirGeneros();
-                cartelera.agregar(titulo, duracion, generos, elegirClasificacion());
+                cartelera.agregar(titulo, duracion, generos, elegir("Clasificación", Clasificacion.values()));
                 System.out.println("Película agregada");
             }
             case "3" -> {
@@ -118,23 +133,11 @@ public class MenuConsola {
                 cartelera.eliminar(leerEntero("Id: "));
                 System.out.println("Película eliminada");
             }
-            case "5" -> imprimir(cartelera.listarPorGenero(elegirGenero()));
+            case "5" -> imprimir(cartelera.listarPorGenero(elegir("Género", Genero.values())));
             case "6" -> completarCatalogo();
             case "7" -> imprimir(cartelera.listarEnCartelera());
             default -> System.out.println("Opción inválida");
         }
-    }
-
-    private Clasificacion elegirClasificacion() {
-        Clasificacion[] opciones = Clasificacion.values();
-        for (int i = 0; i < opciones.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + opciones[i].getEtiqueta());
-        }
-        int numero = leerEntero("Clasificación: ");
-        if (numero < 1 || numero > opciones.length) {
-            throw new IllegalArgumentException("Clasificación inexistente: " + numero);
-        }
-        return opciones[numero - 1];
     }
 
     /** Los datos de catálogo son opcionales: se cargan aparte del alta. */
@@ -157,55 +160,39 @@ public class MenuConsola {
         System.out.println("Datos de catálogo guardados");
     }
 
-    /** Muestra el enum numerado y acepta varios separados por coma: "1,3". */
+    /** Una película puede tener varios géneros: se aceptan varios números separados por coma. */
     private List<Genero> pedirGeneros() {
         Genero[] opciones = Genero.values();
-        for (int i = 0; i < opciones.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + opciones[i]);
-        }
+        listarOpciones(opciones);
         System.out.print("Géneros (números separados por coma): ");
 
         List<Genero> elegidos = new ArrayList<>();
         for (String parte : leer().split(",")) {
-            elegidos.add(porIndice(opciones, Integer.parseInt(parte.trim())));
+            elegidos.add(porIndice(opciones, Integer.parseInt(parte.trim()), "Género"));
         }
         return elegidos;
-    }
-
-    private Genero elegirGenero() {
-        Genero[] opciones = Genero.values();
-        for (int i = 0; i < opciones.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + opciones[i]);
-        }
-        return porIndice(opciones, leerEntero("Género: "));
-    }
-
-    private Genero porIndice(Genero[] opciones, int numero) {
-        if (numero < 1 || numero > opciones.length) {
-            throw new IllegalArgumentException("Género inexistente: " + numero);
-        }
-        return opciones[numero - 1];
     }
 
     // ---------- salas ----------
 
     private void menuSalas() {
         System.out.println("\n-- Salas --");
-        System.out.println("1. Listar  2. Agregar  3. Ver butacas  4. Eliminar  5. Cargar las 6 salas de ejemplo");
-        System.out.println("6. Marcar butaca fuera de servicio  7. Reponer butaca");
+        System.out.println("1. Listar  2. Agregar  3. Ver butacas  4. Eliminar");
+        System.out.println("5. Marcar butaca fuera de servicio  6. Reponer butaca");
         System.out.print("Opción: ");
         switch (leer()) {
-            case "1" -> imprimir(salas.listar());
+            case "1" -> salas.listar().forEach(
+                    s -> System.out.println(s + " - " + salas.capacidad(s.getId()) + " butacas"));
             case "2" -> {
                 System.out.print("Nombre: ");
                 String nombre = leer();
-                TipoSala tipo = elegirTipoSala();
+                TipoSala tipo = elegir("Tipo de sala", TipoSala.values());
                 System.out.print("Butacas de cada fila, separadas por coma (ej. 8,10,12): ");
                 List<Integer> distribucion = new ArrayList<>();
                 for (String parte : leer().split(",")) {
                     distribucion.add(Integer.parseInt(parte.trim()));
                 }
-                salas.agregar(nombre, tipo, distribucion);
+                salas.agregar(nombre, tipo, distribucion, pedirButacasEspeciales());
                 System.out.println("Sala agregada");
             }
             case "3" -> mostrarButacas(leerEntero("Id de sala: "));
@@ -214,16 +201,12 @@ public class MenuConsola {
                 System.out.println("Sala eliminada");
             }
             case "5" -> {
-                new SalasDeEjemplo(salas).cargar();
-                System.out.println("6 salas cargadas");
-            }
-            case "6" -> {
                 int salaId = leerEntero("Id de sala: ");
                 System.out.print("Butaca (ej. C7): ");
                 salas.marcarFueraDeServicio(salaId, leer());
                 System.out.println("Butaca fuera de servicio");
             }
-            case "7" -> {
+            case "6" -> {
                 int salaId = leerEntero("Id de sala: ");
                 System.out.print("Butaca (ej. C7): ");
                 salas.reponer(salaId, leer());
@@ -233,41 +216,29 @@ public class MenuConsola {
         }
     }
 
-    private Idioma elegirIdioma() {
-        System.out.println("  1. DOBLADA  2. SUBTITULADA");
-        int numero = leerEntero("Idioma: ");
-        if (numero < 1 || numero > Idioma.values().length) {
-            throw new IllegalArgumentException("Idioma inexistente: " + numero);
+    /** Las butacas que no son estándar. Dejarlo vacío deja toda la sala estándar. */
+    private Map<String, TipoAsiento> pedirButacasEspeciales() {
+        System.out.print("Butacas especiales (ej. A1:VIP,B2:ACCESIBLE), vacío si no hay: ");
+        String respuesta = leer();
+        Map<String, TipoAsiento> especiales = new LinkedHashMap<>();
+        if (respuesta.isBlank()) {
+            return especiales;
         }
-        return Idioma.values()[numero - 1];
-    }
-
-    private Proyeccion elegirProyeccion() {
-        System.out.println("  1. 2D  2. 3D");
-        int numero = leerEntero("Proyección: ");
-        if (numero < 1 || numero > Proyeccion.values().length) {
-            throw new IllegalArgumentException("Proyección inexistente: " + numero);
+        for (String parte : respuesta.split(",")) {
+            String[] campos = parte.trim().split(":");
+            if (campos.length != 2) {
+                throw new IllegalArgumentException("Formato esperado: A1:VIP,B2:ACCESIBLE");
+            }
+            especiales.put(campos[0].trim().toUpperCase(),
+                    TipoAsiento.valueOf(campos[1].trim().toUpperCase()));
         }
-        return Proyeccion.values()[numero - 1];
-    }
-
-    private TipoSala elegirTipoSala() {
-        TipoSala[] opciones = TipoSala.values();
-        for (int i = 0; i < opciones.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + opciones[i]);
-        }
-        int numero = leerEntero("Tipo de sala: ");
-        if (numero < 1 || numero > opciones.length) {
-            throw new IllegalArgumentException("Tipo inexistente: " + numero);
-        }
-        return opciones[numero - 1];
+        return especiales;
     }
 
     /** Dibuja la sala vacía, fila por fila. */
     private void mostrarButacas(int salaId) {
         salas.buscar(salaId).orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
-        List<Asiento> asientos = salas.asientosDe(salaId);
-        imprimirMapa(asientos, List.of());
+        imprimirMapa(salas.asientosDe(salaId), List.of());
     }
 
     // ---------- funciones ----------
@@ -284,10 +255,10 @@ public class MenuConsola {
                 imprimir(salas.listar());
                 int salaId = leerEntero("Id de sala: ");
                 LocalDateTime inicio = leerFecha();
-                Idioma idioma = elegirIdioma();
-                Proyeccion proyeccion = elegirProyeccion();
+                Version version = elegir("Versión", Version.values());
+                Proyeccion proyeccion = elegir("Proyección", Proyeccion.values());
                 double precio = leerDecimal("Precio base de la butaca estándar: ");
-                funciones.programar(peliculaId, salaId, inicio, idioma, proyeccion, precio);
+                funciones.programar(peliculaId, salaId, inicio, version, proyeccion, precio);
                 System.out.println("Función programada");
             }
             case "3" -> imprimir(funciones.listarPorPelicula(leerEntero("Id de película: ")));
@@ -326,8 +297,8 @@ public class MenuConsola {
 
     private void menuReservas() {
         System.out.println("\n-- Reservas --");
-        System.out.println("1. Listar  2. Reservar  3. Cobrar  4. Cancelar  5. Ver por cliente  6. Mapa de butacas");
-        System.out.println("7. Ver pago de una reserva  8. Arqueo del día");
+        System.out.println("1. Listar  2. Reservar  3. Cobrar  4. Cancelar  5. Ver por cliente");
+        System.out.println("6. Mapa de butacas  7. Ver pago de una reserva");
         System.out.print("Opción: ");
         switch (leer()) {
             case "1" -> imprimir(reservas.listar());
@@ -345,13 +316,8 @@ public class MenuConsola {
             }
             case "3" -> {
                 int reservaId = leerEntero("Id de reserva: ");
-                MedioPago medio = elegirMedioPago();
-                String codigo = "";
-                if (medio.requiereAutorizacion()) {
-                    System.out.print("Código de autorización: ");
-                    codigo = leer();
-                }
-                Pago pago = pagos.cobrar(reservaId, medio, codigo);
+                MedioPago medio = elegir("Medio de pago", MedioPago.values());
+                Pago pago = pagos.cobrar(reservaId, medio, pedirAutorizacion(medio));
                 System.out.printf("Cobrado $ %.2f con %s%n", pago.getMonto(), pago.getMedio());
             }
             case "4" -> {
@@ -366,25 +332,94 @@ public class MenuConsola {
                         System.out::println,
                         () -> System.out.println("La reserva " + reservaId + " todavía no se cobró"));
             }
-            case "8" -> {
-                LocalDate dia = LocalDate.now();
-                imprimir(pagos.listarDelDia(dia));
-                System.out.printf("Total cobrado el %s: $ %.2f%n", dia, pagos.totalCobrado(dia));
-            }
             default -> System.out.println("Opción inválida");
         }
     }
 
-    private MedioPago elegirMedioPago() {
-        MedioPago[] opciones = MedioPago.values();
-        for (int i = 0; i < opciones.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + opciones[i]);
+    // ---------- candy ----------
+
+    private void menuCandy() {
+        System.out.println("\n-- Candy --");
+        System.out.println("1. Ver carta  2. Agregar producto  3. Armar combo  4. Vender");
+        System.out.println("5. Sacar de la carta  6. Reponer  7. Ver compras de un cliente");
+        System.out.print("Opción: ");
+        switch (leer()) {
+            case "1" -> imprimir(candy.listar());
+            case "2" -> {
+                System.out.print("Nombre: ");
+                String nombre = leer();
+                TipoProducto tipo = elegir("Tipo", TipoProducto.POCHOCLOS, TipoProducto.BEBIDA,
+                        TipoProducto.GOLOSINA);
+                candy.agregarProducto(nombre, tipo, leerDecimal("Precio: "));
+                System.out.println("Producto agregado");
+            }
+            case "3" -> {
+                imprimir(candy.listar());
+                System.out.print("Nombre del combo: ");
+                String nombre = leer();
+                Map<Integer, Integer> componentes = pedirCantidades("Qué trae (id:cantidad, ej. 1:1,2:1): ");
+                candy.armarCombo(nombre, leerDecimal("Precio promocional: "), componentes);
+                System.out.println("Combo armado");
+            }
+            case "4" -> venderEnElCandy();
+            case "5" -> {
+                candy.cambiarDisponibilidad(leerEntero("Id de producto: "), false);
+                System.out.println("Producto fuera de la carta");
+            }
+            case "6" -> {
+                candy.cambiarDisponibilidad(leerEntero("Id de producto: "), true);
+                System.out.println("Producto de nuevo en la carta");
+            }
+            case "7" -> imprimir(candy.listarComprasDe(leerEntero("Id de cliente: ")));
+            default -> System.out.println("Opción inválida");
         }
-        int numero = leerEntero("Medio de pago: ");
-        if (numero < 1 || numero > opciones.length) {
-            throw new IllegalArgumentException("Medio de pago inexistente: " + numero);
+    }
+
+    private void venderEnElCandy() {
+        imprimir(candy.listarDisponibles());
+        imprimir(clientes.listar());
+        int clienteId = leerEntero("Id de cliente: ");
+        Map<Integer, Integer> pedido = pedirCantidades("Productos (id:cantidad, ej. 1:2,3:1): ");
+        MedioPago medio = elegir("Medio de pago", MedioPago.values());
+
+        CompraCandy compra = candy.vender(clienteId, pedido, medio, pedirAutorizacion(medio));
+        System.out.printf("Compra registrada. Total: $ %.2f%n", compra.getTotal());
+        double ahorro = candy.ahorroDe(compra);
+        if (ahorro > 0) {
+            System.out.printf("Se ahorró $ %.2f con los combos%n", ahorro);
         }
-        return opciones[numero - 1];
+        System.out.println("Ticket en tickets/candy-" + compra.getId() + ".txt");
+    }
+
+    /** Cantidades por id: "1:2,3:1" son dos unidades del producto 1 y una del 3. */
+    private Map<Integer, Integer> pedirCantidades(String etiqueta) {
+        System.out.print(etiqueta);
+        Map<Integer, Integer> cantidades = new LinkedHashMap<>();
+        for (String parte : leer().split(",")) {
+            String[] campos = parte.trim().split(":");
+            if (campos.length != 2) {
+                throw new IllegalArgumentException("Formato esperado: id:cantidad, por ejemplo 1:2,3:1");
+            }
+            cantidades.put(Integer.parseInt(campos[0].trim()), Integer.parseInt(campos[1].trim()));
+        }
+        return cantidades;
+    }
+
+    // ---------- arqueo ----------
+
+    /** Las dos cajas del cine son distintas: la boletería cobra reservas y el candy vende. */
+    private void arqueoDelDia() {
+        LocalDate dia = LocalDate.now();
+        System.out.println("\n-- Boletería --");
+        imprimir(pagos.listarDelDia(dia));
+        System.out.println("\n-- Candy --");
+        imprimir(candy.listarComprasDelDia(dia));
+
+        double boleteria = pagos.totalCobrado(dia);
+        double barra = candy.totalVendido(dia);
+        System.out.printf("%nBoletería : $ %10.2f%n", boleteria);
+        System.out.printf("Candy     : $ %10.2f%n", barra);
+        System.out.printf("Total del %s: $ %10.2f%n", dia, boleteria + barra);
     }
 
     // ---------- administradores ----------
@@ -440,6 +475,34 @@ public class MenuConsola {
         }
     }
 
+    private String pedirAutorizacion(MedioPago medio) {
+        if (!medio.requiereAutorizacion()) {
+            return "";
+        }
+        System.out.print("Código de autorización: ");
+        return leer();
+    }
+
+    /** Muestra las opciones numeradas y devuelve la elegida. Sirve para cualquier enum. */
+    @SafeVarargs
+    private <T> T elegir(String que, T... opciones) {
+        listarOpciones(opciones);
+        return porIndice(opciones, leerEntero(que + ": "), que);
+    }
+
+    private <T> void listarOpciones(T[] opciones) {
+        for (int i = 0; i < opciones.length; i++) {
+            System.out.println("  " + (i + 1) + ". " + opciones[i]);
+        }
+    }
+
+    private <T> T porIndice(T[] opciones, int numero, String que) {
+        if (numero < 1 || numero > opciones.length) {
+            throw new IllegalArgumentException(que + " inexistente: " + numero);
+        }
+        return opciones[numero - 1];
+    }
+
     /** Muestra las butacas de la función marcando las tomadas. */
     private void mostrarMapaDeFuncion(int funcionId) {
         Funcion funcion = funciones.buscar(funcionId)
@@ -451,7 +514,7 @@ public class MenuConsola {
     }
 
     /**
-     * Una línea por fila. libresConocidos vacío = sala sin función, todas disponibles.
+     * Una línea por fila. libres vacío = sala sin función, todas disponibles.
      * [B4] libre, (B4) ocupada, y el tipo se marca con un símbolo.
      */
     private void imprimirMapa(List<Asiento> asientos, List<Asiento> libres) {

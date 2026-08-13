@@ -1,0 +1,77 @@
+@startuml secuencia-candy
+title Comprar en el candy: del combo al ticket
+
+skinparam sequenceMessageAlign center
+hide footbox
+
+actor Cliente
+participant "MenuConsola" as UI
+participant "GestorCandy" as Gestor
+participant "ProductoDAO" as Productos <<interface>>
+participant "CompraCandyDAO" as DAO <<interface>>
+participant "GeneradorTicketCandy" as Ticket <<interface>>
+
+== Antes: el administrador arma la promocion ==
+
+UI -> Gestor : armarCombo("Combo pareja", 5500,\n{pochoclos:1, gaseosa:1})
+activate Gestor
+Gestor -> Productos : buscarPorId por cada componente
+activate Productos
+Productos --> Gestor : pochoclos $4000, gaseosa $2500
+deactivate Productos
+
+alt el combo cuesta igual o mas que sus componentes
+  Gestor --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
+else 5500 < 6500
+  Gestor -> Productos : guardar(combo con sus componentes)
+  Gestor --> UI : combo
+end
+deactivate Gestor
+
+== Despues: el cliente compra ==
+
+Cliente -> UI : elige productos y medio de pago
+activate UI
+UI -> Gestor : vender(clienteId, {combo:2},\nmedio, autorizacion)
+activate Gestor
+
+alt el producto no esta disponible, la cantidad\nno es valida o falta la autorizacion
+  Gestor --> UI : IllegalArgumentException
+  UI --> Cliente : motivo del rechazo
+else todo en orden
+  Gestor -> Productos : buscarPorId(productoId)
+  activate Productos
+  Productos --> Gestor : producto con su precio
+  deactivate Productos
+
+  note right of Gestor
+    El precio sale de la carta, no se ingresa:
+    la misma razon por la que el pago de una
+    reserva toma el monto de la reserva.
+    Cada ItemCompra lo congela.
+  end note
+
+  Gestor -> DAO : guardar(compra)
+  activate DAO
+  DAO --> Gestor : compra con id asignado
+  deactivate DAO
+
+  Gestor -> Gestor : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
+  Gestor -> Ticket : emitir(compra, cliente, ahorro)
+  activate Ticket
+  Ticket -> Ticket : escribe\ntickets/candy-N.txt
+  deactivate Ticket
+
+  Gestor --> UI : compra
+  UI --> Cliente : "Total: $ 11000.\nAhorro $ 2000 con los combos"
+end
+deactivate Gestor
+deactivate UI
+
+note over DAO, Ticket
+  No hay estados ni cobro posterior: en el mostrador se paga
+  en el acto, asi que la compra nace pagada y lleva encima
+  el medio. Reservar y cobrar despues es solo para las butacas.
+end note
+
+@enduml

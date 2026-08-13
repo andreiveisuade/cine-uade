@@ -2,17 +2,19 @@ package ar.uade.cine.servicio;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-import ar.uade.cine.interfaces.Asiento;
-import ar.uade.cine.interfaces.AsientoDAO;
-import ar.uade.cine.interfaces.Sala;
-import ar.uade.cine.interfaces.SalaDAO;
-import ar.uade.cine.modelo.AsientoImpl;
-import ar.uade.cine.modelo.EstadoAsiento;
-import ar.uade.cine.modelo.SalaImpl;
-import ar.uade.cine.modelo.TipoAsiento;
-import ar.uade.cine.modelo.TipoSala;
+import ar.uade.cine.dominio.salas.Asiento;
+import ar.uade.cine.dominio.salas.AsientoImpl;
+import ar.uade.cine.dominio.salas.EstadoAsiento;
+import ar.uade.cine.dominio.salas.Sala;
+import ar.uade.cine.dominio.salas.SalaImpl;
+import ar.uade.cine.dominio.salas.TipoAsiento;
+import ar.uade.cine.dominio.salas.TipoSala;
+import ar.uade.cine.persistencia.AsientoDAO;
+import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.SalaDAO;
 
 public class GestorSalas {
 
@@ -20,26 +22,28 @@ public class GestorSalas {
 
     private final SalaDAO salaDAO;
     private final AsientoDAO asientoDAO;
+    private final FuncionDAO funcionDAO;
 
-    public GestorSalas(SalaDAO salaDAO, AsientoDAO asientoDAO) {
+    public GestorSalas(SalaDAO salaDAO, AsientoDAO asientoDAO, FuncionDAO funcionDAO) {
         this.salaDAO = salaDAO;
         this.asientoDAO = asientoDAO;
+        this.funcionDAO = funcionDAO;
     }
 
-    /**
-     * Crea la sala y genera sus butacas. La distribución es la cantidad de butacas de
-     * cada fila, de adelante hacia atrás. Todas las butacas quedan estándar.
-     */
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
-        return agregar(nombre, tipo, butacasPorFila, List.of(), List.of());
+        return agregar(nombre, tipo, butacasPorFila, Map.of());
     }
 
     /**
-     * Igual que el anterior, pero marcando butacas especiales por código: las accesibles
-     * suelen ir al borde de una fila y las VIP o de pareja en las filas del fondo.
+     * Crea la sala y genera sus butacas. La distribución es cuántas butacas tiene cada
+     * fila de adelante hacia atrás: [8, 10, 12] es fila A con 8, B con 10 y C con 12.
+     * No se guarda en la sala, se usa una sola vez acá: a partir de este momento la sala
+     * se describe por los asientos que quedaron creados.
+     *
+     * <p>El mapa marca por código las butacas que no son estándar; el resto lo son.
      */
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
-                        List<String> codigosVip, List<String> codigosAccesibles) {
+                        Map<String, TipoAsiento> especiales) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
@@ -61,28 +65,28 @@ public class GestorSalas {
             throw new IllegalArgumentException("Ya existe una sala con ese nombre");
         }
 
-        Sala sala = new SalaImpl(nombre, tipo, butacasPorFila);
+        Sala sala = new SalaImpl(nombre, tipo);
         salaDAO.guardar(sala);
-        asientoDAO.guardarTodos(generarAsientos(sala, codigosVip, codigosAccesibles));
+        asientoDAO.guardarTodos(generarAsientos(sala.getId(), butacasPorFila, especiales));
         return sala;
     }
 
-    private List<Asiento> generarAsientos(Sala sala, List<String> vip, List<String> accesibles) {
-        List<Integer> distribucion = sala.getButacasPorFila();
+    private List<Asiento> generarAsientos(int salaId, List<Integer> distribucion,
+                                          Map<String, TipoAsiento> especiales) {
         List<Asiento> asientos = new ArrayList<>();
         for (int fila = 1; fila <= distribucion.size(); fila++) {
             for (int numero = 1; numero <= distribucion.get(fila - 1); numero++) {
                 String codigo = (char) ('A' + fila - 1) + String.valueOf(numero);
-                TipoAsiento tipo = TipoAsiento.ESTANDAR;
-                if (vip.contains(codigo)) {
-                    tipo = sala.getTipo() == TipoSala.VIP ? TipoAsiento.PAREJA : TipoAsiento.VIP;
-                } else if (accesibles.contains(codigo)) {
-                    tipo = TipoAsiento.ACCESIBLE;
-                }
-                asientos.add(new AsientoImpl(sala.getId(), fila, numero, tipo));
+                asientos.add(new AsientoImpl(salaId, fila, numero,
+                        especiales.getOrDefault(codigo, TipoAsiento.ESTANDAR)));
             }
         }
         return asientos;
+    }
+
+    /** Butacas que tiene la sala. Se cuentan: los asientos son la única fuente de verdad. */
+    public int capacidad(int salaId) {
+        return asientoDAO.listarPorSala(salaId).size();
     }
 
     /** Una butaca rota deja de venderse en todas las funciones, presentes y futuras. */
@@ -91,7 +95,7 @@ public class GestorSalas {
     }
 
     public void reponer(int salaId, String codigo) {
-        cambiarEstado(salaId, codigo, EstadoAsiento.DISPONIBLE);
+        cambiarEstado(salaId, codigo, EstadoAsiento.HABILITADO);
     }
 
     private void cambiarEstado(int salaId, String codigo, EstadoAsiento estado) {
@@ -117,9 +121,14 @@ public class GestorSalas {
         return salaDAO.buscarPorId(id);
     }
 
+    /** R12: borrar una sala con funciones programadas dejaría esas funciones sin sala. */
     public void eliminar(int id) {
         if (salaDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe la sala " + id);
+        }
+        if (!funcionDAO.listarPorSala(id).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
         }
         salaDAO.eliminar(id);
     }

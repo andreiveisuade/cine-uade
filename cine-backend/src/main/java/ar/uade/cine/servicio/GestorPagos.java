@@ -5,13 +5,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import ar.uade.cine.interfaces.Pago;
-import ar.uade.cine.interfaces.PagoDAO;
-import ar.uade.cine.interfaces.Reserva;
-import ar.uade.cine.interfaces.ReservaDAO;
-import ar.uade.cine.modelo.EstadoReserva;
-import ar.uade.cine.modelo.MedioPago;
-import ar.uade.cine.modelo.PagoImpl;
+import ar.uade.cine.dominio.ventas.EstadoReserva;
+import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.ventas.Pago;
+import ar.uade.cine.dominio.ventas.PagoImpl;
+import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.persistencia.PagoDAO;
+import ar.uade.cine.persistencia.ReservaDAO;
 
 /**
  * Cobrar es un circuito aparte del de reservar: por eso tiene su propio gestor y no

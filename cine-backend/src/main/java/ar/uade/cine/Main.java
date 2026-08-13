@@ -1,24 +1,31 @@
 package ar.uade.cine;
 
-import ar.uade.cine.interfaces.AdministradorDAO;
-import ar.uade.cine.interfaces.AsientoDAO;
-import ar.uade.cine.interfaces.ClienteDAO;
-import ar.uade.cine.interfaces.FuncionDAO;
-import ar.uade.cine.interfaces.GeneradorTicket;
-import ar.uade.cine.interfaces.PagoDAO;
-import ar.uade.cine.interfaces.PeliculaDAO;
-import ar.uade.cine.interfaces.ReservaDAO;
-import ar.uade.cine.interfaces.SalaDAO;
-import ar.uade.cine.persistencia.AdministradorDAOMySQL;
-import ar.uade.cine.persistencia.AsientoDAOMySQL;
-import ar.uade.cine.persistencia.ClienteDAOMySQL;
-import ar.uade.cine.persistencia.FuncionDAOMySQL;
-import ar.uade.cine.persistencia.GeneradorTicketTxt;
-import ar.uade.cine.persistencia.PagoDAOMySQL;
-import ar.uade.cine.persistencia.PeliculaDAOMySQL;
-import ar.uade.cine.persistencia.ReservaDAOMySQL;
-import ar.uade.cine.persistencia.SalaDAOMySQL;
+import ar.uade.cine.persistencia.AdministradorDAO;
+import ar.uade.cine.persistencia.AsientoDAO;
+import ar.uade.cine.persistencia.ClienteDAO;
+import ar.uade.cine.persistencia.CompraCandyDAO;
+import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.GeneradorTicket;
+import ar.uade.cine.persistencia.GeneradorTicketCandy;
+import ar.uade.cine.persistencia.PagoDAO;
+import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.ProductoDAO;
+import ar.uade.cine.persistencia.ReservaDAO;
+import ar.uade.cine.persistencia.SalaDAO;
+import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
+import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
+import ar.uade.cine.persistencia.mysql.AdministradorDAOMySQL;
+import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
+import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
+import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
+import ar.uade.cine.persistencia.mysql.FuncionDAOMySQL;
+import ar.uade.cine.persistencia.mysql.PagoDAOMySQL;
+import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
+import ar.uade.cine.persistencia.mysql.ProductoDAOMySQL;
+import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
+import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
 import ar.uade.cine.servicio.GestorAdministradores;
+import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -29,7 +36,9 @@ import ar.uade.cine.ui.MenuConsola;
 
 /**
  * Único lugar donde se eligen las implementaciones concretas. Los gestores solo
- * conocen las interfaces, así que acá se decide en qué medio se guarda cada cosa.
+ * conocen las interfaces, así que acá se decide en qué medio se guarda cada cosa:
+ * cambiar una línea por ReservaDAOTxt hace que las reservas vayan a un archivo sin
+ * tocar ninguna regla de negocio.
  */
 public class Main {
 
@@ -41,24 +50,25 @@ public class Main {
         AsientoDAO asientoDAO = new AsientoDAOMySQL();
         AdministradorDAO administradorDAO = new AdministradorDAOMySQL();
         PagoDAO pagoDAO = new PagoDAOMySQL();
-
         ReservaDAO reservaDAO = new ReservaDAOMySQL();
-        // Cambiando esta línea las reservas pasan a guardarse en reservas.txt,
-        // sin tocar una sola línea de GestorReservas ni del menú:
-        // ReservaDAO reservaDAO = new ReservaDAOTxt();
+        ProductoDAO productoDAO = new ProductoDAOMySQL();
+        CompraCandyDAO compraCandyDAO = new CompraCandyDAOMySQL();
 
         GeneradorTicket generadorTicket = new GeneradorTicketTxt();
+        GeneradorTicketCandy generadorTicketCandy = new GeneradorTicketCandyTxt();
 
-        GestorCartelera gestorCartelera = new GestorCartelera(peliculaDAO);
-        GestorSalas gestorSalas = new GestorSalas(salaDAO, asientoDAO);
-        GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO);
-        GestorClientes gestorClientes = new GestorClientes(clienteDAO);
+        GestorCartelera gestorCartelera = new GestorCartelera(peliculaDAO, funcionDAO);
+        GestorSalas gestorSalas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
+        GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
+        GestorClientes gestorClientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         GestorAdministradores gestorAdministradores = new GestorAdministradores(administradorDAO);
         GestorPagos gestorPagos = new GestorPagos(pagoDAO, reservaDAO);
         GestorReservas gestorReservas = new GestorReservas(
                 reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO, generadorTicket);
+        GestorCandy gestorCandy = new GestorCandy(
+                productoDAO, compraCandyDAO, clienteDAO, generadorTicketCandy);
 
         new MenuConsola(gestorCartelera, gestorSalas, gestorFunciones, gestorClientes,
-                gestorReservas, gestorAdministradores, gestorPagos).iniciar();
+                gestorReservas, gestorAdministradores, gestorPagos, gestorCandy).iniciar();
     }
 }
