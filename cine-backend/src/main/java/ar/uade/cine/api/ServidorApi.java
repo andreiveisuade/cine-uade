@@ -103,6 +103,7 @@ public class ServidorApi {
         RutasFunciones.registrar(app, funciones, vistas);
         RutasClientes.registrar(app, clientes, vistas);
         RutasReservas.registrar(app, reservas, clientes, vistas);
+        RutasPromociones.registrar(app, promociones, vistas);
         RutasPagos.registrar(app, pagos, reservas, vistas);
         RutasSesion.registrar(app, empleados, vistas);
 

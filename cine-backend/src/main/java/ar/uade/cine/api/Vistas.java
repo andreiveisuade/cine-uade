@@ -11,6 +11,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.promociones.Promocion;
+import ar.uade.cine.dominio.promociones.PromocionMontoFijo;
+import ar.uade.cine.dominio.promociones.PromocionNxM;
+import ar.uade.cine.dominio.promociones.PromocionPorcentaje;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.usuarios.Empleado;
@@ -96,6 +100,17 @@ public class Vistas {
     public record ClienteVista(int id, String nombre, String email) {
     }
 
+    /**
+     * Las condiciones vacías viajan como listas vacías, que es como las lee el gestor:
+     * sin días significa todos los días, sin medios significa cualquiera.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record PromocionVista(int id, String nombre, String tipo, Double porcentaje, Double monto,
+                                 Integer lleva, Integer paga, String vigenciaDesde, String vigenciaHasta,
+                                 List<String> diasSemana, String horaDesde, String horaHasta,
+                                 List<String> mediosPago, boolean activa) {
+    }
+
     /** El administrador que devuelve el login: sin el hash de la contraseña. */
     public record EmpleadoVista(int id, String nombre, String email, String rol) {
     }
@@ -114,7 +129,8 @@ public class Vistas {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record PagoVista(int id, int reservaId, double monto, String medio, String fecha,
+    public record PagoVista(int id, int reservaId, double subtotal, Integer promocionId,
+                            double descuento, double monto, String medio, String fecha,
                             String codigoAutorizacion, PeliculaVista pelicula, ClienteVista cliente,
                             Integer entradas) {
     }
@@ -232,6 +248,20 @@ public class Vistas {
         return new EntradaVista(e.asientoId(), e.codigoAsiento(), e.tarifa().name(), e.precio());
     }
 
+    public PromocionVista promocion(Promocion p) {
+        return new PromocionVista(p.getId(), p.getNombre(), p.getTipo().name(),
+                p instanceof PromocionPorcentaje pp ? pp.getPorcentaje() : null,
+                p instanceof PromocionMontoFijo pm ? pm.getMonto() : null,
+                p instanceof PromocionNxM pn ? pn.getLleva() : null,
+                p instanceof PromocionNxM pn ? pn.getPaga() : null,
+                p.getVigenciaDesde().toString(), p.getVigenciaHasta().toString(),
+                p.getDiasSemana().stream().map(Enum::name).toList(),
+                p.getHoraDesde() == null ? null : p.getHoraDesde().toString(),
+                p.getHoraHasta() == null ? null : p.getHoraHasta().toString(),
+                p.getMediosPago().stream().map(Enum::name).toList(),
+                p.estaActiva());
+    }
+
     public ClienteVista cliente(Cliente c) {
         return new ClienteVista(c.getId(), c.getNombre(), c.getEmail());
     }
@@ -241,7 +271,8 @@ public class Vistas {
     }
 
     public PagoVista pago(Pago p) {
-        return new PagoVista(p.getId(), p.getReservaId(), p.getMonto(), p.getMedio().name(),
+        return new PagoVista(p.getId(), p.getReservaId(), p.getSubtotal(), p.getPromocionId(),
+                p.getDescuento(), p.getMonto(), p.getMedio().name(),
                 fecha(p.getFecha()), p.getCodigoAutorizacion(), null, null, null);
     }
 
@@ -258,7 +289,8 @@ public class Vistas {
                 .flatMap(f -> cartelera.buscar(f.getPeliculaId()))
                 .map(this::pelicula)
                 .orElse(null);
-        return new PagoVista(p.getId(), p.getReservaId(), p.getMonto(), p.getMedio().name(),
+        return new PagoVista(p.getId(), p.getReservaId(), p.getSubtotal(), p.getPromocionId(),
+                p.getDescuento(), p.getMonto(), p.getMedio().name(),
                 fecha(p.getFecha()), p.getCodigoAutorizacion(), pelicula,
                 clientes.buscar(reserva.getClienteId()).map(this::cliente).orElse(null),
                 reserva.getCantidadEntradas());
