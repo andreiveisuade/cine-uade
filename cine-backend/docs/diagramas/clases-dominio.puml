@@ -81,16 +81,27 @@ package "dominio.salas" {
 package "dominio.funciones" {
   ' Proyeccion es de la funcion, no de la sala: TipoSala dice que PUEDE
   ' proyectar en 3D, la funcion dice que se ESTA proyectando.
-  ' getFin() es derivado (inicio + duracion de la pelicula) y es lo que hace
-  ' legible la restriccion de superposicion R3.
+  '
+  ' El bloque del paso del tiempo no guarda ningun estado: la funcion no tiene
+  ' un campo "yaEmpezo" que alguien deba cambiar cuando llega la hora, lo
+  ' calcula. Es el mismo criterio que Reserva.estaVigente().
+  ' El instante entra por parametro y no se le pide al reloj, para poder
+  ' probarlo sin esperar; la duracion tambien, pero por otro motivo: ver N2.
+  ' getFin() es lo que hace legible la restriccion de superposicion R3, y
+  ' yaEmpezo() es lo que sostiene R19.
   interface Funcion {
     +getPeliculaId(): int
     +getSalaId(): int
+    +getProgramacionId(): Integer [0..1]
     +getInicio(): LocalDateTime
-    +getFin(): LocalDateTime
     +getVersion(): Version
     +getProyeccion(): Proyeccion
     +getPrecio(): double
+    --el paso del tiempo, derivado--
+    +yaEmpezo(ahora): boolean
+    +getFin(duracionMinutos): LocalDateTime
+    +estaEnCurso(ahora, duracionMinutos): boolean
+    +yaTermino(ahora, duracionMinutos): boolean
   }
   enum Version <<enum>> {
     DOBLADA
@@ -368,6 +379,26 @@ note as N1
   Genero es la excepcion: es multivaluado y tiene
   minimo uno, y esa cardinalidad se pierde si no
   se escribe. Por eso va como atributo.
+end note
+
+note as N2
+  **Las asociaciones se materializan por id.**
+  Ninguna entidad guarda una referencia al objeto:
+  Reserva tiene getFuncionId(): int, no getFuncion().
+  El diagrama dice QUE se relaciona con que y con
+  cuantos; el id es COMO se resuelve. Quien necesita
+  el objeto completo se lo pide al DAO.
+  Es lo habitual con JDBC sin ORM, y evita cargar
+  media base para leer una reserva.
+
+  Tiene una consecuencia visible en este diagrama:
+  **Funcion no sabe cuanto dura.** Solo tiene un
+  peliculaId, y la duracion vive en Pelicula. Por eso
+  getFin() y estaEnCurso() la reciben por parametro
+  en vez de calcularla: guardar una copia seria un
+  segundo lugar donde vive el mismo dato, y bastaria
+  con corregir la duracion de una pelicula para que
+  las funciones ya creadas quedaran mintiendo.
 end note
 
 @enduml
