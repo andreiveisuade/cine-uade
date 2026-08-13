@@ -513,6 +513,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R16</td><td>Las entradas de tarifa reducida no participan del descuento de la promoción</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R17</td><td>No se cobra una reserva vencida</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R19</td><td>Una función que ya empezó no se reserva ni se cobra</td><td><span class="tag tag-ok">hecha</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -546,8 +547,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-03b</td><td>Admin</td><td>Programar una grilla: previsualizarla, aplicarla y darla de baja</td><td>R3, R8</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R19</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6, R13</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-10</td><td>Admin</td><td>Iniciar sesión</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
@@ -617,6 +618,32 @@ body.lightbox-locked { overflow: hidden; }
           filtro es un <em>y</em>, no un <em>o</em>. Por eso en el panel del encargado la etiqueta dice
           «Publicada / Despublicada» y no «En cartelera / Fuera»: con el significado nuevo, una película podía
           figurar «En cartelera» sin una sola función programada.
+        </p>
+      </div>
+
+      <h4>El reloj también es una regla</h4>
+      <p>
+        La misma idea vale para la función: <code>Funcion</code> no guarda un estado que
+        alguien tenga que cambiar cuando llega la hora. Sabe calcularlo —
+        <code>yaEmpezo(ahora)</code>, <code>estaEnCurso(ahora, duracion)</code>,
+        <code>yaTermino(ahora, duracion)</code>— y el instante entra por parámetro en vez de
+        pedírselo al reloj, para poder probarlo sin esperar. Es el mismo patrón que
+        <code>Reserva.estaVencida(ahora)</code>.
+      </p>
+      <p>
+        La duración va por parámetro porque la función no la conoce: vive en la película, y
+        acá solo hay un <code>peliculaId</code>. Quien llama ya tuvo que resolver esa
+        relación —es lo que hace <code>GestorFunciones</code> para validar R3—, así que
+        pedírsela es más honesto que guardar una copia del dato que se desincronizaría.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>R19 salió de acá.</strong> Al modelar el paso del tiempo apareció un
+          agujero que el sistema tenía desde el principio: nada impedía reservar una butaca
+          para una función que había arrancado media hora antes, ni cobrarla después. En
+          <code>reservar</code> la validación va primero —si la película ya se está dando,
+          no importa si la butaca está libre— y en <code>cobrar</code> va junto a R17,
+          porque las dos son el reloj invalidando algo que sigue figurando disponible.
         </p>
       </div>
       <p>
