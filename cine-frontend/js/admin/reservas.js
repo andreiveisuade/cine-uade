@@ -4,6 +4,12 @@ import { avisar, chipEstado, dia, escapar, etiqueta, fechaHora, hora, precio, er
 
 /* -------------------------------------------------------- listado de reservas */
 
+/**
+ * Los estados en el orden en que le importan a quien atiende: primero lo que hay que
+ * cobrar hoy, al final lo que ya no se toca.
+ */
+const ESTADOS = ["RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA"];
+
 export async function vistaReservas(contenedor) {
   const reservas = await api.obtenerReservas();
   const activas = reservas.filter((r) => r.estado !== "CANCELADA");
@@ -11,11 +17,33 @@ export async function vistaReservas(contenedor) {
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Reservas</h1>
-    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
+    <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
       ${reservas.length} reservas · ${activas.length} activas ·
       ${aCobrar.length} pendientes de cobro
       ${aCobrar.length ? `(${precio(aCobrar.reduce((s, r) => s + r.total, 0))})` : ""}
     </p>
+
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Buscar</span>
+        <input id="busqueda" type="search" placeholder="cliente, email, película o butaca"
+          class="mt-1 block w-72 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Estado</span>
+        <select id="estado" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todos</option>
+          ${ESTADOS.map((e) => `<option value="${e}">${etiqueta(e)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Función del día</span>
+        <input id="fecha" type="date"
+          class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+      </label>
+      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+      <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+    </div>
 
     <div class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
       <table class="w-full text-sm">
@@ -25,8 +53,71 @@ export async function vistaReservas(contenedor) {
             <th>Butacas</th><th class="text-right">Total</th><th>Estado</th><th></th>
           </tr>
         </thead>
-        <tbody>
-          ${reservas.map((r) => `
+        <tbody>${filas(reservas)}</tbody>
+      </table>
+    </div>
+  `;
+
+  const busqueda = contenedor.querySelector("#busqueda");
+  const estado = contenedor.querySelector("#estado");
+  const fecha = contenedor.querySelector("#fecha");
+  const cuenta = contenedor.querySelector("#cuenta");
+  const cuerpo = contenedor.querySelector("tbody");
+
+  // Filtra en memoria y repinta solo el cuerpo. No vuelve a pedir la lista: ya está toda
+  // acá, y un viaje al servidor por cada tecla haría que el campo se sienta pesado y que
+  // el resultado llegue tarde.
+  function aplicarFiltros() {
+    const texto = busqueda.value.trim().toLowerCase();
+    const visibles = reservas.filter((r) => {
+      if (estado.value && r.estado !== estado.value) return false;
+      if (fecha.value && r.funcion?.inicio.slice(0, 10) !== fecha.value) return false;
+      if (!texto) return true;
+      // Se busca por lo que alguien tiene a mano en el mostrador: su nombre, su mail, la
+      // película que vino a ver, o la butaca que dice tener.
+      return [
+        r.cliente?.nombre, r.cliente?.email, r.pelicula?.titulo, r.codigo,
+        ...r.entradas.map((e) => e.codigo),
+      ].some((campo) => String(campo || "").toLowerCase().includes(texto));
+    });
+    cuerpo.innerHTML = filas(visibles);
+    cuenta.textContent = visibles.length === reservas.length
+      ? "" : `mostrando ${visibles.length} de ${reservas.length}`;
+  }
+
+  busqueda.addEventListener("input", aplicarFiltros);
+  estado.addEventListener("change", aplicarFiltros);
+  fecha.addEventListener("change", aplicarFiltros);
+  contenedor.querySelector("#limpiar").addEventListener("click", () => {
+    busqueda.value = "";
+    estado.value = "";
+    fecha.value = "";
+    aplicarFiltros();
+    busqueda.focus();
+  });
+
+  cuerpo.addEventListener("click", async (evento) => {
+    const boton = evento.target.closest("button[data-cancelar]");
+    if (!boton) return;
+    try {
+      await api.cancelarReserva(boton.dataset.cancelar);
+      avisar("Reserva cancelada, las butacas quedaron libres");
+      vistaReservas(contenedor);
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+  });
+}
+
+
+/** Una fila por reserva. Se separa para poder repintar solo el cuerpo al filtrar. */
+function filas(reservas) {
+  if (!reservas.length) {
+    return `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+      Ninguna reserva coincide con el filtro.
+    </td></tr>`;
+  }
+  return reservas.map((r) => `
             <tr class="border-b border-slate-200 dark:border-slate-800 ${r.estado === "CANCELADA" ? "text-slate-400 dark:text-slate-500" : ""}">
               <td class="p-2">${r.id}</td>
               <td>
@@ -53,23 +144,7 @@ export async function vistaReservas(contenedor) {
                   <button type="button" data-cancelar="${r.id}"
                     class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Cancelar</button>` : ""}
               </td>
-            </tr>`).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  contenedor.querySelector("tbody").addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-cancelar]");
-    if (!boton) return;
-    try {
-      await api.cancelarReserva(boton.dataset.cancelar);
-      avisar("Reserva cancelada, las butacas quedaron libres");
-      vistaReservas(contenedor);
-    } catch (e) {
-      avisar(e.message, "error");
-    }
-  });
+            </tr>`).join("");
 }
 
 /* ------------------------------------------------------------------- cobrar */

@@ -3,7 +3,13 @@ import { avisar, dia, escapar, etiqueta, hora, precio, error } from "../ui.js";
 
 /* ------------------------------------------------------ programar funciones */
 
-export async function vistaFunciones(contenedor) {
+/**
+ * @param destacada id de la función a la que saltar, si se llegó desde la agenda. La
+ *                  tabla tiene ciento cincuenta filas: aterrizar arriba de todo y que el
+ *                  usuario busque a mano la que acaba de clickear sería mandarlo dos
+ *                  veces al mismo lugar.
+ */
+export async function vistaFunciones(contenedor, destacada) {
   const [funciones, peliculas, salas, tipos, idiomas, proyecciones] = await Promise.all([
     api.obtenerFunciones(), api.obtenerPeliculas(), api.obtenerSalas(),
     api.obtenerTiposSala(), api.obtenerIdiomas(), api.obtenerProyecciones(),
@@ -21,7 +27,7 @@ export async function vistaFunciones(contenedor) {
           </thead>
           <tbody>
             ${funciones.map((f) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800">
+              <tr id="funcion-${f.id}" class="border-b border-slate-200 dark:border-slate-800">
                 <td class="p-2 whitespace-nowrap">
                   ${escapar(dia(f.inicio))} <span class="font-medium">${hora(f.inicio)}</span>
                 </td>
@@ -161,4 +167,11 @@ export async function vistaFunciones(contenedor) {
       avisar(e.message, "error");
     }
   });
+
+  // El salto va al final, con la tabla ya pintada: antes de eso la fila no existe.
+  const fila = destacada && contenedor.querySelector(`#funcion-${CSS.escape(String(destacada))}`);
+  if (fila) {
+    fila.scrollIntoView({ block: "center" });
+    fila.classList.add("bg-amber-100", "dark:bg-amber-900/40");
+  }
 }

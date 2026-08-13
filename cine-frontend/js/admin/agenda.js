@@ -170,14 +170,19 @@ function bloque(funcion, inicioFranja, columna) {
   const detalle = `${funcion.pelicula.titulo}\n${enHora(arranca)}–${enHora(arranca + dura)} (${duracion(dura)})`
     + `\n${funcion.sala.nombre} · ${etiqueta(funcion.proyeccion)} · ${etiqueta(funcion.idioma)}`;
 
+  // Un <a> y no un div con onclick: la agenda es para mirar, y desde acá se salta a
+  // operar sobre esa función. Siendo un enlace de verdad funciona el clic del medio,
+  // el "abrir en pestaña nueva" y el teclado, gratis.
   return `
-    <div class="absolute inset-x-0.5 overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight ${color(funcion.pelicula.id)}"
-         style="top: ${top}px; height: ${alto}px"
-         title="${escapar(detalle)}">
+    <a href="#/funciones/${funcion.id}"
+       class="absolute inset-x-0.5 block overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight
+              ring-slate-900/40 hover:ring-2 dark:ring-white/50 ${color(funcion.pelicula.id)}"
+       style="top: ${top}px; height: ${alto}px"
+       title="${escapar(detalle)} — clic para verla en Funciones">
       <span class="font-semibold">${enHora(arranca)}</span>
       <span class="ml-1">${escapar(funcion.pelicula.titulo)}</span>
       ${alto > 44 ? `<span class="block text-[11px] opacity-70">${escapar(columna.subtitulo(funcion))}</span>` : ""}
-    </div>
+    </a>
   `;
 }
 
