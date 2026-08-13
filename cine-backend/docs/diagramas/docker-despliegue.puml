@@ -8,10 +8,12 @@ actor "Usuario" as usuario
 
 folder "cine-frontend\n(repo hermano)" as repoFrontend
 folder "cine-backend\n(repo hermano)" as repoBackend
+folder "cine-pelis-parser\n(repo hermano)" as repoParser
 
 node "Docker host\ndocker-compose.yml (cine-docker)" {
   frame "red **web**" {
     node "cine-frontend\nnginx-unprivileged:1.27-alpine" as frontend
+    node "cine-parser\npython:3-alpine\n<<perfil importador>>" as parser
   }
 
   node "cine-backend\neclipse-temurin:21-jre-alpine" as backend
@@ -25,14 +27,18 @@ node "Docker host\ndocker-compose.yml (cine-docker)" {
 }
 
 actor "Desarrollador" as dev
+cloud "TMDB\napi.themoviedb.org" as tmdb
 
 repoFrontend .down.> frontend : build context
 repoBackend .down.> backend : build context
+repoParser .down.> parser : build context
 
 usuario --> frontend : "localhost:8080"
 dev --> adminer : "127.0.0.1:8081"
 
 frontend --> backend : proxy_pass /api\n-> backend:8080
+parser --> backend : POST /api/peliculas\n(HTTP, no SQL)
+parser --> tmdb : GET now_playing?region=AR
 backend --> mysql : DB_HOST=mysql:3306
 adminer --> mysql : ADMINER_DEFAULT_SERVER
 mysql --> vol : monta en\n/var/lib/mysql
@@ -50,21 +56,34 @@ note bottom of backend
   tampoco hace falta CORS.
 end note
 
+note bottom of parser
+  Solo en la red **web**: no tiene
+  ruta hasta MySQL. Toda pelicula
+  entra por la API y pasa por las
+  reglas de GestorCartelera.
+  No arranca con el compose:
+  --profile importador
+end note
+
 note as envNote
   .env (no versionado, copiado de .env.example)
   MYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME
   PUERTO_WEB (8080), PUERTO_ADMINER (8081), TZ
+  TMDB_TOKEN (solo lo usa el parser)
 end note
 envNote ..> mysql
 envNote ..> backend
+envNote ..> parser
 
 legend bottom
   |= Elemento |= Detalle |
-  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros dos repos hermanos; |
+  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros tres repos hermanos; |
   |  | ninguno tiene codigo de la app propio, solo docker-compose.yml, .env y el seed del admin. |
-  | red **web** | frontend <-> backend. |
+  | red **web** | frontend y parser <-> backend. |
   | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base. |
   | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
+  | parser | Importa la cartelera real de TMDB. Escribe por HTTP: que no este en la red |
+  |  | **datos** es lo que convierte "no toca la base" en una garantia de red. |
   | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
   |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
   | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |
