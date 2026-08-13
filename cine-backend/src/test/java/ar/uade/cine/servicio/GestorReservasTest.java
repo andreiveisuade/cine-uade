@@ -2,6 +2,8 @@ package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,6 +29,8 @@ import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
@@ -59,6 +63,7 @@ class GestorReservasTest {
     private GestorFunciones funciones;
     private GestorPagos pagos;
     private Path directorioTickets;
+    private ReservaDAO reservaDAO;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
@@ -68,7 +73,7 @@ class GestorReservasTest {
         AsientoDAO asientoDAO = new AsientoDAOMemoria();
         FuncionDAO funcionDAO = new FuncionDAOMemoria();
         ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        ReservaDAO reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
+        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
         directorioTickets = tempDir.resolve("tickets");
 
         new GestorCartelera(peliculaDAO, funcionDAO)
@@ -273,6 +278,95 @@ class GestorReservasTest {
         assertEquals(2, leida.getCantidadEntradas());
         assertEquals("A1", leida.getEntradas().get(0).codigoAsiento());
         assertEquals(LocalDate.now(), leida.getCreadaEn().toLocalDate());
+    }
+
+
+    // ---------- vencimiento ----------
+
+    /**
+     * Envejece la reserva reescribiéndola con otra fecha de creación: es lo mismo que
+     * pasaría en la base media hora después, sin tener que esperarla.
+     *
+     * <p>Relee del DAO en vez de usar la instancia que tiene el test: cobrar() modifica
+     * la copia que leyó el gestor, no esta, y escribir la vieja pisaría el PAGADA.
+     */
+    private void envejecer(int reservaId, int minutos) {
+        Reserva actual = reservaDAO.buscarPorId(reservaId).orElseThrow();
+        reservaDAO.actualizar(new ReservaImpl(actual.getId(), actual.getFuncionId(),
+                actual.getClienteId(), actual.getEntradas(), actual.getEstado(),
+                actual.getCreadaEn().minusMinutes(minutos), actual.getCodigo()));
+    }
+
+    @Test
+    void unaReservaSinPagarVencidaLiberaSusButacas() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        assertEquals(8, reservas.lugaresLibres(1));
+
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+
+        assertEquals(10, reservas.lugaresLibres(1), "las butacas vuelven a la venta");
+        assertEquals(EstadoReserva.EXPIRADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
+    }
+
+    /** Se expira al consultar, no con un proceso de fondo: nadie la marca hasta que alguien mira. */
+    @Test
+    void laReservaVencidaSeCierraReciénCuandoAlguienConsulta() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+
+        assertEquals(EstadoReserva.RESERVADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+        reservas.lugaresLibres(1);
+        assertEquals(EstadoReserva.EXPIRADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+    }
+
+    @Test
+    void unaReservaPagadaNoVence() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+
+        assertEquals(9, reservas.lugaresLibres(1), "la butaca cobrada sigue ocupada");
+    }
+
+    /** R17: si venció, sus butacas ya se pueden estar vendiendo a otro. */
+    @Test
+    void noSeCobraUnaReservaVencida() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+    }
+
+    // ---------- control de acceso ----------
+
+    @Test
+    void elCodigoNoEsElIdYNoSeRepite() {
+        Reserva primera = reservas.reservar(1, 1, generales("A1"));
+        Reserva segunda = reservas.reservar(1, 1, generales("A2"));
+
+        assertNotEquals(primera.getCodigo(), segunda.getCodigo());
+        assertNotEquals(String.valueOf(primera.getId()), primera.getCodigo());
+        assertEquals(8, primera.getCodigo().length());
+    }
+
+    /** R18: en la puerta entra una reserva pagada, y una sola vez. */
+    @Test
+    void seIngresaUnaSolaVezYSoloSiEstaPagada() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        assertThrows(IllegalArgumentException.class,
+                () -> reservas.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
+
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        assertNotNull(reservas.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> reservas.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
+    }
+
+    @Test
+    void unCodigoInventadoNoAbreLaPuerta() {
+        assertThrows(IllegalArgumentException.class, () -> reservas.registrarIngreso("XXXXXXXX"));
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

@@ -39,6 +39,13 @@ public class GestorPagos {
         if (reserva.getEstado() != EstadoReserva.RESERVADA) {
             throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
         }
+        // R17: puede seguir figurando RESERVADA porque nadie consultó esa función desde
+        // que venció, y quien la expira es justamente la consulta. Chequearlo acá es lo
+        // que impide cobrar butacas que ya volvieron a la venta.
+        if (reserva.estaVencida(LocalDateTime.now())) {
+            throw new IllegalArgumentException("La reserva " + reservaId
+                    + " venció: sus butacas volvieron a estar disponibles");
+        }
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
         }

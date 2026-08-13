@@ -37,7 +37,7 @@ import ar.uade.cine.persistencia.ReservaDAO;
 public class ReservaDAOMySQL implements ReservaDAO {
 
     private static final String SELECT_CON_ENTRADAS =
-            "SELECT r.id, r.funcion_id, r.cliente_id, r.estado, r.creada_en, "
+            "SELECT r.id, r.funcion_id, r.cliente_id, r.estado, r.creada_en, r.codigo, r.ingresada_en, "
             + "e.asiento_id, e.tarifa, e.precio, a.fila, a.numero "
             + "FROM reserva r "
             + "LEFT JOIN entrada e ON e.reserva_id = r.id "
@@ -45,7 +45,8 @@ public class ReservaDAOMySQL implements ReservaDAO {
 
     @Override
     public void guardar(Reserva reserva) {
-        String sql = "INSERT INTO reserva (funcion_id, cliente_id, estado, creada_en) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO reserva (funcion_id, cliente_id, estado, creada_en, codigo) "
+                + "VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -53,6 +54,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
                 ps.setInt(2, reserva.getClienteId());
                 ps.setString(3, reserva.getEstado().name());
                 ps.setTimestamp(4, Timestamp.valueOf(reserva.getCreadaEn()));
+                ps.setString(5, reserva.getCodigo());
                 ps.executeUpdate();
 
                 try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -105,15 +107,18 @@ public class ReservaDAOMySQL implements ReservaDAO {
      */
     @Override
     public void actualizar(Reserva reserva) {
-        String sql = "UPDATE reserva SET estado = ? WHERE id = ?";
+        String sql = "UPDATE reserva SET estado = ?, ingresada_en = ? WHERE id = ?";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, reserva.getEstado().name());
-                ps.setInt(2, reserva.getId());
+                ps.setTimestamp(2, reserva.getIngresadaEn() == null
+                        ? null : Timestamp.valueOf(reserva.getIngresadaEn()));
+                ps.setInt(3, reserva.getId());
                 ps.executeUpdate();
 
-                if (reserva.getEstado() == EstadoReserva.CANCELADA) {
+                // Cancelada o expirada: en las dos la butaca vuelve a la venta.
+                if (!reserva.estaVigente()) {
                     liberarButacas(con, reserva.getId());
                 }
                 con.commit();
@@ -139,6 +144,20 @@ public class ReservaDAOMySQL implements ReservaDAO {
         List<Reserva> reservas = consultar(SELECT_CON_ENTRADAS + " WHERE r.id = ?", id,
                 "No se pudo buscar la reserva " + id);
         return reservas.isEmpty() ? Optional.empty() : Optional.of(reservas.get(0));
+    }
+
+    @Override
+    public Optional<Reserva> buscarPorCodigo(String codigo) {
+        try (Connection con = ConexionMySQL.abrir();
+             PreparedStatement ps = con.prepareStatement(SELECT_CON_ENTRADAS + " WHERE r.codigo = ?")) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Reserva> reservas = agrupar(rs);
+                return reservas.isEmpty() ? Optional.empty() : Optional.of(reservas.get(0));
+            }
+        } catch (SQLException e) {
+            throw new PersistenciaException("No se pudo buscar la reserva por codigo", e);
+        }
     }
 
     @Override
@@ -204,7 +223,12 @@ public class ReservaDAOMySQL implements ReservaDAO {
                         rs.getInt("cliente_id"),
                         List.of(),
                         EstadoReserva.valueOf(rs.getString("estado")),
-                        rs.getTimestamp("creada_en").toLocalDateTime());
+                        rs.getTimestamp("creada_en").toLocalDateTime(),
+                        rs.getString("codigo"));
+                Timestamp ingreso = rs.getTimestamp("ingresada_en");
+                if (ingreso != null) {
+                    reserva.setIngresadaEn(ingreso.toLocalDateTime());
+                }
                 porId.put(id, reserva);
             }
             int asientoId = rs.getInt("asiento_id");

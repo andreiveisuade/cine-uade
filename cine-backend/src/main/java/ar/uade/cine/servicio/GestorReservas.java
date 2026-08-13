@@ -134,6 +134,31 @@ public class GestorReservas {
         reservaDAO.actualizar(reserva);
     }
 
+    /**
+     * R18: valida la entrada en la puerta. Solo pasa una reserva pagada, y una sola vez.
+     *
+     * <p>Busca por código y no por id porque es lo que trae el QR, y es además la única
+     * credencial del cliente: pedir el id dejaría entrar probando números.
+     *
+     * @return la reserva ya marcada como ingresada, para que el acomodador vea las
+     *         butacas y qué tarifa declaró cada una
+     */
+    public Reserva registrarIngreso(String codigo) {
+        Reserva reserva = reservaDAO.buscarPorCodigo(codigo == null ? "" : codigo.trim().toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("No existe ninguna reserva con ese código"));
+        if (reserva.getEstado() != EstadoReserva.PAGADA) {
+            throw new IllegalArgumentException("La reserva está " + reserva.getEstado()
+                    + ": solo se ingresa con una reserva pagada");
+        }
+        if (reserva.getIngresadaEn() != null) {
+            throw new IllegalArgumentException("Esa entrada ya se usó el "
+                    + reserva.getIngresadaEn());
+        }
+        reserva.setIngresadaEn(LocalDateTime.now());
+        reservaDAO.actualizar(reserva);
+        return reserva;
+    }
+
     public int lugaresLibres(int funcionId) {
         return asientosLibres(funcionId).size();
     }
@@ -151,16 +176,38 @@ public class GestorReservas {
     }
 
     /**
-     * Ids de las butacas tomadas en esa función. Las reservas canceladas liberan las
-     * suyas (R6). Es público porque es la regla que define "ocupado", y quien dibuje el
-     * mapa de la sala —la consola o una API— tiene que preguntarla acá y no rehacerla.
+     * Ids de las butacas tomadas en esa función. Las reservas canceladas y las expiradas
+     * liberan las suyas (R6). Es público porque es la regla que define "ocupado", y quien
+     * dibuje el mapa de la sala —la consola o una API— tiene que preguntarla acá y no
+     * rehacerla.
      */
     public Set<Integer> asientosOcupados(int funcionId) {
+        expirarVencidas(funcionId);
         return reservaDAO.listarPorFuncion(funcionId).stream()
-                .filter(r -> r.getEstado() != EstadoReserva.CANCELADA)
+                .filter(Reserva::estaVigente)
                 .flatMap(r -> r.getEntradas().stream())
                 .map(Entrada::asientoId)
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Cierra las reservas de esa función que nadie pagó a tiempo, y con eso devuelve sus
+     * butacas a la venta.
+     *
+     * <p>No hay proceso de fondo ni scheduler: la limpieza la hace quien consulta, que es
+     * justo el momento en que importa. Y tiene que <strong>escribir</strong>, no solo
+     * derivar el estado al vuelo: el <code>UNIQUE (funcion_id, asiento_id)</code> de la
+     * base no sabe nada de vencimientos, así que si la fila de la entrada conserva su
+     * funcion_id, la butaca queda libre en la teoría y bloqueada en la práctica.
+     */
+    private void expirarVencidas(int funcionId) {
+        LocalDateTime ahora = LocalDateTime.now();
+        for (Reserva reserva : reservaDAO.listarPorFuncion(funcionId)) {
+            if (reserva.estaVencida(ahora)) {
+                reserva.setEstado(EstadoReserva.EXPIRADA);
+                reservaDAO.actualizar(reserva);
+            }
+        }
     }
 
     private Funcion buscarFuncion(int funcionId) {

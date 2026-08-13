@@ -22,8 +22,13 @@ import ar.uade.cine.persistencia.ReservaDAO;
  * separadas por coma, con su id, su código, su tarifa y lo que se cobró.
  *
  * <pre>
- * 1|3|7|12:A1:GENERAL:5000.0,13:A2:JUBILADO:2500.0|RESERVADA|2026-08-13T20:15:00
- * 2|3|9|20:B5:GENERAL:8000.0|PAGADA|2026-08-13T20:41:12
+ * 1|3|7|12:A1:GENERAL:5000.0,13:A2:JUBILADO:2500.0|RESERVADA|2026-08-13T20:15:00|K7M2P9XQ|
+ * 2|3|9|20:B5:GENERAL:8000.0|PAGADA|2026-08-13T20:41:12|R4T8WZ3B|2026-08-13T21:52:04
+ * </pre>
+ *
+ * <pre>
+ * El anteultimo campo es el codigo del QR; el ultimo es cuando entraron, vacio si
+ * todavia no lo hicieron.
  * </pre>
  *
  * Sin motor de base de datos, cualquier cambio implica reescribir el archivo entero:
@@ -73,6 +78,11 @@ public class ReservaDAOTxt implements ReservaDAO {
     }
 
     @Override
+    public Optional<Reserva> buscarPorCodigo(String codigo) {
+        return listar().stream().filter(r -> r.getCodigo().equals(codigo)).findFirst();
+    }
+
+    @Override
     public List<Reserva> listar() {
         if (!Files.exists(archivo)) {
             return new ArrayList<>();
@@ -115,7 +125,9 @@ public class ReservaDAOTxt implements ReservaDAO {
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
         return r.getId() + "|" + r.getFuncionId() + "|" + r.getClienteId()
-                + "|" + butacas + "|" + r.getEstado().name() + "|" + r.getCreadaEn();
+                + "|" + butacas + "|" + r.getEstado().name() + "|" + r.getCreadaEn()
+                + "|" + r.getCodigo()
+                + "|" + (r.getIngresadaEn() == null ? "" : r.getIngresadaEn());
     }
 
     private Reserva desdeLinea(String linea) {
@@ -128,12 +140,18 @@ public class ReservaDAOTxt implements ReservaDAO {
                         TipoTarifa.valueOf(partes[2]), Double.parseDouble(partes[3])));
             }
         }
-        return new ReservaImpl(
+        Reserva reserva = new ReservaImpl(
                 Integer.parseInt(campos[0]),
                 Integer.parseInt(campos[1]),
                 Integer.parseInt(campos[2]),
                 entradas,
                 EstadoReserva.valueOf(campos[4]),
-                LocalDateTime.parse(campos[5]));
+                LocalDateTime.parse(campos[5]),
+                campos[6]);
+        // split descarta los campos vacios del final: sin ingreso, campos[7] no existe.
+        if (campos.length > 7 && !campos[7].isBlank()) {
+            reserva.setIngresadaEn(LocalDateTime.parse(campos[7]));
+        }
+        return reserva;
     }
 }

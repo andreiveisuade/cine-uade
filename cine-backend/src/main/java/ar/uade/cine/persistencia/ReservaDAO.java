@@ -9,10 +9,13 @@ public interface ReservaDAO {
 
     void guardar(Reserva reserva);
 
-    /** Necesario para cambiar el estado a PAGADA o CANCELADA. */
+    /** Necesario para cambiar el estado y para registrar el ingreso al cine. */
     void actualizar(Reserva reserva);
 
     Optional<Reserva> buscarPorId(int id);
+
+    /** Por el código del QR, que es con lo que se valida la entrada en la puerta. */
+    Optional<Reserva> buscarPorCodigo(String codigo);
 
     List<Reserva> listar();
 
