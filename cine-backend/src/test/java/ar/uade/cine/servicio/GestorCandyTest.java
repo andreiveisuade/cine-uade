@@ -1,6 +1,7 @@
 package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +22,11 @@ import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.ventas.Entrada;
+import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.dominio.ventas.ReservaImpl;
+import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketCandyTxt;
 import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
@@ -33,6 +41,7 @@ class GestorCandyTest {
     Path tempDir;
 
     private GestorCandy candy;
+    private ReservaDAO reservaDAO;
     private Path directorioTickets;
     private int pochoclos;
     private int gaseosa;
@@ -41,12 +50,13 @@ class GestorCandyTest {
     @BeforeEach
     void prepararCarta() {
         ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        new GestorClientes(clienteDAO, new ReservaDAOTxt(tempDir.resolve("reservas.txt")),
-                new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
+        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
+        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria())
+                .registrar("Andrei", "andrei@uade.edu.ar");
         directorioTickets = tempDir.resolve("tickets");
 
         candy = new GestorCandy(new ProductoDAOMemoria(), new CompraCandyDAOMemoria(), clienteDAO,
-                new GeneradorTicketCandyTxt(directorioTickets));
+                reservaDAO, new GeneradorTicketCandyTxt(directorioTickets));
         pochoclos = candy.agregarProducto("Pochoclos grandes", TipoProducto.POCHOCLOS, 4000).getId();
         gaseosa = candy.agregarProducto("Gaseosa 500ml", TipoProducto.BEBIDA, 2500).getId();
     }
@@ -176,5 +186,41 @@ class GestorCandyTest {
     void unComboNoSeDaDeAltaComoProductoSuelto() {
         assertThrows(IllegalArgumentException.class,
                 () -> candy.agregarProducto("Combo trucho", TipoProducto.COMBO, 5000));
+    }
+
+    /** En el mostrador se compra sin dar el nombre, como en cualquier kiosco. */
+    @Test
+    void seVendeSinClienteIdentificado() {
+        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+
+        CompraCandy compra = candy.vender(null, Map.of(pochoclos.getId(), 1),
+                MedioPago.EFECTIVO, "");
+
+        assertNull(compra.getClienteId());
+        assertNull(compra.getReservaId());
+        assertEquals(3000, compra.getTotal(), 0.001);
+    }
+
+    /** El "¿desea agregar pochoclos?" de después de comprar la entrada por la web. */
+    @Test
+    void laCompraDesdeUnaReservaHeredaSuCliente() {
+        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        Reserva reserva = new ReservaImpl(1, 1,
+                List.of(new Entrada(1, "A1", TipoTarifa.GENERAL, 5000)), LocalDateTime.now());
+        reservaDAO.guardar(reserva);
+
+        CompraCandy compra = candy.venderParaReserva(reserva.getId(),
+                Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
+
+        assertEquals(reserva.getId(), compra.getReservaId());
+        assertEquals(reserva.getClienteId(), compra.getClienteId(), "el cliente sale de la reserva");
+    }
+
+    @Test
+    void noSeAgregaCandyAUnaReservaInexistente() {
+        Producto pochoclos = candy.agregarProducto("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+
+        assertThrows(IllegalArgumentException.class, () -> candy.venderParaReserva(999,
+                Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, ""));
     }
 }

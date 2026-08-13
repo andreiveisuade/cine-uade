@@ -17,7 +17,20 @@ public interface CompraCandy {
 
     void setId(int id);
 
-    int getClienteId();
+    /**
+     * Quién compró, o {@code null} si la venta fue de mostrador y nadie se identificó:
+     * pedir el nombre para vender pochoclos no tiene sentido.
+     */
+    Integer getClienteId();
+
+    /**
+     * La reserva a la que se le agregó esta compra, o {@code null} si fue de mostrador.
+     * Es el <em>«¿desea agregar pochoclos?»</em> que aparece después de comprar la
+     * entrada por la web: de ahí sale el cliente sin volver a pedírselo, permite retirar
+     * mostrando el mismo QR de la entrada, y le da al arqueo cuánto vende el upsell
+     * contra el mostrador.
+     */
+    Integer getReservaId();
 
     LocalDateTime getFecha();
 

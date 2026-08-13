@@ -15,10 +15,12 @@ import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.dominio.candy.ProductoImpl;
 import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.usuarios.Cliente;
+import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.GeneradorTicketCandy;
+import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.ProductoDAO;
 
 /**
@@ -30,13 +32,15 @@ public class GestorCandy {
     private final ProductoDAO productoDAO;
     private final CompraCandyDAO compraDAO;
     private final ClienteDAO clienteDAO;
+    private final ReservaDAO reservaDAO;
     private final GeneradorTicketCandy generadorTicket;
 
     public GestorCandy(ProductoDAO productoDAO, CompraCandyDAO compraDAO, ClienteDAO clienteDAO,
-                       GeneradorTicketCandy generadorTicket) {
+                       ReservaDAO reservaDAO, GeneradorTicketCandy generadorTicket) {
         this.productoDAO = productoDAO;
         this.compraDAO = compraDAO;
         this.clienteDAO = clienteDAO;
+        this.reservaDAO = reservaDAO;
         this.generadorTicket = generadorTicket;
     }
 
@@ -97,9 +101,26 @@ public class GestorCandy {
      *
      * @param cantidades id de producto a cuántas unidades lleva
      */
-    public CompraCandy vender(int clienteId, Map<Integer, Integer> cantidades,
+    public CompraCandy vender(Integer clienteId, Map<Integer, Integer> cantidades,
                               MedioPago medio, String codigoAutorizacion) {
-        Cliente cliente = clienteDAO.buscarPorId(clienteId)
+        return vender(clienteId, null, cantidades, medio, codigoAutorizacion);
+    }
+
+    /**
+     * El <em>«¿desea agregar pochoclos + gaseosa?»</em> de después de comprar la entrada
+     * por la web. El cliente no se vuelve a pedir: sale de la reserva.
+     */
+    public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
+                                         MedioPago medio, String codigoAutorizacion) {
+        Reserva reserva = reservaDAO.buscarPorId(reservaId)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + reservaId));
+        return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);
+    }
+
+    private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
+                               MedioPago medio, String codigoAutorizacion) {
+        // Sin cliente es una venta de mostrador: se cobra y se entrega, sin nombre.
+        Cliente cliente = clienteId == null ? null : clienteDAO.buscarPorId(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
         if (cantidades == null || cantidades.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos un producto");
@@ -125,7 +146,7 @@ public class GestorCandy {
             items.add(new ItemCompra(producto.getId(), producto.getNombre(), cantidad, producto.getPrecio()));
         }
 
-        CompraCandy compra = new CompraCandyImpl(clienteId, LocalDateTime.now(), medio,
+        CompraCandy compra = new CompraCandyImpl(clienteId, reservaId, LocalDateTime.now(), medio,
                 codigoAutorizacion == null ? "" : codigoAutorizacion.trim(), items);
         compraDAO.guardar(compra);
         generadorTicket.emitir(compra, cliente, ahorroDe(compra));

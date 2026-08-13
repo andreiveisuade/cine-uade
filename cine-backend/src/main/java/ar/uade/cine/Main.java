@@ -66,7 +66,7 @@ public class Main {
         GestorReservas gestorReservas = new GestorReservas(
                 reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO, generadorTicket);
         GestorCandy gestorCandy = new GestorCandy(
-                productoDAO, compraCandyDAO, clienteDAO, generadorTicketCandy);
+                productoDAO, compraCandyDAO, clienteDAO, reservaDAO, generadorTicketCandy);
 
         new MenuConsola(gestorCartelera, gestorSalas, gestorFunciones, gestorClientes,
                 gestorReservas, gestorAdministradores, gestorPagos, gestorCandy).iniciar();

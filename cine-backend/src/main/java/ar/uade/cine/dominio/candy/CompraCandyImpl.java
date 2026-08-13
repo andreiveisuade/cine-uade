@@ -9,24 +9,26 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 public class CompraCandyImpl implements CompraCandy {
 
     private int id;
-    private final int clienteId;
+    private final Integer clienteId;
+    private final Integer reservaId;
     private final LocalDateTime fecha;
     private final MedioPago medio;
     private final String codigoAutorizacion;
     private final List<ItemCompra> items = new ArrayList<>();
 
-    public CompraCandyImpl(int clienteId, LocalDateTime fecha, MedioPago medio,
+    public CompraCandyImpl(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                            String codigoAutorizacion, List<ItemCompra> items) {
         this.clienteId = clienteId;
+        this.reservaId = reservaId;
         this.fecha = fecha;
         this.medio = medio;
         this.codigoAutorizacion = codigoAutorizacion;
         this.items.addAll(items);
     }
 
-    public CompraCandyImpl(int id, int clienteId, LocalDateTime fecha, MedioPago medio,
-                           String codigoAutorizacion, List<ItemCompra> items) {
-        this(clienteId, fecha, medio, codigoAutorizacion, items);
+    public CompraCandyImpl(int id, Integer clienteId, Integer reservaId, LocalDateTime fecha,
+                           MedioPago medio, String codigoAutorizacion, List<ItemCompra> items) {
+        this(clienteId, reservaId, fecha, medio, codigoAutorizacion, items);
         this.id = id;
     }
 
@@ -41,8 +43,13 @@ public class CompraCandyImpl implements CompraCandy {
     }
 
     @Override
-    public int getClienteId() {
+    public Integer getClienteId() {
         return clienteId;
+    }
+
+    @Override
+    public Integer getReservaId() {
+        return reservaId;
     }
 
     @Override

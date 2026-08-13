@@ -40,7 +40,9 @@ public class GeneradorTicketCandyTxt implements GeneradorTicketCandy {
                 centrar("CINE UADE - CANDY"),
                 centrar("COMPRA #" + compra.getId()),
                 LINEA,
-                campo("Cliente", cliente.getNombre()),
+                // Sin cliente es una venta de mostrador: el ticket sale igual, a nombre
+                // de nadie, como cualquier comprobante de un kiosco.
+                campo("Cliente", cliente == null ? "Consumidor final" : cliente.getNombre()),
                 campo("Fecha", compra.getFecha().format(FORMATO_FECHA)),
                 LINEA));
 

@@ -23,22 +23,25 @@ import ar.uade.cine.persistencia.PersistenciaException;
 public class CompraCandyDAOMySQL implements CompraCandyDAO {
 
     private static final String SELECT =
-            "SELECT c.id, c.cliente_id, c.fecha, c.medio, c.codigo_autorizacion, "
+            "SELECT c.id, c.cliente_id, c.reserva_id, c.fecha, c.medio, c.codigo_autorizacion, "
             + "i.producto_id, i.nombre, i.cantidad, i.precio_unitario "
             + "FROM compra_candy c "
             + "LEFT JOIN item_compra i ON i.compra_id = c.id";
 
     @Override
     public void guardar(CompraCandy compra) {
-        String sql = "INSERT INTO compra_candy (cliente_id, fecha, medio, codigo_autorizacion) "
-                + "VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO compra_candy (cliente_id, reserva_id, fecha, medio, codigo_autorizacion) "
+                + "VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setInt(1, compra.getClienteId());
-                ps.setTimestamp(2, Timestamp.valueOf(compra.getFecha()));
-                ps.setString(3, compra.getMedio().name());
-                ps.setString(4, compra.getCodigoAutorizacion());
+                // setObject y no setInt: los dos admiten NULL, que es como se guarda una
+                // venta de mostrador sin cliente ni reserva detrás.
+                ps.setObject(1, compra.getClienteId(), java.sql.Types.INTEGER);
+                ps.setObject(2, compra.getReservaId(), java.sql.Types.INTEGER);
+                ps.setTimestamp(3, Timestamp.valueOf(compra.getFecha()));
+                ps.setString(4, compra.getMedio().name());
+                ps.setString(5, compra.getCodigoAutorizacion());
                 ps.executeUpdate();
 
                 try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -124,7 +127,8 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
             if (compra == null) {
                 compra = new CompraCandyImpl(
                         id,
-                        rs.getInt("cliente_id"),
+                        (Integer) rs.getObject("cliente_id"),
+                        (Integer) rs.getObject("reserva_id"),
                         rs.getTimestamp("fecha").toLocalDateTime(),
                         MedioPago.valueOf(rs.getString("medio")),
                         rs.getString("codigo_autorizacion"),
