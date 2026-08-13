@@ -1,8 +1,9 @@
 # Contrato de la API
 
 Lo que el frontend espera del backend. Cada función de `js/api.js` corresponde a un
-endpoint de esta lista: hoy resuelven contra `mock/datos.js` y se van a reemplazar por
-`fetch` sin tocar ninguna vista.
+endpoint de esta lista. `FUENTE = "http"` en `js/api.js` es el modo actual: `js/api-http.js`
+llama a estos endpoints con `fetch`. `js/api-mock.js` (modo `"mock"`) sigue existiendo para
+trabajar sin backend, y replica el mismo contrato contra datos en memoria.
 
 Base: `/api`. El navegador la pide al mismo origen y nginx la reenvía al backend por la
 red interna de Docker, así que no hace falta CORS.
@@ -91,14 +92,27 @@ El cliente con ese email, o `null` si no existe. Sin distinguir mayúsculas.
 ### `POST /api/reservas`
 ```json
 { "funcionId": 1, "nombre": "Andrei Veis", "email": "andrei@uade.edu.ar",
-  "codigos": ["C5","C6"] }
+  "butacas": { "C5": "GENERAL", "C6": "JUBILADO" } }
 ```
-Si el email no existe, da de alta el cliente. Devuelve la reserva creada con sus
-entradas. Valida R4 (butaca ocupada), R9 (fuera de servicio) y butacas repetidas.
+`butacas` es código de butaca a **tarifa** de quien la ocupa: `GENERAL`, `MENOR`,
+`JUBILADO` o `ESTUDIANTE`. Va por butaca y no por reserva porque la tarifa es por
+persona — en una reserva de cuatro puede haber dos generales, un menor y un jubilado.
+
+> El formato viejo `"codigos": ["C5","C6"]` **sigue aceptándose** y equivale a todas
+> `GENERAL`. Si vienen los dos, gana `butacas`.
+
+Como la clave es el código de butaca, pedir la misma dos veces es imposible de
+expresar: dejó de ser un error a validar. Si el email no existe, da de alta el cliente.
+Valida R4 (butaca ocupada) y R9 (fuera de servicio).
+
+La reserva vuelve con `codigo` —el del QR, 8 caracteres— y `entradas[].tarifa`.
 
 ### `GET /api/reservas/{id}`
 Todo lo que necesita el ticket: la reserva más `funcion`, `pelicula`, `sala`, `cliente`
-y `total`.
+y `total`. Incluye además `codigo` e `ingresadaEn` (ausente si todavía no entraron).
+
+> `total` es el **subtotal**: la suma de los precios de lista. El total definitivo no
+> existe hasta que se cobra, porque el descuento por promoción depende del medio de pago.
 
 ### `GET /api/reservas?email=andrei@uade.edu.ar`
 Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el email es lo
@@ -112,9 +126,13 @@ Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el e
 ## Encargado
 
 ### `POST /api/sesion`
-`{ "email": "…", "password": "…" }` → el administrador sin el hash.
+`{ "email": "…", "password": "…" }` → el empleado sin el hash.
 **El mismo error para email inexistente y contraseña equivocada**, como
-`GestorAdministradores`.
+`GestorEmpleados`.
+
+`rol` viene en la respuesta y puede ser `ADMINISTRADOR` o `ACOMODADOR`. El acomodador
+solo valida entradas en la puerta: no administra la cartelera, así que el front debería
+llevarlo directo a esa pantalla y no al panel.
 
 > Pendiente de definir entre las dos partes: hoy el front guarda la sesión en
 > `sessionStorage` y los endpoints de admin no piden credenciales. Si se agrega token,
@@ -141,8 +159,23 @@ Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el e
 ```json
 { "medio": "CREDITO", "codigoAutorizacion": "AUTH-40219" }
 ```
-**El monto no viaja**: lo calcula el backend con el total de la reserva. R5 (solo
-`RESERVADA`), R11 (código obligatorio si el medio lo exige), y un pago por reserva.
+**El monto no viaja**: lo calcula el backend. R5 (solo `RESERVADA`), R11 (código
+obligatorio si el medio lo exige), R17 (no se cobra una reserva vencida) y un pago por
+reserva.
+
+Devuelve el desglose completo:
+```json
+{ "id": 2, "reservaId": 25, "subtotal": 15360, "promocionId": 1,
+  "descuento": 7680, "monto": 7680, "medio": "EFECTIVO", … }
+```
+`subtotal` es la suma de los precios de lista; `descuento` lo que sacó la promoción que
+ganó; `monto` lo que entró en la caja, que es lo que suma el arqueo. **Acá se resuelve el
+descuento y no antes**: recién en este momento se conoce el medio de pago, y hay
+promociones que dependen de él.
+
+### `GET /api/reservas/{id}/pago`
+El pago de esa reserva, o `null` si todavía no se cobró — no es error, es la forma en que
+el front pregunta si ya está paga. Mismos campos que el `pago` embebido en `GET /api/reservas`.
 
 ### `GET /api/arqueo?fecha=2026-08-13`
 ```json
@@ -152,3 +185,64 @@ Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el e
               "fecha":"2026-08-13T14:22:00", "codigoAutorizacion":"",
               "pelicula": {…}, "cliente": {…}, "entradas": 3 }] }
 ```
+
+## Promociones (CU-17)
+
+El ABM del administrador. Es lo que justifica que la promoción sea una entidad y no tres
+constantes en el backend: si el cine no las puede cargar, no hacía falta modelarla.
+
+### `POST /api/promociones`
+Un solo pedido para los tres tipos, con las columnas del beneficio en `null` salvo la que
+corresponde. Es la misma forma que tiene la tabla, y evita tres endpoints que se
+diferencian en un campo.
+
+```json
+{ "nombre": "Miércoles 2x1", "tipo": "NXM", "lleva": 2, "paga": 1,
+  "vigenciaDesde": "2026-08-01", "vigenciaHasta": "2026-12-31",
+  "diasSemana": ["WEDNESDAY"], "horaDesde": null, "horaHasta": null,
+  "mediosPago": [] }
+```
+
+| `tipo` | Campos que usa | Ejemplo |
+|---|---|---|
+| `PORCENTAJE` | `porcentaje` (1 a 99) | 30% off |
+| `MONTO_FIJO` | `monto` | $2000 off |
+| `NXM` | `lleva`, `paga` (`lleva` > `paga`) | 2x1 |
+
+**Las listas vacías no restringen**: sin `diasSemana` corre todos los días, sin
+`mediosPago` con cualquiera. `horaDesde`/`horaHasta` en `null` es todo el día.
+
+Las condiciones se evalúan contra el horario de la **función**, no contra el momento de la
+compra: un 2x1 de los miércoles vale para la función del miércoles, aunque las entradas se
+compren el lunes.
+
+### `GET /api/promociones` y `GET /api/promociones/{id}`
+La carta completa, activas e inactivas.
+
+### `POST /api/promociones/{id}/baja` y `/alta`
+Desactiva o reactiva. **No hay `DELETE` a propósito**: una promoción usada en un cobro
+tiene que seguir existiendo para poder explicar por qué se cobró ese monto.
+
+> **Cómo se elige cuál se aplica.** No se acumulan: se evalúan todas las que corren para
+> esa función y ese medio de pago, y gana la que más descuenta (R15). En un empate, la de
+> menor id. Y las entradas de tarifa reducida quedan afuera del cálculo (R16): un jubilado
+> ya tiene su precio especial y no entra además al 2x1. El front no calcula nada de esto,
+> le llega resuelto en la respuesta del pago.
+
+## Control de acceso (CU-18)
+
+### `POST /api/acceso`
+```json
+{ "codigo": "K7M2P9XQ" }
+```
+Lo que llama el acomodador al escanear el QR. Devuelve la `ReservaVista` completa, con las
+butacas y la tarifa de cada una, que es lo que necesita para saber a quién pedirle carnet.
+
+Va por código y no por id porque el código es lo que trae el QR y, como el cliente no
+inicia sesión, es su única credencial: con el id se entraría probando números.
+
+**Es `POST` y no `GET`** porque no es una consulta: marca la entrada como usada. Repetirlo
+falla con `400` (R18), igual que un código inexistente o una reserva sin pagar.
+
+El código tiene 8 caracteres de un alfabeto sin `O`, `I`, `0` ni `1`, porque se tipea a
+mano cuando el escáner no lee y esos cuatro se confunden entre sí.
