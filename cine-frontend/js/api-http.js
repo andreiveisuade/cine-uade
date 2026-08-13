@@ -69,6 +69,9 @@ export const crearReserva = ({ funcionId, nombre, email, codigos }) =>
 
 export const obtenerReserva = (id) => get(`/reservas/${id}`);
 
+export const obtenerReservasDe = (email) =>
+  get(`/reservas?email=${encodeURIComponent(String(email || "").trim())}`);
+
 /* ---------------------------------------------------------------- encargado */
 
 export const login = (email, password) => post("/sesion", { email, password });

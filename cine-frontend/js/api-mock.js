@@ -414,20 +414,35 @@ export function eliminarFuncion(id) {
   return responder(true);
 }
 
+function conDatosDeLaReserva(r) {
+  const funcion = datos.funciones.find((f) => f.id === r.funcionId);
+  return {
+    ...r,
+    funcion,
+    pelicula: funcion ? peliculaDe(funcion.peliculaId) : null,
+    sala: funcion ? salaDe(funcion.salaId) : null,
+    cliente: datos.clientes.find((c) => c.id === r.clienteId),
+    total: r.entradas.reduce((suma, e) => suma + e.precio, 0),
+    pago: datos.pagos.find((p) => p.reservaId === r.id) || null,
+  };
+}
+
 export function obtenerReservas() {
-  const lista = datos.reservas.map((r) => {
-    const funcion = datos.funciones.find((f) => f.id === r.funcionId);
-    return {
-      ...r,
-      funcion,
-      pelicula: funcion ? peliculaDe(funcion.peliculaId) : null,
-      sala: funcion ? salaDe(funcion.salaId) : null,
-      cliente: datos.clientes.find((c) => c.id === r.clienteId),
-      total: r.entradas.reduce((suma, e) => suma + e.precio, 0),
-      pago: datos.pagos.find((p) => p.reservaId === r.id) || null,
-    };
-  });
-  return responder(lista);
+  return responder(datos.reservas.map(conDatosDeLaReserva));
+}
+
+/**
+ * Las reservas de un cliente, buscadas por email: el cliente no inicia sesión, así que
+ * el email es lo único con lo que puede recuperarlas (CU-09).
+ */
+export function obtenerReservasDe(email) {
+  const buscado = String(email || "").trim().toLowerCase();
+  if (!buscado.includes("@")) return fallar("El email no es válido");
+  const cliente = datos.clientes.find((c) => c.email.toLowerCase() === buscado);
+  if (!cliente) return responder([]);
+  return responder(datos.reservas
+    .filter((r) => r.clienteId === cliente.id)
+    .map(conDatosDeLaReserva));
 }
 
 /** R6: cancelar libera las butacas de esa función. */

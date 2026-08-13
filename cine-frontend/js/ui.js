@@ -48,6 +48,16 @@ export function chipClasificacion(clasificacion) {
   return chip(etiqueta(clasificacion), COLOR_CLASIFICACION[clasificacion] || "");
 }
 
+const COLOR_ESTADO = {
+  RESERVADA: "bg-amber-100 text-amber-800",
+  PAGADA: "bg-emerald-100 text-emerald-800",
+  CANCELADA: "bg-slate-200 text-slate-600",
+};
+
+export function chipEstado(estado) {
+  return chip(etiqueta(estado), COLOR_ESTADO[estado] || "");
+}
+
 /**
  * posterUrl es un String que puede venir vacío o con una URL que no carga: la inicial
  * del título queda siempre debajo y la imagen la tapa solo si llega bien.

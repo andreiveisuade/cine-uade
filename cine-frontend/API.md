@@ -92,6 +92,15 @@ entradas. Valida R4 (butaca ocupada), R9 (fuera de servicio) y butacas repetidas
 Todo lo que necesita el ticket: la reserva más `funcion`, `pelicula`, `sala`, `cliente`
 y `total`.
 
+### `GET /api/reservas?email=andrei@uade.edu.ar`
+Las reservas de ese cliente (CU-09). El cliente no inicia sesión, así que el email es lo
+único con lo que puede recuperarlas. Mismos campos que el listado del encargado, más
+`pago`. Comparación de email sin distinguir mayúsculas. Si no hay cliente con ese email,
+`200` con lista vacía — no `404`.
+
+> Sin el parámetro `email`, la misma ruta devuelve **todas** las reservas: es el listado
+> del encargado. Cuando haya autenticación, esa versión debería quedar detrás del token.
+
 ## Encargado
 
 ### `POST /api/sesion`

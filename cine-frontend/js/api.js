@@ -27,6 +27,7 @@ export const {
   obtenerFuncion,
   crearReserva,
   obtenerReserva,
+  obtenerReservasDe,
   // encargado
   login,
   obtenerPeliculas,

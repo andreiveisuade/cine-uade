@@ -5,7 +5,7 @@ import * as api from "./api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "./butacas.js";
 import { iniciarRouter, ir } from "./router.js";
 import {
-  avisar, chip, chipClasificacion, dia, duracion, escapar, etiqueta,
+  avisar, chip, chipClasificacion, chipEstado, dia, duracion, escapar, etiqueta,
   fechaHora, hora, imagenPoster, precio,
 } from "./ui.js";
 
@@ -642,12 +642,6 @@ async function vistaFunciones(contenedor) {
 
 /* -------------------------------------------------------- listado de reservas */
 
-const COLOR_ESTADO = {
-  RESERVADA: "bg-amber-100 text-amber-800",
-  PAGADA: "bg-emerald-100 text-emerald-800",
-  CANCELADA: "bg-slate-200 text-slate-600",
-};
-
 async function vistaReservas(contenedor) {
   const reservas = await api.obtenerReservas();
   const activas = reservas.filter((r) => r.estado !== "CANCELADA");
@@ -686,7 +680,7 @@ async function vistaReservas(contenedor) {
               <td class="font-mono text-xs">${r.entradas.map((e) => e.codigoAsiento).join(", ")}</td>
               <td class="text-right whitespace-nowrap">${precio(r.total)}</td>
               <td class="p-2">
-                ${chip(etiqueta(r.estado), COLOR_ESTADO[r.estado])}
+                ${chipEstado(r.estado)}
                 ${r.pago
                   ? `<span class="block text-xs text-slate-500">${etiqueta(r.pago.medio)} · ${hora(r.pago.fecha)}</span>`
                   : ""}
