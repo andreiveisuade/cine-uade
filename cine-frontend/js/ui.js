@@ -186,3 +186,19 @@ export function hoyISO() {
 
 /** Los días como los nombra el backend, en el orden en que se muestran. */
 export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+/**
+ * Espera a que el usuario deje de escribir antes de ejecutar.
+ *
+ * Hace falta desde que los filtros los resuelve el backend: sin esto, "Matrix" son seis
+ * pedidos y las respuestas pueden llegar desordenadas, así que la lista terminaría
+ * mostrando el resultado de "Matri". Doscientos milisegundos es lo que separa una pausa
+ * de seguir tecleando.
+ */
+export function conEspera(accion, ms = 200) {
+  let pendiente;
+  return (...args) => {
+    clearTimeout(pendiente);
+    pendiente = setTimeout(() => accion(...args), ms);
+  };
+}

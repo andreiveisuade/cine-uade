@@ -66,6 +66,20 @@ export const obtenerCartelera = (genero) =>
   get("/cartelera" + (genero ? `?genero=${encodeURIComponent(genero)}` : ""));
 
 export const obtenerPelicula = (id) => get(`/peliculas/${id}`);
+/**
+ * Arma el `?a=1&b=2` de un objeto de filtros, salteando lo vacío.
+ *
+ * Saltear importa: mandar `?estado=` en vez de omitirlo obliga al backend a distinguir
+ * "vacío" de "ausente", que son lo mismo para quien filtra. Y encodeURIComponent no es
+ * opcional — el texto libre puede traer un `&` o un `#`.
+ */
+function consulta(filtros) {
+  const partes = Object.entries(filtros || {})
+    .filter(([, valor]) => valor !== null && valor !== undefined && String(valor).trim() !== "")
+    .map(([clave, valor]) => `${clave}=${encodeURIComponent(String(valor).trim())}`);
+  return partes.length ? `?${partes.join("&")}` : "";
+}
+
 export const obtenerFuncionesDePelicula = (peliculaId) => get(`/peliculas/${peliculaId}/funciones`);
 export const obtenerFuncion = (id) => get(`/funciones/${id}`);
 
@@ -116,7 +130,11 @@ export const cambiarEstadoAsiento = (salaId, codigo, estado) =>
   put(`/salas/${salaId}/asientos/${encodeURIComponent(String(codigo).trim().toUpperCase())}`,
     { estado });
 
-export const obtenerFunciones = () => get("/funciones");
+/**
+ * @param filtros {peliculaId, salaId, desde, hasta}; las claves vacías no viajan, así que
+ *                sin filtros la URL queda igual que antes.
+ */
+export const obtenerFunciones = (filtros) => get(`/funciones${consulta(filtros)}`);
 
 export const programarFuncion = ({ peliculaId, salaId, inicio, idioma, proyeccion, precio }) =>
   post("/funciones", {
@@ -155,7 +173,8 @@ export const crearProgramacion = (grilla) =>
 export const darDeBajaProgramacion = (id) => post(`/programaciones/${id}/baja`);
 export const darDeAltaProgramacion = (id) => post(`/programaciones/${id}/alta`);
 
-export const obtenerReservas = () => get("/reservas");
+/** @param filtros {estado, dia, q} */
+export const obtenerReservas = (filtros) => get(`/reservas${consulta(filtros)}`);
 export const cancelarReserva = (id) => post(`/reservas/${id}/cancelacion`);
 
 export const cobrar = (reservaId, medio, codigoAutorizacion) =>

@@ -17,7 +17,38 @@ export async function vistaFunciones(contenedor, destacada) {
   const soporta3D = new Map(tipos.map((t) => [t.nombre, t.soportaTresD]));
 
   contenedor.innerHTML = `
-    <h1 class="mb-5 text-2xl font-bold">Funciones</h1>
+    <h1 class="mb-1 text-2xl font-bold">Funciones</h1>
+    <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+      ${funciones.length} programadas. Es la lista más larga del panel: una semana de seis salas
+      pasa de cien funciones.
+    </p>
+
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Película</span>
+        <select name="fpelicula" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Sala</span>
+        <select name="fsala" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Desde</span>
+        <input name="fdesde" type="date" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Hasta</span>
+        <input name="fhasta" type="date" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+      </label>
+      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+      <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+    </div>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
       <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -25,22 +56,7 @@ export async function vistaFunciones(contenedor, destacada) {
           <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
             <tr><th class="p-2">Cuándo</th><th>Película</th><th>Sala</th><th>Formato</th><th class="text-right">Precio</th><th></th></tr>
           </thead>
-          <tbody>
-            ${funciones.map((f) => `
-              <tr id="funcion-${f.id}" class="border-b border-slate-200 dark:border-slate-800">
-                <td class="p-2 whitespace-nowrap">
-                  ${escapar(dia(f.inicio))} <span class="font-medium">${hora(f.inicio)}</span>
-                </td>
-                <td>${escapar(f.pelicula.titulo)}</td>
-                <td class="whitespace-nowrap">${escapar(f.sala.nombre)}</td>
-                <td class="whitespace-nowrap">${etiqueta(f.proyeccion)} · ${etiqueta(f.idioma)}</td>
-                <td class="text-right whitespace-nowrap">${precio(f.precio)}</td>
-                <td class="p-2 text-right">
-                  <button type="button" data-borrar="${f.id}"
-                    class="text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
-                </td>
-              </tr>`).join("")}
-          </tbody>
+          <tbody>${filas(funciones)}</tbody>
         </table>
       </section>
 
@@ -90,6 +106,28 @@ export async function vistaFunciones(contenedor, destacada) {
       </section>
     </div>
   `;
+
+  // --- filtros: el backend los resuelve, acá solo se juntan y se mandan ---
+  const cuerpo = contenedor.querySelector("tbody");
+  const cuenta = contenedor.querySelector("#cuenta");
+  const controles = [...contenedor.querySelectorAll("[name^=f]")]
+    .filter((c) => ["fpelicula", "fsala", "fdesde", "fhasta"].includes(c.name));
+
+  async function aplicarFiltros() {
+    const v = (nombre) => controles.find((c) => c.name === nombre).value;
+    const visibles = await api.obtenerFunciones({
+      peliculaId: v("fpelicula"), salaId: v("fsala"), desde: v("fdesde"), hasta: v("fhasta"),
+    });
+    cuerpo.innerHTML = filas(visibles);
+    cuenta.textContent = visibles.length === funciones.length
+      ? "" : `mostrando ${visibles.length} de ${funciones.length}`;
+  }
+
+  controles.forEach((c) => c.addEventListener("change", aplicarFiltros));
+  contenedor.querySelector("#limpiar").addEventListener("click", () => {
+    controles.forEach((c) => { c.value = ""; });
+    aplicarFiltros();
+  });
 
   const formulario = contenedor.querySelector("#alta");
   const avisos = contenedor.querySelector("#avisos");
@@ -174,4 +212,27 @@ export async function vistaFunciones(contenedor, destacada) {
     fila.scrollIntoView({ block: "center" });
     fila.classList.add("bg-amber-100", "dark:bg-amber-900/40");
   }
+}
+
+/** Una fila por función. Separada para repintar solo el cuerpo al filtrar. */
+function filas(funciones) {
+  if (!funciones.length) {
+    return `<tr><td colspan="6" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+      Ninguna función coincide con el filtro.
+    </td></tr>`;
+  }
+  return funciones.map((f) => `
+              <tr id="funcion-${f.id}" class="border-b border-slate-200 dark:border-slate-800">
+                <td class="p-2 whitespace-nowrap">
+                  ${escapar(dia(f.inicio))} <span class="font-medium">${hora(f.inicio)}</span>
+                </td>
+                <td>${escapar(f.pelicula.titulo)}</td>
+                <td class="whitespace-nowrap">${escapar(f.sala.nombre)}</td>
+                <td class="whitespace-nowrap">${etiqueta(f.proyeccion)} · ${etiqueta(f.idioma)}</td>
+                <td class="text-right whitespace-nowrap">${precio(f.precio)}</td>
+                <td class="p-2 text-right">
+                  <button type="button" data-borrar="${f.id}"
+                    class="text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
+                </td>
+              </tr>`).join("");
 }

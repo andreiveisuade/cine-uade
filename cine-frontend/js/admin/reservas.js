@@ -1,6 +1,6 @@
 import * as api from "../api.js";
 import { ir } from "../router.js";
-import { avisar, chipEstado, dia, escapar, etiqueta, fechaHora, hora, precio, error } from "../ui.js";
+import { avisar, chipEstado, conEspera, dia, escapar, etiqueta, fechaHora, hora, precio, error } from "../ui.js";
 
 /* -------------------------------------------------------- listado de reservas */
 
@@ -64,28 +64,20 @@ export async function vistaReservas(contenedor) {
   const cuenta = contenedor.querySelector("#cuenta");
   const cuerpo = contenedor.querySelector("tbody");
 
-  // Filtra en memoria y repinta solo el cuerpo. No vuelve a pedir la lista: ya está toda
-  // acá, y un viaje al servidor por cada tecla haría que el campo se sienta pesado y que
-  // el resultado llegue tarde.
-  function aplicarFiltros() {
-    const texto = busqueda.value.trim().toLowerCase();
-    const visibles = reservas.filter((r) => {
-      if (estado.value && r.estado !== estado.value) return false;
-      if (fecha.value && r.funcion?.inicio.slice(0, 10) !== fecha.value) return false;
-      if (!texto) return true;
-      // Se busca por lo que alguien tiene a mano en el mostrador: su nombre, su mail, la
-      // película que vino a ver, o la butaca que dice tener.
-      return [
-        r.cliente?.nombre, r.cliente?.email, r.pelicula?.titulo, r.codigo,
-        ...r.entradas.map((e) => e.codigo),
-      ].some((campo) => String(campo || "").toLowerCase().includes(texto));
+  // El filtro lo resuelve el backend: los criterios son del negocio, no de la pantalla,
+  // y viajando en la URL se pueden probar con un curl y compartir pegando el link.
+  async function aplicarFiltros() {
+    const visibles = await api.obtenerReservas({
+      estado: estado.value, dia: fecha.value, q: busqueda.value,
     });
     cuerpo.innerHTML = filas(visibles);
     cuenta.textContent = visibles.length === reservas.length
       ? "" : `mostrando ${visibles.length} de ${reservas.length}`;
   }
 
-  busqueda.addEventListener("input", aplicarFiltros);
+  // Con debounce, porque ahora cada tecla sería un pedido: se espera a que deje de
+  // escribir. Los selects no lo necesitan —un cambio es una decisión, no un tanteo.
+  busqueda.addEventListener("input", conEspera(aplicarFiltros));
   estado.addEventListener("change", aplicarFiltros);
   fecha.addEventListener("change", aplicarFiltros);
   contenedor.querySelector("#limpiar").addEventListener("click", () => {
