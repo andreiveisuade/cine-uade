@@ -514,9 +514,12 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones de una película</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4</td><td><span class="tag tag-ok">hecho</span></td></tr>
-            <tr><td>CU-07</td><td>Cliente</td><td>Pagar una reserva</td><td>R5</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-10</td><td>Admin</td><td>Iniciar sesión</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-11</td><td>Admin</td><td>Marcar o reponer una butaca fuera de servicio</td><td>R9</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -751,7 +754,7 @@ Libres: 52 de 56</code></pre>
 
       <figure class="diagram">
         {{SVG_CAPAS}}
-        <figcaption>Circuito completo de Pelicula, de la UI a la base</figcaption>
+        <figcaption>Las cuatro capas, con sus gestores y DAOs</figcaption>
       </figure>
 
       <div class="table-wrap">
@@ -819,7 +822,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
 
       <figure class="diagram">
         {{SVG_SECUENCIA}}
-        <figcaption>Reservar entradas, de la elección del usuario al ticket emitido</figcaption>
+        <figcaption>Reservar butacas: del mapa de la sala al ticket emitido</figcaption>
       </figure>
 
       <h3>El ticket no es un DAO</h3>

@@ -3,33 +3,51 @@ title Casos de uso - Sistema de cine
 
 left to right direction
 
-actor Administrador as admin
 actor Cliente as cliente
+actor "Administrador\ndel cine" as admin
 
 rectangle Sistema {
   usecase "CU-01 Gestionar peliculas" as CU01
-  usecase "CU-02 Gestionar salas" as CU02
+  usecase "CU-01b Filtrar por genero" as CU01b
+  usecase "CU-02 Gestionar salas y butacas" as CU02
   usecase "CU-03 Programar funcion" as CU03
   usecase "CU-04 Consultar cartelera" as CU04
-  usecase "CU-01b Filtrar por genero" as CU01b
   usecase "CU-05 Registrarse" as CU05
-  usecase "CU-06 Reservar entradas" as CU06
-  usecase "CU-07 Pagar reserva" as CU07
+  usecase "CU-06 Elegir butacas y reservar" as CU06
+  usecase "CU-07 Cobrar reserva" as CU07
   usecase "CU-08 Cancelar reserva" as CU08
   usecase "CU-09 Ver mis reservas" as CU09
+  usecase "CU-10 Iniciar sesion" as CU10
+  usecase "CU-11 Marcar butaca\nfuera de servicio" as CU11
+  usecase "CU-12 Arqueo del dia" as CU12
 }
-
-admin --> CU01
-admin --> CU02
-admin --> CU03
-admin --> CU04
 
 cliente --> CU04
 cliente --> CU01b
 cliente --> CU05
 cliente --> CU06
-cliente --> CU07
 cliente --> CU08
 cliente --> CU09
+
+admin --> CU10
+admin --> CU01
+admin --> CU02
+admin --> CU03
+admin --> CU04
+admin --> CU11
+admin --> CU07
+admin --> CU12
+
+note bottom of CU10
+  Solo el administrador inicia sesion.
+  El cliente compra sin registrarse
+  con contrasena.
+end note
+
+note bottom of CU07
+  El cobro lo registra la boleteria.
+  El monto sale de la reserva, no
+  se ingresa a mano.
+end note
 
 @enduml

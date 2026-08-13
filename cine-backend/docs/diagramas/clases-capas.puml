@@ -2,6 +2,8 @@
 title Arquitectura en capas - patron DAO
 
 skinparam classAttributeIconSize 0
+skinparam nodesep 12
+skinparam ranksep 45
 hide members
 
 package ui {
@@ -14,6 +16,10 @@ package servicio {
   class GestorFunciones
   class GestorClientes
   class GestorReservas
+  class GestorPagos
+  class GestorAdministradores
+  class CalculadoraPrecio
+  class Password
 }
 
 package interfaces {
@@ -23,19 +29,24 @@ package interfaces {
   interface FuncionDAO
   interface ClienteDAO
   interface ReservaDAO
+  interface PagoDAO
+  interface AdministradorDAO
   interface GeneradorTicket
 }
 
 package persistencia {
   class PeliculaDAOMySQL
-  class PeliculaDAOMemoria
   class SalaDAOMySQL
   class AsientoDAOMySQL
   class FuncionDAOMySQL
   class ClienteDAOMySQL
   class ReservaDAOMySQL
+  class PagoDAOMySQL
+  class AdministradorDAOMySQL
   class ReservaDAOTxt
   class GeneradorTicketTxt
+  class ConexionMySQL
+  class PersistenciaException
 }
 
 MenuConsola -down-> GestorCartelera
@@ -43,37 +54,40 @@ MenuConsola -down-> GestorSalas
 MenuConsola -down-> GestorFunciones
 MenuConsola -down-> GestorClientes
 MenuConsola -down-> GestorReservas
+MenuConsola -down-> GestorPagos
+MenuConsola -down-> GestorAdministradores
 
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
 GestorSalas -down-> AsientoDAO
 GestorFunciones -down-> FuncionDAO
-GestorFunciones -down-> PeliculaDAO
-GestorFunciones -down-> SalaDAO
 GestorClientes -down-> ClienteDAO
 GestorReservas -down-> ReservaDAO
 GestorReservas -down-> GeneradorTicket
+GestorReservas ..> CalculadoraPrecio
+GestorPagos -down-> PagoDAO
+GestorPagos -down-> ReservaDAO
+GestorAdministradores -down-> AdministradorDAO
+GestorAdministradores ..> Password
 
 PeliculaDAOMySQL -up-|> PeliculaDAO
-PeliculaDAOMemoria -up-|> PeliculaDAO
 SalaDAOMySQL -up-|> SalaDAO
 AsientoDAOMySQL -up-|> AsientoDAO
 FuncionDAOMySQL -up-|> FuncionDAO
 ClienteDAOMySQL -up-|> ClienteDAO
 ReservaDAOMySQL -up-|> ReservaDAO
 ReservaDAOTxt -up-|> ReservaDAO
+PagoDAOMySQL -up-|> PagoDAO
+AdministradorDAOMySQL -up-|> AdministradorDAO
 GeneradorTicketTxt -up-|> GeneradorTicket
 
-note right of GestorReservas
-  Tambien usa FuncionDAO, SalaDAO,
-  AsientoDAO, ClienteDAO y PeliculaDAO:
-  las butacas libres salen de la sala y
-  el ticket lleva datos de todas.
-end note
-
-note bottom of persistencia
-  Ninguna clase de esta capa imprime ni valida reglas.
-  Las de memoria existen para testear sin base de datos.
-end note
+legend bottom
+  |= Capa |= Detalle |
+  | ui | Unica capa con Scanner y System.out. Reemplazarla por una API REST no toca ninguna regla. |
+  | servicio | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO. |
+  |  | GestorFunciones usa tambien PeliculaDAO y SalaDAO, para validar el solapamiento. |
+  | persistencia | Cada DAO tiene ademas una implementacion en memoria, para testear sin base de datos. |
+  |  | Ninguna clase de esta capa imprime ni valida reglas de negocio. |
+endlegend
 
 @enduml
