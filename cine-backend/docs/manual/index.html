@@ -1870,6 +1870,31 @@ open http://127.0.0.1:8081        # Adminer</code></pre>
       <pre><code>cd ../cine-docker
 docker compose down -v          # -v borra el volumen: se pierden los datos
 docker compose up -d --build</code></pre>
+
+      <h3>Migrar sin perder lo cargado</h3>
+      <p>
+        Rehacer la base alcanza mientras no haya nada adentro que importe. Con reservas y pagos cargados no:
+        <code>down -v</code> los tira para agregar una columna. Por eso el cambio que sumó la grilla dejó
+        además <code>src/main/resources/migracion-programaciones.sql</code>, que crea las dos tablas nuevas y
+        agrega <code>funcion.programacion_id</code> sobre una base que ya existe:
+      </p>
+      <pre><code>docker exec -i cine-mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" appsinteractivas \
+  &lt; src/main/resources/migracion-programaciones.sql</code></pre>
+      <p>
+        <code>NULL</code> es el valor correcto para las funciones que ya estaban: son justamente las que cargó
+        el administrador a mano, que es lo que esa columna en null significa. Correrlo dos veces falla en el
+        <code>ALTER</code> —MySQL no acepta <code>ADD COLUMN IF NOT EXISTS</code>—, y eso está bien: si ya pasó
+        una vez, no hay nada que hacer.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El que clona el proyecto hoy no necesita nada de esto</strong>, y ahí está la trampa: su
+          volumen nace vacío, <code>schema.sql</code> corre entero y todo funciona. El que ya tenía la base
+          levantada se come un <code>500</code> con «Unknown column 'programacion_id'» y parece un error del
+          código. <code>schema.sql</code> sigue siendo la única fuente de verdad de la forma de las tablas; la
+          migración es solo el camino para llegar ahí sin recrearlas.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="entorno">
