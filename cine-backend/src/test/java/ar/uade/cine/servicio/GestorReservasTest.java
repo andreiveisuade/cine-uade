@@ -22,6 +22,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.funciones.FuncionImpl;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoAsiento;
@@ -60,6 +62,7 @@ class GestorReservasTest {
     Path tempDir;
 
     private GestorReservas reservas;
+    private FuncionDAO funcionDAO;
     private GestorSalas salas;
     private GestorFunciones funciones;
     private GestorPagos pagos;
@@ -72,7 +75,7 @@ class GestorReservasTest {
         PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
         SalaDAO salaDAO = new SalaDAOMemoria();
         AsientoDAO asientoDAO = new AsientoDAOMemoria();
-        FuncionDAO funcionDAO = new FuncionDAOMemoria();
+        funcionDAO = new FuncionDAOMemoria();
         ClienteDAO clienteDAO = new ClienteDAOMemoria();
         reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
         directorioTickets = tempDir.resolve("tickets");
@@ -369,6 +372,58 @@ class GestorReservasTest {
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
         assertThrows(IllegalArgumentException.class, () -> reservas.registrarIngreso("XXXXXXXX"));
+    }
+
+
+    // ---------- R19: una funcion que ya empezo no se vende ----------
+
+    /**
+     * Se guarda por el DAO y no con GestorFunciones.programar porque programar en el
+     * pasado no es algo que el sistema deba permitir: lo que se está simulando es el
+     * paso del tiempo sobre una función que se programó normalmente.
+     */
+    private int funcionQueYaEmpezo() {
+        Funcion pasada = new FuncionImpl(1, 1, LocalDateTime.now().minusMinutes(30),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+        funcionDAO.guardar(pasada);
+        return pasada.getId();
+    }
+
+    @Test
+    void noSeReservaUnaFuncionQueYaEmpezo() {
+        int empezada = funcionQueYaEmpezo();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(empezada, 1, generales("A1")));
+    }
+
+    /** La misma butaca sí se vende para la función que todavía no arrancó. */
+    @Test
+    void laMismaButacaSeVendeParaUnaFuncionFutura() {
+        funcionQueYaEmpezo();
+
+        assertEquals(1, reservas.reservar(1, 1, generales("A1")).getCantidadEntradas());
+    }
+
+    /**
+     * El caso que más se parece a la realidad: se reservó con la función por delante y
+     * el cliente llega a la boletería después de que arrancó.
+     */
+    @Test
+    void noSeCobraUnaReservaCuyaFuncionYaEmpezo() {
+        // La reserva se guarda por el DAO, no por el gestor: reservar ya rechaza la
+        // función empezada (R19 de este lado), así que por la puerta de adelante este
+        // escenario no se puede armar. Es el cliente que reservó a tiempo y llega tarde
+        // a la boletería.
+        int empezada = funcionQueYaEmpezo();
+        Reserva reserva = new ReservaImpl(empezada, 1,
+                List.of(new Entrada(1, "A1", TipoTarifa.GENERAL, 5000)),
+                // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
+                LocalDateTime.now());
+        reservaDAO.guardar(reserva);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
