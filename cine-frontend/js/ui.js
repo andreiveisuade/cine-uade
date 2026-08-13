@@ -176,3 +176,13 @@ export function avisar(mensaje, tipo = "ok") {
   document.body.appendChild(caja);
   setTimeout(() => caja.remove(), 3500);
 }
+
+/** El día de hoy en el formato en que viajan las fechas por la API. */
+export function hoyISO() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Los días como los nombra el backend, en el orden en que se muestran. */
+export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
