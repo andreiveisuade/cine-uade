@@ -566,7 +566,7 @@ async function vistaFunciones(contenedor) {
           </div>
           <label class="block text-sm">
             <span class="text-slate-600">Precio base</span>
-            <input name="precio" type="number" min="1" step="100" required
+            <input name="precio" type="number" min="100" step="100" required
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
           </label>
           <div id="avisos" class="space-y-1 text-xs"></div>
@@ -1057,7 +1057,7 @@ async function vistaProgramaciones(contenedor) {
 
           <label class="block text-sm">
             <span class="text-slate-600">Precio base</span>
-            <input name="precio" type="number" min="1" step="100" required value="5000"
+            <input name="precio" type="number" min="100" step="100" required value="5000"
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5" />
           </label>
 
