@@ -60,6 +60,7 @@ public class ServidorApi {
         RutasPeliculas.registrar(app, aplicacion.getCartelera(), aplicacion.getFunciones(), vistas);
         RutasSalas.registrar(app, aplicacion.getSalas(), vistas);
         RutasFunciones.registrar(app, aplicacion.getFunciones(), vistas);
+        RutasProgramaciones.registrar(app, aplicacion.getProgramaciones());
         RutasClientes.registrar(app, aplicacion.getClientes(), vistas);
         RutasReservas.registrar(app, aplicacion.getReservas(), aplicacion.getClientes(), vistas);
         RutasPromociones.registrar(app, aplicacion.getPromociones(), vistas);

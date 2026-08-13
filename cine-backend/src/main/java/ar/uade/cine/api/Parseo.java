@@ -2,6 +2,7 @@ package ar.uade.cine.api;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
@@ -53,6 +54,17 @@ class Parseo {
             return LocalDateTime.parse(valor.trim());
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(queEs + " tiene que ser una fecha y hora válida");
+        }
+    }
+
+    static LocalTime hora(String valor, String queEs) {
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalArgumentException("Falta " + queEs);
+        }
+        try {
+            return LocalTime.parse(valor.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(queEs + " tiene que ser una hora válida");
         }
     }
 
