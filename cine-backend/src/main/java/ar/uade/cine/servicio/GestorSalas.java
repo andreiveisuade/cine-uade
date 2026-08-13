@@ -16,6 +16,10 @@ import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 
+/**
+ * Reglas de negocio de salas y butacas. Depende de SalaDAO y AsientoDAO por interfaz,
+ * y de FuncionDAO solo para R12 (no borrar una sala con funciones programadas).
+ */
 public class GestorSalas {
 
     private static final int MAX_FILAS = 26;
@@ -56,6 +60,7 @@ public class GestorSalas {
         if (butacasPorFila.size() > MAX_FILAS) {
             throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
         }
+        // R2: butacas de cada fila mayores a cero.
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
         }

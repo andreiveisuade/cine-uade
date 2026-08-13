@@ -3,6 +3,11 @@ package ar.uade.cine.dominio.ventas;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Butacas de una función a nombre de un cliente. Nace {@link EstadoReserva#RESERVADA}
+ * y desde ahí solo avanza: a PAGADA cuando se cobra, o a CANCELADA cuando se libera sin
+ * cobrar. No hay vuelta atrás entre esos dos estados finales.
+ */
 public interface Reserva {
 
     int getId();

@@ -9,6 +9,11 @@ import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 
+/**
+ * Alta y baja de clientes. Depende de ReservaDAO y CompraCandyDAO además de ClienteDAO
+ * solo para R12: antes de borrar hay que saber si el cliente tiene historial en cualquiera
+ * de los dos circuitos de venta.
+ */
 public class GestorClientes {
 
     private final ClienteDAO clienteDAO;

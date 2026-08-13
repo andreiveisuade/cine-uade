@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.persistencia.SalaDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class SalaDAOMemoria implements SalaDAO {
 
     private final Map<Integer, Sala> salas = new LinkedHashMap<>();

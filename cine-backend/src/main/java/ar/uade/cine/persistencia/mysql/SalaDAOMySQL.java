@@ -15,6 +15,11 @@ import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.SalaDAO;
 
+/**
+ * Misma interfaz, otra tecnología. A diferencia de Pelicula, una sala vive en una sola
+ * tabla: no hace falta transacción para guardarla. El id lo asigna MySQL
+ * (AUTO_INCREMENT) y se recupera con RETURN_GENERATED_KEYS.
+ */
 public class SalaDAOMySQL implements SalaDAO {
 
     private static final String SELECT = "SELECT id, nombre, tipo FROM sala";

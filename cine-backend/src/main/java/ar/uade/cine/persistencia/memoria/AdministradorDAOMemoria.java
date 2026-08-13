@@ -9,6 +9,7 @@ import java.util.Optional;
 import ar.uade.cine.dominio.usuarios.AdministradorCine;
 import ar.uade.cine.persistencia.AdministradorDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class AdministradorDAOMemoria implements AdministradorDAO {
 
     private final Map<Integer, AdministradorCine> administradores = new LinkedHashMap<>();

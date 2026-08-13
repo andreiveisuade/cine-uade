@@ -5,6 +5,12 @@ import java.util.Optional;
 
 import ar.uade.cine.dominio.ventas.Reserva;
 
+/**
+ * El contrato: qué operaciones existen. No dice dónde ni cómo se guardan los datos.
+ *
+ * <p>No hay eliminar: una reserva no se borra, cambia de estado (RESERVADA, PAGADA,
+ * CANCELADA) con actualizar. Borrarla perdería el historial que necesita el arqueo.
+ */
 public interface ReservaDAO {
 
     void guardar(Reserva reserva);

@@ -2,6 +2,11 @@ package ar.uade.cine.dominio.cartelera;
 
 import java.util.List;
 
+/**
+ * Una película del catálogo. Lo que la identifica en el negocio —título, duración,
+ * géneros, clasificación— va separado de los datos de catálogo de más abajo (director,
+ * sinopsis, año...), que se muestran pero no participan de ninguna regla.
+ */
 public interface Pelicula {
 
     int getId();

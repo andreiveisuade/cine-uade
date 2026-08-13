@@ -15,6 +15,11 @@ import ar.uade.cine.dominio.usuarios.Rol;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
+/**
+ * Misma interfaz, otra tecnología. Comparte la tabla usuario con AdministradorDAOMySQL:
+ * rol la discrimina, y por eso ninguna consulta acá trae password_hash. El cliente no
+ * inicia sesión, así que tampoco tiene actualizar().
+ */
 public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override

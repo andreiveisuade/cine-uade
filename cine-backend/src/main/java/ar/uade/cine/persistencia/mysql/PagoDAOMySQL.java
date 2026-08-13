@@ -17,6 +17,11 @@ import ar.uade.cine.dominio.ventas.PagoImpl;
 import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
+/**
+ * Misma interfaz, otra tecnología. Un pago no se actualiza ni se borra una vez creado
+ * —cobrar es la única operación de escritura—, así que no hay actualizar() en el
+ * contrato.
+ */
 public class PagoDAOMySQL implements PagoDAO {
 
     private static final String SELECT =

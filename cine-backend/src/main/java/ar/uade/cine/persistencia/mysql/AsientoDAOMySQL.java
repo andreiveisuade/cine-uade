@@ -14,6 +14,11 @@ import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.persistencia.AsientoDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
+/**
+ * Misma interfaz, otra tecnología. No hay guardar() individual: una sala se crea con
+ * todas sus butacas juntas (ver guardarTodos), y lo único que cambia después es el
+ * estado de una butaca puntual (fuera de servicio o de vuelta a habilitada).
+ */
 public class AsientoDAOMySQL implements AsientoDAO {
 
     @Override
@@ -22,6 +27,7 @@ public class AsientoDAOMySQL implements AsientoDAO {
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
+            // Una sala puede tener más de cien butacas: batch en vez de un INSERT por fila.
             for (Asiento asiento : asientos) {
                 ps.setInt(1, asiento.getSalaId());
                 ps.setInt(2, asiento.getFila());

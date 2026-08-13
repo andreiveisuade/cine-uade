@@ -17,6 +17,7 @@ public class ReservaImpl implements Reserva {
     private final List<Entrada> entradas = new ArrayList<>();
     private EstadoReserva estado;
 
+    /** Reserva nueva: arranca RESERVADA, todavía no tiene id. */
     public ReservaImpl(int funcionId, int clienteId, List<Entrada> entradas, LocalDateTime creadaEn) {
         this.funcionId = funcionId;
         this.clienteId = clienteId;
@@ -25,6 +26,7 @@ public class ReservaImpl implements Reserva {
         this.estado = EstadoReserva.RESERVADA;
     }
 
+    /** Reserva que viene de la base, con el estado que tenga guardado. */
     public ReservaImpl(int id, int funcionId, int clienteId, List<Entrada> entradas,
                        EstadoReserva estado, LocalDateTime creadaEn) {
         this(funcionId, clienteId, entradas, creadaEn);

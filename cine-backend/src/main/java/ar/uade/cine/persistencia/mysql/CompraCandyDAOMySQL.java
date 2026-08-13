@@ -20,6 +20,13 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
 
+/**
+ * Misma interfaz, otra tecnología. Una compra vive en dos tablas (compra_candy e
+ * item_compra), así que guardarla es una transacción, igual que PeliculaDAOMySQL con
+ * los géneros. item_compra copia nombre y precio_unitario en vez de solo referenciar
+ * producto_id: si el precio del producto cambia después, el ticket ya emitido no
+ * tiene que cambiar con él.
+ */
 public class CompraCandyDAOMySQL implements CompraCandyDAO {
 
     private static final String SELECT =
@@ -116,6 +123,7 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
         }
     }
 
+    /** El JOIN devuelve una fila por cada item: se agrupa por id de compra. */
     private List<CompraCandy> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, CompraCandy> porId = new LinkedHashMap<>();
         while (rs.next()) {

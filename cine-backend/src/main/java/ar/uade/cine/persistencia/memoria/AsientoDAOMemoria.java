@@ -6,6 +6,7 @@ import java.util.List;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.persistencia.AsientoDAO;
 
+/** Implementación en memoria: sirve para probar la lógica sin levantar MySQL. */
 public class AsientoDAOMemoria implements AsientoDAO {
 
     private final List<Asiento> asientos = new ArrayList<>();

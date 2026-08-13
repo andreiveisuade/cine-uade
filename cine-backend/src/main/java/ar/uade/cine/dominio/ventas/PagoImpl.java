@@ -2,6 +2,10 @@ package ar.uade.cine.dominio.ventas;
 
 import java.time.LocalDateTime;
 
+/**
+ * El id llega vacío al construir de alta y con valor al reconstruir desde el DAO —
+ * mismo patrón que el resto del dominio.
+ */
 public class PagoImpl implements Pago {
 
     private int id;
@@ -11,6 +15,7 @@ public class PagoImpl implements Pago {
     private LocalDateTime fecha;
     private String codigoAutorizacion;
 
+    /** Pago nuevo: se cobra ahora, todavía no tiene id. */
     public PagoImpl(int reservaId, double monto, MedioPago medio, LocalDateTime fecha,
                     String codigoAutorizacion) {
         this.reservaId = reservaId;
@@ -20,6 +25,7 @@ public class PagoImpl implements Pago {
         this.codigoAutorizacion = codigoAutorizacion;
     }
 
+    /** Pago que viene de la base. */
     public PagoImpl(int id, int reservaId, double monto, MedioPago medio, LocalDateTime fecha,
                     String codigoAutorizacion) {
         this(reservaId, monto, medio, fecha, codigoAutorizacion);
