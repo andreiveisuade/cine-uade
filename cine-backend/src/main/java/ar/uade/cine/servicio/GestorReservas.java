@@ -8,6 +8,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
@@ -36,6 +39,19 @@ import ar.uade.cine.persistencia.SalaDAO;
  * contra la misma definición de "ocupado".
  */
 public class GestorReservas {
+
+    /**
+     * La bitácora del negocio. Registra lo que <strong>pasó</strong> —una reserva, un
+     * ingreso, una expiración—, no por dónde pasó el código: nadie necesita saber que se
+     * entró a un método, y un log de trazas se vuelve ilegible justo el día que hay que
+     * usarlo.
+     *
+     * <p>Va en el gestor y no en la capa HTTP porque es la capa que decide. Vender por la
+     * API y vender por el menú de consola son la misma operación del cine y tienen que
+     * dejar la misma línea. SLF4J es una fachada y llega hasta acá; el paquete
+     * {@code dominio} sigue sin depender de nada externo.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(GestorReservas.class);
 
     private final ReservaDAO reservaDAO;
     private final FuncionDAO funcionDAO;
@@ -121,6 +137,10 @@ public class GestorReservas {
 
         Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas, LocalDateTime.now());
         reservaDAO.guardar(reserva);
+        // El detalle por butaca y no solo el total: cuando haya que explicar por qué esta
+        // reserva salió lo que salió, la tarifa de cada una es la mitad de la respuesta.
+        LOG.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
+                detalleDe(entradas), reserva.getTotal());
 
         Pelicula pelicula = peliculaDAO.buscarPorId(funcion.getPeliculaId()).orElseThrow();
         generadorTicket.emitir(reserva, funcion, pelicula, sala, cliente);
@@ -141,6 +161,8 @@ public class GestorReservas {
         }
         reserva.setEstado(EstadoReserva.CANCELADA);
         reservaDAO.actualizar(reserva);
+        LOG.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
+                reservaId, reserva.getCantidadEntradas());
     }
 
     /**
@@ -165,6 +187,8 @@ public class GestorReservas {
         }
         reserva.setIngresadaEn(LocalDateTime.now());
         reservaDAO.actualizar(reserva);
+        LOG.info("ingreso reserva {} · codigo {} · {} personas",
+                reserva.getId(), reserva.getCodigo(), reserva.getCantidadEntradas());
         return reserva;
     }
 
@@ -178,6 +202,13 @@ public class GestorReservas {
 
     public Optional<Reserva> buscar(int id) {
         return reservaDAO.buscarPorId(id);
+    }
+
+    /** Las butacas con su tarifa, para la bitácora: {@code C4(JUBILADO) C5(GENERAL)}. */
+    private static String detalleDe(List<Entrada> entradas) {
+        return entradas.stream()
+                .map(e -> e.codigoAsiento() + "(" + e.tarifa() + ")")
+                .collect(Collectors.joining(" "));
     }
 
     private Funcion buscarFuncion(int funcionId) {

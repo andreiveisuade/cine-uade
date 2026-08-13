@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
@@ -22,6 +25,8 @@ import ar.uade.cine.persistencia.ReservaDAO;
  * vive dentro de GestorReservas, que ya tiene bastante con las butacas.
  */
 public class GestorPagos {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GestorPagos.class);
 
     private final PagoDAO pagoDAO;
     private final ReservaDAO reservaDAO;
@@ -99,6 +104,15 @@ public class GestorPagos {
 
         reserva.setEstado(EstadoReserva.PAGADA);
         reservaDAO.actualizar(reserva);
+        // El desglose entero en una línea: subtotal, qué promoción entró y cuánto se
+        // cobró al final. Es la pregunta que se hace en el arqueo cuando la caja no da,
+        // y sin la promoción nombrada la diferencia no se puede explicar.
+        LOG.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
+                reservaId, medio, reserva.getTotal(),
+                descuento.monto() > 0
+                        ? " · promo " + descuento.promocionId() + " -" + descuento.monto()
+                        : " · sin promo",
+                pago.getMonto());
 
         return pago;
     }

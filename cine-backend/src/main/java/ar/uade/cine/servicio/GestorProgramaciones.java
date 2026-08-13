@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.Proyeccion;
@@ -43,6 +46,8 @@ import ar.uade.cine.servicio.PlanProgramacion.FuncionPlanificada;
  * {@code GestorPagos} con {@code GestorPromociones}.
  */
 public class GestorProgramaciones {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GestorProgramaciones.class);
 
     /** Para nombrar contra qué choca cada fecha en un mensaje que se pueda leer. */
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
@@ -130,14 +135,24 @@ public class GestorProgramaciones {
                 continue;
             }
             try {
-                generadas += planificar(grilla, peliculaDe(grilla), true, topeDe(grilla, hoy))
+                int nuevas = planificar(grilla, peliculaDe(grilla), true, topeDe(grilla, hoy))
                         .programables().size();
+                generadas += nuevas;
+                if (nuevas > 0) {
+                    // Esta línea es la que vuelve visible al mecanismo. La extensión pasa
+                    // sola, colgada de una lectura, y sin registro un cine que amanece con
+                    // funciones nuevas no tiene forma de decir de dónde salieron.
+                    LOG.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
+                            grilla.getId(), nuevas, grilla.getGeneradaHasta());
+                }
             } catch (RuntimeException e) {
                 // Una grilla que dejó de ser válida —la película se dio de baja, la sala
                 // cambió de tipo— no puede romper la pantalla de quien pasaba por acá a
                 // mirar la cartelera. Se saltea y sigue; el ABM de grillas es donde eso se
-                // ve y se corrige.
-                continue;
+                // ve y se corrige. Pero se registra: un error que se traga en silencio es
+                // una grilla que deja de generar y nadie se entera hasta que falta la
+                // función.
+                LOG.warn("grilla {} no se pudo extender: {}", grilla.getId(), e.getMessage());
             }
         }
         return generadas;

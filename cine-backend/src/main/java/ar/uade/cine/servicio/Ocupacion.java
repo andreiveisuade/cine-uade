@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.EstadoAsiento;
@@ -29,6 +32,8 @@ import ar.uade.cine.persistencia.ReservaDAO;
  * ofrecer una butaca que la reserva después rechaza.
  */
 public class Ocupacion {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Ocupacion.class);
 
     private final ReservaDAO reservaDAO;
     private final FuncionDAO funcionDAO;
@@ -84,6 +89,11 @@ public class Ocupacion {
             if (reserva.estaVencida(ahora)) {
                 reserva.setEstado(EstadoReserva.EXPIRADA);
                 reservaDAO.actualizar(reserva);
+                // La única línea del log que nadie pidió: pasa sola, sin que haya un
+                // usuario del otro lado. Sin registro, una butaca que se libera parece
+                // magia el día que un cliente reclama que la tenía reservada.
+                LOG.info("reserva {} EXPIRADA · creada {} · {} butacas vuelven a la venta",
+                        reserva.getId(), reserva.getCreadaEn(), reserva.getCantidadEntradas());
             }
         }
     }
