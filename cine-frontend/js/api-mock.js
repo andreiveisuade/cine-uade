@@ -464,6 +464,133 @@ export function eliminarFuncion(id) {
   return responder(true);
 }
 
+/* ------------------------------------------------------------ programaciones */
+
+const DIAS_ISO = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+
+/**
+ * Las fechas y horas que la grilla quiere ocupar. Mismo recorrido que
+ * ProgramacionImpl.horarios(): día por día, quedándose con los que la grilla habilita.
+ * Sin días elegidos son todos, no ninguno.
+ */
+function horariosDe({ desde, hasta, horaInicio, diasSemana }) {
+  const momentos = [];
+  const fin = new Date(`${hasta}T00:00:00`);
+  for (let dia = new Date(`${desde}T00:00:00`); dia <= fin; dia.setDate(dia.getDate() + 1)) {
+    if (!diasSemana?.length || diasSemana.includes(DIAS_ISO[dia.getDay()])) {
+      const iso = `${dia.getFullYear()}-${dos(dia.getMonth() + 1)}-${dos(dia.getDate())}`;
+      momentos.push(`${iso}T${horaInicio.length === 5 ? horaInicio : horaInicio.slice(0, 5)}:00`);
+    }
+  }
+  return momentos;
+}
+
+const dos = (n) => String(n).padStart(2, "0");
+
+/** R3, igual que en programarFuncion: devuelve la función que se pisa, o undefined. */
+function funcionSuperpuesta(salaId, inicio, duracionMinutos) {
+  const desde = new Date(inicio);
+  const hasta = new Date(desde.getTime() + duracionMinutos * 60000);
+  return datos.funciones.filter((f) => f.salaId === salaId).find((f) => {
+    const otraDesde = new Date(f.inicio);
+    const otraHasta = new Date(otraDesde.getTime()
+      + (peliculaDe(f.peliculaId)?.duracionMinutos || 0) * 60000);
+    return desde < otraHasta && otraDesde < hasta;
+  });
+}
+
+/**
+ * La cuenta, una sola vez, igual que GestorProgramaciones.planificar: lo único que
+ * cambia entre previsualizar y crear es si persiste.
+ */
+function planificar(grilla, persistir) {
+  const pelicula = peliculaDe(Number(grilla.peliculaId));
+  if (!pelicula) return fallar(`No existe la película ${grilla.peliculaId}`);
+  const sala = salaDe(Number(grilla.salaId));
+  if (!sala) return fallar(`No existe la sala ${grilla.salaId}`);
+  if (!grilla.idioma || !grilla.proyeccion) return fallar("Falta el idioma o el formato de proyección");
+  // R8 vale para toda la grilla: si la sala no proyecta en 3D, no hay ninguna fecha
+  // del rango en la que sí, y previsualizar tiene que fallar igual que el alta.
+  if (grilla.proyeccion === "TRES_D" && !datos.TIPOS_SALA[sala.tipo].soportaTresD) {
+    return fallar(`La sala ${sala.nombre} no puede proyectar en 3D`);
+  }
+  if (!(grilla.precio > 0)) return fallar("El precio debe ser mayor a cero");
+  if (!grilla.desde || !grilla.hasta || grilla.hasta < grilla.desde) {
+    return fallar("El rango tiene que empezar antes de terminar");
+  }
+  if (!grilla.horaInicio) return fallar("Falta la hora de la función");
+
+  const horarios = horariosDe(grilla);
+  if (!horarios.length) {
+    return fallar("Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
+  }
+
+  const guardada = { ...grilla, id: 0, activa: true,
+                     peliculaId: pelicula.id, salaId: sala.id,
+                     diasSemana: grilla.diasSemana || [], precio: Number(grilla.precio) };
+  if (persistir) {
+    guardada.id = siguienteId(datos.programaciones);
+    datos.programaciones.push(guardada);
+  }
+
+  const funciones = horarios.map((inicio) => {
+    const choque = funcionSuperpuesta(sala.id, inicio, pelicula.duracionMinutos);
+    if (choque) {
+      return { inicio, choca: true,
+               motivo: `la sala ya tiene la función ${choque.id} a las ${choque.inicio.slice(8, 10)}/${choque.inicio.slice(5, 7)} ${choque.inicio.slice(11, 16)}` };
+    }
+    if (persistir) {
+      datos.funciones.push({
+        id: siguienteId(datos.funciones),
+        peliculaId: pelicula.id,
+        salaId: sala.id,
+        programacionId: guardada.id,
+        inicio,
+        idioma: grilla.idioma,
+        proyeccion: grilla.proyeccion,
+        precio: Number(grilla.precio),
+      });
+    }
+    return { inicio, choca: false };
+  });
+
+  return responder({
+    programacion: guardada,
+    funciones,
+    generadas: funciones.filter((f) => !f.choca).length,
+    salteadas: funciones.filter((f) => f.choca).length,
+  });
+}
+
+export function obtenerProgramaciones() {
+  return responder(datos.programaciones.map((p) => ({ ...p })));
+}
+
+export function obtenerProgramacion(id) {
+  const grilla = datos.programaciones.find((p) => p.id === Number(id));
+  if (!grilla) return fallar(`No existe la programación ${id}`);
+  return responder({
+    ...grilla,
+    funciones: datos.funciones
+      .filter((f) => f.programacionId === grilla.id)
+      .map((f) => ({ id: f.id, inicio: f.inicio })),
+  });
+}
+
+export const previsualizarProgramacion = (grilla) => planificar(grilla, false);
+export const crearProgramacion = (grilla) => planificar(grilla, true);
+
+// Dar de baja no toca las funciones ya generadas: pueden tener entradas vendidas.
+const cambiarEstadoProgramacion = (id, activa) => {
+  const grilla = datos.programaciones.find((p) => p.id === Number(id));
+  if (!grilla) return fallar(`No existe la programación ${id}`);
+  grilla.activa = activa;
+  return responder({ ...grilla });
+};
+
+export const darDeBajaProgramacion = (id) => cambiarEstadoProgramacion(id, false);
+export const darDeAltaProgramacion = (id) => cambiarEstadoProgramacion(id, true);
+
 function conDatosDeLaReserva(r) {
   const funcion = datos.funciones.find((f) => f.id === r.funcionId);
   return {

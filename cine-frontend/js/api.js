@@ -45,6 +45,13 @@ export const {
   obtenerFunciones,
   programarFuncion,
   eliminarFuncion,
+  // programaciones
+  obtenerProgramaciones,
+  obtenerProgramacion,
+  previsualizarProgramacion,
+  crearProgramacion,
+  darDeBajaProgramacion,
+  darDeAltaProgramacion,
   obtenerReservas,
   cancelarReserva,
   cobrar,

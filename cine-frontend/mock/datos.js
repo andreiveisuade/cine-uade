@@ -222,6 +222,12 @@ function fecha(diasDesdeHoy, hora) {
          `T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
 }
 
+// Las grillas que el encargado va cargando. Arranca vacio y se llena en la sesion,
+// igual que las funciones que se programan a mano: es un array exportado y no una
+// propiedad que api-mock cree al vuelo, porque a un namespace de modulo ES no se le
+// puede asignar.
+export const programaciones = [];
+
 export const funciones = [
   { id: 1, peliculaId: 1, salaId: 1, inicio: fecha(0, "20:30"), idioma: "SUBTITULADA", proyeccion: "DOS_D", precio: 5000 },
   { id: 2, peliculaId: 1, salaId: 3, inicio: fecha(0, "22:45"), idioma: "DOBLADA", proyeccion: "TRES_D", precio: 5500 },

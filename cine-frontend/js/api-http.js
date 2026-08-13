@@ -129,6 +129,32 @@ export const programarFuncion = ({ peliculaId, salaId, inicio, idioma, proyeccio
 
 export const eliminarFuncion = (id) => borrar(`/funciones/${id}`);
 
+/* ------------------------------------------------------------ programaciones */
+
+export const obtenerProgramaciones = () => get("/programaciones");
+export const obtenerProgramacion = (id) => get(`/programaciones/${id}`);
+
+// Las dos mandan exactamente el mismo cuerpo y solo cambian de ruta: previsualizar
+// tiene que predecir lo que hace el alta, y armar el pedido de dos maneras distintas
+// sería la forma más fácil de que dejara de hacerlo.
+const cuerpoProgramacion = ({ peliculaId, salaId, desde, hasta, horaInicio,
+                              diasSemana, idioma, proyeccion, precio }) => ({
+  peliculaId: Number(peliculaId),
+  salaId: Number(salaId),
+  desde, hasta, horaInicio,
+  diasSemana: diasSemana || [],
+  idioma, proyeccion, precio: Number(precio),
+});
+
+export const previsualizarProgramacion = (grilla) =>
+  post("/programaciones/previsualizar", cuerpoProgramacion(grilla));
+
+export const crearProgramacion = (grilla) =>
+  post("/programaciones", cuerpoProgramacion(grilla));
+
+export const darDeBajaProgramacion = (id) => post(`/programaciones/${id}/baja`);
+export const darDeAltaProgramacion = (id) => post(`/programaciones/${id}/alta`);
+
 export const obtenerReservas = () => get("/reservas");
 export const cancelarReserva = (id) => post(`/reservas/${id}/cancelacion`);
 
