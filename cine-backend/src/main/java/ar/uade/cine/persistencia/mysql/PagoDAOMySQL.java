@@ -20,20 +20,25 @@ import ar.uade.cine.persistencia.PersistenciaException;
 public class PagoDAOMySQL implements PagoDAO {
 
     private static final String SELECT =
-            "SELECT id, reserva_id, monto, medio, fecha, codigo_autorizacion FROM pago";
+            "SELECT id, reserva_id, subtotal, promocion_id, descuento, monto, medio, fecha, "
+            + "codigo_autorizacion FROM pago";
 
     @Override
     public void guardar(Pago pago) {
-        String sql = "INSERT INTO pago (reserva_id, monto, medio, fecha, codigo_autorizacion) "
-                + "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pago (reserva_id, subtotal, promocion_id, descuento, monto, "
+                + "medio, fecha, codigo_autorizacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, pago.getReservaId());
-            ps.setDouble(2, pago.getMonto());
-            ps.setString(3, pago.getMedio().name());
-            ps.setTimestamp(4, Timestamp.valueOf(pago.getFecha()));
-            ps.setString(5, pago.getCodigoAutorizacion());
+            ps.setDouble(2, pago.getSubtotal());
+            // NULL cuando no aplicó ninguna promoción, que es el caso normal.
+            ps.setObject(3, pago.getPromocionId(), java.sql.Types.INTEGER);
+            ps.setDouble(4, pago.getDescuento());
+            ps.setDouble(5, pago.getMonto());
+            ps.setString(6, pago.getMedio().name());
+            ps.setTimestamp(7, Timestamp.valueOf(pago.getFecha()));
+            ps.setString(8, pago.getCodigoAutorizacion());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -98,7 +103,9 @@ public class PagoDAOMySQL implements PagoDAO {
         return new PagoImpl(
                 rs.getInt("id"),
                 rs.getInt("reserva_id"),
-                rs.getDouble("monto"),
+                rs.getDouble("subtotal"),
+                (Integer) rs.getObject("promocion_id"),
+                rs.getDouble("descuento"),
                 MedioPago.valueOf(rs.getString("medio")),
                 rs.getTimestamp("fecha").toLocalDateTime(),
                 rs.getString("codigo_autorizacion"));

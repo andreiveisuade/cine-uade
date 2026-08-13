@@ -5,11 +5,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.PagoImpl;
 import ar.uade.cine.dominio.ventas.Reserva;
+import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 
@@ -21,10 +24,15 @@ public class GestorPagos {
 
     private final PagoDAO pagoDAO;
     private final ReservaDAO reservaDAO;
+    private final FuncionDAO funcionDAO;
+    private final GestorPromociones promociones;
 
-    public GestorPagos(PagoDAO pagoDAO, ReservaDAO reservaDAO) {
+    public GestorPagos(PagoDAO pagoDAO, ReservaDAO reservaDAO, FuncionDAO funcionDAO,
+                       GestorPromociones promociones) {
         this.pagoDAO = pagoDAO;
         this.reservaDAO = reservaDAO;
+        this.funcionDAO = funcionDAO;
+        this.promociones = promociones;
     }
 
     /**
@@ -56,7 +64,18 @@ public class GestorPagos {
             throw new IllegalArgumentException("La reserva " + reservaId + " ya tiene un pago registrado");
         }
 
-        Pago pago = new PagoImpl(reservaId, reserva.getTotal(), medio, LocalDateTime.now(),
+        // Acá recién se sabe el medio de pago, y con él qué promociones corren: por eso
+        // el total definitivo de una reserva no existe hasta que se cobra.
+        LocalDateTime inicioFuncion = funcionDAO.buscarPorId(reserva.getFuncionId())
+                .map(Funcion::getInicio)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No existe la función " + reserva.getFuncionId()));
+        Optional<Promocion> ganadora = promociones.mejorPara(reserva.getEntradas(), inicioFuncion, medio);
+        double descuento = ganadora.map(p -> promociones.descuentoDe(p, reserva.getEntradas())).orElse(0.0);
+
+        Pago pago = new PagoImpl(reservaId, reserva.getTotal(),
+                ganadora.map(Promocion::getId).orElse(null), descuento,
+                medio, LocalDateTime.now(),
                 codigoAutorizacion == null ? "" : codigoAutorizacion.trim());
         pagoDAO.guardar(pago);
 

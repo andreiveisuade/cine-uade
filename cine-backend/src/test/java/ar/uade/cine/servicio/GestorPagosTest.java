@@ -1,11 +1,13 @@
 package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.Set;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
@@ -40,6 +43,7 @@ import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /** R5: solo se cobra una reserva en estado RESERVADA, y una sola vez. */
@@ -50,6 +54,7 @@ class GestorPagosTest {
 
     private GestorReservas reservas;
     private GestorPagos pagos;
+    private GestorPromociones promociones;
     private ReservaDAO reservaDAO;
 
     /** Sala 2D de 10 butacas, función a $5000, un cliente. */
@@ -73,7 +78,8 @@ class GestorPagosTest {
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
                 new GeneradorTicketTxt(tempDir.resolve("tickets")));
-        pagos = new GestorPagos(pagoDAO, reservaDAO);
+        promociones = new GestorPromociones(new PromocionDAOMemoria());
+        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
     }
 
     @Test
@@ -139,6 +145,69 @@ class GestorPagosTest {
         assertEquals(2, pagos.listarDelDia(LocalDate.now()).size());
         assertEquals(15000.0, pagos.totalCobrado(LocalDate.now()), 0.001);
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
+    }
+
+
+    // ---------- el cobro es donde se resuelve el descuento ----------
+
+    /**
+     * El total definitivo no existe hasta que se cobra: recién ahí se sabe el medio de
+     * pago, y con él qué promociones corren.
+     */
+    @Test
+    void elPagoGuardaSubtotalDescuentoYPromocion() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        Promocion promo = promociones.crearNxM("2x1", 2, 1,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of());
+
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        assertEquals(reserva.getTotal(), pago.getSubtotal(), 0.001);
+        assertEquals(promo.getId(), pago.getPromocionId());
+        assertEquals(pago.getSubtotal() - pago.getDescuento(), pago.getMonto(), 0.001);
+        assertTrue(pago.getDescuento() > 0);
+    }
+
+    @Test
+    void sinPromocionAplicableElMontoEsElSubtotal() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        assertNull(pago.getPromocionId());
+        assertEquals(0, pago.getDescuento(), 0.001);
+        assertEquals(pago.getSubtotal(), pago.getMonto(), 0.001);
+    }
+
+    /** El descuento del banco depende del medio, que se elige acá y no al reservar. */
+    @Test
+    void elDescuentoBancarioSoloEntraSiSePagaConEseMedio() {
+        promociones.crearMontoFijo("Banco", 1000,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of(MedioPago.CREDITO));
+
+        Reserva enEfectivo = reservas.reservar(1, 1, generales("A1"));
+        Reserva conTarjeta = reservas.reservar(1, 1, generales("A2"));
+
+        assertEquals(0, pagos.cobrar(enEfectivo.getId(), MedioPago.EFECTIVO, "").getDescuento(), 0.001);
+        assertEquals(1000, pagos.cobrar(conTarjeta.getId(), MedioPago.CREDITO, "AUT-1").getDescuento(), 0.001);
+    }
+
+    /** El arqueo suma lo que entró en la caja, no lo que salía de lista. */
+    @Test
+    void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
+        promociones.crearPorcentaje("50 off", 50,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of());
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        double arqueo = pagos.listarDelDia(LocalDate.now()).stream()
+                .mapToDouble(Pago::getMonto).sum();
+
+        assertEquals(pago.getMonto(), arqueo, 0.001);
+        assertTrue(arqueo < pago.getSubtotal());
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

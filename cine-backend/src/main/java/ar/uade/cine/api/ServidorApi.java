@@ -15,6 +15,7 @@ import ar.uade.cine.persistencia.GeneradorTicket;
 import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.PersistenciaException;
+import ar.uade.cine.persistencia.PromocionDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.archivo.GeneradorTicketTxt;
@@ -25,6 +26,7 @@ import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
 import ar.uade.cine.persistencia.mysql.FuncionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PagoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
+import ar.uade.cine.persistencia.mysql.PromocionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
 import ar.uade.cine.servicio.GestorEmpleados;
@@ -32,6 +34,7 @@ import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorPagos;
+import ar.uade.cine.servicio.GestorPromociones;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
 import io.javalin.Javalin;
@@ -69,6 +72,7 @@ public class ServidorApi {
         EmpleadoDAO empleadoDAO = new EmpleadoDAOMySQL();
         PagoDAO pagoDAO = new PagoDAOMySQL();
         ReservaDAO reservaDAO = new ReservaDAOMySQL();
+        PromocionDAO promocionDAO = new PromocionDAOMySQL();
         // GestorClientes lo necesita para R12: no se borra un cliente con historial
         CompraCandyDAO compraCandyDAO = new CompraCandyDAOMySQL();
         GeneradorTicket generadorTicket = new GeneradorTicketTxt();
@@ -78,7 +82,8 @@ public class ServidorApi {
         GestorFunciones funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         GestorClientes clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         GestorEmpleados empleados = new GestorEmpleados(empleadoDAO);
-        GestorPagos pagos = new GestorPagos(pagoDAO, reservaDAO);
+        GestorPromociones promociones = new GestorPromociones(promocionDAO);
+        GestorPagos pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
                 clienteDAO, peliculaDAO, generadorTicket);
 

@@ -16,6 +16,20 @@ public interface Pago {
     int getReservaId();
 
     /** No se pasa por parámetro: se toma del total de la reserva, así nadie cobra otra cosa. */
+    /** Suma de los precios de lista de las entradas, antes de cualquier descuento. */
+    double getSubtotal();
+
+    /**
+     * La promoción que ganó, o {@code null} si no aplicó ninguna. Guardarla además del
+     * monto es lo que permite explicar meses después por qué se cobró eso, aunque para
+     * entonces la promoción ya esté desactivada.
+     */
+    Integer getPromocionId();
+
+    /** Cuánto sacó la promoción. Cero si no hubo. */
+    double getDescuento();
+
+    /** Lo que entró de verdad en la caja: subtotal menos descuento. Es lo que suma el arqueo. */
     double getMonto();
 
     MedioPago getMedio();

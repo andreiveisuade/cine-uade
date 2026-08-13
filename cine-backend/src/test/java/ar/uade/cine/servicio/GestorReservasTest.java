@@ -46,6 +46,7 @@ import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
+import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
 
 /**
@@ -87,7 +88,8 @@ class GestorReservasTest {
 
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
                 new GeneradorTicketTxt(directorioTickets));
-        pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO);
+        pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO, funcionDAO,
+                new GestorPromociones(new PromocionDAOMemoria()));
     }
 
     @Test
