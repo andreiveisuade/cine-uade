@@ -12,7 +12,7 @@ package ui {
 }
 
 package api {
-  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasReservas\nRutasSalas, RutasSesion" as RutasHttp
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasPromociones, RutasReservas, RutasSalas\nRutasSesion" as RutasHttp
   class Vistas
   class Parseo
   class NoEncontrado
@@ -22,6 +22,7 @@ package servicio {
   class GestorCartelera
   class GestorSalas
   class GestorFunciones
+  class GestorProgramaciones
   class GestorClientes
   class GestorReservas
   class GestorPagos
@@ -42,6 +43,9 @@ package dominio {
   package funciones as dom_funciones {
     class "Funcion + FuncionImpl\nVersion, Proyeccion" as DomFunciones
   }
+  package programaciones as dom_programaciones {
+    class "Programacion\n+ ProgramacionImpl" as DomProgramaciones
+  }
   package ventas as dom_ventas {
     class "Reserva, Pago + Impl\nEntrada, EstadoReserva, MedioPago" as DomVentas
   }
@@ -61,6 +65,7 @@ package persistencia {
   interface SalaDAO
   interface AsientoDAO
   interface FuncionDAO
+  interface ProgramacionDAO
   interface ClienteDAO
   interface ReservaDAO
   interface PagoDAO
@@ -73,7 +78,7 @@ package persistencia {
   class PersistenciaException
 
   package mysql {
-    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL\nConexionMySQL" as DaosMySQL
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nConexionMySQL" as DaosMySQL
   }
   package memoria {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
@@ -86,14 +91,20 @@ package persistencia {
 MenuConsola -down-> servicio
 RutasHttp -down-> servicio
 
-' El unico gestor que usa a otro: el descuento se resuelve al cobrar,
-' que es cuando recien se conoce el medio de pago.
+' Un gestor que usa a otro: el descuento se resuelve al cobrar, que es
+' cuando recien se conoce el medio de pago.
 GestorPagos -right-> GestorPromociones
 GestorPromociones -down-> PromocionDAO
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
 GestorSalas -down-> AsientoDAO
 GestorFunciones -down-> FuncionDAO
+
+' El segundo gestor que usa a otro, y por el mismo motivo que GestorPagos:
+' R3 y R8 ya viven en GestorFunciones. Escribirlas de nuevo en la grilla
+' serian dos definiciones de cuando dos funciones se pisan.
+GestorProgramaciones -right-> GestorFunciones
+GestorProgramaciones -down-> ProgramacionDAO
 GestorClientes -down-> ClienteDAO
 GestorReservas -down-> ReservaDAO
 GestorReservas -down-> GeneradorTicket

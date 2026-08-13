@@ -12,6 +12,7 @@ rectangle Sistema {
   usecase "CU-01b Filtrar por genero" as CU01b
   usecase "CU-02 Gestionar salas y butacas" as CU02
   usecase "CU-03 Programar funcion" as CU03
+  usecase "CU-03b Programar una grilla" as CU03b
   usecase "CU-04 Consultar cartelera" as CU04
   usecase "CU-05 Registrarse" as CU05
   usecase "CU-06 Elegir butacas y reservar" as CU06
@@ -44,6 +45,7 @@ admin --> CU10
 admin --> CU01
 admin --> CU02
 admin --> CU03
+admin --> CU03b
 admin --> CU04
 admin --> CU11
 admin --> CU07
@@ -57,6 +59,16 @@ note bottom of CU10
   Solo el administrador inicia sesion.
   El cliente compra sin registrarse
   con contrasena.
+end note
+
+note bottom of CU03b
+  Una grilla: misma pelicula, misma sala,
+  misma hora, todos los dias de un rango.
+  Genera las funciones de una sola vez.
+  Previsualiza primero: las fechas que chocan
+  contra algo ya programado en esa sala (R3)
+  se marcan y se saltean, no tumban la grilla.
+  Darla de baja no borra lo ya generado.
 end note
 
 note bottom of CU07
