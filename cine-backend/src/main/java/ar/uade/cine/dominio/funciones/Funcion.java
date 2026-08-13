@@ -26,4 +26,28 @@ public interface Funcion {
 
     /** Precio base: lo que cuesta una butaca estándar. Los recargos se calculan aparte. */
     double getPrecio();
+
+    // ---------- el paso del tiempo ----------
+
+    /**
+     * Si la función ya arrancó. Recibe el instante por parámetro y no lo pide al reloj,
+     * por lo mismo que {@code Reserva.estaVencida}: así se puede probar sin esperar.
+     *
+     * <p>Es lo único de este bloque que no necesita saber cuánto dura la película, y es
+     * también lo que sostiene R19: una vez que empezó, no se vende ni se cobra.
+     */
+    boolean yaEmpezo(LocalDateTime ahora);
+
+    /**
+     * Cuándo termina. La duración entra por parámetro porque la función no la conoce:
+     * vive en la película, y acá solo hay un {@code peliculaId}. Quien llama ya tuvo que
+     * resolver esa relación —es lo mismo que hace {@code GestorFunciones} para validar
+     * R3—, así que pedírsela es más honesto que guardar una copia del dato.
+     */
+    LocalDateTime getFin(int duracionMinutos);
+
+    /** Está proyectándose ahora mismo: ya empezó y todavía no terminó. */
+    boolean estaEnCurso(LocalDateTime ahora, int duracionMinutos);
+
+    boolean yaTermino(LocalDateTime ahora, int duracionMinutos);
 }
