@@ -11,7 +11,8 @@
 <header class="border-b border-slate-300 bg-white">
   <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
     <span class="text-lg font-bold tracking-tight">CINE UADE</span>
-    <span class="rounded bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">Encargado</span>
+    <!-- Lo completa admin.js con el rol de la sesión: el acomodador no es un encargado. -->
+    <span id="rol" class="rounded bg-slate-900 px-2 py-0.5 text-xs font-medium text-white">Panel</span>
     <!-- El acomodador solo ve "Puerta": no administra la cartelera. admin.js esconde
          el resto según el rol que devuelve el login. -->
     <nav id="nav" class="hidden flex-1 flex-wrap gap-4 text-sm">

@@ -38,9 +38,8 @@ function pintarEncabezado() {
   document.getElementById("nav").classList.toggle("hidden", !sesion);
   document.getElementById("nav").classList.toggle("flex", !!sesion);
   document.getElementById("salir").classList.toggle("hidden", !sesion);
-  document.getElementById("sesion").textContent = sesion
-    ? `${sesion.nombre}${sesion.rol === "ACOMODADOR" ? " · acomodador" : ""}`
-    : "";
+  document.getElementById("sesion").textContent = sesion ? sesion.nombre : "";
+  document.getElementById("rol").textContent = sesion ? etiqueta(sesion.rol) : "Panel";
   document.querySelectorAll("#nav a[data-rol=ADMINISTRADOR]").forEach((enlace) => {
     enlace.classList.toggle("hidden", !!sesion && !esAdministrador());
   });
