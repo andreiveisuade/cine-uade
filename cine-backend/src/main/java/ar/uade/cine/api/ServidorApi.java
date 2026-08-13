@@ -50,21 +50,39 @@ public class ServidorApi {
         app.start(puerto());
     }
 
-    /** Qué gestor atiende cada familia de rutas. */
+    /**
+     * Qué gestor atiende cada familia de rutas, y con qué vistas arma su respuesta.
+     *
+     * <p>Cada grupo de rutas recibe solo la vista que usa. Antes había una sola clase
+     * Vistas que las armaba todas y por eso necesitaba seis gestores: la ruta de sesión
+     * cargaba con el gestor de pagos para devolver un empleado.
+     */
     private static void registrarRutas(Javalin app, Aplicacion aplicacion) {
-        Vistas vistas = new Vistas(aplicacion.getCartelera(), aplicacion.getSalas(),
-                aplicacion.getFunciones(), aplicacion.getReservas(), aplicacion.getPagos(),
-                aplicacion.getClientes());
+        VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
+                aplicacion.getCalculadoraPrecio());
+        VistasCartelera vistasCartelera = new VistasCartelera(aplicacion.getCartelera(),
+                aplicacion.getSalas(), aplicacion.getReservas(), aplicacion.getCalculadoraPrecio(),
+                vistasSalas);
+        VistasUsuarios vistasUsuarios = new VistasUsuarios();
+        VistasPromociones vistasPromociones = new VistasPromociones();
+        VistasCandy vistasCandy = new VistasCandy();
+        VistasVentas vistasVentas = new VistasVentas(aplicacion.getFunciones(),
+                aplicacion.getSalas(), aplicacion.getCartelera(), aplicacion.getClientes(),
+                aplicacion.getPagos(), aplicacion.getReservas(),
+                vistasCartelera, vistasSalas, vistasUsuarios);
 
         RutasCatalogos.registrar(app);
-        RutasPeliculas.registrar(app, aplicacion.getCartelera(), aplicacion.getFunciones(), vistas);
-        RutasSalas.registrar(app, aplicacion.getSalas(), vistas);
-        RutasFunciones.registrar(app, aplicacion.getFunciones(), vistas);
-        RutasClientes.registrar(app, aplicacion.getClientes(), vistas);
-        RutasReservas.registrar(app, aplicacion.getReservas(), aplicacion.getClientes(), vistas);
-        RutasPromociones.registrar(app, aplicacion.getPromociones(), vistas);
-        RutasPagos.registrar(app, aplicacion.getPagos(), aplicacion.getReservas(), vistas);
-        RutasSesion.registrar(app, aplicacion.getEmpleados(), vistas);
+        RutasPeliculas.registrar(app, aplicacion.getCartelera(), aplicacion.getFunciones(),
+                vistasCartelera);
+        RutasSalas.registrar(app, aplicacion.getSalas(), vistasSalas);
+        RutasFunciones.registrar(app, aplicacion.getFunciones(), vistasCartelera);
+        RutasClientes.registrar(app, aplicacion.getClientes(), vistasUsuarios);
+        RutasReservas.registrar(app, aplicacion.getReservas(), aplicacion.getClientes(),
+                vistasVentas);
+        RutasPromociones.registrar(app, aplicacion.getPromociones(), vistasPromociones);
+        RutasPagos.registrar(app, aplicacion.getPagos(), aplicacion.getReservas(), vistasVentas);
+        RutasCandy.registrar(app, aplicacion.getCandy(), vistasCandy);
+        RutasSesion.registrar(app, aplicacion.getEmpleados(), vistasUsuarios);
     }
 
     private static void registrarErrores(Javalin app) {

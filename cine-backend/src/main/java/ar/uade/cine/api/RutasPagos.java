@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import ar.uade.cine.api.Vistas.PagoVista;
+import ar.uade.cine.api.VistasVentas.PagoVista;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.servicio.Arqueo;
@@ -33,7 +33,7 @@ class RutasPagos {
                        List<PagoVista> pagos) {
     }
 
-    static void registrar(Javalin app, GestorPagos pagos, GestorReservas reservas, Vistas vistas) {
+    static void registrar(Javalin app, GestorPagos pagos, GestorReservas reservas, VistasVentas vistas) {
 
         app.post("/api/reservas/{id}/pago", ctx -> {
             int reservaId = Parseo.id(ctx);

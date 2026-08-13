@@ -33,7 +33,7 @@ class RutasReservas {
     }
 
     static void registrar(Javalin app, GestorReservas reservas, GestorClientes clientes,
-                          Vistas vistas) {
+                          VistasVentas vistas) {
 
         // Sin email es el listado del encargado; con email, las reservas de ese cliente.
         app.get("/api/reservas", ctx -> {

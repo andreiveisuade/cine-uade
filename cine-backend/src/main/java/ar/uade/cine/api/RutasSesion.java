@@ -16,10 +16,10 @@ class RutasSesion {
     record PedidoSesion(String email, String password) {
     }
 
-    static void registrar(Javalin app, GestorEmpleados empleados, Vistas vistas) {
+    static void registrar(Javalin app, GestorEmpleados empleados, VistasUsuarios vistas) {
         app.post("/api/sesion", ctx -> {
             PedidoSesion pedido = ctx.bodyAsClass(PedidoSesion.class);
-            ctx.json(vistas.administrador(
+            ctx.json(vistas.empleado(
                     empleados.iniciarSesion(pedido.email(), pedido.password())));
         });
     }

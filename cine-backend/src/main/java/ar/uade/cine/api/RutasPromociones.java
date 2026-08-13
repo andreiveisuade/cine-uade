@@ -32,7 +32,7 @@ class RutasPromociones {
                            List<String> mediosPago) {
     }
 
-    static void registrar(Javalin app, GestorPromociones promociones, Vistas vistas) {
+    static void registrar(Javalin app, GestorPromociones promociones, VistasPromociones vistas) {
 
         app.get("/api/promociones", ctx ->
                 ctx.json(promociones.listar().stream().map(vistas::promocion).toList()));

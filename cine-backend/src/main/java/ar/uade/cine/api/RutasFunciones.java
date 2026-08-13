@@ -20,7 +20,7 @@ class RutasFunciones {
                          String proyeccion, Double precio) {
     }
 
-    static void registrar(Javalin app, GestorFunciones funciones, Vistas vistas) {
+    static void registrar(Javalin app, GestorFunciones funciones, VistasCartelera vistas) {
 
         app.get("/api/funciones", ctx ->
                 ctx.json(funciones.listar().stream()

@@ -27,7 +27,7 @@ class RutasSalas {
     record PedidoEstado(String estado) {
     }
 
-    static void registrar(Javalin app, GestorSalas salas, Vistas vistas) {
+    static void registrar(Javalin app, GestorSalas salas, VistasSalas vistas) {
 
         app.get("/api/salas", ctx ->
                 ctx.json(salas.listar().stream().map(vistas::sala).toList()));

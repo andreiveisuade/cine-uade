@@ -27,7 +27,7 @@ class RutasPeliculas {
     }
 
     static void registrar(Javalin app, GestorCartelera cartelera, GestorFunciones funciones,
-                          Vistas vistas) {
+                          VistasCartelera vistas) {
 
         // Lo que ve el cliente: solo lo que está en exhibición (CU-01b para el filtro).
         app.get("/api/cartelera", ctx -> {

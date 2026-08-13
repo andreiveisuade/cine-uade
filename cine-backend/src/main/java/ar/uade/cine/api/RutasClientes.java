@@ -16,7 +16,7 @@ class RutasClientes {
     record PedidoCliente(String nombre, String email) {
     }
 
-    static void registrar(Javalin app, GestorClientes clientes, Vistas vistas) {
+    static void registrar(Javalin app, GestorClientes clientes, VistasUsuarios vistas) {
 
         app.get("/api/clientes", ctx -> {
             String email = ctx.queryParam("email");
