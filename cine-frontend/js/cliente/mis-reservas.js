@@ -78,16 +78,22 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
     ir(`#/mis-reservas/${encodeURIComponent(valor)}`);
   });
 
-  contenedor.addEventListener("click", async function alCancelar(evento) {
-    const boton = evento.target.closest("button[data-cancelar]");
-    if (!boton) return;
-    contenedor.removeEventListener("click", alCancelar);
-    try {
-      await api.cancelarReserva(boton.dataset.cancelar);
-      avisar("Reserva cancelada, las butacas quedaron libres");
-    } catch (e) {
-      avisar(e.message, "error");
-    }
-    vistaMisReservas(contenedor, emailBuscado);
+  // El listener va en cada botón y no en el contenedor: los botones los borra el
+  // innerHTML de arriba, el contenedor no. Enganchado al contenedor, cada búsqueda
+  // sumaba un listener más al mismo elemento vivo —y esta vista se vuelve a dibujar
+  // sola al cancelar—, así que un clic terminaba disparando una cancelación por cada
+  // vez que se había pasado por acá.
+  contenedor.querySelectorAll("button[data-cancelar]").forEach((boton) => {
+    boton.addEventListener("click", async () => {
+      // Cancelar tarda: sin esto, dos clics apurados son dos pedidos.
+      boton.disabled = true;
+      try {
+        await api.cancelarReserva(boton.dataset.cancelar);
+        avisar("Reserva cancelada, las butacas quedaron libres");
+      } catch (e) {
+        avisar(e.message, "error");
+      }
+      vistaMisReservas(contenedor, emailBuscado);
+    });
   });
 }
