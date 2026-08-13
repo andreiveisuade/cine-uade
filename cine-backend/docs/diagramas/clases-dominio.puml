@@ -116,16 +116,26 @@ package "dominio.programaciones" {
     +getSalaId(): int
     --patron temporal--
     +getDesde(): LocalDate
-    +getHasta(): LocalDate
+    +getHasta(): LocalDate [0..1]
     +getHoraInicio(): LocalTime
     diasSemana: DayOfWeek [0..*]
-    +horarios(): List<LocalDateTime>
+    +horarios(tope): List<LocalDateTime>
     --lo que copia a cada funcion--
     +getVersion(): Version
     +getProyeccion(): Proyeccion
     +getPrecio(): double
     +estaActiva(): boolean
+    --lo que ya paso--
+    +getGeneradaHasta(): LocalDate [0..1]
   }
+  ' hasta [0..1]: sin fecha de fin la grilla es abierta y corre hasta que la den
+  ' de baja, que es lo normal en un cine. Es lo que le da sentido a estaActiva:
+  ' si toda grilla generara su rango entero al darse de alta, dar de baja no
+  ' evitaria ninguna funcion.
+  '
+  ' generadaHasta es el unico atributo que no describe la intencion sino lo que
+  ' efectivamente se materializo. Por eso horarios() recibe un tope: una grilla
+  ' abierta no tiene final, asi que hasta donde generar lo decide quien pregunta.
 }
 
 package "dominio.usuarios" {

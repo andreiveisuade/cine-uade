@@ -459,14 +459,14 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta en el gestor y el menú de consola, con 191 tests en verde. La API HTTP
+          implementados de punta a punta en el gestor y el menú de consola, con 198 tests en verde. La API HTTP
           todavía no expone candy —<code>ServidorApi</code> no instancia <code>GestorCandy</code>—, así que el
           frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
           <strong>Segunda vuelta, ya implementada.</strong> El modelo se amplió con tarifas por tipo de
           público, promociones, control de acceso con QR, vencimiento de reservas y venta de candy anónima o
-          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 191 tests en verde.
+          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 198 tests en verde.
         </p>
       </div>
     </section>
@@ -878,6 +878,53 @@ body.lightbox-locked { overflow: hidden; }
         mitad de su grilla es una promesa.
       </p>
 
+      <h3>Y después la grilla abierta cambió la premisa</h3>
+      <p>
+        Ese razonamiento seguía siendo correcto, pero se apoyaba en algo que resultó ser falso: que toda
+        grilla tiene fecha de fin. En un cine no la tiene. La función de las 20:30 no vence un martes; corre
+        hasta que alguien decide levantarla.
+      </p>
+      <p>
+        Y ahí se veía el síntoma: <strong><code>activa</code> no hacía nada</strong>. La entidad tenía el flag
+        desde el principio y la pantalla decía «dar de baja solo evita que genere nuevas», pero como cada
+        grilla generaba su rango entero al darse de alta, cuando la dabas de baja <em>ya no quedaba nada por
+        generar</em>. El flag pintaba la fila de gris y nada más. El otro síntoma era peor: un cine cuya última
+        grilla se acababa el domingo amanecía el lunes sin una sola función.
+      </p>
+      <p>
+        Entonces <code>hasta</code> pasó a admitir <code>null</code>. Una grilla sin fin no puede «generar todo
+        su rango» —no hay rango que terminar— así que hace falta elegir hasta dónde: un
+        <strong>horizonte de catorce días</strong>. Es suficiente para que la cartelera se vea llena y el cliente
+        compre con anticipación, y poco como para que cambiar de opinión no obligue a tocar cientos de
+        funciones ya vendidas.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El horizonte se aplica solo a las grillas abiertas.</strong> Al escribirlo lo apliqué a todas,
+          y ocho tests se pusieron en rojo. Tenían razón: una grilla del 7 al 13 de septiembre —a un mes— pasaba
+          a generar <em>cero</em> funciones, y el administrador veía un informe vacío sin entender por qué. El
+          argumento de arriba no se cayó, se acotó: una grilla cerrada ya dice hasta cuándo, y el informe de
+          choques le sirve en el momento de cargarla, no dentro de dos semanas. El horizonte existe únicamente
+          porque una grilla abierta no tiene final.
+        </p>
+      </div>
+      <p>
+        Queda la pregunta de <em>cuándo</em> se genera lo que falta, y la respuesta es la misma que ya usaba el
+        <a href="#vencimiento">vencimiento de reservas</a>: <strong>lo hace quien consulta</strong>.
+        <code>GestorCartelera</code> llama a <code>extenderActivas</code> antes de listar. Sigue sin haber cron
+        ni scheduler. Un cine que nadie mira no necesita funciones nuevas; el día que alguien entra a la web,
+        aparecen.
+      </p>
+      <p>
+        Colgar trabajo de una lectura solo es viable si es barato repetirlo, así que la operación es
+        <strong>idempotente</strong>: cada grilla guarda <code>generadaHasta</code>, la fecha hasta la que ya se
+        procesó, y si está al día no hace nada. Se guarda en vez de derivarse de las funciones existentes por
+        dos motivos. Una función se puede cancelar o mover de sala, y entonces la última generada daría de
+        menos. Y las fechas que <em>chocaron</em> no generaron ninguna función pero también están procesadas:
+        preguntarle al DAO las daría por pendientes y se reintentarían para siempre, listándolas como choques
+        nuevos en cada vuelta.
+      </p>
+
       <h3>Previsualizar, y después aplicar</h3>
       <p>
         Una grilla de quince días casi siempre pisa algo. R3 dice que dos funciones de la misma sala no se
@@ -985,6 +1032,14 @@ body.lightbox-locked { overflow: hidden; }
         única fuente de verdad — es el mismo razonamiento por el que <a href="#salas">la sala no guarda su
         capacidad</a>: dos lugares donde vive el mismo dato son dos lugares que se pueden contradecir, y basta
         con que el administrador borre una función a mano para que el contador quede mintiendo.
+      </p>
+      <p>
+        Sí guarda <code>generada_hasta</code>, y conviene ver por qué <strong>no es la misma cosa</strong>. El
+        contador de funciones sería un dato derivable, y por eso no se guarda. La fecha procesada no lo es: si
+        se dedujera de la última función generada, cancelar una la haría dar de menos, y sobre todo las fechas
+        que <em>chocaron</em> no generaron ninguna función pero también están procesadas — deducirlas las
+        dejaría pendientes para siempre. Es lo único de la tabla que no describe la intención de la grilla sino
+        lo que efectivamente pasó, que es justo la clase de dato que hay que guardar.
       </p>
       <p>
         Tampoco se edita el patrón temporal: solo se activa o se desactiva. Cambiarle las fechas a una grilla
@@ -2349,7 +2404,7 @@ docker compose --profile importador up -d parser</code></pre>
       </div>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 191 tests, no necesitan base
+      <pre><code>mvn test                 # los 198 tests, no necesitan base
 mvn exec:java            # menú de consola, necesita un MySQL en localhost:3306</code></pre>
       <p>
         El menú sigue existiendo y no se tocó: son dos interfaces —<code>MenuConsola</code> y la API HTTP—
@@ -2389,7 +2444,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Unitaria</strong></td>
               <td>Una regla de negocio aislada, sin base ni red</td>
-              <td>Los 191 tests de JUnit sobre los gestores</td>
+              <td>Los 198 tests de JUnit sobre los gestores</td>
               <td>menos de un segundo</td>
             </tr>
             <tr>
@@ -2447,7 +2502,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 191 tests, todos en verde</code></pre>
+mvn clean test                    # 198 tests, todos en verde</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -2850,7 +2905,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 191 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 198 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -2866,7 +2921,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 191 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 198 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -3267,7 +3322,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veintiún casos de uso y las diecinueve reglas funcionan contra MySQL, con 191 tests en verde. Las
+        Los veintiún casos de uso y las diecinueve reglas funcionan contra MySQL, con 198 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y tanto el ticket de butacas como el del
         candy se emiten en <code>.txt</code>.
       </p>
@@ -3521,9 +3576,9 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td>La función le sobrevive a su grilla —dar de baja no borra lo que ya tiene entradas vendidas— y la función suelta de CU-03 no pertenece a ninguna</td>
             </tr>
             <tr>
-              <td>Todo el rango se genera al dar de alta</td>
-              <td>Una ventana móvil que va completando</td>
-              <td>Sin cron ni scheduler, por lo mismo que la expiración de reservas; y el administrador tiene que ver lo que programó para poder corregirlo, no la mitad</td>
+              <td>Una grilla cerrada genera todo su rango al dar de alta; una abierta, hasta un horizonte de 14 días</td>
+              <td>La ventana móvil para todas, o el rango entero para todas</td>
+              <td>El administrador tiene que ver lo que programó para poder corregirlo, así que lo que acotó a mano se genera entero. El horizonte existe solo porque una grilla abierta no tiene final. Sigue sin haber cron: extiende quien consulta, como la expiración de reservas</td>
             </tr>
             <tr>
               <td>Previsualizar y después aplicar, con una sola lógica</td>
