@@ -4,6 +4,9 @@ target/
 *.iml
 .DS_Store
 
+# Lo deja el shade plugin al armar el jar de la imagen de Docker
+dependency-reduced-pom.xml
+
 # Datos que genera la app al correr
 tickets/
 reservas.txt

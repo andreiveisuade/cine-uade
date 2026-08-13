@@ -13,7 +13,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Compila y verifica contra la API de Java 21 -->
     <maven.compiler.release>21</maven.compiler.release>
+    <!-- El menu de consola: lo que corre `mvn exec:java` -->
     <main.class>ar.uade.cine.Main</main.class>
+    <!-- La API HTTP: lo que corre `java -jar` dentro del contenedor -->
+    <api.class>ar.uade.cine.api.ServidorApi</api.class>
   </properties>
 
   <dependencies>
@@ -22,6 +25,24 @@
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <version>9.7.0</version>
+    </dependency>
+
+    <!-- Servidor HTTP de la capa api/. Las versiones de Jackson y SLF4J son las que
+         Javalin 6.7.0 declara: las trae como opcionales, asi que van explicitas. -->
+    <dependency>
+      <groupId>io.javalin</groupId>
+      <artifactId>javalin</artifactId>
+      <version>6.7.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.18.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.17</version>
     </dependency>
 
     <!-- Tests. scope=test => no se empaqueta en el jar final -->
@@ -57,6 +78,45 @@
         <configuration>
           <mainClass>${main.class}</mainClass>
         </configuration>
+      </plugin>
+
+      <!-- Un solo jar con las dependencias adentro: la imagen de Docker corre un JRE
+           pelado, sin Maven ni repositorio local del que sacarlas. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <finalName>cine-api</finalName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>${api.class}</mainClass>
+                </transformer>
+                <!-- Jetty y el driver JDBC se descubren por META-INF/services: sin
+                     fusionar esos archivos, el ultimo jar pisa a los anteriores. -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <!-- Las firmas de los jars originales no valen para el jar fusionado -->
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

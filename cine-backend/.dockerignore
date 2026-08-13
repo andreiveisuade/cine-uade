@@ -1,0 +1,11 @@
+# El build compila de cero adentro del contenedor: lo compilado acá afuera no sirve y
+# solo hace más lento el envío del contexto al daemon.
+target/
+.git
+.gitignore
+.DS_Store
+docs/
+tickets/
+reservas.txt
+Dockerfile
+.dockerignore

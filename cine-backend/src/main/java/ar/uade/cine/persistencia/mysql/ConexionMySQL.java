@@ -7,14 +7,22 @@ import java.sql.SQLException;
 import ar.uade.cine.persistencia.PersistenciaException;
 
 /**
- * Único lugar donde vive el dato de conexión. Si cambia la contraseña, se toca acá
- * y en ningún otro archivo.
+ * Único lugar donde vive el dato de conexión. Sale del entorno porque el host cambia
+ * según dónde corra la app: fuera de Docker la base está en localhost, y adentro el
+ * host es el nombre del servicio del compose. Los defaults son los de la máquina de
+ * desarrollo, así que sin variables de entorno funciona como siempre.
  */
 public class ConexionMySQL {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/appsinteractivas";
-    private static final String USUARIO = "root";
-    private static final String PASSWORD = "root";
+    private static final String URL = "jdbc:mysql://" + variable("DB_HOST", "localhost")
+            + ":" + variable("DB_PORT", "3306") + "/" + variable("DB_NAME", "appsinteractivas");
+    private static final String USUARIO = variable("DB_USER", "root");
+    private static final String PASSWORD = variable("DB_PASSWORD", "root");
+
+    private static String variable(String nombre, String pordefecto) {
+        String valor = System.getenv(nombre);
+        return valor == null || valor.isBlank() ? pordefecto : valor;
+    }
 
     public static Connection abrir() {
         try {

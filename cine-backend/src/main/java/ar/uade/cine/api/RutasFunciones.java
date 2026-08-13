@@ -1,0 +1,58 @@
+package ar.uade.cine.api;
+
+import java.util.Comparator;
+
+import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dominio.funciones.Proyeccion;
+import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.servicio.GestorFunciones;
+import io.javalin.Javalin;
+import io.javalin.http.HttpStatus;
+
+/**
+ * Programación de funciones y mapa de butacas. El detalle de una función es el endpoint
+ * con el que el cliente elige dónde sentarse: por eso trae cada asiento con su precio ya
+ * calculado y si está tomado en esa proyección.
+ */
+class RutasFunciones {
+
+    record PedidoFuncion(Integer peliculaId, Integer salaId, String inicio, String idioma,
+                         String proyeccion, Double precio) {
+    }
+
+    static void registrar(Javalin app, GestorFunciones funciones, Vistas vistas) {
+
+        app.get("/api/funciones", ctx ->
+                ctx.json(funciones.listar().stream()
+                        .sorted(Comparator.comparing(Funcion::getInicio))
+                        .map(vistas::funcionConPelicula)
+                        .toList()));
+
+        app.get("/api/funciones/{id}", ctx ->
+                ctx.json(vistas.funcionConButacas(buscar(funciones, Parseo.id(ctx)))));
+
+        app.post("/api/funciones", ctx -> {
+            PedidoFuncion pedido = ctx.bodyAsClass(PedidoFuncion.class);
+            Funcion funcion = funciones.programar(
+                    pedido.peliculaId() == null ? 0 : pedido.peliculaId(),
+                    pedido.salaId() == null ? 0 : pedido.salaId(),
+                    pedido.inicio() == null ? null : Parseo.momento(pedido.inicio(), "la fecha y hora"),
+                    pedido.idioma() == null ? null : Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
+                    pedido.proyeccion() == null ? null
+                            : Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
+                    pedido.precio() == null ? 0 : pedido.precio());
+            ctx.status(HttpStatus.CREATED).json(vistas.funcionConPelicula(funcion));
+        });
+
+        app.delete("/api/funciones/{id}", ctx -> {
+            int id = Parseo.id(ctx);
+            buscar(funciones, id);
+            funciones.eliminar(id);
+            ctx.status(HttpStatus.NO_CONTENT);
+        });
+    }
+
+    private static Funcion buscar(GestorFunciones funciones, int id) {
+        return funciones.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la función " + id));
+    }
+}
