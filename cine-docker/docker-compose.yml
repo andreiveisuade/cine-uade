@@ -1,0 +1,114 @@
+# Los tres servicios del sistema. Los build context apuntan a los repos hermanos: cada
+# uno sigue siendo un repo git independiente y acá solo se los orquesta.
+#
+# Un solo puerto sale al host: el de nginx. MySQL y el backend se hablan por la red
+# interna de Docker y no son alcanzables desde afuera.
+
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: cine-mysql
+    restart: unless-stopped
+    # El proceso no necesita root: la imagen trae /var/lib/mysql como mysql:mysql y el
+    # volumen nuevo hereda esos permisos.
+    user: mysql
+    environment:
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?falta MYSQL_ROOT_PASSWORD, copiá .env.example a .env}
+      # La imagen crea esta base y le da a este usuario permisos solo sobre ella: la app
+      # nunca se conecta con root.
+      MYSQL_DATABASE: ${DB_NAME:-appsinteractivas}
+      MYSQL_USER: ${DB_USER:?falta DB_USER, copiá .env.example a .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD, copiá .env.example a .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Corre solo la primera vez, cuando el volumen está vacío: así el que clona los
+      # repos levanta la base ya con las tablas creadas.
+      - ../cine-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Después del schema y por el mismo mecanismo: el primer administrador, que no se
+      # puede dar de alta por la API.
+      - ./seed/02-admin.sql:/docker-entrypoint-initdb.d/02-admin.sql:ro
+    healthcheck:
+      # Con el usuario de la app, no con root: es la conexión que de verdad importa que
+      # funcione antes de arrancar el backend.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - datos
+
+  backend:
+    build:
+      context: ../cine-backend
+    container_name: cine-backend
+    restart: unless-stopped
+    # Sin `ports`: al backend solo se llega desde adentro de Docker, y quien lo hace es
+    # nginx. Por eso tampoco hace falta CORS.
+    environment:
+      # Sin esto el contenedor corre en UTC y una función de las 22:00 o un cobro de la
+      # noche caen en el día siguiente: el arqueo del día los dejaría afuera.
+      TZ: ${TZ:-America/Argentina/Buenos_Aires}
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-appsinteractivas}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PORT: "8080"
+    depends_on:
+      mysql:
+        # Que el contenedor de MySQL esté arriba no significa que la base acepte
+        # conexiones: el backend abre una en el primer request y fallaría.
+        condition: service_healthy
+    healthcheck:
+      # Un endpoint de catálogo alcanza: si responde, el servidor levantó y ruteó.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/api/generos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      # En las dos: habla con la base y lo consume nginx. Es el único puente entre las
+      # dos redes, así que el frontend no tiene forma de llegar a MySQL.
+      - datos
+      - web
+
+  frontend:
+    build:
+      context: ../cine-frontend
+    container_name: cine-frontend
+    restart: unless-stopped
+    ports:
+      # El único puerto publicado de todo el sistema.
+      - "${PUERTO_WEB:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - web
+
+  # Visualizador de la base. Publicado solo en la loopback: se abre desde esta máquina
+  # y no queda expuesto a la red donde esté la notebook.
+  adminer:
+    image: adminer:5
+    container_name: cine-adminer
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "127.0.0.1:${PUERTO_ADMINER:-8081}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - datos
+
+volumes:
+  mysql_data:
+
+networks:
+  # Separadas a propósito: el contenedor que sirve la web no tiene ruta hasta la base.
+  datos:
+  web:

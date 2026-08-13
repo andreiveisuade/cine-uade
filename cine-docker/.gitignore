@@ -1,0 +1,3 @@
+# Credenciales: cada máquina tiene las suyas y ninguna va al repo.
+.env
+.DS_Store
