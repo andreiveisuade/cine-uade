@@ -21,9 +21,9 @@ cd ../manual && python3 build.py               # inyecta los SVG en el HTML
 ```
 
 `index.html` **no se edita a mano**: se genera desde `manual/template.html`, que tiene los placeholders
-`{{SVG_CASOS_USO}}`, `{{SVG_DOMINIO}}`, `{{SVG_CAPAS}}`, `{{SVG_SECUENCIA}}` y `{{SVG_SECUENCIA_CANDY}}`.
-Para cambiar texto o diseño del manual, editar el template y volver a correr `build.py`. Si agregás un
-diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
+`{{SVG_CASOS_USO}}`, `{{SVG_DOMINIO}}`, `{{SVG_CAPAS}}`, `{{SVG_SECUENCIA}}`, `{{SVG_SECUENCIA_CANDY}}` y
+`{{SVG_DOCKER}}`. Para cambiar texto o diseño del manual, editar el template y volver a correr `build.py`.
+Si agregás un diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
 
 ## Diagramas
 
@@ -34,3 +34,4 @@ diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | Flujo de reservar butacas hasta emitir el ticket |
 | `secuencia-candy.puml` | Armado del combo promocional y venta en el candy |
+| `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué repo construye a cada uno |

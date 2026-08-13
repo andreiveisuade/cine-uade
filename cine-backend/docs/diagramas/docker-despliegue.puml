@@ -1,0 +1,73 @@
+@startuml docker-despliegue
+title Despliegue con Docker Compose - cine-docker
+
+skinparam nodesep 20
+skinparam ranksep 45
+
+actor "Usuario" as usuario
+
+folder "cine-frontend\n(repo hermano)" as repoFrontend
+folder "cine-backend\n(repo hermano)" as repoBackend
+
+node "Docker host\ndocker-compose.yml (cine-docker)" {
+  frame "red **web**" {
+    node "cine-frontend\nnginx-unprivileged:1.27-alpine" as frontend
+  }
+
+  node "cine-backend\neclipse-temurin:21-jre-alpine" as backend
+
+  frame "red **datos**" {
+    database "cine-mysql\nmysql:8.4" as mysql
+    node "cine-adminer\nadminer:5" as adminer
+  }
+
+  artifact "mysql_data\n(volumen nombrado)" as vol
+}
+
+actor "Desarrollador" as dev
+
+repoFrontend .down.> frontend : build context
+repoBackend .down.> backend : build context
+
+usuario --> frontend : "localhost:8080"
+dev --> adminer : "127.0.0.1:8081"
+
+frontend --> backend : proxy_pass /api\n-> backend:8080
+backend --> mysql : DB_HOST=mysql:3306
+adminer --> mysql : ADMINER_DEFAULT_SERVER
+mysql --> vol : monta en\n/var/lib/mysql
+
+note right of mysql
+  docker-entrypoint-initdb.d
+  (corre solo con el volumen vacio):
+  01-schema.sql <- cine-backend/src/main/resources
+  02-admin.sql  <- cine-docker/seed/
+end note
+
+note bottom of backend
+  Sin ports propio: solo se llega
+  desde adentro de Docker. Por eso
+  tampoco hace falta CORS.
+end note
+
+note as envNote
+  .env (no versionado, copiado de .env.example)
+  MYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME
+  PUERTO_WEB (8080), PUERTO_ADMINER (8081), TZ
+end note
+envNote ..> mysql
+envNote ..> backend
+
+legend bottom
+  |= Elemento |= Detalle |
+  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros dos repos hermanos; |
+  |  | ninguno tiene codigo de la app propio, solo docker-compose.yml, .env y el seed del admin. |
+  | red **web** | frontend <-> backend. |
+  | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base. |
+  | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
+  | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
+  |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
+  | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |
+endlegend
+
+@enduml
