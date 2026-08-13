@@ -53,12 +53,26 @@ public class GestorPagos {
         if (reserva.getEstado() != EstadoReserva.RESERVADA) {
             throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
         }
+        LocalDateTime ahora = LocalDateTime.now();
         // R17: puede seguir figurando RESERVADA porque nadie consultó esa función desde
         // que venció, y quien la expira es justamente la consulta. Chequearlo acá es lo
         // que impide cobrar butacas que ya volvieron a la venta.
-        if (reserva.estaVencida(LocalDateTime.now())) {
+        if (reserva.estaVencida(ahora)) {
             throw new IllegalArgumentException("La reserva " + reservaId
                     + " venció: sus butacas volvieron a estar disponibles");
+        }
+
+        // La función se busca acá arriba y no más abajo porque hacen falta dos cosas de
+        // ella: si ya empezó (R19) y cuándo empieza, para saber qué promociones corren.
+        Funcion funcion = funcionDAO.buscarPorId(reserva.getFuncionId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No existe la función " + reserva.getFuncionId()));
+        // R19: una vez que la función arrancó, esa butaca ya no se vende. Es la misma
+        // clase de validación temporal que R17 —el reloj invalidando algo que sigue
+        // figurando disponible— y por eso van juntas.
+        if (funcion.yaEmpezo(ahora)) {
+            throw new IllegalArgumentException("La función ya empezó: no se puede cobrar la reserva "
+                    + reservaId);
         }
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
@@ -74,12 +88,8 @@ public class GestorPagos {
 
         // Acá recién se sabe el medio de pago, y con él qué promociones corren: por eso
         // el total definitivo de una reserva no existe hasta que se cobra.
-        LocalDateTime inicioFuncion = funcionDAO.buscarPorId(reserva.getFuncionId())
-                .map(Funcion::getInicio)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "No existe la función " + reserva.getFuncionId()));
         PoliticaPromociones.Descuento descuento =
-                promociones.calcularPara(reserva.getEntradas(), inicioFuncion, medio);
+                promociones.calcularPara(reserva.getEntradas(), funcion.getInicio(), medio);
 
         Pago pago = new PagoImpl(reservaId, reserva.getTotal(),
                 descuento.promocionId(), descuento.monto(),

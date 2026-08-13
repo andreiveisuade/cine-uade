@@ -82,6 +82,12 @@ public class GestorReservas {
      */
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
         Funcion funcion = buscarFuncion(funcionId);
+        // R19: una función que ya arrancó no se vende. Va antes que todo lo demás porque
+        // ninguna de las otras validaciones tiene sentido si la película ya está dada:
+        // no importa si la butaca está libre cuando la función empezó hace media hora.
+        if (funcion.yaEmpezo(LocalDateTime.now())) {
+            throw new IllegalArgumentException("La función ya empezó: no se pueden reservar butacas");
+        }
         Cliente cliente = clienteDAO.buscarPorId(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
         if (butacas == null || butacas.isEmpty()) {
