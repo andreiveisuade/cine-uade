@@ -9,12 +9,17 @@ hide members
 
 package ui {
   class MenuConsola
+  interface Menu
+  class "MenuPeliculas, MenuSalas, MenuFunciones\nMenuClientes, MenuReservas, MenuCandy\nMenuArqueo, MenuEmpleados" as MenusDelCine
+  class Consola
+  class MapaDeButacas
 }
 
 package api {
-  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasReservas\nRutasSalas, RutasSesion" as RutasHttp
-  class Vistas
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasReservas\nRutasSalas, RutasSesion, RutasPromociones\nRutasCandy" as RutasHttp
+  class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
   class Parseo
+  class Fechas
   class NoEncontrado
 }
 
@@ -29,7 +34,21 @@ package servicio {
   class GestorEmpleados
   class GestorPromociones
   class CalculadoraPrecio
+  interface PoliticaPromociones
+  class "DatosPelicula, Arqueo" as DatosDeServicio
+}
+
+package seguridad {
   class Password
+}
+
+package comprobantes {
+  interface GeneradorTicket
+  interface GeneradorTicketCandy
+
+  package txt {
+    class "GeneradorTicketTxt\nGeneradorTicketCandyTxt" as GeneradoresTxt
+  }
 }
 
 package dominio {
@@ -68,8 +87,6 @@ package persistencia {
   interface CompraCandyDAO
   interface EmpleadoDAO
   interface PromocionDAO
-  interface GeneradorTicket
-  interface GeneradorTicketCandy
   class PersistenciaException
 
   package mysql {
@@ -79,16 +96,25 @@ package persistencia {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
   }
   package archivo {
-    class "ReservaDAOTxt\nGeneradorTicketTxt\nGeneradorTicketCandyTxt" as DaosArchivo
+    class "ReservaDAOTxt" as DaosArchivo
   }
 }
 
-MenuConsola -down-> servicio
-RutasHttp -down-> servicio
+class Aplicacion
 
-' El unico gestor que usa a otro: el descuento se resuelve al cobrar,
-' que es cuando recien se conoce el medio de pago.
-GestorPagos -right-> GestorPromociones
+Aplicacion -down-> servicio
+Aplicacion -down-> persistencia
+MenuConsola -right-> MenusDelCine
+MenusDelCine ..|> Menu
+MenusDelCine -down-> servicio
+MenusDelCine -right-> Consola
+RutasHttp -down-> servicio
+RutasHttp -right-> Vistas
+
+' El descuento se resuelve al cobrar, que es cuando recien se conoce el medio
+' de pago. GestorPagos depende del contrato, no del gestor que lo implementa.
+GestorPagos -right-> PoliticaPromociones
+GestorPromociones ..up|> PoliticaPromociones
 GestorPromociones -down-> PromocionDAO
 GestorCartelera -down-> PeliculaDAO
 GestorSalas -down-> SalaDAO
@@ -104,6 +130,7 @@ GestorCandy -down-> GeneradorTicketCandy
 GestorEmpleados -down-> EmpleadoDAO
 GestorReservas ..> CalculadoraPrecio
 GestorEmpleados ..> Password
+GeneradoresTxt ..up|> comprobantes
 
 DaosMySQL ..up|> persistencia
 DaosMemoria ..up|> persistencia
@@ -115,19 +142,24 @@ persistencia ..> dominio
 legend bottom
   |= Capa |= De que se ocupa |
   | ui / api | Dos formas de hablar con la misma aplicacion: consola y HTTP. Scanner y System.out |
-  |  | viven solo en MenuConsola; los Rutas* de api/ traducen a JSON, Vistas arma las respuestas |
-  |  | y Parseo lee los parametros. Ninguna regla vive en estas dos, y por eso agregar la API no |
-  |  | obligo a tocar un solo gestor. ServidorApi (no dibujada) solo registra las rutas y arranca |
-  |  | Javalin, igual que Main arma MenuConsola: es composicion, no una capa. GestorCandy es la |
-  |  | unica excepcion — ServidorApi no lo instancia, asi que candy no tiene ruta HTTP todavia. |
+  |  | viven solo en Consola, y cada area del cine tiene su Menu; los Rutas* de api/ traducen a |
+  |  | JSON, las seis Vistas* arman las respuestas y Parseo lee los parametros. Ninguna regla vive |
+  |  | en estas dos capas. Main y ServidorApi (no dibujadas) solo eligen que interfaz levantar. |
+  | Aplicacion | El unico lugar del sistema donde se nombra una implementacion concreta: arma los |
+  |  | nueve gestores y decide en que medio se guarda cada cosa. Las dos puertas comparten ese |
+  |  | armado, y por eso son la misma aplicacion y no dos parecidas. |
   | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
   |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
   |  | GestorFunciones usa PeliculaDAO y SalaDAO para el solapamiento, y ReservaDAO para no borrar |
   |  | una funcion vendida; GestorCartelera y GestorSalas usan FuncionDAO por el mismo motivo. |
   | dominio | Que es un cine. Cada entidad con su implementacion y sus enums, agrupadas por |
   |  | sub-dominio. No depende de ninguna otra capa: no sabe que existen MySQL ni la consola. |
-  | persistencia | Los contratos arriba, las tecnologias en subpaquetes. Ninguna clase de acá |
+  | persistencia | Los contratos arriba, las tecnologias en subpaquetes. Ninguna clase de aca |
   |  | imprime ni valida reglas de negocio: solo traduce entre el dominio y el medio. |
+  | comprobantes | El ticket que se entrega. No es un DAO —un comprobante se imprime, no se |
+  |  | consulta— y por eso no vive en persistencia, aunque tambien termine escribiendo un archivo. |
+  | seguridad | Como se guardan las credenciales. No es una regla del cine: seria igual en |
+  |  | cualquier otro sistema, y por eso no esta entre los gestores. |
 endlegend
 
 note bottom of dominio

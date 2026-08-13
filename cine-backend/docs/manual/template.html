@@ -565,9 +565,9 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>«hecho» no es lo mismo que «en la web».</strong> CU-13 a CU-16 (candy) están implementados en
-          <code>GestorCandy</code> y se usan desde <code>MenuConsola</code>, pero <code>ServidorApi</code> nunca
-          lo instancia: no hay <code>RutasCandy</code>. La API HTTP —y por lo tanto <code>cine-frontend</code>—
-          no tiene candy todavía. CU-15b ya modela cómo se integraría a la compra web.
+          <code>GestorCandy</code>, se usan desde la consola y desde <code>RutasCandy</code>, que las expone
+          por HTTP. Lo que falta es del lado de <code>cine-frontend</code>: la API ya sirve la carta, los combos
+          y las ventas, pero ninguna pantalla web las consume todavía. CU-15b ya modela cómo se integraría a la compra web.
         </p>
       </div>
     </section>
@@ -1029,7 +1029,8 @@ Libres: 52 de 56</code></pre>
       <p>
         Si <code>GestorCartelera</code> conociera <code>PreparedStatement</code>, cambiar MySQL por archivos de texto
         obligaría a reescribir las reglas de negocio, que no tienen nada que ver con el almacenamiento.
-        Con DAO, cambiar de medio es cambiar una línea en <code>Main</code>:
+        Con DAO, cambiar de medio es cambiar una línea en <code>Aplicacion</code>, que es el único lugar
+        del sistema donde se nombra una implementación concreta:
       </p>
       <pre><code>PeliculaDAO dao = new PeliculaDAOMySQL();
 // PeliculaDAO dao = new PeliculaDAOMemoria();
@@ -1042,12 +1043,22 @@ new MenuConsola(gestor).iniciar();</code></pre>
         <table>
           <thead><tr><th>Principio</th><th>Dónde se ve</th></tr></thead>
           <tbody>
-            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, el menú muestra. Nadie hace dos cosas.</td></tr>
-            <tr><td>DIP — Inversión de dependencias</td><td><code>GestorCartelera</code> depende de <code>PeliculaDAO</code>, no de la implementación MySQL.</td></tr>
-            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor.</td></tr>
-            <tr><td>ISP — Segregación de interfaces</td><td>Contratos chicos: cuatro operaciones, no un DAO que hace todo.</td></tr>
+            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, el menú muestra. Nadie hace dos cosas. Cada área del cine tiene su <code>Menu*</code> y su <code>Vistas*</code>: <code>Consola</code> es el único lugar con <code>Scanner</code> y <code>System.out</code>, y <code>Fechas</code> el único que sabe en qué formato viajan las fechas.</td></tr>
+            <tr><td>DIP — Inversión de dependencias</td><td><code>GestorCartelera</code> depende de <code>PeliculaDAO</code>, no de la implementación MySQL. Y <code>GestorPagos</code> depende de <code>PoliticaPromociones</code>, no de <code>GestorPromociones</code>: cobrar necesita un monto, no el ABM de promociones.</td></tr>
+            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor. Sumar un tipo de promoción es una clase nueva, no un <code>case</code> más. Sumar un área a la consola es implementar <code>Menu</code> y agregarlo a la lista, sin tocar el menú principal.</td></tr>
+            <tr><td>LSP — Sustitución de Liskov</td><td>Las tres promociones se usan solo como <code>Promocion</code>: quien cobra llama a <code>calcularDescuento</code> sin saber si atrás hay un 2x1 o un porcentaje. Lo mismo con los DAO: los tests corren con las implementaciones en memoria y el sistema se comporta igual.</td></tr>
+            <tr><td>ISP — Segregación de interfaces</td><td>Contratos chicos: cuatro operaciones, no un DAO que hace todo. <code>Reserva</code> no publica <code>agregarEntrada</code> aunque el DAO lo necesitara para reconstruirla: eso habría dejado que cualquiera le sumara butacas a una reserva ya cobrada.</td></tr>
           </tbody>
         </table>
+
+        <p>
+          Dónde se eligen las implementaciones concretas es parte del mismo asunto: en
+          <code>Aplicacion</code> y en ningún otro lado. Antes <code>Main</code> y <code>ServidorApi</code>
+          armaban cada uno su propia aplicación con las mismas veinte líneas, y las dos copias se
+          separaron sin que nadie lo notara: la de HTTP se olvidó de <code>GestorCandy</code>, así que el
+          candy funcionaba por consola y no existía para quien entraba por la web. Con un solo armado,
+          sumar un gestor lo hace aparecer en las dos puertas a la vez.
+        </p>
       </div>
 
       <div class="callout">
@@ -1119,7 +1130,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
         limitación real del medio, y justamente por eso el DAO existe: esa complicación queda encerrada acá
         y no se filtra al resto del sistema.
       </p>
-      <p>Cambiar de medio es una línea en <code>Main</code>:</p>
+      <p>Cambiar de medio es una línea en <code>Aplicacion</code>:</p>
       <pre><code>ReservaDAO reservaDAO = new ReservaDAOMySQL();
 // ReservaDAO reservaDAO = new ReservaDAOTxt();</code></pre>
       <div class="callout">
@@ -2690,15 +2701,20 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── funciones/      Funcion + Impl, Version, Proyeccion
     │   │   ├── ventas/         Reserva, Pago + Impl, Entrada, EstadoReserva, MedioPago
     │   │   ├── candy/          Producto, CompraCandy + Impl, ItemCombo, ItemCompra
-    │   │   └── usuarios/       Usuario, Cliente, AdministradorCine + Impl, Rol
-    │   ├── servicio/           las reglas: los 8 Gestor*, CalculadoraPrecio, Password
-    │   ├── persistencia/       los 12 contratos (*DAO, GeneradorTicket*)
+    │   │   ├── usuarios/       Usuario, Cliente, Empleado + Impl, Rol
+    │   │   └── promociones/    Promocion + PromocionBase, Porcentaje, MontoFijo, NxM
+    │   ├── servicio/           las reglas: los 9 Gestor*, CalculadoraPrecio,
+    │   │                       PoliticaPromociones, DatosPelicula, Arqueo
+    │   ├── persistencia/       los 11 contratos DAO y sus excepciones
     │   │   ├── mysql/          *DAOMySQL + ConexionMySQL
     │   │   ├── memoria/        *DAOMemoria, para testear sin base
-    │   │   └── archivo/        ReservaDAOTxt, GeneradorTicketTxt, GeneradorTicketCandyTxt
-    │   ├── ui/                 MenuConsola
-    │   ├── api/                HTTP: ServidorApi + 8 Rutas*, Vistas, Parseo, NoEncontrado
-    │   └── Main.java           elige las implementaciones
+    │   │   └── archivo/        ReservaDAOTxt
+    │   ├── comprobantes/       GeneradorTicket*, y txt/ con sus implementaciones
+    │   ├── seguridad/          Password
+    │   ├── ui/                 Consola, Menu + un Menu* por área, MapaDeButacas
+    │   ├── api/                HTTP: ServidorApi + 10 Rutas*, 6 Vistas*, Parseo, Fechas
+    │   ├── Aplicacion.java     el único lugar que elige implementaciones
+    │   └── Main.java           abre la consola
     ├── main/resources/     schema.sql
     └── test/java/ar/uade/cine/servicio/    un test por gestor</code></pre>
       <div class="callout">
