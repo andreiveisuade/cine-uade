@@ -33,6 +33,7 @@ import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.importador.ImportadorDePrueba;
 import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.servicio.informes.InformeFuncion;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
@@ -41,6 +42,7 @@ import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.EmpleadoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ImportacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;
@@ -73,13 +75,13 @@ class AplicacionTest {
                 new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
                 new ReservaDAOMemoria(), new PagoDAOMemoria(),
                 new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
-                new CompraCandyDAOMemoria(),
+                new CompraCandyDAOMemoria(), new ImportacionDAOMemoria(),
                 new BloqueoButacasMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
                 new GeneradorReciboTxt(tempDir.resolve("tickets")),
                 new GeneradorBorderoTxt(tempDir.resolve("informes")),
-                new MercadoPagoEmulado());
+                new MercadoPagoEmulado(), new ImportadorDePrueba());
     }
 
     @Test
@@ -99,6 +101,8 @@ class AplicacionTest {
         assertNotNull(aplicacion.getProductos());
         assertNotNull(aplicacion.getOcupacion());
         assertNotNull(aplicacion.getInformes());
+        assertNotNull(aplicacion.getRevisionCartelera());
+        assertNotNull(aplicacion.getImportaciones());
     }
 
     /**

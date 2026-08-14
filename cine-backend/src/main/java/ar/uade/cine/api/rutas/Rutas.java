@@ -29,6 +29,8 @@ public final class Rutas {
         RutasPeliculas.registrar(app, aplicacion.getCartelera(),
                 aplicacion.getRevisionCartelera(), aplicacion.getFunciones(),
                 vistas.cartelera());
+        // Las importaciones no necesitan vistas: una corrida se dibuja sola.
+        RutasImportaciones.registrar(app, aplicacion.getImportaciones());
         RutasSalas.registrar(app, aplicacion.getSalas(), vistas.salas());
         RutasFunciones.registrar(app, aplicacion.getFunciones(), vistas.cartelera());
         // La grilla arma sus propias vistas adentro de la ruta: no necesita ningun gestor

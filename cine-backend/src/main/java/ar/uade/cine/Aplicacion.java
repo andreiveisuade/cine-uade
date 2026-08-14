@@ -6,6 +6,7 @@ import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.EmpleadoDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.ImportacionDAO;
 import ar.uade.cine.comprobantes.GeneradorBordero;
 import ar.uade.cine.comprobantes.GeneradorRecibo;
 import ar.uade.cine.comprobantes.GeneradorTicket;
@@ -21,6 +22,8 @@ import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.importador.ImportadorCartelera;
+import ar.uade.cine.importador.http.ImportadorHttp;
 import ar.uade.cine.pasarelas.PasarelaPagos;
 import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
@@ -30,6 +33,7 @@ import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
 import ar.uade.cine.persistencia.mysql.EmpleadoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.FuncionDAOMySQL;
+import ar.uade.cine.persistencia.mysql.ImportacionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PagoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PeliculaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ProductoDAOMySQL;
@@ -41,6 +45,7 @@ import ar.uade.cine.persistencia.redis.BloqueoButacasRedis;
 import ar.uade.cine.servicio.ventas.CalculadoraPrecio;
 import ar.uade.cine.servicio.candy.GestorCandy;
 import ar.uade.cine.servicio.cartelera.GestorCartelera;
+import ar.uade.cine.servicio.cartelera.GestorImportaciones;
 import ar.uade.cine.servicio.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.servicio.usuarios.GestorClientes;
 import ar.uade.cine.servicio.usuarios.GestorEmpleados;
@@ -79,6 +84,7 @@ public class Aplicacion {
 
     private final GestorCartelera cartelera;
     private final GestorRevisionCartelera revisionCartelera;
+    private final GestorImportaciones importaciones;
     private final GestorSalas salas;
     private final GestorFunciones funciones;
     private final GestorProgramaciones programaciones;
@@ -111,6 +117,10 @@ public class Aplicacion {
      * <p>{@link MercadoPagoEmulado} es la única implementación de pasarela que hay, y este
      * es el único lugar que la nombra: enchufar la integración de verdad —con credenciales
      * y llamadas de red— es cambiar este argumento, sin tocar una regla de negocio.
+     *
+     * <p>{@link ImportadorHttp} es lo mismo del otro lado: el que sale a buscar la cartelera
+     * real es un proceso aparte, y acá se dice dónde está. Un test le pasa otro y prueba el
+     * circuito entero sin TMDB.
      */
     public static Aplicacion enMySQL() {
         // Un solo pool y una sola plantilla para los trece DAO. Va acá por el mismo motivo
@@ -127,9 +137,10 @@ public class Aplicacion {
                 new ReservaDAOMySQL(plantilla), new PagoDAOMySQL(plantilla),
                 new PromocionDAOMySQL(plantilla), new ProgramacionDAOMySQL(plantilla),
                 new ProductoDAOMySQL(plantilla), new CompraCandyDAOMySQL(plantilla),
-                new BloqueoButacasRedis(),
+                new ImportacionDAOMySQL(plantilla), new BloqueoButacasRedis(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt(),
-                new GeneradorReciboTxt(), new GeneradorBorderoTxt(), new MercadoPagoEmulado());
+                new GeneradorReciboTxt(), new GeneradorBorderoTxt(), new MercadoPagoEmulado(),
+                new ImportadorHttp());
     }
 
     /**
@@ -145,10 +156,11 @@ public class Aplicacion {
                       FuncionDAO funcionDAO, ClienteDAO clienteDAO, EmpleadoDAO empleadoDAO,
                       ReservaDAO reservaDAO, PagoDAO pagoDAO, PromocionDAO promocionDAO,
                       ProgramacionDAO programacionDAO, ProductoDAO productoDAO,
-                      CompraCandyDAO compraCandyDAO, BloqueoButacas bloqueoButacas,
+                      CompraCandyDAO compraCandyDAO, ImportacionDAO importacionDAO,
+                      BloqueoButacas bloqueoButacas,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy,
                       GeneradorRecibo generadorRecibo, GeneradorBordero generadorBordero,
-                      PasarelaPagos pasarela) {
+                      PasarelaPagos pasarela, ImportadorCartelera importador) {
 
         calculadoraPrecio = new CalculadoraPrecio();
 
@@ -160,6 +172,9 @@ public class Aplicacion {
         // El buzon del importador cuelga del catalogo: revisar necesita dar de alta,
         // pero el catalogo no necesita saber que existe un importador.
         revisionCartelera = new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
+        // No depende de la cartelera ni del buzon: lo que el importador trae entra por la
+        // API, como cualquier cliente. Este gestor solo despierta al importador y anota.
+        importaciones = new GestorImportaciones(importacionDAO, importador);
         planificadorGrilla = new PlanificadorGrilla(peliculaDAO, salaDAO, funciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
@@ -184,6 +199,11 @@ public class Aplicacion {
     /** El buzon de lo que trajo el importador y todavia nadie miro. */
     public GestorRevisionCartelera getRevisionCartelera() {
         return revisionCartelera;
+    }
+
+    /** Pedir cartelera nueva a demanda, y el historial de lo que se pidio. */
+    public GestorImportaciones getImportaciones() {
+        return importaciones;
     }
 
     public GestorSalas getSalas() {

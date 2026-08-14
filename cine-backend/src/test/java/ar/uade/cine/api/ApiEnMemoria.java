@@ -15,6 +15,7 @@ import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.importador.ImportadorDePrueba;
 import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
@@ -22,6 +23,7 @@ import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.EmpleadoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
+import ar.uade.cine.persistencia.memoria.ImportacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProductoDAOMemoria;
@@ -56,6 +58,7 @@ public class ApiEnMemoria implements AutoCloseable {
     private final Aplicacion aplicacion;
     private final Javalin servidor;
     private final HttpClient cliente = HttpClient.newHttpClient();
+    private final ImportadorDePrueba importador = new ImportadorDePrueba();
 
     /**
      * @param directorio dónde caen los comprobantes. Va por parámetro para que cada test le
@@ -67,18 +70,23 @@ public class ApiEnMemoria implements AutoCloseable {
                 new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
                 new ReservaDAOMemoria(), new PagoDAOMemoria(), new PromocionDAOMemoria(),
                 new ProgramacionDAOMemoria(), new ProductoDAOMemoria(), new CompraCandyDAOMemoria(),
-                new BloqueoButacasMemoria(),
+                new ImportacionDAOMemoria(), new BloqueoButacasMemoria(),
                 new GeneradorTicketTxt(directorio.resolve("tickets")),
                 new GeneradorTicketCandyTxt(directorio.resolve("tickets")),
                 new GeneradorReciboTxt(directorio.resolve("tickets")),
                 new GeneradorBorderoTxt(directorio.resolve("informes")),
-                new MercadoPagoEmulado());
+                new MercadoPagoEmulado(), importador);
         servidor = ServidorApi.armar(aplicacion).start(0);
     }
 
     /** Los gestores de esta misma API: es con lo que el test arma el escenario. */
     public Aplicacion aplicacion() {
         return aplicacion;
+    }
+
+    /** El importador que atiende esta API, para decirle qué tiene que contestar. */
+    public ImportadorDePrueba importador() {
+        return importador;
     }
 
     public Respuesta get(String ruta) {

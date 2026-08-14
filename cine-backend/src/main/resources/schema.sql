@@ -330,3 +330,22 @@ CREATE TABLE IF NOT EXISTS item_compra (
     FOREIGN KEY (compra_id) REFERENCES compra_candy(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES producto(id)
 );
+
+-- Cada vez que alguien pide cartelera nueva desde el panel. No apunta a las peliculas que
+-- trajo —no hay clave foranea— porque las peliculas ya estan guardadas con su
+-- estado_revision: repetir aca cuales fueron seria tener dos versiones del mismo hecho, y
+-- un dia no coinciden. Los contadores son el resumen de la corrida, no un indice.
+--
+-- `detalle` es el log de la corrida, o el motivo si fallo: es texto para leer, no para
+-- consultar. Por eso es TEXT y no una tabla de lineas.
+CREATE TABLE IF NOT EXISTS importacion (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    estado VARCHAR(15) NOT NULL,
+    paginas INT NOT NULL DEFAULT 1,
+    pedida_en DATETIME NOT NULL,
+    termino_en DATETIME NULL,
+    nuevas INT NOT NULL DEFAULT 0,
+    salteadas INT NOT NULL DEFAULT 0,
+    fallidas INT NOT NULL DEFAULT 0,
+    detalle TEXT
+);
