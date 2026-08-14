@@ -13,8 +13,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Compila y verifica contra la API de Java 21 -->
     <maven.compiler.release>21</maven.compiler.release>
-    <!-- El menu de consola: lo que corre `mvn exec:java` -->
-    <main.class>ar.uade.cine.Main</main.class>
     <!-- La API HTTP: lo que corre `java -jar` dentro del contenedor -->
     <api.class>ar.uade.cine.api.ServidorApi</api.class>
   </properties>
@@ -80,14 +78,6 @@
       </plugin>
 
       <!-- `mvn exec:java` para correr la app sin armar el jar -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.3</version>
-        <configuration>
-          <mainClass>${main.class}</mainClass>
-        </configuration>
-      </plugin>
 
       <!-- Un solo jar con las dependencias adentro: la imagen de Docker corre un JRE
            pelado, sin Maven ni repositorio local del que sacarlas. -->

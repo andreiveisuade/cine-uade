@@ -418,6 +418,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#dos-puertas" data-target="dos-puertas">La puerta que ya no está</a></li>
         <li><a href="#consultas" data-target="consultas">El costo de las consultas</a></li>
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
@@ -464,10 +465,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta —gestor, menú de consola y API HTTP— con 305 tests en verde. El
-          candy fue el último en llegar a HTTP: existía en consola desde el principio y
-          <code>ServidorApi</code> no lo instanciaba, que es el olvido que motivó que
-          <code>Aplicacion</code> sea hoy el único lugar donde se arman los gestores. Ver
+          implementados de punta a punta —gestor y API HTTP— con 314 tests en verde. Ver
           <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
@@ -542,7 +540,7 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Casos de uso</h2>
       <p>
         Dos actores: <strong>Administrador</strong>, que gestiona la cartelera, y <strong>Cliente</strong>,
-        que compra entradas. El menú de consola no distingue usuarios: es un único flujo.
+        que compra entradas.
       </p>
       <p>
         Se suma un tercer actor, el <strong>Acomodador</strong>, que
@@ -591,7 +589,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>«hecho» no es lo mismo que «en la web».</strong> CU-13 a CU-16 (candy) están implementados en
-          <code>GestorCandy</code>, se usan desde la consola y desde <code>RutasCandy</code>, que las expone
+          <code>GestorCandy</code>, y las expone <code>RutasCandy</code>, que las publica
           por HTTP. Lo que falta es del lado de <code>cine-frontend</code>: la API ya sirve la carta, los combos
           y las ventas, pero ninguna pantalla web las consume todavía. CU-15b ya modela cómo se integraría a la compra web.
         </p>
@@ -1438,7 +1436,7 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
         partir de otro dato es exactamente el tipo de regla implícita que después nadie entiende.
       </p>
 
-      <h3>El mapa en consola</h3>
+      <h3>El mapa de butacas</h3>
       <p>Al reservar se dibuja la sala con el estado de cada butaca para esa función:</p>
       <pre><code>        ---------- PANTALLA ----------
   A (1+) (2) [3] [4] [5] [6] [7] [8+]
@@ -1449,7 +1447,7 @@ salas.reponer(1, "B5");                 // la arreglaron</code></pre>
   [n] libre  (n) ocupada  {n} fuera de servicio  * VIP  &amp; pareja  + accesible
 Libres: 52 de 56</code></pre>
       <p>
-        Ese dibujo vive en <code>MenuConsola</code>, no en el modelo: es presentación. El frontend web consume
+        Ese dibujo es presentación y no vive en el modelo. El frontend web consume
         los mismos datos (fila, número, tipo, ocupado) y los dibuja como quiera.
       </p>
       <div class="callout">
@@ -1581,16 +1579,16 @@ Libres: 52 de 56</code></pre>
 // PeliculaDAO dao = new PeliculaDAOMemoria();
 
 GestorCartelera gestor = new GestorCartelera(dao);
-new MenuConsola(gestor).iniciar();</code></pre>
+ServidorApi.registrarRutas(app, aplicacion);</code></pre>
 
       <h3>Los principios SOLID que aplica</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Principio</th><th>Dónde se ve</th></tr></thead>
           <tbody>
-            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, el menú muestra. Nadie hace dos cosas. Cada área del cine tiene su <code>Menu*</code> y su <code>Vistas*</code>: <code>Consola</code> es el único lugar con <code>Scanner</code> y <code>System.out</code>, y <code>Fechas</code> el único que sabe en qué formato viajan las fechas.</td></tr>
+            <tr><td>SRP — Responsabilidad única</td><td>El DAO persiste, el gestor decide, la ruta traduce. Nadie hace dos cosas. Cada área del cine tiene su <code>Rutas*</code> y su <code>Vistas*</code>, y <code>Fechas</code> es el único que sabe en qué formato viajan las fechas.</td></tr>
             <tr><td>DIP — Inversión de dependencias</td><td><code>GestorCartelera</code> depende de <code>PeliculaDAO</code>, no de la implementación MySQL. Y <code>GestorPagos</code> depende de <code>PoliticaPromociones</code>, no de <code>GestorPromociones</code>: cobrar necesita un monto, no el ABM de promociones.</td></tr>
-            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor. Sumar un tipo de promoción es una clase nueva, no un <code>case</code> más. Sumar un área a la consola es implementar <code>Menu</code> y agregarlo a la lista, sin tocar el menú principal.</td></tr>
+            <tr><td>OCP — Abierto/cerrado</td><td>Sumar un <code>PeliculaDAOTxt</code> no obliga a tocar el contrato ni el gestor. Sumar un tipo de promoción es una clase nueva, no un <code>case</code> más. Sumar un área a la API es una clase <code>Rutas*</code> y una línea en <code>ServidorApi</code>.</td></tr>
             <tr><td>LSP — Sustitución de Liskov</td><td>Las tres promociones se usan solo como <code>Promocion</code>: quien cobra llama a <code>calcularDescuento</code> sin saber si atrás hay un 2x1 o un porcentaje. Lo mismo con los DAO: los tests corren con las implementaciones en memoria y el sistema se comporta igual.</td></tr>
             <tr><td>ISP — Segregación de interfaces</td><td>Contratos chicos: cuatro operaciones, no un DAO que hace todo. <code>Reserva</code> no publica <code>agregarEntrada</code> aunque el DAO lo necesitara para reconstruirla: eso habría dejado que cualquiera le sumara butacas a una reserva ya cobrada.</td></tr>
           </tbody>
@@ -1601,7 +1599,7 @@ new MenuConsola(gestor).iniciar();</code></pre>
           <code>Aplicacion</code> y en ningún otro lado. Antes <code>Main</code> y <code>ServidorApi</code>
           armaban cada uno su propia aplicación con las mismas veinte líneas, y las dos copias se
           separaron sin que nadie lo notara: la de HTTP se olvidó de <code>GestorCandy</code>, así que el
-          candy funcionaba por consola y no existía para quien entraba por la web. Con un solo armado,
+          candy funcionaba en el gestor y no existía para quien entraba por la web. Con un solo armado,
           sumar un gestor lo hace aparecer en las dos puertas a la vez.
         </p>
       </div>
@@ -1624,8 +1622,8 @@ new MenuConsola(gestor).iniciar();</code></pre>
       <p>
         Está mal, y el motivo es el mismo que ordena todo lo demás: <strong>«pendientes de cobro» es una
         pregunta del negocio, no de la pantalla.</strong> Tiene una definición, y tiene que ser la misma para
-        la web, para el menú de consola y para lo que venga después. Con el criterio escrito en JavaScript hay
-        dos definiciones del mismo concepto, y la de la consola es la que nadie actualiza. Es exactamente el
+        la web y para lo que venga después. Con el criterio escrito en JavaScript hay dos definiciones del
+        mismo concepto, y la del navegador es la que nadie actualiza. Es exactamente el
         argumento por el que la <a href="#bitacora">bitácora</a> se escribe en el gestor y no en las rutas.
       </p>
       <p>
@@ -1665,6 +1663,42 @@ GET /api/programaciones?activa=true</code></pre>
       </p>
     </section>
 
+    <section class="doc-section" id="dos-puertas">
+      <h2>La puerta que ya no está</h2>
+      <p>
+        Durante casi todo el proyecto el sistema tuvo <strong>dos interfaces</strong>: un menú de consola y la
+        API HTTP. La consola fue la primera, sirvió para probar el dominio antes de que existiera una pantalla,
+        y se eliminó cuando la web pasó a cubrir todo — mantener catorce clases que nadie iba a usar es
+        superficie que se paga en cada cambio y no le sirve a nadie.
+      </p>
+      <p>
+        Se deja escrito porque <strong>dos decisiones centrales del diseño nacieron de ella</strong> y sin este
+        párrafo parecerían arbitrarias:
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Por qué <code>Aplicacion</code> es el único lugar que arma los gestores.</strong> Cuando había
+          dos puertas, cada una construía los suyos por su cuenta. El día que se sumó el candy, alguien lo
+          agregó en una y se olvidó en la otra: existía en el gestor, con sus reglas y sus tests, y no existía
+          para quien entraba por la web. No fue una decisión, fue un olvido que el código permitía. De ahí sale
+          que hoy haya un solo armado y que <code>AplicacionTest</code> lo recorra entero: es el test que habría
+          cazado ese bug.
+        </p>
+        <p>
+          <strong>Por qué ninguna regla vive en la interfaz.</strong> Con dos puertas, cualquier regla escrita
+          en una era una regla que la otra no tenía. Eso obligó desde el principio a que todo lo que decide algo
+          esté en <code>servicio/</code>, y que <code>api/</code> solo traduzca. Hoy la API es la única puerta,
+          pero la separación se sostiene sola: es lo que hace que el importador de TMDB pueda escribir por HTTP
+          sin saltearse una sola validación.
+        </p>
+      </div>
+      <p>
+        La lección general vale más que el código que se borró: <em>una regla escrita en la capa que habla con
+        el usuario es una regla que solo cumple ese usuario</em>. Se notó teniendo dos interfaces; sigue siendo
+        cierta con una.
+      </p>
+    </section>
+
     <section class="doc-section" id="consultas">
       <h2>El costo de las consultas</h2>
       <p>
@@ -1679,18 +1713,25 @@ GET /api/programaciones?activa=true</code></pre>
         Armar la grilla de una semana tardaba <strong>21 segundos</strong>. El planificador le preguntaba a
         <code>superpuestaEn</code> por cada horario candidato, y ese método relee las funciones de la sala y la
         duración de cada película <em>en cada llamada</em>. Seis salas por siete días por una decena de intentos
-        diarios: unas <strong>trece mil consultas</strong>, casi todas pidiendo lo mismo.
+        diarios: <strong>15.702 consultas</strong> para una sola propuesta, casi todas pidiendo lo mismo.
       </p>
       <div class="table-wrap">
         <table>
           <thead><tr><th></th><th>Antes</th><th>Después</th></tr></thead>
           <tbody>
             <tr><td>Tiempo de una propuesta semanal</td><td>21 s</td><td><strong>0,6 s</strong></td></tr>
-            <tr><td>Consultas a la base</td><td>~13.000</td><td>una por sala</td></tr>
+            <tr><td>Consultas a la base</td><td>15.702</td><td><strong>230</strong></td></tr>
             <tr><td>Resultado devuelto</td><td colspan="2">idéntico: 50 pases, mismo elenco, 42% de ocupación, 8,24 de puntaje, 9 géneros de 9</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        El número no es una estimación: sale de prender el <code>general_log</code> de MySQL y contar los
+        <code>SELECT</code> de una misma propuesta con cada versión del código. Y para descartar que fuera
+        arranque en frío —la sospecha razonable, porque las primeras mediciones se tomaron con el compose recién
+        levantado— se revirtió la optimización y se volvió a medir <em>en caliente</em>, con dos corridas
+        descartadas antes: 24,8 s, 21,0 s y 21,2 s. El problema era estructural.
+      </p>
       <p>
         La solución no fue optimizar la consulta sino <strong>dejar de repetirla</strong>:
         <code>agendaDe(salaId)</code> lee los tramos tomados de una sala una vez, con la limpieza ya sumada, y
@@ -1896,7 +1937,7 @@ GET /api/programaciones?activa=true</code></pre>
         <p>
           <strong>Probado:</strong> con esa línea cambiada, la misma reserva que antes terminaba en la tabla
           <code>reserva</code> aparece como <code>1|1|1|2|RESERVADA</code> en <code>reservas.txt</code>.
-          Ni <code>GestorReservas</code> ni <code>MenuConsola</code> cambian una sola línea.
+          <code>GestorReservas</code> no cambia una sola línea.
         </p>
       </div>
 
@@ -2243,7 +2284,7 @@ POST /api/checkouts/MP-1234567890/confirmacion
     <section class="doc-section" id="vencimiento">
       <h2>Vencimiento de la reserva</h2>
       <p>
-        Una reserva sin pagar retiene sus butacas para siempre. En consola casi no se nota; con venta web, un
+        Una reserva sin pagar retiene sus butacas para siempre. Con venta web, un
         puñado de clientes que abandonan el carrito deja una función entera sin butacas disponibles que en
         realidad nadie compró.
       </p>
@@ -3296,8 +3337,8 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       <h4>Las líneas van en el gestor, no en la capa HTTP</h4>
       <p>
         Es la misma razón por la que las reglas viven ahí: cobrar por la API y cobrar por el
-        <code>MenuConsola</code> son <em>la misma operación del cine</em>, y tienen que dejar el mismo
-        registro. Si el log estuviera en las rutas, todo lo que pasa por la consola sería invisible, y habría
+        una llamada HTTP son <em>la misma operación del cine</em>, y tienen que dejar el mismo registro. Si el
+        log estuviera en las rutas, lo que no pase por HTTP sería invisible, y habría
         que acordarse de escribir la línea dos veces cada vez que se agrega una operación.
       </p>
       <p>
@@ -3337,9 +3378,9 @@ docker compose logs -f backend    # solo el negocio</code></pre>
 
       <h3>Sin Docker</h3>
       <pre><code>mvn test                 # los 305 tests, no necesitan base
-mvn exec:java            # menú de consola, necesita un MySQL en localhost:3306</code></pre>
+mvn package              # jar shaded en target/cine-api.jar</code></pre>
       <p>
-        El menú sigue existiendo y no se tocó: son dos interfaces —<code>MenuConsola</code> y la API HTTP—
+        La API HTTP es hoy la única puerta —
         sobre los mismos gestores. Contra la base de los contenedores se usa así:
       </p>
       <pre><code>cd ../cine-docker
@@ -4342,14 +4383,12 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │                       y txt/ con sus implementaciones
     │   ├── pasarelas/          PasarelaPagos + emulada/MercadoPagoEmulado
     │   ├── seguridad/          Password
-    │   ├── ui/                 Consola, Menu + un Menu* por área, MapaDeButacas
     │   ├── api/                HTTP: ServidorApi + 13 Rutas*, 6 Vistas*, Parseo, Fechas
     │   ├── dto/                los 53 DTO, uno por forma de JSON. Subpaquetes que
     │   │                       espejan dominio/: cartelera, funciones, programaciones,
     │   │                       salas, ventas, candy, promociones, usuarios, catalogos
     │   │                       y grilla
-    │   ├── Aplicacion.java     el único lugar que elige implementaciones
-    │   └── Main.java           abre la consola
+    │   └── Aplicacion.java     el único lugar que elige implementaciones
     ├── main/resources/     schema.sql
     └── test/java/ar/uade/cine/servicio/    un test por gestor</code></pre>
       <div class="callout">
@@ -4398,28 +4437,33 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Qué</th><th>Gestor</th><th>HTTP</th><th>Web</th><th>Consola</th></tr></thead>
+          <thead><tr><th>Qué</th><th>Gestor</th><th>HTTP</th><th>Web</th></tr></thead>
           <tbody>
             <tr>
               <td>Candy: carta, combos y ventas (CU-13 a CU-16)</td>
               <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
-              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-ok">sí</span></td>
+              <td><span class="tag tag-pend">falta</span></td>
             </tr>
             <tr>
               <td><a href="#informes">Borderó del INCAA</a> y recaudación por función (CU-19, CU-20)</td>
               <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
-              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-pend">falta</span></td>
+              <td><span class="tag tag-ok">sí</span></td>
+            </tr>
+            <tr>
+              <td><a href="#planificador">Armado automático de la grilla</a></td>
+              <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
+              <td><span class="tag tag-ok">sí</span></td>
             </tr>
             <tr>
               <td><a href="#pasarela">Pago por checkout</a> de la pasarela (CU-07b)</td>
               <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
-              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-pend">falta</span></td>
+              <td><span class="tag tag-ok">sí</span></td>
             </tr>
           </tbody>
         </table>
       </div>
       <p>
-        Las dos últimas filas dejan al menú de consola desparejo con la API, y eso contradice algo que este
+        Lo que sigue abierto contradice algo que este
         manual afirma en varios lugares: que son <em>dos puertas sobre los mismos gestores</em>. Hoy no lo son
         del todo. La deuda es de <code>ui/</code>, no del modelo — los gestores ya están y el trabajo es
         agregar un <code>Menu</code> más y engancharlo, que es exactamente el tamaño que tiene que tener
@@ -4450,7 +4494,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorInformesTest</code></td><td>que el borderó declare solo lo cobrado y no las reservas impagas ni las entradas de otra función, el desglose por tarifa, la separación bruto/descuento/neto, la función sin ventas, el archivo exportado, y que el candy de mostrador no se atribuya a ninguna función</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
             <tr><td><code>GestorEmpleadosTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
-            <tr><td><code>AplicacionTest</code></td><td>que el armado no deje ningún gestor afuera y que el circuito completo —reservar, cobrar, agregar candy, pedir el informe— atraviese a todos sobre los mismos DAO. Es el que habría cazado el candy que existía en consola y no en HTTP</td></tr>
+            <tr><td><code>AplicacionTest</code></td><td>que el armado no deje ningún gestor afuera y que el circuito completo —reservar, cobrar, agregar candy, pedir el informe— atraviese a todos sobre los mismos DAO. Es el que habría cazado el candy que el gestor tenía y la API no exponía</td></tr>
             <tr><td><code>RutasInformesTest</code> y <code>RutasPagosTest</code></td><td>lo que solo se ve por HTTP: que el borderó de una función inexistente sea 404 y no 400, que emitirlo sea 201 y consultarlo 200, que el desglose viaje con el nombre del enum como clave, y que el id del checkout que devuelve el primer pedido sirva para confirmar en el segundo</td></tr>
           </tbody>
         </table>

@@ -5,7 +5,7 @@ skinparam sequenceMessageAlign center
 hide footbox
 
 actor Cliente
-participant "MenuConsola" as UI
+participant "RutasReservas" as UI
 participant "Ocupacion" as Ocupacion
 participant "GestorReservas" as Gestor
 participant "AsientoDAO" as Asientos <<interface>>
