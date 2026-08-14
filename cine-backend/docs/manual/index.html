@@ -424,6 +424,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#acceso" data-target="acceso">Control de acceso</a></li>
         <li><a href="#vencimiento" data-target="vencimiento">Vencimiento de la reserva</a></li>
         <li><a href="#candy" data-target="candy">Candy</a></li>
+        <li><a href="#informes" data-target="informes">Informes por función</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
 
@@ -460,14 +461,14 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta en el gestor y el menú de consola, con 198 tests en verde. La API HTTP
+          implementados de punta a punta en el gestor y el menú de consola, con 245 tests en verde. La API HTTP
           todavía no expone candy —<code>ServidorApi</code> no instancia <code>GestorCandy</code>—, así que el
           frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
           <strong>Segunda vuelta, ya implementada.</strong> El modelo se amplió con tarifas por tipo de
           público, promociones, control de acceso con QR, vencimiento de reservas y venta de candy anónima o
-          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 198 tests en verde.
+          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 245 tests en verde.
         </p>
       </div>
     </section>
@@ -486,6 +487,9 @@ body.lightbox-locked { overflow: hidden; }
         <li><span class="tag tag-ok">hecho</span> Promociones administrables por el cine: porcentaje, monto fijo y 2x1, con vigencia, días, horarios y medios de pago.</li>
         <li><span class="tag tag-ok">hecho</span> Control de acceso: cada reserva lleva un código para validar en la puerta.</li>
         <li><span class="tag tag-ok">hecho</span> Las reservas sin pagar no retienen butacas para siempre.</li>
+        <li><span class="tag tag-ok">hecho</span> Borderó por función para el INCAA: cuántas entradas se vendieron, a qué tarifa y a qué valor, exportable a un archivo.</li>
+        <li><span class="tag tag-ok">hecho</span> Informe financiero por función: lo que recaudó entre boletería y candy.</li>
+        <li><span class="tag tag-ok">hecho</span> Pago electrónico contra una pasarela: checkout con QR que devuelve el código de autorización, emulado.</li>
       </ul>
     </section>
 
@@ -563,6 +567,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-15b</td><td>Cliente</td><td>Agregar candy a una compra recién hecha por la web</td><td>R11</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td><td><span class="tag tag-ok">hecho</span></td></tr>
             <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada en la puerta escaneando el código</td><td>R18</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-07b</td><td>Cliente</td><td>Pagar por <a href="#pasarela">checkout</a>: abrir el QR y confirmarlo con el código que devuelve la pasarela</td><td>R5, R11, R17, R19</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-19</td><td>Admin</td><td>Emitir el <a href="#informes">borderó</a> de una función y exportarlo para el INCAA</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
+            <tr><td>CU-20</td><td>Admin</td><td>Ver cuánto recaudó una función entre boletería y candy</td><td>—</td><td><span class="tag tag-ok">hecho</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -1454,7 +1461,7 @@ GET /api/programaciones?activa=true</code></pre>
       <p>
         DTO significa <em>Data Transfer Object</em>. Es un objeto que existe solo para llevar datos de un lado
         al otro de una frontera —acá, la que separa al backend del navegador—, sin comportamiento propio. En
-        este proyecto son <strong>41</strong>, viven en <code>ar.uade.cine.dto</code> y hay exactamente uno por
+        este proyecto son <strong>46</strong>, viven en <code>ar.uade.cine.dto</code> y hay exactamente uno por
         forma de JSON que la API acepta o devuelve.
       </p>
 
@@ -1515,7 +1522,7 @@ GET /api/programaciones?activa=true</code></pre>
       <p>
         Es a propósito que esa lógica no esté adentro del DTO. Un DTO que se supiera armar solo tendría que
         conocer los gestores, y entonces la clase que existe para transportar datos pasaría a depender de la capa
-        de negocio: exactamente la mezcla que el patrón viene a evitar. Por eso los 41 son <code>record</code> sin
+        de negocio: exactamente la mezcla que el patrón viene a evitar. Por eso los 46 son <code>record</code> sin
         un solo método propio.
       </p>
       <p>
@@ -1676,6 +1683,86 @@ GET /api/programaciones?activa=true</code></pre>
         El enum <code>MedioPago</code> lleva ese dato: <code>requiereAutorizacion()</code>. La regla no vive en
         un <code>if</code> con una lista de medios que hay que actualizar cada vez que se agrega uno — agregar
         <code>BILLETERA_VIRTUAL</code> es sumar una constante y su flag.
+      </p>
+      <p>
+        Ese mismo flag decide otras dos cosas, y las tres juntas son lo que hace que el enum valga la pena:
+        quién exige código, quién pasa por la <a href="#pasarela">pasarela</a> y quién se lleva un
+        <a href="#recibo">recibo de caja</a>. Un medio nuevo se define una vez.
+      </p>
+
+      <h3 id="pasarela">El código de autorización no lo puede inventar el cine</h3>
+      <p>
+        R11 exige un código para los medios electrónicos, pero durante mucho tiempo ese código entraba
+        <strong>tipeado</strong>: quien cobraba escribía cualquier cosa y el sistema la aceptaba. La regla
+        estaba, y lo que la sostenía no.
+      </p>
+      <p>
+        Un pago electrónico lo autoriza un tercero —MercadoPago, el posnet, el banco—, así que hace falta
+        modelar a ese tercero: <code>PasarelaPagos</code>. Es una interfaz por lo mismo que
+        <code>GeneradorTicket</code>: hoy atrás hay una emulación —<strong>sin credenciales ni llamadas de
+        red</strong>, que es lo que corresponde en un TP— y cambiarla por una integración de verdad es cambiar
+        un argumento en <code>Aplicacion</code>, sin tocar una regla.
+      </p>
+      <pre><code>POST /api/reservas/25/checkout   {"medio": "QR"}
+  → { "id": "MP-1234567890", "monto": 7680,
+      "urlPago": "https://checkout.emulado.local/mp/MP-1234567890",
+      "codigoQr": "MP-QR|MP-1234567890" }
+
+POST /api/checkouts/MP-1234567890/confirmacion
+  → el Pago, con codigoAutorizacion "MP-AUT-40219841"</code></pre>
+      <p>
+        Cobrar por este camino son <strong>dos pedidos y no uno</strong> porque en el medio pasa algo que no
+        depende del cine: el cliente escanea y paga. Los dos caminos —el efectivo y el checkout— terminan en el
+        mismo <code>cobrar</code>, y eso no es economía de código: es lo que garantiza que R5, R17 y R19 se
+        apliquen igual por los dos.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Tres decisiones que parecen detalles y no lo son.</strong> El monto del checkout ya lleva el
+          descuento aplicado, porque el cliente aprueba un importe concreto en la pantalla del procesador y
+          cobrarle otro sería otra cosa. Qué se está pagando sale del <em>checkout</em> y no de quien confirma,
+          por lo mismo que el monto no viaja en el pedido de cobro: si la reserva fuera un dato de entrada, se
+          podría autorizar un checkout de $16.000 y aplicarlo a otra reserva. Y todo lo que valida el cobro se
+          valida <em>antes</em> de abrir el checkout, porque mandar a pagar una reserva que no se puede cobrar
+          termina en plata que hay que devolver, y la devolución es justamente lo que este sistema no modela.
+        </p>
+      </div>
+      <p>
+        Lo que la emulación <strong>no</strong> finge: que alguien avise que la plata llegó. En la integración
+        real eso lo dispara el procesador; acá lo dispara quien está atendiendo. Tampoco hay pagos rechazados,
+        y no por pereza — el modelo entero está armado sobre que un pago registrado es un pago exitoso.
+      </p>
+
+      <h3 id="recibo">Qué comprobante sale con cada medio</h3>
+      <p>
+        La pregunta se contesta al revés de como suena: no es «qué imprime el cine», es <em>qué constancia le
+        queda al cliente si el cine no imprime nada</em>. Con un medio electrónico le queda el cupón del
+        procesador, y su número es el <code>codigoAutorizacion</code> que quedó guardado en el pago. Con
+        efectivo no le queda nada, y la caja tampoco tiene contra qué cuadrar.
+      </p>
+      <p>
+        Por eso el <strong>recibo de caja</strong> —<code>tickets/recibo-&lt;id de pago&gt;.txt</code>— sale
+        solo cuando se paga en efectivo, y el discriminador vuelve a ser
+        <code>medio.requiereAutorizacion()</code> y no una lista de medios.
+      </p>
+      <pre><code>============================================
+                 CINE UADE
+             RECIBO DE CAJA #4
+============================================
+ Reserva      : #7 - K7M2P9XQ
+ Entradas     : 2
+ Cobrado      : 14/08/2026 19:45
+============================================
+ Subtotal     : $ 7500.00
+ Descuento    : $ 750.00
+ Total        : $ 6750.00
+ Pago         : EFECTIVO
+============================================</code></pre>
+      <p>
+        Es un comprobante aparte del ticket y no un agregado suyo, porque son dos momentos distintos: el ticket
+        dice qué butacas son y se emite al reservar; el recibo dice cuánto entró y se emite al cobrar, que puede
+        ser media hora más tarde. Ahí está lo único que el ticket no puede decir: el descuento, que no existe
+        hasta que se elige el medio de pago.
       </p>
 
       <h3>Gestor propio</h3>
@@ -1998,6 +2085,104 @@ Total del 2026-08-13: $   27000.00</code></pre>
         Se muestran separadas y después se suman, que es como funciona un cine real: la boletería y el candy
         cierran caja por su cuenta. Unificarlas habría obligado a que <code>Pago</code> apuntara a veces a una
         reserva y a veces a una compra —una clave foránea polimórfica— para no ganar nada.
+      </p>
+    </section>
+
+    <section class="doc-section" id="informes">
+      <h2>Informes por función</h2>
+      <p>
+        El <a href="#candy">arqueo</a> cierra la caja de un <strong>día</strong>. Hay dos preguntas que ese
+        corte no puede contestar, y las dos son por <strong>función</strong>: qué se le declara al INCAA de
+        cada proyección, y cuánto dejó esa función en total.
+      </p>
+
+      <h3>Por qué no se derivan del arqueo</h3>
+      <p>
+        Parece que alcanzaría con filtrar el arqueo del día en que se proyectó, y no alcanza por dos motivos a
+        la vez: las entradas de una función se venden <em>a lo largo de varios días</em> —el arqueo del jueves
+        no tiene la que se compró el lunes—, y el arqueo de un día mezcla todas las funciones de esa noche. Son
+        dos cortes distintos de la misma plata, no uno más fino que el otro.
+      </p>
+      <p>
+        Por eso <code>GestorInformes</code> es un gestor aparte y no dos métodos más de
+        <code>GestorPagos</code>. La razón es de sujeto, la misma que separó a
+        <a href="#reservas"><code>Ocupacion</code></a> de <code>GestorReservas</code>: cobrar es una operación
+        sobre <em>una</em> reserva y necesita saber de estados, vencimientos y promociones; informar es una
+        lectura que cruza película, sala, reservas, cobros y candy sin escribir nada del negocio. Juntos, el que
+        cobra habría terminado cargando con la película y la sala para poder titular un informe.
+      </p>
+
+      <h3>El borderó: lo que se declara es lo que se cobró</h3>
+      <p>
+        La fuente del borderó es el <strong>pago</strong> y no el estado de la reserva. Una reserva sin pagar
+        retiene butacas pero no vendió ninguna entrada, y contarla infla una declaración jurada con plata que
+        nunca entró — y que, si nadie la paga, vuelve a estar a la venta cuando expire (R17).
+      </p>
+      <pre><code>============================================
+                 CINE UADE
+               BORDERO INCAA
+                 FUNCION #3
+============================================
+ Pelicula     : Matrix
+ Sala         : Sala 1
+ Funcion      : 20/08/2026 20:00
+ Generado     : 20/08/2026 23:15
+============================================
+ Entradas vendidas por tarifa
+ GENERAL      :  12   $   60000.00
+ JUBILADO     :   3   $    7500.00
+============================================
+ Espectadores : 15
+ Recaudacion  : $ 67500.00
+ Descuentos   : $ 5000.00
+ Neto         : $ 62500.00
+============================================
+             Declaracion jurada
+============================================</code></pre>
+      <p>
+        Las tres cifras de plata van separadas y no resumidas en una porque cuentan cosas distintas: la
+        recaudación es a precio de lista, que es el valor declarado de cada localidad; el descuento es lo que
+        resignó el cine por una promoción comercial suya; y el neto es lo que entró en la caja. Con una sola, la
+        diferencia entre <em>entradas × precio</em> y lo cobrado no se puede explicar.
+      </p>
+      <p>
+        El desglose por tarifa es lo que hace al informe declarable: es donde se ve qué proporción salió a
+        precio reducido. Y trae solo las tarifas con entradas vendidas, igual que el arqueo no lista los medios
+        de pago con los que no entró nada.
+      </p>
+      <p>
+        El archivo se emite con <code>GeneradorBordero</code>, mismo patrón que los tickets: se escribe una vez,
+        el programa no lo vuelve a leer, así que no es un DAO. Va a <code>informes/</code> y no a
+        <code>tickets/</code> porque un ticket se le entrega a un cliente y un borderó se le presenta a un
+        organismo. Y reescribe el archivo de esa función cada vez: el borderó de una función es uno solo y el
+        que vale es el último, porque las entradas se siguen vendiendo hasta que la película arranca.
+      </p>
+
+      <h3>El informe financiero: las dos cajas de una función</h3>
+      <p>
+        La parte de boletería no se vuelve a calcular — <strong>es</strong> el borderó, que ya la resolvió.
+        Repetir esa cuenta habría dejado dos definiciones de «cuánto recaudó la función» que se separan a la
+        primera corrección, que es el mismo motivo por el que el arqueo vive en el gestor y no en cada pantalla.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El candy de mostrador queda afuera, y es la decisión de esta sección.</strong> Una
+          <code>CompraCandy</code> solo se puede atribuir a una función si tiene <code>reservaId</code> —el
+          «¿desea agregar pochoclos?» de después de comprar la entrada—, porque esa reserva es lo único que dice
+          de qué función se trata. Quien compra un balde en el mostrador puede estar yendo a cualquiera de las
+          cuatro funciones de las 22:00, o a ninguna: repartirlo entre ellas sería inventar el dato.
+        </p>
+        <p>
+          Esa plata no se pierde, se cuenta donde sí es cierta: en el arqueo del día del candy. La consecuencia
+          hay que tenerla a mano al leer los números — <strong>la suma de los informes de todas las funciones de
+          un día da menos que el arqueo de ese día, y la diferencia es el mostrador</strong>. Era esto o un
+          número prolijo y falso.
+        </p>
+      </div>
+      <p>
+        Se informa además <em>cuántas</em> compras se atribuyeron y no solo el monto, porque es lo que dice si
+        el <em>upsell</em> de la web sirve: mucha plata en dos compras no es lo mismo que la misma plata en
+        veinte. Es el número que justifica haber puesto la pregunta.
       </p>
     </section>
 
@@ -2645,7 +2830,7 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       </p>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 198 tests, no necesitan base
+      <pre><code>mvn test                 # los 245 tests, no necesitan base
 mvn exec:java            # menú de consola, necesita un MySQL en localhost:3306</code></pre>
       <p>
         El menú sigue existiendo y no se tocó: son dos interfaces —<code>MenuConsola</code> y la API HTTP—
@@ -2685,7 +2870,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Unitaria</strong></td>
               <td>Una regla de negocio aislada, sin base ni red</td>
-              <td>Los 198 tests de JUnit sobre los gestores</td>
+              <td>Los 245 tests de JUnit sobre los gestores</td>
               <td>menos de un segundo</td>
             </tr>
             <tr>
@@ -2743,7 +2928,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 198 tests, todos en verde</code></pre>
+mvn clean test                    # 245 tests, todos en verde</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -3153,7 +3338,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 198 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 245 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -3169,7 +3354,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 198 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 245 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -3520,7 +3705,8 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
 │   ├── README.md
 │   ├── diagramas/          *.puml + *.svg
 │   └── manual/             template.html + build.py → index.html
-├── tickets/                (generado) ticket-1.txt, candy-1.txt…
+├── tickets/                (generado) ticket-1.txt, candy-1.txt, recibo-1.txt…
+├── informes/               (generado) bordero-funcion-1.txt…
 └── src/
     ├── main/java/ar/uade/cine/
     │   ├── dominio/            qué es un cine. No depende de ninguna otra capa
@@ -3531,17 +3717,20 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── candy/          Producto, CompraCandy + Impl, ItemCombo, ItemCompra
     │   │   ├── usuarios/       Usuario, Cliente, Empleado + Impl, Rol
     │   │   └── promociones/    Promocion + PromocionBase, Porcentaje, MontoFijo, NxM
-    │   ├── servicio/           las reglas: los 9 Gestor*, CalculadoraPrecio,
-    │   │                       PoliticaPromociones, DatosPelicula, Arqueo
+    │   ├── servicio/           las reglas: los 12 Gestor*, CalculadoraPrecio,
+    │   │                       PoliticaPromociones, DatosPelicula, Arqueo,
+    │   │                       Bordero, InformeFuncion
     │   ├── persistencia/       los 11 contratos DAO y sus excepciones
     │   │   ├── mysql/          *DAOMySQL + ConexionMySQL
     │   │   ├── memoria/        *DAOMemoria, para testear sin base
     │   │   └── archivo/        ReservaDAOTxt
-    │   ├── comprobantes/       GeneradorTicket*, y txt/ con sus implementaciones
+    │   ├── comprobantes/       GeneradorTicket*, GeneradorRecibo, GeneradorBordero,
+    │   │                       y txt/ con sus implementaciones
+    │   ├── pasarelas/          PasarelaPagos + emulada/MercadoPagoEmulado
     │   ├── seguridad/          Password
     │   ├── ui/                 Consola, Menu + un Menu* por área, MapaDeButacas
     │   ├── api/                HTTP: ServidorApi + 10 Rutas*, 6 Vistas*, Parseo, Fechas
-    │   ├── dto/                los 41 DTO, uno por forma de JSON. Subpaquetes que
+    │   ├── dto/                los 46 DTO, uno por forma de JSON. Subpaquetes que
     │   │                       espejan dominio/: cartelera, funciones, programaciones,
     │   │                       salas, ventas, candy, promociones, usuarios, catalogos
     │   ├── Aplicacion.java     el único lugar que elige implementaciones
@@ -3567,15 +3756,15 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
         Los tests espejan el paquete de lo que prueban (<code>test/java/ar/uade/cine/servicio/</code>): todos
         prueban gestores, que es donde viven las reglas.
       </p>
-      <p><code>tickets/</code> y <code>reservas.txt</code> están en el <code>.gitignore</code>: son datos que genera la app, no código.</p>
+      <p><code>tickets/</code>, <code>informes/</code> y <code>reservas.txt</code> están en el <code>.gitignore</code>: son datos que genera la app, no código.</p>
     </section>
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veintidós casos de uso y las diecinueve reglas funcionan contra MySQL, con 198 tests en verde. Las
-        reservas además pueden guardarse en un archivo de texto, y tanto el ticket de butacas como el del
-        candy se emiten en <code>.txt</code>.
+        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 245 tests en verde. Las
+        reservas además pueden guardarse en un archivo de texto, y el ticket de butacas, el del candy, el
+        recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
 
       <h3>Modelado, falta implementar</h3>
@@ -3613,7 +3802,8 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorFuncionesTest</code></td><td>R3 (se pisan, no se pisan, otra sala) y R12 sobre función, sala y película</td></tr>
             <tr><td><code>GestorProgramacionesTest</code></td><td>que la grilla genere el rango completo, que respete los días elegidos, que previsualizar no escriba nada, que el alta saltee lo que choca contra R3 y que la baja no toque las funciones ya generadas</td></tr>
             <tr><td><code>GestorReservasTest</code></td><td>R4, R6, R9, R13, el redondeo del precio, el recargo premium y la persistencia en txt</td></tr>
-            <tr><td><code>GestorPagosTest</code></td><td>R5, R11 y el arqueo de boletería</td></tr>
+            <tr><td><code>GestorPagosTest</code></td><td>R5, R11, el arqueo de boletería, el checkout de la pasarela —que el efectivo no lo abre, que el monto ya trae el descuento, que confirmar dos veces no cobra de nuevo— y que el recibo de caja sale solo con efectivo</td></tr>
+            <tr><td><code>GestorInformesTest</code></td><td>que el borderó declare solo lo cobrado y no las reservas impagas ni las entradas de otra función, el desglose por tarifa, la separación bruto/descuento/neto, la función sin ventas, el archivo exportado, y que el candy de mostrador no se atribuya a ninguna función</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
             <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
           </tbody>
@@ -3845,6 +4035,26 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td>Al aplicar se revalida desde el DAO</td>
               <td>Confiar en el informe previsualizado</td>
               <td>Entre mirar y confirmar, otro pudo programar algo en esa sala. Mismo criterio que validar en el gestor <em>y</em> restringir en la base</td>
+            </tr>
+            <tr>
+              <td>Una <code>PasarelaPagos</code> con una implementación emulada</td>
+              <td>Seguir aceptando el código de autorización tipeado a mano</td>
+              <td>R11 exige un código que el cine no puede inventar. Con la interfaz de por medio, la emulación de hoy y una integración real mañana son el mismo argumento en <code>Aplicacion</code></td>
+            </tr>
+            <tr>
+              <td>El recibo de caja solo con efectivo</td>
+              <td>Un comprobante por cada cobro</td>
+              <td>El pago electrónico ya tiene constancia: el cupón del procesador, cuyo número es el código de autorización guardado en el pago. El efectivo no deja ninguna</td>
+            </tr>
+            <tr>
+              <td>El borderó como corte por función, aparte del arqueo</td>
+              <td>Derivarlo filtrando el arqueo del día de la proyección</td>
+              <td>Las entradas de una función se venden a lo largo de varios días y el arqueo de un día mezcla todas las funciones de esa noche. Son dos cortes distintos, no uno más fino</td>
+            </tr>
+            <tr>
+              <td>El candy de mostrador no se atribuye a ninguna función</td>
+              <td>Repartirlo entre las funciones de ese día</td>
+              <td>Solo la reserva dice a qué función va una compra. Sin ella, el reparto es un número prolijo e inventado; así, la suma de los informes da menos que el arqueo y la diferencia se explica</td>
             </tr>
             <tr>
               <td>Seguir sin login de cliente</td>
