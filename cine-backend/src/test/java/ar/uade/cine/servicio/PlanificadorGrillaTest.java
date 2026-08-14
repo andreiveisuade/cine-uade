@@ -267,6 +267,53 @@ class PlanificadorGrillaTest {
         assertTrue(indicadores.pasesPorGenero().containsKey(Genero.COMEDIA));
     }
 
+    /**
+     * El caso que apareció con la base cargada: una semana que ya tiene funciones daba una
+     * ocupación baja —la propuesta apenas encontraba huecos— y se leía como que el cine
+     * estaba vacío, cuando era exactamente al revés. El tiempo que la propuesta podía usar
+     * es la ventana menos lo ya programado, no la ventana entera.
+     */
+    @Test
+    void elTiempoDisponibleDescuentaLoQueYaEstabaProgramado() {
+        Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
+
+        funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 16, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+        int conUnaCargada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
+
+        assertEquals(sinNada - 100, conUnaCargada,
+                "los 100 minutos de la función ya cargada dejan de estar disponibles");
+    }
+
+    /** Una función fuera de la ventana ocupa la sala, pero no le saca lugar a la grilla. */
+    @Test
+    void unaFuncionFueraDeLaVentanaNoDescuentaTiempo() {
+        Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
+
+        // La ventana del test es de 14 a 23: esta función de la mañana queda afuera.
+        funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 10, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+
+        assertEquals(sinNada, planificador.proponer(unDia(1)).indicadores().minutosDisponibles());
+    }
+
+    /** La ocupación nunca puede pasar de 1: es lo que vuelve comparable el número. */
+    @Test
+    void laOcupacionNoSePasaDeUnoNiSeVaANegativo() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        double ocupacion = planificador.proponer(unDia(1)).indicadores().ocupacion();
+
+        assertTrue(ocupacion >= 0 && ocupacion <= 1.0, "ocupación fuera de rango: " + ocupacion);
+    }
+
     // ---------- aplicar ----------
 
     @Test

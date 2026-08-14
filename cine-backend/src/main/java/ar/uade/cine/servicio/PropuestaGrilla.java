@@ -34,8 +34,12 @@ public record PropuestaGrilla(List<Pelicula> elenco, List<PaseSugerido> pases,
      * cartelera y qué tan variada.
      *
      * @param minutosProgramados  suma de la duración de todos los pases
-     * @param minutosDisponibles  el tiempo total de sala que había para llenar, contando
-     *                            la limpieza como tiempo no vendible
+     * @param minutosDisponibles  el tiempo de sala que la propuesta podía usar: la ventana
+     *                            entera <strong>menos</strong> lo que ya estaba programado.
+     *                            Descontarlo es lo que hace que la ocupación signifique lo
+     *                            que dice — con el denominador entero, una semana con las
+     *                            salas llenas daba un número bajo que se leía como cine
+     *                            vacío, cuando era al revés
      * @param puntajePromedio     promedio ponderado por pases: una película que va cuatro
      *                            veces pesa cuatro veces. Es lo que ve el espectador
      *                            promedio que entra sin saber qué va a ver

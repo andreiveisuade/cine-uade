@@ -250,12 +250,41 @@ public class PlanificadorGrilla {
 
     // ---------- los números para poder defenderla ----------
 
+    /**
+     * Cuánto tiempo de sala hay realmente para llenar: la ventana entera menos lo que ya
+     * está programado.
+     *
+     * <p>Descontarlo es lo que hace que la ocupación signifique lo que dice. Sin esto, una
+     * semana con las salas casi llenas daba «ocupación 27%» —la propuesta apenas encontraba
+     * huecos— y se leía como que el cine estaba vacío, cuando era exactamente al revés. El
+     * denominador tiene que ser el tiempo que la propuesta <em>podía</em> usar, no el que
+     * habría tenido con las salas vacías.
+     *
+     * <p>Cuenta las funciones que empiezan dentro de la ventana horaria: una función de la
+     * mañana ocupa la sala, pero no le saca lugar a una grilla que arranca a las 14.
+     */
+    private int minutosLibres(CriteriosGrilla criterios) {
+        long minutosPorDia = Duration.between(criterios.apertura(), criterios.cierreEfectivo()).toMinutes();
+        int ventana = (int) (minutosPorDia * criterios.dias() * salaDAO.listar().size());
+
+        LocalDate hasta = criterios.desde().plusDays(criterios.dias() - 1L);
+        int ocupados = funciones.buscar(null, null, criterios.desde(), hasta).stream()
+                .filter(f -> !f.getInicio().toLocalTime().isBefore(criterios.apertura()))
+                .filter(f -> f.getInicio().toLocalTime().isBefore(criterios.cierreEfectivo()))
+                .mapToInt(f -> peliculaDAO.buscarPorId(f.getPeliculaId())
+                        .map(Pelicula::getDuracionMinutos)
+                        .orElse(0))
+                .sum();
+
+        // Nunca negativo: con salas sobrevendidas por funciones cargadas a mano, el
+        // descuento puede pasarse de la ventana y una ocupación negativa no significa nada.
+        return Math.max(ventana - ocupados, 0);
+    }
+
     private IndicadoresGrilla medir(List<Pelicula> elenco, List<PaseSugerido> pases,
                                     CriteriosGrilla criterios) {
         int programados = pases.stream().mapToInt(PaseSugerido::duracionMinutos).sum();
-
-        long minutosPorDia = Duration.between(criterios.apertura(), criterios.cierreEfectivo()).toMinutes();
-        int disponibles = (int) (minutosPorDia * criterios.dias() * salaDAO.listar().size());
+        int disponibles = minutosLibres(criterios);
 
         Map<Integer, Pelicula> porId = new HashMap<>();
         elenco.forEach(p -> porId.put(p.getId(), p));
