@@ -79,6 +79,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       PORT: "8080"
+      # La única llamada saliente del backend, y no sale a internet: el importador está
+      # en la misma red interna. El backend no sabe qué es TMDB, solo a quién pedírselo.
+      IMPORTADOR_URL: http://parser:8090
     depends_on:
       mysql:
         # Que el contenedor de MySQL esté arriba no significa que la base acepte
@@ -141,29 +144,37 @@ services:
   # MySQL. Que no tenga ruta hasta la base es justamente lo que garantiza que ninguna
   # película entre sin pasar por las reglas de GestorCartelera.
   #
-  # No arranca solo: está detrás del perfil `importador` para no gastar llamadas a TMDB
-  # cada vez que se levanta el compose.
-  #     docker compose --profile importador up -d parser
-  #     docker compose run --rm parser --simular
+  # Arranca con el resto y se queda escuchando en el 8090, pero **no importa nada solo**:
+  # sin un pedido del panel no gasta una llamada a TMDB. Por eso ya no está detrás de un
+  # perfil —el botón del panel estaría roto de fábrica si hubiera que acordarse de
+  # levantarlo— y por eso dejó de existir el loop de seis horas que tenía antes.
+  #     docker compose logs -f parser              # qué está haciendo
+  #     docker compose run --rm parser --simular   # una corrida a mano, y termina
   parser:
     build:
       context: ../cine-pelis-parser
     container_name: cine-parser
-    profiles: ["importador"]
     restart: unless-stopped
-    entrypoint: ["/bin/sh", "/app/entrypoint.sh"]
-    volumes:
-      - ../cine-pelis-parser/entrypoint.sh:/app/entrypoint.sh:ro
+    # Sin esto corre una vez y termina, que es lo que hace falta para `compose run`.
+    command: ["--servidor", "--puerto", "8090"]
     environment:
       TZ: ${TZ:-America/Argentina/Buenos_Aires}
       # Sin `:?` a propósito, aunque el token sea obligatorio: Compose interpola las
-      # variables al parsear el archivo, ignorando los perfiles, así que un `:?` acá
-      # impediría levantar MySQL y el backend a quien no use el importador. El parser
-      # valida el token al arrancar y falla con un mensaje que dice de dónde sacarlo.
+      # variables al parsear el archivo, así que un `:?` acá impediría levantar MySQL y
+      # el backend a quien todavía no sacó su token. En modo servidor el parser levanta
+      # igual sin él y contesta que falta recién cuando le piden una corrida.
       TMDB_TOKEN: ${TMDB_TOKEN}
       TMDB_REGION: ${TMDB_REGION:-AR}
       CINE_API: http://backend:8080/api
-      INTERVALO_SEGUNDOS: ${INTERVALO_IMPORTADOR:-21600}
+    # Sin `ports`: al importador solo se llega desde adentro de la red `web`, y el único
+    # que le habla es el backend. nginx no rutea nada hacia acá.
+    healthcheck:
+      # Con Python porque la imagen es python:slim y no trae curl ni wget.
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/salud')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
       backend:
         # El healthcheck del backend pega a /api/generos: si responde, la API está

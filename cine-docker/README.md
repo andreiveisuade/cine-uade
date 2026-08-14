@@ -45,7 +45,7 @@ se los alcanza desde adentro de la red de Docker.
 | mysql | — | `mysql:3306`, desde el backend y Adminer |
 | redis | — | `redis:6379`, solo desde el backend |
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
-| parser | — | no recibe nada: sale a TMDB y le pega al backend |
+| parser | — | `http://parser:8090`, solo desde el backend. Sale a TMDB y le pega al backend |
 
 Diagrama de esta misma topología (contenedores, redes, volúmenes) en
 [`cine-backend/docs/manual/index.html`](../cine-backend/docs/manual/index.html#correr), sección
@@ -79,21 +79,28 @@ persistirlo solo serviría para recuperar, después de un reinicio, bloqueos ya 
 ## El importador de cartelera
 
 `parser` trae de TMDB las películas que están hoy en cartelera en Argentina y las carga
-por HTTP contra `POST /api/peliculas`. Vive en su propio repo, `cine-pelis-parser`.
+por HTTP contra `POST /api/peliculas/importadas`, o sea al buzón de revisión. Vive en su
+propio repo, `cine-pelis-parser`.
 
-No arranca con el resto: está detrás del perfil `importador`, para no gastar llamadas a
-TMDB cada vez que se levanta el compose.
+**Lo dispara el encargado, desde el panel**: *Importador* en el menú del admin. El parser
+arranca con el resto del compose y se queda escuchando en el 8090, pero no importa nada
+por su cuenta: sin un pedido no gasta una sola llamada a TMDB. Por eso ya no está detrás
+de un perfil, y por eso dejó de tener el loop de seis horas que tenía antes.
 
 ```bash
-docker compose --profile importador run --rm parser --simular   # qué traería
-docker compose --profile importador up -d parser                # queda corriendo cada 6h
-docker compose logs -f parser                                   # qué está haciendo
+docker compose logs -f parser                # qué está haciendo
+docker compose run --rm parser --simular     # qué traería, desde la consola, y termina
 ```
+
+El backend le habla por `IMPORTADOR_URL` (`http://parser:8090` adentro del compose) y es
+la única llamada saliente que hace: no sale a internet, va por la red interna. El que sale
+a TMDB es el parser.
 
 Necesita `TMDB_TOKEN` en el `.env` — se saca gratis en
 [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) y es el
-*API Read Access Token*, el largo. Sin el token los demás servicios levantan igual: el
-parser falla solo, al arrancar, diciendo qué le falta.
+*API Read Access Token*, el largo. Sin el token los demás servicios levantan igual, y el
+parser también: contesta que le falta recién cuando le piden una corrida, y eso se ve en
+la pantalla del panel antes de apretar el botón.
 
 **Está solo en la red `web`, a propósito.** No tiene ruta hasta MySQL, así que no puede
 escribir en la base ni queriendo: todo lo que carga pasa por las reglas de
