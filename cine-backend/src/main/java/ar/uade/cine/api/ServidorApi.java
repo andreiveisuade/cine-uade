@@ -76,6 +76,7 @@ public class ServidorApi {
         // La grilla arma sus propias vistas adentro de la ruta: no necesita ningun gestor
         // mas que el suyo para dibujarse.
         RutasProgramaciones.registrar(app, aplicacion.getProgramaciones());
+        RutasGrilla.registrar(app, aplicacion.getPlanificadorGrilla());
         RutasClientes.registrar(app, aplicacion.getClientes(), vistasUsuarios);
         RutasReservas.registrar(app, aplicacion.getReservas(), aplicacion.getClientes(),
                 vistasVentas);

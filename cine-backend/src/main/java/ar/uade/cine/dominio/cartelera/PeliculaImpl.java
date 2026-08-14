@@ -22,6 +22,7 @@ public class PeliculaImpl implements Pelicula {
     private String idiomaOriginal = "";
     private String posterUrl = "";
     private boolean enCartelera = true;
+    private double puntaje;
     /**
      * Confirmada por defecto: el alta normal es la del encargado, y cargarla a mano ya es
      * haberla decidido. Sólo el importador la baja a PENDIENTE.
@@ -140,6 +141,16 @@ public class PeliculaImpl implements Pelicula {
     @Override
     public void setEnCartelera(boolean enCartelera) {
         this.enCartelera = enCartelera;
+    }
+
+    @Override
+    public double getPuntaje() {
+        return puntaje;
+    }
+
+    @Override
+    public void setPuntaje(double puntaje) {
+        this.puntaje = puntaje;
     }
 
     @Override

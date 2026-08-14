@@ -14,7 +14,11 @@ CREATE TABLE IF NOT EXISTS pelicula (
     -- Lo que trae el importador de TMDB nace PENDIENTE y espera en el buzon; lo que carga
     -- el encargado nace CONFIRMADA, porque cargarlo ya es haberlo decidido. Es un eje
     -- distinto de en_cartelera, que es si se esta dando.
-    estado_revision VARCHAR(15) NOT NULL DEFAULT 'CONFIRMADA'
+    estado_revision VARCHAR(15) NOT NULL DEFAULT 'CONFIRMADA',
+    -- Valoracion de 0 a 10: el vote_average de TMDB para lo importado. Es con lo que el
+    -- planificador de la grilla ordena, porque "programar las mejores" necesita un numero
+    -- que compare dos peliculas.
+    puntaje DECIMAL(3,1) NOT NULL DEFAULT 0
 );
 
 -- Una película tiene varios géneros: tabla aparte con la relación.

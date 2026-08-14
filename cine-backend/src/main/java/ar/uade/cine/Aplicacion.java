@@ -37,6 +37,7 @@ import ar.uade.cine.servicio.GestorFunciones;
 import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorProductos;
 import ar.uade.cine.servicio.GestorProgramaciones;
+import ar.uade.cine.servicio.PlanificadorGrilla;
 import ar.uade.cine.servicio.GestorPromociones;
 import ar.uade.cine.servicio.GestorReservas;
 import ar.uade.cine.servicio.GestorSalas;
@@ -62,6 +63,7 @@ public class Aplicacion {
     private final GestorSalas salas;
     private final GestorFunciones funciones;
     private final GestorProgramaciones programaciones;
+    private final PlanificadorGrilla planificadorGrilla;
     private final GestorClientes clientes;
     private final GestorEmpleados empleados;
     private final GestorPromociones promociones;
@@ -112,6 +114,7 @@ public class Aplicacion {
         programaciones = new GestorProgramaciones(programacionDAO, funcionDAO, funciones);
         // Después de programaciones: la cartelera las extiende antes de listar.
         cartelera = new GestorCartelera(peliculaDAO, funcionDAO, programaciones);
+        planificadorGrilla = new PlanificadorGrilla(peliculaDAO, salaDAO, funciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);
@@ -134,6 +137,10 @@ public class Aplicacion {
 
     public GestorFunciones getFunciones() {
         return funciones;
+    }
+
+    public PlanificadorGrilla getPlanificadorGrilla() {
+        return planificadorGrilla;
     }
 
     public GestorProgramaciones getProgramaciones() {

@@ -53,6 +53,17 @@ public interface Pelicula {
     void setEnCartelera(boolean enCartelera);
 
     /**
+     * Qué tan bien valorada está, de 0 a 10. Es el {@code vote_average} de TMDB para lo
+     * importado, y cero para lo que se carga a mano sin dato.
+     *
+     * <p>Existe para que el planificador de la grilla pueda ordenar: sin un número que
+     * compare dos películas, "programar las mejores" no se puede resolver.
+     */
+    double getPuntaje();
+
+    void setPuntaje(double puntaje);
+
+    /**
      * Si el encargado ya decidió qué hacer con ella. Las que carga él nacen
      * {@link EstadoRevision#CONFIRMADA} —cargarla ya es haberla decidido— y las que trae
      * el importador nacen {@link EstadoRevision#PENDIENTE}.

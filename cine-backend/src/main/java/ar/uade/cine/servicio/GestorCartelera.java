@@ -204,9 +204,19 @@ public class GestorCartelera {
         hacia.setIdiomaOriginal(desde.getIdiomaOriginal());
         hacia.setPosterUrl(desde.getPosterUrl());
         hacia.setEnCartelera(desde.estaEnCartelera());
+        hacia.setPuntaje(desde.getPuntaje());
+        // Sin esto, editarle el título a una película del buzón la daría por confirmada:
+        // la edición arma una PeliculaImpl nueva, y las nuevas nacen CONFIRMADA.
+        hacia.setEstadoRevision(desde.getEstadoRevision());
     }
 
     private void aplicarCatalogo(Pelicula pelicula, DatosPelicula datos) {
+        if (datos.puntaje() != null) {
+            if (datos.puntaje() < 0 || datos.puntaje() > 10) {
+                throw new IllegalArgumentException("El puntaje va de 0 a 10");
+            }
+            pelicula.setPuntaje(datos.puntaje());
+        }
         if (datos.director() != null) {
             pelicula.setDirector(datos.director());
         }

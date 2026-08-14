@@ -49,7 +49,7 @@ public class VistasCartelera {
                 p.getGeneros().stream().map(Enum::name).toList(),
                 p.getClasificacion().name(), p.getPosterUrl(), p.getDirector(), p.getAnio(),
                 p.getIdiomaOriginal(), p.getSinopsis(), p.estaEnCartelera(),
-                p.getEstadoRevision().name());
+                p.getEstadoRevision().name(), p.getPuntaje());
     }
 
     /** Para el listado del cliente: la función con su sala, sin el mapa de butacas. */

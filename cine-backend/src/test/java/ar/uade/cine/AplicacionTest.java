@@ -73,11 +73,12 @@ class AplicacionTest {
     }
 
     @Test
-    void quedanArmadosLosOnceGestores() {
+    void quedanArmadosLosGestores() {
         assertNotNull(aplicacion.getCartelera());
         assertNotNull(aplicacion.getSalas());
         assertNotNull(aplicacion.getFunciones());
         assertNotNull(aplicacion.getProgramaciones());
+        assertNotNull(aplicacion.getPlanificadorGrilla());
         assertNotNull(aplicacion.getClientes());
         assertNotNull(aplicacion.getEmpleados());
         assertNotNull(aplicacion.getPromociones());

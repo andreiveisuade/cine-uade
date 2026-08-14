@@ -31,12 +31,12 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
 
     private static final String SELECT_CON_GENEROS =
             "SELECT p.id, p.titulo, p.duracion_minutos, p.clasificacion, p.director, p.sinopsis, "
-            + "p.anio, p.idioma_original, p.poster_url, p.en_cartelera, p.estado_revision, pg.genero "
+            + "p.anio, p.idioma_original, p.poster_url, p.en_cartelera, p.estado_revision, p.puntaje, pg.genero "
             + "FROM pelicula p LEFT JOIN pelicula_genero pg ON pg.pelicula_id = p.id";
 
     @Override
     public void guardar(Pelicula pelicula) {
-        String sql = "INSERT INTO pelicula (titulo, duracion_minutos, clasificacion, director, sinopsis, anio, idioma_original, poster_url, en_cartelera, estado_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pelicula (titulo, duracion_minutos, clasificacion, director, sinopsis, anio, idioma_original, poster_url, en_cartelera, estado_revision, puntaje) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -67,12 +67,12 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
     public void actualizar(Pelicula pelicula) {
         String sql = "UPDATE pelicula SET titulo = ?, duracion_minutos = ?, clasificacion = ?, director = ?, "
                 + "sinopsis = ?, anio = ?, idioma_original = ?, poster_url = ?, en_cartelera = ?, "
-                + "estado_revision = ? WHERE id = ?";
+                + "estado_revision = ?, puntaje = ? WHERE id = ?";
         try (Connection con = ConexionMySQL.abrir()) {
             con.setAutoCommit(false);
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 cargarDatos(ps, pelicula);
-                ps.setInt(11, pelicula.getId());
+                ps.setInt(12, pelicula.getId());
                 ps.executeUpdate();
 
                 borrarGeneros(con, pelicula.getId());
@@ -128,7 +128,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
         }
     }
 
-    /** Los diez campos de pelicula, en el mismo orden en el INSERT y en el UPDATE. */
+    /** Los once campos de pelicula, en el mismo orden en el INSERT y en el UPDATE. */
     private void cargarDatos(PreparedStatement ps, Pelicula pelicula) throws SQLException {
         ps.setString(1, pelicula.getTitulo());
         ps.setInt(2, pelicula.getDuracionMinutos());
@@ -140,6 +140,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
         ps.setString(8, pelicula.getPosterUrl());
         ps.setBoolean(9, pelicula.estaEnCartelera());
         ps.setString(10, pelicula.getEstadoRevision().name());
+        ps.setDouble(11, pelicula.getPuntaje());
     }
 
     private void guardarGeneros(Connection con, Pelicula pelicula) throws SQLException {
@@ -180,6 +181,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
                 pelicula.setPosterUrl(rs.getString("poster_url"));
                 pelicula.setEnCartelera(rs.getBoolean("en_cartelera"));
                 pelicula.setEstadoRevision(EstadoRevision.valueOf(rs.getString("estado_revision")));
+                pelicula.setPuntaje(rs.getDouble("puntaje"));
                 porId.put(id, pelicula);
             }
             String genero = rs.getString("genero");

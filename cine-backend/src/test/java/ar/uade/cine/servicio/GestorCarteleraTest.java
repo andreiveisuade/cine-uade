@@ -200,7 +200,7 @@ class GestorCarteleraTest {
     void editarSoloPisaLoQueVieneEnElPedido() {
         Pelicula dune = gestor.agregar(new DatosPelicula("Dune", 155,
                 List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13, "Denis Villeneuve",
-                "Arrakis", 2021, "Inglés", "dune.jpg", true));
+                "Arrakis", 2021, "Inglés", "dune.jpg", true, 8.1));
 
         gestor.editar(dune.getId(), DatosPelicula.deCatalogo(null, "Otra sinopsis", null, null, null));
 
@@ -217,7 +217,7 @@ class GestorCarteleraTest {
     @Test
     void elAltaCompletaGuardaElCatalogoDeUnaSolaVez() {
         Pelicula matrix = gestor.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION),
-                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "matrix.jpg", false));
+                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "matrix.jpg", false, 8.7));
 
         Pelicula leida = gestor.buscar(matrix.getId()).orElseThrow();
         assertEquals("Wachowski", leida.getDirector());
@@ -232,7 +232,7 @@ class GestorCarteleraTest {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
         assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
-                new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null)));
+                new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null)));
     }
 
     /** Una edición no es una puerta de atrás: valida con las mismas reglas que el alta. */
@@ -241,9 +241,9 @@ class GestorCarteleraTest {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
         assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
-                new DatosPelicula("  ", null, null, null, null, null, null, null, null, null)));
+                new DatosPelicula("  ", null, null, null, null, null, null, null, null, null, null)));
         assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
-                new DatosPelicula(null, 0, null, null, null, null, null, null, null, null)));
+                new DatosPelicula(null, 0, null, null, null, null, null, null, null, null, null)));
     }
 
     @Test

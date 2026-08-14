@@ -20,19 +20,19 @@ import ar.uade.cine.dominio.cartelera.Genero;
 public record DatosPelicula(String titulo, Integer duracionMinutos, List<Genero> generos,
                             Clasificacion clasificacion, String director, String sinopsis,
                             Integer anio, String idiomaOriginal, String posterUrl,
-                            Boolean enCartelera) {
+                            Boolean enCartelera, Double puntaje) {
 
     /** Lo mínimo de un alta: los datos de catálogo se pueden completar después. */
     public static DatosPelicula deAlta(String titulo, int duracionMinutos, List<Genero> generos,
                                        Clasificacion clasificacion) {
         return new DatosPelicula(titulo, duracionMinutos, generos, clasificacion,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     /** Solo los datos de catálogo, para completarlos sin tocar lo demás. */
     public static DatosPelicula deCatalogo(String director, String sinopsis, Integer anio,
                                            String idiomaOriginal, String posterUrl) {
         return new DatosPelicula(null, null, null, null, director, sinopsis, anio,
-                idiomaOriginal, posterUrl, null);
+                idiomaOriginal, posterUrl, null, null);
     }
 }

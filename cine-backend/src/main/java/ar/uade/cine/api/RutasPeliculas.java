@@ -130,6 +130,6 @@ class RutasPeliculas {
                         ? null : Parseo.constante(Clasificacion.class, pedido.clasificacion(),
                                 "la clasificación"),
                 pedido.director(), pedido.sinopsis(), pedido.anio(), pedido.idiomaOriginal(),
-                pedido.posterUrl(), pedido.enCartelera());
+                pedido.posterUrl(), pedido.enCartelera(), pedido.puntaje());
     }
 }

@@ -413,6 +413,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#programaciones" data-target="programaciones">La grilla de funciones</a></li>
+        <li><a href="#planificador" data-target="planificador">El planificador de la grilla</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
@@ -460,14 +461,22 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta en el gestor y el menú de consola, con 198 tests en verde. La API HTTP
-          todavía no expone candy —<code>ServidorApi</code> no instancia <code>GestorCandy</code>—, así que el
-          frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
+          implementados de punta a punta —gestor, menú de consola y API HTTP— con 248 tests en verde. El candy
+          fue el último en llegar a HTTP: existía en consola desde el principio y <code>ServidorApi</code> no
+          lo instanciaba, que es el olvido que motivó que <code>Aplicacion</code> sea hoy el único lugar donde
+          se arman los gestores. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
           <strong>Segunda vuelta, ya implementada.</strong> El modelo se amplió con tarifas por tipo de
           público, promociones, control de acceso con QR, vencimiento de reservas y venta de candy anónima o
-          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 198 tests en verde.
+          ligada a la reserva.
+        </p>
+        <p>
+          <strong>Tercera vuelta.</strong> La cartelera dejó de ser de prueba: el importador trae la de
+          Argentina desde TMDB, lo importado espera en un <a href="#dto">buzón</a> hasta que alguien la
+          confirma, la limpieza entre funciones entró en R3 y el
+          <a href="#planificador">planificador</a> arma la grilla de la semana eligiendo por puntaje y
+          diversidad de géneros.
         </p>
       </div>
     </section>
@@ -1098,6 +1107,102 @@ body.lightbox-locked { overflow: hidden; }
         Cada bloque es un enlace a esa función en la pantalla de Funciones, que es donde se la puede borrar.
         Va como <code>&lt;a href&gt;</code> y no como un <code>div</code> con <code>onclick</code>: siendo un
         enlace de verdad funcionan gratis el clic del medio, «abrir en pestaña nueva» y el teclado.
+      </p>
+    </section>
+
+    <section class="doc-section" id="planificador">
+      <h2>El planificador: qué se da esta semana</h2>
+      <p>
+        Con cuatro títulos de prueba, programar la semana era obvio. Con el importador trayendo
+        <strong>dieciocho por corrida</strong> hay que elegir, y elegir a ojo termina siempre igual: se
+        programa lo más conocido, la cartelera queda con cuatro películas de acción y el miércoles a la
+        tarde no hay nada para quien no va al cine a eso. <code>PlanificadorGrilla</code> es el que
+        toma esa decisión, y optimiza <strong>tres cosas a la vez</strong> porque ninguna sola alcanza:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Criterio</th><th>Qué pasa si es el único</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Puntaje</strong> — dar lo mejor valorado</td>
+                <td>La grilla queda monotemática: lo mejor puntuado de una temporada suele parecerse entre sí</td></tr>
+            <tr><td><strong>Diversidad</strong> — cubrir géneros distintos</td>
+                <td>Entra cualquier cosa con tal de que sea de un género que falta</td></tr>
+            <tr><td><strong>Ocupación</strong> — no dejar la sala vacía</td>
+                <td>Gana siempre la película más corta, que es la que más veces entra en el día</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Etapa 1: el elenco</h4>
+      <p>
+        Un <strong>goloso</strong> que mira puntaje y géneros juntos. En cada vuelta entra la película de
+        mayor <em>valor</em>:
+      </p>
+      <pre><code>valor(p) = puntaje(p) + 2,0 × (géneros de p que todavía no están cubiertos)</code></pre>
+      <p>
+        Al elegirla, sus géneros pasan a estar cubiertos y las que venían apoyadas en ellos valen menos en
+        la vuelta siguiente. La primera elección es entonces la mejor película a secas, y de ahí en
+        adelante cada una tiene que <em>ganarse</em> el lugar contra lo que ya hay.
+      </p>
+      <p>
+        Los dos puntos del bono son deliberadamente caros: alcanzan para que una comedia de 7,0 le gane a
+        la cuarta película de acción de 8,5 —que es exactamente la decisión que el planificador existe para
+        tomar— pero no para que un documental de 4,0 desplace a una de 9,4. El bono <strong>inclina, no
+        decide</strong>, y hay un test para cada uno de los dos lados.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Goloso y no la combinación óptima, a propósito.</strong> Elegir 8 de 18 son 43.758
+          combinaciones: evaluarlas todas es perfectamente posible. La diferencia con el goloso es de
+          decimales, y a cambio el resultado deja de poder explicarse. Acá vale más que el encargado
+          entienda <em>por qué entró cada película</em> —«esta porque es la mejor, esta porque era la
+          única comedia»— que ganar una décima de puntaje promedio que nadie puede auditar.
+        </p>
+      </div>
+
+      <h4>Etapa 2: el reparto</h4>
+      <p>
+        Cada sala se llena día por día desde la apertura hasta que no entre una función más. Qué película va
+        en cada hueco lo decide un reparto <strong>proporcional al puntaje</strong>: entra la que tiene mayor
+        «deuda», o sea la que menos pases lleva en relación a lo que merece (<code>asignados / puntaje</code>).
+        Así la mejor de la semana termina con cuatro o cinco funciones diarias y la octava con una, sin que
+        haya que escribir esa tabla a mano ni repartir en partes iguales, que sería tratar igual a lo que el
+        público no valora igual.
+      </p>
+      <p>
+        Dos detalles que son decisiones. El pase tiene que <strong>terminar</strong> antes del cierre, no
+        empezar: una película de tres horas no entra a las 23:00 aunque el cine cierre a medianoche. Y cuando
+        la que toca no entra, la sala se da por llena en vez de probar con una más corta — si no, el último
+        turno de todos los días sería siempre para la película de menor duración.
+      </p>
+      <p>
+        <strong>No reescribe R3.</strong> Antes de proponer cada pase le pregunta a
+        <code>GestorFunciones.superpuestaEn</code> si la sala está libre, con la limpieza incluida — igual
+        que hace <code>GestorProgramaciones</code>. Por eso una grilla propuesta sobre salas que ya tienen
+        funciones cargadas a mano las respeta en vez de pisarlas.
+      </p>
+
+      <h4>Los indicadores, o por qué esto es planificación y no un botón mágico</h4>
+      <p>
+        La propuesta no viene sola: viene con los números que permiten discutirla. <strong>Ocupación</strong>
+        (qué porcentaje del tiempo de sala queda vendido), <strong>puntaje promedio</strong> ponderado por
+        pases —una película que va cuatro veces pesa cuatro veces, que es lo que ve el espectador que entra
+        sin saber qué mirar— y <strong>géneros cubiertos</strong> más el detalle de cuántas funciones toca
+        cada uno. Ese último es el que delata una grilla que en el papel es diversa pero da acción todo el
+        día y el documental a las tres de la tarde.
+      </p>
+      <p>
+        Con eso el encargado puede correr la propuesta con seis títulos y con diez, comparar, y elegir con un
+        criterio en vez de con una corazonada. Es lo que convierte «armame la grilla» en una herramienta de
+        planificación.
+      </p>
+      <p>
+        Y como el algoritmo es <strong>determinista</strong>, previsualizar y aplicar pueden ser dos llamadas
+        distintas sin que el resultado cambie en el medio: lo que se ve es lo que se crea. Es el mismo par
+        <code>/propuesta</code> + alta que ya tienen las programaciones, y por la misma razón. Aplicar
+        <em>recalcula</em> en vez de recibir la propuesta de vuelta: si el cliente pudiera mandarla, podría
+        mandar una distinta de la que se le mostró —o una vieja, armada antes de que alguien cargara otra
+        función en esa sala— y el alta escribiría algo que ninguna regla revisó.
       </p>
     </section>
 
@@ -3814,6 +3919,11 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>record</code> en los value objects</td>
               <td>Interfaz + <code>Impl</code> también acá</td>
               <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>Planificador goloso con bono por género</td>
+              <td>Ordenar por puntaje y cortar en 8</td>
+              <td>Ordenar por puntaje da una cartelera monotemática: lo mejor puntuado de una temporada se parece entre sí. El bono hace que cada película después de la primera tenga que ganarse el lugar contra lo que ya está elegido</td>
             </tr>
             <tr>
               <td>Buzón de revisión para lo importado</td>
