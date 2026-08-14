@@ -4,6 +4,7 @@ title Modelo de dominio - Sistema de cine
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 hide empty members
+set namespaceSeparator none
 
 ' Este diagrama muestra QUE ES un cine: entidades, value objects y sus relaciones.
 ' COMO funciona el sistema (gestores, DAO, API) esta en clases-capas.puml.
@@ -27,6 +28,11 @@ package "dominio.cartelera" {
     +getIdiomaOriginal(): String
     +getPosterUrl(): String
     +estaEnCartelera(): boolean
+    --calidad, para ordenar la grilla--
+    +getPuntaje(): double
+    +getVotos(): int
+    --revision del importador--
+    +getEstadoRevision(): EstadoRevision
   }
   enum Genero <<enum>> {
     ACCION / COMEDIA / DRAMA
@@ -38,15 +44,49 @@ package "dominio.cartelera" {
     ATP / MAS_13 / MAS_16 / MAS_18
     --
     +getEdadMinima(): int
+    +getEtiqueta(): String
+  }
+  ' Eje distinto de estaEnCartelera (si SE ESTA DANDO): esto dice si el
+  ' encargado ya decidio que hacer con la pelicula. Las que carga el admin
+  ' nacen CONFIRMADA; las que trae el importador nacen PENDIENTE y esperan en
+  ' un buzon hasta que alguien las mira. No se borran las DESCARTADAS: si se
+  ' borraran, la proxima corrida del importador las volveria a traer.
+  enum EstadoRevision <<enum>> {
+    PENDIENTE / CONFIRMADA / DESCARTADA
+  }
+  ' Una corrida del importador de TMDB: cuando se pidio, como termino, cuanto
+  ' trajo. No guarda QUE peliculas entraron -eso ya esta en el buzon, en
+  ' Pelicula.estadoRevision- sino solo cuantas: repetir la lista aca seria una
+  ' segunda fuente de verdad. Por eso Importacion no tiene flecha a Pelicula.
+  interface Importacion {
+    +getPaginas(): int
+    +getPedidaEn(): LocalDateTime
+    +getTerminoEn(): LocalDateTime [0..1]
+    +getEstado(): EstadoImportacion
+    +getNuevas(): int
+    +getSalteadas(): int
+    +getFallidas(): int
+    +getDetalle(): String [0..1]
+  }
+  ' Tres y no cuatro: no hay PENDIENTE. La corrida arranca en el mismo
+  ' instante en que se la pide, asi que nunca hay una esperando su turno.
+  enum EstadoImportacion <<enum>> {
+    EN_CURSO / TERMINADA / FALLIDA
   }
 }
 
 package "dominio.salas" {
   ' Sala no guarda su distribucion de butacas: serian dos fuentes de verdad
   ' para lo mismo. La capacidad se cuenta desde los asientos.
+  ' getMinutosLimpieza() es lo que sostiene R3 en la practica: entre el fin de
+  ' una funcion y el inicio de la siguiente en la misma sala hay que dejar un
+  ' margen, y no es igual en todas las salas -una de 200 butacas tarda mas que
+  ' una de 60-, asi que vive como dato de la sala y no como constante fija.
   interface Sala {
+    {static} +LIMPIEZA_POR_DEFECTO: int = 15
     +getNombre(): String
     +getTipo(): TipoSala
+    +getMinutosLimpieza(): int
   }
   ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
   ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
@@ -84,7 +124,7 @@ package "dominio.funciones" {
   '
   ' El bloque del paso del tiempo no guarda ningun estado: la funcion no tiene
   ' un campo "yaEmpezo" que alguien deba cambiar cuando llega la hora, lo
-  ' calcula. Es el mismo criterio que Reserva.estaVigente().
+  ' calcula. Es el mismo criterio que Reserva.estaVencida().
   ' El instante entra por parametro y no se le pide al reloj, para poder
   ' probarlo sin esperar; la duracion tambien, pero por otro motivo: ver N2.
   ' getFin() es lo que hace legible la restriccion de superposicion R3, y
@@ -96,7 +136,7 @@ package "dominio.funciones" {
     +getInicio(): LocalDateTime
     +getVersion(): Version
     +getProyeccion(): Proyeccion
-    +getPrecio(): double
+    +getPrecio(): Dinero
     --el paso del tiempo, derivado--
     +yaEmpezo(ahora): boolean
     +getFin(duracionMinutos): LocalDateTime
@@ -134,7 +174,7 @@ package "dominio.programaciones" {
     --lo que copia a cada funcion--
     +getVersion(): Version
     +getProyeccion(): Proyeccion
-    +getPrecio(): double
+    +getPrecio(): Dinero
     +estaActiva(): boolean
     --lo que ya paso--
     +getGeneradaHasta(): LocalDate [0..1]
@@ -166,6 +206,8 @@ package "dominio.usuarios" {
     CLIENTE
     ADMINISTRADOR
     ACOMODADOR
+    --
+    +esEmpleado(): boolean
   }
 }
 
@@ -175,15 +217,20 @@ package "dominio.ventas" {
   ' primera operacion que se cruza con una vencida la cierra al pasar.
   ' codigo es el del QR y, como el cliente no inicia sesion, es su unica
   ' credencial: por eso no puede ser el id. ingresadaEn null = no entraron aun.
+  ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
+  ' en Funcion, para poder probarla sin esperar media hora; MINUTOS_PARA_PAGAR
+  ' es lo que define ese plazo.
   interface Reserva {
+    {static} +MINUTOS_PARA_PAGAR: int = 30
     +getFuncionId(): int
     +getClienteId(): int
     +getCreadaEn(): LocalDateTime
     +getEntradas(): List<Entrada>
     +getCantidadEntradas(): int
-    +getSubtotal(): double
+    +getTotal(): Dinero
     +getEstado(): EstadoReserva
     +estaVigente(): boolean
+    +estaVencida(ahora): boolean
     --control de acceso--
     +getCodigo(): String
     +getIngresadaEn(): LocalDateTime
@@ -197,7 +244,7 @@ package "dominio.ventas" {
     +asientoId(): int
     +codigoAsiento(): String
     +tarifa(): TipoTarifa
-    +precio(): double
+    +precio(): Dinero
   }
   ' El descuento vive aca y no en la entrada: el 2x1 no se puede escribir como
   ' factor sobre una butaca, y como las promociones no se acumulan y gana la
@@ -206,10 +253,10 @@ package "dominio.ventas" {
   ' el descuento bancario depende del medio que se elige al cobrar.
   interface Pago {
     +getReservaId(): int
-    +getSubtotal(): double
+    +getSubtotal(): Dinero
     +getPromocionId(): Integer
-    +getDescuento(): double
-    +getMonto(): double
+    +getDescuento(): Dinero
+    +getMonto(): Dinero
     +getMedio(): MedioPago
     +getFecha(): LocalDateTime
     +getCodigoAutorizacion(): String
@@ -242,9 +289,14 @@ package "dominio.promociones" {
   ' Van a tabla unica con discriminador, igual que Usuario.
   ' calcularDescuento recibe una lista de entradas y no la reserva entera
   ' porque las de tarifa reducida no participan del descuento (R16).
+  ' aplicaA recibe el inicio de la funcion y el medio de pago por parametro, no
+  ' un objeto Funcion completo: todo lo que evalua -vigencia, dia, hora, medio-
+  ' sale de esos dos datos, y pedir la funcion entera obligaria a resolverla
+  ' solo para leerle el inicio.
   interface Promocion {
     --condiciones--
     +getNombre(): String
+    +getTipo(): TipoPromocion
     +getVigenciaDesde(): LocalDate
     +getVigenciaHasta(): LocalDate
     +getDiasSemana(): Set<DayOfWeek>
@@ -252,22 +304,35 @@ package "dominio.promociones" {
     +getHoraHasta(): LocalTime
     +getMediosPago(): Set<MedioPago>
     +estaActiva(): boolean
-    +aplicaA(Funcion, MedioPago, LocalDateTime): boolean
+    +aplicaA(inicioFuncion, medio): boolean
     --beneficio--
-    +calcularDescuento(List<Entrada>): double
+    +calcularDescuento(List<Entrada>): Dinero
   }
+  ' Discriminador de la tabla unica, mismo patron que Rol en Usuario: las tres
+  ' van a la misma tabla porque comparten todas las condiciones y solo cambia
+  ' como calculan el descuento.
+  enum TipoPromocion <<enum>> {
+    PORCENTAJE
+    MONTO_FIJO
+    NXM
+  }
+  ' Comparte la evaluacion de condiciones (aplicaA, implementada aca una sola
+  ' vez) y dos helpers de calculo que usan las tres subclases: topear() evita
+  ' que un descuento deje el cobro en negativo, subtotalDe() es lo que suman
+  ' las entradas que participan del descuento.
   abstract class PromocionBase {
-    #cumpleCondiciones(...): boolean
+    {static} #topear(Dinero, List<Entrada>): Dinero
+    {static} #subtotalDe(List<Entrada>): Dinero
   }
   class PromocionPorcentaje {
     +getPorcentaje(): double
   }
   class PromocionMontoFijo {
-    +getMonto(): double
+    +getMonto(): Dinero
   }
   class PromocionNxM {
-    +getN(): int
-    +getM(): int
+    +getLleva(): int
+    +getPaga(): int
   }
 }
 
@@ -275,7 +340,7 @@ package "dominio.candy" {
   interface Producto {
     +getNombre(): String
     +getTipo(): TipoProducto
-    +getPrecio(): double
+    +getPrecio(): Dinero
     +estaDisponible(): boolean
     +getComponentes(): List<ItemCombo>
     +esCombo(): boolean
@@ -300,18 +365,41 @@ package "dominio.candy" {
     +getMedio(): MedioPago
     +getCodigoAutorizacion(): String
     +getItems(): List<ItemCompra>
-    +getTotal(): double
+    +getTotal(): Dinero
   }
   class ItemCompra <<record>> {
     +productoId(): int
     +nombre(): String
     +cantidad(): int
-    +precioUnitario(): double
-    +getSubtotal(): double
+    +precioUnitario(): Dinero
+    +getSubtotal(): Dinero
   }
   enum TipoProducto <<enum>> {
     POCHOCLOS / BEBIDA
     GOLOSINA / COMBO
+  }
+}
+
+package "dominio.dinero" {
+  ' Dinero es un value object, no una entidad: sin id ni DAO propio, y viaja como
+  ' TIPO de atributo en todo el dominio (funciones, programaciones, ventas,
+  ' promociones, candy) en los lugares donde antes habia un double. La razon esta
+  ' en su propio javadoc: un double no representa 0,10 exacto y las cuentas de
+  ' plata terminan mintiendo de a poco; Dinero guarda centavos enteros y evita el
+  ' problema de raiz en vez de redondear despues de cada operacion.
+  ' No lleva flechas hacia el resto del modelo, por el mismo motivo que N1: es un
+  ' tipo, no una entidad con la que otra entidad "se relaciona".
+  class Dinero <<record>> {
+    centavos: long
+    --
+    +aPesos(): double
+    +mas(Dinero): Dinero
+    +menos(Dinero): Dinero
+    +por(factor): Dinero
+    +porcentaje(double): Dinero
+    +acotadoA(techo): Dinero
+    +sinBajarDeCero(): Dinero
+    +esMayorQue(Dinero): boolean
   }
 }
 
