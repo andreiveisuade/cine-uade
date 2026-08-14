@@ -501,8 +501,14 @@ mano cuando el escáner no lee y esos cuatro se confunden entre sí.
 
 ### `POST /api/grilla/propuesta` y `POST /api/grilla`
 
-Mismo cuerpo, y todos los campos son opcionales: sin nada, arma una semana desde hoy, de
-14 a 24, con ocho títulos.
+Mismo cuerpo. **`precio` es obligatorio**; el resto tiene default: una semana desde hoy,
+de 14 a 24, con ocho títulos. Sin `precio` responde `400` con
+`{"error":"Falta el precio de las funciones"}`.
+
+El precio no tiene default a propósito. Los otros siete son convenciones razonables, pero
+cuánto sale la entrada es una decisión comercial que el sistema no puede tomar por el cine:
+si inventara un número y el encargado no lo mirara, se venderían entradas a un precio que
+no decidió nadie.
 
 ```json
 { "desde": "2026-09-01", "dias": 7, "apertura": "14:00", "cierre": "00:00",
