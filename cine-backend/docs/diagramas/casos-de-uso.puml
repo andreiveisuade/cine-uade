@@ -13,10 +13,12 @@ rectangle Sistema {
   usecase "CU-02 Gestionar salas y butacas" as CU02
   usecase "CU-03 Programar funcion" as CU03
   usecase "CU-03b Programar una grilla" as CU03b
+  usecase "CU-03c Ver la programacion\ncomo agenda" as CU03c
   usecase "CU-04 Consultar cartelera" as CU04
   usecase "CU-05 Registrarse" as CU05
   usecase "CU-06 Elegir butacas y reservar" as CU06
   usecase "CU-07 Cobrar reserva" as CU07
+  usecase "CU-07b Pagar por checkout\nde la pasarela" as CU07b
   usecase "CU-08 Cancelar reserva" as CU08
   usecase "CU-09 Ver mis reservas" as CU09
   usecase "CU-10 Iniciar sesion" as CU10
@@ -29,6 +31,8 @@ rectangle Sistema {
   usecase "CU-15b Agregar candy\na mi compra web" as CU15b
   usecase "CU-17 Gestionar\npromociones" as CU17
   usecase "CU-18 Validar entrada\nen la puerta" as CU18
+  usecase "CU-19 Emitir el bordero\nde una funcion" as CU19
+  usecase "CU-20 Recaudacion de\nuna funcion" as CU20
 }
 
 cliente --> CU04
@@ -40,12 +44,14 @@ cliente --> CU09
 cliente --> CU15
 cliente --> CU16
 cliente --> CU15b
+cliente --> CU07b
 
 admin --> CU10
 admin --> CU01
 admin --> CU02
 admin --> CU03
 admin --> CU03b
+admin --> CU03c
 admin --> CU04
 admin --> CU11
 admin --> CU07
@@ -53,6 +59,8 @@ admin --> CU12
 admin --> CU13
 admin --> CU14
 admin --> CU17
+admin --> CU19
+admin --> CU20
 acomodador --> CU18
 
 note bottom of CU10
@@ -87,6 +95,29 @@ note bottom of CU12
   Dos cajas distintas: boleteria (pagos de
   reservas) y candy (ventas de mostrador).
   El arqueo las muestra por separado y suma.
+  Es del dia: por funcion son CU-19 y CU-20.
+end note
+
+note bottom of CU07b
+  El medio electronico no lo autoriza el cine:
+  se abre un checkout contra la pasarela, el
+  cliente escanea y paga, y recien ahi vuelve
+  el codigo que exige R11. El efectivo no pasa
+  por aca, se cobra en la caja (CU-07).
+end note
+
+note bottom of CU19
+  Lo que el cine declara al INCAA de cada
+  proyeccion: espectadores, desglose por tarifa
+  y recaudacion. Declara lo cobrado, no lo
+  reservado, y se exporta a un archivo.
+end note
+
+note bottom of CU20
+  Cuanto dejo la funcion entre sus dos cajas.
+  Del candy solo entra el que esta ligado a una
+  reserva: el de mostrador no dice a que funcion
+  va quien lo compro, y se cuenta en CU-12.
 end note
 
 note bottom of CU14

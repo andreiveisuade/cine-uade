@@ -16,7 +16,7 @@ package ui {
 }
 
 package api {
-  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy" as RutasHttp
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy, RutasInformes" as RutasHttp
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
   class Parseo
   class Fechas
@@ -26,7 +26,7 @@ package api {
 ' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes espejan
 ' a dominio/, asi que de que entidad viene cada forma se lee en la ruta del archivo.
 package dto {
-  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, catalogos\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
+  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, catalogos\ngrilla\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
 }
 
 package servicio {
@@ -41,10 +41,12 @@ package servicio {
   class GestorProductos
   class GestorEmpleados
   class GestorPromociones
+  class GestorInformes
+  class PlanificadorGrilla
   class CalculadoraPrecio
   class Ocupacion
   interface PoliticaPromociones
-  class "DatosPelicula, Arqueo" as DatosDeServicio
+  class "DatosPelicula, Arqueo\nBordero, InformeFuncion" as DatosDeServicio
 }
 
 package seguridad {
@@ -54,9 +56,23 @@ package seguridad {
 package comprobantes {
   interface GeneradorTicket
   interface GeneradorTicketCandy
+  interface GeneradorRecibo
+  interface GeneradorBordero
 
   package txt {
-    class "GeneradorTicketTxt\nGeneradorTicketCandyTxt" as GeneradoresTxt
+    class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt, GeneradorBorderoTxt" as GeneradoresTxt
+  }
+}
+
+' Quien autoriza un pago electronico nunca es el cine: R11 pide un codigo que
+' devuelve un tercero. Es un contrato por lo mismo que GeneradorTicket —hoy
+' atras hay una emulacion y manana podria haber una integracion real— y por eso
+' vive afuera de servicio: es un puerto hacia el mundo, no una regla.
+package pasarelas {
+  interface PasarelaPagos
+
+  package emulada {
+    class "MercadoPagoEmulado\nel checkout, sin credenciales ni red" as PasarelaEmulada
   }
 }
 
@@ -181,6 +197,26 @@ GestorReservas ..> CalculadoraPrecio
 GestorEmpleados ..> Password
 GeneradoresTxt ..up|> comprobantes
 
+' Cobrar en efectivo y cobrar por checkout terminan en el mismo metodo, asi que
+' R5, R17 y R19 se aplican igual por los dos caminos. Lo que cambia es de donde
+' sale el codigo de autorizacion, y quien no tiene procesador atras —el efectivo—
+' es el unico que se lleva un recibo de caja del cine.
+GestorPagos -down-> PasarelaPagos
+GestorPagos -down-> GeneradorRecibo
+PasarelaEmulada ..up|> PasarelaPagos
+
+' El bordero del INCAA y la recaudacion de una funcion no se pueden derivar del
+' arqueo: ese cierra un dia y las entradas de una funcion se venden a lo largo de
+' varios. Es un corte distinto, y por eso un gestor propio: informar es leer y
+' cruzar cinco fuentes, cobrar es escribir sobre una reserva.
+GestorInformes -down-> PagoDAO
+GestorInformes -down-> CompraCandyDAO
+GestorInformes -down-> GeneradorBordero
+
+' El planificador no persiste nada: propone una grilla y quien decide es el
+' administrador. Se apoya en GestorFunciones para no reescribir R3.
+PlanificadorGrilla -right-> GestorFunciones
+
 DaosMySQL ..up|> persistencia
 DaosMemoria ..up|> persistencia
 DaosArchivo ..up|> persistencia
@@ -200,12 +236,16 @@ legend bottom
   |  | Estan separados del dominio para que el contrato HTTP no quede atado a como esta hecha |
   |  | una entidad adentro: renombrar un atributo privado no puede romper al front. |
   | Aplicacion | El unico lugar del sistema donde se nombra una implementacion concreta: arma los |
-  |  | diez gestores y decide en que medio se guarda cada cosa. Las dos puertas comparten ese |
-  |  | armado, y por eso son la misma aplicacion y no dos parecidas. |
+  |  | doce gestores —mas el planificador de grilla— y decide en que medio se guarda cada cosa. Las |
+  |  | dos puertas comparten ese armado, y por eso son la misma aplicacion y no dos parecidas. |
   | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
   |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
   |  | GestorFunciones usa PeliculaDAO y SalaDAO para el solapamiento, y ReservaDAO para no borrar |
-  |  | una funcion vendida; GestorCartelera y GestorSalas usan FuncionDAO por el mismo motivo. |
+  |  | una funcion vendida; GestorCartelera y GestorSalas usan FuncionDAO por el mismo motivo; |
+  |  | GestorInformes suma FuncionDAO, PeliculaDAO, SalaDAO y ReservaDAO para titular el bordero |
+  |  | y contar sus entradas. |
+  | pasarelas | Quien autoriza un pago electronico. Es un puerto hacia afuera y no una regla, por |
+  |  | eso no esta en servicio: el cine no puede inventar el codigo que exige R11. |
   | dominio | Que es un cine. Cada entidad con su implementacion y sus enums, agrupadas por |
   |  | sub-dominio. No depende de ninguna otra capa: no sabe que existen MySQL ni la consola. |
   | persistencia | Los contratos arriba, las tecnologias en subpaquetes. Ninguna clase de aca |

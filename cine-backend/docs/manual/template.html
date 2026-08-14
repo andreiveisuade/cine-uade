@@ -3695,6 +3695,9 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
             <tr><td>CU-03b la grilla</td><td><code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>R3 sala sin superposición</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>CU-18 validar entrada</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-16</td></tr>
+            <tr><td>CU-07b pago por checkout</td><td><code>GestorPagosTest</code>, <code>RutasPagosTest</code></td><td>—, cubierto por el automático</td></tr>
+            <tr><td>CU-19 borderó del INCAA</td><td><code>GestorInformesTest</code>, <code>RutasInformesTest</code></td><td>—, cubierto por el automático</td></tr>
+            <tr><td>CU-20 recaudación por función</td><td><code>GestorInformesTest</code>, <code>RutasInformesTest</code></td><td>—, cubierto por el automático</td></tr>
           </tbody>
         </table>
       </div>
@@ -4151,30 +4154,56 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
         recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
 
-      <h3>Modelado, falta implementar</h3>
+      <h3>Implementado, pero solo hasta la API</h3>
       <p>
-        La segunda vuelta de modelado agregó cuatro reglas (R15 a R18), tres casos de uso y un paquete de
-        dominio entero. Está todo dibujado en el modelo de dominio y explicado en este manual, pero
-        <strong>nada de esto existe todavía en el código</strong>:
+        Durante dos entregas esta sección listó como pendiente todo lo que había agregado la segunda vuelta
+        de modelado —tarifas, promociones, control de acceso, vencimiento, candy anónimo, <code>Empleado</code>—
+        y para entonces ya estaba escrito y probado. Queda anotado porque es la falla más fácil de repetir en
+        un manual: <strong>lo que se documenta como pendiente hay que darlo de baja cuando se hace</strong>, y
+        nadie vuelve a leer una lista que da por sentada. Un entregable que dice que la mitad del sistema no
+        existe es peor que uno incompleto.
+      </p>
+      <p>
+        Hoy el corte real es otro y no está en el backend: <strong>hay circuitos que llegan hasta la API y no
+        hasta la pantalla</strong>. Están implementados en el gestor, probados y expuestos por HTTP, pero
+        ninguna vista los usa todavía:
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Qué</th><th>Dónde está explicado</th><th>Tamaño</th></tr></thead>
+          <thead><tr><th>Qué</th><th>Gestor</th><th>HTTP</th><th>Web</th><th>Consola</th></tr></thead>
           <tbody>
-            <tr><td>Tarifas por tipo de público</td><td><a href="#precios">Precios y promociones</a></td><td>medio</td></tr>
-            <tr><td>Motor de promociones y su ABM</td><td><a href="#precios">Precios y promociones</a></td><td><strong>grande</strong>: se lleva una jerarquía, un DAO, un ABM y sus tests</td></tr>
-            <tr><td>Control de acceso con código por reserva</td><td><a href="#acceso">Control de acceso</a></td><td>medio</td></tr>
-            <tr><td>Vencimiento de reservas</td><td><a href="#vencimiento">Vencimiento de la reserva</a></td><td>chico</td></tr>
-            <tr><td>Candy anónimo y ligado a la reserva</td><td><a href="#candy">Candy</a></td><td>chico</td></tr>
-            <tr><td><code>Empleado</code> y el rol acomodador</td><td><a href="#usuarios">Usuarios y roles</a></td><td>chico</td></tr>
+            <tr>
+              <td>Candy: carta, combos y ventas (CU-13 a CU-16)</td>
+              <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
+              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-ok">sí</span></td>
+            </tr>
+            <tr>
+              <td><a href="#informes">Borderó del INCAA</a> y recaudación por función (CU-19, CU-20)</td>
+              <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
+              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-pend">falta</span></td>
+            </tr>
+            <tr>
+              <td><a href="#pasarela">Pago por checkout</a> de la pasarela (CU-07b)</td>
+              <td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td>
+              <td><span class="tag tag-pend">falta</span></td><td><span class="tag tag-pend">falta</span></td>
+            </tr>
           </tbody>
         </table>
       </div>
       <p>
+        Las dos últimas filas dejan al menú de consola desparejo con la API, y eso contradice algo que este
+        manual afirma en varios lugares: que son <em>dos puertas sobre los mismos gestores</em>. Hoy no lo son
+        del todo. La deuda es de <code>ui/</code>, no del modelo — los gestores ya están y el trabajo es
+        agregar un <code>Menu</code> más y engancharlo, que es exactamente el tamaño que tiene que tener
+        sumar un área cuando la arquitectura está bien cortada.
+      </p>
+      <p>
         Los tres diagramas —<a href="#dominio">dominio</a>, <a href="#capas">capas</a> y
-        <a href="#casos-de-uso">casos de uso</a>— están al día con lo implementado, incluida la grilla:
-        <code>GestorProgramaciones</code> y <code>ProgramacionDAO</code> aparecen en el de capas, y CU-03b
-        en el de casos de uso.
+        <a href="#casos-de-uso">casos de uso</a>— están al día con lo implementado. En el de capas aparecen
+        <code>GestorInformes</code>, <code>PlanificadorGrilla</code>, el paquete <code>pasarelas</code> con su
+        implementación emulada y los cuatro generadores de comprobantes; en el de casos de uso, CU-03c, CU-07b,
+        CU-19 y CU-20. Que un diagrama afirme estar al día es una promesa que hay que revisar en cada entrega:
+        esta vez estaba vencida.
       </p>
 
       <h3>Tests</h3>
@@ -4192,14 +4221,24 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorPagosTest</code></td><td>R5, R11, el arqueo de boletería, el checkout de la pasarela —que el efectivo no lo abre, que el monto ya trae el descuento, que confirmar dos veces no cobra de nuevo— y que el recibo de caja sale solo con efectivo</td></tr>
             <tr><td><code>GestorInformesTest</code></td><td>que el borderó declare solo lo cobrado y no las reservas impagas ni las entradas de otra función, el desglose por tarifa, la separación bruto/descuento/neto, la función sin ventas, el archivo exportado, y que el candy de mostrador no se atribuya a ninguna función</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
-            <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
+            <tr><td><code>GestorEmpleadosTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
+            <tr><td><code>AplicacionTest</code></td><td>que el armado no deje ningún gestor afuera y que el circuito completo —reservar, cobrar, agregar candy, pedir el informe— atraviese a todos sobre los mismos DAO. Es el que habría cazado el candy que existía en consola y no en HTTP</td></tr>
             <tr><td><code>RutasInformesTest</code> y <code>RutasPagosTest</code></td><td>lo que solo se ve por HTTP: que el borderó de una función inexistente sea 404 y no 400, que emitirlo sea 201 y consultarlo 200, que el desglose viaje con el nombre del enum como clave, y que el id del checkout que devuelve el primer pedido sirva para confirmar en el segundo</td></tr>
           </tbody>
         </table>
       </div>
       <p>
+        La tabla lista las clases que cubren una regla. Están además <code>VistasCarteleraTest</code>,
+        <code>VistasVentasTest</code>, <code>VistasSalasTest</code>, <code>VistasPromocionesTest</code>,
+        <code>ParseoTest</code> y <code>FechasTest</code>, que fijan la forma del JSON y la lectura de lo que
+        entra: qué campos trae cada variante de una función, en qué formato viajan las fechas y qué pasa con
+        un parámetro mal escrito.
+      </p>
+      <p>
         Corren sin MySQL: usan los DAO en memoria, y los que escriben archivos lo hacen en un directorio
-        temporal. Es el beneficio concreto de haber inyectado los DAO por constructor.
+        temporal. Es el beneficio concreto de haber inyectado los DAO por constructor. Las dos excepciones son
+        <code>BloqueoButacasRedisTest</code>, que se saltea sin un Redis descartable, y los dos
+        <code>Rutas*Test</code>, que levantan el servidor HTTP en un puerto libre.
       </p>
 
       <h3>Deudas anotadas</h3>
@@ -4260,7 +4299,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
       <ul>
         <li><strong>Complejo o sucursal:</strong> hoy hay un solo cine implícito. Varias sedes obligarían a que <code>Sala</code> pertenezca a un <code>Cine</code> y a filtrar la cartelera por sede.</li>
         <li><strong>Abonos, membresías y puntos:</strong> otro agregado entero, con su propio ciclo de vida.</li>
-        <li><strong>Caja por turno y por empleado:</strong> el arqueo hoy es del día completo. En un cine real cada boletero cierra su caja, lo que pediría asociar cada pago a quien lo cobró. Con <code>Empleado</code> ya modelado, esto quedó a un campo de distancia, pero sigue afuera.</li>
+        <li><strong>Caja por turno y por empleado:</strong> hay corte por día —el arqueo— y por función —el <a href="#informes">borderó</a>—, pero no por <em>quién</em> cobró. En un cine real cada boletero cierra su caja, lo que pediría asociar cada pago a un empleado. Con <code>Empleado</code> ya modelado quedó a un campo de distancia, pero sigue afuera.</li>
         <li><strong>Devolución y cancelación de función:</strong> son el mismo problema. Un cine cancela funciones con entradas vendidas —se rompió el proyector, no llegó la copia— y sin devolución no hay forma de cerrar ese circuito. Haría falta <code>EstadoFuncion</code> y decidir el efecto en cascada sobre las reservas.</li>
         <li><strong>Ingresos parciales:</strong> con un código por reserva y no por butaca, si de cuatro personas entran tres el sistema no lo puede representar. Es el costo consciente de la decisión del <a href="#acceso">QR por reserva</a>.</li>
         <li><strong>Stock del candy:</strong> <code>Producto</code> tiene un flag <code>disponible</code>, no una cantidad. Descontar stock obligaría además a decidir qué pasa con los componentes cuando se vende un combo.</li>
