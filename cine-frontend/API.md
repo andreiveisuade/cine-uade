@@ -532,6 +532,11 @@ hace con ellos y qué tal salió.
   "funcionesCreadas": 0 }
 ```
 
+`minutosDisponibles` es el tiempo de sala que la propuesta **podía** usar: la ventana
+entera menos lo que ya estaba programado. Por eso `ocupacion` mide cuánto del hueco real
+se llena, y no baja solo porque la semana ya tenga funciones cargadas. Las funciones que
+empiezan fuera de la ventana horaria no descuentan.
+
 `funcionesCreadas` es `0` en `/propuesta` y la cantidad real en el alta: el front necesita
 distinguir «así quedaría» de «así quedó», y contar los pases no alcanza porque son el
 mismo número en los dos casos.
