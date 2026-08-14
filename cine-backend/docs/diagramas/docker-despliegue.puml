@@ -13,7 +13,7 @@ folder "cine-pelis-parser\n(repo hermano)" as repoParser
 node "Docker host\ndocker-compose.yml (cine-docker)" {
   frame "red **web**" {
     node "cine-frontend\nnginx-unprivileged:1.27-alpine" as frontend
-    node "cine-parser\npython:3-alpine\n<<perfil importador>>" as parser
+    node "cine-parser\npython:3.12-slim\nescucha en 8090" as parser
   }
 
   node "cine-backend\neclipse-temurin:21-jre-alpine" as backend
@@ -38,7 +38,8 @@ usuario --> frontend : "localhost:8080"
 dev --> adminer : "127.0.0.1:8081"
 
 frontend --> backend : proxy_pass /api\n-> backend:8080
-parser --> backend : POST /api/peliculas\n(HTTP, no SQL)
+parser --> backend : POST /api/peliculas/importadas\n(HTTP, no SQL)
+backend --> parser : POST /importar\n(IMPORTADOR_URL, a pedido del panel)
 parser --> tmdb : GET now_playing?region=AR
 backend --> mysql : DB_HOST=mysql:3306
 backend ..> redis : REDIS_HOST=redis:6379\n(si no responde, se vende igual)
@@ -63,8 +64,10 @@ note bottom of parser
   ruta hasta MySQL. Toda pelicula
   entra por la API y pasa por las
   reglas de GestorCartelera.
-  No arranca con el compose:
-  --profile importador
+  Sin ports: al 8090 solo llega el
+  backend, cuando el encargado
+  aprieta el boton. No corre nada
+  por su cuenta.
 end note
 
 note as envNote
@@ -88,8 +91,10 @@ legend bottom
   |  | doble venta la impide el UNIQUE de MySQL. Por eso el backend lo espera con |
   |  | "service_started" y no con "service_healthy" como a la base. |
   | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
-  | parser | Importa la cartelera real de TMDB. Escribe por HTTP: que no este en la red |
-  |  | **datos** es lo que convierte "no toca la base" en una garantia de red. |
+  | parser | Importa la cartelera real de TMDB, a pedido del panel. Escribe por HTTP: que no |
+  |  | este en la red **datos** es lo que convierte "no toca la base" en una garantia de red. |
+  |  | La flecha backend -> parser es la unica llamada saliente del backend, y no sale a |
+  |  | internet: va por la red interna. El que sale a TMDB es el parser. |
   | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
   |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
   | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |

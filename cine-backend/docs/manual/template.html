@@ -3779,34 +3779,112 @@ open http://localhost:8080        # la aplicación</code></pre>
         el que se corrige a mano después.
       </p>
 
+      <h4>Pedirla desde el panel</h4>
+      <p>
+        Al principio el importador corría solo: un <code>while true</code> con
+        <code>sleep 21600</code> en el entrypoint, una pasada cada seis horas. Para adelantarlo
+        había que abrir una terminal y escribir un <code>docker compose run</code>. Eso deja al
+        encargado —que es el que se da cuenta de que falta cartelera— dependiendo de que alguien
+        con acceso a la consola le corra el importador.
+      </p>
+      <p>
+        Ahora hay una pantalla, <strong>Importador</strong>, con un botón. Y el camino que recorre
+        ese botón es lo interesante, porque había que agregarlo <em>sin</em> romper las dos
+        propiedades que sostienen todo lo de arriba: que el parser no tenga ruta hasta MySQL, y
+        que el backend no tenga que saber qué es TMDB.
+      </p>
+      <pre><code>admin  ──►  nginx  ──►  backend  ──POST /importar──►  parser  ──►  TMDB
+ #/importador          (red web)     (red web)          │
+                                                        │  una película por vez
+                       backend  ◄───────────────────────┘  POST /api/peliculas/importadas
+                          │                                 (reglas de GestorCartelera)
+                          ▼
+                     buzón "Por revisar"</code></pre>
+      <p>
+        El parser dejó de ser un job y pasó a ser un servicio: levanta un servidor HTTP de
+        veinte líneas —<code>http.server</code>, sin dependencias nuevas— con dos rutas,
+        <code>GET /salud</code> y <code>POST /importar</code>. No publica puerto al host y nginx no
+        rutea nada hacia él: adentro de la red <code>web</code> lo alcanza el backend y nadie más.
+        Sigue sin estar en <code>datos</code>, así que sigue sin poder escribir en la base, y todo
+        lo que carga sigue entrando por <code>POST /api/peliculas/importadas</code>.
+      </p>
+      <p>
+        Del lado del backend, el parser es un <code>ImportadorCartelera</code>: una interfaz al
+        lado de <code>PasarelaPagos</code>, con la implementación HTTP como único lugar que sabe a
+        qué URL pegarle. El gestor le dice «corré una importación» y no se entera de que existe
+        TMDB. Es también lo que deja probar todo el circuito con un importador de mentira, sin
+        levantar Python ni gastar cuota.
+      </p>
+      <h4>Por qué no el socket de Docker</h4>
+      <p>
+        La primera idea era más directa: que el backend lanzara el contenedor del parser, como
+        hace el <code>docker compose run</code> de la terminal. Para eso hay que montarle el socket
+        de Docker adentro del contenedor, y eso <strong>le da al backend control total del demonio
+        que lo corre</strong>: crear contenedores privilegiados, montar el disco del host, apagar
+        la base. El sistema entero está diseñado alrededor de que cada servicio pueda hacer solo lo
+        suyo —el frontend no llega a MySQL, el parser tampoco— y esto le daría al backend más poder
+        que a cualquiera, para agregar un botón. Un servidor HTTP de veinte líneas en el parser
+        cuesta menos y no cambia el modelo de amenaza.
+      </p>
+      <h4>Una corrida entra en un pedido HTTP</h4>
+      <p>
+        La respuesta del <code>POST /api/importaciones</code> llega <em>cuando la corrida
+        terminó</em>, con los contadores adentro. La alternativa habitual —contestar «ya te aviso»
+        y que el navegador pregunte cada dos segundos— serían treinta pedidos para enterarse de
+        algo que uno solo puede contar, y un mecanismo de trabajos en segundo plano que el backend
+        no tiene en ninguna otra parte.
+      </p>
+      <p>
+        Para que eso sea posible había que arreglar el tiempo. Una corrida son dos llamadas a TMDB
+        por película, cada una con una pausa de 0,3s: de a una, veinte películas eran casi un
+        minuto, y nginx corta a los treinta segundos. Pidiendo los detalles <strong>de a cuatro en
+        paralelo</strong> la corrida baja a diez o quince segundos. Las altas contra nuestro
+        backend siguen siendo de a una y en orden: son escrituras que pasan por R1, y dos hilos
+        mandando el mismo título se pisarían. Igual esa ruta tiene su propio
+        <code>proxy_read_timeout</code> de 180s, por si TMDB tiene un mal día.
+      </p>
+      <p>
+        Cada corrida queda guardada en la tabla <code>importacion</code>: cuándo se pidió, cómo
+        terminó y qué trajo. No es infraestructura, es la respuesta a «¿cuándo trajimos cartelera
+        por última vez?», que es una pregunta del lunes a la mañana. Una corrida que quedó
+        <code>EN_CURSO</code> —el backend se reinició en el medio— la da por perdida el que
+        consulta el historial, con el mismo criterio con el que la cartelera extiende las
+        programaciones vencidas: el trabajo lo hace quien consulta, no un proceso de fondo.
+      </p>
+      <p>
+        Y dos guardas chicas: no se puede pedir una corrida mientras hay otra en curso, y hay un
+        minuto de espera entre corridas. La cartelera no cambia en veinte segundos, y cada clic de
+        más son sesenta llamadas contra una cuota gratuita.
+      </p>
+
       <h4>Correrlo</h4>
       <p>
-        No arranca con el compose. Está detrás del perfil <code>importador</code>, para no gastar
-        llamadas a TMDB cada vez que se levanta el sistema.
+        Arranca con el compose y se queda escuchando, pero <strong>no importa nada solo</strong>:
+        sin un pedido del panel no gasta una llamada a TMDB. Por eso ya no hace falta el perfil que
+        lo dejaba afuera del <code>up</code>, y por eso desapareció el loop de seis horas.
       </p>
       <pre><code>cd ../cine-docker
 # el token va en .env: TMDB_TOKEN=&lt;API Read Access Token de themoviedb.org&gt;
 
-# ensayo: dice qué haría, no escribe nada
-docker compose --profile importador run --rm -e ESPERA_INICIAL=0 -e INTERVALO_SEGUNDOS=0 parser --simular
+docker compose up -d                       # el parser queda escuchando en el 8090
+docker compose logs -f parser              # qué está haciendo
 
-# la corrida de verdad
-docker compose --profile importador run --rm -e ESPERA_INICIAL=0 -e INTERVALO_SEGUNDOS=0 parser
-
-# o dejarlo corriendo, una pasada cada 6 horas
-docker compose --profile importador up -d parser</code></pre>
+# y desde la consola, sin pasar por el panel:
+docker compose run --rm parser --simular   # dice qué traería, no escribe nada, y termina
+docker compose run --rm parser             # la corrida de verdad</code></pre>
       <p>
         Es <strong>idempotente</strong>: antes de dar de alta compara contra los títulos que ya
-        están, así que correrlo dos veces no duplica nada. Eso es lo que permite dejarlo en loop
+        están, así que correrlo dos veces no duplica nada. Eso es lo que permite apretar el botón
         sin llevar registro de qué se importó.
       </p>
       <p>
         El token va en <code>.env</code> como <code>${TMDB_TOKEN}</code>, sin el
-        <code>:?</code> que marcaría la variable como obligatoria. Es a propósito y costó una
-        corrida entenderlo: Compose interpola las variables <strong>al parsear el archivo</strong>,
-        ignorando los perfiles, así que un <code>:?</code> ahí impediría levantar MySQL y el
-        backend a cualquiera que no use el importador. La validación la hace el parser al arrancar,
-        y falla con un mensaje que dice de dónde sacar el token.
+        <code>:?</code> que marcaría la variable como obligatoria. Es a propósito: Compose
+        interpola las variables <strong>al parsear el archivo</strong>, así que un <code>:?</code>
+        ahí impediría levantar MySQL y el backend a cualquiera que todavía no sacó su token. En
+        modo servidor el parser levanta igual sin él y contesta que falta recién cuando le piden
+        una corrida —el panel lo muestra antes de dejar apretar el botón—, en vez de morirse en un
+        crash-loop que nadie mira.
       </p>
 
       <h4>Qué pasó en la primera corrida</h4>
@@ -5216,6 +5294,16 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td>Buzón de revisión para lo importado</td>
               <td>Que TMDB entre derecho al catálogo</td>
               <td>Con dieciocho títulos por corrida, el catálogo dejaría de ser una decisión del cine para ser una copia de lo que se da afuera. Y las descartadas se guardan en vez de borrarse: borradas volverían en la corrida siguiente, todas las noches</td>
+            </tr>
+            <tr>
+              <td>El importador escucha un pedido del backend</td>
+              <td>Que el backend lance el contenedor por el socket de Docker</td>
+              <td>Montarle el socket al backend le da control total del demonio que lo corre —crear contenedores privilegiados, montar el disco del host—, para agregar un botón. Un servidor HTTP de veinte líneas en el parser cuesta menos y no cambia el modelo de amenaza. El parser sigue sin ruta hasta MySQL</td>
+            </tr>
+            <tr>
+              <td>La importación contesta cuando terminó</td>
+              <td>Responder 202 y que el navegador pregunte cada dos segundos</td>
+              <td>Serían treinta pedidos para enterarse de algo que uno solo puede contar, más un mecanismo de trabajos en segundo plano que el backend no tiene en ninguna otra parte. Pedir los detalles de TMDB de a cuatro en paralelo bajó la corrida a diez segundos, que entran en un spinner</td>
             </tr>
             <tr>
               <td><code>estadoRevision</code> aparte de <code>enCartelera</code></td>
