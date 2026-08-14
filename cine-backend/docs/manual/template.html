@@ -3377,7 +3377,7 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       </p>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 305 tests, no necesitan base
+      <pre><code>mvn test                 # los 314 tests, no necesitan base
 mvn package              # jar shaded en target/cine-api.jar</code></pre>
       <p>
         La API HTTP es hoy la única puerta —
@@ -3475,7 +3475,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 305 tests: 301 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 314 tests: 310 corren siempre, 4 se saltean</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -3980,7 +3980,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 305 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 314 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -3996,7 +3996,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 305 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 314 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -4416,7 +4416,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 305 tests en verde. Las
+        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 314 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y el ticket de butacas, el del candy, el
         recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
