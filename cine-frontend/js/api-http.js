@@ -81,7 +81,16 @@ function consulta(filtros) {
 }
 
 export const obtenerFuncionesDePelicula = (peliculaId) => get(`/peliculas/${peliculaId}/funciones`);
-export const obtenerFuncion = (id) => get(`/funciones/${id}`);
+
+// `sesion` es opcional y solo cambia una cosa: las butacas que esa sesión tiene
+// bloqueadas mientras elige no vuelven marcadas como ocupadas para ella misma. Se
+// resuelve en el backend y no acá para que "ocupado" tenga una sola definición.
+export const obtenerFuncion = (id, sesion) => get(`/funciones/${id}${consulta({ sesion })}`);
+
+// La selección entera, no una butaca suelta: una sola llamada toma lo nuevo, renueva lo
+// que sigue elegido y suelta lo que se deseleccionó. Con butacas en [] suelta todo.
+export const bloquearButacas = ({ funcionId, sesion, butacas }) =>
+  post(`/funciones/${Number(funcionId)}/bloqueos`, { sesion, butacas });
 
 export const registrarCliente = ({ nombre, email }) => post("/clientes", { nombre, email });
 
@@ -90,8 +99,8 @@ export const buscarClientePorEmail = (email) =>
 
 // butacas es { "C5": "GENERAL", "C6": "JUBILADO" }: la tarifa es por persona, así que
 // va por butaca y no por reserva.
-export const crearReserva = ({ funcionId, nombre, email, butacas }) =>
-  post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas });
+export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
+  post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });
 
 export const obtenerReserva = (id) => get(`/reservas/${id}`);
 

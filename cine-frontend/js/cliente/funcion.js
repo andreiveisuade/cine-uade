@@ -1,8 +1,9 @@
 import * as api from "../api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "../butacas.js";
 import { ir } from "../router.js";
-import { dia, escapar, etiqueta, hora, precio } from "../ui.js";
-import { seleccion, catalogoTarifas, precioConTarifa, selectorTarifa } from "./compra.js";
+import { avisar, dia, escapar, etiqueta, hora, precio } from "../ui.js";
+import { seleccion, catalogoTarifas, precioConTarifa, selectorTarifa, sesionDeCompra,
+         sostenerSeleccion, renovarMientrasSigaAca } from "./compra.js";
 
 /* ------------------------------------------------------- mapa de butacas */
 
@@ -26,7 +27,10 @@ function pintarParaComprar(asiento, elegidas) {
 }
 
 export async function vistaFuncion(contenedor, id) {
-  const [funcion] = await Promise.all([api.obtenerFuncion(id), catalogoTarifas()]);
+  // La sesión va en el pedido para que las butacas que uno mismo bloqueó no le vuelvan
+  // marcadas como ocupadas: "ocupado" lo decide el backend, no esta pantalla.
+  const [funcion] = await Promise.all([
+    api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]);
   if (seleccion.funcionId !== funcion.id) {
     seleccion.funcionId = funcion.id;
     seleccion.butacas = {};
@@ -109,7 +113,7 @@ export async function vistaFuncion(contenedor, id) {
     });
   }
 
-  mapa.addEventListener("click", (evento) => {
+  mapa.addEventListener("click", async (evento) => {
     const boton = evento.target.closest("button[data-codigo]");
     if (!boton || boton.disabled) return;
     const codigo = boton.dataset.codigo;
@@ -117,8 +121,20 @@ export async function vistaFuncion(contenedor, id) {
     // después hay que acreditarla en la puerta.
     if (seleccion.butacas[codigo]) delete seleccion.butacas[codigo];
     else seleccion.butacas[codigo] = "GENERAL";
+    // Se repinta antes de pedir el bloqueo: la butaca se ve elegida en el acto y no
+    // después de un ida y vuelta al servidor.
     refrescar();
+
+    const rechazadas = await sostenerSeleccion(funcion.id).catch(() => []);
+    if (rechazadas.length) {
+      // Que se escape una butaca es que otro llegó primero, no una falla. El mapa se
+      // vuelve a pedir porque el que teníamos ya está diciendo algo que no es cierto.
+      avisar(`${rechazadas.join(", ")}: alguien las está comprando`, "error");
+      Object.assign(funcion, await api.obtenerFuncion(id, sesionDeCompra()));
+      refrescar();
+    }
   });
 
   refrescar();
+  renovarMientrasSigaAca(funcion.id);
 }

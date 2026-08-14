@@ -7,6 +7,60 @@ import { etiqueta, precio } from "../ui.js";
 // la misma butaca es imposible de expresar.
 export const seleccion = { funcionId: null, butacas: {} };
 
+/* ------------------------------------------ las butacas de mientras se elige */
+
+/*
+ * Mientras alguien elige, sus butacas dejan de ofrecerse al resto. El backend las guarda
+ * a nombre de una sesión que genera este navegador y las suelta solo a los tres minutos:
+ * cerrar la pestaña no avisa, así que el bloqueo tiene que caducar por su cuenta.
+ *
+ * Va en `sessionStorage` y no en `localStorage` porque cada pestaña es una compra
+ * distinta. Y no es una credencial: lo peor que puede hacer una sesión inventada es
+ * soltar el bloqueo de otro, y eso devuelve una butaca a la venta sin poder venderla dos
+ * veces —eso lo sigue impidiendo la base—.
+ */
+const CLAVE_SESION = "cine.sesionDeCompra";
+
+export function sesionDeCompra() {
+  let sesion = sessionStorage.getItem(CLAVE_SESION);
+  if (!sesion) {
+    sesion = crypto.randomUUID();
+    sessionStorage.setItem(CLAVE_SESION, sesion);
+  }
+  return sesion;
+}
+
+/**
+ * Le avisa al backend qué tiene elegido esta sesión, entero y no de a una butaca: con eso
+ * toma lo nuevo, renueva lo que sigue elegido y suelta lo que se deseleccionó.
+ *
+ * Si alguna se escapó la saca de la selección, porque seguir mostrándola elegida sería
+ * prometer una butaca que ya no está. Devuelve las que se perdieron para que la pantalla
+ * avise.
+ */
+export async function sostenerSeleccion(funcionId) {
+  const { rechazadas } = await api.bloquearButacas({
+    funcionId,
+    sesion: sesionDeCompra(),
+    butacas: Object.keys(seleccion.butacas),
+  });
+  rechazadas.forEach((codigo) => delete seleccion.butacas[codigo]);
+  return rechazadas;
+}
+
+// El bloqueo dura tres minutos y se renueva al tocar el mapa; sin esto, quedarse
+// leyendo el resumen o tipeando el mail alcanzaría para perder las butacas.
+const RENOVAR_CADA_MS = 60_000;
+let renovacion = null;
+
+export function renovarMientrasSigaAca(funcionId) {
+  clearInterval(renovacion);
+  renovacion = setInterval(() => sostenerSeleccion(funcionId).catch(() => {}), RENOVAR_CADA_MS);
+  // Irse de la pantalla corta la renovación, y lo que quede bloqueado vence solo. El
+  // router no tiene dónde colgar una limpieza, pero el cambio de hash sí.
+  window.addEventListener("hashchange", () => clearInterval(renovacion), { once: true });
+}
+
 // El catálogo de tarifas sale del backend y no se repite acá: el multiplicador vive en
 // el enum del dominio, y tenerlo duplicado serían dos fuentes de verdad para el precio.
 let tarifas = null;

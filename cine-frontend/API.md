@@ -77,7 +77,7 @@ R3: una función no puede empezar hasta que termine la anterior **más** esos mi
 que programar a las 22:00 algo que termina a las 22:00 da 400. La agenda del admin lo
 dibuja como una franja rayada debajo de cada bloque.
 
-### `GET /api/funciones/{id}`
+### `GET /api/funciones/{id}?sesion=…`
 El endpoint del mapa de butacas. Lo de arriba **más** todas las butacas de la sala, cada
 una con su precio ya calculado y si está ocupada **en esa función**:
 
@@ -89,9 +89,54 @@ una con su precio ya calculado y si está ocupada **en esa función**:
   "libres": 50 }
 ```
 
-`ocupado` se calcula: hay una entrada con ese asiento en alguna reserva **no cancelada**
-de esta función. `estado` es del asiento y vale para todas las funciones. Los dos tienen
-que venir separados: el front los pinta distinto.
+`ocupado` se calcula, y por dos motivos: hay una entrada con ese asiento en alguna reserva
+**no cancelada** de esta función, **o** alguien la tiene [bloqueada mientras elige](#post-apifuncionesidbloqueos).
+`estado` es del asiento y vale para todas las funciones. Los dos tienen que venir
+separados: el front los pinta distinto.
+
+`sesion` es **opcional** y cambia una sola cosa: las butacas que esa sesión tiene
+bloqueadas no vuelven marcadas como ocupadas para ella misma. Mandarla siempre desde la
+pantalla de compra — sin ella, apenas uno bloquea una butaca el mapa se la muestra tomada.
+
+> **Por qué el filtro es del backend y no del navegador.** El front podría pintar su
+> propia selección por encima del campo `ocupado`, y sería una segunda definición de
+> «ocupado» viviendo en la pantalla. «Ocupado» lo decide `Ocupacion`, que es la misma
+> definición que usa la reserva al validar: si se separan, el mapa termina ofreciendo una
+> butaca que la reserva rechaza.
+
+### `POST /api/funciones/{id}/bloqueos`
+Mientras alguien elige, sus butacas dejan de ofrecerse al resto. Es la etapa anterior a la
+reserva: todavía no hay cliente ni ticket.
+
+```json
+{ "sesion": "3f9a…", "butacas": ["C5", "C6"] }
+```
+
+```json
+{ "sesion": "3f9a…", "butacas": ["C5"], "rechazadas": ["C6"], "vencenEnSegundos": 180 }
+```
+
+Se manda la **selección entera**, no una butaca suelta: con eso una sola llamada toma lo
+nuevo, renueva lo que sigue elegido y suelta lo que se deseleccionó. `"butacas": []`
+suelta todo. Es idempotente, así que se puede llamar en cada click sin llevar la cuenta.
+
+- `butacas` en la respuesta son las que quedaron a nombre de esa sesión. `rechazadas`, las
+  que se escaparon. **Perder una butaca no es un error**: las demás sí se consiguieron, así
+  que responde `200` y no `409`, y el front saca las rechazadas de la selección y avisa.
+- `vencenEnSegundos` dice cuánto dura el bloqueo. Hay que **renovarlo** antes de que venza
+  —volver a llamar con la misma selección alcanza—: completar el formulario de la
+  confirmación tarda más que la ventana.
+- `sesion` la genera el navegador (`crypto.randomUUID()`, en `sessionStorage`: cada pestaña
+  es una compra distinta) y **no es una credencial**. No hace falta que lo sea: lo peor que
+  puede hacer una sesión inventada es soltar el bloqueo de otro, y eso devuelve una butaca a
+  la venta sin poder venderla dos veces.
+- Una butaca que no existe en la sala sí es `400`, con el mismo mensaje que al reservar.
+
+> **El bloqueo puede no existir.** Vive en Redis, y si Redis no responde el backend
+> contesta que todas se consiguieron y el mapa no muestra ninguna bloqueada: el sistema
+> vuelve a comportarse como antes de que el bloqueo existiera. El front no tiene que hacer
+> nada distinto — es la misma respuesta, con `rechazadas` siempre vacío. Que una butaca no
+> se venda dos veces lo sigue garantizando la base, no esto.
 
 ### `POST /api/clientes`
 `{ "nombre": "Andrei Veis", "email": "andrei@uade.edu.ar" }` → el cliente creado (CU-05).
@@ -104,11 +149,17 @@ El cliente con ese email, o `null` si no existe. Sin distinguir mayúsculas.
 ### `POST /api/reservas`
 ```json
 { "funcionId": 1, "nombre": "Andrei Veis", "email": "andrei@uade.edu.ar",
-  "butacas": { "C5": "GENERAL", "C6": "JUBILADO" } }
+  "butacas": { "C5": "GENERAL", "C6": "JUBILADO" }, "sesion": "3f9a…" }
 ```
 `butacas` es código de butaca a **tarifa** de quien la ocupa: `GENERAL`, `MENOR`,
 `JUBILADO` o `ESTUDIANTE`. Va por butaca y no por reserva porque la tarifa es por
 persona — en una reserva de cuatro puede haber dos generales, un menor y un jubilado.
+
+`sesion` es la misma con la que se pidieron los [bloqueos](#post-apifuncionesidbloqueos) y
+hay que mandarla: sin ella el propio bloqueo hace rebotar la reserva con «la butaca C5 ya
+está ocupada». Es **opcional** porque la boletería confirma sin haber pasado por la etapa
+de elegir. Al confirmar, el backend suelta todos los bloqueos de esa sesión en esa función,
+incluidos los de las butacas que se miraron y no se compraron.
 
 > El formato viejo `"codigos": ["C5","C6"]` **sigue aceptándose** y equivale a todas
 > `GENERAL`. Si vienen los dos, gana `butacas`.

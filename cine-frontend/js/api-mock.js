@@ -49,14 +49,41 @@ function generarCodigo() {
   return codigo;
 }
 
+/*
+ * Los bloqueos de mientras alguien elige, que en el backend viven en Redis. Acá van en
+ * memoria porque el mock es un solo navegador: no alcanza para dos personas peleando una
+ * butaca, pero sí para que la pantalla se comporte igual que contra la API, que es para
+ * lo que el modo mock existe.
+ */
+const SEGUNDOS_ELIGIENDO = 180;
+const bloqueos = new Map(); // "funcionId:asientoId" -> { sesion, vence }
+
+/** Las butacas tomadas en esa función, con la sesión que tiene cada una. */
+function bloqueadas(funcionId) {
+  const tomadas = new Map();
+  for (const [clave, bloqueo] of bloqueos) {
+    if (bloqueo.vence <= Date.now()) {
+      bloqueos.delete(clave);
+    } else if (clave.startsWith(`${funcionId}:`)) {
+      tomadas.set(Number(clave.slice(String(funcionId).length + 1)), bloqueo.sesion);
+    }
+  }
+  return tomadas;
+}
+
 // Un asiento no está ocupado en sí mismo: lo está en una función, si alguna
-// reserva no cancelada de esa función lo tomó.
-function asientosOcupados(funcionId) {
-  return new Set(
+// reserva no cancelada de esa función lo tomó, o si alguien la está eligiendo.
+// Las que bloqueó `sesion` no le están ocupadas a ella.
+function asientosOcupados(funcionId, sesion) {
+  const ocupados = new Set(
     datos.reservas
       .filter((r) => r.funcionId === funcionId && r.estado !== "CANCELADA")
       .flatMap((r) => r.entradas.map((e) => e.asientoId)),
   );
+  for (const [asientoId, duenio] of bloqueadas(funcionId)) {
+    if (duenio !== sesion) ocupados.add(asientoId);
+  }
+  return ocupados;
 }
 
 function salaDe(salaId) {
@@ -129,12 +156,12 @@ export function obtenerFuncionesDePelicula(peliculaId) {
 }
 
 /** La función con su sala dibujable: cada butaca con su tipo, estado, precio y si está ocupada. */
-export function obtenerFuncion(id) {
+export function obtenerFuncion(id, sesion) {
   const funcion = datos.funciones.find((f) => f.id === Number(id));
   if (!funcion) return fallar(`No existe la función ${id}`);
 
   const sala = salaDe(funcion.salaId);
-  const ocupados = asientosOcupados(funcion.id);
+  const ocupados = asientosOcupados(funcion.id, sesion);
   const butacas = datos.asientos
     .filter((a) => a.salaId === sala.id)
     .map((a) => ({
@@ -180,7 +207,7 @@ export function buscarClientePorEmail(email) {
  * Crea la reserva con las butacas elegidas. Si el email no existe, da de alta el cliente.
  * Replica las validaciones de GestorReservas.
  */
-export function crearReserva({ funcionId, nombre, email, butacas }) {
+export function crearReserva({ funcionId, nombre, email, butacas, sesion }) {
   const funcion = datos.funciones.find((f) => f.id === Number(funcionId));
   if (!funcion) return fallar(`No existe la función ${funcionId}`);
   if (!nombre || !nombre.trim()) return fallar("Falta el nombre del cliente");
@@ -190,7 +217,7 @@ export function crearReserva({ funcionId, nombre, email, butacas }) {
 
   const sala = salaDe(funcion.salaId);
   const deLaSala = datos.asientos.filter((a) => a.salaId === sala.id);
-  const ocupados = asientosOcupados(funcion.id);
+  const ocupados = asientosOcupados(funcion.id, sesion);
 
   // Al venir como mapa, una butaca repetida es imposible de expresar: no hay que validarla.
   const entradas = [];
@@ -229,7 +256,54 @@ export function crearReserva({ funcionId, nombre, email, butacas }) {
     entradas,
   };
   datos.reservas.push(reserva);
+  // Guardada la reserva, el bloqueo cumplió su etapa: de acá en adelante la butaca la
+  // retiene la reserva. Suelta también las que se miraron y no se compraron.
+  liberarBloqueos(funcion.id, sesion);
   return responder(reserva);
+}
+
+/**
+ * Lo que esa sesión tiene elegido en el mapa. Toma lo nuevo, renueva lo que sigue elegido
+ * y suelta lo que se deseleccionó; con `butacas` en [] suelta todo.
+ *
+ * Que una butaca no se consiga no es un error: es que otro llegó primero, y las demás sí
+ * se consiguieron. Por eso las rechazadas viajan en la misma respuesta.
+ */
+export function bloquearButacas({ funcionId, sesion, butacas }) {
+  const funcion = datos.funciones.find((f) => f.id === Number(funcionId));
+  if (!funcion) return fallar(`No existe la función ${funcionId}`);
+  if (!sesion) return fallar("Hace falta una sesión para bloquear butacas");
+
+  const deLaSala = datos.asientos.filter((a) => a.salaId === funcion.salaId);
+  const ocupados = asientosOcupados(funcion.id, sesion);
+  const pedidas = (butacas || []).map((codigo) => String(codigo).trim().toUpperCase());
+
+  const conseguidas = [];
+  const sigueEligiendo = new Set();
+  for (const codigo of pedidas) {
+    const asiento = deLaSala.find((a) => a.codigo === codigo);
+    if (!asiento) return fallar(`La butaca ${codigo} no existe en esa sala`);
+    sigueEligiendo.add(asiento.id);
+    if (ocupados.has(asiento.id)) continue;
+    bloqueos.set(`${funcion.id}:${asiento.id}`,
+      { sesion, vence: Date.now() + SEGUNDOS_ELIGIENDO * 1000 });
+    conseguidas.push(codigo);
+  }
+  liberarBloqueos(funcion.id, sesion, (asientoId) => !sigueEligiendo.has(asientoId));
+
+  return responder({
+    sesion,
+    butacas: conseguidas,
+    rechazadas: pedidas.filter((codigo) => !conseguidas.includes(codigo)),
+    vencenEnSegundos: SEGUNDOS_ELIGIENDO,
+  });
+}
+
+/** Suelta los bloqueos de esa sesión en esa función, solo los suyos. */
+function liberarBloqueos(funcionId, sesion, corresponde = () => true) {
+  for (const [asientoId, duenio] of bloqueadas(funcionId)) {
+    if (duenio === sesion && corresponde(asientoId)) bloqueos.delete(`${funcionId}:${asientoId}`);
+  }
 }
 
 /** Todo lo que necesita el ticket, igual que el comprobante .txt del backend. */

@@ -1,12 +1,14 @@
 import * as api from "../api.js";
 import { ir } from "../router.js";
 import { avisar, dia, escapar, etiqueta, hora, precio, error } from "../ui.js";
-import { seleccion, catalogoTarifas, tarifaPorNombre, precioConTarifa, selectorTarifa, clienteRecordado, recordarCliente } from "./compra.js";
+import { seleccion, catalogoTarifas, tarifaPorNombre, precioConTarifa, selectorTarifa,
+         clienteRecordado, recordarCliente, sesionDeCompra, renovarMientrasSigaAca } from "./compra.js";
 
 /* ------------------------------------------------------------- confirmación */
 
 export async function vistaConfirmar(contenedor, id) {
-  const [funcion] = await Promise.all([api.obtenerFuncion(id), catalogoTarifas()]);
+  const [funcion] = await Promise.all([
+    api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]);
   // Si se recargó la página la selección se perdió: volver al mapa.
   if (seleccion.funcionId !== funcion.id || Object.keys(seleccion.butacas).length === 0) {
     ir(`#/funcion/${funcion.id}`);
@@ -124,6 +126,9 @@ export async function vistaConfirmar(contenedor, id) {
         nombre: datos.get("nombre"),
         email: datos.get("email"),
         butacas: seleccion.butacas,
+        // La misma sesión con la que se bloquearon: sin esto, el propio bloqueo haría
+        // rebotar la reserva por butaca ocupada.
+        sesion: sesionDeCompra(),
       });
       // Comprar sin registrarse igual deja los datos listos para la próxima.
       recordarCliente({ nombre: datos.get("nombre").trim(), email: datos.get("email").trim() });
@@ -143,4 +148,8 @@ export async function vistaConfirmar(contenedor, id) {
       errorForm.classList.remove("hidden");
     }
   });
+
+  // Completar el formulario lleva más de lo que dura un bloqueo: sin renovarlo, la
+  // persona perdería las butacas justo mientras tipea el mail.
+  renovarMientrasSigaAca(funcion.id);
 }
