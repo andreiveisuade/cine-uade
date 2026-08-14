@@ -3,6 +3,7 @@ package ar.uade.cine.pasarelas;
 import java.util.Optional;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Quien autoriza un pago electrónico, que nunca es el cine. El cobro en la web no termina
@@ -14,7 +15,7 @@ import ar.uade.cine.dominio.ventas.MedioPago;
  * <p>Es una interfaz por el mismo motivo que {@link ar.uade.cine.comprobantes.GeneradorTicket}:
  * hoy atrás hay una emulación —no hay credenciales ni llamadas de red en este TP— y mañana
  * podría haber una integración de verdad. Con el contrato de por medio, eso es cambiar un
- * argumento en {@code Aplicacion} y {@link ar.uade.cine.servicio.GestorPagos} no se entera.
+ * argumento en {@code Aplicacion} y {@link ar.uade.cine.servicio.ventas.GestorPagos} no se entera.
  *
  * <p>Acá no vive ninguna regla: no decide si la reserva se puede cobrar, ni si el medio
  * exige autorización, ni si la función ya empezó. Eso es del gestor. La pasarela solo crea
@@ -29,7 +30,7 @@ public interface PasarelaPagos {
      *              que mostrar el importe final o el cliente aprobaría un número y pagaría
      *              otro
      */
-    Checkout crear(int reservaId, MedioPago medio, double monto);
+    Checkout crear(int reservaId, MedioPago medio, Dinero monto);
 
     /** Vacío si ese checkout no existe. Quién avisa del error es el gestor, no la pasarela. */
     Optional<Checkout> buscar(String checkoutId);
@@ -51,7 +52,7 @@ public interface PasarelaPagos {
      * @param codigoQr lo que codifica el QR. El dibujo es problema de quien lo muestra:
      *                 acá viaja el contenido, igual que los enums viajan por nombre
      */
-    record Checkout(String id, int reservaId, MedioPago medio, double monto,
+    record Checkout(String id, int reservaId, MedioPago medio, Dinero monto,
                     String urlPago, String codigoQr) {
     }
 }

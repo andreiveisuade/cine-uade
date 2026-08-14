@@ -1,6 +1,7 @@
 package ar.uade.cine.dominio.candy;
 
 import java.util.List;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Algo que se vende en el candy. Un combo es también un Producto —tiene precio y se
@@ -17,9 +18,9 @@ public interface Producto {
 
     TipoProducto getTipo();
 
-    double getPrecio();
+    Dinero getPrecio();
 
-    void setPrecio(double precio);
+    void setPrecio(Dinero precio);
 
     /**
      * Si se sigue ofreciendo. Un producto no se borra: puede estar en compras viejas,

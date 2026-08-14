@@ -1,6 +1,7 @@
 package ar.uade.cine.dominio.funciones;
 
 import java.time.LocalDateTime;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Una función programada: una película en una sala, a una fecha y hora, con su versión,
@@ -35,7 +36,7 @@ public interface Funcion {
     Proyeccion getProyeccion();
 
     /** Precio base: lo que cuesta una butaca estándar. Los recargos se calculan aparte. */
-    double getPrecio();
+    Dinero getPrecio();
 
     // ---------- el paso del tiempo ----------
 

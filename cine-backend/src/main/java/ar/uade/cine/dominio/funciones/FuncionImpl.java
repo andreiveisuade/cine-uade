@@ -1,6 +1,7 @@
 package ar.uade.cine.dominio.funciones;
 
 import java.time.LocalDateTime;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Referencia a película y sala por id: el DAO trae el objeto completo cuando hace falta.
@@ -14,16 +15,16 @@ public class FuncionImpl implements Funcion {
     private final LocalDateTime inicio;
     private final Version version;
     private final Proyeccion proyeccion;
-    private final double precio;
+    private final Dinero precio;
 
     /** La función suelta de CU-03: no salió de ninguna grilla. */
     public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio,
-                       Version version, Proyeccion proyeccion, double precio) {
+                       Version version, Proyeccion proyeccion, Dinero precio) {
         this(peliculaId, salaId, inicio, version, proyeccion, precio, null);
     }
 
     public FuncionImpl(int peliculaId, int salaId, LocalDateTime inicio, Version version,
-                       Proyeccion proyeccion, double precio, Integer programacionId) {
+                       Proyeccion proyeccion, Dinero precio, Integer programacionId) {
         this.peliculaId = peliculaId;
         this.salaId = salaId;
         this.inicio = inicio;
@@ -34,7 +35,7 @@ public class FuncionImpl implements Funcion {
     }
 
     public FuncionImpl(int id, int peliculaId, int salaId, LocalDateTime inicio, Version version,
-                       Proyeccion proyeccion, double precio, Integer programacionId) {
+                       Proyeccion proyeccion, Dinero precio, Integer programacionId) {
         this(peliculaId, salaId, inicio, version, proyeccion, precio, programacionId);
         this.id = id;
     }
@@ -80,7 +81,7 @@ public class FuncionImpl implements Funcion {
     }
 
     @Override
-    public double getPrecio() {
+    public Dinero getPrecio() {
         return precio;
     }
 

@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * El checkout de MercadoPago, emulado: arma el link y el QR, y devuelve un código de
@@ -40,7 +41,7 @@ public class MercadoPagoEmulado implements PasarelaPagos {
     private final Map<String, Checkout> checkouts = new ConcurrentHashMap<>();
 
     @Override
-    public Checkout crear(int reservaId, MedioPago medio, double monto) {
+    public Checkout crear(int reservaId, MedioPago medio, Dinero monto) {
         String id = "MP-" + numero(10);
         // El QR no lleva la reserva ni el monto sueltos: lleva el id del checkout, que es
         // lo que el procesador sabe resolver. Poner el monto adentro dejaría que alguien

@@ -10,6 +10,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Las condiciones que comparten las tres promociones: cuándo corre y con qué se paga.
@@ -73,9 +74,13 @@ public abstract class PromocionBase implements Promocion {
     }
 
     /** Nunca descuenta más que el total: un descuento mayor daría un cobro negativo. */
-    protected static double topear(double descuento, List<Entrada> entradas) {
-        double total = entradas.stream().mapToDouble(Entrada::precio).sum();
-        return Math.min(Math.max(descuento, 0), total);
+    protected static Dinero topear(Dinero descuento, List<Entrada> entradas) {
+        return descuento.sinBajarDeCero().acotadoA(subtotalDe(entradas));
+    }
+
+    /** Lo que suman las entradas que participan del descuento. */
+    protected static Dinero subtotalDe(List<Entrada> entradas) {
+        return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
 
     @Override

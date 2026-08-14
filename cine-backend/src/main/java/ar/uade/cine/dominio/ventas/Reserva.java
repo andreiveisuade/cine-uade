@@ -2,6 +2,7 @@ package ar.uade.cine.dominio.ventas;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Butacas de una función a nombre de un cliente. Nace {@link EstadoReserva#RESERVADA}
@@ -42,7 +43,7 @@ public interface Reserva {
      * definitivo aparece recién al cobrar, cuando se sabe el medio de pago y con él qué
      * promoción aplica.
      */
-    double getTotal();
+    Dinero getTotal();
 
     EstadoReserva getEstado();
 

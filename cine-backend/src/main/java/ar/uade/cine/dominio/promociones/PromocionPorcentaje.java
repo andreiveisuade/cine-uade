@@ -8,6 +8,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /** Un porcentaje del subtotal: el "miércoles 30% off". */
 public class PromocionPorcentaje extends PromocionBase {
@@ -31,13 +32,9 @@ public class PromocionPorcentaje extends PromocionBase {
     }
 
     @Override
-    public double calcularDescuento(List<Entrada> entradas) {
-        double subtotal = entradas.stream().mapToDouble(Entrada::precio).sum();
-        return topear(redondear(subtotal * porcentaje / 100), entradas);
-    }
-
-    /** A dos decimales, por el mismo arrastre de error que se redondea en el precio. */
-    private static double redondear(double monto) {
-        return Math.round(monto * 100) / 100.0;
+    public Dinero calcularDescuento(List<Entrada> entradas) {
+        // Sin redondeo propio: Dinero ya trabaja en centavos enteros. Este metodo
+        // tenia su copia del Math.round de CalculadoraPrecio, en otro paquete.
+        return topear(subtotalDe(entradas).porcentaje(porcentaje), entradas);
     }
 }

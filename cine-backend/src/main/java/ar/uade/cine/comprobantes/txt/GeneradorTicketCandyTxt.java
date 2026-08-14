@@ -12,6 +12,7 @@ import ar.uade.cine.dominio.candy.ItemCompra;
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.persistencia.PersistenciaException;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Escribe el comprobante en tickets/candy-&lt;id&gt;.txt. Mismo medio y mismo formato que
@@ -34,7 +35,7 @@ public class GeneradorTicketCandyTxt implements GeneradorTicketCandy {
     }
 
     @Override
-    public void emitir(CompraCandy compra, Cliente cliente, double ahorro) {
+    public void emitir(CompraCandy compra, Cliente cliente, Dinero ahorro) {
         List<String> lineas = new ArrayList<>(List.of(
                 LINEA,
                 centrar("CINE UADE - CANDY"),
@@ -47,14 +48,14 @@ public class GeneradorTicketCandyTxt implements GeneradorTicketCandy {
                 LINEA));
 
         for (ItemCompra item : compra.getItems()) {
-            lineas.add(String.format(" %-2dx %-22s $ %8.2f",
+            lineas.add(String.format(" %-2dx %-22s $ %8s",
                     item.cantidad(), recortar(item.nombre()), item.getSubtotal()));
         }
 
         lineas.add(LINEA);
-        lineas.add(campo("Total", String.format("$ %.2f", compra.getTotal())));
-        if (ahorro > 0) {
-            lineas.add(campo("Ahorraste", String.format("$ %.2f con los combos", ahorro)));
+        lineas.add(campo("Total", "$ " + compra.getTotal()));
+        if (ahorro.esMayorQue(Dinero.CERO)) {
+            lineas.add(campo("Ahorraste", "$ " + ahorro + " con los combos"));
         }
         lineas.add(campo("Pago", compra.getMedio().name()));
         if (!compra.getCodigoAutorizacion().isBlank()) {

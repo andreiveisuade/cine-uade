@@ -11,6 +11,7 @@ import ar.uade.cine.comprobantes.GeneradorRecibo;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.persistencia.PersistenciaException;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Escribe el recibo en tickets/recibo-&lt;id de pago&gt;.txt. Mismo formato y misma carpeta
@@ -51,16 +52,16 @@ public class GeneradorReciboTxt implements GeneradorRecibo {
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
                 campo("Cobrado", pago.getFecha().format(FORMATO_FECHA)),
                 LINEA,
-                campo("Subtotal", String.format("$ %.2f", pago.getSubtotal()))));
+                campo("Subtotal", "$ " + pago.getSubtotal())));
 
         // El descuento solo se imprime si lo hubo: una linea "Descuento: $ 0.00" invita a
         // preguntar en la caja por que no se aplico ninguna promocion.
-        if (pago.getDescuento() > 0) {
-            lineas.add(campo("Descuento", String.format("$ %.2f", pago.getDescuento())));
+        if (pago.getDescuento().esMayorQue(Dinero.CERO)) {
+            lineas.add(campo("Descuento", "$ " + pago.getDescuento()));
         }
 
         lineas.addAll(List.of(
-                campo("Total", String.format("$ %.2f", pago.getMonto())),
+                campo("Total", "$ " + pago.getMonto()),
                 campo("Pago", pago.getMedio().name()),
                 LINEA,
                 centrar("Comprobante de pago en efectivo"),

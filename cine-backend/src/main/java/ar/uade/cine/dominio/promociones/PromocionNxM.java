@@ -9,6 +9,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Llevás n, pagás m: el 2x1 de toda la vida.
@@ -49,18 +50,17 @@ public class PromocionNxM extends PromocionBase {
      * butacas— y la quinta se paga entera.
      */
     @Override
-    public double calcularDescuento(List<Entrada> entradas) {
+    public Dinero calcularDescuento(List<Entrada> entradas) {
         int grupos = entradas.size() / lleva;
         int gratis = grupos * (lleva - paga);
         if (gratis <= 0) {
-            return 0;
+            return Dinero.CERO;
         }
-        double descuento = entradas.stream()
+        Dinero descuento = Dinero.sumar(entradas.stream()
                 .map(Entrada::precio)
                 .sorted(Comparator.naturalOrder())
                 .limit(gratis)
-                .mapToDouble(Double::doubleValue)
-                .sum();
+                .toList());
         return topear(descuento, entradas);
     }
 }

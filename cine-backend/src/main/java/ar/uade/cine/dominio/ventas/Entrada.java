@@ -1,5 +1,7 @@
 package ar.uade.cine.dominio.ventas;
 
+import ar.uade.cine.dominio.dinero.Dinero;
+
 /**
  * Una butaca vendida dentro de una reserva. Es un value object: no tiene identidad
  * propia ni DAO, se guarda y se lee siempre junto con su reserva. Por eso es un record
@@ -16,7 +18,7 @@ package ar.uade.cine.dominio.ventas;
  *                      que se pagó. Ninguna promoción lo toca: el descuento se calcula
  *                      sobre el total y vive en el {@link Pago}
  */
-public record Entrada(int asientoId, String codigoAsiento, TipoTarifa tarifa, double precio) {
+public record Entrada(int asientoId, String codigoAsiento, TipoTarifa tarifa, Dinero precio) {
 
     @Override
     public String toString() {

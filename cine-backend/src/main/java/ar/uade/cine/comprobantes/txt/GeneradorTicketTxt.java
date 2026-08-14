@@ -16,6 +16,7 @@ import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.comprobantes.GeneradorTicket;
 import ar.uade.cine.persistencia.PersistenciaException;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Escribe el comprobante en tickets/ticket-&lt;id&gt;.txt.
@@ -57,13 +58,13 @@ public class GeneradorTicketTxt implements GeneradorTicket {
         for (Entrada entrada : reserva.getEntradas()) {
             String butaca = "Butaca " + entrada.codigoAsiento();
             String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + entrada.tarifa();
-            lineas.add(String.format(" %-13s: $ %.2f%s", butaca, entrada.precio(), tarifa));
+            lineas.add(String.format(" %-13s: $ %s%s", butaca, entrada.precio(), tarifa));
         }
 
         lineas.addAll(List.of(
                 LINEA,
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
-                campo("Total", String.format("$ %.2f", reserva.getTotal())),
+                campo("Total", "$ " + reserva.getTotal()),
                 campo("Estado", reserva.getEstado().name()),
                 LINEA,
                 centrar("Presentar en boleteria"),

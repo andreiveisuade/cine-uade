@@ -11,6 +11,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Referencia película y sala por id: el DAO trae el objeto completo cuando hace falta.
@@ -26,13 +27,13 @@ public class ProgramacionImpl implements Programacion {
     private final Set<DayOfWeek> diasSemana;
     private final Version version;
     private final Proyeccion proyeccion;
-    private final double precio;
+    private final Dinero precio;
     private boolean activa = true;
     private LocalDate generadaHasta;
 
     public ProgramacionImpl(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
                             LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
-                            Proyeccion proyeccion, double precio) {
+                            Proyeccion proyeccion, Dinero precio) {
         this.peliculaId = peliculaId;
         this.salaId = salaId;
         this.desde = desde;
@@ -47,7 +48,7 @@ public class ProgramacionImpl implements Programacion {
 
     public ProgramacionImpl(int id, int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
                             LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
-                            Proyeccion proyeccion, double precio) {
+                            Proyeccion proyeccion, Dinero precio) {
         this(peliculaId, salaId, desde, hasta, horaInicio, diasSemana, version, proyeccion, precio);
         this.id = id;
     }
@@ -134,7 +135,7 @@ public class ProgramacionImpl implements Programacion {
     }
 
     @Override
-    public double getPrecio() {
+    public Dinero getPrecio() {
         return precio;
     }
 

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Un descuento sobre el total de una reserva.
@@ -75,5 +76,5 @@ public interface Promocion {
      * corresponden. Si la regla viviera adentro, habría que acordarse de repetirla en
      * cada implementación.
      */
-    double calcularDescuento(List<Entrada> entradas);
+    Dinero calcularDescuento(List<Entrada> entradas);
 }

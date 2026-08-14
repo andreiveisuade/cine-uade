@@ -1,6 +1,6 @@
 package ar.uade.cine.comprobantes;
 
-import ar.uade.cine.servicio.Bordero;
+import ar.uade.cine.servicio.informes.Bordero;
 
 /**
  * Emite el borderó de una función en un archivo, que es lo que después se sube al INCAA.

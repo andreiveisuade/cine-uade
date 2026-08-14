@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Reservar y comprar son el mismo registro en distinto estado: nace RESERVADA
@@ -99,8 +100,8 @@ public class ReservaImpl implements Reserva {
     }
 
     @Override
-    public double getTotal() {
-        return entradas.stream().mapToDouble(Entrada::precio).sum();
+    public Dinero getTotal() {
+        return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
 
     @Override

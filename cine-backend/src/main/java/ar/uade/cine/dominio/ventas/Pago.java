@@ -1,6 +1,7 @@
 package ar.uade.cine.dominio.ventas;
 
 import java.time.LocalDateTime;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Comprobante de cobro de una reserva. Tiene entidad propia —y no es un campo más de
@@ -17,7 +18,7 @@ public interface Pago {
 
     /** No se pasa por parámetro: se toma del total de la reserva, así nadie cobra otra cosa. */
     /** Suma de los precios de lista de las entradas, antes de cualquier descuento. */
-    double getSubtotal();
+    Dinero getSubtotal();
 
     /**
      * La promoción que ganó, o {@code null} si no aplicó ninguna. Guardarla además del
@@ -27,10 +28,10 @@ public interface Pago {
     Integer getPromocionId();
 
     /** Cuánto sacó la promoción. Cero si no hubo. */
-    double getDescuento();
+    Dinero getDescuento();
 
     /** Lo que entró de verdad en la caja: subtotal menos descuento. Es lo que suma el arqueo. */
-    double getMonto();
+    Dinero getMonto();
 
     MedioPago getMedio();
 

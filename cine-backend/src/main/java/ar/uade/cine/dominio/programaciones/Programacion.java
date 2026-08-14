@@ -9,6 +9,7 @@ import java.util.Set;
 
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * La grilla con la que un cine define su cartelera: "Matrix en la Sala 1, todos los días
@@ -86,7 +87,7 @@ public interface Programacion {
 
     Proyeccion getProyeccion();
 
-    double getPrecio();
+    Dinero getPrecio();
 
     /**
      * Una grilla dada de baja no genera funciones nuevas; las ya generadas siguen vivas.

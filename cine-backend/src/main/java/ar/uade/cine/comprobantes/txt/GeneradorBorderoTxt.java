@@ -11,7 +11,8 @@ import java.util.Map;
 import ar.uade.cine.comprobantes.GeneradorBordero;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.PersistenciaException;
-import ar.uade.cine.servicio.Bordero;
+import ar.uade.cine.servicio.informes.Bordero;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Escribe el borderó en informes/bordero-funcion-&lt;id&gt;.txt, con el mismo formato de
@@ -62,7 +63,7 @@ public class GeneradorBorderoTxt implements GeneradorBordero {
         // tarifas en cero no se declaran, igual que el arqueo no lista los medios de pago
         // con los que no entro nada.
         for (Map.Entry<TipoTarifa, Bordero.TotalPorTarifa> tarifa : bordero.porTarifa().entrySet()) {
-            lineas.add(String.format(" %-13s: %3d   $ %10.2f",
+            lineas.add(String.format(" %-13s: %3d   $ %10s",
                     tarifa.getKey(), tarifa.getValue().cantidad(), tarifa.getValue().total()));
         }
         if (bordero.porTarifa().isEmpty()) {
@@ -73,9 +74,9 @@ public class GeneradorBorderoTxt implements GeneradorBordero {
         lineas.addAll(List.of(
                 LINEA,
                 campo("Espectadores", String.valueOf(bordero.espectadores())),
-                campo("Recaudacion", String.format("$ %.2f", bordero.recaudacionBruta())),
-                campo("Descuentos", String.format("$ %.2f", bordero.descuentos())),
-                campo("Neto", String.format("$ %.2f", bordero.recaudacionNeta())),
+                campo("Recaudacion", "$ " + bordero.recaudacionBruta()),
+                campo("Descuentos", "$ " + bordero.descuentos()),
+                campo("Neto", "$ " + bordero.recaudacionNeta()),
                 LINEA,
                 centrar("Declaracion jurada"),
                 LINEA));

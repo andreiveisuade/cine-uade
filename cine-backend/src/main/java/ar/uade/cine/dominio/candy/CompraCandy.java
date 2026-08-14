@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Una venta del candy. A diferencia de la reserva de butacas, no hay estados: en el
@@ -46,5 +47,5 @@ public interface CompraCandy {
     List<ItemCompra> getItems();
 
     /** Derivado de los items: no se guarda por separado. */
-    double getTotal();
+    Dinero getTotal();
 }

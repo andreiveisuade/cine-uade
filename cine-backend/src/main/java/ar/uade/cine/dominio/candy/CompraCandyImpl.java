@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Igual que PeliculaImpl: el constructor corto arma la compra al venderla (sin id
@@ -78,8 +79,8 @@ public class CompraCandyImpl implements CompraCandy {
     }
 
     @Override
-    public double getTotal() {
-        return items.stream().mapToDouble(ItemCompra::getSubtotal).sum();
+    public Dinero getTotal() {
+        return Dinero.sumar(items.stream().map(ItemCompra::getSubtotal).toList());
     }
 
     @Override

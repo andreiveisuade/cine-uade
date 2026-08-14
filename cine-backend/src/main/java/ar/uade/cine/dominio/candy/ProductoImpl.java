@@ -2,6 +2,7 @@ package ar.uade.cine.dominio.candy;
 
 import java.util.ArrayList;
 import java.util.List;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Igual que PeliculaImpl: el constructor corto da de alta un producto nuevo (sin id,
@@ -13,18 +14,18 @@ public class ProductoImpl implements Producto {
     private int id;
     private final String nombre;
     private final TipoProducto tipo;
-    private double precio;
+    private Dinero precio;
     private boolean disponible;
     private final List<ItemCombo> componentes = new ArrayList<>();
 
-    public ProductoImpl(String nombre, TipoProducto tipo, double precio) {
+    public ProductoImpl(String nombre, TipoProducto tipo, Dinero precio) {
         this.nombre = nombre;
         this.tipo = tipo;
         this.precio = precio;
         this.disponible = true;
     }
 
-    public ProductoImpl(int id, String nombre, TipoProducto tipo, double precio, boolean disponible) {
+    public ProductoImpl(int id, String nombre, TipoProducto tipo, Dinero precio, boolean disponible) {
         this(nombre, tipo, precio);
         this.id = id;
         this.disponible = disponible;
@@ -51,12 +52,12 @@ public class ProductoImpl implements Producto {
     }
 
     @Override
-    public double getPrecio() {
+    public Dinero getPrecio() {
         return precio;
     }
 
     @Override
-    public void setPrecio(double precio) {
+    public void setPrecio(Dinero precio) {
         this.precio = precio;
     }
 
