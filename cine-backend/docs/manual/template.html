@@ -417,12 +417,15 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
+        <li><a href="#solid" data-target="solid">SOLID en este código</a></li>
+        <li><a href="#grasp" data-target="grasp">Patrones GRASP</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
         <li><a href="#dos-puertas" data-target="dos-puertas">La puerta que ya no está</a></li>
         <li><a href="#consultas" data-target="consultas">El costo de las consultas</a></li>
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#pagos" data-target="pagos">Pagos</a></li>
+        <li><a href="#dinero" data-target="dinero">La plata no es un double</a></li>
         <li><a href="#precios" data-target="precios">Precios y promociones</a></li>
         <li><a href="#acceso" data-target="acceso">Control de acceso</a></li>
         <li><a href="#vencimiento" data-target="vencimiento">Vencimiento de la reserva</a></li>
@@ -465,7 +468,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta —gestor y API HTTP— con 314 tests en verde. Ver
+          implementados de punta a punta —gestor y API HTTP— con 334 tests en verde. Ver
           <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
@@ -1189,6 +1192,54 @@ body.lightbox-locked { overflow: hidden; }
         </p>
       </div>
 
+      <h4>El puntaje no vale lo mismo en todas</h4>
+      <p>
+        TMDB devuelve dos números por película y el importador guardaba uno solo: la nota
+        (<code>vote_average</code>) sin la cantidad de votos (<code>vote_count</code>). Con eso el
+        planificador comparaba cosas que no son comparables. Mirado sobre la cartelera argentina real:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Película</th><th>Nota</th><th>Votos</th><th>Qué significa en realidad</th></tr></thead>
+          <tbody>
+            <tr><td>Superman</td><td>7,4</td><td>2.732</td><td>una medición</td></tr>
+            <tr><td>Nimrods</td><td>6,7</td><td>6</td><td>seis opiniones sueltas</td></tr>
+            <tr><td>Canelones</td><td><strong>0,0</strong></td><td><strong>0</strong></td><td>nadie la vio todavía — <em>no</em> es una mala película</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El tercer caso es el grave y no es una rareza: <strong>siete de cada veinte títulos en cartel no
+        tienen ningún voto</strong>. Un estreno de la semana entraba al sistema con 0,0 y quedaba último
+        para siempre, compitiendo de igual a igual con una película que la gente vio y calificó mal.
+      </p>
+      <p>
+        La corrección es la que usan IMDb y el propio TMDB para sus rankings: mezclar la nota de la película
+        con el promedio del catálogo, dándole más peso a la nota cuantos más votos tenga.
+      </p>
+      <pre><code>valor = (v / (v + 50)) × nota  +  (50 / (v + 50)) × promedio</code></pre>
+      <p>
+        Los <strong>cincuenta votos</strong> salen de mirar los datos, no de una convención: la mediana de la
+        cartelera está en treinta y cuatro, así que con ese umbral la mitad del catálogo queda a mitad de
+        camino entre su nota y el promedio — ni se le cree del todo ni se lo ignora. Y el promedio del catálogo
+        va <strong>ponderado por votos</strong>: si cada película contara igual, una con seis votos movería la
+        referencia tanto como una con cinco mil, y la referencia tiene que estar mejor medida que lo que corrige.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Cero votos son dos situaciones distintas, y confundirlas rompió el algoritmo.</strong> La
+          primera versión mandaba al promedio a toda película sin votos. Suena razonable hasta que aparece la
+          que <em>cargó el encargado a mano</em>: tiene 9,0 y cero votos porque nunca estuvo en TMDB. Con esa
+          regla, un 9,0 y un 2,0 cargados a mano valían exactamente lo mismo, y en un catálogo sin ninguna
+          película votada el promedio daba cero y <em>todas</em> valían cero. El ranking desaparecía.
+        </p>
+        <p>
+          Hoy se distinguen: puntaje sin votos es el criterio del encargado y vale tal cual; cero sin votos es
+          ausencia de datos y va al promedio. Lo detectaron los tests del planificador al ponerse en rojo — y
+          la lectura fácil habría sido actualizar el test, que es justamente la equivocada.
+        </p>
+      </div>
+
       <h4>Etapa 2: el reparto</h4>
       <p>
         Cada sala se llena día por día desde la apertura hasta que no entre una función más. Qué película va
@@ -1543,19 +1594,394 @@ Libres: 52 de 56</code></pre>
       <p>Cada capa tiene una responsabilidad y solo conoce a la de abajo.</p>
 
       <figure class="diagram">
+        {{SVG_CAPAS_PAQUETES}}
+        <figcaption>Las cuatro capas y los subpaquetes de cada una</figcaption>
+      </figure>
+
+      <figure class="diagram">
         {{SVG_CAPAS}}
-        <figcaption>Las cuatro capas, con sus gestores y DAOs</figcaption>
+        <figcaption>Las mismas capas, clase por clase</figcaption>
       </figure>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Qué NO hace</th></tr></thead>
           <tbody>
-            <tr><td><code>ui</code></td><td>Hablar con el usuario</td><td>No decide reglas ni toca SQL</td></tr>
-            <tr><td><code>servicio</code></td><td>Reglas de negocio</td><td>No conoce <code>java.sql</code> ni <code>Scanner</code></td></tr>
-            <tr><td><code>interfaces</code></td><td>Contratos: qué operaciones existen</td><td>No dice cómo se guardan los datos</td></tr>
-            <tr><td><code>persistencia</code></td><td>Leer y escribir en el medio concreto</td><td>No valida reglas ni imprime</td></tr>
-            <tr><td><code>modelo</code></td><td>Datos</td><td>No se guarda ni se muestra a sí mismo</td></tr>
+            <tr><td><code>api</code></td><td>Traducir HTTP a llamadas a gestores</td><td>No decide reglas ni toca SQL</td></tr>
+            <tr><td><code>dto</code></td><td>La forma exacta del JSON que entra y sale</td><td>No tiene comportamiento</td></tr>
+            <tr><td><code>servicio</code></td><td>Reglas de negocio (R1..R19)</td><td>No conoce <code>java.sql</code> ni HTTP</td></tr>
+            <tr><td><code>dominio</code></td><td>Entidades, enums y el valor <code>Dinero</code></td><td>No se guarda ni se muestra a sí mismo</td></tr>
+            <tr><td><code>persistencia</code></td><td>Leer y escribir en el medio concreto</td><td>No valida reglas de negocio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        La regla que sostiene todo lo demás: <strong><code>dominio</code> no importa nada de afuera</strong>.
+        Ni <code>java.sql</code>, ni Javalin, ni Jackson. Se puede compilar el paquete entero sin ninguna
+        dependencia del <code>pom.xml</code>, y esa es la prueba de que las reglas del cine no están atadas a
+        la tecnología con la que hoy se guardan o se muestran.
+      </p>
+
+      <h3>Dentro de cada capa, un subpaquete por subdominio</h3>
+      <p>
+        Los cuatro paquetes están divididos igual: por área del negocio, no por tipo de clase. Todo lo de
+        ventas junto, todo lo de candy junto. Es lo que hace que agregar una regla de reservas sea abrir una
+        carpeta y no recorrer una lista de veinticinco archivos ordenados alfabéticamente.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Paquete</th><th>Adentro</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>servicio/</code></td>
+              <td>
+                <code>candy/</code> <code>cartelera/</code> <code>funciones/</code> <code>informes/</code>
+                <code>programaciones/</code> <code>promociones/</code> <code>salas/</code>
+                <code>usuarios/</code> <code>ventas/</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>api/</code></td>
+              <td>
+                <code>http/</code> (Parseo, Fechas, NoEncontrado) · <code>rutas/</code> · <code>vistas/</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>dominio/</code></td>
+              <td>
+                <code>candy/</code> <code>cartelera/</code> <code>dinero/</code> <code>funciones/</code>
+                <code>programaciones/</code> <code>promociones/</code> <code>salas/</code>
+                <code>usuarios/</code> <code>ventas/</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>persistencia/</code></td>
+              <td>las interfaces DAO sueltas + <code>mysql/</code> <code>memoria/</code> <code>archivo/</code> <code>redis/</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Cada subpaquete de <code>servicio/</code> junta el gestor con lo que solo él usa: sus criterios de
+        búsqueda y sus records de resultado. <code>informes/</code>, por ejemplo, tiene
+        <code>GestorInformes</code> (el corte por función), <code>GestorCaja</code> (el corte por día) y los
+        tres records que devuelven: <code>Bordero</code>, <code>InformeFuncion</code> y <code>Arqueo</code>.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Una sola clase pública por subpaquete de <code>api</code>.</strong> Las trece clases
+          <code>Rutas*</code> son package-private: la única forma de registrarlas es
+          <code>Rutas.registrarTodas(app, aplicacion)</code>. Así nadie puede colgar media API del servidor
+          desde afuera, ni registrar una familia de rutas y olvidarse de las otras. Es el mismo criterio con el
+          que <code>Aplicacion</code> es el único lugar que arma el sistema.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="solid">
+      <h2>SOLID en este código</h2>
+      <p class="lede">
+        Los cinco principios, cada uno con el lugar concreto del sistema donde se aplica y —lo que importa
+        más— <strong>qué problema real evitó</strong>. Un principio que no se puede señalar con el dedo en un
+        archivo es una cita, no un diseño.
+      </p>
+
+      <h3>S — Responsabilidad única</h3>
+      <p>
+        Una clase tiene que tener <em>una sola razón para cambiar</em>. No "hacer una sola cosa": una sola
+        razón para que la toques.
+      </p>
+      <p>
+        El caso más claro del sistema es el de <strong>cobrar y arquear</strong>. Durante un tiempo,
+        <code>GestorPagos</code> tenía los dos: <code>cobrar()</code> y también <code>arqueoDe()</code>,
+        <code>totalCobrado()</code> y <code>listarDelDia()</code>. Suena razonable —los dos hablan de plata—
+        pero son dos razones de cambio distintas:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Cobrar</th><th>Arquear</th></tr></thead>
+          <tbody>
+            <tr><td>Sujeto</td><td>una reserva</td><td>un día entero</td></tr>
+            <tr><td>Escribe</td><td>sí: crea el pago, cambia el estado</td><td>no: solo lee</td></tr>
+            <tr><td>Cambia cuando…</td><td>cambia cómo se cobra (R5, R11, R17, R19)</td><td>cambia qué se declara</td></tr>
+            <tr><td>Quién lo usa</td><td>el circuito de compra</td><td>el cierre de caja del encargado</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Peor todavía: el arqueo del candy vivía en <code>GestorCandy</code>, así que la pregunta "¿cuánto entró
+        hoy?" no se podía contestar sin ir a dos gestores transaccionales distintos y sumar por afuera. Hoy
+        existe <code>servicio/informes/GestorCaja</code>, que es el corte por día, al lado de
+        <code>GestorInformes</code>, que es el corte por función. <code>GestorPagos</code> volvió a hacer una
+        sola cosa: cobrar.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Cómo se detecta.</strong> Si al describir una clase necesitás la palabra "y" —"cobra
+          <em>y</em> arquea", "administra el catálogo <em>y</em> revisa lo que trae el importador"— probá
+          separar por ahí y mirá si las dos partes cambian por motivos distintos. Si cambian juntas siempre, la
+          "y" era falsa y conviene dejarla junta.
+        </p>
+      </div>
+
+      <h3>O — Abierto/cerrado</h3>
+      <p>
+        Abierto a la extensión, cerrado a la modificación: sumar un caso nuevo debería ser
+        <strong>agregar</strong> código, no <strong>editar</strong> código que ya funciona y ya está probado.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_SOLID_OCP}}
+        <figcaption>Las tres promociones: cada una calcula lo suyo, sin un solo <code>switch</code></figcaption>
+      </figure>
+
+      <p>
+        Las promociones son la demostración. Hay tres tipos de beneficio y cada uno calcula distinto:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Clase</th><th>Cómo calcula el descuento</th></tr></thead>
+          <tbody>
+            <tr><td><code>PromocionPorcentaje</code></td><td>un porcentaje del subtotal</td></tr>
+            <tr><td><code>PromocionMontoFijo</code></td><td>una cantidad fija de plata</td></tr>
+            <tr><td><code>PromocionNxM</code></td><td>regala las <em>n − m</em> entradas más baratas de cada grupo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Las tres heredan de <code>PromocionBase</code>, que resuelve lo único que comparten —cuándo corre la
+        promoción: vigencia, día, horario, medio de pago— y deja abierto <code>calcularDescuento()</code>. En
+        todo el sistema <strong>no hay un solo <code>switch</code> por tipo de promoción</strong>: quien cobra
+        llama al método y la clase que le tocó hace lo suyo.
+      </p>
+      <p>
+        La prueba de que está bien puesto el corte: agregar un "3x2 solo para estudiantes los martes" es
+        escribir una clase nueva y sumar una constante al enum. No se toca <code>GestorPagos</code>, no se toca
+        <code>GestorPromociones</code>, no se toca ninguna de las otras dos promociones. Con un
+        <code>switch</code>, cada tipo nuevo obligaría a editar —y volver a probar— el método que ya andaba.
+      </p>
+
+      <h3>L — Sustitución de Liskov</h3>
+      <p>
+        Donde el código espera una interfaz, cualquier implementación tiene que servir sin que el que llama se
+        entere de cuál le tocó.
+      </p>
+      <p>
+        Acá se verifica de una manera que no admite discusión: <strong>los tests corren el sistema entero con
+        otra implementación de persistencia</strong>. En producción los DAO son los de MySQL; en
+        <code>AplicacionTest</code> son los de <code>persistencia/memoria/</code>. Los gestores son
+        literalmente las mismas clases, con las mismas reglas, y no se enteran. Si alguna implementación en
+        memoria se comportara distinto de la de MySQL —devolviera <code>null</code> donde la otra devuelve
+        vacío, o no respetara un orden— los tests fallarían, y ese es justamente el punto.
+      </p>
+      <p>
+        El caso más interesante es <code>BloqueoButacas</code>, que tiene una implementación en Redis y otra en
+        memoria. <code>BloqueoButacasRedis</code> hace algo más: si Redis no está disponible, degrada a "ningún
+        bloqueo" en vez de explotar. Eso <strong>respeta</strong> el contrato en vez de romperlo —un bloqueo que
+        no existe es un estado válido, porque los bloqueos vencen solos— y por eso el sistema sigue vendiendo
+        entradas con Redis caído. La doble venta la sigue impidiendo el <code>UNIQUE</code> de la base.
+      </p>
+
+      <h3>I — Segregación de interfaces</h3>
+      <p>
+        Nadie debería verse obligado a depender de métodos que no usa.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_SOLID_ISP}}
+        <figcaption><code>GestorPagos</code> depende de un contrato de un método, no del ABM entero</figcaption>
+      </figure>
+
+      <p>
+        Este es el principio que más cambió el diseño. <code>GestorPagos</code> necesita saber cuánto descontar
+        al cobrar, y para eso dependía de <code>GestorPromociones</code> a secas: la <strong>única</strong>
+        dependencia de un gestor a otro gestor concreto que había en el sistema. Cobrar quedaba atado a
+        <code>crearPorcentaje</code>, <code>crearNxM</code>, <code>activar</code>, <code>desactivar</code>,
+        <code>listar</code>… métodos que nunca iba a llamar.
+      </p>
+      <p>
+        La solución fue extraer <code>PoliticaPromociones</code>, una interfaz de <strong>un solo método</strong>
+        que devuelve un monto y de qué promoción salió. <code>GestorPromociones</code> la implementa, además de
+        seguir teniendo su ABM completo. Cobrar ahora ve la porción que usa y nada más.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Lo que se gana, concreto:</strong> cambiar cómo se decide el descuento —acumular varias
+          promociones, traerlo de un servicio externo, apagarlo para una función especial— es escribir otra
+          implementación de esa interfaz. <code>GestorPagos</code> no se entera ni se recompila. Y en la
+          dirección contraria: agregar un método al ABM de promociones ya no puede romper el cobro.
+        </p>
+      </div>
+
+      <h3>D — Inversión de dependencias</h3>
+      <p>
+        Las clases que deciden no dependen de las que hacen el trabajo sucio: las dos dependen de una
+        abstracción.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_SOLID_DIP}}
+        <figcaption><code>Aplicacion</code> es el único lugar del sistema que nombra una implementación concreta</figcaption>
+      </figure>
+
+      <p>
+        Ningún gestor sabe que atrás hay MySQL. <code>GestorReservas</code> conoce la interfaz
+        <code>ReservaDAO</code>, y hay tres implementaciones de verdad: <code>ReservaDAOMySQL</code>,
+        <code>ReservaDAOMemoria</code> y <code>ReservaDAOTxt</code>. Cuál se usa lo decide un solo archivo:
+        <strong><code>Aplicacion.java</code></strong>. Es el único lugar de todo el sistema donde se escribe el
+        nombre de una clase concreta de persistencia.
+      </p>
+      <p>
+        Lo mismo vale para las otras tres cosas que el sistema no quiere tener adentro: los comprobantes
+        (<code>GeneradorTicket</code> y compañía, hoy en archivos de texto), la pasarela de pagos
+        (<code>PasarelaPagos</code>, hoy emulada) y el origen de las conexiones a la base
+        (<code>DataSource</code>, hoy un pool). Enchufar MercadoPago de verdad —con credenciales y llamadas de
+        red— es cambiar un argumento en <code>enMySQL()</code>, sin tocar una sola regla de negocio.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>La prueba de que no es decorativo.</strong> Muchos proyectos declaran interfaces y después
+          tienen una sola implementación, con lo cual la abstracción no separa nada. Acá el reemplazo
+          <em>ocurre</em>: los 334 tests corren contra las implementaciones en memoria, sin MySQL levantado y
+          sin Docker. Si la inversión fuera de mentira, no habría forma de correrlos así.
+        </p>
+      </div>
+    </section>
+
+    <section class="doc-section" id="grasp">
+      <h2>Patrones GRASP</h2>
+      <p class="lede">
+        SOLID dice qué forma tiene que tener el resultado. GRASP es más práctico: ayuda a decidir
+        <strong>a qué clase le toca cada responsabilidad</strong> mientras la estás repartiendo.
+      </p>
+
+      <h3>Experto en información</h3>
+      <p>
+        La responsabilidad va donde están los datos para cumplirla. Ejemplos del sistema:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pregunta</th><th>Quién la contesta</th><th>Por qué él</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>¿Cuánto sale esta reserva?</td>
+              <td><code>Reserva.getTotal()</code></td>
+              <td>Es la suma de sus entradas, y las entradas son suyas</td>
+            </tr>
+            <tr>
+              <td>¿Cuánto descuenta esta promoción?</td>
+              <td><code>Promocion.calcularDescuento()</code></td>
+              <td>Cada tipo sabe su propia fórmula</td>
+            </tr>
+            <tr>
+              <td>¿Esta reserva ya venció?</td>
+              <td><code>Reserva.estaVencida(ahora)</code></td>
+              <td>Tiene la fecha de creación y sabe cuántos minutos duran</td>
+            </tr>
+            <tr>
+              <td>¿Esta función ya empezó?</td>
+              <td><code>Funcion.yaEmpezo(ahora)</code></td>
+              <td>Tiene el horario de inicio</td>
+            </tr>
+            <tr>
+              <td>¿Cuánto es este importe más aquel?</td>
+              <td><code>Dinero.mas()</code></td>
+              <td>Sabe que la plata se suma en centavos enteros</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El contraejemplo también está en el código, a propósito: <code>Reserva</code> <strong>no</strong> sabe
+        si sus butacas están libres. Eso no depende de la reserva sino de la función —de todas las otras
+        reservas de esa misma función— así que preguntárselo a ella sería pedirle algo que no puede saber sola.
+      </p>
+
+      <h3>Fabricación pura</h3>
+      <p>
+        Cuando una responsabilidad no le cabe naturalmente a ninguna entidad del negocio, se inventa una clase
+        que no representa nada del mundo real. Es legítimo, y es lo contrario de forzarla adentro de una
+        entidad que no le corresponde.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_GRASP_FABRICACION}}
+        <figcaption>Tres clases que no son entidades y existen porque el modelo las pedía</figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Clase</th><th>Por qué no es una entidad</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Ocupacion</code></td>
+              <td>
+                "Qué butacas están tomadas" es un hecho sobre la <em>función</em>, no sobre la reserva ni sobre
+                la sala. Ponerlo en <code>GestorReservas</code> haría que el mapa de butacas y la validación de
+                la venta usaran definiciones distintas de "ocupado".
+              </td>
+            </tr>
+            <tr>
+              <td><code>CalculadoraPrecio</code></td>
+              <td>
+                El precio de lista necesita la función, la sala, la butaca y la tarifa <em>a la vez</em>.
+                Ninguna de las cuatro es dueña del cálculo.
+              </td>
+            </tr>
+            <tr>
+              <td><code>AgendaDeSala</code></td>
+              <td>
+                Existe por costo, no por modelo: el planificador prueba cientos de horarios y releer las
+                funciones en cada intento llevaba una propuesta de una semana a más de veinte segundos.
+              </td>
+            </tr>
+            <tr>
+              <td><code>Plantilla</code></td>
+              <td>
+                El andamiaje de JDBC —abrir, preparar, recorrer, cerrar, traducir el error— no es de ningún
+                DAO en particular: estaba copiado en los trece.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Bajo acoplamiento y alta cohesión</h3>
+      <p>
+        Los dos que sostienen a todos los demás. El sistema los busca así:
+      </p>
+      <ul>
+        <li>
+          <strong>Todo entra por el constructor.</strong> Ningún gestor construye sus dependencias: las recibe.
+          Por eso se pueden reemplazar sin tocarlos.
+        </li>
+        <li>
+          <strong>Cada familia de rutas recibe solo la vista que usa.</strong> Antes había una sola clase
+          <code>Vistas</code> que las armaba todas, y por eso necesitaba seis gestores: la ruta de sesión
+          cargaba con el gestor de pagos para poder devolver un empleado.
+        </li>
+        <li>
+          <strong>Un subpaquete por subdominio.</strong> Lo que cambia junto vive junto.
+        </li>
+      </ul>
+
+      <h3>Indirección y variaciones protegidas</h3>
+      <p>
+        Poner un intermediario para que los cambios de un lado no se propaguen al otro. Los cuatro puntos donde
+        el sistema se protege de lo que puede cambiar:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lo que puede cambiar</th><th>El contrato que lo aísla</th></tr></thead>
+          <tbody>
+            <tr><td>Dónde se guardan los datos</td><td>las interfaces <code>*DAO</code></td></tr>
+            <tr><td>Con qué procesador se cobra</td><td><code>PasarelaPagos</code></td></tr>
+            <tr><td>En qué sale el comprobante</td><td><code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorBordero</code></td></tr>
+            <tr><td>Cómo se decide un descuento</td><td><code>PoliticaPromociones</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -1751,7 +2177,7 @@ GET /api/programaciones?activa=true</code></pre>
         Lo que no lo detecta: los tests. Corren contra <code>persistencia/memoria/</code>, donde una consulta
         cuesta lo mismo que leer una variable, así que trece mil son gratis. Este problema solo existe del otro
         lado de la interfaz — y por eso apareció recién cuando la pantalla del planificador probó contra el
-        backend real, y no en los 314 tests en verde.
+        backend real, y no en los 334 tests en verde.
       </p>
 
       <h3>Lo que ya está resuelto sin haberlo escrito</h3>
@@ -2124,6 +2550,106 @@ POST /api/checkouts/MP-1234567890/confirmacion
           impide a propósito), ni pagos rechazados: acá un pago registrado es un pago exitoso.
         </p>
       </div>
+    </section>
+
+    <section class="doc-section" id="dinero">
+      <h2>La plata no es un <code>double</code></h2>
+      <p class="lede">
+        Toda la plata del sistema es un <code>Dinero</code>: un valor que guarda
+        <strong>centavos enteros</strong>. Esta sección explica por qué, porque es la decisión que más código
+        tocó y la que menos se ve desde afuera.
+      </p>
+
+      <h3>El problema</h3>
+      <p>
+        Un <code>double</code> no puede representar 0,10 exactamente. Lo más cerca que llega es
+        0,1000000000000000055511151231… Eso hace que las cuentas de dinero mientan de a poco. El caso concreto
+        que aparecía en este sistema estaba anotado en un comentario de la calculadora de precios:
+      </p>
+      <div class="callout">
+        <p><code>5250.50 × 1.3 = 6825.650000000001</code></p>
+      </div>
+      <p>
+        La respuesta de entonces fue redondear a dos decimales después de cada operación. Eso tapa el síntoma y
+        deja dos problemas abiertos:
+      </p>
+      <ol>
+        <li>
+          <strong>Hay que acordarse.</strong> Cada cuenta nueva tiene que redondear, y si alguien se olvida el
+          error vuelve. El redondeo terminó copiado en dos clases de dos paquetes distintos:
+          <code>CalculadoraPrecio</code> y <code>PromocionPorcentaje</code>.
+        </li>
+        <li>
+          <strong>El error se acumula igual en las sumas largas.</strong> Redondear cada término no arregla
+          sumar trescientos, que es exactamente lo que hace el arqueo del día.
+        </li>
+      </ol>
+
+      <h3>La solución</h3>
+      <p>
+        <code>dominio/dinero/Dinero</code> es un <code>record</code> con un <code>long</code> de centavos. Con
+        enteros no hay decimal que aproximar: la suma de mil importes es exacta, y
+        <code>equals</code> compara plata de verdad en vez de dos flotantes que se parecen. El redondeo pasa
+        <strong>una sola vez</strong>, al entrar desde un número con decimales, y de ahí en adelante las
+        cuentas son exactas.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Operación</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>mas</code> / <code>menos</code></td><td>sumar entradas, restar el descuento</td></tr>
+            <tr><td><code>por(factor)</code></td><td>los multiplicadores de sala, butaca y tarifa</td></tr>
+            <tr><td><code>porcentaje(p)</code></td><td>el "30% off" de una promoción</td></tr>
+            <tr><td><code>acotadoA(techo)</code></td><td>que un descuento de $2000 sobre $1500 no deje el cobro en negativo</td></tr>
+            <tr><td><code>compareTo</code></td><td>R15: elegir la promoción que más descuenta</td></tr>
+            <tr><td><code>sumar(coleccion)</code></td><td>el total de una reserva, el arqueo del día</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Dónde vive y dónde no</h3>
+      <p>
+        <code>Dinero</code> es el tipo de la plata en <code>dominio</code> y en <code>servicio</code>. En los
+        <strong>bordes</strong> vuelve a ser un número con decimales, y solo en dos lugares:
+      </p>
+      <ul>
+        <li>
+          <strong>los DTO de <code>dto/</code></strong>, porque el JSON del contrato dice
+          <code>"total": 15000.0</code> y cambiarlo rompería el frontend sin ganar nada. La conversión ocurre
+          en <code>api/vistas/</code>.
+        </li>
+        <li>
+          <strong>los DAO</strong>, porque la columna de la base es <code>DECIMAL</code> y el schema ya está
+          desplegado.
+        </li>
+      </ul>
+      <p>
+        Se puede verificar de un grep: <code>aPesos()</code> aparece únicamente en <code>api/</code> y en
+        <code>persistencia/</code>. Si apareciera en <code>servicio/</code>, sería una cuenta hecha en pesos
+        con coma y el problema estaría de vuelta.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>El test es la documentación.</strong> <code>DineroTest</code> tiene diecisiete casos y los
+          primeros cuatro no prueban la clase: prueban <em>el problema</em>. Afirman que
+          <code>5250.50 * 1.3</code> en <code>double</code> NO da 6825.65, que sumar 0,10 diez veces NO da 1, y
+          que con <code>Dinero</code> las dos cosas sí dan lo que corresponde. Escrito así, el motivo de la
+          clase no puede quedar desactualizado: si alguien vuelve a poner <code>double</code>, falla un test y
+          no un comentario.
+        </p>
+      </div>
+
+      <h3>Lo que destapó el cambio</h3>
+      <p>
+        Al migrar apareció un error que estaba latente: cuatro generadores de comprobantes usaban
+        <code>String.format("$ %.2f", monto)</code>. Con <code>double</code> funcionaba; con
+        <code>Dinero</code> <strong>compila igual pero explota en tiempo de ejecución</strong> con
+        <code>IllegalFormatConversionException</code>, porque <code>%f</code> no acepta un objeto. Lo agarraron
+        los tests al emitir un ticket. Es la clase de error que un cambio de tipo destapa y que el compilador
+        no puede avisar, y es el argumento más corto a favor de tener tests que ejerciten la emisión de
+        comprobantes y no solo el cálculo.
+      </p>
     </section>
 
     <section class="doc-section" id="precios">
@@ -2887,7 +3413,7 @@ open http://127.0.0.1:8081        # Adminer</code></pre>
         <p>
           <strong>Ya no se entra con root.</strong> La aplicación tiene un usuario propio con permisos solo
           sobre <code>appsinteractivas</code>: si esas credenciales se filtran, no alcanzan para tocar otras
-          bases del motor. Los defaults <code>root/root</code> que quedaron en <code>ConexionMySQL</code> son
+          bases del motor. Los defaults <code>root/root</code> que quedaron en <code>OrigenMySQL</code> son
           para correr fuera de Docker, contra una base local de desarrollo.
         </p>
       </div>
@@ -2909,10 +3435,12 @@ open http://127.0.0.1:8081        # Adminer</code></pre>
         <code>README.md</code> de <code>cine-docker</code>.
       </p>
       <p>
-        <code>ConexionMySQL</code> lee <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
+        <code>OrigenMySQL</code> lee <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>,
         <code>DB_USER</code> y <code>DB_PASSWORD</code> del entorno, con los valores de siempre como default:
         adentro de Docker el host es <code>mysql</code>, y afuera sigue funcionando contra
-        <code>localhost:3306</code> sin configurar nada.
+        <code>localhost:3306</code> sin configurar nada. Es además donde se arma el pool de
+        conexiones: antes cada operación abría la suya con <code>DriverManager</code> y la cerraba,
+        o sea un handshake TCP completo por consulta.
       </p>
 
       <h3>Base nueva desde cero</h3>
@@ -3377,7 +3905,7 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       </p>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 314 tests, no necesitan base
+      <pre><code>mvn test                 # los 334 tests, no necesitan base
 mvn package              # jar shaded en target/cine-api.jar</code></pre>
       <p>
         La API HTTP es hoy la única puerta —
@@ -3475,7 +4003,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 314 tests: 310 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 334 tests: 330 corren siempre, 4 se saltean</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -3980,7 +4508,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 314 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 334 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -3996,7 +4524,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 314 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 334 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -4370,12 +4898,22 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── ventas/         Reserva, Pago + Impl, Entrada, EstadoReserva, MedioPago
     │   │   ├── candy/          Producto, CompraCandy + Impl, ItemCombo, ItemCompra
     │   │   ├── usuarios/       Usuario, Cliente, Empleado + Impl, Rol
-    │   │   └── promociones/    Promocion + PromocionBase, Porcentaje, MontoFijo, NxM
-    │   ├── servicio/           las reglas: los 12 Gestor*, PlanificadorGrilla,
-    │   │                       CalculadoraPrecio, PoliticaPromociones, DatosPelicula,
-    │   │                       Arqueo, Bordero, InformeFuncion
+    │   │   ├── promociones/    Promocion + PromocionBase, Porcentaje, MontoFijo, NxM
+    │   │   ├── programaciones/ Programacion + Impl
+    │   │   └── dinero/         Dinero: la plata, en centavos enteros
+    │   ├── servicio/           las reglas, en un subpaquete por area. Los 14 Gestor*
+    │   │   ├── ventas/         GestorReservas, GestorPagos, Ocupacion, CalculadoraPrecio
+    │   │   ├── cartelera/      GestorCartelera, GestorRevisionCartelera, DatosPelicula
+    │   │   ├── informes/       GestorInformes (por funcion), GestorCaja (por dia),
+    │   │   │                   Arqueo, Bordero, InformeFuncion
+    │   │   ├── programaciones/ GestorProgramaciones, PlanificadorGrilla, PropuestaGrilla
+    │   │   ├── promociones/    GestorPromociones + PoliticaPromociones
+    │   │   ├── funciones/      GestorFunciones, AgendaDeSala
+    │   │   ├── candy/          GestorCandy (ventas) y GestorProductos (la carta)
+    │   │   ├── salas/          GestorSalas
+    │   │   └── usuarios/       GestorClientes, GestorEmpleados
     │   ├── persistencia/       los 12 contratos DAO, BloqueoButacas y sus excepciones
-    │   │   ├── mysql/          *DAOMySQL + ConexionMySQL
+    │   │   ├── mysql/          *DAOMySQL + Plantilla (el JDBC) + OrigenMySQL (el pool)
     │   │   ├── memoria/        *DAOMemoria, para testear sin base
     │   │   ├── archivo/        ReservaDAOTxt
     │   │   └── redis/          BloqueoButacasRedis: la butaca mientras se elige
@@ -4383,14 +4921,18 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │                       y txt/ con sus implementaciones
     │   ├── pasarelas/          PasarelaPagos + emulada/MercadoPagoEmulado
     │   ├── seguridad/          Password
-    │   ├── api/                HTTP: ServidorApi + 13 Rutas*, 6 Vistas*, Parseo, Fechas
+    │   ├── api/                HTTP. ServidorApi arriba, y adentro:
+    │   │   ├── http/           Parseo, Fechas, NoEncontrado
+    │   │   ├── rutas/          Rutas (lo unico publico) + las 13 Rutas*
+    │   │   └── vistas/         Vistas (la fabrica) + las 6 Vistas*
     │   ├── dto/                los 53 DTO, uno por forma de JSON. Subpaquetes que
     │   │                       espejan dominio/: cartelera, funciones, programaciones,
     │   │                       salas, ventas, candy, promociones, usuarios, catalogos
     │   │                       y grilla
     │   └── Aplicacion.java     el único lugar que elige implementaciones
     ├── main/resources/     schema.sql
-    └── test/java/ar/uade/cine/servicio/    un test por gestor</code></pre>
+    └── test/java/ar/uade/cine/    espeja a main: un test por gestor, mas los de
+                                   api/ y el de dominio/dinero/</code></pre>
       <div class="callout">
         <p>
           <strong>Antes había un paquete <code>interfaces/</code> y otro <code>modelo/</code>, y era el error de
@@ -4416,10 +4958,33 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 314 tests en verde. Las
+        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 334 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y el ticket de butacas, el del candy, el
         recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
+
+      <div class="callout">
+        <p>
+          <strong>Pendiente conocido y decidido: la API no valida quién llama.</strong>
+          <code>POST /api/sesion</code> verifica las credenciales del encargado y devuelve su empleado, pero
+          <em>ninguna otra ruta</em> comprueba que quien la invoca haya iniciado sesión. El guard que existe
+          hoy está en <code>admin.js</code>, o sea del lado del navegador: alcanza para que la pantalla no
+          muestre lo que no corresponde, y no alcanza para nada más. Con <code>curl</code> se puede hoy dar de
+          baja una película, leer el arqueo del día o validar una entrada en la puerta sin credencial alguna.
+        </p>
+        <p>
+          Está anotado y no resuelto a propósito: el arreglo es acotado —un <code>beforeMatched</code> en
+          <code>ServidorApi</code> que exija un token de sesión y compare contra <code>Rol</code>, con las
+          rutas públicas declaradas explícitamente— y el rol ya está modelado
+          (<code>Rol.esEmpleado()</code>), pero toca el contrato HTTP y por lo tanto también al frontend. Se
+          hace en una pasada propia, con el <code>API.md</code> actualizado en el mismo movimiento.
+        </p>
+        <p>
+          Mientras tanto, lo que contiene el riesgo es el despliegue y no el código: el <code>docker-compose</code>
+          publica un solo puerto, el de nginx, y Adminer está atado a la loopback. Eso es una mitigación de
+          entorno, no una defensa de la aplicación, y conviene tenerlo claro.
+        </p>
+      </div>
 
       <h3>Implementado, pero solo hasta la API</h3>
       <p>

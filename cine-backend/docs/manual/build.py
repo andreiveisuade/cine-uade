@@ -13,6 +13,12 @@ svg_map = {
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",
     "{{SVG_DOCKER}}": DIAGRAMAS / "docker-despliegue.svg",
+    # Los principios, uno por diagrama: el codigo que los aplica esta al lado en el texto.
+    "{{SVG_CAPAS_PAQUETES}}": DIAGRAMAS / "capas.svg",
+    "{{SVG_SOLID_DIP}}": DIAGRAMAS / "solid-dip.svg",
+    "{{SVG_SOLID_ISP}}": DIAGRAMAS / "solid-isp.svg",
+    "{{SVG_SOLID_OCP}}": DIAGRAMAS / "solid-ocp.svg",
+    "{{SVG_GRASP_FABRICACION}}": DIAGRAMAS / "grasp-pure-fabrication.svg",
 }
 
 

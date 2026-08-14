@@ -1,0 +1,95 @@
+@startuml grasp-pure-fabrication
+title GRASP: Fabricacion pura - clases que el modelo pedia sin ser entidad ni gestor
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Las tres no son una entidad del dominio -no representan un concepto del
+' cine que un cliente reconozca, como Reserva o Funcion- ni son el gestor de
+' un caso de uso -no tienen un CU-XX propio en el manual-. Existen porque
+' asignarle esa responsabilidad a la entidad o al gestor mas cercano rompia
+' otra cosa: alta cohesion de un lado, un segundo lugar con la misma logica
+' del otro. Fabricacion pura es exactamente ese tercer lugar.
+
+package "servicio.ventas" {
+  class Ocupacion {
+    +asientosOcupados(funcionId): Set<Integer>
+    +asientosLibres(funcionId): List<Asiento>
+    +bloquear(funcionId, codigos, sesion)
+    +liberar(funcionId, sesion)
+  }
+  class CalculadoraPrecio {
+    +precioDe(Funcion, Sala, Asiento,\nTipoTarifa): double
+    +precioBaseEnSala(Funcion, Sala): double
+  }
+}
+
+package "servicio.funciones" {
+  class GestorFunciones {
+    +agendaDe(salaId): AgendaDeSala
+  }
+  class AgendaDeSala {
+    +chocaEn(inicio, fin): boolean
+  }
+}
+
+package "servicio.programaciones" {
+  class PlanificadorGrilla
+}
+
+GestorFunciones -right-> AgendaDeSala : agendaDe()\nconstruye y devuelve
+PlanificadorGrilla -up-> AgendaDeSala : chocaEn(), una vez\npor sala por corrida
+
+note right of Ocupacion
+  Que butacas estan tomadas es un hecho sobre
+  la FUNCION, no sobre la reserva ni sobre la
+  sala: una reserva vigente las toma, un bloqueo
+  de quien esta eligiendo tambien. No cabia en
+  Reserva -no sabe de otras reservas- ni en Sala
+  -no sabe de horarios-, y ponerla en GestorReservas
+  la hubiera dejado escondida ahi cuando la API
+  y la consola necesitan la misma pregunta para
+  dibujar el mapa antes de que exista ninguna
+  reserva. Es la unica definicion de "ocupado"
+  del sistema.
+end note
+
+note right of CalculadoraPrecio
+  El precio de lista de una butaca: funcion x
+  multiplicador de sala x multiplicador de
+  butaca x multiplicador de tarifa. No es un
+  metodo de Funcion, Sala ni Asiento porque
+  necesita a los tres juntos, y ponerlo en
+  cualquiera de ellos le daria a esa entidad
+  una responsabilidad sobre las otras dos. Los
+  descuentos por promocion no pasan por aca: un
+  2x1 no se puede expresar como factor de una
+  butaca sola, por eso esa cuenta vive en otro
+  lado (ver solid-ocp.puml).
+end note
+
+note bottom of AgendaDeSala
+  Existe por costo, no por modelo. La regla de
+  R3 -que dos funciones de una sala no se pisen-
+  ya la resuelve GestorFunciones.superpuestaEn()
+  para una consulta suelta, pero el planificador
+  prueba cientos de horarios por corrida y repetir
+  esas lecturas contra MySQL en cada intento
+  llevaba una propuesta de una semana a mas de
+  veinte segundos. AgendaDeSala no reescribe la
+  regla: guarda los tramos que GestorFunciones ya
+  calculo y solo compara numeros. Si R3 cambia,
+  cambia en un solo lugar.
+end note
+
+note as N1
+  Las tres son fabricacion pura por el mismo
+  motivo: existen para que otra clase -una
+  entidad o un gestor- no cargue con una
+  responsabilidad que no es la suya, sin que
+  esa responsabilidad deje de tener un lugar
+  donde vivir bien cohesionada.
+end note
+
+@enduml

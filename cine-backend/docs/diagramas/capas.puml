@@ -1,0 +1,148 @@
+@startuml capas
+title Capas y paquetes - servicio y api reorganizados por subdominio
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 40
+hide members
+
+' Reemplaza conceptualmente a clases-capas.puml para la vista de paquetes:
+' aquel muestra las clases y sus colaboraciones una por una, este muestra
+' donde vive cada cosa despues de partir servicio/ y api/ en un subpaquete
+' por subdominio. Las clases y flechas de negocio siguen siendo las de
+' clases-capas.puml; aca no se repiten.
+
+package api {
+  package rutas {
+    class Rutas
+    class "13 Rutas*\n(package-private)" as RutasInternas
+  }
+  package vistas {
+    class Vistas
+    class "6 Vistas*\n(package-private)" as VistasInternas
+  }
+  package http {
+    class "Parseo, Fechas\nNoEncontrado" as Http
+  }
+  class ServidorApi
+}
+
+package dto {
+  class "candy, cartelera, catalogos, funciones\ngrilla, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
+}
+
+package servicio {
+  package candy as srv_candy {
+    class "GestorCandy\nGestorProductos" as SrvCandy
+  }
+  package cartelera as srv_cartelera {
+    class "GestorCartelera\nDatosPelicula" as SrvCartelera
+  }
+  package funciones as srv_funciones {
+    class "GestorFunciones\nAgendaDeSala" as SrvFunciones
+  }
+  package informes as srv_informes {
+    class "GestorInformes\nArqueo, Bordero\nInformeFuncion" as SrvInformes
+  }
+  package programaciones as srv_programaciones {
+    class "GestorProgramaciones, PlanificadorGrilla\nPlanProgramacion, CriteriosGrilla\nPropuestaGrilla" as SrvProgramaciones
+  }
+  package promociones as srv_promociones {
+    class "GestorPromociones\nPoliticaPromociones" as SrvPromociones
+  }
+  package salas as srv_salas {
+    class "GestorSalas" as SrvSalas
+  }
+  package usuarios as srv_usuarios {
+    class "GestorClientes\nGestorEmpleados" as SrvUsuarios
+  }
+  package ventas as srv_ventas {
+    class "GestorReservas, GestorPagos\nOcupacion, CalculadoraPrecio\nCriteriosReserva" as SrvVentas
+  }
+}
+
+package dominio {
+  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios" as DomSubpaquetes
+}
+
+package persistencia {
+  class "PeliculaDAO, SalaDAO, AsientoDAO, FuncionDAO\nProgramacionDAO, ClienteDAO, ReservaDAO, PagoDAO\nProductoDAO, CompraCandyDAO, EmpleadoDAO\nPromocionDAO, BloqueoButacas" as DaoInterfaces
+  package mysql {
+  }
+  package memoria {
+  }
+  package archivo {
+  }
+  package redis {
+  }
+}
+
+class Aplicacion
+
+Rutas ..> RutasInternas : registra
+Vistas *-- VistasInternas : arma
+
+RutasInternas -down-> servicio
+RutasInternas -right-> Vistas
+RutasInternas ..> Dtos
+VistasInternas ..> Dtos
+
+ServidorApi -down-> Rutas
+ServidorApi -down-> Aplicacion
+
+Aplicacion -down-> servicio
+Aplicacion -down-> persistencia
+
+servicio ..> dominio
+persistencia ..> dominio
+
+note bottom of dominio
+  No depende de NADA externo: ni de api, ni de
+  servicio, ni de persistencia, ni de una libreria
+  de terceros salvo java.time. Es la unica capa
+  que se podria llevar a otro proyecto tal cual,
+  y por eso sus subpaquetes no cambiaron con esta
+  reorganizacion: ya estaban partidos por
+  subdominio desde el principio.
+end note
+
+note left of RutasInternas
+  Las 13 clases Rutas* son package-private: nadie
+  fuera de api.rutas las puede nombrar. Lo unico
+  publico del paquete es Rutas, que las registra
+  a todas contra Javalin. ServidorApi conoce
+  Rutas.registrarTodas(), no RutasReservas ni
+  RutasCandy.
+end note
+
+note left of VistasInternas
+  Mismo criterio en api.vistas: las 6 clases
+  Vistas* son package-private y arman el DTO de
+  respuesta pidiendole a los gestores lo que
+  necesitan. Solo Vistas.de(aplicacion) es publico,
+  y devuelve las seis ya armadas y conectadas:
+  un Rutas* recibe una Vistas, no seis parametros
+  sueltos.
+end note
+
+legend bottom
+  |= Capa |= Que cambio con la reorganizacion |
+  | servicio | Paso de un paquete plano con doce gestores sueltos a un |
+  |  | subpaquete por subdominio: candy, cartelera, funciones, informes, |
+  |  | programaciones, promociones, salas, usuarios, ventas. Cada uno agrupa |
+  |  | su gestor con las clases de fabricacion pura y los value objects que |
+  |  | le sirven solo a el -Ocupacion y CalculadoraPrecio en ventas, |
+  |  | AgendaDeSala en funciones, Arqueo/Bordero/InformeFuncion en informes-. |
+  | api | rutas/ y vistas/ dejaron de ser una clase Rutas* o Vistas* suelta |
+  |  | por familia HTTP en el paquete api/: ahora cada una es su propio |
+  |  | subpaquete con una fachada publica y el resto package-private, mas |
+  |  | http/ para lo transversal (Parseo, Fechas, NoEncontrado). |
+  | dominio | Sin cambios: ya vivia partido por subdominio antes de esta |
+  |  | reorganizacion. Ver clases-dominio.puml para el detalle. |
+  | persistencia | Sin cambios: los contratos arriba, las tecnologias -mysql, |
+  |  | memoria, archivo, redis- en subpaquetes debajo. Ver solid-dip.puml |
+  |  | para por que ninguna de esas cuatro se nombra fuera de Aplicacion. |
+endlegend
+
+@enduml

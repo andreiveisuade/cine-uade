@@ -1,0 +1,82 @@
+@startuml solid-dip
+title SOLID: Inversion de dependencias - quien nombra una implementacion concreta
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' El caso testigo es ReservaDAO, pero la misma forma se repite en las otras
+' doce interfaces de persistencia/, y tambien en comprobantes/ y pasarelas/:
+' un modulo de alto nivel (la regla de negocio) y uno de bajo nivel (donde se
+' guarda el dato) dependen los dos de una abstraccion que no le pertenece a ninguno
+' de los dos. Sin esa interfaz de por medio, GestorReservas importaria
+' java.sql y no se podria probar sin una base levantada.
+
+package "servicio.ventas" {
+  class GestorReservas
+}
+
+package persistencia {
+  interface ReservaDAO {
+    +guardar(Reserva)
+    +actualizar(Reserva)
+    +buscarPorId(id): Optional<Reserva>
+    +buscarPorCodigo(codigo): Optional<Reserva>
+    +listar(): List<Reserva>
+    +listarPorFuncion(funcionId): List<Reserva>
+    +listarPorCliente(clienteId): List<Reserva>
+  }
+
+  package mysql {
+    class ReservaDAOMySQL
+  }
+  package memoria {
+    class ReservaDAOMemoria
+  }
+  package archivo {
+    class ReservaDAOTxt
+  }
+}
+
+class Aplicacion
+
+GestorReservas -down-> ReservaDAO : depende de\nla interfaz
+ReservaDAOMySQL .up.|> ReservaDAO
+ReservaDAOMemoria .up.|> ReservaDAO
+ReservaDAOTxt .up.|> ReservaDAO
+
+Aplicacion -right-> ReservaDAOMySQL : new, en enMySQL()
+Aplicacion ..> GestorReservas : arma pasandole\nla interfaz
+
+note right of Aplicacion
+  Es el unico lugar de todo el sistema que
+  nombra una implementacion concreta de DAO.
+  Los doce gestores conocen solo las interfaces
+  de persistencia/: donde se guarda cada cosa
+  se decide aca, y en ningun otro lado. Cambiar
+  ReservaDAOMySQL por ReservaDAOTxt es cambiar
+  un argumento de un constructor, sin tocar una
+  sola regla de negocio.
+end note
+
+note bottom of ReservaDAOMemoria
+  AplicacionTest arma el mismo constructor
+  publico de Aplicacion pero con las DAOMemoria
+  en vez de las MySQL, y recorre el circuito
+  completo: alta de pelicula, sala, funcion,
+  reserva, cobro. Por eso los tests levantan el
+  sistema entero en memoria y ninguno toca una
+  base real.
+end note
+
+note as N1
+  La flecha de compilacion va en las dos
+  direcciones hacia la interfaz:
+  GestorReservas --> ReservaDAO <-- ReservaDAOMySQL.
+  Alto nivel y bajo nivel dependen los dos de
+  la abstraccion; ninguno depende del otro.
+  Eso es la D de SOLID.
+end note
+N1 .. ReservaDAO
+
+@enduml

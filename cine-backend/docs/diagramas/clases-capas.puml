@@ -8,6 +8,9 @@ skinparam ranksep 45
 hide members
 
 package api {
+  ' Divididos en http/ (Parseo, Fechas, NoEncontrado), rutas/ y vistas/.
+  ' Rutas y Vistas son lo unico publico de sus subpaquetes.
+
   class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy, RutasInformes" as RutasHttp
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
   class Parseo
@@ -22,6 +25,9 @@ package dto {
 }
 
 package servicio {
+  ' Divididos en subpaquetes por area: candy, cartelera, funciones, informes,
+  ' programaciones, promociones, salas, usuarios, ventas.
+
   class GestorCartelera
   class GestorSalas
   class GestorFunciones
@@ -34,11 +40,12 @@ package servicio {
   class GestorEmpleados
   class GestorPromociones
   class GestorInformes
+  class GestorCaja
   class PlanificadorGrilla
   class CalculadoraPrecio
   class Ocupacion
   interface PoliticaPromociones
-  class "DatosPelicula, Arqueo\nBordero, InformeFuncion" as DatosDeServicio
+  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla" as DatosDeServicio
 }
 
 package seguridad {
@@ -112,7 +119,7 @@ package persistencia {
   class PersistenciaException
 
   package mysql {
-    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nConexionMySQL" as DaosMySQL
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nPlantilla + OrigenMySQL" as DaosMySQL
   }
   package memoria {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
