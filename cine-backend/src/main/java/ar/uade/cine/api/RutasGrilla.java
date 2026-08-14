@@ -52,14 +52,25 @@ class RutasGrilla {
     /**
      * Los defaults viven acá y no en el planificador porque son una comodidad de la
      * pantalla, no una regla: un cine que abra a las 10 solo tiene que mandar el campo.
+     *
+     * <p>El precio es la excepción y no tiene default a propósito. Los otros siete son
+     * convenciones razonables —una semana, de 14 a 24, ocho títulos—, pero cuánto sale la
+     * entrada es una decisión comercial que el sistema no puede tomar por el cine: si
+     * inventara un número y el encargado no lo mirara, se venderían entradas a un precio
+     * que no decidió nadie. Por eso falta se avisa acá, con el mismo criterio que usa
+     * {@code RutasCandy} con la disponibilidad: comprobar que un campo obligatorio del
+     * pedido esté presente es traducción, no una regla de negocio.
      */
     private static CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
+        if (pedido.precio() == null) {
+            throw new IllegalArgumentException("Falta el precio de las funciones");
+        }
         LocalDate desde = pedido.desde() == null || pedido.desde().isBlank()
                 ? LocalDate.now()
                 : Parseo.dia(pedido.desde(), "la fecha de inicio");
         CriteriosGrilla base = CriteriosGrilla.deUnaSemana(desde,
                 pedido.cuantasPeliculas() == null ? 8 : pedido.cuantasPeliculas(),
-                pedido.precio() == null ? 0 : pedido.precio());
+                pedido.precio());
 
         return new CriteriosGrilla(desde,
                 pedido.dias() == null ? base.dias() : pedido.dias(),
