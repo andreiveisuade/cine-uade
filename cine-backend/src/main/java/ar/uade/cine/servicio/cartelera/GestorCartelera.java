@@ -14,9 +14,6 @@ import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.servicio.programaciones.GestorProgramaciones;
-import ar.uade.cine.servicio.promociones.GestorPromociones;
-import ar.uade.cine.servicio.ventas.GestorPagos;
-import ar.uade.cine.servicio.ventas.GestorReservas;
 
 /**
  * Reglas de negocio del catálogo. Depende de la interfaz PeliculaDAO, no de una
