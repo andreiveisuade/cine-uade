@@ -1,5 +1,5 @@
 import * as api from "../api.js";
-import { avisar, chip, chipClasificacion, duracion, escapar, etiqueta, imagenPoster, error } from "../ui.js";
+import { avisar, chip, chipClasificacion, conEspera, duracion, escapar, etiqueta, imagenPoster, error } from "../ui.js";
 
 /* ---------------------------------------------------------- ABM de películas */
 
@@ -23,46 +23,38 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
       la baja aunque las tenga.
     </p>
 
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Buscar</span>
+        <input id="fq" type="search" placeholder="título"
+          class="mt-1 block w-64 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Género</span>
+        <select id="fgenero" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todos</option>
+          ${generos.map((g) => `<option value="${g}">${etiqueta(g)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Estado</span>
+        <select id="fpublicada" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          <option value="true">Publicadas</option>
+          <option value="false">Despublicadas</option>
+        </select>
+      </label>
+      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+      <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+    </div>
+
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
       <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table class="w-full text-sm">
           <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
             <tr><th class="p-2"></th><th>Título</th><th>Duración</th><th>Edad</th><th>Géneros</th><th>Estado</th><th></th></tr>
           </thead>
-          <tbody>
-            ${peliculas.map((p) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.id === editando?.id ? "bg-amber-50 dark:bg-amber-900/20" : ""}">
-                <td class="p-2">${imagenPoster(p, "h-12 w-8 rounded")}</td>
-                <td>
-                  <span class="font-medium">${escapar(p.titulo)}</span>
-                  <span class="block text-xs text-slate-500 dark:text-slate-400">
-                    ${[p.anio || null, p.director || null].filter(Boolean).map(escapar).join(" · ")}
-                  </span>
-                </td>
-                <td class="whitespace-nowrap">${duracion(p.duracionMinutos)}</td>
-                <td>${chipClasificacion(p.clasificacion)}</td>
-                <td class="py-1">
-                  <div class="flex flex-wrap gap-1">${p.generos.map((g) => chip(etiqueta(g))).join("")}</div>
-                </td>
-                <td>
-                  <button type="button" data-cartelera="${p.id}"
-                    title="${p.enCartelera
-                      ? "Publicada: aparece en la cartelera si tiene funciones por delante"
-                      : "Despublicada: no aparece aunque tenga funciones"}"
-                    class="rounded-full px-2 py-0.5 text-xs font-medium ${p.enCartelera
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                      : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}">
-                    ${p.enCartelera ? "Publicada" : "Despublicada"}
-                  </button>
-                </td>
-                <td class="p-2 text-right whitespace-nowrap">
-                  <button type="button" data-editar="${p.id}"
-                    class="text-xs text-slate-700 hover:underline dark:text-slate-200">Editar</button>
-                  <button type="button" data-borrar="${p.id}"
-                    class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
-                </td>
-              </tr>`).join("")}
-          </tbody>
+          <tbody>${filas(peliculas, editando?.id)}</tbody>
         </table>
       </section>
 
@@ -149,6 +141,31 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
     </div>
   `;
 
+  // --- filtros: los resuelve el backend, acá se juntan y se mandan ---
+  const fq = contenedor.querySelector("#fq");
+  const fgenero = contenedor.querySelector("#fgenero");
+  const fpublicada = contenedor.querySelector("#fpublicada");
+  const cuenta = contenedor.querySelector("#cuenta");
+  const cuerpo = contenedor.querySelector("tbody");
+
+  async function aplicarFiltros() {
+    const visibles = await api.obtenerPeliculas({
+      q: fq.value, genero: fgenero.value, publicada: fpublicada.value,
+    });
+    cuerpo.innerHTML = filas(visibles, editando?.id);
+    cuenta.textContent = visibles.length === peliculas.length
+      ? "" : `mostrando ${visibles.length} de ${peliculas.length}`;
+  }
+
+  fq.addEventListener("input", conEspera(aplicarFiltros));
+  fgenero.addEventListener("change", aplicarFiltros);
+  fpublicada.addEventListener("change", aplicarFiltros);
+  contenedor.querySelector("#limpiar").addEventListener("click", () => {
+    fq.value = ""; fgenero.value = ""; fpublicada.value = "";
+    aplicarFiltros();
+    fq.focus();
+  });
+
   const formulario = contenedor.querySelector("#alta");
   formulario.addEventListener("submit", async (evento) => {
     evento.preventDefault();
@@ -210,4 +227,45 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
       avisar(e.message, "error");
     }
   });
+}
+
+/** Una fila por película. Separada para repintar solo el cuerpo al filtrar. */
+function filas(peliculas, editandoId) {
+  if (!peliculas.length) {
+    return `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+      Ninguna película coincide con el filtro.
+    </td></tr>`;
+  }
+  return peliculas.map((p) => `
+              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.id === editandoId ? "bg-amber-50 dark:bg-amber-900/20" : ""}">
+                <td class="p-2">${imagenPoster(p, "h-12 w-8 rounded")}</td>
+                <td>
+                  <span class="font-medium">${escapar(p.titulo)}</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">
+                    ${[p.anio || null, p.director || null].filter(Boolean).map(escapar).join(" · ")}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap">${duracion(p.duracionMinutos)}</td>
+                <td>${chipClasificacion(p.clasificacion)}</td>
+                <td class="py-1">
+                  <div class="flex flex-wrap gap-1">${p.generos.map((g) => chip(etiqueta(g))).join("")}</div>
+                </td>
+                <td>
+                  <button type="button" data-cartelera="${p.id}"
+                    title="${p.enCartelera
+                      ? "Publicada: aparece en la cartelera si tiene funciones por delante"
+                      : "Despublicada: no aparece aunque tenga funciones"}"
+                    class="rounded-full px-2 py-0.5 text-xs font-medium ${p.enCartelera
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                      : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"}">
+                    ${p.enCartelera ? "Publicada" : "Despublicada"}
+                  </button>
+                </td>
+                <td class="p-2 text-right whitespace-nowrap">
+                  <button type="button" data-editar="${p.id}"
+                    class="text-xs text-slate-700 hover:underline dark:text-slate-200">Editar</button>
+                  <button type="button" data-borrar="${p.id}"
+                    class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
+                </td>
+              </tr>`).join("");
 }

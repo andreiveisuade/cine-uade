@@ -102,7 +102,8 @@ export const obtenerReservasDe = (email) =>
 
 export const login = (email, password) => post("/sesion", { email, password });
 
-export const obtenerPeliculas = () => get("/peliculas");
+/** @param filtros {q, genero, publicada} */
+export const obtenerPeliculas = (filtros) => get(`/peliculas${consulta(filtros)}`);
 
 export const crearPelicula = ({ titulo, duracionMinutos, generos, clasificacion,
                                 posterUrl, ...catalogo }) =>
@@ -149,7 +150,8 @@ export const eliminarFuncion = (id) => borrar(`/funciones/${id}`);
 
 /* ------------------------------------------------------------ programaciones */
 
-export const obtenerProgramaciones = () => get("/programaciones");
+/** @param filtros {peliculaId, salaId, activa} */
+export const obtenerProgramaciones = (filtros) => get(`/programaciones${consulta(filtros)}`);
 export const obtenerProgramacion = (id) => get(`/programaciones/${id}`);
 
 // Las dos mandan exactamente el mismo cuerpo y solo cambian de ruta: previsualizar

@@ -30,33 +30,40 @@ export async function vistaProgramaciones(contenedor) {
       ya programado en esa sala se saltean, y el informe dice cuáles.
     </p>
 
+    <div class="mb-4 flex flex-wrap items-end gap-3">
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Película</span>
+        <select id="fpelicula" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Sala</span>
+        <select id="fsala" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Estado</span>
+        <select id="factiva" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <option value="">Todas</option>
+          <option value="true">Activas</option>
+          <option value="false">Dadas de baja</option>
+        </select>
+      </label>
+      <button type="button" id="limpiarFiltros" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+      <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
+    </div>
+
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
       <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table class="w-full text-sm">
           <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
             <tr><th class="p-2">Película</th><th>Sala</th><th>Cuándo</th><th>Días</th><th class="text-right">Precio</th><th></th></tr>
           </thead>
-          <tbody>
-            ${programaciones.length ? programaciones.map((p) => `
-              <tr class="cursor-pointer border-b border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}"
-                  data-ver="${p.id}">
-                <td class="p-2 font-medium">${escapar(tituloDe(peliculas, p.peliculaId))}</td>
-                <td class="whitespace-nowrap">${escapar(nombreDeSala(salas, p.salaId))}</td>
-                <td class="whitespace-nowrap text-xs">
-                  ${escapar(p.desde)} ${p.hasta ? `al ${escapar(p.hasta)}` : "<span class=\"font-medium\">en adelante</span>"} · <span class="font-medium">${escapar(p.horaInicio.slice(0, 5))}</span>
-                  ${p.hasta ? "" : `<span class="block text-slate-500 dark:text-slate-400">generada hasta ${escapar(p.generadaHasta || "—")}</span>`}
-                </td>
-                <td class="text-xs">${escapar(diasDeLaGrilla(p))}</td>
-                <td class="text-right whitespace-nowrap">${precio(p.precio)}</td>
-                <td class="p-2 text-right whitespace-nowrap">
-                  <button type="button" data-${p.activa ? "baja" : "alta"}="${p.id}"
-                    class="text-xs ${p.activa ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"} hover:underline">
-                    ${p.activa ? "Dar de baja" : "Reactivar"}
-                  </button>
-                </td>
-              </tr>`).join("")
-              : '<tr><td colspan="6" class="p-6 text-center text-slate-500 dark:text-slate-400">Todavía no hay grillas cargadas.</td></tr>'}
-          </tbody>
+          <tbody>${filas(programaciones, peliculas, salas)}</tbody>
         </table>
         <p class="border-t border-slate-200 p-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Dar de baja una grilla <strong>no borra las funciones que ya generó</strong>:
@@ -152,6 +159,27 @@ export async function vistaProgramaciones(contenedor) {
       </section>
     </div>
   `;
+
+  // --- filtros: los resuelve el backend ---
+  const fpelicula = contenedor.querySelector("#fpelicula");
+  const fsala = contenedor.querySelector("#fsala");
+  const factiva = contenedor.querySelector("#factiva");
+  const cuenta = contenedor.querySelector("#cuenta");
+
+  async function aplicarFiltros() {
+    const visibles = await api.obtenerProgramaciones({
+      peliculaId: fpelicula.value, salaId: fsala.value, activa: factiva.value,
+    });
+    contenedor.querySelector("tbody").innerHTML = filas(visibles, peliculas, salas);
+    cuenta.textContent = visibles.length === programaciones.length
+      ? "" : `mostrando ${visibles.length} de ${programaciones.length}`;
+  }
+
+  [fpelicula, fsala, factiva].forEach((c) => c.addEventListener("change", aplicarFiltros));
+  contenedor.querySelector("#limpiarFiltros").addEventListener("click", () => {
+    fpelicula.value = ""; fsala.value = ""; factiva.value = "";
+    aplicarFiltros();
+  });
 
   const formulario = contenedor.querySelector("#alta");
   const errorAlta = contenedor.querySelector("#errorAlta");
@@ -293,4 +321,31 @@ function dibujarFuncionesGeneradas(grilla) {
           `<span class="rounded bg-slate-100 px-2 py-0.5 dark:bg-slate-700">${escapar(fechaHora(f.inicio))}</span>`).join("")}
       </div>
     </div>`;
+}
+
+/** Una fila por grilla. Separada para repintar solo el cuerpo al filtrar. */
+function filas(programaciones, peliculas, salas) {
+  if (!programaciones.length) {
+    return `<tr><td colspan="6" class="p-6 text-center text-slate-500 dark:text-slate-400">
+      Ninguna grilla coincide con el filtro.
+    </td></tr>`;
+  }
+  return programaciones.map((p) => `
+              <tr class="cursor-pointer border-b border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}"
+                  data-ver="${p.id}">
+                <td class="p-2 font-medium">${escapar(tituloDe(peliculas, p.peliculaId))}</td>
+                <td class="whitespace-nowrap">${escapar(nombreDeSala(salas, p.salaId))}</td>
+                <td class="whitespace-nowrap text-xs">
+                  ${escapar(p.desde)} ${p.hasta ? `al ${escapar(p.hasta)}` : "<span class=\"font-medium\">en adelante</span>"} · <span class="font-medium">${escapar(p.horaInicio.slice(0, 5))}</span>
+                  ${p.hasta ? "" : `<span class="block text-slate-500 dark:text-slate-400">generada hasta ${escapar(p.generadaHasta || "—")}</span>`}
+                </td>
+                <td class="text-xs">${escapar(diasDeLaGrilla(p))}</td>
+                <td class="text-right whitespace-nowrap">${precio(p.precio)}</td>
+                <td class="p-2 text-right whitespace-nowrap">
+                  <button type="button" data-${p.activa ? "baja" : "alta"}="${p.id}"
+                    class="text-xs ${p.activa ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"} hover:underline">
+                    ${p.activa ? "Dar de baja" : "Reactivar"}
+                  </button>
+                </td>
+              </tr>`).join("");
 }
