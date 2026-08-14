@@ -7,6 +7,5 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 WORKDIR /usr/share/nginx/html
 COPY index.html admin.html ./
 COPY js/ ./js/
-COPY mock/ ./mock/
 
 EXPOSE 8080

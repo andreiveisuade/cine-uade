@@ -1,9 +1,8 @@
 # Contrato de la API
 
 Lo que el frontend espera del backend. Cada función de `js/api.js` corresponde a un
-endpoint de esta lista. `FUENTE = "http"` en `js/api.js` es el modo actual: `js/api-http.js`
-llama a estos endpoints con `fetch`. `js/api-mock.js` (modo `"mock"`) sigue existiendo para
-trabajar sin backend, y replica el mismo contrato contra datos en memoria.
+endpoint de esta lista: `js/api.js` reexporta `js/api-http.js`, que llama a estos
+endpoints con `fetch`.
 
 Base: `/api`. El navegador la pide al mismo origen y nginx la reenvía al backend por la
 red interna de Docker, así que no hace falta CORS.

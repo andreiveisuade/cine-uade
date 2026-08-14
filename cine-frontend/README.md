@@ -36,26 +36,15 @@ docker compose up -d --build --no-deps frontend
 
 ## De dónde salen los datos
 
-Todo el acceso a datos pasa por `js/api.js`, que es un selector:
-
-```js
-export const FUENTE = "http"; // "mock" | "http"
-```
-
-- `"http"` → `js/api-http.js`, contra la API REST del backend. **Es el modo actual.**
-- `"mock"` → `js/api-mock.js`, contra datos de ejemplo en memoria, sin backend.
-
-Las dos implementaciones exponen exactamente el mismo conjunto de operaciones con la
-misma forma, así que alternar es cambiar esa línea: ninguna vista se entera. El mock
-sirve para trabajar en las pantallas sin levantar nada, y replica las validaciones del
-backend para que el front no mande algo que va a fallar.
+Todo el acceso a datos pasa por `js/api.js`, que reexporta `js/api-http.js`: la
+implementación contra la API REST del backend.
 
 El contrato de los endpoints está en [API.md](API.md).
 
-Servir el repo con `python3 -m http.server` alcanza **solo en modo mock**. En modo
-`"http"` hace falta el contenedor: el `/api` lo resuelve nginx como reverse proxy hacia
-el backend por la red interna, y por eso el front no conoce ni el host ni el puerto del
-backend, y no hace falta CORS.
+Para desarrollar hace falta el backend levantado (`docker compose up` en
+`../cine-docker`): `python3 -m http.server` no alcanza, porque `/api` lo resuelve nginx
+como reverse proxy hacia el backend por la red interna, y por eso el front no conoce ni
+el host ni el puerto del backend, y no hace falta CORS.
 
 ## Estructura
 
@@ -65,15 +54,16 @@ admin.html        encargado
 Dockerfile        nginx unprivileged
 nginx.conf        estáticos + reverse proxy de /api
 API.md            contrato con el backend
-mock/datos.js     datos de ejemplo, solo para el modo mock
 js/
-  api.js          selector: elige mock o http
+  api.js          reexporta api-http.js
   api-http.js     implementación contra la API REST
-  api-mock.js     implementación contra el mock
   router.js       ruteo por hash (#/pelicula/3)
   theme.js        toggle claro/oscuro, persistido en localStorage
   butacas.js      dibujo del mapa de la sala, compartido por cliente y encargado
-  ui.js           formatos y etiquetas de los enums del dominio
+  componentes.js  piezas de HTML reutilizables (campo, panel, tabla, botón...)
+  etiquetas.js    traducción de los enums del dominio a texto legible
+  formato.js      formateo de plata, fecha y hora
+  dom.js          escapado, avisos por pantalla y el resto del contacto con el DOM
   cliente.js      vistas del cliente
   admin.js        vistas del encargado
 ```
