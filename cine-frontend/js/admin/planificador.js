@@ -1,5 +1,5 @@
 import * as api from "../api.js";
-import { avisar, cargando, dia, duracion, escapar, etiqueta, hora, hoyISO } from "../ui.js";
+import { avisar, dia, duracion, escapar, etiqueta, fantasma, hora, hoyISO, spinner } from "../ui.js";
 
 /* --------------------------------------------- armado automático de la grilla */
 
@@ -159,9 +159,9 @@ export async function vistaPlanificador(contenedor) {
     const criterios = leerCriterios();
     const boton = aplicada ? botonAplicar : botonPrevisualizar;
     boton.disabled = true;
-    boton.textContent = aplicada ? "Creando…" : "Calculando…";
-    propuesta.innerHTML = cargando(aplicada
-      ? "Creando las funciones…" : "Armando la grilla, puede tardar unos segundos…");
+    boton.innerHTML = `<span class="inline-flex items-center justify-center gap-2">
+      ${spinner("h-4 w-4")}${aplicada ? "Creando…" : "Calculando…"}</span>`;
+    propuesta.innerHTML = esqueletoPropuesta(aplicada);
 
     try {
       const grilla = await pedir(criterios);
@@ -193,6 +193,54 @@ export async function vistaPlanificador(contenedor) {
     evento.preventDefault();
     correr(api.armarGrilla, true);
   });
+}
+
+/* -------------------------------------------------------- mientras calcula */
+
+/**
+ * Lo que se ve mientras el servidor arma la grilla: el mismo andamiaje que el resultado,
+ * en gris.
+ *
+ * El mensaje no promete tiempos, promete **qué** está pasando: hasta que el backend dejó
+ * de preguntar la disponibilidad hueco por hueco, armar una semana tardaba veinte
+ * segundos; hoy tarda medio. Lo que no cambia es que es un ida y vuelta al servidor, y que
+ * puede volver a alargarse con más salas o más días.
+ *
+ * Contar las dos etapas del algoritmo mientras corren es, además, la única parte de la
+ * espera que le sirve a quien mira: para cuando aparecen los números, ya sabe de dónde
+ * salieron.
+ */
+function esqueletoPropuesta(aplicada) {
+  return `
+    <div class="space-y-4">
+      <div class="rounded border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+        <p class="flex items-center gap-2 font-semibold">
+          ${spinner()} ${aplicada ? "Creando las funciones…" : "Armando la grilla…"}
+        </p>
+        <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">
+          ${aplicada
+            ? "Cada pase de la propuesta se programa como una función de verdad."
+            : `Primero elige el elenco por puntaje y géneros; después llena cada sala día por
+               día, preguntando en cada horario si está libre.`}
+        </p>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        ${[0, 1, 2, 3].map(() => `
+          <div class="rounded border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            ${fantasma("h-3 w-24")}
+            ${fantasma("mt-2 h-7 w-16")}
+            ${fantasma("mt-2 h-3 w-full")}
+          </div>`).join("")}
+      </div>
+
+      <div class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        ${fantasma("h-4 w-40")}
+        <div class="mt-3 space-y-2">
+          ${[0, 1, 2, 3, 4, 5].map(() => fantasma("h-6 w-full")).join("")}
+        </div>
+      </div>
+    </div>`;
 }
 
 /* ------------------------------------------------------------- el resultado */
@@ -230,7 +278,8 @@ function dibujarIndicadores(indicadores, pases, anterior) {
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       ${tarjeta("Ocupación de las salas", porcentaje(indicadores.ocupacion),
         `${indicadores.minutosProgramados.toLocaleString("es-AR")} de
-         ${indicadores.minutosDisponibles.toLocaleString("es-AR")} minutos de sala`,
+         ${indicadores.minutosDisponibles.toLocaleString("es-AR")} minutos <strong>libres</strong>,
+         que son la ventana menos lo que ya estaba programado`,
         variacion(indicadores.ocupacion, previos?.ocupacion, porcentaje))}
       ${tarjeta("Puntaje promedio", conDecimal(indicadores.puntajePromedio),
         "por pase, así una película con más funciones pesa más",

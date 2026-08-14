@@ -157,8 +157,31 @@ export function chip(texto, clases = "bg-slate-200 text-slate-700 dark:bg-slate-
   return `<span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium ${clases}">${escapar(texto)}</span>`;
 }
 
+/**
+ * El círculo que gira. Vive acá y no en cada vista porque es el mismo en todas, y porque
+ * es lo único que separa «está tardando» de «se colgó»: quieta, una espera de más de un
+ * segundo se lee como una pantalla rota, y lo que hace el usuario es volver a apretar.
+ */
+export function spinner(clases = "h-5 w-5") {
+  return `<span class="inline-block ${clases} animate-spin rounded-full border-2 border-slate-300 border-t-slate-700 dark:border-slate-600 dark:border-t-slate-200"></span>`;
+}
+
 export function cargando(mensaje = "Cargando…") {
-  return `<p class="py-12 text-center text-slate-500 dark:text-slate-400">${escapar(mensaje)}</p>`;
+  return `<div class="flex items-center justify-center gap-3 py-12 text-slate-500 dark:text-slate-400">
+    ${spinner()}<span>${escapar(mensaje)}</span>
+  </div>`;
+}
+
+/**
+ * Un bloque gris que late, del tamaño de lo que se está por dibujar.
+ *
+ * Sirve donde se conoce la forma del resultado, y ahí es mejor que un cartel centrado por
+ * dos motivos: dice **dónde** va a aparecer cada cosa —así la pantalla no salta cuando
+ * llegan los datos— y deja ver de entrada que lo que viene son cuatro números y una tabla,
+ * no una lista infinita.
+ */
+export function fantasma(clases) {
+  return `<div class="animate-pulse rounded bg-slate-200 dark:bg-slate-700 ${clases}"></div>`;
 }
 
 export function error(mensaje) {
