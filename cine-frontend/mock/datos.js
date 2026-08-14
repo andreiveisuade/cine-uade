@@ -76,6 +76,10 @@ function poster(titulo, fondo) {
 // Los datos de catálogo (director, sinopsis, año, idioma original, poster) no tienen
 // reglas asociadas: son para mostrar la película. enCartelera sí decide qué ve el
 // cliente: una película cargada no está necesariamente en exhibición.
+//
+// estadoRevision es el otro eje: si el encargado ya decidió qué hacer con ella. Las dos
+// últimas están PENDIENTES a propósito —son las que "trajo el importador"— para que el
+// buzón de revisión tenga algo que mostrar en modo mock.
 export const peliculas = [
   { id: 1, titulo: "Matrix", duracionMinutos: 136, generos: ["ACCION", "CIENCIA_FICCION"],
     clasificacion: "MAS_16", posterUrl: poster("Matrix", "#1f4d3d"),
@@ -123,7 +127,24 @@ export const peliculas = [
     director: "Fritz Lang", anio: 1927, idiomaOriginal: "Alemán (muda)",
     sinopsis: "En una ciudad partida entre la superficie y el subsuelo, el hijo del gobernante baja a ver cómo se vive abajo.",
     enCartelera: false },
+  // Las dos que "trajo el importador": esperan en el buzón, fuera de cartelera, hasta que
+  // el encargado las confirme o las descarte. Nadie puede programarlas mientras tanto.
+  { id: 10, titulo: "Robot Salvaje", duracionMinutos: 102, generos: ["ANIMACION", "DRAMA"],
+    clasificacion: "ATP", posterUrl: poster("Robot Salvaje", "#2f5d50"),
+    director: "Chris Sanders", anio: 2024, idiomaOriginal: "Inglés",
+    sinopsis: "Un robot naufraga en una isla desierta y termina criando a un ganso huérfano.",
+    enCartelera: false, estadoRevision: "PENDIENTE" },
+  { id: 11, titulo: "La Sustancia", duracionMinutos: 141, generos: ["TERROR", "DRAMA"],
+    clasificacion: "MAS_18", posterUrl: poster("La Sustancia", "#6b1f3a"),
+    director: "Coralie Fargeat", anio: 2024, idiomaOriginal: "Inglés",
+    sinopsis: "Una estrella de televisión prueba un tratamiento que promete una versión mejor de sí misma.",
+    enCartelera: false, estadoRevision: "PENDIENTE" },
 ];
+
+// Las que no lo declaran son del catálogo de siempre: ya estaban decididas.
+for (const pelicula of peliculas) {
+  pelicula.estadoRevision = pelicula.estadoRevision || "CONFIRMADA";
+}
 
 // Las seis salas del complejo. Cada tipo de butaca se declara por código: sin TipoSala
 // VIP no hay de dónde inferir que una sala es "la de las butacas de pareja".

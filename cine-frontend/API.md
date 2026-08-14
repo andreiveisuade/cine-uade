@@ -45,8 +45,14 @@ opcional (CU-01b).
 [{ "id": 1, "titulo": "Matrix", "duracionMinutos": 136,
    "generos": ["ACCION","CIENCIA_FICCION"], "clasificacion": "MAS_16",
    "posterUrl": "https://…", "director": "…", "anio": 1999,
-   "idiomaOriginal": "Inglés", "sinopsis": "…", "enCartelera": true }]
+   "idiomaOriginal": "Inglés", "sinopsis": "…", "enCartelera": true,
+   "estadoRevision": "CONFIRMADA" }]
 ```
+
+`estadoRevision` es `PENDIENTE`, `CONFIRMADA` o `DESCARTADA`, y es un eje distinto de
+`enCartelera`: este dice si la película **entró al catálogo** —se responde una sola vez— y
+`enCartelera` si **se está dando**, que cambia todas las semanas. Lo que trae el importador
+nace `PENDIENTE` y no se puede programar hasta confirmarlo.
 
 ### `GET /api/peliculas/{id}`
 Una película, con los mismos campos.
@@ -147,7 +153,11 @@ llevarlo directo a esa pantalla y no al panel.
 | Método | Ruta | Notas |
 |---|---|---|
 | GET | `/api/peliculas` | Todas, incluidas las que no están en cartelera |
-| POST | `/api/peliculas` | R1 título único, R2 duración > 0, R7 un género, R10 clasificación |
+| GET | `/api/peliculas/pendientes` | El buzón: lo que trajo el importador y nadie miró. Va **antes** que `/{id}` en el registro de rutas |
+| POST | `/api/peliculas` | R1 título único, R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
+| POST | `/api/peliculas/importadas` | Mismo cuerpo que el alta, pero nace `PENDIENTE` y fuera de cartelera. Lo usa el importador de TMDB |
+| POST | `/api/peliculas/{id}/confirmacion` | La acepta: pasa a `CONFIRMADA` y queda en cartelera |
+| POST | `/api/peliculas/{id}/descarte` | La rechaza: pasa a `DESCARTADA`. 400 si ya tiene funciones programadas |
 | PUT | `/api/peliculas/{id}` | Campos parciales. El título único se compara contra **las otras** |
 | DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas |
 | GET | `/api/salas` | |
@@ -182,6 +192,45 @@ promociones que dependen de él.
 ### `GET /api/reservas/{id}/pago`
 El pago de esa reserva, o `null` si todavía no se cobró — no es error, es la forma en que
 el front pregunta si ya está paga. Mismos campos que el `pago` embebido en `GET /api/reservas`.
+
+### `POST /api/reservas/{id}/checkout`
+```json
+{ "medio": "QR" }
+```
+El camino de los medios electrónicos: el código de autorización que pide R11 no lo tipea
+nadie, lo devuelve el procesador. **El efectivo no pasa por acá** — 400 con «El pago con
+EFECTIVO se cobra en la caja del cine, no por checkout».
+
+```json
+{ "id": "MP-1234567890", "reservaId": 25, "medio": "QR", "monto": 7680,
+  "urlPago": "https://checkout.emulado.local/mp/MP-1234567890",
+  "codigoQr": "MP-QR|MP-1234567890" }
+```
+
+`monto` **ya viene con el descuento aplicado**: es el importe que el cliente va a aprobar en
+la pantalla del procesador, y si después se cobrara otro no coincidirían. `codigoQr` es el
+*contenido* del QR, no una imagen: dibujarlo es del navegador, igual que traducir los enums.
+
+Valida lo mismo que el cobro —R5, R17, R19— y no al confirmar: mandar a pagar una reserva
+que no se puede cobrar termina en plata que hay que devolver, y devolución es justo lo que
+no existe (R13). Una reserva ya pagada tampoco abre checkout.
+
+> La pasarela es una **emulación**: no hay credenciales ni llamadas de red. El host
+> `emulado.local` está elegido para que no se pueda confundir con uno real.
+
+### `POST /api/checkouts/{id}/confirmacion`
+Sin cuerpo. Es «el cliente pagó»: la pasarela devuelve el código de autorización y con él
+se registra el cobro. Responde el mismo `PagoVista` que `POST /api/reservas/{id}/pago`, ya
+con `codigoAutorizacion`. Un checkout inexistente da 400, y confirmarlo dos veces también:
+la segunda choca contra R5, así que un doble click no cobra dos veces.
+
+> Qué se está pagando sale del checkout y no de quien confirma, por lo mismo que el monto
+> no viaja en el pedido de cobro: si la reserva fueran datos de entrada, se podría autorizar
+> un checkout de $16.000 y aplicarlo a otra reserva.
+>
+> En una integración de verdad esto lo dispara el aviso del procesador. Acá lo dispara el
+> front, que es la parte que la emulación no puede fingir: alguien tiene que decir que la
+> plata llegó.
 
 ### `GET /api/arqueo?fecha=2026-08-13`
 ```json

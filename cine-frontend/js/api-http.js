@@ -105,6 +105,13 @@ export const login = (email, password) => post("/sesion", { email, password });
 /** @param filtros {q, genero, publicada} */
 export const obtenerPeliculas = (filtros) => get(`/peliculas${consulta(filtros)}`);
 
+/** El buzón: lo que trajo el importador y todavía nadie miró. */
+export const obtenerPeliculasPendientes = () => get("/peliculas/pendientes");
+
+export const confirmarPelicula = (id) => post(`/peliculas/${id}/confirmacion`, {});
+
+export const descartarPelicula = (id) => post(`/peliculas/${id}/descarte`, {});
+
 export const crearPelicula = ({ titulo, duracionMinutos, generos, clasificacion,
                                 posterUrl, ...catalogo }) =>
   post("/peliculas", {

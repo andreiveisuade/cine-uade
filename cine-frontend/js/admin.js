@@ -9,6 +9,7 @@ import { wireToggle } from "./theme.js";
 import { cerrarSesion, esAdministrador, pintarEncabezado, sesionActual } from "./admin/sesion.js";
 import { vistaLogin } from "./admin/login.js";
 import { vistaPeliculas } from "./admin/peliculas.js";
+import { vistaPendientes } from "./admin/pendientes.js";
 import { vistaSalas } from "./admin/salas.js";
 import { vistaFunciones } from "./admin/funciones.js";
 import { vistaProgramaciones } from "./admin/programaciones.js";
@@ -35,6 +36,7 @@ iniciarRouter({
   rutas: {
     login: vistaLogin,
     peliculas: vistaPeliculas,
+    pendientes: vistaPendientes,
     salas: vistaSalas,
     funciones: vistaFunciones,
     programaciones: vistaProgramaciones,

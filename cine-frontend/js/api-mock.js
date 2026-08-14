@@ -293,8 +293,36 @@ export function crearPelicula({ titulo, duracionMinutos, generos, clasificacion,
     idiomaOriginal: (catalogo.idiomaOriginal || "").trim(),
     sinopsis: (catalogo.sinopsis || "").trim(),
     enCartelera: catalogo.enCartelera !== false,
+    // El alta del encargado nace confirmada: cargarla ya es haberla decidido.
+    estadoRevision: "CONFIRMADA",
   };
   datos.peliculas.push(pelicula);
+  return responder(pelicula);
+}
+
+/** El buzón: lo que trajo el importador y todavía nadie miró. */
+export function obtenerPeliculasPendientes() {
+  return responder(datos.peliculas.filter((p) => p.estadoRevision === "PENDIENTE"));
+}
+
+export function confirmarPelicula(id) {
+  const pelicula = datos.peliculas.find((p) => p.id === Number(id));
+  if (!pelicula) return fallar("No existe la película " + id);
+  pelicula.estadoRevision = "CONFIRMADA";
+  pelicula.enCartelera = true;
+  return responder(pelicula);
+}
+
+export function descartarPelicula(id) {
+  const pelicula = datos.peliculas.find((p) => p.id === Number(id));
+  if (!pelicula) return fallar("No existe la película " + id);
+  if (datos.funciones.some((f) => f.peliculaId === pelicula.id)) {
+    return fallar("No se puede descartar una película que ya tiene funciones programadas");
+  }
+  // Descartada, no borrada: si se borrara, la próxima corrida del importador la traería
+  // de nuevo y habría que descartarla otra vez.
+  pelicula.estadoRevision = "DESCARTADA";
+  pelicula.enCartelera = false;
   return responder(pelicula);
 }
 
