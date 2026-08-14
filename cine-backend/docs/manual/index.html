@@ -3795,6 +3795,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorProgramacionesTest</code></td><td>que la grilla genere el rango completo, que respete los días elegidos, que previsualizar no escriba nada, que el alta saltee lo que choca contra R3 y que la baja no toque las funciones ya generadas</td></tr>
             <tr><td><code>GestorReservasTest</code></td><td>R4, R6, R9, R13, el redondeo del precio, el recargo premium y la persistencia en txt</td></tr>
             <tr><td><code>OcupacionTest</code></td><td>el <a href="#bloqueo">bloqueo de mientras se elige</a>: que la butaca deje de ofrecerse, que a quien la eligió sí le aparezca libre, dos sesiones por la misma butaca, el vencimiento y su renovación, que confirmar suelte el bloqueo, y que con Redis caído se venda igual</td></tr>
+            <tr><td><code>BloqueoButacasRedisTest</code></td><td>los comandos contra un Redis de verdad, que es lo único que no cubre la implementación en memoria. <strong>Se saltea</strong> salvo que se le pase un Redis descartable en <code>REDIS_TEST_PORT</code>: si usara el puerto por defecto escribiría en el Redis que la máquina tenga levantado</td></tr>
             <tr><td><code>GestorPagosTest</code></td><td>R5, R11 y el arqueo de boletería</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
             <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
