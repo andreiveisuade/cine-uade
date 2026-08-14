@@ -166,7 +166,7 @@ export async function vistaCobrar(contenedor, id) {
     <a href="#/reservas" class="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">&larr; Reservas</a>
     <h1 class="mt-2 mb-5 text-2xl font-bold">Cobrar reserva #${reserva.id}</h1>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-2 md:items-start">
       <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
         <h2 class="mb-3 font-semibold">Cobro</h2>
         <form id="cobro" class="space-y-3">
@@ -176,11 +176,6 @@ export async function vistaCobrar(contenedor, id) {
               ${medios.map((m) => `<option value="${m.nombre}">${etiqueta(m.nombre)}</option>`).join("")}
             </select>
           </label>
-          <label id="campoCodigo" class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Código de autorización</span>
-            <input name="codigo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            <span class="text-xs text-slate-500 dark:text-slate-400">Lo devuelve el procesador. El efectivo no lleva.</span>
-          </label>
           <div class="rounded bg-slate-100 p-3 text-sm dark:bg-slate-800">
             <span class="text-slate-600 dark:text-slate-300">A cobrar</span>
             <p class="text-xl font-bold">${precio(reserva.total)}</p>
@@ -189,11 +184,13 @@ export async function vistaCobrar(contenedor, id) {
               promoción vigente para este medio de pago, el descuento se aplica al cobrar.
             </p>
           </div>
-          <button type="submit"
+          <p id="comoCobra" class="text-xs text-slate-500 dark:text-slate-400"></p>
+          <button type="submit" id="botonCobro"
             class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
             Registrar cobro
           </button>
         </form>
+        <div id="checkout" class="mt-3"></div>
       </section>
 
       <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
@@ -236,30 +233,103 @@ export async function vistaCobrar(contenedor, id) {
   `;
 
   const formulario = contenedor.querySelector("#cobro");
-  const campoCodigo = contenedor.querySelector("#campoCodigo");
+  const panelCheckout = contenedor.querySelector("#checkout");
+  const boton = contenedor.querySelector("#botonCobro");
+  const comoCobra = contenedor.querySelector("#comoCobra");
 
-  // R11: el código solo se pide cuando el medio lo exige.
-  function ajustarCodigo() {
-    const medio = medios.find((m) => m.nombre === formulario.medio.value);
-    campoCodigo.classList.toggle("hidden", !medio.requiereAutorizacion);
-    formulario.codigo.required = medio.requiereAutorizacion;
+  const porCheckout = () =>
+    medios.find((m) => m.nombre === formulario.medio.value).requiereAutorizacion;
+
+  /**
+   * R11 partido en dos caminos. El código de autorización de un medio electrónico lo
+   * devuelve el procesador, así que dejó de tipearse a mano: ese campo era una invitación
+   * a inventar un código y registrar un cobro que nadie autorizó. El efectivo no tiene
+   * procesador ni código, y se sigue cobrando en la caja.
+   */
+  function ajustarMedio() {
+    // Un checkout es de un medio y un monto concretos: cambiar el medio lo invalida.
+    panelCheckout.innerHTML = "";
+    boton.textContent = porCheckout() ? "Abrir checkout" : "Registrar cobro";
+    comoCobra.textContent = porCheckout()
+      ? "El cliente paga en la pasarela y el código de autorización lo devuelve ella."
+      : "Se cobra en la caja del cine. El efectivo no lleva código de autorización.";
   }
-  formulario.medio.addEventListener("change", ajustarCodigo);
-  ajustarCodigo();
+  formulario.medio.addEventListener("change", ajustarMedio);
+  ajustarMedio();
+
+  /** Con descuento no alcanza con decir cuánto entró: hay que poder explicar por qué se
+   *  cobró menos que el subtotal, que es justo lo que el cliente va a preguntar. */
+  function avisarCobro(pago) {
+    avisar(pago.descuento > 0
+      ? `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)} · ${precio(pago.descuento)} de descuento`
+      : `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)}`);
+    ir("#/caja");
+  }
 
   formulario.addEventListener("submit", async (evento) => {
     evento.preventDefault();
-    const datos = new FormData(formulario);
+    const medio = formulario.medio.value;
     try {
-      const pago = await api.cobrar(reserva.id, datos.get("medio"), datos.get("codigo"));
-      // Con descuento no alcanza con decir cuánto entró: hay que poder explicar por qué
-      // se cobró menos que el subtotal, que es justo lo que el cliente va a preguntar.
-      avisar(pago.descuento > 0
-        ? `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)} · ${precio(pago.descuento)} de descuento`
-        : `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)}`);
-      ir("#/caja");
+      if (!porCheckout()) {
+        avisarCobro(await api.cobrar(reserva.id, medio, ""));
+        return;
+      }
+      // Abrir el checkout todavía no cobra: valida R5, R17 y R19 y devuelve qué tiene que
+      // aprobar el cliente. Se valida acá y no al confirmar porque mandar a pagar una
+      // reserva que no se puede cobrar termina en plata que hay que devolver, y la
+      // devolución es justo lo que no existe (R13).
+      panelCheckout.innerHTML = dibujarCheckout(await api.abrirCheckout(reserva.id, medio));
     } catch (e) {
       avisar(e.message, "error");
     }
   });
+
+  panelCheckout.addEventListener("click", async (evento) => {
+    const confirmar = evento.target.closest("button[data-confirmar]");
+    if (!confirmar) return;
+    confirmar.disabled = true;
+    try {
+      // Qué se está pagando sale del checkout, no de quien confirma.
+      avisarCobro(await api.confirmarCheckout(confirmar.dataset.confirmar));
+    } catch (e) {
+      confirmar.disabled = false;
+      avisar(e.message, "error");
+    }
+  });
+}
+
+/**
+ * El checkout abierto: lo que el cliente tiene que aprobar en la pasarela.
+ *
+ * `codigoQr` es el *contenido* del QR y no una imagen, así que se muestra tal cual: la
+ * pasarela es una emulación y el host no existe, de modo que dibujar el cuadrado o linkear
+ * la URL harían parecer real algo que no lo es.
+ */
+function dibujarCheckout(checkout) {
+  return `
+    <div class="rounded border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm font-semibold">Checkout abierto · ${etiqueta(checkout.medio)}</p>
+      <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">${escapar(checkout.id)}</p>
+
+      <p class="text-sm text-slate-600 dark:text-slate-300">El cliente aprueba</p>
+      <p class="mb-3 text-2xl font-bold">${precio(checkout.monto)}</p>
+
+      <p class="text-xs text-slate-600 dark:text-slate-300">Contenido del QR</p>
+      <p class="mb-2 break-all rounded border border-dashed border-slate-400 bg-white p-2 font-mono text-xs dark:border-slate-600 dark:bg-slate-900">
+        ${escapar(checkout.codigoQr)}
+      </p>
+      <p class="text-xs text-slate-600 dark:text-slate-300">Link de pago</p>
+      <p class="mb-3 break-all font-mono text-xs text-slate-500 dark:text-slate-400">${escapar(checkout.urlPago)}</p>
+
+      <button type="button" data-confirmar="${escapar(checkout.id)}"
+        class="w-full rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-400 dark:bg-emerald-600">
+        El cliente pagó · confirmar
+      </button>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        El monto <strong>ya tiene el descuento aplicado</strong>: es el importe que se
+        aprueba, y si después se cobrara otro no coincidirían. La pasarela es una
+        emulación —el host no existe—, así que el aviso de «pagó» lo da esta pantalla;
+        en una integración de verdad lo dispara el procesador.
+      </p>
+    </div>`;
 }

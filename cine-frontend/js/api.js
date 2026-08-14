@@ -56,10 +56,19 @@ export const {
   crearProgramacion,
   darDeBajaProgramacion,
   darDeAltaProgramacion,
+  // armado automático de la grilla
+  proponerGrilla,
+  armarGrilla,
+  // informes por función
+  obtenerBordero,
+  emitirBordero,
+  obtenerInformeDeFuncion,
   obtenerReservas,
   cancelarReserva,
   cobrar,
   obtenerPagoDeReserva,
+  abrirCheckout,
+  confirmarCheckout,
   obtenerArqueo,
   // promociones
   obtenerPromociones,

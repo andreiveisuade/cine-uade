@@ -230,9 +230,11 @@ function filas(funciones) {
                 <td class="whitespace-nowrap">${escapar(f.sala.nombre)}</td>
                 <td class="whitespace-nowrap">${etiqueta(f.proyeccion)} · ${etiqueta(f.idioma)}</td>
                 <td class="text-right whitespace-nowrap">${precio(f.precio)}</td>
-                <td class="p-2 text-right">
+                <td class="p-2 text-right whitespace-nowrap">
+                  <a href="#/funcion/${f.id}"
+                    class="text-xs font-medium text-slate-900 hover:underline dark:text-slate-100">Informes</a>
                   <button type="button" data-borrar="${f.id}"
-                    class="text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
+                    class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
                 </td>
               </tr>`).join("");
 }

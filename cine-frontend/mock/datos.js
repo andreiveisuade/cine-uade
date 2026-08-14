@@ -146,6 +146,20 @@ for (const pelicula of peliculas) {
   pelicula.estadoRevision = pelicula.estadoRevision || "CONFIRMADA";
 }
 
+/**
+ * Con cuánto puntúa el público cada película, que es lo que mira el planificador para
+ * elegir el elenco de la semana y para repartir los pases.
+ *
+ * Va aparte y no como un campo más de `peliculas` porque el backend hace lo mismo: el
+ * puntaje vive en la entidad pero `PeliculaVista` no lo expone, así que solo aparece en
+ * el elenco que devuelve la grilla. Metido en el objeto, el mock estaría publicando un
+ * campo que la API real no manda.
+ */
+export const PUNTAJES = {
+  1: 8.7, 2: 9.2, 3: 7.6, 4: 8.2, 5: 8.1, 6: 7.4,
+  7: 8.5, 8: 8.1, 9: 8.0, 10: 8.4, 11: 7.1,
+};
+
 // Las seis salas del complejo. Cada tipo de butaca se declara por código: sin TipoSala
 // VIP no hay de dónde inferir que una sala es "la de las butacas de pareja".
 const definicionSalas = [
@@ -329,11 +343,40 @@ function totalDe(reservaId) {
 
 // Un pago por cada reserva pagada: el monto sale del total de la reserva, nunca
 // se carga a mano. Hay uno de ayer para que el arqueo del día no los junte a todos.
+// El desglose viaja completo aunque acá no haya promoción aplicada: el borderó declara
+// bruto y neto por separado, y sin `subtotal` la diferencia entre lo que valía la entrada
+// y lo que entró en la caja no se podría explicar.
 export const pagos = [
-  { id: 1, reservaId: 1, monto: totalDe(1), medio: "EFECTIVO",
+  { id: 1, reservaId: 1, subtotal: totalDe(1), promocionId: null, descuento: 0,
+    monto: totalDe(1), medio: "EFECTIVO",
     fecha: fecha(0, "14:22"), codigoAutorizacion: "" },
-  { id: 2, reservaId: 4, monto: totalDe(4), medio: "CREDITO",
+  { id: 2, reservaId: 4, subtotal: totalDe(4), promocionId: null, descuento: 0,
+    monto: totalDe(4), medio: "CREDITO",
     fecha: fecha(0, "18:05"), codigoAutorizacion: "AUTH-40219" },
-  { id: 3, reservaId: 6, monto: totalDe(6), medio: "QR",
+  { id: 3, reservaId: 6, subtotal: totalDe(6), promocionId: null, descuento: 0,
+    monto: totalDe(6), medio: "QR",
     fecha: fecha(-1, "12:40"), codigoAutorizacion: "QR-88371" },
+];
+
+// Una promoción de ejemplo, por el mismo motivo que las grillas: es un array exportado y
+// no una propiedad que api-mock cree al vuelo, porque a un namespace de módulo ES no se le
+// puede asignar. Es de un medio de pago a propósito: así el mock muestra lo que el
+// contrato dice del cobro —el descuento se resuelve recién al saber cómo se paga— y el
+// checkout puede devolver un monto distinto del subtotal.
+export const promociones = [
+  { id: 1, nombre: "30% pagando con QR", tipo: "PORCENTAJE", porcentaje: 30,
+    monto: null, lleva: null, paga: null,
+    vigenciaDesde: fecha(-30, "00:00").slice(0, 10),
+    vigenciaHasta: fecha(180, "00:00").slice(0, 10),
+    diasSemana: [], horaDesde: null, horaHasta: null,
+    mediosPago: ["QR"], activa: true },
+];
+
+// La barra. Solo se le puede atribuir a una función la compra que tiene `reservaId` —el
+// «¿desea agregar pochoclos?» de después de comprar la entrada—: la del mostrador no dice
+// a qué función va, y por eso el informe por función la deja afuera.
+export const comprasCandy = [
+  { id: 1, reservaId: 1, total: 9500, fecha: fecha(0, "14:25") },
+  { id: 2, reservaId: 6, total: 6200, fecha: fecha(-1, "12:45") },
+  { id: 3, reservaId: null, total: 4800, fecha: fecha(0, "20:10") },
 ];

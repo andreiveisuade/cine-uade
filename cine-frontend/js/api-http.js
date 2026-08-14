@@ -191,6 +191,35 @@ export const crearProgramacion = (grilla) =>
 export const darDeBajaProgramacion = (id) => post(`/programaciones/${id}/baja`);
 export const darDeAltaProgramacion = (id) => post(`/programaciones/${id}/alta`);
 
+/* -------------------------------------------- armado automático de la grilla */
+
+// Mismo cuerpo para los dos, igual que en las programaciones: la propuesta tiene que
+// predecir lo que hace el alta. Los campos vacíos no viajan —el backend tiene un default
+// para cada uno— y por eso van sin Number() cuando están en blanco.
+const cuerpoGrilla = ({ desde, dias, apertura, cierre,
+                        cuantasPeliculas, precio, idioma, proyeccion }) => ({
+  desde: desde || null,
+  dias: dias ? Number(dias) : null,
+  apertura: apertura || null,
+  cierre: cierre || null,
+  cuantasPeliculas: cuantasPeliculas ? Number(cuantasPeliculas) : null,
+  precio: precio ? Number(precio) : null,
+  idioma, proyeccion,
+});
+
+export const proponerGrilla = (criterios) => post("/grilla/propuesta", cuerpoGrilla(criterios));
+export const armarGrilla = (criterios) => post("/grilla", cuerpoGrilla(criterios));
+
+/* ------------------------------------------------------ informes por función */
+
+export const obtenerBordero = (funcionId) => get(`/funciones/${funcionId}/bordero`);
+
+// POST porque escribe: emite el archivo que se sube al INCAA. Consultar el borderó dos
+// veces no es lo mismo que declararlo dos veces.
+export const emitirBordero = (funcionId) => post(`/funciones/${funcionId}/bordero`);
+
+export const obtenerInformeDeFuncion = (funcionId) => get(`/funciones/${funcionId}/informe`);
+
 /** @param filtros {estado, dia, q} */
 export const obtenerReservas = (filtros) => get(`/reservas${consulta(filtros)}`);
 export const cancelarReserva = (id) => post(`/reservas/${id}/cancelacion`);
@@ -199,6 +228,16 @@ export const cobrar = (reservaId, medio, codigoAutorizacion) =>
   post(`/reservas/${reservaId}/pago`, { medio, codigoAutorizacion });
 
 export const obtenerPagoDeReserva = (reservaId) => get(`/reservas/${reservaId}/pago`);
+
+// El camino de los medios electrónicos: el código de autorización que pide R11 no lo
+// tipea nadie, lo devuelve el procesador al confirmar. El efectivo no pasa por acá.
+export const abrirCheckout = (reservaId, medio) =>
+  post(`/reservas/${reservaId}/checkout`, { medio });
+
+// Qué se está pagando sale del checkout y no de quien confirma: si la reserva fuera dato
+// de entrada, se podría autorizar un checkout y aplicarlo a otra reserva.
+export const confirmarCheckout = (checkoutId) =>
+  post(`/checkouts/${encodeURIComponent(checkoutId)}/confirmacion`);
 
 export const obtenerArqueo = (fecha) => get(`/arqueo?fecha=${encodeURIComponent(fecha)}`);
 

@@ -39,6 +39,15 @@ function redondear(monto) {
   return Math.round(monto * 100) / 100;
 }
 
+const dosDigitos = (n) => String(n).padStart(2, "0");
+
+/** El momento actual como lo manda el backend: ISO local sin zona. */
+function ahoraISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigitos(d.getDate())}`
+    + `T${dosDigitos(d.getHours())}:${dosDigitos(d.getMinutes())}:${dosDigitos(d.getSeconds())}`;
+}
+
 // Mismo alfabeto que el backend: sin O, I, 0 ni 1, que se confunden al tipearlos.
 function generarCodigo() {
   const alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -706,6 +715,204 @@ const cambiarEstadoProgramacion = (id, activa) => {
 export const darDeBajaProgramacion = (id) => cambiarEstadoProgramacion(id, false);
 export const darDeAltaProgramacion = (id) => cambiarEstadoProgramacion(id, true);
 
+/* -------------------------------------------- armado automático de la grilla */
+
+/*
+ * El planificador de la semana, con el mismo algoritmo que PlanificadorGrilla: elige el
+ * elenco con un goloso que mira puntaje y géneros a la vez, y reparte los pases
+ * proporcionalmente al puntaje. Se replica en vez de devolver una propuesta fija porque
+ * lo que la pantalla tiene que mostrar es justamente el razonamiento —por qué entró cada
+ * película y cuántos pases se lleva—, y con datos inventados los indicadores no lo dirían.
+ */
+
+/** Lo habitual, igual que los defaults de la ruta: una semana, de 14 a 24, ocho títulos. */
+const GRILLA_POR_DEFECTO = {
+  dias: 7, apertura: "14:00", cierre: "00:00", cuantasPeliculas: 8,
+  idioma: "SUBTITULADA", proyeccion: "DOS_D",
+};
+
+const BONO_GENERO_NUEVO = 2.0;
+
+const puntajeDe = (pelicula) => datos.PUNTAJES[pelicula.id] || 0;
+
+const minutosDe = (hora) => Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
+
+const enHoras = (minutos) => `${dosDigitos(Math.floor(minutos / 60))}:${dosDigitos(minutos % 60)}`;
+
+/** El cierre a las 00:00 es el final del día, no su principio. */
+const cierreEfectivo = (cierre) => (minutosDe(cierre) === 0 ? 23 * 60 + 59 : minutosDe(cierre));
+
+/**
+ * El elenco de la semana. La primera elección es la mejor película a secas; de ahí en
+ * adelante entra la de mayor puntaje + bono por los géneros que todavía no están
+ * cubiertos, así que cada una se gana el lugar contra lo que ya hay.
+ *
+ * Con el elenco vacío no hay bono —mide lo que una película *agrega*— y el bono crece
+ * cada vez menos, para que cuatro etiquetas de género no valgan cuatro veces lo que una.
+ */
+function elegirElenco(cuantas) {
+  const candidatas = datos.peliculas.filter(
+    (p) => p.estadoRevision === "CONFIRMADA" && p.duracionMinutos > 0);
+  const elenco = [];
+  const cubiertos = new Set();
+
+  while (elenco.length < cuantas && candidatas.length) {
+    const valor = (p) => puntajeDe(p) + (elenco.length === 0 ? 0
+      : BONO_GENERO_NUEVO * Math.sqrt(p.generos.filter((g) => !cubiertos.has(g)).length));
+    // Desempate por título: sin esto, dos películas con el mismo valor podrían salir en
+    // cualquier orden y la propuesta dejaría de ser reproducible.
+    const mejor = candidatas.reduce((a, b) => {
+      const diferencia = valor(b) - valor(a);
+      return diferencia > 0 || (diferencia === 0 && b.titulo < a.titulo) ? b : a;
+    });
+    elenco.push(mejor);
+    mejor.generos.forEach((g) => cubiertos.add(g));
+    candidatas.splice(candidatas.indexOf(mejor), 1);
+  }
+  return elenco;
+}
+
+/**
+ * La que más lejos está de los pases que le corresponden por puntaje. La deuda es
+ * asignados / puntaje: cuanto más chico ese número, más le deben. Con eso la mejor de la
+ * semana se lleva cuatro pases por día y la última uno, sin escribir esa tabla a mano.
+ */
+function conMasDeuda(elenco, asignados) {
+  // Nunca cero: una película sin valorar quedaría con deuda infinita y se llevaría la
+  // grilla entera.
+  const deuda = (p) => asignados.get(p.id) / Math.max(puntajeDe(p), 0.1);
+  return elenco.reduce((a, b) => {
+    const diferencia = deuda(b) - deuda(a);
+    return diferencia < 0 || (diferencia === 0 && b.titulo < a.titulo) ? b : a;
+  });
+}
+
+/** Llena cada sala, día por día, desde la apertura hasta que no entre una función más. */
+function repartir(elenco, criterios) {
+  const apertura = minutosDe(criterios.apertura);
+  const cierre = cierreEfectivo(criterios.cierre);
+  const asignados = new Map(elenco.map((p) => [p.id, 0]));
+  const pases = [];
+
+  for (let dia = 0; dia < criterios.dias; dia++) {
+    const fecha = new Date(`${criterios.desde}T00:00:00`);
+    fecha.setDate(fecha.getDate() + dia);
+    const iso = `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`;
+
+    for (const sala of datos.salas) {
+      let momento = apertura;
+      while (momento < cierre) {
+        const elegida = conMasDeuda(elenco, asignados);
+        const fin = momento + elegida.duracionMinutos;
+        // No entra completa antes de cerrar: la sala se da por llena. No se prueba con
+        // una más corta a propósito, porque eso dejaría el último turno del día siempre
+        // para la película de menor duración.
+        if (fin > cierre) break;
+
+        const inicio = `${iso}T${enHoras(momento)}:00`;
+        // R3 se pregunta, no se reescribe: si la sala ya tiene algo cargado ahí, el pase
+        // se corre media hora en vez de pisarlo.
+        if (funcionSuperpuesta(sala.id, inicio, elegida.duracionMinutos)) {
+          momento += 30;
+          continue;
+        }
+        pases.push({
+          peliculaId: elegida.id, titulo: elegida.titulo,
+          salaId: sala.id, sala: sala.nombre,
+          inicio, duracionMinutos: elegida.duracionMinutos,
+        });
+        asignados.set(elegida.id, asignados.get(elegida.id) + 1);
+        momento = fin + sala.minutosLimpieza;
+      }
+    }
+  }
+  return pases;
+}
+
+/** Los números con los que se juzga la grilla, para poder comparar dos corridas. */
+function medirGrilla(elenco, pases, criterios) {
+  const porId = new Map(elenco.map((p) => [p.id, p]));
+  const minutosPorDia = cierreEfectivo(criterios.cierre) - minutosDe(criterios.apertura);
+  const pasesPorGenero = {};
+  const cubiertos = new Set();
+
+  for (const pase of pases) {
+    for (const genero of porId.get(pase.peliculaId).generos) {
+      pasesPorGenero[genero] = (pasesPorGenero[genero] || 0) + 1;
+    }
+  }
+  elenco.forEach((p) => p.generos.forEach((g) => cubiertos.add(g)));
+
+  const programados = pases.reduce((suma, p) => suma + p.duracionMinutos, 0);
+  const disponibles = minutosPorDia * criterios.dias * datos.salas.length;
+
+  return {
+    minutosProgramados: programados,
+    minutosDisponibles: disponibles,
+    ocupacion: disponibles ? programados / disponibles : 0,
+    puntajePromedio: pases.length
+      ? pases.reduce((suma, p) => suma + puntajeDe(porId.get(p.peliculaId)), 0) / pases.length
+      : 0,
+    generosCubiertos: cubiertos.size,
+    generosTotales: datos.GENEROS.length,
+    pasesPorGenero,
+  };
+}
+
+/**
+ * La cuenta, una sola vez: lo único que cambia entre proponer y aplicar es si escribe las
+ * funciones. Por eso `funcionesCreadas` es el único campo distinto entre las dos
+ * respuestas — los pases son los mismos y no alcanzan para distinguirlas.
+ */
+function planificarGrilla(criterios, aplicar) {
+  const c = { ...GRILLA_POR_DEFECTO };
+  for (const [clave, valor] of Object.entries(criterios || {})) {
+    if (valor !== null && valor !== undefined && valor !== "") c[clave] = valor;
+  }
+  if (!c.desde) c.desde = ahoraISO().slice(0, 10);
+
+  if (!(c.dias > 0)) return fallar("La grilla tiene que cubrir al menos un día");
+  if (!(c.cuantasPeliculas > 0)) return fallar("Hay que programar al menos una película");
+  if (!(c.precio > 0)) return fallar("El precio debe ser mayor a cero");
+  if (minutosDe(c.apertura) >= cierreEfectivo(c.cierre)) {
+    return fallar("El cine tiene que cerrar después de abrir");
+  }
+  if (!datos.salas.length) return fallar("No hay salas cargadas para programar");
+
+  const elenco = elegirElenco(Number(c.cuantasPeliculas));
+  if (!elenco.length) {
+    return fallar("No hay películas confirmadas para armar la grilla: revisá el buzón de importadas");
+  }
+
+  const pases = repartir(elenco, { ...c, dias: Number(c.dias) });
+  if (aplicar) {
+    for (const pase of pases) {
+      datos.funciones.push({
+        id: siguienteId(datos.funciones),
+        peliculaId: pase.peliculaId, salaId: pase.salaId, inicio: pase.inicio,
+        idioma: c.idioma, proyeccion: c.proyeccion, precio: Number(c.precio),
+      });
+    }
+  }
+
+  const pasesPorPelicula = new Map();
+  pases.forEach((p) => pasesPorPelicula.set(p.peliculaId, (pasesPorPelicula.get(p.peliculaId) || 0) + 1));
+
+  return responder({
+    elenco: elenco.map((p) => ({
+      id: p.id, titulo: p.titulo, puntaje: puntajeDe(p),
+      duracionMinutos: p.duracionMinutos, generos: p.generos,
+      pases: pasesPorPelicula.get(p.id) || 0,
+    })),
+    pases,
+    indicadores: medirGrilla(elenco, pases, { ...c, dias: Number(c.dias) }),
+    funcionesCreadas: aplicar ? pases.length : 0,
+  });
+}
+
+export const proponerGrilla = (criterios) => planificarGrilla(criterios, false);
+export const armarGrilla = (criterios) => planificarGrilla(criterios, true);
+
 function conDatosDeLaReserva(r) {
   const funcion = datos.funciones.find((f) => f.id === r.funcionId);
   return {
@@ -779,8 +986,6 @@ export function cobrar(reservaId, medio, codigoAutorizacion) {
     return fallar(`La reserva ${reserva.id} ya tiene un pago registrado`);
   }
 
-  const ahora = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
   // El descuento se resuelve acá y no al reservar: recién ahora se sabe el medio de
   // pago, y hay promociones que dependen de él.
   const subtotal = reserva.entradas.reduce((suma, e) => suma + e.precio, 0);
@@ -794,8 +999,7 @@ export function cobrar(reservaId, medio, codigoAutorizacion) {
     descuento: redondear(descuento),
     monto: redondear(subtotal - descuento),
     medio,
-    fecha: `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`
-      + `T${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`,
+    fecha: ahoraISO(),
     codigoAutorizacion: String(codigoAutorizacion || "").trim(),
   };
   datos.pagos.push(pago);
@@ -806,6 +1010,63 @@ export function cobrar(reservaId, medio, codigoAutorizacion) {
 export function obtenerPagoDeReserva(reservaId) {
   const pago = datos.pagos.find((p) => p.reservaId === Number(reservaId));
   return responder(pago || null);
+}
+
+/*
+ * La pasarela emulada. Los checkouts abiertos viven en un Map y no en `datos` porque lo
+ * único que tienen que sobrevivir es el rato entre que el cliente ve el QR y aprueba:
+ * cerrada la pestaña, ese checkout no le sirve a nadie.
+ */
+const checkouts = new Map();
+
+/**
+ * Abre el checkout de un medio electrónico. Valida lo mismo que el cobro y no al
+ * confirmar: mandar a pagar una reserva que no se puede cobrar termina en plata que hay
+ * que devolver, y la devolución es justo lo que no existe (R13).
+ */
+export function abrirCheckout(reservaId, medio) {
+  const reserva = datos.reservas.find((r) => r.id === Number(reservaId));
+  if (!reserva) return fallar(`No existe la reserva ${reservaId}`);
+  const definicion = datos.MEDIOS_PAGO[medio];
+  if (!definicion) return fallar("Falta el medio de pago");
+  if (!definicion.requiereAutorizacion) {
+    return fallar(`El pago con ${medio} se cobra en la caja del cine, no por checkout`);
+  }
+  if (reserva.estado !== "RESERVADA") {
+    return fallar(`La reserva está ${reserva.estado}, no se puede cobrar`);
+  }
+  if (datos.pagos.some((p) => p.reservaId === reserva.id)) {
+    return fallar(`La reserva ${reserva.id} ya tiene un pago registrado`);
+  }
+
+  // El monto ya viaja con el descuento aplicado: es el importe que el cliente aprueba en
+  // la pantalla del procesador, y si después se cobrara otro no coincidirían.
+  const subtotal = reserva.entradas.reduce((suma, e) => suma + e.precio, 0);
+  const ganadora = mejorPromocion(reserva, funcionDe(reserva), medio);
+  const id = `MP-${Math.floor(1e9 + Math.random() * 9e9)}`;
+  const checkout = {
+    id,
+    reservaId: reserva.id,
+    medio,
+    monto: redondear(subtotal - (ganadora ? descuentoDe(ganadora, reserva.entradas) : 0)),
+    urlPago: `https://checkout.emulado.local/mp/${id}`,
+    // El contenido del QR, no una imagen: dibujarlo es del navegador.
+    codigoQr: `MP-QR|${id}`,
+  };
+  checkouts.set(id, checkout);
+  return responder(checkout);
+}
+
+/**
+ * «El cliente pagó»: la pasarela devuelve el código de autorización y con él se registra
+ * el cobro. Qué se está pagando sale del checkout y no de quien confirma, así no se puede
+ * autorizar un checkout y aplicarlo a otra reserva.
+ */
+export function confirmarCheckout(checkoutId) {
+  const checkout = checkouts.get(String(checkoutId));
+  if (!checkout) return fallar(`No existe el checkout ${checkoutId}`);
+  return cobrar(checkout.reservaId, checkout.medio,
+    `MP-AUT-${Math.floor(10000000 + Math.random() * 89999999)}`);
 }
 
 /** Arqueo: qué se cobró en un día, cuánto, y abierto por medio de pago. */
@@ -836,6 +1097,93 @@ export function obtenerArqueo(fecha) {
     total: delDia.reduce((suma, p) => suma + p.monto, 0),
     entradas: detalle.reduce((suma, p) => suma + p.entradas, 0),
     porMedio,
+  });
+}
+
+/* ------------------------------------------------------ informes por función */
+
+/**
+ * Qué se vendió para esa función y a qué valor. Lo que declara es lo **cobrado**, y por
+ * eso la fuente es el pago: una reserva sin pagar retiene butacas pero no vendió ninguna
+ * entrada, y contarla infla la declaración con plata que nunca entró.
+ *
+ * El desglose por tarifa se arma con el precio de lista de cada butaca y los totales con
+ * el pago: es la misma plata mirada por dos lados, y el pago es el único que sabe cuánto
+ * sacó la promoción, que es sobre el total y no sobre una butaca.
+ */
+function borderoDe(funcionId) {
+  const funcion = datos.funciones.find((f) => f.id === Number(funcionId));
+  if (!funcion) return null;
+
+  const porTarifa = {};
+  let espectadores = 0;
+  let bruta = 0;
+  let descuentos = 0;
+  let neta = 0;
+
+  for (const reserva of datos.reservas.filter((r) => r.funcionId === funcion.id)) {
+    const pago = datos.pagos.find((p) => p.reservaId === reserva.id);
+    if (!pago) continue;
+    for (const entrada of reserva.entradas) {
+      const tarifa = entrada.tarifa || "GENERAL";
+      if (!porTarifa[tarifa]) porTarifa[tarifa] = { cantidad: 0, total: 0 };
+      porTarifa[tarifa].cantidad += 1;
+      porTarifa[tarifa].total = redondear(porTarifa[tarifa].total + entrada.precio);
+      espectadores += 1;
+    }
+    bruta += pago.subtotal;
+    descuentos += pago.descuento;
+    neta += pago.monto;
+  }
+
+  return {
+    funcionId: funcion.id,
+    pelicula: peliculaDe(funcion.peliculaId).titulo,
+    sala: salaDe(funcion.salaId).nombre,
+    funcion: funcion.inicio,
+    generadoEn: ahoraISO(),
+    espectadores,
+    recaudacionBruta: redondear(bruta),
+    descuentos: redondear(descuentos),
+    recaudacionNeta: redondear(neta),
+    porTarifa,
+  };
+}
+
+export function obtenerBordero(funcionId) {
+  const bordero = borderoDe(funcionId);
+  return bordero ? responder(bordero) : fallar(`No existe la función ${funcionId}`);
+}
+
+/**
+ * Emitir es declarar: el backend escribe el archivo que se sube al INCAA y responde el
+ * mismo informe. Acá no hay dónde escribirlo, así que lo único que se ve del acto de
+ * declarar es el `generadoEn` nuevo — que es, justamente, lo que fecha la declaración.
+ */
+export const emitirBordero = (funcionId) => obtenerBordero(funcionId);
+
+/**
+ * Cuánto dejó la función entre las dos cajas. El candy de mostrador queda afuera a
+ * propósito: solo la compra con `reservaId` dice de qué función se trata, y repartir la
+ * del mostrador entre las funciones del día sería inventar el dato.
+ */
+export function obtenerInformeDeFuncion(funcionId) {
+  const bordero = borderoDe(funcionId);
+  if (!bordero) return fallar(`No existe la función ${funcionId}`);
+
+  // Sin mirar el estado de la reserva: una compra del candy nace cobrada, así que esa
+  // plata entró aunque después la reserva se cancelara.
+  const deLaFuncion = datos.reservas
+    .filter((r) => r.funcionId === Number(funcionId))
+    .map((r) => r.id);
+  const compras = datos.comprasCandy.filter((c) => deLaFuncion.includes(c.reservaId));
+  const candy = compras.reduce((suma, c) => suma + c.total, 0);
+
+  return responder({
+    boleteria: bordero,
+    comprasCandy: compras.length,
+    candy: redondear(candy),
+    total: redondear(bordero.recaudacionNeta + candy),
   });
 }
 
@@ -916,7 +1264,6 @@ export function crearPromocion(promocion) {
     return fallar("En un NxM hay que llevar más de lo que se paga");
   }
 
-  datos.promociones = datos.promociones || [];
   const nueva = { ...promocion, nombre: promocion.nombre.trim(),
                   id: siguienteId(datos.promociones), activa: true };
   datos.promociones.push(nueva);
@@ -945,10 +1292,7 @@ export function validarEntrada(codigo) {
   }
   if (reserva.ingresadaEn) return fallar(`Esa entrada ya se usó el ${reserva.ingresadaEn}`);
 
-  const ahora = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  reserva.ingresadaEn = `${ahora.getFullYear()}-${pad(ahora.getMonth() + 1)}-${pad(ahora.getDate())}`
-    + `T${pad(ahora.getHours())}:${pad(ahora.getMinutes())}:${pad(ahora.getSeconds())}`;
+  reserva.ingresadaEn = ahoraISO();
   return obtenerReserva(reserva.id);
 }
 
