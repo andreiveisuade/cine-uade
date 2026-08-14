@@ -17,8 +17,15 @@ async function pedir(ruta, opciones = {}) {
       headers: opciones.cuerpo ? { "Content-Type": "application/json" } : {},
       method: opciones.metodo || "GET",
       body: opciones.cuerpo ? JSON.stringify(opciones.cuerpo) : undefined,
+      // `fetch` no tiene timeout propio: sin esto, un pedido que no vuelve deja el botón
+      // girando para siempre. Solo lo usa la importación, que es la única que puede
+      // tardar minutos; el resto contesta o falla enseguida.
+      signal: opciones.espera ? AbortSignal.timeout(opciones.espera) : undefined,
     });
-  } catch {
+  } catch (e) {
+    if (e.name === "TimeoutError") {
+      throw new Error("El servidor tardó demasiado en responder");
+    }
     throw new Error("No se pudo conectar con el servidor");
   }
 
@@ -120,6 +127,23 @@ export const obtenerPeliculasPendientes = () => get("/peliculas/pendientes");
 export const confirmarPelicula = (id) => post(`/peliculas/${id}/confirmacion`, {});
 
 export const descartarPelicula = (id) => post(`/peliculas/${id}/descarte`, {});
+
+/* ------------------------------------------------------------- el importador */
+
+/**
+ * Trae cartelera nueva de TMDB, ahora. La respuesta llega recién cuando la corrida
+ * terminó —diez o quince segundos— y ya trae los contadores: no hay que volver a
+ * preguntar. Tres minutos de paciencia, uno más que el techo del backend.
+ */
+export const importarAhora = (paginas) =>
+  pedir("/importaciones", { metodo: "POST", cuerpo: { paginas: Number(paginas) || 1 },
+                            espera: 180000 });
+
+/** Las últimas corridas, de la más nueva a la más vieja. */
+export const obtenerImportaciones = () => get("/importaciones");
+
+/** Si el importador está levantado, para avisar antes de que alguien apriete el botón. */
+export const estadoImportador = () => get("/importaciones/estado");
 
 export const crearPelicula = ({ titulo, duracionMinutos, generos, clasificacion,
                                 posterUrl, ...catalogo }) =>

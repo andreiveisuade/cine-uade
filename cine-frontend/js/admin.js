@@ -10,6 +10,7 @@ import { cerrarSesion, esAdministrador, pintarEncabezado, sesionActual } from ".
 import { vistaLogin } from "./admin/login.js";
 import { vistaPeliculas } from "./admin/peliculas.js";
 import { vistaPendientes } from "./admin/pendientes.js";
+import { vistaImportador } from "./admin/importador.js";
 import { vistaSalas } from "./admin/salas.js";
 import { vistaFunciones } from "./admin/funciones.js";
 import { vistaFuncion } from "./admin/funcion.js";
@@ -39,6 +40,7 @@ iniciarRouter({
     login: vistaLogin,
     peliculas: vistaPeliculas,
     pendientes: vistaPendientes,
+    importador: vistaImportador,
     salas: vistaSalas,
     funciones: vistaFunciones,
     funcion: vistaFuncion,

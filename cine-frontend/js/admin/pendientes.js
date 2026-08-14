@@ -68,6 +68,9 @@ function vacio() {
       <p class="text-sm text-slate-500 dark:text-slate-400">
         No hay nada esperando. Cuando el importador traiga títulos nuevos van a aparecer acá.
       </p>
+      <p class="mt-2 text-sm">
+        <a href="#/importador" class="underline">Traer cartelera ahora</a>
+      </p>
   `, "p-8 text-center");
 }
 

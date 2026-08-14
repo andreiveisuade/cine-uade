@@ -49,6 +49,9 @@ const ETIQUETAS = {
   MAS_13: "+13",
   MAS_16: "+16",
   MAS_18: "+18",
+  EN_CURSO: "En curso",
+  TERMINADA: "Terminada",
+  FALLIDA: "Falló",
 };
 
 export function etiqueta(valor) {
@@ -73,6 +76,11 @@ const COLOR_ESTADO = {
   CANCELADA: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
   // Vencida no es cancelada: al cliente no se le puede decir que canceló algo que no canceló.
   EXPIRADA: "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+  // Los de una corrida del importador. Comparten el chip con los de una reserva porque
+  // son lo mismo para quien mira: en qué terminó algo que estaba pasando.
+  EN_CURSO: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  TERMINADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  FALLIDA: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
 export function chipEstado(estado) {

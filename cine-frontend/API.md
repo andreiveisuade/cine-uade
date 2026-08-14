@@ -544,3 +544,62 @@ Solo entran películas **confirmadas**: lo que espera en el buzón no se puede p
 no hay ninguna, `400` pidiendo que revisen el buzón. Los pases nunca pisan funciones ya
 cargadas —la propuesta consulta R3 con la limpieza incluida— así que se puede correr sobre
 una semana que ya tiene algo programado.
+
+## El importador de cartelera
+
+Traer de TMDB lo que está hoy en cartelera en Argentina, a pedido del encargado. Lo que
+entra cae en el buzón (`estadoRevision: PENDIENTE`), no en el catálogo.
+
+| Método | Ruta | Notas |
+|---|---|---|
+| POST | `/api/importaciones` | Corre una importación y contesta **cuando terminó**. Cuerpo opcional |
+| GET | `/api/importaciones` | Las últimas 20, de la más nueva a la más vieja |
+| GET | `/api/importaciones/estado` | Si el importador está levantado. Va **antes** que el listado en el registro de rutas |
+
+### `POST /api/importaciones`
+
+```json
+{ "paginas": 2 }
+```
+
+`paginas` es opcional —ausente es una, de veinte títulos— y va de 1 a 3. El cuerpo entero
+también es opcional: un POST sin cuerpo es un pedido válido.
+
+```json
+{ "id": 7, "estado": "TERMINADA", "paginas": 2,
+  "pedidaEn": "2026-08-14T17:00:54", "terminoEn": "2026-08-14T17:01:01",
+  "nuevas": 9, "salteadas": 20, "fallidas": 0,
+  "detalle": "– Yo, narciso: sin duración en TMDB\n+ [41] Hablan las aves" }
+```
+
+`estado` es `EN_CURSO`, `TERMINADA` o `FALLIDA`. `detalle` es el log de la corrida —o el
+motivo si falló— y puede ser `null`: es texto para leer, no un dato para consultar.
+
+**Tarda lo que tarda la corrida**, diez o quince segundos, y contesta con el resultado
+final. No hay `202` con un id para ir a preguntar después: eso obligaría al front a
+repreguntar cada dos segundos, o sea treinta pedidos para enterarse de algo que este
+puede contar de una. nginx tiene un `proxy_read_timeout` de 180s para esta ruta —el resto
+de `/api` sigue en 30— y el backend corta a los 120.
+
+**Que el importador falle no es un error de la API**: responde `201` igual, con la corrida
+en `FALLIDA` y el motivo en `detalle`. Una corrida fallida pudo haber cargado algunas
+películas antes de cortarse; el buzón es siempre la verdad de qué entró.
+
+Los `400`, con el mensaje que se muestra tal cual:
+
+- `Las páginas a importar van de 1 a 3`
+- `Ya hay una importación en curso: esperá a que termine`
+- `El importador corrió recién: esperá 60 segundos antes de volver a pedirlo` — la
+  protección contra el doble clic. La cartelera no cambia en veinte segundos y cada
+  corrida son sesenta llamadas a TMDB, que tiene cuota.
+
+### `GET /api/importaciones/estado`
+
+```json
+{ "disponible": true, "detalle": "Listo para traer cartelera" }
+```
+
+Lo pide la pantalla al abrirse, una sola vez, para avisar que el importador no está antes
+de que alguien apriete el botón y espere en vano. `detalle` viene redactado para mostrarse.
+
+> Estos endpoints no piden credenciales, como el resto de los del encargado.
