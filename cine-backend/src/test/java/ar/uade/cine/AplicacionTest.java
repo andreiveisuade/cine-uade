@@ -29,6 +29,7 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
@@ -73,6 +74,7 @@ class AplicacionTest {
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
                 new GeneradorReciboTxt(tempDir.resolve("tickets")),
+                new GeneradorBorderoTxt(tempDir.resolve("informes")),
                 new MercadoPagoEmulado());
     }
 

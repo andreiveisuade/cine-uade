@@ -81,6 +81,9 @@ public class ServidorApi {
                 vistasVentas);
         RutasPromociones.registrar(app, aplicacion.getPromociones(), vistasPromociones);
         RutasPagos.registrar(app, aplicacion.getPagos(), aplicacion.getReservas(), vistasVentas);
+        // Los informes por función arman sus DTO adentro de la ruta: ya vienen calculados
+        // del gestor y no necesitan ensamblador.
+        RutasInformes.registrar(app, aplicacion.getInformes(), aplicacion.getFunciones());
         RutasCandy.registrar(app, aplicacion.getCandy(), aplicacion.getProductos(), vistasCandy);
         RutasSesion.registrar(app, aplicacion.getEmpleados(), vistasUsuarios);
     }

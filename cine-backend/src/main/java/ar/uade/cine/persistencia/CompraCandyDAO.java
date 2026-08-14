@@ -20,4 +20,10 @@ public interface CompraCandyDAO {
     List<CompraCandy> listarPorFecha(LocalDate fecha);
 
     List<CompraCandy> listarPorCliente(int clienteId);
+
+    /**
+     * Las compras que se le agregaron a una reserva. Es lo único que permite atribuirle
+     * candy a una función: la venta de mostrador no dice a qué función va quien la compra.
+     */
+    List<CompraCandy> listarPorReserva(int reservaId);
 }

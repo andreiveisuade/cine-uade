@@ -5,6 +5,7 @@ import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.EmpleadoDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.comprobantes.GeneradorBordero;
 import ar.uade.cine.comprobantes.GeneradorRecibo;
 import ar.uade.cine.comprobantes.GeneradorTicket;
 import ar.uade.cine.comprobantes.GeneradorTicketCandy;
@@ -15,6 +16,7 @@ import ar.uade.cine.persistencia.ProgramacionDAO;
 import ar.uade.cine.persistencia.PromocionDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
+import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
@@ -38,6 +40,7 @@ import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorEmpleados;
 import ar.uade.cine.servicio.GestorFunciones;
+import ar.uade.cine.servicio.GestorInformes;
 import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorProductos;
 import ar.uade.cine.servicio.GestorProgramaciones;
@@ -74,6 +77,7 @@ public class Aplicacion {
     private final Ocupacion ocupacion;
     private final GestorProductos productos;
     private final GestorCandy candy;
+    private final GestorInformes informes;
     private final CalculadoraPrecio calculadoraPrecio;
 
     /**
@@ -95,7 +99,7 @@ public class Aplicacion {
                 new ReservaDAOMySQL(), new PagoDAOMySQL(), new PromocionDAOMySQL(),
                 new ProgramacionDAOMySQL(), new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt(),
-                new GeneradorReciboTxt(), new MercadoPagoEmulado());
+                new GeneradorReciboTxt(), new GeneradorBorderoTxt(), new MercadoPagoEmulado());
     }
 
     /**
@@ -113,7 +117,8 @@ public class Aplicacion {
                       ProgramacionDAO programacionDAO, ProductoDAO productoDAO,
                       CompraCandyDAO compraCandyDAO,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy,
-                      GeneradorRecibo generadorRecibo, PasarelaPagos pasarela) {
+                      GeneradorRecibo generadorRecibo, GeneradorBordero generadorBordero,
+                      PasarelaPagos pasarela) {
 
         calculadoraPrecio = new CalculadoraPrecio();
 
@@ -133,6 +138,8 @@ public class Aplicacion {
         productos = new GestorProductos(productoDAO);
         candy = new GestorCandy(compraCandyDAO, clienteDAO, reservaDAO, generadorTicketCandy,
                 productos);
+        informes = new GestorInformes(funcionDAO, peliculaDAO, salaDAO, reservaDAO, pagoDAO,
+                compraCandyDAO, generadorBordero);
     }
 
     public GestorCartelera getCartelera() {
@@ -184,6 +191,11 @@ public class Aplicacion {
     /** Las ventas del candy, que le preguntan los precios a {@link #getProductos()}. */
     public GestorCandy getCandy() {
         return candy;
+    }
+
+    /** El borderó del INCAA y la recaudación de cada función, entradas más candy. */
+    public GestorInformes getInformes() {
+        return informes;
     }
 
     /** La usa la capa HTTP para mostrar el precio de cada butaca en el mapa de la sala. */

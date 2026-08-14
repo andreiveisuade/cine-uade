@@ -9,4 +9,5 @@ dependency-reduced-pom.xml
 
 # Datos que genera la app al correr
 tickets/
+informes/
 reservas.txt

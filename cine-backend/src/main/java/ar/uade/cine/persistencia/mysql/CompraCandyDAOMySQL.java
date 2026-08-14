@@ -96,6 +96,12 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
                 "No se pudieron listar las compras del cliente " + clienteId);
     }
 
+    @Override
+    public List<CompraCandy> listarPorReserva(int reservaId) {
+        return consultar(SELECT + " WHERE c.reserva_id = ? ORDER BY c.fecha", reservaId,
+                "No se pudieron listar las compras de la reserva " + reservaId);
+    }
+
     private void guardarItems(Connection con, CompraCandy compra) throws SQLException {
         String sql = "INSERT INTO item_compra (compra_id, producto_id, nombre, cantidad, precio_unitario) "
                 + "VALUES (?, ?, ?, ?, ?)";

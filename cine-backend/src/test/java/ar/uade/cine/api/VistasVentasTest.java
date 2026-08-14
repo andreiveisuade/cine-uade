@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.Aplicacion;
+import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
@@ -75,6 +76,7 @@ class VistasVentasTest {
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
                 new GeneradorReciboTxt(tempDir.resolve("tickets")),
+                new GeneradorBorderoTxt(tempDir.resolve("informes")),
                 new MercadoPagoEmulado());
 
         VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
