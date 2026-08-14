@@ -100,6 +100,7 @@ package persistencia {
   interface CompraCandyDAO
   interface EmpleadoDAO
   interface PromocionDAO
+  interface BloqueoButacas
   class PersistenciaException
 
   package mysql {
@@ -110,6 +111,9 @@ package persistencia {
   }
   package archivo {
     class "ReservaDAOTxt" as DaosArchivo
+  }
+  package redis {
+    class "BloqueoButacasRedis\nel bloqueo de mientras se elige" as BloqueoRedis
   }
 }
 
@@ -155,6 +159,13 @@ GestorReservas -down-> GeneradorTicket
 GestorReservas -right-> Ocupacion
 Ocupacion -down-> ReservaDAO
 Ocupacion -down-> AsientoDAO
+
+' Una butaca esta tomada por dos motivos distintos: porque alguien la compro
+' —hay una reserva vigente— o porque alguien la esta eligiendo —hay un bloqueo
+' con vencimiento corto—. Las dos etapas entran en la misma definicion de
+' "ocupado": si el bloqueo quedara afuera, el mapa ofreceria una butaca que la
+' reserva despues rechaza.
+Ocupacion -down-> BloqueoButacas
 GestorPagos -down-> PagoDAO
 
 ' La carta y las ventas del candy cambian por motivos distintos: una cuando
@@ -173,6 +184,7 @@ GeneradoresTxt ..up|> comprobantes
 DaosMySQL ..up|> persistencia
 DaosMemoria ..up|> persistencia
 DaosArchivo ..up|> persistencia
+BloqueoRedis ..up|> BloqueoButacas
 
 servicio ..> dominio
 persistencia ..> dominio

@@ -32,6 +32,7 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.EmpleadoDAOMemoria;
@@ -68,6 +69,7 @@ class AplicacionTest {
                 new ReservaDAOMemoria(), new PagoDAOMemoria(),
                 new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
                 new CompraCandyDAOMemoria(),
+                new BloqueoButacasMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
     }

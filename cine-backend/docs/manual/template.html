@@ -424,6 +424,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#precios" data-target="precios">Precios y promociones</a></li>
         <li><a href="#acceso" data-target="acceso">Control de acceso</a></li>
         <li><a href="#vencimiento" data-target="vencimiento">Vencimiento de la reserva</a></li>
+        <li><a href="#bloqueo" data-target="bloqueo">La butaca mientras se elige</a></li>
         <li><a href="#candy" data-target="candy">Candy</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
       </ol>
@@ -495,6 +496,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><span class="tag tag-ok">hecho</span> Promociones administrables por el cine: porcentaje, monto fijo y 2x1, con vigencia, días, horarios y medios de pago.</li>
         <li><span class="tag tag-ok">hecho</span> Control de acceso: cada reserva lleva un código para validar en la puerta.</li>
         <li><span class="tag tag-ok">hecho</span> Las reservas sin pagar no retienen butacas para siempre.</li>
+        <li><span class="tag tag-ok">hecho</span> Mientras alguien elige sus butacas, esas butacas dejan de ofrecerse al resto.</li>
       </ul>
     </section>
 
@@ -2032,6 +2034,173 @@ GET /api/programaciones?activa=true</code></pre>
       </p>
     </section>
 
+    <section class="doc-section" id="bloqueo">
+      <h2>La butaca mientras se elige</h2>
+      <p>
+        El vencimiento de la reserva tapó una ventana, y al taparla dejó ver la de antes.
+        Una reserva <code>RESERVADA</code> retiene sus butacas treinta minutos, pero
+        <strong>recién existe cuando el cliente confirmó</strong> con su nombre y su mail.
+        Todo lo que pasa antes —abrir el mapa, elegir cuatro butacas, discutir cuáles,
+        completar el formulario— transcurre con esas butacas figurando libres para todo el
+        mundo.
+      </p>
+      <pre><code>Ana                                    Beto
+abre el mapa: C5 libre  ─┐
+elige C5, C6             │             abre el mapa: C5 libre    ← sigue diciendo libre
+escribe nombre y mail    │             elige C5
+confirma  ───────────────┘
+                                       confirma                  ← recién acá se entera</code></pre>
+      <p>
+        Que Beto pierda la butaca no es el problema: alguien la tenía que perder. El
+        problema es <em>cuándo</em> se entera. El sistema le mostró una butaca libre durante
+        dos minutos, le hizo elegir tarifas y cargar sus datos, y le avisó al final. Eso es
+        exactamente lo que <a href="#reservas"><code>Ocupacion</code></a> existe para evitar,
+        una etapa antes.
+      </p>
+
+      <h3>Un bloqueo con vencimiento, y en Redis</h3>
+      <p>
+        La solución es tomar la butaca en cuanto alguien la clickea, a nombre de una
+        <strong>sesión</strong> anónima que genera el navegador, y soltarla sola a los tres
+        minutos. Cada vez que la persona toca el mapa se renueva, así que tardar en decidir
+        no le cuesta la butaca: lo que la ventana acota es cuánto retiene una butaca alguien
+        que cerró la pestaña y no va a volver.
+      </p>
+      <p>
+        Ese dato es lo contrario de todo lo demás que guarda el sistema: dura tres minutos,
+        no se audita, no entra en el arqueo y <strong>tiene que borrarse solo</strong>. Una
+        tabla lo soportaría, pero habría que barrerla —o filtrar por fecha en cada consulta,
+        como ya hace la expiración de reservas— y quedaría un dato temporal mezclado con los
+        permanentes. El vencimiento por clave es exactamente el mecanismo que hace falta, y
+        Redis lo trae puesto.
+      </p>
+
+      <h3>Dos mecanismos de vencimiento, dos etapas distintas</h3>
+      <p>
+        La pregunta obvia es si el bloqueo no reemplaza al estado <code>RESERVADA</code>: los
+        dos retienen butacas y los dos vencen. No se reemplazan porque no cubren lo mismo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Bloqueo</th><th>Reserva <code>RESERVADA</code></th></tr></thead>
+          <tbody>
+            <tr><td>Etapa</td><td>eligiendo butacas</td><td>elegidas, falta pagar</td></tr>
+            <tr><td>Dura</td><td>3 minutos, renovables</td><td>30 minutos</td></tr>
+            <tr><td>De quién es</td><td>de una sesión anónima</td><td>de un cliente con nombre y mail</td></tr>
+            <tr><td>Qué deja</td><td>nada: se borra solo</td><td>historial, ticket, código de acceso, precios congelados</td></tr>
+            <tr><td>Al vencer</td><td>desaparece</td><td>pasa a <code>EXPIRADA</code>, que es un dato del negocio</td></tr>
+            <tr><td>Dónde vive</td><td>Redis</td><td>MySQL</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <p>
+          <strong>Ninguno de los dos puede hacer el trabajo del otro.</strong> Si el bloqueo
+          reemplazara a <code>RESERVADA</code>, las reservas esperando pago dejarían de
+          sobrevivir a un reinicio y el cliente no podría ver en su historial algo que
+          todavía no pagó. Y al revés tampoco: no se puede crear una reserva mientras
+          alguien elige, porque una reserva necesita un cliente y el cliente recién se
+          identifica al confirmar.
+        </p>
+        <p>
+          Las dos ventanas <strong>nunca se solapan sobre la misma butaca</strong>: cuando la
+          reserva nace, <code>GestorReservas.reservar</code> suelta el bloqueo, porque de ahí
+          en adelante la butaca la retiene la reserva. De paso suelta también las que la
+          persona miró y no compró, sin esperar a que venzan.
+        </p>
+      </div>
+
+      <h3>El bloqueo entra en la definición de «ocupado», no al lado</h3>
+      <p>
+        <code>Ocupacion</code> es la única definición de «ocupado» del sistema: la usan el que
+        vende y los dos que dibujan el mapa. El bloqueo va <strong>adentro</strong> de esa
+        clase y no en una capa aparte, porque si quedara afuera el mapa ofrecería una butaca
+        que la reserva después rechaza — que es el problema que la clase existe para evitar.
+      </p>
+      <p>
+        Una butaca queda entonces tomada por dos motivos distintos: porque alguien la
+        <em>compró</em> o porque alguien la <em>está eligiendo</em>. Con una diferencia: el
+        bloqueo es de alguien. La butaca que Ana bloqueó le está ocupada a Beto y no a Ana,
+        así que la consulta lleva quién pregunta:
+      </p>
+      <pre><code>ocupacion.asientosOcupados(funcionId)           // el mapa de la boletería: todo lo tomado
+ocupacion.asientosOcupados(funcionId, sesion)   // el de Ana: sin lo que bloqueó ella</code></pre>
+      <p>
+        Esa sesión viaja hasta el backend —<code>GET /api/funciones/{id}?sesion=…</code>— y no
+        se resuelve en el navegador a propósito. Que el front pintara su propia selección por
+        encima del campo <code>ocupado</code> sería una <strong>segunda definición de
+        «ocupado» viviendo en la pantalla</strong>, y además una regla de negocio en la capa
+        que no lleva reglas.
+      </p>
+      <p>
+        <code>BloqueoButacas</code> es una interfaz de <code>persistencia</code> que entra por
+        constructor como cualquier DAO, así que el gestor no sabe que Redis existe: hay una
+        implementación en Redis y otra en memoria, y es la de memoria la que hace que
+        <code>mvn test</code> siga corriendo sin levantar nada.
+      </p>
+
+      <h3>Si Redis no está, el cine sigue vendiendo</h3>
+      <p>
+        Es la decisión que más se paga sola. El adaptador de Redis <strong>no propaga el
+        fallo de conexión</strong>: lo loguea una vez y contesta como si no hubiera ningún
+        bloqueo. Es lo contrario de lo que hacen los DAO, que tiran
+        <code>PersistenciaException</code>, y la diferencia no es un descuido:
+      </p>
+      <div class="callout">
+        <p>
+          Un DAO caído significa <em>que el dato no está</em>. Un lock caído significa
+          <em>que nadie la reservó todavía</em>, que es cierto. La primera afirmación no se
+          puede inventar; la segunda es la respuesta correcta.
+        </p>
+      </div>
+      <p>
+        El fondo es que este bloqueo <strong>no es la garantía</strong> de que una butaca no
+        se venda dos veces: esa la sigue dando el
+        <a href="#base-de-datos"><code>UNIQUE (funcion_id, asiento_id)</code></a> de MySQL,
+        que arbitra la carrera aunque Redis no exista. Sin Redis se pierde comodidad —volver
+        a la etapa en que la butaca se pierde recién al confirmar— y no corrección. Hacer que
+        el sistema deje de vender por eso sería voltear algo que hoy funciona sin Redis para
+        proteger algo que la base ya protege.
+      </p>
+      <p>
+        En el compose eso se ve en una palabra: el backend espera a Redis con
+        <code>service_started</code> y a MySQL con <code>service_healthy</code>. Y se puede
+        comprobar apagándolo:
+      </p>
+      <pre><code>docker compose stop redis     # el cine sigue vendiendo</code></pre>
+
+      <h3>Una sola llamada por click</h3>
+      <p>
+        El endpoint recibe la <strong>selección entera</strong> y no una butaca suelta:
+      </p>
+      <pre><code>POST /api/funciones/1/bloqueos
+{ "sesion": "3f9a…", "butacas": ["C5", "C6"] }
+
+{ "sesion": "3f9a…", "butacas": ["C5"], "rechazadas": ["C6"], "vencenEnSegundos": 180 }</code></pre>
+      <p>
+        Con eso una sola llamada toma lo nuevo, renueva lo que sigue elegido y suelta lo que
+        se deseleccionó; <code>"butacas": []</code> suelta todo. Con un «tomar» y un «soltar»
+        separados, una pestaña cerrada en el medio dejaba butacas tomadas que nadie iba a
+        soltar.
+      </p>
+      <p>
+        Que una butaca no se consiga <strong>no es un error</strong>: es que otro llegó
+        primero, y las demás sí se consiguieron. Por eso <code>rechazadas</code> viaja en la
+        misma respuesta en vez de fallar el pedido entero, y el front puede repintar el mapa
+        sin volver a pedirlo.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>La sesión no es una credencial.</strong> La genera el navegador y el backend
+          no la verifica. No hace falta: lo peor que puede hacer una sesión inventada es
+          soltar el bloqueo de otro, y eso devuelve una butaca a la venta sin poder venderla
+          dos veces. Cuando el cliente tenga login de verdad, el dueño del bloqueo puede pasar
+          a ser él, pero hoy el cliente se identifica recién al confirmar y una sesión anónima
+          es lo único que existe mientras elige.
+        </p>
+      </div>
+    </section>
+
     <section class="doc-section" id="candy">
       <h2>Candy</h2>
       <p>
@@ -2288,6 +2457,17 @@ inserta A1  ────┘
         <code>ReservaDAOTxt</code> no tiene esta garantía: no hay constraints en un archivo de texto. Alcanza
         porque es para un solo proceso —los tests y la demo—, y está anotado en su javadoc.
       </p>
+      <div class="callout">
+        <p>
+          <strong>El <a href="#bloqueo">bloqueo de mientras se elige</a> no reemplaza a este
+          <code>UNIQUE</code>, lo complementa.</strong> El bloqueo achica la ventana —Beto ve
+          la butaca tomada mientras Ana la está eligiendo, en vez de enterarse al confirmar—
+          pero no la cierra: la boletería vende sin pasar por él, y si Redis está caído no hay
+          bloqueo ninguno. Quien arbitra la carrera sigue siendo la base. Es el mismo criterio
+          que hace que el gestor valide igual aunque exista el <code>UNIQUE</code>: cada capa
+          resuelve el caso para el que sirve, y la de abajo no confía en la de arriba.
+        </p>
+      </div>
       <p>
         Guardar una película o una reserva toca <strong>dos tablas</strong> (la entidad y su detalle), así que
         esas operaciones van en una transacción con <code>setAutoCommit(false)</code> y
@@ -2579,7 +2759,7 @@ open http://localhost:8080        # la aplicación</code></pre>
 
       <figure class="diagram">
         {{SVG_DOCKER}}
-        <figcaption>Los cinco contenedores, las dos redes internas y qué repo construye a cada uno</figcaption>
+        <figcaption>Los seis contenedores, las dos redes internas y qué repo construye a cada uno</figcaption>
       </figure>
       <p>
         La misma topología, explicada en prosa: <a href="#base-de-datos">Base de datos → Qué se ve
@@ -2594,6 +2774,7 @@ open http://localhost:8080        # la aplicación</code></pre>
             <tr><td>Adminer</td><td><a href="http://127.0.0.1:8081">127.0.0.1:8081</a></td><td>Ver y consultar la base desde el navegador</td></tr>
             <tr><td>Backend</td><td><code>backend:8080</code></td><td>Solo en la red interna: no se llega desde el host</td></tr>
             <tr><td>MySQL</td><td><code>mysql:3306</code></td><td>Solo en la red interna: ya no hay <code>localhost:3306</code></td></tr>
+            <tr><td>Redis</td><td><code>redis:6379</code></td><td>Los <a href="#bloqueo">bloqueos de butaca</a> de mientras alguien elige. Es el único que se puede apagar sin romper nada</td></tr>
             <tr><td>Parser</td><td>—</td><td>No arranca con el compose: está detrás del perfil <code>importador</code> (ver abajo)</td></tr>
           </tbody>
         </table>
@@ -3785,6 +3966,8 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorFuncionesTest</code></td><td>R3 (se pisan, no se pisan, otra sala) y R12 sobre función, sala y película</td></tr>
             <tr><td><code>GestorProgramacionesTest</code></td><td>que la grilla genere el rango completo, que respete los días elegidos, que previsualizar no escriba nada, que el alta saltee lo que choca contra R3 y que la baja no toque las funciones ya generadas</td></tr>
             <tr><td><code>GestorReservasTest</code></td><td>R4, R6, R9, R13, el redondeo del precio, el recargo premium y la persistencia en txt</td></tr>
+            <tr><td><code>OcupacionTest</code></td><td>el <a href="#bloqueo">bloqueo de mientras se elige</a>: que la butaca deje de ofrecerse, que a quien la eligió sí le aparezca libre, dos sesiones por la misma butaca, el vencimiento y su renovación, que confirmar suelte el bloqueo, y que con Redis caído se venda igual</td></tr>
+            <tr><td><code>BloqueoButacasRedisTest</code></td><td>los comandos contra un Redis de verdad, que es lo único que no cubre la implementación en memoria. <strong>Se saltea</strong> salvo que se le pase un Redis descartable en <code>REDIS_TEST_PORT</code>: si usara el puerto por defecto escribiría en el Redis que la máquina tenga levantado</td></tr>
             <tr><td><code>GestorPagosTest</code></td><td>R5, R11 y el arqueo de boletería</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
             <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
@@ -4037,6 +4220,26 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td>Al aplicar se revalida desde el DAO</td>
               <td>Confiar en el informe previsualizado</td>
               <td>Entre mirar y confirmar, otro pudo programar algo en esa sala. Mismo criterio que validar en el gestor <em>y</em> restringir en la base</td>
+            </tr>
+            <tr>
+              <td>Un bloqueo efímero mientras se elige, además del estado <code>RESERVADA</code></td>
+              <td>Que el bloqueo reemplace a <code>RESERVADA</code>, o crear la reserva al primer click</td>
+              <td>Cubren etapas distintas: el bloqueo es anónimo y no deja rastro, la reserva tiene cliente, ticket y precios congelados. Reemplazarla haría que una reserva sin pagar no sobreviva a un reinicio; adelantarla es imposible, porque el cliente recién se identifica al confirmar</td>
+            </tr>
+            <tr>
+              <td>El bloqueo vive adentro de <code>Ocupacion</code></td>
+              <td>Una capa aparte, o resolverlo en el navegador</td>
+              <td>Es la única definición de «ocupado» del sistema. Afuera, el mapa ofrecería una butaca que la reserva después rechaza; en el navegador, serían dos definiciones y una regla de negocio en la capa que no lleva reglas</td>
+            </tr>
+            <tr>
+              <td>Sin Redis se vende igual</td>
+              <td>Fallar la operación si el bloqueo no se puede tomar</td>
+              <td>Un DAO caído significa que el dato no está; un lock caído, que nadie la reservó todavía. La doble venta la impide el <code>UNIQUE</code> de la base, así que sin Redis se pierde comodidad y no corrección: hacerlo obligatorio voltearía algo que ya funcionaba sin él</td>
+            </tr>
+            <tr>
+              <td>Una clave por butaca con <code>SET NX PX</code></td>
+              <td>Un hash por función con vencimiento por campo</td>
+              <td>El hash ahorra el <code>SCAN</code> de la consulta, pero pide dos comandos para escribir butaca y vencimiento, y morirse entre los dos deja una butaca bloqueada <em>para siempre</em>: la única falla que este mecanismo no puede permitirse, porque nadie la limpia después</td>
             </tr>
             <tr>
               <td>Seguir sin login de cliente</td>

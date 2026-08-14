@@ -43,6 +43,7 @@ import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
@@ -64,6 +65,13 @@ class GestorReservasTest {
 
     private GestorReservas reservas;
     private Ocupacion ocupacion;
+    private BloqueoButacasMemoria bloqueos;
+    /**
+     * El reloj de los bloqueos, movible a mano. Probar que un bloqueo vence no puede
+     * costar tres minutos de {@code Thread.sleep}, y una espera real además vuelve el test
+     * dependiente de lo cargada que esté la máquina.
+     */
+    private LocalDateTime ahora;
     private FuncionDAO funcionDAO;
     private GestorSalas salas;
     private GestorFunciones funciones;
@@ -96,7 +104,9 @@ class GestorReservasTest {
         clientes = new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria());
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
 
-        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
+        ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
+        bloqueos = new BloqueoButacasMemoria(() -> ahora);
+        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO, bloqueos);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
                 new GeneradorTicketTxt(directorioTickets), new CalculadoraPrecio(), ocupacion);
         pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO, funcionDAO,

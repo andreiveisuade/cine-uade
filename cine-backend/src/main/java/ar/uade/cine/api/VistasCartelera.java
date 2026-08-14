@@ -64,12 +64,26 @@ public class VistasCartelera {
 
     /** El mapa de butacas: cada asiento de la sala con su precio y si está tomado acá. */
     public FuncionVistaDTO funcionConButacas(Funcion f) {
+        return funcionConButacas(f, null);
+    }
+
+    /**
+     * El mismo mapa, visto por quien está eligiendo: las butacas que esa sesión bloqueó no
+     * le salen ocupadas a ella.
+     *
+     * <p>La sesión llega hasta acá y no se resuelve en el navegador a propósito. Que el
+     * front pintara su propia selección por encima del flag {@code ocupado} sería una
+     * segunda definición de "ocupado" viviendo en la pantalla, justo lo que
+     * {@link Ocupacion} existe para evitar, y además una regla en la capa que no lleva
+     * reglas.
+     */
+    public FuncionVistaDTO funcionConButacas(Funcion f, String sesion) {
         Sala sala = salaDe(f);
-        Set<Integer> ocupados = ocupacion.asientosOcupados(f.getId());
+        Set<Integer> ocupados = ocupacion.asientosOcupados(f.getId(), sesion);
         List<AsientoVistaDTO> butacas = salas.asientosDe(sala.getId()).stream()
                 .map(a -> vistasSalas.asiento(a, f, sala, ocupados))
                 .toList();
-        return armar(f, peliculaDe(f), butacas, ocupacion.lugaresLibres(f.getId()));
+        return armar(f, peliculaDe(f), butacas, ocupacion.lugaresLibres(f.getId(), sesion));
     }
 
     private FuncionVistaDTO armar(Funcion f, PeliculaVistaDTO pelicula, List<AsientoVistaDTO> butacas,

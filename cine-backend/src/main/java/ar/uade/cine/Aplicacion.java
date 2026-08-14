@@ -1,6 +1,7 @@
 package ar.uade.cine;
 
 import ar.uade.cine.persistencia.AsientoDAO;
+import ar.uade.cine.persistencia.BloqueoButacas;
 import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.EmpleadoDAO;
@@ -28,6 +29,7 @@ import ar.uade.cine.persistencia.mysql.ProgramacionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.PromocionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
+import ar.uade.cine.persistencia.redis.BloqueoButacasRedis;
 import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorCartelera;
@@ -81,6 +83,11 @@ public class Aplicacion {
      * <p>Los tickets van a disco y no a la base a propósito. Un comprobante es un papel
      * que se entrega, no un dato que se consulta: por eso su contrato es
      * {@link GeneradorTicket} y no un DAO.
+     *
+     * <p>Los bloqueos de butaca van a Redis y no a MySQL porque son lo contrario de todo
+     * lo demás que hay acá: duran tres minutos y después no le importan a nadie. Si Redis
+     * no está, {@link BloqueoButacasRedis} degrada a "ningún bloqueo" y el sistema sigue
+     * vendiendo como antes de que existiera.
      */
     public static Aplicacion enMySQL() {
         return new Aplicacion(
@@ -88,6 +95,7 @@ public class Aplicacion {
                 new FuncionDAOMySQL(), new ClienteDAOMySQL(), new EmpleadoDAOMySQL(),
                 new ReservaDAOMySQL(), new PagoDAOMySQL(), new PromocionDAOMySQL(),
                 new ProgramacionDAOMySQL(), new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
+                new BloqueoButacasRedis(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt());
     }
 
@@ -104,7 +112,7 @@ public class Aplicacion {
                       FuncionDAO funcionDAO, ClienteDAO clienteDAO, EmpleadoDAO empleadoDAO,
                       ReservaDAO reservaDAO, PagoDAO pagoDAO, PromocionDAO promocionDAO,
                       ProgramacionDAO programacionDAO, ProductoDAO productoDAO,
-                      CompraCandyDAO compraCandyDAO,
+                      CompraCandyDAO compraCandyDAO, BloqueoButacas bloqueoButacas,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy) {
 
         calculadoraPrecio = new CalculadoraPrecio();
@@ -119,7 +127,7 @@ public class Aplicacion {
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);
         pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
-        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
+        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO, bloqueoButacas);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
                 peliculaDAO, generadorTicket, calculadoraPrecio, ocupacion);
         productos = new GestorProductos(productoDAO);
