@@ -22,7 +22,8 @@ open http://localhost:8080
 ```
 
 - `index.html` — cliente, sin login: cartelera, funciones, butacas, reserva y ticket.
-- `admin.html` — encargado, con login: películas, salas, funciones, reservas y caja.
+- `admin.html` — encargado, con login: películas, salas, funciones, grillas, el
+  planificador de la semana, reservas, cobro, informes por función y caja.
 
 Credenciales de prueba del encargado: `encargado@cine.uade.ar` / `cine2026`.
 
@@ -96,3 +97,8 @@ calcula el backend: el front nunca lo recalcula, solo lo muestra.
 
 Cubre 12 de los 16 casos de uso del manual. Falta el módulo de candy (CU-13 a CU-16) y
 que el arqueo (CU-12) separe boletería de candy.
+
+Lo último que salió de la terminal y ya tiene pantalla: el armado automático de la grilla
+(`#/planificador`), el borderó del INCAA y el informe por función (`#/funcion/{id}`, desde
+el listado de funciones) y el cobro de los medios electrónicos por el checkout de la
+pasarela.

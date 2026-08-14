@@ -1,5 +1,5 @@
 import * as api from "../api.js";
-import { avisar, dia, error, escapar, etiqueta, fechaHora, hora, precio } from "../ui.js";
+import { avisar, dia, escapar, etiqueta, fechaHora, hora, precio } from "../ui.js";
 
 /* ------------------------------------------------- una función y sus informes */
 
