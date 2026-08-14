@@ -1,5 +1,5 @@
 import * as api from "../api.js";
-import { avisar, dia, duracion, escapar, etiqueta, hora, hoyISO } from "../ui.js";
+import { avisar, cargando, dia, duracion, escapar, etiqueta, hora, hoyISO } from "../ui.js";
 
 /* --------------------------------------------- armado automático de la grilla */
 
@@ -134,6 +134,7 @@ export async function vistaPlanificador(contenedor) {
   const errorCriterios = contenedor.querySelector("#errorCriterios");
   const propuesta = contenedor.querySelector("#propuesta");
   const botonAplicar = contenedor.querySelector("#aplicar");
+  const botonPrevisualizar = contenedor.querySelector("#previsualizar");
 
   const leerCriterios = () => Object.fromEntries(new FormData(formulario));
 
@@ -147,12 +148,27 @@ export async function vistaPlanificador(contenedor) {
   formulario.addEventListener("input", invalidarPropuesta);
   formulario.addEventListener("change", invalidarPropuesta);
 
+  /**
+   * Armar una semana de seis salas le lleva varios segundos al backend: consulta R3 hueco
+   * por hueco. Sin decirlo en pantalla parece colgada, y lo que hace el encargado es
+   * volver a apretar el botón — que son otros tantos segundos de servidor.
+   */
   async function correr(pedir, aplicada) {
     if (!formulario.reportValidity()) return;
     errorCriterios.classList.add("hidden");
     const criterios = leerCriterios();
+    const boton = aplicada ? botonAplicar : botonPrevisualizar;
+    boton.disabled = true;
+    boton.textContent = aplicada ? "Creando…" : "Calculando…";
+    propuesta.innerHTML = cargando(aplicada
+      ? "Creando las funciones…" : "Armando la grilla, puede tardar unos segundos…");
+
     try {
       const grilla = await pedir(criterios);
+      // Si tocó un criterio mientras calculaba, lo que llegó ya no describe lo que está en
+      // pantalla: pintarlo sería mostrar una grilla que no es la de estos criterios.
+      if (JSON.stringify(leerCriterios()) !== JSON.stringify(criterios)) return;
+
       propuesta.innerHTML = dibujarPropuesta(grilla, corridaAnterior);
       corridaAnterior = { titulos: Number(criterios.cuantasPeliculas), indicadores: grilla.indicadores };
       // funcionesCreadas viene en 0 al previsualizar y con el número real en el alta: es
@@ -165,11 +181,13 @@ export async function vistaPlanificador(contenedor) {
       invalidarPropuesta();
       errorCriterios.textContent = e.message;
       errorCriterios.classList.remove("hidden");
+    } finally {
+      botonPrevisualizar.disabled = false;
+      botonPrevisualizar.textContent = "Previsualizar";
     }
   }
 
-  contenedor.querySelector("#previsualizar")
-    .addEventListener("click", () => correr(api.proponerGrilla, false));
+  botonPrevisualizar.addEventListener("click", () => correr(api.proponerGrilla, false));
 
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
