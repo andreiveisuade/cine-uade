@@ -9,8 +9,10 @@ import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
-import ar.uade.cine.servicio.GestorClientes;
+import ar.uade.cine.dto.ventas.PedidoAccesoDTO;
+import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.servicio.CriteriosReserva;
+import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorReservas;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -20,19 +22,6 @@ import io.javalin.http.HttpStatus;
  * email, y si es la primera vez que compra se lo da de alta en el momento.
  */
 class RutasReservas {
-
-    /**
-     * {@code butacas} es el pedido completo: código de butaca a tarifa de quien la ocupa.
-     * {@code codigos} es la forma vieja, sin tarifas, y se sigue aceptando para no romper
-     * a quien ya la use: se interpreta como todas GENERAL.
-     */
-    record PedidoReserva(Integer funcionId, String nombre, String email,
-                         List<String> codigos, Map<String, TipoTarifa> butacas) {
-    }
-
-    /** El código del QR, que es lo único que tiene el acomodador en la puerta. */
-    record PedidoAcceso(String codigo) {
-    }
 
     static void registrar(Javalin app, GestorReservas reservas, GestorClientes clientes,
                           VistasVentas vistas) {
@@ -66,7 +55,7 @@ class RutasReservas {
                 ctx.json(vistas.reserva(buscar(reservas, Parseo.id(ctx)))));
 
         app.post("/api/reservas", ctx -> {
-            PedidoReserva pedido = ctx.bodyAsClass(PedidoReserva.class);
+            PedidoReservaDTO pedido = ctx.bodyAsClass(PedidoReservaDTO.class);
             // Que al cliente nuevo se lo dé de alta acá mismo es la regla de comprar sin
             // registrarse, y vive en el gestor: esta capa solo pasa lo que llegó.
             Cliente cliente = clientes.identificar(pedido.nombre(), pedido.email());
@@ -87,7 +76,7 @@ class RutasReservas {
          * repetirlo falla a propósito (R18).
          */
         app.post("/api/acceso", ctx -> {
-            PedidoAcceso pedido = ctx.bodyAsClass(PedidoAcceso.class);
+            PedidoAccesoDTO pedido = ctx.bodyAsClass(PedidoAccesoDTO.class);
             ctx.json(vistas.reserva(reservas.registrarIngreso(pedido.codigo())));
         });
 
@@ -101,7 +90,7 @@ class RutasReservas {
     }
 
     /** Sin tarifas explícitas, la lista vieja de códigos vale como todas GENERAL. */
-    private static Map<String, TipoTarifa> butacasPedidas(PedidoReserva pedido) {
+    private static Map<String, TipoTarifa> butacasPedidas(PedidoReservaDTO pedido) {
         if (pedido.butacas() != null && !pedido.butacas().isEmpty()) {
             return pedido.butacas();
         }

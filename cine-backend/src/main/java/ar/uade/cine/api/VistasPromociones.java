@@ -1,13 +1,10 @@
 package ar.uade.cine.api;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.promociones.PromocionMontoFijo;
 import ar.uade.cine.dominio.promociones.PromocionNxM;
 import ar.uade.cine.dominio.promociones.PromocionPorcentaje;
+import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 
 /**
  * Las promociones, en la forma que espera el front.
@@ -18,19 +15,8 @@ import ar.uade.cine.dominio.promociones.PromocionPorcentaje;
  */
 public class VistasPromociones {
 
-    /**
-     * Las condiciones vacías viajan como listas vacías, que es como las lee el gestor:
-     * sin días significa todos los días, sin medios significa cualquiera.
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record PromocionVista(int id, String nombre, String tipo, Double porcentaje, Double monto,
-                                 Integer lleva, Integer paga, String vigenciaDesde, String vigenciaHasta,
-                                 List<String> diasSemana, String horaDesde, String horaHasta,
-                                 List<String> mediosPago, boolean activa) {
-    }
-
-    public PromocionVista promocion(Promocion p) {
-        return new PromocionVista(p.getId(), p.getNombre(), p.getTipo().name(),
+    public PromocionVistaDTO promocion(Promocion p) {
+        return new PromocionVistaDTO(p.getId(), p.getNombre(), p.getTipo().name(),
                 p instanceof PromocionPorcentaje pp ? pp.getPorcentaje() : null,
                 p instanceof PromocionMontoFijo pm ? pm.getMonto() : null,
                 p instanceof PromocionNxM pn ? pn.getLleva() : null,

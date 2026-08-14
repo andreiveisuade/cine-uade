@@ -8,6 +8,8 @@ import ar.uade.cine.dominio.salas.EstadoAsiento;
 import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.dominio.salas.TipoSala;
+import ar.uade.cine.dto.salas.PedidoEstadoDTO;
+import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.servicio.GestorSalas;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -19,14 +21,6 @@ import io.javalin.http.HttpStatus;
  */
 class RutasSalas {
 
-    record PedidoSala(String nombre, String tipo, List<Integer> butacasPorFila,
-                      List<String> codigosVip, List<String> codigosPareja,
-                      List<String> codigosAccesibles) {
-    }
-
-    record PedidoEstado(String estado) {
-    }
-
     static void registrar(Javalin app, GestorSalas salas, VistasSalas vistas) {
 
         app.get("/api/salas", ctx ->
@@ -36,7 +30,7 @@ class RutasSalas {
                 ctx.json(vistas.salaConButacas(buscar(salas, Parseo.id(ctx)))));
 
         app.post("/api/salas", ctx -> {
-            PedidoSala pedido = ctx.bodyAsClass(PedidoSala.class);
+            PedidoSalaDTO pedido = ctx.bodyAsClass(PedidoSalaDTO.class);
             Sala sala = salas.agregar(pedido.nombre(),
                     pedido.tipo() == null ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                     pedido.butacasPorFila(),
@@ -59,7 +53,7 @@ class RutasSalas {
             buscar(salas, salaId);
 
             EstadoAsiento estado = Parseo.constante(EstadoAsiento.class,
-                    ctx.bodyAsClass(PedidoEstado.class).estado(), "el estado de la butaca");
+                    ctx.bodyAsClass(PedidoEstadoDTO.class).estado(), "el estado de la butaca");
             if (estado == EstadoAsiento.FUERA_DE_SERVICIO) {
                 salas.marcarFueraDeServicio(salaId, codigo);
             } else {
@@ -74,7 +68,7 @@ class RutasSalas {
     }
 
     /** Cada butaca es estándar salvo que su código esté en alguna de las tres listas. */
-    private static Map<String, TipoAsiento> especiales(PedidoSala pedido) {
+    private static Map<String, TipoAsiento> especiales(PedidoSalaDTO pedido) {
         Map<String, TipoAsiento> especiales = new HashMap<>();
         marcar(especiales, pedido.codigosVip(), TipoAsiento.VIP);
         marcar(especiales, pedido.codigosPareja(), TipoAsiento.PAREJA);

@@ -16,9 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.Aplicacion;
-import ar.uade.cine.api.VistasVentas.EntradaVista;
-import ar.uade.cine.api.VistasVentas.PagoVista;
-import ar.uade.cine.api.VistasVentas.ReservaVista;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
@@ -32,6 +29,9 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dto.ventas.EntradaVistaDTO;
+import ar.uade.cine.dto.ventas.PagoVistaDTO;
+import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -91,7 +91,7 @@ class VistasVentasTest {
 
     @Test
     void laReservaTraeTodoLoQueImprimeElTicket() {
-        ReservaVista vista = vistas.reserva(reservar("A1", "A2"));
+        ReservaVistaDTO vista = vistas.reserva(reservar("A1", "A2"));
 
         assertEquals("Matrix", vista.pelicula().titulo());
         assertEquals("Sala 1", vista.sala().nombre());
@@ -105,7 +105,7 @@ class VistasVentasTest {
     /** El email del cliente viaja: es con lo que se identifica al comprar sin registrarse. */
     @Test
     void elClienteViajaSinDatosDeMas() {
-        ReservaVista vista = vistas.reserva(reservar("A1"));
+        ReservaVistaDTO vista = vistas.reserva(reservar("A1"));
 
         assertEquals(cliente.getId(), vista.cliente().id());
         assertEquals("andrei@uade.edu.ar", vista.cliente().email());
@@ -121,7 +121,7 @@ class VistasVentasTest {
         butacas.put("A1", TipoTarifa.GENERAL);
         butacas.put("A2", TipoTarifa.JUBILADO);
 
-        ReservaVista vista = vistas.reserva(aplicacion.getReservas()
+        ReservaVistaDTO vista = vistas.reserva(aplicacion.getReservas()
                 .reservar(1, cliente.getId(), butacas));
 
         assertEquals("GENERAL", entrada(vista, "A1").tarifa());
@@ -136,7 +136,7 @@ class VistasVentasTest {
     void laReservaViajaConElCodigoDelQr() {
         Reserva reserva = reservar("A1");
 
-        ReservaVista vista = vistas.reserva(reserva);
+        ReservaVistaDTO vista = vistas.reserva(reserva);
 
         assertEquals(reserva.getCodigo(), vista.codigo());
         assertTrue(!vista.codigo().equals(String.valueOf(vista.id())));
@@ -171,7 +171,7 @@ class VistasVentasTest {
         Reserva reserva = reservar("A1");
         aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
 
-        ReservaVista vista = vistas.reserva(aplicacion.getReservas()
+        ReservaVistaDTO vista = vistas.reserva(aplicacion.getReservas()
                 .buscar(reserva.getId()).orElseThrow());
 
         assertEquals("PAGADA", vista.estado());
@@ -190,7 +190,7 @@ class VistasVentasTest {
         Reserva reserva = reservar("A1");
         Pago pago = aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        PagoVista vista = vistas.pago(pago);
+        PagoVistaDTO vista = vistas.pago(pago);
 
         assertNull(vista.pelicula());
         assertNull(vista.cliente());
@@ -207,7 +207,7 @@ class VistasVentasTest {
         Reserva reserva = reservar("A1", "A2");
         Pago pago = aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        PagoVista vista = vistas.pagoDeArqueo(pago);
+        PagoVistaDTO vista = vistas.pagoDeArqueo(pago);
 
         assertEquals("Matrix", vista.pelicula().titulo());
         assertEquals("Andrei", vista.cliente().nombre());
@@ -223,7 +223,7 @@ class VistasVentasTest {
         return aplicacion.getReservas().reservar(1, cliente.getId(), butacas);
     }
 
-    private static EntradaVista entrada(ReservaVista vista, String codigo) {
+    private static EntradaVistaDTO entrada(ReservaVistaDTO vista, String codigo) {
         return vista.entradas().stream()
                 .filter(e -> e.codigo().equals(codigo))
                 .findFirst()

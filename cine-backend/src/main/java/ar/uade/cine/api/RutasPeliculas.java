@@ -7,6 +7,7 @@ import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
+import ar.uade.cine.dto.cartelera.PedidoPeliculaDTO;
 import ar.uade.cine.servicio.DatosPelicula;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -19,12 +20,6 @@ import io.javalin.http.HttpStatus;
  * invente esta capa: el front lo muestra tal cual al usuario.
  */
 class RutasPeliculas {
-
-    /** Sirve para el alta y para la edición: en el PUT todos los campos son opcionales. */
-    record PedidoPelicula(String titulo, Integer duracionMinutos, List<String> generos,
-                          String clasificacion, String director, String sinopsis, Integer anio,
-                          String idiomaOriginal, String posterUrl, Boolean enCartelera) {
-    }
 
     static void registrar(Javalin app, GestorCartelera cartelera, GestorFunciones funciones,
                           VistasCartelera vistas) {
@@ -63,7 +58,7 @@ class RutasPeliculas {
         });
 
         app.post("/api/peliculas", ctx -> {
-            PedidoPelicula pedido = ctx.bodyAsClass(PedidoPelicula.class);
+            PedidoPeliculaDTO pedido = ctx.bodyAsClass(PedidoPeliculaDTO.class);
             ctx.status(HttpStatus.CREATED).json(vistas.pelicula(cartelera.agregar(datosDe(pedido))));
         });
 
@@ -72,7 +67,7 @@ class RutasPeliculas {
             // El gestor rechaza el id inexistente como dato inválido; acá se pregunta
             // antes para poder responder 404 y no 400.
             buscar(cartelera, id);
-            PedidoPelicula pedido = ctx.bodyAsClass(PedidoPelicula.class);
+            PedidoPeliculaDTO pedido = ctx.bodyAsClass(PedidoPeliculaDTO.class);
             ctx.json(vistas.pelicula(cartelera.editar(id, datosDe(pedido))));
         });
 
@@ -99,7 +94,7 @@ class RutasPeliculas {
      * mandé". En el alta, ese mismo null es el que dispara el error de dato faltante, con
      * el mensaje del gestor y no con uno que invente esta capa.
      */
-    private static DatosPelicula datosDe(PedidoPelicula pedido) {
+    private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {
         return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos() == null
                         ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"),

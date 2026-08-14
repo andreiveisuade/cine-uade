@@ -1,5 +1,6 @@
 package ar.uade.cine.api;
 
+import ar.uade.cine.dto.usuarios.PedidoSesionDTO;
 import ar.uade.cine.servicio.GestorEmpleados;
 import io.javalin.Javalin;
 
@@ -13,12 +14,9 @@ import io.javalin.Javalin;
  */
 class RutasSesion {
 
-    record PedidoSesion(String email, String password) {
-    }
-
     static void registrar(Javalin app, GestorEmpleados empleados, VistasUsuarios vistas) {
         app.post("/api/sesion", ctx -> {
-            PedidoSesion pedido = ctx.bodyAsClass(PedidoSesion.class);
+            PedidoSesionDTO pedido = ctx.bodyAsClass(PedidoSesionDTO.class);
             ctx.json(vistas.empleado(
                     empleados.iniciarSesion(pedido.email(), pedido.password())));
         });

@@ -23,6 +23,12 @@ package api {
   class NoEncontrado
 }
 
+' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes espejan
+' a dominio/, asi que de que entidad viene cada forma se lee en la ruta del archivo.
+package dto {
+  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, catalogos\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
+}
+
 package servicio {
   class GestorCartelera
   class GestorSalas
@@ -117,6 +123,8 @@ MenusDelCine -down-> servicio
 MenusDelCine -right-> Consola
 RutasHttp -down-> servicio
 RutasHttp -right-> Vistas
+RutasHttp ..> Dtos
+Vistas ..> Dtos
 
 ' El descuento se resuelve al cobrar, que es cuando recien se conoce el medio
 ' de pago. GestorPagos depende del contrato, no del gestor que lo implementa.
@@ -173,8 +181,12 @@ legend bottom
   |= Capa |= De que se ocupa |
   | ui / api | Dos formas de hablar con la misma aplicacion: consola y HTTP. Scanner y System.out |
   |  | viven solo en Consola, y cada area del cine tiene su Menu; los Rutas* de api/ traducen a |
-  |  | JSON, las seis Vistas* arman las respuestas y Parseo lee los parametros. Ninguna regla vive |
-  |  | en estas dos capas. Main y ServidorApi (no dibujadas) solo eligen que interfaz levantar. |
+  |  | JSON, las seis Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Ninguna |
+  |  | regla vive en estas dos capas. Main y ServidorApi (no dibujadas) solo eligen que interfaz |
+  |  | levantar. |
+  | dto | La forma del JSON, en objetos sin comportamiento: un tipo por mensaje que entra o sale. |
+  |  | Estan separados del dominio para que el contrato HTTP no quede atado a como esta hecha |
+  |  | una entidad adentro: renombrar un atributo privado no puede romper al front. |
   | Aplicacion | El unico lugar del sistema donde se nombra una implementacion concreta: arma los |
   |  | diez gestores y decide en que medio se guarda cada cosa. Las dos puertas comparten ese |
   |  | armado, y por eso son la misma aplicacion y no dos parecidas. |

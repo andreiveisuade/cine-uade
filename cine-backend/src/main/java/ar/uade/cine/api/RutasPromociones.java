@@ -10,6 +10,7 @@ import java.util.Set;
 import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.promociones.TipoPromocion;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.servicio.GestorPromociones;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -21,17 +22,6 @@ import io.javalin.http.HttpStatus;
  */
 class RutasPromociones {
 
-    /**
-     * Un solo pedido para los tres tipos, con las columnas del beneficio en null salvo
-     * la que corresponde: es la misma forma que tiene la tabla, y evita tres endpoints
-     * que se diferencian en un campo.
-     */
-    record PedidoPromocion(String nombre, String tipo, Double porcentaje, Double monto,
-                           Integer lleva, Integer paga, String vigenciaDesde, String vigenciaHasta,
-                           List<String> diasSemana, String horaDesde, String horaHasta,
-                           List<String> mediosPago) {
-    }
-
     static void registrar(Javalin app, GestorPromociones promociones, VistasPromociones vistas) {
 
         app.get("/api/promociones", ctx ->
@@ -41,7 +31,7 @@ class RutasPromociones {
                 ctx.json(vistas.promocion(buscar(promociones, Parseo.id(ctx)))));
 
         app.post("/api/promociones", ctx -> {
-            PedidoPromocion pedido = ctx.bodyAsClass(PedidoPromocion.class);
+            PedidoPromocionDTO pedido = ctx.bodyAsClass(PedidoPromocionDTO.class);
             LocalDate desde = LocalDate.parse(pedido.vigenciaDesde());
             LocalDate hasta = LocalDate.parse(pedido.vigenciaHasta());
             Set<DayOfWeek> dias = leer(pedido.diasSemana(), DayOfWeek::valueOf);

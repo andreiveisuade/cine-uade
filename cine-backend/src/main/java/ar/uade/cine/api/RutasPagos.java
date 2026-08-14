@@ -1,13 +1,14 @@
 package ar.uade.cine.api;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
-import ar.uade.cine.api.VistasVentas.PagoVista;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
+import ar.uade.cine.dto.ventas.ArqueoVistaDTO;
+import ar.uade.cine.dto.ventas.PedidoPagoDTO;
+import ar.uade.cine.dto.ventas.TotalMedioDTO;
 import ar.uade.cine.servicio.Arqueo;
 import ar.uade.cine.servicio.GestorPagos;
 import ar.uade.cine.servicio.GestorReservas;
@@ -23,16 +24,6 @@ import io.javalin.http.HttpStatus;
  */
 class RutasPagos {
 
-    record PedidoPago(String medio, String codigoAutorizacion) {
-    }
-
-    record TotalMedio(int cantidad, double total) {
-    }
-
-    record ArqueoVista(String fecha, double total, int entradas, Map<String, TotalMedio> porMedio,
-                       List<PagoVista> pagos) {
-    }
-
     static void registrar(Javalin app, GestorPagos pagos, GestorReservas reservas, VistasVentas vistas) {
 
         app.post("/api/reservas/{id}/pago", ctx -> {
@@ -40,7 +31,7 @@ class RutasPagos {
             reservas.buscar(reservaId)
                     .orElseThrow(() -> new NoEncontrado("No existe la reserva " + reservaId));
 
-            PedidoPago pedido = ctx.bodyAsClass(PedidoPago.class);
+            PedidoPagoDTO pedido = ctx.bodyAsClass(PedidoPagoDTO.class);
             // Sin medio, el null llega al gestor y es él quien avisa que falta (R11 se
             // valida ahí mismo, según lo que exija la constante).
             MedioPago medio = pedido.medio() == null
@@ -68,7 +59,7 @@ class RutasPagos {
 
         app.get("/api/arqueo", ctx -> {
             Arqueo arqueo = pagos.arqueoDe(Parseo.dia(ctx.queryParam("fecha"), "la fecha"));
-            ctx.json(new ArqueoVista(arqueo.fecha().toString(), arqueo.total(), arqueo.entradas(),
+            ctx.json(new ArqueoVistaDTO(arqueo.fecha().toString(), arqueo.total(), arqueo.entradas(),
                     porMedio(arqueo), arqueo.pagos().stream().map(vistas::pagoDeArqueo).toList()));
         });
     }
@@ -77,10 +68,10 @@ class RutasPagos {
      * El reparto por medio, con el nombre de la constante como clave. En TreeMap porque el
      * front lista los medios en el orden en que vienen y alfabético es un orden estable.
      */
-    private static Map<String, TotalMedio> porMedio(Arqueo arqueo) {
-        Map<String, TotalMedio> resumen = new TreeMap<>();
+    private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {
+        Map<String, TotalMedioDTO> resumen = new TreeMap<>();
         arqueo.porMedio().forEach((medio, acumulado) ->
-                resumen.put(medio.name(), new TotalMedio(acumulado.cantidad(), acumulado.total())));
+                resumen.put(medio.name(), new TotalMedioDTO(acumulado.cantidad(), acumulado.total())));
         return resumen;
     }
 }

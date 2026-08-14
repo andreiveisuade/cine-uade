@@ -2,6 +2,8 @@ package ar.uade.cine.api;
 
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.usuarios.Empleado;
+import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
+import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
 
 /**
  * Las personas, en la forma que espera el front. No necesita ningún gestor: un cliente y
@@ -9,18 +11,11 @@ import ar.uade.cine.dominio.usuarios.Empleado;
  */
 public class VistasUsuarios {
 
-    public record ClienteVista(int id, String nombre, String email) {
+    public ClienteVistaDTO cliente(Cliente c) {
+        return new ClienteVistaDTO(c.getId(), c.getNombre(), c.getEmail());
     }
 
-    /** El empleado que devuelve el login: sin el hash de la contraseña. */
-    public record EmpleadoVista(int id, String nombre, String email, String rol) {
-    }
-
-    public ClienteVista cliente(Cliente c) {
-        return new ClienteVista(c.getId(), c.getNombre(), c.getEmail());
-    }
-
-    public EmpleadoVista empleado(Empleado e) {
-        return new EmpleadoVista(e.getId(), e.getNombre(), e.getEmail(), e.getRol().name());
+    public EmpleadoVistaDTO empleado(Empleado e) {
+        return new EmpleadoVistaDTO(e.getId(), e.getNombre(), e.getEmail(), e.getRol().name());
     }
 }

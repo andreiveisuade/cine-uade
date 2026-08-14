@@ -10,6 +10,10 @@ import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dto.catalogos.ClasificacionVistaDTO;
+import ar.uade.cine.dto.catalogos.MedioPagoVistaDTO;
+import ar.uade.cine.dto.catalogos.TarifaVistaDTO;
+import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
 import io.javalin.Javalin;
 
 /**
@@ -23,27 +27,15 @@ import io.javalin.Javalin;
  */
 class RutasCatalogos {
 
-    record ClasificacionVista(String nombre, int edadMinima) {
-    }
-
-    record TipoSalaVista(String nombre, double multiplicador, boolean soportaTresD) {
-    }
-
-    record MedioPagoVista(String nombre, boolean requiereAutorizacion) {
-    }
-
-    record TarifaVista(String nombre, double multiplicador, boolean requiereAcreditacion) {
-    }
-
     static void registrar(Javalin app) {
         app.get("/api/generos", ctx -> ctx.json(nombres(Genero.values())));
 
         app.get("/api/clasificaciones", ctx -> ctx.json(Arrays.stream(Clasificacion.values())
-                .map(c -> new ClasificacionVista(c.name(), c.getEdadMinima()))
+                .map(c -> new ClasificacionVistaDTO(c.name(), c.getEdadMinima()))
                 .toList()));
 
         app.get("/api/tipos-sala", ctx -> ctx.json(Arrays.stream(TipoSala.values())
-                .map(t -> new TipoSalaVista(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD()))
+                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD()))
                 .toList()));
 
         // El enum se llama Version en el dominio: es cómo se escucha esta copia, no el
@@ -53,7 +45,7 @@ class RutasCatalogos {
         app.get("/api/proyecciones", ctx -> ctx.json(nombres(Proyeccion.values())));
 
         app.get("/api/medios-pago", ctx -> ctx.json(Arrays.stream(MedioPago.values())
-                .map(m -> new MedioPagoVista(m.name(), m.requiereAutorizacion()))
+                .map(m -> new MedioPagoVistaDTO(m.name(), m.requiereAutorizacion()))
                 .toList()));
 
         // El multiplicador va porque el front muestra el precio de cada butaca antes de
@@ -61,7 +53,7 @@ class RutasCatalogos {
         // fuentes de verdad para lo mismo. requiereAcreditacion es lo que le permite
         // avisar "traé el carnet" al elegir la tarifa, y no recién en la puerta.
         app.get("/api/tarifas", ctx -> ctx.json(Arrays.stream(TipoTarifa.values())
-                .map(t -> new TarifaVista(t.name(), t.getMultiplicadorPrecio(), t.requiereAcreditacion()))
+                .map(t -> new TarifaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.requiereAcreditacion()))
                 .toList()));
     }
 

@@ -3,6 +3,7 @@ package ar.uade.cine.api;
 import java.util.Optional;
 
 import ar.uade.cine.dominio.usuarios.Cliente;
+import ar.uade.cine.dto.usuarios.PedidoClienteDTO;
 import ar.uade.cine.servicio.GestorClientes;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -12,9 +13,6 @@ import io.javalin.http.HttpStatus;
  * por primera vez. Son dos caminos al mismo alta, no un paso previo del otro.
  */
 class RutasClientes {
-
-    record PedidoCliente(String nombre, String email) {
-    }
 
     static void registrar(Javalin app, GestorClientes clientes, VistasUsuarios vistas) {
 
@@ -33,7 +31,7 @@ class RutasClientes {
         });
 
         app.post("/api/clientes", ctx -> {
-            PedidoCliente pedido = ctx.bodyAsClass(PedidoCliente.class);
+            PedidoClienteDTO pedido = ctx.bodyAsClass(PedidoClienteDTO.class);
             Cliente cliente = clientes.registrar(pedido.nombre(), pedido.email());
             ctx.status(HttpStatus.CREATED).json(vistas.cliente(cliente));
         });

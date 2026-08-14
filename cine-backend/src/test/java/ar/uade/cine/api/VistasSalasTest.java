@@ -13,8 +13,6 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ar.uade.cine.api.VistasSalas.AsientoVista;
-import ar.uade.cine.api.VistasSalas.SalaVista;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.funciones.Funcion;
@@ -25,16 +23,18 @@ import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dto.salas.AsientoVistaDTO;
+import ar.uade.cine.dto.salas.SalaVistaDTO;
+import ar.uade.cine.persistencia.AsientoDAO;
+import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ProgramacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ReservaDAOMemoria;
 import ar.uade.cine.persistencia.memoria.SalaDAOMemoria;
-import ar.uade.cine.persistencia.AsientoDAO;
-import ar.uade.cine.persistencia.FuncionDAO;
-import ar.uade.cine.persistencia.PeliculaDAO;
-import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.servicio.CalculadoraPrecio;
 import ar.uade.cine.servicio.GestorCartelera;
 import ar.uade.cine.servicio.GestorFunciones;
@@ -77,7 +77,7 @@ class VistasSalasTest {
      */
     @Test
     void laDistribucionSeDerivaDeLasButacasQueExisten() {
-        SalaVista vista = vistas.sala(salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3, 5, 2)));
+        SalaVistaDTO vista = vistas.sala(salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3, 5, 2)));
 
         assertEquals(List.of(3, 5, 2), vista.butacasPorFila());
         assertEquals(3, vista.filas());
@@ -95,7 +95,7 @@ class VistasSalasTest {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(2, 2),
                 Map.of("A1", TipoAsiento.VIP));
 
-        SalaVista vista = vistas.salaConButacas(sala);
+        SalaVistaDTO vista = vistas.salaConButacas(sala);
 
         assertEquals(4, vista.asientos().size());
         assertEquals("VIP", butaca(vista, "A1").tipo());
@@ -112,7 +112,7 @@ class VistasSalasTest {
     void fueraDeUnaFuncionNoSeSabeSiEstaTomadaNiCuantoSale() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(2));
 
-        AsientoVista butaca = butaca(vistas.salaConButacas(sala), "A1");
+        AsientoVistaDTO butaca = butaca(vistas.salaConButacas(sala), "A1");
 
         assertNull(butaca.ocupado());
         assertNull(butaca.precio());
@@ -124,7 +124,7 @@ class VistasSalasTest {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3));
         salas.marcarFueraDeServicio(sala.getId(), "A2");
 
-        SalaVista vista = vistas.salaConButacas(sala);
+        SalaVistaDTO vista = vistas.salaConButacas(sala);
 
         assertEquals(3, vista.asientos().size(), "la butaca rota no desaparece del mapa");
         assertEquals("FUERA_DE_SERVICIO", butaca(vista, "A2").estado());
@@ -188,7 +188,7 @@ class VistasSalasTest {
                 .orElseThrow(() -> new AssertionError("La sala no tiene la butaca " + codigo));
     }
 
-    private static AsientoVista butaca(SalaVista vista, String codigo) {
+    private static AsientoVistaDTO butaca(SalaVistaDTO vista, String codigo) {
         return vista.asientos().stream()
                 .filter(a -> a.codigo().equals(codigo))
                 .findFirst()

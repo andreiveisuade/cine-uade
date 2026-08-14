@@ -14,9 +14,9 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ar.uade.cine.api.VistasPromociones.PromocionVista;
 import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.persistencia.memoria.PromocionDAOMemoria;
 import ar.uade.cine.servicio.GestorPromociones;
 
@@ -46,7 +46,7 @@ class VistasPromocionesTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(DayOfWeek.TUESDAY), null, null, Set.of());
 
-        PromocionVista vista = vistas.promocion(promocion);
+        PromocionVistaDTO vista = vistas.promocion(promocion);
 
         assertEquals("PORCENTAJE", vista.tipo());
         assertEquals(30.0, vista.porcentaje());
@@ -61,7 +61,7 @@ class VistasPromocionesTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of());
 
-        PromocionVista vista = vistas.promocion(promocion);
+        PromocionVistaDTO vista = vistas.promocion(promocion);
 
         assertEquals("MONTO_FIJO", vista.tipo());
         assertEquals(2000.0, vista.monto());
@@ -74,7 +74,7 @@ class VistasPromocionesTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of());
 
-        PromocionVista vista = vistas.promocion(promocion);
+        PromocionVistaDTO vista = vistas.promocion(promocion);
 
         assertEquals("NXM", vista.tipo());
         assertEquals(2, vista.lleva());
@@ -93,7 +93,7 @@ class VistasPromocionesTest {
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of());
 
-        PromocionVista vista = vistas.promocion(promocion);
+        PromocionVistaDTO vista = vistas.promocion(promocion);
 
         assertEquals(List.of(), vista.diasSemana());
         assertEquals(List.of(), vista.mediosPago());
@@ -108,7 +108,7 @@ class VistasPromocionesTest {
                 Set.of(DayOfWeek.FRIDAY), LocalTime.of(22, 0), LocalTime.of(23, 59),
                 Set.of(MedioPago.EFECTIVO));
 
-        PromocionVista vista = vistas.promocion(promocion);
+        PromocionVistaDTO vista = vistas.promocion(promocion);
 
         assertEquals("2026-03-01", vista.vigenciaDesde());
         assertEquals("2026-03-31", vista.vigenciaHasta());

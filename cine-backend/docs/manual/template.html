@@ -417,6 +417,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#pagos" data-target="pagos">Pagos</a></li>
         <li><a href="#precios" data-target="precios">Precios y promociones</a></li>
@@ -1445,6 +1446,82 @@ GET /api/programaciones?activa=true</code></pre>
         cruza datos de cuatro tablas (el nombre del cliente, el título de la película, los códigos de butaca),
         y escribir ese <code>JOIN</code> a mano dejaría el criterio partido entre el gestor y una cadena de
         SQL, que es justo lo que el patrón DAO viene a evitar.
+      </p>
+    </section>
+
+    <section class="doc-section" id="dto">
+      <h2>El patrón DTO</h2>
+      <p>
+        DTO significa <em>Data Transfer Object</em>. Es un objeto que existe solo para llevar datos de un lado
+        al otro de una frontera —acá, la que separa al backend del navegador—, sin comportamiento propio. En
+        este proyecto son <strong>41</strong>, viven en <code>ar.uade.cine.dto</code> y hay exactamente uno por
+        forma de JSON que la API acepta o devuelve.
+      </p>
+
+      <h3>Qué problema resuelve</h3>
+      <p>
+        La alternativa era serializar las entidades del dominio directamente: mandar la <code>Pelicula</code> tal
+        cual y que Jackson la convierta. Funciona, y es lo que rompe más tarde. El contrato HTTP quedaría atado a
+        cómo está hecha la entidad por dentro: renombrar un atributo privado, agregar un campo que el front no
+        tiene por qué ver, o cambiar un enum por otro tipo pasaría a ser un cambio incompatible para el cliente.
+        Con un DTO en el medio, el dominio evoluciona por sus razones y el contrato por las suyas.
+      </p>
+      <p>
+        Hay además cosas que la entidad no puede dar sola. Una función arrastra la sala donde va, la película que
+        proyecta, el precio de cada butaca y cuáles están tomadas: nada de eso vive en <code>Funcion</code>. El
+        DTO es lo único que puede tener las cuatro cosas juntas sin obligar a la entidad a conocerlas.
+      </p>
+
+      <h3>Entran y salen, y el nombre lo dice</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Familia</th><th>Dirección</th><th>Cómo son sus campos</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Pedido*DTO</code></td>
+              <td>Lo que entra: el cuerpo del <code>POST</code> o el <code>PUT</code></td>
+              <td>Todos objeto y no primitiva (<code>Integer</code>, no <code>int</code>): un campo ausente tiene
+                  que poder llegar en <code>null</code>, porque es lo que el gestor lee como «no lo mandé» y lo
+                  que dispara <em>su</em> mensaje de error y no uno inventado por la capa HTTP</td>
+            </tr>
+            <tr>
+              <td><code>*VistaDTO</code></td>
+              <td>Lo que sale: la respuesta</td>
+              <td>Primitivas, porque el dato ya existe. Los opcionales llevan
+                  <code>@JsonInclude(NON_NULL)</code> y desaparecen del JSON en vez de viajar vacíos</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Los subpaquetes espejan al dominio</h3>
+      <p>
+        <code>dto/</code> se divide igual que <code>dominio/</code>: <code>cartelera</code>,
+        <code>funciones</code>, <code>programaciones</code>, <code>salas</code>, <code>ventas</code>,
+        <code>candy</code>, <code>promociones</code> y <code>usuarios</code>, más <code>catalogos</code> para los
+        enums que el front pide para armar sus formularios. De qué entidad viene cada forma del JSON se lee en la
+        ruta del archivo, sin abrirlo. El único suelto en la raíz es <code>ErrorVistaDTO</code>, que no pertenece
+        a ninguna familia: es la forma de cualquier error, sea 400, 404 o 500.
+      </p>
+
+      <h3>El DTO no se arma solo</h3>
+      <p>
+        Quien los construye son las seis clases <code>Vistas*</code> de <code>api/</code>, que son los
+        <strong>ensambladores</strong>: van a buscarle a los gestores lo que el DTO necesita y no vive en una sola
+        entidad. <code>VistasVentas</code> es el caso extremo —seis gestores— y no por desprolijidad: el ticket
+        muestra qué película, en qué sala, a qué hora, de quién y si ya se pagó, y cada dato vive en un lado
+        distinto.
+      </p>
+      <p>
+        Es a propósito que esa lógica no esté adentro del DTO. Un DTO que se supiera armar solo tendría que
+        conocer los gestores, y entonces la clase que existe para transportar datos pasaría a depender de la capa
+        de negocio: exactamente la mezcla que el patrón viene a evitar. Por eso los 41 son <code>record</code> sin
+        un solo método propio.
+      </p>
+      <p>
+        La única excepción es <code>RutasProgramaciones</code>, que arma sus DTO adentro de la ruta en vez de
+        delegar en un <code>Vistas*</code>: una programación se dibuja sola —no necesita preguntarle nada a otro
+        gestor para completarse—, así que darle un ensamblador propio sería una indirección sin nada a cambio.
       </p>
     </section>
 
@@ -3464,6 +3541,9 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   ├── seguridad/          Password
     │   ├── ui/                 Consola, Menu + un Menu* por área, MapaDeButacas
     │   ├── api/                HTTP: ServidorApi + 10 Rutas*, 6 Vistas*, Parseo, Fechas
+    │   ├── dto/                los 41 DTO, uno por forma de JSON. Subpaquetes que
+    │   │                       espejan dominio/: cartelera, funciones, programaciones,
+    │   │                       salas, ventas, candy, promociones, usuarios, catalogos
     │   ├── Aplicacion.java     el único lugar que elige implementaciones
     │   └── Main.java           abre la consola
     ├── main/resources/     schema.sql
@@ -3667,6 +3747,11 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>record</code> en los value objects</td>
               <td>Interfaz + <code>Impl</code> también acá</td>
               <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>DTO propios en <code>dto/</code></td>
+              <td>Serializar las entidades del dominio</td>
+              <td>Mandar la entidad tal cual ata el contrato HTTP a cómo está hecha por dentro: renombrar un atributo privado rompería al front. Además una función arrastra sala, película, precios y butacas tomadas, que no viven en <code>Funcion</code></td>
             </tr>
             <tr>
               <td>Validar antes de borrar (R12)</td>

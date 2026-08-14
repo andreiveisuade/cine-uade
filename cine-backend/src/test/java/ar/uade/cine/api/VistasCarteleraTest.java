@@ -17,8 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.Aplicacion;
-import ar.uade.cine.api.VistasCartelera.FuncionVista;
-import ar.uade.cine.api.VistasCartelera.PeliculaVista;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
@@ -32,6 +30,9 @@ import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.salas.TipoAsiento;
 import ar.uade.cine.dominio.salas.TipoSala;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
+import ar.uade.cine.dto.funciones.FuncionVistaDTO;
+import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -84,7 +85,7 @@ class VistasCarteleraTest {
                 .agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION),
                         Clasificacion.MAS_13);
 
-        PeliculaVista vista = vistas.pelicula(matrix);
+        PeliculaVistaDTO vista = vistas.pelicula(matrix);
 
         assertEquals("Matrix", vista.titulo());
         assertEquals(136, vista.duracionMinutos());
@@ -100,7 +101,7 @@ class VistasCarteleraTest {
                 DatosPelicula.deCatalogo("Wachowski", "Un hacker descubre la verdad", 1999,
                         "Inglés", "http://poster.jpg"));
 
-        PeliculaVista vista = vistas.pelicula(completa);
+        PeliculaVistaDTO vista = vistas.pelicula(completa);
 
         assertEquals("Wachowski", vista.director());
         assertEquals(1999, vista.anio());
@@ -116,7 +117,7 @@ class VistasCarteleraTest {
     void laFuncionParaElClienteNoTraeNiPeliculaNiButacas() {
         Funcion funcion = programarUnaFuncion();
 
-        FuncionVista vista = vistas.funcion(funcion);
+        FuncionVistaDTO vista = vistas.funcion(funcion);
 
         assertEquals("Sala 1", vista.sala().nombre());
         assertNull(vista.pelicula());
@@ -128,7 +129,7 @@ class VistasCarteleraTest {
     void laFuncionParaElEncargadoDiceQuePeliculaVa() {
         Funcion funcion = programarUnaFuncion();
 
-        FuncionVista vista = vistas.funcionConPelicula(funcion);
+        FuncionVistaDTO vista = vistas.funcionConPelicula(funcion);
 
         assertEquals("Matrix", vista.pelicula().titulo());
         assertNull(vista.asientos(), "el listado no dibuja el mapa de butacas");
@@ -138,7 +139,7 @@ class VistasCarteleraTest {
     void elMapaDeButacasTraeLaSalaEnteraYCuantosLugaresQuedan() {
         Funcion funcion = programarUnaFuncion();
 
-        FuncionVista vista = vistas.funcionConButacas(funcion);
+        FuncionVistaDTO vista = vistas.funcionConButacas(funcion);
 
         assertEquals(10, vista.asientos().size());
         assertEquals(10, vista.libres());
@@ -157,7 +158,7 @@ class VistasCarteleraTest {
                 aplicacion.getClientes().identificar("Andrei", "andrei@uade.edu.ar").getId(),
                 Map.of("A1", TipoTarifa.GENERAL));
 
-        FuncionVista vista = vistas.funcionConButacas(funcion);
+        FuncionVistaDTO vista = vistas.funcionConButacas(funcion);
 
         assertTrue(butaca(vista, "A1").ocupado());
         assertFalse(butaca(vista, "A2").ocupado());
@@ -178,7 +179,7 @@ class VistasCarteleraTest {
         Funcion funcion = aplicacion.getFunciones().programar(1, imax.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
 
-        FuncionVista vista = vistas.funcion(funcion);
+        FuncionVistaDTO vista = vistas.funcion(funcion);
 
         assertEquals(5000.0, vista.precio(), 0.001, "el precio crudo de la función");
         assertEquals(8000.0, vista.precioDesde(), 0.001, "5000 x 1.6 de IMAX, butaca estándar");
@@ -191,7 +192,7 @@ class VistasCarteleraTest {
 
     @Test
     void laVersionYLaProyeccionViajanComoNombre() {
-        FuncionVista vista = vistas.funcion(programarUnaFuncion());
+        FuncionVistaDTO vista = vistas.funcion(programarUnaFuncion());
 
         assertEquals("SUBTITULADA", vista.idioma());
         assertEquals("DOS_D", vista.proyeccion());
@@ -217,7 +218,7 @@ class VistasCarteleraTest {
         Funcion sinPelicula = new FuncionImpl(99, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
 
-        FuncionVista vista = vistas.funcionConPelicula(sinPelicula);
+        FuncionVistaDTO vista = vistas.funcionConPelicula(sinPelicula);
 
         assertNull(vista.pelicula());
         assertNotNull(vista.sala());
@@ -230,7 +231,7 @@ class VistasCarteleraTest {
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
     }
 
-    private static VistasSalas.AsientoVista butaca(FuncionVista vista, String codigo) {
+    private static AsientoVistaDTO butaca(FuncionVistaDTO vista, String codigo) {
         return vista.asientos().stream()
                 .filter(a -> a.codigo().equals(codigo))
                 .findFirst()

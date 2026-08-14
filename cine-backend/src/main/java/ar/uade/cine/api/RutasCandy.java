@@ -2,12 +2,16 @@ package ar.uade.cine.api;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.dominio.candy.TipoProducto;
 import ar.uade.cine.dominio.ventas.MedioPago;
+import ar.uade.cine.dto.candy.ArqueoCandyVistaDTO;
+import ar.uade.cine.dto.candy.PedidoComboDTO;
+import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;
+import ar.uade.cine.dto.candy.PedidoProductoDTO;
+import ar.uade.cine.dto.candy.PedidoVentaDTO;
 import ar.uade.cine.servicio.GestorCandy;
 import ar.uade.cine.servicio.GestorProductos;
 import io.javalin.Javalin;
@@ -25,26 +29,6 @@ import io.javalin.http.HttpStatus;
  */
 class RutasCandy {
 
-    /** Alta de un producto suelto. Un combo va por su propio endpoint. */
-    record PedidoProducto(String nombre, String tipo, Double precio) {
-    }
-
-    /** {@code componentes} es id de producto a cuántas unidades trae el combo. */
-    record PedidoCombo(String nombre, Double precio, Map<Integer, Integer> componentes) {
-    }
-
-    /**
-     * {@code cantidades} es id de producto a unidades. {@code clienteId} y {@code reservaId}
-     * son los dos opcionales: sin ninguno es una venta de mostrador, y con reserva el
-     * cliente sale de ella.
-     */
-    record PedidoVenta(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
-                       String medio, String codigoAutorizacion) {
-    }
-
-    record PedidoDisponibilidad(Boolean disponible) {
-    }
-
     static void registrar(Javalin app, GestorCandy candy, GestorProductos carta, VistasCandy vistas) {
 
         // La carta que ve el cliente: solo lo que está a la venta.
@@ -58,7 +42,7 @@ class RutasCandy {
                 ctx.json(vistas.producto(buscar(carta, Parseo.id(ctx)))));
 
         app.post("/api/candy/productos", ctx -> {
-            PedidoProducto pedido = ctx.bodyAsClass(PedidoProducto.class);
+            PedidoProductoDTO pedido = ctx.bodyAsClass(PedidoProductoDTO.class);
             Producto producto = carta.agregar(pedido.nombre(),
                     pedido.tipo() == null
                             ? null : Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
@@ -69,7 +53,7 @@ class RutasCandy {
         // R14: el combo tiene que salir menos que sus componentes sueltos, y eso lo valida
         // el gestor contra la lista de precios.
         app.post("/api/candy/combos", ctx -> {
-            PedidoCombo pedido = ctx.bodyAsClass(PedidoCombo.class);
+            PedidoComboDTO pedido = ctx.bodyAsClass(PedidoComboDTO.class);
             Producto combo = carta.armarCombo(pedido.nombre(),
                     pedido.precio() == null ? 0 : pedido.precio(), pedido.componentes());
             ctx.status(HttpStatus.CREATED).json(vistas.producto(combo));
@@ -80,7 +64,7 @@ class RutasCandy {
         app.put("/api/candy/productos/{id}/disponibilidad", ctx -> {
             int id = Parseo.id(ctx);
             buscar(carta, id);
-            Boolean disponible = ctx.bodyAsClass(PedidoDisponibilidad.class).disponible();
+            Boolean disponible = ctx.bodyAsClass(PedidoDisponibilidadDTO.class).disponible();
             if (disponible == null) {
                 throw new IllegalArgumentException("Falta decir si el producto queda disponible");
             }
@@ -89,7 +73,7 @@ class RutasCandy {
         });
 
         app.post("/api/candy/compras", ctx -> {
-            PedidoVenta pedido = ctx.bodyAsClass(PedidoVenta.class);
+            PedidoVentaDTO pedido = ctx.bodyAsClass(PedidoVentaDTO.class);
             MedioPago medio = pedido.medio() == null
                     ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
 
@@ -115,14 +99,11 @@ class RutasCandy {
 
         app.get("/api/candy/arqueo", ctx -> {
             LocalDate fecha = Parseo.dia(ctx.queryParam("fecha"), "la fecha");
-            ctx.json(new ArqueoCandyVista(fecha.toString(), candy.totalVendido(fecha),
+            ctx.json(new ArqueoCandyVistaDTO(fecha.toString(), candy.totalVendido(fecha),
                     candy.listarComprasDelDia(fecha).stream()
                             .map(c -> vistas.compra(c, carta.ahorroDe(c)))
                             .toList()));
         });
-    }
-
-    record ArqueoCandyVista(String fecha, double total, List<VistasCandy.CompraCandyVista> compras) {
     }
 
     private static Producto buscar(GestorProductos carta, int id) {

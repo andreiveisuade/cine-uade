@@ -5,6 +5,7 @@ import java.util.Comparator;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
+import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.servicio.GestorFunciones;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -15,10 +16,6 @@ import io.javalin.http.HttpStatus;
  * calculado y si está tomado en esa proyección.
  */
 class RutasFunciones {
-
-    record PedidoFuncion(Integer peliculaId, Integer salaId, String inicio, String idioma,
-                         String proyeccion, Double precio) {
-    }
 
     static void registrar(Javalin app, GestorFunciones funciones, VistasCartelera vistas) {
 
@@ -39,7 +36,7 @@ class RutasFunciones {
                 ctx.json(vistas.funcionConButacas(buscar(funciones, Parseo.id(ctx)))));
 
         app.post("/api/funciones", ctx -> {
-            PedidoFuncion pedido = ctx.bodyAsClass(PedidoFuncion.class);
+            PedidoFuncionDTO pedido = ctx.bodyAsClass(PedidoFuncionDTO.class);
             Funcion funcion = funciones.programar(
                     pedido.peliculaId() == null ? 0 : pedido.peliculaId(),
                     pedido.salaId() == null ? 0 : pedido.salaId(),

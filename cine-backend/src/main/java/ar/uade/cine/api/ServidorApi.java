@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import ar.uade.cine.Aplicacion;
+import ar.uade.cine.dto.ErrorVistaDTO;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.persistencia.PersistenciaException;
 import io.javalin.Javalin;
@@ -29,10 +30,6 @@ public class ServidorApi {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServidorApi.class);
     private static final int PUERTO_POR_DEFECTO = 8080;
-
-    /** La forma de cualquier error, sea 400, 404 o 500. */
-    record ErrorVista(String error) {
-    }
 
     public static void main(String[] args) {
         Aplicacion aplicacion = Aplicacion.enMySQL();
@@ -111,14 +108,14 @@ public class ServidorApi {
 
         app.error(HttpStatus.NOT_FOUND, ctx -> {
             if (ctx.attribute("respondido") == null) {
-                ctx.json(new ErrorVista("No existe la ruta " + ctx.path()));
+                ctx.json(new ErrorVistaDTO("No existe la ruta " + ctx.path()));
             }
         });
     }
 
     private static void responder(io.javalin.http.Context ctx, HttpStatus estado, String mensaje) {
         ctx.attribute("respondido", true);
-        ctx.status(estado).json(new ErrorVista(mensaje));
+        ctx.status(estado).json(new ErrorVistaDTO(mensaje));
     }
 
     private static int puerto() {
