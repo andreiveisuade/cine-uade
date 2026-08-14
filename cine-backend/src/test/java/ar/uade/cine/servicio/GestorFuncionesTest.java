@@ -33,6 +33,7 @@ import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
@@ -178,7 +179,8 @@ class GestorFuncionesTest {
     void noSeBorraUnaFuncionConReservas() {
         GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
                 clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new CalculadoraPrecio(), new Ocupacion(reservaDAO, funcionDAO, asientoDAO));
+                new CalculadoraPrecio(),
+                new Ocupacion(reservaDAO, funcionDAO, asientoDAO, new BloqueoButacasMemoria()));
         new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"));
 

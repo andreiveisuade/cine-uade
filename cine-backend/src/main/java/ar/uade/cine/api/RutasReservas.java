@@ -9,22 +9,29 @@ import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoAccesoDTO;
+import ar.uade.cine.dto.ventas.PedidoBloqueoDTO;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.servicio.CriteriosReserva;
 import ar.uade.cine.servicio.GestorClientes;
 import ar.uade.cine.servicio.GestorReservas;
+import ar.uade.cine.servicio.Ocupacion;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
 
 /**
  * Reservar, consultar y cancelar. El cliente no inicia sesión: se identifica con su
  * email, y si es la primera vez que compra se lo da de alta en el momento.
+ *
+ * <p>El bloqueo de butacas cuelga de la función porque son sus butacas las que se toman,
+ * pero se registra acá y no en {@link RutasFunciones}: es la primera etapa del circuito de
+ * compra, no una operación sobre la programación.
  */
 class RutasReservas {
 
     static void registrar(Javalin app, GestorReservas reservas, GestorClientes clientes,
-                          VistasVentas vistas) {
+                          Ocupacion ocupacion, VistasVentas vistas) {
 
         // Sin email es el listado del encargado; con email, las reservas de ese cliente.
         // El listado, con los filtros del panel como query params. Que el criterio viaje
@@ -63,8 +70,33 @@ class RutasReservas {
             Reserva reserva = reservas.reservar(
                     pedido.funcionId() == null ? 0 : pedido.funcionId(),
                     cliente.getId(),
-                    butacasPedidas(pedido));
+                    butacasPedidas(pedido),
+                    pedido.sesion());
             ctx.status(HttpStatus.CREATED).json(vistas.reserva(reserva));
+        });
+
+        /*
+         * La etapa de antes de la reserva: mientras alguien elige, sus butacas dejan de
+         * aparecer libres para el resto. Vence solo, así que cerrar la pestaña las devuelve
+         * a la venta sin que nadie avise.
+         *
+         * Es POST y no PUT aunque sea idempotente porque no crea ni reemplaza un recurso
+         * con URL propia: no hay un `GET /api/funciones/1/bloqueos/xxx` que devuelva esto.
+         * Se manda la selección entera —y `butacas: []` para soltar todo— para que una sola
+         * llamada por click alcance para tomar, renovar y soltar.
+         */
+        app.post("/api/funciones/{id}/bloqueos", ctx -> {
+            PedidoBloqueoDTO pedido = ctx.bodyAsClass(PedidoBloqueoDTO.class);
+            int funcionId = Parseo.id(ctx);
+            List<String> pedidas = pedido.butacas() == null ? List.of() : pedido.butacas();
+            List<String> conseguidas = ocupacion.bloquear(funcionId, pedidas, pedido.sesion());
+            // Las que se escaparon van aparte y no como error: las otras sí se consiguieron.
+            List<String> rechazadas = pedidas.stream()
+                    .map(codigo -> codigo.trim().toUpperCase())
+                    .filter(codigo -> !conseguidas.contains(codigo))
+                    .toList();
+            ctx.json(new BloqueoVistaDTO(pedido.sesion(), conseguidas, rechazadas,
+                    Ocupacion.MIENTRAS_ELIGE.toSeconds()));
         });
 
         /*

@@ -34,6 +34,7 @@ import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
+import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.EmpleadoDAOMemoria;
@@ -69,6 +70,7 @@ class VistasCarteleraTest {
                 new ReservaDAOMemoria(), new PagoDAOMemoria(),
                 new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
                 new CompraCandyDAOMemoria(),
+                new BloqueoButacasMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
 

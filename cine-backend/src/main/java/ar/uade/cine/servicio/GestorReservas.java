@@ -85,6 +85,18 @@ public class GestorReservas {
     }
 
     /**
+     * Reservar sin sesión previa: elegir y confirmar son un solo acto.
+     *
+     * <p>Es lo que pasa en la boletería y en el menú de consola, donde el que atiende
+     * escribe las butacas y confirma en la misma operación: no hay una etapa de "estoy
+     * mirando el mapa" que haya que proteger. Existe como sobrecarga y no como un
+     * {@code null} en la llamada para que ese caso quede escrito y no parezca un olvido.
+     */
+    public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
+        return reservar(funcionId, clienteId, butacas, null);
+    }
+
+    /**
      * Crea la reserva con las butacas elegidas y emite el ticket.
      *
      * <p>Las butacas vienen como código a tarifa porque la tarifa es por persona: en una
@@ -93,8 +105,11 @@ public class GestorReservas {
      * en vez de un error que hay que validar.
      *
      * @param butacas código de butaca a tarifa de quien la ocupa
+     * @param sesion  quién viene eligiendo estas butacas, para que su propio bloqueo no le
+     *                rechace la reserva. Sin sesión, cualquier butaca bloqueada está tomada
      */
-    public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
+    public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas,
+                            String sesion) {
         Funcion funcion = buscarFuncion(funcionId);
         // R19: una función que ya arrancó no se vende. Va antes que todo lo demás porque
         // ninguna de las otras validaciones tiene sentido si la película ya está dada:
@@ -111,7 +126,7 @@ public class GestorReservas {
         Sala sala = salaDAO.buscarPorId(funcion.getSalaId())
                 .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + funcion.getSalaId()));
         List<Asiento> deLaSala = asientoDAO.listarPorSala(funcion.getSalaId());
-        Set<Integer> ocupados = ocupacion.asientosOcupados(funcionId);
+        Set<Integer> ocupados = ocupacion.asientosOcupados(funcionId, sesion);
 
         List<Entrada> entradas = new ArrayList<>();
         for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
@@ -138,6 +153,12 @@ public class GestorReservas {
 
         Reserva reserva = new ReservaImpl(funcionId, clienteId, entradas, LocalDateTime.now());
         reservaDAO.guardar(reserva);
+        // Guardada la reserva, el bloqueo cumplió su etapa: de acá en adelante la butaca la
+        // retiene la reserva, que es la que sale en el mapa y la que sostiene el UNIQUE.
+        // Suelta también las que la persona miró y no compró, porque la compra terminó.
+        if (sesion != null) {
+            ocupacion.liberar(funcionId, sesion);
+        }
         // El detalle por butaca y no solo el total: cuando haya que explicar por qué esta
         // reserva salió lo que salió, la tarifa de cada una es la mitad de la respuesta.
         LOG.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,

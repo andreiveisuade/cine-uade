@@ -32,8 +32,11 @@ class RutasFunciones {
                         .map(vistas::funcionConPelicula)
                         .toList()));
 
+        // `sesion` es opcional y solo cambia una cosa: las butacas que esa sesión tiene
+        // bloqueadas mientras elige no le vuelven marcadas como ocupadas a ella misma.
         app.get("/api/funciones/{id}", ctx ->
-                ctx.json(vistas.funcionConButacas(buscar(funciones, Parseo.id(ctx)))));
+                ctx.json(vistas.funcionConButacas(buscar(funciones, Parseo.id(ctx)),
+                        ctx.queryParam("sesion"))));
 
         app.post("/api/funciones", ctx -> {
             PedidoFuncionDTO pedido = ctx.bodyAsClass(PedidoFuncionDTO.class);
