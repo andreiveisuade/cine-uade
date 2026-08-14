@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * El único lugar donde se ejecutan de verdad los comandos de Redis. Todo lo demás
- * —{@link ar.uade.cine.servicio.OcupacionTest}— corre contra la implementación en memoria,
+ * —{@link ar.uade.cine.servicio.ventas.OcupacionTest}— corre contra la implementación en memoria,
  * así que los dos scripts Lua de esta clase no tendrían ninguna cobertura sin este test.
  *
  * <p><strong>Se saltea salvo que se le diga contra qué Redis correr.</strong> No usa el
