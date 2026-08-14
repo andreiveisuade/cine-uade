@@ -1985,6 +1985,49 @@ Libres: 52 de 56</code></pre>
           </tbody>
         </table>
       </div>
+
+      <h3>Controlador</h3>
+      <p>
+        Quien recibe el pedido de afuera no lo resuelve: lo traduce y se lo pasa a un objeto de la capa de
+        dominio. Sin esto, la lógica de negocio termina repartida entre la web y el resto del sistema, y deja
+        de poder probarse sin levantar un servidor HTTP.
+      </p>
+      <p>
+        Cada clase <code>Rutas*</code> es ese controlador. <code>RutasReservas.registrar</code> tiene seis
+        endpoints y ninguno decide nada por sí mismo: parsea el pedido, llama a <code>GestorReservas</code> o
+        <code>Ocupacion</code>, y devuelve lo que arma <code>VistasVentas</code>. La única línea de código
+        propio de la clase es <code>butacasPedidas</code>, y ni esa es una regla de negocio: es adaptar la
+        forma del DTO viejo (una lista de códigos) a la nueva (código con tarifa) antes de pasarla para
+        abajo.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Cómo se nota que está bien puesto el corte.</strong> Los 334 tests del sistema corren contra
+          los gestores directamente, sin tocar Javalin ni abrir un puerto. Si una regla de negocio viviera en
+          <code>Rutas*</code>, probarla obligaría a levantar el servidor HTTP entero.
+        </p>
+      </div>
+
+      <h3>Polimorfismo</h3>
+      <p>
+        Cuando el comportamiento varía según el tipo, la decisión no la toma quien pregunta —con un
+        <code>if</code> o un <code>switch</code> por tipo— sino cada tipo por sí mismo.
+      </p>
+      <p>
+        El precio de una butaca combina tres ejes que varían de forma independiente: la tecnología de la sala
+        (<code>TipoSala</code>), la categoría de la butaca (<code>TipoAsiento</code>) y quién compra
+        (<code>TipoTarifa</code>). Los tres enums llevan su propio <code>multiplicadorPrecio</code>, y
+        <code>CalculadoraPrecio.precioDe</code> los combina sin preguntar de cuál se trata:
+      </p>
+      <pre><code>funcion.getPrecio()
+        .por(sala.getTipo().getMultiplicadorPrecio())
+        .por(asiento.getTipo().getMultiplicadorPrecio())
+        .por(tarifa.getMultiplicadorPrecio());</code></pre>
+      <p>
+        Es el mismo mecanismo que ya se vio en OCP con las promociones, aplicado ahora al
+        precio: en todo el sistema no hay un <code>switch</code> que combine sala, butaca y tarifa. Agregar un
+        <code>TipoSala.CUATRO_DX</code> es sumar una constante al enum, no tocar <code>CalculadoraPrecio</code>.
+      </p>
     </section>
 
     <section class="doc-section" id="dao">
