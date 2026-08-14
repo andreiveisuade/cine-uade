@@ -1146,15 +1146,34 @@ body.lightbox-locked { overflow: hidden; }
 
       <h4>Etapa 1: el elenco</h4>
       <p>
-        Un <strong>goloso</strong> que mira puntaje y géneros juntos. En cada vuelta entra la película de
-        mayor <em>valor</em>:
+        Un <strong>goloso</strong> que mira puntaje y géneros juntos. La primera elección es la mejor
+        película a secas; de ahí en adelante entra la de mayor <em>valor</em>:
       </p>
-      <pre><code>valor(p) = puntaje(p) + 2,0 × (géneros de p que todavía no están cubiertos)</code></pre>
+      <pre><code>valor(p) = puntaje(p) + 2,0 × √(géneros de p que todavía no están cubiertos)</code></pre>
       <p>
         Al elegirla, sus géneros pasan a estar cubiertos y las que venían apoyadas en ellos valen menos en
-        la vuelta siguiente. La primera elección es entonces la mejor película a secas, y de ahí en
-        adelante cada una tiene que <em>ganarse</em> el lugar contra lo que ya hay.
+        la vuelta siguiente, así que cada una tiene que <em>ganarse</em> el lugar contra lo que ya hay.
       </p>
+      <div class="callout">
+        <p>
+          <strong>Los dos detalles de esa fórmula los puso el dato real, no el diseño.</strong> La primera
+          versión aplicaba el bono siempre y de forma lineal, y contra el catálogo de TMDB elegía primero a
+          <em>Vaiana</em> —puntaje 7,2— antes que a <em>El Padrino</em> —9,2—. El motivo: Vaiana figura a la
+          vez como acción, animación, ciencia ficción y comedia, cuatro géneros nuevos que con un bono lineal
+          valían ocho puntos, tanto como el puntaje máximo posible.
+        </p>
+        <p>
+          De ahí las dos correcciones. <strong>Con el elenco vacío no hay bono</strong>, porque el bono mide
+          lo que una película <em>agrega</em> a lo ya elegido y al principio no hay nada a lo que agregarle:
+          aplicarlo premiaba a la mejor catalogada, no a la mejor. Y <strong>la raíz</strong> hace que el
+          bono crezca cada vez menos, para que cuatro etiquetas de TMDB no valgan cuatro veces lo que una
+          — los géneros de ahí son generosos, y tenerlos no es lo mismo que aportar esa variedad.
+        </p>
+        <p>
+          Los tests con películas inventadas no lo detectaron: todas tenían uno o dos géneros, que es donde
+          las dos fórmulas dan lo mismo. Apareció al correr el planificador contra la cartelera importada.
+        </p>
+      </div>
       <p>
         Los dos puntos del bono son deliberadamente caros: alcanzan para que una comedia de 7,0 le gane a
         la cuarta película de acción de 8,5 —que es exactamente la decisión que el planificador existe para

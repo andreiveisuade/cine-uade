@@ -125,6 +125,45 @@ class PlanificadorGrillaTest {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
+    /**
+     * El caso que aparece con datos de TMDB y no con películas de test: los géneros de ahí
+     * son generosos, y una película figura a la vez como acción, animación, ciencia ficción
+     * y comedia. Con un bono lineal esas cuatro etiquetas valían ocho puntos y le ganaban a
+     * la mejor del catálogo por estar mejor catalogada, no por ser mejor ni por aportar
+     * cuatro veces más variedad.
+     */
+    @Test
+    void muchosGenerosNoLeGananALaMejorPelicula() {
+        cargar("La mejor", 9.2, Genero.DRAMA, Genero.SUSPENSO);
+        cargar("La etiquetada", 7.2,
+                Genero.ACCION, Genero.ANIMACION, Genero.CIENCIA_FICCION, Genero.COMEDIA);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.proponer(unDia(2));
+
+        assertEquals("La mejor", propuesta.elenco().get(0).getTitulo(),
+                "la primera elección es la mejor película a secas, sin bono de por medio");
+        assertEquals("La etiquetada", propuesta.elenco().get(1).getTitulo(),
+                "y en la segunda vuelta sí pesa la variedad que agrega");
+    }
+
+    /**
+     * El bono crece cada vez menos, pero sigue creciendo: entre dos películas de igual
+     * puntaje, la que aporta más géneros nuevos entra antes.
+     */
+    @Test
+    void aIgualPuntajeEntraLaQueAportaMasGeneros() {
+        cargar("Ancla", 9.5, Genero.DRAMA);
+        cargar("Aporta uno", 7.0, Genero.TERROR);
+        cargar("Aporta tres", 7.0, Genero.ACCION, Genero.COMEDIA, Genero.ROMANCE);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.proponer(unDia(2));
+
+        assertEquals("Ancla", propuesta.elenco().get(0).getTitulo());
+        assertEquals("Aporta tres", propuesta.elenco().get(1).getTitulo());
+    }
+
     @Test
     void noEligeLoQueTodaviaEstaEnElBuzon() {
         cargar("Confirmada", 6.0, Genero.DRAMA);

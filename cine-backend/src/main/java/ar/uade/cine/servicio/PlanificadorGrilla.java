@@ -54,13 +54,21 @@ import ar.uade.cine.servicio.PropuestaGrilla.PaseSugerido;
 public class PlanificadorGrilla {
 
     /**
-     * Cuánto vale, en puntos, que una película traiga un género que todavía no está en el
+     * Cuánto vale, en puntos, que una película traiga géneros que todavía no están en el
      * elenco.
      *
      * <p>Dos puntos sobre diez es deliberadamente caro: alcanza para que una comedia de
      * 7,0 le gane a la cuarta película de acción de 8,5, que es exactamente la decisión
      * que el planificador existe para tomar. Más bajo y la diversidad no se nota; más alto
      * y entra cualquier cosa con tal de tapar un género vacío.
+     *
+     * <p>El bono no es lineal en la cantidad de géneros nuevos sino que <strong>crece cada
+     * vez menos</strong>: el primero vale los dos puntos enteros, el segundo suma menos, el
+     * cuarto casi nada. Lo pide el dato con el que trabajamos: los géneros salen de TMDB y
+     * son generosos —una película figura a la vez como acción, animación, ciencia ficción y
+     * comedia—. Con un bono lineal esa película se llevaría ocho puntos, tanto como el
+     * puntaje máximo posible, y le ganaría a la mejor del catálogo por tener más etiquetas
+     * puestas y no por aportar cuatro veces más variedad.
      */
     private static final double BONO_GENERO_NUEVO = 2.0;
 
@@ -110,11 +118,11 @@ public class PlanificadorGrilla {
     /**
      * Elige el elenco de la semana con un goloso que mira puntaje y géneros a la vez.
      *
-     * <p>En cada vuelta toma la película de mayor <em>valor</em>, donde el valor es su
-     * puntaje más un bono por cada género que todavía no está cubierto. Al elegirla, esos
-     * géneros pasan a estar cubiertos y las que venían apoyadas en ellos valen menos en la
-     * vuelta siguiente. Así la primera elección es la mejor película a secas, y de ahí en
-     * adelante cada una tiene que ganarse el lugar contra lo que ya hay.
+     * <p>La primera elección es la mejor película a secas. De ahí en adelante, cada vuelta
+     * toma la de mayor <em>valor</em>: su puntaje más un bono por los géneros que todavía
+     * no están cubiertos. Al elegirla, esos géneros pasan a estar cubiertos y las que
+     * venían apoyadas en ellos valen menos en la vuelta siguiente, así que cada una tiene
+     * que ganarse el lugar contra lo que ya hay.
      *
      * <p>Un goloso y no la combinación óptima: elegir 8 de 18 son 43.758 combinaciones y
      * evaluarlas todas es posible, pero la diferencia con esto es de decimales y el
@@ -130,8 +138,9 @@ public class PlanificadorGrilla {
         List<Pelicula> elenco = new ArrayList<>();
         Set<Genero> cubiertos = new HashSet<>();
         while (elenco.size() < cuantas && !candidatas.isEmpty()) {
+            Set<Genero> yaCubiertos = Set.copyOf(cubiertos);
             Pelicula mejor = candidatas.stream()
-                    .max(Comparator.comparingDouble((Pelicula p) -> valor(p, cubiertos))
+                    .max(Comparator.comparingDouble((Pelicula p) -> valor(p, yaCubiertos, elenco.isEmpty()))
                             // Desempate por título: sin esto, dos películas con el mismo
                             // valor podrían salir en cualquier orden y la propuesta dejaría
                             // de ser reproducible.
@@ -144,9 +153,26 @@ public class PlanificadorGrilla {
         return elenco;
     }
 
-    private double valor(Pelicula pelicula, Set<Genero> cubiertos) {
+    /**
+     * Cuánto vale esta película <em>ahora</em>, con este elenco a medio armar.
+     *
+     * <p>Con el elenco vacío no hay bono, y no es un caso borde: el bono mide cuánta
+     * variedad <em>agrega</em> una película a lo que ya se eligió, y cuando no se eligió
+     * nada todavía no hay nada a lo que agregarle. Aplicarlo igual premiaría a la película
+     * con más etiquetas de TMDB, que es una propiedad de cómo está catalogada y no del
+     * aporte que hace. Así la primera elección es la mejor película a secas, y de ahí en
+     * adelante cada una tiene que ganarse el lugar contra lo que ya hay.
+     *
+     * <p>La raíz es lo que hace que el bono crezca cada vez menos. Sin ella, dos géneros
+     * nuevos valen el doble que uno y cuatro el cuádruple, que es exactamente la cuenta que
+     * no queremos.
+     */
+    private double valor(Pelicula pelicula, Set<Genero> cubiertos, boolean primera) {
+        if (primera) {
+            return pelicula.getPuntaje();
+        }
         long nuevos = pelicula.getGeneros().stream().filter(g -> !cubiertos.contains(g)).count();
-        return pelicula.getPuntaje() + BONO_GENERO_NUEVO * nuevos;
+        return pelicula.getPuntaje() + BONO_GENERO_NUEVO * Math.sqrt(nuevos);
     }
 
     // ---------- etapa 2: dónde y cuándo ----------
