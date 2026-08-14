@@ -188,14 +188,23 @@ public class PlanificadorGrilla {
      * público no valora igual.
      *
      * <p>Los huecos que ya están ocupados no se saltean en silencio: si la sala tiene una
-     * función cargada, {@code superpuestaEn} la detecta y el planificador avanza al
-     * horario siguiente. Es la misma regla R3 de siempre, preguntada y no reescrita.
+     * función cargada, la agenda la detecta y el planificador avanza al horario siguiente.
+     * Es la misma regla R3 de siempre, preguntada y no reescrita — la agenda se la pide a
+     * {@link GestorFunciones#agendaDe}, que la arma con los tramos ya calculados.
+     *
+     * <p>La agenda se lee <strong>una vez por sala</strong> y no en cada intento. Con
+     * {@code superpuestaEn} por hueco, una propuesta de una semana hacía miles de consultas
+     * repetidas y tardaba más de veinte segundos contra MySQL. La regla no cambió; cambió
+     * cuántas veces se va a buscar el mismo dato.
      */
     private List<PaseSugerido> repartir(List<Pelicula> elenco, CriteriosGrilla criterios) {
         List<Sala> salas = salaDAO.listar();
         List<PaseSugerido> pases = new ArrayList<>();
         Map<Integer, Integer> asignados = new HashMap<>();
         elenco.forEach(p -> asignados.put(p.getId(), 0));
+
+        Map<Integer, AgendaDeSala> agendas = new HashMap<>();
+        salas.forEach(sala -> agendas.put(sala.getId(), funciones.agendaDe(sala.getId())));
 
         for (int dia = 0; dia < criterios.dias(); dia++) {
             LocalDate fecha = criterios.desde().plusDays(dia);
@@ -212,7 +221,7 @@ public class PlanificadorGrilla {
                         // último turno del día siempre para la película de menor duración.
                         break;
                     }
-                    if (funciones.superpuestaEn(sala.getId(), momento, fin).isPresent()) {
+                    if (agendas.get(sala.getId()).chocaEn(momento, fin)) {
                         momento = momento.plusMinutes(30);
                         continue;
                     }

@@ -1207,10 +1207,31 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <p>
         <strong>No reescribe R3.</strong> Antes de proponer cada pase le pregunta a
-        <code>GestorFunciones.superpuestaEn</code> si la sala está libre, con la limpieza incluida — igual
-        que hace <code>GestorProgramaciones</code>. Por eso una grilla propuesta sobre salas que ya tienen
-        funciones cargadas a mano las respeta en vez de pisarlas.
+        <code>GestorFunciones</code> si la sala está libre, con la limpieza incluida — igual que hace
+        <code>GestorProgramaciones</code>. Por eso una grilla propuesta sobre salas que ya tienen funciones
+        cargadas a mano las respeta en vez de pisarlas.
       </p>
+      <div class="callout">
+        <p>
+          <strong>Pero se la pregunta una vez por sala, no una vez por hueco.</strong> La primera versión
+          llamaba a <code>superpuestaEn</code> en cada intento de horario, y ese método relee las funciones de
+          la sala y la duración de cada película <em>en cada llamada</em>. Seis salas por siete días por una
+          decena de intentos diarios daba unas trece mil consultas repetidas: <strong>veintiún segundos</strong>
+          para armar una semana. Medido contra MySQL, no estimado.
+        </p>
+        <p>
+          <code>agendaDe(salaId)</code> devuelve los tramos ya tomados de una sala, leídos una sola vez y con la
+          limpieza ya sumada. El planificador compara contra eso en memoria. La misma corrida pasó a
+          <strong>0,6 segundos</strong> —treinta y cinco veces más rápido— y devuelve exactamente la misma
+          grilla: mismos pases, mismo elenco, mismos indicadores.
+        </p>
+        <p>
+          Lo que <em>no</em> cambió es dónde vive la regla. Quién decide si dos rangos se pisan sigue siendo
+          <code>GestorFunciones</code>, que es el que arma la agenda; <code>AgendaDeSala</code> solo compara
+          números que otro calculó. Mover la regla al planificador habría sido más rápido de escribir y habría
+          dejado dos definiciones de R3 — que es exactamente lo que el sistema evita en todos lados.
+        </p>
+      </div>
 
       <h4>Los indicadores, o por qué esto es planificación y no un botón mágico</h4>
       <p>

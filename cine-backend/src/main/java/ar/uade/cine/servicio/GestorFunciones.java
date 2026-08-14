@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.Map;
 
 import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Pelicula;
@@ -158,6 +160,33 @@ public class GestorFunciones {
                     + finReal.plusMinutes(limpieza).format(MOMENTO) + " no se puede empezar";
         }
         return "La sala ya tiene una función en ese horario";
+    }
+
+    /**
+     * La misma regla R3 que {@link #superpuestaEn}, pero con las lecturas hechas una sola
+     * vez, para quien tenga que preguntar muchas veces por la misma sala.
+     *
+     * <p>{@code superpuestaEn} relee las funciones de la sala y la duración de cada
+     * película en cada llamada. Está bien para un alta suelta y es carísimo para el
+     * planificador, que prueba cientos de horarios por corrida: así una propuesta de una
+     * semana tardaba más de veinte segundos contra MySQL, casi todo en repetir las mismas
+     * consultas.
+     *
+     * <p>Devolver la agenda armada y no una lista cruda es lo que mantiene la regla acá:
+     * quien la use compara contra tramos que ya incluyen la limpieza, sin saber cómo se
+     * calculó ni tener que acordarse de sumarla.
+     */
+    public AgendaDeSala agendaDe(int salaId) {
+        int limpieza = salaDAO.buscarPorId(salaId).map(Sala::getMinutosLimpieza).orElse(0);
+        Map<Integer, Integer> duraciones = peliculaDAO.listar().stream()
+                .collect(Collectors.toMap(Pelicula::getId, Pelicula::getDuracionMinutos));
+
+        List<AgendaDeSala.Tramo> tomados = funcionDAO.listarPorSala(salaId).stream()
+                .map(f -> new AgendaDeSala.Tramo(f.getInicio(),
+                        f.getInicio().plusMinutes(duraciones.getOrDefault(f.getPeliculaId(), 0))
+                                .plusMinutes(limpieza)))
+                .toList();
+        return new AgendaDeSala(limpieza, tomados);
     }
 
     public List<Funcion> listar() {
