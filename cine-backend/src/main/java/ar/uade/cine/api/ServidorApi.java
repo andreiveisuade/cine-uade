@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import ar.uade.cine.Aplicacion;
+import ar.uade.cine.api.http.NoEncontrado;
+import ar.uade.cine.api.rutas.Rutas;
 import ar.uade.cine.dto.ErrorVistaDTO;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
 import ar.uade.cine.persistencia.PersistenciaException;
@@ -14,13 +16,13 @@ import io.javalin.http.HttpStatus;
 import io.javalin.json.JavalinJackson;
 
 /**
- * La misma aplicación, hablada por HTTP en vez de por consola. La levanta con
- * {@link Aplicacion}, igual que Main, y después no hace más que traducir: cada ruta arma
- * una llamada a un gestor y devuelve lo que responde.
+ * La aplicación hablada por HTTP. La levanta con {@link Aplicacion} y después no hace más
+ * que traducir: cada ruta arma una llamada a un gestor y devuelve lo que responde.
  *
- * <p>Que las dos puertas compartan ese armado es lo que garantiza que sean la misma
- * aplicación y no dos parecidas. Acá no se nombra ninguna implementación concreta de
- * persistencia: esta clase ni se entera de que atrás hay MySQL.
+ * <p>Acá no se nombra ninguna implementación concreta de persistencia: esta clase ni se
+ * entera de que atrás hay MySQL. Y desde que el cableado de rutas vive en {@link Rutas},
+ * tampoco sabe qué endpoints existen: le quedan dos trabajos, configurar el servidor y
+ * traducir los errores del negocio a códigos HTTP.
  *
  * <p>Ninguna regla vive acá. Cuando un gestor rechaza algo lo hace con
  * IllegalArgumentException, y esta capa la convierte en un 400 con el mensaje intacto,
@@ -54,51 +56,9 @@ public class ServidorApi {
                     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)));
         });
 
-        registrarRutas(app, aplicacion);
+        Rutas.registrarTodas(app, aplicacion);
         registrarErrores(app);
         return app;
-    }
-
-    /**
-     * Qué gestor atiende cada familia de rutas, y con qué vistas arma su respuesta.
-     *
-     * <p>Cada grupo de rutas recibe solo la vista que usa. Antes había una sola clase
-     * Vistas que las armaba todas y por eso necesitaba seis gestores: la ruta de sesión
-     * cargaba con el gestor de pagos para devolver un empleado.
-     */
-    private static void registrarRutas(Javalin app, Aplicacion aplicacion) {
-        VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
-                aplicacion.getCalculadoraPrecio());
-        VistasCartelera vistasCartelera = new VistasCartelera(aplicacion.getCartelera(),
-                aplicacion.getSalas(), aplicacion.getOcupacion(), aplicacion.getCalculadoraPrecio(),
-                vistasSalas);
-        VistasUsuarios vistasUsuarios = new VistasUsuarios();
-        VistasPromociones vistasPromociones = new VistasPromociones();
-        VistasCandy vistasCandy = new VistasCandy();
-        VistasVentas vistasVentas = new VistasVentas(aplicacion.getFunciones(),
-                aplicacion.getSalas(), aplicacion.getCartelera(), aplicacion.getClientes(),
-                aplicacion.getPagos(), aplicacion.getReservas(),
-                vistasCartelera, vistasSalas, vistasUsuarios);
-
-        RutasCatalogos.registrar(app);
-        RutasPeliculas.registrar(app, aplicacion.getCartelera(), aplicacion.getFunciones(),
-                vistasCartelera);
-        RutasSalas.registrar(app, aplicacion.getSalas(), vistasSalas);
-        RutasFunciones.registrar(app, aplicacion.getFunciones(), vistasCartelera);
-        // La grilla arma sus propias vistas adentro de la ruta: no necesita ningun gestor
-        // mas que el suyo para dibujarse.
-        RutasProgramaciones.registrar(app, aplicacion.getProgramaciones());
-        RutasGrilla.registrar(app, aplicacion.getPlanificadorGrilla());
-        RutasClientes.registrar(app, aplicacion.getClientes(), vistasUsuarios);
-        RutasReservas.registrar(app, aplicacion.getReservas(), aplicacion.getClientes(),
-                aplicacion.getOcupacion(), vistasVentas);
-        RutasPromociones.registrar(app, aplicacion.getPromociones(), vistasPromociones);
-        RutasPagos.registrar(app, aplicacion.getPagos(), aplicacion.getReservas(), vistasVentas);
-        // Los informes por función arman sus DTO adentro de la ruta: ya vienen calculados
-        // del gestor y no necesitan ensamblador.
-        RutasInformes.registrar(app, aplicacion.getInformes(), aplicacion.getFunciones());
-        RutasCandy.registrar(app, aplicacion.getCandy(), aplicacion.getProductos(), vistasCandy);
-        RutasSesion.registrar(app, aplicacion.getEmpleados(), vistasUsuarios);
     }
 
     private static void registrarErrores(Javalin app) {

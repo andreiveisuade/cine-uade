@@ -24,6 +24,8 @@ import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.pasarelas.PasarelaPagos;
 import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
+import ar.uade.cine.persistencia.mysql.OrigenMySQL;
+import ar.uade.cine.persistencia.mysql.Plantilla;
 import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
 import ar.uade.cine.persistencia.mysql.EmpleadoDAOMySQL;
@@ -36,21 +38,23 @@ import ar.uade.cine.persistencia.mysql.PromocionDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ReservaDAOMySQL;
 import ar.uade.cine.persistencia.mysql.SalaDAOMySQL;
 import ar.uade.cine.persistencia.redis.BloqueoButacasRedis;
-import ar.uade.cine.servicio.CalculadoraPrecio;
-import ar.uade.cine.servicio.GestorCandy;
-import ar.uade.cine.servicio.GestorCartelera;
-import ar.uade.cine.servicio.GestorClientes;
-import ar.uade.cine.servicio.GestorEmpleados;
-import ar.uade.cine.servicio.GestorFunciones;
-import ar.uade.cine.servicio.GestorInformes;
-import ar.uade.cine.servicio.GestorPagos;
-import ar.uade.cine.servicio.GestorProductos;
-import ar.uade.cine.servicio.GestorProgramaciones;
-import ar.uade.cine.servicio.PlanificadorGrilla;
-import ar.uade.cine.servicio.GestorPromociones;
-import ar.uade.cine.servicio.GestorReservas;
-import ar.uade.cine.servicio.GestorSalas;
-import ar.uade.cine.servicio.Ocupacion;
+import ar.uade.cine.servicio.ventas.CalculadoraPrecio;
+import ar.uade.cine.servicio.candy.GestorCandy;
+import ar.uade.cine.servicio.cartelera.GestorCartelera;
+import ar.uade.cine.servicio.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.servicio.usuarios.GestorClientes;
+import ar.uade.cine.servicio.usuarios.GestorEmpleados;
+import ar.uade.cine.servicio.funciones.GestorFunciones;
+import ar.uade.cine.servicio.informes.GestorCaja;
+import ar.uade.cine.servicio.informes.GestorInformes;
+import ar.uade.cine.servicio.ventas.GestorPagos;
+import ar.uade.cine.servicio.candy.GestorProductos;
+import ar.uade.cine.servicio.programaciones.GestorProgramaciones;
+import ar.uade.cine.servicio.programaciones.PlanificadorGrilla;
+import ar.uade.cine.servicio.promociones.GestorPromociones;
+import ar.uade.cine.servicio.ventas.GestorReservas;
+import ar.uade.cine.servicio.salas.GestorSalas;
+import ar.uade.cine.servicio.ventas.Ocupacion;
 
 /**
  * La aplicación armada: los gestores, ya conectados a dónde se guarda cada cosa.
@@ -59,16 +63,22 @@ import ar.uade.cine.servicio.Ocupacion;
  * concreta. Los gestores solo conocen las interfaces de <code>persistencia</code>, así que
  * acá se decide en qué medio va cada cosa y nada más que acá.
  *
- * <p>Existe porque hay dos maneras de entrar al sistema —{@link Main} por consola y
- * {@link ar.uade.cine.api.ServidorApi} por HTTP— y las dos necesitan exactamente la misma
- * aplicación abajo. Cuando cada arranque armaba la suya, las dos copias se separaron:
- * la de HTTP se quedó sin GestorCandy, y el candy dejó de existir para el que entraba por
- * la web aunque el gestor estuviera escrito y probado. Con un solo armado eso no puede
- * volver a pasar: sumar un gestor lo hace aparecer en las dos puertas a la vez.
+ * <p>Existe porque el sistema se levanta desde más de un lado y todos necesitan
+ * exactamente la misma aplicación abajo: {@link ar.uade.cine.api.ServidorApi} en
+ * producción, y {@code AplicacionTest} en memoria para recorrer el circuito completo sin
+ * tocar MySQL. Hubo una época en que cada arranque armaba la suya y las copias se
+ * separaron: una se quedó sin GestorCandy, y el candy dejó de existir para quien entraba
+ * por ahí aunque el gestor estuviera escrito y probado. Con un solo armado eso no puede
+ * volver a pasar: sumar un gestor lo hace aparecer en todas las puertas a la vez.
+ *
+ * <p>Esa es también la razón por la que el constructor es público: es lo que deja que un
+ * test levante el sistema entero contra las implementaciones en memoria y verifique que
+ * los gestores están conectados entre sí, y no solo que cada uno anda por su cuenta.
  */
 public class Aplicacion {
 
     private final GestorCartelera cartelera;
+    private final GestorRevisionCartelera revisionCartelera;
     private final GestorSalas salas;
     private final GestorFunciones funciones;
     private final GestorProgramaciones programaciones;
@@ -82,11 +92,12 @@ public class Aplicacion {
     private final GestorProductos productos;
     private final GestorCandy candy;
     private final GestorInformes informes;
+    private final GestorCaja caja;
     private final CalculadoraPrecio calculadoraPrecio;
 
     /**
      * Todo en MySQL, con los comprobantes en archivos de texto y la pasarela emulada: es
-     * como corren la consola y la API.
+     * como corre la API en producción.
      *
      * <p>Los tickets van a disco y no a la base a propósito. Un comprobante es un papel
      * que se entrega, no un dato que se consulta: por eso su contrato es
@@ -102,11 +113,20 @@ public class Aplicacion {
      * y llamadas de red— es cambiar este argumento, sin tocar una regla de negocio.
      */
     public static Aplicacion enMySQL() {
+        // Un solo pool y una sola plantilla para los trece DAO. Va acá por el mismo motivo
+        // que los DAO: este es el único lugar que nombra implementaciones concretas, y de
+        // dónde salen las conexiones es una decisión de armado, no de cada DAO. Que la
+        // compartan es además lo que hace que el pool sirva: trece pools de diez
+        // conexiones serían ciento treinta conexiones contra la misma base.
+        Plantilla plantilla = new Plantilla(OrigenMySQL.conPool());
+
         return new Aplicacion(
-                new PeliculaDAOMySQL(), new SalaDAOMySQL(), new AsientoDAOMySQL(),
-                new FuncionDAOMySQL(), new ClienteDAOMySQL(), new EmpleadoDAOMySQL(),
-                new ReservaDAOMySQL(), new PagoDAOMySQL(), new PromocionDAOMySQL(),
-                new ProgramacionDAOMySQL(), new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
+                new PeliculaDAOMySQL(plantilla), new SalaDAOMySQL(plantilla),
+                new AsientoDAOMySQL(plantilla), new FuncionDAOMySQL(plantilla),
+                new ClienteDAOMySQL(plantilla), new EmpleadoDAOMySQL(plantilla),
+                new ReservaDAOMySQL(plantilla), new PagoDAOMySQL(plantilla),
+                new PromocionDAOMySQL(plantilla), new ProgramacionDAOMySQL(plantilla),
+                new ProductoDAOMySQL(plantilla), new CompraCandyDAOMySQL(plantilla),
                 new BloqueoButacasRedis(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt(),
                 new GeneradorReciboTxt(), new GeneradorBorderoTxt(), new MercadoPagoEmulado());
@@ -137,6 +157,9 @@ public class Aplicacion {
         programaciones = new GestorProgramaciones(programacionDAO, funcionDAO, funciones);
         // Después de programaciones: la cartelera las extiende antes de listar.
         cartelera = new GestorCartelera(peliculaDAO, funcionDAO, programaciones);
+        // El buzon del importador cuelga del catalogo: revisar necesita dar de alta,
+        // pero el catalogo no necesita saber que existe un importador.
+        revisionCartelera = new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
         planificadorGrilla = new PlanificadorGrilla(peliculaDAO, salaDAO, funciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
@@ -151,10 +174,16 @@ public class Aplicacion {
                 productos);
         informes = new GestorInformes(funcionDAO, peliculaDAO, salaDAO, reservaDAO, pagoDAO,
                 compraCandyDAO, generadorBordero);
+        caja = new GestorCaja(pagoDAO, reservaDAO, compraCandyDAO);
     }
 
     public GestorCartelera getCartelera() {
         return cartelera;
+    }
+
+    /** El buzon de lo que trajo el importador y todavia nadie miro. */
+    public GestorRevisionCartelera getRevisionCartelera() {
+        return revisionCartelera;
     }
 
     public GestorSalas getSalas() {
@@ -211,6 +240,11 @@ public class Aplicacion {
     /** El borderó del INCAA y la recaudación de cada función, entradas más candy. */
     public GestorInformes getInformes() {
         return informes;
+    }
+
+    /** El cierre de caja del día: boletería y candy. El otro corte de los informes. */
+    public GestorCaja getCaja() {
+        return caja;
     }
 
     /** La usa la capa HTTP para mostrar el precio de cada butaca en el mapa de la sala. */

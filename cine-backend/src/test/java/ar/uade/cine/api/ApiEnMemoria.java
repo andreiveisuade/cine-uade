@@ -49,7 +49,7 @@ import io.javalin.Javalin;
  * paralelo, o un backend abierto en otra terminal, hicieran fallar la prueba por algo que
  * no tiene nada que ver con el código.
  */
-class ApiEnMemoria implements AutoCloseable {
+public class ApiEnMemoria implements AutoCloseable {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -61,7 +61,7 @@ class ApiEnMemoria implements AutoCloseable {
      * @param directorio dónde caen los comprobantes. Va por parámetro para que cada test le
      *                   pase su {@code @TempDir} y no se escriba en el repo al correr la suite
      */
-    ApiEnMemoria(Path directorio) {
+    public ApiEnMemoria(Path directorio) {
         aplicacion = new Aplicacion(
                 new PeliculaDAOMemoria(), new SalaDAOMemoria(), new AsientoDAOMemoria(),
                 new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
@@ -77,15 +77,15 @@ class ApiEnMemoria implements AutoCloseable {
     }
 
     /** Los gestores de esta misma API: es con lo que el test arma el escenario. */
-    Aplicacion aplicacion() {
+    public Aplicacion aplicacion() {
         return aplicacion;
     }
 
-    Respuesta get(String ruta) {
+    public Respuesta get(String ruta) {
         return pedir(HttpRequest.newBuilder(uri(ruta)).GET());
     }
 
-    Respuesta post(String ruta, String cuerpo) {
+    public Respuesta post(String ruta, String cuerpo) {
         return pedir(HttpRequest.newBuilder(uri(ruta))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(cuerpo)));
@@ -114,10 +114,10 @@ class ApiEnMemoria implements AutoCloseable {
     }
 
     /** Lo que contestó el servidor, sin interpretar: el código y el cuerpo crudo. */
-    record Respuesta(int estado, String cuerpo) {
+    public record Respuesta(int estado, String cuerpo) {
 
         /** El JSON ya parseado, para no afirmar cosas sobre un {@code String} con llaves. */
-        JsonNode json() {
+        public JsonNode json() {
             try {
                 return JSON.readTree(cuerpo);
             } catch (IOException e) {
@@ -130,7 +130,7 @@ class ApiEnMemoria implements AutoCloseable {
          * completo y no sobre un pedazo: el contrato dice que sale <em>intacto</em> desde el
          * gestor, y un {@code contains} dejaría pasar que la capa HTTP lo reescriba.
          */
-        String error() {
+        public String error() {
             return json().get("error").asText();
         }
     }
