@@ -70,11 +70,13 @@ class GestorReservasTest {
     private GestorPagos pagos;
     private Path directorioTickets;
     private ReservaDAO reservaDAO;
+    private GestorClientes clientes;
+    private PeliculaDAO peliculaDAO;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
-        PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
+        peliculaDAO = new PeliculaDAOMemoria();
         SalaDAO salaDAO = new SalaDAOMemoria();
         AsientoDAO asientoDAO = new AsientoDAOMemoria();
         funcionDAO = new FuncionDAOMemoria();
@@ -91,7 +93,8 @@ class GestorReservasTest {
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
-        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
+        clientes = new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria());
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
 
         ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
@@ -432,6 +435,122 @@ class GestorReservasTest {
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
+    // ---------- el buscador de reservas ----------
+
+    /**
+     * Dos clientes, dos funciones en días distintos y tres reservas, una de ellas
+     * cancelada. Es el mínimo para que ningún filtro devuelva la lista entera por
+     * casualidad y parezca que funciona.
+     */
+    private void cargarReservas() {
+        clientes.registrar("Sofía Pérez", "sofia@ejemplo.com");
+        // Segunda película y función, para poder filtrar por título y por día.
+        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
+                new ProgramacionDAOMemoria(), funcionDAO, funciones))
+                .agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+
+        reservas.reservar(1, 1, generales("A1", "A2"));   // Andrei, Matrix, el 20
+        reservas.reservar(2, 2, generales("B1"));          // Sofía, El Padrino, el 21
+        // La tercera también es de Andrei: así tiene una vigente y una cancelada, que es
+        // lo que hace que combinar estado + texto no sea trivial.
+        reservas.cancelar(reservas.reservar(1, 1, generales("A3")).getId());
+    }
+
+    @Test
+    void buscarSinCriteriosDevuelveTodo() {
+        cargarReservas();
+
+        assertEquals(3, reservas.buscar(CriteriosReserva.ninguno()).size());
+        assertEquals(3, reservas.buscar(null).size(), "null no puede romper: es 'sin filtros'");
+    }
+
+    @Test
+    void filtraPorEstado() {
+        cargarReservas();
+
+        assertEquals(2, reservas.buscar(
+                new CriteriosReserva(EstadoReserva.RESERVADA, null, null)).size());
+        assertEquals(1, reservas.buscar(
+                new CriteriosReserva(EstadoReserva.CANCELADA, null, null)).size());
+    }
+
+    /** El día es el de la función, no el de cuándo se hizo la reserva. */
+    @Test
+    void filtraPorElDiaDeLaFuncion() {
+        cargarReservas();
+
+        assertEquals(2, reservas.buscar(
+                new CriteriosReserva(null, LocalDate.of(2026, 8, 20), null)).size());
+        assertEquals(1, reservas.buscar(
+                new CriteriosReserva(null, LocalDate.of(2026, 8, 21), null)).size());
+        assertTrue(reservas.buscar(
+                new CriteriosReserva(null, LocalDate.of(2026, 8, 22), null)).isEmpty());
+    }
+
+    /**
+     * El texto busca sobre lo que la persona tiene a mano en el mostrador. Cada uno de
+     * estos campos vive en una tabla distinta, y por eso el criterio no es un WHERE.
+     */
+    @Test
+    void elTextoBuscaPorClienteEmailPeliculaYButaca() {
+        cargarReservas();
+
+        assertEquals(2, buscarTexto("andrei").size(), "por nombre del cliente");
+        assertEquals(1, buscarTexto("sofia@ejemplo").size(), "por email");
+        assertEquals(1, buscarTexto("padrino").size(), "por título de la película");
+        assertEquals(1, buscarTexto("B1").size(), "por código de butaca");
+    }
+
+    @Test
+    void elTextoNoDistingueMayusculasYEsParcial() {
+        cargarReservas();
+
+        assertEquals(2, buscarTexto("ANDREI").size());
+        assertEquals(2, buscarTexto("ndre").size(), "coincide en el medio");
+    }
+
+    /** El código del ticket es lo único que trae quien perdió el mail. */
+    @Test
+    void elTextoBuscaPorCodigoDeReserva() {
+        cargarReservas();
+        String codigo = reservas.buscar(CriteriosReserva.ninguno()).get(0).getCodigo();
+
+        assertEquals(1, buscarTexto(codigo).size());
+        assertEquals(1, buscarTexto(codigo.toLowerCase()).size());
+    }
+
+    /** Los criterios se acumulan: Andrei tiene dos, pero una sola sigue vigente. */
+    @Test
+    void losCriteriosSeCombinan() {
+        cargarReservas();
+
+        assertEquals(1, reservas.buscar(
+                new CriteriosReserva(EstadoReserva.RESERVADA, null, "andrei")).size());
+        assertEquals(1, reservas.buscar(
+                new CriteriosReserva(EstadoReserva.CANCELADA, null, "andrei")).size());
+    }
+
+    @Test
+    void unTextoEnBlancoNoFiltra() {
+        cargarReservas();
+
+        assertEquals(3, buscarTexto("").size());
+        assertEquals(3, buscarTexto("   ").size(), "solo espacios es lo mismo que vacío");
+    }
+
+    @Test
+    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
+        cargarReservas();
+
+        assertTrue(buscarTexto("nadie con ese nombre").isEmpty());
+    }
+
+    private List<Reserva> buscarTexto(String texto) {
+        return reservas.buscar(new CriteriosReserva(null, null, texto));
+    }
+
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
         for (String codigo : codigos) {

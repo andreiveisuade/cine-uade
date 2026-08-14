@@ -259,4 +259,68 @@ class GestorCarteleraTest {
         assertEquals(1, gestor.listarPorGenero(Genero.CIENCIA_FICCION).size());
         assertEquals("Matrix", gestor.listarPorGenero(Genero.ACCION).get(0).getTitulo());
     }
+
+    // ---------- el buscador del catálogo ----------
+
+    /** Tres películas que se solapan en género y estado, para que ningún filtro sea trivial. */
+    private void cargarCatalogo() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        gestor.agregar("Matrix Reloaded", 138, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        gestor.agregar("El Resplandor", 146, List.of(Genero.TERROR), Clasificacion.MAS_18);
+    }
+
+    /** Sin criterios devuelve todo: es el estado inicial de la pantalla. */
+    @Test
+    void buscarSinCriteriosDevuelveTodo() {
+        cargarCatalogo();
+
+        assertEquals(3, gestor.buscar(null, null, null).size());
+        // La cadena vacía es lo que manda un input sin tocar, y tiene que valer lo mismo.
+        assertEquals(3, gestor.buscar("", null, null).size());
+    }
+
+    /** Parcial y sin distinguir mayúsculas: nadie tipea el título exacto. */
+    @Test
+    void buscarPorTituloEsParcialYNoDistingueMayusculas() {
+        cargarCatalogo();
+
+        assertEquals(2, gestor.buscar("matrix", null, null).size());
+        assertEquals(2, gestor.buscar("MATRIX", null, null).size());
+        assertEquals(1, gestor.buscar("reloaded", null, null).size());
+        // También coincide en el medio del título, no solo al principio.
+        assertEquals(1, gestor.buscar("esplandor", null, null).size());
+    }
+
+    @Test
+    void buscarPorGeneroYPorEstado() {
+        cargarCatalogo();
+
+        assertEquals(2, gestor.buscar(null, Genero.ACCION, null).size());
+        assertEquals(3, gestor.buscar(null, null, true).size(), "el alta las publica");
+
+        Pelicula resplandor = gestor.buscar(3).orElseThrow();
+        resplandor.setEnCartelera(false);
+        gestor.actualizar(resplandor);
+
+        assertEquals(2, gestor.buscar(null, null, true).size());
+        assertEquals(1, gestor.buscar(null, null, false).size());
+        assertEquals(3, gestor.buscar(null, null, null).size(), "null es todas, no ninguna");
+    }
+
+    /** Los criterios se acumulan: es un Y, no un O. */
+    @Test
+    void losCriteriosSeCombinan() {
+        cargarCatalogo();
+
+        assertEquals(1, gestor.buscar("matrix", Genero.CIENCIA_FICCION, true).size());
+        assertTrue(gestor.buscar("matrix", Genero.TERROR, null).isEmpty(),
+                "ninguna Matrix es de terror: combinar tiene que poder dar vacío");
+    }
+
+    @Test
+    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
+        cargarCatalogo();
+
+        assertTrue(gestor.buscar("titanic", null, null).isEmpty());
+    }
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,75 @@ class GestorFuncionesTest {
         funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, 4500);
+    }
+
+    // ---------- el buscador de la cartelera programada ----------
+
+    /**
+     * Segunda película y segunda sala, más funciones repartidas en tres días. Sin este
+     * escenario cualquier filtro devolvería todo y los tests pasarían sin probar nada.
+     */
+    private void cargarMasFunciones() {
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
+        // Interstellar en la sala 2, el mismo día que la del setup.
+        funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 4500);
+        // Matrix en la sala 1, dos días después.
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
+                Version.DOBLADA, Proyeccion.DOS_D, 5000);
+    }
+
+    @Test
+    void buscarSinCriteriosDevuelveTodo() {
+        cargarMasFunciones();
+
+        assertEquals(3, funciones.buscar(null, null, null, null).size());
+    }
+
+    @Test
+    void buscarPorPeliculaYPorSala() {
+        cargarMasFunciones();
+
+        assertEquals(2, funciones.buscar(1, null, null, null).size(), "las dos de Interstellar");
+        assertEquals(2, funciones.buscar(null, 1, null, null).size(), "las dos de la sala 1");
+        // Cruzar los dos criterios deja una sola: es un Y, no un O.
+        assertEquals(1, funciones.buscar(1, 1, null, null).size());
+    }
+
+    /**
+     * El rango incluye los dos extremos. Quien filtra «del 20 al 22» espera ver el 22:
+     * un rango semiabierto acá sería una sorpresa, no una convención.
+     */
+    @Test
+    void elRangoDeFechasIncluyeLosDosExtremos() {
+        cargarMasFunciones();
+
+        assertEquals(3, funciones.buscar(null, null,
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 22)).size());
+        assertEquals(1, funciones.buscar(null, null,
+                LocalDate.of(2026, 8, 22), LocalDate.of(2026, 8, 22)).size(),
+                "un solo día: desde y hasta iguales");
+    }
+
+    @Test
+    void elRangoSeAbreDeUnLadoODelOtro() {
+        cargarMasFunciones();
+
+        assertEquals(1, funciones.buscar(null, null, LocalDate.of(2026, 8, 21), null).size(),
+                "solo desde: de ahí en adelante");
+        assertEquals(2, funciones.buscar(null, null, null, LocalDate.of(2026, 8, 21)).size(),
+                "solo hasta: todo lo anterior");
+    }
+
+    @Test
+    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
+        cargarMasFunciones();
+
+        assertTrue(funciones.buscar(null, null,
+                LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31)).isEmpty());
+        assertTrue(funciones.buscar(99, null, null, null).isEmpty(),
+                "una película que no existe no es un error, es cero resultados");
     }
 
     @Test

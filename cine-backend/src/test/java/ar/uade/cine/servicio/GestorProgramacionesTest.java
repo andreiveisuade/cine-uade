@@ -350,6 +350,58 @@ class GestorProgramacionesTest {
         assertEquals(delAlta, funcionDAO.listar().size());
     }
 
+    // ---------- el buscador de grillas ----------
+
+    /**
+     * Dos grillas de la misma película en salas distintas, una de ellas dada de baja.
+     * La de baja importa: es la que el filtro tiene que poder separar.
+     */
+    private void cargarGrillas() {
+        crearSemana(Set.of());
+        PlanProgramacion enSala2 = programaciones.crear(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
+                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+        programaciones.desactivar(enSala2.programacion().getId());
+    }
+
+    @Test
+    void buscarSinCriteriosDevuelveTodasIncluidasLasDeBaja() {
+        cargarGrillas();
+
+        assertEquals(2, programaciones.buscar(null, null, null).size());
+    }
+
+    /**
+     * Es la pregunta que más se hace en esta pantalla: cuáles están generando funciones.
+     * Las dadas de baja no se borran nunca —siguen explicando las que ya crearon— así que
+     * la lista solo crece y sin este filtro se vuelve ilegible.
+     */
+    @Test
+    void filtraLasActivasYLasDadasDeBaja() {
+        cargarGrillas();
+
+        assertEquals(1, programaciones.buscar(null, null, true).size());
+        assertEquals(1, programaciones.buscar(null, null, false).size());
+        assertEquals(2, programaciones.buscar(null, null, null).size(), "null es todas");
+    }
+
+    @Test
+    void filtraPorSalaYCombinaConElEstado() {
+        cargarGrillas();
+
+        assertEquals(1, programaciones.buscar(null, 1, null).size());
+        assertEquals(1, programaciones.buscar(null, 2, null).size());
+        // La de la sala 2 es justamente la que está de baja.
+        assertTrue(programaciones.buscar(null, 2, true).isEmpty());
+        assertEquals(1, programaciones.buscar(null, 2, false).size());
+    }
+
+    @Test
+    void buscarSinCoincidenciasDevuelveVacio() {
+        cargarGrillas();
+
+        assertTrue(programaciones.buscar(99, null, null).isEmpty());
+    }
+
     // ---------- helpers ----------
 
     /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
