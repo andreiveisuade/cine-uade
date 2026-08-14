@@ -358,6 +358,20 @@ export const pagos = [
     fecha: fecha(-1, "12:40"), codigoAutorizacion: "QR-88371" },
 ];
 
+// Una promoción de ejemplo, por el mismo motivo que las grillas: es un array exportado y
+// no una propiedad que api-mock cree al vuelo, porque a un namespace de módulo ES no se le
+// puede asignar. Es de un medio de pago a propósito: así el mock muestra lo que el
+// contrato dice del cobro —el descuento se resuelve recién al saber cómo se paga— y el
+// checkout puede devolver un monto distinto del subtotal.
+export const promociones = [
+  { id: 1, nombre: "30% pagando con QR", tipo: "PORCENTAJE", porcentaje: 30,
+    monto: null, lleva: null, paga: null,
+    vigenciaDesde: fecha(-30, "00:00").slice(0, 10),
+    vigenciaHasta: fecha(180, "00:00").slice(0, 10),
+    diasSemana: [], horaDesde: null, horaHasta: null,
+    mediosPago: ["QR"], activa: true },
+];
+
 // La barra. Solo se le puede atribuir a una función la compra que tiene `reservaId` —el
 // «¿desea agregar pochoclos?» de después de comprar la entrada—: la del mostrador no dice
 // a qué función va, y por eso el informe por función la deja afuera.

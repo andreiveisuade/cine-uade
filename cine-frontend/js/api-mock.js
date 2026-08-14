@@ -1264,7 +1264,6 @@ export function crearPromocion(promocion) {
     return fallar("En un NxM hay que llevar más de lo que se paga");
   }
 
-  datos.promociones = datos.promociones || [];
   const nueva = { ...promocion, nombre: promocion.nombre.trim(),
                   id: siguienteId(datos.promociones), activa: true };
   datos.promociones.push(nueva);
