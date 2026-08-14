@@ -45,6 +45,12 @@ class RutasPeliculas {
                                 Parseo.booleanOpcional(ctx.queryParam("publicada"), "publicada"))
                         .stream().map(vistas::pelicula).toList()));
 
+        // El buzón: lo que trajo el importador y todavía nadie miró. Va antes que
+        // /{id} porque Javalin resuelve por orden de registro: al revés, "pendientes"
+        // entraría como id y el parseo devolvería un 400.
+        app.get("/api/peliculas/pendientes", ctx ->
+                ctx.json(cartelera.listarPendientes().stream().map(vistas::pelicula).toList()));
+
         app.get("/api/peliculas/{id}", ctx ->
                 ctx.json(vistas.pelicula(buscar(cartelera, Parseo.id(ctx)))));
 
@@ -60,6 +66,28 @@ class RutasPeliculas {
         app.post("/api/peliculas", ctx -> {
             PedidoPeliculaDTO pedido = ctx.bodyAsClass(PedidoPeliculaDTO.class);
             ctx.status(HttpStatus.CREATED).json(vistas.pelicula(cartelera.agregar(datosDe(pedido))));
+        });
+
+        // El alta del importador, separada de la del encargado: lo que baja de TMDB es una
+        // propuesta y entra al buzón, no al catálogo. Es la misma forma de pedido, así que
+        // el importador no tiene que aprender otro cuerpo, solo otra URL.
+        app.post("/api/peliculas/importadas", ctx -> {
+            PedidoPeliculaDTO pedido = ctx.bodyAsClass(PedidoPeliculaDTO.class);
+            ctx.status(HttpStatus.CREATED).json(vistas.pelicula(cartelera.importar(datosDe(pedido))));
+        });
+
+        // Confirmar y descartar son POST y no PUT por lo mismo que la baja de una promoción:
+        // no se está mandando un estado nuevo, se está tomando una decisión sobre la película.
+        app.post("/api/peliculas/{id}/confirmacion", ctx -> {
+            int id = Parseo.id(ctx);
+            buscar(cartelera, id);
+            ctx.json(vistas.pelicula(cartelera.confirmar(id)));
+        });
+
+        app.post("/api/peliculas/{id}/descarte", ctx -> {
+            int id = Parseo.id(ctx);
+            buscar(cartelera, id);
+            ctx.json(vistas.pelicula(cartelera.descartar(id)));
         });
 
         app.put("/api/peliculas/{id}", ctx -> {

@@ -9,7 +9,12 @@ CREATE TABLE IF NOT EXISTS pelicula (
     anio INT NOT NULL DEFAULT 0,
     idioma_original VARCHAR(40) NOT NULL DEFAULT '',
     poster_url VARCHAR(255) NOT NULL DEFAULT '',
-    en_cartelera BOOLEAN NOT NULL DEFAULT TRUE
+    en_cartelera BOOLEAN NOT NULL DEFAULT TRUE,
+    -- Si el encargado ya decidio que hacer con ella: PENDIENTE, CONFIRMADA o DESCARTADA.
+    -- Lo que trae el importador de TMDB nace PENDIENTE y espera en el buzon; lo que carga
+    -- el encargado nace CONFIRMADA, porque cargarlo ya es haberlo decidido. Es un eje
+    -- distinto de en_cartelera, que es si se esta dando.
+    estado_revision VARCHAR(15) NOT NULL DEFAULT 'CONFIRMADA'
 );
 
 -- Una película tiene varios géneros: tabla aparte con la relación.

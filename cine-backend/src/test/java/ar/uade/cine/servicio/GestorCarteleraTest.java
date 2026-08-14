@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.dominio.cartelera.Clasificacion;
+import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
@@ -322,5 +323,72 @@ class GestorCarteleraTest {
         cargarCatalogo();
 
         assertTrue(gestor.buscar("titanic", null, null).isEmpty());
+    }
+
+    // ---------- el buzón de lo que trae el importador ----------
+
+    private DatosPelicula deTmdb(String titulo) {
+        return DatosPelicula.deAlta(titulo, 120, List.of(Genero.ACCION), Clasificacion.ATP);
+    }
+
+    @Test
+    void loQueCargaElEncargadoNaceConfirmado() {
+        Pelicula pelicula = gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+
+        assertEquals(EstadoRevision.CONFIRMADA, pelicula.getEstadoRevision());
+        assertTrue(pelicula.estaEnCartelera());
+    }
+
+    @Test
+    void loQueTraeElImportadorNacePendienteYFueraDeCartelera() {
+        Pelicula pelicula = gestor.importar(deTmdb("Dune"));
+
+        assertEquals(EstadoRevision.PENDIENTE, pelicula.getEstadoRevision());
+        assertFalse(pelicula.estaEnCartelera(),
+                "una película que nadie confirmó no puede estar ofreciéndose al cliente");
+    }
+
+    @Test
+    void elBuzonSoloTraeLasPendientes() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        gestor.importar(deTmdb("Dune"));
+        gestor.importar(deTmdb("Oppenheimer"));
+
+        assertEquals(2, gestor.listarPendientes().size());
+    }
+
+    @Test
+    void confirmarLaSacaDelBuzonYLaPoneEnCartelera() {
+        Pelicula importada = gestor.importar(deTmdb("Dune"));
+
+        Pelicula confirmada = gestor.confirmar(importada.getId());
+
+        assertEquals(EstadoRevision.CONFIRMADA, confirmada.getEstadoRevision());
+        assertTrue(confirmada.estaEnCartelera());
+        assertTrue(gestor.listarPendientes().isEmpty());
+    }
+
+    /**
+     * Descartada no es borrada: tiene que quedar el registro de la decisión, o la próxima
+     * corrida del importador la traería de nuevo y habría que descartarla otra vez.
+     */
+    @Test
+    void descartarLaGuardaEnVezDeBorrarla() {
+        Pelicula importada = gestor.importar(deTmdb("Dune"));
+
+        gestor.descartar(importada.getId());
+
+        assertEquals(EstadoRevision.DESCARTADA,
+                gestor.buscar(importada.getId()).orElseThrow().getEstadoRevision());
+        assertTrue(gestor.listarPendientes().isEmpty());
+    }
+
+    @Test
+    void noSePuedeDescartarUnaPeliculaConFuncionesProgramadas() {
+        Pelicula importada = gestor.importar(deTmdb("Dune"));
+        gestor.confirmar(importada.getId());
+        programarProxima(importada.getId());
+
+        assertThrows(IllegalArgumentException.class, () -> gestor.descartar(importada.getId()));
     }
 }

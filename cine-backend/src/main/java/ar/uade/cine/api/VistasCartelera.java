@@ -48,7 +48,8 @@ public class VistasCartelera {
         return new PeliculaVistaDTO(p.getId(), p.getTitulo(), p.getDuracionMinutos(),
                 p.getGeneros().stream().map(Enum::name).toList(),
                 p.getClasificacion().name(), p.getPosterUrl(), p.getDirector(), p.getAnio(),
-                p.getIdiomaOriginal(), p.getSinopsis(), p.estaEnCartelera());
+                p.getIdiomaOriginal(), p.getSinopsis(), p.estaEnCartelera(),
+                p.getEstadoRevision().name());
     }
 
     /** Para el listado del cliente: la función con su sala, sin el mapa de butacas. */

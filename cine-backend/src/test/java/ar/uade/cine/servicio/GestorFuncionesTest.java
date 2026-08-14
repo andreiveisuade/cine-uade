@@ -19,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
+import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.FuncionImpl;
 import ar.uade.cine.dominio.funciones.Proyeccion;
@@ -223,6 +224,33 @@ class GestorFuncionesTest {
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
                         Version.DOBLADA, Proyeccion.TRES_D, 4500));
+    }
+
+    /**
+     * Sin esto el buzón de revisión no serviría de nada: bastaría con programar desde ahí
+     * para meter en la cartelera del cine algo que nunca nadie aprobó.
+     */
+    @Test
+    void noSePuedeProgramarUnaPeliculaPendienteDeRevision() {
+        Pelicula importada = cartelera.importar(
+                DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
+                        Version.DOBLADA, Proyeccion.DOS_D, 4500));
+
+        assertTrue(e.getMessage().contains("confirmada"), e.getMessage());
+    }
+
+    @Test
+    void unaVezConfirmadaSeProgramaNormal() {
+        Pelicula importada = cartelera.importar(
+                DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
+        cartelera.confirmar(importada.getId());
+
+        assertDoesNotThrow(
+                () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
+                        Version.DOBLADA, Proyeccion.DOS_D, 4500));
     }
 
     @Test

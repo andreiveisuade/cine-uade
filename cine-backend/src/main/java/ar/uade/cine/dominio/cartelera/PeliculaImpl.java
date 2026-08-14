@@ -22,6 +22,11 @@ public class PeliculaImpl implements Pelicula {
     private String idiomaOriginal = "";
     private String posterUrl = "";
     private boolean enCartelera = true;
+    /**
+     * Confirmada por defecto: el alta normal es la del encargado, y cargarla a mano ya es
+     * haberla decidido. Sólo el importador la baja a PENDIENTE.
+     */
+    private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
     /** Película nueva: todavía no tiene id, lo asigna la base al guardarla. */
     public PeliculaImpl(String titulo, int duracionMinutos, List<Genero> generos, Clasificacion clasificacion) {
@@ -135,6 +140,16 @@ public class PeliculaImpl implements Pelicula {
     @Override
     public void setEnCartelera(boolean enCartelera) {
         this.enCartelera = enCartelera;
+    }
+
+    @Override
+    public EstadoRevision getEstadoRevision() {
+        return estadoRevision;
+    }
+
+    @Override
+    public void setEstadoRevision(EstadoRevision estadoRevision) {
+        this.estadoRevision = estadoRevision;
     }
 
     @Override

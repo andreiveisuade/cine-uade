@@ -2506,11 +2506,40 @@ open http://localhost:8080        # la aplicación</code></pre>
         sistema. Está escrito en Python, sin dependencias: solo la biblioteca estándar.
       </p>
 
+      <h4>Lo que trae es una propuesta, no una decisión</h4>
+      <p>
+        TMDB devuelve la cartelera entera de Argentina: dieciocho títulos en una corrida cualquiera,
+        y subiendo. Si todos entraran derecho al catálogo, <strong>el catálogo dejaría de ser una
+        decisión del cine para pasar a ser una copia de lo que se está dando afuera</strong> — que
+        es exactamente lo contrario de programar una sala.
+      </p>
+      <p>
+        Por eso lo importado cae en un <strong>buzón</strong>: nace con
+        <code>estadoRevision = PENDIENTE</code>, fuera de cartelera, y ahí espera. El encargado lo
+        mira y <em>confirma</em> o <em>descarta</em>; recién confirmada la película existe para el
+        resto del sistema. <code>GestorFunciones</code> rechaza programar una que no esté
+        confirmada, porque si no el buzón no serviría de nada: alcanzaría con programar desde ahí
+        para meter en la cartelera algo que nadie aprobó.
+      </p>
+      <p>
+        Lo descartado <strong>no se borra</strong>. Si se borrara, la corrida siguiente lo traería
+        de nuevo —el parser pregunta qué títulos ya están para no repetirlos, y uno borrado no está—
+        y habría que descartarlo otra vez, todas las noches. Guardar la decisión es lo que hace que
+        descartar una vez alcance.
+      </p>
+      <p>
+        El alta del importador es un endpoint aparte, <code>POST /api/peliculas/importadas</code>, y
+        no un parámetro del alta común. Son dos circuitos distintos y conviene que se note: lo que
+        carga el encargado ya está decidido por definición —lo decidió al cargarlo—. Si fueran el
+        mismo endpoint con un flag, olvidarse el flag haría entrar dieciocho títulos al catálogo sin
+        que nadie los mire.
+      </p>
+
       <h4>Es un cliente, no una parte del sistema</h4>
       <p>
         La decisión que ordena todo lo demás: el parser <strong>escribe por HTTP</strong>, con un
-        <code>POST /api/peliculas</code> por película. No abre una conexión a MySQL ni corre un
-        <code>INSERT</code>. Podría hacerlo —la base está ahí, en el mismo Docker— y sería más
+        <code>POST /api/peliculas/importadas</code> por película. No abre una conexión a MySQL ni
+        corre un <code>INSERT</code>. Podría hacerlo —la base está ahí, en el mismo Docker— y sería más
         rápido; sería también la forma de que entre una película sin título, con duración cero o
         con un género inventado, porque saltearía <code>GestorCartelera</code>.
       </p>
@@ -3785,6 +3814,16 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>record</code> en los value objects</td>
               <td>Interfaz + <code>Impl</code> también acá</td>
               <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>Buzón de revisión para lo importado</td>
+              <td>Que TMDB entre derecho al catálogo</td>
+              <td>Con dieciocho títulos por corrida, el catálogo dejaría de ser una decisión del cine para ser una copia de lo que se da afuera. Y las descartadas se guardan en vez de borrarse: borradas volverían en la corrida siguiente, todas las noches</td>
+            </tr>
+            <tr>
+              <td><code>estadoRevision</code> aparte de <code>enCartelera</code></td>
+              <td>Un solo campo para las dos cosas</td>
+              <td>Son dos ejes: <code>enCartelera</code> es si se está dando y cambia todas las semanas; el otro es si la película entró al catálogo, que se responde una sola vez. Con uno solo, «todavía no la miré» y «la saqué la semana pasada» serían indistinguibles</td>
             </tr>
             <tr>
               <td>La limpieza como número en <code>Sala</code></td>

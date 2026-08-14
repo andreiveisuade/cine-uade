@@ -51,4 +51,13 @@ public interface Pelicula {
     boolean estaEnCartelera();
 
     void setEnCartelera(boolean enCartelera);
+
+    /**
+     * Si el encargado ya decidió qué hacer con ella. Las que carga él nacen
+     * {@link EstadoRevision#CONFIRMADA} —cargarla ya es haberla decidido— y las que trae
+     * el importador nacen {@link EstadoRevision#PENDIENTE}.
+     */
+    EstadoRevision getEstadoRevision();
+
+    void setEstadoRevision(EstadoRevision estadoRevision);
 }

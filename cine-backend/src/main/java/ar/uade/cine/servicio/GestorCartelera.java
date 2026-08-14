@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import ar.uade.cine.dominio.cartelera.Clasificacion;
+import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
@@ -58,6 +59,72 @@ public class GestorCartelera {
         aplicarCatalogo(pelicula, datos);
         peliculaDAO.guardar(pelicula);
         return pelicula;
+    }
+
+    /**
+     * El alta del importador: la película entra al buzón, no al catálogo.
+     *
+     * <p>Es un método aparte y no un parámetro de {@link #agregar(DatosPelicula)} porque
+     * son dos circuitos distintos y conviene que se note: lo que carga el encargado ya
+     * está decidido por definición —lo decidió al cargarlo—, y lo que baja de TMDB es una
+     * propuesta. Si fueran el mismo método con un flag, olvidarse el flag haría entrar
+     * dieciocho títulos al catálogo sin que nadie los mire, que es exactamente lo que esto
+     * viene a evitar.
+     *
+     * <p>Nace fuera de cartelera además de pendiente: una película que nadie confirmó no
+     * puede estar ofreciéndose al cliente mientras espera que la miren.
+     */
+    public Pelicula importar(DatosPelicula datos) {
+        Pelicula pelicula = agregar(datos);
+        pelicula.setEstadoRevision(EstadoRevision.PENDIENTE);
+        pelicula.setEnCartelera(false);
+        peliculaDAO.actualizar(pelicula);
+        return pelicula;
+    }
+
+    /** Las que trajo el importador y todavía nadie miró. Es la pantalla de revisión. */
+    public List<Pelicula> listarPendientes() {
+        return peliculaDAO.listar().stream()
+                .filter(p -> p.getEstadoRevision() == EstadoRevision.PENDIENTE)
+                .toList();
+    }
+
+    /**
+     * El encargado la acepta: pasa a ser parte del catálogo y queda en cartelera.
+     *
+     * <p>Hace las dos cosas a propósito. Confirmar una película importada es decir «esta
+     * la damos»; dejarla confirmada pero fuera de cartelera obligaría a dos pasos para el
+     * caso normal. El caso raro —aceptarla ahora para darla más adelante— ya tiene su
+     * herramienta: el mismo interruptor de cartelera que tienen todas.
+     */
+    public Pelicula confirmar(int id) {
+        Pelicula pelicula = exigir(id);
+        pelicula.setEstadoRevision(EstadoRevision.CONFIRMADA);
+        pelicula.setEnCartelera(true);
+        peliculaDAO.actualizar(pelicula);
+        return pelicula;
+    }
+
+    /**
+     * El encargado no la quiere. Queda guardada como descartada en vez de borrarse: si se
+     * borrara, la próxima corrida del importador la traería igual y habría que descartarla
+     * de nuevo, y así para siempre.
+     */
+    public Pelicula descartar(int id) {
+        Pelicula pelicula = exigir(id);
+        if (!funcionDAO.listarPorPelicula(id).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No se puede descartar una película que ya tiene funciones programadas");
+        }
+        pelicula.setEstadoRevision(EstadoRevision.DESCARTADA);
+        pelicula.setEnCartelera(false);
+        peliculaDAO.actualizar(pelicula);
+        return pelicula;
+    }
+
+    private Pelicula exigir(int id) {
+        return peliculaDAO.buscarPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
     }
 
     /**

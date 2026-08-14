@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.FuncionImpl;
@@ -84,6 +85,13 @@ public class GestorFunciones {
                                        Proyeccion proyeccion, double precio) {
         Pelicula pelicula = peliculaDAO.buscarPorId(peliculaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
+        // Lo que trajo el importador y nadie miró todavía no se puede dar. Si se pudiera,
+        // el buzón de revisión no serviría de nada: bastaría con programar desde ahí para
+        // meter en la cartelera del cine algo que nunca nadie aprobó.
+        if (pelicula.getEstadoRevision() != EstadoRevision.CONFIRMADA) {
+            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+                    + " todavía no está confirmada: revisala antes de programarla");
+        }
         Sala sala = salaDAO.buscarPorId(salaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
         if (version == null || proyeccion == null) {
