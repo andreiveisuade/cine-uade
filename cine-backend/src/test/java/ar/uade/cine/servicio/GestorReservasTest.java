@@ -40,7 +40,9 @@ import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
+import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.archivo.ReservaDAOTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
@@ -100,7 +102,8 @@ class GestorReservasTest {
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
                 new GeneradorTicketTxt(directorioTickets), new CalculadoraPrecio(), ocupacion);
         pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO, funcionDAO,
-                new GestorPromociones(new PromocionDAOMemoria()));
+                new GestorPromociones(new PromocionDAOMemoria()), new MercadoPagoEmulado(),
+                new GeneradorReciboTxt(directorioTickets));
     }
 
     @Test

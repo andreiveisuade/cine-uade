@@ -29,8 +29,10 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -69,7 +71,9 @@ class AplicacionTest {
                 new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
                 new CompraCandyDAOMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
+                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
+                new GeneradorReciboTxt(tempDir.resolve("tickets")),
+                new MercadoPagoEmulado());
     }
 
     @Test

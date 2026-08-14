@@ -1,10 +1,13 @@
 package ar.uade.cine.servicio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Set;
@@ -35,7 +38,10 @@ import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
+import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
@@ -82,7 +88,8 @@ class GestorPagosTest {
                 new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio(),
                 new Ocupacion(reservaDAO, funcionDAO, asientoDAO));
         promociones = new GestorPromociones(new PromocionDAOMemoria());
-        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
+        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones,
+                new MercadoPagoEmulado(), new GeneradorReciboTxt(tempDir.resolve("tickets")));
     }
 
     @Test
@@ -264,6 +271,126 @@ class GestorPagosTest {
         assertTrue(arqueo.total() < pago.getSubtotal());
     }
 
+    // ---------- el comprobante del cobro ----------
+
+    /**
+     * El efectivo no deja rastro afuera del cine: si no se imprime el recibo, el cliente se
+     * va sin constancia de haber pagado.
+     */
+    @Test
+    void elCobroEnEfectivoImprimeElReciboDeCaja() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        Path recibo = tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt");
+
+        assertTrue(Files.exists(recibo));
+        assertTrue(leer(recibo).contains("EFECTIVO"));
+    }
+
+    /** El electrónico ya tiene su comprobante: el cupón del que salió el código. */
+    @Test
+    void elCobroElectronicoNoImprimeReciboDeCaja() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUT-123");
+
+        assertFalse(Files.exists(tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt")));
+    }
+
+    /** Lo que el recibo dice y el ticket no puede: el descuento se resuelve recién al cobrar. */
+    @Test
+    void elReciboMuestraElDescuentoQueSeAplicoAlCobrar() {
+        promociones.crearPorcentaje("50 off", 50,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of());
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        String recibo = leer(tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt"));
+
+        assertTrue(recibo.contains("Descuento"));
+        assertTrue(recibo.contains("2500.00"));
+    }
+
+    // ---------- el pago electrónico, contra la pasarela emulada ----------
+
+    @Test
+    void elCheckoutViajaConElLinkYElQrDeLaPasarela() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+
+        assertEquals(reserva.getId(), checkout.reservaId());
+        assertEquals(MedioPago.QR, checkout.medio());
+        assertEquals(5000.0, checkout.monto(), 0.001);
+        assertFalse(checkout.urlPago().isBlank());
+        assertFalse(checkout.codigoQr().isBlank());
+    }
+
+    /** El cliente aprueba un importe en la pantalla del procesador: tiene que ser el final. */
+    @Test
+    void elMontoDelCheckoutYaTraeElDescuentoAplicado() {
+        promociones.crearPorcentaje("50 off", 50,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of());
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+
+        assertEquals(2500.0, pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).monto(), 0.001);
+    }
+
+    /** R11 al revés: el efectivo no tiene a quién pedirle una autorización. */
+    @Test
+    void elEfectivoNoAbreCheckout() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.EFECTIVO));
+    }
+
+    @Test
+    void noSeAbreCheckoutDeUnaReservaYaPagada() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
+    }
+
+    /**
+     * El código no lo inventa el cine: sale de la pasarela y es lo que después permite
+     * reclamarle el cobro. R11 se cumple sin que nadie tipee nada.
+     */
+    @Test
+    void confirmarElCheckoutCobraConElCodigoQueDevolvioLaPasarela() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+
+        Pago pago = pagos.confirmarCheckout(checkout.id());
+
+        assertEquals(reserva.getId(), pago.getReservaId());
+        assertEquals(MedioPago.QR, pago.getMedio());
+        assertEquals(10000.0, pago.getMonto(), 0.001);
+        assertFalse(pago.getCodigoAutorizacion().isBlank());
+        assertEquals(EstadoReserva.PAGADA,
+                reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+    }
+
+    @Test
+    void noSeConfirmaUnCheckoutQueNoExiste() {
+        assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout("MP-0000000000"));
+    }
+
+    /** Un doble click no cobra dos veces: la segunda confirmación choca contra R5. */
+    @Test
+    void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+        pagos.confirmarCheckout(checkout.id());
+
+        assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout(checkout.id()));
+        assertEquals(1, pagos.listarDelDia(LocalDate.now()).size());
+    }
+
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
@@ -271,5 +398,13 @@ class GestorPagosTest {
             butacas.put(codigo, TipoTarifa.GENERAL);
         }
         return butacas;
+    }
+
+    private static String leer(Path archivo) {
+        try {
+            return Files.readString(archivo);
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo leer " + archivo, e);
+        }
     }
 }

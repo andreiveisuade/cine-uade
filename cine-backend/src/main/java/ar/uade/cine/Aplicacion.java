@@ -5,6 +5,7 @@ import ar.uade.cine.persistencia.ClienteDAO;
 import ar.uade.cine.persistencia.CompraCandyDAO;
 import ar.uade.cine.persistencia.EmpleadoDAO;
 import ar.uade.cine.persistencia.FuncionDAO;
+import ar.uade.cine.comprobantes.GeneradorRecibo;
 import ar.uade.cine.comprobantes.GeneradorTicket;
 import ar.uade.cine.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.persistencia.PagoDAO;
@@ -14,8 +15,11 @@ import ar.uade.cine.persistencia.ProgramacionDAO;
 import ar.uade.cine.persistencia.PromocionDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
+import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
 import ar.uade.cine.persistencia.mysql.ClienteDAOMySQL;
 import ar.uade.cine.persistencia.mysql.CompraCandyDAOMySQL;
@@ -73,12 +77,16 @@ public class Aplicacion {
     private final CalculadoraPrecio calculadoraPrecio;
 
     /**
-     * Todo en MySQL, con los comprobantes en archivos de texto: es como corren la consola
-     * y la API.
+     * Todo en MySQL, con los comprobantes en archivos de texto y la pasarela emulada: es
+     * como corren la consola y la API.
      *
      * <p>Los tickets van a disco y no a la base a propósito. Un comprobante es un papel
      * que se entrega, no un dato que se consulta: por eso su contrato es
      * {@link GeneradorTicket} y no un DAO.
+     *
+     * <p>{@link MercadoPagoEmulado} es la única implementación de pasarela que hay, y este
+     * es el único lugar que la nombra: enchufar la integración de verdad —con credenciales
+     * y llamadas de red— es cambiar este argumento, sin tocar una regla de negocio.
      */
     public static Aplicacion enMySQL() {
         return new Aplicacion(
@@ -86,7 +94,8 @@ public class Aplicacion {
                 new FuncionDAOMySQL(), new ClienteDAOMySQL(), new EmpleadoDAOMySQL(),
                 new ReservaDAOMySQL(), new PagoDAOMySQL(), new PromocionDAOMySQL(),
                 new ProgramacionDAOMySQL(), new ProductoDAOMySQL(), new CompraCandyDAOMySQL(),
-                new GeneradorTicketTxt(), new GeneradorTicketCandyTxt());
+                new GeneradorTicketTxt(), new GeneradorTicketCandyTxt(),
+                new GeneradorReciboTxt(), new MercadoPagoEmulado());
     }
 
     /**
@@ -103,7 +112,8 @@ public class Aplicacion {
                       ReservaDAO reservaDAO, PagoDAO pagoDAO, PromocionDAO promocionDAO,
                       ProgramacionDAO programacionDAO, ProductoDAO productoDAO,
                       CompraCandyDAO compraCandyDAO,
-                      GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy) {
+                      GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy,
+                      GeneradorRecibo generadorRecibo, PasarelaPagos pasarela) {
 
         calculadoraPrecio = new CalculadoraPrecio();
 
@@ -115,7 +125,8 @@ public class Aplicacion {
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);
         promociones = new GestorPromociones(promocionDAO);
-        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones);
+        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones, pasarela,
+                generadorRecibo);
         ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO);
         reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
                 peliculaDAO, generadorTicket, calculadoraPrecio, ocupacion);
