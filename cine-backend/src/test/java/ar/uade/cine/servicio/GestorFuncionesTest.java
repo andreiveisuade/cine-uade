@@ -150,12 +150,71 @@ class GestorFuncionesTest {
         assertEquals(1, funciones.listar().size());
     }
 
+    /**
+     * La función del setup termina 22:00 y la Sala 1 se limpia en 15 minutos, así que
+     * pegar una a las 22:00 ya no alcanza: la sala está ocupada limpiándose.
+     */
     @Test
-    void aceptaFuncionDespuesDeQueTerminaLaAnterior() {
-        assertDoesNotThrow(
+    void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
+        assertThrows(IllegalArgumentException.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 0),
                         Version.SUBTITULADA, Proyeccion.DOS_D, 4500));
+        assertEquals(1, funciones.listar().size());
+    }
+
+    /**
+     * El mensaje tiene que decir que el problema es la limpieza y hasta cuándo dura. Sin
+     * eso, el encargado ve "la sala está ocupada" a una hora en la que la cartelera no
+     * muestra nada y lo lee como un error del sistema.
+     */
+    @Test
+    void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 5),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, 4500));
+
+        assertTrue(e.getMessage().contains("limpieza"), e.getMessage());
+        assertTrue(e.getMessage().contains("22:15"), e.getMessage());
+    }
+
+    @Test
+    void aceptaFuncionCuandoYaTerminoLaLimpieza() {
+        assertDoesNotThrow(
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 15),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, 4500));
         assertEquals(2, funciones.listar().size());
+    }
+
+    /** Cero es válido: una sala que no necesita corte encadena funciones como antes. */
+    @Test
+    void sinLimpiezaLasFuncionesSePuedenEncadenar() {
+        salas.agregar("Sala sin corte", TipoSala.DOS_D, List.of(10, 10), Map.of(), 0);
+        funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, 4500);
+
+        assertDoesNotThrow(
+                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 22, 0),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, 4500));
+    }
+
+    /**
+     * Una limpieza negativa adelantaría el permiso para la función siguiente y la dejaría
+     * empezar antes de que termine la anterior: es un dato mal cargado, no "sin limpieza".
+     */
+    @Test
+    void rechazaSalaConLimpiezaNegativa() {
+        assertThrows(IllegalArgumentException.class,
+                () -> salas.agregar("Sala rota", TipoSala.DOS_D, List.of(10, 10), Map.of(), -5));
+    }
+
+    /** La limpieza es de la sala: la de al lado sigue libre a la misma hora. */
+    @Test
+    void laLimpiezaNoAfectaALasOtrasSalas() {
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(6, 8), Map.of(), 30);
+
+        assertDoesNotThrow(
+                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 22, 0),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, 4500));
     }
 
     @Test

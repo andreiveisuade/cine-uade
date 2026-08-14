@@ -31,10 +31,14 @@ class RutasSalas {
 
         app.post("/api/salas", ctx -> {
             PedidoSalaDTO pedido = ctx.bodyAsClass(PedidoSalaDTO.class);
+            // Sin minutosLimpieza queda el default de la sala: el ABM viejo del front no
+            // lo manda, y omitirlo tiene que seguir siendo un alta válida.
             Sala sala = salas.agregar(pedido.nombre(),
                     pedido.tipo() == null ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                     pedido.butacasPorFila(),
-                    especiales(pedido));
+                    especiales(pedido),
+                    pedido.minutosLimpieza() == null
+                            ? Sala.LIMPIEZA_POR_DEFECTO : pedido.minutosLimpieza());
             ctx.status(HttpStatus.CREATED).json(vistas.salaConButacas(sala));
         });
 

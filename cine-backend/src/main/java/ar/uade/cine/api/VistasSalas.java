@@ -50,7 +50,7 @@ public class VistasSalas {
     private SalaVistaDTO armar(Sala s, List<Asiento> asientos, List<AsientoVistaDTO> detalle) {
         List<Integer> distribucion = butacasPorFila(asientos);
         return new SalaVistaDTO(s.getId(), s.getNombre(), s.getTipo().name(), distribucion,
-                distribucion.size(), asientos.size(), detalle);
+                distribucion.size(), asientos.size(), s.getMinutosLimpieza(), detalle);
     }
 
     /**

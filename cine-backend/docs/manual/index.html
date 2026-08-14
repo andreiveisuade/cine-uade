@@ -498,7 +498,7 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>R1</td><td>No puede haber dos películas con el mismo título</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R2</td><td>Duración de película y butacas de cada fila mayores a cero</td><td><span class="tag tag-ok">hecha</span></td></tr>
-            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas</td><td><span class="tag tag-ok">hecha</span></td></tr>
+            <tr><td>R3</td><td>Una sala no puede tener dos funciones superpuestas, contando la limpieza entre una y la siguiente</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R4</td><td>No se puede reservar una butaca que ya está tomada en esa función</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R5</td><td>Solo se cobra una reserva en estado RESERVADA, y una sola vez</td><td><span class="tag tag-ok">hecha</span></td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td><td><span class="tag tag-ok">hecha</span></td></tr>
@@ -1062,6 +1062,13 @@ body.lightbox-locked { overflow: hidden; }
         que hay que leer, sumar al horario y comparar con la fila siguiente. Dibujado, La Odisea ocupa casi tres
         horas de columna y un corto una franja mínima. La regla se ve en vez de calcularse.
       </p>
+      <p>
+        Debajo de cada bloque va una <strong>franja rayada: la limpieza</strong>. Es el rato en que la sala se
+        está levantando y no se puede programar nada, y sale de <code>sala.minutosLimpieza</code>. Sin
+        dibujarla, ese hueco existe igual —el backend rechaza el alta— pero en la pantalla se ve como espacio
+        libre, y el encargado descubre la regla recién cuando el alta le falla. Es el mismo criterio que el alto
+        del bloque: la restricción se ve en vez de sorprender.
+      </p>
       <div class="callout">
         <p>
           <strong>Y sin embargo la agenda no está en el modelo de dominio, a propósito.</strong> El test es
@@ -1117,6 +1124,37 @@ body.lightbox-locked { overflow: hidden; }
           <code>GestorSalas.capacidad(salaId)</code>.
         </p>
       </div>
+
+      <h3 id="limpieza">La limpieza entre funciones</h3>
+      <p>
+        Entre que sale el último espectador y entra el primero de la función siguiente hay que levantar la
+        sala. Ese rato es <code>sala.minutosLimpieza</code> y cuenta para R3: lo que ocupa una función no es su
+        duración sino su duración <strong>más</strong> la limpieza. Programar a las 22:00 algo que termina a las
+        22:00 es vender una función que empieza con la gente adentro barriendo.
+      </p>
+      <p>
+        <strong>Va en la sala y no como constante del sistema</strong> porque no todas tardan lo mismo: una de
+        sesenta butacas se limpia mientras a la de doscientas todavía le están saliendo. Que sea configurable es
+        justamente lo que permite programar la sala chica más apretada. Cero es válido y significa que se puede
+        encadenar sin corte; negativo se rechaza al crear la sala, porque no es «sin limpieza» sino un dato mal
+        cargado que dejaría empezar una función antes de que termine la anterior.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Y no es una entidad ni un bloque agendado</strong>, por el mismo test que dejó a la agenda
+          afuera del dominio: ¿qué guarda?, ¿qué pasa cuando cambia? La limpieza no guarda nada propio —se
+          deriva entera de la función anterior— y no tiene identidad ni ciclo de vida. Es un margen, y por eso
+          vive como un número en <code>Sala</code>. Modelarla como entidad habría sido agendar un objeto que
+          nadie consulta por sí mismo.
+        </p>
+      </div>
+      <p>
+        El mensaje de error distingue los dos choques posibles, y no por prolijidad. Si la función anterior
+        termina 22:00 y el encargado intenta las 22:05, «la sala ya tiene una función en ese horario» es
+        desconcertante: mirando la cartelera no hay nada a esa hora. El sistema responde
+        <em>«La sala necesita 15 minutos de limpieza: la función anterior termina 22:00 y hasta 22:15 no se
+        puede empezar»</em>, que es la diferencia entre «esto está roto» y «ah, corro la función un rato».
+      </p>
 
       <h3>Un asiento no está "ocupado"</h3>
       <p>
@@ -3747,6 +3785,11 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>record</code> en los value objects</td>
               <td>Interfaz + <code>Impl</code> también acá</td>
               <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>La limpieza como número en <code>Sala</code></td>
+              <td>Un bloque agendado entre funciones</td>
+              <td>No guarda nada propio ni tiene ciclo de vida: se deriva de la función anterior. Mismo test que dejó a la agenda afuera del dominio. Y va por sala y no como constante porque una de sesenta butacas no tarda lo mismo que una de doscientas</td>
             </tr>
             <tr>
               <td>DTO propios en <code>dto/</code></td>

@@ -22,16 +22,17 @@ import ar.uade.cine.persistencia.SalaDAO;
  */
 public class SalaDAOMySQL implements SalaDAO {
 
-    private static final String SELECT = "SELECT id, nombre, tipo FROM sala";
+    private static final String SELECT = "SELECT id, nombre, tipo, minutos_limpieza FROM sala";
 
     @Override
     public void guardar(Sala sala) {
-        String sql = "INSERT INTO sala (nombre, tipo) VALUES (?, ?)";
+        String sql = "INSERT INTO sala (nombre, tipo, minutos_limpieza) VALUES (?, ?, ?)";
         try (Connection con = ConexionMySQL.abrir();
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, sala.getNombre());
             ps.setString(2, sala.getTipo().name());
+            ps.setInt(3, sala.getMinutosLimpieza());
             ps.executeUpdate();
 
             try (ResultSet claves = ps.getGeneratedKeys()) {
@@ -91,6 +92,7 @@ public class SalaDAOMySQL implements SalaDAO {
         return new SalaImpl(
                 rs.getInt("id"),
                 rs.getString("nombre"),
-                TipoSala.valueOf(rs.getString("tipo")));
+                TipoSala.valueOf(rs.getString("tipo")),
+                rs.getInt("minutos_limpieza"));
     }
 }

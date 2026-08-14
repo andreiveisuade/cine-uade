@@ -8,6 +8,6 @@ import java.util.List;
  * espera el mapa de especiales.
  */
 public record PedidoSalaDTO(String nombre, String tipo, List<Integer> butacasPorFila,
-                         List<String> codigosVip, List<String> codigosPareja,
-                         List<String> codigosAccesibles) {
+                            List<String> codigosVip, List<String> codigosPareja,
+                            List<String> codigosAccesibles, Integer minutosLimpieza) {
 }

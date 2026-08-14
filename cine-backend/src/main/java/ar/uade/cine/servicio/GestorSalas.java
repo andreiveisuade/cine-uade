@@ -38,6 +38,11 @@ public class GestorSalas {
         return agregar(nombre, tipo, butacasPorFila, Map.of());
     }
 
+    public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
+                        Map<String, TipoAsiento> especiales) {
+        return agregar(nombre, tipo, butacasPorFila, especiales, Sala.LIMPIEZA_POR_DEFECTO);
+    }
+
     /**
      * Crea la sala y genera sus butacas. La distribución es cuántas butacas tiene cada
      * fila de adelante hacia atrás: [8, 10, 12] es fila A con 8, B con 10 y C con 12.
@@ -45,9 +50,12 @@ public class GestorSalas {
      * se describe por los asientos que quedaron creados.
      *
      * <p>El mapa marca por código las butacas que no son estándar; el resto lo son.
+     *
+     * @param minutosLimpieza cuánto hay que esperar entre dos funciones de esta sala. Cero
+     *                        es válido y significa que se puede encadenar sin corte
      */
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
-                        Map<String, TipoAsiento> especiales) {
+                        Map<String, TipoAsiento> especiales, int minutosLimpieza) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
@@ -64,13 +72,18 @@ public class GestorSalas {
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
         }
+        // Negativo no es "sin limpieza", es un dato mal cargado: adelantaría el permiso
+        // para la función siguiente y la dejaría empezar antes de que termine la anterior.
+        if (minutosLimpieza < 0) {
+            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
+        }
         boolean repetida = salaDAO.listar().stream()
                 .anyMatch(s -> s.getNombre().equalsIgnoreCase(nombre));
         if (repetida) {
             throw new IllegalArgumentException("Ya existe una sala con ese nombre");
         }
 
-        Sala sala = new SalaImpl(nombre, tipo);
+        Sala sala = new SalaImpl(nombre, tipo, minutosLimpieza);
         salaDAO.guardar(sala);
         asientoDAO.guardarTodos(generarAsientos(sala.getId(), butacasPorFila, especiales));
         return sala;

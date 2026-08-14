@@ -9,14 +9,16 @@ public class SalaImpl implements Sala {
     private int id;
     private final String nombre;
     private final TipoSala tipo;
+    private final int minutosLimpieza;
 
-    public SalaImpl(String nombre, TipoSala tipo) {
+    public SalaImpl(String nombre, TipoSala tipo, int minutosLimpieza) {
         this.nombre = nombre;
         this.tipo = tipo;
+        this.minutosLimpieza = minutosLimpieza;
     }
 
-    public SalaImpl(int id, String nombre, TipoSala tipo) {
-        this(nombre, tipo);
+    public SalaImpl(int id, String nombre, TipoSala tipo, int minutosLimpieza) {
+        this(nombre, tipo, minutosLimpieza);
         this.id = id;
     }
 
@@ -38,6 +40,11 @@ public class SalaImpl implements Sala {
     @Override
     public TipoSala getTipo() {
         return tipo;
+    }
+
+    @Override
+    public int getMinutosLimpieza() {
+        return minutosLimpieza;
     }
 
     @Override

@@ -26,7 +26,11 @@ CREATE TABLE IF NOT EXISTS pelicula_genero (
 CREATE TABLE IF NOT EXISTS sala (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL,
-    tipo VARCHAR(15) NOT NULL
+    tipo VARCHAR(15) NOT NULL,
+    -- Cuanto hay que dejar entre dos funciones para levantar la sala. Va por sala y no
+    -- como constante del sistema porque no todas tardan lo mismo. DEFAULT para que las
+    -- salas cargadas antes de esta columna sigan teniendo un margen razonable.
+    minutos_limpieza INT NOT NULL DEFAULT 15
 );
 
 CREATE TABLE IF NOT EXISTS asiento (
