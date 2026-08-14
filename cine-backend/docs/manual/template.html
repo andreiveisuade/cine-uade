@@ -3270,7 +3270,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Aceptación</strong></td>
               <td>Que un usuario pueda hacer lo que el caso de uso promete</td>
-              <td>Los casos CP-10 a CP-18, a mano en el navegador</td>
+              <td>Los casos CP-10 a CP-19, a mano en el navegador</td>
               <td>media hora</td>
             </tr>
           </tbody>
@@ -3701,6 +3701,70 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         mapa, sigue en <code>RESERVADA</code>.
       </p>
 
+      <h4>CP-19 · La butaca que alguien está eligiendo no se ofrece <span class="tag tag-ok">concurrencia</span></h4>
+      <p>
+        Es el único caso que necesita <strong>dos personas a la vez</strong>, y alcanza con
+        dos pestañas: la sesión de compra vive en <code>sessionStorage</code>, que es por
+        pestaña, así que dos pestañas del mismo navegador son dos clientes distintos.
+      </p>
+      <ol>
+        <li>Abrí la misma función en dos pestañas. Llamémoslas A y B.</li>
+        <li>En A, elegí tres butacas —por ejemplo B3, B4 y B5—. No confirmes nada.</li>
+        <li>Recargá B.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> en B esas tres aparecen en gris, con el tooltip
+        «ocupada», y el contador de arriba bajó de a tres. <strong>Nadie las compró</strong>:
+        no hay ninguna reserva nueva en el panel del encargado. En A siguen elegibles, porque
+        las suyas no le están ocupadas a ella.
+      </p>
+
+      <figure class="diagram">
+        <img src="{{IMG_BLOQUEO}}" alt="Mapa de butacas visto por la segunda sesión, con B3, B4 y B5 en gris mientras la primera las está eligiendo" />
+        <figcaption>Lo que ve B mientras A elige — B3, B4 y B5 tomadas sin que exista ninguna reserva</figcaption>
+      </figure>
+
+      <p>Quién tiene cada una se puede mirar, y es la forma más rápida de entender el mecanismo:</p>
+      <pre><code>docker exec cine-redis redis-cli --scan --pattern 'cine:bloqueo:*'
+docker exec cine-redis redis-cli ttl cine:bloqueo:&lt;funcion&gt;:&lt;asiento&gt;</code></pre>
+      <p>
+        <strong>Esperado:</strong> una clave por butaca, con la sesión de A como valor y un
+        TTL que baja solo. Si en A tocás una butaca de nuevo, el TTL vuelve a subir: tardar
+        en decidir no cuesta la butaca.
+      </p>
+      <ol start="4">
+        <li>En A, confirmá la compra de <em>una sola</em> de las tres. Recargá B.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> la comprada sigue ocupada —ahora la retiene la reserva— y
+        las otras dos <strong>volvieron a la venta en el acto</strong>, sin esperar a que
+        venzan. Las claves de esa función en Redis quedaron en cero.
+      </p>
+      <p>
+        Falta la mitad más importante, y es el mismo caso mirado <strong>sin el
+        servicio</strong>: lo que hay que ver es qué se pierde y qué no.
+      </p>
+      <pre><code>docker compose stop redis</code></pre>
+      <ol start="5">
+        <li>Repetí el paso 2 en A y recargá B.</li>
+      </ol>
+      <p>
+        <strong>Esperado:</strong> las butacas que A está eligiendo <em>ya no</em> aparecen
+        tomadas en B —el bloqueo desapareció— pero la que se vendió en el paso 4
+        <strong>sigue ocupada</strong>. Y B puede comprar sin problema: sale el ticket. En el
+        log del backend hay <strong>una sola línea</strong> avisando que Redis no responde,
+        no una por consulta:
+      </p>
+      <pre><code>docker compose logs backend | grep -i redis
+docker compose start redis        # y el log dice que volvió</code></pre>
+      <p>
+        Levantado de nuevo, el bloqueo funciona desde el primer click.
+        <br><em>Verifica:</em> CU-06; que las dos etapas —<a href="#bloqueo">bloqueo</a> y
+        reserva— no se solapan; y que el bloqueo es una <em>comodidad</em> y no la garantía.
+        Sin Redis se vuelve a la etapa en que la butaca se pierde recién al confirmar, pero
+        que no se venda dos veces lo sigue sosteniendo el <code>UNIQUE</code> de la base.
+      </p>
+
       <h3>Matriz de trazabilidad</h3>
       <p>
         Sirve para dos preguntas: «este caso de prueba, ¿para qué está?» y —más
@@ -3716,6 +3780,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
             <tr><td>R15 gana la mejor promo</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
             <tr><td>R16 tarifa reducida afuera</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
             <tr><td>R17 no se cobra vencida</td><td><code>GestorReservasTest</code></td><td>CP-18</td></tr>
+            <tr><td><a href="#bloqueo">Bloqueo de mientras se elige</a></td><td><code>OcupacionTest</code>, <code>BloqueoButacasRedisTest</code></td><td>CP-19</td></tr>
             <tr><td>R18 se ingresa una sola vez</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16</td></tr>
             <tr><td>CU-06 reservar</td><td><code>GestorReservasTest</code></td><td>CP-02, CP-10</td></tr>
             <tr><td>CU-17 promociones</td><td><code>GestorPromocionesTest</code></td><td>CP-04, CP-08, CP-14</td></tr>
@@ -3854,6 +3919,18 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
           </tbody>
         </table>
       </div>
+      <p>
+        <strong>CP-19 no está en esa tabla porque todavía no existía.</strong> El
+        <a href="#bloqueo">bloqueo de mientras se elige</a> se sumó después, y su caso se
+        corrió el <strong>14/08</strong> contra el compose completo, con dos pestañas sobre
+        la misma función: la primera eligió B3, B4 y B5 y la segunda las vio en gris con el
+        contador en 51 de 56, sin que existiera ninguna reserva. Al confirmar una sola
+        butaca, las otras dos volvieron a la venta en el acto y Redis quedó sin claves para
+        esa función. Con <code>docker compose stop redis</code> la segunda pudo comprar
+        igual y el log dejó una sola línea. Pasó, sin defectos. Se anota acá y no en la
+        tabla de arriba porque esa tabla es el registro de <em>esa</em> corrida, no un
+        acumulado: mezclarlas haría que la fecha del encabezado dejara de ser cierta.
+      </p>
 
       <h3>CP-10 · Comprar con dos tarifas distintas</h3>
       <p>
