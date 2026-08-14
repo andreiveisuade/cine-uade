@@ -59,11 +59,17 @@ aparte:
 [{ "id": 1, "peliculaId": 1, "salaId": 1, "inicio": "2026-08-13T20:30:00",
    "idioma": "SUBTITULADA", "proyeccion": "DOS_D", "precio": 5000,
    "sala": { "id": 1, "nombre": "Sala 1", "tipo": "IMAX",
-             "butacasPorFila": [8,10,12,12,14], "filas": 5, "capacidadSala": 56 },
+             "butacasPorFila": [8,10,12,12,14], "filas": 5, "capacidadSala": 56,
+             "minutosLimpieza": 15 },
    "precioDesde": 8000 }]
 ```
 
 `precioDesde` es `precio × multiplicador de sala`: la butaca más barata.
+
+`minutosLimpieza` es cuánto tarda esa sala en levantarse entre dos funciones. Cuenta para
+R3: una función no puede empezar hasta que termine la anterior **más** esos minutos, así
+que programar a las 22:00 algo que termina a las 22:00 da 400. La agenda del admin lo
+dibuja como una franja rayada debajo de cada bloque.
 
 ### `GET /api/funciones/{id}`
 El endpoint del mapa de butacas. Lo de arriba **más** todas las butacas de la sala, cada
@@ -146,7 +152,7 @@ llevarlo directo a esa pantalla y no al panel.
 | DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas |
 | GET | `/api/salas` | |
 | GET | `/api/salas/{id}` | Con `asientos` |
-| POST | `/api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles}` |
+| POST | `/api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. `minutosLimpieza` es opcional: ausente son 15, y no puede ser negativo |
 | DELETE | `/api/salas/{id}` | 400 si tiene funciones |
 | PUT | `/api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` |
 | GET | `/api/funciones` | Todas, con `pelicula` y `sala` embebidas |

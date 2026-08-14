@@ -356,13 +356,14 @@ export function obtenerSala(id) {
 }
 
 export function crearSala({ nombre, tipo, butacasPorFila,
-                            codigosVip, codigosPareja, codigosAccesibles }) {
+                            codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza }) {
   const nombreSala = (nombre || "").trim();
   if (!nombreSala) return fallar("El nombre no puede estar vacío");
   if (!datos.TIPOS_SALA[tipo]) return fallar("Falta el tipo de sala");
   if (!butacasPorFila || butacasPorFila.length === 0) return fallar("La sala necesita al menos una fila");
   if (butacasPorFila.length > 26) return fallar("Máximo 26 filas: se identifican con una letra");
   if (butacasPorFila.some((b) => !(b > 0))) return fallar("Cada fila debe tener al menos una butaca");
+  if (minutosLimpieza < 0) return fallar("Los minutos de limpieza no pueden ser negativos");
   if (datos.salas.some((s) => s.nombre.toLowerCase() === nombreSala.toLowerCase())) {
     return fallar("Ya existe una sala con ese nombre");
   }
@@ -374,6 +375,8 @@ export function crearSala({ nombre, tipo, butacasPorFila,
     butacasPorFila: [...butacasPorFila],
     filas: butacasPorFila.length,
     capacidadSala: butacasPorFila.reduce((a, b) => a + b, 0),
+    // Ausente es el default del backend, no cero: cero significaría "encadena sin corte".
+    minutosLimpieza: minutosLimpieza == null ? 15 : minutosLimpieza,
   };
   datos.salas.push(sala);
 

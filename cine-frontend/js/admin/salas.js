@@ -28,7 +28,7 @@ export async function vistaSalas(contenedor, id) {
       <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table class="w-full text-sm">
           <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2">Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th></th></tr>
+            <tr><th class="p-2">Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Limpieza</th><th></th></tr>
           </thead>
           <tbody>
             ${salas.map((s) => `
@@ -37,6 +37,7 @@ export async function vistaSalas(contenedor, id) {
                 <td>${chip(etiqueta(s.tipo), "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300")}</td>
                 <td class="font-mono text-xs">${s.butacasPorFila.join(",")}</td>
                 <td>${s.capacidadSala}</td>
+                <td class="whitespace-nowrap">${s.minutosLimpieza} min</td>
                 <td class="p-2 text-right whitespace-nowrap">
                   <a href="#/salas/${s.id}" class="text-xs text-slate-700 hover:underline dark:text-slate-200">Butacas</a>
                   <button type="button" data-borrar="${s.id}"
@@ -81,6 +82,14 @@ export async function vistaSalas(contenedor, id) {
             <input name="accesibles" placeholder="A1,A8"
               class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
           </label>
+          <label class="block text-sm">
+            <span class="text-slate-600 dark:text-slate-300">Minutos de limpieza</span>
+            <input name="limpieza" type="number" min="0" value="15"
+              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
+            <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+              Lo que hay que esperar entre dos funciones. Una sala chica se levanta más rápido.
+            </span>
+          </label>
           <p id="previa" class="text-xs text-slate-500 dark:text-slate-400"></p>
           <button type="submit"
             class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Crear sala</button>
@@ -110,6 +119,7 @@ export async function vistaSalas(contenedor, id) {
         codigosVip: parsearCodigos(datos.get("vip")),
         codigosPareja: parsearCodigos(datos.get("pareja")),
         codigosAccesibles: parsearCodigos(datos.get("accesibles")),
+        minutosLimpieza: Number(datos.get("limpieza")),
       });
       avisar(`${sala.nombre} creada con ${sala.capacidadSala} butacas`);
       vistaSalas(contenedor);

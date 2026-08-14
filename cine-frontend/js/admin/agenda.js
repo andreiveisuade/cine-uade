@@ -183,6 +183,30 @@ function bloque(funcion, inicioFranja, columna) {
       <span class="ml-1">${escapar(funcion.pelicula.titulo)}</span>
       ${alto > 44 ? `<span class="block text-[11px] opacity-70">${escapar(columna.subtitulo(funcion))}</span>` : ""}
     </a>
+    ${limpieza(funcion, arranca + dura, inicioFranja)}
+  `;
+}
+
+/**
+ * La franja rayada que va pegada abajo de cada función: el rato en que la sala se está
+ * levantando y no se puede programar nada.
+ *
+ * <p>Es lo que vuelve visible por qué la próxima función no puede arrancar donde termina
+ * la anterior. Sin esto el hueco existe igual —el backend lo rechaza— pero en la pantalla
+ * se ve como espacio libre, y el encargado descubre la regla recién cuando el alta falla.
+ *
+ * <p>No es un bloque propio ni un enlace: no hay nada que abrir. Se deriva de la función
+ * de arriba, igual que la agenda entera se deriva de las funciones.
+ */
+function limpieza(funcion, termina, inicioFranja) {
+  const minutos = funcion.sala.minutosLimpieza;
+  if (!minutos) return "";
+
+  return `
+    <div class="pointer-events-none absolute inset-x-0.5 rounded-b border-t border-dashed border-slate-400/70"
+         style="top: ${(termina - inicioFranja) * PX_POR_MINUTO}px; height: ${minutos * PX_POR_MINUTO}px;
+                background-image: repeating-linear-gradient(45deg, rgb(100 116 139 / .18) 0 4px, transparent 4px 8px)"
+         title="Limpieza de ${escapar(funcion.sala.nombre)}: ${minutos} min, hasta ${enHora(termina + minutos)}"></div>
   `;
 }
 
@@ -220,7 +244,10 @@ function armarColumnas(modo, desde, salas, sala) {
 function franjaHoraria(funciones) {
   if (!funciones.length) return null;
   const arranques = funciones.map((f) => minutosDe(f.inicio));
-  const finales = funciones.map((f) => minutosDe(f.inicio) + f.pelicula.duracionMinutos);
+  // El final incluye la limpieza: si no, la franja termina justo donde acaba la última
+  // película y su rayado queda cortado por el borde de la grilla.
+  const finales = funciones.map((f) =>
+    minutosDe(f.inicio) + f.pelicula.duracionMinutos + (f.sala.minutosLimpieza || 0));
   return {
     inicio: Math.floor(Math.min(...arranques) / 60) * 60,
     fin: Math.ceil(Math.max(...finales) / 60) * 60,

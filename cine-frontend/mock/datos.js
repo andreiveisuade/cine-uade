@@ -196,6 +196,10 @@ for (const def of definicionSalas) {
     butacasPorFila: def.butacasPorFila,
     filas: def.butacasPorFila.length,
     capacidadSala: def.butacasPorFila.reduce((a, b) => a + b, 0),
+    // Sale del tamaño para que el mock muestre salas que se limpian a distinto ritmo,
+    // que es de lo que se trata el dato: una de sesenta butacas no tarda lo mismo que
+    // una de doscientas. El backend no lo calcula, se lo carga el encargado.
+    minutosLimpieza: def.butacasPorFila.reduce((a, b) => a + b, 0) > 100 ? 20 : 15,
   };
   salas.push(sala);
   const generados = generarAsientos(
