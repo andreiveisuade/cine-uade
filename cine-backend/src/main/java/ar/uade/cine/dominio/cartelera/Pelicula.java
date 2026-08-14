@@ -64,6 +64,17 @@ public interface Pelicula {
     void setPuntaje(double puntaje);
 
     /**
+     * Sobre cuántos votos se calculó el puntaje.
+     *
+     * <p>Es lo que dice cuánto vale ese puntaje, y sin esto no se puede leer. Un 8,0 sobre
+     * seis votos y un 8,0 sobre cinco mil son el mismo número y no la misma información; un
+     * 0,0 sobre cero votos no es una película mala, es una que todavía nadie vio.
+     */
+    int getVotos();
+
+    void setVotos(int votos);
+
+    /**
      * Si el encargado ya decidió qué hacer con ella. Las que carga él nacen
      * {@link EstadoRevision#CONFIRMADA} —cargarla ya es haberla decidido— y las que trae
      * el importador nacen {@link EstadoRevision#PENDIENTE}.

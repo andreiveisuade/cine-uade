@@ -23,6 +23,7 @@ public class PeliculaImpl implements Pelicula {
     private String posterUrl = "";
     private boolean enCartelera = true;
     private double puntaje;
+    private int votos;
     /**
      * Confirmada por defecto: el alta normal es la del encargado, y cargarla a mano ya es
      * haberla decidido. Sólo el importador la baja a PENDIENTE.
@@ -151,6 +152,16 @@ public class PeliculaImpl implements Pelicula {
     @Override
     public void setPuntaje(double puntaje) {
         this.puntaje = puntaje;
+    }
+
+    @Override
+    public int getVotos() {
+        return votos;
+    }
+
+    @Override
+    public void setVotos(int votos) {
+        this.votos = votos;
     }
 
     @Override

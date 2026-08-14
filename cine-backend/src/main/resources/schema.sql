@@ -18,7 +18,11 @@ CREATE TABLE IF NOT EXISTS pelicula (
     -- Valoracion de 0 a 10: el vote_average de TMDB para lo importado. Es con lo que el
     -- planificador de la grilla ordena, porque "programar las mejores" necesita un numero
     -- que compare dos peliculas.
-    puntaje DECIMAL(3,1) NOT NULL DEFAULT 0
+    puntaje DECIMAL(3,1) NOT NULL DEFAULT 0,
+    -- Sobre cuantos votos se calculo ese puntaje. Es lo que dice cuanto vale: un 8,0 sobre
+    -- seis votos y un 8,0 sobre cinco mil son el mismo numero y no la misma informacion, y
+    -- un 0,0 sobre cero votos no es una pelicula mala sino una que nadie vio todavia.
+    votos INT NOT NULL DEFAULT 0
 );
 
 -- Una película tiene varios géneros: tabla aparte con la relación.
