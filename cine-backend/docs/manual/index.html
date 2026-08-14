@@ -461,14 +461,14 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta en el gestor y el menú de consola, con 245 tests en verde. La API HTTP
+          implementados de punta a punta en el gestor y el menú de consola, con 260 tests en verde. La API HTTP
           todavía no expone candy —<code>ServidorApi</code> no instancia <code>GestorCandy</code>—, así que el
           frontend web no lo tiene. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
           <strong>Segunda vuelta, ya implementada.</strong> El modelo se amplió con tarifas por tipo de
           público, promociones, control de acceso con QR, vencimiento de reservas y venta de candy anónima o
-          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 245 tests en verde.
+          ligada a la reserva. Todo eso está modelado <em>y</em> funcionando, con 260 tests en verde.
         </p>
       </div>
     </section>
@@ -2830,7 +2830,7 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       </p>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 245 tests, no necesitan base
+      <pre><code>mvn test                 # los 260 tests, no necesitan base
 mvn exec:java            # menú de consola, necesita un MySQL en localhost:3306</code></pre>
       <p>
         El menú sigue existiendo y no se tocó: son dos interfaces —<code>MenuConsola</code> y la API HTTP—
@@ -2870,7 +2870,7 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Unitaria</strong></td>
               <td>Una regla de negocio aislada, sin base ni red</td>
-              <td>Los 245 tests de JUnit sobre los gestores</td>
+              <td>Los tests de JUnit sobre los gestores</td>
               <td>menos de un segundo</td>
             </tr>
             <tr>
@@ -2882,8 +2882,8 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
             <tr>
               <td><strong>Sistema</strong></td>
               <td>La API completa por HTTP, sin abrir el navegador</td>
-              <td>Los casos CP-01 a CP-09 de acá abajo</td>
-              <td>minutos</td>
+              <td><code>RutasInformesTest</code> y <code>RutasPagosTest</code>, que levantan el servidor de verdad, y los casos CP-01 a CP-09 de acá abajo</td>
+              <td>los automáticos, medio segundo; los CP, minutos</td>
             </tr>
             <tr>
               <td><strong>Aceptación</strong></td>
@@ -2928,7 +2928,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 245 tests, todos en verde</code></pre>
+mvn clean test                    # 260 tests, todos en verde</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -2946,6 +2946,33 @@ mvn clean test                    # 245 tests, todos en verde</code></pre>
         por constructor: sin inversión de dependencias, probar una regla exigiría levantar
         una base.
       </p>
+
+      <h4>Los que sí levantan el servidor</h4>
+      <p>
+        Quince de esos tests no prueban una regla sino la <strong>capa HTTP</strong>, que es
+        lo que un test de gestor no puede ver. Un gestor rechaza siempre igual, con
+        <code>IllegalArgumentException</code>; que eso salga como 400 y no como 404 —o al
+        revés— se decide en <code>api/</code>, y es parte del contrato con el frontend.
+      </p>
+      <p>
+        Por eso <code>ApiEnMemoria</code> levanta <code>ServidorApi.armar()</code>, la misma
+        API que corre en producción, contra la aplicación en memoria y en el puerto
+        <code>0</code> —el que el sistema operativo tenga libre—. Registrar las rutas a mano
+        en un Javalin armado para la prueba habría dejado afuera justamente lo que se quiere
+        comprobar: el mapeo de excepciones y el mapper de JSON. El test seguiría en verde el
+        día que esos dos cambien.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Un test que no falla cuando rompés el código no prueba nada.</strong> La
+          forma barata de comprobarlo es romperlo a propósito: cambiar el
+          <code>NoEncontrado</code> de <code>RutasInformes</code> por un
+          <code>IllegalArgumentException</code> —un error que parece equivalente y no lo es—
+          hace fallar exactamente un caso, con
+          <code>expected: &lt;404&gt; but was: &lt;400&gt;</code>. Después se revierte. Es
+          medio minuto y es la diferencia entre tener una prueba y tener una que acompaña.
+        </p>
+      </div>
 
       <h3>Nivel 2: que el esquema sea válido</h3>
       <p>
@@ -3338,7 +3365,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 245 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 260 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -3354,7 +3381,7 @@ curl -s http://localhost:8080/api/funciones | grep -c '"id"'</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 245 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 260 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -3762,7 +3789,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 245 tests en verde. Las
+        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 260 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y el ticket de butacas, el del candy, el
         recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
@@ -3806,6 +3833,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
             <tr><td><code>GestorInformesTest</code></td><td>que el borderó declare solo lo cobrado y no las reservas impagas ni las entradas de otra función, el desglose por tarifa, la separación bruto/descuento/neto, la función sin ventas, el archivo exportado, y que el candy de mostrador no se atribuya a ninguna función</td></tr>
             <tr><td><code>GestorCandyTest</code></td><td>R14, el ahorro del combo, la venta con ticket y el arqueo del candy</td></tr>
             <tr><td><code>GestorAdministradoresTest</code></td><td>login, hash de contraseña, email repetido</td></tr>
+            <tr><td><code>RutasInformesTest</code> y <code>RutasPagosTest</code></td><td>lo que solo se ve por HTTP: que el borderó de una función inexistente sea 404 y no 400, que emitirlo sea 201 y consultarlo 200, que el desglose viaje con el nombre del enum como clave, y que el id del checkout que devuelve el primer pedido sirva para confirmar en el segundo</td></tr>
           </tbody>
         </table>
       </div>
