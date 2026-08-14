@@ -20,6 +20,7 @@ node "Docker host\ndocker-compose.yml (cine-docker)" {
 
   frame "red **datos**" {
     database "cine-mysql\nmysql:8.4" as mysql
+    database "cine-redis\nredis:8-alpine\nsin volumen: --save \"\"" as redis
     node "cine-adminer\nadminer:5" as adminer
   }
 
@@ -40,6 +41,7 @@ frontend --> backend : proxy_pass /api\n-> backend:8080
 parser --> backend : POST /api/peliculas\n(HTTP, no SQL)
 parser --> tmdb : GET now_playing?region=AR
 backend --> mysql : DB_HOST=mysql:3306
+backend ..> redis : REDIS_HOST=redis:6379\n(si no responde, se vende igual)
 adminer --> mysql : ADMINER_DEFAULT_SERVER
 mysql --> vol : monta en\n/var/lib/mysql
 
@@ -80,7 +82,11 @@ legend bottom
   | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros tres repos hermanos; |
   |  | ninguno tiene codigo de la app propio, solo docker-compose.yml, .env y el seed del admin. |
   | red **web** | frontend y parser <-> backend. |
-  | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base. |
+  | red **datos** | backend y adminer <-> mysql, backend <-> redis. El frontend no tiene ruta hasta la base. |
+  | redis | Los bloqueos de butaca de mientras alguien elige. Unico servicio que se puede |
+  |  | apagar sin romper nada: sin el se vende como antes de que existiera, porque la |
+  |  | doble venta la impide el UNIQUE de MySQL. Por eso el backend lo espera con |
+  |  | "service_started" y no con "service_healthy" como a la base. |
   | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
   | parser | Importa la cartelera real de TMDB. Escribe por HTTP: que no este en la red |
   |  | **datos** es lo que convierte "no toca la base" en una garantia de red. |
