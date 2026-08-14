@@ -40,6 +40,26 @@ services:
     networks:
       - datos
 
+  # Donde viven los bloqueos de butaca mientras alguien las elige. Es lo contrario de
+  # MySQL: lo que se guarda acá dura tres minutos y después no le importa a nadie.
+  #
+  # `--save ""` apaga la persistencia a disco a propósito. Guardar en un archivo algo
+  # que vence en tres minutos solo sirve para recuperar, después de un reinicio,
+  # bloqueos que ya vencieron.
+  redis:
+    image: redis:8-alpine
+    container_name: cine-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    # Sin `ports`: solo lo alcanza el backend, por la red interna.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datos
+
   backend:
     build:
       context: ../cine-backend
@@ -56,12 +76,21 @@ services:
       DB_NAME: ${DB_NAME:-appsinteractivas}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
       PORT: "8080"
     depends_on:
       mysql:
         # Que el contenedor de MySQL esté arriba no significa que la base acepte
         # conexiones: el backend abre una en el primer request y fallaría.
         condition: service_healthy
+      redis:
+        # A propósito `service_started` y no `service_healthy`, que es lo contrario de lo
+        # que se le pide a MySQL: sin la base el sistema no puede funcionar, sin Redis sí.
+        # Un `service_healthy` acá haría que un Redis roto impidiera vender entradas, que
+        # es justo el retroceso que el bloqueo tiene prohibido causar: la doble venta la
+        # sigue impidiendo el UNIQUE de la base.
+        condition: service_started
     healthcheck:
       # Un endpoint de catálogo alcanza: si responde, el servidor levantó y ruteó.
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/api/generos"]

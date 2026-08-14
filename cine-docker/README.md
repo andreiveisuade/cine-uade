@@ -43,6 +43,7 @@ se los alcanza desde adentro de la red de Docker.
 | frontend | 8080 | el navegador |
 | backend | — | `http://backend:8080`, desde nginx |
 | mysql | — | `mysql:3306`, desde el backend y Adminer |
+| redis | — | `redis:6379`, solo desde el backend |
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
 | parser | — | no recibe nada: sale a TMDB y le pega al backend |
 
@@ -56,6 +57,24 @@ sale del mismo origen y no hace falta CORS.
 
 Las dos redes están separadas: el contenedor que sirve la web no tiene ruta hasta la base.
 El backend es el único que está en las dos.
+
+## Redis se puede apagar
+
+`redis` guarda los bloqueos de butaca de mientras alguien elige, y es el único servicio del
+compose que se puede bajar sin romper nada:
+
+```sh
+docker compose stop redis          # el cine sigue vendiendo
+```
+
+Con Redis apagado el mapa deja de mostrar como tomadas las butacas que alguien está
+eligiendo, y esa butaca se pierde recién al confirmar —que es como funcionaba el sistema
+antes de que Redis existiera—. Lo que **no** cambia es que una butaca no se vende dos
+veces: eso lo garantiza el `UNIQUE (funcion_id, asiento_id)` de MySQL, no Redis. Por eso el
+backend depende de él con `service_started` y no con `service_healthy` como de la base.
+
+No tiene volumen y arranca con `--save ""`: lo que guarda vence en tres minutos, así que
+persistirlo solo serviría para recuperar, después de un reinicio, bloqueos ya vencidos.
 
 ## El importador de cartelera
 
