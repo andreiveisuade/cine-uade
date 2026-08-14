@@ -32,8 +32,20 @@ public class ServidorApi {
     private static final int PUERTO_POR_DEFECTO = 8080;
 
     public static void main(String[] args) {
-        Aplicacion aplicacion = Aplicacion.enMySQL();
+        armar(Aplicacion.enMySQL()).start(puerto());
+    }
 
+    /**
+     * La API entera, armada y sin arrancar: el JSON, las rutas y la traducción de errores.
+     *
+     * <p>Está separada de {@link #main} porque son dos cosas distintas —armar y escuchar en
+     * un puerto— y solo la segunda necesita MySQL. Con el armado aparte, un test puede
+     * levantar <strong>esta misma</strong> API contra la aplicación en memoria y en un
+     * puerto libre. Si el test armara su propio Javalin, estaría probando una API parecida:
+     * el día que acá se agregue un manejador de errores, el de la prueba seguiría
+     * respondiendo como antes y nadie se enteraría.
+     */
+    static Javalin armar(Aplicacion aplicacion) {
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
             // Un campo de más en el pedido no es motivo para rechazarlo: el front puede
@@ -44,7 +56,7 @@ public class ServidorApi {
 
         registrarRutas(app, aplicacion);
         registrarErrores(app);
-        app.start(puerto());
+        return app;
     }
 
     /**
@@ -82,6 +94,9 @@ public class ServidorApi {
                 aplicacion.getOcupacion(), vistasVentas);
         RutasPromociones.registrar(app, aplicacion.getPromociones(), vistasPromociones);
         RutasPagos.registrar(app, aplicacion.getPagos(), aplicacion.getReservas(), vistasVentas);
+        // Los informes por función arman sus DTO adentro de la ruta: ya vienen calculados
+        // del gestor y no necesitan ensamblador.
+        RutasInformes.registrar(app, aplicacion.getInformes(), aplicacion.getFunciones());
         RutasCandy.registrar(app, aplicacion.getCandy(), aplicacion.getProductos(), vistasCandy);
         RutasSesion.registrar(app, aplicacion.getEmpleados(), vistasUsuarios);
     }

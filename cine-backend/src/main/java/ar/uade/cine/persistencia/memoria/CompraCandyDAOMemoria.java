@@ -30,8 +30,18 @@ public class CompraCandyDAOMemoria implements CompraCandyDAO {
         return compras.stream().filter(c -> c.getFecha().toLocalDate().equals(fecha)).toList();
     }
 
+    /**
+     * Compara con equals y no con ==: las dos claves son Integer porque admiten null, y
+     * desreferenciarlas para comparar contra un int reventaba con la primera venta de
+     * mostrador guardada, que es justo la que no tiene cliente.
+     */
     @Override
     public List<CompraCandy> listarPorCliente(int clienteId) {
-        return compras.stream().filter(c -> c.getClienteId() == clienteId).toList();
+        return compras.stream().filter(c -> Integer.valueOf(clienteId).equals(c.getClienteId())).toList();
+    }
+
+    @Override
+    public List<CompraCandy> listarPorReserva(int reservaId) {
+        return compras.stream().filter(c -> Integer.valueOf(reservaId).equals(c.getReservaId())).toList();
     }
 }

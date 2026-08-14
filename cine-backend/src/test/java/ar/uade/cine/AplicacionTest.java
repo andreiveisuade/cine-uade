@@ -29,8 +29,12 @@ import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
+import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
+import ar.uade.cine.servicio.InformeFuncion;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
@@ -71,7 +75,10 @@ class AplicacionTest {
                 new CompraCandyDAOMemoria(),
                 new BloqueoButacasMemoria(),
                 new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")));
+                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
+                new GeneradorReciboTxt(tempDir.resolve("tickets")),
+                new GeneradorBorderoTxt(tempDir.resolve("informes")),
+                new MercadoPagoEmulado());
     }
 
     @Test
@@ -90,6 +97,7 @@ class AplicacionTest {
         assertNotNull(aplicacion.getCandy());
         assertNotNull(aplicacion.getProductos());
         assertNotNull(aplicacion.getOcupacion());
+        assertNotNull(aplicacion.getInformes());
     }
 
     /**
@@ -140,5 +148,33 @@ class AplicacionTest {
         // El cliente sale de la reserva, no se vuelve a pedir.
         assertEquals(cliente.getId(), compra.getClienteId());
         assertTrue(aplicacion.getCandy().listarComprasDe(cliente.getId()).size() == 1);
+    }
+
+    /**
+     * El informe de una función es el gestor que más lejos mira: cruza lo que guardaron
+     * reservas, pagos y candy. Si quedara colgado de otros DAOs, no fallaría nada — daría
+     * cero, que es la clase de error que este test existe para encontrar.
+     */
+    @Test
+    void elInformeDeLaFuncionVeLoQueCobraronLosOtrosGestores() {
+        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        Sala sala = aplicacion.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        Funcion funcion = aplicacion.getFunciones().programar(1, sala.getId(),
+                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, 5000);
+        Cliente cliente = aplicacion.getClientes().identificar("Andrei", "andrei@uade.edu.ar");
+        Reserva reserva = aplicacion.getReservas().reservar(funcion.getId(), cliente.getId(),
+                Map.of("A1", TipoTarifa.GENERAL));
+        aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        Producto pochoclos = aplicacion.getProductos()
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, 3000);
+        aplicacion.getCandy().venderParaReserva(reserva.getId(), Map.of(pochoclos.getId(), 1),
+                MedioPago.EFECTIVO, "");
+
+        InformeFuncion informe = aplicacion.getInformes().informeDe(funcion.getId());
+
+        assertEquals(1, informe.bordero().espectadores());
+        assertEquals(5000.0, informe.bordero().recaudacionNeta(), 0.001);
+        assertEquals(3000.0, informe.candy(), 0.001);
+        assertEquals(8000.0, informe.total(), 0.001);
     }
 }
