@@ -117,16 +117,15 @@ En Adminer el servidor es `mysql`, no `localhost`: Adminer corre adentro de Dock
 a la base por el nombre del servicio. El usuario y la contraseña son los del `.env`, y
 tiene permisos solo sobre `appsinteractivas`.
 
-## El menú de consola
+## Mirar la base a mano
 
-Sigue funcionando: la API se sumó, no reemplazó nada. Como MySQL ya no publica el 3306,
-la forma directa de usarlo contra esta base es correrlo adentro del contenedor del
-backend, que ya está en la red interna y con las variables puestas:
+El menú de consola se eliminó: la única puerta de entrada al sistema es la API HTTP, y el
+importador y el seed escriben por ahí también, justamente para que ninguna regla de
+negocio quede sin aplicar.
+
+Para inspeccionar los datos está Adminer en `localhost:8081` (servidor `mysql`, no
+`localhost`). Y para una consulta suelta:
 
 ```sh
-docker compose exec backend java -cp /app/cine-api.jar ar.uade.cine.Main
+docker compose exec mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas
 ```
-
-Fuera de Docker, `mvn exec:java` sigue andando como siempre contra una base propia en
-`localhost:3306`: los defaults de `ConexionMySQL` son esos justamente para que no haga
-falta configurar nada.
