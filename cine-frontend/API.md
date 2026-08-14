@@ -208,6 +208,8 @@ llevarlo directo a esa pantalla y no al panel.
 | POST | `/api/peliculas` | R1 título único, R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
 | POST | `/api/peliculas/importadas` | Mismo cuerpo que el alta, pero nace `PENDIENTE` y fuera de cartelera. Lo usa el importador de TMDB |
 | POST | `/api/peliculas/{id}/confirmacion` | La acepta: pasa a `CONFIRMADA` y queda en cartelera |
+| POST | `/api/grilla/propuesta` | Arma la grilla de la semana **sin escribir**: elige el elenco por puntaje y diversidad y lo reparte en las salas |
+| POST | `/api/grilla` | La misma grilla, creando las funciones. Recalcula en vez de recibir la propuesta: el algoritmo es determinista |
 | POST | `/api/peliculas/{id}/descarte` | La rechaza: pasa a `DESCARTADA`. 400 si ya tiene funciones programadas |
 | PUT | `/api/peliculas/{id}` | Campos parciales. El título único se compara contra **las otras** |
 | DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas |
@@ -493,3 +495,42 @@ falla con `400` (R18), igual que un código inexistente o una reserva sin pagar.
 
 El código tiene 8 caracteres de un alfabeto sin `O`, `I`, `0` ni `1`, porque se tipea a
 mano cuando el escáner no lee y esos cuatro se confunden entre sí.
+
+
+## El armado automático de la grilla
+
+### `POST /api/grilla/propuesta` y `POST /api/grilla`
+
+Mismo cuerpo, y todos los campos son opcionales: sin nada, arma una semana desde hoy, de
+14 a 24, con ocho títulos.
+
+```json
+{ "desde": "2026-09-01", "dias": 7, "apertura": "14:00", "cierre": "00:00",
+  "cuantasPeliculas": 8, "precio": 5000, "idioma": "SUBTITULADA", "proyeccion": "DOS_D" }
+```
+
+`cierre: "00:00"` se lee como el final del día, no como su principio.
+
+La respuesta trae las tres cosas con las que se juzga una grilla: a quiénes eligió, qué
+hace con ellos y qué tal salió.
+
+```json
+{ "elenco": [{ "id": 4, "titulo": "Duna: Parte Dos", "puntaje": 8.2,
+               "duracionMinutos": 166, "generos": ["CIENCIA_FICCION","ACCION"], "pases": 12 }],
+  "pases": [{ "peliculaId": 4, "titulo": "Duna: Parte Dos", "salaId": 1, "sala": "Sala 1",
+              "inicio": "2026-09-01T14:00:00", "duracionMinutos": 166 }],
+  "indicadores": { "minutosProgramados": 3320, "minutosDisponibles": 4200,
+                   "ocupacion": 0.79, "puntajePromedio": 7.8,
+                   "generosCubiertos": 6, "generosTotales": 9,
+                   "pasesPorGenero": { "ACCION": 12, "COMEDIA": 5 } },
+  "funcionesCreadas": 0 }
+```
+
+`funcionesCreadas` es `0` en `/propuesta` y la cantidad real en el alta: el front necesita
+distinguir «así quedaría» de «así quedó», y contar los pases no alcanza porque son el
+mismo número en los dos casos.
+
+Solo entran películas **confirmadas**: lo que espera en el buzón no se puede programar. Si
+no hay ninguna, `400` pidiendo que revisen el buzón. Los pases nunca pisan funciones ya
+cargadas —la propuesta consulta R3 con la limpieza incluida— así que se puede correr sobre
+una semana que ya tiene algo programado.
