@@ -15,13 +15,16 @@ import ar.uade.cine.dominio.candy.ItemCombo;
 import ar.uade.cine.dominio.candy.Producto;
 import ar.uade.cine.dominio.candy.ProductoImpl;
 import ar.uade.cine.dominio.candy.TipoProducto;
-import ar.uade.cine.persistencia.PersistenciaException;
+import ar.uade.cine.dominio.dinero.Dinero;
 import ar.uade.cine.persistencia.ProductoDAO;
 
 /**
  * El producto y los componentes de sus combos se leen juntos, con el mismo patrón de
  * agrupación que usa ReservaDAOMySQL con las entradas. El segundo JOIN sobre producto
  * es para traer el nombre de cada componente.
+ *
+ * <p>Guardar y actualizar van en transacción porque el combo vive en dos tablas: dejar
+ * el producto sin sus componentes lo convertiría en un combo que no trae nada.
  */
 public class ProductoDAOMySQL implements ProductoDAO {
 
@@ -32,32 +35,26 @@ public class ProductoDAOMySQL implements ProductoDAO {
             + "LEFT JOIN combo_item ci ON ci.combo_id = p.id "
             + "LEFT JOIN producto c ON c.id = ci.producto_id";
 
+    private final Plantilla plantilla;
+
+    public ProductoDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
+
     @Override
     public void guardar(Producto producto) {
-        String sql = "INSERT INTO producto (nombre, tipo, precio, disponible) VALUES (?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
+            String sql = "INSERT INTO producto (nombre, tipo, precio, disponible) VALUES (?, ?, ?, ?)";
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, producto.getNombre());
                 ps.setString(2, producto.getTipo().name());
-                ps.setDouble(3, producto.getPrecio());
+                ps.setDouble(3, producto.getPrecio().aPesos());
                 ps.setBoolean(4, producto.estaDisponible());
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        producto.setId(claves.getInt(1));
-                    }
-                }
-                guardarComponentes(con, producto);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
+                producto.setId(Plantilla.idGenerado(ps));
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar el producto", e);
-        }
+            guardarComponentes(con, producto);
+        }, "No se pudo guardar el producto");
     }
 
     /**
@@ -67,28 +64,20 @@ public class ProductoDAOMySQL implements ProductoDAO {
      */
     @Override
     public void actualizar(Producto producto) {
-        String sql = "UPDATE producto SET precio = ?, disponible = ? WHERE id = ?";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
+            String sql = "UPDATE producto SET precio = ?, disponible = ? WHERE id = ?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setDouble(1, producto.getPrecio());
+                ps.setDouble(1, producto.getPrecio().aPesos());
                 ps.setBoolean(2, producto.estaDisponible());
                 ps.setInt(3, producto.getId());
                 ps.executeUpdate();
-
-                borrarComponentes(con, producto.getId());
-                guardarComponentes(con, producto);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo actualizar el producto " + producto.getId(), e);
-        }
+            borrarComponentes(con, producto.getId());
+            guardarComponentes(con, producto);
+        }, "No se pudo actualizar el producto " + producto.getId());
     }
 
-    private void borrarComponentes(Connection con, int comboId) throws SQLException {
+    private static void borrarComponentes(Connection con, int comboId) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement("DELETE FROM combo_item WHERE combo_id = ?")) {
             ps.setInt(1, comboId);
             ps.executeUpdate();
@@ -97,23 +86,26 @@ public class ProductoDAOMySQL implements ProductoDAO {
 
     @Override
     public Optional<Producto> buscarPorId(int id) {
-        List<Producto> productos = consultar(SELECT + " WHERE p.id = ?", id,
+        List<Producto> productos = plantilla.consultar(SELECT + " WHERE p.id = ?",
+                ps -> ps.setInt(1, id), ProductoDAOMySQL::agrupar,
                 "No se pudo buscar el producto " + id);
         return productos.isEmpty() ? Optional.empty() : Optional.of(productos.get(0));
     }
 
     @Override
     public List<Producto> listar() {
-        return consultar(SELECT + " ORDER BY p.id", null, "No se pudieron listar los productos");
+        return plantilla.consultar(SELECT + " ORDER BY p.id", Plantilla.Parametros.NINGUNO,
+                ProductoDAOMySQL::agrupar, "No se pudieron listar los productos");
     }
 
     @Override
     public List<Producto> listarDisponibles() {
-        return consultar(SELECT + " WHERE p.disponible = TRUE ORDER BY p.id", null,
+        return plantilla.consultar(SELECT + " WHERE p.disponible = TRUE ORDER BY p.id",
+                Plantilla.Parametros.NINGUNO, ProductoDAOMySQL::agrupar,
                 "No se pudieron listar los productos disponibles");
     }
 
-    private void guardarComponentes(Connection con, Producto combo) throws SQLException {
+    private static void guardarComponentes(Connection con, Producto combo) throws SQLException {
         if (combo.getComponentes().isEmpty()) {
             return;
         }
@@ -129,23 +121,8 @@ public class ProductoDAOMySQL implements ProductoDAO {
         }
     }
 
-    private List<Producto> consultar(String sql, Integer filtro, String mensajeError) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            if (filtro != null) {
-                ps.setInt(1, filtro);
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                return agrupar(rs);
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException(mensajeError, e);
-        }
-    }
-
     /** El JOIN devuelve una fila por cada componente: se agrupa por id de producto. */
-    private List<Producto> agrupar(ResultSet rs) throws SQLException {
+    private static List<Producto> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, Producto> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -155,7 +132,7 @@ public class ProductoDAOMySQL implements ProductoDAO {
                         id,
                         rs.getString("nombre"),
                         TipoProducto.valueOf(rs.getString("tipo")),
-                        rs.getDouble("precio"),
+                        Dinero.de(rs.getDouble("precio")),
                         rs.getBoolean("disponible"));
                 porId.put(id, producto);
             }

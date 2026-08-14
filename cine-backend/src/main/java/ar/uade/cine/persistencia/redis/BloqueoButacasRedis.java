@@ -82,7 +82,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
     /**
      * Si Redis está caído no se entera acá: el cliente no conecta al construirse, sino en el
      * primer comando. Es a propósito —levantar el backend no puede depender de que Redis ya
-     * esté arriba— y es lo mismo que hace {@code ConexionMySQL}, que abre la conexión recién
+     * esté arriba— y es lo mismo que hace {@code OrigenMySQL}, que arma el pool recién
      * en el primer request.
      */
     public BloqueoButacasRedis() {

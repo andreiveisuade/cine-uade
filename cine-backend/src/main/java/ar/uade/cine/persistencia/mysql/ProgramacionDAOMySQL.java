@@ -19,8 +19,8 @@ import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dominio.programaciones.Programacion;
 import ar.uade.cine.dominio.programaciones.ProgramacionImpl;
-import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ProgramacionDAO;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Los días de la grilla van en tabla hija y no como lista separada por comas, por lo
@@ -36,13 +36,18 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
             "SELECT id, pelicula_id, sala_id, desde, hasta, hora_inicio, version, proyeccion, "
             + "precio, activa, generada_hasta FROM programacion";
 
+    private final Plantilla plantilla;
+
+    public ProgramacionDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
+
     @Override
     public void guardar(Programacion programacion) {
         String sql = "INSERT INTO programacion (pelicula_id, sala_id, desde, hasta, hora_inicio, "
                 + "version, proyeccion, precio, activa, generada_hasta) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, programacion.getPeliculaId());
                 ps.setInt(2, programacion.getSalaId());
@@ -52,25 +57,14 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
                 ps.setTime(5, Time.valueOf(programacion.getHoraInicio()));
                 ps.setString(6, programacion.getVersion().name());
                 ps.setString(7, programacion.getProyeccion().name());
-                ps.setDouble(8, programacion.getPrecio());
+                ps.setDouble(8, programacion.getPrecio().aPesos());
                 ps.setBoolean(9, programacion.estaActiva());
                 ps.setDate(10, fecha(programacion.getGeneradaHasta()));
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        programacion.setId(claves.getInt(1));
-                    }
-                }
-                guardarDias(con, programacion);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
+                programacion.setId(Plantilla.idGenerado(ps));
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar la programación", e);
-        }
+            guardarDias(con, programacion);
+        }, "No se pudo guardar la programación");
     }
 
     /**
@@ -79,21 +73,15 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
      */
     @Override
     public void actualizar(Programacion programacion) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(
-                     "UPDATE programacion SET activa = ?, generada_hasta = ? WHERE id = ?")) {
-
-            ps.setBoolean(1, programacion.estaActiva());
-            ps.setDate(2, fecha(programacion.getGeneradaHasta()));
-            ps.setInt(3, programacion.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new PersistenciaException(
-                    "No se pudo actualizar la programación " + programacion.getId(), e);
-        }
+        plantilla.ejecutar("UPDATE programacion SET activa = ?, generada_hasta = ? WHERE id = ?",
+                ps -> {
+                    ps.setBoolean(1, programacion.estaActiva());
+                    ps.setDate(2, fecha(programacion.getGeneradaHasta()));
+                    ps.setInt(3, programacion.getId());
+                }, "No se pudo actualizar la programación " + programacion.getId());
     }
 
-    private void guardarDias(Connection con, Programacion programacion) throws SQLException {
+    private static void guardarDias(Connection con, Programacion programacion) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO programacion_dia (programacion_id, dia) VALUES (?, ?)")) {
             for (DayOfWeek dia : programacion.getDiasSemana()) {
@@ -107,16 +95,14 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
 
     @Override
     public Optional<Programacion> buscarPorId(int id) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(SELECT + " WHERE id = ?")) {
-
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? Optional.of(mapear(con, rs)) : Optional.empty();
+        return plantilla.leyendo(con -> {
+            try (PreparedStatement ps = con.prepareStatement(SELECT + " WHERE id = ?")) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? Optional.of(mapear(con, rs)) : Optional.empty();
+                }
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo buscar la programación " + id, e);
-        }
+        }, "No se pudo buscar la programación " + id);
     }
 
     @Override
@@ -131,22 +117,21 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
                 "No se pudieron listar las programaciones activas");
     }
 
+    /** Todas sobre una sola conexión: cada una lee además sus días de la tabla hija. */
     private List<Programacion> consultar(String sql, String mensajeError) {
-        List<Programacion> programaciones = new ArrayList<>();
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                programaciones.add(mapear(con, rs));
+        return plantilla.leyendo(con -> {
+            List<Programacion> programaciones = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    programaciones.add(mapear(con, rs));
+                }
             }
             return programaciones;
-        } catch (SQLException e) {
-            throw new PersistenciaException(mensajeError, e);
-        }
+        }, mensajeError);
     }
 
-    private Programacion mapear(Connection con, ResultSet rs) throws SQLException {
+    private static Programacion mapear(Connection con, ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         Programacion programacion = new ProgramacionImpl(
                 id,
@@ -158,7 +143,7 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
                 diasDe(con, id),
                 Version.valueOf(rs.getString("version")),
                 Proyeccion.valueOf(rs.getString("proyeccion")),
-                rs.getDouble("precio"));
+                Dinero.de(rs.getDouble("precio")));
         programacion.setActiva(rs.getBoolean("activa"));
         programacion.setGeneradaHasta(fechaDe(rs, "generada_hasta"));
         return programacion;
@@ -174,7 +159,7 @@ public class ProgramacionDAOMySQL implements ProgramacionDAO {
         return valor == null ? null : valor.toLocalDate();
     }
 
-    private Set<DayOfWeek> diasDe(Connection con, int programacionId) throws SQLException {
+    private static Set<DayOfWeek> diasDe(Connection con, int programacionId) throws SQLException {
         Set<DayOfWeek> dias = EnumSet.noneOf(DayOfWeek.class);
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT dia FROM programacion_dia WHERE programacion_id = ?")) {

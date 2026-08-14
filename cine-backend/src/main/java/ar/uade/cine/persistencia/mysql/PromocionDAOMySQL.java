@@ -21,8 +21,8 @@ import ar.uade.cine.dominio.promociones.PromocionNxM;
 import ar.uade.cine.dominio.promociones.PromocionPorcentaje;
 import ar.uade.cine.dominio.promociones.TipoPromocion;
 import ar.uade.cine.dominio.ventas.MedioPago;
-import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.PromocionDAO;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Las tres clases de promoción van a la misma tabla con <code>tipo</code> de
@@ -40,18 +40,25 @@ public class PromocionDAOMySQL implements PromocionDAO {
             "SELECT id, nombre, tipo, porcentaje, monto, lleva, paga, vigencia_desde, "
             + "vigencia_hasta, hora_desde, hora_hasta, activa FROM promocion";
 
+    private final Plantilla plantilla;
+
+    public PromocionDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
+
     @Override
     public void guardar(Promocion promocion) {
         String sql = "INSERT INTO promocion (nombre, tipo, porcentaje, monto, lleva, paga, "
                 + "vigencia_desde, vigencia_hasta, hora_desde, hora_hasta, activa) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, promocion.getNombre());
                 ps.setString(2, promocion.getTipo().name());
                 ps.setObject(3, promocion instanceof PromocionPorcentaje p ? p.getPorcentaje() : null);
-                ps.setObject(4, promocion instanceof PromocionMontoFijo m ? m.getMonto() : null);
+                // .aPesos() y no el Dinero pelado: setObject acepta Object, asi que un
+                // Dinero acá compila y recién falla contra la base.
+                ps.setObject(4, promocion instanceof PromocionMontoFijo m ? m.getMonto().aPesos() : null);
                 ps.setObject(5, promocion instanceof PromocionNxM n ? n.getLleva() : null);
                 ps.setObject(6, promocion instanceof PromocionNxM n ? n.getPaga() : null);
                 ps.setDate(7, Date.valueOf(promocion.getVigenciaDesde()));
@@ -60,21 +67,10 @@ public class PromocionDAOMySQL implements PromocionDAO {
                 ps.setTime(10, promocion.getHoraHasta() == null ? null : Time.valueOf(promocion.getHoraHasta()));
                 ps.setBoolean(11, promocion.estaActiva());
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        promocion.setId(claves.getInt(1));
-                    }
-                }
-                guardarCondiciones(con, promocion);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
+                promocion.setId(Plantilla.idGenerado(ps));
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar la promoción", e);
-        }
+            guardarCondiciones(con, promocion);
+        }, "No se pudo guardar la promoción");
     }
 
     /**
@@ -84,18 +80,13 @@ public class PromocionDAOMySQL implements PromocionDAO {
      */
     @Override
     public void actualizar(Promocion promocion) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement("UPDATE promocion SET activa = ? WHERE id = ?")) {
-
+        plantilla.ejecutar("UPDATE promocion SET activa = ? WHERE id = ?", ps -> {
             ps.setBoolean(1, promocion.estaActiva());
             ps.setInt(2, promocion.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo actualizar la promoción " + promocion.getId(), e);
-        }
+        }, "No se pudo actualizar la promoción " + promocion.getId());
     }
 
-    private void guardarCondiciones(Connection con, Promocion promocion) throws SQLException {
+    private static void guardarCondiciones(Connection con, Promocion promocion) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "INSERT INTO promocion_dia (promocion_id, dia) VALUES (?, ?)")) {
             for (DayOfWeek dia : promocion.getDiasSemana()) {
@@ -118,16 +109,14 @@ public class PromocionDAOMySQL implements PromocionDAO {
 
     @Override
     public Optional<Promocion> buscarPorId(int id) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(SELECT + " WHERE id = ?")) {
-
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? Optional.of(mapear(con, rs)) : Optional.empty();
+        return plantilla.leyendo(con -> {
+            try (PreparedStatement ps = con.prepareStatement(SELECT + " WHERE id = ?")) {
+                ps.setInt(1, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? Optional.of(mapear(con, rs)) : Optional.empty();
+                }
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo buscar la promoción " + id, e);
-        }
+        }, "No se pudo buscar la promoción " + id);
     }
 
     @Override
@@ -141,35 +130,32 @@ public class PromocionDAOMySQL implements PromocionDAO {
                 "No se pudieron listar las promociones activas");
     }
 
+    /**
+     * Todas las promociones sobre una sola conexión: cada una lee además sus días y sus
+     * medios de pago de las tablas hijas, y pedir una conexión por promoción para leer
+     * dos filas sería desperdiciar el pool.
+     */
     private List<Promocion> consultar(String sql, String mensajeError) {
-        List<Promocion> promociones = new ArrayList<>();
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                promociones.add(mapear(con, rs));
+        return plantilla.leyendo(con -> {
+            List<Promocion> promociones = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    promociones.add(mapear(con, rs));
+                }
             }
             return promociones;
-        } catch (SQLException e) {
-            throw new PersistenciaException(mensajeError, e);
-        }
+        }, mensajeError);
     }
 
     @Override
     public void eliminar(int id) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement("DELETE FROM promocion WHERE id = ?")) {
-
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo eliminar la promoción " + id, e);
-        }
+        plantilla.ejecutar("DELETE FROM promocion WHERE id = ?", ps -> ps.setInt(1, id),
+                "No se pudo eliminar la promoción " + id);
     }
 
     /** El tipo decide qué implementación construir: es para lo que está el discriminador. */
-    private Promocion mapear(Connection con, ResultSet rs) throws SQLException {
+    private static Promocion mapear(Connection con, ResultSet rs) throws SQLException {
         int id = rs.getInt("id");
         String nombre = rs.getString("nombre");
         Set<DayOfWeek> dias = diasDe(con, id);
@@ -181,7 +167,7 @@ public class PromocionDAOMySQL implements PromocionDAO {
             case PORCENTAJE -> new PromocionPorcentaje(nombre, rs.getDouble("porcentaje"),
                     rs.getDate("vigencia_desde").toLocalDate(), rs.getDate("vigencia_hasta").toLocalDate(),
                     dias, horaDesde, horaHasta, medios);
-            case MONTO_FIJO -> new PromocionMontoFijo(nombre, rs.getDouble("monto"),
+            case MONTO_FIJO -> new PromocionMontoFijo(nombre, Dinero.de(rs.getDouble("monto")),
                     rs.getDate("vigencia_desde").toLocalDate(), rs.getDate("vigencia_hasta").toLocalDate(),
                     dias, horaDesde, horaHasta, medios);
             case NXM -> new PromocionNxM(nombre, rs.getInt("lleva"), rs.getInt("paga"),
@@ -193,7 +179,7 @@ public class PromocionDAOMySQL implements PromocionDAO {
         return promocion;
     }
 
-    private Set<DayOfWeek> diasDe(Connection con, int promocionId) throws SQLException {
+    private static Set<DayOfWeek> diasDe(Connection con, int promocionId) throws SQLException {
         Set<DayOfWeek> dias = EnumSet.noneOf(DayOfWeek.class);
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT dia FROM promocion_dia WHERE promocion_id = ?")) {
@@ -207,7 +193,7 @@ public class PromocionDAOMySQL implements PromocionDAO {
         return dias;
     }
 
-    private Set<MedioPago> mediosDe(Connection con, int promocionId) throws SQLException {
+    private static Set<MedioPago> mediosDe(Connection con, int promocionId) throws SQLException {
         Set<MedioPago> medios = EnumSet.noneOf(MedioPago.class);
         try (PreparedStatement ps = con.prepareStatement(
                 "SELECT medio FROM promocion_medio WHERE promocion_id = ?")) {

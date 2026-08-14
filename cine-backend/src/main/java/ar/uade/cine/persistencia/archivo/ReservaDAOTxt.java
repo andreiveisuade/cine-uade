@@ -15,6 +15,7 @@ import ar.uade.cine.dominio.ventas.ReservaImpl;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ReservaDAO;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * Misma interfaz que ReservaDAOMySQL, otro medio: un archivo de texto con una
@@ -137,7 +138,7 @@ public class ReservaDAOTxt implements ReservaDAO {
             for (String butaca : campos[3].split(",")) {
                 String[] partes = butaca.split(":");
                 entradas.add(new Entrada(Integer.parseInt(partes[0]), partes[1],
-                        TipoTarifa.valueOf(partes[2]), Double.parseDouble(partes[3])));
+                        TipoTarifa.valueOf(partes[2]), Dinero.de(Double.parseDouble(partes[3]))));
             }
         }
         Reserva reserva = new ReservaImpl(

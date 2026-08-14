@@ -1,6 +1,7 @@
 package ar.uade.cine.persistencia;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,15 @@ public interface PagoDAO {
     void guardar(Pago pago);
 
     Optional<Pago> buscarPorReserva(int reservaId);
+
+    /**
+     * Los pagos de varias reservas de una sola consulta.
+     *
+     * <p>Existe para el listado del panel: pedirle el pago a cada reserva por separado
+     * es una consulta por fila, y con doscientas reservas en pantalla eso son doscientas
+     * consultas para armar una tabla.
+     */
+    List<Pago> buscarPorReservas(Collection<Integer> reservaIds);
 
     /** Para el arqueo: cuánto entró en un día. */
     List<Pago> listarPorFecha(LocalDate fecha);

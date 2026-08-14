@@ -4,10 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,9 +17,9 @@ import java.util.Optional;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.CompraCandyImpl;
 import ar.uade.cine.dominio.candy.ItemCompra;
+import ar.uade.cine.dominio.dinero.Dinero;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.persistencia.CompraCandyDAO;
-import ar.uade.cine.persistencia.PersistenciaException;
 
 /**
  * Misma interfaz, otra tecnología. Una compra vive en dos tablas (compra_candy e
@@ -36,12 +36,17 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
             + "FROM compra_candy c "
             + "LEFT JOIN item_compra i ON i.compra_id = c.id";
 
+    private final Plantilla plantilla;
+
+    public CompraCandyDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
+
     @Override
     public void guardar(CompraCandy compra) {
-        String sql = "INSERT INTO compra_candy (cliente_id, reserva_id, fecha, medio, codigo_autorizacion) "
-                + "VALUES (?, ?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
+            String sql = "INSERT INTO compra_candy (cliente_id, reserva_id, fecha, medio, codigo_autorizacion) "
+                    + "VALUES (?, ?, ?, ?, ?)";
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 // setObject y no setInt: los dos admiten NULL, que es como se guarda una
                 // venta de mostrador sin cliente ni reserva detrás.
@@ -51,58 +56,42 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
                 ps.setString(4, compra.getMedio().name());
                 ps.setString(5, compra.getCodigoAutorizacion());
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        compra.setId(claves.getInt(1));
-                    }
-                }
-                guardarItems(con, compra);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
+                compra.setId(Plantilla.idGenerado(ps));
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar la compra del candy", e);
-        }
+            guardarItems(con, compra);
+        }, "No se pudo guardar la compra del candy");
     }
 
     @Override
     public Optional<CompraCandy> buscarPorId(int id) {
-        List<CompraCandy> compras = consultar(SELECT + " WHERE c.id = ?", id,
+        List<CompraCandy> compras = plantilla.consultar(SELECT + " WHERE c.id = ?",
+                ps -> ps.setInt(1, id), CompraCandyDAOMySQL::agrupar,
                 "No se pudo buscar la compra " + id);
         return compras.isEmpty() ? Optional.empty() : Optional.of(compras.get(0));
     }
 
     @Override
     public List<CompraCandy> listarPorFecha(LocalDate fecha) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(
-                     SELECT + " WHERE DATE(c.fecha) = ? ORDER BY c.fecha")) {
-
-            ps.setDate(1, java.sql.Date.valueOf(fecha));
-            try (ResultSet rs = ps.executeQuery()) {
-                return agrupar(rs);
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudieron listar las compras del " + fecha, e);
-        }
+        return plantilla.consultar(SELECT + " WHERE DATE(c.fecha) = ? ORDER BY c.fecha",
+                ps -> ps.setDate(1, java.sql.Date.valueOf(fecha)), CompraCandyDAOMySQL::agrupar,
+                "No se pudieron listar las compras del " + fecha);
     }
 
     @Override
     public List<CompraCandy> listarPorCliente(int clienteId) {
-        return consultar(SELECT + " WHERE c.cliente_id = ? ORDER BY c.fecha DESC", clienteId,
+        return plantilla.consultar(SELECT + " WHERE c.cliente_id = ? ORDER BY c.fecha DESC",
+                ps -> ps.setInt(1, clienteId), CompraCandyDAOMySQL::agrupar,
                 "No se pudieron listar las compras del cliente " + clienteId);
     }
 
     @Override
     public List<CompraCandy> listarPorReserva(int reservaId) {
-        return consultar(SELECT + " WHERE c.reserva_id = ? ORDER BY c.fecha", reservaId,
+        return plantilla.consultar(SELECT + " WHERE c.reserva_id = ? ORDER BY c.fecha",
+                ps -> ps.setInt(1, reservaId), CompraCandyDAOMySQL::agrupar,
                 "No se pudieron listar las compras de la reserva " + reservaId);
     }
 
-    private void guardarItems(Connection con, CompraCandy compra) throws SQLException {
+    private static void guardarItems(Connection con, CompraCandy compra) throws SQLException {
         String sql = "INSERT INTO item_compra (compra_id, producto_id, nombre, cantidad, precio_unitario) "
                 + "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -111,25 +100,10 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
                 ps.setInt(2, item.productoId());
                 ps.setString(3, item.nombre());
                 ps.setInt(4, item.cantidad());
-                ps.setDouble(5, item.precioUnitario());
+                ps.setDouble(5, item.precioUnitario().aPesos());
                 ps.addBatch();
             }
             ps.executeBatch();
-        }
-    }
-
-    private List<CompraCandy> consultar(String sql, Integer filtro, String mensajeError) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            if (filtro != null) {
-                ps.setInt(1, filtro);
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                return agrupar(rs);
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException(mensajeError, e);
         }
     }
 
@@ -140,7 +114,7 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
      * {@code CompraCandy} no necesita publicar un <code>agregarItem</code> que solo servía
      * para este armado: una venta cerrada no admite items nuevos.
      */
-    private List<CompraCandy> agrupar(ResultSet rs) throws SQLException {
+    private static List<CompraCandy> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, FilasDeCompra> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -159,7 +133,7 @@ public class CompraCandyDAOMySQL implements CompraCandyDAO {
             int productoId = rs.getInt("producto_id");
             if (!rs.wasNull()) {
                 filas.items().add(new ItemCompra(productoId, rs.getString("nombre"),
-                        rs.getInt("cantidad"), rs.getDouble("precio_unitario")));
+                        rs.getInt("cantidad"), Dinero.de(rs.getDouble("precio_unitario"))));
             }
         }
         return porId.values().stream().map(FilasDeCompra::aCompra).toList();

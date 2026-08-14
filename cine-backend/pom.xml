@@ -43,6 +43,16 @@
       <version>2.0.17</version>
     </dependency>
 
+    <!-- Pool de conexiones. Sin esto cada operacion abria una conexion nueva contra
+         MySQL —handshake TCP incluido— y la cerraba: en un listado que arma 200 reservas
+         eso son 200 conexiones para 200 consultas. HikariCP es el pool estandar y lo
+         unico que se le pide es reusar lo que ya esta abierto. -->
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>7.0.2</version>
+    </dependency>
+
     <!-- Cliente de Redis, donde viven los bloqueos de butaca mientras alguien elige. Es
          el cliente canonico, y esta en la misma categoria que el driver de MySQL: hablar
          un protocolo a mano es reinventar algo que ya existe y se rompe en los bordes. -->

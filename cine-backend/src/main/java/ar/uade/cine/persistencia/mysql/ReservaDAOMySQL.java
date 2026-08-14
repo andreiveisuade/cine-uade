@@ -20,8 +20,8 @@ import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.ReservaImpl;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.ButacaOcupadaException;
-import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.persistencia.ReservaDAO;
+import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * La reserva y sus entradas viajan juntas: se guardan en la misma transacción y se leen
@@ -44,12 +44,17 @@ public class ReservaDAOMySQL implements ReservaDAO {
             + "LEFT JOIN entrada e ON e.reserva_id = r.id "
             + "LEFT JOIN asiento a ON a.id = e.asiento_id";
 
+    private final Plantilla plantilla;
+
+    public ReservaDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
+
     @Override
     public void guardar(Reserva reserva) {
         String sql = "INSERT INTO reserva (funcion_id, cliente_id, estado, creada_en, codigo) "
                 + "VALUES (?, ?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, reserva.getFuncionId());
                 ps.setInt(2, reserva.getClienteId());
@@ -57,27 +62,21 @@ public class ReservaDAOMySQL implements ReservaDAO {
                 ps.setTimestamp(4, Timestamp.valueOf(reserva.getCreadaEn()));
                 ps.setString(5, reserva.getCodigo());
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        reserva.setId(claves.getInt(1));
-                    }
-                }
+                reserva.setId(Plantilla.idGenerado(ps));
                 guardarEntradas(con, reserva);
-                con.commit();
             } catch (SQLException e) {
-                con.rollback();
                 if (violaUnicidad(e)) {
                     // El UNIQUE (funcion_id, asiento_id) es el arbitro final: si salta, otra
                     // reserva tomo la butaca despues de que GestorReservas la vio libre.
+                    // Se traduce acá adentro para que salga como 409 y no como 500: la
+                    // Plantilla envuelve en PersistenciaException todo lo que sigue siendo
+                    // SQLException, y perder una carrera por una butaca no es una falla.
                     throw new ButacaOcupadaException(
                             "Alguien tomó una de esas butacas mientras confirmabas la reserva", e);
                 }
                 throw e;
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar la reserva", e);
-        }
+        }, "No se pudo guardar la reserva");
     }
 
     /**
@@ -89,7 +88,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
      * integridad. La violación real queda adentro, como causa. El SQLState 23000 —el estándar
      * para "integrity constraint violation"— sí viaja en la excepción de arriba.
      */
-    private boolean violaUnicidad(SQLException error) {
+    private static boolean violaUnicidad(SQLException error) {
         for (Throwable causa = error; causa != null; causa = causa.getCause()) {
             if (causa instanceof SQLIntegrityConstraintViolationException) {
                 return true;
@@ -109,30 +108,22 @@ public class ReservaDAOMySQL implements ReservaDAO {
     @Override
     public void actualizar(Reserva reserva) {
         String sql = "UPDATE reserva SET estado = ?, ingresada_en = ? WHERE id = ?";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, reserva.getEstado().name());
                 ps.setTimestamp(2, reserva.getIngresadaEn() == null
                         ? null : Timestamp.valueOf(reserva.getIngresadaEn()));
                 ps.setInt(3, reserva.getId());
                 ps.executeUpdate();
-
-                // Cancelada o expirada: en las dos la butaca vuelve a la venta.
-                if (!reserva.estaVigente()) {
-                    liberarButacas(con, reserva.getId());
-                }
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo actualizar la reserva " + reserva.getId(), e);
-        }
+            // Cancelada o expirada: en las dos la butaca vuelve a la venta.
+            if (!reserva.estaVigente()) {
+                liberarButacas(con, reserva.getId());
+            }
+        }, "No se pudo actualizar la reserva " + reserva.getId());
     }
 
-    private void liberarButacas(Connection con, int reservaId) throws SQLException {
+    private static void liberarButacas(Connection con, int reservaId) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(
                 "UPDATE entrada SET funcion_id = NULL WHERE reserva_id = ?")) {
             ps.setInt(1, reservaId);
@@ -149,16 +140,10 @@ public class ReservaDAOMySQL implements ReservaDAO {
 
     @Override
     public Optional<Reserva> buscarPorCodigo(String codigo) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(SELECT_CON_ENTRADAS + " WHERE r.codigo = ?")) {
-            ps.setString(1, codigo);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Reserva> reservas = agrupar(rs);
-                return reservas.isEmpty() ? Optional.empty() : Optional.of(reservas.get(0));
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo buscar la reserva por codigo", e);
-        }
+        List<Reserva> reservas = plantilla.consultar(SELECT_CON_ENTRADAS + " WHERE r.codigo = ?",
+                ps -> ps.setString(1, codigo), ReservaDAOMySQL::agrupar,
+                "No se pudo buscar la reserva por codigo");
+        return reservas.isEmpty() ? Optional.empty() : Optional.of(reservas.get(0));
     }
 
     @Override
@@ -180,7 +165,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
     }
 
     /** funcion_id sale de la reserva: no es un dato extra, es lo que sostiene el UNIQUE. */
-    private void guardarEntradas(Connection con, Reserva reserva) throws SQLException {
+    private static void guardarEntradas(Connection con, Reserva reserva) throws SQLException {
         String sql = "INSERT INTO entrada (reserva_id, asiento_id, funcion_id, tarifa, precio) "
                 + "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -189,7 +174,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
                 ps.setInt(2, entrada.asientoId());
                 ps.setInt(3, reserva.getFuncionId());
                 ps.setString(4, entrada.tarifa().name());
-                ps.setDouble(5, entrada.precio());
+                ps.setDouble(5, entrada.precio().aPesos());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -197,18 +182,11 @@ public class ReservaDAOMySQL implements ReservaDAO {
     }
 
     private List<Reserva> consultar(String sql, Integer filtro, String mensajeError) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
+        return plantilla.consultar(sql, ps -> {
             if (filtro != null) {
                 ps.setInt(1, filtro);
             }
-            try (ResultSet rs = ps.executeQuery()) {
-                return agrupar(rs);
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException(mensajeError, e);
-        }
+        }, ReservaDAOMySQL::agrupar, mensajeError);
     }
 
     /**
@@ -221,7 +199,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
      * negocio usa: existía solo para este armado, y de paso dejaba que cualquiera le
      * sumara butacas a una reserva ya cobrada.
      */
-    private List<Reserva> agrupar(ResultSet rs) throws SQLException {
+    private static List<Reserva> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, FilasDeReserva> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -243,7 +221,7 @@ public class ReservaDAOMySQL implements ReservaDAO {
             if (!rs.wasNull()) {
                 String codigo = (char) ('A' + rs.getInt("fila") - 1) + String.valueOf(rs.getInt("numero"));
                 filas.entradas().add(new Entrada(asientoId, codigo,
-                        TipoTarifa.valueOf(rs.getString("tarifa")), rs.getDouble("precio")));
+                        TipoTarifa.valueOf(rs.getString("tarifa")), Dinero.de(rs.getDouble("precio"))));
             }
         }
         return porId.values().stream().map(FilasDeReserva::aReserva).toList();

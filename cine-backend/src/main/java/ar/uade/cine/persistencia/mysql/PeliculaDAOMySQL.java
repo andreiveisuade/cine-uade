@@ -17,7 +17,6 @@ import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
 import ar.uade.cine.persistencia.PeliculaDAO;
-import ar.uade.cine.persistencia.PersistenciaException;
 
 /**
  * Misma interfaz, otra tecnología. El gestor no se entera del cambio.
@@ -31,32 +30,26 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
 
     private static final String SELECT_CON_GENEROS =
             "SELECT p.id, p.titulo, p.duracion_minutos, p.clasificacion, p.director, p.sinopsis, "
-            + "p.anio, p.idioma_original, p.poster_url, p.en_cartelera, p.estado_revision, p.puntaje, pg.genero "
+            + "p.anio, p.idioma_original, p.poster_url, p.en_cartelera, p.estado_revision, p.puntaje, p.votos, pg.genero "
             + "FROM pelicula p LEFT JOIN pelicula_genero pg ON pg.pelicula_id = p.id";
+
+    private final Plantilla plantilla;
+
+    public PeliculaDAOMySQL(Plantilla plantilla) {
+        this.plantilla = plantilla;
+    }
 
     @Override
     public void guardar(Pelicula pelicula) {
-        String sql = "INSERT INTO pelicula (titulo, duracion_minutos, clasificacion, director, sinopsis, anio, idioma_original, poster_url, en_cartelera, estado_revision, puntaje) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+        String sql = "INSERT INTO pelicula (titulo, duracion_minutos, clasificacion, director, sinopsis, anio, idioma_original, poster_url, en_cartelera, estado_revision, puntaje, votos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 cargarDatos(ps, pelicula);
                 ps.executeUpdate();
-
-                try (ResultSet claves = ps.getGeneratedKeys()) {
-                    if (claves.next()) {
-                        pelicula.setId(claves.getInt(1));
-                    }
-                }
-                guardarGeneros(con, pelicula);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
+                pelicula.setId(Plantilla.idGenerado(ps));
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo guardar la película", e);
-        }
+            guardarGeneros(con, pelicula);
+        }, "No se pudo guardar la película");
     }
 
     /**
@@ -67,69 +60,42 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
     public void actualizar(Pelicula pelicula) {
         String sql = "UPDATE pelicula SET titulo = ?, duracion_minutos = ?, clasificacion = ?, director = ?, "
                 + "sinopsis = ?, anio = ?, idioma_original = ?, poster_url = ?, en_cartelera = ?, "
-                + "estado_revision = ?, puntaje = ? WHERE id = ?";
-        try (Connection con = ConexionMySQL.abrir()) {
-            con.setAutoCommit(false);
+                + "estado_revision = ?, puntaje = ?, votos = ? WHERE id = ?";
+        plantilla.enTransaccion(con -> {
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 cargarDatos(ps, pelicula);
-                ps.setInt(12, pelicula.getId());
+                ps.setInt(13, pelicula.getId());
                 ps.executeUpdate();
-
-                borrarGeneros(con, pelicula.getId());
-                guardarGeneros(con, pelicula);
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                throw e;
             }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo actualizar la película " + pelicula.getId(), e);
-        }
+            borrarGeneros(con, pelicula.getId());
+            guardarGeneros(con, pelicula);
+        }, "No se pudo actualizar la película " + pelicula.getId());
     }
 
     @Override
     public Optional<Pelicula> buscarPorId(int id) {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(SELECT_CON_GENEROS + " WHERE p.id = ?")) {
-
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Pelicula> peliculas = agrupar(rs);
-                return peliculas.isEmpty() ? Optional.empty() : Optional.of(peliculas.get(0));
-            }
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo buscar la película " + id, e);
-        }
+        List<Pelicula> peliculas = plantilla.consultar(SELECT_CON_GENEROS + " WHERE p.id = ?",
+                ps -> ps.setInt(1, id), PeliculaDAOMySQL::agrupar,
+                "No se pudo buscar la película " + id);
+        return peliculas.isEmpty() ? Optional.empty() : Optional.of(peliculas.get(0));
     }
 
     @Override
     public List<Pelicula> listar() {
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(SELECT_CON_GENEROS + " ORDER BY p.id");
-             ResultSet rs = ps.executeQuery()) {
-
-            return agrupar(rs);
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudieron listar las películas", e);
-        }
+        return plantilla.consultar(SELECT_CON_GENEROS + " ORDER BY p.id",
+                Plantilla.Parametros.NINGUNO, PeliculaDAOMySQL::agrupar,
+                "No se pudieron listar las películas");
     }
 
     /** Los géneros se van solos: pelicula_genero tiene ON DELETE CASCADE. */
     @Override
     public void eliminar(int id) {
-        String sql = "DELETE FROM pelicula WHERE id = ?";
-        try (Connection con = ConexionMySQL.abrir();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new PersistenciaException("No se pudo eliminar la película " + id, e);
-        }
+        plantilla.ejecutar("DELETE FROM pelicula WHERE id = ?", ps -> ps.setInt(1, id),
+                "No se pudo eliminar la película " + id);
     }
 
-    /** Los once campos de pelicula, en el mismo orden en el INSERT y en el UPDATE. */
-    private void cargarDatos(PreparedStatement ps, Pelicula pelicula) throws SQLException {
+    /** Los doce campos de pelicula, en el mismo orden en el INSERT y en el UPDATE. */
+    private static void cargarDatos(PreparedStatement ps, Pelicula pelicula) throws SQLException {
         ps.setString(1, pelicula.getTitulo());
         ps.setInt(2, pelicula.getDuracionMinutos());
         ps.setString(3, pelicula.getClasificacion().name());
@@ -141,9 +107,10 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
         ps.setBoolean(9, pelicula.estaEnCartelera());
         ps.setString(10, pelicula.getEstadoRevision().name());
         ps.setDouble(11, pelicula.getPuntaje());
+        ps.setInt(12, pelicula.getVotos());
     }
 
-    private void guardarGeneros(Connection con, Pelicula pelicula) throws SQLException {
+    private static void guardarGeneros(Connection con, Pelicula pelicula) throws SQLException {
         String sql = "INSERT INTO pelicula_genero (pelicula_id, genero) VALUES (?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             for (Genero genero : pelicula.getGeneros()) {
@@ -155,7 +122,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
         }
     }
 
-    private void borrarGeneros(Connection con, int peliculaId) throws SQLException {
+    private static void borrarGeneros(Connection con, int peliculaId) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement("DELETE FROM pelicula_genero WHERE pelicula_id = ?")) {
             ps.setInt(1, peliculaId);
             ps.executeUpdate();
@@ -166,7 +133,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
      * El JOIN devuelve una fila por cada género, así que la misma película aparece
      * repetida: se agrupa por id y se le van sumando los géneros.
      */
-    private List<Pelicula> agrupar(ResultSet rs) throws SQLException {
+    private static List<Pelicula> agrupar(ResultSet rs) throws SQLException {
         Map<Integer, Pelicula> porId = new LinkedHashMap<>();
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -182,6 +149,7 @@ public class PeliculaDAOMySQL implements PeliculaDAO {
                 pelicula.setEnCartelera(rs.getBoolean("en_cartelera"));
                 pelicula.setEstadoRevision(EstadoRevision.valueOf(rs.getString("estado_revision")));
                 pelicula.setPuntaje(rs.getDouble("puntaje"));
+                pelicula.setVotos(rs.getInt("votos"));
                 porId.put(id, pelicula);
             }
             String genero = rs.getString("genero");

@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * <p>La duración entra por parámetro y no es una constante de acá: cuánto tiempo se le
  * guarda una butaca a alguien es una regla del negocio y vive en
- * {@link ar.uade.cine.servicio.Ocupacion}. Esta interfaz solo sabe tomar, soltar y contar.
+ * {@link ar.uade.cine.servicio.ventas.Ocupacion}. Esta interfaz solo sabe tomar, soltar y contar.
  */
 public interface BloqueoButacas {
 
