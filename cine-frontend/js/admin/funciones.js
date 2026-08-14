@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { avisar, dia, escapar, etiqueta, hora, precio, error } from "../ui.js";
+import { boton, botonSecundario, campo, filaTabla, panel, select, tabla } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { dia, hora, precio } from "../formato.js";
 
 /* ------------------------------------------------------ programar funciones */
 
@@ -24,86 +27,42 @@ export async function vistaFunciones(contenedor, destacada) {
     </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Película</span>
-        <select name="fpelicula" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+      ${select({ nombre: "fpelicula", etiqueta: "Película", ancho: "block", opciones: `
           <option value="">Todas</option>
-          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Sala</span>
-        <select name="fsala" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}` })}
+      ${select({ nombre: "fsala", etiqueta: "Sala", ancho: "block", opciones: `
           <option value="">Todas</option>
-          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Desde</span>
-        <input name="fdesde" type="date" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Hasta</span>
-        <input name="fhasta" type="date" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-      </label>
-      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}` })}
+      ${campo({ nombre: "fdesde", etiqueta: "Desde", tipo: "date", ancho: "block" })}
+      ${campo({ nombre: "fhasta", etiqueta: "Hasta", tipo: "date", ancho: "block" })}
+      ${botonSecundario("Limpiar", { atributos: 'id="limpiar"' })}
       <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
     </div>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2">Cuándo</th><th>Película</th><th>Sala</th><th>Formato</th><th class="text-right">Precio</th><th></th></tr>
-          </thead>
-          <tbody>${filas(funciones)}</tbody>
-        </table>
-      </section>
+      ${panel(tabla(
+        '<tr><th class="p-2">Cuándo</th><th>Película</th><th>Sala</th><th>Formato</th><th class="text-right">Precio</th><th></th></tr>',
+        filas(funciones)), "overflow-x-auto")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Programar función</h2>
         <form id="alta" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Película</span>
-            <select name="peliculaId" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)} (${p.duracionMinutos}′)</option>`).join("")}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Sala</span>
-            <select name="salaId" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)} — ${etiqueta(s.tipo)}</option>`).join("")}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Inicio</span>
-            <input name="inicio" type="datetime-local" required
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${select({ nombre: "peliculaId", etiqueta: "Película",
+            opciones: peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)} (${p.duracionMinutos}′)</option>`).join("") })}
+          ${select({ nombre: "salaId", etiqueta: "Sala",
+            opciones: salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)} — ${etiqueta(s.tipo)}</option>`).join("") })}
+          ${campo({ nombre: "inicio", etiqueta: "Inicio", tipo: "datetime-local", requerido: true })}
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Idioma</span>
-              <select name="idioma" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-                ${idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("")}
-              </select>
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Proyección</span>
-              <select name="proyeccion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-                ${proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("")}
-              </select>
-            </label>
+            ${select({ nombre: "idioma", etiqueta: "Idioma",
+              opciones: idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("") })}
+            ${select({ nombre: "proyeccion", etiqueta: "Proyección",
+              opciones: proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("") })}
           </div>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Precio base</span>
-            <input name="precio" type="number" min="100" step="100" required
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${campo({ nombre: "precio", etiqueta: "Precio base", tipo: "number", requerido: true, extra: 'min="100" step="100"' })}
           <div id="avisos" class="space-y-1 text-xs"></div>
-          <button type="submit"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Programar</button>
+          ${boton("Programar")}
         </form>
-      </section>
+      `, "p-4")}
     </div>
   `;
 
@@ -195,10 +154,10 @@ export async function vistaFunciones(contenedor, destacada) {
   });
 
   contenedor.querySelector("tbody").addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-borrar]");
-    if (!boton) return;
+    const botonBorrar = evento.target.closest("button[data-borrar]");
+    if (!botonBorrar) return;
     try {
-      await api.eliminarFuncion(boton.dataset.borrar);
+      await api.eliminarFuncion(botonBorrar.dataset.borrar);
       avisar("Función borrada");
       vistaFunciones(contenedor);
     } catch (e) {
@@ -222,7 +181,7 @@ function filas(funciones) {
     </td></tr>`;
   }
   return funciones.map((f) => `
-              <tr id="funcion-${f.id}" class="border-b border-slate-200 dark:border-slate-800">
+              <tr id="funcion-${f.id}" class="${filaTabla()}">
                 <td class="p-2 whitespace-nowrap">
                   ${escapar(dia(f.inicio))} <span class="font-medium">${hora(f.inicio)}</span>
                 </td>

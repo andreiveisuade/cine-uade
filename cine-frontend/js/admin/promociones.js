@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { DIAS_SEMANA, avisar, dia, error, escapar, etiqueta, hora, hoyISO, precio } from "../ui.js";
+import { boton, campo, filaTabla, panel, select, tabla } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { DIAS_SEMANA, etiqueta } from "../etiquetas.js";
+import { dia, hora, hoyISO, precio } from "../formato.js";
 
 /* -------------------------------------------------------------- promociones */
 
@@ -37,14 +40,10 @@ export async function vistaPromociones(contenedor) {
     </p>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2">Nombre</th><th>Beneficio</th><th>Vigencia</th><th>Cuándo</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${promociones.length ? promociones.map((p) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}">
+      ${panel(`
+        ${tabla('<tr><th class="p-2">Nombre</th><th>Beneficio</th><th>Vigencia</th><th>Cuándo</th><th></th></tr>',
+          promociones.length ? promociones.map((p) => `
+              <tr class="${filaTabla(p.activa ? "" : "text-slate-400 dark:text-slate-500")}">
                 <td class="p-2 font-medium">${escapar(p.nombre)}</td>
                 <td class="whitespace-nowrap font-semibold">${escapar(beneficioDe(p))}</td>
                 <td class="whitespace-nowrap text-xs">
@@ -58,71 +57,37 @@ export async function vistaPromociones(contenedor) {
                   </button>
                 </td>
               </tr>`).join("")
-              : '<tr><td colspan="5" class="p-6 text-center text-slate-500 dark:text-slate-400">Todavía no hay promociones.</td></tr>'}
-          </tbody>
-        </table>
+              : '<tr><td colspan="5" class="p-6 text-center text-slate-500 dark:text-slate-400">Todavía no hay promociones.</td></tr>')}
         <p class="border-t border-slate-200 p-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro
           tiene que seguir existiendo para poder explicar por qué se cobró ese monto.
         </p>
-      </section>
+      `, "overflow-x-auto")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Nueva promoción</h2>
         <form id="alta" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Nombre</span>
-            <input name="nombre" required placeholder="Miércoles 2x1"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${campo({ nombre: "nombre", etiqueta: "Nombre", requerido: true, placeholder: "Miércoles 2x1" })}
 
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Tipo</span>
-            <select name="tipo" id="tipo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
+          ${select({ nombre: "tipo", etiqueta: "Tipo", opciones: `
               <option value="PORCENTAJE">Porcentaje</option>
               <option value="MONTO_FIJO">Monto fijo</option>
-              <option value="NXM">NxM (2x1)</option>
-            </select>
-          </label>
+              <option value="NXM">NxM (2x1)</option>` })}
 
           <div data-campos="PORCENTAJE">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Porcentaje de descuento</span>
-              <input name="porcentaje" type="number" min="1" max="99" value="30"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "porcentaje", etiqueta: "Porcentaje de descuento", tipo: "number", valor: 30, extra: 'min="1" max="99"' })}
           </div>
           <div data-campos="MONTO_FIJO" class="hidden">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Monto a descontar</span>
-              <input name="monto" type="number" min="1" value="2000"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "monto", etiqueta: "Monto a descontar", tipo: "number", valor: 2000, extra: 'min="1"' })}
           </div>
           <div data-campos="NXM" class="hidden grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Lleva</span>
-              <input name="lleva" type="number" min="2" value="2"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Paga</span>
-              <input name="paga" type="number" min="1" value="1"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "lleva", etiqueta: "Lleva", tipo: "number", valor: 2, extra: 'min="2"' })}
+            ${campo({ nombre: "paga", etiqueta: "Paga", tipo: "number", valor: 1, extra: 'min="1"' })}
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Desde</span>
-              <input name="vigenciaDesde" type="date" required value="${hoyISO()}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Hasta</span>
-              <input name="vigenciaHasta" type="date" required
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "vigenciaDesde", etiqueta: "Desde", tipo: "date", valor: hoyISO(), requerido: true })}
+            ${campo({ nombre: "vigenciaHasta", etiqueta: "Hasta", tipo: "date", requerido: true })}
           </div>
 
           <fieldset class="text-sm">
@@ -136,16 +101,8 @@ export async function vistaPromociones(contenedor) {
           </fieldset>
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Desde hora</span>
-              <input name="horaDesde" type="time"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Hasta hora</span>
-              <input name="horaHasta" type="time"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "horaDesde", etiqueta: "Desde hora", tipo: "time" })}
+            ${campo({ nombre: "horaHasta", etiqueta: "Hasta hora", tipo: "time" })}
           </div>
 
           <fieldset class="text-sm">
@@ -158,10 +115,7 @@ export async function vistaPromociones(contenedor) {
             </div>
           </fieldset>
 
-          <button type="submit"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-            Crear promoción
-          </button>
+          ${boton("Crear promoción")}
           <p id="errorAlta" class="hidden text-sm text-red-700 dark:text-red-400"></p>
         </form>
         <p class="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
@@ -169,7 +123,7 @@ export async function vistaPromociones(contenedor) {
           contra el momento de la compra: un 2x1 de los miércoles vale para la función del
           miércoles aunque las entradas se compren el lunes.
         </p>
-      </section>
+      `, "p-4")}
     </div>
   `;
 

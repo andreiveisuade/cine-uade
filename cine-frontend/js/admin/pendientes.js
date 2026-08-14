@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { avisar, chipClasificacion, duracion, escapar, etiqueta, imagenPoster } from "../ui.js";
+import { boton, botonSecundario, imagenPoster, panel } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { chipClasificacion, etiqueta } from "../etiquetas.js";
+import { duracion } from "../formato.js";
 
 /* ------------------------------------------------- el buzón de lo importado */
 
@@ -24,16 +27,16 @@ export async function vistaPendientes(contenedor) {
     ${pendientes.length === 0 ? vacio() : lista(pendientes)}
   `;
 
-  contenedor.querySelectorAll("[data-confirmar]").forEach((boton) => {
-    boton.addEventListener("click", () => decidir(contenedor, boton,
-      api.confirmarPelicula(Number(boton.dataset.confirmar)),
-      `${boton.dataset.titulo} confirmada: ya se puede programar`));
+  contenedor.querySelectorAll("[data-confirmar]").forEach((botonTarjeta) => {
+    botonTarjeta.addEventListener("click", () => decidir(contenedor, botonTarjeta,
+      api.confirmarPelicula(Number(botonTarjeta.dataset.confirmar)),
+      `${botonTarjeta.dataset.titulo} confirmada: ya se puede programar`));
   });
 
-  contenedor.querySelectorAll("[data-descartar]").forEach((boton) => {
-    boton.addEventListener("click", () => decidir(contenedor, boton,
-      api.descartarPelicula(Number(boton.dataset.descartar)),
-      `${boton.dataset.titulo} descartada`));
+  contenedor.querySelectorAll("[data-descartar]").forEach((botonTarjeta) => {
+    botonTarjeta.addEventListener("click", () => decidir(contenedor, botonTarjeta,
+      api.descartarPelicula(Number(botonTarjeta.dataset.descartar)),
+      `${botonTarjeta.dataset.titulo} descartada`));
   });
 }
 
@@ -45,8 +48,8 @@ export async function vistaPendientes(contenedor) {
  * Los dos botones de la tarjeta quedan deshabilitados mientras la llamada viaja: sin eso,
  * dos clics seguidos mandan confirmar y descartar sobre la misma película.
  */
-async function decidir(contenedor, boton, promesa, mensaje) {
-  const tarjeta = boton.closest("article");
+async function decidir(contenedor, botonTarjeta, promesa, mensaje) {
+  const tarjeta = botonTarjeta.closest("section");
   tarjeta.querySelectorAll("button").forEach((b) => { b.disabled = true; });
   tarjeta.classList.add("opacity-60");
   try {
@@ -61,13 +64,11 @@ async function decidir(contenedor, boton, promesa, mensaje) {
 }
 
 function vacio() {
-  return `
-    <section class="rounded border border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <p class="text-sm text-slate-500 dark:text-slate-400">
         No hay nada esperando. Cuando el importador traiga títulos nuevos van a aparecer acá.
       </p>
-    </section>
-  `;
+  `, "p-8 text-center");
 }
 
 function lista(pendientes) {
@@ -84,8 +85,7 @@ function lista(pendientes) {
  * sinopsis la decisión se toma leyendo un título suelto.
  */
 function tarjeta(pelicula) {
-  return `
-    <article class="flex flex-col overflow-hidden rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <div class="flex gap-3 p-3">
         ${imagenPoster(pelicula, "h-32 w-24 shrink-0 rounded object-cover")}
         <div class="min-w-0">
@@ -106,15 +106,10 @@ function tarjeta(pelicula) {
         ${escapar(pelicula.sinopsis) || "Sin sinopsis."}
       </p>
       <div class="mt-auto flex gap-2 p-3">
-        <button type="button" data-confirmar="${pelicula.id}" data-titulo="${escapar(pelicula.titulo)}"
-          class="flex-1 rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-          Confirmar
-        </button>
-        <button type="button" data-descartar="${pelicula.id}" data-titulo="${escapar(pelicula.titulo)}"
-          class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">
-          Descartar
-        </button>
+        ${boton("Confirmar", { tipo: "button", ancho: "flex-1", tamano: "px-3 py-1.5",
+          atributos: `data-confirmar="${pelicula.id}" data-titulo="${escapar(pelicula.titulo)}"` })}
+        ${botonSecundario("Descartar", {
+          atributos: `data-descartar="${pelicula.id}" data-titulo="${escapar(pelicula.titulo)}"` })}
       </div>
-    </article>
-  `;
+  `, "flex flex-col overflow-hidden");
 }

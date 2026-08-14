@@ -1,6 +1,8 @@
 import * as api from "../api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "../butacas.js";
-import { avisar, chip, escapar, etiqueta, error } from "../ui.js";
+import { boton, campo, chip, filaTabla, panel, select, tabla } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
 
 /* --------------------------------------------------------------- ABM de salas */
 
@@ -25,14 +27,10 @@ export async function vistaSalas(contenedor, id) {
     <h1 class="mb-5 text-2xl font-bold">Salas</h1>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_320px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2">Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Limpieza</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${salas.map((s) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800">
+      ${panel(tabla(
+        '<tr><th class="p-2">Sala</th><th>Tipo</th><th>Distribución</th><th>Butacas</th><th>Limpieza</th><th></th></tr>',
+        salas.map((s) => `
+              <tr class="${filaTabla()}">
                 <td class="p-2 font-medium">${escapar(s.nombre)}</td>
                 <td>${chip(etiqueta(s.tipo), "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300")}</td>
                 <td class="font-mono text-xs">${s.butacasPorFila.join(",")}</td>
@@ -43,58 +41,25 @@ export async function vistaSalas(contenedor, id) {
                   <button type="button" data-borrar="${s.id}"
                     class="ml-2 text-xs text-red-700 hover:underline dark:text-red-400">Borrar</button>
                 </td>
-              </tr>`).join("")}
-          </tbody>
-        </table>
-      </section>
+              </tr>`).join("")), "overflow-x-auto")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Nueva sala</h2>
         <form id="alta" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Nombre</span>
-            <input name="nombre" required class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Tipo</span>
-            <select name="tipo" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${tipos.map((t) => `<option value="${t.nombre}">${etiqueta(t.nombre)} (×${t.multiplicador})</option>`).join("")}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Butacas por fila</span>
-            <input name="distribucion" required placeholder="8,10,12,12,14"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            <span class="text-xs text-slate-500 dark:text-slate-400">Una fila por número. La primera es la A.</span>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Butacas VIP</span>
-            <input name="vip" placeholder="I1,I2,J1"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Butacas de pareja</span>
-            <input name="pareja" placeholder="A1,A2"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Butacas accesibles</span>
-            <input name="accesibles" placeholder="A1,A8"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 font-mono dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Minutos de limpieza</span>
-            <input name="limpieza" type="number" min="0" value="15"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-              Lo que hay que esperar entre dos funciones. Una sala chica se levanta más rápido.
-            </span>
-          </label>
+          ${campo({ nombre: "nombre", etiqueta: "Nombre", requerido: true })}
+          ${select({ nombre: "tipo", etiqueta: "Tipo",
+            opciones: tipos.map((t) => `<option value="${t.nombre}">${etiqueta(t.nombre)} (×${t.multiplicador})</option>`).join("") })}
+          ${campo({ nombre: "distribucion", etiqueta: "Butacas por fila", requerido: true, placeholder: "8,10,12,12,14",
+            extra: "font-mono", pista: "Una fila por número. La primera es la A." })}
+          ${campo({ nombre: "vip", etiqueta: "Butacas VIP", placeholder: "I1,I2,J1", extra: "font-mono" })}
+          ${campo({ nombre: "pareja", etiqueta: "Butacas de pareja", placeholder: "A1,A2", extra: "font-mono" })}
+          ${campo({ nombre: "accesibles", etiqueta: "Butacas accesibles", placeholder: "A1,A8", extra: "font-mono" })}
+          ${campo({ nombre: "limpieza", etiqueta: "Minutos de limpieza", tipo: "number", valor: 15, extra: 'min="0"',
+            pista: "Lo que hay que esperar entre dos funciones. Una sala chica se levanta más rápido." })}
           <p id="previa" class="text-xs text-slate-500 dark:text-slate-400"></p>
-          <button type="submit"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Crear sala</button>
+          ${boton("Crear sala")}
         </form>
-      </section>
+      `, "p-4")}
     </div>
   `;
 
@@ -129,10 +94,10 @@ export async function vistaSalas(contenedor, id) {
   });
 
   contenedor.querySelector("tbody").addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-borrar]");
-    if (!boton) return;
+    const botonBorrar = evento.target.closest("button[data-borrar]");
+    if (!botonBorrar) return;
     try {
-      await api.eliminarSala(boton.dataset.borrar);
+      await api.eliminarSala(botonBorrar.dataset.borrar);
       avisar("Sala borrada");
       vistaSalas(contenedor);
     } catch (e) {
@@ -158,10 +123,10 @@ async function vistaMapaSala(contenedor, id) {
       Una butaca rota no se vende en ninguna función.
     </p>
 
-    <div class="mt-5 overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+    ${panel(`
       ${pantalla()}
       <div id="mapa" class="flex flex-col gap-1"></div>
-    </div>
+    `, "mt-5 overflow-x-auto p-4")}
 
     ${referencia([
       ["border border-slate-400 bg-white dark:border-slate-600 dark:bg-slate-800", "disponible"],
@@ -192,9 +157,9 @@ async function vistaMapaSala(contenedor, id) {
   mapa.innerHTML = dibujarMapa(sala, sala.asientos, pintar);
 
   mapa.addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-codigo]");
-    if (!boton) return;
-    const asiento = sala.asientos.find((a) => a.codigo === boton.dataset.codigo);
+    const botonAsiento = evento.target.closest("button[data-codigo]");
+    if (!botonAsiento) return;
+    const asiento = sala.asientos.find((a) => a.codigo === botonAsiento.dataset.codigo);
     const nuevo = asiento.estado === "FUERA_DE_SERVICIO" ? "HABILITADO" : "FUERA_DE_SERVICIO";
     try {
       await api.cambiarEstadoAsiento(sala.id, asiento.codigo, nuevo);

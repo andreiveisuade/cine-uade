@@ -1,6 +1,9 @@
 import * as api from "../api.js";
 import { ir } from "../router.js";
-import { avisar, dia, escapar, etiqueta, hora, precio, error } from "../ui.js";
+import { boton, campo, filaTabla, panel } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { dia, hora, precio } from "../formato.js";
 import { seleccion, catalogoTarifas, tarifaPorNombre, precioConTarifa, selectorTarifa,
          clienteRecordado, recordarCliente, sesionDeCompra, renovarMientrasSigaAca } from "./compra.js";
 
@@ -25,8 +28,7 @@ export async function vistaConfirmar(contenedor, id) {
     (a) => tarifaPorNombre(seleccion.butacas[a.codigo]).requiereAcreditacion);
 
   // El resumen se repinta solo cuando cambia una tarifa, sin tocar el formulario.
-  const resumenCompra = () => `
-  <section id="resumenCompra" class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+  const resumenCompra = () => panel(`
     <h2 class="mb-1 font-semibold">${escapar(funcion.pelicula.titulo)}</h2>
     <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
       ${escapar(dia(funcion.inicio))} ${hora(funcion.inicio)} ·
@@ -41,7 +43,7 @@ export async function vistaConfirmar(contenedor, id) {
       </thead>
       <tbody>
         ${elegidas.map((a) => `
-          <tr class="border-b border-slate-200 dark:border-slate-800">
+          <tr class="${filaTabla()}">
             <td class="py-1 font-medium">${a.codigo}</td>
             <td>${etiqueta(a.tipo)}</td>
             <td>${selectorTarifa(a.codigo, seleccion.butacas[a.codigo])}</td>
@@ -68,31 +70,19 @@ export async function vistaConfirmar(contenedor, id) {
         <strong>Acordate del carnet.</strong> En la puerta te van a pedir que acredites
         la tarifa de ${escapar(aAcreditar().map((a) => `${a.codigo} (${etiqueta(seleccion.butacas[a.codigo]).toLowerCase()})`).join(", "))}.
       </p>` : ""}
-  </section>
-  `;
+  `, "p-4", 'id="resumenCompra"');
 
   contenedor.innerHTML = `
     <a href="#/funcion/${funcion.id}" class="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">&larr; Cambiar butacas</a>
     <h1 class="mt-2 mb-5 text-2xl font-bold">Confirmar reserva</h1>
 
     <div class="grid gap-4 md:grid-cols-2">
-      <section class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Tus datos</h2>
         <form id="datos" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Nombre</span>
-            <input name="nombre" required value="${escapar(recordado?.nombre || "")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Email</span>
-            <input name="email" type="email" required value="${escapar(recordado?.email || "")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-          </label>
-          <button type="submit"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-            Confirmar reserva
-          </button>
+          ${campo({ nombre: "nombre", etiqueta: "Nombre", valor: recordado?.nombre || "", requerido: true })}
+          ${campo({ nombre: "email", etiqueta: "Email", tipo: "email", valor: recordado?.email || "", requerido: true })}
+          ${boton("Confirmar reserva")}
           <p id="errorForm" class="hidden text-sm text-red-700 dark:text-red-400"></p>
           ${recordado ? "" : `
             <p class="text-xs text-slate-500 dark:text-slate-400">
@@ -100,7 +90,7 @@ export async function vistaConfirmar(contenedor, id) {
               para no cargar los datos cada vez.
             </p>`}
         </form>
-      </section>
+      `, "p-4")}
 
       ${resumenCompra()}
     </div>

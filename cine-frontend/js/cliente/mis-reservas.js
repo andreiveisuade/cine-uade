@@ -1,6 +1,9 @@
 import * as api from "../api.js";
 import { ir } from "../router.js";
-import { avisar, chipEstado, dia, escapar, etiqueta, fechaHora, hora, precio, error } from "../ui.js";
+import { boton, panel } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { chipEstado, etiqueta } from "../etiquetas.js";
+import { dia, fechaHora, hora, precio } from "../formato.js";
 import { clienteRecordado } from "./compra.js";
 
 /* --------------------------------------------------------------- mis reservas */
@@ -13,8 +16,7 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
     : (clienteRecordado()?.email || "");
   const reservas = email ? await api.obtenerReservasDe(email) : null;
 
-  const tarjetas = (reservas || []).map((r) => `
-    <article class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 ${r.estado === "CANCELADA" ? "opacity-60" : ""}">
+  const tarjetas = (reservas || []).map((r) => panel(`
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 class="font-semibold">${escapar(r.pelicula?.titulo || "—")}</h2>
@@ -46,8 +48,7 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
                class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-400">Cancelar</button>`
           : ""}
       </div>
-    </article>
-  `).join("");
+    `, `p-4 ${r.estado === "CANCELADA" ? "opacity-60" : ""}`)).join("");
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Mis reservas</h1>
@@ -59,9 +60,7 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
       <input name="email" type="email" required value="${escapar(email)}"
         placeholder="tu@email.com"
         class="min-w-64 flex-1 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-        Buscar
-      </button>
+      ${boton("Buscar", { ancho: "" })}
     </form>
 
     ${reservas === null
@@ -83,12 +82,12 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
   // sumaba un listener más al mismo elemento vivo —y esta vista se vuelve a dibujar
   // sola al cancelar—, así que un clic terminaba disparando una cancelación por cada
   // vez que se había pasado por acá.
-  contenedor.querySelectorAll("button[data-cancelar]").forEach((boton) => {
-    boton.addEventListener("click", async () => {
+  contenedor.querySelectorAll("button[data-cancelar]").forEach((botonCancelar) => {
+    botonCancelar.addEventListener("click", async () => {
       // Cancelar tarda: sin esto, dos clics apurados son dos pedidos.
-      boton.disabled = true;
+      botonCancelar.disabled = true;
       try {
-        await api.cancelarReserva(boton.dataset.cancelar);
+        await api.cancelarReserva(botonCancelar.dataset.cancelar);
         avisar("Reserva cancelada, las butacas quedaron libres");
       } catch (e) {
         avisar(e.message, "error");

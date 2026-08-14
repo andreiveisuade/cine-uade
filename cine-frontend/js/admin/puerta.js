@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { escapar, etiqueta, fechaHora } from "../ui.js";
+import { boton } from "../componentes.js";
+import { escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { fechaHora } from "../formato.js";
 
 /* -------------------------------------------------------------------- puerta */
 
@@ -20,9 +23,7 @@ export async function vistaPuerta(contenedor) {
     <form id="validar" class="flex flex-wrap gap-2">
       <input name="codigo" required autocomplete="off" autofocus placeholder="A1B2C3D4"
         class="w-48 rounded border border-slate-400 px-3 py-2 font-mono text-lg uppercase tracking-widest dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-      <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-        Validar
-      </button>
+      ${boton("Validar", { ancho: "" })}
     </form>
 
     <div id="resultado" class="mt-5"></div>

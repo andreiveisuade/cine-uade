@@ -1,5 +1,6 @@
 import * as api from "../api.js";
-import { etiqueta, precio } from "../ui.js";
+import { etiqueta } from "../etiquetas.js";
+import { precio } from "../formato.js";
 
 // Lo elegido en el mapa de butacas, para que lo lea la confirmación. Es un mapa de
 // código a tarifa y no una lista, porque la tarifa es por persona: en una reserva de

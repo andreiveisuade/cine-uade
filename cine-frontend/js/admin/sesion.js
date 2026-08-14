@@ -1,5 +1,5 @@
 import { ir } from "../router.js";
-import { etiqueta } from "../ui.js";
+import { etiqueta } from "../etiquetas.js";
 
 /* ------------------------------------------------------------------- sesión */
 

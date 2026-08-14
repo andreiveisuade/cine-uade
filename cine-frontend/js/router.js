@@ -1,6 +1,6 @@
 // Router por hash: #/pelicula/3 llama a la vista "pelicula" con el parámetro "3".
 
-import { cargando, error } from "./ui.js";
+import { cargando, error } from "./componentes.js";
 
 function partesDelHash() {
   return location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);

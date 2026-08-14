@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { duracion, escapar, etiqueta, hoyISO } from "../ui.js";
+import { botonSecundario, select } from "../componentes.js";
+import { escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { duracion, hoyISO } from "../formato.js";
 
 /* --------------------------------------------------------------- la agenda */
 /*
@@ -76,25 +79,14 @@ export async function vistaAgenda(contenedor, modoPedido, desdePedido, salaPedid
     </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Ver</span>
-        <select id="modo" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-          ${Object.entries(MODOS).map(([clave, m]) => `
-            <option value="${clave}" ${clave === modo ? "selected" : ""}>${m.etiqueta}</option>`).join("")}
-        </select>
-      </label>
-      ${modo === "semana" ? `
-        <label class="text-sm">
-          <span class="text-slate-600 dark:text-slate-300">Sala</span>
-          <select id="sala" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-            ${salas.map((s) => `
-              <option value="${s.id}" ${s.id === sala.id ? "selected" : ""}>${escapar(s.nombre)} — ${escapar(etiqueta(s.tipo))}</option>`).join("")}
-          </select>
-        </label>` : ""}
+      ${select({ nombre: "modo", etiqueta: "Ver", ancho: "block", opciones: Object.entries(MODOS).map(([clave, m]) => `
+            <option value="${clave}" ${clave === modo ? "selected" : ""}>${m.etiqueta}</option>`).join("") })}
+      ${modo === "semana" ? select({ nombre: "sala", etiqueta: "Sala", ancho: "block", opciones: salas.map((s) => `
+              <option value="${s.id}" ${s.id === sala.id ? "selected" : ""}>${escapar(s.nombre)} — ${escapar(etiqueta(s.tipo))}</option>`).join("") }) : ""}
       <div class="flex items-center gap-1">
-        <button type="button" id="antes" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">←</button>
-        <button type="button" id="hoy" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Hoy</button>
-        <button type="button" id="despues" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">→</button>
+        ${botonSecundario("←", { atributos: 'id="antes"' })}
+        ${botonSecundario("Hoy", { atributos: 'id="hoy"' })}
+        ${botonSecundario("→", { atributos: 'id="despues"' })}
       </div>
       <p class="text-sm text-slate-500 dark:text-slate-400">
         ${visibles.length} funciones${modo === "semana" ? ` en ${escapar(sala.nombre)}` : ""}

@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { avisar, chip, chipClasificacion, conEspera, duracion, escapar, etiqueta, imagenPoster, error } from "../ui.js";
+import { boton, botonSecundario, campo, chip, filaTabla, imagenPoster, panel, select, tabla } from "../componentes.js";
+import { avisar, conEspera, escapar } from "../dom.js";
+import { chipClasificacion, etiqueta } from "../etiquetas.js";
+import { duracion } from "../formato.js";
 
 /* ---------------------------------------------------------- ABM de películas */
 
@@ -13,7 +16,6 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
   const editando = editandoId
     ? peliculas.find((p) => p.id === Number(editandoId))
     : null;
-  const valor = (campo) => escapar(editando?.[campo] ?? "");
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Películas</h1>
@@ -24,94 +26,44 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
     </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Buscar</span>
-        <input id="fq" type="search" placeholder="título"
-          class="mt-1 block w-64 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Género</span>
-        <select id="fgenero" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+      ${campo({ nombre: "fq", etiqueta: "Buscar", tipo: "search", placeholder: "título", ancho: "block w-64" })}
+      ${select({ nombre: "fgenero", etiqueta: "Género", ancho: "block", opciones: `
           <option value="">Todos</option>
-          ${generos.map((g) => `<option value="${g}">${etiqueta(g)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Estado</span>
-        <select id="fpublicada" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          ${generos.map((g) => `<option value="${g}">${etiqueta(g)}</option>`).join("")}` })}
+      ${select({ nombre: "fpublicada", etiqueta: "Estado", ancho: "block", opciones: `
           <option value="">Todas</option>
           <option value="true">Publicadas</option>
-          <option value="false">Despublicadas</option>
-        </select>
-      </label>
-      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+          <option value="false">Despublicadas</option>` })}
+      ${botonSecundario("Limpiar", { atributos: 'id="limpiar"' })}
       <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
     </div>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2"></th><th>Título</th><th>Duración</th><th>Edad</th><th>Géneros</th><th>Estado</th><th></th></tr>
-          </thead>
-          <tbody>${filas(peliculas, editando?.id)}</tbody>
-        </table>
-      </section>
+      ${panel(tabla(
+        '<tr><th class="p-2"></th><th>Título</th><th>Duración</th><th>Edad</th><th>Géneros</th><th>Estado</th><th></th></tr>',
+        filas(peliculas, editando?.id)), "overflow-x-auto")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">
           ${editando ? `Editar ${escapar(editando.titulo)}` : "Nueva película"}
         </h2>
         <form id="alta" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Título</span>
-            <input name="titulo" required value="${valor("titulo")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${campo({ nombre: "titulo", etiqueta: "Título", requerido: true, valor: editando?.titulo })}
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Duración (min)</span>
-              <input name="duracion" type="number" min="1" required
-                value="${editando ? editando.duracionMinutos : ""}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Año</span>
-              <input name="anio" type="number" min="1888" value="${editando?.anio || ""}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "duracion", etiqueta: "Duración (min)", tipo: "number", requerido: true,
+              valor: editando ? editando.duracionMinutos : "", extra: 'min="1"' })}
+            ${campo({ nombre: "anio", etiqueta: "Año", tipo: "number", valor: editando?.anio || "", extra: 'min="1888"' })}
           </div>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Clasificación</span>
-            <select name="clasificacion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${clasificaciones.map((c) => `
+          ${select({ nombre: "clasificacion", etiqueta: "Clasificación", opciones: clasificaciones.map((c) => `
                 <option value="${c.nombre}" ${c.nombre === editando?.clasificacion ? "selected" : ""}>
                   ${etiqueta(c.nombre)}${c.edadMinima ? ` — desde ${c.edadMinima} años` : " — todo público"}
-                </option>`).join("")}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Dirección</span>
-            <input name="director" value="${valor("director")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Idioma original</span>
-            <input name="idiomaOriginal" value="${valor("idiomaOriginal")}"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            <span class="text-xs text-slate-500 dark:text-slate-400">El de la película, no el de la función.</span>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Sinopsis</span>
-            <textarea name="sinopsis" rows="3"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">${valor("sinopsis")}</textarea>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Poster (URL)</span>
-            <input name="posterUrl" value="${valor("posterUrl")}" placeholder="https://…"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            <span class="text-xs text-slate-500 dark:text-slate-400">Opcional. Sin poster se muestra la inicial del título.</span>
-          </label>
+                </option>`).join("") })}
+          ${campo({ nombre: "director", etiqueta: "Dirección", valor: editando?.director })}
+          ${campo({ nombre: "idiomaOriginal", etiqueta: "Idioma original", valor: editando?.idiomaOriginal,
+            pista: "El de la película, no el de la función." })}
+          ${campo({ nombre: "sinopsis", etiqueta: "Sinopsis", tipo: "textarea", valor: editando?.sinopsis, extra: 'rows="3"' })}
+          ${campo({ nombre: "posterUrl", etiqueta: "Poster (URL)", valor: editando?.posterUrl, placeholder: "https://…",
+            pista: "Opcional. Sin poster se muestra la inicial del título." })}
           <fieldset class="text-sm">
             <legend class="text-slate-600 dark:text-slate-300">Géneros (al menos uno)</legend>
             <div class="mt-1 grid grid-cols-2 gap-1">
@@ -127,17 +79,11 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
             <span class="text-slate-600 dark:text-slate-300">Publicada</span>
           </label>
           <div class="flex gap-2">
-            <button type="submit"
-              class="flex-1 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-              ${editando ? "Guardar cambios" : "Agregar"}
-            </button>
-            ${editando
-              ? `<button type="button" id="cancelar"
-                   class="rounded border border-slate-400 px-4 py-2 text-sm dark:border-slate-600">Cancelar</button>`
-              : ""}
+            ${boton(editando ? "Guardar cambios" : "Agregar", { ancho: "flex-1" })}
+            ${editando ? botonSecundario("Cancelar", { tamano: "px-4 py-2", atributos: 'id="cancelar"' }) : ""}
           </div>
         </form>
-      </section>
+      `, "p-4")}
     </div>
   `;
 
@@ -237,7 +183,7 @@ function filas(peliculas, editandoId) {
     </td></tr>`;
   }
   return peliculas.map((p) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800 ${p.id === editandoId ? "bg-amber-50 dark:bg-amber-900/20" : ""}">
+              <tr class="${filaTabla(p.id === editandoId ? "bg-amber-50 dark:bg-amber-900/20" : "")}">
                 <td class="p-2">${imagenPoster(p, "h-12 w-8 rounded")}</td>
                 <td>
                   <span class="font-medium">${escapar(p.titulo)}</span>

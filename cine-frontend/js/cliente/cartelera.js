@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { chip, chipClasificacion, duracion, escapar, etiqueta, imagenPoster } from "../ui.js";
+import { chip, imagenPoster } from "../componentes.js";
+import { escapar } from "../dom.js";
+import { chipClasificacion, etiqueta } from "../etiquetas.js";
+import { duracion } from "../formato.js";
 
 /* ---------------------------------------------------------------- cartelera */
 

@@ -1,6 +1,9 @@
 import * as api from "../api.js";
 import { ir } from "../router.js";
-import { avisar, chipEstado, conEspera, dia, escapar, etiqueta, fechaHora, hora, precio, error } from "../ui.js";
+import { boton, botonSecundario, campo, filaTabla, panel, select, tabla } from "../componentes.js";
+import { avisar, conEspera, escapar } from "../dom.js";
+import { chipEstado, etiqueta } from "../etiquetas.js";
+import { dia, fechaHora, hora, precio } from "../formato.js";
 
 /* -------------------------------------------------------- listado de reservas */
 
@@ -24,38 +27,20 @@ export async function vistaReservas(contenedor) {
     </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Buscar</span>
-        <input id="busqueda" type="search" placeholder="cliente, email, película o butaca"
-          class="mt-1 block w-72 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Estado</span>
-        <select id="estado" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+      ${campo({ nombre: "busqueda", etiqueta: "Buscar", tipo: "search", placeholder: "cliente, email, película o butaca", ancho: "block w-72" })}
+      ${select({ nombre: "estado", etiqueta: "Estado", ancho: "block", opciones: `
           <option value="">Todos</option>
-          ${ESTADOS.map((e) => `<option value="${e}">${etiqueta(e)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Función del día</span>
-        <input id="fecha" type="date"
-          class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-      </label>
-      <button type="button" id="limpiar" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+          ${ESTADOS.map((e) => `<option value="${e}">${etiqueta(e)}</option>`).join("")}` })}
+      ${campo({ nombre: "fecha", etiqueta: "Función del día", tipo: "date", ancho: "block" })}
+      ${botonSecundario("Limpiar", { atributos: 'id="limpiar"' })}
       <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
     </div>
 
-    <div class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-      <table class="w-full text-sm">
-        <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+    ${panel(tabla(`
           <tr>
             <th class="p-2">#</th><th>Función</th><th>Cliente</th>
             <th>Butacas</th><th class="text-right">Total</th><th>Estado</th><th></th>
-          </tr>
-        </thead>
-        <tbody>${filas(reservas)}</tbody>
-      </table>
-    </div>
+          </tr>`, filas(reservas)), "overflow-x-auto")}
   `;
 
   const busqueda = contenedor.querySelector("#busqueda");
@@ -89,10 +74,10 @@ export async function vistaReservas(contenedor) {
   });
 
   cuerpo.addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-cancelar]");
-    if (!boton) return;
+    const botonCancelar = evento.target.closest("button[data-cancelar]");
+    if (!botonCancelar) return;
     try {
-      await api.cancelarReserva(boton.dataset.cancelar);
+      await api.cancelarReserva(botonCancelar.dataset.cancelar);
       avisar("Reserva cancelada, las butacas quedaron libres");
       vistaReservas(contenedor);
     } catch (e) {
@@ -110,7 +95,7 @@ function filas(reservas) {
     </td></tr>`;
   }
   return reservas.map((r) => `
-            <tr class="border-b border-slate-200 dark:border-slate-800 ${r.estado === "CANCELADA" ? "text-slate-400 dark:text-slate-500" : ""}">
+            <tr class="${filaTabla(r.estado === "CANCELADA" ? "text-slate-400 dark:text-slate-500" : "")}">
               <td class="p-2">${r.id}</td>
               <td>
                 ${escapar(r.pelicula?.titulo || "—")}
@@ -167,15 +152,11 @@ export async function vistaCobrar(contenedor, id) {
     <h1 class="mt-2 mb-5 text-2xl font-bold">Cobrar reserva #${reserva.id}</h1>
 
     <div class="grid gap-4 md:grid-cols-2 md:items-start">
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Cobro</h2>
         <form id="cobro" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Medio de pago</span>
-            <select name="medio" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${medios.map((m) => `<option value="${m.nombre}">${etiqueta(m.nombre)}</option>`).join("")}
-            </select>
-          </label>
+          ${select({ nombre: "medio", etiqueta: "Medio de pago",
+            opciones: medios.map((m) => `<option value="${m.nombre}">${etiqueta(m.nombre)}</option>`).join("") })}
           <div class="rounded bg-slate-100 p-3 text-sm dark:bg-slate-800">
             <span class="text-slate-600 dark:text-slate-300">A cobrar</span>
             <p class="text-xl font-bold">${precio(reserva.total)}</p>
@@ -185,15 +166,12 @@ export async function vistaCobrar(contenedor, id) {
             </p>
           </div>
           <p id="comoCobra" class="text-xs text-slate-500 dark:text-slate-400"></p>
-          <button type="submit" id="botonCobro"
-            class="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">
-            Registrar cobro
-          </button>
+          ${boton("Registrar cobro", { atributos: 'id="botonCobro"' })}
         </form>
         <div id="checkout" class="mt-3"></div>
-      </section>
+      `, "p-4")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-1 font-semibold">${escapar(reserva.pelicula?.titulo || "—")}</h2>
         <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
           ${reserva.funcion
@@ -213,7 +191,7 @@ export async function vistaCobrar(contenedor, id) {
           </thead>
           <tbody>
             ${reserva.entradas.map((e) => `
-              <tr class="border-b border-slate-200 dark:border-slate-800">
+              <tr class="${filaTabla()}">
                 <td class="py-1 font-medium">${e.codigo}</td>
                 <td class="text-xs ${e.tarifa && e.tarifa !== "GENERAL" ? "font-semibold text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}">
                   ${etiqueta(e.tarifa || "GENERAL")}
@@ -228,13 +206,13 @@ export async function vistaCobrar(contenedor, id) {
             </tr>
           </tfoot>
         </table>
-      </section>
+      `, "p-4")}
     </div>
   `;
 
   const formulario = contenedor.querySelector("#cobro");
   const panelCheckout = contenedor.querySelector("#checkout");
-  const boton = contenedor.querySelector("#botonCobro");
+  const botonCobro = contenedor.querySelector("#botonCobro");
   const comoCobra = contenedor.querySelector("#comoCobra");
 
   const porCheckout = () =>
@@ -249,7 +227,7 @@ export async function vistaCobrar(contenedor, id) {
   function ajustarMedio() {
     // Un checkout es de un medio y un monto concretos: cambiar el medio lo invalida.
     panelCheckout.innerHTML = "";
-    boton.textContent = porCheckout() ? "Abrir checkout" : "Registrar cobro";
+    botonCobro.textContent = porCheckout() ? "Abrir checkout" : "Registrar cobro";
     comoCobra.textContent = porCheckout()
       ? "El cliente paga en la pasarela y el código de autorización lo devuelve ella."
       : "Se cobra en la caja del cine. El efectivo no lleva código de autorización.";

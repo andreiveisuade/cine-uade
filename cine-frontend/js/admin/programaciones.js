@@ -1,6 +1,9 @@
 import * as api from "../api.js";
 import { pantalla } from "../butacas.js";
-import { DIAS_SEMANA, avisar, dia, error, escapar, etiqueta, fechaHora, hoyISO, precio } from "../ui.js";
+import { boton, botonSecundario, campo, filaTabla, panel, select, tabla } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { DIAS_SEMANA, etiqueta } from "../etiquetas.js";
+import { dia, fechaHora, hoyISO, precio } from "../formato.js";
 
 /* ------------------------------------------------------------ programaciones */
 
@@ -31,82 +34,46 @@ export async function vistaProgramaciones(contenedor) {
     </p>
 
     <div class="mb-4 flex flex-wrap items-end gap-3">
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Película</span>
-        <select id="fpelicula" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+      ${select({ nombre: "fpelicula", etiqueta: "Película", ancho: "block", opciones: `
           <option value="">Todas</option>
-          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Sala</span>
-        <select id="fsala" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)}</option>`).join("")}` })}
+      ${select({ nombre: "fsala", etiqueta: "Sala", ancho: "block", opciones: `
           <option value="">Todas</option>
-          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Estado</span>
-        <select id="factiva" class="mt-1 block rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)}</option>`).join("")}` })}
+      ${select({ nombre: "factiva", etiqueta: "Estado", ancho: "block", opciones: `
           <option value="">Todas</option>
           <option value="true">Activas</option>
-          <option value="false">Dadas de baja</option>
-        </select>
-      </label>
-      <button type="button" id="limpiarFiltros" class="rounded border border-slate-400 px-3 py-1.5 text-sm dark:border-slate-600">Limpiar</button>
+          <option value="false">Dadas de baja</option>` })}
+      ${botonSecundario("Limpiar", { atributos: 'id="limpiarFiltros"' })}
       <p id="cuenta" class="text-sm text-slate-500 dark:text-slate-400"></p>
     </div>
 
     <div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-      <section class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-        <table class="w-full text-sm">
-          <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-            <tr><th class="p-2">Película</th><th>Sala</th><th>Cuándo</th><th>Días</th><th class="text-right">Precio</th><th></th></tr>
-          </thead>
-          <tbody>${filas(programaciones, peliculas, salas)}</tbody>
-        </table>
+      ${panel(`
+        ${tabla('<tr><th class="p-2">Película</th><th>Sala</th><th>Cuándo</th><th>Días</th><th class="text-right">Precio</th><th></th></tr>',
+          filas(programaciones, peliculas, salas))}
         <p class="border-t border-slate-200 p-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Dar de baja una grilla <strong>no borra las funciones que ya generó</strong>:
           pueden tener entradas vendidas. Solo evita que genere nuevas. Hacé clic en una
           fila para ver qué funciones creó.
         </p>
         <div id="detalle"></div>
-      </section>
+      `, "overflow-x-auto")}
 
-      <section class="rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 p-4">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Nueva grilla</h2>
         <form id="alta" class="space-y-3">
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Película</span>
-            <select name="peliculaId" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)} (${p.duracionMinutos}′)</option>`).join("")}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Sala</span>
-            <select name="salaId" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-              ${salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)} — ${etiqueta(s.tipo)}</option>`).join("")}
-            </select>
-          </label>
+          ${select({ nombre: "peliculaId", etiqueta: "Película",
+            opciones: peliculas.map((p) => `<option value="${p.id}">${escapar(p.titulo)} (${p.duracionMinutos}′)</option>`).join("") })}
+          ${select({ nombre: "salaId", etiqueta: "Sala",
+            opciones: salas.map((s) => `<option value="${s.id}">${escapar(s.nombre)} — ${etiqueta(s.tipo)}</option>`).join("") })}
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Desde</span>
-              <input name="desde" type="date" required value="${hoyISO()}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Hasta <span class="text-slate-400 dark:text-slate-500">(vacío = sin fin)</span></span>
-              <input name="hasta" type="date"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-            </label>
+            ${campo({ nombre: "desde", etiqueta: "Desde", tipo: "date", valor: hoyISO(), requerido: true })}
+            ${campo({ nombre: "hasta", etiqueta: 'Hasta <span class="text-slate-400 dark:text-slate-500">(vacío = sin fin)</span>', tipo: "date" })}
           </div>
 
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Hora de la función</span>
-            <input name="horaInicio" type="time" required value="20:30"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${campo({ nombre: "horaInicio", etiqueta: "Hora de la función", tipo: "time", valor: "20:30", requerido: true })}
 
           <fieldset class="text-sm">
             <legend class="text-slate-600 dark:text-slate-300">Días (ninguno = todos)</legend>
@@ -119,33 +86,18 @@ export async function vistaProgramaciones(contenedor) {
           </fieldset>
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Idioma</span>
-              <select name="idioma" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-                ${idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("")}
-              </select>
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Proyección</span>
-              <select name="proyeccion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500">
-                ${proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("")}
-              </select>
-            </label>
+            ${select({ nombre: "idioma", etiqueta: "Idioma",
+              opciones: idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("") })}
+            ${select({ nombre: "proyeccion", etiqueta: "Proyección",
+              opciones: proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("") })}
           </div>
 
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Precio base</span>
-            <input name="precio" type="number" min="100" step="100" required value="5000"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500" />
-          </label>
+          ${campo({ nombre: "precio", etiqueta: "Precio base", tipo: "number", valor: 5000, requerido: true, extra: 'min="100" step="100"' })}
 
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="previsualizar"
-              class="rounded border border-slate-400 px-4 py-2 text-sm font-medium dark:border-slate-600">Previsualizar</button>
-            <button type="submit" id="confirmar" disabled
-              class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300 dark:bg-white dark:text-slate-900 dark:disabled:bg-slate-700 dark:disabled:text-slate-400">
-              Confirmar
-            </button>
+            ${botonSecundario("Previsualizar", { tamano: "px-4 py-2", clases: "font-medium", atributos: 'id="previsualizar"' })}
+            ${boton("Confirmar", { atributos: 'id="confirmar" disabled',
+              clases: "disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400" })}
           </div>
           <p id="errorAlta" class="hidden text-sm text-red-700 dark:text-red-400"></p>
         </form>
@@ -156,7 +108,7 @@ export async function vistaProgramaciones(contenedor) {
           Al confirmar, el servidor <strong>vuelve a revisar</strong> cada fecha: entre que
           mirás el informe y confirmás, otro puede haber programado algo en esa sala.
         </p>
-      </section>
+      `, "p-4")}
     </div>
   `;
 
@@ -331,7 +283,7 @@ function filas(programaciones, peliculas, salas) {
     </td></tr>`;
   }
   return programaciones.map((p) => `
-              <tr class="cursor-pointer border-b border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}"
+              <tr class="${filaTabla(`cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 ${p.activa ? "" : "text-slate-400 dark:text-slate-500"}`)}"
                   data-ver="${p.id}">
                 <td class="p-2 font-medium">${escapar(tituloDe(peliculas, p.peliculaId))}</td>
                 <td class="whitespace-nowrap">${escapar(nombreDeSala(salas, p.salaId))}</td>

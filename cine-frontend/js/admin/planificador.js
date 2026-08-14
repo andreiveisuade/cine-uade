@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { avisar, dia, duracion, escapar, etiqueta, fantasma, hora, hoyISO, spinner } from "../ui.js";
+import { boton, botonSecundario, campo, fantasma, filaTabla, panel, select, spinner, tabla } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { dia, duracion, hora, hoyISO } from "../formato.js";
 
 /* --------------------------------------------- armado automático de la grilla */
 
@@ -44,77 +47,40 @@ export async function vistaPlanificador(contenedor) {
     </p>
 
     <div class="grid gap-4 lg:grid-cols-[320px_1fr] lg:items-start">
-      <section class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      ${panel(`
         <h2 class="mb-3 font-semibold">Criterios</h2>
         <form id="criterios" class="space-y-3">
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Desde</span>
-              <input name="desde" type="date" required value="${hoyISO()}"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Días</span>
-              <input name="dias" type="number" min="1" max="31" required value="7"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            </label>
+            ${campo({ nombre: "desde", etiqueta: "Desde", tipo: "date", valor: hoyISO(), requerido: true })}
+            ${campo({ nombre: "dias", etiqueta: "Días", tipo: "number", valor: 7, requerido: true, extra: 'min="1" max="31"' })}
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Apertura</span>
-              <input name="apertura" type="time" required value="14:00"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Cierre</span>
-              <input name="cierre" type="time" required value="00:00"
-                class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            </label>
+            ${campo({ nombre: "apertura", etiqueta: "Apertura", tipo: "time", valor: "14:00", requerido: true })}
+            ${campo({ nombre: "cierre", etiqueta: "Cierre", tipo: "time", valor: "00:00", requerido: true })}
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400">
             El cierre a las 00:00 se lee como el final del día. Es hasta cuándo tiene que
             <em>haber terminado</em> la última función, no cuándo puede empezar.
           </p>
 
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Cuántas películas</span>
-            <input name="cuantasPeliculas" type="number" min="1" max="30" required value="8"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-            <span class="text-xs text-slate-500 dark:text-slate-400">
-              Cuántos títulos distintos entran en la semana. Solo se eligen entre las
-              confirmadas: lo que espera en el buzón no se puede programar.
-            </span>
-          </label>
+          ${campo({ nombre: "cuantasPeliculas", etiqueta: "Cuántas películas", tipo: "number", valor: 8, requerido: true,
+            extra: 'min="1" max="30"',
+            pista: "Cuántos títulos distintos entran en la semana. Solo se eligen entre las confirmadas: lo que espera en el buzón no se puede programar." })}
 
-          <label class="block text-sm">
-            <span class="text-slate-600 dark:text-slate-300">Precio base</span>
-            <input name="precio" type="number" min="100" step="100" required value="5000"
-              class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
-          </label>
+          ${campo({ nombre: "precio", etiqueta: "Precio base", tipo: "number", valor: 5000, requerido: true, extra: 'min="100" step="100"' })}
 
           <div class="grid grid-cols-2 gap-2">
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Idioma</span>
-              <select name="idioma" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-                ${idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("")}
-              </select>
-            </label>
-            <label class="block text-sm">
-              <span class="text-slate-600 dark:text-slate-300">Proyección</span>
-              <select name="proyeccion" class="mt-1 w-full rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
-                ${proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("")}
-              </select>
-            </label>
+            ${select({ nombre: "idioma", etiqueta: "Idioma",
+              opciones: idiomas.map((i) => `<option value="${i}">${etiqueta(i)}</option>`).join("") })}
+            ${select({ nombre: "proyeccion", etiqueta: "Proyección",
+              opciones: proyecciones.map((p) => `<option value="${p}">${etiqueta(p)}</option>`).join("") })}
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <button type="button" id="previsualizar"
-              class="rounded border border-slate-400 px-4 py-2 text-sm font-medium dark:border-slate-600">Previsualizar</button>
-            <button type="submit" id="aplicar" disabled
-              class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300 dark:bg-white dark:text-slate-900 dark:disabled:bg-slate-700 dark:disabled:text-slate-400">
-              Aplicar
-            </button>
+            ${botonSecundario("Previsualizar", { tamano: "px-4 py-2", clases: "font-medium", atributos: 'id="previsualizar"' })}
+            ${boton("Aplicar", { atributos: 'id="aplicar" disabled',
+              clases: "disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400" })}
           </div>
           <p id="errorCriterios" class="hidden text-sm text-red-700 dark:text-red-400"></p>
         </form>
@@ -124,7 +90,7 @@ export async function vistaPlanificador(contenedor) {
           calcular</strong> la propuesta con estos mismos criterios: no recibe la que
           estás viendo, así que si alguien programó algo en el medio, lo respeta.
         </p>
-      </section>
+      `, "p-4")}
 
       <section id="propuesta"></section>
     </div>
@@ -157,9 +123,9 @@ export async function vistaPlanificador(contenedor) {
     if (!formulario.reportValidity()) return;
     errorCriterios.classList.add("hidden");
     const criterios = leerCriterios();
-    const boton = aplicada ? botonAplicar : botonPrevisualizar;
-    boton.disabled = true;
-    boton.innerHTML = `<span class="inline-flex items-center justify-center gap-2">
+    const botonActivo = aplicada ? botonAplicar : botonPrevisualizar;
+    botonActivo.disabled = true;
+    botonActivo.innerHTML = `<span class="inline-flex items-center justify-center gap-2">
       ${spinner("h-4 w-4")}${aplicada ? "Creando…" : "Calculando…"}</span>`;
     propuesta.innerHTML = esqueletoPropuesta(aplicada);
 
@@ -226,20 +192,19 @@ function esqueletoPropuesta(aplicada) {
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        ${[0, 1, 2, 3].map(() => `
-          <div class="rounded border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+        ${[0, 1, 2, 3].map(() => panel(`
             ${fantasma("h-3 w-24")}
             ${fantasma("mt-2 h-7 w-16")}
             ${fantasma("mt-2 h-3 w-full")}
-          </div>`).join("")}
+          `, "p-3")).join("")}
       </div>
 
-      <div class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      ${panel(`
         ${fantasma("h-4 w-40")}
         <div class="mt-3 space-y-2">
           ${[0, 1, 2, 3, 4, 5].map(() => fantasma("h-6 w-full")).join("")}
         </div>
-      </div>
+      `, "p-4")}
     </div>`;
 }
 
@@ -263,13 +228,12 @@ function variacion(actual, anterior, formato) {
 }
 
 function tarjeta(titulo, valor, detalle, delta) {
-  return `
-    <div class="rounded border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">${escapar(titulo)}</p>
       <p class="text-2xl font-bold">${escapar(valor)}</p>
       <p class="text-xs text-slate-500 dark:text-slate-400">${detalle}</p>
       ${delta || ""}
-    </div>`;
+  `, "p-3");
 }
 
 function dibujarIndicadores(indicadores, pases, anterior) {
@@ -299,8 +263,7 @@ function dibujarGeneros(pasesPorGenero) {
   const entradas = Object.entries(pasesPorGenero).sort((a, b) => b[1] - a[1]);
   if (!entradas.length) return "";
   const maximo = entradas[0][1];
-  return `
-    <div class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <h3 class="mb-3 font-semibold">Pases por género</h3>
       <div class="space-y-1">
         ${entradas.map(([genero, cuantos]) => `
@@ -314,35 +277,29 @@ function dibujarGeneros(pasesPorGenero) {
         Una película cuenta en todos sus géneros, así que la suma es mayor que la cantidad
         de pases.
       </p>
-    </div>`;
+  `, "p-4");
 }
 
 /** El elenco elegido: por qué entró cada una y cuánto se lleva. */
 function dibujarElenco(elenco) {
-  return `
-    <div class="overflow-x-auto rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <h3 class="p-4 pb-2 font-semibold">Elenco de la semana (${elenco.length})</h3>
-      <table class="w-full text-sm">
-        <thead class="border-b border-slate-300 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-          <tr><th class="p-2">Película</th><th class="px-3 text-right">Puntaje</th><th class="px-3">Duración</th><th>Géneros</th><th class="text-right">Pases</th></tr>
-        </thead>
-        <tbody>
-          ${elenco.map((p) => `
-            <tr class="border-b border-slate-200 dark:border-slate-800">
+      ${tabla(
+        '<tr><th class="p-2">Película</th><th class="px-3 text-right">Puntaje</th><th class="px-3">Duración</th><th>Géneros</th><th class="text-right">Pases</th></tr>',
+        elenco.map((p) => `
+            <tr class="${filaTabla()}">
               <td class="p-2 font-medium">${escapar(p.titulo)}</td>
               <td class="px-3 text-right font-medium">${escapar(conDecimal(p.puntaje))}</td>
               <td class="whitespace-nowrap px-3 text-slate-500 dark:text-slate-400">${escapar(duracion(p.duracionMinutos))}</td>
               <td class="text-xs text-slate-500 dark:text-slate-400">${p.generos.map((g) => escapar(etiqueta(g))).join(" · ")}</td>
               <td class="p-2 text-right font-medium">${p.pases}</td>
-            </tr>`).join("")}
-        </tbody>
-      </table>
+            </tr>`).join(""))}
       <p class="border-t border-slate-200 p-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
         La primera entró por puntaje; las siguientes, por lo que <strong>agregan</strong> a
         lo ya elegido — por eso puede entrar una comedia de 7,0 antes que la cuarta de
         acción de 8,5. Los pases se reparten proporcionalmente al puntaje.
       </p>
-    </div>`;
+  `, "overflow-x-auto");
 }
 
 /**
@@ -360,8 +317,7 @@ function dibujarPases(pases) {
     salas.get(pase.sala).push(pase);
   }
 
-  return `
-    <div class="rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+  return panel(`
       <h3 class="mb-3 font-semibold">La semana, sala por sala</h3>
       <div class="space-y-2">
         ${[...dias.entries()].map(([fecha, salas], indice) => `
@@ -384,7 +340,7 @@ function dibujarPases(pases) {
             </div>
           </details>`).join("")}
       </div>
-    </div>`;
+  `, "p-4");
 }
 
 function dibujarPropuesta(grilla, anterior) {

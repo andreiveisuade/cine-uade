@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { avisar, escapar, etiqueta, fechaHora, precio, precioExacto } from "../ui.js";
+import { botonSecundario } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { fechaHora, precio, precioExacto } from "../formato.js";
 
 /* -------------------------------------------------------------------- ticket */
 
@@ -87,7 +90,7 @@ export async function vistaTicket(contenedor, id) {
     <pre class="mt-4 overflow-x-auto rounded border border-slate-300 bg-white p-4 text-xs leading-5 dark:border-slate-700 dark:bg-slate-900">${escapar(armarTicket(reserva))}</pre>
     <div class="mt-4 flex gap-2">
       <a href="#/" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Volver a la cartelera</a>
-      <button type="button" id="copiar" class="rounded border border-slate-400 px-4 py-2 text-sm dark:border-slate-600 dark:text-slate-100">Copiar</button>
+      ${botonSecundario("Copiar", { tamano: "px-4 py-2", atributos: 'id="copiar"', clases: "dark:text-slate-100" })}
     </div>
   `;
 

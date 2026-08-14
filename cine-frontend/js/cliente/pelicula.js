@@ -1,5 +1,8 @@
 import * as api from "../api.js";
-import { chip, chipClasificacion, dia, duracion, escapar, etiqueta, hora, imagenPoster, porDia, precio } from "../ui.js";
+import { chip, imagenPoster } from "../componentes.js";
+import { escapar } from "../dom.js";
+import { chipClasificacion, etiqueta } from "../etiquetas.js";
+import { dia, duracion, hora, porDia, precio } from "../formato.js";
 
 /* --------------------------------------------------- detalle de una película */
 

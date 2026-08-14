@@ -1,7 +1,10 @@
 import * as api from "../api.js";
 import { CLASES_TIPO, dibujarMapa, pantalla, referencia } from "../butacas.js";
 import { ir } from "../router.js";
-import { avisar, dia, escapar, etiqueta, hora, precio } from "../ui.js";
+import { boton, panel } from "../componentes.js";
+import { avisar, escapar } from "../dom.js";
+import { etiqueta } from "../etiquetas.js";
+import { dia, hora, precio } from "../formato.js";
 import { seleccion, catalogoTarifas, precioConTarifa, selectorTarifa, sesionDeCompra,
          sostenerSeleccion, renovarMientrasSigaAca } from "./compra.js";
 
@@ -51,10 +54,10 @@ export async function vistaFuncion(contenedor, id) {
       precio base ${precio(funcion.precio)}
     </p>
 
-    <div class="mt-5 overflow-x-auto rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+    ${panel(`
       ${pantalla()}
       <div id="mapa" class="flex flex-col gap-1"></div>
-    </div>
+    `, "mt-5 overflow-x-auto p-4")}
 
     ${referencia([
       ["border border-slate-400 bg-white dark:border-slate-600 dark:bg-slate-800", "libre"],
@@ -66,7 +69,7 @@ export async function vistaFuncion(contenedor, id) {
       [`border ${CLASES_TIPO.ACCESIBLE}`, "+ accesible"],
     ])}
 
-    <div id="resumen" class="sticky bottom-0 mt-4 rounded border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"></div>
+    ${panel("", "sticky bottom-0 mt-4 p-3", 'id="resumen"')}
   `;
 
   const mapa = contenedor.querySelector("#mapa");
@@ -99,10 +102,9 @@ export async function vistaFuncion(contenedor, id) {
                <span class="ml-2 font-semibold">${precio(total)}</span>`
             : '<span class="text-slate-500 dark:text-slate-400">Elegí una o más butacas</span>'}
         </div>
-        <button type="button" id="continuar" ${elegidas.length ? "" : "disabled"}
-          class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:bg-slate-300 dark:bg-white dark:text-slate-900 dark:disabled:bg-slate-700 dark:disabled:text-slate-400">
-          Continuar
-        </button>
+        ${boton("Continuar", { tipo: "button", ancho: "",
+          atributos: `id="continuar" ${elegidas.length ? "" : "disabled"}`,
+          clases: "disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-400" })}
       </div>`;
     resumen.querySelector("#continuar").addEventListener("click", () => ir(`#/confirmar/${funcion.id}`));
     resumen.querySelectorAll("select[data-tarifa-de]").forEach((select) => {
@@ -114,9 +116,9 @@ export async function vistaFuncion(contenedor, id) {
   }
 
   mapa.addEventListener("click", async (evento) => {
-    const boton = evento.target.closest("button[data-codigo]");
-    if (!boton || boton.disabled) return;
-    const codigo = boton.dataset.codigo;
+    const botonAsiento = evento.target.closest("button[data-codigo]");
+    if (!botonAsiento || botonAsiento.disabled) return;
+    const codigo = botonAsiento.dataset.codigo;
     // Arranca en GENERAL: la tarifa reducida hay que elegirla a propósito, porque
     // después hay que acreditarla en la puerta.
     if (seleccion.butacas[codigo]) delete seleccion.butacas[codigo];
