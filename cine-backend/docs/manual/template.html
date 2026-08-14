@@ -418,6 +418,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#dao" data-target="dao">El patrón DAO</a></li>
+        <li><a href="#consultas" data-target="consultas">El costo de las consultas</a></li>
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#reservas" data-target="reservas">Reservas y ticket</a></li>
         <li><a href="#pagos" data-target="pagos">Pagos</a></li>
@@ -1661,6 +1662,95 @@ GET /api/programaciones?activa=true</code></pre>
         cruza datos de cuatro tablas (el nombre del cliente, el título de la película, los códigos de butaca),
         y escribir ese <code>JOIN</code> a mano dejaría el criterio partido entre el gestor y una cadena de
         SQL, que es justo lo que el patrón DAO viene a evitar.
+      </p>
+    </section>
+
+    <section class="doc-section" id="consultas">
+      <h2>El costo de las consultas</h2>
+      <p>
+        El patrón DAO esconde de dónde salen los datos, y eso es exactamente lo que lo hace útil: el gestor no
+        sabe si atrás hay MySQL, memoria o un archivo. El precio es que <strong>desde el código no se ve cuánto
+        cuesta cada llamada</strong>. Un <code>buscarPorId</code> parece gratis y es un viaje a la base; puesto
+        adentro de un bucle, deja de parecerlo recién cuando alguien lo corre con datos de verdad.
+      </p>
+
+      <h3>El caso que apareció, medido</h3>
+      <p>
+        Armar la grilla de una semana tardaba <strong>21 segundos</strong>. El planificador le preguntaba a
+        <code>superpuestaEn</code> por cada horario candidato, y ese método relee las funciones de la sala y la
+        duración de cada película <em>en cada llamada</em>. Seis salas por siete días por una decena de intentos
+        diarios: unas <strong>trece mil consultas</strong>, casi todas pidiendo lo mismo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Antes</th><th>Después</th></tr></thead>
+          <tbody>
+            <tr><td>Tiempo de una propuesta semanal</td><td>21 s</td><td><strong>0,6 s</strong></td></tr>
+            <tr><td>Consultas a la base</td><td>~13.000</td><td>una por sala</td></tr>
+            <tr><td>Resultado devuelto</td><td colspan="2">idéntico: 50 pases, mismo elenco, 42% de ocupación, 8,24 de puntaje, 9 géneros de 9</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        La solución no fue optimizar la consulta sino <strong>dejar de repetirla</strong>:
+        <code>agendaDe(salaId)</code> lee los tramos tomados de una sala una vez, con la limpieza ya sumada, y
+        el planificador compara en memoria. Y la regla no se movió de lugar —quién decide si dos rangos se pisan
+        sigue siendo <code>GestorFunciones</code>—, porque resolverla en el planificador habría sido más corto
+        de escribir y habría dejado dos definiciones de R3.
+      </p>
+
+      <h3>Cómo se reconoce un N+1</h3>
+      <p>
+        Es el problema más caro y el más fácil de escribir sin darse cuenta: un bucle que adentro consulta la
+        base. La señal es que <strong>el tiempo crece con los datos y no con el trabajo</strong>. Armar una
+        semana pide siempre lo mismo, pero tardaba cada vez más a medida que la base acumulaba funciones,
+        porque cada intento releía todas las de esa sala.
+      </p>
+      <p>
+        Lo que no lo detecta: los tests. Corren contra <code>persistencia/memoria/</code>, donde una consulta
+        cuesta lo mismo que leer una variable, así que trece mil son gratis. Este problema solo existe del otro
+        lado de la interfaz — y por eso apareció recién cuando la pantalla del planificador probó contra el
+        backend real, y no en los 314 tests en verde.
+      </p>
+
+      <h3>Lo que ya está resuelto sin haberlo escrito</h3>
+      <p>
+        Los índices. <code>funcion</code> tiene índice en <code>sala_id</code>, <code>pelicula_id</code> y
+        <code>programacion_id</code>; <code>reserva</code> en <code>funcion_id</code>, <code>cliente_id</code> y
+        <code>codigo</code>. Ninguno está declarado en <code>schema.sql</code>: los crea InnoDB solo, por las
+        <code>FOREIGN KEY</code> y los <code>UNIQUE</code>. Es decir que los <code>listarPorSala</code> y
+        <code>listarPorFuncion</code> —las consultas más frecuentes del sistema— van por índice desde el primer
+        día. Por eso el problema del planificador nunca fue la consulta individual: era repetirla.
+      </p>
+
+      <h3>Las deudas, y hasta cuándo aguantan</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Deuda</th><th>Dónde</th><th>Cuándo empieza a doler</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Filtrar en memoria en vez de con <code>WHERE</code></td>
+              <td><a href="#filtros"><code>GestorReservas.buscar</code></a> y los demás buscadores</td>
+              <td>Decenas de miles de reservas. Hoy son cientos, y el criterio cruza cuatro tablas: bajarlo a SQL partiría la regla entre el gestor y una cadena de texto</td>
+            </tr>
+            <tr>
+              <td>Sin índice por fecha</td>
+              <td><code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td>
+              <td>No son <code>FOREIGN KEY</code>, así que no heredan índice y el arqueo del día hace scan completo. Con 177 funciones no se nota; con 50.000, sí</td>
+            </tr>
+            <tr>
+              <td>El catálogo se relee entero</td>
+              <td><code>agendaDe</code> trae todas las películas para armar el mapa de duraciones</td>
+              <td>Es una consulta por propuesta y el catálogo son decenas de títulos. Si creciera a miles, convendría pedir solo las del elenco</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Están anotadas y no implementadas a propósito. Un <code>WHERE</code> a medias —con la mitad del criterio
+        en SQL y la otra mitad en Java— es peor que el filtro en memoria: cuesta lo mismo de mantener y ya no se
+        entiende de un vistazo dónde vive la regla. La diferencia entre deuda y descuido es tenerla escrita con
+        el umbral al lado.
       </p>
     </section>
 
@@ -4502,6 +4592,11 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td><code>record</code> en los value objects</td>
               <td>Interfaz + <code>Impl</code> también acá</td>
               <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+            </tr>
+            <tr>
+              <td>Leer la agenda de la sala una vez, no una por hueco</td>
+              <td>Preguntar el solapamiento en cada intento</td>
+              <td>Trece mil consultas repetidas y 21 segundos para armar una semana. La agenda la sigue armando <code>GestorFunciones</code>, así que R3 no se duplica: lo que cambió es cuántas veces se va a buscar el mismo dato, no quién decide</td>
             </tr>
             <tr>
               <td>Planificador goloso con bono por género</td>
