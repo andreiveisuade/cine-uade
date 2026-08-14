@@ -241,6 +241,60 @@ la segunda choca contra R5, así que un doble click no cobra dos veces.
               "pelicula": {…}, "cliente": {…}, "entradas": 3 }] }
 ```
 
+## Informes por función
+
+El arqueo cierra la caja de un **día**. Estos dos cortan por **función**, que es lo que
+pide el INCAA y lo que responde «cuánto dejó esta función». No se pueden derivar del
+arqueo: las entradas de una función se venden a lo largo de varios días.
+
+### `GET /api/funciones/{id}/bordero`
+```json
+{ "funcionId": 3, "pelicula": "Matrix", "sala": "Sala 1",
+  "funcion": "2026-08-20T20:00:00", "generadoEn": "2026-08-20T23:15:00",
+  "espectadores": 15, "recaudacionBruta": 67500, "descuentos": 5000,
+  "recaudacionNeta": 62500,
+  "porTarifa": { "GENERAL": {"cantidad":12,"total":60000},
+                 "JUBILADO": {"cantidad":3,"total":7500} } }
+```
+
+Declara lo **cobrado**: una reserva sin pagar retiene butacas pero no vendió ninguna
+entrada. Una función sin ventas no es un error, es un borderó en cero con `porTarifa`
+vacío; una función que no existe es `404`.
+
+Las tres cifras van separadas porque cuentan cosas distintas: `recaudacionBruta` es a
+precio de lista —el valor declarado de cada localidad—, `descuentos` lo que resignó el cine
+por una promoción suya, y `recaudacionNeta` lo que entró en la caja. Con una sola, la
+diferencia entre entradas × precio y lo cobrado no se puede explicar.
+
+`porTarifa` solo trae las tarifas con entradas vendidas, igual que `porMedio` en el arqueo.
+
+### `POST /api/funciones/{id}/bordero`
+Emite el archivo que se sube al INCAA, en `informes/bordero-funcion-<id>.txt` del servidor
+—mismo mecanismo que los tickets—. Responde `201` con el mismo cuerpo que el `GET`.
+
+> Es `POST` porque **escribe**: consultar el borderó dos veces no es lo mismo que
+> declararlo dos veces. Vuelve a emitir el archivo de esa función y pisa el anterior: el
+> borderó de una función es uno solo y el que vale es el último, porque las entradas se
+> siguen vendiendo hasta que la película arranca.
+
+### `GET /api/funciones/{id}/informe`
+```json
+{ "boleteria": { "funcionId": 3, "…": "el mismo borderó" },
+  "comprasCandy": 4, "candy": 12000, "total": 74500 }
+```
+
+`boleteria` es el borderó completo y no una versión recortada, justamente para que los dos
+informes no puedan decir números distintos de lo mismo. `total` es `recaudacionNeta` + `candy`.
+
+> **El candy de mostrador no entra, a propósito.** Solo se atribuye a una función el que
+> tiene `reservaId` —el «¿desea agregar pochoclos?» de después de comprar la entrada—,
+> porque esa reserva es lo único que dice de qué función se trata. Quien compra un balde en
+> el mostrador puede estar yendo a cualquiera de las cuatro funciones de las 22:00, o a
+> ninguna: repartirlo sería inventar el dato. Esa plata se cuenta donde sí es cierta, en
+> `GET /api/candy/arqueo`. La consecuencia hay que tenerla a mano al leer los números: la
+> suma de los informes de todas las funciones de un día da **menos** que el arqueo de ese
+> día, y la diferencia es el mostrador.
+
 ## Programaciones (CU-03b)
 
 La grilla: *«Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15 de septiembre»*.
