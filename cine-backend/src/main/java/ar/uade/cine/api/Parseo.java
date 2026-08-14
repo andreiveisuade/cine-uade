@@ -107,6 +107,22 @@ class Parseo {
         return vacio(valor) ? null : constante(tipo, valor, queEs);
     }
 
+    /**
+     * Un filtro de sí/no con tres estados: true, false y "no filtres por esto". Por eso
+     * devuelve Boolean y no boolean — la diferencia entre "solo las despublicadas" y
+     * "todas" se perdería con un primitivo.
+     */
+    static Boolean booleanOpcional(String valor, String queEs) {
+        if (vacio(valor)) {
+            return null;
+        }
+        String limpio = valor.trim().toLowerCase();
+        if (limpio.equals("true") || limpio.equals("false")) {
+            return Boolean.valueOf(limpio);
+        }
+        throw new IllegalArgumentException(queEs + " tiene que ser true o false");
+    }
+
     private static boolean vacio(String valor) {
         return valor == null || valor.isBlank();
     }

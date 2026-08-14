@@ -285,6 +285,22 @@ public class GestorProgramaciones {
         return programacionDAO.listar();
     }
 
+    /**
+     * Las grillas que cumplen los criterios. Cualquier parámetro en {@code null} no filtra.
+     *
+     * <p>{@code activa} en {@code true} es la pregunta que más se hace acá: cuáles están
+     * generando funciones hoy. Las dadas de baja no se borran nunca —siguen explicando las
+     * funciones que crearon— así que la lista solo crece y el filtro es lo que la mantiene
+     * usable.
+     */
+    public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
+        return programacionDAO.listar().stream()
+                .filter(p -> peliculaId == null || p.getPeliculaId() == peliculaId)
+                .filter(p -> salaId == null || p.getSalaId() == salaId)
+                .filter(p -> activa == null || p.estaActiva() == activa)
+                .toList();
+    }
+
     public Optional<Programacion> buscar(int id) {
         return programacionDAO.buscarPorId(id);
     }

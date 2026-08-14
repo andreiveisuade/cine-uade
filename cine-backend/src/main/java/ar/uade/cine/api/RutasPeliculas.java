@@ -41,8 +41,14 @@ class RutasPeliculas {
         });
 
         // Lo que ve el encargado: el catálogo entero, esté o no en cartelera.
+        // El catálogo dejó de ser cuatro títulos de prueba desde que el importador trae
+        // la cartelera real: filtrar por título es lo primero que hace falta.
         app.get("/api/peliculas", ctx ->
-                ctx.json(cartelera.listar().stream().map(vistas::pelicula).toList()));
+                ctx.json(cartelera.buscar(
+                                ctx.queryParam("q"),
+                                Parseo.constanteOpcional(Genero.class, ctx.queryParam("genero"), "el género"),
+                                Parseo.booleanOpcional(ctx.queryParam("publicada"), "publicada"))
+                        .stream().map(vistas::pelicula).toList()));
 
         app.get("/api/peliculas/{id}", ctx ->
                 ctx.json(vistas.pelicula(buscar(cartelera, Parseo.id(ctx)))));

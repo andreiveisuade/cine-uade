@@ -204,6 +204,26 @@ public class GestorCartelera {
         return peliculaDAO.listar();
     }
 
+    /**
+     * El catálogo filtrado. Cualquier parámetro en {@code null} no filtra.
+     *
+     * <p>Desde que el importador trae la cartelera real, el catálogo dejó de ser una lista
+     * de cuatro títulos de prueba: son veintidós y van a ser más en cada corrida. Buscar
+     * por título es lo primero que se necesita cuando la lista pasa de una pantalla.
+     *
+     * @param publicada {@code true} solo las publicadas, {@code false} solo las
+     *                  despublicadas, {@code null} todas. Es {@code Boolean} y no
+     *                  {@code boolean} justamente para que exista ese tercer caso
+     */
+    public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
+        String buscado = titulo == null ? "" : titulo.trim().toLowerCase();
+        return peliculaDAO.listar().stream()
+                .filter(p -> buscado.isEmpty() || p.getTitulo().toLowerCase().contains(buscado))
+                .filter(p -> genero == null || p.getGeneros().contains(genero))
+                .filter(p -> publicada == null || p.estaEnCartelera() == publicada)
+                .toList();
+    }
+
     public Optional<Pelicula> buscar(int id) {
         return peliculaDAO.buscarPorId(id);
     }

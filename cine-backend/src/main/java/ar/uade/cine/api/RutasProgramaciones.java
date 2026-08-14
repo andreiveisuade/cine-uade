@@ -78,8 +78,14 @@ class RutasProgramaciones {
 
     static void registrar(Javalin app, GestorProgramaciones programaciones) {
 
+        // Las grillas dadas de baja no se borran nunca: siguen explicando las funciones
+        // que crearon. La lista solo crece, y `activa=true` es la pregunta frecuente.
         app.get("/api/programaciones", ctx ->
-                ctx.json(programaciones.listar().stream()
+                ctx.json(programaciones.buscar(
+                                Parseo.numeroOpcional(ctx.queryParam("peliculaId"), "la película"),
+                                Parseo.numeroOpcional(ctx.queryParam("salaId"), "la sala"),
+                                Parseo.booleanOpcional(ctx.queryParam("activa"), "activa"))
+                        .stream()
                         .map(p -> programacion(p, null))
                         .toList()));
 
