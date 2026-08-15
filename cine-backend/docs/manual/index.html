@@ -5078,6 +5078,15 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
         Los tests espejan el paquete de lo que prueban (<code>test/java/ar/uade/cine/servicio/</code>): todos
         prueban gestores, que es donde viven las reglas.
       </p>
+      <p>
+        La excepción es <code>ArquitecturaTest</code>, que no prueba una regla del cine sino esta estructura:
+        lee los <code>import</code> de cada archivo de <code>src/main/java</code> y falla si una capa nombra a
+        otra que no tiene debajo —si <code>dominio/</code> importara <code>persistencia/</code>, o si un gestor
+        importara <code>api/</code>— y también si alguien que no sea <code>Aplicacion</code> nombra un DAO
+        concreto de <code>mysql/</code>, <code>memoria/</code>, <code>archivo/</code> o <code>redis/</code>.
+        Todo lo que este capítulo afirma se verifica en cada <code>mvn test</code>, en vez de depender de que
+        nadie se olvide.
+      </p>
       <p><code>tickets/</code>, <code>informes/</code> y <code>reservas.txt</code> están en el <code>.gitignore</code>: son datos que genera la app, no código.</p>
     </section>
 
