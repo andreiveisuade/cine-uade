@@ -205,7 +205,7 @@ llevarlo directo a esa pantalla y no al panel.
 | GET | `/api/peliculas` | Todas, incluidas las que no están en cartelera |
 | GET | `/api/peliculas/pendientes` | El buzón: lo que trajo el importador y nadie miró. Va **antes** que `/{id}` en el registro de rutas |
 | POST | `/api/peliculas` | R1 título único, R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
-| POST | `/api/peliculas/importadas` | Mismo cuerpo que el alta, pero nace `PENDIENTE` y fuera de cartelera. Lo usa el importador de TMDB |
+| POST | `/api/peliculas/importadas` | Mismo cuerpo que el alta, pero nace `PENDIENTE` y fuera de cartelera. Es la puerta del alta importada para un cliente externo; el importador de TMDB ya no la usa, entra por el gestor |
 | POST | `/api/peliculas/{id}/confirmacion` | La acepta: pasa a `CONFIRMADA` y queda en cartelera |
 | POST | `/api/grilla/propuesta` | Arma la grilla de la semana **sin escribir**: elige el elenco por puntaje y diversidad y lo reparte en las salas |
 | POST | `/api/grilla` | La misma grilla, creando las funciones. Recalcula en vez de recibir la propuesta: el algoritmo es determinista |
@@ -554,7 +554,7 @@ entra cae en el buzón (`estadoRevision: PENDIENTE`), no en el catálogo.
 |---|---|---|
 | POST | `/api/importaciones` | Corre una importación y contesta **cuando terminó**. Cuerpo opcional |
 | GET | `/api/importaciones` | Las últimas 20, de la más nueva a la más vieja |
-| GET | `/api/importaciones/estado` | Si el importador está levantado. Va **antes** que el listado en el registro de rutas |
+| GET | `/api/importaciones/estado` | Si el importador puede correr. Va **antes** que el listado en el registro de rutas |
 
 ### `POST /api/importaciones`
 
@@ -568,12 +568,15 @@ también es opcional: un POST sin cuerpo es un pedido válido.
 ```json
 { "id": 7, "estado": "TERMINADA", "paginas": 2,
   "pedidaEn": "2026-08-14T17:00:54", "terminoEn": "2026-08-14T17:01:01",
-  "nuevas": 9, "salteadas": 20, "fallidas": 0,
-  "detalle": "– Yo, narciso: sin duración en TMDB\n+ [41] Hablan las aves" }
+  "nuevas": 9, "salteadas": 20, "fallidas": 1,
+  "detalle": "+ [41] Hablan las aves\n✗ Yo, narciso: La duración debe ser mayor a cero" }
 ```
 
 `estado` es `EN_CURSO`, `TERMINADA` o `FALLIDA`. `detalle` es el log de la corrida —o el
-motivo si falló— y puede ser `null`: es texto para leer, no un dato para consultar.
+motivo si falló— y puede ser `null`: es texto para leer, no un dato para consultar. Cada
+línea es una película: `+` la que entró al buzón, con su id, y `✗` la que el alta rechazó,
+con el mensaje de la regla que la rechazó. Las que ya estaban en el catálogo no se
+nombran: son veinte líneas de ruido y ya se cuentan en `salteadas`.
 
 **Tarda lo que tarda la corrida**, diez o quince segundos, y contesta con el resultado
 final. No hay `202` con un id para ir a preguntar después: eso obligaría al front a
@@ -581,7 +584,7 @@ repreguntar cada dos segundos, o sea treinta pedidos para enterarse de algo que 
 puede contar de una. nginx tiene un `proxy_read_timeout` de 180s para esta ruta —el resto
 de `/api` sigue en 30— y el backend corta a los 120.
 
-**Que el importador falle no es un error de la API**: responde `201` igual, con la corrida
+**Que TMDB falle no es un error de la API**: responde `201` igual, con la corrida
 en `FALLIDA` y el motivo en `detalle`. Una corrida fallida pudo haber cargado algunas
 películas antes de cortarse; el buzón es siempre la verdad de qué entró.
 
@@ -599,7 +602,9 @@ Los `400`, con el mensaje que se muestra tal cual:
 { "disponible": true, "detalle": "Listo para traer cartelera" }
 ```
 
-Lo pide la pantalla al abrirse, una sola vez, para avisar que el importador no está antes
-de que alguien apriete el botón y espere en vano. `detalle` viene redactado para mostrarse.
+Lo pide la pantalla al abrirse, una sola vez, para avisar antes de que alguien apriete el
+botón y espere en vano. `detalle` viene redactado para mostrarse: hoy lo único que puede
+faltar es el token de TMDB, y el mensaje dice dónde cargarlo. No se le pega a TMDB para
+contestar esto —sería gastar cuota cada vez que se abre la pantalla.
 
 > Estos endpoints no piden credenciales, como el resto de los del encargado.
