@@ -11,7 +11,7 @@ package api {
   ' Divididos en http/ (Parseo, Fechas, NoEncontrado), rutas/ y vistas/.
   ' Rutas y Vistas son lo unico publico de sus subpaquetes.
 
-  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy, RutasInformes" as RutasHttp
+  class "RutasCatalogos, RutasClientes, RutasFunciones\nRutasPagos, RutasPeliculas, RutasProgramaciones\nRutasReservas, RutasSalas, RutasSesion\nRutasPromociones, RutasCandy, RutasInformes\nRutasGrilla, RutasImportaciones" as RutasHttp
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
   class Parseo
   class Fechas
@@ -136,11 +136,12 @@ package persistencia {
   interface CompraCandyDAO
   interface EmpleadoDAO
   interface PromocionDAO
+  interface ImportacionDAO
   interface BloqueoButacas
   class PersistenciaException
 
   package mysql {
-    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nPlantilla + OrigenMySQL" as DaosMySQL
+    class "PeliculaDAOMySQL, SalaDAOMySQL\nAsientoDAOMySQL, FuncionDAOMySQL\nClienteDAOMySQL, ReservaDAOMySQL\nPagoDAOMySQL, ProductoDAOMySQL\nCompraCandyDAOMySQL, EmpleadoDAOMySQL\nPromocionDAOMySQL, ProgramacionDAOMySQL\nImportacionDAOMySQL\nPlantilla + OrigenMySQL" as DaosMySQL
   }
   package memoria {
     class "un DAOMemoria por contrato:\npara testear sin base de datos" as DaosMemoria
