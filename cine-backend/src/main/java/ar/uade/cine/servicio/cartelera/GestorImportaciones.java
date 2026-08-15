@@ -7,8 +7,8 @@ import java.util.List;
 import ar.uade.cine.dominio.cartelera.EstadoImportacion;
 import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dominio.cartelera.ImportacionImpl;
-import ar.uade.cine.importador.ImportadorCartelera;
-import ar.uade.cine.importador.ImportadorError;
+import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
+import ar.uade.cine.infraestructura.importador.ImportadorError;
 import ar.uade.cine.persistencia.ImportacionDAO;
 
 /**

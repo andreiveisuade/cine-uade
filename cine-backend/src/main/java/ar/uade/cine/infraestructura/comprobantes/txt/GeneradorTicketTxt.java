@@ -1,4 +1,4 @@
-package ar.uade.cine.comprobantes.txt;
+package ar.uade.cine.infraestructura.comprobantes.txt;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,7 +14,7 @@ import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.ventas.Entrada;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
-import ar.uade.cine.comprobantes.GeneradorTicket;
+import ar.uade.cine.infraestructura.comprobantes.GeneradorTicket;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.dominio.dinero.Dinero;
 

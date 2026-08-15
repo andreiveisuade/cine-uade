@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import ar.uade.cine.comprobantes.GeneradorTicketCandy;
+import ar.uade.cine.infraestructura.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.CompraCandyImpl;
 import ar.uade.cine.dominio.candy.ItemCompra;

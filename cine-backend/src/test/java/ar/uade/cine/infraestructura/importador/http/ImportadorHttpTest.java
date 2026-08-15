@@ -1,4 +1,4 @@
-package ar.uade.cine.importador.http;
+package ar.uade.cine.infraestructura.importador.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,8 +16,8 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import ar.uade.cine.importador.ImportadorCartelera;
-import ar.uade.cine.importador.ImportadorError;
+import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
+import ar.uade.cine.infraestructura.importador.ImportadorError;
 
 /**
  * El cliente del importador, contra un servidor de mentira que contesta lo que el test

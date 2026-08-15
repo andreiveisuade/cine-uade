@@ -1,4 +1,4 @@
-package ar.uade.cine.seguridad;
+package ar.uade.cine.infraestructura.seguridad;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

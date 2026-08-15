@@ -1,4 +1,4 @@
-package ar.uade.cine.comprobantes.txt;
+package ar.uade.cine.infraestructura.comprobantes.txt;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import ar.uade.cine.comprobantes.GeneradorRecibo;
+import ar.uade.cine.infraestructura.comprobantes.GeneradorRecibo;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;
 import ar.uade.cine.persistencia.PersistenciaException;

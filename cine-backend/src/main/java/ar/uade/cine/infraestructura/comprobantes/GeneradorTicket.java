@@ -1,4 +1,4 @@
-package ar.uade.cine.comprobantes;
+package ar.uade.cine.infraestructura.comprobantes;
 
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;

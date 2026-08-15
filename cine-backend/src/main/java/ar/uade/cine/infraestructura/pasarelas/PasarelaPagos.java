@@ -1,4 +1,4 @@
-package ar.uade.cine.pasarelas;
+package ar.uade.cine.infraestructura.pasarelas;
 
 import java.util.Optional;
 
@@ -12,7 +12,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * autorización que es la prueba de que la plata existe. R11 pide ese código justamente
  * porque el cine no se lo puede inventar.
  *
- * <p>Es una interfaz por el mismo motivo que {@link ar.uade.cine.comprobantes.GeneradorTicket}:
+ * <p>Es una interfaz por el mismo motivo que {@link ar.uade.cine.infraestructura.comprobantes.GeneradorTicket}:
  * hoy atrás hay una emulación —no hay credenciales ni llamadas de red en este TP— y mañana
  * podría haber una integración de verdad. Con el contrato de por medio, eso es cambiar un
  * argumento en {@code Aplicacion} y {@link ar.uade.cine.servicio.ventas.GestorPagos} no se entera.

@@ -1,4 +1,4 @@
-package ar.uade.cine.importador.http;
+package ar.uade.cine.infraestructura.importador.http;
 
 import java.io.IOException;
 import java.net.URI;
@@ -10,8 +10,8 @@ import java.time.Duration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ar.uade.cine.importador.ImportadorCartelera;
-import ar.uade.cine.importador.ImportadorError;
+import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
+import ar.uade.cine.infraestructura.importador.ImportadorError;
 
 /**
  * El importador de verdad: el contenedor {@code parser}, al otro lado de la red interna.

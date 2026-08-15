@@ -1,4 +1,4 @@
-package ar.uade.cine.importador;
+package ar.uade.cine.infraestructura.importador;
 
 /**
  * No se pudo correr la importación.

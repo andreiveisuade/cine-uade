@@ -5,7 +5,7 @@ import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dto.cartelera.EstadoImportadorDTO;
 import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
 import ar.uade.cine.dto.cartelera.PedidoImportacionDTO;
-import ar.uade.cine.importador.ImportadorCartelera;
+import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
 import ar.uade.cine.servicio.cartelera.GestorImportaciones;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;

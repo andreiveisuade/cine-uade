@@ -1,4 +1,4 @@
-package ar.uade.cine.pasarelas.emulada;
+package ar.uade.cine.infraestructura.pasarelas.emulada;
 
 import java.security.SecureRandom;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ar.uade.cine.dominio.ventas.MedioPago;
-import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.infraestructura.pasarelas.PasarelaPagos;
 import ar.uade.cine.dominio.dinero.Dinero;
 
 /**

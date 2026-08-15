@@ -1,4 +1,4 @@
-package ar.uade.cine.importador;
+package ar.uade.cine.infraestructura.importador;
 
 /**
  * Un importador que no sale a ningún lado: contesta lo que el test le haya dicho que

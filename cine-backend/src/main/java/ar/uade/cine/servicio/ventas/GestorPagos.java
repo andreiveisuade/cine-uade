@@ -8,14 +8,14 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ar.uade.cine.comprobantes.GeneradorRecibo;
+import ar.uade.cine.infraestructura.comprobantes.GeneradorRecibo;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.PagoImpl;
 import ar.uade.cine.dominio.ventas.Reserva;
-import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.infraestructura.pasarelas.PasarelaPagos;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PagoDAO;
 import ar.uade.cine.persistencia.ReservaDAO;

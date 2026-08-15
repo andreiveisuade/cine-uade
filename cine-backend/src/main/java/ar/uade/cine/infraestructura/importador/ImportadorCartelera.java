@@ -1,4 +1,4 @@
-package ar.uade.cine.importador;
+package ar.uade.cine.infraestructura.importador;
 
 /**
  * Quien sale a buscar la cartelera real, que nunca es el cine.
@@ -8,7 +8,7 @@ package ar.uade.cine.importador;
  * por HTTP contra {@code POST /api/peliculas/importadas}. Sigue siendo un cliente más del
  * sistema: entra por la misma puerta que cualquiera y pasa por las mismas reglas.
  *
- * <p>Es una interfaz por el mismo motivo que {@link ar.uade.cine.pasarelas.PasarelaPagos}:
+ * <p>Es una interfaz por el mismo motivo que {@link ar.uade.cine.infraestructura.pasarelas.PasarelaPagos}:
  * lo que hay del otro lado es un tercero, y el gestor no tiene por qué saber cómo se le
  * habla. Acá adentro no aparece la palabra TMDB, ni una clave de API, ni una URL: el
  * backend pide «corré una importación» y el que sabe de dónde sacar las películas es el

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.funciones.Proyeccion;

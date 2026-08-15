@@ -48,30 +48,48 @@ package servicio {
   class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla" as DatosDeServicio
 }
 
-package seguridad {
-  class Password
-}
+' Los adaptadores de salida. Cada uno es una interfaz que declara servicio/ y una
+' implementacion que se elige en Aplicacion, la misma forma que persistencia/: un
+' puerto hacia el mundo, no una regla. Estan juntos bajo infraestructura/ para que
+' el nivel de arriba del paquete sean las capas y nada mas.
+package infraestructura {
 
-package comprobantes {
-  interface GeneradorTicket
-  interface GeneradorTicketCandy
-  interface GeneradorRecibo
-  interface GeneradorBordero
-
-  package txt {
-    class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt, GeneradorBorderoTxt" as GeneradoresTxt
+  package seguridad {
+    class Password
   }
-}
 
-' Quien autoriza un pago electronico nunca es el cine: R11 pide un codigo que
-' devuelve un tercero. Es un contrato por lo mismo que GeneradorTicket —hoy
-' atras hay una emulacion y manana podria haber una integracion real— y por eso
-' vive afuera de servicio: es un puerto hacia el mundo, no una regla.
-package pasarelas {
-  interface PasarelaPagos
+  package comprobantes {
+    interface GeneradorTicket
+    interface GeneradorTicketCandy
+    interface GeneradorRecibo
+    interface GeneradorBordero
 
-  package emulada {
-    class "MercadoPagoEmulado\nel checkout, sin credenciales ni red" as PasarelaEmulada
+    package txt {
+      class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt, GeneradorBorderoTxt" as GeneradoresTxt
+    }
+  }
+
+  ' Quien autoriza un pago electronico nunca es el cine: R11 pide un codigo que
+  ' devuelve un tercero. Es un contrato por lo mismo que GeneradorTicket: hoy
+  ' atras hay una emulacion y manana podria haber una integracion real.
+  package pasarelas {
+    interface PasarelaPagos
+
+    package emulada {
+      class "MercadoPagoEmulado\nel checkout, sin credenciales ni red" as PasarelaEmulada
+    }
+  }
+
+  ' La cartelera de TMDB entra por aca. El parser es un proceso aparte y este es
+  ' el contrato con el: el gestor pide una corrida y no sabe que del otro lado
+  ' hay HTTP.
+  package importador {
+    interface ImportadorCartelera
+    class ImportadorError
+
+    package http as importador_http {
+      class "ImportadorHttp\ncliente contra el parser" as ImportadorHttp
+    }
   }
 }
 
@@ -238,16 +256,18 @@ legend bottom
   |  | una funcion vendida; GestorCartelera y GestorSalas usan FuncionDAO por el mismo motivo; |
   |  | GestorInformes suma FuncionDAO, PeliculaDAO, SalaDAO y ReservaDAO para titular el bordero |
   |  | y contar sus entradas. |
-  | pasarelas | Quien autoriza un pago electronico. Es un puerto hacia afuera y no una regla, por |
-  |  | eso no esta en servicio: el cine no puede inventar el codigo que exige R11. |
   | dominio | Que es un cine. Cada entidad con su implementacion y sus enums, agrupadas por |
   |  | sub-dominio. No depende de ninguna otra capa: no sabe que existen MySQL ni la consola. |
   | persistencia | Los contratos arriba, las tecnologias en subpaquetes. Ninguna clase de aca |
   |  | imprime ni valida reglas de negocio: solo traduce entre el dominio y el medio. |
-  | comprobantes | El ticket que se entrega. No es un DAO —un comprobante se imprime, no se |
-  |  | consulta— y por eso no vive en persistencia, aunque tambien termine escribiendo un archivo. |
-  | seguridad | Como se guardan las credenciales. No es una regla del cine: seria igual en |
-  |  | cualquier otro sistema, y por eso no esta entre los gestores. |
+  | infraestructura | Los cuatro puertos hacia afuera, con la misma forma que persistencia: |
+  |  | la interfaz la declara el que la necesita y la implementacion la elige Aplicacion. |
+  |  | **pasarelas**: quien autoriza un pago electronico —el cine no puede inventar el codigo |
+  |  | que exige R11—. **comprobantes**: el ticket que se entrega; no es un DAO, porque un |
+  |  | comprobante se imprime y no se consulta, aunque tambien termine escribiendo un archivo. |
+  |  | **importador**: de donde sale la cartelera; el gestor pide una corrida sin saber que del |
+  |  | otro lado hay HTTP. **seguridad**: como se guardan las credenciales, que seria igual en |
+  |  | cualquier otro sistema y por eso no esta entre los gestores. |
 endlegend
 
 note bottom of dominio

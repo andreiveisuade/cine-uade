@@ -11,12 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ar.uade.cine.Aplicacion;
-import ar.uade.cine.comprobantes.txt.GeneradorBorderoTxt;
-import ar.uade.cine.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.comprobantes.txt.GeneradorTicketCandyTxt;
-import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.importador.ImportadorDePrueba;
-import ar.uade.cine.pasarelas.emulada.MercadoPagoEmulado;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorBorderoTxt;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorReciboTxt;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketCandyTxt;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.infraestructura.importador.ImportadorDePrueba;
+import ar.uade.cine.infraestructura.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;

@@ -5038,10 +5038,15 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── memoria/        *DAOMemoria, para testear sin base
     │   │   ├── archivo/        ReservaDAOTxt
     │   │   └── redis/          BloqueoButacasRedis: la butaca mientras se elige
-    │   ├── comprobantes/       GeneradorTicket*, GeneradorRecibo, GeneradorBordero,
-    │   │                       y txt/ con sus implementaciones
-    │   ├── pasarelas/          PasarelaPagos + emulada/MercadoPagoEmulado
-    │   ├── seguridad/          Password
+    │   ├── infraestructura/    los puertos hacia afuera: interfaz arriba, tecnologia
+    │   │   │                   abajo, y Aplicacion eligiendo cual. Misma forma que
+    │   │   │                   persistencia/, pero lo que hay del otro lado no es una base
+    │   │   ├── comprobantes/   GeneradorTicket*, GeneradorRecibo, GeneradorBordero,
+    │   │   │                   y txt/ con sus implementaciones
+    │   │   ├── pasarelas/      PasarelaPagos + emulada/MercadoPagoEmulado
+    │   │   ├── importador/     ImportadorCartelera + http/ImportadorHttp, el cliente
+    │   │   │                   contra el parser de TMDB
+    │   │   └── seguridad/      Password
     │   ├── api/                HTTP. ServidorApi arriba, y adentro:
     │   │   ├── http/           Parseo, Fechas, NoEncontrado
     │   │   ├── rutas/          Rutas (lo unico publico) + las 13 Rutas*

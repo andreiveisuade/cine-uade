@@ -1,4 +1,4 @@
-package ar.uade.cine.comprobantes.txt;
+package ar.uade.cine.infraestructura.comprobantes.txt;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import ar.uade.cine.comprobantes.GeneradorBordero;
+import ar.uade.cine.infraestructura.comprobantes.GeneradorBordero;
 import ar.uade.cine.dominio.ventas.TipoTarifa;
 import ar.uade.cine.persistencia.PersistenciaException;
 import ar.uade.cine.servicio.informes.Bordero;

@@ -11,7 +11,7 @@ import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
 import ar.uade.cine.dto.ventas.TotalMedioDTO;
-import ar.uade.cine.pasarelas.PasarelaPagos;
+import ar.uade.cine.infraestructura.pasarelas.PasarelaPagos;
 import ar.uade.cine.servicio.informes.Arqueo;
 import ar.uade.cine.servicio.informes.GestorCaja;
 import ar.uade.cine.servicio.ventas.GestorPagos;

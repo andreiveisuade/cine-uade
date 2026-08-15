@@ -1,4 +1,4 @@
-package ar.uade.cine.comprobantes;
+package ar.uade.cine.infraestructura.comprobantes;
 
 import ar.uade.cine.dominio.ventas.Pago;
 import ar.uade.cine.dominio.ventas.Reserva;

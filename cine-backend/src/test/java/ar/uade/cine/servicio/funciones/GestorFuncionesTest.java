@@ -32,7 +32,7 @@ import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
 import ar.uade.cine.persistencia.ReservaDAO;
 import ar.uade.cine.persistencia.SalaDAO;
-import ar.uade.cine.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;

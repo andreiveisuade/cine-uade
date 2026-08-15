@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import ar.uade.cine.dominio.cartelera.EstadoImportacion;
 import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dominio.cartelera.ImportacionImpl;
-import ar.uade.cine.importador.ImportadorDePrueba;
+import ar.uade.cine.infraestructura.importador.ImportadorDePrueba;
 import ar.uade.cine.persistencia.ImportacionDAO;
 import ar.uade.cine.persistencia.memoria.ImportacionDAOMemoria;
 
