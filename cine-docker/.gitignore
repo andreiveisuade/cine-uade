@@ -1,3 +1,7 @@
 # Credenciales: cada máquina tiene las suyas y ninguna va al repo.
 .env
 .DS_Store
+
+# Ajustes de la máquina de cada uno (ej: publicar el puerto de MySQL para verlo con un
+# cliente de escritorio). No es parte del sistema.
+docker-compose.override.yml
