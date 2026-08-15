@@ -5,8 +5,9 @@ skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 hide empty members
 
-' El caso testigo es ReservaDAO, pero la misma forma se repite en las otras
-' trece interfaces de persistencia/, y tambien en los puertos de infraestructura/:
+' El caso testigo es ReservaDAO, pero la misma forma se repite en las otras trece
+' interfaces de persistencia/ —los doce DAO restantes mas BloqueoButacas, que es
+' interfaz igual aunque no se llame DAO—, y tambien en los puertos de infraestructura/:
 ' un modulo de alto nivel (la regla de negocio) y uno de bajo nivel (donde se
 ' guarda el dato) dependen los dos de una abstraccion que no le pertenece a ninguno
 ' de los dos. Sin esa interfaz de por medio, GestorReservas importaria
