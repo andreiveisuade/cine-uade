@@ -468,7 +468,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los circuitos de cartelera, salas, funciones, reservas, pagos y candy están
-          implementados de punta a punta —gestor y API HTTP— con 334 tests en verde. Ver
+          implementados de punta a punta —gestor y API HTTP— con 382 tests en verde. Ver
           <a href="#estado">Estado y pendientes</a>.
         </p>
         <p>
@@ -1846,7 +1846,7 @@ Libres: 52 de 56</code></pre>
         <p>
           <strong>La prueba de que no es decorativo.</strong> Muchos proyectos declaran interfaces y después
           tienen una sola implementación, con lo cual la abstracción no separa nada. Acá el reemplazo
-          <em>ocurre</em>: los 334 tests corren contra las implementaciones en memoria, sin MySQL levantado y
+          <em>ocurre</em>: los 382 tests corren contra las implementaciones en memoria, sin MySQL levantado y
           sin Docker. Si la inversión fuera de mentira, no habría forma de correrlos así.
         </p>
       </div>
@@ -2002,7 +2002,7 @@ Libres: 52 de 56</code></pre>
       </p>
       <div class="callout">
         <p>
-          <strong>Cómo se nota que está bien puesto el corte.</strong> Los 334 tests del sistema corren contra
+          <strong>Cómo se nota que está bien puesto el corte.</strong> Los 382 tests del sistema corren contra
           los gestores directamente, sin tocar Javalin ni abrir un puerto. Si una regla de negocio viviera en
           <code>Rutas*</code>, probarla obligaría a levantar el servidor HTTP entero.
         </p>
@@ -2221,7 +2221,7 @@ GET /api/programaciones?activa=true</code></pre>
         Lo que no lo detecta: los tests. Corren contra <code>persistencia/memoria/</code>, donde una consulta
         cuesta lo mismo que leer una variable, así que trece mil son gratis. Este problema solo existe del otro
         lado de la interfaz — y por eso apareció recién cuando la pantalla del planificador probó contra el
-        backend real, y no en los 334 tests en verde.
+        backend real, y no en los 382 tests en verde.
       </p>
 
       <h3>Lo que ya está resuelto sin haberlo escrito</h3>
@@ -3624,7 +3624,7 @@ docker compose up -d --build</code></pre>
         <table>
           <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
           <tbody>
-            <tr><td><code>mvn exec:java</code></td><td>Corre el <code>main</code> de <code>ar.uade.cine.Main</code></td></tr>
+            <tr><td><code>mvn exec:java -Dexec.mainClass=ar.uade.cine.api.ServidorApi</code></td><td>Levanta la API sin empaquetar. Necesita una MySQL a mano</td></tr>
             <tr><td><code>mvn compile</code></td><td>Compila a <code>target/classes</code></td></tr>
             <tr><td><code>mvn test</code></td><td>Compila y corre los tests</td></tr>
             <tr><td><code>mvn package</code></td><td>Compila, testea y genera el jar en <code>target/</code></td></tr>
@@ -3636,8 +3636,11 @@ docker compose up -d --build</code></pre>
         </table>
       </div>
       <p>
-        La clase que ejecuta <code>exec:java</code> se define en el pom con la propiedad <code>main.class</code>.
-        Si la renombrás o la movés de paquete, hay que actualizarla ahí.
+        La clase con el <code>main</code> es <code>ar.uade.cine.api.ServidorApi</code>, y está una sola vez en el
+        pom, en la propiedad <code>api.class</code>: de ahí la toma el plugin <em>shade</em> para escribir el
+        <code>Main-Class</code> del jar. Si la renombrás o la movés de paquete, se actualiza ahí y el jar sigue
+        arrancando. A <code>exec:java</code> hay que pasársela a mano porque el plugin no está configurado en el
+        pom: se baja y se ejecuta al invocarlo.
       </p>
 
       <h3>Verificar que está todo bien</h3>
@@ -4022,14 +4025,20 @@ docker compose logs -f backend    # solo el negocio</code></pre>
       </p>
 
       <h3>Sin Docker</h3>
-      <pre><code>mvn test                 # los 334 tests, no necesitan base
-mvn package              # jar shaded en target/cine-api.jar</code></pre>
+      <pre><code>mvn test                 # los 382 tests, no necesitan base
+mvn package              # jar shaded en target/cine-api.jar
+java -jar target/cine-api.jar</code></pre>
       <p>
-        La API HTTP es hoy la única puerta —
-        sobre los mismos gestores. Contra la base de los contenedores se usa así:
+        La API HTTP es hoy la única puerta: hubo también un menú de consola, y se eliminó cuando la web pasó a
+        cubrir todo. Los dos hablaban con los mismos gestores, que es lo que hizo barato sacar uno.
       </p>
-      <pre><code>cd ../cine-docker
-docker compose exec backend java -cp /app/cine-api.jar ar.uade.cine.Main</code></pre>
+      <p>
+        El jar levanta la API en el puerto <code>PORT</code> (8080 por defecto) y busca la base en
+        <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USER</code> y
+        <code>DB_PASSWORD</code>, con los valores de <code>OrigenMySQL</code> como default. Hace falta una MySQL
+        propia: la del <code>docker compose</code> no publica su puerto al host, así que desde afuera del
+        contenedor no se la alcanza.
+      </p>
 
       <h3>Regenerar este manual</h3>
       <pre><code>cd docs/diagramas &amp;&amp; plantuml -tsvg *.puml
@@ -4120,7 +4129,7 @@ docker compose ps                # los 4 en Up; mysql y backend en (healthy)</co
 
       <h3>Nivel 1: las pruebas que corren solas</h3>
       <pre><code>cd TPO/cine-backend
-mvn clean test                    # 334 tests: 330 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 382 tests: 378 corren siempre, 4 se saltean</code></pre>
       <div class="callout">
         <p>
           <strong>El <code>clean</code> no es decorativo.</strong> Sin él, Maven puede
@@ -4625,7 +4634,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
         <p>
           <strong>Y cuando lo arregles, volvé a correr todo.</strong> Eso es
           <strong>prueba de regresión</strong>: verificar que el arreglo no rompió algo que
-          antes andaba. Los 334 tests automáticos existen justamente para que eso cueste
+          antes andaba. Los 382 tests automáticos existen justamente para que eso cueste
           treinta segundos y no una tarde. Un arreglo sin regresión es media solución.
         </p>
       </div>
@@ -4641,7 +4650,7 @@ docker compose start redis        # y el log dice que volvió</code></pre>
           <tbody>
             <tr>
               <td><strong>Verificación</strong> vs <strong>validación</strong></td>
-              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 334 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
+              <td>Verificar es «¿construimos bien el sistema?» — los tests de JUnit. Validar es «¿construimos el sistema correcto?» — recorrer los casos de uso a mano. Los 382 tests pueden estar en verde y el sistema no servir para lo que se pidió</td>
             </tr>
             <tr>
               <td>Pirámide de pruebas</td>
@@ -5090,7 +5099,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 334 tests en verde. Las
+        Los veinticinco casos de uso y las diecinueve reglas funcionan contra MySQL, con 382 tests en verde. Las
         reservas además pueden guardarse en un archivo de texto, y el ticket de butacas, el del candy, el
         recibo de caja y el borderó del INCAA se emiten en <code>.txt</code>.
       </p>
