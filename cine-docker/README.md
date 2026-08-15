@@ -45,7 +45,6 @@ se los alcanza desde adentro de la red de Docker.
 | mysql | — | `mysql:3306`, desde el backend y Adminer |
 | redis | — | `redis:6379`, solo desde el backend |
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
-| parser | — | `http://parser:8090`, solo desde el backend. Sale a TMDB y le pega al backend |
 
 Diagrama de esta misma topología (contenedores, redes, volúmenes) en
 [`cine-backend/docs/manual/index.html`](../cine-backend/docs/manual/index.html#correr), sección
@@ -78,35 +77,31 @@ persistirlo solo serviría para recuperar, después de un reinicio, bloqueos ya 
 
 ## El importador de cartelera
 
-`parser` trae de TMDB las películas que están hoy en cartelera en Argentina y las carga
-por HTTP contra `POST /api/peliculas/importadas`, o sea al buzón de revisión. Vive en su
-propio repo, `cine-pelis-parser`.
-
-**Lo dispara el encargado, desde el panel**: *Importador* en el menú del admin. El parser
-arranca con el resto del compose y se queda escuchando en el 8090, pero no importa nada
-por su cuenta: sin un pedido no gasta una sola llamada a TMDB. Por eso ya no está detrás
-de un perfil, y por eso dejó de tener el loop de seis horas que tenía antes.
+El backend trae de TMDB las películas que están hoy en cartelera en Argentina y las deja
+en el buzón de revisión, en estado pendiente. **Lo dispara el encargado, desde el panel**:
+*Importador* en el menú del admin. No corre solo: sin un pedido no gasta una sola llamada
+a TMDB.
 
 ```bash
-docker compose logs -f parser                # qué está haciendo
-docker compose run --rm parser --simular     # qué traería, desde la consola, y termina
+docker compose logs -f backend               # qué trajo la última corrida
 ```
 
-El backend le habla por `IMPORTADOR_URL` (`http://parser:8090` adentro del compose) y es
-la única llamada saliente que hace: no sale a internet, va por la red interna. El que sale
-a TMDB es el parser.
+Es la única llamada saliente del sistema. Hasta hace poco tampoco salía a internet: le
+pedía la corrida a un contenedor `parser` en Python que era el que hablaba con TMDB. Se lo
+absorbió porque la parte que importaba de ese proceso —traducir los 19 géneros de TMDB a
+los 9 nuestros, resolver la clasificación del INCAA, saltear lo que ya está— son
+decisiones del cine, y vivían afuera del sistema y sin tests.
 
 Necesita `TMDB_TOKEN` en el `.env` — se saca gratis en
 [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) y es el
-*API Read Access Token*, el largo. Sin el token los demás servicios levantan igual, y el
-parser también: contesta que le falta recién cuando le piden una corrida, y eso se ve en
-la pantalla del panel antes de apretar el botón.
+*API Read Access Token*, el largo. Sin el token el sistema levanta igual: la pantalla del
+panel avisa que falta antes de que alguien apriete el botón.
 
-**Está solo en la red `web`, a propósito.** No tiene ruta hasta MySQL, así que no puede
-escribir en la base ni queriendo: todo lo que carga pasa por las reglas de
-`GestorCartelera` — R1 título único, R2 duración, R7 al menos un género, R10
-clasificación. Es la misma razón por la que `seed/datos-de-ejemplo.sh` siembra por la API
-y no por SQL.
+**Lo que baja de TMDB no entra al catálogo**, entra al buzón: nace pendiente y fuera de
+cartelera hasta que el encargado lo confirma. Y entra por `GestorRevisionCartelera`, o sea
+pasando por las mismas reglas que el alta a mano — R1 título único, R2 duración, R7 al
+menos un género, R10 clasificación. Es la misma razón por la que `seed/datos-de-ejemplo.sh`
+siembra por la API y no por SQL.
 
 ## La base
 
