@@ -16,7 +16,7 @@ hide members
 package api {
   package rutas {
     class Rutas
-    class "13 Rutas*\n(package-private)" as RutasInternas
+    class "14 Rutas*\n(package-private)" as RutasInternas
   }
   package vistas {
     class Vistas
@@ -108,7 +108,7 @@ note bottom of dominio
 end note
 
 note left of RutasInternas
-  Las 13 clases Rutas* son package-private: nadie
+  Las 14 clases Rutas* son package-private: nadie
   fuera de api.rutas las puede nombrar. Lo unico
   publico del paquete es Rutas, que las registra
   a todas contra Javalin. ServidorApi conoce

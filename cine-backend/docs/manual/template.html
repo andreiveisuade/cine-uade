@@ -1673,7 +1673,7 @@ Libres: 52 de 56</code></pre>
 
       <div class="callout">
         <p>
-          <strong>Una sola clase pública por subpaquete de <code>api</code>.</strong> Las trece clases
+          <strong>Una sola clase pública por subpaquete de <code>api</code>.</strong> Las catorce clases
           <code>Rutas*</code> son package-private: la única forma de registrarlas es
           <code>Rutas.registrarTodas(app, aplicacion)</code>. Así nadie puede colgar media API del servidor
           desde afuera, ni registrar una familia de rutas y olvidarse de las otras. Es el mismo criterio con el
@@ -2270,7 +2270,7 @@ GET /api/programaciones?activa=true</code></pre>
       <p>
         DTO significa <em>Data Transfer Object</em>. Es un objeto que existe solo para llevar datos de un lado
         al otro de una frontera —acá, la que separa al backend del navegador—, sin comportamiento propio. En
-        este proyecto son <strong>46</strong>, viven en <code>ar.uade.cine.dto</code> y hay exactamente uno por
+        este proyecto son <strong>56</strong>, viven en <code>ar.uade.cine.dto</code> y hay exactamente uno por
         forma de JSON que la API acepta o devuelve.
       </p>
 
@@ -5019,7 +5019,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── promociones/    Promocion + PromocionBase, Porcentaje, MontoFijo, NxM
     │   │   ├── programaciones/ Programacion + Impl
     │   │   └── dinero/         Dinero: la plata, en centavos enteros
-    │   ├── servicio/           las reglas, en un subpaquete por area. Los 14 Gestor*
+    │   ├── servicio/           las reglas, en un subpaquete por area. Los 15 Gestor*
     │   │   ├── ventas/         GestorReservas, GestorPagos, Ocupacion, CalculadoraPrecio
     │   │   ├── cartelera/      GestorCartelera, GestorRevisionCartelera, DatosPelicula
     │   │   ├── informes/       GestorInformes (por funcion), GestorCaja (por dia),
@@ -5046,7 +5046,7 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   └── seguridad/      Password
     │   ├── api/                HTTP. ServidorApi arriba, y adentro:
     │   │   ├── http/           Parseo, Fechas, NoEncontrado
-    │   │   ├── rutas/          Rutas (lo unico publico) + las 13 Rutas*
+    │   │   ├── rutas/          Rutas (lo unico publico) + las 14 Rutas*
     │   │   └── vistas/         Vistas (la fabrica) + las 6 Vistas*
     │   ├── dto/                los 56 DTO, uno por forma de JSON. Subpaquetes que
     │   │                       espejan dominio/: cartelera, funciones, programaciones,

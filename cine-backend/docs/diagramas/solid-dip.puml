@@ -6,7 +6,7 @@ skinparam packageStyle rectangle
 hide empty members
 
 ' El caso testigo es ReservaDAO, pero la misma forma se repite en las otras
-' doce interfaces de persistencia/, y tambien en los puertos de infraestructura/:
+' trece interfaces de persistencia/, y tambien en los puertos de infraestructura/:
 ' un modulo de alto nivel (la regla de negocio) y uno de bajo nivel (donde se
 ' guarda el dato) dependen los dos de una abstraccion que no le pertenece a ninguno
 ' de los dos. Sin esa interfaz de por medio, GestorReservas importaria
@@ -51,7 +51,7 @@ Aplicacion ..> GestorReservas : arma pasandole\nla interfaz
 note right of Aplicacion
   Es el unico lugar de todo el sistema que
   nombra una implementacion concreta de DAO.
-  Los doce gestores conocen solo las interfaces
+  Los quince gestores conocen solo las interfaces
   de persistencia/: donde se guarda cada cosa
   se decide aca, y en ningun otro lado. Cambiar
   ReservaDAOMySQL por ReservaDAOTxt es cambiar

@@ -29,6 +29,8 @@ package servicio {
   ' programaciones, promociones, salas, usuarios, ventas.
 
   class GestorCartelera
+  class GestorRevisionCartelera
+  class GestorImportaciones
   class GestorSalas
   class GestorFunciones
   class GestorProgramaciones
@@ -166,6 +168,12 @@ GestorPagos -right-> PoliticaPromociones
 GestorPromociones ..up|> PoliticaPromociones
 GestorPromociones -down-> PromocionDAO
 GestorCartelera -down-> PeliculaDAO
+
+' El buzon cuelga del catalogo: revisar necesita dar de alta, pero el catalogo no
+' necesita saber que existe un importador. Y el que pide cartelera nueva depende del
+' puerto, no de TMDB: es el mismo DIP que PasarelaPagos, del lado de la entrada de datos.
+GestorRevisionCartelera -right-> GestorCartelera
+GestorImportaciones -down-> CatalogoExterno
 GestorSalas -down-> SalaDAO
 GestorSalas -down-> AsientoDAO
 GestorFunciones -down-> FuncionDAO
@@ -249,7 +257,7 @@ legend bottom
   |  | Estan separados del dominio para que el contrato HTTP no quede atado a como esta hecha |
   |  | una entidad adentro: renombrar un atributo privado no puede romper al front. |
   | Aplicacion | El unico lugar del sistema donde se nombra una implementacion concreta: arma los |
-  |  | doce gestores —mas el planificador de grilla— y decide en que medio se guarda cada cosa. Las |
+  |  | quince gestores —mas el planificador de grilla— y decide en que medio se guarda cada cosa. Las |
   |  | dos puertas comparten ese armado, y por eso son la misma aplicacion y no dos parecidas. |
   | servicio | Las reglas de negocio. Cada gestor pide los DAO que necesita para validarlas: |
   |  | GestorReservas usa ademas FuncionDAO, SalaDAO, AsientoDAO, ClienteDAO y PeliculaDAO; |
