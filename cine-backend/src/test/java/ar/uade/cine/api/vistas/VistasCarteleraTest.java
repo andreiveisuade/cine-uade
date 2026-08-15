@@ -41,7 +41,7 @@ import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
 import ar.uade.cine.persistencia.memoria.ClienteDAOMemoria;
 import ar.uade.cine.persistencia.memoria.CompraCandyDAOMemoria;
 import ar.uade.cine.persistencia.memoria.EmpleadoDAOMemoria;
-import ar.uade.cine.infraestructura.importador.ImportadorDePrueba;
+import ar.uade.cine.infraestructura.importador.CatalogoDePrueba;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.ImportacionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PagoDAOMemoria;
@@ -83,7 +83,7 @@ class VistasCarteleraTest {
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
                 new GeneradorReciboTxt(tempDir.resolve("tickets")),
                 new GeneradorBorderoTxt(tempDir.resolve("informes")),
-                new MercadoPagoEmulado(), new ImportadorDePrueba());
+                new MercadoPagoEmulado(), new CatalogoDePrueba());
 
         vistas = new VistasCartelera(aplicacion.getCartelera(), aplicacion.getSalas(),
                 aplicacion.getOcupacion(), aplicacion.getCalculadoraPrecio(),

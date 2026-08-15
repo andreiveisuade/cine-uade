@@ -5,7 +5,7 @@ import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dto.cartelera.EstadoImportadorDTO;
 import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
 import ar.uade.cine.dto.cartelera.PedidoImportacionDTO;
-import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
+import ar.uade.cine.infraestructura.importador.CatalogoExterno;
 import ar.uade.cine.servicio.cartelera.GestorImportaciones;
 import io.javalin.Javalin;
 import io.javalin.http.HttpStatus;
@@ -33,7 +33,7 @@ class RutasImportaciones {
         // Antes que /importaciones/{lo que sea} no hace falta: no hay ninguna otra. Pero el
         // estado sí va antes del listado por costumbre del archivo de al lado.
         app.get("/api/importaciones/estado", ctx -> {
-            ImportadorCartelera.Estado estado = importaciones.estadoDelImportador();
+            CatalogoExterno.Estado estado = importaciones.estadoDelImportador();
             ctx.json(new EstadoImportadorDTO(estado.disponible(), estado.detalle()));
         });
 

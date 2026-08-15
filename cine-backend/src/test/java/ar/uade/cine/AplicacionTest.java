@@ -33,7 +33,7 @@ import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infraestructura.importador.ImportadorDePrueba;
+import ar.uade.cine.infraestructura.importador.CatalogoDePrueba;
 import ar.uade.cine.infraestructura.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.servicio.informes.InformeFuncion;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
@@ -81,7 +81,7 @@ class AplicacionTest {
                 new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
                 new GeneradorReciboTxt(tempDir.resolve("tickets")),
                 new GeneradorBorderoTxt(tempDir.resolve("informes")),
-                new MercadoPagoEmulado(), new ImportadorDePrueba());
+                new MercadoPagoEmulado(), new CatalogoDePrueba());
     }
 
     @Test

@@ -22,8 +22,8 @@ import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
-import ar.uade.cine.infraestructura.importador.http.ImportadorHttp;
+import ar.uade.cine.infraestructura.importador.CatalogoExterno;
+import ar.uade.cine.infraestructura.importador.tmdb.TmdbHttp;
 import ar.uade.cine.infraestructura.pasarelas.PasarelaPagos;
 import ar.uade.cine.infraestructura.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.mysql.AsientoDAOMySQL;
@@ -118,9 +118,9 @@ public class Aplicacion {
      * es el único lugar que la nombra: enchufar la integración de verdad —con credenciales
      * y llamadas de red— es cambiar este argumento, sin tocar una regla de negocio.
      *
-     * <p>{@link ImportadorHttp} es lo mismo del otro lado: el que sale a buscar la cartelera
-     * real es un proceso aparte, y acá se dice dónde está. Un test le pasa otro y prueba el
-     * circuito entero sin TMDB.
+     * <p>{@link TmdbHttp} es lo mismo del otro lado: de dónde salen las películas que el cine
+     * no cargó a mano es una decisión de armado, y este es el único lugar que nombra a TMDB.
+     * Un test le pasa otro catálogo y prueba el circuito entero sin gastar cuota.
      */
     public static Aplicacion enMySQL() {
         // Un solo pool y una sola plantilla para los trece DAO. Va acá por el mismo motivo
@@ -140,7 +140,7 @@ public class Aplicacion {
                 new ImportacionDAOMySQL(plantilla), new BloqueoButacasRedis(),
                 new GeneradorTicketTxt(), new GeneradorTicketCandyTxt(),
                 new GeneradorReciboTxt(), new GeneradorBorderoTxt(), new MercadoPagoEmulado(),
-                new ImportadorHttp());
+                new TmdbHttp());
     }
 
     /**
@@ -160,7 +160,7 @@ public class Aplicacion {
                       BloqueoButacas bloqueoButacas,
                       GeneradorTicket generadorTicket, GeneradorTicketCandy generadorTicketCandy,
                       GeneradorRecibo generadorRecibo, GeneradorBordero generadorBordero,
-                      PasarelaPagos pasarela, ImportadorCartelera importador) {
+                      PasarelaPagos pasarela, CatalogoExterno catalogoExterno) {
 
         calculadoraPrecio = new CalculadoraPrecio();
 
@@ -172,9 +172,10 @@ public class Aplicacion {
         // El buzon del importador cuelga del catalogo: revisar necesita dar de alta,
         // pero el catalogo no necesita saber que existe un importador.
         revisionCartelera = new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
-        // No depende de la cartelera ni del buzon: lo que el importador trae entra por la
-        // API, como cualquier cliente. Este gestor solo despierta al importador y anota.
-        importaciones = new GestorImportaciones(importacionDAO, importador);
+        // Despues de los dos: pregunta el catalogo para saber que ya esta y da de alta por el
+        // buzon. El catalogo externo solo trae candidatas; que entra lo decide este gestor.
+        importaciones = new GestorImportaciones(importacionDAO, catalogoExterno, cartelera,
+                revisionCartelera);
         planificadorGrilla = new PlanificadorGrilla(peliculaDAO, salaDAO, funciones);
         clientes = new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO);
         empleados = new GestorEmpleados(empleadoDAO);

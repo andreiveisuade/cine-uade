@@ -2,12 +2,15 @@ package ar.uade.cine.servicio.cartelera;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import ar.uade.cine.dominio.cartelera.EstadoImportacion;
 import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dominio.cartelera.ImportacionImpl;
-import ar.uade.cine.infraestructura.importador.ImportadorCartelera;
+import ar.uade.cine.dominio.cartelera.Pelicula;
+import ar.uade.cine.infraestructura.importador.CatalogoExterno;
 import ar.uade.cine.infraestructura.importador.ImportadorError;
 import ar.uade.cine.persistencia.ImportacionDAO;
 
@@ -18,11 +21,16 @@ import ar.uade.cine.persistencia.ImportacionDAO;
  * una terminal. Este gestor es la puerta para que el encargado lo pida desde el panel, que
  * es donde está parado cuando se da cuenta de que falta cartelera.
  *
- * <p><strong>No sabe qué es TMDB.</strong> Le habla a un {@link ImportadorCartelera} y lo
- * que ese importador cargue va a entrar por {@code POST /api/peliculas/importadas} como
- * cualquier cliente, o sea pasando por {@link GestorRevisionCartelera} y por las reglas de
- * {@link GestorCartelera}. Este gestor no escribe una sola película: solo registra que se
- * pidió una corrida y cómo terminó.
+ * <p><strong>No sabe qué es TMDB.</strong> Le pide candidatas a un {@link CatalogoExterno} y
+ * las da de alta por {@link GestorRevisionCartelera}, o sea que entran al buzón pasando por
+ * las mismas reglas que el alta a mano. De dónde salieron esas películas es problema del
+ * adaptador; qué se hace con ellas, de este gestor.
+ *
+ * <p>La corrida vive acá y no del otro lado de la interfaz por una razón concreta: saltear lo
+ * que ya está —comparando por título, que es lo que R1 hace único— es una regla del cine, no
+ * una decisión del catálogo ajeno. Cuando el importador era un proceso Python aparte, esa
+ * comparación estaba escrita por segunda vez allá, y las dos copias se podían separar sin que
+ * nadie se enterara.
  *
  * <p>Es el vecino del buzón y no del catálogo por lo mismo que
  * {@link GestorRevisionCartelera} está separado de {@link GestorCartelera}: acá no se
@@ -38,12 +46,16 @@ public class GestorImportaciones {
     private static final int PAGINAS_MAXIMAS = 3;
 
     private final ImportacionDAO importacionDAO;
-    private final ImportadorCartelera importador;
+    private final CatalogoExterno catalogo;
+    private final GestorCartelera cartelera;
+    private final GestorRevisionCartelera revision;
     private final Duration corridaMaxima;
     private final Duration esperaEntreCorridas;
 
-    public GestorImportaciones(ImportacionDAO importacionDAO, ImportadorCartelera importador) {
-        this(importacionDAO, importador, Duration.ofMinutes(5), Duration.ofSeconds(60));
+    public GestorImportaciones(ImportacionDAO importacionDAO, CatalogoExterno catalogo,
+                               GestorCartelera cartelera, GestorRevisionCartelera revision) {
+        this(importacionDAO, catalogo, cartelera, revision,
+                Duration.ofMinutes(5), Duration.ofSeconds(60));
     }
 
     /**
@@ -53,10 +65,13 @@ public class GestorImportaciones {
      * @param corridaMaxima cuánto puede estar EN_CURSO antes de darla por perdida
      * @param esperaEntreCorridas el mínimo entre dos corridas seguidas
      */
-    public GestorImportaciones(ImportacionDAO importacionDAO, ImportadorCartelera importador,
+    public GestorImportaciones(ImportacionDAO importacionDAO, CatalogoExterno catalogo,
+                               GestorCartelera cartelera, GestorRevisionCartelera revision,
                                Duration corridaMaxima, Duration esperaEntreCorridas) {
         this.importacionDAO = importacionDAO;
-        this.importador = importador;
+        this.catalogo = catalogo;
+        this.cartelera = cartelera;
+        this.revision = revision;
         this.corridaMaxima = corridaMaxima;
         this.esperaEntreCorridas = esperaEntreCorridas;
     }
@@ -64,29 +79,98 @@ public class GestorImportaciones {
     /**
      * Corre una importación y vuelve cuando terminó.
      *
-     * <p>Bloquea el hilo del pedido diez o quince segundos, que es lo que tarda el
-     * importador. Es a propósito: el encargado está esperando la respuesta y devolverle un
+     * <p>Bloquea el hilo del pedido diez o quince segundos, que es lo que tardan las llamadas
+     * a TMDB. Es a propósito: el encargado está esperando la respuesta y devolverle un
      * «después te aviso» obligaría a que el navegador pregunte cada dos segundos si ya
      * terminó, o sea a inventar tráfico para simular una espera que ya existe.
      *
-     * <p>Que el importador falle <strong>no</strong> hace fallar esto: la corrida queda
+     * <p>Que el catálogo externo falle <strong>no</strong> hace fallar esto: la corrida queda
      * registrada como FALLIDA con el motivo, que es un resultado y no un error del sistema.
-     * Lo único que tira es lo que el encargado puede corregir: pedir mal las páginas, o
-     * pedir una corrida cuando no corresponde.
+     * Lo único que tira es lo que el encargado puede corregir: pedir mal las páginas, o pedir
+     * una corrida cuando no corresponde.
      *
      * @param paginas cuántas páginas de TMDB traer, o {@code null} para una
      */
     public Importacion ejecutar(Integer paginas) {
         Importacion importacion = reservarTurno(validarPaginas(paginas));
         try {
-            ImportadorCartelera.Resumen resumen = importador.importar(importacion.getPaginas());
-            importacion.terminar(resumen.nuevas(), resumen.salteadas(), resumen.fallidas(),
-                    resumen.detalle(), LocalDateTime.now());
+            correr(importacion);
         } catch (ImportadorError e) {
             importacion.fallar(e.getMessage(), LocalDateTime.now());
         }
         importacionDAO.actualizar(importacion);
         return importacion;
+    }
+
+    /**
+     * La corrida: traer, saltear lo que ya está y mandar el resto al buzón.
+     *
+     * <p>Las altas van de a una y en orden, aunque las consultas a TMDB se hayan hecho en
+     * paralelo: son escrituras que pasan por R1 y dos hilos mandando el mismo título se
+     * pisarían contra el título único.
+     *
+     * <p>Una película que el alta rechaza no corta la corrida: queda anotada como fallida con
+     * el mensaje del gestor y se sigue con la siguiente. Una corrida que se cae a la mitad y
+     * deja medio trabajo hecho es peor que una que no corre.
+     */
+    private void correr(Importacion importacion) {
+        List<DatosPelicula> candidatas = catalogo.enCartelera(importacion.getPaginas());
+        Set<String> yaEstan = titulosCargados();
+        StringBuilder detalle = new StringBuilder();
+        int nuevas = 0;
+        int salteadas = 0;
+        int fallidas = 0;
+
+        for (DatosPelicula candidata : candidatas) {
+            // El mismo Set resuelve los dos casos: la película que ya está en el catálogo y la
+            // que TMDB trajo dos veces entre páginas. Sin lo segundo, el duplicado se mandaría
+            // igual y volvería rechazado por R1: contado como falla, cuando no lo es.
+            String clave = clave(candidata.titulo());
+            if (!clave.isEmpty() && !yaEstan.add(clave)) {
+                salteadas++;
+                continue;
+            }
+            try {
+                Pelicula creada = revision.importar(candidata);
+                detalle.append("+ [").append(creada.getId()).append("] ")
+                        .append(creada.getTitulo()).append('\n');
+                nuevas++;
+            } catch (IllegalArgumentException e) {
+                // El alta la rechazó por una regla de negocio. No es un error del importador:
+                // es el sistema haciendo su trabajo, y queda registrado para poder mirarlo.
+                detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
+                        .append(e.getMessage()).append('\n');
+                fallidas++;
+            }
+        }
+
+        importacion.terminar(nuevas, salteadas, fallidas,
+                detalle.isEmpty() ? null : detalle.toString().strip(), LocalDateTime.now());
+    }
+
+    /**
+     * Los títulos que ya están, en minúscula y sin espacios de más.
+     *
+     * <p>Incluye a las descartadas a propósito: si no, la corrida siguiente volvería a
+     * proponer lo que el encargado ya rechazó y habría que descartarlo todas las veces.
+     * Descartar una vez alcanza.
+     */
+    private Set<String> titulosCargados() {
+        Set<String> titulos = new HashSet<>();
+        for (Pelicula pelicula : cartelera.listar()) {
+            titulos.add(clave(pelicula.getTitulo()));
+        }
+        return titulos;
+    }
+
+    private static String clave(String titulo) {
+        return titulo == null ? "" : titulo.strip().toLowerCase();
+    }
+
+    /** Para el renglón del log: sin título, el alta la va a rechazar y hay que nombrarla igual. */
+    private static String nombreDe(DatosPelicula candidata) {
+        String titulo = candidata.titulo();
+        return titulo == null || titulo.isBlank() ? "(sin título)" : titulo.strip();
     }
 
     /**
@@ -163,11 +247,11 @@ public class GestorImportaciones {
     }
 
     /**
-     * Si el importador está levantado. La pantalla lo pregunta al abrirse para poder avisar
-     * antes de que alguien apriete el botón y espere una respuesta que no va a llegar.
+     * Si el catálogo externo está en condiciones de contestar. La pantalla lo pregunta al
+     * abrirse para poder avisar antes de que alguien apriete el botón y espere en vano.
      */
-    public ImportadorCartelera.Estado estadoDelImportador() {
-        return importador.consultar();
+    public CatalogoExterno.Estado estadoDelImportador() {
+        return catalogo.consultar();
     }
 
     private static int validarPaginas(Integer paginas) {

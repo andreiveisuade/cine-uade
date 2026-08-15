@@ -47,17 +47,17 @@ class RutasImportacionesTest {
 
     @Test
     void pedirUnaCorridaDevuelveLoQueTrajo() {
-        api.importador().queTraiga(18, 2, 1);
+        api.catalogo().queTraiga("Duna", "Vaiana", "Duna");
 
         ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{\"paginas\":2}");
 
         assertEquals(201, respuesta.estado());
         assertEquals("TERMINADA", respuesta.json().get("estado").asText());
-        assertEquals(18, respuesta.json().get("nuevas").asInt());
-        assertEquals(2, respuesta.json().get("salteadas").asInt());
-        assertEquals(1, respuesta.json().get("fallidas").asInt());
+        assertEquals(2, respuesta.json().get("nuevas").asInt());
+        assertEquals(1, respuesta.json().get("salteadas").asInt());
+        assertEquals(0, respuesta.json().get("fallidas").asInt());
         assertEquals(2, respuesta.json().get("paginas").asInt());
-        assertEquals(2, api.importador().paginasPedidas());
+        assertEquals(2, api.catalogo().paginasPedidas());
     }
 
     /** «Traeme cartelera» es un pedido completo: el default de páginas lo pone el gestor. */
@@ -71,7 +71,7 @@ class RutasImportacionesTest {
 
     @Test
     void lasFechasViajanEnIsoLocalYLaQueNoPasoEnNull() {
-        api.importador().queFalleCon("no responde");
+        api.catalogo().queFalleCon("no responde");
 
         ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{}");
 
@@ -92,28 +92,28 @@ class RutasImportacionesTest {
 
         assertEquals(400, respuesta.estado());
         assertEquals("Las páginas a importar van de 1 a 3", respuesta.error());
-        assertEquals(0, api.importador().corridas());
+        assertEquals(0, api.catalogo().consultas());
     }
 
     /**
-     * Que el importador no esté no es un error de la API: la corrida queda registrada como
+     * Que TMDB no conteste no es un error de la API: la corrida queda registrada como
      * fallida y se responde 201 igual. El motivo se le muestra al encargado.
      */
     @Test
-    void siElImportadorNoEstaLaCorridaQuedaFallidaYNoEsUn500() {
-        api.importador().queFalleCon("El importador no responde en http://parser:8090");
+    void siTmdbNoContestaLaCorridaQuedaFallidaYNoEsUn500() {
+        api.catalogo().queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
 
         ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{}");
 
         assertEquals(201, respuesta.estado());
         assertEquals("FALLIDA", respuesta.json().get("estado").asText());
-        assertEquals("El importador no responde en http://parser:8090",
+        assertEquals("TMDB rechazó el token: revisá TMDB_TOKEN",
                 respuesta.json().get("detalle").asText());
     }
 
     @Test
     void loQueSePidioQuedaEnElHistorial() {
-        api.importador().queTraiga(5, 0, 0);
+        api.catalogo().queTraiga("Duna", "Vaiana", "Wicked", "Anora", "Cónclave");
         api.post("/api/importaciones", "{}");
 
         ApiEnMemoria.Respuesta respuesta = api.get("/api/importaciones");
@@ -137,18 +137,18 @@ class RutasImportacionesTest {
         assertEquals(400, segunda.estado());
         assertEquals("El importador corrió recién: esperá 60 segundos antes de volver a pedirlo",
                 segunda.error());
-        assertEquals(1, api.importador().corridas());
+        assertEquals(1, api.catalogo().consultas());
     }
 
     @Test
     void elEstadoDelImportadorSeConsultaAntesDeApretarElBoton() {
-        api.importador().queEste(false, "revisá que el contenedor esté levantado");
+        api.catalogo().queEste(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env");
 
         ApiEnMemoria.Respuesta respuesta = api.get("/api/importaciones/estado");
 
         assertEquals(200, respuesta.estado());
         assertFalse(respuesta.json().get("disponible").asBoolean());
-        assertEquals("revisá que el contenedor esté levantado",
+        assertEquals("Falta el token de TMDB: cargá TMDB_TOKEN en el .env",
                 respuesta.json().get("detalle").asText());
     }
 

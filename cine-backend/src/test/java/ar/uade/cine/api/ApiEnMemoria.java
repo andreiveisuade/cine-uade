@@ -15,7 +15,7 @@ import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infraestructura.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infraestructura.importador.ImportadorDePrueba;
+import ar.uade.cine.infraestructura.importador.CatalogoDePrueba;
 import ar.uade.cine.infraestructura.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.BloqueoButacasMemoria;
@@ -58,7 +58,7 @@ public class ApiEnMemoria implements AutoCloseable {
     private final Aplicacion aplicacion;
     private final Javalin servidor;
     private final HttpClient cliente = HttpClient.newHttpClient();
-    private final ImportadorDePrueba importador = new ImportadorDePrueba();
+    private final CatalogoDePrueba catalogo = new CatalogoDePrueba();
 
     /**
      * @param directorio dónde caen los comprobantes. Va por parámetro para que cada test le
@@ -75,7 +75,7 @@ public class ApiEnMemoria implements AutoCloseable {
                 new GeneradorTicketCandyTxt(directorio.resolve("tickets")),
                 new GeneradorReciboTxt(directorio.resolve("tickets")),
                 new GeneradorBorderoTxt(directorio.resolve("informes")),
-                new MercadoPagoEmulado(), importador);
+                new MercadoPagoEmulado(), catalogo);
         servidor = ServidorApi.armar(aplicacion).start(0);
     }
 
@@ -84,9 +84,9 @@ public class ApiEnMemoria implements AutoCloseable {
         return aplicacion;
     }
 
-    /** El importador que atiende esta API, para decirle qué tiene que contestar. */
-    public ImportadorDePrueba importador() {
-        return importador;
+    /** El catálogo externo que atiende esta API, para decirle qué tiene que contestar. */
+    public CatalogoDePrueba catalogo() {
+        return catalogo;
     }
 
     public Respuesta get(String ruta) {
