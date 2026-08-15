@@ -89,9 +89,14 @@ const OPCIONES_PAGINAS = `
 `;
 
 /**
- * El aviso de que el importador no está levantado, antes de apretar el botón y esperar
- * una respuesta que no va a llegar. Si está, no se dice nada: que las cosas anden es lo
+ * El aviso de que el importador no puede correr, antes de apretar el botón y esperar una
+ * respuesta que no va a llegar. Si puede, no se dice nada: que las cosas anden es lo
  * esperable y no merece un cartel.
+ *
+ * El detalle ya viene redactado por el backend y dice qué hacer —hoy lo único que puede
+ * faltar es el token de TMDB—, así que acá no se agrega ningún comando: el de antes decía
+ * cómo levantar un contenedor que dejó de existir cuando el importador pasó a ser parte
+ * del backend.
  */
 function avisoDelImportador(estado) {
   if (estado.disponible) return "";
@@ -100,7 +105,6 @@ function avisoDelImportador(estado) {
                 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
       <p class="font-medium">El importador no está disponible</p>
       <p class="mt-1">${escapar(estado.detalle)}</p>
-      <p class="mt-2 font-mono text-xs">docker compose up -d parser</p>
     </div>`;
 }
 
