@@ -8,12 +8,10 @@ actor "Usuario" as usuario
 
 folder "cine-frontend\n(repo hermano)" as repoFrontend
 folder "cine-backend\n(repo hermano)" as repoBackend
-folder "cine-pelis-parser\n(repo hermano)" as repoParser
 
 node "Docker host\ndocker-compose.yml (cine-docker)" {
   frame "red **web**" {
     node "cine-frontend\nnginx-unprivileged:1.27-alpine" as frontend
-    node "cine-parser\npython:3.12-slim\nescucha en 8090" as parser
   }
 
   node "cine-backend\neclipse-temurin:21-jre-alpine" as backend
@@ -32,15 +30,12 @@ cloud "TMDB\napi.themoviedb.org" as tmdb
 
 repoFrontend .down.> frontend : build context
 repoBackend .down.> backend : build context
-repoParser .down.> parser : build context
 
 usuario --> frontend : "localhost:8080"
 dev --> adminer : "127.0.0.1:8081"
 
 frontend --> backend : proxy_pass /api\n-> backend:8080
-parser --> backend : POST /api/peliculas/importadas\n(HTTP, no SQL)
-backend --> parser : POST /importar\n(IMPORTADOR_URL, a pedido del panel)
-parser --> tmdb : GET now_playing?region=AR
+backend --> tmdb : GET now_playing?region=AR\n(TMDB_TOKEN, a pedido del panel)
 backend --> mysql : DB_HOST=mysql:3306
 backend ..> redis : REDIS_HOST=redis:6379\n(si no responde, se vende igual)
 adminer --> mysql : ADMINER_DEFAULT_SERVER
@@ -59,42 +54,39 @@ note bottom of backend
   tampoco hace falta CORS.
 end note
 
-note bottom of parser
-  Solo en la red **web**: no tiene
-  ruta hasta MySQL. Toda pelicula
-  entra por la API y pasa por las
-  reglas de GestorCartelera.
-  Sin ports: al 8090 solo llega el
-  backend, cuando el encargado
-  aprieta el boton. No corre nada
-  por su cuenta.
+note right of tmdb
+  Unica llamada saliente del sistema,
+  y solo cuando el encargado aprieta
+  el boton: no corre nada por su
+  cuenta. Lo que trae entra al buzon
+  por GestorRevisionCartelera, con
+  las reglas de GestorCartelera.
 end note
 
 note as envNote
   .env (no versionado, copiado de .env.example)
   MYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME
   PUERTO_WEB (8080), PUERTO_ADMINER (8081), TZ
-  TMDB_TOKEN (solo lo usa el parser)
+  TMDB_TOKEN, TMDB_REGION (los usa el backend)
 end note
 envNote ..> mysql
 envNote ..> backend
-envNote ..> parser
 
 legend bottom
   |= Elemento |= Detalle |
-  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros tres repos hermanos; |
+  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros dos repos hermanos; |
   |  | ninguno tiene codigo de la app propio, solo docker-compose.yml, .env y el seed del admin. |
-  | red **web** | frontend y parser <-> backend. |
+  | red **web** | frontend <-> backend. |
   | red **datos** | backend y adminer <-> mysql, backend <-> redis. El frontend no tiene ruta hasta la base. |
   | redis | Los bloqueos de butaca de mientras alguien elige. Unico servicio que se puede |
   |  | apagar sin romper nada: sin el se vende como antes de que existiera, porque la |
   |  | doble venta la impide el UNIQUE de MySQL. Por eso el backend lo espera con |
   |  | "service_started" y no con "service_healthy" como a la base. |
   | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
-  | parser | Importa la cartelera real de TMDB, a pedido del panel. Escribe por HTTP: que no |
-  |  | este en la red **datos** es lo que convierte "no toca la base" en una garantia de red. |
-  |  | La flecha backend -> parser es la unica llamada saliente del backend, y no sale a |
-  |  | internet: va por la red interna. El que sale a TMDB es el parser. |
+  | TMDB | La cartelera real, a pedido del panel. Hasta hace poco la traia un contenedor |
+  |  | "parser" en Python que escribia por HTTP contra la API; se lo absorbio porque la |
+  |  | traduccion de su modelo al nuestro es una decision del cine y vivia afuera del |
+  |  | sistema, sin tests. Ahora es un adaptador de infraestructura mas. |
   | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
   |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
   | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |

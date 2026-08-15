@@ -976,8 +976,8 @@ body.lightbox-locked { overflow: hidden; }
         </table>
       </div>
       <p>
-        Es el mismo par que ya existía en el proyecto: <code>cine-pelis-parser</code> tiene
-        <code>--simular</code> por exactamente este motivo.
+        Es el mismo par que ya existía en el proyecto: el importador de cartelera propone y el
+        <a href="#importador">buzón</a> decide, en vez de publicar lo que trajo.
       </p>
       <p>
         Los dos reciben <strong>exactamente el mismo cuerpo</strong>, y en la capa HTTP lo lee un solo método.
@@ -2157,8 +2157,9 @@ GET /api/programaciones?activa=true</code></pre>
           <strong>Por qué ninguna regla vive en la interfaz.</strong> Con dos puertas, cualquier regla escrita
           en una era una regla que la otra no tenía. Eso obligó desde el principio a que todo lo que decide algo
           esté en <code>servicio/</code>, y que <code>api/</code> solo traduzca. Hoy la API es la única puerta,
-          pero la separación se sostiene sola: es lo que hace que el importador de TMDB pueda escribir por HTTP
-          sin saltearse una sola validación.
+          pero la separación se sostiene sola: es lo que hace que el importador de TMDB pueda dar de alta
+          sin saltearse una sola validación, y que la haya cumplido igual cuando escribía por HTTP desde otro
+          proceso.
         </p>
       </div>
       <p>
@@ -3725,7 +3726,6 @@ open http://localhost:8080        # la aplicación</code></pre>
             <tr><td>Backend</td><td><code>backend:8080</code></td><td>Solo en la red interna: no se llega desde el host</td></tr>
             <tr><td>MySQL</td><td><code>mysql:3306</code></td><td>Solo en la red interna: ya no hay <code>localhost:3306</code></td></tr>
             <tr><td>Redis</td><td><code>redis:6379</code></td><td>Los <a href="#bloqueo">bloqueos de butaca</a> de mientras alguien elige. Es el único que se puede apagar sin romper nada</td></tr>
-            <tr><td>Parser</td><td>—</td><td>No arranca con el compose: está detrás del perfil <code>importador</code> (ver abajo)</td></tr>
           </tbody>
         </table>
       </div>
@@ -3734,12 +3734,13 @@ open http://localhost:8080        # la aplicación</code></pre>
         hace falta configurar CORS.
       </p>
 
-      <h3>El importador de la cartelera real</h3>
+      <h3 id="importador">El importador de la cartelera real</h3>
       <p>
         Las películas de prueba —Matrix, El Padrino— alcanzaban para probar las reglas, pero no
-        para ver el sistema funcionando con datos que uno no eligió. <code>cine-pelis-parser</code>
-        es un cuarto repo que trae la cartelera argentina de <strong>TMDB</strong> y la carga en el
-        sistema. Está escrito en Python, sin dependencias: solo la biblioteca estándar.
+        para ver el sistema funcionando con datos que uno no eligió. El importador trae de
+        <strong>TMDB</strong> lo que está hoy en cartelera en Argentina y lo deja esperando en un
+        buzón. Empezó siendo un cuarto repo en Python y hoy es una capa más del backend: el
+        <a href="#absorber">por qué de esa mudanza</a> es la parte que más enseña de todo esto.
       </p>
 
       <h4>Lo que trae es una propuesta, no una decisión</h4>
@@ -3759,54 +3760,22 @@ open http://localhost:8080        # la aplicación</code></pre>
       </p>
       <p>
         Lo descartado <strong>no se borra</strong>. Si se borrara, la corrida siguiente lo traería
-        de nuevo —el parser pregunta qué títulos ya están para no repetirlos, y uno borrado no está—
-        y habría que descartarlo otra vez, todas las noches. Guardar la decisión es lo que hace que
-        descartar una vez alcance.
+        de nuevo —el importador pregunta qué títulos ya están para no repetirlos, y uno borrado no
+        está— y habría que descartarlo otra vez, todas las noches. Guardar la decisión es lo que
+        hace que descartar una vez alcance.
       </p>
-      <p>
-        El alta del importador es un endpoint aparte, <code>POST /api/peliculas/importadas</code>, y
-        no un parámetro del alta común. Son dos circuitos distintos y conviene que se note: lo que
-        carga el encargado ya está decidido por definición —lo decidió al cargarlo—. Si fueran el
-        mismo endpoint con un flag, olvidarse el flag haría entrar dieciocho títulos al catálogo sin
-        que nadie los mire.
-      </p>
-
-      <h4>Es un cliente, no una parte del sistema</h4>
-      <p>
-        La decisión que ordena todo lo demás: el parser <strong>escribe por HTTP</strong>, con un
-        <code>POST /api/peliculas/importadas</code> por película. No abre una conexión a MySQL ni
-        corre un <code>INSERT</code>. Podría hacerlo —la base está ahí, en el mismo Docker— y sería más
-        rápido; sería también la forma de que entre una película sin título, con duración cero o
-        con un género inventado, porque saltearía <code>GestorCartelera</code>.
-      </p>
-      <p>
-        Y no queda en una convención que alguien podría romper: el contenedor está
-        <strong>solo en la red <code>web</code></strong>, no en <code>datos</code>. No tiene ruta
-        de red hasta MySQL. Lo verifiqué desde adentro del contenedor: el socket a
-        <code>mysql:3306</code> ni siquiera resuelve el nombre. Es la misma idea que separar las
-        dos redes para que el frontend no llegue a la base, aplicada a un cliente que sí escribe.
-      </p>
-      <div class="callout">
-        <p>
-          <strong>Esto es lo que hace que la validación siga siendo una sola.</strong> Las reglas
-          R1 (título), R2 (duración mayor a cero) y R7 (al menos un género) están escritas una vez,
-          en el gestor. El importador no las repite: manda el pedido y el backend acepta o rechaza.
-          Si mañana se agrega una regla nueva al alta de películas, el importador la cumple sin
-          que nadie lo toque.
-        </p>
-      </div>
 
       <h4>Dos sistemas que hablan del mismo dominio y no lo modelan igual</h4>
       <p>
-        <code>mapeo.py</code> es el corazón del parser y es donde está el problema interesante.
+        <code>MapeoTmdb</code> es el corazón del importador y es donde está el problema interesante.
         TMDB tiene 19 géneros, nosotros 9. Ellos guardan el idioma como código ISO 639
         (<code>en</code>), nosotros como texto (<code>Inglés</code>). Su certificación es un par
         (país, valor) y hay que buscar la argentina entre todas; la nuestra es un enum de cuatro
         valores.
       </p>
       <p>
-        Traducir en un solo archivo es lo que evita que esas diferencias se filtren al resto del
-        sistema. De <code>mapeo.py</code> para adentro, TMDB no existe: el backend nunca ve un
+        Traducir en un solo lugar es lo que evita que esas diferencias se filtren al resto del
+        sistema. De <code>MapeoTmdb</code> para adentro, TMDB no existe: nadie más ve un
         <code>genre_id</code> ni un <code>iso_3166_1</code>. Es el mismo razonamiento que el patrón
         DAO —modelo ajeno de un lado, el nuestro del otro, una capa fina en el medio que sabe
         convertir— y por eso el importador es un buen ejemplo para defender esa decisión: acá la
@@ -3822,53 +3791,85 @@ open http://localhost:8080        # la aplicación</code></pre>
         el que se corrige a mano después.
       </p>
 
+      <h4 id="absorber">Por qué dejó de ser un proceso aparte</h4>
+      <p>
+        Durante dos entregas el importador fue <code>cine-pelis-parser</code>: un cuarto repo, en
+        Python, que corría en su propio contenedor y cargaba cada película con un
+        <code>POST /api/peliculas/importadas</code>. La idea era defendible y está buena de
+        entender, porque el argumento que la sostenía era real: <strong>el contenedor estaba solo
+        en la red <code>web</code>, sin ruta hasta MySQL</strong>, así que no podía escribir en la
+        base ni queriendo. «Todo entra por las reglas» dejaba de ser una convención y pasaba a ser
+        una propiedad de la topología.
+      </p>
+      <p>
+        Lo que estaba mal no era el contenedor de más: era <em>qué</em> había quedado adentro. El
+        archivo que traducía géneros y clasificaciones estaba decidiendo cosas del negocio —que
+        Fantasía cuenta como ciencia ficción, que sin certificación se asume <code>MAS_13</code>—
+        y comparaba títulos en minúscula para no repetir altas, que es R1 escrita por segunda vez.
+        Eso es dominio, y vivía afuera del sistema, en otro lenguaje, sin un solo test.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>El acoplamiento peor es el que ningún compilador ve.</strong>
+          <code>mapeo.py</code> nombraba a <code>CIENCIA_FICCION</code> y a <code>MAS_13</code>
+          como texto. Renombrar una constante de <code>Genero</code> compilaba bien, pasaba los
+          382 tests y rompía recién en la corrida siguiente, de noche, contra el buzón. Hoy esa
+          misma tabla es un <code>Map&lt;String, Genero&gt;</code>: el cambio no compila, que es
+          exactamente lo que uno quiere que pase.
+        </p>
+      </div>
+      <p>
+        Con la traducción adentro, el resto se cayó solo. Desaparecieron el servidor HTTP del
+        parser, el cliente que le hablaba desde Java, un healthcheck, dos timeouts encadenados y
+        <strong>dos candados para el mismo invariante</strong> —uno en <code>GestorImportaciones</code>
+        y otro en el parser— que existían nada más que porque había dos procesos. La corrida dejó
+        de ser dieciocho pedidos HTTP contra nuestra propia API para ser dieciocho llamadas a un
+        gestor.
+      </p>
+      <p>
+        Lo que se perdió, dicho sin maquillaje: la garantía ya no es de red. Que el importador no
+        pueda escribir en MySQL por su cuenta ahora lo sostienen <code>ArquitecturaTest</code>
+        —<code>infraestructura/</code> no puede nombrar un DAO concreto— y el hecho de que
+        <code>Aplicacion</code> sea el único que reparte dependencias. Es una garantía verificada en
+        cada <code>mvn test</code>, pero es un test que alguien puede editar; la red no se edita
+        sin querer. Para un sistema de este tamaño el cambio paga: se recuperó la lógica de negocio
+        y se la puede probar, que era el problema más grande de los dos.
+      </p>
+
       <h4>Pedirla desde el panel</h4>
       <p>
         Al principio el importador corría solo: un <code>while true</code> con
         <code>sleep 21600</code> en el entrypoint, una pasada cada seis horas. Para adelantarlo
-        había que abrir una terminal y escribir un <code>docker compose run</code>. Eso deja al
-        encargado —que es el que se da cuenta de que falta cartelera— dependiendo de que alguien
-        con acceso a la consola le corra el importador.
+        había que abrir una terminal. Eso deja al encargado —que es el que se da cuenta de que falta
+        cartelera— dependiendo de que alguien con acceso a la consola le corra el importador.
       </p>
       <p>
-        Ahora hay una pantalla, <strong>Importador</strong>, con un botón. Y el camino que recorre
-        ese botón es lo interesante, porque había que agregarlo <em>sin</em> romper las dos
-        propiedades que sostienen todo lo de arriba: que el parser no tenga ruta hasta MySQL, y
-        que el backend no tenga que saber qué es TMDB.
+        Ahora hay una pantalla, <strong>Importador</strong>, con un botón:
       </p>
-      <pre><code>admin  ──►  nginx  ──►  backend  ──POST /importar──►  parser  ──►  TMDB
- #/importador          (red web)     (red web)          │
-                                                        │  una película por vez
-                       backend  ◄───────────────────────┘  POST /api/peliculas/importadas
-                          │                                 (reglas de GestorCartelera)
-                          ▼
-                     buzón "Por revisar"</code></pre>
+      <pre><code>admin  ──►  nginx  ──►  backend  ──►  TMDB   now_playing + detalle + release_dates
+ #/importador          (red web)      │      (de a cuatro en paralelo)
+                                      ▼
+                            GestorImportaciones   saltea lo que ya está (R1)
+                                      │
+                                      ▼
+                          GestorRevisionCartelera   una por vez, con R2, R7, R10
+                                      │
+                                      ▼
+                              buzón "Por revisar"</code></pre>
       <p>
-        El parser dejó de ser un job y pasó a ser un servicio: levanta un servidor HTTP de
-        veinte líneas —<code>http.server</code>, sin dependencias nuevas— con dos rutas,
-        <code>GET /salud</code> y <code>POST /importar</code>. No publica puerto al host y nginx no
-        rutea nada hacia él: adentro de la red <code>web</code> lo alcanza el backend y nadie más.
-        Sigue sin estar en <code>datos</code>, así que sigue sin poder escribir en la base, y todo
-        lo que carga sigue entrando por <code>POST /api/peliculas/importadas</code>.
+        Del lado del código, TMDB es un <code>CatalogoExterno</code>: una interfaz al lado de
+        <code>PasarelaPagos</code>, con <code>TmdbHttp</code> como único lugar que sabe a qué URL
+        pegarle. El gestor le pide candidatas y no se entera de que existe TMDB. Es también lo que
+        deja probar todo el circuito con un catálogo de mentira, sin gastar cuota: los tests de
+        importación corren contra <code>CatalogoDePrueba</code> y el alta es de verdad.
       </p>
       <p>
-        Del lado del backend, el parser es un <code>ImportadorCartelera</code>: una interfaz al
-        lado de <code>PasarelaPagos</code>, con la implementación HTTP como único lugar que sabe a
-        qué URL pegarle. El gestor le dice «corré una importación» y no se entera de que existe
-        TMDB. Es también lo que deja probar todo el circuito con un importador de mentira, sin
-        levantar Python ni gastar cuota.
+        Y el reparto de responsabilidades quedó donde corresponde: el adaptador
+        <strong>solo trae</strong> —puede traer una película sin duración, si TMDB no la dio— y el
+        que decide qué entra es el gestor, con las mismas reglas del alta a mano. Cuando el
+        importador filtraba por su cuenta, R1 y R2 estaban escritas dos veces.
       </p>
-      <h4>Por qué no el socket de Docker</h4>
-      <p>
-        La primera idea era más directa: que el backend lanzara el contenedor del parser, como
-        hace el <code>docker compose run</code> de la terminal. Para eso hay que montarle el socket
-        de Docker adentro del contenedor, y eso <strong>le da al backend control total del demonio
-        que lo corre</strong>: crear contenedores privilegiados, montar el disco del host, apagar
-        la base. El sistema entero está diseñado alrededor de que cada servicio pueda hacer solo lo
-        suyo —el frontend no llega a MySQL, el parser tampoco— y esto le daría al backend más poder
-        que a cualquiera, para agregar un botón. Un servidor HTTP de veinte líneas en el parser
-        cuesta menos y no cambia el modelo de amenaza.
-      </p>
+
       <h4>Una corrida entra en un pedido HTTP</h4>
       <p>
         La respuesta del <code>POST /api/importaciones</code> llega <em>cuando la corrida
@@ -3881,10 +3882,10 @@ open http://localhost:8080        # la aplicación</code></pre>
         Para que eso sea posible había que arreglar el tiempo. Una corrida son dos llamadas a TMDB
         por película, cada una con una pausa de 0,3s: de a una, veinte películas eran casi un
         minuto, y nginx corta a los treinta segundos. Pidiendo los detalles <strong>de a cuatro en
-        paralelo</strong> la corrida baja a diez o quince segundos. Las altas contra nuestro
-        backend siguen siendo de a una y en orden: son escrituras que pasan por R1, y dos hilos
-        mandando el mismo título se pisarían. Igual esa ruta tiene su propio
-        <code>proxy_read_timeout</code> de 180s, por si TMDB tiene un mal día.
+        paralelo</strong> la corrida baja a diez o quince segundos. Las altas siguen siendo de a
+        una y en orden: son escrituras que pasan por R1, y dos hilos mandando el mismo título se
+        pisarían. Igual esa ruta tiene su propio <code>proxy_read_timeout</code> de 180s, por si
+        TMDB tiene un mal día.
       </p>
       <p>
         Cada corrida queda guardada en la tabla <code>importacion</code>: cuándo se pidió, cómo
@@ -3902,19 +3903,14 @@ open http://localhost:8080        # la aplicación</code></pre>
 
       <h4>Correrlo</h4>
       <p>
-        Arranca con el compose y se queda escuchando, pero <strong>no importa nada solo</strong>:
-        sin un pedido del panel no gasta una llamada a TMDB. Por eso ya no hace falta el perfil que
-        lo dejaba afuera del <code>up</code>, y por eso desapareció el loop de seis horas.
+        No hay nada que levantar aparte: el importador es el backend. <strong>No importa nada
+        solo</strong>, tampoco: sin un pedido del panel no gasta una llamada a TMDB.
       </p>
       <pre><code>cd ../cine-docker
 # el token va en .env: TMDB_TOKEN=&lt;API Read Access Token de themoviedb.org&gt;
 
-docker compose up -d                       # el parser queda escuchando en el 8090
-docker compose logs -f parser              # qué está haciendo
-
-# y desde la consola, sin pasar por el panel:
-docker compose run --rm parser --simular   # dice qué traería, no escribe nada, y termina
-docker compose run --rm parser             # la corrida de verdad</code></pre>
+docker compose up -d                   # y listo: el botón está en #/importador
+docker compose logs -f backend         # qué trajo la última corrida, película por película</code></pre>
       <p>
         Es <strong>idempotente</strong>: antes de dar de alta compara contra los títulos que ya
         están, así que correrlo dos veces no duplica nada. Eso es lo que permite apretar el botón
@@ -3924,10 +3920,9 @@ docker compose run --rm parser             # la corrida de verdad</code></pre>
         El token va en <code>.env</code> como <code>${TMDB_TOKEN}</code>, sin el
         <code>:?</code> que marcaría la variable como obligatoria. Es a propósito: Compose
         interpola las variables <strong>al parsear el archivo</strong>, así que un <code>:?</code>
-        ahí impediría levantar MySQL y el backend a cualquiera que todavía no sacó su token. En
-        modo servidor el parser levanta igual sin él y contesta que falta recién cuando le piden
-        una corrida —el panel lo muestra antes de dejar apretar el botón—, en vez de morirse en un
-        crash-loop que nadie mira.
+        ahí impediría levantar MySQL y el backend a cualquiera que todavía no sacó su token. Sin
+        token el sistema arranca igual y la pantalla avisa que falta antes de dejar apretar el
+        botón, en vez de fallar cuando ya nadie mira.
       </p>
 
       <h4>Qué pasó en la primera corrida</h4>
@@ -3937,13 +3932,14 @@ docker compose run --rm parser             # la corrida de verdad</code></pre>
         original, clasificación y poster reales.
       </p>
       <p>
-        Y apareció algo que la simulación dejó ver antes de escribir: entre los estrenos,
+        Y apareció algo que no se veía con cuatro títulos de prueba: entre los estrenos,
         <code>now_playing</code> devuelve <strong>cortometrajes</strong>. Entraron cuatro de menos
         de 45 minutos, uno de 5. No es un error del importador —son estrenos de verdad— pero una
         película de 5 minutos en un cine tiene un efecto que no se ve de entrada: la duración es lo
         que decide si dos funciones se superponen, así que permite programar doce por hora en la
-        misma sala. El corte quedó escrito y comentado en <code>es_importable</code>: filtrar por
-        duración es una decisión del negocio, no del importador.
+        misma sala. No se filtran: el buzón ya es el lugar donde una persona decide eso, y meter un
+        mínimo de duración adentro del importador sería que el importador opine sobre qué se puede
+        proyectar.
       </p>
       <div class="callout">
         <p>
@@ -4994,13 +4990,14 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     <section class="doc-section" id="estructura">
       <h2>Estructura de carpetas</h2>
       <p>
-        El sistema son cuatro repos hermanos. Ninguno depende del código de otro: se hablan por
-        HTTP, y <code>cine-docker</code> es el único que los conoce a todos.
+        El sistema son tres repos hermanos. Ninguno depende del código de otro: se hablan por
+        HTTP, y <code>cine-docker</code> es el único que los conoce a todos. Eran cuatro hasta que
+        <code>cine-pelis-parser</code> —el importador de TMDB, en Python— se absorbió adentro del
+        backend; el <a href="#importador">por qué</a> está más abajo.
       </p>
       <pre><code>TPO/
 ├── cine-backend/       Java 21 + Javalin. El dominio, las reglas y la API
 ├── cine-frontend/      JS sin framework. Un módulo por pantalla, servido por nginx
-├── cine-pelis-parser/  Python. Importa la cartelera de TMDB por la API del backend
 └── cine-docker/        docker-compose.yml, .env y el seed. Cero código de la app</code></pre>
       <pre><code>cine-backend/
 ├── pom.xml
@@ -5044,8 +5041,8 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
     │   │   ├── comprobantes/   GeneradorTicket*, GeneradorRecibo, GeneradorBordero,
     │   │   │                   y txt/ con sus implementaciones
     │   │   ├── pasarelas/      PasarelaPagos + emulada/MercadoPagoEmulado
-    │   │   ├── importador/     ImportadorCartelera + http/ImportadorHttp, el cliente
-    │   │   │                   contra el parser de TMDB
+    │   │   ├── importador/     CatalogoExterno + tmdb/ con TmdbHttp y MapeoTmdb: de
+    │   │   │                   donde salen las peliculas que nadie cargo a mano
     │   │   └── seguridad/      Password
     │   ├── api/                HTTP. ServidorApi arriba, y adentro:
     │   │   ├── http/           Parseo, Fechas, NoEncontrado
@@ -5353,9 +5350,9 @@ promocion  1            ← queda registrado cuál ganó</code></pre>
               <td>Con dieciocho títulos por corrida, el catálogo dejaría de ser una decisión del cine para ser una copia de lo que se da afuera. Y las descartadas se guardan en vez de borrarse: borradas volverían en la corrida siguiente, todas las noches</td>
             </tr>
             <tr>
-              <td>El importador escucha un pedido del backend</td>
-              <td>Que el backend lance el contenedor por el socket de Docker</td>
-              <td>Montarle el socket al backend le da control total del demonio que lo corre —crear contenedores privilegiados, montar el disco del host—, para agregar un botón. Un servidor HTTP de veinte líneas en el parser cuesta menos y no cambia el modelo de amenaza. El parser sigue sin ruta hasta MySQL</td>
+              <td>El importador es una capa del backend</td>
+              <td>Dejarlo como un proceso Python aparte, que escribía por HTTP</td>
+              <td>Su traducción de géneros y clasificaciones son decisiones del cine, y comparar títulos para no repetir es R1: todo eso vivía afuera del sistema, en otro lenguaje y sin tests, nombrando a los enums de <code>dominio</code> como texto. Se perdió la garantía de red —el contenedor no tenía ruta hasta MySQL— y quedó la de diseño, que <code>ArquitecturaTest</code> verifica en cada corrida</td>
             </tr>
             <tr>
               <td>La importación contesta cuando terminó</td>

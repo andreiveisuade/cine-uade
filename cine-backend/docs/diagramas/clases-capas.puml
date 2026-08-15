@@ -80,15 +80,16 @@ package infraestructura {
     }
   }
 
-  ' La cartelera de TMDB entra por aca. El parser es un proceso aparte y este es
-  ' el contrato con el: el gestor pide una corrida y no sabe que del otro lado
-  ' hay HTTP.
+  ' De donde salen las peliculas que el cine no cargo a mano. El contrato no nombra
+  ' a TMDB: el gestor pide candidatas y no sabe de donde salen. Antes del otro lado
+  ' habia un proceso Python aparte; ahora es un adaptador mas, como la pasarela.
   package importador {
-    interface ImportadorCartelera
+    interface CatalogoExterno
     class ImportadorError
 
-    package http as importador_http {
-      class "ImportadorHttp\ncliente contra el parser" as ImportadorHttp
+    package tmdb {
+      class "TmdbHttp\nlas tres llamadas de TMDB" as TmdbHttp
+      class "MapeoTmdb\nsu modelo -> el nuestro" as MapeoTmdb
     }
   }
 }
