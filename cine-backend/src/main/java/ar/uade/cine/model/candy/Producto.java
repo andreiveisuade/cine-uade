@@ -6,6 +6,7 @@ import java.util.List;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,6 +31,7 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(unique = true)
     private String nombre;
 
     @Enumerated(EnumType.STRING)

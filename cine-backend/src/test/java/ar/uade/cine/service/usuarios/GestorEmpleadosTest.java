@@ -8,17 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.repository.memoria.EmpleadoDAOMemoria;
 
-class GestorEmpleadosTest {
+class GestorEmpleadosTest extends PruebaDeIntegracion {
 
+    @Autowired
     private GestorEmpleados empleados;
 
     @BeforeEach
     void registrarUno() {
-        empleados = new GestorEmpleados(new EmpleadoDAOMemoria());
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
     }
 

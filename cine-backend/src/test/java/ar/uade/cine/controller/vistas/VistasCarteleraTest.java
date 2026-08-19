@@ -14,9 +14,14 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.Aplicacion;
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
@@ -26,7 +31,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.FuncionImpl;
+import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Sala;
@@ -36,21 +41,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.EmpleadoDAOMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.ImportacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProductoDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.service.ventas.Ocupacion;
@@ -62,39 +54,29 @@ import ar.uade.cine.model.dinero.Dinero;
  * cliente, la del encargado y la del mapa de butacas— porque el front decide qué dibujar
  * según qué campos vengan, y mandar de más es tan un error como mandar de menos.
  */
-class VistasCarteleraTest {
+class VistasCarteleraTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private GestorCartelera cartelera;
 
-    private Aplicacion aplicacion;
+    @Autowired
+    private GestorClientes clientes;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorReservas reservas;
+
+    @Autowired
+    private GestorSalas salas;
+
+    @Autowired
     private VistasCartelera vistas;
-
-    @BeforeEach
-    void prepararEscenario() {
-        aplicacion = new Aplicacion(
-                new PeliculaDAOMemoria(), new SalaDAOMemoria(), new AsientoDAOMemoria(),
-                new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
-                new ReservaDAOMemoria(), new PagoDAOMemoria(),
-                new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
-                new CompraCandyDAOMemoria(), new ImportacionDAOMemoria(),
-                new BloqueoButacasMemoria(),
-                new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
-                new GeneradorReciboTxt(tempDir.resolve("tickets")),
-                new GeneradorBorderoTxt(tempDir.resolve("informes")),
-                new MercadoPagoEmulado(), new CatalogoDePrueba());
-
-        vistas = new VistasCartelera(aplicacion.getCartelera(), aplicacion.getSalas(),
-                aplicacion.getOcupacion(), aplicacion.getCalculadoraPrecio(),
-                new VistasSalas(aplicacion.getSalas(), aplicacion.getCalculadoraPrecio()));
-    }
-
-    // ---------- la película ----------
 
     @Test
     void laPeliculaViajaConSusEnumsComoNombre() {
-        Pelicula matrix = aplicacion.getCartelera()
+        Pelicula matrix = cartelera
                 .agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION),
                         Clasificacion.MAS_13);
 
@@ -109,8 +91,8 @@ class VistasCarteleraTest {
     /** Los datos de catálogo son los que llenan la ficha del cliente. */
     @Test
     void laPeliculaViajaConSusDatosDeCatalogo() {
-        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        Pelicula completa = aplicacion.getCartelera().editar(1,
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        Pelicula completa = cartelera.editar(1,
                 DatosPelicula.deCatalogo("Wachowski", "Un hacker descubre la verdad", 1999,
                         "Inglés", "http://poster.jpg"));
 
@@ -122,8 +104,6 @@ class VistasCarteleraTest {
         assertEquals("http://poster.jpg", vista.posterUrl());
         assertEquals("Un hacker descubre la verdad", vista.sinopsis());
     }
-
-    // ---------- las tres variantes de función ----------
 
     /** El listado del cliente: la función con su sala, sin película ni mapa de butacas. */
     @Test
@@ -167,8 +147,8 @@ class VistasCarteleraTest {
     @Test
     void elMapaMarcaLasButacasYaReservadas() {
         Funcion funcion = programarUnaFuncion();
-        aplicacion.getReservas().reservar(funcion.getId(),
-                aplicacion.getClientes().identificar("Andrei", "andrei@uade.edu.ar").getId(),
+        reservas.reservar(funcion.getId(),
+                clientes.identificar("Andrei", "andrei@uade.edu.ar").getId(),
                 Map.of("A1", TipoTarifa.GENERAL));
 
         FuncionVistaDTO vista = vistas.funcionConButacas(funcion);
@@ -178,18 +158,16 @@ class VistasCarteleraTest {
         assertEquals(9, vista.libres());
     }
 
-    // ---------- el precio anunciado ----------
-
     /**
      * El "desde $" de la cartelera: lo que sale la butaca más barata de esa función. No
      * es el precio de la función, que no contempla la tecnología de la sala.
      */
     @Test
     void elPrecioDesdeContemplaLaSalaPeroNoElTipoDeButaca() {
-        Sala imax = aplicacion.getSalas().agregar("IMAX", TipoSala.IMAX, List.of(2),
+        Sala imax = salas.agregar("IMAX", TipoSala.IMAX, List.of(2),
                 Map.of("A1", TipoAsiento.VIP));
-        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        Funcion funcion = aplicacion.getFunciones().programar(1, imax.getId(),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Funcion funcion = funciones.programar(1, imax.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         FuncionVistaDTO vista = vistas.funcion(funcion);
@@ -217,8 +195,8 @@ class VistasCarteleraTest {
      */
     @Test
     void unaFuncionSinSalaEsUnRecursoQueNoExiste() {
-        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        Funcion huerfana = new FuncionImpl(1, 99, LocalDateTime.of(2026, 8, 20, 20, 0),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Funcion huerfana = new Funcion(1, 99, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         assertThrows(NoEncontrado.class, () -> vistas.funcion(huerfana));
@@ -227,8 +205,8 @@ class VistasCarteleraTest {
     /** El listado del encargado no se cae por una película borrada: la manda en null. */
     @Test
     void unaFuncionSinPeliculaNoRompeElListado() {
-        Sala sala = aplicacion.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        Funcion sinPelicula = new FuncionImpl(99, sala.getId(),
+        Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        Funcion sinPelicula = new Funcion(99, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         FuncionVistaDTO vista = vistas.funcionConPelicula(sinPelicula);
@@ -238,9 +216,9 @@ class VistasCarteleraTest {
     }
 
     private Funcion programarUnaFuncion() {
-        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        Sala sala = aplicacion.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        return aplicacion.getFunciones().programar(1, sala.getId(),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        return funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 

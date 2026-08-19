@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,38 +13,31 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.ConfiguracionDePrueba;
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
+import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
+import ar.uade.cine.repository.AsientoRepository;
+import ar.uade.cine.repository.ClienteRepository;
+import ar.uade.cine.repository.FuncionRepository;
+import ar.uade.cine.repository.PeliculaRepository;
+import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * El bloqueo de butacas mientras alguien las está eligiendo: la etapa anterior a que
@@ -57,60 +50,64 @@ import ar.uade.cine.model.dinero.Dinero;
  *
  * <p>Corre sin Redis levantado, incluido el caso que justamente prueba que no hace falta.
  */
-class OcupacionTest {
-
-    @TempDir
-    Path tempDir;
+class OcupacionTest extends PruebaDeIntegracion {
 
     /** Dos sesiones distintas eligiendo la misma función, que es el conflicto a probar. */
     private static final String ANA = "sesion-de-ana";
     private static final String BETO = "sesion-de-beto";
 
+    @Autowired
     private Ocupacion ocupacion;
+    @Autowired
     private GestorReservas reservas;
-    private BloqueoButacasMemoria bloqueos;
+    @Autowired
+    private BloqueoButacas bloqueos;
+    @Autowired
+    private ConfiguracionDePrueba.Reloj reloj;
 
-    /**
-     * El reloj de los bloqueos, movible a mano. Es el mismo criterio que
-     * {@link ar.uade.cine.model.ventas.Reserva#estaVencida(LocalDateTime)}: probar que
-     * algo vence no puede costar esperar a que venza, y una espera real vuelve al test
-     * dependiente de lo cargada que esté la máquina.
-     */
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private GestorSalas salas;
+    @Autowired
+    private GestorFunciones funciones;
+    @Autowired
+    private GestorClientes clientes;
+    @Autowired
+    private CalculadoraPrecio calculadoraPrecio;
+
+    @Autowired
+    private ReservaRepository reservaRepository;
+    @Autowired
+    private FuncionRepository funcionRepository;
+    @Autowired
+    private AsientoRepository asientoRepository;
+    @Autowired
+    private SalaRepository salaRepository;
+    @Autowired
+    private ClienteRepository clienteRepository;
+    @Autowired
+    private PeliculaRepository peliculaRepository;
+
     private LocalDateTime ahora;
-
-    private ReservaDAO reservaDAO;
-    private FuncionDAO funcionDAO;
-    private AsientoDAO asientoDAO;
-    private SalaDAO salaDAO;
-    private ClienteDAO clienteDAO;
-    private PeliculaDAO peliculaDAO;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
-        peliculaDAO = new PeliculaDAOMemoria();
-        salaDAO = new SalaDAOMemoria();
-        asientoDAO = new AsientoDAOMemoria();
-        funcionDAO = new FuncionDAOMemoria();
-        clienteDAO = new ClienteDAOMemoria();
-        reservaDAO = new ReservaDAOMemoria();
-
-        GestorFunciones funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, funciones))
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        new GestorSalas(salaDAO, asientoDAO, funcionDAO).agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 12, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria())
-                .registrar("Andrei", "andrei@uade.edu.ar");
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
-        bloqueos = new BloqueoButacasMemoria(() -> ahora);
-        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO, bloqueos);
-        reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO,
-                peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new CalculadoraPrecio(), ocupacion);
+        reloj.mover(ahora);
+    }
+
+    /** Mueve el reloj de los bloqueos, que es el único que este test necesita adelantar. */
+    private void avanzar(Duration cuanto) {
+        ahora = ahora.plus(cuanto);
+        reloj.mover(ahora);
     }
 
     // ---------- la butaca deja de ofrecerse ----------
@@ -169,7 +166,7 @@ class OcupacionTest {
     void elBloqueoVencidoDevuelveLaButacaALaVenta() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        ahora = ahora.plus(Ocupacion.MIENTRAS_ELIGE).plusSeconds(1);
+        avanzar(Ocupacion.MIENTRAS_ELIGE.plusSeconds(1));
 
         assertTrue(codigosLibres(null).contains("A1"));
         assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), BETO),
@@ -181,11 +178,11 @@ class OcupacionTest {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
         // Dos minutos después toca el mapa de nuevo: no perdió la butaca por tardar.
-        ahora = ahora.plusMinutes(2);
+        avanzar(Duration.ofMinutes(2));
         assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
 
         // Cuatro minutos desde el primer bloqueo: sin la renovación ya habría vencido.
-        ahora = ahora.plusMinutes(2);
+        avanzar(Duration.ofMinutes(2));
         assertFalse(codigosLibres(BETO).contains("A1"));
     }
 
@@ -254,13 +251,13 @@ class OcupacionTest {
      */
     @Test
     void sinRedisSeSigueVendiendoComoAntes() {
-        Ocupacion sinRedis = new Ocupacion(reservaDAO, funcionDAO, asientoDAO,
-                new BloqueoButacasRedis("127.0.0.1", 63999));
+        Ocupacion sinRedis = new Ocupacion(reservaRepository, funcionRepository,
+                asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999));
 
-        GestorReservas ventaSinRedis = new GestorReservas(reservaDAO, funcionDAO, salaDAO,
-                asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new CalculadoraPrecio(), sinRedis);
+        GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
+                salaRepository, asientoRepository, clienteRepository, peliculaRepository,
+                new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
+                calculadoraPrecio, sinRedis);
 
         assertEquals(List.of("A1"), sinRedis.bloquear(1, List.of("A1"), ANA),
                 "nadie la tiene tomada, así que se la lleva");
@@ -276,7 +273,7 @@ class OcupacionTest {
     }
 
     private int idDe(String codigo) {
-        return asientoDAO.listarPorSala(1).stream()
+        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).stream()
                 .filter(a -> a.getCodigo().equals(codigo))
                 .map(Asiento::getId)
                 .findFirst()

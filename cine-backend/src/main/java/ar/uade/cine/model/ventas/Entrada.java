@@ -11,6 +11,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Una butaca vendida dentro de una reserva. No se consulta sola: se guarda y se lee
@@ -27,6 +29,14 @@ import jakarta.persistence.ManyToOne;
  * para rearmar el código; con la relación mapeada, eso lo hace Hibernate.
  */
 @Entity
+@Table(uniqueConstraints = {
+        // Lo que impide de verdad vender la misma butaca dos veces en la misma función
+        // (R4). Estaba escrito solo en schema.sql, y desde que Hibernate arma la base de
+        // los tests tiene que estar acá también: si no, la suite probaría contra un motor
+        // sin la restricción que sostiene la regla.
+        @UniqueConstraint(columnNames = {"funcion_id", "asiento_id"}),
+        @UniqueConstraint(columnNames = {"reserva_id", "asiento_id"})
+})
 public class Entrada {
 
     @Id

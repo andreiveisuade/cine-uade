@@ -11,25 +11,16 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.SalaDAO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
@@ -42,28 +33,18 @@ import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
  * El planificador optimiza tres cosas a la vez —puntaje, diversidad y ocupación— y cada
  * una se prueba por separado, porque el riesgo es justamente que una se coma a las otras.
  */
-class PlanificadorGrillaTest {
+class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
-    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-    private final SalaDAO salaDAO = new SalaDAOMemoria();
-    private final AsientoDAO asientoDAO = new AsientoDAOMemoria();
-    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-
+    @Autowired
     private GestorCartelera cartelera;
+    @Autowired
     private GestorRevisionCartelera revision;
+    @Autowired
     private GestorSalas salas;
+    @Autowired
     private GestorFunciones funciones;
+    @Autowired
     private PlanificadorGrilla planificador;
-
-    @BeforeEach
-    void prepararCine() {
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, new ReservaDAOMemoria());
-        cartelera = new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, funciones));
-        revision = new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
-        salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
-        planificador = new PlanificadorGrilla(peliculaDAO, salaDAO, funciones);
-    }
 
     /** Una película de 100 minutos, con el puntaje y los géneros que pida el caso. */
     private Pelicula cargar(String titulo, double puntaje, Genero... generos) {
@@ -82,8 +63,6 @@ class PlanificadorGrillaTest {
                 LocalTime.of(14, 0), LocalTime.of(23, 0), cuantasPeliculas, Dinero.de(5000),
                 Version.SUBTITULADA, Proyeccion.DOS_D);
     }
-
-    // ---------- etapa 1: a quiénes elige ----------
 
     @Test
     void aIgualdadDeGenerosEligeLasMejorPuntuadas() {
@@ -253,8 +232,6 @@ class PlanificadorGrillaTest {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    // ---------- etapa 2: cómo las reparte ----------
-
     /** El reparto es proporcional al puntaje, no en partes iguales. */
     @Test
     void laMejorPuntuadaSeLlevaMasPases() {
@@ -325,8 +302,6 @@ class PlanificadorGrillaTest {
         }
     }
 
-    // ---------- los indicadores ----------
-
     @Test
     void losIndicadoresMidenOcupacionPuntajeYDiversidad() {
         cargar("Accion", 9.0, Genero.ACCION);
@@ -391,8 +366,6 @@ class PlanificadorGrillaTest {
         assertTrue(ocupacion >= 0 && ocupacion <= 1.0, "ocupación fuera de rango: " + ocupacion);
     }
 
-    // ---------- aplicar ----------
-
     @Test
     void aplicarCreaLasFuncionesDeLaPropuesta() {
         cargar("Una", 8.0, Genero.ACCION);
@@ -415,8 +388,6 @@ class PlanificadorGrillaTest {
         assertEquals(planificador.proponer(unDia(2)).pases(),
                 planificador.proponer(unDia(2)).pases());
     }
-
-    // ---------- lo que rechaza ----------
 
     @Test
     void sinPeliculasConfirmadasAvisaQueRevisenElBuzon() {

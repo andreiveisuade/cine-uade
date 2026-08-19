@@ -1,4 +1,4 @@
-package ar.uade.cine.controller.rutas;
+package ar.uade.cine.controller.controladores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -9,12 +9,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.Aplicacion;
+import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Funcion;
@@ -24,7 +29,6 @@ import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.controller.ApiEnMemoria;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
@@ -35,37 +39,46 @@ import ar.uade.cine.model.dinero.Dinero;
  * primero sirva para el segundo. Los mensajes de error se comparan enteros porque el
  * contrato dice que salen intactos desde el gestor y se le muestran al usuario tal cual.
  */
-class RutasPagosTest {
+class PagoControllerTest extends PruebaDeApi {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private GestorCartelera cartelera;
 
-    private ApiEnMemoria api;
+    @Autowired
+    private GestorClientes clientes;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorPagos pagos;
+
+    @Autowired
+    private GestorReservas reservas;
+
+    @Autowired
+    private GestorSalas salas;
+
+
     private Reserva reserva;
 
     /** Una reserva de dos butacas generales sin cobrar, a $5000 cada una. */
     @BeforeEach
     void levantarLaApiConUnaReservaSinCobrar() {
-        api = new ApiEnMemoria(tempDir);
-        Aplicacion app = api.aplicacion();
 
-        app.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        app.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        Funcion funcion = app.getFunciones().programar(1, 1,
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        Funcion funcion = funciones.programar(1, 1,
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        Cliente cliente = app.getClientes().identificar("Andrei", "andrei@uade.edu.ar");
-        reserva = app.getReservas().reservar(funcion.getId(), cliente.getId(),
+        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL));
     }
 
-    @AfterEach
-    void bajarLaApi() {
-        api.close();
-    }
 
     @Test
     void abrirElCheckoutDevuelveElLinkYElQrConElMontoAPagar() {
-        ApiEnMemoria.Respuesta respuesta = checkout("QR");
+        Respuesta respuesta = checkout("QR");
 
         assertEquals(201, respuesta.estado());
         var checkout = respuesta.json();
@@ -80,7 +93,7 @@ class RutasPagosTest {
     /** R11 al revés: el efectivo no tiene a quién pedirle una autorización. */
     @Test
     void elEfectivoNoAbreCheckout() {
-        ApiEnMemoria.Respuesta respuesta = checkout("EFECTIVO");
+        Respuesta respuesta = checkout("EFECTIVO");
 
         assertEquals(400, respuesta.estado());
         assertEquals("El pago con EFECTIVO se cobra en la caja del cine, no por checkout",
@@ -89,8 +102,8 @@ class RutasPagosTest {
 
     @Test
     void sinMedioElErrorLoDaElGestorYNoLaCapaHttp() {
-        ApiEnMemoria.Respuesta respuesta =
-                api.post("/api/reservas/" + reserva.getId() + "/checkout", "{}");
+        Respuesta respuesta =
+                post("/api/reservas/" + reserva.getId() + "/checkout", "{}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("Falta el medio de pago", respuesta.error());
@@ -98,7 +111,7 @@ class RutasPagosTest {
 
     @Test
     void unMedioInventadoNoLlegaAlGestor() {
-        ApiEnMemoria.Respuesta respuesta = checkout("CRIPTO");
+        Respuesta respuesta = checkout("CRIPTO");
 
         assertEquals(400, respuesta.estado());
         assertEquals("Valor inválido para el medio de pago: CRIPTO", respuesta.error());
@@ -106,7 +119,7 @@ class RutasPagosTest {
 
     @Test
     void elCheckoutDeUnaReservaQueNoExisteEs404() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/reservas/99/checkout", "{\"medio\":\"QR\"}");
+        Respuesta respuesta = post("/api/reservas/99/checkout", "{\"medio\":\"QR\"}");
 
         assertEquals(404, respuesta.estado());
         assertEquals("No existe la reserva 99", respuesta.error());
@@ -117,7 +130,7 @@ class RutasPagosTest {
     void confirmarElCheckoutCobraYDevuelveElPagoAutorizado() {
         String id = checkout("QR").json().get("id").asText();
 
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/checkouts/" + id + "/confirmacion", "");
+        Respuesta respuesta = post("/api/checkouts/" + id + "/confirmacion", "");
 
         assertEquals(201, respuesta.estado());
         var pago = respuesta.json();
@@ -131,26 +144,26 @@ class RutasPagosTest {
     @Test
     void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
         String id = checkout("QR").json().get("id").asText();
-        api.post("/api/checkouts/" + id + "/confirmacion", "");
+        post("/api/checkouts/" + id + "/confirmacion", "");
 
-        ApiEnMemoria.Respuesta segunda = api.post("/api/checkouts/" + id + "/confirmacion", "");
+        Respuesta segunda = post("/api/checkouts/" + id + "/confirmacion", "");
 
         assertEquals(400, segunda.estado());
         assertEquals("La reserva está PAGADA, no se puede cobrar", segunda.error());
-        assertEquals(1, api.aplicacion().getPagos().listar().size());
+        assertEquals(1, pagos.listar().size());
     }
 
     @Test
     void confirmarUnCheckoutQueNoExisteEs400() {
-        ApiEnMemoria.Respuesta respuesta =
-                api.post("/api/checkouts/MP-0000000000/confirmacion", "");
+        Respuesta respuesta =
+                post("/api/checkouts/MP-0000000000/confirmacion", "");
 
         assertEquals(400, respuesta.estado());
         assertEquals("No existe el checkout MP-0000000000", respuesta.error());
     }
 
-    private ApiEnMemoria.Respuesta checkout(String medio) {
-        return api.post("/api/reservas/" + reserva.getId() + "/checkout",
+    private Respuesta checkout(String medio) {
+        return post("/api/reservas/" + reserva.getId() + "/checkout",
                 "{\"medio\":\"" + medio + "\"}");
     }
 }

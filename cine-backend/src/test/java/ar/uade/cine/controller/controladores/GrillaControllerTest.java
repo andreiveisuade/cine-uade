@@ -1,4 +1,4 @@
-package ar.uade.cine.controller.rutas;
+package ar.uade.cine.controller.controladores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -6,17 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.Aplicacion;
+import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.controller.ApiEnMemoria;
 
 /**
  * El armado de la grilla, pedido por HTTP.
@@ -26,29 +27,29 @@ import ar.uade.cine.controller.ApiEnMemoria;
  * se decide en {@code api/} y no se ve desde un test del planificador, que recibe los
  * criterios ya armados.
  */
-class RutasGrillaTest {
+class GrillaControllerTest extends PruebaDeApi {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private GestorCartelera cartelera;
 
-    private ApiEnMemoria api;
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorSalas salas;
+
+
 
     @BeforeEach
     void levantarLaApiConUnCine() {
-        api = new ApiEnMemoria(tempDir);
-        Aplicacion app = api.aplicacion();
 
-        Pelicula matrix = app.getCartelera()
+        Pelicula matrix = cartelera
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         matrix.setPuntaje(8.7);
-        app.getCartelera().actualizar(matrix);
-        app.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        cartelera.actualizar(matrix);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
     }
 
-    @AfterEach
-    void bajarLaApi() {
-        api.close();
-    }
 
     /**
      * El resto de los campos sí tiene default: con solo el precio alcanza para una semana
@@ -56,7 +57,7 @@ class RutasGrillaTest {
      */
     @Test
     void conSoloElPrecioArmaLaGrillaConLosDefaults() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/grilla/propuesta", "{\"precio\":5000}");
+        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000}");
 
         assertEquals(200, respuesta.estado());
         assertTrue(respuesta.json().get("pases").size() > 0);
@@ -71,7 +72,7 @@ class RutasGrillaTest {
      */
     @Test
     void sinPrecioAvisaQueFaltaYNoQueEsInvalido() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/grilla/propuesta", "{}");
+        Respuesta respuesta = post("/api/grilla/propuesta", "{}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("Falta el precio de las funciones", respuesta.json().get("error").asText());
@@ -80,7 +81,7 @@ class RutasGrillaTest {
     /** Un precio mandado pero imposible sigue siendo el otro error, el del planificador. */
     @Test
     void conPrecioEnCeroElMensajeEsElDelPlanificador() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/grilla/propuesta", "{\"precio\":0}");
+        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":0}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("El precio debe ser mayor a cero", respuesta.json().get("error").asText());
@@ -89,12 +90,12 @@ class RutasGrillaTest {
     /** El alta sí escribe, y lo dice en el mismo campo que la previsualización deja en cero. */
     @Test
     void elAltaDevuelve201YCuentaLasFuncionesCreadas() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/grilla",
+        Respuesta respuesta = post("/api/grilla",
                 "{\"precio\":5000,\"dias\":1,\"cuantasPeliculas\":1}");
 
         assertEquals(201, respuesta.estado());
         int creadas = respuesta.json().get("funcionesCreadas").asInt();
         assertTrue(creadas > 0, "el alta tiene que crear funciones");
-        assertEquals(creadas, api.aplicacion().getFunciones().listar().size());
+        assertEquals(creadas, funciones.listar().size());
     }
 }

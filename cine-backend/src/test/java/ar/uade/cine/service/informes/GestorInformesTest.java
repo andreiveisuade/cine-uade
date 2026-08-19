@@ -15,7 +15,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
@@ -23,6 +23,7 @@ import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -32,26 +33,7 @@ import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.repository.CompraCandyDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PagoDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProductoDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.cartelera.GestorCartelera;
@@ -72,60 +54,44 @@ import ar.uade.cine.model.dinero.Dinero;
  * responden con lo <strong>cobrado</strong>, y casi todos los casos de borde de acá son
  * plata que parece de la función y no lo es.
  */
-class GestorInformesTest {
+class GestorInformesTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    private static final Path DIRECTORIO_INFORMES = Path.of("target/comprobantes/informes");
 
-    private Path directorioInformes;
+    @Autowired
     private GestorReservas reservas;
+    @Autowired
     private GestorPagos pagos;
+    @Autowired
     private GestorPromociones promociones;
+    @Autowired
     private GestorProductos productos;
+    @Autowired
     private GestorCandy candy;
+    @Autowired
     private GestorCaja caja;
+    @Autowired
     private GestorInformes informes;
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private GestorSalas salas;
+    @Autowired
+    private GestorFunciones funciones;
+    @Autowired
+    private GestorClientes clientes;
 
     /** Dos funciones de Matrix en la misma sala 2D de 10 butacas, a $5000, y un cliente. */
     @BeforeEach
     void prepararEscenario() {
-        PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-        SalaDAO salaDAO = new SalaDAOMemoria();
-        AsientoDAO asientoDAO = new AsientoDAOMemoria();
-        FuncionDAO funcionDAO = new FuncionDAOMemoria();
-        ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        PagoDAO pagoDAO = new PagoDAOMemoria();
-        ReservaDAO reservaDAO = new ReservaDAOMemoria();
-        CompraCandyDAO compraCandyDAO = new CompraCandyDAOMemoria();
-        directorioInformes = tempDir.resolve("informes");
-
-        GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, gestorFunciones))
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        new GestorSalas(salaDAO, asientoDAO, funcionDAO).agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        gestorFunciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
-        gestorFunciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
-        new GestorClientes(clienteDAO, reservaDAO, compraCandyDAO)
-                .registrar("Andrei", "andrei@uade.edu.ar");
-
-        reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio(),
-                new Ocupacion(reservaDAO, funcionDAO, asientoDAO, new BloqueoButacasMemoria()));
-        promociones = new GestorPromociones(new PromocionDAOMemoria());
-        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones, new MercadoPagoEmulado(),
-                new GeneradorReciboTxt(tempDir.resolve("tickets")));
-        productos = new GestorProductos(new ProductoDAOMemoria());
-        candy = new GestorCandy(compraCandyDAO, clienteDAO, reservaDAO,
-                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")), productos);
-        informes = new GestorInformes(funcionDAO, peliculaDAO, salaDAO, reservaDAO, pagoDAO,
-                compraCandyDAO, new GeneradorBorderoTxt(directorioInformes));
-        caja = new GestorCaja(pagoDAO, reservaDAO, compraCandyDAO);
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
     }
-
-    // ---------- el borderó ----------
 
     @Test
     void elBorderoTitulaConLaPeliculaLaSalaYElHorarioDeLaFuncion() {
@@ -224,7 +190,7 @@ class GestorInformesTest {
 
         informes.exportarBordero(1);
 
-        Path archivo = directorioInformes.resolve("bordero-funcion-1.txt");
+        Path archivo = DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt");
         assertTrue(Files.exists(archivo));
         String texto = leer(archivo);
         assertTrue(texto.contains("Matrix"));
@@ -245,10 +211,8 @@ class GestorInformesTest {
         Bordero bordero = informes.exportarBordero(1);
 
         assertEquals(2, bordero.espectadores());
-        assertTrue(leer(directorioInformes.resolve("bordero-funcion-1.txt")).contains("10000.00"));
+        assertTrue(leer(DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt")).contains("10000.00"));
     }
-
-    // ---------- el informe financiero ----------
 
     @Test
     void elInformeSumaLasEntradasYElCandyDeLaFuncion() {

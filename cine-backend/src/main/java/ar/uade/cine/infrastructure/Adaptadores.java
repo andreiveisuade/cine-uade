@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorBordero;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
@@ -14,6 +15,8 @@ import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
+import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.tmdb.TmdbHttp;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -65,6 +68,22 @@ public class Adaptadores {
         return new GeneradorBorderoTxt(directorio);
     }
 
+    /**
+     * Los bloqueos van a Redis y no a la base porque son lo contrario de todo lo demás que
+     * se guarda: duran tres minutos y después no le importan a nadie. Si Redis no está,
+     * {@link BloqueoButacasRedis} degrada a "ningún bloqueo" y el sistema sigue vendiendo
+     * como antes de que existiera —la doble venta la sigue impidiendo el UNIQUE de la base.
+     *
+     * <p>Fuera del perfil de test, que usa la implementación en memoria con un reloj que se
+     * puede mover a mano: probar que un bloqueo vence no puede costar tres minutos de espera.
+     */
+    @Bean
+    @Profile("!test")
+    public BloqueoButacas bloqueoButacas(@Value("${cine.redis.host}") String host,
+                                         @Value("${cine.redis.puerto}") int puerto) {
+        return new BloqueoButacasRedis(host, puerto);
+    }
+
     @Bean
     public PasarelaPagos pasarelaPagos() {
         return new MercadoPagoEmulado();
@@ -77,6 +96,7 @@ public class Adaptadores {
      * entradas por no poder importar cartelera.
      */
     @Bean
+    @Profile("!test")
     public CatalogoExterno catalogoExterno(@Value("${cine.tmdb.token}") String token,
                                            @Value("${cine.tmdb.region}") String region,
                                            @Value("${cine.tmdb.base}") String base) {

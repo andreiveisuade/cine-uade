@@ -13,9 +13,17 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.Aplicacion;
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.service.ventas.CalculadoraPrecio;
+import ar.uade.cine.service.ventas.Ocupacion;
+import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
@@ -35,21 +43,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.EmpleadoDAOMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.ImportacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProductoDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
@@ -60,44 +55,44 @@ import ar.uade.cine.model.dinero.Dinero;
  * cuándo se ingresó. El segundo viaja en null mientras nadie entró, y esa distinción es
  * la que le permite al acomodador saber si el ticket ya se usó.
  */
-class VistasVentasTest {
+class VistasVentasTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private CalculadoraPrecio calculadoraPrecio;
 
-    private Aplicacion aplicacion;
+    @Autowired
+    private GestorCartelera cartelera;
+
+    @Autowired
+    private GestorClientes clientes;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorPagos pagos;
+
+    @Autowired
+    private GestorReservas reservas;
+
+    @Autowired
+    private GestorSalas salas;
+
+    @Autowired
+    private Ocupacion ocupacion;
+
+    @Autowired
     private VistasVentas vistas;
+
     private Cliente cliente;
 
     @BeforeEach
     void prepararEscenario() {
-        aplicacion = new Aplicacion(
-                new PeliculaDAOMemoria(), new SalaDAOMemoria(), new AsientoDAOMemoria(),
-                new FuncionDAOMemoria(), new ClienteDAOMemoria(), new EmpleadoDAOMemoria(),
-                new ReservaDAOMemoria(), new PagoDAOMemoria(),
-                new PromocionDAOMemoria(), new ProgramacionDAOMemoria(), new ProductoDAOMemoria(),
-                new CompraCandyDAOMemoria(), new ImportacionDAOMemoria(),
-                new BloqueoButacasMemoria(),
-                new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new GeneradorTicketCandyTxt(tempDir.resolve("tickets")),
-                new GeneradorReciboTxt(tempDir.resolve("tickets")),
-                new GeneradorBorderoTxt(tempDir.resolve("informes")),
-                new MercadoPagoEmulado(), new CatalogoDePrueba());
-
-        VistasSalas vistasSalas = new VistasSalas(aplicacion.getSalas(),
-                aplicacion.getCalculadoraPrecio());
-        VistasCartelera vistasCartelera = new VistasCartelera(aplicacion.getCartelera(),
-                aplicacion.getSalas(), aplicacion.getOcupacion(),
-                aplicacion.getCalculadoraPrecio(), vistasSalas);
-        vistas = new VistasVentas(aplicacion.getFunciones(), aplicacion.getSalas(),
-                aplicacion.getCartelera(), aplicacion.getClientes(), aplicacion.getPagos(),
-                aplicacion.getReservas(), vistasCartelera, vistasSalas, new VistasUsuarios());
-
-        aplicacion.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        Sala sala = aplicacion.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        aplicacion.getFunciones().programar(1, sala.getId(),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        cliente = aplicacion.getClientes().identificar("Andrei", "andrei@uade.edu.ar");
+        cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
     }
 
     @Test
@@ -132,15 +127,13 @@ class VistasVentasTest {
         butacas.put("A1", TipoTarifa.GENERAL);
         butacas.put("A2", TipoTarifa.JUBILADO);
 
-        ReservaVistaDTO vista = vistas.reserva(aplicacion.getReservas()
+        ReservaVistaDTO vista = vistas.reserva(reservas
                 .reservar(1, cliente.getId(), butacas));
 
         assertEquals("GENERAL", entrada(vista, "A1").tarifa());
         assertEquals("JUBILADO", entrada(vista, "A2").tarifa());
         assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
     }
-
-    // ---------- lo que necesita la puerta ----------
 
     /** El código del QR no es el id: es lo que se escanea y no se puede adivinar. */
     @Test
@@ -162,15 +155,13 @@ class VistasVentasTest {
         Reserva reserva = reservar("A1");
         assertNull(vistas.reserva(reserva).ingresadaEn());
 
-        aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-        Reserva ingresada = aplicacion.getReservas().registrarIngreso(reserva.getCodigo());
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        Reserva ingresada = reservas.registrarIngreso(reserva.getCodigo());
 
         assertNotNull(vistas.reserva(ingresada).ingresadaEn());
         assertEquals(19, vistas.reserva(ingresada).ingresadaEn().length(),
                 "tiene que usar el mismo formato que el resto de las fechas");
     }
-
-    // ---------- el pago ----------
 
     @Test
     void sinCobrarLaReservaViajaSinPago() {
@@ -180,9 +171,9 @@ class VistasVentasTest {
     @Test
     void cobradaLaReservaTraeSuPagoYCambiaDeEstado() {
         Reserva reserva = reservar("A1");
-        aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
+        pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
 
-        ReservaVistaDTO vista = vistas.reserva(aplicacion.getReservas()
+        ReservaVistaDTO vista = vistas.reserva(reservas
                 .buscar(reserva.getId()).orElseThrow());
 
         assertEquals("PAGADA", vista.estado());
@@ -199,7 +190,7 @@ class VistasVentasTest {
     @Test
     void elPagoEmbebidoNoRepiteLoQueYaTraeLaReserva() {
         Reserva reserva = reservar("A1");
-        Pago pago = aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         PagoVistaDTO vista = vistas.pago(pago);
 
@@ -216,7 +207,7 @@ class VistasVentasTest {
     @Test
     void elPagoDelArqueoSiTraeQueSeVendioYAQuien() {
         Reserva reserva = reservar("A1", "A2");
-        Pago pago = aplicacion.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         PagoVistaDTO vista = vistas.pagoDeArqueo(pago);
 
@@ -231,7 +222,7 @@ class VistasVentasTest {
         for (String codigo : codigos) {
             butacas.put(codigo, TipoTarifa.GENERAL);
         }
-        return aplicacion.getReservas().reservar(1, cliente.getId(), butacas);
+        return reservas.reservar(1, cliente.getId(), butacas);
     }
 
     private static EntradaVistaDTO entrada(ReservaVistaDTO vista, String codigo) {

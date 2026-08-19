@@ -18,8 +18,11 @@ import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
+
+import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -31,28 +34,11 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PagoDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.Arqueo;
@@ -64,45 +50,37 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.model.dinero.Dinero;
 
 /** R5: solo se cobra una reserva en estado RESERVADA, y una sola vez. */
-class GestorPagosTest {
+class GestorPagosTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    private static final Path TICKETS = Path.of("target/comprobantes/tickets");
 
+    @Autowired
     private GestorReservas reservas;
+    @Autowired
     private GestorPagos pagos;
+    @Autowired
     private GestorCaja caja;
+    @Autowired
     private GestorPromociones promociones;
-    private ReservaDAO reservaDAO;
+    @Autowired
+    private ReservaRepository reservaRepository;
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private GestorSalas salas;
+    @Autowired
+    private GestorFunciones funciones;
+    @Autowired
+    private GestorClientes clientes;
 
     /** Sala 2D de 10 butacas, función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
-        PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-        SalaDAO salaDAO = new SalaDAOMemoria();
-        AsientoDAO asientoDAO = new AsientoDAOMemoria();
-        FuncionDAO funcionDAO = new FuncionDAOMemoria();
-        ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        PagoDAO pagoDAO = new PagoDAOMemoria();
-        reservaDAO = new ReservaDAOMemoria();
-
-        GestorFunciones gestorFunciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, gestorFunciones))
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        new GestorSalas(salaDAO, asientoDAO, funcionDAO).agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        gestorFunciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
-        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
-
-        reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(tempDir.resolve("tickets")), new CalculadoraPrecio(),
-                new Ocupacion(reservaDAO, funcionDAO, asientoDAO, new BloqueoButacasMemoria()));
-        promociones = new GestorPromociones(new PromocionDAOMemoria());
-        pagos = new GestorPagos(pagoDAO, reservaDAO, funcionDAO, promociones,
-                new MercadoPagoEmulado(), new GeneradorReciboTxt(tempDir.resolve("tickets")));
-        // El cierre de caja es otro gestor: cobrar y arquear cambian por motivos distintos.
-        caja = new GestorCaja(pagoDAO, reservaDAO, new CompraCandyDAOMemoria());
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
     }
 
     @Test
@@ -121,7 +99,7 @@ class GestorPagosTest {
         pagos.cobrar(reserva.getId(), MedioPago.DEBITO, "AUT-123");
 
         assertEquals(EstadoReserva.PAGADA,
-                reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+                reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
     }
 
     @Test
@@ -170,8 +148,6 @@ class GestorPagosTest {
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
     }
 
-
-    // ---------- el cobro es donde se resuelve el descuento ----------
 
     /**
      * El total definitivo no existe hasta que se cobra: recién ahí se sabe el medio de
@@ -233,8 +209,6 @@ class GestorPagosTest {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo));
     }
 
-    // ---------- el cierre de caja ----------
-
     /**
      * El arqueo es una cuenta del gestor y no de quien lo muestra: la consola y la API
      * tienen que dar estos mismos tres números.
@@ -284,8 +258,6 @@ class GestorPagosTest {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo.total()));
     }
 
-    // ---------- el comprobante del cobro ----------
-
     /**
      * El efectivo no deja rastro afuera del cine: si no se imprime el recibo, el cliente se
      * va sin constancia de haber pagado.
@@ -295,7 +267,7 @@ class GestorPagosTest {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        Path recibo = tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt");
+        Path recibo = TICKETS.resolve("recibo-" + pago.getId() + ".txt");
 
         assertTrue(Files.exists(recibo));
         assertTrue(leer(recibo).contains("EFECTIVO"));
@@ -307,7 +279,7 @@ class GestorPagosTest {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUT-123");
 
-        assertFalse(Files.exists(tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt")));
+        assertFalse(Files.exists(TICKETS.resolve("recibo-" + pago.getId() + ".txt")));
     }
 
     /** Lo que el recibo dice y el ticket no puede: el descuento se resuelve recién al cobrar. */
@@ -319,13 +291,11 @@ class GestorPagosTest {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        String recibo = leer(tempDir.resolve("tickets").resolve("recibo-" + pago.getId() + ".txt"));
+        String recibo = leer(TICKETS.resolve("recibo-" + pago.getId() + ".txt"));
 
         assertTrue(recibo.contains("Descuento"));
         assertTrue(recibo.contains("2500.00"));
     }
-
-    // ---------- el pago electrónico, contra la pasarela emulada ----------
 
     @Test
     void elCheckoutViajaConElLinkYElQrDeLaPasarela() {
@@ -385,7 +355,7 @@ class GestorPagosTest {
         assertEquals(Dinero.de(10000.0), pago.getMonto());
         assertFalse(pago.getCodigoAutorizacion().isBlank());
         assertEquals(EstadoReserva.PAGADA,
-                reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+                reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
     }
 
     @Test

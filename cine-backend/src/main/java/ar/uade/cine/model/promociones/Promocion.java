@@ -59,6 +59,7 @@ public abstract class Promocion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(unique = true)
     private String nombre;
 
     private LocalDate vigenciaDesde;

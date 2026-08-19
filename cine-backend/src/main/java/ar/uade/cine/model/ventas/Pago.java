@@ -23,7 +23,7 @@ public class Pago {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "reserva_id")
+    @Column(name = "reserva_id", unique = true)
     private int reservaId;
 
     /** Suma de los precios de lista de las entradas, antes de cualquier descuento. */

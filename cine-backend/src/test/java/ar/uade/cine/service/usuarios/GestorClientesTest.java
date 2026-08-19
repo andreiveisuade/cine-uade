@@ -4,35 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
 
 /**
  * El cliente compra sin registrarse: se identifica con su email y, si es la primera vez,
  * se lo da de alta en el momento. Esa regla es del gestor, así que reservar por consola y
  * reservar por la web tienen que resolverla igual.
  */
-class GestorClientesTest {
+class GestorClientesTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
-
+    @Autowired
     private GestorClientes gestor;
-
-    /** ReservaDAO y CompraCandyDAO solo hacen falta para la baja, que valida el historial. */
-    @BeforeEach
-    void prepararEscenario() {
-        gestor = new GestorClientes(new ClienteDAOMemoria(),
-                new ReservaDAOMemoria(), new CompraCandyDAOMemoria());
-    }
 
     @Test
     void identificarDaDeAltaAlQueCompraPorPrimeraVez() {

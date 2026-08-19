@@ -10,23 +10,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.repository.FuncionRepository;
+import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.cartelera.PeliculaImpl;
-import ar.uade.cine.model.funciones.FuncionImpl;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.dinero.Dinero;
@@ -36,31 +32,31 @@ import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
  * Gracias a que GestorCartelera depende de la interfaz, se puede testear la lógica
  * con el DAO en memoria: los tests corren sin MySQL levantado.
  */
-class GestorCarteleraTest {
+class GestorCarteleraTest extends PruebaDeIntegracion {
 
     // El DAO de funciones queda accesible porque estar en cartelera se deriva de tener
     // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
-    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
+    @Autowired
+    private FuncionRepository funcionRepository;
+    @Autowired
+    private PeliculaRepository peliculaRepository;
     // Sin grillas cargadas, extenderActivas no encuentra nada que hacer: acá el gestor de
     // programaciones está para que la cartelera pueda pedírselo, no para que genere.
-    private final GestorCartelera gestor = new GestorCartelera(peliculaDAO, funcionDAO,
-            new GestorProgramaciones(new ProgramacionDAOMemoria(), funcionDAO,
-                    new GestorFunciones(funcionDAO, peliculaDAO, new SalaDAOMemoria(),
-                            new ReservaDAOMemoria())));
+    @Autowired
+    private GestorCartelera gestor;
 
     /** El buzon del importador es otro gestor: mismo subdominio, otra responsabilidad. */
-    private final GestorRevisionCartelera revision =
-            new GestorRevisionCartelera(peliculaDAO, funcionDAO, gestor);
+    @Autowired
+    private GestorRevisionCartelera revision;
 
     /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
     private void programarProxima(int peliculaId) {
-        funcionDAO.guardar(new FuncionImpl(peliculaId, 1, LocalDateTime.now().plusDays(7),
+        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().plusDays(7),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private void programarPasada(int peliculaId) {
-        funcionDAO.guardar(new FuncionImpl(peliculaId, 1, LocalDateTime.now().minusDays(1),
+        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().minusDays(1),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
@@ -119,8 +115,6 @@ class GestorCarteleraTest {
         assertEquals("Denis Villeneuve", leida.getDirector());
         assertEquals(2021, leida.getAnio());
     }
-
-    // ---------- la cartelera se deriva de la programación ----------
 
     /** El flag sigue pudiendo bajar una película, aunque tenga funciones programadas. */
     @Test
@@ -186,8 +180,8 @@ class GestorCarteleraTest {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        Pelicula renombrada = new PeliculaImpl(dune.getId(), "Matrix", 155, Clasificacion.MAS_13);
-        assertThrows(IllegalArgumentException.class, () -> gestor.actualizar(renombrada));
+        dune.actualizar("Matrix", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        assertThrows(IllegalArgumentException.class, () -> gestor.actualizar(dune));
     }
 
     @Test
@@ -197,8 +191,6 @@ class GestorCarteleraTest {
 
         assertDoesNotThrow(() -> gestor.actualizar(dune));
     }
-
-    // ---------- editar: lo que no viene se conserva ----------
 
     /**
      * La edición parcial vive en el gestor y no en cada interfaz: es lo que hace que
@@ -269,8 +261,6 @@ class GestorCarteleraTest {
         assertEquals("Matrix", gestor.listarPorGenero(Genero.ACCION).get(0).getTitulo());
     }
 
-    // ---------- el buscador del catálogo ----------
-
     /** Tres películas que se solapan en género y estado, para que ningún filtro sea trivial. */
     private void cargarCatalogo() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
@@ -332,8 +322,6 @@ class GestorCarteleraTest {
 
         assertTrue(gestor.buscar("titanic", null, null).isEmpty());
     }
-
-    // ---------- el buzón de lo que trae el importador ----------
 
     private DatosPelicula deTmdb(String titulo) {
         return DatosPelicula.deAlta(titulo, 120, List.of(Genero.ACCION), Clasificacion.ATP);

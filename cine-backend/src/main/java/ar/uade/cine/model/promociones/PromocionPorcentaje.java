@@ -19,6 +19,9 @@ public class PromocionPorcentaje extends Promocion {
 
     private double porcentaje;
 
+    protected PromocionPorcentaje() {
+    }
+
     public PromocionPorcentaje(String nombre, double porcentaje, LocalDate vigenciaDesde,
                                LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
                                LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {

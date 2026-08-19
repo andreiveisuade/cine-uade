@@ -15,33 +15,20 @@ import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.FuncionImpl;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
@@ -54,40 +41,29 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
 /** R3: una sala no puede tener dos funciones superpuestas. R12: no se borra lo que está en uso. */
-class GestorFuncionesTest {
+class GestorFuncionesTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
-
-    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-    private final SalaDAO salaDAO = new SalaDAOMemoria();
-    private final AsientoDAO asientoDAO = new AsientoDAOMemoria();
-    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-    private final ClienteDAO clienteDAO = new ClienteDAOMemoria();
-
-    private ReservaDAO reservaDAO;
+    @Autowired
     private GestorFunciones funciones;
+    @Autowired
     private GestorSalas salas;
+    @Autowired
     private GestorCartelera cartelera;
+    @Autowired
     private GestorRevisionCartelera revision;
+    @Autowired
+    private GestorReservas reservas;
+    @Autowired
+    private GestorClientes clientes;
 
     /** Película de 120 minutos en la sala 1, con una función a las 20:00. */
     @BeforeEach
     void prepararCartelera() {
-        reservaDAO = new ReservaDAOMemoria();
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
-        cartelera = new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, funciones));
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
-        revision = new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
-        salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
     }
-
-    // ---------- el buscador de la cartelera programada ----------
 
     /**
      * Segunda película y segunda sala, más funciones repartidas en tres días. Sin este
@@ -276,11 +252,7 @@ class GestorFuncionesTest {
     /** R12: sin esto, borrar la función deja las reservas apuntando a la nada. */
     @Test
     void noSeBorraUnaFuncionConReservas() {
-        GestorReservas reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO,
-                clienteDAO, peliculaDAO, new GeneradorTicketTxt(tempDir.resolve("tickets")),
-                new CalculadoraPrecio(),
-                new Ocupacion(reservaDAO, funcionDAO, asientoDAO, new BloqueoButacasMemoria()));
-        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria()).registrar("Andrei", "andrei@uade.edu.ar");
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"));
 
         assertThrows(IllegalArgumentException.class, () -> funciones.eliminar(1));
@@ -305,13 +277,11 @@ class GestorFuncionesTest {
     }
 
 
-    // ---------- el paso del tiempo ----------
-
     /** Matrix dura 136 minutos: una función a las 20:00 termina 22:16. */
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {
-        return new FuncionImpl(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+        return new Funcion(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 

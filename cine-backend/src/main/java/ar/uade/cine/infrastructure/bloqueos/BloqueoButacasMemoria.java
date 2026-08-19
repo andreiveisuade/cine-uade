@@ -82,6 +82,11 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
      * el TTL de la clave; acá el vencimiento hay que mirarlo al leer, porque nadie más va a
      * pasar a limpiar.
      */
+    /** Deja el mapa vacío. Lo usan los tests: el adaptador es uno solo para toda la suite. */
+    public void limpiar() {
+        bloqueos.clear();
+    }
+
     private Bloqueo vigente(String clave) {
         Bloqueo bloqueo = bloqueos.get(clave);
         if (bloqueo == null) {

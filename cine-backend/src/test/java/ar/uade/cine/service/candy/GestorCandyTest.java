@@ -9,63 +9,56 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.model.ventas.ReservaImpl;
-import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.ProductoDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.service.informes.GestorCaja;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.TipoAsiento;
+import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.ventas.MedioPago;
+import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.repository.AsientoRepository;
+import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.service.informes.GestorCaja;
+import ar.uade.cine.service.usuarios.GestorClientes;
 
 /** R14: un combo tiene que costar menos que sus componentes sueltos. */
-class GestorCandyTest {
+class GestorCandyTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    private static final Path DIRECTORIO_TICKETS = Path.of("target/comprobantes/tickets");
 
+    @Autowired
     private GestorCandy candy;
+    @Autowired
     private GestorCaja caja;
+    @Autowired
     private GestorProductos carta;
-    private ReservaDAO reservaDAO;
-    private Path directorioTickets;
+    @Autowired
+    private GestorClientes clientes;
+    @Autowired
+    private ReservaRepository reservaRepository;
+    @Autowired
+    private AsientoRepository asientoRepository;
+
     private int pochoclos;
     private int gaseosa;
 
     /** Pochoclos a $4000, gaseosa a $2500, un cliente. */
     @BeforeEach
     void prepararCarta() {
-        ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        reservaDAO = new ReservaDAOMemoria();
-        new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria())
-                .registrar("Andrei", "andrei@uade.edu.ar");
-        directorioTickets = tempDir.resolve("tickets");
-
-        carta = new GestorProductos(new ProductoDAOMemoria());
-        CompraCandyDAOMemoria compraCandyDAO = new CompraCandyDAOMemoria();
-        candy = new GestorCandy(compraCandyDAO, clienteDAO, reservaDAO,
-                new GeneradorTicketCandyTxt(directorioTickets), carta);
-        caja = new GestorCaja(new PagoDAOMemoria(), reservaDAO, compraCandyDAO);
+        clientes.registrar("Andrei", "andrei@uade.edu.ar");
         pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
         gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500)).getId();
     }
@@ -163,7 +156,7 @@ class GestorCandyTest {
         int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
         CompraCandy compra = candy.vender(1, pedido(combo, 1), MedioPago.DEBITO, "AUT-77");
 
-        Path ticket = directorioTickets.resolve("candy-" + compra.getId() + ".txt");
+        Path ticket = DIRECTORIO_TICKETS.resolve("candy-" + compra.getId() + ".txt");
         assertTrue(Files.exists(ticket), "no se generó el ticket del candy");
 
         String contenido = Files.readString(ticket);
@@ -214,9 +207,10 @@ class GestorCandyTest {
     @Test
     void laCompraDesdeUnaReservaHeredaSuCliente() {
         Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva reserva = new ReservaImpl(1, 1,
-                List.of(new Entrada(1, "A1", TipoTarifa.GENERAL, Dinero.de(5000))), LocalDateTime.now());
-        reservaDAO.guardar(reserva);
+        Asiento asiento = asientoRepository.save(new Asiento(1, 1, 1, TipoAsiento.ESTANDAR));
+        Reserva reserva = reservaRepository.save(new Reserva(1, 1,
+                List.of(new Entrada(asiento, TipoTarifa.GENERAL, Dinero.de(5000))),
+                LocalDateTime.now()));
 
         CompraCandy compra = candy.venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");

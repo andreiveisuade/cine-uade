@@ -1,4 +1,4 @@
-package ar.uade.cine.controller.rutas;
+package ar.uade.cine.controller.controladores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -6,12 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.controller.ApiEnMemoria;
+import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
+
 
 /**
  * Pedir cartelera por HTTP, con un importador que no sale a TMDB.
@@ -20,26 +21,21 @@ import ar.uade.cine.controller.ApiEnMemoria;
  * cuerpo valga, que el rechazo del gestor salga como 400 con el mensaje intacto, y que las
  * fechas viajen en el formato del contrato.
  */
-class RutasImportacionesTest {
+class ImportacionControllerTest extends PruebaDeApi {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private CatalogoDePrueba catalogo;
 
-    private ApiEnMemoria api;
+
 
     @BeforeEach
     void levantarLaApi() {
-        api = new ApiEnMemoria(tempDir);
     }
 
-    @AfterEach
-    void bajarLaApi() {
-        api.close();
-    }
 
     @Test
     void sinNingunaCorridaElHistorialEstaVacio() {
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/importaciones");
+        Respuesta respuesta = get("/api/importaciones");
 
         assertEquals(200, respuesta.estado());
         assertEquals(0, respuesta.json().size());
@@ -47,9 +43,9 @@ class RutasImportacionesTest {
 
     @Test
     void pedirUnaCorridaDevuelveLoQueTrajo() {
-        api.catalogo().queTraiga("Duna", "Vaiana", "Duna");
+        catalogo.queTraiga("Duna", "Vaiana", "Duna");
 
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{\"paginas\":2}");
+        Respuesta respuesta = post("/api/importaciones", "{\"paginas\":2}");
 
         assertEquals(201, respuesta.estado());
         assertEquals("TERMINADA", respuesta.json().get("estado").asText());
@@ -57,13 +53,13 @@ class RutasImportacionesTest {
         assertEquals(1, respuesta.json().get("salteadas").asInt());
         assertEquals(0, respuesta.json().get("fallidas").asInt());
         assertEquals(2, respuesta.json().get("paginas").asInt());
-        assertEquals(2, api.catalogo().paginasPedidas());
+        assertEquals(2, catalogo.paginasPedidas());
     }
 
     /** «Traeme cartelera» es un pedido completo: el default de páginas lo pone el gestor. */
     @Test
     void sinCuerpoTambienVale() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "");
+        Respuesta respuesta = post("/api/importaciones", "");
 
         assertEquals(201, respuesta.estado());
         assertEquals(1, respuesta.json().get("paginas").asInt());
@@ -71,9 +67,9 @@ class RutasImportacionesTest {
 
     @Test
     void lasFechasViajanEnIsoLocalYLaQueNoPasoEnNull() {
-        api.catalogo().queFalleCon("no responde");
+        catalogo.queFalleCon("no responde");
 
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{}");
+        Respuesta respuesta = post("/api/importaciones", "{}");
 
         assertTrue(respuesta.json().get("pedidaEn").asText().matches(
                         "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"),
@@ -88,11 +84,11 @@ class RutasImportacionesTest {
      */
     @Test
     void pedirCuatroPaginasEs400ConElMensajeDelGestor() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{\"paginas\":4}");
+        Respuesta respuesta = post("/api/importaciones", "{\"paginas\":4}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("Las páginas a importar van de 1 a 3", respuesta.error());
-        assertEquals(0, api.catalogo().consultas());
+        assertEquals(0, catalogo.consultas());
     }
 
     /**
@@ -101,9 +97,9 @@ class RutasImportacionesTest {
      */
     @Test
     void siTmdbNoContestaLaCorridaQuedaFallidaYNoEsUn500() {
-        api.catalogo().queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
+        catalogo.queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
 
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/importaciones", "{}");
+        Respuesta respuesta = post("/api/importaciones", "{}");
 
         assertEquals(201, respuesta.estado());
         assertEquals("FALLIDA", respuesta.json().get("estado").asText());
@@ -113,10 +109,10 @@ class RutasImportacionesTest {
 
     @Test
     void loQueSePidioQuedaEnElHistorial() {
-        api.catalogo().queTraiga("Duna", "Vaiana", "Wicked", "Anora", "Cónclave");
-        api.post("/api/importaciones", "{}");
+        catalogo.queTraiga("Duna", "Vaiana", "Wicked", "Anora", "Cónclave");
+        post("/api/importaciones", "{}");
 
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/importaciones");
+        Respuesta respuesta = get("/api/importaciones");
 
         assertEquals(1, respuesta.json().size());
         assertEquals(5, respuesta.json().get(0).get("nuevas").asInt());
@@ -130,21 +126,21 @@ class RutasImportacionesTest {
      */
     @Test
     void apretarDosVecesSeguidoNoCorreDosVeces() {
-        api.post("/api/importaciones", "{}");
+        post("/api/importaciones", "{}");
 
-        ApiEnMemoria.Respuesta segunda = api.post("/api/importaciones", "{}");
+        Respuesta segunda = post("/api/importaciones", "{}");
 
         assertEquals(400, segunda.estado());
         assertEquals("El importador corrió recién: esperá 60 segundos antes de volver a pedirlo",
                 segunda.error());
-        assertEquals(1, api.catalogo().consultas());
+        assertEquals(1, catalogo.consultas());
     }
 
     @Test
     void elEstadoDelImportadorSeConsultaAntesDeApretarElBoton() {
-        api.catalogo().queEste(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env");
+        catalogo.queEste(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env");
 
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/importaciones/estado");
+        Respuesta respuesta = get("/api/importaciones/estado");
 
         assertEquals(200, respuesta.estado());
         assertFalse(respuesta.json().get("disponible").asBoolean());
@@ -159,6 +155,6 @@ class RutasImportacionesTest {
      */
     @Test
     void elEstadoNoSeLoComeElListado() {
-        assertTrue(api.get("/api/importaciones/estado").json().has("disponible"));
+        assertTrue(get("/api/importaciones/estado").json().has("disponible"));
     }
 }

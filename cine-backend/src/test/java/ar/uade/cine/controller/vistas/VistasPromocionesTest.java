@@ -11,13 +11,13 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 
@@ -30,16 +30,13 @@ import ar.uade.cine.model.dinero.Dinero;
  * que <strong>no</strong> mande los de los otros. Si mañana aparece un tipo nuevo, este
  * archivo es el que avisa que hay que tocarlo.
  */
-class VistasPromocionesTest {
+class VistasPromocionesTest extends PruebaDeIntegracion {
 
+    @Autowired
     private GestorPromociones promociones;
-    private VistasPromociones vistas;
 
-    @BeforeEach
-    void prepararEscenario() {
-        promociones = new GestorPromociones(new PromocionDAOMemoria());
-        vistas = new VistasPromociones();
-    }
+    @Autowired
+    private VistasPromociones vistas;
 
     @Test
     void elPorcentajeMandaSuPorcentajeYNadaMas() {

@@ -68,6 +68,15 @@ public class CatalogoDePrueba implements CatalogoExterno {
     }
 
     /** Cuántas veces se lo consultó: es lo que prueba que un pedido rechazado no corrió. */
+    /** Lo deja como recién creado: es un bean compartido entre las clases de test. */
+    public void reiniciar() {
+        candidatas = List.of();
+        motivoDeFalla = null;
+        estado = new Estado(true, "Listo para traer cartelera");
+        consultas = 0;
+        paginasPedidas = 0;
+    }
+
     public int consultas() {
         return consultas;
     }

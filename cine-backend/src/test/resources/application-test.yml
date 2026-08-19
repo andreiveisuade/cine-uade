@@ -1,0 +1,39 @@
+# La base de los tests: H2 en memoria, creada por Hibernate desde las entidades al
+# arrancar el contexto y tirada al terminar. Reemplaza a las catorce implementaciones en
+# memoria de los DAO, con una diferencia que se paga sola: ahora los tests pasan por el
+# mapeo y por las consultas de verdad, así que un @Query roto o una relación mal anotada
+# se ven en `mvn test` y no recién contra MySQL.
+#
+# MODE=MySQL le pide a H2 que se comporte como el motor de producción en lo que se puede
+# —tipos, comillas, funciones— para que la distancia entre lo que prueba la suite y lo que
+# corre en Docker sea la menor posible.
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:cine;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+cine:
+  comprobantes:
+    # Adentro de target/: `mvn clean` se los lleva y no ensucian el repo.
+    tickets: target/comprobantes/tickets
+    informes: target/comprobantes/informes
+  redis:
+    host: localhost
+    puerto: 6379
+  tmdb:
+    token: ""
+    region: AR
+    base: https://api.themoviedb.org/3
+
+logging:
+  level:
+    org.hibernate: warn

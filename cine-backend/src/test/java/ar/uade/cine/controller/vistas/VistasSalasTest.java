@@ -22,19 +22,12 @@ import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.SalaDAO;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
@@ -47,27 +40,22 @@ import ar.uade.cine.model.dinero.Dinero;
  * butacas se dibujan con estos campos. Un cambio de forma acá no rompe ninguna regla de
  * negocio —por eso ningún test de servicio lo atraparía— pero deja una pantalla en blanco.
  */
-class VistasSalasTest {
+class VistasSalasTest extends PruebaDeIntegracion {
 
+    @Autowired
     private GestorSalas salas;
+    @Autowired
     private GestorFunciones funciones;
+    @Autowired
     private CalculadoraPrecio calculadora;
+    @Autowired
     private VistasSalas vistas;
+    @Autowired
+    private GestorCartelera cartelera;
 
     @BeforeEach
     void prepararEscenario() {
-        PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-        SalaDAO salaDAO = new SalaDAOMemoria();
-        AsientoDAO asientoDAO = new AsientoDAOMemoria();
-        FuncionDAO funcionDAO = new FuncionDAOMemoria();
-
-        salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, new ReservaDAOMemoria());
-        calculadora = new CalculadoraPrecio();
-        vistas = new VistasSalas(salas, calculadora);
-
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, funciones))
+        cartelera
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
     }
 
@@ -131,8 +119,6 @@ class VistasSalasTest {
         assertEquals("FUERA_DE_SERVICIO", butaca(vista, "A2").estado());
         assertEquals("HABILITADO", butaca(vista, "A1").estado());
     }
-
-    // ---------- la butaca dentro del mapa de una función ----------
 
     @Test
     void enElMapaDeUnaFuncionLaButacaDiceSiEstaTomada() {

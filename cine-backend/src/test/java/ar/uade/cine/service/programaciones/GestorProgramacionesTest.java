@@ -16,25 +16,17 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.repository.FuncionRepository;
+import ar.uade.cine.repository.ProgramacionRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ProgramacionDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
-import ar.uade.cine.repository.archivo.ReservaDAOTxt;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -44,37 +36,31 @@ import ar.uade.cine.model.dinero.Dinero;
  * La grilla que materializa funciones: que genere las del rango, que respete los días
  * elegidos, que previsualizar no escriba y que el alta saltee lo que choca contra R3.
  */
-class GestorProgramacionesTest {
-
-    @TempDir
-    Path tempDir;
+class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     private static final LocalDate LUNES = LocalDate.of(2026, 9, 7);
     private static final LocalDate DOMINGO = LocalDate.of(2026, 9, 13);
     private static final LocalTime LAS_2030 = LocalTime.of(20, 30);
 
-    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-    private final SalaDAO salaDAO = new SalaDAOMemoria();
-    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-    private final ProgramacionDAO programacionDAO = new ProgramacionDAOMemoria();
-
+    @Autowired
+    private FuncionRepository funcionRepository;
+    @Autowired
+    private ProgramacionRepository programacionRepository;
+    @Autowired
     private GestorFunciones funciones;
+    @Autowired
     private GestorProgramaciones programaciones;
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private GestorSalas salas;
 
     /** Matrix (136') en la Sala 1, que es 2D, y una Sala 2 que sí proyecta en 3D. */
     @BeforeEach
     void prepararCartelera() {
-        ReservaDAO reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                programacionDAO, funcionDAO,
-                new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO)))
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        GestorSalas salas = new GestorSalas(salaDAO, new AsientoDAOMemoria(), funcionDAO);
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         salas.agregar("Sala 2", TipoSala.TRES_D, List.of(5, 5));
-
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
-        programaciones = new GestorProgramaciones(programacionDAO, funcionDAO, funciones);
     }
 
     /** El caso del enunciado: una semana entera, una función por día. */
@@ -117,8 +103,6 @@ class GestorProgramacionesTest {
 
         assertNull(suelta.getProgramacionId());
     }
-
-    // ---------- previsualizar y después aplicar ----------
 
     @Test
     void previsualizarNoEscribeNada() {
@@ -194,8 +178,6 @@ class GestorProgramacionesTest {
         assertEquals(2, programaciones.listar().size());
     }
 
-    // ---------- baja ----------
-
     /**
      * Dar de baja la grilla no toca las funciones ya generadas: pueden tener entradas
      * vendidas. Lo que evita es que se generen nuevas.
@@ -225,8 +207,6 @@ class GestorProgramacionesTest {
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
         assertThrows(IllegalArgumentException.class, () -> programaciones.desactivar(99));
     }
-
-    // ---------- lo que se valida una vez por grilla, no una por función ----------
 
     /**
      * R8 vale para la grilla entera: si la sala no proyecta en 3D, no hay ninguna fecha
@@ -269,8 +249,6 @@ class GestorProgramacionesTest {
                         LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
-    // ---------- la grilla abierta, que rueda sola ----------
-
     /**
      * Sin {@code hasta}, el alta no puede generar "todo el rango": el rango no termina.
      * Genera hasta el horizonte y ahí se detiene.
@@ -297,23 +275,23 @@ class GestorProgramacionesTest {
     @Test
     void extenderEsIdempotente() {
         crearAbierta();
-        int despuesDelAlta = funcionDAO.listar().size();
+        int despuesDelAlta = funcionRepository.findAll().size();
 
         assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
         assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
-        assertEquals(despuesDelAlta, funcionDAO.listar().size());
+        assertEquals(despuesDelAlta, funcionRepository.findAll().size());
     }
 
     /** El día que el horizonte se corre, aparecen las funciones nuevas y solo esas. */
     @Test
     void alPasarLosDiasExtiendeLasQueFaltan() {
         crearAbierta();
-        int despuesDelAlta = funcionDAO.listar().size();
+        int despuesDelAlta = funcionRepository.findAll().size();
 
         int generadas = programaciones.extenderActivas(LocalDate.now().plusDays(3));
 
         assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
-        assertEquals(despuesDelAlta + 3, funcionDAO.listar().size());
+        assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
     }
 
     /**
@@ -323,12 +301,12 @@ class GestorProgramacionesTest {
     @Test
     void unaGrillaDadaDeBajaNoExtiende() {
         PlanProgramacion plan = crearAbierta();
-        int despuesDelAlta = funcionDAO.listar().size();
+        int despuesDelAlta = funcionRepository.findAll().size();
 
         programaciones.desactivar(plan.programacion().getId());
 
         assertEquals(0, programaciones.extenderActivas(LocalDate.now().plusDays(30)));
-        assertEquals(despuesDelAlta, funcionDAO.listar().size(),
+        assertEquals(despuesDelAlta, funcionRepository.findAll().size(),
                 "las que ya generó siguen; nuevas no aparecen");
     }
 
@@ -348,13 +326,11 @@ class GestorProgramacionesTest {
     @Test
     void unaGrillaCerradaNoSePasaDeSuHasta() {
         crearSemana(Set.of());
-        int delAlta = funcionDAO.listar().size();
+        int delAlta = funcionRepository.findAll().size();
 
         assertEquals(0, programaciones.extenderActivas(DOMINGO.plusMonths(6)));
-        assertEquals(delAlta, funcionDAO.listar().size());
+        assertEquals(delAlta, funcionRepository.findAll().size());
     }
-
-    // ---------- el buscador de grillas ----------
 
     /**
      * Dos grillas de la misma película en salas distintas, una de ellas dada de baja.
@@ -405,8 +381,6 @@ class GestorProgramacionesTest {
 
         assertTrue(programaciones.buscar(99, null, null).isEmpty());
     }
-
-    // ---------- helpers ----------
 
     /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {

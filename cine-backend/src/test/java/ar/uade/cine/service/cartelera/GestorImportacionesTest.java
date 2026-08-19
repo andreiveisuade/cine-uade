@@ -11,25 +11,20 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.repository.ImportacionRepository;
+import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoImportacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Importacion;
-import ar.uade.cine.model.cartelera.ImportacionImpl;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.ImportacionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.ImportacionDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.ReservaDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 
@@ -45,22 +40,31 @@ import ar.uade.cine.service.programaciones.GestorProgramaciones;
  * protección contra el doble clic y tiene su propio test; dejarla puesta en todos obligaría
  * a que cada uno durmiera un minuto.
  */
-class GestorImportacionesTest {
+class GestorImportacionesTest extends PruebaDeIntegracion {
 
-    private final ImportacionDAO importacionDAO = new ImportacionDAOMemoria();
-    private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
-    private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
-    private final CatalogoDePrueba catalogo = new CatalogoDePrueba();
+    @Autowired
+    private ImportacionRepository importacionRepository;
+    @Autowired
+    private PeliculaRepository peliculaRepository;
+    @Autowired
+    private CatalogoDePrueba catalogo;
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private GestorRevisionCartelera revision;
 
-    private final GestorCartelera cartelera = new GestorCartelera(peliculaDAO, funcionDAO,
-            new GestorProgramaciones(new ProgramacionDAOMemoria(), funcionDAO,
-                    new GestorFunciones(funcionDAO, peliculaDAO, new SalaDAOMemoria(),
-                            new ReservaDAOMemoria())));
-    private final GestorRevisionCartelera revision =
-            new GestorRevisionCartelera(peliculaDAO, funcionDAO, cartelera);
+    private GestorImportaciones gestor;
 
-    private final GestorImportaciones gestor = new GestorImportaciones(importacionDAO, catalogo,
-            cartelera, revision, Duration.ofMinutes(5), Duration.ZERO);
+    /**
+     * El gestor se arma acá y no se pide al contenedor por la espera entre corridas: el bean
+     * de la aplicación la tiene en un minuto —es la protección contra el doble clic, y tiene
+     * su propio test— y dejarla puesta obligaría a que cada prueba durmiera ese minuto.
+     */
+    @BeforeEach
+    void armarElGestorSinEsperaEntreCorridas() {
+        gestor = new GestorImportaciones(importacionRepository, catalogo, cartelera, revision,
+                Duration.ofMinutes(5), Duration.ZERO);
+    }
 
     @Test
     void unaCorridaQueVuelveBienQuedaRegistradaConLoQueTrajo() {
@@ -87,7 +91,7 @@ class GestorImportacionesTest {
 
         gestor.ejecutar(1);
 
-        Pelicula importada = peliculaDAO.listar().get(0);
+        Pelicula importada = peliculaRepository.findAll().get(0);
         assertEquals(EstadoRevision.PENDIENTE, importada.getEstadoRevision());
         assertFalse(importada.estaEnCartelera(), "no puede ofrecerse antes de que la miren");
     }
@@ -106,7 +110,7 @@ class GestorImportacionesTest {
         assertEquals(0, segunda.getNuevas());
         assertEquals(2, segunda.getSalteadas());
         assertEquals(0, segunda.getFallidas());
-        assertEquals(2, peliculaDAO.listar().size(), "no se duplicó ninguna");
+        assertEquals(2, peliculaRepository.findAll().size(), "no se duplicó ninguna");
     }
 
     /**
@@ -117,7 +121,7 @@ class GestorImportacionesTest {
     void unaDescartadaTampocoSeVuelveAProponer() {
         catalogo.queTraiga("Duna");
         gestor.ejecutar(1);
-        revision.descartar(peliculaDAO.listar().get(0).getId());
+        revision.descartar(peliculaRepository.findAll().get(0).getId());
 
         Importacion segunda = gestor.ejecutar(1);
 
@@ -152,7 +156,7 @@ class GestorImportacionesTest {
         assertEquals(1, importacion.getFallidas());
         assertTrue(importacion.getDetalle().contains("✗ Corto de festival"),
                 "el motivo tiene que quedar en el detalle: " + importacion.getDetalle());
-        assertEquals(1, peliculaDAO.listar().size(), "la buena entró igual");
+        assertEquals(1, peliculaRepository.findAll().size(), "la buena entró igual");
     }
 
     @Test
@@ -161,7 +165,7 @@ class GestorImportacionesTest {
 
         Importacion importacion = gestor.ejecutar(1);
 
-        int id = peliculaDAO.listar().get(0).getId();
+        int id = peliculaRepository.findAll().get(0).getId();
         assertEquals("+ [" + id + "] Duna", importacion.getDetalle());
     }
 
@@ -210,7 +214,7 @@ class GestorImportacionesTest {
 
     @Test
     void noSePuedePedirOtraMientrasHayUnaEnCurso() {
-        importacionDAO.guardar(new ImportacionImpl(1, LocalDateTime.now()));
+        importacionRepository.save(new Importacion(1, LocalDateTime.now()));
 
         IllegalArgumentException error =
                 assertThrows(IllegalArgumentException.class, () -> gestor.ejecutar(1));
@@ -221,7 +225,7 @@ class GestorImportacionesTest {
 
     @Test
     void dosCorridasSeguidasSeRechazanSiHayEsperaConfigurada() {
-        GestorImportaciones conEspera = new GestorImportaciones(importacionDAO, catalogo,
+        GestorImportaciones conEspera = new GestorImportaciones(importacionRepository, catalogo,
                 cartelera, revision, Duration.ofMinutes(5), Duration.ofMinutes(1));
         conEspera.ejecutar(1);
 
@@ -239,7 +243,7 @@ class GestorImportacionesTest {
      */
     @Test
     void unaCorridaColgadaCaducaSolaYDesbloqueaElSistema() {
-        importacionDAO.guardar(new ImportacionImpl(1, LocalDateTime.now().minusMinutes(10)));
+        importacionRepository.save(new Importacion(1, LocalDateTime.now().minusMinutes(10)));
 
         Importacion caducada = gestor.listar().get(0);
 
@@ -251,7 +255,7 @@ class GestorImportacionesTest {
 
     @Test
     void unaCorridaEnCursoRecienPedidaNoCaduca() {
-        importacionDAO.guardar(new ImportacionImpl(1, LocalDateTime.now()));
+        importacionRepository.save(new Importacion(1, LocalDateTime.now()));
 
         assertEquals(EstadoImportacion.EN_CURSO, gestor.listar().get(0).getEstado());
     }

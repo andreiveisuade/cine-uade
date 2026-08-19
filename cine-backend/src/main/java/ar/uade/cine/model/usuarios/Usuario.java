@@ -38,6 +38,7 @@ public abstract class Usuario {
 
     private String nombre;
 
+    @Column(unique = true)
     private String email;
 
     /**

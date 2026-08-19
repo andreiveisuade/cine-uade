@@ -18,42 +18,31 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import ar.uade.cine.ConfiguracionDePrueba;
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.repository.AsientoRepository;
+import ar.uade.cine.repository.FuncionRepository;
+import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.FuncionImpl;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoAsiento;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.model.ventas.ReservaImpl;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoDAO;
-import ar.uade.cine.repository.ClienteDAO;
-import ar.uade.cine.repository.FuncionDAO;
-import ar.uade.cine.repository.PeliculaDAO;
-import ar.uade.cine.repository.ReservaDAO;
-import ar.uade.cine.repository.SalaDAO;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
-import ar.uade.cine.repository.archivo.ReservaDAOTxt;
-import ar.uade.cine.repository.memoria.AsientoDAOMemoria;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
-import ar.uade.cine.repository.memoria.ClienteDAOMemoria;
-import ar.uade.cine.repository.memoria.CompraCandyDAOMemoria;
-import ar.uade.cine.repository.memoria.FuncionDAOMemoria;
-import ar.uade.cine.repository.memoria.PagoDAOMemoria;
-import ar.uade.cine.repository.memoria.PeliculaDAOMemoria;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
-import ar.uade.cine.repository.memoria.ProgramacionDAOMemoria;
-import ar.uade.cine.repository.memoria.SalaDAOMemoria;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
@@ -67,60 +56,48 @@ import ar.uade.cine.model.dinero.Dinero;
  * reserva ya cobrada). Usa ReservaDAOTxt sobre un directorio temporal, así de paso se
  * prueba el DAO de archivo.
  */
-class GestorReservasTest {
+class GestorReservasTest extends PruebaDeIntegracion {
 
-    @TempDir
-    Path tempDir;
+    private static final Path TICKETS = Path.of("target/comprobantes/tickets");
 
+    @Autowired
     private GestorReservas reservas;
+    @Autowired
     private Ocupacion ocupacion;
-    private BloqueoButacasMemoria bloqueos;
-    /**
-     * El reloj de los bloqueos, movible a mano. Probar que un bloqueo vence no puede
-     * costar tres minutos de {@code Thread.sleep}, y una espera real además vuelve el test
-     * dependiente de lo cargada que esté la máquina.
-     */
-    private LocalDateTime ahora;
-    private FuncionDAO funcionDAO;
+    @Autowired
     private GestorSalas salas;
+    @Autowired
     private GestorFunciones funciones;
+    @Autowired
     private GestorPagos pagos;
-    private Path directorioTickets;
-    private ReservaDAO reservaDAO;
+    @Autowired
     private GestorClientes clientes;
-    private PeliculaDAO peliculaDAO;
+    @Autowired
+    private GestorCartelera cartelera;
+    @Autowired
+    private ReservaRepository reservaRepository;
+    @Autowired
+    private FuncionRepository funcionRepository;
+    @Autowired
+    private AsientoRepository asientoRepository;
+    @Autowired
+    private ConfiguracionDePrueba.Reloj reloj;
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    private LocalDateTime ahora;
 
     /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
-        peliculaDAO = new PeliculaDAOMemoria();
-        SalaDAO salaDAO = new SalaDAOMemoria();
-        AsientoDAO asientoDAO = new AsientoDAOMemoria();
-        funcionDAO = new FuncionDAOMemoria();
-        ClienteDAO clienteDAO = new ClienteDAOMemoria();
-        reservaDAO = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
-        directorioTickets = tempDir.resolve("tickets");
-
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO,
-                new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO)))
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        salas = new GestorSalas(salaDAO, asientoDAO, funcionDAO);
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        funciones = new GestorFunciones(funcionDAO, peliculaDAO, salaDAO, reservaDAO);
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        clientes = new GestorClientes(clienteDAO, reservaDAO, new CompraCandyDAOMemoria());
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
-        bloqueos = new BloqueoButacasMemoria(() -> ahora);
-        ocupacion = new Ocupacion(reservaDAO, funcionDAO, asientoDAO, bloqueos);
-        reservas = new GestorReservas(reservaDAO, funcionDAO, salaDAO, asientoDAO, clienteDAO, peliculaDAO,
-                new GeneradorTicketTxt(directorioTickets), new CalculadoraPrecio(), ocupacion);
-        pagos = new GestorPagos(new PagoDAOMemoria(), reservaDAO, funcionDAO,
-                new GestorPromociones(new PromocionDAOMemoria()), new MercadoPagoEmulado(),
-                new GeneradorReciboTxt(directorioTickets));
+        reloj.mover(ahora);
     }
 
     @Test
@@ -237,7 +214,7 @@ class GestorReservasTest {
     void emiteElTicketConLasButacas() throws IOException {
         Reserva reserva = reservas.reservar(1, 1, generales("B4", "B5"));
 
-        Path ticket = directorioTickets.resolve("ticket-" + reserva.getId() + ".txt");
+        Path ticket = TICKETS.resolve("ticket-" + reserva.getId() + ".txt");
         assertTrue(Files.exists(ticket), "no se generó el ticket");
 
         String contenido = Files.readString(ticket);
@@ -302,19 +279,22 @@ class GestorReservasTest {
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
     }
 
+    /**
+     * Lo guardado se relee entero. El código de butaca es lo que más importa acá: no está
+     * en la tabla entrada —sale del asiento— así que si la relación quedara mal mapeada, el
+     * ticket saldría sin butacas y ninguna regla de negocio se enteraría.
+     */
     @Test
-    void elDaoDeTextoPersisteLasButacasYLaFecha() {
+    void loGuardadoSeReleeConSusButacasYSuFecha() {
         reservas.reservar(1, 1, generales("A1", "B2"));
 
-        ReservaDAO otraInstancia = new ReservaDAOTxt(tempDir.resolve("reservas.txt"));
-        Reserva leida = otraInstancia.buscarPorId(1).orElseThrow();
+        Reserva leida = reservaRepository.findById(1).orElseThrow();
+
         assertEquals(2, leida.getCantidadEntradas());
         assertEquals("A1", leida.getEntradas().get(0).codigoAsiento());
         assertEquals(LocalDate.now(), leida.getCreadaEn().toLocalDate());
     }
 
-
-    // ---------- vencimiento ----------
 
     /**
      * Envejece la reserva reescribiéndola con otra fecha de creación: es lo mismo que
@@ -324,10 +304,10 @@ class GestorReservasTest {
      * la copia que leyó el gestor, no esta, y escribir la vieja pisaría el PAGADA.
      */
     private void envejecer(int reservaId, int minutos) {
-        Reserva actual = reservaDAO.buscarPorId(reservaId).orElseThrow();
-        reservaDAO.actualizar(new ReservaImpl(actual.getId(), actual.getFuncionId(),
-                actual.getClienteId(), actual.getEntradas(), actual.getEstado(),
-                actual.getCreadaEn().minusMinutes(minutos), actual.getCodigo()));
+        jdbc.update("UPDATE reserva SET creada_en = ? WHERE id = ?",
+                reservaRepository.findById(reservaId).orElseThrow()
+                        .getCreadaEn().minusMinutes(minutos),
+                reservaId);
     }
 
     @Test
@@ -347,9 +327,9 @@ class GestorReservasTest {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertEquals(EstadoReserva.RESERVADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+        assertEquals(EstadoReserva.RESERVADA, reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
         ocupacion.lugaresLibres(1);
-        assertEquals(EstadoReserva.EXPIRADA, reservaDAO.buscarPorId(reserva.getId()).orElseThrow().getEstado());
+        assertEquals(EstadoReserva.EXPIRADA, reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
     }
 
     @Test
@@ -370,8 +350,6 @@ class GestorReservasTest {
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
-
-    // ---------- control de acceso ----------
 
     @Test
     void elCodigoNoEsElIdYNoSeRepite() {
@@ -403,18 +381,14 @@ class GestorReservasTest {
     }
 
 
-    // ---------- R19: una funcion que ya empezo no se vende ----------
-
     /**
      * Se guarda por el DAO y no con GestorFunciones.programar porque programar en el
      * pasado no es algo que el sistema deba permitir: lo que se está simulando es el
      * paso del tiempo sobre una función que se programó normalmente.
      */
     private int funcionQueYaEmpezo() {
-        Funcion pasada = new FuncionImpl(1, 1, LocalDateTime.now().minusMinutes(30),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        funcionDAO.guardar(pasada);
-        return pasada.getId();
+        return funcionRepository.save(new Funcion(1, 1, LocalDateTime.now().minusMinutes(30),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
     }
 
     @Test
@@ -444,18 +418,15 @@ class GestorReservasTest {
         // escenario no se puede armar. Es el cliente que reservó a tiempo y llega tarde
         // a la boletería.
         int empezada = funcionQueYaEmpezo();
-        Reserva reserva = new ReservaImpl(empezada, 1,
-                List.of(new Entrada(1, "A1", TipoTarifa.GENERAL, Dinero.de(5000))),
+        Asiento butaca = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).get(0);
+        Reserva reserva = reservaRepository.save(new Reserva(empezada, 1,
+                List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
-                LocalDateTime.now());
-        reservaDAO.guardar(reserva);
+                LocalDateTime.now()));
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
-
-    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
-    // ---------- el buscador de reservas ----------
 
     /**
      * Dos clientes, dos funciones en días distintos y tres reservas, una de ellas
@@ -465,9 +436,7 @@ class GestorReservasTest {
     private void cargarReservas() {
         clientes.registrar("Sofía Pérez", "sofia@ejemplo.com");
         // Segunda película y función, para poder filtrar por título y por día.
-        new GestorCartelera(peliculaDAO, funcionDAO, new GestorProgramaciones(
-                new ProgramacionDAOMemoria(), funcionDAO, funciones))
-                .agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
+        cartelera.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 

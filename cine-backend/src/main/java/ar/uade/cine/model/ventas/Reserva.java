@@ -77,6 +77,7 @@ public class Reserva {
      * credencial que existe en el sistema: por eso no puede ser el id, o con la reserva 5 en
      * la mano se imprime la 6.
      */
+    @Column(unique = true)
     private String codigo;
 
     @Enumerated(EnumType.STRING)

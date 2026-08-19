@@ -27,6 +27,9 @@ public class PromocionNxM extends Promocion {
     private int lleva;
     private int paga;
 
+    protected PromocionNxM() {
+    }
+
     public PromocionNxM(String nombre, int lleva, int paga, LocalDate vigenciaDesde,
                         LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
                         LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {

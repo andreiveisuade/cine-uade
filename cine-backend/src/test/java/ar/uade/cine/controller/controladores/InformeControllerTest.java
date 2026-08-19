@@ -1,4 +1,4 @@
-package ar.uade.cine.controller.rutas;
+package ar.uade.cine.controller.controladores;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,12 +10,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.Aplicacion;
+import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.service.candy.GestorCandy;
+import ar.uade.cine.service.candy.GestorProductos;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -28,7 +35,6 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.controller.ApiEnMemoria;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
@@ -40,38 +46,53 @@ import ar.uade.cine.model.dinero.Dinero;
  * el que el gestor rechaza todo. Esa diferencia se decide en {@code api/} y no se ve desde
  * un test de gestor.
  */
-class RutasInformesTest {
+class InformeControllerTest extends PruebaDeApi {
 
-    @TempDir
-    Path tempDir;
+    @Autowired
+    private GestorProductos productos;
 
-    private ApiEnMemoria api;
+    @Autowired
+    private GestorCandy candy;
+
+    @Autowired
+    private GestorCartelera cartelera;
+
+    @Autowired
+    private GestorClientes clientes;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorPagos pagos;
+
+    @Autowired
+    private GestorReservas reservas;
+
+    @Autowired
+    private GestorSalas salas;
+
+
     private Reserva reserva;
 
     /** Una función de Matrix con una reserva cobrada: una general y una jubilada. */
     @BeforeEach
     void levantarLaApiConUnaFuncionVendida() {
-        api = new ApiEnMemoria(tempDir);
-        Aplicacion app = api.aplicacion();
 
-        app.getCartelera().agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        app.getSalas().agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        Funcion funcion = app.getFunciones().programar(1, 1,
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        Funcion funcion = funciones.programar(1, 1,
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        Cliente cliente = app.getClientes().identificar("Andrei", "andrei@uade.edu.ar");
-        reserva = app.getReservas().reservar(funcion.getId(), cliente.getId(),
+        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.JUBILADO));
-        app.getPagos().cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
     }
 
-    @AfterEach
-    void bajarLaApi() {
-        api.close();
-    }
 
     @Test
     void elBorderoViajaConElDesgloseYLasTresCifras() {
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/funciones/1/bordero");
+        Respuesta respuesta = get("/api/funciones/1/bordero");
 
         assertEquals(200, respuesta.estado());
         var bordero = respuesta.json();
@@ -90,7 +111,7 @@ class RutasInformesTest {
     /** Una tarifa sin entradas no viaja en cero: directamente no está, como en el arqueo. */
     @Test
     void elDesgloseSoloTraeLasTarifasConEntradasVendidas() {
-        var porTarifa = api.get("/api/funciones/1/bordero").json().get("porTarifa");
+        var porTarifa = get("/api/funciones/1/bordero").json().get("porTarifa");
 
         assertTrue(porTarifa.has("GENERAL"));
         assertFalse(porTarifa.has("ESTUDIANTE"));
@@ -102,7 +123,7 @@ class RutasInformesTest {
      */
     @Test
     void elBorderoDeUnaFuncionQueNoExisteEs404() {
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/funciones/99/bordero");
+        Respuesta respuesta = get("/api/funciones/99/bordero");
 
         assertEquals(404, respuesta.estado());
         assertEquals("No existe la función 99", respuesta.error());
@@ -110,7 +131,7 @@ class RutasInformesTest {
 
     @Test
     void unIdQueNoEsNumeroTampocoRompe() {
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/funciones/abc/bordero");
+        Respuesta respuesta = get("/api/funciones/abc/bordero");
 
         assertEquals(404, respuesta.estado());
         assertEquals("El identificador abc no es válido", respuesta.error());
@@ -119,22 +140,22 @@ class RutasInformesTest {
     /** Emitir escribe: por eso es POST y devuelve 201, no 200. */
     @Test
     void emitirElBorderoDevuelve201YDejaElArchivo() {
-        ApiEnMemoria.Respuesta respuesta = api.post("/api/funciones/1/bordero", "");
+        Respuesta respuesta = post("/api/funciones/1/bordero", "");
 
         assertEquals(201, respuesta.estado());
         assertEquals(2, respuesta.json().get("espectadores").asInt());
-        assertTrue(Files.exists(tempDir.resolve("informes").resolve("bordero-funcion-1.txt")));
+        assertTrue(Files.exists(Path.of("target/comprobantes/informes").resolve("bordero-funcion-1.txt")));
     }
 
     /** El informe embebe el borderó completo, no una versión recortada. */
     @Test
     void elInformeSumaLaBoleteriaYElCandyDeLaFuncion() {
-        Producto pochoclos = api.aplicacion().getProductos()
+        Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        api.aplicacion().getCandy().venderParaReserva(reserva.getId(),
+        candy.venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
-        ApiEnMemoria.Respuesta respuesta = api.get("/api/funciones/1/informe");
+        Respuesta respuesta = get("/api/funciones/1/informe");
 
         assertEquals(200, respuesta.estado());
         var informe = respuesta.json();
@@ -152,12 +173,12 @@ class RutasInformesTest {
      */
     @Test
     void elCandyDeMostradorNoLlegaAlInformeDeLaFuncion() {
-        Producto pochoclos = api.aplicacion().getProductos()
+        Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        api.aplicacion().getCandy().vender(null, Map.of(pochoclos.getId(), 1),
+        candy.vender(null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 
-        var informe = api.get("/api/funciones/1/informe").json();
+        var informe = get("/api/funciones/1/informe").json();
 
         assertEquals(0, informe.get("comprasCandy").asInt());
         assertEquals(0.0, informe.get("candy").asDouble(), 0.001);

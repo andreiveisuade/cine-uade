@@ -12,21 +12,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.promociones.Promocion;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.memoria.PromocionDAOMemoria;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * R15 (las promociones no se acumulan: gana la que más descuenta) y R16 (las entradas de
  * tarifa reducida no participan del descuento), más el cálculo de cada tipo.
  */
-class GestorPromocionesTest {
+class GestorPromocionesTest extends PruebaDeIntegracion {
 
     /** 20 de agosto de 2026 es jueves; el 19, miércoles. */
     private static final LocalDateTime JUEVES = LocalDateTime.of(2026, 8, 20, 20, 0);
@@ -34,23 +36,19 @@ class GestorPromocionesTest {
     private static final LocalDate DESDE = LocalDate.of(2026, 8, 1);
     private static final LocalDate HASTA = LocalDate.of(2026, 8, 31);
 
+    private static final Asiento A1 = new Asiento(1, 1, 1, TipoAsiento.ESTANDAR);
+
+    @Autowired
     private GestorPromociones promociones;
 
-    @BeforeEach
-    void prepararCarta() {
-        promociones = new GestorPromociones(new PromocionDAOMemoria());
-    }
-
     private static Entrada entrada(double precio) {
-        // el literal entra en pesos y se convierte una sola vez, como en el resto del sistema
-        return new Entrada(1, "A1", TipoTarifa.GENERAL, Dinero.de(precio));
+        return entrada(precio, TipoTarifa.GENERAL);
     }
 
+    /** Sin guardar: el descuento se calcula sobre los precios y no toca la base. */
     private static Entrada entrada(double precio, TipoTarifa tarifa) {
-        return new Entrada(1, "A1", tarifa, Dinero.de(precio));
+        return new Entrada(A1, tarifa, Dinero.de(precio));
     }
-
-    // ---------- cada tipo calcula lo suyo ----------
 
     @Test
     void elPorcentajeDescuentaSobreElSubtotal() {
@@ -96,8 +94,6 @@ class GestorPromocionesTest {
         assertEquals(Dinero.de(0), promo.calcularDescuento(List.of(entrada(5000))));
     }
 
-    // ---------- R15: no se acumulan, gana la mejor ----------
-
     @Test
     void ganaLaQueMasDescuenta() {
         promociones.crearPorcentaje("10 off", 10, DESDE, HASTA, Set.of(), null, null, Set.of());
@@ -123,8 +119,6 @@ class GestorPromocionesTest {
         assertEquals("primera", ganadora.orElseThrow().getNombre());
     }
 
-    // ---------- R16: la tarifa reducida queda afuera ----------
-
     @Test
     void laTarifaReducidaNoParticipaDelDescuento() {
         Promocion promo = promociones.crearPorcentaje("50 off", 50, DESDE, HASTA,
@@ -143,8 +137,6 @@ class GestorPromocionesTest {
         assertTrue(promociones.mejorPara(List.of(entrada(2500, TipoTarifa.JUBILADO)),
                 JUEVES, MedioPago.EFECTIVO).isEmpty());
     }
-
-    // ---------- condiciones ----------
 
     @Test
     void laDelMiercolesNoCorreUnJueves() {
@@ -196,8 +188,6 @@ class GestorPromocionesTest {
 
         assertTrue(promociones.mejorPara(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO).isEmpty());
     }
-
-    // ---------- validaciones del alta ----------
 
     /** Un 2x2 no descuenta nada y un 2x3 cobraría de más. */
     @Test

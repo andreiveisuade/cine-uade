@@ -19,6 +19,9 @@ public class PromocionMontoFijo extends Promocion {
 
     private Dinero monto;
 
+    protected PromocionMontoFijo() {
+    }
+
     public PromocionMontoFijo(String nombre, Dinero monto, LocalDate vigenciaDesde,
                               LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
                               LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {
