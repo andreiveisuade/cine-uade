@@ -27,6 +27,20 @@ spring:
       maximum-pool-size: 10
       pool-name: cine
 
+  jpa:
+    hibernate:
+      # El schema lo sigue creando schema.sql cuando el volumen de MySQL esta vacio, y las
+      # migraciones se aplican a mano: la base ya esta desplegada y con datos, asi que
+      # dejar que Hibernate la modifique seria darle permiso a borrar una columna con
+      # ventas adentro. `validate` es el punto medio: no toca nada, pero si una entidad y
+      # su tabla dejan de coincidir la aplicacion no arranca y el error dice cual.
+      ddl-auto: validate
+    # Sin sesion abierta durante la respuesta HTTP: las entidades se leen completas dentro
+    # del servicio —por eso las colecciones son EAGER— y el controlador ya trabaja con
+    # objetos cerrados. Dejarlo en true esconde consultas que salen mientras se serializa
+    # el JSON, y es el default que Spring Boot avisa por log que conviene apagar.
+    open-in-view: false
+
   jackson:
     deserialization:
       # Un campo de más en el pedido no es motivo para rechazarlo: el front puede mandar

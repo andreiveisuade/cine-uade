@@ -27,8 +27,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * incompleto pasó de ser un bug de tiempo de uso a un error de arranque.
  *
  * <p>Qué implementación se usa para guardar cada cosa sigue decidiéndose en un solo lugar,
- * pero ahora es un perfil: ver {@link ar.uade.cine.persistencia.PersistenciaMySQL} y
- * {@link ar.uade.cine.persistencia.PersistenciaEnMemoria}.
+ * pero ahora es un perfil: ver {@link ar.uade.cine.repository.PersistenciaMySQL} y
+ * {@link ar.uade.cine.repository.PersistenciaEnMemoria}.
  */
 @SpringBootApplication
 public class Aplicacion {

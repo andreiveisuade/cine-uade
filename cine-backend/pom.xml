@@ -34,12 +34,14 @@
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
-    <!-- JDBC con el DataSource ya armado por Spring Boot a partir de application.yml.
-         El pool sigue siendo HikariCP —viene adentro de este starter— pero ya no se
-         configura con código: por eso desapareció OrigenMySQL. -->
+    <!-- Spring Data JPA: Hibernate como proveedor, el DataSource ya armado a partir de
+         application.yml y los repositorios generados desde una interfaz. Es lo que
+         reemplaza a los trece DAO de MySQL con sus dos mil líneas de SQL a mano, al
+         OrigenMySQL que configuraba el pool con código y a la Plantilla que envolvía
+         JDBC. El pool sigue siendo HikariCP: viene adentro de este starter. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-jdbc</artifactId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
     <!-- Driver JDBC de MySQL. En runtime: nadie lo importa, lo carga el DataSource. -->
@@ -55,6 +57,17 @@
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
+    </dependency>
+
+    <!-- La base de los tests: en memoria, creada por Hibernate desde las entidades y
+         tirada al terminar. Es lo que reemplaza a las catorce implementaciones en
+         memoria de los DAO — con la diferencia de que ahora los tests pasan por el
+         mapeo y las consultas de verdad, así que un @Query roto se ve en `mvn test` y
+         no recién contra MySQL. -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- Tests. scope=test => no se empaqueta en el jar final. El starter trae JUnit 5,
