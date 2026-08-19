@@ -9,6 +9,7 @@ import java.util.Set;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
@@ -17,6 +18,8 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("PORCENTAJE")
 public class PromocionPorcentaje extends Promocion {
 
+    // DECIMAL(5,2) en la base, double acá: hay que decírselo o `validate` no arranca.
+    @Column(columnDefinition = "DECIMAL(5,2)")
     private double porcentaje;
 
     protected PromocionPorcentaje() {

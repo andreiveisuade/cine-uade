@@ -68,6 +68,9 @@ public class Pelicula {
 
     private boolean enCartelera = true;
 
+    // La columna es DECIMAL(3,1) y el campo un double: sin decírselo, Hibernate espera un
+    // FLOAT y `validate` corta el arranque.
+    @Column(columnDefinition = "DECIMAL(3,1)")
     private double puntaje;
 
     private int votos;
