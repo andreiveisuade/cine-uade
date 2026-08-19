@@ -83,8 +83,6 @@ class PlanificadorGrillaTest {
                 Version.SUBTITULADA, Proyeccion.DOS_D);
     }
 
-    // ---------- etapa 1: a quiénes elige ----------
-
     @Test
     void aIgualdadDeGenerosEligeLasMejorPuntuadas() {
         cargar("Buena", 9.0, Genero.ACCION);
@@ -253,8 +251,6 @@ class PlanificadorGrillaTest {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    // ---------- etapa 2: cómo las reparte ----------
-
     /** El reparto es proporcional al puntaje, no en partes iguales. */
     @Test
     void laMejorPuntuadaSeLlevaMasPases() {
@@ -325,8 +321,6 @@ class PlanificadorGrillaTest {
         }
     }
 
-    // ---------- los indicadores ----------
-
     @Test
     void losIndicadoresMidenOcupacionPuntajeYDiversidad() {
         cargar("Accion", 9.0, Genero.ACCION);
@@ -391,8 +385,6 @@ class PlanificadorGrillaTest {
         assertTrue(ocupacion >= 0 && ocupacion <= 1.0, "ocupación fuera de rango: " + ocupacion);
     }
 
-    // ---------- aplicar ----------
-
     @Test
     void aplicarCreaLasFuncionesDeLaPropuesta() {
         cargar("Una", 8.0, Genero.ACCION);
@@ -415,8 +407,6 @@ class PlanificadorGrillaTest {
         assertEquals(planificador.proponer(unDia(2)).pases(),
                 planificador.proponer(unDia(2)).pases());
     }
-
-    // ---------- lo que rechaza ----------
 
     @Test
     void sinPeliculasConfirmadasAvisaQueRevisenElBuzon() {

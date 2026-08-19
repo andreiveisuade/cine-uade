@@ -90,8 +90,6 @@ class VistasCarteleraTest {
                 new VistasSalas(aplicacion.getSalas(), aplicacion.getCalculadoraPrecio()));
     }
 
-    // ---------- la película ----------
-
     @Test
     void laPeliculaViajaConSusEnumsComoNombre() {
         Pelicula matrix = aplicacion.getCartelera()
@@ -122,8 +120,6 @@ class VistasCarteleraTest {
         assertEquals("http://poster.jpg", vista.posterUrl());
         assertEquals("Un hacker descubre la verdad", vista.sinopsis());
     }
-
-    // ---------- las tres variantes de función ----------
 
     /** El listado del cliente: la función con su sala, sin película ni mapa de butacas. */
     @Test
@@ -177,8 +173,6 @@ class VistasCarteleraTest {
         assertFalse(butaca(vista, "A2").ocupado());
         assertEquals(9, vista.libres());
     }
-
-    // ---------- el precio anunciado ----------
 
     /**
      * El "desde $" de la cartelera: lo que sale la butaca más barata de esa función. No

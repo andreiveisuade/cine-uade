@@ -140,8 +140,6 @@ class VistasVentasTest {
         assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
     }
 
-    // ---------- lo que necesita la puerta ----------
-
     /** El código del QR no es el id: es lo que se escanea y no se puede adivinar. */
     @Test
     void laReservaViajaConElCodigoDelQr() {
@@ -169,8 +167,6 @@ class VistasVentasTest {
         assertEquals(19, vistas.reserva(ingresada).ingresadaEn().length(),
                 "tiene que usar el mismo formato que el resto de las fechas");
     }
-
-    // ---------- el pago ----------
 
     @Test
     void sinCobrarLaReservaViajaSinPago() {

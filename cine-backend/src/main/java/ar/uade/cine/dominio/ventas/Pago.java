@@ -16,8 +16,11 @@ public interface Pago {
 
     int getReservaId();
 
-    /** No se pasa por parámetro: se toma del total de la reserva, así nadie cobra otra cosa. */
-    /** Suma de los precios de lista de las entradas, antes de cualquier descuento. */
+    /**
+     * Suma de los precios de lista de las entradas, antes de cualquier descuento.
+     *
+     * <p>No se pasa por parámetro: se toma del total de la reserva, así nadie cobra otra cosa.
+     */
     Dinero getSubtotal();
 
     /**

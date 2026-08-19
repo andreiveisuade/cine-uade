@@ -170,9 +170,6 @@ class GestorPagosTest {
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
     }
 
-
-    // ---------- el cobro es donde se resuelve el descuento ----------
-
     /**
      * El total definitivo no existe hasta que se cobra: recién ahí se sabe el medio de
      * pago, y con él qué promociones corren.
@@ -233,8 +230,6 @@ class GestorPagosTest {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo));
     }
 
-    // ---------- el cierre de caja ----------
-
     /**
      * El arqueo es una cuenta del gestor y no de quien lo muestra: la consola y la API
      * tienen que dar estos mismos tres números.
@@ -284,8 +279,6 @@ class GestorPagosTest {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo.total()));
     }
 
-    // ---------- el comprobante del cobro ----------
-
     /**
      * El efectivo no deja rastro afuera del cine: si no se imprime el recibo, el cliente se
      * va sin constancia de haber pagado.
@@ -324,8 +317,6 @@ class GestorPagosTest {
         assertTrue(recibo.contains("Descuento"));
         assertTrue(recibo.contains("2500.00"));
     }
-
-    // ---------- el pago electrónico, contra la pasarela emulada ----------
 
     @Test
     void elCheckoutViajaConElLinkYElQrDeLaPasarela() {

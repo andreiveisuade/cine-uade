@@ -118,8 +118,6 @@ class GestorProgramacionesTest {
         assertNull(suelta.getProgramacionId());
     }
 
-    // ---------- previsualizar y después aplicar ----------
-
     @Test
     void previsualizarNoEscribeNada() {
         PlanProgramacion plan = previsualizarSemana();
@@ -194,8 +192,6 @@ class GestorProgramacionesTest {
         assertEquals(2, programaciones.listar().size());
     }
 
-    // ---------- baja ----------
-
     /**
      * Dar de baja la grilla no toca las funciones ya generadas: pueden tener entradas
      * vendidas. Lo que evita es que se generen nuevas.
@@ -225,8 +221,6 @@ class GestorProgramacionesTest {
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
         assertThrows(IllegalArgumentException.class, () -> programaciones.desactivar(99));
     }
-
-    // ---------- lo que se valida una vez por grilla, no una por función ----------
 
     /**
      * R8 vale para la grilla entera: si la sala no proyecta en 3D, no hay ninguna fecha
@@ -268,8 +262,6 @@ class GestorProgramacionesTest {
                 () -> programaciones.crear(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
                         LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
-
-    // ---------- la grilla abierta, que rueda sola ----------
 
     /**
      * Sin {@code hasta}, el alta no puede generar "todo el rango": el rango no termina.
@@ -354,8 +346,6 @@ class GestorProgramacionesTest {
         assertEquals(delAlta, funcionDAO.listar().size());
     }
 
-    // ---------- el buscador de grillas ----------
-
     /**
      * Dos grillas de la misma película en salas distintas, una de ellas dada de baja.
      * La de baja importa: es la que el filtro tiene que poder separar.
@@ -405,8 +395,6 @@ class GestorProgramacionesTest {
 
         assertTrue(programaciones.buscar(99, null, null).isEmpty());
     }
-
-    // ---------- helpers ----------
 
     /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {

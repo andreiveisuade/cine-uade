@@ -113,8 +113,6 @@ class OcupacionTest {
                 new CalculadoraPrecio(), ocupacion);
     }
 
-    // ---------- la butaca deja de ofrecerse ----------
-
     @Test
     void laButacaQueAlguienEstaEligiendoDejaDeAparecerLibre() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
@@ -131,8 +129,6 @@ class OcupacionTest {
         assertEquals(10, ocupacion.lugaresLibres(1, ANA));
         assertFalse(codigosLibres(BETO).contains("A1"), "pero al de al lado sí");
     }
-
-    // ---------- dos por la misma butaca ----------
 
     @Test
     void dosPersonasPorLaMismaButacaSeLaLlevaLaPrimera() {
@@ -162,8 +158,6 @@ class OcupacionTest {
 
         assertEquals("La butaca Z9 no existe en esa sala", error.getMessage());
     }
-
-    // ---------- el vencimiento ----------
 
     @Test
     void elBloqueoVencidoDevuelveLaButacaALaVenta() {
@@ -207,8 +201,6 @@ class OcupacionTest {
         assertFalse(codigosLibres(BETO).contains("A1"));
     }
 
-    // ---------- el paso a la reserva ----------
-
     @Test
     void elQueEligioPuedeReservarLoQueTieneBloqueado() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
@@ -242,8 +234,6 @@ class OcupacionTest {
                 "la que compró sigue ocupada, ahora por la reserva");
     }
 
-    // ---------- sin el medio donde vive el bloqueo ----------
-
     /**
      * Redis caído no puede voltear la venta: el bloqueo es comodidad, y la garantía de que
      * una butaca no se venda dos veces la sigue dando el UNIQUE de la base. El sistema
@@ -268,8 +258,6 @@ class OcupacionTest {
         assertEquals(1, ventaSinRedis.reservar(1, 1, generales("A1"), ANA).getCantidadEntradas(),
                 "y la reserva sale igual");
     }
-
-    // ---------- ayudas ----------
 
     private List<String> codigosLibres(String sesion) {
         return ocupacion.asientosLibres(1, sesion).stream().map(Asiento::getCodigo).toList();

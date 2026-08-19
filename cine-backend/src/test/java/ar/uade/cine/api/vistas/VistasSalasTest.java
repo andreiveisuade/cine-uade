@@ -132,8 +132,6 @@ class VistasSalasTest {
         assertEquals("HABILITADO", butaca(vista, "A1").estado());
     }
 
-    // ---------- la butaca dentro del mapa de una función ----------
-
     @Test
     void enElMapaDeUnaFuncionLaButacaDiceSiEstaTomada() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3));

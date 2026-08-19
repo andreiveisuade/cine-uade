@@ -313,9 +313,6 @@ class GestorReservasTest {
         assertEquals(LocalDate.now(), leida.getCreadaEn().toLocalDate());
     }
 
-
-    // ---------- vencimiento ----------
-
     /**
      * Envejece la reserva reescribiéndola con otra fecha de creación: es lo mismo que
      * pasaría en la base media hora después, sin tener que esperarla.
@@ -371,8 +368,6 @@ class GestorReservasTest {
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
-    // ---------- control de acceso ----------
-
     @Test
     void elCodigoNoEsElIdYNoSeRepite() {
         Reserva primera = reservas.reservar(1, 1, generales("A1"));
@@ -401,9 +396,6 @@ class GestorReservasTest {
     void unCodigoInventadoNoAbreLaPuerta() {
         assertThrows(IllegalArgumentException.class, () -> reservas.registrarIngreso("XXXXXXXX"));
     }
-
-
-    // ---------- R19: una funcion que ya empezo no se vende ----------
 
     /**
      * Se guarda por el DAO y no con GestorFunciones.programar porque programar en el
@@ -453,9 +445,6 @@ class GestorReservasTest {
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
-
-    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
-    // ---------- el buscador de reservas ----------
 
     /**
      * Dos clientes, dos funciones en días distintos y tres reservas, una de ellas

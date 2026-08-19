@@ -87,8 +87,6 @@ class GestorFuncionesTest {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
     }
 
-    // ---------- el buscador de la cartelera programada ----------
-
     /**
      * Segunda película y segunda sala, más funciones repartidas en tres días. Sin este
      * escenario cualquier filtro devolvería todo y los tests pasarían sin probar nada.
@@ -303,9 +301,6 @@ class GestorFuncionesTest {
         assertDoesNotThrow(() -> cartelera.eliminar(1));
         assertDoesNotThrow(() -> salas.eliminar(1));
     }
-
-
-    // ---------- el paso del tiempo ----------
 
     /** Matrix dura 136 minutos: una función a las 20:00 termina 22:16. */
     private static final int DURACION = 136;

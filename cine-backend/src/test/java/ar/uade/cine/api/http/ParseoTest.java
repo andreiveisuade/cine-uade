@@ -22,8 +22,6 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
  */
 class ParseoTest {
 
-    // ---------- enums ----------
-
     @Test
     void leeLaConstanteDelEnum() {
         assertEquals(MedioPago.EFECTIVO, Parseo.constante(MedioPago.class, "EFECTIVO", "el medio"));
@@ -89,8 +87,6 @@ class ParseoTest {
         assertThrows(IllegalArgumentException.class,
                 () -> Parseo.constantes(Genero.class, List.of("ACCION", "MUSICAL_INVENTADO"), "el género"));
     }
-
-    // ---------- fechas y horas ----------
 
     @Test
     void leeElMomentoDeUnaFuncion() {
