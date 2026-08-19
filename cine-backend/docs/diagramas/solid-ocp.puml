@@ -1,0 +1,98 @@
+@startuml solid-ocp
+title SOLID: Abierto-cerrado - un beneficio nuevo es una clase, no un case mas
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Las tres promociones que hay hoy no agotan lo que un cine puede querer
+' ofrecer: un 3x2, un descuento que crece con la cantidad de entradas,
+' una promo que solo corre para socios. Sumar cualquiera de esas es escribir
+' una clase nueva que implementa calcularDescuento(): PromocionBase ya le
+' resuelve la vigencia, el dia, el horario y el medio de pago, asi que la
+' clase nueva no repite nada de eso. En ningun lugar del sistema hay un
+' switch (tipo) que haya que ir a tocar: ni GestorPromociones.mejorPara(),
+' ni GestorPagos.cobrar() saben que implementaciones existen.
+
+package "model.promociones" {
+  interface Promocion {
+    +aplicaA(inicioFuncion, medio): boolean
+    +calcularDescuento(entradas): double
+  }
+
+  abstract class PromocionBase {
+    #cumpleCondiciones: vigencia,\ndia, horario, medio
+    +aplicaA(inicioFuncion, medio): boolean
+    {abstract} +calcularDescuento(entradas): double
+  }
+
+  class PromocionPorcentaje {
+    -porcentaje: double
+    +calcularDescuento(entradas): double
+  }
+  class PromocionMontoFijo {
+    -monto: double
+    +calcularDescuento(entradas): double
+  }
+  class PromocionNxM {
+    -lleva: int
+    -paga: int
+    +calcularDescuento(entradas): double
+  }
+}
+
+PromocionBase .up.|> Promocion
+PromocionPorcentaje -up-|> PromocionBase
+PromocionMontoFijo -up-|> PromocionBase
+PromocionNxM -up-|> PromocionBase
+
+note right of PromocionBase
+  aplicaA() esta ESCRITA UNA VEZ ACA y las tres
+  hijas la heredan sin tocarla: vigencia, dia de
+  semana, horario y medio de pago se evaluan
+  igual sea cual sea el beneficio. Lo unico que
+  cada clase decide distinto es cuanto descuenta,
+  y eso es abstracto: obliga a que cada hija lo
+  resuelva a su manera.
+end note
+
+note bottom of PromocionPorcentaje
+  % del subtotal:
+  "miercoles 30% off"
+end note
+note bottom of PromocionMontoFijo
+  Monto fijo, topeado al
+  subtotal para no dar
+  un cobro negativo:
+  "$2000 off con tal banco"
+end note
+note bottom of PromocionNxM
+  Regala las entradas mas
+  baratas del grupo, no
+  las mas caras:
+  "2x1 de toda la vida"
+end note
+
+note as N1
+  Por que PromocionNxM es la que obliga a que
+  el descuento sea un monto y no un factor por
+  butaca: "cada dos entradas, una gratis" no se
+  puede escribir como multiplicador de una
+  entrada sola. Con esa unidad comun, las tres
+  son comparables entre si -hace falta para R15,
+  que dice que gana la que mas descuenta- y
+  agregar una cuarta no rompe esa comparacion.
+end note
+N1 .. PromocionNxM
+
+note as N2
+  **Cerrado a modificacion:** ninguna de las
+  clases existentes cambia para sumar un
+  beneficio nuevo.
+  **Abierto a extension:** PromocionBase se
+  extiende con una clase mas, que GestorPromociones
+  ya sabe usar porque solo conoce Promocion.
+end note
+N2 .. Promocion
+
+@enduml

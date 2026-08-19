@@ -1,0 +1,78 @@
+@startuml secuencia-reserva
+title Reservar butacas: del menu al ticket
+
+skinparam sequenceMessageAlign center
+hide footbox
+
+actor Cliente
+participant "ReservaController" as UI
+participant "Ocupacion" as Ocupacion
+participant "GestorReservas" as Gestor
+participant "AsientoRepository" as Asientos <<interface>>
+participant "ReservaRepository" as DAO <<interface>>
+participant "CalculadoraPrecio" as Precio
+participant "GeneradorTicket" as Ticket <<interface>>
+
+Cliente -> UI : elige funcion y cliente
+activate UI
+
+UI -> Ocupacion : asientosLibres(funcionId)
+activate Ocupacion
+Ocupacion -> Asientos : listarPorSala(salaId)
+activate Asientos
+Asientos --> Ocupacion : butacas de la sala
+deactivate Asientos
+Ocupacion -> DAO : listarPorFuncion(funcionId)
+activate DAO
+DAO --> Ocupacion : reservas de esa funcion
+deactivate DAO
+Ocupacion -> Ocupacion : descarta las tomadas por reservas\nno canceladas y las fuera de servicio
+Ocupacion --> UI : butacas libres
+deactivate Ocupacion
+
+UI --> Cliente : dibuja el mapa de la sala
+Cliente -> UI : "A1,A2"
+
+UI -> Gestor : reservar(funcionId, clienteId,\ncodigos)
+activate Gestor
+
+alt alguna butaca no existe, no es de esa sala,\nesta ocupada o esta fuera de servicio
+  Gestor --> UI : IllegalArgumentException
+  UI --> Cliente : motivo del rechazo
+else todas disponibles
+  loop por cada butaca
+    Gestor -> Precio : precioDe(funcion, sala, asiento)
+    activate Precio
+    Precio --> Gestor : base x tipo de sala x tipo de\nbutaca, redondeado a 2 decimales
+    deactivate Precio
+  end
+
+  note right of Gestor
+    El precio queda congelado en cada Entrada.
+    La reserva nace RESERVADA y con la fecha
+    en que se hizo.
+  end note
+
+  Gestor -> DAO : guardar(reserva)
+  activate DAO
+  DAO --> Gestor : reserva con id asignado
+  deactivate DAO
+
+  Gestor -> Ticket : emitir(reserva, funcion,\npelicula, sala, cliente)
+  activate Ticket
+  Ticket -> Ticket : escribe\ntickets/ticket-N.txt
+  deactivate Ticket
+
+  Gestor --> UI : reserva
+  UI --> Cliente : "Reserva confirmada.\nTotal: $ X"
+end
+deactivate Gestor
+deactivate UI
+
+note over DAO, Ticket
+  El gestor habla con interfaces. Que Spring Data la guarde en
+  MySQL o en H2, y el ticket en un .txt o manana en un PDF,
+  no cambia esta secuencia.
+end note
+
+@enduml

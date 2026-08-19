@@ -1,0 +1,158 @@
+@startuml casos-de-uso
+title Casos de uso - Sistema de cine
+
+left to right direction
+
+actor Cliente as cliente
+actor "Administrador\ndel cine" as admin
+actor Acomodador as acomodador
+
+rectangle Sistema {
+  usecase "CU-01 Gestionar peliculas" as CU01
+  usecase "CU-01b Filtrar por genero" as CU01b
+  usecase "CU-02 Gestionar salas y butacas" as CU02
+  usecase "CU-03 Programar funcion" as CU03
+  usecase "CU-03b Programar una grilla" as CU03b
+  usecase "CU-03c Ver la programacion\ncomo agenda" as CU03c
+  usecase "CU-04 Consultar cartelera" as CU04
+  usecase "CU-05 Registrarse" as CU05
+  usecase "CU-06 Elegir butacas y reservar" as CU06
+  usecase "CU-07 Cobrar reserva" as CU07
+  usecase "CU-07b Pagar por checkout\nde la pasarela" as CU07b
+  usecase "CU-08 Cancelar reserva" as CU08
+  usecase "CU-09 Ver mis reservas" as CU09
+  usecase "CU-10 Iniciar sesion" as CU10
+  usecase "CU-11 Marcar butaca\nfuera de servicio" as CU11
+  usecase "CU-12 Arqueo del dia" as CU12
+  usecase "CU-13 Gestionar la carta\ndel candy" as CU13
+  usecase "CU-14 Armar combo\npromocional" as CU14
+  usecase "CU-15 Comprar en el candy" as CU15
+  usecase "CU-16 Ver mis compras\ndel candy" as CU16
+  usecase "CU-15b Agregar candy\na mi compra web" as CU15b
+  usecase "CU-17 Gestionar\npromociones" as CU17
+  usecase "CU-18 Validar entrada\nen la puerta" as CU18
+  usecase "CU-19 Emitir el bordero\nde una funcion" as CU19
+  usecase "CU-20 Recaudacion de\nuna funcion" as CU20
+}
+
+cliente --> CU04
+cliente --> CU01b
+cliente --> CU05
+cliente --> CU06
+cliente --> CU08
+cliente --> CU09
+cliente --> CU15
+cliente --> CU16
+cliente --> CU15b
+cliente --> CU07b
+
+admin --> CU10
+admin --> CU01
+admin --> CU02
+admin --> CU03
+admin --> CU03b
+admin --> CU03c
+admin --> CU04
+admin --> CU11
+admin --> CU07
+admin --> CU12
+admin --> CU13
+admin --> CU14
+admin --> CU17
+admin --> CU19
+admin --> CU20
+acomodador --> CU18
+
+note bottom of CU10
+  Solo el administrador inicia sesion.
+  El cliente compra sin registrarse
+  con contrasena.
+end note
+
+note bottom of CU03b
+  Una grilla: misma pelicula, misma sala,
+  misma hora, todos los dias de un rango.
+  Genera las funciones de una sola vez.
+  Previsualiza primero: las fechas que chocan
+  contra algo ya programado en esa sala (R3)
+  se marcan y se saltean, no tumban la grilla.
+  Darla de baja no borra lo ya generado.
+end note
+
+note bottom of CU07
+  El cobro lo registra la boleteria.
+  El monto sale de la reserva, no
+  se ingresa a mano.
+end note
+
+note bottom of CU08
+  Solo se cancela una reserva sin cobrar.
+  Si ya se pago hace falta una devolucion,
+  que es un circuito que no modelamos.
+end note
+
+note bottom of CU12
+  Dos cajas distintas: boleteria (pagos de
+  reservas) y candy (ventas de mostrador).
+  El arqueo las muestra por separado y suma.
+  Es del dia: por funcion son CU-19 y CU-20.
+end note
+
+note bottom of CU07b
+  El medio electronico no lo autoriza el cine:
+  se abre un checkout contra la pasarela, el
+  cliente escanea y paga, y recien ahi vuelve
+  el codigo que exige R11. El efectivo no pasa
+  por aca, se cobra en la caja (CU-07).
+end note
+
+note bottom of CU19
+  Lo que el cine declara al INCAA de cada
+  proyeccion: espectadores, desglose por tarifa
+  y recaudacion. Declara lo cobrado, no lo
+  reservado, y se exporta a un archivo.
+end note
+
+note bottom of CU20
+  Cuanto dejo la funcion entre sus dos cajas.
+  Del candy solo entra el que esta ligado a una
+  reserva: el de mostrador no dice a que funcion
+  va quien lo compro, y se cuenta en CU-12.
+end note
+
+note bottom of CU14
+  Un combo tiene que costar menos que sus
+  componentes sueltos: si no, no es promocion.
+  El sistema lo valida contra la carta.
+end note
+
+note bottom of CU15
+  Se paga en el acto y se emite el ticket.
+  No hay reserva previa: eso es solo para
+  las butacas.
+end note
+
+note bottom of CU15b
+  El "desea agregar pochoclos?" de despues
+  de comprar la entrada. El cliente sale de
+  la reserva, no se vuelve a pedir, y el
+  pedido se retira con el mismo QR.
+end note
+
+note bottom of CU17
+  Porcentaje, monto fijo o 2x1, con vigencia,
+  dias, horarios y medios de pago. No se
+  acumulan: gana la que mas descuenta (R15),
+  y las entradas de tarifa reducida quedan
+  afuera del descuento (R16).
+end note
+
+note bottom of CU18
+  El acomodador escanea el codigo de la
+  reserva. Solo pasa una pagada, y una sola
+  vez (R18). Ve las butacas y que tarifa
+  declaro cada una, para pedir el carnet
+  cuando corresponde.
+end note
+
+@enduml

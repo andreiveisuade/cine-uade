@@ -1,0 +1,252 @@
+@startuml clases-capas
+title Arquitectura en capas - Spring Boot + Spring Data JPA
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 45
+hide members
+
+package controller {
+  ' Divididos en http/ (Parseo, Fechas, NoEncontrado, ManejadorErrores) y vistas/.
+  ' Ya no hay rutas/: cada controlador es publico y Spring lo descubre solo.
+
+  class "CandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nSalaController, SesionController" as Controllers
+  class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
+  class Parseo
+  class Fechas
+  class NoEncontrado
+  class ManejadorErrores
+}
+
+' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes espejan
+' a model/, asi que de que entidad viene cada forma se lee en la ruta del archivo.
+package dto {
+  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, catalogos\ngrilla\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
+}
+
+package service {
+  ' Divididos en subpaquetes por area: candy, cartelera, funciones, informes,
+  ' programaciones, promociones, salas, usuarios, ventas.
+
+  class GestorCartelera
+  class GestorRevisionCartelera
+  class GestorImportaciones
+  class GestorSalas
+  class GestorFunciones
+  class GestorProgramaciones
+  class GestorClientes
+  class GestorReservas
+  class GestorPagos
+  class GestorCandy
+  class GestorProductos
+  class GestorEmpleados
+  class GestorPromociones
+  class GestorInformes
+  class GestorCaja
+  class PlanificadorGrilla
+  class CalculadoraPrecio
+  class Ocupacion
+  interface PoliticaPromociones
+  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla" as DatosDeServicio
+}
+
+' Los adaptadores de salida. Cada uno es una interfaz que declara service/ y una
+' implementacion que Spring resuelve por perfil o por component scan, la misma
+' forma que repository/: un puerto hacia el mundo, no una regla. Estan juntos
+' bajo infrastructure/ para que el nivel de arriba del paquete sean las capas.
+package infrastructure {
+
+  package seguridad {
+    class Password
+  }
+
+  package bloqueos {
+    interface BloqueoButacas
+    class "BloqueoButacasRedis\nla butaca mientras se elige" as BloqueoRedis
+    class BloqueoButacasMemoria
+  }
+
+  package comprobantes {
+    interface GeneradorTicket
+    interface GeneradorTicketCandy
+    interface GeneradorRecibo
+    interface GeneradorBordero
+
+    package txt {
+      class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt, GeneradorBorderoTxt" as GeneradoresTxt
+    }
+  }
+
+  ' Quien autoriza un pago electronico nunca es el cine: R11 pide un codigo que
+  ' devuelve un tercero. Es un contrato por lo mismo que GeneradorTicket: hoy
+  ' atras hay una emulacion y manana podria haber una integracion real.
+  package pasarelas {
+    interface PasarelaPagos
+
+    package emulada {
+      class "MercadoPagoEmulado\nel checkout, sin credenciales ni red" as PasarelaEmulada
+    }
+  }
+
+  ' De donde salen las peliculas que el cine no cargo a mano. El contrato no nombra
+  ' a TMDB: el gestor pide candidatas y no sabe de donde salen.
+  package importador {
+    interface CatalogoExterno
+    class ImportadorError
+
+    package tmdb {
+      class "TmdbHttp\nlas tres llamadas de TMDB" as TmdbHttp
+      class "MapeoTmdb\nsu modelo -> el nuestro" as MapeoTmdb
+    }
+  }
+}
+
+package model {
+  package cartelera as dom_cartelera {
+    class "Pelicula @Entity\nGenero, Clasificacion" as DomCartelera
+  }
+  package salas as dom_salas {
+    class "Sala, Asiento @Entity\nTipoSala, TipoAsiento, EstadoAsiento" as DomSalas
+  }
+  package funciones as dom_funciones {
+    class "Funcion @Entity\nVersion, Proyeccion" as DomFunciones
+  }
+  package programaciones as dom_programaciones {
+    class "Programacion @Entity" as DomProgramaciones
+  }
+  package ventas as dom_ventas {
+    class "Reserva, Pago @Entity\nEntrada, EstadoReserva, MedioPago" as DomVentas
+  }
+  package candy as dom_candy {
+    class "Producto, CompraCandy @Entity\nItemCombo, ItemCompra, TipoProducto" as DomCandy
+  }
+  package promociones as dom_promociones {
+    class "Promocion (abstract @Entity)\nPorcentaje, MontoFijo, NxM\nTipoPromocion" as DomPromociones
+  }
+  package usuarios as dom_usuarios {
+    class "Usuario, Cliente, Empleado @Entity\nRol" as DomUsuarios
+  }
+}
+
+package repository {
+  interface PeliculaRepository
+  interface SalaRepository
+  interface AsientoRepository
+  interface FuncionRepository
+  interface ProgramacionRepository
+  interface ClienteRepository
+  interface ReservaRepository
+  interface PagoRepository
+  interface ProductoRepository
+  interface CompraCandyRepository
+  interface EmpleadoRepository
+  interface PromocionRepository
+  interface ImportacionRepository
+  class DineroConverter
+
+  note bottom of PeliculaRepository
+    13 interfaces JpaRepository, planas:
+    sin implementacion propia y sin
+    subcarpeta por tecnologia. Spring
+    Data genera la unica que existe.
+  end note
+}
+
+class Aplicacion
+
+Aplicacion .. Controllers : Spring conecta todo\npor component scan
+Controllers -down-> service
+Controllers -right-> Vistas
+Controllers ..> Dtos
+Vistas ..> Dtos
+
+' El descuento se resuelve al cobrar, que es cuando recien se conoce el medio
+' de pago. GestorPagos depende del contrato, no del gestor que lo implementa.
+GestorPagos -right-> PoliticaPromociones
+GestorPromociones ..up|> PoliticaPromociones
+GestorPromociones -down-> PromocionRepository
+GestorCartelera -down-> PeliculaRepository
+GestorCartelera -right-> GestorProgramaciones
+
+' El buzon cuelga del catalogo: revisar necesita dar de alta, pero el catalogo no
+' necesita saber que existe un importador. Y el que pide cartelera nueva depende del
+' puerto, no de TMDB: es el mismo DIP que PasarelaPagos, del lado de la entrada de datos.
+GestorRevisionCartelera -right-> GestorCartelera
+GestorImportaciones -down-> CatalogoExterno
+GestorImportaciones -up-> GestorCartelera
+GestorImportaciones -up-> GestorRevisionCartelera
+GestorSalas -down-> SalaRepository
+GestorSalas -down-> AsientoRepository
+GestorFunciones -down-> FuncionRepository
+
+' La grilla se apoya en GestorFunciones y no reescribe R3 ni R8: serian dos
+' definiciones de cuando dos funciones se pisan. Son dependencias gestor a
+' gestor contra la clase concreta: la unica que pasa por interfaz es
+' GestorPagos -> PoliticaPromociones.
+GestorProgramaciones -right-> GestorFunciones
+GestorProgramaciones -down-> ProgramacionRepository
+GestorClientes -down-> ClienteRepository
+GestorReservas -down-> ReservaRepository
+GestorReservas -down-> GeneradorTicket
+
+' Que butacas estan tomadas es una pregunta sobre la funcion, no sobre una
+' reserva: por eso Ocupacion es una clase y no un metodo de GestorReservas.
+GestorReservas -right-> Ocupacion
+Ocupacion -down-> ReservaRepository
+Ocupacion -down-> AsientoRepository
+Ocupacion -down-> BloqueoButacas
+GestorPagos -down-> PagoRepository
+
+' La carta y las ventas del candy cambian por motivos distintos: una cuando
+' el cine suma un producto, la otra cuando cambia como se cobra.
+GestorCandy -right-> GestorProductos
+GestorProductos -down-> ProductoRepository
+GestorCandy -down-> CompraCandyRepository
+GestorCandy -down-> GeneradorTicketCandy
+GestorEmpleados -down-> EmpleadoRepository
+GestorReservas ..> CalculadoraPrecio
+GestorEmpleados ..> Password
+GeneradoresTxt ..up|> comprobantes
+
+GestorPagos -down-> PasarelaPagos
+GestorPagos -down-> GeneradorRecibo
+PasarelaEmulada ..up|> PasarelaPagos
+BloqueoRedis ..up|> BloqueoButacas
+BloqueoButacasMemoria ..up|> BloqueoButacas
+
+GestorInformes -down-> PagoRepository
+GestorInformes -down-> CompraCandyRepository
+GestorInformes -down-> GeneradorBordero
+
+' El planificador no persiste nada: propone una grilla y quien decide es el
+' administrador. Se apoya en GestorFunciones para no reescribir R3.
+PlanificadorGrilla -right-> GestorFunciones
+
+repository ..> model
+infrastructure ..> model
+service ..> repository
+service ..> infrastructure
+
+legend bottom
+  |= Capa |= De que se ocupa |
+  | controller | Como se habla con la aplicacion: HTTP. 14 @RestController traducen a JSON, las |
+  |  | seis Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Ninguna regla |
+  |  | vive aca. Ya no hay una fachada que los registre: Spring los descubre por component scan. |
+  | dto | La forma del JSON, en objetos sin comportamiento: un tipo por mensaje que entra o sale. |
+  | Aplicacion | Ya no arma nada: solo @SpringBootApplication + main(). Cada @Service, @Repository |
+  |  | y @RestController se conecta solo. Que implementacion de infrastructure/ se usa lo decide |
+  |  | un perfil de Spring, no una linea de codigo. |
+  | service | Las reglas de negocio. Cada gestor pide los repositorios que necesita para validarlas. |
+  | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. No |
+  |  | depende de ninguna otra capa. Sin interfaz+Impl, salvo Promocion: jerarquia real. |
+  | repository | 13 interfaces JpaRepository planas. Ninguna clase de aca imprime ni valida reglas |
+  |  | de negocio: Spring Data genera la unica implementacion que existe. |
+  | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
+  |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |
+  |  | **comprobantes**: el ticket que se entrega; no es de persistencia, se imprime y no se |
+  |  | consulta. **importador**: de donde sale la cartelera. **bloqueos**: la butaca mientras se |
+  |  | elige, con Redis o en memoria. **seguridad**: como se guardan las credenciales. |
+endlegend
+
+@enduml

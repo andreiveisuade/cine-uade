@@ -1,0 +1,73 @@
+@startuml solid-isp
+title SOLID: Segregacion de interfaces - cobrar no necesita el ABM de promociones
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Antes de que existiera PoliticaPromociones, GestorPagos dependia de
+' GestorPromociones a secas: la unica clase concreta de la que otro gestor
+' dependia en todo el sistema. Cobrar solo necesita un numero, pero al
+' depender de la clase entera quedaba atado tambien a crearPorcentaje,
+' crearMontoFijo, crearNxM, activar, desactivar, listar, buscar... metodos
+' que nunca iba a llamar y que igual lo obligaban a recompilar si cambiaban.
+' La interfaz de un solo metodo es el corte: GestorPagos ve la porcion que
+' usa, no la clase completa.
+
+package "service.ventas" {
+  class GestorPagos
+}
+
+package "service.promociones" {
+  interface PoliticaPromociones {
+    +calcularPara(entradas, inicioFuncion, medio): Descuento
+  }
+  class "Descuento\npromocionId, monto" as Descuento <<record>>
+
+  class GestorPromociones {
+    +crearPorcentaje(...)
+    +crearMontoFijo(...)
+    +crearNxM(...)
+    +activar(id)
+    +desactivar(id)
+    +listar(): List<Promocion>
+    +buscar(id): Optional<Promocion>
+    +mejorPara(entradas, inicioFuncion, medio)
+    --
+    +calcularPara(...): Descuento
+  }
+}
+
+GestorPagos -right-> PoliticaPromociones : depende de esto
+GestorPromociones .up.|> PoliticaPromociones : implementa esto,\ny bastante mas
+
+PoliticaPromociones ..> Descuento
+
+note right of GestorPagos
+  cobrar() le pregunta a la interfaz un monto
+  y de que promocion salio, nada mas. No sabe
+  que existe un ABM de promociones ni que hay
+  una regla para elegir "la que mas descuenta"
+  (R15): eso vive del otro lado del contrato.
+end note
+
+note bottom of GestorPromociones
+  Implementa PoliticaPromociones ademas de
+  tener el ABM completo: es una interfaz chica
+  sobre una clase grande, no una clase chica.
+  ISP no dice que GestorPromociones tenga que
+  achicarse; dice que nadie deberia verse
+  obligado a depender de mas de lo que usa.
+end note
+
+note as N1
+  Si GestorPagos dependiera de GestorPromociones
+  a secas, cualquier cambio en el ABM -otro tipo
+  de promocion, otro parametro en crearNxM-
+  obligaria a recompilar y volver a probar
+  GestorPagos, que no toca esas lineas ni le
+  importan.
+end note
+N1 .. GestorPagos
+
+@enduml

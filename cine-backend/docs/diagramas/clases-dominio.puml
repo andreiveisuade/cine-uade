@@ -1,0 +1,493 @@
+@startuml clases-dominio
+title Modelo de dominio - Sistema de cine
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+set namespaceSeparator none
+
+' Este diagrama muestra QUE ES un cine: entidades, value objects y sus relaciones.
+' COMO funciona el sistema (gestores, repositorios, API) esta en clases-capas.puml.
+' Los comentarios ' que siguen son el razonamiento de cada decision: no se renderizan,
+' y son la materia prima de las secciones del manual.
+
+package "model.cartelera" {
+  ' generos va como atributo con cardinalidad y no como flecha: es la unica
+  ' relacion multivaluada del modelo (R7 exige minimo uno) y ese [1..*] se
+  ' perderia si quedara escondido dentro de un List<Genero>.
+  class Pelicula <<Entity>> {
+    +getTitulo(): String
+    +getDuracionMinutos(): int
+    +getClasificacion(): Clasificacion
+    --
+    generos: Genero [1..*]
+    --datos de catalogo--
+    +getDirector(): String
+    +getSinopsis(): String
+    +getAnio(): int
+    +getIdiomaOriginal(): String
+    +getPosterUrl(): String
+    +estaEnCartelera(): boolean
+    --calidad, para ordenar la grilla--
+    +getPuntaje(): double
+    +getVotos(): int
+    --revision del importador--
+    +getEstadoRevision(): EstadoRevision
+  }
+  enum Genero <<enum>> {
+    ACCION / COMEDIA / DRAMA
+    TERROR / CIENCIA_FICCION
+    ANIMACION / DOCUMENTAL
+    ROMANCE / SUSPENSO
+  }
+  enum Clasificacion <<enum>> {
+    ATP / MAS_13 / MAS_16 / MAS_18
+    --
+    +getEdadMinima(): int
+    +getEtiqueta(): String
+  }
+  ' Eje distinto de estaEnCartelera (si SE ESTA DANDO): esto dice si el
+  ' encargado ya decidio que hacer con la pelicula. Las que carga el admin
+  ' nacen CONFIRMADA; las que trae el importador nacen PENDIENTE y esperan en
+  ' un buzon hasta que alguien las mira. No se borran las DESCARTADAS: si se
+  ' borraran, la proxima corrida del importador las volveria a traer.
+  enum EstadoRevision <<enum>> {
+    PENDIENTE / CONFIRMADA / DESCARTADA
+  }
+  ' Una corrida del importador de TMDB: cuando se pidio, como termino, cuanto
+  ' trajo. No guarda QUE peliculas entraron -eso ya esta en el buzon, en
+  ' Pelicula.estadoRevision- sino solo cuantas: repetir la lista aca seria una
+  ' segunda fuente de verdad. Por eso Importacion no tiene flecha a Pelicula.
+  class Importacion <<Entity>> {
+    +getPaginas(): int
+    +getPedidaEn(): LocalDateTime
+    +getTerminoEn(): LocalDateTime [0..1]
+    +getEstado(): EstadoImportacion
+    +getNuevas(): int
+    +getSalteadas(): int
+    +getFallidas(): int
+    +getDetalle(): String [0..1]
+  }
+  ' Tres y no cuatro: no hay PENDIENTE. La corrida arranca en el mismo
+  ' instante en que se la pide, asi que nunca hay una esperando su turno.
+  enum EstadoImportacion <<enum>> {
+    EN_CURSO / TERMINADA / FALLIDA
+  }
+}
+
+package "model.salas" {
+  ' Sala no guarda su distribucion de butacas: serian dos fuentes de verdad
+  ' para lo mismo. La capacidad se cuenta desde los asientos.
+  ' getMinutosLimpieza() es lo que sostiene R3 en la practica: entre el fin de
+  ' una funcion y el inicio de la siguiente en la misma sala hay que dejar un
+  ' margen, y no es igual en todas las salas -una de 200 butacas tarda mas que
+  ' una de 60-, asi que vive como dato de la sala y no como constante fija.
+  class Sala <<Entity>> {
+    {static} +LIMPIEZA_POR_DEFECTO: int = 15
+    +getNombre(): String
+    +getTipo(): TipoSala
+    +getMinutosLimpieza(): int
+  }
+  ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
+  ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
+  ' butaca rota lo esta siempre.
+  class Asiento <<Entity>> {
+    +getSalaId(): int
+    +getFila(): int
+    +getNumero(): int
+    +getTipo(): TipoAsiento
+    +getEstado(): EstadoAsiento
+    +getCodigo(): String
+  }
+  ' TipoSala es tecnologia, no precio premium: cuando el recargo estaba tambien
+  ' aca, una butaca VIP en sala VIP pagaba 2.0 x 1.5, tres veces la base.
+  enum TipoSala <<enum>> {
+    DOS_D / TRES_D / IMAX / CUATRO_D
+    --
+    +getMultiplicadorPrecio(): double
+    +soportaTresD(): boolean
+  }
+  enum TipoAsiento <<enum>> {
+    ESTANDAR / VIP / PAREJA / ACCESIBLE
+    --
+    +getMultiplicadorPrecio(): double
+  }
+  enum EstadoAsiento <<enum>> {
+    HABILITADO
+    FUERA_DE_SERVICIO
+  }
+}
+
+package "model.funciones" {
+  ' Proyeccion es de la funcion, no de la sala: TipoSala dice que PUEDE
+  ' proyectar en 3D, la funcion dice que se ESTA proyectando.
+  '
+  ' El bloque del paso del tiempo no guarda ningun estado: la funcion no tiene
+  ' un campo "yaEmpezo" que alguien deba cambiar cuando llega la hora, lo
+  ' calcula. Es el mismo criterio que Reserva.estaVencida().
+  ' El instante entra por parametro y no se le pide al reloj, para poder
+  ' probarlo sin esperar; la duracion tambien, pero por otro motivo: ver N2.
+  ' getFin() es lo que hace legible la restriccion de superposicion R3, y
+  ' yaEmpezo() es lo que sostiene R19.
+  class Funcion <<Entity>> {
+    +getPeliculaId(): int
+    +getSalaId(): int
+    +getProgramacionId(): Integer [0..1]
+    +getInicio(): LocalDateTime
+    +getVersion(): Version
+    +getProyeccion(): Proyeccion
+    +getPrecio(): Dinero
+    --el paso del tiempo, derivado--
+    +yaEmpezo(ahora): boolean
+    +getFin(duracionMinutos): LocalDateTime
+    +estaEnCurso(ahora, duracionMinutos): boolean
+    +yaTermino(ahora, duracionMinutos): boolean
+  }
+  enum Version <<enum>> {
+    DOBLADA
+    SUBTITULADA
+  }
+  enum Proyeccion <<enum>> {
+    DOS_D
+    TRES_D
+  }
+}
+
+package "model.programaciones" {
+  ' La grilla del cine: "Matrix en la Sala 1, todos los dias a las 20:30, del
+  ' 1 al 15 de septiembre". Una sola alta en vez de quince.
+  ' MATERIALIZA funciones, no las calcula al vuelo: una funcion tiene cosas
+  ' propias que la grilla no sabe —sus reservas, si se cancelo, si se movio de
+  ' sala— y derivarlas obligaria a modelar cada excepcion como una excepcion a
+  ' la grilla. A la tercera, el modelo seria la grilla mas una lista de parches.
+  ' diasSemana va como atributo con cardinalidad por lo mismo que generos en
+  ' Pelicula, pero el minimo es 0 y no 1: vacio significa todos los dias.
+  class Programacion <<Entity>> {
+    +getPeliculaId(): int
+    +getSalaId(): int
+    --patron temporal--
+    +getDesde(): LocalDate
+    +getHasta(): LocalDate [0..1]
+    +getHoraInicio(): LocalTime
+    diasSemana: DayOfWeek [0..*]
+    +horarios(tope): List<LocalDateTime>
+    --lo que copia a cada funcion--
+    +getVersion(): Version
+    +getProyeccion(): Proyeccion
+    +getPrecio(): Dinero
+    +estaActiva(): boolean
+    --lo que ya paso--
+    +getGeneradaHasta(): LocalDate [0..1]
+  }
+  ' hasta [0..1]: sin fecha de fin la grilla es abierta y corre hasta que la den
+  ' de baja, que es lo normal en un cine. Es lo que le da sentido a estaActiva:
+  ' si toda grilla generara su rango entero al darse de alta, dar de baja no
+  ' evitaria ninguna funcion.
+  '
+  ' generadaHasta es el unico atributo que no describe la intencion sino lo que
+  ' efectivamente se materializo. Por eso horarios() recibe un tope: una grilla
+  ' abierta no tiene final, asi que hasta donde generar lo decide quien pregunta.
+}
+
+package "model.usuarios" {
+  class Usuario <<Entity>> {
+    +getNombre(): String
+    +getEmail(): String
+    +getRol(): Rol
+  }
+  class Cliente <<Entity>>
+  ' Antes era AdministradorCine. El corte nunca fue el cargo sino tener
+  ' contrasena: el empleado la tiene, el cliente no. Al entrar el acomodador
+  ' el nombre viejo mentia; la herencia no. Rol discrimina la tabla unica.
+  class Empleado <<Entity>> {
+    +getPasswordHash(): String
+  }
+  enum Rol <<enum>> {
+    CLIENTE
+    ADMINISTRADOR
+    ACOMODADOR
+    --
+    +esEmpleado(): boolean
+  }
+}
+
+package "model.ventas" {
+  ' Nace RESERVADA, pasa a PAGADA al cobrar, CANCELADA si el cliente la da de
+  ' baja y EXPIRADA si nadie la pago a tiempo. Expira sin proceso de fondo: la
+  ' primera operacion que se cruza con una vencida la cierra al pasar.
+  ' codigo es el del QR y, como el cliente no inicia sesion, es su unica
+  ' credencial: por eso no puede ser el id. ingresadaEn null = no entraron aun.
+  ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
+  ' en Funcion, para poder probarla sin esperar media hora; MINUTOS_PARA_PAGAR
+  ' es lo que define ese plazo.
+  class Reserva <<Entity>> {
+    {static} +MINUTOS_PARA_PAGAR: int = 30
+    +getFuncionId(): int
+    +getClienteId(): int
+    +getCreadaEn(): LocalDateTime
+    +getEntradas(): List<Entrada>
+    +getCantidadEntradas(): int
+    +getTotal(): Dinero
+    +getEstado(): EstadoReserva
+    +estaVigente(): boolean
+    +estaVencida(ahora): boolean
+    --control de acceso--
+    +getCodigo(): String
+    +getIngresadaEn(): LocalDateTime
+  }
+  ' Value object: sin identidad ni DAO, vive y muere con su reserva.
+  ' precio es el de lista (funcion x TipoSala x TipoAsiento x TipoTarifa), se
+  ' congela al reservar y ninguna promocion lo toca.
+  ' La tarifa va aca porque es por persona: en una reserva de cuatro puede
+  ' haber dos generales, un menor y un jubilado.
+  class Entrada <<Embeddable>> {
+    +asientoId(): int
+    +codigoAsiento(): String
+    +tarifa(): TipoTarifa
+    +precio(): Dinero
+  }
+  ' El descuento vive aca y no en la entrada: el 2x1 no se puede escribir como
+  ' factor sobre una butaca, y como las promociones no se acumulan y gana la
+  ' mejor (R15), todas tienen que producir la misma unidad: un monto sobre la
+  ' reserva. Consecuencia: el total definitivo no existe hasta el pago, porque
+  ' el descuento bancario depende del medio que se elige al cobrar.
+  class Pago <<Entity>> {
+    +getReservaId(): int
+    +getSubtotal(): Dinero
+    +getPromocionId(): Integer
+    +getDescuento(): Dinero
+    +getMonto(): Dinero
+    +getMedio(): MedioPago
+    +getFecha(): LocalDateTime
+    +getCodigoAutorizacion(): String
+  }
+  enum EstadoReserva <<enum>> {
+    RESERVADA / PAGADA
+    CANCELADA / EXPIRADA
+  }
+  ' Quien compra, no donde se sienta. Sin login no hay como validar "jubilado"
+  ' al vender: la tarifa se declara al comprar y se acredita en la puerta, y
+  ' por eso el enum sabe cual requiere acreditacion.
+  enum TipoTarifa <<enum>> {
+    GENERAL / MENOR
+    JUBILADO / ESTUDIANTE
+    --
+    +getMultiplicadorPrecio(): double
+    +requiereAcreditacion(): boolean
+  }
+  enum MedioPago <<enum>> {
+    EFECTIVO / DEBITO / CREDITO
+    QR / TRANSFERENCIA
+    --
+    +requiereAutorizacion(): boolean
+  }
+}
+
+package "model.promociones" {
+  ' Clase abstracta @Entity con tres subclases de verdad, que es cuando la
+  ' abstraccion paga: un tipo de beneficio nuevo es una clase, no un case mas
+  ' en un switch. Es la unica jerarquia del dominio que sobrevivio al pasaje a
+  ' JPA con esta forma -el resto de las entidades eran interfaz con un solo
+  ' implementador, y hoy son @Entity a secas-: aca el polimorfismo es real.
+  ' Van a tabla unica con discriminador, igual que Usuario.
+  ' calcularDescuento recibe una lista de entradas y no la reserva entera
+  ' porque las de tarifa reducida no participan del descuento (R16).
+  ' aplicaA recibe el inicio de la funcion y el medio de pago por parametro, no
+  ' un objeto Funcion completo: todo lo que evalua -vigencia, dia, hora, medio-
+  ' sale de esos dos datos, y pedir la funcion entera obligaria a resolverla
+  ' solo para leerle el inicio. Las condiciones comunes y dos helpers de
+  ' calculo -topear() evita un cobro negativo, subtotalDe() suma lo que
+  ' participa del descuento- viven ya en esta clase, no en una intermedia.
+  abstract class Promocion <<Entity>> {
+    --condiciones--
+    +getNombre(): String
+    +getTipo(): TipoPromocion
+    +getVigenciaDesde(): LocalDate
+    +getVigenciaHasta(): LocalDate
+    +getDiasSemana(): Set<DayOfWeek>
+    +getHoraDesde(): LocalTime
+    +getHoraHasta(): LocalTime
+    +getMediosPago(): Set<MedioPago>
+    +estaActiva(): boolean
+    +aplicaA(inicioFuncion, medio): boolean
+    --beneficio--
+    +{abstract} calcularDescuento(List<Entrada>): Dinero
+    {static} #topear(Dinero, List<Entrada>): Dinero
+    {static} #subtotalDe(List<Entrada>): Dinero
+  }
+  ' Discriminador de la tabla unica, mismo patron que Rol en Usuario: las tres
+  ' van a la misma tabla porque comparten todas las condiciones y solo cambia
+  ' como calculan el descuento.
+  enum TipoPromocion <<enum>> {
+    PORCENTAJE
+    MONTO_FIJO
+    NXM
+  }
+  class PromocionPorcentaje {
+    +getPorcentaje(): double
+  }
+  class PromocionMontoFijo {
+    +getMonto(): Dinero
+  }
+  class PromocionNxM {
+    +getLleva(): int
+    +getPaga(): int
+  }
+}
+
+package "model.candy" {
+  class Producto <<Entity>> {
+    +getNombre(): String
+    +getTipo(): TipoProducto
+    +getPrecio(): Dinero
+    +estaDisponible(): boolean
+    +getComponentes(): List<ItemCombo>
+    +esCombo(): boolean
+  }
+  ' La autoreferencia es lo que hace al combo una promocion y no un producto
+  ' con nombre bonito: sabiendo que trae se valida que cueste menos que
+  ' comprarlo suelto (R14).
+  class ItemCombo <<Embeddable>> {
+    +productoId(): int
+    +nombre(): String
+    +cantidad(): int
+  }
+  ' No pasa por Pago y no tiene estados: en el mostrador se cobra en el acto,
+  ' asi que nace pagada y lleva encima el medio.
+  ' Las dos asociaciones en 0..1 no son redundantes: la venta de mostrador no
+  ' tiene ninguna, y la del "desea agregar pochoclos?" posterior a la compra
+  ' web tiene reserva, de donde sale el cliente sin volver a pedirlo.
+  class CompraCandy <<Entity>> {
+    +getClienteId(): Integer
+    +getReservaId(): Integer
+    +getFecha(): LocalDateTime
+    +getMedio(): MedioPago
+    +getCodigoAutorizacion(): String
+    +getItems(): List<ItemCompra>
+    +getTotal(): Dinero
+  }
+  class ItemCompra <<Embeddable>> {
+    +productoId(): int
+    +nombre(): String
+    +cantidad(): int
+    +precioUnitario(): Dinero
+    +getSubtotal(): Dinero
+  }
+  enum TipoProducto <<enum>> {
+    POCHOCLOS / BEBIDA
+    GOLOSINA / COMBO
+  }
+}
+
+package "model.dinero" {
+  ' Dinero es un value object, no una entidad: sin id ni DAO propio, y viaja como
+  ' TIPO de atributo en todo el dominio (funciones, programaciones, ventas,
+  ' promociones, candy) en los lugares donde antes habia un double. La razon esta
+  ' en su propio javadoc: un double no representa 0,10 exacto y las cuentas de
+  ' plata terminan mintiendo de a poco; Dinero guarda centavos enteros y evita el
+  ' problema de raiz en vez de redondear despues de cada operacion.
+  ' No lleva flechas hacia el resto del modelo, por el mismo motivo que N1: es un
+  ' tipo, no una entidad con la que otra entidad "se relaciona".
+  class Dinero <<record>> {
+    centavos: long
+    --
+    +aPesos(): double
+    +mas(Dinero): Dinero
+    +menos(Dinero): Dinero
+    +por(factor): Dinero
+    +porcentaje(double): Dinero
+    +acotadoA(techo): Dinero
+    +sinBajarDeCero(): Dinero
+    +esMayorQue(Dinero): boolean
+  }
+}
+
+Cliente --|> Usuario
+Empleado --|> Usuario
+
+PromocionPorcentaje --|> Promocion
+PromocionMontoFijo --|> Promocion
+PromocionNxM --|> Promocion
+
+Sala "1" *-- "1..*" Asiento
+Funcion "*" --> "1" Pelicula
+
+Funcion "*" --> "1" Sala
+note on link
+  {R3: dos funciones de la misma
+  sala no se superponen}
+end note
+
+' Las dos puntas dicen algo. Del lado de Programacion es 0..1 y no 1 porque la
+' grilla no reemplaza a CU-03: la funcion suelta que carga el admin —el
+' preestreno, la funcion especial— no pertenece a ninguna. Del lado de Funcion
+' el * incluye cero: una grilla cuyas fechas chocan todas contra R3 se da de
+' alta y no materializa ninguna.
+' Es asociacion y NO composicion, que es lo que la distingue de Sala <>- Asiento:
+' la funcion no se va con la grilla. Dar de baja una programacion solo evita que
+' genere nuevas; las ya generadas sobreviven con sus entradas vendidas encima.
+Funcion "*" --> "0..1" Programacion : generada por >
+Programacion "*" --> "1" Pelicula
+Programacion "*" --> "1" Sala
+
+Reserva "*" --> "1" Funcion
+Reserva "*" --> "1" Cliente
+Reserva "1" *-- "1..*" Entrada
+
+Entrada "*" --> "1" Asiento
+note on link
+  {entrada.asiento.sala =
+   entrada.reserva.funcion.sala}
+end note
+
+Pago "0..1" --> "1" Reserva
+Pago "*" --> "0..1" Promocion
+
+Producto "1" *-- "0..*" ItemCombo : contiene >
+note on link
+  {0 si tipo != COMBO,
+   >= 2 si tipo = COMBO}
+end note
+
+ItemCombo "*" --> "1" Producto : refiere a >
+CompraCandy "*" --> "0..1" Cliente
+CompraCandy "*" --> "0..1" Reserva
+CompraCandy "1" *-- "1..*" ItemCompra
+ItemCompra "*" --> "1" Producto
+
+note as N1
+  **Los enums no llevan asociacion.**
+  Un enum es un tipo, no una entidad: se modela
+  como atributo (getTipo(): TipoSala), igual que
+  un String. Dibujarle una flecha "1 a 1" diria
+  que cada sala tiene su propio IMAX, cuando IMAX
+  es un valor compartido por todas.
+  Genero es la excepcion: es multivaluado y tiene
+  minimo uno, y esa cardinalidad se pierde si no
+  se escribe. Por eso va como atributo.
+end note
+
+note as N2
+  **Las asociaciones se materializan por id.**
+  Ninguna entidad guarda una referencia al objeto:
+  Reserva tiene getFuncionId(): int, no getFuncion().
+  El diagrama dice QUE se relaciona con que y con
+  cuantos; el id es COMO se resuelve. Quien necesita
+  el objeto completo se lo pide al repositorio.
+  Se mantuvo asi incluso con JPA disponible: un
+  @ManyToOne navegable es la puerta de entrada mas
+  comun a un N+1 -cargar una reserva arrastraria su
+  funcion, su sala, su pelicula- y el id explicito
+  deja ese costo a la vista de quien lo pide.
+
+  Tiene una consecuencia visible en este diagrama:
+  **Funcion no sabe cuanto dura.** Solo tiene un
+  peliculaId, y la duracion vive en Pelicula. Por eso
+  getFin() y estaEnCurso() la reciben por parametro
+  en vez de calcularla: guardar una copia seria un
+  segundo lugar donde vive el mismo dato, y bastaria
+  con corregir la duracion de una pelicula para que
+  las funciones ya creadas quedaran mintiendo.
+end note
+
+@enduml

@@ -1,0 +1,134 @@
+@startuml capas
+title Capas y paquetes - Spring Boot + Spring Data JPA
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 40
+hide members
+
+' El 19/08/2026 el backend migro de Javalin+DAO a Spring Boot + Spring Data JPA.
+' Este diagrama reemplaza conceptualmente a clases-capas.puml para la vista de
+' paquetes: aquel muestra las clases y sus colaboraciones una por una, este
+' muestra donde vive cada cosa. Las clases y flechas de negocio siguen siendo
+' las de clases-capas.puml; aca no se repiten.
+
+package controller {
+  package vistas {
+    class "6 Vistas*\n(ensambladores de DTO)" as VistasInternas
+  }
+  package http {
+    class "Parseo, Fechas, NoEncontrado\nManejadorErrores" as Http
+  }
+  class "14 @RestController\n(uno por area, sin fachada)" as Controllers
+}
+
+package dto {
+  class "candy, cartelera, catalogos, funciones\ngrilla, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
+}
+
+package service {
+  package candy as srv_candy {
+    class "GestorCandy\nGestorProductos" as SrvCandy
+  }
+  package cartelera as srv_cartelera {
+    class "GestorCartelera\nDatosPelicula" as SrvCartelera
+  }
+  package funciones as srv_funciones {
+    class "GestorFunciones\nAgendaDeSala" as SrvFunciones
+  }
+  package informes as srv_informes {
+    class "GestorInformes\nArqueo, Bordero\nInformeFuncion" as SrvInformes
+  }
+  package programaciones as srv_programaciones {
+    class "GestorProgramaciones, PlanificadorGrilla\nPlanProgramacion, CriteriosGrilla\nPropuestaGrilla" as SrvProgramaciones
+  }
+  package promociones as srv_promociones {
+    class "GestorPromociones\nPoliticaPromociones" as SrvPromociones
+  }
+  package salas as srv_salas {
+    class "GestorSalas" as SrvSalas
+  }
+  package usuarios as srv_usuarios {
+    class "GestorClientes\nGestorEmpleados" as SrvUsuarios
+  }
+  package ventas as srv_ventas {
+    class "GestorReservas, GestorPagos\nOcupacion, CalculadoraPrecio\nCriteriosReserva" as SrvVentas
+  }
+}
+
+package model {
+  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios, dinero" as DomSubpaquetes
+}
+
+package repository {
+  class "13 interfaces JpaRepository\n(planas, sin implementacion propia)\n+ DineroConverter" as Repos
+}
+
+package infrastructure {
+  class "bloqueos, comprobantes\npasarelas, importador, seguridad" as Infra
+}
+
+class Aplicacion
+
+Controllers -down-> service
+Controllers -right-> VistasInternas
+Controllers ..> Dtos
+VistasInternas ..> Dtos
+
+service ..> repository
+service ..> infrastructure
+repository ..> model
+infrastructure ..> model
+
+note bottom of model
+  No depende de NADA externo: ni de
+  controller, ni de service, ni de
+  repository, ni de una libreria de
+  terceros salvo java.time. Es la unica
+  capa que se podria llevar a otro
+  proyecto tal cual.
+end note
+
+note left of Controllers
+  Ya no hay una fachada tipo
+  Rutas.registrarTodas(): cada
+  controlador es publico y Spring lo
+  descubre solo por component scan.
+  Antes eran 14 clases Rutas*
+  package-private mas una que las
+  registraba.
+end note
+
+note left of Repos
+  Antes era persistencia/, con un
+  contrato arriba y una implementacion
+  por tecnologia abajo (mysql/, memoria/,
+  archivo/, redis/). Hoy no hay ninguna
+  carpeta de implementacion: Spring Data
+  genera la unica que existe.
+end note
+
+note right of Aplicacion
+  Ya no arma nada a mano. Es solo
+  @SpringBootApplication + main():
+  Spring conecta cada @Service,
+  @Repository y @RestController por
+  component scan.
+end note
+
+Aplicacion .. Controllers
+
+legend bottom
+  |= Capa |= Que cambio con la migracion a Spring |
+  | service | Sin cambios de fondo: sigue siendo un subpaquete por subdominio, cada uno con su |
+  |  | gestor y las clases de fabricacion pura que le sirven solo a el. |
+  | controller | api/rutas/ y api/vistas/ se convirtieron en controller/: vistas/ sobrevive igual, |
+  |  | pero rutas/ y su fachada desaparecieron -cada @RestController es publico y autonomo-. |
+  | model | Sin cambios de subpaquetes, pero las entidades dejaron de ser interfaz+Impl: son |
+  |  | clases @Entity a secas, salvo Promocion, que sigue siendo jerarquia real. |
+  | repository | persistencia/ perdio sus cuatro subcarpetas por tecnologia: hoy son 13 interfaces |
+  |  | planas y Spring Data genera la unica implementacion que existe. |
+endlegend
+
+@enduml

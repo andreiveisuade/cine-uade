@@ -1,0 +1,16 @@
+target/
+*.class
+.idea/
+*.iml
+.DS_Store
+
+# Lo deja el shade plugin al armar el jar de la imagen de Docker
+dependency-reduced-pom.xml
+
+# Datos que genera la app al correr. Con barra adelante: sin ella el patron matchea
+# cualquier carpeta con ese nombre a cualquier profundidad, y `informes/` se estaba
+# tragando src/main/java/ar/uade/cine/servicio/informes/ — cinco clases del negocio que
+# nunca entraron al repo y que un clon limpio no compilaba.
+/tickets/
+/informes/
+/reservas.txt

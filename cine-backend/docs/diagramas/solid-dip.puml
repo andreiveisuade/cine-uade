@@ -1,0 +1,77 @@
+@startuml solid-dip
+title SOLID: Inversion de dependencias - ni siquiera hay una implementacion para nombrar
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' El caso testigo es ReservaRepository, pero la misma forma se repite en las
+' otras doce interfaces de repository/. Antes el DIP se sostenia con
+' disciplina: un solo lugar (Aplicacion) nombraba la implementacion concreta
+' de cada DAO. Hoy la forma es mas fuerte: Spring Data genera la unica
+' implementacion en tiempo de arranque, asi que no existe una clase que se
+' pueda nombrar ni por accidente. GestorReservas depende de la interfaz sin
+' saber que atras hay MySQL o H2.
+
+package "service.ventas" {
+  class GestorReservas
+}
+
+package repository {
+  interface ReservaRepository {
+    +save(Reserva): Reserva
+    +saveAndFlush(Reserva): Reserva
+    +findById(id): Optional<Reserva>
+    +findByCodigo(codigo): Optional<Reserva>
+    +findAll(): List<Reserva>
+    +findByFuncionId(funcionId): List<Reserva>
+    +findByClienteIdOrderByCreadaEnDesc(clienteId): List<Reserva>
+  }
+}
+
+note right of ReservaRepository
+  No hay ninguna clase que implemente
+  esta interfaz en el codigo fuente.
+  Spring Data la genera al arrancar,
+  a partir de la firma de cada metodo.
+end note
+
+class Aplicacion <<@SpringBootApplication>>
+
+GestorReservas -down-> ReservaRepository : depende de\nla interfaz
+
+note as N2
+  ArquitecturaTest ya no busca "un solo
+  lugar nombra la implementacion" -no
+  tendria que buscar-: verifica que
+  ningun service/ ni controller/
+  importe jakarta.persistence,
+  java.sql u org.springframework.jdbc.
+  Si alguien se saltea su repositorio,
+  el test lo detecta.
+end note
+N2 .. GestorReservas
+
+note right of Aplicacion
+  Solo levanta el contenedor de Spring
+  (@SpringBootApplication + main()).
+  No arma nada a mano: cada @Service,
+  @Repository y @RestController se
+  conecta solo por component scan.
+end note
+
+Aplicacion ..> GestorReservas : el contenedor lo\narma, no Aplicacion
+
+note as N1
+  La flecha de compilacion va en un
+  solo sentido, hacia la interfaz:
+  GestorReservas --> ReservaRepository.
+  No hay una segunda clase de bajo
+  nivel de la que dependa a su vez -eso
+  es lo que hace mas fuerte esta D que
+  la version con DAO, donde si habia
+  una implementacion concreta detras.
+end note
+N1 .. ReservaRepository
+
+@enduml
