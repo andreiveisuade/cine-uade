@@ -16,7 +16,6 @@ function centrar(texto) {
   return " ".repeat(Math.max(Math.floor((LINEA.length - texto.length) / 2), 0)) + texto;
 }
 
-/** Mismo contenido y formato que tickets/ticket-<id>.txt del backend. */
 /**
  * El código de acceso, grande y separado en dos grupos de cuatro para poder leerlo de
  * un renglón. No es un QR dibujado: generarlo de verdad pide una librería, y el código
@@ -41,6 +40,7 @@ function tarjetaCodigo(reserva) {
     </div>`;
 }
 
+/** Mismo contenido y formato que tickets/ticket-<id>.txt del backend. */
 function armarTicket(reserva) {
   return [
     LINEA,

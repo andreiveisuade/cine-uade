@@ -80,7 +80,6 @@ export function precioConTarifa(asiento, nombreTarifa) {
   return Math.round(asiento.precio * tarifaPorNombre(nombreTarifa).multiplicador * 100) / 100;
 }
 
-/** Un <select> de tarifas para una butaca. */
 export function selectorTarifa(codigo, elegida) {
   const opciones = (tarifas || []).map((t) =>
     `<option value="${t.nombre}" ${t.nombre === elegida ? "selected" : ""}>${etiqueta(t.nombre)}</option>`,
