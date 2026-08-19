@@ -30,7 +30,7 @@ Si agregás un diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
 | Archivo | Qué muestra |
 |---|---|
 | `clases-dominio.puml` | Entidades, enums y relaciones del negocio, agrupadas por sub-dominio |
-| `clases-capas.puml` | Arquitectura DAO: las 4 capas, con sus gestores, contratos e implementaciones |
+| `clases-capas.puml` | Arquitectura en capas: gestores, repositorios y adaptadores de infraestructura |
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | Flujo de reservar butacas hasta emitir el ticket |
 | `secuencia-candy.puml` | Armado del combo promocional y venta en el candy |

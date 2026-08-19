@@ -14,11 +14,11 @@ hide empty members
 ' La interfaz de un solo metodo es el corte: GestorPagos ve la porcion que
 ' usa, no la clase completa.
 
-package "servicio.ventas" {
+package "service.ventas" {
   class GestorPagos
 }
 
-package "servicio.promociones" {
+package "service.promociones" {
   interface PoliticaPromociones {
     +calcularPara(entradas, inicioFuncion, medio): Descuento
   }

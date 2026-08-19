@@ -12,7 +12,7 @@ hide empty members
 ' otra cosa: alta cohesion de un lado, un segundo lugar con la misma logica
 ' del otro. Fabricacion pura es exactamente ese tercer lugar.
 
-package "servicio.ventas" {
+package "service.ventas" {
   class Ocupacion {
     +asientosOcupados(funcionId): Set<Integer>
     +asientosLibres(funcionId): List<Asiento>
@@ -25,7 +25,7 @@ package "servicio.ventas" {
   }
 }
 
-package "servicio.funciones" {
+package "service.funciones" {
   class GestorFunciones {
     +agendaDe(salaId): AgendaDeSala
   }
@@ -34,7 +34,7 @@ package "servicio.funciones" {
   }
 }
 
-package "servicio.programaciones" {
+package "service.programaciones" {
   class PlanificadorGrilla
 }
 

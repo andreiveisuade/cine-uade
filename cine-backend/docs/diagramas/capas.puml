@@ -1,5 +1,5 @@
 @startuml capas
-title Capas y paquetes - servicio y api reorganizados por subdominio
+title Capas y paquetes - Spring Boot + Spring Data JPA
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
@@ -7,32 +7,27 @@ skinparam nodesep 12
 skinparam ranksep 40
 hide members
 
-' Reemplaza conceptualmente a clases-capas.puml para la vista de paquetes:
-' aquel muestra las clases y sus colaboraciones una por una, este muestra
-' donde vive cada cosa despues de partir servicio/ y api/ en un subpaquete
-' por subdominio. Las clases y flechas de negocio siguen siendo las de
-' clases-capas.puml; aca no se repiten.
+' El 19/08/2026 el backend migro de Javalin+DAO a Spring Boot + Spring Data JPA.
+' Este diagrama reemplaza conceptualmente a clases-capas.puml para la vista de
+' paquetes: aquel muestra las clases y sus colaboraciones una por una, este
+' muestra donde vive cada cosa. Las clases y flechas de negocio siguen siendo
+' las de clases-capas.puml; aca no se repiten.
 
-package api {
-  package rutas {
-    class Rutas
-    class "14 Rutas*\n(package-private)" as RutasInternas
-  }
+package controller {
   package vistas {
-    class Vistas
-    class "6 Vistas*\n(package-private)" as VistasInternas
+    class "6 Vistas*\n(ensambladores de DTO)" as VistasInternas
   }
   package http {
-    class "Parseo, Fechas\nNoEncontrado" as Http
+    class "Parseo, Fechas, NoEncontrado\nManejadorErrores" as Http
   }
-  class ServidorApi
+  class "14 @RestController\n(uno por area, sin fachada)" as Controllers
 }
 
 package dto {
   class "candy, cartelera, catalogos, funciones\ngrilla, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
 }
 
-package servicio {
+package service {
   package candy as srv_candy {
     class "GestorCandy\nGestorProductos" as SrvCandy
   }
@@ -62,87 +57,78 @@ package servicio {
   }
 }
 
-package dominio {
-  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios" as DomSubpaquetes
+package model {
+  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios, dinero" as DomSubpaquetes
 }
 
-package persistencia {
-  class "PeliculaDAO, SalaDAO, AsientoDAO, FuncionDAO\nProgramacionDAO, ClienteDAO, ReservaDAO, PagoDAO\nProductoDAO, CompraCandyDAO, EmpleadoDAO\nPromocionDAO, BloqueoButacas" as DaoInterfaces
-  package mysql {
-  }
-  package memoria {
-  }
-  package archivo {
-  }
-  package redis {
-  }
+package repository {
+  class "13 interfaces JpaRepository\n(planas, sin implementacion propia)\n+ DineroConverter" as Repos
+}
+
+package infrastructure {
+  class "bloqueos, comprobantes\npasarelas, importador, seguridad" as Infra
 }
 
 class Aplicacion
 
-Rutas ..> RutasInternas : registra
-Vistas *-- VistasInternas : arma
-
-RutasInternas -down-> servicio
-RutasInternas -right-> Vistas
-RutasInternas ..> Dtos
+Controllers -down-> service
+Controllers -right-> VistasInternas
+Controllers ..> Dtos
 VistasInternas ..> Dtos
 
-ServidorApi -down-> Rutas
-ServidorApi -down-> Aplicacion
+service ..> repository
+service ..> infrastructure
+repository ..> model
+infrastructure ..> model
 
-Aplicacion -down-> servicio
-Aplicacion -down-> persistencia
-
-servicio ..> dominio
-persistencia ..> dominio
-
-note bottom of dominio
-  No depende de NADA externo: ni de api, ni de
-  servicio, ni de persistencia, ni de una libreria
-  de terceros salvo java.time. Es la unica capa
-  que se podria llevar a otro proyecto tal cual,
-  y por eso sus subpaquetes no cambiaron con esta
-  reorganizacion: ya estaban partidos por
-  subdominio desde el principio.
+note bottom of model
+  No depende de NADA externo: ni de
+  controller, ni de service, ni de
+  repository, ni de una libreria de
+  terceros salvo java.time. Es la unica
+  capa que se podria llevar a otro
+  proyecto tal cual.
 end note
 
-note left of RutasInternas
-  Las 14 clases Rutas* son package-private: nadie
-  fuera de api.rutas las puede nombrar. Lo unico
-  publico del paquete es Rutas, que las registra
-  a todas contra Javalin. ServidorApi conoce
-  Rutas.registrarTodas(), no RutasReservas ni
-  RutasCandy.
+note left of Controllers
+  Ya no hay una fachada tipo
+  Rutas.registrarTodas(): cada
+  controlador es publico y Spring lo
+  descubre solo por component scan.
+  Antes eran 14 clases Rutas*
+  package-private mas una que las
+  registraba.
 end note
 
-note left of VistasInternas
-  Mismo criterio en api.vistas: las 6 clases
-  Vistas* son package-private y arman el DTO de
-  respuesta pidiendole a los gestores lo que
-  necesitan. Solo Vistas.de(aplicacion) es publico,
-  y devuelve las seis ya armadas y conectadas:
-  un Rutas* recibe una Vistas, no seis parametros
-  sueltos.
+note left of Repos
+  Antes era persistencia/, con un
+  contrato arriba y una implementacion
+  por tecnologia abajo (mysql/, memoria/,
+  archivo/, redis/). Hoy no hay ninguna
+  carpeta de implementacion: Spring Data
+  genera la unica que existe.
 end note
+
+note right of Aplicacion
+  Ya no arma nada a mano. Es solo
+  @SpringBootApplication + main():
+  Spring conecta cada @Service,
+  @Repository y @RestController por
+  component scan.
+end note
+
+Aplicacion .. Controllers
 
 legend bottom
-  |= Capa |= Que cambio con la reorganizacion |
-  | servicio | Paso de un paquete plano con doce gestores sueltos a un |
-  |  | subpaquete por subdominio: candy, cartelera, funciones, informes, |
-  |  | programaciones, promociones, salas, usuarios, ventas. Cada uno agrupa |
-  |  | su gestor con las clases de fabricacion pura y los value objects que |
-  |  | le sirven solo a el -Ocupacion y CalculadoraPrecio en ventas, |
-  |  | AgendaDeSala en funciones, Arqueo/Bordero/InformeFuncion en informes-. |
-  | api | rutas/ y vistas/ dejaron de ser una clase Rutas* o Vistas* suelta |
-  |  | por familia HTTP en el paquete api/: ahora cada una es su propio |
-  |  | subpaquete con una fachada publica y el resto package-private, mas |
-  |  | http/ para lo transversal (Parseo, Fechas, NoEncontrado). |
-  | dominio | Sin cambios: ya vivia partido por subdominio antes de esta |
-  |  | reorganizacion. Ver clases-dominio.puml para el detalle. |
-  | persistencia | Sin cambios: los contratos arriba, las tecnologias -mysql, |
-  |  | memoria, archivo, redis- en subpaquetes debajo. Ver solid-dip.puml |
-  |  | para por que ninguna de esas cuatro se nombra fuera de Aplicacion. |
+  |= Capa |= Que cambio con la migracion a Spring |
+  | service | Sin cambios de fondo: sigue siendo un subpaquete por subdominio, cada uno con su |
+  |  | gestor y las clases de fabricacion pura que le sirven solo a el. |
+  | controller | api/rutas/ y api/vistas/ se convirtieron en controller/: vistas/ sobrevive igual, |
+  |  | pero rutas/ y su fachada desaparecieron -cada @RestController es publico y autonomo-. |
+  | model | Sin cambios de subpaquetes, pero las entidades dejaron de ser interfaz+Impl: son |
+  |  | clases @Entity a secas, salvo Promocion, que sigue siendo jerarquia real. |
+  | repository | persistencia/ perdio sus cuatro subcarpetas por tecnologia: hoy son 13 interfaces |
+  |  | planas y Spring Data genera la unica implementacion que existe. |
 endlegend
 
 @enduml

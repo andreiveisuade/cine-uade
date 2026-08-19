@@ -5,11 +5,11 @@ skinparam sequenceMessageAlign center
 hide footbox
 
 actor Cliente
-participant "RutasReservas" as UI
+participant "ReservaController" as UI
 participant "Ocupacion" as Ocupacion
 participant "GestorReservas" as Gestor
-participant "AsientoDAO" as Asientos <<interface>>
-participant "ReservaDAO" as DAO <<interface>>
+participant "AsientoRepository" as Asientos <<interface>>
+participant "ReservaRepository" as DAO <<interface>>
 participant "CalculadoraPrecio" as Precio
 participant "GeneradorTicket" as Ticket <<interface>>
 
@@ -70,8 +70,8 @@ deactivate Gestor
 deactivate UI
 
 note over DAO, Ticket
-  El gestor habla con interfaces. Que la reserva termine en MySQL
-  o en reservas.txt, y el ticket en un .txt o manana en un PDF,
+  El gestor habla con interfaces. Que Spring Data la guarde en
+  MySQL o en H2, y el ticket en un .txt o manana en un PDF,
   no cambia esta secuencia.
 end note
 

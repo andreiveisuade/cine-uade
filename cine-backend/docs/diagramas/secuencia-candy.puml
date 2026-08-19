@@ -5,11 +5,11 @@ skinparam sequenceMessageAlign center
 hide footbox
 
 actor Cliente
-participant "RutasCandy" as UI
+participant "CandyController" as UI
 participant "GestorCandy" as Gestor
 participant "GestorProductos" as Carta
-participant "ProductoDAO" as Productos <<interface>>
-participant "CompraCandyDAO" as DAO <<interface>>
+participant "ProductoRepository" as Productos <<interface>>
+participant "CompraCandyRepository" as DAO <<interface>>
 participant "GeneradorTicketCandy" as Ticket <<interface>>
 
 == Antes: el administrador arma la promocion ==
