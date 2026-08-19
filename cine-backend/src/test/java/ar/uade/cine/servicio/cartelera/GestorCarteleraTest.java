@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,10 +20,12 @@ import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.cartelera.PeliculaImpl;
 import ar.uade.cine.dominio.funciones.FuncionImpl;
+import ar.uade.cine.dominio.programaciones.ProgramacionImpl;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.persistencia.FuncionDAO;
 import ar.uade.cine.persistencia.PeliculaDAO;
+import ar.uade.cine.persistencia.ProgramacionDAO;
 import ar.uade.cine.persistencia.memoria.AsientoDAOMemoria;
 import ar.uade.cine.persistencia.memoria.FuncionDAOMemoria;
 import ar.uade.cine.persistencia.memoria.PeliculaDAOMemoria;
@@ -42,10 +47,11 @@ class GestorCarteleraTest {
     // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
     private final FuncionDAO funcionDAO = new FuncionDAOMemoria();
     private final PeliculaDAO peliculaDAO = new PeliculaDAOMemoria();
+    private final ProgramacionDAO programacionDAO = new ProgramacionDAOMemoria();
     // Sin grillas cargadas, extenderActivas no encuentra nada que hacer: acá el gestor de
     // programaciones está para que la cartelera pueda pedírselo, no para que genere.
     private final GestorCartelera gestor = new GestorCartelera(peliculaDAO, funcionDAO,
-            new GestorProgramaciones(new ProgramacionDAOMemoria(), funcionDAO,
+            new GestorProgramaciones(programacionDAO, funcionDAO,
                     new GestorFunciones(funcionDAO, peliculaDAO, new SalaDAOMemoria(),
                             new ReservaDAOMemoria())));
 
@@ -398,5 +404,47 @@ class GestorCarteleraTest {
         programarProxima(importada.getId());
 
         assertThrows(IllegalArgumentException.class, () -> revision.descartar(importada.getId()));
+    }
+
+    /* --------------------------------------------------------------- R12: borrado */
+
+    @Test
+    void borraLaQueNoDejoRastro() {
+        Pelicula pelicula = gestor.agregar("Sin Estrenar", 100, List.of(Genero.DRAMA),
+                Clasificacion.ATP);
+
+        gestor.eliminar(pelicula.getId());
+
+        assertTrue(gestor.listar().isEmpty());
+    }
+
+    @Test
+    void noBorraLaQueTieneFunciones() {
+        Pelicula pelicula = gestor.agregar("Matrix", 136, List.of(Genero.ACCION),
+                Clasificacion.MAS_13);
+        programarProxima(pelicula.getId());
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> gestor.eliminar(pelicula.getId()));
+
+        assertTrue(e.getMessage().contains("Matrix"), e.getMessage());
+        assertEquals(1, gestor.listar().size());
+    }
+
+    /** Sin funciones de por medio: la grilla sola ya alcanza para frenar el borrado. */
+    @Test
+    void noBorraLaProgramadaAunqueNoTengaFunciones() {
+        Pelicula pelicula = gestor.agregar("La Odisea", 150, List.of(Genero.DRAMA),
+                Clasificacion.ATP);
+        programacionDAO.guardar(new ProgramacionImpl(pelicula.getId(), 1,
+                LocalDate.now().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> gestor.eliminar(pelicula.getId()));
+
+        assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
+        assertTrue(funcionDAO.listarPorPelicula(pelicula.getId()).isEmpty());
+        assertEquals(1, gestor.listar().size());
     }
 }

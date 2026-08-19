@@ -249,14 +249,21 @@ public class GestorCartelera {
     /**
      * R12: una película con funciones no se borra. Para sacarla de circulación sin perder
      * el historial está estaEnCartelera, que es lo que corresponde casi siempre.
+     *
+     * <p>La grilla se pregunta aparte porque puede no haber materializado ninguna función
+     * todavía —abierta más allá del horizonte, o con todas sus fechas chocadas—: sin este
+     * chequeo el borrado lo frenaba la foreign key y salía un 500 en vez del motivo.
      */
     public void eliminar(int id) {
-        if (peliculaDAO.buscarPorId(id).isEmpty()) {
-            throw new IllegalArgumentException("No existe la película " + id);
-        }
+        Pelicula pelicula = peliculaDAO.buscarPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
         if (!funcionDAO.listarPorPelicula(id).isEmpty()) {
-            throw new IllegalArgumentException("La película " + id
+            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
+        }
+        if (!programaciones.buscar(id, null, null).isEmpty()) {
+            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+                    + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
         peliculaDAO.eliminar(id);
     }
