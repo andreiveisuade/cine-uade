@@ -6,10 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.EstadoImportacion;
 import ar.uade.cine.model.cartelera.Importacion;
@@ -41,8 +40,16 @@ import ar.uade.cine.repository.ImportacionRepository;
  * {@link GestorRevisionCartelera} está separado de {@link GestorCartelera}: acá no se
  * administra qué películas hay, se administra de dónde vienen.
  */
+/*
+ * Sin @Transactional a nivel de clase, a diferencia del resto de los gestores que escriben,
+ * y no es un olvido: una corrida NO es una unidad atómica. Su razón de ser es justamente que
+ * unas películas entren, otras se salteen y otras fallen, y que eso quede contado. Con una
+ * transacción envolviendo todo, el `catch` que anota una película como fallida se encuentra
+ * con que el alta ya marcó la transacción como rollback-only, y al terminar la corrida el
+ * commit explota con UnexpectedRollbackException: no entra nada, ni siquiera el registro de
+ * la corrida. Cada alta abre la suya —la de GestorRevisionCartelera— y falla sola.
+ */
 @Service
-@Transactional
 public class GestorImportaciones {
 
     /** Cuántas corridas muestra la pantalla. El historial crece para siempre; la tabla no. */
@@ -60,26 +67,18 @@ public class GestorImportaciones {
     private final Duration esperaEntreCorridas;
 
     /**
-     * De los dos constructores, este es el que usa el contenedor: el otro existe para que
-     * un test pueda acortar los tiempos, y sin la anotacion Spring no sabria cual elegir.
-     */
-    @Autowired
-    public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
-                               GestorCartelera cartelera, GestorRevisionCartelera revision) {
-        this(importacionRepository, catalogo, cartelera, revision,
-                Duration.ofMinutes(5), Duration.ofSeconds(60));
-    }
-
-    /**
-     * Las dos duraciones entran por constructor para poder probarlas: esperar cinco minutos
-     * de reloj para ver que una corrida colgada caduca no es un test, es una siesta.
+     * Las dos duraciones salen de la configuración y no de constantes acá adentro para poder
+     * probarlas: esperar cinco minutos de reloj para ver que una corrida colgada caduca no es
+     * un test, es una siesta. El perfil de test las baja a cero y así puede usar este mismo
+     * bean, con su proxy transaccional puesto, en vez de armarse uno con {@code new}.
      *
      * @param corridaMaxima cuánto puede estar EN_CURSO antes de darla por perdida
      * @param esperaEntreCorridas el mínimo entre dos corridas seguidas
      */
     public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
                                GestorCartelera cartelera, GestorRevisionCartelera revision,
-                               Duration corridaMaxima, Duration esperaEntreCorridas) {
+                               @Value("${cine.importador.corrida-maxima}") Duration corridaMaxima,
+                               @Value("${cine.importador.espera-entre-corridas}") Duration esperaEntreCorridas) {
         this.importacionRepository = importacionRepository;
         this.catalogo = catalogo;
         this.cartelera = cartelera;

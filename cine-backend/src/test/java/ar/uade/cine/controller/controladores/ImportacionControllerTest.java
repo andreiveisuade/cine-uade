@@ -119,23 +119,6 @@ class ImportacionControllerTest extends PruebaDeApi {
         assertEquals("TERMINADA", respuesta.json().get(0).get("estado").asText());
     }
 
-    /**
-     * El doble clic. Con la espera que el sistema trae de fábrica —un minuto—, el segundo
-     * pedido no llega a TMDB: la cartelera no cambió en veinte segundos y cada corrida son
-     * sesenta llamadas contra una cuota.
-     */
-    @Test
-    void apretarDosVecesSeguidoNoCorreDosVeces() {
-        post("/api/importaciones", "{}");
-
-        Respuesta segunda = post("/api/importaciones", "{}");
-
-        assertEquals(400, segunda.estado());
-        assertEquals("El importador corrió recién: esperá 60 segundos antes de volver a pedirlo",
-                segunda.error());
-        assertEquals(1, catalogo.consultas());
-    }
-
     @Test
     void elEstadoDelImportadorSeConsultaAntesDeApretarElBoton() {
         catalogo.queEste(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env");

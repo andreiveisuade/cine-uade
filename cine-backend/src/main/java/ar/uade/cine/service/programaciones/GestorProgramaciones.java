@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -136,8 +137,16 @@ public class GestorProgramaciones {
      * <p>Acá es donde {@code activa} deja de ser decorativo: una grilla dada de baja se
      * saltea, y con eso deja de generar funciones nuevas sin tocar las que ya vendió.
      *
+     * <p>Corre <strong>fuera</strong> de transacción, y es lo que hace que el
+     * {@code catch} de más abajo signifique lo que dice. Cada grilla se extiende con las
+     * escrituras de {@code GestorFunciones}, que abre la suya: si una falla, hace rollback
+     * de lo suyo y las demás siguen. Adentro de una transacción compartida, en cambio, la
+     * primera grilla rota la marcaría como rollback-only y el commit fallaría al final —o
+     * sea que una grilla inválida voltearía la pantalla de cartelera de la que cuelga esto.
+     *
      * @return cuántas funciones se generaron
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public int extenderActivas(LocalDate hoy) {
         int generadas = 0;
         for (Programacion grilla : programacionRepository.findAll()) {

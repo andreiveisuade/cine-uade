@@ -53,18 +53,16 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorRevisionCartelera revision;
 
-    private GestorImportaciones gestor;
-
     /**
-     * El gestor se arma acá y no se pide al contenedor por la espera entre corridas: el bean
-     * de la aplicación la tiene en un minuto —es la protección contra el doble clic, y tiene
-     * su propio test— y dejarla puesta obligaría a que cada prueba durmiera ese minuto.
+     * El bean de verdad, no uno armado con {@code new}. La diferencia importa: un gestor
+     * construido a mano no pasa por el proxy que le pone las transacciones, así que un test
+     * que lo arme por su cuenta no puede ver los errores de límite transaccional —y este
+     * archivo dejó pasar uno justamente así, el que hacía fallar la corrida entera cuando el
+     * alta de una película se rechazaba—. La espera entre corridas la pone el perfil de test
+     * en cero, que es lo que permite usar el bean tal cual.
      */
-    @BeforeEach
-    void armarElGestorSinEsperaEntreCorridas() {
-        gestor = new GestorImportaciones(importacionRepository, catalogo, cartelera, revision,
-                Duration.ofMinutes(5), Duration.ZERO);
-    }
+    @Autowired
+    private GestorImportaciones gestor;
 
     @Test
     void unaCorridaQueVuelveBienQuedaRegistradaConLoQueTrajo() {

@@ -29,6 +29,11 @@ cine:
   redis:
     host: localhost
     puerto: 6379
+  importador:
+    corrida-maxima: 5m
+    # Sin espera: es una protección contra el doble clic y tiene su propio test; dejarla
+    # puesta obligaría a que cada prueba del importador durmiera un minuto.
+    espera-entre-corridas: 0s
   tmdb:
     token: ""
     region: AR

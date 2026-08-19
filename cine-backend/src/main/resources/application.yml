@@ -60,6 +60,12 @@ cine:
   redis:
     host: ${REDIS_HOST:localhost}
     puerto: ${REDIS_PORT:6379}
+  importador:
+    # Cuánto puede quedar una corrida EN_CURSO antes de darla por perdida: sin esto, un
+    # backend reiniciado a mitad de corrida bloquearía las importaciones para siempre.
+    corrida-maxima: 5m
+    # El mínimo entre dos corridas seguidas, que es la protección contra el doble clic.
+    espera-entre-corridas: 60s
   tmdb:
     token: ${TMDB_TOKEN:}
     region: ${TMDB_REGION:AR}
