@@ -149,9 +149,9 @@ class ImportacionControllerTest extends PruebaDeApi {
     }
 
     /**
-     * La ruta del estado va antes que la del listado en el registro, pero además tiene que
-     * seguir siendo alcanzable: si Javalin resolviera el listado primero, esto devolvería
-     * una lista y el front no tendría cómo saber si el importador está.
+     * Spring elige la ruta más específica y no la primera registrada, así que el orden de
+     * los métodos ya no decide nada. Igual se prueba: si un día {@code /estado} entrara como
+     * un id del listado, el front no tendría cómo saber si el importador está.
      */
     @Test
     void elEstadoNoSeLoComeElListado() {

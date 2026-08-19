@@ -27,11 +27,10 @@ import redis.clients.jedis.resps.ScanResult;
  *
  * <h2>Si Redis no responde, el sistema sigue vendiendo</h2>
  * <p>Esta clase <strong>no propaga el fallo de conexión</strong>: lo loguea y contesta como
- * si no hubiera ningún bloqueo. Es lo contrario de lo que hacen los DAO, que tiran
- * {@link ar.uade.cine.repository.PersistenciaException}, y la diferencia no es un
- * descuido: <em>un DAO caído significa que el dato no está, y un lock caído significa que
- * nadie la reservó todavía</em>, que es cierto. La primera afirmación no se puede inventar;
- * la segunda es la respuesta correcta.
+ * si no hubiera ningún bloqueo. Es lo contrario de lo que hace la capa de datos, que
+ * propaga el fallo, y la diferencia no es un descuido: <em>una base caída significa que el
+ * dato no está, y un lock caído significa que nadie la reservó todavía</em>, que es cierto.
+ * La primera afirmación no se puede inventar; la segunda es la respuesta correcta.
  *
  * <p>El fondo es que este bloqueo <strong>no es la garantía</strong> de que una butaca no se
  * venda dos veces: esa la sigue dando el {@code UNIQUE (funcion_id, asiento_id)} de MySQL,
@@ -80,9 +79,9 @@ public class BloqueoButacasRedis implements BloqueoButacas {
 
     /**
      * Si Redis está caído no se entera acá: el cliente no conecta al construirse, sino en el
-     * primer comando. Es a propósito —levantar el backend no puede depender de que Redis ya
-     * esté arriba— y es lo mismo que hace {@code OrigenMySQL}, que arma el pool recién
-     * en el primer request.
+     * primer comando. Es a propósito: levantar el backend no puede depender de que Redis ya
+     * esté arriba. Es lo mismo que hace el pool de conexiones de Spring Boot, que abre la
+     * primera recién cuando alguien la pide.
      */
     public BloqueoButacasRedis() {
         this(variable("REDIS_HOST", "localhost"),
