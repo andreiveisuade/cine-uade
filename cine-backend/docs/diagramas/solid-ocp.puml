@@ -14,7 +14,7 @@ hide empty members
 ' switch (tipo) que haya que ir a tocar: ni GestorPromociones.mejorPara(),
 ' ni GestorPagos.cobrar() saben que implementaciones existen.
 
-package "dominio.promociones" {
+package "model.promociones" {
   interface Promocion {
     +aplicaA(inicioFuncion, medio): boolean
     +calcularDescuento(entradas): double

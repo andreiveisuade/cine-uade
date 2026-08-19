@@ -7,15 +7,15 @@ hide empty members
 set namespaceSeparator none
 
 ' Este diagrama muestra QUE ES un cine: entidades, value objects y sus relaciones.
-' COMO funciona el sistema (gestores, DAO, API) esta en clases-capas.puml.
+' COMO funciona el sistema (gestores, repositorios, API) esta en clases-capas.puml.
 ' Los comentarios ' que siguen son el razonamiento de cada decision: no se renderizan,
 ' y son la materia prima de las secciones del manual.
 
-package "dominio.cartelera" {
+package "model.cartelera" {
   ' generos va como atributo con cardinalidad y no como flecha: es la unica
   ' relacion multivaluada del modelo (R7 exige minimo uno) y ese [1..*] se
   ' perderia si quedara escondido dentro de un List<Genero>.
-  interface Pelicula {
+  class Pelicula <<Entity>> {
     +getTitulo(): String
     +getDuracionMinutos(): int
     +getClasificacion(): Clasificacion
@@ -58,7 +58,7 @@ package "dominio.cartelera" {
   ' trajo. No guarda QUE peliculas entraron -eso ya esta en el buzon, en
   ' Pelicula.estadoRevision- sino solo cuantas: repetir la lista aca seria una
   ' segunda fuente de verdad. Por eso Importacion no tiene flecha a Pelicula.
-  interface Importacion {
+  class Importacion <<Entity>> {
     +getPaginas(): int
     +getPedidaEn(): LocalDateTime
     +getTerminoEn(): LocalDateTime [0..1]
@@ -75,14 +75,14 @@ package "dominio.cartelera" {
   }
 }
 
-package "dominio.salas" {
+package "model.salas" {
   ' Sala no guarda su distribucion de butacas: serian dos fuentes de verdad
   ' para lo mismo. La capacidad se cuenta desde los asientos.
   ' getMinutosLimpieza() es lo que sostiene R3 en la practica: entre el fin de
   ' una funcion y el inicio de la siguiente en la misma sala hay que dejar un
   ' margen, y no es igual en todas las salas -una de 200 butacas tarda mas que
   ' una de 60-, asi que vive como dato de la sala y no como constante fija.
-  interface Sala {
+  class Sala <<Entity>> {
     {static} +LIMPIEZA_POR_DEFECTO: int = 15
     +getNombre(): String
     +getTipo(): TipoSala
@@ -91,7 +91,7 @@ package "dominio.salas" {
   ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
   ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
   ' butaca rota lo esta siempre.
-  interface Asiento {
+  class Asiento <<Entity>> {
     +getSalaId(): int
     +getFila(): int
     +getNumero(): int
@@ -118,7 +118,7 @@ package "dominio.salas" {
   }
 }
 
-package "dominio.funciones" {
+package "model.funciones" {
   ' Proyeccion es de la funcion, no de la sala: TipoSala dice que PUEDE
   ' proyectar en 3D, la funcion dice que se ESTA proyectando.
   '
@@ -129,7 +129,7 @@ package "dominio.funciones" {
   ' probarlo sin esperar; la duracion tambien, pero por otro motivo: ver N2.
   ' getFin() es lo que hace legible la restriccion de superposicion R3, y
   ' yaEmpezo() es lo que sostiene R19.
-  interface Funcion {
+  class Funcion <<Entity>> {
     +getPeliculaId(): int
     +getSalaId(): int
     +getProgramacionId(): Integer [0..1]
@@ -153,7 +153,7 @@ package "dominio.funciones" {
   }
 }
 
-package "dominio.programaciones" {
+package "model.programaciones" {
   ' La grilla del cine: "Matrix en la Sala 1, todos los dias a las 20:30, del
   ' 1 al 15 de septiembre". Una sola alta en vez de quince.
   ' MATERIALIZA funciones, no las calcula al vuelo: una funcion tiene cosas
@@ -162,7 +162,7 @@ package "dominio.programaciones" {
   ' la grilla. A la tercera, el modelo seria la grilla mas una lista de parches.
   ' diasSemana va como atributo con cardinalidad por lo mismo que generos en
   ' Pelicula, pero el minimo es 0 y no 1: vacio significa todos los dias.
-  interface Programacion {
+  class Programacion <<Entity>> {
     +getPeliculaId(): int
     +getSalaId(): int
     --patron temporal--
@@ -189,17 +189,17 @@ package "dominio.programaciones" {
   ' abierta no tiene final, asi que hasta donde generar lo decide quien pregunta.
 }
 
-package "dominio.usuarios" {
-  interface Usuario {
+package "model.usuarios" {
+  class Usuario <<Entity>> {
     +getNombre(): String
     +getEmail(): String
     +getRol(): Rol
   }
-  interface Cliente
+  class Cliente <<Entity>>
   ' Antes era AdministradorCine. El corte nunca fue el cargo sino tener
   ' contrasena: el empleado la tiene, el cliente no. Al entrar el acomodador
   ' el nombre viejo mentia; la herencia no. Rol discrimina la tabla unica.
-  interface Empleado {
+  class Empleado <<Entity>> {
     +getPasswordHash(): String
   }
   enum Rol <<enum>> {
@@ -211,7 +211,7 @@ package "dominio.usuarios" {
   }
 }
 
-package "dominio.ventas" {
+package "model.ventas" {
   ' Nace RESERVADA, pasa a PAGADA al cobrar, CANCELADA si el cliente la da de
   ' baja y EXPIRADA si nadie la pago a tiempo. Expira sin proceso de fondo: la
   ' primera operacion que se cruza con una vencida la cierra al pasar.
@@ -220,7 +220,7 @@ package "dominio.ventas" {
   ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
   ' en Funcion, para poder probarla sin esperar media hora; MINUTOS_PARA_PAGAR
   ' es lo que define ese plazo.
-  interface Reserva {
+  class Reserva <<Entity>> {
     {static} +MINUTOS_PARA_PAGAR: int = 30
     +getFuncionId(): int
     +getClienteId(): int
@@ -240,7 +240,7 @@ package "dominio.ventas" {
   ' congela al reservar y ninguna promocion lo toca.
   ' La tarifa va aca porque es por persona: en una reserva de cuatro puede
   ' haber dos generales, un menor y un jubilado.
-  class Entrada <<record>> {
+  class Entrada <<Embeddable>> {
     +asientoId(): int
     +codigoAsiento(): String
     +tarifa(): TipoTarifa
@@ -251,7 +251,7 @@ package "dominio.ventas" {
   ' mejor (R15), todas tienen que producir la misma unidad: un monto sobre la
   ' reserva. Consecuencia: el total definitivo no existe hasta el pago, porque
   ' el descuento bancario depende del medio que se elige al cobrar.
-  interface Pago {
+  class Pago <<Entity>> {
     +getReservaId(): int
     +getSubtotal(): Dinero
     +getPromocionId(): Integer
@@ -283,17 +283,22 @@ package "dominio.ventas" {
   }
 }
 
-package "dominio.promociones" {
-  ' Interfaz con tres implementaciones de verdad, que es cuando la abstraccion
-  ' paga: un tipo de beneficio nuevo es una clase, no un case mas en un switch.
+package "model.promociones" {
+  ' Clase abstracta @Entity con tres subclases de verdad, que es cuando la
+  ' abstraccion paga: un tipo de beneficio nuevo es una clase, no un case mas
+  ' en un switch. Es la unica jerarquia del dominio que sobrevivio al pasaje a
+  ' JPA con esta forma -el resto de las entidades eran interfaz con un solo
+  ' implementador, y hoy son @Entity a secas-: aca el polimorfismo es real.
   ' Van a tabla unica con discriminador, igual que Usuario.
   ' calcularDescuento recibe una lista de entradas y no la reserva entera
   ' porque las de tarifa reducida no participan del descuento (R16).
   ' aplicaA recibe el inicio de la funcion y el medio de pago por parametro, no
   ' un objeto Funcion completo: todo lo que evalua -vigencia, dia, hora, medio-
   ' sale de esos dos datos, y pedir la funcion entera obligaria a resolverla
-  ' solo para leerle el inicio.
-  interface Promocion {
+  ' solo para leerle el inicio. Las condiciones comunes y dos helpers de
+  ' calculo -topear() evita un cobro negativo, subtotalDe() suma lo que
+  ' participa del descuento- viven ya en esta clase, no en una intermedia.
+  abstract class Promocion <<Entity>> {
     --condiciones--
     +getNombre(): String
     +getTipo(): TipoPromocion
@@ -306,7 +311,9 @@ package "dominio.promociones" {
     +estaActiva(): boolean
     +aplicaA(inicioFuncion, medio): boolean
     --beneficio--
-    +calcularDescuento(List<Entrada>): Dinero
+    +{abstract} calcularDescuento(List<Entrada>): Dinero
+    {static} #topear(Dinero, List<Entrada>): Dinero
+    {static} #subtotalDe(List<Entrada>): Dinero
   }
   ' Discriminador de la tabla unica, mismo patron que Rol en Usuario: las tres
   ' van a la misma tabla porque comparten todas las condiciones y solo cambia
@@ -315,14 +322,6 @@ package "dominio.promociones" {
     PORCENTAJE
     MONTO_FIJO
     NXM
-  }
-  ' Comparte la evaluacion de condiciones (aplicaA, implementada aca una sola
-  ' vez) y dos helpers de calculo que usan las tres subclases: topear() evita
-  ' que un descuento deje el cobro en negativo, subtotalDe() es lo que suman
-  ' las entradas que participan del descuento.
-  abstract class PromocionBase {
-    {static} #topear(Dinero, List<Entrada>): Dinero
-    {static} #subtotalDe(List<Entrada>): Dinero
   }
   class PromocionPorcentaje {
     +getPorcentaje(): double
@@ -336,8 +335,8 @@ package "dominio.promociones" {
   }
 }
 
-package "dominio.candy" {
-  interface Producto {
+package "model.candy" {
+  class Producto <<Entity>> {
     +getNombre(): String
     +getTipo(): TipoProducto
     +getPrecio(): Dinero
@@ -348,7 +347,7 @@ package "dominio.candy" {
   ' La autoreferencia es lo que hace al combo una promocion y no un producto
   ' con nombre bonito: sabiendo que trae se valida que cueste menos que
   ' comprarlo suelto (R14).
-  class ItemCombo <<record>> {
+  class ItemCombo <<Embeddable>> {
     +productoId(): int
     +nombre(): String
     +cantidad(): int
@@ -358,7 +357,7 @@ package "dominio.candy" {
   ' Las dos asociaciones en 0..1 no son redundantes: la venta de mostrador no
   ' tiene ninguna, y la del "desea agregar pochoclos?" posterior a la compra
   ' web tiene reserva, de donde sale el cliente sin volver a pedirlo.
-  interface CompraCandy {
+  class CompraCandy <<Entity>> {
     +getClienteId(): Integer
     +getReservaId(): Integer
     +getFecha(): LocalDateTime
@@ -367,7 +366,7 @@ package "dominio.candy" {
     +getItems(): List<ItemCompra>
     +getTotal(): Dinero
   }
-  class ItemCompra <<record>> {
+  class ItemCompra <<Embeddable>> {
     +productoId(): int
     +nombre(): String
     +cantidad(): int
@@ -380,7 +379,7 @@ package "dominio.candy" {
   }
 }
 
-package "dominio.dinero" {
+package "model.dinero" {
   ' Dinero es un value object, no una entidad: sin id ni DAO propio, y viaja como
   ' TIPO de atributo en todo el dominio (funciones, programaciones, ventas,
   ' promociones, candy) en los lugares donde antes habia un double. La razon esta
@@ -406,10 +405,9 @@ package "dominio.dinero" {
 Cliente --|> Usuario
 Empleado --|> Usuario
 
-PromocionBase ..|> Promocion
-PromocionPorcentaje --|> PromocionBase
-PromocionMontoFijo --|> PromocionBase
-PromocionNxM --|> PromocionBase
+PromocionPorcentaje --|> Promocion
+PromocionMontoFijo --|> Promocion
+PromocionNxM --|> Promocion
 
 Sala "1" *-- "1..*" Asiento
 Funcion "*" --> "1" Pelicula
@@ -475,9 +473,12 @@ note as N2
   Reserva tiene getFuncionId(): int, no getFuncion().
   El diagrama dice QUE se relaciona con que y con
   cuantos; el id es COMO se resuelve. Quien necesita
-  el objeto completo se lo pide al DAO.
-  Es lo habitual con JDBC sin ORM, y evita cargar
-  media base para leer una reserva.
+  el objeto completo se lo pide al repositorio.
+  Se mantuvo asi incluso con JPA disponible: un
+  @ManyToOne navegable es la puerta de entrada mas
+  comun a un N+1 -cargar una reserva arrastraria su
+  funcion, su sala, su pelicula- y el id explicito
+  deja ese costo a la vista de quien lo pide.
 
   Tiene una consecuencia visible en este diagrama:
   **Funcion no sabe cuanto dura.** Solo tiene un

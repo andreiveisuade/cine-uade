@@ -1,83 +1,77 @@
 @startuml solid-dip
-title SOLID: Inversion de dependencias - quien nombra una implementacion concreta
+title SOLID: Inversion de dependencias - ni siquiera hay una implementacion para nombrar
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 hide empty members
 
-' El caso testigo es ReservaDAO, pero la misma forma se repite en las otras trece
-' interfaces de persistencia/ —los doce DAO restantes mas BloqueoButacas, que es
-' interfaz igual aunque no se llame DAO—, y tambien en los puertos de infraestructura/:
-' un modulo de alto nivel (la regla de negocio) y uno de bajo nivel (donde se
-' guarda el dato) dependen los dos de una abstraccion que no le pertenece a ninguno
-' de los dos. Sin esa interfaz de por medio, GestorReservas importaria
-' java.sql y no se podria probar sin una base levantada.
+' El caso testigo es ReservaRepository, pero la misma forma se repite en las
+' otras doce interfaces de repository/. Antes el DIP se sostenia con
+' disciplina: un solo lugar (Aplicacion) nombraba la implementacion concreta
+' de cada DAO. Hoy la forma es mas fuerte: Spring Data genera la unica
+' implementacion en tiempo de arranque, asi que no existe una clase que se
+' pueda nombrar ni por accidente. GestorReservas depende de la interfaz sin
+' saber que atras hay MySQL o H2.
 
-package "servicio.ventas" {
+package "service.ventas" {
   class GestorReservas
 }
 
-package persistencia {
-  interface ReservaDAO {
-    +guardar(Reserva)
-    +actualizar(Reserva)
-    +buscarPorId(id): Optional<Reserva>
-    +buscarPorCodigo(codigo): Optional<Reserva>
-    +listar(): List<Reserva>
-    +listarPorFuncion(funcionId): List<Reserva>
-    +listarPorCliente(clienteId): List<Reserva>
-  }
-
-  package mysql {
-    class ReservaDAOMySQL
-  }
-  package memoria {
-    class ReservaDAOMemoria
-  }
-  package archivo {
-    class ReservaDAOTxt
+package repository {
+  interface ReservaRepository {
+    +save(Reserva): Reserva
+    +saveAndFlush(Reserva): Reserva
+    +findById(id): Optional<Reserva>
+    +findByCodigo(codigo): Optional<Reserva>
+    +findAll(): List<Reserva>
+    +findByFuncionId(funcionId): List<Reserva>
+    +findByClienteIdOrderByCreadaEnDesc(clienteId): List<Reserva>
   }
 }
 
-class Aplicacion
+note right of ReservaRepository
+  No hay ninguna clase que implemente
+  esta interfaz en el codigo fuente.
+  Spring Data la genera al arrancar,
+  a partir de la firma de cada metodo.
+end note
 
-GestorReservas -down-> ReservaDAO : depende de\nla interfaz
-ReservaDAOMySQL .up.|> ReservaDAO
-ReservaDAOMemoria .up.|> ReservaDAO
-ReservaDAOTxt .up.|> ReservaDAO
+class Aplicacion <<@SpringBootApplication>>
 
-Aplicacion -right-> ReservaDAOMySQL : new, en enMySQL()
-Aplicacion ..> GestorReservas : arma pasandole\nla interfaz
+GestorReservas -down-> ReservaRepository : depende de\nla interfaz
+
+note as N2
+  ArquitecturaTest ya no busca "un solo
+  lugar nombra la implementacion" -no
+  tendria que buscar-: verifica que
+  ningun service/ ni controller/
+  importe jakarta.persistence,
+  java.sql u org.springframework.jdbc.
+  Si alguien se saltea su repositorio,
+  el test lo detecta.
+end note
+N2 .. GestorReservas
 
 note right of Aplicacion
-  Es el unico lugar de todo el sistema que
-  nombra una implementacion concreta de DAO.
-  Los quince gestores conocen solo las interfaces
-  de persistencia/: donde se guarda cada cosa
-  se decide aca, y en ningun otro lado. Cambiar
-  ReservaDAOMySQL por ReservaDAOTxt es cambiar
-  un argumento de un constructor, sin tocar una
-  sola regla de negocio.
+  Solo levanta el contenedor de Spring
+  (@SpringBootApplication + main()).
+  No arma nada a mano: cada @Service,
+  @Repository y @RestController se
+  conecta solo por component scan.
 end note
 
-note bottom of ReservaDAOMemoria
-  AplicacionTest arma el mismo constructor
-  publico de Aplicacion pero con las DAOMemoria
-  en vez de las MySQL, y recorre el circuito
-  completo: alta de pelicula, sala, funcion,
-  reserva, cobro. Por eso los tests levantan el
-  sistema entero en memoria y ninguno toca una
-  base real.
-end note
+Aplicacion ..> GestorReservas : el contenedor lo\narma, no Aplicacion
 
 note as N1
-  La flecha de compilacion va en las dos
-  direcciones hacia la interfaz:
-  GestorReservas --> ReservaDAO <-- ReservaDAOMySQL.
-  Alto nivel y bajo nivel dependen los dos de
-  la abstraccion; ninguno depende del otro.
-  Eso es la D de SOLID.
+  La flecha de compilacion va en un
+  solo sentido, hacia la interfaz:
+  GestorReservas --> ReservaRepository.
+  No hay una segunda clase de bajo
+  nivel de la que dependa a su vez -eso
+  es lo que hace mas fuerte esta D que
+  la version con DAO, donde si habia
+  una implementacion concreta detras.
 end note
-N1 .. ReservaDAO
+N1 .. ReservaRepository
 
 @enduml
