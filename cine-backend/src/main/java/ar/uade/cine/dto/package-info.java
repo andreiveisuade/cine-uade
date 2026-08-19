@@ -18,7 +18,7 @@
  *   <li>{@code *VistaDTO} — lo que sale. Ahí sí las primitivas, porque el dato ya existe.</li>
  * </ul>
  *
- * <p>Los subpaquetes espejan a {@code ar.uade.cine.dominio}: {@code cartelera},
+ * <p>Los subpaquetes espejan a {@code ar.uade.cine.model}: {@code cartelera},
  * {@code funciones}, {@code programaciones}, {@code salas}, {@code ventas}, {@code candy},
  * {@code promociones} y {@code usuarios}, más {@code catalogos} para los enums que el front
  * pide para armar sus formularios. Cada DTO queda al lado del paquete de dominio que
@@ -27,7 +27,7 @@
  * a ninguna familia, es la forma de cualquier error.
  *
  * <p>No tienen lógica: quien los arma son las clases {@code Vistas*} de
- * {@link ar.uade.cine.api}, que son los ensambladores —van a buscar a los gestores lo que
+ * {@link ar.uade.cine.controller}, que son los ensambladores —van a buscar a los gestores lo que
  * el DTO necesita y no vive en una sola entidad—. Un DTO que se supiera armar solo tendría
  * que conocer los gestores, y volveríamos a mezclar transporte con negocio.
  */

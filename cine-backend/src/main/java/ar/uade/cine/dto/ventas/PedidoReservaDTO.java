@@ -3,7 +3,7 @@ package ar.uade.cine.dto.ventas;
 import java.util.List;
 import java.util.Map;
 
-import ar.uade.cine.dominio.ventas.TipoTarifa;
+import ar.uade.cine.model.ventas.TipoTarifa;
 
 /**
  * {@code butacas} es el pedido completo: código de butaca a tarifa de quien la ocupa.

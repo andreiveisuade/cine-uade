@@ -35,54 +35,54 @@ class ArquitecturaTest {
     /**
      * Hacia dónde puede importar cada capa. La lectura es "de arriba hacia abajo": una capa
      * sólo puede nombrar a las que tiene debajo, nunca a las de arriba, y por eso
-     * {@code servicio} no incluye ni {@code api} ni {@code dto} (las reglas de negocio no
-     * saben que existe HTTP) y {@code dominio} no incluye nada (no sabe siquiera que se lo
-     * guarda en algún lado).
+     * {@code service} no incluye ni {@code controller} ni {@code dto} (las reglas de negocio
+     * no saben que existe HTTP) y {@code model} no incluye nada más que a sí mismo.
      */
     private static final Map<String, Set<String>> PERMITIDO = Map.of(
-            "dominio", Set.of("dominio"),
-            "dto", Set.of("dominio", "dto"),
-            "persistencia", Set.of("dominio", "persistencia"),
-            "infraestructura", Set.of("dominio", "persistencia", "infraestructura", "servicio"),
-            "servicio", Set.of("dominio", "persistencia", "infraestructura", "servicio"),
-            "api", Set.of("dominio", "dto", "persistencia", "infraestructura", "servicio", "api"));
+            "model", Set.of("model"),
+            "dto", Set.of("model", "dto"),
+            "repository", Set.of("model", "repository"),
+            "infrastructure", Set.of("model", "repository", "infrastructure", "service"),
+            "service", Set.of("model", "repository", "infrastructure", "service"),
+            "controller", Set.of("model", "dto", "repository", "infrastructure", "service",
+                    "controller"));
 
     @Nested
     @DisplayName("Las flechas entre capas van todas para el mismo lado")
     class Dependencias {
 
         @Test
-        @DisplayName("dominio/ no importa ninguna otra capa")
-        void elDominioNoDependeDeNada() {
-            assertSinViolaciones(violacionesDeCapa("dominio"));
+        @DisplayName("model/ no importa ninguna otra capa")
+        void elModeloNoDependeDeNada() {
+            assertSinViolaciones(violacionesDeCapa("model"));
         }
 
         @Test
-        @DisplayName("persistencia/ conoce el dominio que guarda, y nada más")
+        @DisplayName("repository/ conoce el modelo que guarda, y nada más")
         void laPersistenciaSoloConoceElDominio() {
-            assertSinViolaciones(violacionesDeCapa("persistencia"));
+            assertSinViolaciones(violacionesDeCapa("repository"));
         }
 
         @Test
-        @DisplayName("servicio/ no importa api/ ni dto/: las reglas no saben que existe HTTP")
+        @DisplayName("service/ no importa controller/ ni dto/: las reglas no saben que existe HTTP")
         void elServicioNoDependeDeLaEntrada() {
-            assertSinViolaciones(violacionesDeCapa("servicio"));
+            assertSinViolaciones(violacionesDeCapa("service"));
         }
 
         @Test
-        @DisplayName("dto/ no tiene lógica: no importa servicio/ ni persistencia/")
+        @DisplayName("dto/ no tiene lógica: no importa service/ ni repository/")
         void losDtoNoDependenDeLosGestores() {
             assertSinViolaciones(violacionesDeCapa("dto"));
         }
 
         @Test
-        @DisplayName("infraestructura/ es adaptador de salida, no llama a la entrada")
+        @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
         void laInfraestructuraNoDependeDeLaApi() {
             // La excepción viva es comprobantes/, que importa el record servicio.informes.Bordero
             // para poder formatearlo. Es un dato de salida, no un gestor; por eso 'servicio'
             // está permitido acá. Si algún día un adaptador importara un Gestor*, esta regla
             // habría que ajustarla a mano, y esa discusión es justamente lo que se quiere forzar.
-            assertSinViolaciones(violacionesDeCapa("infraestructura"));
+            assertSinViolaciones(violacionesDeCapa("infrastructure"));
         }
     }
 
@@ -90,16 +90,30 @@ class ArquitecturaTest {
     @DisplayName("Inversión de dependencias: un solo lugar elige la implementación")
     class ImplementacionesConcretas {
 
+        /**
+         * Antes esta regla decía "sólo Aplicacion nombra un DAO concreto", y era la forma de
+         * sostener a mano lo que ahora sostiene el contenedor: los servicios dependen de las
+         * interfaces {@code *Repository} y de quién las implementa no se entera nadie —la
+         * implementación la genera Spring Data en tiempo de arranque, así que ni siquiera
+         * existe una clase que se pueda nombrar por accidente—.
+         *
+         * <p>Lo que queda por cuidar es el otro lado: que un servicio no se salte su
+         * repositorio y hable con la base por abajo. Un {@code JdbcTemplate} o un
+         * {@code EntityManager} adentro de {@code service/} sería exactamente eso.
+         */
         @Test
-        @DisplayName("sólo Aplicacion nombra un DAO de mysql/, memoria/, archivo/ o redis/")
-        void laImplementacionSeEligeEnUnSoloLugar() {
+        @DisplayName("ningún servicio habla con la base por abajo del repositorio")
+        void nadieSeSalteaElRepositorio() {
             List<String> violaciones = new ArrayList<>();
             for (Path archivo : fuentes()) {
-                if (archivo.endsWith("Aplicacion.java")) {
+                String capa = capaDe(archivo);
+                if (!capa.equals("service") && !capa.equals("controller")) {
                     continue;
                 }
-                for (String importado : importsInternos(archivo)) {
-                    if (importado.matches("persistencia\\.(mysql|memoria|archivo|redis)\\..*")) {
+                for (String importado : importsExternos(archivo)) {
+                    if (importado.startsWith("org.springframework.jdbc")
+                            || importado.startsWith("jakarta.persistence")
+                            || importado.startsWith("java.sql")) {
                         violaciones.add(RAIZ.relativize(archivo) + " importa " + importado);
                     }
                 }
@@ -139,6 +153,20 @@ class ArquitecturaTest {
                     .map(linea -> linea.replaceFirst("^import (static )?", "").replaceFirst(";$", ""))
                     .filter(clase -> clase.startsWith("ar.uade.cine."))
                     .map(clase -> clase.substring("ar.uade.cine.".length()))
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /** Los {@code import} que no son del proyecto: con esos se detecta el atajo a la base. */
+    private static List<String> importsExternos(Path archivo) {
+        try {
+            return Files.readAllLines(archivo).stream()
+                    .map(String::strip)
+                    .filter(linea -> linea.startsWith("import "))
+                    .map(linea -> linea.replaceFirst("^import (static )?", "").replaceFirst(";$", ""))
+                    .filter(clase -> !clase.startsWith("ar.uade.cine."))
                     .toList();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

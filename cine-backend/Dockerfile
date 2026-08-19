@@ -11,8 +11,8 @@ COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 
 COPY src ./src
-# Los tests corren en la máquina de desarrollo con `mvn package`; acá solo se arma el
-# artefacto. El shade deja las dependencias adentro del jar.
+# Los tests corren en la máquina de desarrollo con `mvn test`; acá solo se arma el
+# artefacto. El plugin de Spring Boot deja las dependencias adentro del jar ejecutable.
 RUN mvn -B -q package -DskipTests
 
 # ---------- runtime ----------

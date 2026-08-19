@@ -4,6 +4,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <!-- El parent de Spring Boot: fija de una vez las versiones de todo el ecosistema
+       —Spring, Jackson, Hibernate, el driver JDBC, JUnit— y configura los plugins del
+       build. Es la razón por la que abajo casi ninguna dependencia lleva <version>:
+       elegirlas a mano es como se llega a una combinación que no existe probada. -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
   <!-- Coordenadas: identifican tu proyecto de forma única -->
   <groupId>ar.uade</groupId>
   <artifactId>cine</artifactId>
@@ -12,45 +23,32 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Compila y verifica contra la API de Java 21 -->
-    <maven.compiler.release>21</maven.compiler.release>
-    <!-- La API HTTP: lo que corre `java -jar` dentro del contenedor -->
-    <api.class>ar.uade.cine.api.ServidorApi</api.class>
+    <java.version>21</java.version>
   </properties>
 
   <dependencies>
-    <!-- Driver JDBC de MySQL -->
+    <!-- La API HTTP. Trae Spring MVC, Tomcat embebido y Jackson: es lo que reemplaza a
+         Javalin más las tres dependencias que había que declararle a mano. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Spring Data JPA: Hibernate como proveedor, el DataSource ya armado a partir de
+         application.yml y los repositorios generados desde una interfaz. Es lo que
+         reemplaza a los trece DAO de MySQL con sus dos mil líneas de SQL a mano, al
+         OrigenMySQL que configuraba el pool con código y a la Plantilla que envolvía
+         JDBC. El pool sigue siendo HikariCP: viene adentro de este starter. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- Driver JDBC de MySQL. En runtime: nadie lo importa, lo carga el DataSource. -->
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
-      <version>9.7.0</version>
-    </dependency>
-
-    <!-- Servidor HTTP de la capa api/. Las versiones de Jackson y SLF4J son las que
-         Javalin 6.7.0 declara: las trae como opcionales, asi que van explicitas. -->
-    <dependency>
-      <groupId>io.javalin</groupId>
-      <artifactId>javalin</artifactId>
-      <version>6.7.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>2.18.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>2.0.17</version>
-    </dependency>
-
-    <!-- Pool de conexiones. Sin esto cada operacion abria una conexion nueva contra
-         MySQL —handshake TCP incluido— y la cerraba: en un listado que arma 200 reservas
-         eso son 200 conexiones para 200 consultas. HikariCP es el pool estandar y lo
-         unico que se le pide es reusar lo que ya esta abierto. -->
-    <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-      <version>7.0.2</version>
+      <scope>runtime</scope>
     </dependency>
 
     <!-- Cliente de Redis, donde viven los bloqueos de butaca mientras alguien elige. Es
@@ -59,73 +57,39 @@
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
-      <version>6.2.0</version>
     </dependency>
 
-    <!-- Tests. scope=test => no se empaqueta en el jar final -->
+    <!-- La base de los tests: en memoria, creada por Hibernate desde las entidades y
+         tirada al terminar. Es lo que reemplaza a las catorce implementaciones en
+         memoria de los DAO — con la diferencia de que ahora los tests pasan por el
+         mapeo y las consultas de verdad, así que un @Query roto se ve en `mvn test` y
+         no recién contra MySQL. -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>5.14.4</version>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Tests. scope=test => no se empaqueta en el jar final. El starter trae JUnit 5,
+         AssertJ, Mockito y el soporte de Spring para levantar el contexto en una prueba. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
+    <!-- El jar se sigue llamando cine-api.jar: es lo que copia el Dockerfile. -->
+    <finalName>cine-api</finalName>
     <plugins>
-      <!-- Fijar versiones de plugins evita que el build cambie solo entre máquinas -->
+      <!-- Arma el jar ejecutable con las dependencias adentro y el main apuntado a la
+           clase @SpringBootApplication. Reemplaza al shade: la imagen de Docker corre un
+           JRE pelado, sin Maven ni repositorio local del que sacar las dependencias.
+           `mvn spring-boot:run` levanta la app sin empaquetar. -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.15.0</version>
-      </plugin>
-
-      <!-- Corre los tests de src/test/java en `mvn test` -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.6</version>
-      </plugin>
-
-      <!-- `mvn exec:java` para correr la app sin armar el jar -->
-
-      <!-- Un solo jar con las dependencias adentro: la imagen de Docker corre un JRE
-           pelado, sin Maven ni repositorio local del que sacarlas. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.1</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <finalName>cine-api</finalName>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>${api.class}</mainClass>
-                </transformer>
-                <!-- Jetty y el driver JDBC se descubren por META-INF/services: sin
-                     fusionar esos archivos, el ultimo jar pisa a los anteriores. -->
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-              </transformers>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <!-- Las firmas de los jars originales no valen para el jar fusionado -->
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                    <exclude>module-info.class</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
