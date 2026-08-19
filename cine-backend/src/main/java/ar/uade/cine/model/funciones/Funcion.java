@@ -144,7 +144,6 @@ public class Funcion {
         return inicio.plusMinutes(duracionMinutos);
     }
 
-    /** Está proyectándose ahora mismo: ya empezó y todavía no terminó. */
     public boolean estaEnCurso(LocalDateTime ahora, int duracionMinutos) {
         return yaEmpezo(ahora) && !yaTermino(ahora, duracionMinutos);
     }

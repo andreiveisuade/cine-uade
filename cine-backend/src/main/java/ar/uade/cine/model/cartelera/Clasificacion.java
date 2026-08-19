@@ -21,7 +21,6 @@ public enum Clasificacion {
         return edadMinima;
     }
 
-    /** Cómo se muestra en la cartelera: "ATP", "+13", "+16", "+18". */
     public String getEtiqueta() {
         return edadMinima == 0 ? "ATP" : "+" + edadMinima;
     }

@@ -194,8 +194,6 @@ CREATE TABLE IF NOT EXISTS entrada (
     FOREIGN KEY (funcion_id) REFERENCES funcion(id)
 );
 
--- ---------- promociones ----------
-
 -- Las tres clases de promocion van a la misma tabla con tipo como discriminador, igual
 -- que usuario: comparten todas las condiciones y solo cambia como calculan el descuento.
 -- Por eso las columnas del beneficio son NULL: cada tipo usa la suya y deja las otras
@@ -271,8 +269,6 @@ CREATE TABLE IF NOT EXISTS pago (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id),
     FOREIGN KEY (promocion_id) REFERENCES promocion(id)
 );
-
--- ---------- candy ----------
 
 -- Un combo es un producto mas: tiene precio propio y se vende como una unidad.
 -- disponible reemplaza al borrado: el producto puede estar en compras ya emitidas.

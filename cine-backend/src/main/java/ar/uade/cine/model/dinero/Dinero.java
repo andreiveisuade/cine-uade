@@ -104,7 +104,6 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return centavos > techo.centavos ? techo : this;
     }
 
-    /** Nunca negativo: lo que baja de cero se recorta a cero. */
     public Dinero sinBajarDeCero() {
         return centavos < 0 ? CERO : this;
     }

@@ -172,7 +172,6 @@ public class Programacion {
         return hasta;
     }
 
-    /** La hora a la que arranca cada función de la grilla. */
     public LocalTime getHoraInicio() {
         return horaInicio;
     }

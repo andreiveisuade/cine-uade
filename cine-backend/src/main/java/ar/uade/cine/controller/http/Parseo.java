@@ -73,7 +73,6 @@ public final class Parseo {
         }
     }
 
-    /* ------------------------------------------------------- filtros opcionales */
     /*
      * Los tres de abajo son para query params de búsqueda, donde "no vino" y "no filtres
      * por eso" son lo mismo. Por eso devuelven null en vez de fallar, al revés que los de
