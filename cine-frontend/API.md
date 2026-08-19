@@ -211,7 +211,7 @@ llevarlo directo a esa pantalla y no al panel.
 | POST | `/api/grilla` | La misma grilla, creando las funciones. Recalcula en vez de recibir la propuesta: el algoritmo es determinista |
 | POST | `/api/peliculas/{id}/descarte` | La rechaza: pasa a `DESCARTADA`. 400 si ya tiene funciones programadas |
 | PUT | `/api/peliculas/{id}` | Campos parciales. El título único se compara contra **las otras** |
-| DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas |
+| DELETE | `/api/peliculas/{id}` | 400 si tiene funciones programadas o alguna grilla que la programe, aunque esa grilla todavía no haya generado ninguna función |
 | GET | `/api/salas` | |
 | GET | `/api/salas/{id}` | Con `asientos` |
 | POST | `/api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. `minutosLimpieza` es opcional: ausente son 15, y no puede ser negativo |
