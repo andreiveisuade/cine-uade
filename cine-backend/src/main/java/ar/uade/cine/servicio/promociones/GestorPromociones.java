@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.promociones.PromocionMontoFijo;
 import ar.uade.cine.dominio.promociones.PromocionNxM;
@@ -27,6 +29,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * cliente. Aplicar varias en cadena obligaría a definir un orden —que cambia el
  * resultado— y a poner un piso para que el precio no llegue a cero.
  */
+@Service
 public class GestorPromociones implements PoliticaPromociones {
 
     private final PromocionDAO dao;

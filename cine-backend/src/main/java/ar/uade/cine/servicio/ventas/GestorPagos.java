@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.infraestructura.comprobantes.GeneradorRecibo;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.ventas.EstadoReserva;
@@ -32,6 +34,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * devuelve la autorización. Que sean el mismo método no es una economía de código: es lo
  * que garantiza que R5, R17 y R19 se apliquen igual por los dos caminos.
  */
+@Service
 public class GestorPagos {
 
     private static final Logger LOG = LoggerFactory.getLogger(GestorPagos.class);

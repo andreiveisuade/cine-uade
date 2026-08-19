@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
@@ -54,6 +56,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * distintas sin que el resultado cambie en el medio, que es el mismo par que ya tienen las
  * programaciones con su {@code /previsualizar}.
  */
+@Service
 public class PlanificadorGrilla {
 
     /**

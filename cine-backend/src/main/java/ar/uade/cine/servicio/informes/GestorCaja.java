@@ -5,6 +5,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.ventas.MedioPago;
 import ar.uade.cine.dominio.ventas.Pago;
@@ -33,6 +35,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * <p>No cobra ni corrige nada: solo lee. Si un número no cierra, la respuesta está en los
  * pagos, no acá.
  */
+@Service
 public class GestorCaja {
 
     private final PagoDAO pagoDAO;

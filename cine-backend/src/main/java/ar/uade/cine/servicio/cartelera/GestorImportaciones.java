@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.EstadoImportacion;
 import ar.uade.cine.dominio.cartelera.Importacion;
 import ar.uade.cine.dominio.cartelera.ImportacionImpl;
@@ -36,6 +39,7 @@ import ar.uade.cine.persistencia.ImportacionDAO;
  * {@link GestorRevisionCartelera} está separado de {@link GestorCartelera}: acá no se
  * administra qué películas hay, se administra de dónde vienen.
  */
+@Service
 public class GestorImportaciones {
 
     /** Cuántas corridas muestra la pantalla. El historial crece para siempre; la tabla no. */
@@ -52,6 +56,11 @@ public class GestorImportaciones {
     private final Duration corridaMaxima;
     private final Duration esperaEntreCorridas;
 
+    /**
+     * De los dos constructores, este es el que usa el contenedor: el otro existe para que
+     * un test pueda acortar los tiempos, y sin la anotacion Spring no sabria cual elegir.
+     */
+    @Autowired
     public GestorImportaciones(ImportacionDAO importacionDAO, CatalogoExterno catalogo,
                                GestorCartelera cartelera, GestorRevisionCartelera revision) {
         this(importacionDAO, catalogo, cartelera, revision,

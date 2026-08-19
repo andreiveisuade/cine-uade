@@ -1,5 +1,7 @@
 package ar.uade.cine.api.vistas;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.promociones.Promocion;
 import ar.uade.cine.dominio.promociones.PromocionMontoFijo;
 import ar.uade.cine.dominio.promociones.PromocionNxM;
@@ -14,6 +16,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * el JSON tiene que mostrar el beneficio, y cada tipo lo expresa con un campo distinto.
  * El cálculo del descuento sigue siendo polimórfico y no pasa por acá.
  */
+@Component
 public class VistasPromociones {
 
     public PromocionVistaDTO promocion(Promocion p) {

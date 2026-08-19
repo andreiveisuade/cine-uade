@@ -1,0 +1,65 @@
+# La configuración de la aplicación. Lo que antes se leía con System.getenv() repartido
+# entre OrigenMySQL, BloqueoButacasRedis, TmdbHttp y ServidorApi ahora está todo acá, y
+# los adaptadores lo reciben ya resuelto.
+#
+# Las variables de entorno siguen siendo las mismas que pasa el docker-compose
+# (DB_HOST, REDIS_HOST, TMDB_TOKEN...): la sintaxis ${VAR:default} le da a cada una el
+# valor de la máquina de desarrollo cuando no está definida, así que fuera de Docker
+# arranca sin configurar nada.
+
+spring:
+  application:
+    name: cine
+
+  # El perfil decide dónde se guarda cada cosa: es lo que antes elegía a mano el
+  # constructor de Aplicacion. `mysql` es como corre en producción; los tests activan
+  # `memoria` y levantan el mismo sistema sin base de datos.
+  profiles:
+    active: mysql
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:appsinteractivas}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    hikari:
+      # Diez conexiones alcanzan y sobran para un cine: el límite real no es la cantidad
+      # de usuarios sino cuántas consultas hay simultáneamente en vuelo.
+      maximum-pool-size: 10
+      pool-name: cine
+
+  jackson:
+    deserialization:
+      # Un campo de más en el pedido no es motivo para rechazarlo: el front puede mandar
+      # algo que este backend todavía no usa.
+      fail-on-unknown-properties: false
+
+server:
+  port: ${PORT:8080}
+
+# Lo propio del cine, con el mismo prefijo para todo: lo leen las clases
+# @ConfigurationProperties de api/ e infraestructura/.
+cine:
+  comprobantes:
+    # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.
+    tickets: ${CINE_TICKETS:tickets}
+    informes: ${CINE_INFORMES:informes}
+  redis:
+    host: ${REDIS_HOST:localhost}
+    puerto: ${REDIS_PORT:6379}
+  tmdb:
+    token: ${TMDB_TOKEN:}
+    region: ${TMDB_REGION:AR}
+    base: https://api.themoviedb.org/3
+
+logging:
+  # `docker compose logs` mezcla los cinco contenedores en una sola columna, así que cada
+  # caracter de prefijo es uno menos de la línea que interesa: la hora sin fecha, el nivel
+  # y el nombre corto de la clase.
+  pattern:
+    console: "%d{HH:mm:ss} %-5level %logger{0} - %msg%n"
+  level:
+    # El arranque de Spring y de Tomcat son una decena de líneas que no son del sistema.
+    org.springframework: warn
+    org.apache: warn
+    com.zaxxer.hikari: warn
+    ar.uade.cine: info

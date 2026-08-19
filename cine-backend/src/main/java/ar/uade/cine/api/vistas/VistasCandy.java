@@ -1,5 +1,7 @@
 package ar.uade.cine.api.vistas;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.ItemCombo;
 import ar.uade.cine.dominio.candy.ItemCompra;
@@ -17,6 +19,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * <p>Un combo es un producto que además dice qué trae: por eso {@code componentes} viaja
  * en la misma forma que cualquier otro producto y no en un endpoint aparte.
  */
+@Component
 public class VistasCandy {
 
     public ProductoVistaDTO producto(Producto p) {

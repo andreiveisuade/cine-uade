@@ -3,6 +3,8 @@ package ar.uade.cine.api.vistas;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
@@ -30,6 +32,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * <p>Qué butaca está ocupada se le pregunta a {@link Ocupacion} y no se recalcula acá: es
  * una regla de negocio, no una cuestión de formato.
  */
+@Component
 public class VistasCartelera {
 
     private final GestorCartelera cartelera;

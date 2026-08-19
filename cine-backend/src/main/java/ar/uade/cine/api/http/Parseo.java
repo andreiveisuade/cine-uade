@@ -6,28 +6,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-import io.javalin.http.Context;
-
 /**
  * Lectura de lo que entra por HTTP: texto crudo a los tipos del dominio. Los mensajes
  * son los que va a leer el usuario, así que no dejan asomar nombres de clases de Java.
+ *
+ * <p>Ya no tiene el {@code id(Context)} que tenía con Javalin: un {@code @PathVariable int}
+ * lo convierte Spring, y cuando el valor no es un número el que devuelve el 404 con el
+ * mismo mensaje de siempre es {@link ManejadorErrores}. Lo que queda acá es lo que Spring
+ * no puede saber: qué enum se esperaba, qué campo era y cómo se le explica al usuario que
+ * mandó cualquier cosa.
  */
 public final class Parseo {
 
     private Parseo() {
-    }
-
-    public static int id(Context ctx) {
-        return id(ctx, "id");
-    }
-
-    public static int id(Context ctx, String nombre) {
-        String valor = ctx.pathParam(nombre);
-        try {
-            return Integer.parseInt(valor);
-        } catch (NumberFormatException e) {
-            throw new NoEncontrado("El identificador " + valor + " no es válido");
-        }
     }
 
     /** Los enums viajan con el nombre de la constante, nunca con la etiqueta de mostrar. */

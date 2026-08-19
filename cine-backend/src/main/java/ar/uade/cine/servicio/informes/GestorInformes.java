@@ -10,6 +10,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.infraestructura.comprobantes.GeneradorBordero;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.cartelera.Pelicula;
@@ -44,6 +46,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * lectura: el encabezado sale de película y sala, las entradas de reservas y pagos, y la
  * barra de las compras del candy.
  */
+@Service
 public class GestorInformes {
 
     private static final Logger LOG = LoggerFactory.getLogger(GestorInformes.class);

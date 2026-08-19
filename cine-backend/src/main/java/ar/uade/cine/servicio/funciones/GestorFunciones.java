@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
@@ -27,6 +29,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * Necesita película y sala porque la regla R3 no se puede validar solo con funciones:
  * cuánto dura cada una sale de la película que proyecta.
  */
+@Service
 public class GestorFunciones {
 
     /** Para que el mensaje del choque diga una hora y no un LocalDateTime crudo. */

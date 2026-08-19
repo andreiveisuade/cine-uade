@@ -13,6 +13,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.funciones.Proyeccion;
@@ -50,6 +52,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * funciones se pisan. Es la misma dependencia entre gestores que ya tiene
  * {@code GestorPagos} con {@code GestorPromociones}.
  */
+@Service
 public class GestorProgramaciones {
 
     private static final Logger LOG = LoggerFactory.getLogger(GestorProgramaciones.class);

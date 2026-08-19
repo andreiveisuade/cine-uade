@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.AsientoImpl;
 import ar.uade.cine.dominio.salas.EstadoAsiento;
@@ -20,6 +22,7 @@ import ar.uade.cine.persistencia.SalaDAO;
  * Reglas de negocio de salas y butacas. Depende de SalaDAO y AsientoDAO por interfaz,
  * y de FuncionDAO solo para R12 (no borrar una sala con funciones programadas).
  */
+@Service
 public class GestorSalas {
 
     private static final int MAX_FILAS = 26;

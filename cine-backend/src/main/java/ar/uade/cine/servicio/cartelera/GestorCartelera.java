@@ -6,6 +6,8 @@ import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.Clasificacion;
 import ar.uade.cine.dominio.cartelera.Genero;
 import ar.uade.cine.dominio.cartelera.Pelicula;
@@ -19,6 +21,7 @@ import ar.uade.cine.servicio.programaciones.GestorProgramaciones;
  * Reglas de negocio del catálogo. Depende de la interfaz PeliculaDAO, no de una
  * implementación concreta: por eso funciona igual con memoria, MySQL o lo que venga.
  */
+@Service
 public class GestorCartelera {
 
     private final PeliculaDAO peliculaDAO;

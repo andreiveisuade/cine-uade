@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.EstadoAsiento;
@@ -64,6 +66,7 @@ import ar.uade.cine.persistencia.ReservaDAO;
  * {@link GestorReservas#reservar} suelta el bloqueo, porque a partir de ahí la butaca la
  * retiene la reserva.
  */
+@Service
 public class Ocupacion {
 
     private static final Logger LOG = LoggerFactory.getLogger(Ocupacion.class);

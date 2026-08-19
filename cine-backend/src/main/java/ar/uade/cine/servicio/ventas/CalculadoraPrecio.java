@@ -1,5 +1,7 @@
 package ar.uade.cine.servicio.ventas;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.dinero.Dinero;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
@@ -22,6 +24,7 @@ import ar.uade.cine.dominio.ventas.TipoTarifa;
  * al centavo pasa una sola vez y adentro del tipo, así que acá solo quedan las tres
  * multiplicaciones que son la regla de precio.
  */
+@Service
 public class CalculadoraPrecio {
 
     public Dinero precioDe(Funcion funcion, Sala sala, Asiento asiento, TipoTarifa tarifa) {

@@ -2,6 +2,8 @@ package ar.uade.cine.servicio.usuarios;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.usuarios.Empleado;
 import ar.uade.cine.dominio.usuarios.EmpleadoImpl;
 import ar.uade.cine.dominio.usuarios.Rol;
@@ -12,6 +14,7 @@ import ar.uade.cine.infraestructura.seguridad.Password;
  * Alta e inicio de sesión de los empleados. El cliente no pasa por acá: compra
  * sin loguearse.
  */
+@Service
 public class GestorEmpleados {
 
     private final EmpleadoDAO dao;

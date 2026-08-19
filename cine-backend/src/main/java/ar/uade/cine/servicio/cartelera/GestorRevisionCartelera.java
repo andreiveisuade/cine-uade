@@ -2,6 +2,8 @@ package ar.uade.cine.servicio.cartelera;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.EstadoRevision;
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.persistencia.FuncionDAO;
@@ -26,6 +28,7 @@ import ar.uade.cine.persistencia.PeliculaDAO;
  * el catálogo no necesita saber que existe un importador. Es la misma dirección que tiene
  * la dependencia entre cartelera y programaciones.
  */
+@Service
 public class GestorRevisionCartelera {
 
     private final PeliculaDAO peliculaDAO;

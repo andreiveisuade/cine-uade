@@ -3,6 +3,8 @@ package ar.uade.cine.servicio.usuarios;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.usuarios.ClienteImpl;
 import ar.uade.cine.persistencia.ClienteDAO;
@@ -14,6 +16,7 @@ import ar.uade.cine.persistencia.ReservaDAO;
  * solo para R12: antes de borrar hay que saber si el cliente tiene historial en cualquiera
  * de los dos circuitos de venta.
  */
+@Service
 public class GestorClientes {
 
     private final ClienteDAO clienteDAO;

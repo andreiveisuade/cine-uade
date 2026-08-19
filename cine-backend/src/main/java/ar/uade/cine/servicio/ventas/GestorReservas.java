@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.cartelera.Pelicula;
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
@@ -39,6 +41,7 @@ import ar.uade.cine.persistencia.SalaDAO;
  * igual que se la hace la API para dibujar el mapa, así que los dos validan contra la
  * misma definición de "ocupado".
  */
+@Service
 public class GestorReservas {
 
     /**

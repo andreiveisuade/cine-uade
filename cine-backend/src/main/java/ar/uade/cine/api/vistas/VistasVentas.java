@@ -1,5 +1,7 @@
 package ar.uade.cine.api.vistas;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Sala;
 import ar.uade.cine.dominio.ventas.Entrada;
@@ -33,6 +35,7 @@ import ar.uade.cine.dominio.usuarios.Cliente;
  * quién y si ya se pagó— y cada uno de esos datos vive en un lado distinto. Reducir esta
  * lista sería cambiar el contrato de la API, no reacomodar código.
  */
+@Component
 public class VistasVentas {
 
     private final GestorFunciones funciones;

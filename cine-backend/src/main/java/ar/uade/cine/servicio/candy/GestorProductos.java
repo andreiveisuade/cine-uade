@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.ItemCombo;
 import ar.uade.cine.dominio.candy.ItemCompra;
@@ -26,6 +28,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * cuánto sale cada cosa en vez de aceptar el precio que le manden, igual que el pago de
  * una reserva toma el monto de la reserva y no de quien cobra.
  */
+@Service
 public class GestorProductos {
 
     private final ProductoDAO productoDAO;

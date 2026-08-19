@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 import ar.uade.cine.infraestructura.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.dominio.candy.CompraCandy;
 import ar.uade.cine.dominio.candy.CompraCandyImpl;
@@ -27,6 +29,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * al que le pregunta. Esa separación es la que hace que cargar un producto nuevo y
  * cambiar cómo se cobra sean dos cambios en dos archivos distintos.
  */
+@Service
 public class GestorCandy {
 
     private final CompraCandyDAO compraDAO;

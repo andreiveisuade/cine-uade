@@ -1,5 +1,7 @@
 package ar.uade.cine.api.vistas;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.usuarios.Cliente;
 import ar.uade.cine.dominio.usuarios.Empleado;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
@@ -9,6 +11,7 @@ import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
  * Las personas, en la forma que espera el front. No necesita ningún gestor: un cliente y
  * un empleado ya traen encima todo lo que se muestra de ellos.
  */
+@Component
 public class VistasUsuarios {
 
     public ClienteVistaDTO cliente(Cliente c) {

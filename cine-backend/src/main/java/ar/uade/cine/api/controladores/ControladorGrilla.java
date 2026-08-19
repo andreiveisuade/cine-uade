@@ -1,4 +1,4 @@
-package ar.uade.cine.api.rutas;
+package ar.uade.cine.api.controladores;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -6,7 +6,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import ar.uade.cine.api.http.Parseo;
 import ar.uade.cine.dominio.cartelera.Pelicula;
+import ar.uade.cine.dominio.dinero.Dinero;
 import ar.uade.cine.dominio.funciones.Proyeccion;
 import ar.uade.cine.dominio.funciones.Version;
 import ar.uade.cine.dto.grilla.IndicadoresGrillaDTO;
@@ -18,37 +26,39 @@ import ar.uade.cine.servicio.programaciones.CriteriosGrilla;
 import ar.uade.cine.servicio.programaciones.PlanificadorGrilla;
 import ar.uade.cine.servicio.programaciones.PropuestaGrilla;
 import ar.uade.cine.servicio.programaciones.PropuestaGrilla.PaseSugerido;
-import io.javalin.Javalin;
-import io.javalin.http.HttpStatus;
-import ar.uade.cine.api.http.Parseo;
-import ar.uade.cine.dominio.dinero.Dinero;
 
 /**
  * El armado automático de la grilla semanal.
  *
- * <p>Dos endpoints para una sola operación, igual que las programaciones: {@code /propuesta}
- * devuelve exactamente lo mismo que devolvería el alta, sin escribir. El encargado puede
- * probar seis títulos contra diez, comparar los indicadores y recién ahí confirmar. Como el
- * planificador es determinista, lo que ve es lo que se va a crear.
- *
- * <p>Arma sus propios DTO adentro de la ruta y no en una clase {@code Vistas*}, por lo
- * mismo que {@code RutasProgramaciones}: la propuesta llega completa desde el servicio y no
- * necesita preguntarle nada a ningún gestor para dibujarse.
+ * <p>Dos endpoints para una sola operación, igual que las programaciones:
+ * {@code /propuesta} devuelve exactamente lo mismo que devolvería el alta, sin escribir. El
+ * encargado puede probar seis títulos contra diez, comparar los indicadores y recién ahí
+ * confirmar. Como el planificador es determinista, lo que ve es lo que se va a crear.
  */
-class RutasGrilla {
+@RestController
+public class ControladorGrilla {
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-    static void registrar(Javalin app, PlanificadorGrilla planificador) {
+    private final PlanificadorGrilla planificador;
 
-        // Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que
-        // el alta, y meter ocho campos en la query string sería ilegible.
-        app.post("/api/grilla/propuesta", ctx ->
-                ctx.json(propuesta(planificador.proponer(criterios(ctx.bodyAsClass(PedidoGrillaDTO.class))), false)));
+    public ControladorGrilla(PlanificadorGrilla planificador) {
+        this.planificador = planificador;
+    }
 
-        app.post("/api/grilla", ctx ->
-                ctx.status(HttpStatus.CREATED)
-                        .json(propuesta(planificador.aplicar(criterios(ctx.bodyAsClass(PedidoGrillaDTO.class))), true)));
+    /**
+     * Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que el
+     * alta, y meter ocho campos en la query string sería ilegible.
+     */
+    @PostMapping("/api/grilla/propuesta")
+    public PropuestaGrillaDTO proponer(@RequestBody PedidoGrillaDTO pedido) {
+        return propuesta(planificador.proponer(criterios(pedido)), false);
+    }
+
+    @PostMapping("/api/grilla")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PropuestaGrillaDTO aplicar(@RequestBody PedidoGrillaDTO pedido) {
+        return propuesta(planificador.aplicar(criterios(pedido)), true);
     }
 
     /**
@@ -58,10 +68,9 @@ class RutasGrilla {
      * <p>El precio es la excepción y no tiene default a propósito. Los otros siete son
      * convenciones razonables —una semana, de 14 a 24, ocho títulos—, pero cuánto sale la
      * entrada es una decisión comercial que el sistema no puede tomar por el cine: si
-     * inventara un número y el encargado no lo mirara, se venderían entradas a un precio
-     * que no decidió nadie. Por eso falta se avisa acá, con el mismo criterio que usa
-     * {@code RutasCandy} con la disponibilidad: comprobar que un campo obligatorio del
-     * pedido esté presente es traducción, no una regla de negocio.
+     * inventara un número y el encargado no lo mirara, se venderían entradas a un precio que
+     * no decidió nadie. Comprobar que un campo obligatorio del pedido esté presente es
+     * traducción, no una regla de negocio.
      */
     private static CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         if (pedido.precio() == null) {
@@ -72,7 +81,7 @@ class RutasGrilla {
                 : Parseo.dia(pedido.desde(), "la fecha de inicio");
         CriteriosGrilla base = CriteriosGrilla.deUnaSemana(desde,
                 pedido.cuantasPeliculas() == null ? 8 : pedido.cuantasPeliculas(),
-                Dinero.de(pedido.precio() == null ? 0 : pedido.precio()));
+                Dinero.de(pedido.precio()));
 
         return new CriteriosGrilla(desde,
                 pedido.dias() == null ? base.dias() : pedido.dias(),
@@ -90,9 +99,9 @@ class RutasGrilla {
     }
 
     /**
-     * @param creadas si las funciones se escribieron de verdad. El front necesita
-     *                distinguir "así quedaría" de "así quedó", y contar los pases no
-     *                alcanza: son el mismo número en los dos casos
+     * @param creadas si las funciones se escribieron de verdad. El front necesita distinguir
+     *                "así quedaría" de "así quedó", y contar los pases no alcanza: son el
+     *                mismo número en los dos casos
      */
     private static PropuestaGrillaDTO propuesta(PropuestaGrilla propuesta, boolean creadas) {
         Map<Integer, Integer> pasesPorPelicula = new LinkedHashMap<>();
@@ -100,7 +109,7 @@ class RutasGrilla {
 
         return new PropuestaGrillaDTO(
                 propuesta.elenco().stream().map(p -> elegida(p, pasesPorPelicula)).toList(),
-                propuesta.pases().stream().map(RutasGrilla::pase).toList(),
+                propuesta.pases().stream().map(ControladorGrilla::pase).toList(),
                 indicadores(propuesta),
                 creadas ? propuesta.pases().size() : 0);
     }

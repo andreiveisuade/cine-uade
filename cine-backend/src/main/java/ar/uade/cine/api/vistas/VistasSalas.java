@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
+
 import ar.uade.cine.dominio.funciones.Funcion;
 import ar.uade.cine.dominio.salas.Asiento;
 import ar.uade.cine.dominio.salas.Sala;
@@ -22,6 +24,7 @@ import ar.uade.cine.dominio.dinero.Dinero;
  * AsientoDAO, no la sala— y la respuesta las incluye. Es justamente lo que el DTO no
  * puede hacer por su cuenta.
  */
+@Component
 public class VistasSalas {
 
     private final GestorSalas salas;
