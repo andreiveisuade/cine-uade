@@ -13,6 +13,11 @@ svg_map = {
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",
     "{{SVG_DOCKER}}": DIAGRAMAS / "docker-despliegue.svg",
+    "{{SVG_IMPORTADOR}}": DIAGRAMAS / "importador-flujo.svg",
+    "{{SVG_PETICION}}": DIAGRAMAS / "peticion-capas.svg",
+    "{{SVG_USUARIOS}}": DIAGRAMAS / "usuarios-herencia.svg",
+    "{{SVG_PROMOCIONES}}": DIAGRAMAS / "promociones-herencia.svg",
+    "{{SVG_BUTACA_CARRERA}}": DIAGRAMAS / "butaca-carrera.svg",
     # Los principios, uno por diagrama: el codigo que los aplica esta al lado en el texto.
     "{{SVG_CAPAS_PAQUETES}}": DIAGRAMAS / "capas.svg",
     "{{SVG_SOLID_DIP}}": DIAGRAMAS / "solid-dip.svg",
@@ -26,11 +31,9 @@ svg_map = {
 # que los SVG: el manual tiene que abrirse de un doble clic, sin servidor. En JPEG y no
 # PNG porque son capturas de pantalla completas y pesan la cuarta parte.
 imagen_map = {
-    "{{IMG_CARTELERA}}": CAPTURAS / "cp10-cartelera.jpg",
     "{{IMG_MAPA}}": CAPTURAS / "cp10-mapa.jpg",
     "{{IMG_TICKET}}": CAPTURAS / "cp10-ticket.jpg",
     "{{IMG_GRILLA}}": CAPTURAS / "cp09-grilla.jpg",
-    "{{IMG_PROMOCIONES}}": CAPTURAS / "cp14-promociones.jpg",
     "{{IMG_BLOQUEO}}": CAPTURAS / "cp19-bloqueo.jpg",
     "{{IMG_PUERTA_OK}}": CAPTURAS / "cp16-puerta-adelante.jpg",
     "{{IMG_PUERTA_RECHAZO}}": CAPTURAS / "cp16-puerta-rechazo.jpg",
