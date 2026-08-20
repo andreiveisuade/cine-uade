@@ -3,13 +3,13 @@
 Interfaz web del sistema de salas de cine de Aplicaciones Interactivas.
 HTML + JavaScript + Tailwind, sin framework ni build step.
 
-Es uno de los tres repos hermanos del TP:
+Es una de las tres carpetas del monorepo:
 
 ```
-TPO/
-├── cine-backend/    Java + JDBC + MySQL. También el manual, en docs/manual/
-├── cine-frontend/   este repo
-└── cine-docker/     el compose que levanta los tres contenedores
+cine-uade/
+├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL. También el manual, en docs/manual/
+├── cine-frontend/   esta carpeta
+└── cine-docker/     el compose que levanta todo
 ```
 
 ## Cómo correrlo
@@ -64,9 +64,18 @@ js/
   etiquetas.js    traducción de los enums del dominio a texto legible
   formato.js      formateo de plata, fecha y hora
   dom.js          escapado, avisos por pantalla y el resto del contacto con el DOM
-  cliente.js      vistas del cliente
-  admin.js        vistas del encargado
+  cliente.js      mapa de rutas del cliente
+  admin.js        mapa de rutas del encargado + guardia por rol
+  cliente/        una vista por archivo: cartelera, pelicula, funcion, compra,
+                  confirmar, ticket, mis-reservas, registro
+  admin/          una vista por archivo: peliculas, salas, funciones, funcion,
+                  agenda, programaciones, planificador, promociones, reservas,
+                  caja, puerta, importador, pendientes, login, sesion
 ```
+
+Cada vista es una funcion `async (contenedor, ...params)` registrada en el mapa de
+`cliente.js` / `admin.js`. Agregar una pantalla es agregar un archivo y una linea en ese
+mapa: los modulos no se conocen entre si.
 
 ## Dos cosas del dominio que el front respeta
 
@@ -85,10 +94,10 @@ calcula el backend: el front nunca lo recalcula, solo lo muestra.
 
 ## Estado
 
-Cubre 12 de los 16 casos de uso del manual. Falta el módulo de candy (CU-13 a CU-16) y
-que el arqueo (CU-12) separe boletería de candy.
+Cubre todos los casos de uso del manual **menos el candy** (CU-13 a CU-16): la API ya
+sirve la carta, los combos y las ventas, y ninguna pantalla las consume todavia. Es la
+unica deuda de este tipo que queda.
 
-Lo último que salió de la terminal y ya tiene pantalla: el armado automático de la grilla
-(`#/planificador`), el borderó del INCAA y el informe por función (`#/funcion/{id}`, desde
-el listado de funciones) y el cobro de los medios electrónicos por el checkout de la
-pasarela.
+Con pantalla y andando: el armado automatico de la grilla (`#/planificador`), la agenda
+(`#/agenda`), el bordero del INCAA y el informe por funcion (`#/funcion/{id}`), el cobro
+por checkout de la pasarela y la validacion de entradas en la puerta (`#/puerta`).

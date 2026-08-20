@@ -1,5 +1,5 @@
-# Los servicios del sistema. Los build context apuntan a los repos hermanos: cada uno
-# sigue siendo un repo git independiente y acá solo se los orquesta.
+# Los servicios del sistema. Los build context apuntan a las carpetas hermanas del
+# monorepo; acá solo se los orquesta.
 #
 # Un solo puerto sale al host: el de nginx. MySQL y el backend se hablan por la red
 # interna de Docker y no son alcanzables desde afuera.

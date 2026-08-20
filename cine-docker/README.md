@@ -1,12 +1,12 @@
 # cine-docker
 
-Orquestación del TP. Levanta los servicios del sistema desde los repos hermanos.
+Orquestación del TP. Levanta los servicios del sistema desde las carpetas hermanas.
 
 ```
-TPO/
-├── cine-backend/    Java 21 + JDBC + MySQL, con la API HTTP en ar.uade.cine.api
+cine-uade/
+├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL, con la API en ar.uade.cine.controller
 ├── cine-frontend/   HTML + JS + Tailwind servido por nginx
-└── cine-docker/     este repo: el compose
+└── cine-docker/     esta carpeta: el compose
 ```
 
 ## Levantarlo
@@ -86,11 +86,8 @@ a TMDB.
 docker compose logs -f backend               # qué trajo la última corrida
 ```
 
-Es la única llamada saliente del sistema. Hasta hace poco tampoco salía a internet: le
-pedía la corrida a un contenedor `parser` en Python que era el que hablaba con TMDB. Se lo
-absorbió porque la parte que importaba de ese proceso —traducir los 19 géneros de TMDB a
-los 9 nuestros, resolver la clasificación del INCAA, saltear lo que ya está— son
-decisiones del cine, y vivían afuera del sistema y sin tests.
+Es la única llamada saliente del sistema. Vive dentro del backend, en
+`infrastructure/importador/`: no hay contenedor aparte.
 
 Necesita `TMDB_TOKEN` en el `.env` — se saca gratis en
 [themoviedb.org/settings/api](https://www.themoviedb.org/settings/api) y es el
@@ -121,9 +118,8 @@ tiene permisos solo sobre `appsinteractivas`.
 
 ## Mirar la base a mano
 
-El menú de consola se eliminó: la única puerta de entrada al sistema es la API HTTP, y el
-importador y el seed escriben por ahí también, justamente para que ninguna regla de
-negocio quede sin aplicar.
+La única puerta de entrada al sistema es la API HTTP: el importador y el seed escriben por
+ahí también, justamente para que ninguna regla de negocio quede sin aplicar.
 
 Para inspeccionar los datos está Adminer en `localhost:8081` (servidor `mysql`, no
 `localhost`). Y para una consulta suelta:
