@@ -26,9 +26,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * declara, la aplicación <strong>no levanta</strong> y el error dice qué falta: el circuito
  * incompleto pasó de ser un bug de tiempo de uso a un error de arranque.
  *
- * <p>Qué implementación se usa para guardar cada cosa sigue decidiéndose en un solo lugar,
- * pero ahora es un perfil: ver {@link ar.uade.cine.repository.PersistenciaMySQL} y
- * {@link ar.uade.cine.repository.PersistenciaEnMemoria}.
+ * <p>Qué implementación se usa para cada puerto hacia afuera se decide en un solo lugar:
+ * {@link ar.uade.cine.infrastructure.Adaptadores}, por perfil de Spring. Las de los
+ * repositorios no se eligen: las genera Spring Data desde la interfaz.
  */
 @SpringBootApplication
 public class Aplicacion {

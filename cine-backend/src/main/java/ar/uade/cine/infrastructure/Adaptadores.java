@@ -26,9 +26,8 @@ import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
  * Los puertos hacia afuera, elegidos y configurados: dónde caen los comprobantes, quién
  * cobra y de dónde salen las películas que el cine no cargó a mano.
  *
- * <p>Es a {@code infraestructura/} lo que {@link ar.uade.cine.repository.PersistenciaMySQL}
- * es a {@code persistencia/}: el único lugar que nombra una implementación concreta. Y por
- * el mismo motivo se declaran con {@code @Bean} en vez de anotarse con {@code @Component}
+ * <p>Es el único lugar del sistema que nombra una implementación concreta de un puerto. Se
+ * declaran con {@code @Bean} en vez de anotarse con {@code @Component}
  * —los tres necesitan configuración que sale de {@code application.yml}, así que hay algo
  * que decidir, y esa decisión se lee mejor junta que repartida en anotaciones.
  *
