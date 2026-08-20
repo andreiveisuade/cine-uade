@@ -7,12 +7,6 @@ skinparam nodesep 12
 skinparam ranksep 40
 hide members
 
-' El 19/08/2026 el backend migro de Javalin+DAO a Spring Boot + Spring Data JPA.
-' Este diagrama reemplaza conceptualmente a clases-capas.puml para la vista de
-' paquetes: aquel muestra las clases y sus colaboraciones una por una, este
-' muestra donde vive cada cosa. Las clases y flechas de negocio siguen siendo
-' las de clases-capas.puml; aca no se repiten.
-
 package controller {
   package vistas {
     class "6 Vistas*\n(ensambladores de DTO)" as VistasInternas
@@ -90,45 +84,6 @@ note bottom of model
   proyecto tal cual.
 end note
 
-note left of Controllers
-  Ya no hay una fachada tipo
-  Rutas.registrarTodas(): cada
-  controlador es publico y Spring lo
-  descubre solo por component scan.
-  Antes eran 14 clases Rutas*
-  package-private mas una que las
-  registraba.
-end note
-
-note left of Repos
-  Antes era persistencia/, con un
-  contrato arriba y una implementacion
-  por tecnologia abajo (mysql/, memoria/,
-  archivo/, redis/). Hoy no hay ninguna
-  carpeta de implementacion: Spring Data
-  genera la unica que existe.
-end note
-
-note right of Aplicacion
-  Ya no arma nada a mano. Es solo
-  @SpringBootApplication + main():
-  Spring conecta cada @Service,
-  @Repository y @RestController por
-  component scan.
-end note
-
 Aplicacion .. Controllers
-
-legend bottom
-  |= Capa |= Que cambio con la migracion a Spring |
-  | service | Sin cambios de fondo: sigue siendo un subpaquete por subdominio, cada uno con su |
-  |  | gestor y las clases de fabricacion pura que le sirven solo a el. |
-  | controller | api/rutas/ y api/vistas/ se convirtieron en controller/: vistas/ sobrevive igual, |
-  |  | pero rutas/ y su fachada desaparecieron -cada @RestController es publico y autonomo-. |
-  | model | Sin cambios de subpaquetes, pero las entidades dejaron de ser interfaz+Impl: son |
-  |  | clases @Entity a secas, salvo Promocion, que sigue siendo jerarquia real. |
-  | repository | persistencia/ perdio sus cuatro subcarpetas por tecnologia: hoy son 13 interfaces |
-  |  | planas y Spring Data genera la unica implementacion que existe. |
-endlegend
 
 @enduml

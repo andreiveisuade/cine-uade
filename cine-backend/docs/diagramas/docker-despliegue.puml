@@ -79,14 +79,12 @@ legend bottom
   | red **web** | frontend <-> backend. |
   | red **datos** | backend y adminer <-> mysql, backend <-> redis. El frontend no tiene ruta hasta la base. |
   | redis | Los bloqueos de butaca de mientras alguien elige. Unico servicio que se puede |
-  |  | apagar sin romper nada: sin el se vende como antes de que existiera, porque la |
-  |  | doble venta la impide el UNIQUE de MySQL. Por eso el backend lo espera con |
+  |  | apagar sin romper nada: la doble venta la impide el UNIQUE de MySQL. |
+  |  | Por eso el backend lo espera con |
   |  | "service_started" y no con "service_healthy" como a la base. |
   | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
-  | TMDB | La cartelera real, a pedido del panel. Hasta hace poco la traia un contenedor |
-  |  | "parser" en Python que escribia por HTTP contra la API; se lo absorbio porque la |
-  |  | traduccion de su modelo al nuestro es una decision del cine y vivia afuera del |
-  |  | sistema, sin tests. Ahora es un adaptador de infraestructura mas. |
+  | TMDB | La cartelera real, a pedido del panel. Es un adaptador dentro del backend |
+  |  | (infrastructure/importador/): no hay contenedor aparte. |
   | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
   |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
   | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |

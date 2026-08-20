@@ -1,0 +1,47 @@
+@startuml importador-flujo
+title Importador de cartelera: TMDB entra por las reglas del cine
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 200
+skinparam ParticipantPadding 12
+
+actor "Encargado" as E
+participant "nginx" as NG
+participant "GestorImportaciones\nservice/cartelera/" as GI
+participant "TmdbHttp\ninfrastructure/importador/" as TM
+participant "MapeoTmdb" as MAP
+participant "GestorRevisionCartelera" as GR
+database MySQL as DB
+
+E -> NG : POST /api/importaciones\n(boton en #/importador)
+NG -> GI : proxy_read_timeout 180s
+activate GI
+
+GI -> TM : cartelera de AR
+activate TM
+TM -> TM : now_playing + detalle\n+ release_dates\n(de a 4 en paralelo)
+TM -> MAP : traduce
+MAP --> TM : 19 generos -> 9\nISO 639 -> texto\nsin certificacion -> MAS_13
+TM --> GI : candidatas
+deactivate TM
+
+loop una por vez, en orden
+  GI -> GI : R1: ya esta ese titulo?
+  GI -> GR : alta(datos)
+  GR -> GR : R2, R7, R10
+  GR -> DB : estadoRevision = PENDIENTE\n(fuera de cartelera)
+end
+
+GI --> NG : contadores de la corrida
+deactivate GI
+NG --> E : 200 + resumen
+
+note over GR, DB
+  Cae en el buzon "Por revisar", no en
+  cartelera. GestorFunciones rechaza
+  programar una pelicula sin confirmar.
+  Lo descartado no se borra: si no, la
+  corrida siguiente lo traeria otra vez.
+end note
+
+@enduml

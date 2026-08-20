@@ -1,0 +1,64 @@
+@startuml peticion-capas
+title Una peticion, de punta a punta: contenedores, puertos y capas
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 200
+skinparam ParticipantPadding 10
+skinparam BoxPadding 12
+
+actor Navegador as N
+
+box "contenedor frontend\nred: web" #F7EBE3
+  participant "nginx\n:8080" as NGINX
+end box
+
+box "contenedor backend\nredes: web + datos" #F2F0ED
+  participant "ReservaController\ncontroller/" as CTRL
+  participant "VistasVentas\ncontroller/vistas/" as VIS
+  participant "GestorReservas\nservice/ventas/" as GEST
+  participant "ReservaRepository\nrepository/" as REPO
+end box
+
+box "contenedor mysql\nred: datos" #F2F0ED
+  database "MySQL\n:3306" as DB
+end box
+
+N -> NGINX : POST /api/reservas\nlocalhost:8080
+note right of N
+  El unico puerto publicado
+  al host es este.
+end note
+
+NGINX -> CTRL : proxy_pass\nbackend:8080
+note right of NGINX
+  Mismo origen: no hace
+  falta CORS.
+end note
+
+CTRL -> CTRL : PedidoReservaDTO\n(Jackson deserializa)
+CTRL -> GEST : reservar(criterios)
+activate GEST
+
+GEST -> GEST : valida R4, R19, tarifas
+GEST -> REPO : save(reserva)
+REPO -> DB : INSERT reserva + entrada
+DB --> REPO : id
+REPO --> GEST : Reserva
+GEST --> CTRL : Reserva
+deactivate GEST
+
+CTRL -> VIS : reserva(Reserva)
+VIS --> CTRL : ReservaVistaDTO
+
+CTRL --> NGINX : 200 + JSON
+NGINX --> N : 200 + JSON
+
+note over CTRL, REPO
+  Si el gestor tira IllegalArgumentException,
+  ManejadorErrores (@RestControllerAdvice) la
+  traduce a 400 con el mensaje intacto:
+  ese texto se le muestra al usuario.
+  NoEncontrado -> 404 · ButacaOcupada -> 409
+end note
+
+@enduml

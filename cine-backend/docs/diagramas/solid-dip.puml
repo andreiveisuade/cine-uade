@@ -41,9 +41,7 @@ class Aplicacion <<@SpringBootApplication>>
 GestorReservas -down-> ReservaRepository : depende de\nla interfaz
 
 note as N2
-  ArquitecturaTest ya no busca "un solo
-  lugar nombra la implementacion" -no
-  tendria que buscar-: verifica que
+  ArquitecturaTest verifica que
   ningun service/ ni controller/
   importe jakarta.persistence,
   java.sql u org.springframework.jdbc.
@@ -55,9 +53,9 @@ N2 .. GestorReservas
 note right of Aplicacion
   Solo levanta el contenedor de Spring
   (@SpringBootApplication + main()).
-  No arma nada a mano: cada @Service,
-  @Repository y @RestController se
-  conecta solo por component scan.
+  Cada @Service, @Repository y
+  @RestController se conecta solo
+  por component scan.
 end note
 
 Aplicacion ..> GestorReservas : el contenedor lo\narma, no Aplicacion
@@ -66,11 +64,8 @@ note as N1
   La flecha de compilacion va en un
   solo sentido, hacia la interfaz:
   GestorReservas --> ReservaRepository.
-  No hay una segunda clase de bajo
-  nivel de la que dependa a su vez -eso
-  es lo que hace mas fuerte esta D que
-  la version con DAO, donde si habia
-  una implementacion concreta detras.
+  No hay ninguna clase de bajo nivel
+  de la que dependa a su vez.
 end note
 N1 .. ReservaRepository
 

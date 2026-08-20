@@ -1,0 +1,38 @@
+@startuml usuarios-herencia
+title Usuarios: herencia, no un enum suelto
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 34
+
+abstract class Usuario <<@Entity>> {
+  nombre
+  email
+  rol : Rol
+}
+
+class Cliente {
+  -- sin credenciales --
+}
+
+class Empleado {
+  passwordHash
+}
+
+enum Rol {
+  CLIENTE
+  ADMINISTRADOR
+  ACOMODADOR
+}
+
+Usuario <|-- Cliente
+Usuario <|-- Empleado
+Usuario --> Rol : discriminador
+
+note right of Empleado
+  El corte es tener contrasena,
+  no el cargo. Rol distingue
+  adentro de Empleado.
+end note
+
+@enduml

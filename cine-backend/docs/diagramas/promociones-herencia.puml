@@ -1,0 +1,48 @@
+@startuml promociones-herencia
+title Promociones: una jerarquia, no un switch
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 34
+
+abstract class Promocion <<@Entity>> {
+  nombre
+  vigencia
+  diasSemana
+  horario
+  mediosPago
+  --
+  {abstract} calcularDescuento(entradas)
+}
+
+class PromocionPorcentaje {
+  porcentaje
+  --
+  subtotal x 0.30
+}
+
+class PromocionMontoFijo {
+  monto
+  --
+  $2000 off
+}
+
+class PromocionNxM {
+  n, m
+  --
+  2x1: las (cant/n)x(n-m)
+  entradas mas baratas
+}
+
+Promocion <|-- PromocionPorcentaje
+Promocion <|-- PromocionMontoFijo
+Promocion <|-- PromocionNxM
+
+note bottom of Promocion
+  Recibe las entradas, no la reserva: R16
+  hecho firma. Las de tarifa reducida no
+  se le pasan, asi que no pueden entrar
+  al descuento por descuido.
+end note
+
+@enduml

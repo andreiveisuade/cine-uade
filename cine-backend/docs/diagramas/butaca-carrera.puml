@@ -1,0 +1,56 @@
+@startuml butaca-carrera
+title Dos personas, la misma butaca: las dos defensas
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 210
+skinparam ParticipantPadding 14
+
+actor Ana
+actor Beto
+participant "Ocupacion\n+ Redis" as Bloqueo
+database "MySQL\nUNIQUE(funcion,asiento)" as DB
+
+== Defensa 1: el bloqueo, mientras elige ==
+
+Ana -> Bloqueo : elige C5
+activate Bloqueo
+Bloqueo --> Ana : bloqueada 180s
+deactivate Bloqueo
+
+Beto -> Bloqueo : abre el mapa
+activate Bloqueo
+Bloqueo --> Beto : C5 aparece TOMADA
+deactivate Bloqueo
+
+note over Beto
+  Se entera ahora, antes de
+  cargar sus datos. Sin esto
+  se enteraba al confirmar.
+end note
+
+== Defensa 2: el UNIQUE, al confirmar ==
+
+note over Bloqueo
+  Si Redis no esta, la etapa 1
+  no existe y las dos llegan
+  aca creyendo que C5 esta libre.
+end note
+
+Ana -> DB : INSERT entrada(f1, C5)
+activate DB
+DB --> Ana : ok
+deactivate DB
+
+Beto -> DB : INSERT entrada(f1, C5)
+activate DB
+DB --> Beto : violacion de UNIQUE\n-> 409 ButacaOcupada
+deactivate DB
+
+note over DB
+  Cancelar pone funcion_id = NULL:
+  MySQL no aplica el unico a filas
+  con NULL, asi que la butaca se
+  puede revender (R6).
+end note
+
+@enduml
