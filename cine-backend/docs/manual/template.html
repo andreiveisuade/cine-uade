@@ -463,7 +463,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los 25 casos de uso y las 19 reglas funcionan de punta a punta —gestor y API
-          HTTP— con <strong>362 tests en verde</strong>. Lo único que no tiene pantalla web es el candy
+          HTTP— con <strong>385 tests</strong>. Lo único que no tiene pantalla web es el candy
           (CU-13 a CU-16): la API ya lo sirve. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
@@ -1543,7 +1543,7 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <div class="callout">
         <p>
-          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 362 tests llaman a los
+          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 385 tests llaman a los
           gestores directo, sin pasar por HTTP. Los 29 que sí abren un puerto (<code>PruebaDeApi</code>) existen
           justamente para probar el controlador en sí —parseo, códigos de estado, el
           <code>@RestControllerAdvice</code>—, no las reglas de negocio: esas ya están cubiertas del otro lado.
@@ -2882,6 +2882,11 @@ docker compose up -d --build
         <figcaption>Los contenedores, las dos redes y qué carpeta construye a cada uno</figcaption>
       </figure>
 
+      <figure class="diagram">
+        {{SVG_ARRANQUE}}
+        <figcaption>El orden de arranque: cada servicio espera al anterior, por eso el puerto 8080 tarda en responder</figcaption>
+      </figure>
+
       <div class="table-wrap">
         <table>
           <thead><tr><th>Servicio</th><th>Puerto en el host</th><th>Cómo se lo alcanza</th></tr></thead>
@@ -3010,7 +3015,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/peliculas   #
 
       <h3>Nivel 1 · las pruebas que corren solas</h3>
       <pre><code>cd cine-backend
-mvn clean test                    # 362 tests: 358 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 385 tests: 381 corren siempre, 4 se saltean</code></pre>
 
       <div class="callout">
         <p>
@@ -3189,7 +3194,17 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
-      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>362 tests en verde</strong>.</p>
+      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>385 tests</strong>.</p>
+
+      <div class="callout">
+        <p><strong>La suite esta en rojo por fechas vencidas.</strong> 92 de los 385 tests
+        fallan hoy con <em>&laquo;La funcion ya empezo: no se pueden reservar butacas&raquo;</em>.
+        No es una regresion del codigo: 18 archivos de test arman las funciones con fechas
+        escritas a mano —<code>LocalDateTime.of(2026, 8, 20, 20, 0)</code> aparece 45 veces—
+        que al pasar el calendario quedan en el pasado, y el sistema las rechaza como
+        corresponde. El arreglo es relativizar esas fechas al momento de la corrida
+        (<code>LocalDateTime.now().plusDays(n)</code>) en vez de fijarlas.</p>
+      </div>
 
       <div class="callout">
         <p>

@@ -1,0 +1,55 @@
+@startuml arranque-orden
+title Orden de arranque - docker compose up -d --build
+
+skinparam sequenceMessageAlign center
+
+actor "Quien levanta" as dev
+participant "compose" as compose
+database "mysql" as mysql
+participant "redis" as redis
+participant "backend" as backend
+participant "frontend\n(nginx)" as frontend
+
+dev -> compose : docker compose up -d --build
+
+compose -> mysql : crear
+compose -> redis : crear
+
+activate mysql
+mysql -> mysql : volumen vacio:\ncorre 01-schema.sql\ny 02-admin.sql
+mysql --> compose : healthy
+deactivate mysql
+
+note over redis
+  service_started, no
+  service_healthy: sin
+  Redis se vende igual
+end note
+
+compose -> backend : crear\n(espera mysql healthy)
+activate backend
+backend -> mysql : conecta
+backend -> backend : ddl-auto: validate\ncontra el schema
+backend --> compose : healthy\n(GET /api/generos responde)
+deactivate backend
+
+compose -> frontend : crear\n(espera backend healthy)
+activate frontend
+frontend --> compose : Up
+deactivate frontend
+
+dev -> frontend : localhost:8080
+frontend -> backend : proxy_pass /api
+
+legend bottom
+  |= Momento |= Que pasa |
+  | Primera vez | Maven baja las dependencias para compilar el jar: tarda minutos. |
+  |  | Despues Docker reusa esa capa y son segundos. |
+  | Antes del healthy del backend | localhost:8080 NO responde. No esta roto: el frontend |
+  |  | todavia no arranco porque espera al backend. |
+  | Verificar | docker compose ps -> los 5 Up, mysql y backend (healthy). |
+  | Base recien creada | No hay datos. Sembrar con ./seed/datos-de-ejemplo.sh, que |
+  |  | entra por la API y pasa por las mismas reglas del sistema. |
+endlegend
+
+@enduml

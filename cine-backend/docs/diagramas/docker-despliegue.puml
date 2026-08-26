@@ -6,8 +6,8 @@ skinparam ranksep 45
 
 actor "Usuario" as usuario
 
-folder "cine-frontend\n(repo hermano)" as repoFrontend
-folder "cine-backend\n(repo hermano)" as repoBackend
+folder "cine-frontend\n(carpeta del monorepo)" as repoFrontend
+folder "cine-backend\n(carpeta del monorepo)" as repoBackend
 
 node "Docker host\ndocker-compose.yml (cine-docker)" {
   frame "red **web**" {
@@ -74,8 +74,8 @@ envNote ..> backend
 
 legend bottom
   |= Elemento |= Detalle |
-  | cine-docker | Repo que orquesta. Los ` build:` de compose apuntan a los otros dos repos hermanos; |
-  |  | ninguno tiene codigo de la app propio, solo docker-compose.yml, .env y el seed del admin. |
+  | cine-docker | Carpeta que orquesta. Los ` build:` de compose apuntan a las otras dos carpetas |
+  |  | del monorepo; no tiene codigo de la app propio, solo docker-compose.yml, .env y el seed. |
   | red **web** | frontend <-> backend. |
   | red **datos** | backend y adminer <-> mysql, backend <-> redis. El frontend no tiene ruta hasta la base. |
   | redis | Los bloqueos de butaca de mientras alguien elige. Unico servicio que se puede |

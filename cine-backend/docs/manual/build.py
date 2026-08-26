@@ -13,6 +13,7 @@ svg_map = {
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",
     "{{SVG_DOCKER}}": DIAGRAMAS / "docker-despliegue.svg",
+    "{{SVG_ARRANQUE}}": DIAGRAMAS / "arranque-orden.svg",
     "{{SVG_IMPORTADOR}}": DIAGRAMAS / "importador-flujo.svg",
     "{{SVG_PETICION}}": DIAGRAMAS / "peticion-capas.svg",
     "{{SVG_USUARIOS}}": DIAGRAMAS / "usuarios-herencia.svg",

@@ -11,12 +11,20 @@ cine-uade/
 
 ## Levantarlo
 
+El paso a paso completo, con verificación y qué hacer si algo falla, está en el
+[`README.md` de la raíz](../README.md). Acá va el resumen:
+
 ```sh
 cp .env.example .env     # y cambiar las contraseñas
 docker compose up -d --build
+docker compose ps        # esperar a que mysql y backend digan (healthy)
 ```
 
 La aplicación queda en <http://localhost:8080> y Adminer en <http://localhost:8081>.
+
+El frontend espera a que el backend esté sano, y el backend a que lo esté MySQL: hasta que
+`docker compose ps` no muestre los dos `(healthy)`, el puerto 8080 no responde. No está
+roto, todavía no le toca.
 
 Para entrar al panel del encargado: `encargado@cine.uade.ar` / `cine2026`. Ese
 administrador lo siembra `seed/02-admin.sql` la primera vez que arranca la base, porque no
@@ -56,6 +64,24 @@ sale del mismo origen y no hace falta CORS.
 
 Las dos redes están separadas: el contenedor que sirve la web no tiene ruta hasta la base.
 El backend es el único que está en las dos.
+
+## Ajustes de tu máquina: `docker-compose.override.yml`
+
+Docker Compose lee automáticamente un `docker-compose.override.yml` si existe, sin flags.
+Ese archivo **no se versiona**: es donde cada uno pone lo que necesita en su máquina y no
+es parte del sistema.
+
+El caso más común es publicar el puerto de MySQL para abrirlo con Workbench o DBeaver,
+porque el compose entregable lo deja solo en la red interna:
+
+```yaml
+services:
+  mysql:
+    ports:
+      - "127.0.0.1:3306:3306"
+```
+
+Con eso conectás a `127.0.0.1:3306`, base `appsinteractivas`, usuario y clave del `.env`.
 
 ## Redis se puede apagar
 
