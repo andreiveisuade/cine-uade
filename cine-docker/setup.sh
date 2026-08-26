@@ -31,6 +31,12 @@ docker info >/dev/null 2>&1 || fatal "Docker está instalado pero no corriendo. 
 docker compose version >/dev/null 2>&1 || fatal "Falta 'docker compose'. Actualizá Docker Desktop."
 ok "Docker corriendo"
 
+# El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
+# que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
+if [ -d ../.githooks ] && [ "$(git -C .. config core.hooksPath 2>/dev/null)" != ".githooks" ]; then
+  git -C .. config core.hooksPath .githooks 2>/dev/null && ok "Hook anti-credenciales activado"
+fi
+
 # ------------------------------------------------------------------- 2. el .env
 paso "2/5  Configuración (.env)"
 

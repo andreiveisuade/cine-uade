@@ -1,5 +1,9 @@
 # Credenciales: cada máquina tiene las suyas y ninguna va al repo.
+# El patrón cubre .env.local, .env.backup y cualquier otra variante.
 .env
+.env.*
+!.env.example
+
 .DS_Store
 
 # Ajustes de la máquina de cada uno (ej: publicar el puerto de MySQL para verlo con un

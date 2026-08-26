@@ -88,6 +88,15 @@ docker compose up -d backend
 | Trae 0 películas, sin error | Se cortó al copiar |
 | Dice que no está autorizado | Mal pegado, o revocado |
 
+**El token es de Andrei y el repo es público: si se filtra, hay que revocarlo.** El `.env`
+está en el `.gitignore` —con todas sus variantes— y hay un hook que frena el commit si
+detecta un archivo de credenciales o un token pegado en el código. `setup.sh` lo activa
+solo; a mano es:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 <details>
 <summary>Sacar uno propio</summary>
 

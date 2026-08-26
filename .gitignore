@@ -1,1 +1,6 @@
 .DS_Store
+
+# Ningún .env en ninguna carpeta, con el nombre que sea.
+.env
+.env.*
+!.env.example

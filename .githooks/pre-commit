@@ -1,0 +1,25 @@
+#!/bin/sh
+# Frena el commit si algo que va a subir parece una credencial.
+#
+# Se activa con:  git config core.hooksPath .githooks
+# (setup.sh lo hace solo)
+
+encontrado=""
+
+# Un .env versionado, con el nombre que sea.
+env=$(git diff --cached --name-only --diff-filter=A | grep -E '(^|/)\.env(\.|$)' | grep -v '\.env\.example$')
+[ -n "$env" ] && encontrado="archivo de credenciales:\n$env"
+
+# Un token de TMDB pegado en cualquier archivo. Es un JWT: empieza con el header
+# estandar y sigue con la carga, que es lo que no debe viajar.
+tok=$(git diff --cached -U0 | grep -E '^\+.*eyJhbGciOiJIUzI1NiJ9\.[A-Za-z0-9_-]{20,}' | head -3)
+[ -n "$tok" ] && encontrado="${encontrado}${encontrado:+\n\n}un token pegado en el código"
+
+if [ -n "$encontrado" ]; then
+  printf '\n  Commit frenado: %b\n\n' "$encontrado"
+  printf '  El repo es público. Sacalo del commit con:\n'
+  printf '      git restore --staged <archivo>\n\n'
+  printf '  Las credenciales van en cine-docker/.env, que no se versiona.\n'
+  printf '  Si estás seguro de que es un falso positivo: git commit --no-verify\n\n'
+  exit 1
+fi

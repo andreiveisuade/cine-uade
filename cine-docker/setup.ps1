@@ -45,6 +45,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 Ok "Docker corriendo"
 
+# El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
+# que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
+if ((Test-Path ..\.githooks) -and ((git -C .. config core.hooksPath) -ne '.githooks')) {
+  git -C .. config core.hooksPath .githooks 2>$null
+  if ($LASTEXITCODE -eq 0) { Ok "Hook anti-credenciales activado" }
+}
+
 # ------------------------------------------------------------------- 2. el .env
 Paso "2/5  Configuracion (.env)"
 
