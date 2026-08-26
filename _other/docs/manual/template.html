@@ -438,6 +438,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#entorno" data-target="entorno">Entorno</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#terminal" data-target="terminal">La terminal de boletería</a></li>
         <li><a href="#importador" data-target="importador">El importador de cartelera</a></li>
         <li><a href="#probar" data-target="probar">Cómo probarlo</a></li>
         <li><a href="#estructura" data-target="estructura">Estructura de carpetas</a></li>
@@ -2937,6 +2938,128 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         <code>index.html</code> <strong>es generado</strong>: se arma desde <code>template.html</code>
         inyectando los SVG y las capturas. Editar el template, nunca el <code>index.html</code>.
       </p>
+    </section>
+
+    <section class="doc-section" id="terminal">
+      <h2>La terminal de boletería</h2>
+
+      <p class="lede">
+        Una aplicación de escritorio en Java Swing que vende entradas y valida códigos en la
+        puerta <strong>sin depender de que el servidor responda</strong>. Tiene su propia base y
+        sincroniza cada venta contra la desplegada.
+      </p>
+
+      <figure class="diagram">
+        {{SVG_TERMINAL}}
+        <figcaption>Las dos instalaciones y qué viaja en cada sentido</figcaption>
+      </figure>
+
+      <h3>Qué corre en cada lado</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dónde</th><th>Qué</th><th>Cómo se levanta</th></tr></thead>
+          <tbody>
+            <tr>
+              <td rowspan="2"><strong>Boletería</strong></td>
+              <td><code>cine-desktop</code>, la app Swing</td>
+              <td>Nativo, <code>java -jar</code></td>
+            </tr>
+            <tr>
+              <td>backend + MySQL, <strong>sin nginx ni Redis</strong></td>
+              <td>Compose reducido, dos servicios</td>
+            </tr>
+            <tr>
+              <td><strong>Servidor</strong></td>
+              <td>Los cinco servicios de siempre</td>
+              <td><code>docker compose up -d</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Swing habla HTTP contra <code>localhost:8080</code>: es <strong>un cliente más</strong>, igual
+        que el navegador, y consume los mismos endpoints. No duplica una sola regla de negocio, porque
+        las reglas viven en <code>service/</code> y esa capa no conoce HTTP —lo garantiza
+        <a href="#capas"><code>ArquitecturaTest</code></a>.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Sin Redis en la terminal.</strong> Los bloqueos de butaca existen para que dos
+          personas que eligen a la vez no se pisen. En una boletería con un solo cajero no hay
+          nadie con quien pisarse. El backend ya degrada solo si Redis no responde, así que no
+          hace falta tocar código: alcanza con no levantarlo.
+        </p>
+      </div>
+
+      <h3>Qué viaja en cada sentido</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué</th><th>Sentido</th><th>Cuándo</th></tr></thead>
+          <tbody>
+            <tr><td>Películas, funciones, salas</td><td>Baja</td><td>La terminal las consume, no las crea</td></tr>
+            <tr><td>Reservas ya vendidas</td><td>Baja</td><td>Para validar en la puerta un código comprado por web</td></tr>
+            <tr><td>Reservas y pagos de la terminal</td><td>Sube</td><td>Al toque de cada venta</td></tr>
+            <tr><td>Arqueo</td><td>—</td><td>Solo en la web, después de sincronizar</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Los ids no chocan porque se reparten por rango</h3>
+
+      <p>
+        La terminal y el servidor crean reservas al mismo tiempo, cada uno con su
+        <code>AUTO_INCREMENT</code>. Si los dos arrancaran en 1, al sincronizar habría dos reservas
+        distintas con el mismo id.
+      </p>
+
+      <pre><code>ALTER TABLE reserva AUTO_INCREMENT = 1000000;</code></pre>
+
+      <p>
+        Con eso el servidor usa 1 en adelante y la terminal 1.000.000 en adelante. Es una línea en
+        el schema de la terminal y <strong>no toca ninguna entidad</strong>: los
+        <code>@GeneratedValue</code> quedan como están. Las alternativas —pasar todos los ids a UUID,
+        o llevar una tabla que mapee id local contra id remoto— cuestan mucho más y resuelven lo mismo.
+      </p>
+
+      <h3>Qué pasa cuando el servidor rechaza una venta</h3>
+
+      <p>
+        La reserva local lleva un estado de sincronización. No hay cola de reintentos ni resolución
+        automática: lo que el servidor rechaza queda a la vista y lo resuelve una persona.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Estado</th><th>Qué significa</th><th>Qué se hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>PENDIENTE</code></td><td>Todavía no subió</td><td>Reintentar desde el botón</td></tr>
+            <tr><td><code>SINCRONIZADA</code></td><td>El servidor la aceptó</td><td>Nada</td></tr>
+            <tr><td><code>RECHAZADA</code></td><td>El servidor la rechazó, con el motivo guardado</td><td>Lo resuelve el cajero</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Una pantalla lista las rechazadas con su motivo. El cajero ve <em>«butaca C5: ya estaba
+        vendida»</em> y decide qué hacer. El sistema no intenta arreglarlo solo, pero
+        <strong>nada se pierde en silencio</strong>.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Vender sin red puede vender dos veces la misma butaca, y por ahora se acepta.</strong>
+          La garantía de que eso no pase es el <code>UNIQUE (funcion_id, asiento_id)</code> de MySQL,
+          y funciona porque hay una sola base. Con una base local vendiendo a ciegas, dos cajas
+          pueden vender la misma butaca y al sincronizar una de las dos ventas ya ocurrió. Resolverlo
+          de verdad exige partir el inventario entre terminales —cada una con sus butacas en
+          exclusiva—, que desaprovecha capacidad. Para el alcance del TP se deja anotado y el
+          conflicto se resuelve a mano desde la pantalla de rechazadas.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="importador">

@@ -1,0 +1,65 @@
+@startuml terminal-desktop
+title Terminal de boleteria y servidor - dos instalaciones, una sincronizacion
+
+skinparam nodesep 25
+skinparam ranksep 45
+
+node "Boleteria del cine" as term {
+  frame "Nativo" {
+    node "cine-desktop\nJava Swing" as swing
+  }
+  frame "docker compose (reducido)" {
+    node "backend\nSpring Boot" as backLocal
+    database "MySQL local\nAUTO_INCREMENT = 1000000" as dbLocal
+  }
+}
+
+node "Servidor" as srv {
+  frame "docker compose (completo)" {
+    node "nginx\n+ frontend" as nginx
+    node "backend" as backSrv
+    database "MySQL" as dbSrv
+    node "redis" as redis
+  }
+}
+
+actor "Cajero" as cajero
+actor "Cliente web" as web
+
+cajero --> swing
+swing --> backLocal : HTTP localhost:8080
+backLocal --> dbLocal
+
+web --> nginx
+nginx --> backSrv : proxy /api
+backSrv --> dbSrv
+backSrv ..> redis : bloqueos
+
+backLocal <-> backSrv : sincronizacion HTTP
+
+note right of dbLocal
+  Sin redis: una sola caja,
+  no hay butacas que bloquear
+  entre usuarios.
+end note
+
+legend bottom
+  |= Que | = Sentido |= Detalle |
+  | Peliculas, funciones, salas | baja | La terminal las consume, no las crea |
+  | Reservas ya vendidas | baja | Para poder validar en la puerta un codigo comprado por web |
+  | Reservas y pagos de la terminal | sube | Al toque de cada venta |
+  | Arqueo | — | Solo en la version web, despues de sincronizar |
+  |  |  |  |
+  |= Estado local |= Que significa |= Que se hace |
+  | PENDIENTE | Todavia no subio | Reintentar desde el boton |
+  | SINCRONIZADA | El servidor la acepto | Nada |
+  | RECHAZADA | El servidor la rechazo, con motivo | Lo resuelve el cajero a mano |
+  |  |  |  |
+  |= Decision |= Por que |
+  | Ids por rango | La terminal arranca en 1.000.000 y el servidor en 1: no chocan al sincronizar, |
+  |  | y no hay que cambiar @GeneratedValue en ninguna entidad. |
+  | Sin cola de reintentos | La venta sube al toque. Si falla, queda PENDIENTE y se sube a mano. |
+  | Swing habla HTTP | Es un cliente mas, como el navegador: no duplica ninguna regla de negocio. |
+endlegend
+
+@enduml

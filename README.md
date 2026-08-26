@@ -23,12 +23,27 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 | `cine-docker/` | El `docker-compose.yml` que levanta todo |
 | `_other/` | Documentación e instrucciones |
 
+## Hacia dónde va
+
+Tres frentes, en este orden:
+
+| | Qué | Cuándo |
+|---|---|---|
+| **1** | Backend sólido y **terminal de boletería en Java Swing**, con base local que sincroniza | Primera entrega |
+| **2** | Migrar las pantallas web a **React** | Segunda entrega |
+| **3** | **Desplegar** en un servidor | Segunda entrega |
+
+La terminal vende y valida entradas sin depender del servidor: tiene su propia base y sube
+cada venta al toque. Cómo está pensada —qué corre en cada lado, qué se sincroniza y qué
+pasa cuando el servidor rechaza una venta— está en
+[la sección del manual](_other/docs/manual/index.html#terminal).
+
 ## Documentación
 
 | Archivo | Qué es |
 |---|---|
 | [`_other/COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md) | Cómo ponerlo a andar, paso a paso |
-| [`_other/docs/manual/index.html`](_other/docs/manual/index.html) | El manual: requerimientos, casos de uso, reglas, arquitectura y 17 diagramas |
+| [`_other/docs/manual/index.html`](_other/docs/manual/index.html) | El manual: requerimientos, casos de uso, reglas, arquitectura y 18 diagramas |
 | [`cine-frontend/API.md`](cine-frontend/API.md) | El contrato HTTP, endpoint por endpoint |
 
 ## Tareas
