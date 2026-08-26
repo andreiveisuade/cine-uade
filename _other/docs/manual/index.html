@@ -2994,6 +2994,37 @@ cd ../manual &amp;&amp; python3 build.py</code></pre>
         </p>
       </div>
 
+      <h3>Qué pantallas tiene</h3>
+
+      <p>
+        Ninguna se inventa: son dos vistas del panel web portadas a Swing. Están resueltas y
+        probadas, así que se leen antes de escribir nada.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pantalla</th><th>De dónde sale</th><th>Qué resuelve</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Cobrar</strong></td>
+              <td><code>js/admin/reservas.js</code> → <code>vistaCobrar</code></td>
+              <td>El monto no se elige: sale del total de las butacas. Efectivo cobra directo, los medios electrónicos abren checkout y después confirman</td>
+            </tr>
+            <tr>
+              <td><strong>Puerta</strong></td>
+              <td><code>js/admin/puerta.js</code> → <code>vistaPuerta</code></td>
+              <td>Valida el código de 8 caracteres. El foco vuelve al campo después de cada una, porque en la puerta se encadenan</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        <strong>El arqueo no va en la terminal.</strong> Uno local mostraría números parciales
+        —no ve las ventas web hasta sincronizar—, y dos pantallas dando cifras distintas de la
+        misma caja es peor que una sola.
+      </p>
+
       <h3>Qué viaja en cada sentido</h3>
 
       <div class="table-wrap">
