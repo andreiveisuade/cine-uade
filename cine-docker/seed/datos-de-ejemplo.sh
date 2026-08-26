@@ -63,7 +63,11 @@ alta salas '{"nombre":"Sala 6","tipo":"CUATRO_D","butacasPorFila":[10,12,12,14,1
 
 echo "Funciones"
 HOY=$(date +%F)
-MANANA=$(date -v+1d +%F 2>/dev/null || date -d '+1 day' +%F)
+# BSD (macOS), GNU (Linux) y BusyBox (Alpine, cuando esto corre dentro de un contenedor).
+# BusyBox no entiende ninguna de las dos primeras, pero sí una fecha epoch.
+MANANA=$(date -v+1d +%F 2>/dev/null \
+      || date -d '+1 day' +%F 2>/dev/null \
+      || date -d "@$(( $(date +%s) + 86400 ))" +%F)
 
 alta funciones "{\"peliculaId\":1,\"salaId\":1,\"inicio\":\"${HOY}T20:30:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}" "Matrix, Sala 1, hoy 20:30"
 alta funciones "{\"peliculaId\":1,\"salaId\":3,\"inicio\":\"${HOY}T22:00:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"TRES_D\",\"precio\":5500}" "Matrix 3D, Sala 3, hoy 22:00"

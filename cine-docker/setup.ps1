@@ -25,6 +25,14 @@ function Set-Variable-Env($archivo, $clave, $valor) {
   (Get-Content $archivo) -replace "^$clave=.*", "$clave=$valor" | Set-Content $archivo -Encoding UTF8
 }
 
+# Indexar .Matches[0] directo revienta cuando no hay match, y con ErrorActionPreference
+# en Stop eso corta el script. Devolver "" es lo que el resto del script espera.
+function Get-Variable-Env($archivo, $clave) {
+  $linea = Select-String -Path $archivo -Pattern "^$clave=(.*)$" | Select-Object -First 1
+  if ($linea) { return $linea.Matches[0].Groups[1].Value.Trim() }
+  return ""
+}
+
 # ---------------------------------------------------------------- 1. requisitos
 Paso "1/5  Requisitos"
 
@@ -54,7 +62,7 @@ if (Test-Path .env) {
 # --------------------------------------------------------------- 3. token TMDB
 Paso "3/5  Token de TMDB (opcional)"
 
-$actual = (Select-String -Path .env -Pattern '^TMDB_TOKEN=(.*)$').Matches.Groups[1].Value
+$actual = Get-Variable-Env .env 'TMDB_TOKEN'
 
 if ($actual) {
   Ok "Ya tenes un token cargado"
@@ -104,24 +112,28 @@ Ok "mysql y backend sanos"
 # ------------------------------------------------------------------- 5. datos
 Paso "5/5  Datos de ejemplo"
 
-# El seed es bash. En Windows se corre adentro del contenedor de MySQL, que trae shell.
+# Windows no trae shell POSIX ni curl garantizados, asi que el seed corre adentro de un
+# contenedor conectado a la red del compose. No depende de Git Bash.
 $cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM pelicula"' 2>$null
+$hayDatos = $false
+if ($cuenta) { $n = 0; if ([int]::TryParse(("$cuenta").Trim(), [ref]$n)) { $hayDatos = $n -gt 0 } }
 
-if ($cuenta -and [int]$cuenta -gt 0) {
+if ($hayDatos) {
   Ok "Ya hay datos cargados, no siembro de nuevo"
 } else {
-  if (Get-Command bash -ErrorAction SilentlyContinue) {
-    bash ./seed/datos-de-ejemplo.sh *> $null
-    if ($LASTEXITCODE -eq 0) { Ok "4 peliculas, 6 salas y 8 funciones" }
-    else { Aviso "Fallo el sembrado. Proba a mano desde Git Bash: ./seed/datos-de-ejemplo.sh" }
+  $red = (docker network ls --format '{{.Name}}' | Where-Object { $_ -like '*_web' } | Select-Object -First 1)
+  if (-not $red) {
+    Aviso "No encontre la red del compose. Sembra a mano: ./seed/datos-de-ejemplo.sh"
   } else {
-    Aviso "No encontre bash para correr el seed."
-    Write-Host "      Abri Git Bash en esta carpeta y corre: ./seed/datos-de-ejemplo.sh"
+    docker run --rm --network $red -v "${PWD}/seed:/seed:ro" -e API=http://frontend:8080/api `
+      --entrypoint sh curlimages/curl:latest /seed/datos-de-ejemplo.sh *> $null
+    if ($LASTEXITCODE -eq 0) { Ok "4 peliculas, 6 salas y 8 funciones" }
+    else { Aviso "Fallo el sembrado. Proba a mano: ./seed/datos-de-ejemplo.sh" }
   }
 }
 
-$puerto  = (Select-String -Path .env -Pattern '^PUERTO_WEB=(.*)$').Matches.Groups[1].Value
-$adminer = (Select-String -Path .env -Pattern '^PUERTO_ADMINER=(.*)$').Matches.Groups[1].Value
+$puerto  = Get-Variable-Env .env 'PUERTO_WEB'
+$adminer = Get-Variable-Env .env 'PUERTO_ADMINER'
 if (-not $puerto)  { $puerto  = '8080' }
 if (-not $adminer) { $adminer = '8081' }
 
