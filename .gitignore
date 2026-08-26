@@ -1,1 +1,4 @@
 .DS_Store
+
+# Convenciones de trabajo locales, no forman parte del sistema
+CLAUDE.md

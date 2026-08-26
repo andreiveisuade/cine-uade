@@ -8,7 +8,7 @@
 ## Ver el manual
 
 ```bash
-open docs/manual/index.html
+open manual/index.html
 ```
 
 Es autocontenido: los SVG van embebidos, no necesita servidor ni internet.
@@ -16,7 +16,7 @@ Es autocontenido: los SVG van embebidos, no necesita servidor ni internet.
 ## Regenerar
 
 ```bash
-cd docs/diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
+cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
 cd ../manual && python3 build.py               # inyecta los SVG en el HTML
 ```
 

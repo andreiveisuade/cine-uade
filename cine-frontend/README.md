@@ -7,7 +7,7 @@ Es una de las tres carpetas del monorepo:
 
 ```
 cine-uade/
-├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL. También el manual, en docs/manual/
+├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL
 ├── cine-frontend/   esta carpeta
 └── cine-docker/     el compose que levanta todo
 ```

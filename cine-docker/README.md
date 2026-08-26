@@ -11,8 +11,18 @@ cine-uade/
 
 ## Levantarlo
 
-El paso a paso completo, con verificación y qué hacer si algo falla, está en el
-[`README.md` de la raíz](../README.md). Acá va el resumen:
+Lo más rápido es el script, que arma el `.env` con contraseñas nuevas, pide el token de
+TMDB, levanta, espera los healthchecks y siembra:
+
+```sh
+./setup.sh          # macOS y Linux
+.\setup.ps1         # Windows (PowerShell)
+```
+
+Es idempotente: si el `.env` ya existe no lo pisa, y si ya hay datos no vuelve a sembrar.
+
+El paso a paso completo, con verificación y qué hacer si algo falla, está en
+[`_other/COMO-LEVANTARLO.md`](../_other/COMO-LEVANTARLO.md). A mano:
 
 ```sh
 cp .env.example .env     # y cambiar las contraseñas
@@ -55,7 +65,7 @@ se los alcanza desde adentro de la red de Docker.
 | adminer | 8081, solo en 127.0.0.1 | el navegador de esta máquina |
 
 Diagrama de esta misma topología (contenedores, redes, volúmenes) en
-[`cine-backend/docs/manual/index.html`](../cine-backend/docs/manual/index.html#correr), sección
+[`_other/docs/manual/index.html`](../_other/docs/manual/index.html#correr), sección
 "Cómo correrlo".
 
 El navegador nunca habla con el backend directo: `backend` es un nombre que solo resuelve
