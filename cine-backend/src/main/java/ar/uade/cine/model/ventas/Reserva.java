@@ -85,6 +85,11 @@ public class Reserva {
 
     /** Cuándo entraron al cine, o {@code null} si todavía no lo hicieron. */
     private LocalDateTime ingresadaEn;
+    @Column(name = "estado_sincronizacion")
+    private String estadoSincronizacion;
+
+    @Column(name = "motivo_rechazo")
+    private String motivoRechazo;
 
     protected Reserva() {
     }
@@ -211,4 +216,29 @@ public class Reserva {
         return "[" + id + "] función " + funcionId + " - cliente " + clienteId
                 + " - butacas " + entradas + " - " + estado;
     }
+
+    // --- Métodos de sincronización con la terminal ---
+
+    public String getEstadoSincronizacion() {
+        return estadoSincronizacion;
+    }
+
+    public String getMotivoRechazo() {
+        return motivoRechazo;
+    }
+
+    public void marcarSincronizada() {
+        this.estadoSincronizacion = "SINCRONIZADA";
+        this.motivoRechazo = null;
+    }
+
+    public void marcarRechazada(String motivo) {
+        this.estadoSincronizacion = "RECHAZADA";
+        this.motivoRechazo = motivo;
+    }
+
+    public void marcarPendiente() {
+        this.estadoSincronizacion = "PENDIENTE";
+    }
+    
 }
