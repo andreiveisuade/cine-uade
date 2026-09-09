@@ -175,7 +175,7 @@ Conectás a `127.0.0.1:3306`, base `appsinteractivas`, usuario y clave del `.env
 
 ## Tests
 
-385 pruebas contra H2 en memoria, sin Docker ni MySQL.
+389 pruebas contra H2 en memoria, sin Docker ni MySQL.
 
 ```bash
 cd cine-backend && mvn clean test                                              # con Java 21 y Maven

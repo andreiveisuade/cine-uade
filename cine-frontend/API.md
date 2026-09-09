@@ -14,7 +14,7 @@ como la lectura rápida: qué endpoints hay y qué devuelve cada uno, sin levant
 | Fechas | ISO local sin zona: `2026-08-13T20:30:00`. Solo fecha: `2026-08-13` |
 | Enums | Viaja el nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
-| Errores | `400` o `404` con `{"error": "…"}`. El texto se muestra tal cual al usuario |
+| Errores | `400`, `404`, `409` o `500` con `{"error": "…"}`. El texto se muestra tal cual al usuario |
 
 ## Catálogos
 

@@ -122,6 +122,7 @@ $(printf '\033[1mListo\033[0m')
   Cliente     http://localhost:${puerto:-8080}
   Panel       http://localhost:${puerto:-8080}/admin.html   encargado@cine.uade.ar / cine2026
   Puerta      el mismo panel                        puerta@cine.uade.ar / cine2026
+  Swagger     http://localhost:${puerto:-8080}/swagger-ui.html
   Adminer     http://localhost:$(grep '^PUERTO_ADMINER=' .env | cut -d= -f2- || echo 8081)   servidor: mysql
 
   Para bajarlo:  docker compose down
