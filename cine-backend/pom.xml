@@ -20,6 +20,13 @@
   <artifactId>cine</artifactId>
   <version>1.0-SNAPSHOT</version>
 
+  <!-- WAR y no jar para poder desplegar en un Tomcat instalado aparte, que es lo que pide
+       la cátedra. No se pierde nada a cambio: el plugin de Spring Boot lo repackagea como
+       WAR *ejecutable* —las dependencias de scope provided van a WEB-INF/lib-provided— así
+       que `java -jar cine-api.war` sigue levantando el Tomcat embebido igual que antes.
+       Un solo artefacto sirve para los dos despliegues. -->
+  <packaging>war</packaging>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Compila y verifica contra la API de Java 21 -->
@@ -32,6 +39,26 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- El mismo Tomcat que ya venía adentro de starter-web, ahora nombrado explícitamente
+         para poder marcarlo `provided`: un Tomcat instalado aparte trae el suyo, y meter un
+         segundo servlet container en el WAR es el choque clásico de clases al desplegar.
+         `provided` no lo saca de la compilación ni de los tests —ahí sigue disponible— solo
+         no lo copia a WEB-INF/lib. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-tomcat</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Swagger UI y el /v3/api-docs, generados leyendo los @RestController: la doc de la
+         API sale del código y no de un archivo aparte que se desactualiza. Lleva <version>
+         porque springdoc no lo maneja el parent de Spring Boot. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.8.6</version>
     </dependency>
 
     <!-- Spring Data JPA: Hibernate como proveedor, el DataSource ya armado a partir de

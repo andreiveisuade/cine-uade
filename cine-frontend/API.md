@@ -2,6 +2,10 @@
 
 Base `/api`. Cada función de `js/api.js` es un endpoint de esta lista.
 
+Con el sistema levantado, **<http://localhost:8080/swagger-ui.html>** es lo mismo pero
+probable desde el navegador, y generado desde los `@RestController`. Este archivo queda
+como la lectura rápida: qué endpoints hay y qué devuelve cada uno, sin levantar nada.
+
 ## Convenciones
 
 | | |

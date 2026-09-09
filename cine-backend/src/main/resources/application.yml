@@ -50,6 +50,22 @@ spring:
 server:
   port: ${PORT:8080}
 
+# La documentación de la API, generada desde los @RestController.
+springdoc:
+  api-docs:
+    # El JSON de OpenAPI. nginx lo proxea junto con /swagger-ui.
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    # Por ruta y no por orden de descubrimiento: si no, la lista cambia de posición cada
+    # vez que se agrega un controlador y no hay forma de encontrar un endpoint dos veces
+    # en el mismo lugar.
+    operations-sorter: method
+    tags-sorter: alpha
+    # Sin los modelos desplegados de entrada: son 57 DTO y tapan la lista de endpoints,
+    # que es lo que se viene a buscar.
+    default-models-expand-depth: -1
+
 # Lo propio del cine, con el mismo prefijo para todo: lo leen las clases
 # @ConfigurationProperties de api/ e infraestructura/.
 cine:

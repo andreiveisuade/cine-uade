@@ -2,6 +2,8 @@ package ar.uade.cine;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 /**
  * El arranque del sistema. Es lo único que hace: el armado lo hace Spring.
@@ -29,9 +31,30 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>Qué implementación se usa para cada puerto hacia afuera se decide en un solo lugar:
  * {@link ar.uade.cine.infrastructure.Adaptadores}, por perfil de Spring. Las de los
  * repositorios no se eligen: las genera Spring Data desde la interfaz.
+ *
+ * <p>Hereda de {@link SpringBootServletInitializer} para poder arrancar de <strong>dos
+ * maneras</strong>, que es lo que permite desplegar el mismo WAR en un Tomcat instalado
+ * aparte sin perder el {@code java -jar}:
+ *
+ * <ul>
+ *   <li><strong>Con el Tomcat embebido</strong>: entra por {@code main()}, que es como corre
+ *       en Docker y como lo levanta {@code mvn spring-boot:run}.</li>
+ *   <li><strong>Dentro de un Tomcat externo</strong>: ahí no hay {@code main()}. El
+ *       contenedor descubre esta clase por el mecanismo de arranque de servlets y llama a
+ *       {@code configure()}, que le dice de dónde colgar la aplicación.</li>
+ * </ul>
+ *
+ * <p>Las dos rutas terminan armando el mismo contexto de Spring, así que no hay una
+ * configuración "de Docker" y otra "de Tomcat" que se puedan ir separando.
  */
 @SpringBootApplication
-public class Aplicacion {
+public class Aplicacion extends SpringBootServletInitializer {
+
+    /** El camino cuando el que manda es un Tomcat externo: no pasa por {@code main()}. */
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(Aplicacion.class);
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(Aplicacion.class, args);
