@@ -31,6 +31,9 @@ import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Reservar, consultar y cancelar. El cliente no inicia sesión: se identifica con su
  * email, y si es la primera vez que compra se lo da de alta en el momento.
@@ -40,6 +43,7 @@ import ar.uade.cine.service.ventas.Ocupacion;
  * circuito de compra, no una operación sobre la programación. Un controlador agrupa por lo
  * que se pide, no por el prefijo de la URL.
  */
+@Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
 public class ReservaController {
 
@@ -63,6 +67,7 @@ public class ReservaController {
      * consecuencias que se pagan solas: el filtro se puede probar con un curl, y una
      * búsqueda se puede compartir pegando el link.
      */
+    @Operation(summary = "Las reservas del cine; con email, las de ese cliente")
     @GetMapping("/api/reservas")
     public List<ReservaVistaDTO> listar(@RequestParam(required = false) String email,
                                         @RequestParam(required = false) String estado,
@@ -87,11 +92,13 @@ public class ReservaController {
                 .toList());
     }
 
+    @Operation(summary = "El detalle de una reserva")
     @GetMapping("/api/reservas/{id}")
     public ReservaVistaDTO detalle(@PathVariable int id) {
         return vistas.reserva(buscar(id));
     }
 
+    @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
     @PostMapping("/api/reservas")
     @ResponseStatus(HttpStatus.CREATED)
     public ReservaVistaDTO reservar(@RequestBody PedidoReservaDTO pedido) {
@@ -116,6 +123,7 @@ public class ReservaController {
      * manda la selección entera —y {@code butacas: []} para soltar todo— para que una sola
      * llamada por click alcance para tomar, renovar y soltar.
      */
+    @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")
     public BloqueoVistaDTO bloquear(@PathVariable int id, @RequestBody PedidoBloqueoDTO pedido) {
         List<String> pedidas = pedido.butacas() == null ? List.of() : pedido.butacas();
@@ -137,12 +145,14 @@ public class ReservaController {
      * <p>Es POST y no GET porque no es una consulta: marca la entrada como usada, y
      * repetirlo falla a propósito (R18).
      */
+    @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")
     @PostMapping("/api/acceso")
     public ReservaVistaDTO registrarIngreso(@RequestBody PedidoAccesoDTO pedido) {
         return vistas.reserva(reservas.registrarIngreso(pedido.codigo()));
     }
 
     /** R6: cancelar libera las butacas, y el cupo de la función deja de contarlas. */
+    @Operation(summary = "Cancelar una reserva y liberar sus butacas")
     @PostMapping("/api/reservas/{id}/cancelacion")
     public ReservaVistaDTO cancelar(@PathVariable int id) {
         buscar(id);

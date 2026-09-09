@@ -18,10 +18,14 @@ import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.usuarios.PedidoClienteDTO;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Registro del cliente (CU-05). Es opcional: reservar también da de alta a quien compra
  * por primera vez. Son dos caminos al mismo alta, no un paso previo del otro.
  */
+@Tag(name = "Clientes", description = "El alta y la búsqueda de quien compra")
 @RestController
 public class ClienteController {
 
@@ -41,6 +45,7 @@ public class ClienteController {
      * contrato: se usa para reconocer a alguien, no para verificar que exista, así que no
      * encontrarlo es una respuesta válida y no un error.
      */
+    @Operation(summary = "Buscar un cliente por email. Si no está, devuelve null")
     @GetMapping(value = "/api/clientes", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> buscarPorEmail(@RequestParam(required = false) String email) {
         Optional<Cliente> cliente = email == null || email.isBlank()
@@ -49,6 +54,7 @@ public class ClienteController {
         return ResponseEntity.ok(cliente.map(c -> (Object) vistas.cliente(c)).orElse("null"));
     }
 
+    @Operation(summary = "Registrar un cliente")
     @PostMapping("/api/clientes")
     @ResponseStatus(HttpStatus.CREATED)
     public ClienteVistaDTO registrar(@RequestBody PedidoClienteDTO pedido) {

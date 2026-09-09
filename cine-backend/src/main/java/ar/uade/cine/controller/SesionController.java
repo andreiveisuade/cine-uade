@@ -9,6 +9,9 @@ import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
 import ar.uade.cine.dto.usuarios.PedidoSesionDTO;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Inicio de sesión del encargado (CU-10). El cliente no pasa por acá: compra sin
  * registrarse.
@@ -17,6 +20,7 @@ import ar.uade.cine.service.usuarios.GestorEmpleados;
  * así que esta capa no tiene que hacer nada para no filtrar qué emails están registrados:
  * le alcanza con no inventarle un mensaje propio.
  */
+@Tag(name = "Sesión", description = "El login del panel")
 @RestController
 public class SesionController {
 
@@ -28,6 +32,7 @@ public class SesionController {
         this.vistas = vistas;
     }
 
+    @Operation(summary = "Login del encargado. Es la única ruta que verifica credenciales")
     @PostMapping("/api/sesion")
     public EmpleadoVistaDTO iniciar(@RequestBody PedidoSesionDTO pedido) {
         return vistas.empleado(empleados.iniciarSesion(pedido.email(), pedido.password()));
