@@ -21,6 +21,7 @@ import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Las ventas del candy. Es un circuito distinto al de las butacas: acá no se reserva
@@ -39,14 +40,16 @@ public class GestorCandy {
     private final ReservaRepository reservaRepository;
     private final GeneradorTicketCandy generadorTicket;
     private final GestorProductos productos;
+    private final Reloj reloj;
 
     public GestorCandy(CompraCandyRepository compraCandyRepository, ClienteRepository clienteRepository, ReservaRepository reservaRepository,
-                       GeneradorTicketCandy generadorTicket, GestorProductos productos) {
+                       GeneradorTicketCandy generadorTicket, GestorProductos productos, Reloj reloj) {
         this.compraCandyRepository = compraCandyRepository;
         this.clienteRepository = clienteRepository;
         this.reservaRepository = reservaRepository;
         this.generadorTicket = generadorTicket;
         this.productos = productos;
+        this.reloj = reloj;
     }
 
     /**
@@ -101,7 +104,7 @@ public class GestorCandy {
             items.add(new ItemCompra(producto, cantidad, producto.getPrecio()));
         }
 
-        CompraCandy compra = new CompraCandy(clienteId, reservaId, LocalDateTime.now(), medio,
+        CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio,
                 codigoAutorizacion == null ? "" : codigoAutorizacion.trim(), items);
         compraCandyRepository.save(compra);
         generadorTicket.emitir(compra, cliente, productos.ahorroDe(compra));

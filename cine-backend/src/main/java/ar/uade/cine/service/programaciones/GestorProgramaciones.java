@@ -31,6 +31,7 @@ import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * La grilla del cine: "Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15 de
@@ -77,12 +78,14 @@ public class GestorProgramaciones {
     private final ProgramacionRepository programacionRepository;
     private final FuncionRepository funcionRepository;
     private final GestorFunciones funciones;
+    private final Reloj reloj;
 
     public GestorProgramaciones(ProgramacionRepository programacionRepository, FuncionRepository funcionRepository,
-                                GestorFunciones funciones) {
+                                GestorFunciones funciones, Reloj reloj) {
         this.programacionRepository = programacionRepository;
         this.funcionRepository = funcionRepository;
         this.funciones = funciones;
+        this.reloj = reloj;
     }
 
     /**
@@ -94,7 +97,7 @@ public class GestorProgramaciones {
                                           Version version, Proyeccion proyeccion, Dinero precio) {
         Programacion grilla = armar(peliculaId, salaId, desde, hasta, horaInicio, diasSemana,
                 version, proyeccion, precio);
-        return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, LocalDate.now()));
+        return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
     }
 
     /**
@@ -120,7 +123,7 @@ public class GestorProgramaciones {
         // quedar en la base para que alguien la descubra después.
         Pelicula pelicula = peliculaDe(grilla);
         programacionRepository.save(grilla);
-        return planificar(grilla, pelicula, true, topeDe(grilla, LocalDate.now()));
+        return planificar(grilla, pelicula, true, topeDe(grilla, reloj.hoy()));
     }
 
     /**

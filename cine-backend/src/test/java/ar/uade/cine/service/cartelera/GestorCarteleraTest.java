@@ -6,11 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.time.LocalTime;
-import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,12 +56,12 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
     private void programarProxima(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().plusDays(7),
+        funcionRepository.save(new Funcion(peliculaId, 1, reloj.ahora().plusDays(7),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private void programarPasada(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().minusDays(1),
+        funcionRepository.save(new Funcion(peliculaId, 1, reloj.ahora().minusDays(1),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
@@ -424,7 +422,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("La Odisea", 150, List.of(Genero.DRAMA),
                 Clasificacion.ATP);
         programacionRepository.save(new Programacion(pelicula.getId(), 1,
-                LocalDate.now().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+                reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,

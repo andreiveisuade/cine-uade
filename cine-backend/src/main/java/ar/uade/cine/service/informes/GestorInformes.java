@@ -31,6 +31,7 @@ import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Los informes que se cortan <strong>por función</strong>: el borderó que se le declara al
@@ -61,10 +62,11 @@ public class GestorInformes {
     private final PagoRepository pagoRepository;
     private final CompraCandyRepository compraCandyRepository;
     private final GeneradorBordero generadorBordero;
+    private final Reloj reloj;
 
     public GestorInformes(FuncionRepository funcionRepository, PeliculaRepository peliculaRepository, SalaRepository salaRepository,
                           ReservaRepository reservaRepository, PagoRepository pagoRepository, CompraCandyRepository compraCandyRepository,
-                          GeneradorBordero generadorBordero) {
+                          GeneradorBordero generadorBordero, Reloj reloj) {
         this.funcionRepository = funcionRepository;
         this.peliculaRepository = peliculaRepository;
         this.salaRepository = salaRepository;
@@ -72,6 +74,7 @@ public class GestorInformes {
         this.pagoRepository = pagoRepository;
         this.compraCandyRepository = compraCandyRepository;
         this.generadorBordero = generadorBordero;
+        this.reloj = reloj;
     }
 
     /**
@@ -125,7 +128,7 @@ public class GestorInformes {
         }
 
         return new Bordero(funcionId, pelicula.getTitulo(), sala.getNombre(), funcion.getInicio(),
-                LocalDateTime.now(), espectadores,
+                reloj.ahora(), espectadores,
                 bruta, descuentos, neta, porTarifa);
     }
 

@@ -260,7 +260,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         // 14 días de horizonte contados desde hoy, más el de hoy mismo si entra en el rango.
         assertFalse(plan.funciones().isEmpty(), "una grilla abierta tiene que generar algo");
         LocalDate ultima = plan.funciones().get(plan.funciones().size() - 1).inicio().toLocalDate();
-        assertFalse(ultima.isAfter(LocalDate.now().plusDays(14)),
+        assertFalse(ultima.isAfter(reloj.hoy().plusDays(14)),
                 "no puede generar más allá del horizonte");
     }
 
@@ -277,8 +277,8 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         crearAbierta();
         int despuesDelAlta = funcionRepository.findAll().size();
 
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy()));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy()));
         assertEquals(despuesDelAlta, funcionRepository.findAll().size());
     }
 
@@ -288,7 +288,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         crearAbierta();
         int despuesDelAlta = funcionRepository.findAll().size();
 
-        int generadas = programaciones.extenderActivas(LocalDate.now().plusDays(3));
+        int generadas = programaciones.extenderActivas(reloj.hoy().plusDays(3));
 
         assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
         assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
@@ -305,7 +305,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         programaciones.desactivar(plan.programacion().getId());
 
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now().plusDays(30)));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy().plusDays(30)));
         assertEquals(despuesDelAlta, funcionRepository.findAll().size(),
                 "las que ya generó siguen; nuevas no aparecen");
     }
@@ -315,11 +315,11 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void reactivarlaVuelveAExtender() {
         PlanProgramacion plan = crearAbierta();
         programaciones.desactivar(plan.programacion().getId());
-        programaciones.extenderActivas(LocalDate.now().plusDays(10));
+        programaciones.extenderActivas(reloj.hoy().plusDays(10));
 
         programaciones.activar(plan.programacion().getId());
 
-        assertEquals(10, programaciones.extenderActivas(LocalDate.now().plusDays(10)));
+        assertEquals(10, programaciones.extenderActivas(reloj.hoy().plusDays(10)));
     }
 
     /** Una grilla cerrada ya generada no vuelve a generar por más que pase el tiempo. */
@@ -384,7 +384,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {
-        return programaciones.crear(1, 1, LocalDate.now(), null, LAS_2030, Set.of(),
+        return programaciones.crear(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 

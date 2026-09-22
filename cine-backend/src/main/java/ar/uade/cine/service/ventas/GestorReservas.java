@@ -34,6 +34,7 @@ import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * El ciclo de vida de una reserva: nace al vender, se cancela, o se usa en la puerta.
@@ -94,6 +95,7 @@ public class GestorReservas {
     private final GeneradorTicket generadorTicket;
     private final CalculadoraPrecio calculadoraPrecio;
     private final Ocupacion ocupacion;
+    private final Reloj reloj;
 
     /**
      * La calculadora entra por el constructor como todo lo demás. Creándola adentro, el
@@ -103,7 +105,7 @@ public class GestorReservas {
     public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository, SalaRepository salaRepository,
                           AsientoRepository asientoRepository, ClienteRepository clienteRepository, PeliculaRepository peliculaRepository,
                           GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio,
-                          Ocupacion ocupacion) {
+                          Ocupacion ocupacion, Reloj reloj) {
         this.reservaRepository = reservaRepository;
         this.funcionRepository = funcionRepository;
         this.salaRepository = salaRepository;
@@ -113,6 +115,7 @@ public class GestorReservas {
         this.generadorTicket = generadorTicket;
         this.calculadoraPrecio = calculadoraPrecio;
         this.ocupacion = ocupacion;
+        this.reloj = reloj;
     }
 
     /**
@@ -145,7 +148,7 @@ public class GestorReservas {
         // R19: una función que ya arrancó no se vende. Va antes que todo lo demás porque
         // ninguna de las otras validaciones tiene sentido si la película ya está dada:
         // no importa si la butaca está libre cuando la función empezó hace media hora.
-        if (funcion.yaEmpezo(LocalDateTime.now())) {
+        if (funcion.yaEmpezo(reloj.ahora())) {
             throw new IllegalArgumentException("La función ya empezó: no se pueden reservar butacas");
         }
         Cliente cliente = clienteRepository.findById(clienteId)
@@ -183,7 +186,7 @@ public class GestorReservas {
         }
 
         Reserva reserva = guardarCompitiendoPorLasButacas(
-                new Reserva(funcionId, clienteId, entradas, LocalDateTime.now()));
+                new Reserva(funcionId, clienteId, entradas, reloj.ahora()));
         // Guardada la reserva, el bloqueo cumplió su etapa: de acá en adelante la butaca la
         // retiene la reserva, que es la que sale en el mapa y la que sostiene el UNIQUE.
         // Suelta también las que la persona miró y no compró, porque la compra terminó.
@@ -238,7 +241,7 @@ public class GestorReservas {
             throw new IllegalArgumentException("Esa entrada ya se usó el "
                     + reserva.getIngresadaEn());
         }
-        reserva.setIngresadaEn(LocalDateTime.now());
+        reserva.setIngresadaEn(reloj.ahora());
         reservaRepository.save(reserva);
         LOG.info("ingreso reserva {} · codigo {} · {} personas",
                 reserva.getId(), reserva.getCodigo(), reserva.getCantidadEntradas());

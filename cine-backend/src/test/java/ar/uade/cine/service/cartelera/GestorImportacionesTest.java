@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -212,7 +211,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSePuedePedirOtraMientrasHayUnaEnCurso() {
-        importacionRepository.save(new Importacion(1, LocalDateTime.now()));
+        importacionRepository.save(new Importacion(1, reloj.ahora()));
 
         IllegalArgumentException error =
                 assertThrows(IllegalArgumentException.class, () -> gestor.ejecutar(1));
@@ -224,7 +223,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     @Test
     void dosCorridasSeguidasSeRechazanSiHayEsperaConfigurada() {
         GestorImportaciones conEspera = new GestorImportaciones(importacionRepository, catalogo,
-                cartelera, revision, Duration.ofMinutes(5), Duration.ofMinutes(1));
+                cartelera, revision, Duration.ofMinutes(5), Duration.ofMinutes(1), reloj);
         conEspera.ejecutar(1);
 
         IllegalArgumentException error =
@@ -241,7 +240,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
      */
     @Test
     void unaCorridaColgadaCaducaSolaYDesbloqueaElSistema() {
-        importacionRepository.save(new Importacion(1, LocalDateTime.now().minusMinutes(10)));
+        importacionRepository.save(new Importacion(1, reloj.ahora().minusMinutes(10)));
 
         Importacion caducada = gestor.listar().get(0);
 
@@ -253,7 +252,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
 
     @Test
     void unaCorridaEnCursoRecienPedidaNoCaduca() {
-        importacionRepository.save(new Importacion(1, LocalDateTime.now()));
+        importacionRepository.save(new Importacion(1, reloj.ahora()));
 
         assertEquals(EstadoImportacion.EN_CURSO, gestor.listar().get(0).getEstado());
     }

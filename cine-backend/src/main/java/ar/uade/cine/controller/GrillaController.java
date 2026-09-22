@@ -22,6 +22,7 @@ import ar.uade.cine.dto.grilla.PaseSugeridoDTO;
 import ar.uade.cine.dto.grilla.PedidoGrillaDTO;
 import ar.uade.cine.dto.grilla.PeliculaElegidaDTO;
 import ar.uade.cine.dto.grilla.PropuestaGrillaDTO;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.programaciones.CriteriosGrilla;
 import ar.uade.cine.service.programaciones.PlanificadorGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla;
@@ -41,9 +42,11 @@ public class GrillaController {
     private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final PlanificadorGrilla planificador;
+    private final Reloj reloj;
 
-    public GrillaController(PlanificadorGrilla planificador) {
+    public GrillaController(PlanificadorGrilla planificador, Reloj reloj) {
         this.planificador = planificador;
+        this.reloj = reloj;
     }
 
     /**
@@ -72,12 +75,12 @@ public class GrillaController {
      * no decidió nadie. Comprobar que un campo obligatorio del pedido esté presente es
      * traducción, no una regla de negocio.
      */
-    private static CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
+    private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         if (pedido.precio() == null) {
             throw new IllegalArgumentException("Falta el precio de las funciones");
         }
         LocalDate desde = pedido.desde() == null || pedido.desde().isBlank()
-                ? LocalDate.now()
+                ? reloj.hoy()
                 : Parseo.dia(pedido.desde(), "la fecha de inicio");
         CriteriosGrilla base = CriteriosGrilla.deUnaSemana(desde,
                 pedido.cuantasPeliculas() == null ? 8 : pedido.cuantasPeliculas(),
