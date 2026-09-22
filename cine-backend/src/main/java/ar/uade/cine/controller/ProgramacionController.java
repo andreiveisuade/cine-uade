@@ -31,6 +31,9 @@ import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.programaciones.PlanProgramacion;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * CU-03b: el ABM de la grilla. Programar quince funciones de a una es el trabajo que esta
  * entidad viene a sacar del medio.
@@ -45,6 +48,7 @@ import ar.uade.cine.service.programaciones.PlanProgramacion;
  * sin ganar nada. Las formas viven igual en {@link ar.uade.cine.dto.programaciones}, con
  * todas las demás.
  */
+@Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
 public class ProgramacionController {
 
@@ -61,6 +65,7 @@ public class ProgramacionController {
      * Las grillas dadas de baja no se borran nunca: siguen explicando las funciones que
      * crearon. La lista solo crece, y {@code activa=true} es la pregunta frecuente.
      */
+    @Operation(summary = "Las grillas cargadas, activas y dadas de baja")
     @GetMapping("/api/programaciones")
     public List<ProgramacionVistaDTO> listar(@RequestParam(required = false) String peliculaId,
                                              @RequestParam(required = false) String salaId,
@@ -74,6 +79,7 @@ public class ProgramacionController {
                 .toList();
     }
 
+    @Operation(summary = "Una grilla con las funciones que generó")
     @GetMapping("/api/programaciones/{id}")
     public ProgramacionVistaDTO detalle(@PathVariable int id) {
         Programacion grilla = buscar(id);
@@ -84,11 +90,13 @@ public class ProgramacionController {
      * Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que el
      * alta, y meter nueve campos en la query string sería ilegible.
      */
+    @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
     @PostMapping("/api/programaciones/previsualizar")
     public PlanVistaDTO previsualizar(@RequestBody PedidoProgramacionDTO pedido) {
         return plan(aplicar(pedido, false));
     }
 
+    @Operation(summary = "Crear la grilla y generar sus funciones")
     @PostMapping("/api/programaciones")
     @ResponseStatus(HttpStatus.CREATED)
     public PlanVistaDTO crear(@RequestBody PedidoProgramacionDTO pedido) {
@@ -100,6 +108,7 @@ public class ProgramacionController {
      * entradas vendidas tiene que seguir existiendo para explicarlas. Dar de baja solo evita
      * que genere nuevas; las ya generadas no se tocan.
      */
+    @Operation(summary = "Dar de baja una grilla: deja de generar funciones nuevas")
     @PostMapping("/api/programaciones/{id}/baja")
     public ProgramacionVistaDTO desactivar(@PathVariable int id) {
         buscar(id);
@@ -107,6 +116,7 @@ public class ProgramacionController {
         return programacion(buscar(id), null);
     }
 
+    @Operation(summary = "Volver a activar una grilla")
     @PostMapping("/api/programaciones/{id}/alta")
     public ProgramacionVistaDTO activar(@PathVariable int id) {
         buscar(id);

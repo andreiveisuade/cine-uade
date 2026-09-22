@@ -26,11 +26,15 @@ import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.salas.GestorSalas;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * ABM de salas y estado de las butacas. La distribución llega como lista —[8, 10, 12]
  * es fila A con 8, B con 10 y C con 12— y las butacas que no son estándar vienen por
  * código en tres listas, que es como el gestor espera el mapa de especiales.
  */
+@Tag(name = "Salas", description = "Las salas del cine y el estado de cada butaca")
 @RestController
 public class SalaController {
 
@@ -42,16 +46,19 @@ public class SalaController {
         this.vistas = vistas;
     }
 
+    @Operation(summary = "Las salas del cine")
     @GetMapping("/api/salas")
     public List<SalaVistaDTO> listar() {
         return salas.listar().stream().map(vistas::sala).toList();
     }
 
+    @Operation(summary = "Una sala con todas sus butacas")
     @GetMapping("/api/salas/{id}")
     public SalaVistaDTO detalle(@PathVariable int id) {
         return vistas.salaConButacas(buscar(id));
     }
 
+    @Operation(summary = "Dar de alta una sala y generarle las butacas")
     @PostMapping("/api/salas")
     @ResponseStatus(HttpStatus.CREATED)
     public SalaVistaDTO agregar(@RequestBody PedidoSalaDTO pedido) {
@@ -67,6 +74,7 @@ public class SalaController {
         return vistas.salaConButacas(sala);
     }
 
+    @Operation(summary = "Borrar una sala")
     @DeleteMapping("/api/salas/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
@@ -78,6 +86,7 @@ public class SalaController {
      * Una butaca rota deja de venderse en todas las funciones, presentes y futuras: por eso
      * el estado es del asiento y no de la reserva (R9).
      */
+    @Operation(summary = "Marcar una butaca fuera de servicio, o reponerla")
     @PutMapping("/api/salas/{salaId}/asientos/{codigo}")
     public SalaVistaDTO cambiarEstado(@PathVariable int salaId, @PathVariable String codigo,
                                       @RequestBody PedidoEstadoDTO pedido) {

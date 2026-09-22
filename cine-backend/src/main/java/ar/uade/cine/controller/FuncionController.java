@@ -24,11 +24,15 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Programación de funciones y mapa de butacas. El detalle de una función es el endpoint
  * con el que el cliente elige dónde sentarse: por eso trae cada asiento con su precio ya
  * calculado y si está tomado en esa proyección.
  */
+@Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
 public class FuncionController {
 
@@ -44,6 +48,7 @@ public class FuncionController {
      * Es la lista más larga del sistema: una semana de seis salas pasa de cien funciones.
      * Los filtros son los que usa quien programa.
      */
+    @Operation(summary = "Buscar funciones por película, sala y rango de fechas")
     @GetMapping("/api/funciones")
     public List<FuncionVistaDTO> buscar(@RequestParam(required = false) String peliculaId,
                                         @RequestParam(required = false) String salaId,
@@ -64,12 +69,14 @@ public class FuncionController {
      * {@code sesion} es opcional y solo cambia una cosa: las butacas que esa sesión tiene
      * bloqueadas mientras elige no le vuelven marcadas como ocupadas a ella misma.
      */
+    @Operation(summary = "Una función con su mapa de butacas y el precio ya calculado de cada una")
     @GetMapping("/api/funciones/{id}")
     public FuncionVistaDTO detalle(@PathVariable int id,
                                    @RequestParam(required = false) String sesion) {
         return vistas.funcionConButacas(buscar(id), sesion);
     }
 
+    @Operation(summary = "Programar una función")
     @PostMapping("/api/funciones")
     @ResponseStatus(HttpStatus.CREATED)
     public FuncionVistaDTO programar(@RequestBody PedidoFuncionDTO pedido) {
@@ -85,6 +92,7 @@ public class FuncionController {
         return vistas.funcionConPelicula(funcion);
     }
 
+    @Operation(summary = "Borrar una función")
     @DeleteMapping("/api/funciones/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {

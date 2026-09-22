@@ -2,6 +2,10 @@
 
 Base `/api`. Cada función de `js/api.js` es un endpoint de esta lista.
 
+Con el sistema levantado, **<http://localhost:8080/swagger-ui.html>** es lo mismo pero
+probable desde el navegador, y generado desde los `@RestController`. Este archivo queda
+como la lectura rápida: qué endpoints hay y qué devuelve cada uno, sin levantar nada.
+
 ## Convenciones
 
 | | |
@@ -10,7 +14,7 @@ Base `/api`. Cada función de `js/api.js` es un endpoint de esta lista.
 | Fechas | ISO local sin zona: `2026-08-13T20:30:00`. Solo fecha: `2026-08-13` |
 | Enums | Viaja el nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
-| Errores | `400` o `404` con `{"error": "…"}`. El texto se muestra tal cual al usuario |
+| Errores | `400`, `404`, `409` o `500` con `{"error": "…"}`. El texto se muestra tal cual al usuario |
 
 ## Catálogos
 

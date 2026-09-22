@@ -17,6 +17,9 @@ import ar.uade.cine.dto.cartelera.PedidoImportacionDTO;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.service.cartelera.GestorImportaciones;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Pedir cartelera nueva desde el panel.
  *
@@ -29,6 +32,7 @@ import ar.uade.cine.service.cartelera.GestorImportaciones;
  * <p>No hay {@code /{id}}: una importación no tiene pantalla propia. Se la ve en el
  * historial, que es donde tiene sentido —al lado de las anteriores— y de a veinte.
  */
+@Tag(name = "Importación", description = "La cartelera que baja de TMDB")
 @RestController
 public class ImportacionController {
 
@@ -38,12 +42,14 @@ public class ImportacionController {
         this.importaciones = importaciones;
     }
 
+    @Operation(summary = "Si el importador tiene token y TMDB responde")
     @GetMapping("/api/importaciones/estado")
     public EstadoImportadorDTO estado() {
         CatalogoExterno.Estado estado = importaciones.estadoDelImportador();
         return new EstadoImportadorDTO(estado.disponible(), estado.detalle());
     }
 
+    @Operation(summary = "El historial de importaciones")
     @GetMapping("/api/importaciones")
     public List<ImportacionVistaDTO> listar() {
         return importaciones.listar().stream().map(ImportacionController::vista).toList();
@@ -57,6 +63,7 @@ public class ImportacionController {
      * pedido completo y el default de páginas lo pone el gestor. Sin eso, un POST vacío
      * moriría en el parseo del JSON y el error saldría con otra forma que la del contrato.
      */
+    @Operation(summary = "Traer cartelera de TMDB. Tarda: contesta cuando terminó")
     @PostMapping("/api/importaciones")
     @ResponseStatus(HttpStatus.CREATED)
     public ImportacionVistaDTO importar(

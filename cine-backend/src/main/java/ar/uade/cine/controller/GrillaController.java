@@ -27,6 +27,9 @@ import ar.uade.cine.service.programaciones.PlanificadorGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * El armado automático de la grilla semanal.
  *
@@ -35,6 +38,7 @@ import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
  * encargado puede probar seis títulos contra diez, comparar los indicadores y recién ahí
  * confirmar. Como el planificador es determinista, lo que ve es lo que se va a crear.
  */
+@Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
 public class GrillaController {
 
@@ -50,11 +54,13 @@ public class GrillaController {
      * Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que el
      * alta, y meter ocho campos en la query string sería ilegible.
      */
+    @Operation(summary = "Proponer una semana entera de funciones, sin escribir nada")
     @PostMapping("/api/grilla/propuesta")
     public PropuestaGrillaDTO proponer(@RequestBody PedidoGrillaDTO pedido) {
         return propuesta(planificador.proponer(criterios(pedido)), false);
     }
 
+    @Operation(summary = "Aplicar la propuesta: crea todas las funciones")
     @PostMapping("/api/grilla")
     @ResponseStatus(HttpStatus.CREATED)
     public PropuestaGrillaDTO aplicar(@RequestBody PedidoGrillaDTO pedido) {

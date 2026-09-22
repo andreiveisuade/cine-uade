@@ -62,6 +62,7 @@ docker compose ps      # repetir hasta ver mysql y backend (healthy)
 | Cliente | <http://localhost:8080> | — |
 | Panel | <http://localhost:8080/admin.html> | `encargado@cine.uade.ar` / `cine2026` |
 | Puerta | el mismo panel | `puerta@cine.uade.ar` / `cine2026` |
+| Swagger | <http://localhost:8080/swagger-ui.html> | — |
 | Adminer | <http://localhost:8081> | servidor `mysql`, usuario del `.env` |
 
 ## Token de TMDB
@@ -104,6 +105,31 @@ Cuenta gratis en [themoviedb.org](https://www.themoviedb.org/signup) → [Config
 API](https://www.themoviedb.org/settings/api) → tipo **Developer**. Copiá el **API Read
 Access Token** (largo, empieza con `eyJ`), no la API key corta.
 </details>
+
+## La API documentada
+
+<http://localhost:8080/swagger-ui.html> lista los 68 endpoints, con el cuerpo que espera
+cada uno y el que devuelve. Se puede probar cualquiera desde ahí, sin `curl`.
+
+Sale de los `@RestController`: no hay un archivo que mantener al día. El contrato crudo,
+para importar en Postman o Insomnia, está en `/v3/api-docs`.
+
+## Desplegar en un Tomcat aparte
+
+El artefacto es un **WAR ejecutable**: sirve para las dos cosas sin recompilar.
+
+```bash
+cd cine-backend && mvn package -DskipTests    # deja target/cine-api.war
+```
+
+| Cómo | Comando | Queda en |
+|---|---|---|
+| Tomcat embebido | `java -jar target/cine-api.war` | `localhost:8080` |
+| Tomcat instalado | copiar el WAR a `$CATALINA_HOME/webapps/` | `localhost:8080/cine-api` |
+
+En el segundo caso la app cuelga del nombre del archivo. Para que quede en la raíz,
+copiarlo como `ROOT.war`. La base se configura con las mismas variables de entorno
+(`DB_HOST`, `DB_USER`, `DB_PASSWORD`), que en un Tomcat instalado van en `setenv.sh`.
 
 ## Si algo falla
 
@@ -149,7 +175,7 @@ Conectás a `127.0.0.1:3306`, base `appsinteractivas`, usuario y clave del `.env
 
 ## Tests
 
-385 pruebas contra H2 en memoria, sin Docker ni MySQL.
+389 pruebas contra H2 en memoria, sin Docker ni MySQL.
 
 ```bash
 cd cine-backend && mvn clean test                                              # con Java 21 y Maven

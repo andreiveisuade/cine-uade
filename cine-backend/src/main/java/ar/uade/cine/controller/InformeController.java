@@ -20,6 +20,9 @@ import ar.uade.cine.service.informes.Bordero;
 import ar.uade.cine.service.informes.GestorInformes;
 import ar.uade.cine.service.informes.InformeFuncion;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Los informes que se cortan por función: el borderó del INCAA y la recaudación completa.
  *
@@ -32,6 +35,7 @@ import ar.uade.cine.service.informes.InformeFuncion;
  * que las programaciones: un informe se dibuja solo, ya viene calculado del gestor y no
  * necesita pedirle nada a nadie más para completarse.
  */
+@Tag(name = "Informes", description = "El borderó del INCAA y la recaudación por función")
 @RestController
 public class InformeController {
 
@@ -43,6 +47,7 @@ public class InformeController {
         this.funciones = funciones;
     }
 
+    @Operation(summary = "El borderó de una función")
     @GetMapping("/api/funciones/{id}/bordero")
     public BorderoVistaDTO bordero(@PathVariable int id) {
         exigirFuncion(id);
@@ -54,6 +59,7 @@ public class InformeController {
      * informes/bordero-funcion-&lt;id&gt;.txt. Pedir dos veces el mismo borderó no es lo
      * mismo que declararlo dos veces.
      */
+    @Operation(summary = "Emitir el archivo del borderó que se sube al INCAA")
     @PostMapping("/api/funciones/{id}/bordero")
     @ResponseStatus(HttpStatus.CREATED)
     public BorderoVistaDTO exportarBordero(@PathVariable int id) {
@@ -61,6 +67,7 @@ public class InformeController {
         return vista(informes.exportarBordero(id));
     }
 
+    @Operation(summary = "La recaudación completa de una función: entradas y candy")
     @GetMapping("/api/funciones/{id}/informe")
     public InformeFuncionVistaDTO informe(@PathVariable int id) {
         exigirFuncion(id);

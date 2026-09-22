@@ -32,6 +32,9 @@ import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.informes.GestorCaja;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * La carta del candy y sus ventas por HTTP.
  *
@@ -43,6 +46,7 @@ import ar.uade.cine.service.informes.GestorCaja;
  * <p>Son dos circuitos de venta distintos: acá no se reserva nada, se paga en el mostrador
  * y se entrega, así que la compra nace cobrada y no pasa por {@code /api/reservas}.
  */
+@Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
 public class CandyController {
 
@@ -60,6 +64,7 @@ public class CandyController {
     }
 
     /** La carta que ve el cliente: solo lo que está a la venta. */
+    @Operation(summary = "La carta del candy")
     @GetMapping("/api/candy/productos")
     public List<ProductoVistaDTO> productos(
             @RequestParam(required = false, defaultValue = "false") boolean todos) {
@@ -67,11 +72,13 @@ public class CandyController {
         return productos.stream().map(vistas::producto).toList();
     }
 
+    @Operation(summary = "El detalle de un producto")
     @GetMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO producto(@PathVariable int id) {
         return vistas.producto(buscar(id));
     }
 
+    @Operation(summary = "Dar de alta un producto")
     @PostMapping("/api/candy/productos")
     @ResponseStatus(HttpStatus.CREATED)
     public ProductoVistaDTO agregar(@RequestBody PedidoProductoDTO pedido) {
@@ -86,6 +93,7 @@ public class CandyController {
      * R14: el combo tiene que salir menos que sus componentes sueltos, y eso lo valida el
      * gestor contra la lista de precios.
      */
+    @Operation(summary = "Armar un combo con productos de la carta")
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
     public ProductoVistaDTO armarCombo(@RequestBody PedidoComboDTO pedido) {
@@ -97,6 +105,7 @@ public class CandyController {
      * No hay DELETE: un producto puede estar en compras viejas, y borrarlo dejaría esos
      * tickets apuntando a la nada. Se saca de la carta y se repone.
      */
+    @Operation(summary = "Sacar un producto de la carta, o reponerlo")
     @PutMapping("/api/candy/productos/{id}/disponibilidad")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
                                                   @RequestBody PedidoDisponibilidadDTO pedido) {
@@ -108,6 +117,7 @@ public class CandyController {
         return vistas.producto(buscar(id));
     }
 
+    @Operation(summary = "Vender candy en el mostrador: nace cobrado")
     @PostMapping("/api/candy/compras")
     @ResponseStatus(HttpStatus.CREATED)
     public CompraCandyVistaDTO vender(@RequestBody PedidoVentaDTO pedido) {
@@ -125,15 +135,17 @@ public class CandyController {
     }
 
     /** El arqueo del candy es la otra caja del cine, aparte de la boletería. */
+    @Operation(summary = "Las compras de candy de un día, o las de un cliente")
     @GetMapping("/api/candy/compras")
     public List<CompraCandyVistaDTO> compras(@RequestParam(required = false) String fecha,
                                              @RequestParam(required = false) String clienteId) {
         List<CompraCandy> compras = clienteId != null && !clienteId.isBlank()
-                ? candy.listarComprasDe(Integer.parseInt(clienteId.trim()))
+                ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el cliente"))
                 : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
         return compras.stream().map(c -> vistas.compra(c, carta.ahorroDe(c))).toList();
     }
 
+    @Operation(summary = "El arqueo del candy de un día")
     @GetMapping("/api/candy/arqueo")
     public ArqueoCandyVistaDTO arqueo(@RequestParam(required = false) String fecha) {
         LocalDate dia = Parseo.dia(fecha, "la fecha");

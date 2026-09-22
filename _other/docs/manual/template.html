@@ -438,6 +438,8 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#entorno" data-target="entorno">Entorno</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#tomcat" data-target="tomcat">Tomcat: embebido o aparte</a></li>
+        <li><a href="#swagger" data-target="swagger">La API, documentada sola</a></li>
         <li><a href="#terminal" data-target="terminal">La terminal de boletería</a></li>
         <li><a href="#importador" data-target="importador">El importador de cartelera</a></li>
         <li><a href="#probar" data-target="probar">Cómo probarlo</a></li>
@@ -464,7 +466,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los 25 casos de uso y las 19 reglas funcionan de punta a punta —gestor y API
-          HTTP— con <strong>385 tests</strong>. Lo único que no tiene pantalla web es el candy
+          HTTP— con <strong>389 tests</strong>. Lo único que no tiene pantalla web es el candy
           (CU-13 a CU-16): la API ya lo sirve. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
@@ -1544,7 +1546,7 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <div class="callout">
         <p>
-          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 385 tests llaman a los
+          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 389 tests llaman a los
           gestores directo, sin pasar por HTTP. Los 29 que sí abren un puerto (<code>PruebaDeApi</code>) existen
           justamente para probar el controlador en sí —parseo, códigos de estado, el
           <code>@RestControllerAdvice</code>—, no las reglas de negocio: esas ya están cubiertas del otro lado.
@@ -2924,11 +2926,88 @@ docker compose down -v                             # borra la base y empieza de 
 
       <h3>Sin Docker</h3>
       <pre><code>mvn test                      # los tests, contra H2 en memoria: no hace falta Docker
-mvn package                   # jar en target/cine-api.jar
-java -jar target/cine-api.jar # busca la base en DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD</code></pre>
+mvn package                   # WAR en target/cine-api.war
+java -jar target/cine-api.war # busca la base en DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD</code></pre>
       <p>
         Para levantar la app completa así hace falta una MySQL propia: la del compose no publica su puerto al
         host. <code>mvn test</code> no la necesita.
+      </p>
+
+      <h3 id="tomcat">Tomcat: embebido o aparte</h3>
+      <p>
+        El servidor siempre fue Tomcat —lo trae <code>spring-boot-starter-web</code>, y por eso el
+        <code>java -jar</code> de arriba levanta un servidor sin instalar nada—. Lo que cambia es
+        <strong>quién lo arranca</strong>, y el mismo artefacto sirve para los dos casos.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Modo</th><th>Cómo</th><th>Queda en</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Embebido</strong> — el Tomcat va adentro del WAR</td>
+              <td><code>java -jar target/cine-api.war</code></td>
+              <td><code>localhost:8080</code></td>
+            </tr>
+            <tr>
+              <td><strong>Aparte</strong> — el Tomcat ya está instalado y manda él</td>
+              <td>copiar el WAR a <code>$CATALINA_HOME/webapps/</code></td>
+              <td><code>localhost:8080/cine-api</code>, o la raíz si se lo renombra <code>ROOT.war</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Que las dos cosas convivan son dos decisiones. El <code>packaging</code> es
+        <strong><code>war</code></strong> y no <code>jar</code>, porque un Tomcat instalado despliega lo que
+        encuentre en <code>webapps/</code>; el plugin de Spring Boot igual lo deja
+        <em>ejecutable</em>, así que no se pierde el <code>java -jar</code>. Y
+        <code>spring-boot-starter-tomcat</code> pasa a <strong><code>provided</code></strong>: un Tomcat
+        instalado trae el suyo, y meter un segundo servidor adentro del WAR es el choque de clases clásico
+        al desplegar. Queda en <code>WEB-INF/lib-provided/</code>, que el arranque embebido sí lee.
+      </p>
+      <p>
+        Del lado del código, <code>Aplicacion</code> hereda de <code>SpringBootServletInitializer</code>
+        porque un Tomcat externo <strong>no llama a <code>main()</code></strong>: descubre la clase por el
+        arranque de servlets y le pide con <code>configure()</code> de dónde colgar la aplicación. Los dos
+        caminos terminan armando el mismo contexto de Spring, así que no hay una configuración «de Docker» y
+        otra «de Tomcat» que se puedan ir separando.
+      </p>
+
+      <h3 id="swagger">La API, documentada sola</h3>
+      <p>
+        Con el sistema levantado, <code>localhost:8080/swagger-ui.html</code> lista los endpoints con el
+        cuerpo que espera y el que devuelve cada uno, y deja probarlos sin <code>curl</code>. El contrato
+        crudo —para importar en Postman— está en <code>/v3/api-docs</code>.
+      </p>
+      <p>
+        Lo genera springdoc leyendo los <code>@RestController</code> y los tipos de sus DTO: <strong>no hay
+        un archivo que mantener al día</strong>, que es la única forma de que la documentación de una API no
+        termine mintiendo. Lo que no está en ninguna firma —el título y el contrato de errores— se declara en
+        <code>controller/http/ConfiguracionOpenApi</code>.
+      </p>
+      <div class="callout">
+        <p>
+          <strong>Los cuatro errores se declaran una vez, no 68 veces.</strong>
+          <code>ManejadorErrores</code> es un <code>@RestControllerAdvice</code>: cualquier ruta puede
+          devolver 400, 404, 409 o 500 aunque su método no los mencione. Anotarlos endpoint por endpoint
+          serían 68 repeticiones que se desincronizan con la primera excepción nueva, así que los agrega un
+          <code>OpenApiCustomizer</code> a todas las operaciones.
+        </p>
+        <p>
+          El esquema de error va en ese customizer y <strong>no</strong> en el bean <code>OpenAPI</code>:
+          springdoc arma <code>components.schemas</code> desde los tipos que encuentra en los controladores y
+          reemplaza lo que hubiera puesto el bean. Declarado allá, el esquema desaparecía y quedaban 272
+          referencias apuntando a la nada — con la aplicación levantando igual y
+          <code>/v3/api-docs</code> devolviendo 200. Lo cuida <code>ContratoOpenApiTest</code>, que recorre el
+          documento y falla si un <code>$ref</code> no resuelve.
+        </p>
+      </div>
+      <p>
+        nginx necesita un bloque propio para <code>/swagger-ui</code> y <code>/v3/api-docs</code>: springdoc
+        los publica en la raíz y no bajo <code>/api</code>, así que sin eso caerían en el
+        <code>try_files</code> que sirve los estáticos y darían 404. Va <strong>antes</strong> del bloque de
+        <code>.js</code> y <code>.css</code>, porque si no ese se quedaría con los archivos de la propia UI,
+        que están adentro del backend y no en la imagen de nginx.
       </p>
 
       <h3>Regenerar este manual</h3>
@@ -3169,7 +3248,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/peliculas   #
 
       <h3>Nivel 1 · las pruebas que corren solas</h3>
       <pre><code>cd cine-backend
-mvn clean test                    # 385 tests: 381 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 389 tests: 381 corren siempre, 4 se saltean</code></pre>
 
       <div class="callout">
         <p>
@@ -3348,10 +3427,10 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
-      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>385 tests</strong>.</p>
+      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>389 tests</strong>.</p>
 
       <div class="callout">
-        <p><strong>La suite esta en rojo por fechas vencidas.</strong> 92 de los 385 tests
+        <p><strong>La suite esta en rojo por fechas vencidas.</strong> 92 de los 389 tests
         fallan hoy con <em>&laquo;La funcion ya empezo: no se pueden reservar butacas&raquo;</em>.
         No es una regresion del codigo: 18 archivos de test arman las funciones con fechas
         escritas a mano —<code>LocalDateTime.of(2026, 8, 20, 20, 0)</code> aparece 45 veces—

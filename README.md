@@ -3,7 +3,7 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 19 reglas de negocio sobre MySQL, con 385 tests.
+25 casos de uso y 19 reglas de negocio sobre MySQL, con 389 tests.
 
 ## Stack
 
@@ -45,6 +45,7 @@ pasa cuando el servidor rechaza una venta— está en
 | [`_other/COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md) | Cómo ponerlo a andar, paso a paso |
 | [`_other/docs/manual/index.html`](_other/docs/manual/index.html) | El manual: requerimientos, casos de uso, reglas, arquitectura y 18 diagramas |
 | [`cine-frontend/API.md`](cine-frontend/API.md) | El contrato HTTP, endpoint por endpoint |
+| `localhost:8080/swagger-ui.html` | El mismo contrato, probable desde el navegador (con el sistema levantado) |
 
 ## Tareas
 

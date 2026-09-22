@@ -18,6 +18,9 @@ import ar.uade.cine.dto.catalogos.MedioPagoVistaDTO;
 import ar.uade.cine.dto.catalogos.TarifaVistaDTO;
 import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Los enums del dominio, tal como están. El front los pide para armar los combos de
  * sus formularios sin tener que repetir las listas de su lado.
@@ -30,14 +33,17 @@ import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
  * <p>Es el único controlador sin colaboradores: no le pide nada a ningún gestor porque no
  * hay nada que preguntar —las constantes son las que son.
  */
+@Tag(name = "Catálogos", description = "Las listas de constantes que llenan los combos del panel")
 @RestController
 public class CatalogoController {
 
+    @Operation(summary = "Los géneros con los que se clasifica una película")
     @GetMapping("/api/generos")
     public List<String> generos() {
         return nombres(Genero.values());
     }
 
+    @Operation(summary = "Las clasificaciones por edad")
     @GetMapping("/api/clasificaciones")
     public List<ClasificacionVistaDTO> clasificaciones() {
         return Arrays.stream(Clasificacion.values())
@@ -45,6 +51,7 @@ public class CatalogoController {
                 .toList();
     }
 
+    @Operation(summary = "Los tipos de sala y su recargo")
     @GetMapping("/api/tipos-sala")
     public List<TipoSalaVistaDTO> tiposDeSala() {
         return Arrays.stream(TipoSala.values())
@@ -56,16 +63,19 @@ public class CatalogoController {
      * El enum se llama Version en el dominio: es cómo se escucha esta copia, no el idioma
      * hablado de la película. La ruta conserva el nombre que usa el front.
      */
+    @Operation(summary = "Subtitulada o doblada")
     @GetMapping("/api/idiomas")
     public List<String> idiomas() {
         return nombres(Version.values());
     }
 
+    @Operation(summary = "2D, 3D y sus recargos")
     @GetMapping("/api/proyecciones")
     public List<String> proyecciones() {
         return nombres(Proyeccion.values());
     }
 
+    @Operation(summary = "Los medios de pago que acepta la boletería")
     @GetMapping("/api/medios-pago")
     public List<MedioPagoVistaDTO> mediosDePago() {
         return Arrays.stream(MedioPago.values())
@@ -79,6 +89,7 @@ public class CatalogoController {
      * de verdad para lo mismo. requiereAcreditacion es lo que le permite avisar "traé el
      * carnet" al elegir la tarifa, y no recién en la puerta.
      */
+    @Operation(summary = "Las tarifas de entrada y su descuento")
     @GetMapping("/api/tarifas")
     public List<TarifaVistaDTO> tarifas() {
         return Arrays.stream(TipoTarifa.values())

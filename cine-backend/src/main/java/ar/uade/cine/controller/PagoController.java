@@ -32,6 +32,9 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Cobro de una reserva y arqueo del día.
  *
@@ -44,6 +47,7 @@ import ar.uade.cine.service.ventas.GestorReservas;
  * el segundo es un pago igual al del efectivo; la diferencia es de dónde salió el código de
  * autorización.
  */
+@Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController
 public class PagoController {
 
@@ -60,6 +64,7 @@ public class PagoController {
         this.vistas = vistas;
     }
 
+    @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")
     @ResponseStatus(HttpStatus.CREATED)
     public PagoVistaDTO cobrar(@PathVariable int id, @RequestBody PedidoPagoDTO pedido) {
@@ -76,6 +81,7 @@ public class PagoController {
      * se pagó, así que la respuesta es el literal {@code null}. Es el mismo caso que la
      * búsqueda de cliente por email, y por eso también se arma con {@link ResponseEntity}.
      */
+    @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
     @GetMapping(value = "/api/reservas/{id}/pago", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> pagoDe(@PathVariable int id) {
         exigirReserva(id);
@@ -84,6 +90,7 @@ public class PagoController {
     }
 
     /** Abrir el checkout: lo que devuelve es el QR y el link que ve el cliente. */
+    @Operation(summary = "Abrir el checkout electrónico: devuelve el QR y el link de pago")
     @PostMapping("/api/reservas/{id}/checkout")
     @ResponseStatus(HttpStatus.CREATED)
     public CheckoutVistaDTO abrirCheckout(@PathVariable int id,
@@ -101,12 +108,14 @@ public class PagoController {
      * El id del checkout es del procesador y no un número nuestro, así que viaja como
      * {@code String} y no como {@code int}: no es un id de los nuestros.
      */
+    @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")
     @PostMapping("/api/checkouts/{id}/confirmacion")
     @ResponseStatus(HttpStatus.CREATED)
     public PagoVistaDTO confirmarCheckout(@PathVariable String id) {
         return vistas.pago(pagos.confirmarCheckout(id));
     }
 
+    @Operation(summary = "El arqueo de boletería de un día")
     @GetMapping("/api/arqueo")
     public ArqueoVistaDTO arqueo(@RequestParam(required = false) String fecha) {
         Arqueo arqueo = caja.arqueoDe(Parseo.dia(fecha, "la fecha"));

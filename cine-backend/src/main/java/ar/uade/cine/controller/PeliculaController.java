@@ -29,6 +29,9 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Cartelera y ABM de películas. Los campos que faltan en el pedido se mandan igual al
  * gestor —en null o en cero— para que el mensaje de error sea el suyo y no uno que
@@ -39,6 +42,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
  * se los pasaba a mano: pedir menos colaboradores es lo que hace evidente qué depende de
  * qué.
  */
+@Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController
 public class PeliculaController {
 
@@ -56,6 +60,7 @@ public class PeliculaController {
     }
 
     /** Lo que ve el cliente: solo lo que está en exhibición (CU-01b para el filtro). */
+    @Operation(summary = "La cartelera pública: solo lo que está en exhibición")
     @GetMapping("/api/cartelera")
     public List<PeliculaVistaDTO> cartelera(@RequestParam(required = false) String genero) {
         List<Pelicula> peliculas = cartelera.listarEnCartelera();
@@ -71,6 +76,7 @@ public class PeliculaController {
      * de ser cuatro títulos de prueba desde que el importador trae la cartelera real:
      * filtrar por título es lo primero que hace falta.
      */
+    @Operation(summary = "Buscar en el catálogo entero, esté o no en cartelera")
     @GetMapping("/api/peliculas")
     public List<PeliculaVistaDTO> buscar(@RequestParam(required = false) String q,
                                          @RequestParam(required = false) String genero,
@@ -86,16 +92,19 @@ public class PeliculaController {
      * registrarlo antes que {@code /{id}} porque resolvía por orden; Spring elige la ruta
      * más específica, así que el orden de los métodos ya no decide nada.
      */
+    @Operation(summary = "El buzón: lo que trajo el importador y todavía nadie revisó")
     @GetMapping("/api/peliculas/pendientes")
     public List<PeliculaVistaDTO> pendientes() {
         return revision.listarPendientes().stream().map(vistas::pelicula).toList();
     }
 
+    @Operation(summary = "El detalle de una película")
     @GetMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO detalle(@PathVariable int id) {
         return vistas.pelicula(buscar(id));
     }
 
+    @Operation(summary = "Las funciones programadas de una película")
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
         buscar(id);
@@ -105,6 +114,7 @@ public class PeliculaController {
                 .toList();
     }
 
+    @Operation(summary = "Dar de alta una película a mano")
     @PostMapping("/api/peliculas")
     @ResponseStatus(HttpStatus.CREATED)
     public PeliculaVistaDTO agregar(@RequestBody PedidoPeliculaDTO pedido) {
@@ -116,6 +126,7 @@ public class PeliculaController {
      * propuesta y entra al buzón, no al catálogo. Es la misma forma de pedido, así que el
      * importador no tiene que aprender otro cuerpo, solo otra URL.
      */
+    @Operation(summary = "Alta del importador: entra al buzón, no al catálogo")
     @PostMapping("/api/peliculas/importadas")
     @ResponseStatus(HttpStatus.CREATED)
     public PeliculaVistaDTO importar(@RequestBody PedidoPeliculaDTO pedido) {
@@ -126,18 +137,21 @@ public class PeliculaController {
      * Confirmar y descartar son POST y no PUT por lo mismo que la baja de una promoción:
      * no se está mandando un estado nuevo, se está tomando una decisión sobre la película.
      */
+    @Operation(summary = "Aceptar una película del buzón y publicarla")
     @PostMapping("/api/peliculas/{id}/confirmacion")
     public PeliculaVistaDTO confirmar(@PathVariable int id) {
         buscar(id);
         return vistas.pelicula(revision.confirmar(id));
     }
 
+    @Operation(summary = "Descartar una película del buzón")
     @PostMapping("/api/peliculas/{id}/descarte")
     public PeliculaVistaDTO descartar(@PathVariable int id) {
         buscar(id);
         return vistas.pelicula(revision.descartar(id));
     }
 
+    @Operation(summary = "Editar una película")
     @PutMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO editar(@PathVariable int id, @RequestBody PedidoPeliculaDTO pedido) {
         // El gestor rechaza el id inexistente como dato inválido; acá se pregunta antes
@@ -146,6 +160,7 @@ public class PeliculaController {
         return vistas.pelicula(cartelera.editar(id, datosDe(pedido)));
     }
 
+    @Operation(summary = "Borrar una película del catálogo")
     @DeleteMapping("/api/peliculas/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
