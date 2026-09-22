@@ -143,8 +143,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
-        assertEquals(2, caja.listarDelDia(LocalDate.now()).size());
-        assertEquals(Dinero.de(15000.0), caja.totalCobrado(LocalDate.now()));
+        assertEquals(2, caja.listarDelDia(reloj.hoy()).size());
+        assertEquals(Dinero.de(15000.0), caja.totalCobrado(reloj.hoy()));
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
     }
 
@@ -202,7 +202,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        Dinero arqueo = Dinero.sumar(caja.listarDelDia(LocalDate.now()).stream()
+        Dinero arqueo = Dinero.sumar(caja.listarDelDia(reloj.hoy()).stream()
                 .map(Pago::getMonto).toList());
 
         assertEquals(pago.getMonto(), arqueo);
@@ -220,7 +220,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
-        Arqueo arqueo = caja.arqueoDe(LocalDate.now());
+        Arqueo arqueo = caja.arqueoDe(reloj.hoy());
 
         assertEquals(Dinero.de(15000.0), arqueo.total());
         // Tres butacas vendidas en dos cobros: el número no sale de la cantidad de pagos.
@@ -234,7 +234,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     /** Un día sin cobros no es un error: es una caja en cero. */
     @Test
     void elArqueoDeUnDiaSinCobrosDaEnCero() {
-        Arqueo arqueo = caja.arqueoDe(LocalDate.now().minusDays(1));
+        Arqueo arqueo = caja.arqueoDe(reloj.hoy().minusDays(1));
 
         assertEquals(Dinero.de(0), arqueo.total());
         assertEquals(0, arqueo.entradas());
@@ -251,7 +251,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        Arqueo arqueo = caja.arqueoDe(LocalDate.now());
+        Arqueo arqueo = caja.arqueoDe(reloj.hoy());
 
         assertEquals(pago.getMonto(), arqueo.total());
         assertEquals(pago.getMonto(), arqueo.porMedio().get(MedioPago.EFECTIVO).total());
@@ -371,7 +371,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         pagos.confirmarCheckout(checkout.id());
 
         assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout(checkout.id()));
-        assertEquals(1, caja.listarDelDia(LocalDate.now()).size());
+        assertEquals(1, caja.listarDelDia(reloj.hoy()).size());
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

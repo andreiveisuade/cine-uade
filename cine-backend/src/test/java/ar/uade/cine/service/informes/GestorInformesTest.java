@@ -250,7 +250,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(0, informe.comprasCandy());
         assertEquals(Dinero.de(0), informe.candy());
         assertEquals(Dinero.de(5000.0), informe.total());
-        assertEquals(Dinero.de(3000.0), caja.totalCandyDe(LocalDate.now()));
+        assertEquals(Dinero.de(3000.0), caja.totalCandyDe(reloj.hoy()));
     }
 
     /** El candy de la función de al lado tampoco: se atribuye por la reserva, no por el día. */

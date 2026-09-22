@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,8 +170,8 @@ class GestorCandyTest extends PruebaDeIntegracion {
         candy.vender(1, pedido(pochoclos, 2), MedioPago.EFECTIVO, "");
         candy.vender(1, pedido(gaseosa, 1), MedioPago.QR, "QR-1");
 
-        assertEquals(2, candy.listarComprasDelDia(LocalDate.now()).size());
-        assertEquals(Dinero.de(10500.0), caja.totalCandyDe(LocalDate.now()));
+        assertEquals(2, candy.listarComprasDelDia(reloj.hoy()).size());
+        assertEquals(Dinero.de(10500.0), caja.totalCandyDe(reloj.hoy()));
     }
 
     @Test
@@ -210,7 +208,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
         Asiento asiento = asientoRepository.save(new Asiento(1, 1, 1, TipoAsiento.ESTANDAR));
         Reserva reserva = reservaRepository.save(new Reserva(1, 1,
                 List.of(new Entrada(asiento, TipoTarifa.GENERAL, Dinero.de(5000))),
-                LocalDateTime.now()));
+                reloj.ahora()));
 
         CompraCandy compra = candy.venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");

@@ -1,6 +1,7 @@
 package ar.uade.cine.infrastructure;
 
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,7 @@ import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.tmdb.TmdbHttp;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Los puertos hacia afuera, elegidos y configurados: dónde caen los comprobantes, quién
@@ -81,6 +83,17 @@ public class Adaptadores {
     public BloqueoButacas bloqueoButacas(@Value("${cine.redis.host}") String host,
                                          @Value("${cine.redis.puerto}") int puerto) {
         return new BloqueoButacasRedis(host, puerto);
+    }
+
+    /**
+     * El reloj de la máquina. Fuera del perfil de test, que pone uno que se mueve a mano:
+     * es lo que permite que un test arme una función "para el 20 de agosto" y siga siendo
+     * futuro el 21 de septiembre.
+     */
+    @Bean
+    @Profile("!test")
+    public Reloj reloj() {
+        return LocalDateTime::now;
     }
 
     @Bean

@@ -17,6 +17,7 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Reglas de negocio del catálogo. Depende de la interfaz PeliculaRepository, no de una
@@ -29,6 +30,7 @@ public class GestorCartelera {
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
+    private final Reloj reloj;
 
     /**
      * Recibe el gestor de grillas porque la cartelera es la lectura de la que cuelga la
@@ -38,10 +40,11 @@ public class GestorCartelera {
      * dirección y no en la otra: las grillas no necesitan saber nada de la cartelera.
      */
     public GestorCartelera(PeliculaRepository peliculaRepository, FuncionRepository funcionRepository,
-                           GestorProgramaciones programaciones) {
+                           GestorProgramaciones programaciones, Reloj reloj) {
         this.peliculaRepository = peliculaRepository;
         this.funcionRepository = funcionRepository;
         this.programaciones = programaciones;
+        this.reloj = reloj;
     }
 
     /** El alta mínima: título, duración, géneros y clasificación. */
@@ -185,7 +188,7 @@ public class GestorCartelera {
      * paralela: cuando los dos hablan, manda la programación.
      */
     public List<Pelicula> listarEnCartelera() {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = reloj.ahora();
         // Las grillas activas materializan acá lo que les falta. Sin esto un cine con
         // grillas abiertas amanecería vacío el día que se pasara el último rango generado:
         // la cartelera se deriva de las funciones, y las funciones alguien las tiene que

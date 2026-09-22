@@ -17,6 +17,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.repository.ImportacionRepository;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Pedir cartelera nueva, ahora.
@@ -65,6 +66,7 @@ public class GestorImportaciones {
     private final GestorRevisionCartelera revision;
     private final Duration corridaMaxima;
     private final Duration esperaEntreCorridas;
+    private final Reloj reloj;
 
     /**
      * Las dos duraciones salen de la configuración y no de constantes acá adentro para poder
@@ -78,13 +80,15 @@ public class GestorImportaciones {
     public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
                                GestorCartelera cartelera, GestorRevisionCartelera revision,
                                @Value("${cine.importador.corrida-maxima}") Duration corridaMaxima,
-                               @Value("${cine.importador.espera-entre-corridas}") Duration esperaEntreCorridas) {
+                               @Value("${cine.importador.espera-entre-corridas}") Duration esperaEntreCorridas,
+                               Reloj reloj) {
         this.importacionRepository = importacionRepository;
         this.catalogo = catalogo;
         this.cartelera = cartelera;
         this.revision = revision;
         this.corridaMaxima = corridaMaxima;
         this.esperaEntreCorridas = esperaEntreCorridas;
+        this.reloj = reloj;
     }
 
     /**
@@ -107,7 +111,7 @@ public class GestorImportaciones {
         try {
             correr(importacion);
         } catch (ImportadorError e) {
-            importacion.fallar(e.getMessage(), LocalDateTime.now());
+            importacion.fallar(e.getMessage(), reloj.ahora());
         }
         importacionRepository.save(importacion);
         return importacion;
@@ -156,7 +160,7 @@ public class GestorImportaciones {
         }
 
         importacion.terminar(nuevas, salteadas, fallidas,
-                detalle.isEmpty() ? null : detalle.toString().strip(), LocalDateTime.now());
+                detalle.isEmpty() ? null : detalle.toString().strip(), reloj.ahora());
     }
 
     /**
@@ -202,7 +206,7 @@ public class GestorImportaciones {
             exigirQueNoHayaOtraEnCurso(ultimas.get(0));
             exigirQueHayaPasadoUnRato(ultimas.get(0));
         }
-        Importacion importacion = new Importacion(paginas, LocalDateTime.now());
+        Importacion importacion = new Importacion(paginas, reloj.ahora());
         importacionRepository.save(importacion);
         return importacion;
     }
@@ -221,7 +225,7 @@ public class GestorImportaciones {
      */
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
         LocalDateTime desde = ultima.getTerminoEn();
-        if (desde != null && desde.plus(esperaEntreCorridas).isAfter(LocalDateTime.now())) {
+        if (desde != null && desde.plus(esperaEntreCorridas).isAfter(reloj.ahora())) {
             throw new IllegalArgumentException("El importador corrió recién: esperá "
                     + esperaEntreCorridas.toSeconds() + " segundos antes de volver a pedirlo");
         }
@@ -241,7 +245,7 @@ public class GestorImportaciones {
      */
     public List<Importacion> listar() {
         List<Importacion> ultimas = importacionRepository.findAllByOrderByIdDesc(Limit.of(HISTORIAL));
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = reloj.ahora();
         for (Importacion importacion : ultimas) {
             if (quedoColgada(importacion, ahora)) {
                 importacion.fallar("La corrida no terminó a tiempo. Puede haber cargado "

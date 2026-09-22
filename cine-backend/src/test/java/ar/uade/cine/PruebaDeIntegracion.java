@@ -32,16 +32,18 @@ public abstract class PruebaDeIntegracion {
     @Autowired
     private BloqueoButacas bloqueoButacas;
 
+    /** El reloj del sistema bajo prueba: lo que los gestores leen como "ahora". */
     @Autowired
-    private ConfiguracionDePrueba.Reloj relojDeLosBloqueos;
+    protected ConfiguracionDePrueba.RelojMovible reloj;
 
     @BeforeEach
     void dejarLaBaseComoNueva() {
         limpieza.limpiar();
         catalogoExterno.reiniciar();
-        // El adaptador de bloqueos y su reloj son beans, o sea uno solo para toda la suite:
-        // sin esto, la butaca que un test dejó elegida le aparece tomada al siguiente.
+        // El adaptador de bloqueos y el reloj son beans, o sea uno solo para toda la suite:
+        // sin esto, la butaca que un test dejó elegida le aparece tomada al siguiente, y la
+        // hora a la que otro movió el reloj le queda al que sigue.
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
-        relojDeLosBloqueos.reiniciar();
+        reloj.reiniciar();
     }
 }

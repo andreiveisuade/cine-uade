@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 
 /**
@@ -29,13 +29,13 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
     }
 
     private final Map<String, Bloqueo> bloqueos = new LinkedHashMap<>();
-    private final Supplier<LocalDateTime> reloj;
+    private final Reloj reloj;
 
     public BloqueoButacasMemoria() {
         this(LocalDateTime::now);
     }
 
-    public BloqueoButacasMemoria(Supplier<LocalDateTime> reloj) {
+    public BloqueoButacasMemoria(Reloj reloj) {
         this.reloj = reloj;
     }
 
@@ -46,7 +46,7 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
         if (actual != null && !actual.sesion().equals(sesion)) {
             return false;
         }
-        bloqueos.put(clave, new Bloqueo(sesion, reloj.get().plus(duracion)));
+        bloqueos.put(clave, new Bloqueo(sesion, reloj.ahora().plus(duracion)));
         return true;
     }
 
@@ -92,7 +92,7 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
         if (bloqueo == null) {
             return null;
         }
-        if (!bloqueo.vence().isAfter(reloj.get())) {
+        if (!bloqueo.vence().isAfter(reloj.ahora())) {
             bloqueos.remove(clave);
             return null;
         }

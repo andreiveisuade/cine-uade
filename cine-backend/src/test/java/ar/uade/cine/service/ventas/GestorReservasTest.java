@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import ar.uade.cine.ConfiguracionDePrueba;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
@@ -80,8 +79,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
     private FuncionRepository funcionRepository;
     @Autowired
     private AsientoRepository asientoRepository;
-    @Autowired
-    private ConfiguracionDePrueba.Reloj reloj;
     @Autowired
     private JdbcTemplate jdbc;
 
@@ -268,7 +265,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void guardaCuandoSeHizoLaReserva() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
 
-        assertEquals(LocalDate.now(), reserva.getCreadaEn().toLocalDate());
+        assertEquals(reloj.hoy(), reserva.getCreadaEn().toLocalDate());
     }
 
     @Test
@@ -292,7 +289,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(2, leida.getCantidadEntradas());
         assertEquals("A1", leida.getEntradas().get(0).codigoAsiento());
-        assertEquals(LocalDate.now(), leida.getCreadaEn().toLocalDate());
+        assertEquals(reloj.hoy(), leida.getCreadaEn().toLocalDate());
     }
 
 
@@ -387,7 +384,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
      * paso del tiempo sobre una función que se programó normalmente.
      */
     private int funcionQueYaEmpezo() {
-        return funcionRepository.save(new Funcion(1, 1, LocalDateTime.now().minusMinutes(30),
+        return funcionRepository.save(new Funcion(1, 1, reloj.ahora().minusMinutes(30),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
     }
 
@@ -422,7 +419,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservaRepository.save(new Reserva(empezada, 1,
                 List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
-                LocalDateTime.now()));
+                reloj.ahora()));
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));

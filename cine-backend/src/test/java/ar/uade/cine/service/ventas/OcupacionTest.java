@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.ConfiguracionDePrueba;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
@@ -62,8 +61,6 @@ class OcupacionTest extends PruebaDeIntegracion {
     private GestorReservas reservas;
     @Autowired
     private BloqueoButacas bloqueos;
-    @Autowired
-    private ConfiguracionDePrueba.Reloj reloj;
 
     @Autowired
     private GestorCartelera cartelera;
@@ -242,12 +239,12 @@ class OcupacionTest extends PruebaDeIntegracion {
     @Test
     void sinRedisSeSigueVendiendoComoAntes() {
         Ocupacion sinRedis = new Ocupacion(reservaRepository, funcionRepository,
-                asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999));
+                asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999), reloj);
 
         GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
                 salaRepository, asientoRepository, clienteRepository, peliculaRepository,
                 new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
-                calculadoraPrecio, sinRedis);
+                calculadoraPrecio, sinRedis, reloj);
 
         assertEquals(List.of("A1"), sinRedis.bloquear(1, List.of("A1"), ANA),
                 "nadie la tiene tomada, así que se la lleva");

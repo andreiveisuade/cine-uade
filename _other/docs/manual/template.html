@@ -3262,8 +3262,8 @@ mvn clean test                    # 389 tests: 381 corren siempre, 4 se saltean<
       <p>
         Corren contra <strong>H2 en memoria</strong>, creada por Hibernate desde las entidades (perfil
         <code>test</code>): un <code>@Query</code> roto o una relación mal anotada se ven acá y no recién contra
-        MySQL. Lo que sí se reemplaza por un doble es lo que sale del proceso —Redis y TMDB—, en
-        <code>ConfiguracionDePrueba</code>. Los 29 <code>*ControllerTest</code> levantan la aplicación entera con
+        MySQL. Lo que sí se reemplaza por un doble es lo que sale del proceso —Redis, TMDB y el reloj de
+        la máquina—, en <code>ConfiguracionDePrueba</code>. Los 29 <code>*ControllerTest</code> levantan la aplicación entera con
         <code>@SpringBootTest(webEnvironment = RANDOM_PORT)</code>, porque que un rechazo salga
         <code>400</code> y no <code>404</code> se decide en <code>controller/</code> y es parte del contrato con
         el frontend.
@@ -3430,13 +3430,16 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
       <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>389 tests</strong>.</p>
 
       <div class="callout">
-        <p><strong>La suite esta en rojo por fechas vencidas.</strong> 92 de los 389 tests
-        fallan hoy con <em>&laquo;La funcion ya empezo: no se pueden reservar butacas&raquo;</em>.
-        No es una regresion del codigo: 18 archivos de test arman las funciones con fechas
-        escritas a mano —<code>LocalDateTime.of(2026, 8, 20, 20, 0)</code> aparece 45 veces—
-        que al pasar el calendario quedan en el pasado, y el sistema las rechaza como
-        corresponde. El arreglo es relativizar esas fechas al momento de la corrida
-        (<code>LocalDateTime.now().plusDays(n)</code>) en vez de fijarlas.</p>
+        <p><strong>El reloj es un puerto.</strong> Hasta el 21 de septiembre la suite se puso en
+        rojo sola: 92 tests arman funciones con fechas escritas a mano
+        —<code>LocalDateTime.of(2026, 8, 20, 20, 0)</code>— y los gestores preguntaban la hora con
+        <code>LocalDateTime.now()</code>, así que el día que el calendario pasó esas fechas, R19 las
+        rechazó como corresponde. No era una regresión, pero era una suite que dependía del reloj de
+        la pared. El arreglo no fue relativizar 45 fechas sino sacar el <code>now()</code> de los
+        gestores: <code>infrastructure/reloj/Reloj</code> es el contrato, <code>Adaptadores</code>
+        enchufa <code>LocalDateTime::now</code> en producción, y <code>ConfiguracionDePrueba</code> uno
+        que arranca siempre el 14 de agosto de 2026 y que un test puede mover. Es la misma idea que
+        ya tenía <code>Reserva.estaVencida(momento)</code>, llevada a todo el sistema.</p>
       </div>
 
       <div class="callout">

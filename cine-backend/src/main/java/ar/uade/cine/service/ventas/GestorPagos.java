@@ -24,6 +24,7 @@ import ar.uade.cine.repository.PagoRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Cobrar es un circuito aparte del de reservar: por eso tiene su propio gestor y no
@@ -47,6 +48,7 @@ public class GestorPagos {
     private final PoliticaPromociones promociones;
     private final PasarelaPagos pasarela;
     private final GeneradorRecibo generadorRecibo;
+    private final Reloj reloj;
 
     /**
      * Recibe la política de descuentos por contrato y no el gestor de promociones: cobrar
@@ -56,13 +58,14 @@ public class GestorPagos {
      */
     public GestorPagos(PagoRepository pagoRepository, ReservaRepository reservaRepository, FuncionRepository funcionRepository,
                        PoliticaPromociones promociones, PasarelaPagos pasarela,
-                       GeneradorRecibo generadorRecibo) {
+                       GeneradorRecibo generadorRecibo, Reloj reloj) {
         this.pagoRepository = pagoRepository;
         this.reservaRepository = reservaRepository;
         this.funcionRepository = funcionRepository;
         this.promociones = promociones;
         this.pasarela = pasarela;
         this.generadorRecibo = generadorRecibo;
+        this.reloj = reloj;
     }
 
     /**
@@ -93,7 +96,7 @@ public class GestorPagos {
 
         Pago pago = new Pago(reservaId, reserva.getTotal(),
                 descuento.promocionId(), descuento.monto(),
-                medio, LocalDateTime.now(),
+                medio, reloj.ahora(),
                 codigoAutorizacion == null ? "" : codigoAutorizacion.trim());
         pagoRepository.save(pago);
 
@@ -191,7 +194,7 @@ public class GestorPagos {
         if (reserva.getEstado() != EstadoReserva.RESERVADA) {
             throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
         }
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = reloj.ahora();
         // R17: puede seguir figurando RESERVADA porque nadie consultó esa función desde
         // que venció, y quien la expira es justamente la consulta. Chequearlo acá es lo
         // que impide cobrar butacas que ya volvieron a la venta.

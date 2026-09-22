@@ -25,6 +25,7 @@ import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
  * Qué butacas están tomadas en una función y cuáles quedan.
@@ -87,13 +88,15 @@ public class Ocupacion {
     private final FuncionRepository funcionRepository;
     private final AsientoRepository asientoRepository;
     private final BloqueoButacas bloqueos;
+    private final Reloj reloj;
 
     public Ocupacion(ReservaRepository reservaRepository, FuncionRepository funcionRepository, AsientoRepository asientoRepository,
-                     BloqueoButacas bloqueos) {
+                     BloqueoButacas bloqueos, Reloj reloj) {
         this.reservaRepository = reservaRepository;
         this.funcionRepository = funcionRepository;
         this.asientoRepository = asientoRepository;
         this.bloqueos = bloqueos;
+        this.reloj = reloj;
     }
 
     /**
@@ -229,7 +232,7 @@ public class Ocupacion {
      * un dato del negocio que caducó y una retención temporal que se olvida.
      */
     private void expirarVencidas(int funcionId) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = reloj.ahora();
         for (Reserva reserva : reservaRepository.findByFuncionId(funcionId)) {
             if (reserva.estaVencida(ahora)) {
                 reserva.setEstado(EstadoReserva.EXPIRADA);
