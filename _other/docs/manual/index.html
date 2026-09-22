@@ -417,6 +417,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y roles</a></li>
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
+        <li><a href="#anotaciones" data-target="anotaciones">Las anotaciones, una por una</a></li>
         <li><a href="#solid" data-target="solid">SOLID en este código</a></li>
         <li><a href="#grasp" data-target="grasp">Patrones GRASP</a></li>
         <li><a href="#dao" data-target="dao">De DAO a Spring Data JPA</a></li>
@@ -1224,6 +1225,301 @@ body.lightbox-locked { overflow: hidden; }
           <code>@SpringBootApplication</code>.
         </p>
       </div>
+    </section>
+
+    <section class="doc-section" id="anotaciones">
+      <h2>Las anotaciones, una por una</h2>
+      <p>
+        Spring y JPA se programan con anotaciones: un <code>@Algo</code> arriba de una clase, un método o un
+        atributo que no ejecuta nada por sí mismo, sino que le dice al framework qué hacer con eso al arrancar.
+        Esta sección las lista todas —las que usa este código, ninguna otra— con lo que significa cada una, dónde
+        está y qué pasaría si faltara. Es el vocabulario para leer cualquier archivo del backend.
+      </p>
+
+      <h3>Las que arman el sistema</h3>
+      <p>
+        Spring arranca escaneando el paquete <code>ar.uade.cine</code> en busca de clases marcadas, crea una
+        instancia de cada una —un <em>bean</em>— y las conecta entre sí por constructor. Nadie escribe
+        <code>new GestorReservas(...)</code>: si un gestor pide algo que ninguna clase declara, la aplicación no
+        levanta y el error dice qué falta.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Anotación</th><th>Qué le dice a Spring</th><th>Dónde está</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>@SpringBootApplication</code></td>
+              <td>«Acá empieza todo»: activa el escaneo de componentes, la autoconfiguración (Tomcat, Jackson,
+                  Hibernate, el pool de conexiones) y lee <code>application.yml</code>. Son tres anotaciones en
+                  una.</td>
+              <td><code>Aplicacion.java</code>, la única clase suelta del paquete</td>
+            </tr>
+            <tr>
+              <td><code>@Service</code></td>
+              <td>Esta clase es un bean de la capa de negocio. Técnicamente es igual a
+                  <code>@Component</code>; el nombre distinto es para que se lea qué capa es al abrir el
+                  archivo.</td>
+              <td>Los 19 <code>Gestor*</code> de <code>service/</code></td>
+            </tr>
+            <tr>
+              <td><code>@RestController</code></td>
+              <td>Bean que atiende HTTP, y lo que devuelvan sus métodos va al cuerpo de la respuesta como JSON
+                  (es <code>@Controller</code> + <code>@ResponseBody</code>).</td>
+              <td>Los 15 <code>*Controller</code></td>
+            </tr>
+            <tr>
+              <td><code>@Component</code></td>
+              <td>Bean genérico, sin capa declarada.</td>
+              <td>Los seis <code>Vistas*</code>: ensamblan DTO, no son negocio ni atienden rutas</td>
+            </tr>
+            <tr>
+              <td><code>@Configuration</code> + <code>@Bean</code></td>
+              <td>Una clase cuyos métodos fabrican beans a mano. Se usa cuando hay algo que decidir al
+                  construirlo —qué implementación, con qué parámetros— en vez de anotar la clase.</td>
+              <td><code>infrastructure/Adaptadores</code>: elige <code>MercadoPagoEmulado</code>,
+                  <code>TmdbHttp</code>, Redis, los generadores de comprobantes y el reloj</td>
+            </tr>
+            <tr>
+              <td><code>@Profile("!test")</code></td>
+              <td>Este bean existe solo si el perfil activo no es <code>test</code>. Es lo que permite que la
+                  suite reemplace Redis, TMDB y el reloj por dobles sin tocar el código de producción.</td>
+              <td><code>Adaptadores.bloqueoButacas</code>, <code>Adaptadores.reloj</code>;
+                  <code>ConfiguracionDePrueba</code> lleva <code>@Profile("test")</code></td>
+            </tr>
+            <tr>
+              <td><code>@Value("${...}")</code></td>
+              <td>Inyecta un valor de <code>application.yml</code> en un parámetro del constructor.</td>
+              <td><code>GestorImportaciones</code> recibe así la espera entre corridas, que el test baja a cero</td>
+            </tr>
+            <tr>
+              <td><code>@Transactional</code></td>
+              <td>Cada método público corre dentro de una transacción: se abre al entrar, se confirma al salir
+                  y se deshace si sale una excepción. Spring lo implementa envolviendo al bean en un
+                  <em>proxy</em>, por eso solo aplica a llamadas que vienen de afuera de la clase.</td>
+              <td>A nivel de clase en 13 gestores. <code>GestorImportaciones</code> no lo lleva a propósito:
+                  cuenta lo que falla y sigue, y adentro de una transacción compartida ese <code>catch</code>
+                  la dejaría marcada para rollback. <code>extenderActivas</code> lleva
+                  <code>NOT_SUPPORTED</code> por lo mismo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Las que traducen HTTP</h3>
+      <p>
+        Un método de un controlador es una función Java común. Estas anotaciones dicen qué pedido HTTP lo
+        invoca y de qué parte del pedido sale cada parámetro.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Anotación</th><th>Qué hace</th><th>Ejemplo en el código</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>@GetMapping</code>, <code>@PostMapping</code>, <code>@PutMapping</code>,
+                  <code>@DeleteMapping</code></td>
+              <td>Método HTTP + ruta que atiende este método. <code>{id}</code> en la ruta es una variable.
+                  Los cuatro verbos: GET consulta y no cambia nada, POST crea o ejecuta una acción, PUT
+                  reemplaza un recurso, DELETE lo borra.</td>
+              <td><code>@GetMapping("/api/peliculas/{id}")</code>,
+                  <code>@DeleteMapping("/api/funciones/{id}")</code> en sus controladores</td>
+            </tr>
+            <tr>
+              <td><code>@PathVariable</code></td>
+              <td>El parámetro sale de la ruta. Spring lo convierte al tipo declarado; si no puede
+                  (<code>/api/peliculas/abc</code>), levanta <code>MethodArgumentTypeMismatchException</code>
+                  y <code>ManejadorErrores</code> la traduce a 404.</td>
+              <td><code>buscar(@PathVariable int id)</code></td>
+            </tr>
+            <tr>
+              <td><code>@RequestParam</code></td>
+              <td>El parámetro sale de la <em>query string</em> (<code>?genero=ACCION</code>). Con
+                  <code>required = false</code> es un filtro opcional: si no vino, llega <code>null</code>.</td>
+              <td><code>ClienteController.buscarPorEmail(@RequestParam(required = false) String email)</code></td>
+            </tr>
+            <tr>
+              <td><code>@RequestBody</code></td>
+              <td>El parámetro sale del cuerpo del pedido: Jackson convierte el JSON al DTO. Si el cuerpo no
+                  es JSON válido, <code>HttpMessageNotReadableException</code> → 400.</td>
+              <td><code>agregar(@RequestBody PedidoPeliculaDTO pedido)</code></td>
+            </tr>
+            <tr>
+              <td><code>@ResponseStatus</code></td>
+              <td>Con qué código responde el método cuando termina bien. Sin ella es 200; un alta declara
+                  <code>CREATED</code> (201) y un borrado <code>NO_CONTENT</code> (204).</td>
+              <td>Los 17 <code>POST</code> que crean algo y los 3 <code>DELETE</code></td>
+            </tr>
+            <tr>
+              <td><code>@RestControllerAdvice</code> + <code>@ExceptionHandler</code></td>
+              <td>Una clase cuyos métodos atrapan excepciones de <em>todos</em> los controladores, cada uno
+                  para un tipo. Es donde una excepción del negocio se convierte en un código HTTP.</td>
+              <td><code>ManejadorErrores</code>: <code>IllegalArgumentException</code> → 400,
+                  <code>NoEncontrado</code> → 404, <code>ButacaOcupadaException</code> → 409,
+                  <code>DataAccessException</code> → 500</td>
+            </tr>
+            <tr>
+              <td><code>@JsonInclude(NON_NULL)</code></td>
+              <td>Jackson omite del JSON los campos en <code>null</code> en vez de escribirlos vacíos.</td>
+              <td>Los <code>*VistaDTO</code> con campos opcionales, como el pago de una reserva</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Las que mapean objetos a tablas (JPA)</h3>
+      <p>
+        Estas son de <code>jakarta.persistence</code>, no de Spring: son el estándar JPA, que Hibernate
+        implementa. Dicen cómo una clase Java se corresponde con una tabla y cómo cada atributo con una
+        columna. <code>ddl-auto: validate</code> hace que al arrancar Hibernate compare este mapeo con el
+        esquema real y se niegue a levantar si no coinciden.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Anotación</th><th>Qué significa</th><th>Ejemplo en el código</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>@Entity</code></td>
+              <td>Esta clase es una tabla; cada instancia, una fila. Necesita un constructor sin argumentos
+                  (Hibernate crea el objeto vacío y después le carga los campos) y un <code>@Id</code>.</td>
+              <td>Las 19 entidades de <code>model/</code></td>
+            </tr>
+            <tr>
+              <td><code>@Table</code></td>
+              <td>El nombre de la tabla cuando no coincide con el de la clase, y las restricciones de
+                  unicidad que la base tiene que hacer cumplir.</td>
+              <td><code>Entrada</code>: <code>UNIQUE (funcion_id, asiento_id)</code>, que es lo que cierra la
+                  carrera por la última butaca (R4)</td>
+            </tr>
+            <tr>
+              <td><code>@Id</code> + <code>@GeneratedValue(IDENTITY)</code></td>
+              <td>La clave primaria, y que la genera la base con <code>AUTO_INCREMENT</code>: el objeto se
+                  guarda sin id y vuelve con uno.</td>
+              <td>Todas las entidades con tabla propia</td>
+            </tr>
+            <tr>
+              <td><code>@Column</code></td>
+              <td>El nombre de la columna cuando no sale del atributo (<code>peliculaId</code> →
+                  <code>pelicula_id</code>), o una restricción (<code>unique = true</code>).</td>
+              <td><code>Funcion.peliculaId</code>, <code>Reserva.codigo</code></td>
+            </tr>
+            <tr>
+              <td><code>@Enumerated(STRING)</code></td>
+              <td>El enum se guarda por el nombre de la constante y no por su posición. Sin esto,
+                  reordenar el enum cambiaría el significado de todas las filas ya guardadas.</td>
+              <td>Los 20 enums persistidos: clasificación, versión, estado de reserva…</td>
+            </tr>
+            <tr>
+              <td><code>@ManyToOne</code></td>
+              <td>Muchas filas de esta tabla apuntan a una de otra: una clave foránea, cargada como objeto.
+                  <code>@JoinColumn</code> nombra la columna.</td>
+              <td><code>Entrada.asiento</code>: una entrada no existe sin su butaca, y el mapa de la sala la
+                  necesita entera. También <code>ItemCompra.producto</code></td>
+            </tr>
+            <tr>
+              <td><code>@OneToMany</code></td>
+              <td>El lado inverso: una fila de esta tabla tiene una lista de filas de otra.
+                  <code>cascade = ALL</code> hace que guardar o borrar la reserva guarde o borre sus
+                  entradas; <code>orphanRemoval</code> borra la entrada que se saca de la lista.</td>
+              <td><code>Reserva.entradas</code>, <code>CompraCandy.items</code>: las hijas son parte de la
+                  madre, no vecinas</td>
+            </tr>
+            <tr>
+              <td><code>@ElementCollection</code> + <code>@CollectionTable</code></td>
+              <td>Una lista de valores sin identidad propia —enums, strings— en una tabla auxiliar con la
+                  clave foránea a esta entidad. Es una relación uno-a-muchos con algo que no es entidad.</td>
+              <td><code>Pelicula.generos</code> → tabla <code>pelicula_genero</code>;
+                  <code>Promocion.dias</code>, <code>Promocion.medios</code></td>
+            </tr>
+            <tr>
+              <td><code>@Inheritance(SINGLE_TABLE)</code> + <code>@DiscriminatorColumn</code> +
+                  <code>@DiscriminatorValue</code></td>
+              <td>Una jerarquía de clases en una sola tabla: una columna (<code>tipo</code>, <code>rol</code>)
+                  dice de qué subclase es cada fila, y Hibernate instancia la correcta al leer.</td>
+              <td><code>Promocion</code> → <code>PromocionPorcentaje</code>, <code>PromocionNxM</code>,
+                  <code>PromocionMontoFijo</code>; <code>Usuario</code> → <code>Cliente</code>,
+                  <code>Empleado</code></td>
+            </tr>
+            <tr>
+              <td><code>@Embeddable</code></td>
+              <td>Una clase cuyos campos se guardan como columnas de la tabla de quien la contiene, sin
+                  tabla propia.</td>
+              <td><code>ItemCombo</code>, <code>ItemCompra</code></td>
+            </tr>
+            <tr>
+              <td><code>@Converter(autoApply = true)</code></td>
+              <td>Cómo se traduce un tipo propio a una columna y de vuelta, para todos los atributos de
+                  ese tipo.</td>
+              <td><code>DineroConverter</code>: <code>Dinero</code> (centavos en <code>long</code>) ↔
+                  <code>DECIMAL(12,2)</code></td>
+            </tr>
+            <tr>
+              <td><code>@Query</code> + <code>@Param</code></td>
+              <td>Una consulta escrita a mano en JPQL —el SQL de los objetos— cuando el nombre del método no
+                  alcanza para expresarla.</td>
+              <td><code>PagoRepository.findEntre</code>: los pagos de un rango de fechas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Lo que no es anotación pero también es sintaxis</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Elemento</th><th>Qué es</th><th>Dónde</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>interface X extends JpaRepository&lt;Entidad, Integer&gt;</code></td>
+              <td>Un repositorio sin una línea de implementación: Spring Data genera la clase al arrancar.
+                  Trae <code>findAll</code>, <code>findById</code>, <code>save</code>, <code>delete</code>
+                  gratis, y deriva consultas del <strong>nombre</strong> del método:
+                  <code>findBySalaIdOrderByFilaAscNumeroAsc</code> es
+                  <code>WHERE sala_id = ? ORDER BY fila, numero</code>.</td>
+              <td>Los 13 de <code>repository/</code></td>
+            </tr>
+            <tr>
+              <td><code>record</code></td>
+              <td>Una clase inmutable con constructor, getters, <code>equals</code> y <code>toString</code>
+                  generados por el compilador. Es lo que hace que un DTO sea una sola línea.</td>
+              <td>Los 57 DTO; los resultados <code>Arqueo</code>, <code>Bordero</code>,
+                  <code>InformeFuncion</code></td>
+            </tr>
+            <tr>
+              <td><code>Optional&lt;T&gt;</code></td>
+              <td>«Puede no haber»: <code>findById</code> lo devuelve para obligar a quien llama a decidir qué
+                  pasa si no existe, en vez de un <code>null</code> que explota más lejos.</td>
+              <td><code>.orElseThrow(() -&gt; new NoEncontrado(...))</code> en cada controlador</td>
+            </tr>
+            <tr>
+              <td>Inyección por constructor</td>
+              <td>Las dependencias llegan como parámetros del constructor y se guardan en campos
+                  <code>final</code>. Sin <code>@Autowired</code>: con un solo constructor Spring lo usa solo.
+                  El objeto nunca existe a medio armar y se puede construir a mano en un test.</td>
+              <td>Todos los gestores, controladores y vistas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Los patrones que ya están, con nombre</h3>
+      <p>
+        Además de DAO, DTO, GRASP y SOLID, que tienen sección propia, en el código hay patrones clásicos que
+        conviene poder nombrar:
+      </p>
+      <ul>
+        <li><strong>Strategy</strong> — <code>Promocion.calcularDescuento</code> es abstracto y cada subclase
+            trae su fórmula. <code>GestorPagos</code> cobra sin un solo <code>switch</code> sobre el tipo.</li>
+        <li><strong>Adapter</strong> (puertos y adaptadores) — <code>PasarelaPagos</code>,
+            <code>CatalogoExterno</code>, <code>BloqueoButacas</code>, <code>GeneradorTicket</code> y
+            <code>Reloj</code> son contratos; <code>MercadoPagoEmulado</code>, <code>TmdbHttp</code>,
+            <code>BloqueoButacasRedis</code>, <code>GeneradorTicketTxt</code> y <code>LocalDateTime::now</code>
+            los cumplen. El negocio no sabe cuál tiene enchufado.</li>
+        <li><strong>Repository</strong> — cada <code>*Repository</code> es una colección en memoria que
+            resulta estar en MySQL.</li>
+        <li><strong>Assembler</strong> — las <code>Vistas*</code> arman los DTO desde varias entidades.</li>
+        <li><strong>Front Controller</strong> — el <code>DispatcherServlet</code> de Spring MVC recibe todo
+            pedido y lo despacha al método anotado; ningún controlador abre un socket.</li>
+        <li><strong>Proxy</strong> — <code>@Transactional</code> funciona porque el bean inyectado no es el
+            gestor sino un envoltorio que abre y cierra la transacción alrededor de cada llamada.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="solid">
