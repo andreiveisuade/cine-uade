@@ -187,24 +187,47 @@ class ApiHttpTest {
     }
 
     @Test
-    void unErrorSinJsonMuestraElTextoQueVino() {
+    void elHtmlDeUnProxyCaidoNoLlegaALaPantalla() {
         ingresar();
-        responder("GET /api/salas", 502, "Bad Gateway");
+        responder("GET /api/salas", 502, "<html><head><title>502 Bad Gateway</title></head><body>"
+                + "<center><h1>502 Bad Gateway</h1></center><hr><center>nginx</center></body></html>");
 
         ErrorApi error = assertThrows(ErrorApi.class, api::obtenerSalas);
 
         assertEquals(502, error.estado());
-        assertEquals("Bad Gateway", error.getMessage());
+        assertEquals("El servidor no está disponible en este momento. Probá de nuevo en unos segundos.",
+                error.getMessage());
     }
 
     @Test
-    void unErrorSinCuerpoDiceElCodigo() {
+    void unErrorSinCuerpoSeExplicaPorElCodigo() {
         ingresar();
         responder("GET /api/salas", 500, "");
 
         ErrorApi error = assertThrows(ErrorApi.class, api::obtenerSalas);
 
-        assertEquals("Error 500 del servidor", error.getMessage());
+        assertEquals("Falló el servidor. Probá de nuevo; si sigue pasando, avisá al administrador.",
+                error.getMessage());
+    }
+
+    @Test
+    void un404ConHtmlEsUnRecursoQueNoEsta() {
+        ingresar();
+        responder("GET /api/salas", 404, "<html><body>Not Found</body></html>");
+
+        ErrorApi error = assertThrows(ErrorApi.class, api::obtenerSalas);
+
+        assertEquals("No se encontró el recurso en el servidor.", error.getMessage());
+    }
+
+    @Test
+    void unCodigoSinMensajeConocidoLoNombra() {
+        ingresar();
+        responder("GET /api/salas", 418, "tetera");
+
+        ErrorApi error = assertThrows(ErrorApi.class, api::obtenerSalas);
+
+        assertEquals("El servidor respondió con un error (código 418).", error.getMessage());
     }
 
     @Test
@@ -224,7 +247,8 @@ class ApiHttpTest {
         ErrorApi error = assertThrows(ErrorApi.class, api::obtenerSalas);
 
         assertEquals(0, error.estado());
-        assertTrue(error.getMessage().startsWith("No se pudo conectar con el servidor"));
+        assertTrue(error.getMessage().startsWith("No se pudo conectar con el servidor en http://127.0.0.1:"));
+        assertTrue(error.getMessage().endsWith("¿Está levantado?"));
     }
 
     @Test

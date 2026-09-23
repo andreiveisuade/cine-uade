@@ -154,7 +154,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
             Files.writeString(destino.toPath(), DeclaracionJuradaCsv.escribir(datos.declaracion(), datos.tarifas()),
                     StandardCharsets.UTF_8);
         } catch (IOException e) {
-            Tarea.mostrarError(this, new ErrorApi(0, "No se pudo guardar el archivo: " + e.getMessage()));
+            Tarea.mostrarError(this, new ErrorApi(-1, "No se pudo guardar el archivo: " + e.getMessage()));
             return;
         }
         avisar("Declaración jurada guardada en " + destino.getAbsolutePath());

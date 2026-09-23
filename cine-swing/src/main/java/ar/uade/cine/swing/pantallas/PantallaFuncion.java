@@ -161,7 +161,7 @@ final class PantallaFuncion extends Pantalla {
                     Files.writeString(destino, BorderoTxt.escribir(emision.bordero(), emision.tarifas()),
                             StandardCharsets.UTF_8);
                 } catch (IOException ex) {
-                    Tarea.mostrarError(this, new ErrorApi(0, "No se pudo guardar el borderó: " + ex.getMessage()));
+                    Tarea.mostrarError(this, new ErrorApi(-1, "No se pudo guardar el borderó: " + ex.getMessage()));
                     return;
                 }
                 avisar("Borderó emitido: " + emision.bordero().espectadores() + " espectadores, "

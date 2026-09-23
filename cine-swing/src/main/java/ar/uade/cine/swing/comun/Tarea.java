@@ -47,7 +47,7 @@ public final class Tarea {
                 } catch (ExecutionException e) {
                     Throwable causa = e.getCause();
                     ErrorApi error = causa instanceof ErrorApi api ? api
-                            : new ErrorApi(0, causa.getMessage() != null ? causa.getMessage() : causa.toString());
+                            : new ErrorApi(-1, causa.getMessage() != null ? causa.getMessage() : causa.toString());
                     alFallar.accept(error);
                     return;
                 } catch (InterruptedException e) {
@@ -60,7 +60,7 @@ public final class Tarea {
     }
 
     public static void mostrarError(Component origen, ErrorApi error) {
-        JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(origen), error.getMessage(), "No se pudo",
-                JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(origen), error.getMessage(),
+                error.esSinConexion() ? "Sin conexión con el servidor" : "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

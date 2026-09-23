@@ -126,7 +126,7 @@ final class PantallaImportador extends Pantalla {
         Tarea.ejecutar(this, () -> api.importarAhora(cuantas), corrida -> {
             terminar();
             if ("FALLIDA".equals(corrida.estado())) {
-                Tarea.mostrarError(this, new ErrorApi(0, resumen(corrida)));
+                Tarea.mostrarError(this, new ErrorApi(-1, resumen(corrida)));
             } else {
                 avisar(resumen(corrida));
             }
