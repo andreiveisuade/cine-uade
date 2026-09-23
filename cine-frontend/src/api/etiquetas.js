@@ -51,6 +51,11 @@ const ETIQUETAS = {
   BEBIDA: "Bebida",
   GOLOSINA: "Golosina",
   COMBO: "Combo",
+  EFECTIVO: "Efectivo",
+  DEBITO: "Débito",
+  CREDITO: "Crédito",
+  QR: "QR",
+  TRANSFERENCIA: "Transferencia",
 };
 
 export function etiqueta(valor) {
