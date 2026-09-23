@@ -37,6 +37,12 @@ public abstract class Usuario {
     }
 
     protected Usuario(String nombre, String email, Rol rol) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("El email no es válido");
+        }
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;

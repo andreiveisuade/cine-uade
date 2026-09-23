@@ -14,8 +14,13 @@ public class Empleado extends Usuario {
     protected Empleado() {
     }
 
+    // Un Empleado CLIENTE se guardaría con contraseña y, por la fórmula del discriminador en
+    // Usuario, se releería como Cliente: la jerarquía dejaría de valer. Por eso lo corta acá.
     public Empleado(String nombre, String email, String passwordHash, Rol rol) {
         super(nombre, email, rol);
+        if (rol == null || !rol.esEmpleado()) {
+            throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
+        }
         this.passwordHash = passwordHash;
     }
 

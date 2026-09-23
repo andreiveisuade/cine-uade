@@ -1,6 +1,5 @@
 package ar.uade.cine.service.usuarios;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,24 +23,18 @@ public class GestorEmpleados {
         this.claves = claves;
     }
 
+    // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
+    // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.
+    // La clave en claro solo la ve el gestor; nombre, email y rol los valida Empleado.
     public void registrar(String nombre, String email, String password, Rol rol) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (email == null || !email.contains("@")) {
-            throw new IllegalArgumentException("El email no es válido");
-        }
         if (password == null || password.length() < 6) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
-        // Un CLIENTE no tiene contraseña: darlo de alta acá le permitiría iniciar sesión.
-        if (rol == null || !rol.esEmpleado()) {
-            throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
-        }
+        Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
         if (empleadoRepository.findByEmail(email).isPresent()) {
             throw new ConflictoDeNegocio("Ya hay un empleado con ese email");
         }
-        empleadoRepository.save(new Empleado(nombre, email, claves.encode(password), rol));
+        empleadoRepository.save(empleado);
     }
 
     // El hash ya viene armado: lo pide el login, que es quien tiene la clave en claro.
@@ -52,10 +45,5 @@ public class GestorEmpleados {
     @Transactional(readOnly = true)
     public Optional<Empleado> buscarPorEmail(String email) {
         return empleadoRepository.findByEmail(email);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Empleado> listar() {
-        return empleadoRepository.findAll();
     }
 }
