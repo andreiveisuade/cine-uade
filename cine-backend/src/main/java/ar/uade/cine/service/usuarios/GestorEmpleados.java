@@ -1,6 +1,7 @@
 package ar.uade.cine.service.usuarios;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,12 +42,9 @@ public class GestorEmpleados {
         empleadoRepository.save(new Empleado(nombre, email, Password.hashear(password), rol));
     }
 
-    // Mismo error para email inexistente y contraseña mala, para no revelar qué emails existen.
     @Transactional(readOnly = true)
-    public Empleado iniciarSesion(String email, String password) {
-        return empleadoRepository.findByEmail(email)
-                .filter(admin -> Password.coincide(password, admin.getPasswordHash()))
-                .orElseThrow(CredencialesInvalidas::new);
+    public Optional<Empleado> buscarPorEmail(String email) {
+        return empleadoRepository.findByEmail(email);
     }
 
     @Transactional(readOnly = true)

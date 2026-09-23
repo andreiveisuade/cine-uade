@@ -25,30 +25,19 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void iniciaSesionConLasCredencialesCorrectas() {
-        Empleado admin = empleados.iniciarSesion("encargado@cine.com", "secreta123");
+    void seEncuentraPorEmailConSuRol() {
+        Empleado admin = empleados.buscarPorEmail("encargado@cine.com").orElseThrow();
 
         assertEquals("Encargado", admin.getNombre());
         assertEquals(Rol.ADMINISTRADOR, admin.getRol());
-    }
-
-    @Test
-    void rechazaLaContrasenaEquivocada() {
-        assertThrows(CredencialesInvalidas.class,
-                () -> empleados.iniciarSesion("encargado@cine.com", "otracosa"));
-    }
-
-    @Test
-    void rechazaUnEmailQueNoExiste() {
-        assertThrows(CredencialesInvalidas.class,
-                () -> empleados.iniciarSesion("nadie@cine.com", "secreta123"));
+        assertTrue(empleados.buscarPorEmail("nadie@cine.com").isEmpty());
     }
 
     @Test
     void noGuardaLaContrasenaEnTextoPlano() {
-        Empleado admin = empleados.iniciarSesion("encargado@cine.com", "secreta123");
+        Empleado admin = empleados.buscarPorEmail("encargado@cine.com").orElseThrow();
+
         assertNotEquals("secreta123", admin.getPasswordHash());
-        assertEquals(64, admin.getPasswordHash().length(), "SHA-256 en hexa son 64 caracteres");
     }
 
     @Test
@@ -67,15 +56,5 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     void noSeRegistraUnClienteComoEmpleado() {
         assertThrows(IllegalArgumentException.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.CLIENTE));
-    }
-
-    @Test
-    void elAcomodadorTambienIniciaSesionYConservaSuRol() {
-        empleados.registrar("Puerta", "puerta@cine.com", "secreta123", Rol.ACOMODADOR);
-
-        Empleado acomodador = empleados.iniciarSesion("puerta@cine.com", "secreta123");
-
-        assertEquals(Rol.ACOMODADOR, acomodador.getRol());
-        assertTrue(acomodador.getRol().esEmpleado());
     }
 }

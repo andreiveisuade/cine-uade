@@ -3,6 +3,7 @@ package ar.uade.cine.controller.http;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
 
@@ -10,7 +11,7 @@ class ManejadorErroresTest extends PruebaDeApi {
 
     @Test
     void credencialesEquivocadasSon401() {
-        Respuesta respuesta = post("/api/sesion", "{\"email\":\"nadie@cine.com\",\"password\":\"otracosa\"}");
+        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "nadie@cine.com", "otracosa");
 
         assertEquals(401, respuesta.estado());
         assertEquals("Email o contraseña incorrectos", respuesta.error());

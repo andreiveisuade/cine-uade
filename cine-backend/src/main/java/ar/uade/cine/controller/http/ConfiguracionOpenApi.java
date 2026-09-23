@@ -57,8 +57,8 @@ public class ConfiguracionOpenApi {
                                 empleado (botón *Authorize*). Sin credenciales se puede usar lo que \
                                 usa el sitio del cliente —cartelera, detalle de película y función, \
                                 catálogos, carta del candy, reservar, bloquear butacas, consultar y cancelar la propia \
-                                reserva— y `POST /api/sesion`. `POST /api/acceso` pide ACOMODADOR o \
-                                ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
+                                reserva—. `POST /api/sesion` (el login) y `POST /api/acceso` piden \
+                                ACOMODADOR o ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
                                 """))
                 // Relativo: sirve igual detrás del nginx del compose que contra el backend directo.
                 .servers(List.of(new Server().url("/").description("Este mismo servidor")));
@@ -94,9 +94,6 @@ public class ConfiguracionOpenApi {
             respuestas.addApiResponse("409", respuestaDeError("La butaca ya estaba vendida: se perdió la carrera contra otra compra"));
         } else if (CON_NOMBRE_UNICO.contains(metodo + " " + ruta)) {
             respuestas.addApiResponse("409", respuestaDeError("Ya existe otro con ese nombre, email o título"));
-        }
-        if (ruta.equals("/api/sesion")) {
-            respuestas.addApiResponse("401", respuestaDeError("Email o contraseña incorrectos"));
         }
         respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos o la emisión de un comprobante"));
 

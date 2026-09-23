@@ -26,7 +26,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import ar.uade.cine.dto.ErrorVistaDTO;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
-import ar.uade.cine.service.usuarios.CredencialesInvalidas;
 import ar.uade.cine.service.ventas.ButacaOcupadaException;
 import ar.uade.cine.service.ConflictoDeNegocio;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -67,11 +66,6 @@ public class ManejadorErrores {
     @ExceptionHandler(ConflictoDeNegocio.class)
     public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
-    }
-
-    @ExceptionHandler(CredencialesInvalidas.class)
-    public ResponseEntity<ErrorVistaDTO> credencialesInvalidas(CredencialesInvalidas e) {
-        return responder(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
 
     @ExceptionHandler(ButacaOcupadaException.class)

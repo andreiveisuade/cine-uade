@@ -19,8 +19,8 @@ Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Prob
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST /api/sesion`, `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/codigo/{codigo}/cancelacion`; `GET` de `/api/cartelera`, `/api/peliculas/{id}`, `/api/peliculas/{id}/funciones`, `/api/funciones/{id}`, `/api/reservas/codigo/{codigo}`, `/api/reservas?email=` (con email), `/api/candy/productos` y `/{id}`, los siete catálogos; Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
-| `ACOMODADOR` o `ADMINISTRADOR` | `POST /api/acceso` |
+| Público | `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/codigo/{codigo}/cancelacion`; `GET` de `/api/cartelera`, `/api/peliculas/{id}`, `/api/peliculas/{id}/funciones`, `/api/funciones/{id}`, `/api/reservas/codigo/{codigo}`, `/api/reservas?email=` (con email), `/api/candy/productos` y `/{id}`, los siete catálogos; Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
+| `ACOMODADOR` o `ADMINISTRADOR` | `POST /api/sesion`, `POST /api/acceso` |
 | `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email, las rutas de reserva por `{id}` y `GET /api/peliculas/pendientes`. Una ruta nueva nace así |
 
 `401` sin `WWW-Authenticate`: «Hace falta iniciar sesión para esta operación» o, con credenciales
@@ -144,9 +144,13 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
 
 # Encargado
 
-`POST /api/sesion`: `{email, password}` → el empleado sin hash, `rol` `ADMINISTRADOR` o `ACOMODADOR`.
-Mismo `401` para email y clave. Sin token: el front guarda `email:contraseña` en `sessionStorage`
-y ante un `401` fuera del login vuelve a `#/login`.
+`POST /api/sesion`, con `Authorization: Basic base64(email:contraseña)` y sin cuerpo → `200` con
+el empleado sin hash (`{id, nombre, email, rol}`, `rol` `ADMINISTRADOR` o `ACOMODADOR`). Las
+credenciales las verifica el mismo filtro que en cualquier otra ruta: el login solo confirma que
+son válidas y dice de quién son. Un cuerpo que llegue igual se ignora. Clave mala o email
+inexistente: `401` «Email o contraseña incorrectos», el mismo para los dos. Sin header: `401` «Hace
+falta iniciar sesión para esta operación», aunque el cuerpo traiga `{email, password}`. No hay
+token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada pedido.
 
 ## Cartelera y salas
 

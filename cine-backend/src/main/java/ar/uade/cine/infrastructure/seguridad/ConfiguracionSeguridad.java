@@ -24,7 +24,6 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
-import ar.uade.cine.service.usuarios.CredencialesInvalidas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,7 +42,6 @@ public class ConfiguracionSeguridad {
     // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
 
     public static final String[] POST_PUBLICOS = {
-            "/api/sesion",
             "/api/clientes",
             "/api/reservas",
             "/api/funciones/*/bloqueos",
@@ -71,7 +69,7 @@ public class ConfiguracionSeguridad {
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
                         // Mismo texto para clave y email: distinguirlos revela qué emails existen.
                         error instanceof BadCredentialsException
-                                ? new CredencialesInvalidas().getMessage()
+                                ? "Email o contraseña incorrectos"
                                 : "Hace falta iniciar sesión para esta operación");
         AccessDeniedHandler sinPermiso = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.FORBIDDEN,
@@ -99,7 +97,9 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
                         .requestMatchers(reservasDeUnEmail()).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
+                        // El login también: el acomodador entra al panel para llegar a la puerta.
+                        .requestMatchers(HttpMethod.POST, "/api/sesion", "/api/acceso")
+                        .hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
                 .build();
     }

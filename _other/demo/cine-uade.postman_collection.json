@@ -52,7 +52,7 @@
   "item": [
     {
       "name": "0. Sesión",
-      "description": "Login del encargado. Usuario y clave salen de las variables de la colección.",
+      "description": "Login del encargado: Basic como el resto de la colección, con usuario y clave de las variables.",
       "item": [
         {
           "name": "Login correcto",
@@ -69,12 +69,7 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/sesion",
               "host": [
@@ -84,19 +79,7 @@
                 "sesion"
               ]
             },
-            "description": "Devuelve el empleado sin el hash.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{usuario}}\",\n  \"password\": \"{{clave}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "auth": {
-              "type": "noauth"
-            }
+            "description": "Basic con las credenciales de la colección, sin cuerpo. Devuelve el empleado sin el hash."
           }
         },
         {
@@ -114,12 +97,7 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/sesion",
               "host": [
@@ -130,17 +108,20 @@
               ]
             },
             "description": "Mismo error para email inexistente y clave equivocada.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{usuario}}\",\n  \"password\": \"clave-equivocada\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "auth": {
-              "type": "noauth"
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{usuario}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "clave-equivocada",
+                  "type": "string"
+                }
+              ]
             }
           }
         }
