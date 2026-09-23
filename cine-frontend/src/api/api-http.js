@@ -146,9 +146,9 @@ export const obtenerSalas = () => get("/salas");
 export const obtenerSala = (id) => get(`/salas/${id}`);
 
 export const crearSala = ({ nombre, tipo, butacasPorFila,
-                            codigosVip, codigosPareja, codigosAccesibles }) =>
+                            codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza }) =>
   post("/salas", { nombre, tipo, butacasPorFila,
-                   codigosVip, codigosPareja, codigosAccesibles });
+                   codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza });
 
 export const eliminarSala = (id) => borrar(`/salas/${id}`);
 
