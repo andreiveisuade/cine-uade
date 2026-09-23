@@ -181,7 +181,7 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 | `DELETE /api/salas/{id}` | `400` si tiene funciones |
 | `PUT /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /api/funciones?peliculaId=&salaId=&desde=&hasta=` | Con `pelicula` y `sala` embebidas, por `inicio`. Filtros opcionales; `desde` y `hasta` son días (`AAAA-MM-DD`) y `hasta` incluye todo ese día |
-| `POST /api/funciones` | R3 superposición, R8 3D en sala que no soporta |
+| `POST /api/funciones` | R3 superposición, R8 3D en sala que no soporta, R20 `400` «La función no puede empezar en el pasado» si `inicio` no es posterior al momento actual (ahora mismo ya cuenta como pasado, igual que en R19) |
 | `DELETE /api/funciones/{id}` | `400` si tiene reservas, aun canceladas (R12: son historial) |
 
 ## Arqueo e informes
@@ -253,7 +253,8 @@ Genera funciones reales. `POST /api/programaciones/previsualizar` (no escribe) y
 
 - `diasSemana` vacío = todos. Es `idioma`, no `version`. Previsualizado: `id` `0`. `motivo` solo si `choca`.
 - Aplicar revalida: repintar con la respuesta.
-- `400` ya al previsualizar: 3D en sala 2D (R8), `desde` > `hasta`, `horaInicio` mal formada, rango sin ningún `diasSemana`.
+- R20: los pases que ya pasaron (por ejemplo, hoy a una hora vencida) se saltean: no aparecen en `funciones` ni cuentan en `salteadas`, en la previsualización ni al crear. Tampoco se generan al extender una grilla abierta.
+- `400` ya al previsualizar: 3D en sala 2D (R8), `desde` > `hasta`, `horaInicio` mal formada, rango sin ningún `diasSemana`, rango cerrado que ya pasó entero (R20: «Todos los horarios del rango ya pasaron: la grilla no generaría funciones»).
 
 | Ruta | Notas |
 |---|---|
@@ -278,7 +279,7 @@ obligatorio; default: una semana desde hoy, 14 a 24, ocho títulos.
 ```
 
 `cierre: "00:00"` = fin del día. `minutosDisponibles` descuenta lo ya programado. Solo películas
-confirmadas (ninguna: `400`); no pisa funciones existentes. `dias` de 1 a 31 (`400` fuera de rango).
+confirmadas (ninguna: `400`); no pisa funciones existentes ni propone pases que ya pasaron (R20: hoy arranca en el primer intento de media hora posterior a ahora). `dias` de 1 a 31 (`400` fuera de rango).
 
 ## Promociones (CU-17)
 

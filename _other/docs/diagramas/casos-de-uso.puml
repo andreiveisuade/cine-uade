@@ -78,7 +78,14 @@ note bottom of CU03b
   Previsualiza primero: las fechas que chocan
   contra algo ya programado en esa sala (R3)
   se marcan y se saltean, no tumban la grilla.
+  Los pases que ya pasaron (R20) tampoco se
+  generan ni se muestran.
   Darla de baja no borra lo ya generado.
+end note
+
+note bottom of CU03
+  El inicio tiene que ser posterior
+  al momento actual (R20).
 end note
 
 note bottom of CU07

@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 479 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 489 tests.</p>
       </div>
     </section>
 
@@ -507,6 +507,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R17</td><td>No se cobra una reserva vencida</td></tr>
             <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td></tr>
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
+            <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
           </tbody>
         </table>
       </div>
@@ -528,8 +529,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td></tr>
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td></tr>
             <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas con su mapa</td><td>R2</td></tr>
-            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3</td></tr>
-            <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8</td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3, R20</td></tr>
+            <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20</td></tr>
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td></tr>
@@ -553,6 +554,17 @@ body.lightbox-locked { overflow: hidden; }
           </tbody>
         </table>
       </div>
+
+      <h3>Flujos alternativos de R20</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>CU</th><th>Cuando</th><th>El sistema</th></tr></thead>
+          <tbody>
+            <tr><td>CU-03</td><td>El inicio es anterior al momento actual, o es ahora mismo</td><td>Rechaza con 400 «La función no puede empezar en el pasado» y no guarda nada</td></tr>
+            <tr><td>CU-03b</td><td>La grilla (o el planificador) tiene pases que ya pasaron, por ejemplo hoy a una hora vencida</td><td>Los saltea: no aparecen en la previsualización ni se crean, y no cuentan como choques. Si un rango cerrado ya pasó entero, rechaza la grilla porque no generaría funciones</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="doc-section" id="capas">
@@ -570,7 +582,7 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. Un subpaquete por subdominio con su <code>*Controller</code> y su <code>Vistas*</code> (arma los DTO), más <code>catalogos/</code> y <code>http/</code> (parseo, errores, OpenAPI)</td><td>Reglas, base</td></tr>
             <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>); los compartidos en <code>catalogos/</code> y <code>comun/</code></td><td>Comportamiento</td></tr>
-            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio con R1..R19</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
+            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio con R1..R20</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
             <tr><td><code>model/</code></td><td>Entidades, enums y <code>Dinero</code></td><td>Guardarse o mostrarse</td></tr>
             <tr><td><code>repository/</code></td><td>14 <code>JpaRepository</code> por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
             <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, reloj, seguridad) y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
@@ -619,10 +631,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorRevisionCartelera</code></td><td>Buzón de importadas: alta, confirmar, descartar</td></tr>
             <tr><td><code>GestorImportaciones</code></td><td>Corre el importador de TMDB y guarda el historial</td></tr>
             <tr><td><code>GestorSalas</code></td><td>ABM de salas, genera asientos, fuera de servicio (R9)</td></tr>
-            <tr><td><code>GestorFunciones</code></td><td>Funciones sueltas: alta y baja (R3, R8, R12)</td></tr>
+            <tr><td><code>GestorFunciones</code></td><td>Funciones sueltas: alta y baja (R3, R8, R12, R20)</td></tr>
             <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una sola vez</td></tr>
-            <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, dar de baja</td></tr>
-            <tr><td><code>PlanificadorGrilla</code></td><td>Propone elenco y pases de la semana</td></tr>
+            <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, dar de baja; saltea el pasado (R20)</td></tr>
+            <tr><td><code>PlanificadorGrilla</code></td><td>Propone elenco y pases de la semana, desde ahora (R20)</td></tr>
             <tr><td><code>GestorPromociones</code></td><td>ABM de promociones; elige la mejor (R15, R16)</td></tr>
             <tr><td><code>PoliticaPromociones</code></td><td>Interfaz de un método que usa el cobro</td></tr>
             <tr><td><code>GestorReservas</code></td><td>Reservar y cancelar (R4, R6, R9, R13, R19)</td></tr>
@@ -799,7 +811,7 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Caso</th><th>HTTP</th></tr></thead>
           <tbody>
-            <tr><td>Dato inválido (Bean Validation, JSON mal formado o con un tipo equivocado —el mensaje nombra el campo—, parámetro de la query faltante o mal escrito) o regla R1..R19 (<code>IllegalArgumentException</code>)</td><td>400</td></tr>
+            <tr><td>Dato inválido (Bean Validation, JSON mal formado o con un tipo equivocado —el mensaje nombra el campo—, parámetro de la query faltante o mal escrito) o regla R1..R20 (<code>IllegalArgumentException</code>)</td><td>400</td></tr>
             <tr><td>Sin credenciales o credenciales inválidas</td><td>401</td></tr>
             <tr><td>Rol insuficiente</td><td>403</td></tr>
             <tr><td>Recurso inexistente (<code>RecursoNoEncontrado</code>) o id no numérico en la ruta</td><td>404</td></tr>
@@ -856,7 +868,7 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>Web React (<code>cine-frontend</code>)</td><td>Cliente, sin login</td><td>Cartelera, elegir butacas, reservar, ver y cancelar su ticket</td></tr>
             <tr><td>Swing (<code>cine-swing</code>)</td><td>Encargado y acomodador, con login</td><td>Cartelera, salas, funciones, grilla, planificador, agenda, reservas y cobro, promociones, candy, caja, declaración jurada y Puerta</td></tr>
-            <tr><td>Backend (<code>cine-backend</code>)</td><td>Los dos clientes, por HTTP</td><td>Todas las reglas (R1..R19), seguridad por rol y la base</td></tr>
+            <tr><td>Backend (<code>cine-backend</code>)</td><td>Los dos clientes, por HTTP</td><td>Todas las reglas (R1..R20), seguridad por rol y la base</td></tr>
           </tbody>
         </table>
       </div>
@@ -897,7 +909,7 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th></th><th>Cliente (Swing)</th><th>Backend</th></tr></thead>
           <tbody>
-            <tr><td>Qué valida</td><td>Obligatoriedad y formato de lo tipeado</td><td>Todas las reglas: precio mayor a cero, rangos, superposición (R3), 3D (R8), R1 a R19</td></tr>
+            <tr><td>Qué valida</td><td>Obligatoriedad y formato de lo tipeado</td><td>Todas las reglas: precio mayor a cero, rangos, superposición (R3), 3D (R8), R1 a R20</td></tr>
             <tr><td>Cuándo</td><td>Al tipear (los campos numéricos no aceptan letras) y al enviar</td><td>Al recibir el pedido</td></tr>
             <tr><td>Cómo avisa</td><td>No manda nada: marca el campo con el borde de error de FlatLaf, escribe el motivo junto al formulario y deja el foco en el primero</td><td><code>400</code> con el mensaje, que el formulario muestra tal cual en el mismo lugar; si nombra un campo («El precio…»), lo marca</td></tr>
           </tbody>
@@ -1056,6 +1068,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Grilla cerrada</strong> se genera entera; <strong>abierta</strong> (<code>hasta = null</code>), a 14 días.</li>
         <li><strong>Sin cron:</strong> <code>GestorCartelera</code> llama a <code>extenderActivas</code> antes de listar; es idempotente por <code>generadaHasta</code>.</li>
         <li>El patrón no se edita: se da de baja y se crea otra.</li>
+        <li><strong>R20, saltear y no fallar:</strong> un pase que ya pasó no se lista ni se crea, ni en la previsualización ni al extender. La función suelta sí se rechaza, porque ahí el encargado eligió la hora. El criterio es uno solo, <code>GestorFunciones.yaPaso</code>, con el corte de R19: la función que empieza ahora ya empezó y no se podría vender. Las funciones que quedaron en el pasado no se tocan: son historial (R12).</li>
       </ul>
       <p>
         <code>POST /api/programaciones/previsualizar</code> informa qué fechas chocan y contra qué función, sin
@@ -1076,6 +1089,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         <li><strong>Elenco:</strong> goloso, explicable elección por elección. El bono inclina, no decide.</li>
         <li><strong>Votos:</strong> seis votos no valen como miles; cero votos con puntaje es carga manual y vale tal cual.</li>
         <li><strong>Reparto:</strong> cada sala día por día, el pase a la película con más deuda (<code>asignados / puntaje</code>), sin pasar el cierre ni pisar lo programado. Determinista.</li>
+        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que todavía no pasó.</li>
       </ul>
     </section>
 
@@ -1454,7 +1468,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
             <tr><td>¿Por qué dividieron el proyecto en estas capas?</td><td>Para que cada cambio toque un solo lugar: HTTP, reglas, datos e integraciones están separados. <code>ArquitecturaTest</code> lo hace cumplir.</td></tr>
-            <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> aplica R1..R19, <code>model/</code> son las entidades, <code>repository/</code> persiste, <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
+            <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> aplica R1..R20, <code>model/</code> son las entidades, <code>repository/</code> persiste, <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
             <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Las reglas quedarían atadas a HTTP: el importador, que da de alta por <code>GestorRevisionCartelera</code>, y los tests de gestor tendrían que duplicarlas.</td></tr>
             <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>En el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>): es el único paso común a API, importador y seed. Lo que depende de un solo objeto, como que un NxM lleve más de lo que paga, va en el constructor de la entidad.</td></tr>
             <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code> (<code>spring.datasource.url</code>, credenciales; Hibernate deduce el dialecto), el driver en <code>pom.xml</code>, <code>schema.sql</code> y el único SQL nativo, el <code>INSERT IGNORE</code> de <code>BloqueoButacaRepository</code>. El resto de repositorios y los gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2.</td></tr>
@@ -1683,17 +1697,17 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
           <tbody>
             <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td><code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB</td></tr>
             <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
-            <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09</td></tr>
+            <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09 y CP-19</td></tr>
             <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador y en el panel Swing</td></tr>
           </tbody>
         </table>
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 479 tests, ninguno salteado</code></pre>
+mvn clean test       # 489 tests, ninguno salteado</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
-        <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
+        <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos
         no dependen de la fecha real.
       </p>
 
@@ -1711,6 +1725,7 @@ mvn clean test       # 479 tests, ninguno salteado</code></pre>
             <tr><td>CP-07</td><td>Código inválido, repetido, impago</td><td>Tres rechazos (R18)</td></tr>
             <tr><td>CP-08</td><td>Promoción inválida</td><td>400 con el mensaje</td></tr>
             <tr><td>CP-09</td><td>Grilla: previsualizar, aplicar, baja</td><td>Previsualizar no escribe (R3)</td></tr>
+            <tr><td>CP-19</td><td><code>POST /api/funciones</code> con <code>inicio</code> en 2020, y después a futuro</td><td>400 «La función no puede empezar en el pasado»; después 201 (R20)</td></tr>
           </tbody>
         </table>
       </div>
@@ -1753,6 +1768,7 @@ mvn clean test       # 479 tests, ninguno salteado</code></pre>
           <tbody>
             <tr><td>R1, R2, R7</td><td><code>GestorCarteleraTest</code></td><td>—</td></tr>
             <tr><td>R3, R12</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
+            <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code>, <code>PlanificadorGrillaTest</code>, <code>FuncionControllerTest</code></td><td>CP-19</td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td><td>CP-11</td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code></td><td>CP-13</td></tr>
             <tr><td>R14</td><td><code>GestorCandyTest</code></td><td>—</td></tr>
