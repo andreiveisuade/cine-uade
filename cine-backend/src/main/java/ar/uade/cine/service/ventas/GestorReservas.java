@@ -40,7 +40,7 @@ import ar.uade.cine.service.usuarios.GestorClientes;
  * Qué butacas están tomadas no se resuelve acá sino en {@link Ocupacion}: es un hecho
  * sobre la función, y así vender y dibujar el mapa usan la misma definición.
  *
- * <p><strong>Por qué el constructor recibe diez colaboradores.</strong> Seis son
+ * <p><strong>Por qué el constructor recibe once colaboradores.</strong> Seis son
  * repositorios porque vender una entrada cruza seis agregados —función, sala, asientos,
  * cliente, película y la reserva misma— y las entidades se relacionan por id (ver
  * {@code Funcion}), así que resolver esas asociaciones es trabajo del gestor. Se evaluó
@@ -48,7 +48,8 @@ import ar.uade.cine.service.usuarios.GestorClientes;
  * usa una combinación distinta (reservar no necesita la película hasta el ticket,
  * {@code buscar} necesita los catálogos enteros), y la clase nueva sería un pasamanos de
  * repositorios que solo movería el número de lugar. Lo que sí vive afuera es lo que tiene
- * regla propia: el precio en {@link CalculadoraPrecio} y lo ocupado en {@link Ocupacion}.
+ * regla propia: el precio en {@link CalculadoraPrecio}, lo ocupado en {@link Ocupacion} y
+ * el alta del cliente sin registro en {@code GestorClientes}.
  */
 @Service
 @Transactional

@@ -1629,7 +1629,8 @@ body.lightbox-locked { overflow: hidden; }
         hoy?" no se podía contestar sin ir a dos gestores transaccionales distintos y sumar por afuera. Hoy
         existe <code>service/informes/GestorCaja</code>, que es el corte por día, al lado de
         <code>GestorInformes</code>, que es el corte por función. <code>GestorPagos</code> volvió a hacer una
-        sola cosa: cobrar.
+        sola cosa: cobrar. <code>totalCobrado()</code> y <code>listarDelDia()</code> no sobrevivieron a la
+        mudanza: solo los llamaban los tests, y <code>arqueoDe()</code> ya devuelve el total y los pagos.
       </p>
       <div class="callout">
         <p>
@@ -1736,6 +1737,35 @@ body.lightbox-locked { overflow: hidden; }
           dirección contraria: agregar un método al ABM de promociones ya no puede romper el cobro.
         </p>
       </div>
+      <p>
+        <strong>Las otras dependencias entre gestores no llevan interfaz, y es a propósito.</strong> Hoy son
+        siete, todas dentro de <code>service/</code>:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Quién</th><th>Depende de</th><th>Para qué</th></tr></thead>
+          <tbody>
+            <tr><td><code>GestorCartelera</code></td><td><code>GestorProgramaciones</code></td><td>Que las grillas activas generen sus funciones antes de mostrar la cartelera, y no dar de baja una película que tiene grillas</td></tr>
+            <tr><td><code>GestorProgramaciones</code></td><td><code>GestorFunciones</code></td><td>Que cada función de la grilla pase por las mismas reglas (R3, R8) que una suelta</td></tr>
+            <tr><td><code>PlanificadorGrilla</code></td><td><code>GestorFunciones</code></td><td>Leer la agenda de cada sala para no proponer choques</td></tr>
+            <tr><td><code>GestorRevisionCartelera</code></td><td><code>GestorCartelera</code></td><td>Dar de alta lo aprobado con las validaciones del catálogo</td></tr>
+            <tr><td><code>GestorImportaciones</code></td><td><code>GestorCartelera</code> y <code>GestorRevisionCartelera</code></td><td>Que lo importado de TMDB entre por la misma puerta que lo cargado a mano</td></tr>
+            <tr><td><code>GestorCandy</code></td><td><code>GestorProductos</code></td><td>Resolver los productos de la carta que se venden, con su precio</td></tr>
+            <tr><td><code>GestorReservas</code></td><td><code>GestorClientes</code></td><td>Identificar o dar de alta a quien compra sin registrarse, en la misma transacción que la reserva</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Las siete son orquestación dentro de la misma capa: un gestor reusa las reglas de otro en vez de
+        copiarlas, que es justamente lo que evita tener dos versiones de R3 o de R1. Cada una tiene una sola
+        implementación y ninguna razón previsible para tener otra, y quien depende usa casi todo lo que el otro
+        ofrece. Una interfaz por cada una sería andamiaje: un archivo más que repite las firmas y que el
+        contenedor resuelve igual a la única clase que hay. <code>PoliticaPromociones</code> es distinta en las
+        dos cosas que la justifican: <code>GestorPagos</code> usaba un método de ocho, y el descuento sí es un
+        punto de variación real —acumular, traerlo de afuera, apagarlo—. La regla que se siguió es esa: la
+        interfaz se extrae cuando el que depende ve de más o cuando hay una segunda implementación a la vista,
+        no por principio.
+      </p>
 
       <h3>D — Inversión de dependencias</h3>
       <p>
@@ -1888,6 +1918,19 @@ body.lightbox-locked { overflow: hidden; }
         </li>
         <li>
           <strong>Un subpaquete por subdominio.</strong> Lo que cambia junto vive junto.
+        </li>
+        <li>
+          <strong>Entre agregados, un id; adentro de un agregado, el objeto.</strong> <code>Funcion</code>
+          guarda <code>peliculaId</code> y <code>salaId</code>, y <code>Reserva</code> guarda
+          <code>funcionId</code> y <code>clienteId</code>, en vez de un <code>@ManyToOne</code>. Cada una es
+          raíz de su propio agregado, con su repositorio y su ciclo de vida: una película se edita sin tocar
+          sus funciones, y una reserva no puede modificar la sala. Con referencias, leer una reserva traería
+          la función, que traería la película con sus géneros y la sala con sus asientos: una cadena de
+          cargas que nadie pidió y que con colecciones <code>EAGER</code> se multiplica. Con el id, el gestor
+          resuelve la asociación cuando la necesita y el costo queda a la vista —<code>GestorReservas</code>
+          busca la sala para calcular el precio y la película recién para el ticket—. Adentro del agregado sí
+          va el objeto: <code>Reserva.entradas</code> con <code>Entrada.asiento</code>, porque la entrada no
+          existe sin su reserva y el mapa necesita la butaca entera.
         </li>
       </ul>
 
@@ -2289,13 +2332,20 @@ GET /api/programaciones?activa=true</code></pre>
         </table>
       </div>
       <p>
-        <code>GestorReservas</code> recibe nueve dependencias, más que ningún otro gestor. No es capricho: el
-        ticket lleva datos de película, sala y cliente, así que reservar tiene que ir a buscarlos.
+        <code>GestorReservas</code> recibe once dependencias, más que ningún otro gestor, y seis son
+        repositorios. No es capricho: reservar cruza seis agregados —función, sala, asientos, cliente,
+        película y la reserva— y como se relacionan por id, resolverlos es trabajo del gestor. Se evaluó sacar
+        un "resolvedor" de función, sala, película y asientos, y se descartó: cada método usa una combinación
+        distinta y la clase nueva sería un pasamanos de repositorios que solo cambia el número de lugar. Lo que
+        sí vive afuera es lo que tiene regla propia: el precio en <code>CalculadoraPrecio</code>, lo ocupado
+        en <code>Ocupacion</code> y el alta del cliente sin registro en <code>GestorClientes</code>. Adentro, <code>reservar()</code> se lee en el orden del negocio —R19,
+        cliente, butacas, guardar, liberar el bloqueo, ticket— y el detalle va a <code>armarEntradas()</code>,
+        <code>butacaVendible()</code> (R4 y R9) y <code>emitirTicket()</code>.
       </p>
 
       <h3>Qué butacas están tomadas no es asunto de la reserva</h3>
       <p>
-        La novena dependencia es <code>Ocupacion</code>, y es una clase aparte por un motivo de sujeto: una
+        Una de esas dependencias es <code>Ocupacion</code>, y es una clase aparte por un motivo de sujeto: una
         butaca no está ocupada <em>en sí misma</em>, lo está <strong>para una función</strong>, si alguna
         reserva vigente de esa función la tomó. La pregunta es sobre la función, no sobre una reserva.
       </p>
@@ -3866,6 +3916,11 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
               <td><code>reserva.cliente_id</code> apunta a <code>usuario(id)</code> sin filtrar por rol: la base aceptaría una reserva a nombre de un administrador</td>
               <td><code>schema.sql</code></td>
               <td>Es el costo de la tabla única. Lo evita <code>ClienteRepository</code>, que filtra por el discriminador en todas sus consultas</td>
+            </tr>
+            <tr>
+              <td>Las entidades se relacionan por id, no con <code>@ManyToOne</code> (decidido: ver <a href="#grasp">Bajo acoplamiento</a>)</td>
+              <td><code>model/</code>, <code>service/</code></td>
+              <td>Cuando una vista necesita las asociaciones de muchas filas: sin cuidado es una consulta por fila. Hoy se paga indexando los catálogos una vez, como en <code>GestorReservas.buscar</code></td>
             </tr>
             <tr>
               <td>Las contraseñas son SHA-256 sin salt</td>
