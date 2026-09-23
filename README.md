@@ -45,6 +45,7 @@ pasa cuando el servidor rechaza una venta— está en
 | [`_other/COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md) | Cómo ponerlo a andar, paso a paso |
 | [`_other/docs/manual/index.html`](_other/docs/manual/index.html) | El manual: requerimientos, casos de uso, reglas, arquitectura y 18 diagramas |
 | [`cine-frontend/API.md`](cine-frontend/API.md) | El contrato HTTP, endpoint por endpoint |
+| [`_other/demo/cine-uade.postman_collection.json`](_other/demo/cine-uade.postman_collection.json) | La demo de la Etapa 1: GET, POST, PUT y DELETE, con casos exitosos y de error. Se importa en Postman, Bruno o Insomnia |
 | `localhost:8080/swagger-ui.html` | El mismo contrato, probable desde el navegador (con el sistema levantado) |
 
 ## Tareas
