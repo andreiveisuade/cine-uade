@@ -39,6 +39,16 @@ import ar.uade.cine.service.usuarios.GestorClientes;
  * El ciclo de vida de una reserva: nace al vender, se cancela, o se usa en la puerta.
  * Qué butacas están tomadas no se resuelve acá sino en {@link Ocupacion}: es un hecho
  * sobre la función, y así vender y dibujar el mapa usan la misma definición.
+ *
+ * <p><strong>Por qué el constructor recibe diez colaboradores.</strong> Seis son
+ * repositorios porque vender una entrada cruza seis agregados —función, sala, asientos,
+ * cliente, película y la reserva misma— y las entidades se relacionan por id (ver
+ * {@code Funcion}), así que resolver esas asociaciones es trabajo del gestor. Se evaluó
+ * sacar un "resolvedor" de función + sala + película + asientos, y no se hizo: cada método
+ * usa una combinación distinta (reservar no necesita la película hasta el ticket,
+ * {@code buscar} necesita los catálogos enteros), y la clase nueva sería un pasamanos de
+ * repositorios que solo movería el número de lugar. Lo que sí vive afuera es lo que tiene
+ * regla propia: el precio en {@link CalculadoraPrecio} y lo ocupado en {@link Ocupacion}.
  */
 @Service
 @Transactional
@@ -118,32 +128,10 @@ public class GestorReservas {
         if (butacas == null || butacas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
-
         Sala sala = salaRepository.findById(funcion.getSalaId())
                 .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + funcion.getSalaId()));
-        List<Asiento> deLaSala = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
-        Set<Integer> ocupados = ocupacion.asientosOcupados(funcionId, sesion);
 
-        List<Entrada> entradas = new ArrayList<>();
-        for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
-            TipoTarifa tarifa = pedido.getValue() == null ? TipoTarifa.GENERAL : pedido.getValue();
-            // Buscar entre los asientos de esta sala es lo que garantiza que la butaca
-            // pertenezca a la sala de la función: la base no lo puede validar sola.
-            Asiento asiento = Asiento.conCodigo(deLaSala, pedido.getKey())
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "La butaca " + Asiento.normalizarCodigo(pedido.getKey()) + " no existe en esa sala"));
-            // R9: una butaca fuera de servicio no se vende en ninguna función.
-            if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
-                throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
-            }
-            // R4: no se puede reservar una butaca ya tomada en esa función.
-            if (ocupados.contains(asiento.getId())) {
-                throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " ya está ocupada");
-            }
-            entradas.add(new Entrada(asiento, tarifa,
-                    calculadoraPrecio.precioDe(funcion, sala, asiento, tarifa)));
-        }
-
+        List<Entrada> entradas = armarEntradas(funcion, sala, butacas, sesion);
         Reserva reserva = guardarCompitiendoPorLasButacas(
                 new Reserva(funcionId, clienteId, entradas, reloj.ahora()));
         // Guardada la reserva, la butaca la retiene ella: el bloqueo cumplió su etapa.
@@ -153,10 +141,50 @@ public class GestorReservas {
         LOG.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
                 detalleDe(entradas), reserva.getTotal());
 
+        emitirTicket(reserva, funcion, sala, cliente);
+        return reserva;
+    }
+
+    /**
+     * Una entrada por butaca pedida, con su precio ya calculado. Los asientos de la sala y
+     * los ocupados se leen una sola vez para todo el pedido, no una vez por butaca.
+     */
+    private List<Entrada> armarEntradas(Funcion funcion, Sala sala, Map<String, TipoTarifa> butacas,
+                                        String sesion) {
+        List<Asiento> deLaSala = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        Set<Integer> ocupados = ocupacion.asientosOcupados(funcion.getId(), sesion);
+
+        List<Entrada> entradas = new ArrayList<>();
+        for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
+            TipoTarifa tarifa = pedido.getValue() == null ? TipoTarifa.GENERAL : pedido.getValue();
+            Asiento asiento = butacaVendible(deLaSala, pedido.getKey(), ocupados);
+            entradas.add(new Entrada(asiento, tarifa,
+                    calculadoraPrecio.precioDe(funcion, sala, asiento, tarifa)));
+        }
+        return entradas;
+    }
+
+    /** La butaca con ese código, si se puede vender en esta función; si no, por qué no. */
+    private static Asiento butacaVendible(List<Asiento> deLaSala, String codigo, Set<Integer> ocupados) {
+        // Buscar entre los asientos de esta sala es lo que garantiza que la butaca
+        // pertenezca a la sala de la función: la base no lo puede validar sola.
+        Asiento asiento = Asiento.conCodigo(deLaSala, codigo)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala"));
+        // R9: una butaca fuera de servicio no se vende en ninguna función.
+        if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
+            throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
+        }
+        // R4: no se puede reservar una butaca ya tomada en esa función.
+        if (ocupados.contains(asiento.getId())) {
+            throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " ya está ocupada");
+        }
+        return asiento;
+    }
+
+    private void emitirTicket(Reserva reserva, Funcion funcion, Sala sala, Cliente cliente) {
         Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId()).orElseThrow();
         generadorTicket.emitir(reserva, funcion, pelicula, sala, cliente);
-
-        return reserva;
     }
 
     /** R6 y R13: las reglas están en {@link Reserva#cancelar()}; acá se persiste y se registra. */
