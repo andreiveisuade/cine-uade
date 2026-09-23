@@ -21,15 +21,19 @@ import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.TipoAsiento;
-import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.cartelera.Clasificacion;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.GestorCaja;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
 /** R14: un combo tiene que costar menos que sus componentes sueltos. */
@@ -46,9 +50,13 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
     @Autowired
-    private ReservaRepository reservaRepository;
+    private GestorCartelera cartelera;
     @Autowired
-    private AsientoRepository asientoRepository;
+    private GestorSalas salas;
+    @Autowired
+    private GestorFunciones funciones;
+    @Autowired
+    private GestorReservas reservas;
 
     private int pochoclos;
     private int gaseosa;
@@ -205,10 +213,11 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void laCompraDesdeUnaReservaHeredaSuCliente() {
         Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Asiento asiento = asientoRepository.save(new Asiento(1, 1, 1, TipoAsiento.ESTANDAR));
-        Reserva reserva = reservaRepository.save(new Reserva(1, 1,
-                List.of(new Entrada(asiento, TipoTarifa.GENERAL, Dinero.de(5000))),
-                reloj.ahora()));
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5));
+        funciones.programar(1, 1, reloj.ahora().plusDays(1),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        Reserva reserva = reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL));
 
         CompraCandy compra = candy.venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");

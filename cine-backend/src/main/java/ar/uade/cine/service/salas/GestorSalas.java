@@ -102,7 +102,7 @@ public class GestorSalas {
                 && salaRepository.existsByNombreIgnoreCase(nombre.trim())) {
             throw new IllegalArgumentException("Ya existe una sala con ese nombre");
         }
-        if (tipo != sala.getTipo() && funcionRepository.existsBySalaId(id)) {
+        if (tipo != sala.getTipo() && funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(
                     "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
         }
@@ -157,7 +157,7 @@ public class GestorSalas {
         if (!salaRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la sala " + id);
         }
-        if (funcionRepository.existsBySalaId(id)) {
+        if (funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
         }

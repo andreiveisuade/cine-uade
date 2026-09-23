@@ -66,7 +66,7 @@ public class Ocupacion {
 
     /** Sin contar las que bloqueó esa sesión: a ella no le están ocupadas. */
     public Set<Integer> asientosOcupados(int funcionId, String sesion) {
-        List<Reserva> reservas = reservaRepository.findByFuncionId(funcionId);
+        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
         expirarVencidas(reservas);
         Set<Integer> ocupados = reservas.stream()
                 .filter(Reserva::estaVigente)

@@ -130,6 +130,8 @@ package "model.funciones" {
   ' getFin() es lo que hace legible la restriccion de superposicion R3, y
   ' yaEmpezo() es lo que sostiene R19.
   class Funcion <<Entity>> {
+    +getPelicula(): Pelicula
+    +getSala(): Sala
     +getPeliculaId(): int
     +getSalaId(): int
     +getProgramacionId(): Integer [0..1]
@@ -220,6 +222,8 @@ package "model.ventas" {
   ' es lo que define ese plazo.
   class Reserva <<Entity>> {
     {static} +MINUTOS_PARA_PAGAR: int = 30
+    +getFuncion(): Funcion
+    +getCliente(): Cliente
     +getFuncionId(): int
     +getClienteId(): int
     +getCreadaEn(): LocalDateTime
@@ -466,26 +470,19 @@ note as N1
 end note
 
 note as N2
-  **Las asociaciones se materializan por id.**
-  Ninguna entidad guarda una referencia al objeto:
-  Reserva tiene getFuncionId(): int, no getFuncion().
-  El diagrama dice QUE se relaciona con que y con
-  cuantos; el id es COMO se resuelve. Quien necesita
-  el objeto completo se lo pide al repositorio.
-  Se mantuvo asi incluso con JPA disponible: un
-  @ManyToOne navegable es la puerta de entrada mas
-  comun a un N+1 -cargar una reserva arrastraria su
-  funcion, su sala, su pelicula- y el id explicito
-  deja ese costo a la vista de quien lo pide.
+  **Entre agregados, @ManyToOne LAZY o id.**
+  Funcion -> Pelicula, Funcion -> Sala,
+  Reserva -> Funcion y Reserva -> Cliente son
+  @ManyToOne(fetch = LAZY): el gestor navega
+  funcion.getSala() adentro de su transaccion, y
+  getSalaId() lee el id del proxy sin ir a la base.
+  El resto (Programacion, Pago, CompraCandy,
+  Asiento.salaId) sigue por id.
 
-  Tiene una consecuencia visible en este diagrama:
-  **Funcion no sabe cuanto dura.** Solo tiene un
-  peliculaId, y la duracion vive en Pelicula. Por eso
-  getFin() la recibe por parametro
-  en vez de calcularla: guardar una copia seria un
-  segundo lugar donde vive el mismo dato, y bastaria
-  con corregir la duracion de una pelicula para que
-  las funciones ya creadas quedaran mintiendo.
+  **Funcion no sabe cuanto dura.** La duracion
+  vive en Pelicula, y getFin() la recibe por
+  parametro: una copia quedaria mintiendo si se
+  corrige la duracion de la pelicula.
 end note
 
 @enduml

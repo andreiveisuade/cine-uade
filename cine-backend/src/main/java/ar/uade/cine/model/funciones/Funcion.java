@@ -2,19 +2,23 @@ package ar.uade.cine.model.funciones;
 
 import java.time.LocalDateTime;
 
+import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 /**
- * Una película en una sala a una fecha y hora. Referencia película y sala por id y no con
- * {@code @ManyToOne}: son vecinos, no partes, y cargarlos en cada función sobra. Las
- * relaciones se mapean solo donde una cosa no existe sin la otra (entradas de una reserva).
+ * Una película en una sala a una fecha y hora. Película y sala son LAZY: listar funciones
+ * no tiene que traer ambas por fila, y los ids se leen del proxy sin ir a la base.
  */
 @Entity
 public class Funcion {
@@ -23,11 +27,13 @@ public class Funcion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "pelicula_id")
-    private int peliculaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pelicula_id", nullable = false)
+    private Pelicula pelicula;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    private Sala sala;
 
     /** {@code null} si se cargó a mano (preestreno, función especial). */
     @Column(name = "programacion_id")
@@ -48,15 +54,15 @@ public class Funcion {
     }
 
     /** Función suelta de CU-03, sin grilla. */
-    public Funcion(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio) {
-        this(peliculaId, salaId, inicio, version, proyeccion, precio, null);
+        this(pelicula, sala, inicio, version, proyeccion, precio, null);
     }
 
-    public Funcion(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio, Integer programacionId) {
-        this.peliculaId = peliculaId;
-        this.salaId = salaId;
+        this.pelicula = pelicula;
+        this.sala = sala;
         this.inicio = inicio;
         this.version = version;
         this.proyeccion = proyeccion;
@@ -68,12 +74,21 @@ public class Funcion {
         return id;
     }
 
+    public Pelicula getPelicula() {
+        return pelicula;
+    }
+
+    public Sala getSala() {
+        return sala;
+    }
+
+    /** No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas. */
     public int getPeliculaId() {
-        return peliculaId;
+        return pelicula.getId();
     }
 
     public int getSalaId() {
-        return salaId;
+        return sala.getId();
     }
 
     public Integer getProgramacionId() {
@@ -98,7 +113,7 @@ public class Funcion {
 
     @Override
     public String toString() {
-        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio
+        return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + inicio
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
     }
 

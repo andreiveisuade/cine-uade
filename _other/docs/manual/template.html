@@ -666,9 +666,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@Entity</code></td><td>La clase es una tabla y cada instancia una fila. Pide constructor sin argumentos e <code>@Id</code></td><td>Las 19 entidades</td></tr>
             <tr><td><code>@Table</code></td><td>Nombre de la tabla y restricciones de unicidad</td><td><code>Entrada</code>: <code>UNIQUE (funcion_id, asiento_id)</code> (R4)</td></tr>
             <tr><td><code>@Id</code> + <code>@GeneratedValue(IDENTITY)</code></td><td>Clave primaria generada por <code>AUTO_INCREMENT</code></td><td>Todas</td></tr>
-            <tr><td><code>@Column</code></td><td>Nombre de columna o restricción (<code>unique</code>)</td><td><code>Funcion.peliculaId</code>, <code>Reserva.codigo</code></td></tr>
+            <tr><td><code>@Column</code></td><td>Nombre de columna o restricción (<code>unique</code>)</td><td><code>Funcion.programacionId</code>, <code>Reserva.codigo</code></td></tr>
             <tr><td><code>@Enumerated(STRING)</code></td><td>El enum se guarda por nombre, no por posición: reordenarlo no corrompe datos</td><td>Estado, versión, clasificación…</td></tr>
-            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>Clave foránea cargada como objeto</td><td><code>Entrada.asiento</code>, <code>ItemCompra.producto</code></td></tr>
+            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>Clave foránea cargada como objeto; con <code>fetch = LAZY</code>, un proxy que va a la base recién cuando se lo usa</td><td><code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code> (LAZY); <code>Entrada.asiento</code>, <code>ItemCompra.producto</code></td></tr>
             <tr><td><code>@OneToMany(cascade = ALL, orphanRemoval)</code></td><td>Lista de hijas que se guardan y borran con la madre</td><td><code>Reserva.entradas</code>, <code>CompraCandy.items</code></td></tr>
             <tr><td><code>@ElementCollection</code> + <code>@CollectionTable</code></td><td>Lista de valores sin identidad en una tabla auxiliar</td><td><code>Pelicula.generos</code> → <code>pelicula_genero</code></td></tr>
             <tr><td><code>@Inheritance(SINGLE_TABLE)</code> + <code>@DiscriminatorColumn/Value</code></td><td>Jerarquía en una sola tabla; una columna dice la subclase</td><td><code>Promocion</code>, <code>Usuario</code></td></tr>
@@ -758,9 +758,9 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Modelo de dominio</h2>
       <p>
         Cada entidad es una clase <code>@Entity</code> sin interfaz; solo <code>Promocion</code> es jerarquía,
-        porque ahí el polimorfismo es real. Entre agregados la referencia es un id
-        (<code>peliculaId</code>, <code>salaId</code>); adentro de un agregado, el objeto (ver
-        <a href="#grasp">bajo acoplamiento</a>).
+        porque ahí el polimorfismo es real. Las asociaciones centrales son <code>@ManyToOne</code> LAZY
+        (<code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Reserva.funcion</code>,
+        <code>Reserva.cliente</code>); las demás, un id (ver <a href="#grasp">bajo acoplamiento</a>).
       </p>
 
       <figure class="diagram">
@@ -973,14 +973,15 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorReservas.reservar</code></td><td>R19 primero (función empezada); cliente existente o dado de alta por email; al menos una butaca; cada butaca existe <em>en esa sala</em>, no está fuera de servicio (R9) ni tomada en esa función (R4). El <code>UNIQUE</code> de la base cierra la carrera (409)</td></tr>
             <tr><td><code>GestorPagos.cobrar</code></td><td>R5 (solo <code>RESERVADA</code>, una vez), R11, R17 (no vencida), R19</td></tr>
             <tr><td><code>GestorReservas.cancelar</code></td><td>R13 (solo sin cobrar) y R6: pasa a <code>CANCELADA</code> y libera las butacas</td></tr>
-            <tr><td><code>GestorReservas.registrarIngreso</code></td><td>R18: pagada y una sola vez</td></tr>
+            <tr><td><code>GestorAcceso.registrarIngreso</code></td><td>R18: pagada y una sola vez</td></tr>
           </tbody>
         </table>
       </div>
       <p>
         <code>reservar()</code> se lee en el orden del negocio y delega el detalle en <code>armarEntradas()</code>,
-        <code>butacaVendible()</code> y <code>emitirTicket()</code>. Tiene once dependencias porque cruza seis
-        agregados relacionados por id; lo que tiene regla propia vive afuera: precio en
+        <code>butacaVendible()</code> y <code>emitirTicket()</code>. Tiene ocho dependencias: sala y película
+        las navega desde la función, la puerta es <code>GestorAcceso</code> y las búsquedas
+        <code>ConsultasReservas</code>. Lo que tiene regla propia vive afuera: precio en
         <code>CalculadoraPrecio</code>, ocupación en <code>Ocupacion</code>, alta del cliente en
         <code>GestorClientes</code> (en la misma transacción).
       </p>
@@ -1207,7 +1208,7 @@ POST /api/checkouts/MP-1234567890/confirmacion
       </p>
       <p>
         Las consultas se derivan del nombre del método; <code>@Query</code> solo donde el nombre no alcanza.
-        Varios buscadores (<code>GestorReservas.buscar</code>) filtran en memoria porque el criterio cruza cuatro
+        Varios buscadores (<code>ConsultasReservas.buscar</code>) filtran en memoria porque el criterio cruza cuatro
         tablas: es deuda anotada en <a href="#estado">Estado</a>.
       </p>
 
@@ -1309,7 +1310,7 @@ POST /api/checkouts/MP-1234567890/confirmacion
         <table>
           <thead><tr><th>Principio</th><th>Dónde se aplica</th><th>Qué evita</th></tr></thead>
           <tbody>
-            <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorPagos</code> cobra; <code>GestorCaja</code> arquea el día; <code>GestorInformes</code> corta por función. <code>GestorProductos</code> (carta) y <code>GestorCandy</code> (ventas)</td><td>Que un cambio en cómo se cobra toque cómo se declara la caja</td></tr>
+            <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende; <code>GestorAcceso</code> valida la puerta; <code>ConsultasReservas</code> busca. <code>GestorPagos</code> cobra; <code>GestorCaja</code> arquea el día; <code>GestorInformes</code> corta por función. <code>GestorProductos</code> (carta) y <code>GestorCandy</code> (ventas)</td><td>Que un cambio en cómo se cobra toque cómo se declara la caja</td></tr>
             <tr><td><strong>O</strong> · Abierto/cerrado</td><td><code>Promocion.calcularDescuento()</code>: un tipo nuevo es una subclase; el cobro no tiene <code>switch</code></td><td>Editar y volver a probar el cobro por cada promoción nueva</td></tr>
             <tr><td><strong>L</strong> · Liskov</td><td><code>BloqueoButacasRedis</code> y <code>BloqueoButacasMemoria</code> cumplen el mismo contrato; Redis caído degrada a «sin bloqueos», que es un estado válido</td><td>Que el que llama tenga que saber qué implementación le tocó</td></tr>
             <tr><td><strong>I</strong> · Segregación de interfaces</td><td><code>GestorPagos</code> depende de <code>PoliticaPromociones</code> (un método, <code>calcularPara</code>), no del ABM entero de <code>GestorPromociones</code></td><td>Que un cambio en el ABM rompa el cobro</td></tr>
@@ -1363,7 +1364,7 @@ POST /api/checkouts/MP-1234567890/confirmacion
             <tr><td><strong>Controlador</strong></td><td>Cada <code>*Controller</code> parsea, llama al gestor y devuelve lo que arma su <code>Vistas*</code>. Por eso la mayoría de los tests llama a los gestores sin HTTP</td></tr>
             <tr><td><strong>Polimorfismo</strong></td><td>Los enums <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code> llevan su <code>multiplicadorPrecio</code>; <code>CalculadoraPrecio.precioDe</code> los combina sin preguntar cuál es. Y las subclases de <code>Promocion</code></td></tr>
             <tr><td><strong>Indirección / variaciones protegidas</strong></td><td>Dónde se guarda (<code>*Repository</code>), con qué se cobra (<code>PasarelaPagos</code>), en qué sale el comprobante (<code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorBordero</code>), cómo se decide un descuento (<code>PoliticaPromociones</code>)</td></tr>
-            <tr><td><strong>Bajo acoplamiento</strong></td><td>Todo entra por constructor; cada controlador recibe solo sus gestores y su vista; entre agregados un id, adentro el objeto</td></tr>
+            <tr><td><strong>Bajo acoplamiento</strong></td><td>Todo entra por constructor; cada controlador recibe solo sus gestores y su vista; asociaciones LAZY y, fuera del núcleo, un id</td></tr>
             <tr><td><strong>Alta cohesión</strong></td><td>Un subpaquete por subdominio</td></tr>
           </tbody>
         </table>
@@ -1374,13 +1375,16 @@ POST /api/checkouts/MP-1234567890/confirmacion
         <figcaption>Tres clases que no son entidades y existen porque el modelo las pedía</figcaption>
       </figure>
 
-      <h3>Entre agregados, un id</h3>
+      <h3>Relaciones LAZY entre agregados</h3>
       <p>
-        <code>Funcion</code> guarda <code>peliculaId</code> y <code>salaId</code>, y <code>Reserva</code> guarda
-        <code>funcionId</code> y <code>clienteId</code>, en vez de <code>@ManyToOne</code>. Cada una es raíz de su
-        agregado con su propio repositorio; con referencias, leer una reserva arrastraría función, película con
-        géneros y sala con asientos. El gestor resuelve la asociación cuando la necesita y el costo queda a la
-        vista. Adentro del agregado sí va el objeto: <code>Reserva.entradas</code> con <code>Entrada.asiento</code>.
+        <code>Funcion → Pelicula</code>, <code>Funcion → Sala</code>, <code>Reserva → Funcion</code> y
+        <code>Reserva → Cliente</code> son <code>@ManyToOne(fetch = LAZY)</code> sobre las mismas columnas
+        <code>*_id</code>. LAZY porque con EAGER leer una reserva arrastraría función, película con géneros y sala.
+        Con <code>open-in-view: false</code> no hay sesión fuera del gestor, así que se navega
+        (<code>funcion.getSala()</code>) solo adentro de su transacción; las vistas usan
+        <code>getSalaId()</code>, que lee el id del proxy sin ir a la base. Programación, pago, candy y
+        <code>Asiento.salaId</code> siguen por id. Adentro del agregado va el objeto:
+        <code>Reserva.entradas</code> con <code>Entrada.asiento</code>.
       </p>
 
       <h3>Patrones de diseño clásicos</h3>
@@ -1749,7 +1753,7 @@ mvn clean test       # 416 tests; los 4 de BloqueoButacasRedisTest se saltean si
             <tr><td>Spring Boot + Spring Data JPA</td><td>DAO con JDBC a mano</td><td>El repositorio es la interfaz y Spring Data pone la implementación: DIP sin código de persistencia propio</td></tr>
             <tr><td>Paquetes por capa y, adentro, por subdominio</td><td>Agrupar por tipo de archivo</td><td>La carpeta dice de qué se ocupa el código; lo que cambia junto vive junto</td></tr>
             <tr><td>Entidades <code>@Entity</code> sin interfaz (salvo <code>Promocion</code>)</td><td>Interfaz + <code>Impl</code> por entidad</td><td>Una interfaz con un solo implementador no separa nada; la abstracción útil está en el repositorio</td></tr>
-            <tr><td>Entre agregados, un id</td><td><code>@ManyToOne</code> en todas las relaciones</td><td>Evita cadenas de carga y deja el costo a la vista</td></tr>
+            <tr><td><code>@ManyToOne</code> LAZY en las asociaciones centrales</td><td>Ids sueltos, o <code>@ManyToOne</code> EAGER</td><td>El ORM conoce la relación y el gestor navega; LAZY evita cadenas de carga</td></tr>
             <tr><td>DTO propios</td><td>Serializar entidades</td><td>El contrato HTTP no se ata a la forma interna del dominio</td></tr>
             <tr><td>Reglas en el gestor <em>y</em> restricciones en la base</td><td>Solo una de las dos</td><td>El gestor da el mensaje claro; el <code>UNIQUE</code> cierra la carrera</td></tr>
             <tr><td>Validar antes de borrar (R12)</td><td>Dejar fallar la <code>FOREIGN KEY</code></td><td>Mensaje entendible en vez de error de SQL</td></tr>

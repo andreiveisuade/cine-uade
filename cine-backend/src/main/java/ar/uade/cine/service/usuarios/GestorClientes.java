@@ -68,7 +68,7 @@ public class GestorClientes {
         if (!clienteRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe el cliente " + id);
         }
-        if (reservaRepository.existsByClienteId(id)) {
+        if (reservaRepository.existsByCliente_Id(id)) {
             throw new IllegalArgumentException("El cliente " + id + " tiene reservas: no se puede eliminar");
         }
         if (compraCandyRepository.existsByClienteId(id)) {

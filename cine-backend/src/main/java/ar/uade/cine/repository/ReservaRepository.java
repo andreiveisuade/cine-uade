@@ -17,12 +17,12 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
     /** Por código y no por id: es la única credencial del cliente, y el id se adivina. */
     Optional<Reserva> findByCodigo(String codigo);
 
-    List<Reserva> findByFuncionId(int funcionId);
+    List<Reserva> findByFuncion_Id(int funcionId);
 
-    List<Reserva> findByClienteIdOrderByCreadaEnDesc(int clienteId);
+    List<Reserva> findByCliente_IdOrderByCreadaEnDesc(int clienteId);
 
     /** R12, sin cargar reservas con sus entradas. */
-    boolean existsByFuncionId(int funcionId);
+    boolean existsByFuncion_Id(int funcionId);
 
-    boolean existsByClienteId(int clienteId);
+    boolean existsByCliente_Id(int clienteId);
 }

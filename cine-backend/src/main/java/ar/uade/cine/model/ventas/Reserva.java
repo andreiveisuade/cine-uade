@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.usuarios.Cliente;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +18,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 /**
@@ -38,11 +41,14 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "funcion_id")
-    private int funcionId;
+    /** LAZY como en {@link Funcion}: los ids salen del proxy y el resto solo si se navega. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "funcion_id", nullable = false)
+    private Funcion funcion;
 
-    @Column(name = "cliente_id")
-    private int clienteId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cliente_id", nullable = false)
+    private Cliente cliente;
 
     private LocalDateTime creadaEn;
 
@@ -63,14 +69,14 @@ public class Reserva {
     protected Reserva() {
     }
 
-    public Reserva(int funcionId, int clienteId, List<Entrada> entradas, LocalDateTime creadaEn) {
-        this.funcionId = funcionId;
-        this.clienteId = clienteId;
+    public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
+        this.funcion = funcion;
+        this.cliente = cliente;
         this.creadaEn = creadaEn;
         this.codigo = generarCodigo();
         this.estado = EstadoReserva.RESERVADA;
         entradas.forEach(entrada -> {
-            entrada.ocupar(funcionId);
+            entrada.ocupar(funcion.getId());
             this.entradas.add(entrada);
         });
     }
@@ -87,12 +93,20 @@ public class Reserva {
         return id;
     }
 
+    public Funcion getFuncion() {
+        return funcion;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
     public int getFuncionId() {
-        return funcionId;
+        return funcion.getId();
     }
 
     public int getClienteId() {
-        return clienteId;
+        return cliente.getId();
     }
 
     public LocalDateTime getCreadaEn() {
@@ -178,7 +192,7 @@ public class Reserva {
 
     @Override
     public String toString() {
-        return "[" + id + "] función " + funcionId + " - cliente " + clienteId
+        return "[" + id + "] función " + getFuncionId() + " - cliente " + getClienteId()
                 + " - butacas " + entradas + " - " + estado;
     }
 }

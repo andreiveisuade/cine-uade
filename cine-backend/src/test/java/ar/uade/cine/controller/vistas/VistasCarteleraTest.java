@@ -31,7 +31,6 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Sala;
@@ -182,8 +181,9 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
     /** 404 y no 500: el front muestra mensajes distintos. */
     @Test
     void unaFuncionSinSalaEsUnRecursoQueNoExiste() {
-        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        Funcion huerfana = new Funcion(1, 99, LocalDateTime.of(2026, 8, 20, 20, 0),
+        Pelicula matrix = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Sala sinGuardar = new Sala("Sala 9", TipoSala.DOS_D, 15);
+        Funcion huerfana = new Funcion(matrix, sinGuardar, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         assertThrows(NoEncontrado.class, () -> vistas.funcion(huerfana));
@@ -192,7 +192,8 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
     @Test
     void unaFuncionSinPeliculaNoRompeElListado() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
-        Funcion sinPelicula = new Funcion(99, sala.getId(),
+        Pelicula sinGuardar = new Pelicula("Fantasma", 100, List.of(Genero.DRAMA), Clasificacion.ATP);
+        Funcion sinPelicula = new Funcion(sinGuardar, sala,
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         FuncionVistaDTO vista = vistas.funcionConPelicula(sinPelicula);

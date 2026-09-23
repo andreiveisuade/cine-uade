@@ -36,8 +36,8 @@ spring:
       # su tabla dejan de coincidir la aplicacion no arranca y el error dice cual.
       ddl-auto: validate
     # Sin sesion abierta durante la respuesta HTTP: las entidades se leen completas dentro
-    # del servicio —por eso las colecciones son EAGER— y el controlador ya trabaja con
-    # objetos cerrados. Dejarlo en true esconde consultas que salen mientras se serializa
+    # del servicio —por eso las colecciones son EAGER, y los @ManyToOne LAZY se navegan
+    # solo ahi— y el controlador ya trabaja con objetos cerrados. Dejarlo en true esconde consultas que salen mientras se serializa
     # el JSON, y es el default que Spring Boot avisa por log que conviene apagar.
     open-in-view: false
 

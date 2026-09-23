@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.EstadoAsiento;
@@ -26,9 +25,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
-import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
 /**
@@ -44,26 +41,21 @@ public class GestorReservas {
 
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
-    private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
     private final GestorClientes clientes;
-    private final PeliculaRepository peliculaRepository;
     private final GeneradorTicket generadorTicket;
     private final CalculadoraPrecio calculadoraPrecio;
     private final Ocupacion ocupacion;
     private final Reloj reloj;
 
-    public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository, SalaRepository salaRepository,
+    public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository,
                           AsientoRepository asientoRepository, GestorClientes clientes,
-                          PeliculaRepository peliculaRepository,
                           GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio,
                           Ocupacion ocupacion, Reloj reloj) {
         this.reservaRepository = reservaRepository;
         this.funcionRepository = funcionRepository;
-        this.salaRepository = salaRepository;
         this.asientoRepository = asientoRepository;
         this.clientes = clientes;
-        this.peliculaRepository = peliculaRepository;
         this.generadorTicket = generadorTicket;
         this.calculadoraPrecio = calculadoraPrecio;
         this.ocupacion = ocupacion;
@@ -102,12 +94,11 @@ public class GestorReservas {
         if (butacas == null || butacas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
-        Sala sala = salaRepository.findById(funcion.getSalaId())
-                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + funcion.getSalaId()));
+        Sala sala = funcion.getSala();
 
         List<Entrada> entradas = armarEntradas(funcion, sala, butacas, sesion);
         Reserva reserva = guardarCompitiendoPorLasButacas(
-                new Reserva(funcionId, clienteId, entradas, reloj.ahora()));
+                new Reserva(funcion, cliente, entradas, reloj.ahora()));
         // Desde acá la butaca la retiene la reserva, no el bloqueo.
         if (sesion != null) {
             ocupacion.liberar(funcionId, sesion);
@@ -152,8 +143,7 @@ public class GestorReservas {
     }
 
     private void emitirTicket(Reserva reserva, Funcion funcion, Sala sala, Cliente cliente) {
-        Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId()).orElseThrow();
-        generadorTicket.emitir(reserva, funcion, pelicula, sala, cliente);
+        generadorTicket.emitir(reserva, funcion, funcion.getPelicula(), sala, cliente);
     }
 
     /** R6 y R13, en {@link Reserva#cancelar()}. */

@@ -14,6 +14,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
@@ -26,12 +28,11 @@ import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
-import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -71,9 +72,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     @Autowired
     private AsientoRepository asientoRepository;
     @Autowired
-    private SalaRepository salaRepository;
-    @Autowired
-    private PeliculaRepository peliculaRepository;
+    private PlatformTransactionManager transacciones;
 
     private LocalDateTime ahora;
 
@@ -220,15 +219,17 @@ class OcupacionTest extends PruebaDeIntegracion {
                 asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999), reloj);
 
         GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
-                salaRepository, asientoRepository, clientes, peliculaRepository,
+                asientoRepository, clientes,
                 new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
                 calculadoraPrecio, sinRedis, reloj);
 
         assertEquals(List.of("A1"), sinRedis.bloquear(1, List.of("A1"), ANA),
                 "nadie la tiene tomada, así que se la lleva");
         assertEquals(10, sinRedis.lugaresLibres(1), "pero no queda anotada en ningún lado");
-        assertEquals(1, ventaSinRedis.reservar(1, 1, generales("A1"), ANA).getCantidadEntradas(),
-                "y la reserva sale igual");
+        // Armado a mano no tiene el proxy de @Transactional: la transacción la abre el test.
+        Reserva reserva = new TransactionTemplate(transacciones)
+                .execute(estado -> ventaSinRedis.reservar(1, 1, generales("A1"), ANA));
+        assertEquals(1, reserva.getCantidadEntradas(), "y la reserva sale igual");
     }
 
     private List<String> codigosLibres(String sesion) {

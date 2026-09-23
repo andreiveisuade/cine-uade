@@ -65,8 +65,9 @@ public class GestorFunciones {
             throw new IllegalArgumentException(
                     motivoDeLaSuperposicion(choque.get(), salaId, inicio));
         }
-        Funcion funcion = new Funcion(peliculaId, salaId, inicio, version, proyeccion, precio,
-                programacionId);
+        // Ya validada arriba: la referencia sale de la sesión, sin otra consulta.
+        Funcion funcion = new Funcion(pelicula, salaRepository.getReferenceById(salaId), inicio,
+                version, proyeccion, precio, programacionId);
         funcionRepository.save(funcion);
         return funcion;
     }
@@ -128,7 +129,7 @@ public class GestorFunciones {
      */
     public AgendaDeSala agendaDe(int salaId) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
-        List<Funcion> funciones = funcionRepository.findBySalaId(salaId);
+        List<Funcion> funciones = funcionRepository.findBySala_Id(salaId);
         Map<Integer, Integer> duraciones = peliculaRepository
                 .findAllById(funciones.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Pelicula::getId, Pelicula::getDuracionMinutos));
@@ -156,7 +157,7 @@ public class GestorFunciones {
     }
 
     public List<Funcion> listarPorPelicula(int peliculaId) {
-        return funcionRepository.findByPeliculaId(peliculaId);
+        return funcionRepository.findByPelicula_Id(peliculaId);
     }
 
     public Optional<Funcion> buscar(int id) {
@@ -168,7 +169,7 @@ public class GestorFunciones {
         if (!funcionRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la función " + id);
         }
-        if (reservaRepository.existsByFuncionId(id)) {
+        if (reservaRepository.existsByFuncion_Id(id)) {
             throw new IllegalArgumentException(
                     "La función " + id + " tiene reservas: no se puede eliminar");
         }

@@ -9,13 +9,13 @@ import ar.uade.cine.model.funciones.Funcion;
 /** Los {@code exists} son para R12, que solo necesita saber si hay alguna. */
 public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
 
-    List<Funcion> findByPeliculaId(int peliculaId);
+    List<Funcion> findByPelicula_Id(int peliculaId);
 
-    List<Funcion> findBySalaId(int salaId);
+    List<Funcion> findBySala_Id(int salaId);
 
     List<Funcion> findByProgramacionId(int programacionId);
 
-    boolean existsByPeliculaId(int peliculaId);
+    boolean existsByPelicula_Id(int peliculaId);
 
-    boolean existsBySalaId(int salaId);
+    boolean existsBySala_Id(int salaId);
 }

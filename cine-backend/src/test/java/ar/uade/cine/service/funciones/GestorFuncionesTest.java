@@ -259,7 +259,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {
-        return new Funcion(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+        return new Funcion(null, null, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 

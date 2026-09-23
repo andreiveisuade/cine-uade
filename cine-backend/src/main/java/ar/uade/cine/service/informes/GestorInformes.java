@@ -77,7 +77,7 @@ public class GestorInformes {
         Dinero bruta = Dinero.CERO;
         Dinero descuentos = Dinero.CERO;
         Dinero neta = Dinero.CERO;
-        List<Reserva> reservas = reservaRepository.findByFuncionId(funcionId);
+        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
         Map<Integer, Pago> pagosPorReserva = new HashMap<>();
         for (Pago cobro : pagoRepository.findByReservaIdIn(reservas.stream().map(Reserva::getId).toList())) {
             pagosPorReserva.put(cobro.getReservaId(), cobro);
@@ -124,7 +124,7 @@ public class GestorInformes {
         Bordero bordero = borderoDe(funcionId);
 
         // Una compra del candy nace cobrada.
-        List<Integer> reservas = reservaRepository.findByFuncionId(funcionId).stream()
+        List<Integer> reservas = reservaRepository.findByFuncion_Id(funcionId).stream()
                 .map(Reserva::getId).toList();
         List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(reservas);
         Dinero candy = Dinero.sumar(compras.stream().map(CompraCandy::getTotal).toList());

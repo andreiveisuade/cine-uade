@@ -376,14 +376,15 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
 
     /** Por el repositorio: el gestor no deja programar en el pasado. */
-    private int funcionQueYaEmpezo() {
-        return funcionRepository.save(new Funcion(1, 1, reloj.ahora().minusMinutes(30),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
+    private Funcion funcionQueYaEmpezo() {
+        return funcionRepository.save(new Funcion(cartelera.buscar(1).orElseThrow(),
+                salas.buscar(1).orElseThrow(), reloj.ahora().minusMinutes(30),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @Test
     void noSeReservaUnaFuncionQueYaEmpezo() {
-        int empezada = funcionQueYaEmpezo();
+        int empezada = funcionQueYaEmpezo().getId();
 
         assertThrows(IllegalArgumentException.class,
                 () -> reservas.reservar(empezada, 1, generales("A1")));
@@ -402,9 +403,9 @@ class GestorReservasTest extends PruebaDeIntegracion {
      */
     @Test
     void noSeCobraUnaReservaCuyaFuncionYaEmpezo() {
-        int empezada = funcionQueYaEmpezo();
+        Funcion empezada = funcionQueYaEmpezo();
         Asiento butaca = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).get(0);
-        Reserva reserva = reservaRepository.save(new Reserva(empezada, 1,
+        Reserva reserva = reservaRepository.save(new Reserva(empezada, clientes.buscar(1).orElseThrow(),
                 List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));

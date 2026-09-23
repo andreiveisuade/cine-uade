@@ -42,7 +42,7 @@ public class ConsultasReservas {
     }
 
     public List<Reserva> listarPorCliente(int clienteId) {
-        return reservaRepository.findByClienteIdOrderByCreadaEnDesc(clienteId);
+        return reservaRepository.findByCliente_IdOrderByCreadaEnDesc(clienteId);
     }
 
     /**

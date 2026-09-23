@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,9 @@ import ar.uade.cine.repository.ProgramacionRepository;
 import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
+import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
@@ -45,16 +49,27 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorRevisionCartelera revision;
+    @Autowired
+    private SalaRepository salaRepository;
+
+    private Sala sala;
 
     /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
     private void programarProxima(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, reloj.ahora().plusDays(7),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        programar(peliculaId, reloj.ahora().plusDays(7));
     }
 
     private void programarPasada(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, reloj.ahora().minusDays(1),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        programar(peliculaId, reloj.ahora().minusDays(1));
+    }
+
+    /** Por el repositorio: el gestor no deja programar en el pasado ni sin confirmar. */
+    private void programar(int peliculaId, LocalDateTime inicio) {
+        if (sala == null) {
+            sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
+        }
+        funcionRepository.save(new Funcion(peliculaRepository.findById(peliculaId).orElseThrow(), sala,
+                inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @Test
@@ -403,7 +418,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
-        assertTrue(funcionRepository.findByPeliculaId(pelicula.getId()).isEmpty());
+        assertTrue(funcionRepository.findByPelicula_Id(pelicula.getId()).isEmpty());
         assertEquals(1, gestor.listar().size());
     }
 }

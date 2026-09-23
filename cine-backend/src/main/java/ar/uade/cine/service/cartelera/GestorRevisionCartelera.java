@@ -57,7 +57,7 @@ public class GestorRevisionCartelera {
     /** Descartada en vez de borrada: si no, la próxima corrida la traería de nuevo. */
     public Pelicula descartar(int id) {
         Pelicula pelicula = exigir(id);
-        if (funcionRepository.existsByPeliculaId(id)) {
+        if (funcionRepository.existsByPelicula_Id(id)) {
             throw new IllegalArgumentException(
                     "No se puede descartar una película que ya tiene funciones programadas");
         }

@@ -194,7 +194,7 @@ public class GestorCartelera {
     public void eliminar(int id) {
         Pelicula pelicula = peliculaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
-        if (funcionRepository.existsByPeliculaId(id)) {
+        if (funcionRepository.existsByPelicula_Id(id)) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
         }
