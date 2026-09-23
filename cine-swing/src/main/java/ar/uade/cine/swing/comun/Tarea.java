@@ -2,8 +2,6 @@ package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ErrorApi;
 
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -20,12 +18,9 @@ public final class Tarea {
     private Tarea() {
     }
 
-    /** El error se muestra tal cual lo mandó el backend, en un diálogo sobre {@code origen}. */
+    /** Sin formulario al que atarlo, el error es global: va en un diálogo, ver {@link Mensajes#error}. */
     public static <T> void ejecutar(Component origen, Callable<T> trabajo, Consumer<T> alTerminar) {
-        ejecutar(origen, trabajo, alTerminar, error -> {
-            // El 401 ya lo atiende ApiHttp mandando al login, que dice por qué: un diálogo encima sería ruido.
-            if (!error.esSesionVencida()) mostrarError(origen, error);
-        });
+        ejecutar(origen, trabajo, alTerminar, error -> Mensajes.error(origen, error));
     }
 
     public static <T> void ejecutar(Component origen, Callable<T> trabajo, Consumer<T> alTerminar,
@@ -57,10 +52,5 @@ public final class Tarea {
                 alTerminar.accept(resultado);
             }
         }.execute();
-    }
-
-    public static void mostrarError(Component origen, ErrorApi error) {
-        JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(origen), error.getMessage(),
-                error.esSinConexion() ? "Sin conexión con el servidor" : "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

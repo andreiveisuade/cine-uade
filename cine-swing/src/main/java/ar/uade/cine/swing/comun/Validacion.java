@@ -270,10 +270,16 @@ public final class Validacion {
 
     /**
      * El rechazo del backend, tal cual llegó. Si nombra uno de los campos leídos, se marca: "El precio debe ser mayor
-     * a cero" marca el precio. Es solo una ayuda para encontrarlo; el texto es el del backend.
+     * a cero" marca el precio. Es solo una ayuda para encontrarlo; el texto es el del backend. Solo un rechazo de lo
+     * que se mandó es del formulario: sin conexión, un 500 o un 409 no se arreglan tocando un campo y van al diálogo de
+     * errores globales.
      */
     public void mostrarError(ErrorApi error) {
         if (error.esSesionVencida()) return;
+        if (!error.esDelFormulario()) {
+            Mensajes.error(mensaje, error);
+            return;
+        }
         mostrar(List.of(error.getMessage()));
         String texto = error.getMessage().toLowerCase(Locale.ROOT);
         nombrados.stream()

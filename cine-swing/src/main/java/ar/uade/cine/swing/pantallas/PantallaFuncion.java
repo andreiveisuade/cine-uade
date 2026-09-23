@@ -8,9 +8,9 @@ import ar.uade.cine.swing.api.dto.InformeFuncion;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.api.dto.Total;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
-import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.informes.BorderoTxt;
 
 import javax.swing.BorderFactory;
@@ -161,7 +161,7 @@ final class PantallaFuncion extends Pantalla {
                     Files.writeString(destino, BorderoTxt.escribir(emision.bordero(), emision.tarifas()),
                             StandardCharsets.UTF_8);
                 } catch (IOException ex) {
-                    Tarea.mostrarError(this, new ErrorApi(-1, "No se pudo guardar el borderó: " + ex.getMessage()));
+                    Mensajes.error(this, new ErrorApi(-1, "No se pudo guardar el borderó: " + ex.getMessage()));
                     return;
                 }
                 avisar("Borderó emitido: " + emision.bordero().espectadores() + " espectadores, "

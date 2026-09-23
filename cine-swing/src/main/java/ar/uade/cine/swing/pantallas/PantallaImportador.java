@@ -8,6 +8,7 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -126,7 +127,7 @@ final class PantallaImportador extends Pantalla {
         Tarea.ejecutar(this, () -> api.importarAhora(cuantas), corrida -> {
             terminar();
             if ("FALLIDA".equals(corrida.estado())) {
-                Tarea.mostrarError(this, new ErrorApi(-1, resumen(corrida)));
+                Mensajes.error(this, new ErrorApi(-1, resumen(corrida)));
             } else {
                 avisar(resumen(corrida));
             }

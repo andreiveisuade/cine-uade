@@ -54,3 +54,19 @@ cada promoción de `campos` de `/api/tipos-promocion`, y Cobrar y Cancelar se ha
 
 Un 401 fuera del login cierra el panel y vuelve al login. Las credenciales viven en memoria
 y se van al cerrar la app.
+
+## Dónde va cada mensaje
+
+Todo pasa por `comun/Mensajes`; cambiar la política toca ese archivo.
+
+| Tipo de mensaje | Dónde se muestra |
+|---|---|
+| Error de un campo: formato, obligatorio o un 400 del backend | En línea, junto al formulario, con el campo marcado (`Validacion`) |
+| Error global: sin conexión, 500, 409, 403, o un 400 sin formulario | Diálogo de error con el texto del backend (`Mensajes.error`). El 401 vuelve al login |
+| Acción destructiva o sin vuelta atrás (borrar, dar de baja, cobrar, cancelar una reserva) | Confirmación con el verbo en el botón, «Sí, borrar» / «Cancelar» (`Mensajes.confirmar`) |
+| Éxito | Barra de estado en verde, que se borra sola (`Mensajes.exito`). Sin diálogo |
+
+Si el servidor contesta un error sin el `{"error": "…"}` del backend (el HTML de un nginx con el
+backend reiniciando, un cuerpo vacío), `ApiHttp` no lo muestra: lo escribe en la consola y en
+pantalla queda un mensaje según el código. El porqué de la política está en el manual, en
+«Panel del encargado (Swing)».

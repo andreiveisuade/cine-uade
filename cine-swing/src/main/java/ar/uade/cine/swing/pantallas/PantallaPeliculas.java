@@ -142,11 +142,15 @@ final class PantallaPeliculas extends Pantalla {
         JButton publicar = new JButton("Publicar / despublicar");
         JButton borrar = new JButton("Borrar");
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(this::editar));
-        publicar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> accion(
-                () -> api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
-                p.enCartelera() ? "Despublicada" : "Publicada", this::recargar)));
+        publicar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
+            // Despublicar la baja de la cartelera del cliente aunque tenga funciones: se pregunta. Publicar no.
+            if (p.enCartelera() && !confirmar("¿Despublicar " + p.titulo() + "? Deja de verse en la cartelera "
+                    + "aunque tenga funciones.", "Sí, despublicar")) return;
+            accion(() -> api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
+                    p.enCartelera() ? "Despublicada" : "Publicada", this::recargar);
+        }));
         borrar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
-            if (!confirmar("¿Borrar " + p.titulo() + "?")) return;
+            if (!confirmar("¿Borrar " + p.titulo() + "?", "Sí, borrar")) return;
             accion(() -> {
                 api.eliminarPelicula(p.id());
                 return null;

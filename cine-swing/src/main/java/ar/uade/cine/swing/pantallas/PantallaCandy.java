@@ -15,6 +15,7 @@ import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -134,8 +135,12 @@ final class PantallaCandy extends Pantalla {
             tabla.tabla().getSelectionModel().addListSelectionListener(e -> habilitar());
             tabla.alDobleClic(this::editar);
             editar.addActionListener(e -> tabla.seleccionada().ifPresent(this::editar));
-            alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
-                    accion(() -> api.cambiarDisponibilidadCandy(p.id(), !p.disponible()), null, this::recargar)));
+            alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
+                if (p.disponible() && !confirmar("¿Sacar " + p.nombre() + " de la carta? Deja de venderse en el "
+                        + "mostrador.", "Sí, sacar")) return;
+                accion(() -> api.cambiarDisponibilidadCandy(p.id(), !p.disponible()),
+                        p.nombre() + (p.disponible() ? " salió de la carta" : " volvió a la carta"), this::recargar);
+            }));
             habilitar();
             // Qué tipos se dan de alta sueltos lo dice el catálogo: el combo se arma abajo, con sus componentes.
             cargar(api::obtenerTiposProducto, tipos -> tipos.stream().filter(t -> !t.esCombo())
@@ -247,7 +252,7 @@ final class PantallaCandy extends Pantalla {
         }
 
         // Nombre y precio: lo único que el backend deja cambiar. Con un campo mal, el diálogo vuelve a abrirse con el
-        // motivo en vez de cerrarse y perder lo tipeado.
+        // motivo en vez de cerrarse y perder lo tipeado; también si el que lo rechaza es el backend.
         private void editar(Producto p) {
             JTextField nombre = new JTextField(p.nombre(), 20);
             JTextField valor = Campos.soloDecimal(new JTextField(p.precio() % 1 == 0
@@ -260,6 +265,17 @@ final class PantallaCandy extends Pantalla {
                 formulario.ancho(Componentes.nota("Trae " + componentesDe(p) + ". Los componentes se fijan al armarlo."));
             }
             formulario.ancho(error);
+            editar(p, formulario, nombre, valor, error, null);
+        }
+
+        private void editar(Producto p, Componentes.Formulario formulario, JTextField nombre, JTextField valor,
+                            JLabel error, ErrorApi rechazo) {
+            if (rechazo != null) {
+                Validacion v = new Validacion(error);
+                v.texto(nombre, "Nombre", true);
+                v.decimal(valor, "Precio", true);
+                v.mostrarError(rechazo);
+            }
             while (true) {
                 int opcion = JOptionPane.showConfirmDialog(this, formulario, "Editar " + p.nombre(),
                         JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -268,8 +284,13 @@ final class PantallaCandy extends Pantalla {
                 String nuevoNombre = v.texto(nombre, "Nombre", true);
                 Double nuevoPrecio = v.decimal(valor, "Precio", true);
                 if (v.ok()) {
-                    accion(() -> api.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio), "Producto actualizado",
-                            this::recargar);
+                    Tarea.ejecutar(this, () -> api.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio), editado -> {
+                        avisar("Producto actualizado");
+                        recargar();
+                    }, e -> {
+                        if (e.esDelFormulario()) editar(p, formulario, nombre, valor, error, e);
+                        else Mensajes.error(this, e);
+                    });
                     return;
                 }
             }
@@ -420,6 +441,12 @@ final class PantallaCandy extends Pantalla {
             Map<Integer, Integer> pedidas = elegidas(cantidades);
             // Si el código hace falta (R11) lo decide el backend: acá solo se deja de mandar donde no aplica.
             String autorizacion = requiereCodigo() ? codigo.getText().trim() : "";
+            // Sin nada elegido no se pregunta: el backend lo rechaza y el motivo aparece junto al formulario.
+            int unidades = pedidas.values().stream().mapToInt(Integer::intValue).sum();
+            if (unidades > 0 && !confirmar("¿Cobrar " + unidades + (unidades == 1 ? " producto" : " productos")
+                    + " en " + etiqueta(medioElegido).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) {
+                return;
+            }
             Tarea.ejecutar(this, () -> {
                 Integer clienteId = null;
                 // Con reserva el email sobra: el backend toma el cliente de la reserva.

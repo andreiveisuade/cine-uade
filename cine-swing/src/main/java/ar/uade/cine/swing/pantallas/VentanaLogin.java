@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 
@@ -71,7 +72,12 @@ public final class VentanaLogin extends JFrame {
             alIngresar.accept(empleado);
         }, error -> {
             // En el login, el 401 es "email o contraseña incorrectos": va al lado del formulario, no en un diálogo.
+            // Sin conexión o un 500 no se arreglan cambiando la clave: esos van al diálogo de errores globales.
             ingresar.setEnabled(true);
+            if (error.estado() != 401 && !error.esDelFormulario()) {
+                Mensajes.error(this, error);
+                return;
+            }
             mensaje.setText(error.getMessage());
             password.selectAll();
             password.requestFocusInWindow();

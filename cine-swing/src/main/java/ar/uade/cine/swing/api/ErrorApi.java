@@ -20,6 +20,11 @@ public class ErrorApi extends RuntimeException {
         return estado == 401;
     }
 
+    /** Un rechazo de lo que se mandó (400, o un 404 de algo tipeado, como un email): se corrige en el formulario. */
+    public boolean esDelFormulario() {
+        return estado == 400 || estado == 404;
+    }
+
     /** No se llegó al servidor, o el proxy contestó que el backend no está (reiniciando, caído). */
     public boolean esSinConexion() {
         return estado == 0 || estado == 502 || estado == 503 || estado == 504;

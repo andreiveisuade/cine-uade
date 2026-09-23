@@ -182,7 +182,7 @@ class ValidacionTest {
         v.texto(nombre, "Nombre", true);
         v.ok();
 
-        v.mostrarError(new ErrorApi(409, "Ya hay una sala llamada Sala 1"));
+        v.mostrarError(new ErrorApi(400, "Ya hay una sala con esa distribución de butacas"));
 
         assertFalse(Validacion.marcado(nombre));
     }

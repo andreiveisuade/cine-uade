@@ -2,10 +2,10 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 
 import javax.swing.BorderFactory;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.util.concurrent.Callable;
@@ -35,12 +35,13 @@ abstract class Pantalla extends JPanel {
         });
     }
 
+    /** Lo que salió bien, en la barra de estado: ver {@link Mensajes}. */
     protected void avisar(String mensaje) {
-        JOptionPane.showMessageDialog(this, mensaje, "Listo", JOptionPane.INFORMATION_MESSAGE);
+        Mensajes.exito(this, mensaje);
     }
 
-    protected boolean confirmar(String pregunta) {
-        return JOptionPane.showConfirmDialog(this, pregunta, "Confirmar", JOptionPane.OK_CANCEL_OPTION)
-                == JOptionPane.OK_OPTION;
+    /** {@code si}: el botón que confirma, con el verbo de la acción ("Sí, borrar"). */
+    protected boolean confirmar(String pregunta, String si) {
+        return Mensajes.confirmar(this, pregunta, si);
     }
 }

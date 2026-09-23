@@ -227,7 +227,7 @@ final class PantallaFunciones extends Pantalla {
 
     private void borrar(Funcion funcion) {
         if (!confirmar("¿Borrar la función de " + funcion.pelicula().titulo() + " del " + dia(funcion.inicio())
-                + " " + hora(funcion.inicio()) + "?")) return;
+                + " " + hora(funcion.inicio()) + "?", "Sí, borrar")) return;
         accion(() -> {
             api.eliminarFuncion(funcion.id());
             return null;

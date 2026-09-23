@@ -10,6 +10,7 @@ import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -212,15 +213,19 @@ final class PantallaCobro extends Pantalla {
             Validacion v = new Validacion(error);
             String elegido = v.elegido(medio, "Medio de pago");
             if (!v.ok()) return;
-            enviar.setEnabled(false);
             Consumer<ErrorApi> fallo = e -> {
                 enviar.setEnabled(true);
                 v.mostrarError(e);
             };
             if (!porCheckout()) {
+                // Un cobro registrado no se deshace: se pregunta antes. Abrir el checkout, en cambio, no cobra.
+                if (!Mensajes.confirmar(this, "¿Registrar el cobro de la reserva #" + reserva.id() + " en "
+                        + etiqueta(elegido).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) return;
+                enviar.setEnabled(false);
                 Tarea.ejecutar(this, () -> api.cobrar(reserva.id(), elegido, ""), this::cobrado, fallo);
             } else {
                 // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
+                enviar.setEnabled(false);
                 Tarea.ejecutar(this, () -> api.abrirCheckout(reserva.id(), elegido), c -> {
                     enviar.setEnabled(true);
                     mostrarCheckout(c);
@@ -252,11 +257,13 @@ final class PantallaCobro extends Pantalla {
             agregar(panel, texto(c.urlPago()));
             JButton confirmar = new JButton("El cliente pagó · confirmar");
             confirmar.addActionListener(e -> {
+                if (!Mensajes.confirmar(this, "¿El cliente aprobó el pago de " + precio(c.monto()) + "? Se registra "
+                        + "el cobro y no se puede deshacer.", "Sí, confirmar el pago")) return;
                 confirmar.setEnabled(false);
                 // Qué se está pagando sale del checkout, no de quien confirma.
                 Tarea.ejecutar(this, () -> api.confirmarCheckout(c.id()), this::cobrado, error -> {
                     confirmar.setEnabled(true);
-                    if (!error.esSesionVencida()) Tarea.mostrarError(this, error);
+                    Mensajes.error(this, error);
                 });
             });
             agregar(panel, confirmar);

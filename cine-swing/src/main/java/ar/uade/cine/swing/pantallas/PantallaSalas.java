@@ -145,7 +145,7 @@ final class PantallaSalas extends Pantalla {
     }
 
     private void borrar(Sala sala) {
-        if (!confirmar("¿Borrar " + sala.nombre() + "?")) return;
+        if (!confirmar("¿Borrar " + sala.nombre() + "?", "Sí, borrar")) return;
         accion(() -> {
             api.eliminarSala(sala.id());
             return null;

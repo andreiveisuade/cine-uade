@@ -927,6 +927,52 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>JCalendar</strong> para toda fecha: <code>JDateChooser</code> en rangos y filtros, <code>JCalendar</code> en la agenda. En pantalla <code>dd/MM/yyyy</code>; al backend viaja ISO.</li>
         <li><strong>Borderó y declaración jurada en la PC:</strong> el backend da los números por JSON y el archivo lo escribe el cliente, con el mismo formato que antes generaba el servidor.</li>
       </ul>
+      <h3 id="swing-mensajes">Dónde va cada mensaje</h3>
+      <p>
+        El lugar de un mensaje depende del tipo de problema, no de la pantalla. Los diálogos y la barra de estado
+        pasan por <code>comun/Mensajes</code>; lo que va en línea, por <code>Validacion</code>, que le deriva a
+        <code>Mensajes</code> todo error que no sea de un campo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo de mensaje</th><th>Dónde se muestra</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Error de un campo: formato, obligatorio, o un <code>400</code> del backend</td><td>En línea, junto al formulario, con el campo marcado</td><td>Se ven todos juntos y al lado de lo que hay que corregir</td></tr>
+            <tr><td>Error global: sin conexión, <code>500</code>, <code>409</code>, <code>403</code>, o un <code>400</code> sin formulario</td><td>Diálogo modal de error con el texto del backend. El <code>401</code> vuelve al login</td><td>No se arregla tocando un campo y sin enterarse no se puede seguir</td></tr>
+            <tr><td>Acción destructiva o sin vuelta atrás: borrar, dar de baja, sacar de la carta, despublicar, descartar, cancelar una reserva, cobrar</td><td>Confirmación antes de mandar, con un botón que dice la acción («Sí, borrar») y «Cancelar» por defecto</td><td>Es la última oportunidad de no equivocarse</td></tr>
+            <tr><td>Éxito</td><td>Barra de estado, en verde, y se borra sola a los seis segundos</td><td>Informa sin bloquear: no hay nada que decidir</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Un error del servidor que no trae el <code>{"error": "…"}</code> del backend (el HTML de un nginx con el
+        backend reiniciando, un cuerpo vacío) nunca se muestra crudo: <code>ApiHttp</code> lo manda a la consola y
+        en pantalla queda un mensaje según el código, como «El servidor no está disponible en este momento».
+      </p>
+      <h4>Decisión: cada mensaje en su lugar</h4>
+      <ul>
+        <li><strong>Contexto.</strong> Swing mostraba casi todo con <code>JOptionPane.showMessageDialog</code>: los
+          errores del backend, los globales y cada alta que salía bien («Listo»). Solo dos acciones pedían
+          confirmación, y con botones genéricos.</li>
+        <li><strong>Decisión.</strong> Los errores de campo van en línea: el usuario ve todos juntos y dónde
+          corregirlos, mientras que un modal tapa el formulario y obliga a recordar el mensaje después de cerrarlo.
+          Es la heurística de Nielsen «ayudar a los usuarios a reconocer, diagnosticar y recuperarse de errores»,
+          junto con «reconocer antes que recordar» (Nielsen Norman Group, <em>10 Usability Heuristics for User
+          Interface Design</em>). Los diálogos modales quedan solo para errores globales y confirmaciones: un
+          modal bloquea, así que se justifica cuando el usuario tiene que decidir algo o no puede seguir sin
+          enterarse. Las confirmaciones de acciones destructivas aplican «prevención de errores», y tanto la guía
+          de diseño de Microsoft para Windows (Fluent / Windows App SDK, sobre <em>dialogs</em>) como las
+          <em>Human Interface Guidelines</em> de Apple (sobre <em>alerts</em>) recomiendan usar alertas modales con
+          moderación y solo para información crítica o decisiones. El éxito no lleva modal: sería un clic de más
+          sin nada que decidir. «Visibilidad del estado del sistema» pide informarlo, y la barra de estado lo
+          informa sin bloquear.</li>
+        <li><strong>Alternativas descartadas.</strong> Todo por <code>showMessageDialog</code>, el estilo clásico de
+          Swing: interrumpe en cada alta y separa el error del campo que lo causó. Todo en línea y sin
+          confirmaciones: un clic de más en «Borrar» no tendría vuelta atrás.</li>
+        <li><strong>Consecuencias.</strong> <code>JOptionPane</code> sigue en uso, pero solo donde corresponde. Todo
+          pasa por <code>comun/Mensajes</code> (y <code>Validacion</code> para lo que va en línea), así que cambiar
+          la política toca un archivo.</li>
+      </ul>
       <h3>Las pantallas</h3>
       <figure class="diagram">
         {{IMG_SWING_PELICULAS}}
@@ -1848,6 +1894,9 @@ mvn clean test       # 490 tests, ninguno salteado</code></pre>
             <tr><td>Candy cobra en el acto</td><td>Reusar <code>Pago</code></td><td>Sin FK polimórfica</td></tr>
             <tr><td>Borderó aparte del arqueo</td><td>Filtrar el arqueo</td><td>Cortes distintos</td></tr>
             <tr><td><code>Dinero</code> en centavos</td><td><code>double</code></td><td>Cuentas exactas</td></tr>
+
+            <tr><td colspan="3" style="font-weight:600">Panel del encargado</td></tr>
+            <tr><td>Cada mensaje en su lugar (<a href="#swing-mensajes">detalle</a>)</td><td>Todo en <code>showMessageDialog</code></td><td>Error de campo en línea, modal solo para errores globales y confirmaciones, éxito sin bloquear</td></tr>
           </tbody>
         </table>
       </div>

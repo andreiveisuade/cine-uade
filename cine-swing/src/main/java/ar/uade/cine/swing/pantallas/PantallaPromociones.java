@@ -101,8 +101,12 @@ final class PantallaPromociones extends Pantalla {
         add(formulario(), BorderLayout.EAST);
 
         tabla.tabla().getSelectionModel().addListSelectionListener(e -> habilitar());
-        alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
-                accion(() -> api.cambiarActivacionPromocion(p.id(), !p.activa()), null, this::recargar)));
+        alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
+            if (p.activa() && !confirmar("¿Dar de baja " + p.nombre() + "? Deja de aplicarse en los cobros.",
+                    "Sí, dar de baja")) return;
+            accion(() -> api.cambiarActivacionPromocion(p.id(), !p.activa()),
+                    p.nombre() + (p.activa() ? " dada de baja" : " reactivada"), this::recargar);
+        }));
         habilitar();
         cargar(api::obtenerTiposPromocion, this::armarTipos);
         recargar();

@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Empleado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Etiquetas;
+import ar.uade.cine.swing.comun.Mensajes;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -62,6 +63,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         lateral.setPreferredSize(new Dimension(180, 0));
         raiz.add(lateral, BorderLayout.WEST);
         raiz.add(contenido, BorderLayout.CENTER);
+        raiz.add(Mensajes.barraDeEstado(getRootPane()), BorderLayout.SOUTH);
         setContentPane(raiz);
 
         setSize(1280, 800);

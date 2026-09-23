@@ -11,6 +11,7 @@ import ar.uade.cine.swing.api.dto.TotalDeclarado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -154,7 +155,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
             Files.writeString(destino.toPath(), DeclaracionJuradaCsv.escribir(datos.declaracion(), datos.tarifas()),
                     StandardCharsets.UTF_8);
         } catch (IOException e) {
-            Tarea.mostrarError(this, new ErrorApi(-1, "No se pudo guardar el archivo: " + e.getMessage()));
+            Mensajes.error(this, new ErrorApi(-1, "No se pudo guardar el archivo: " + e.getMessage()));
             return;
         }
         avisar("Declaración jurada guardada en " + destino.getAbsolutePath());

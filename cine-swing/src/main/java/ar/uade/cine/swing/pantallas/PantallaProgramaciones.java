@@ -161,9 +161,12 @@ final class PantallaProgramaciones extends Pantalla {
 
     private JPanel accionesDeFila() {
         JPanel acciones = new JPanel(new FlujoConSalto());
-        cambiarActivacion.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
-                accion(() -> api.cambiarActivacionProgramacion(p.id(), !p.activa()),
-                        p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::recargar)));
+        cambiarActivacion.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
+            if (p.activa() && !confirmar("¿Dar de baja esta grilla? Deja de generar funciones; las que ya generó "
+                    + "quedan.", "Sí, dar de baja")) return;
+            accion(() -> api.cambiarActivacionProgramacion(p.id(), !p.activa()),
+                    p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::recargar);
+        }));
         acciones.add(cambiarActivacion);
         return acciones;
     }

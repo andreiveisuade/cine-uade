@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.Pelicula;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 
 import javax.swing.JButton;
@@ -78,8 +79,13 @@ final class PantallaPendientes extends Pantalla {
         // Deshabilitados mientras viaja: dos clics seguidos mandarían confirmar y descartar la misma película.
         confirmar.addActionListener(e -> decidir(confirmar, descartar, () -> api.confirmarPelicula(pelicula.id()),
                 pelicula.titulo() + " confirmada: ya se puede programar"));
-        descartar.addActionListener(e -> decidir(confirmar, descartar, () -> api.descartarPelicula(pelicula.id()),
-                pelicula.titulo() + " descartada"));
+        descartar.addActionListener(e -> {
+            // No tiene vuelta atrás: el importador no la vuelve a proponer.
+            if (!confirmar("¿Descartar " + pelicula.titulo() + "? El importador no la vuelve a proponer.",
+                    "Sí, descartar")) return;
+            decidir(confirmar, descartar, () -> api.descartarPelicula(pelicula.id()),
+                    pelicula.titulo() + " descartada");
+        });
 
         JPanel tarjeta = new JPanel(new BorderLayout(0, 8));
         tarjeta.add(datos, BorderLayout.CENTER);
@@ -97,7 +103,7 @@ final class PantallaPendientes extends Pantalla {
         }, error -> {
             confirmar.setEnabled(true);
             descartar.setEnabled(true);
-            if (!error.esSesionVencida()) Tarea.mostrarError(this, error);
+            Mensajes.error(this, error);
         });
     }
 

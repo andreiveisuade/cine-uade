@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -79,8 +80,14 @@ final class PantallaPuerta extends Pantalla {
             mostrarValida(validada.reserva(), validada.seAcreditan());
             reiniciar();
         }, error -> {
-            // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa.
+            // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa. Pero sin conexión
+            // o con el servidor caído no se sabe si pasa: eso no es un NO PASA, es un error global.
             if (error.esSesionVencida()) return;
+            if (!error.esDelFormulario()) {
+                Mensajes.error(this, error);
+                reiniciar();
+                return;
+            }
             mostrar(Colores.error(), "NO PASA", "<p>" + escapar(error.getMessage()) + "</p>");
             reiniciar();
         });

@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -168,7 +169,8 @@ final class PantallaReservas extends Pantalla {
     }
 
     private void cancelar(Reserva reserva) {
-        if (!confirmar("¿Cancelar la reserva #" + reserva.id() + "? Las butacas quedan libres.")) return;
+        if (!Mensajes.confirmar(this, "¿Cancelar la reserva #" + reserva.id() + "? Las butacas quedan libres.",
+                "Sí, cancelar la reserva", "Volver")) return;
         accion(() -> api.cancelarReserva(reserva.id()), "Reserva cancelada, las butacas quedaron libres",
                 this::recargar);
     }
