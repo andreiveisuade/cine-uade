@@ -79,7 +79,7 @@ export function Funcion() {
       </div>
 
       <Grid gap="md" align="flex-start">
-        <Grid.Col span={{ base: 12, md: 8 }}>
+        <Grid.Col span={{ base: 12, lg: 9 }}>
           <MapaButacas sala={funcion.sala} asientos={funcion.asientos}
             pintar={(a) => pintarParaComprar(a, butacas)} alElegir={alternar} />
           <Referencia items={[
@@ -93,7 +93,7 @@ export function Funcion() {
           ]} />
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 4 }} style={{ position: "sticky", top: 76 }}>
+        <Grid.Col span={{ base: 12, lg: 3 }} style={{ position: "sticky", top: 76 }}>
           <Paper withBorder p="md">
             <Text fw={600} mb="xs">Tu selección</Text>
             {elegidas.length ? (

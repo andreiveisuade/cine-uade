@@ -97,7 +97,7 @@ function FormularioGrilla({ peliculas, salas, idiomas, proyecciones, alCrear }) 
           data={salas.map((s) => ({ value: String(s.id), label: `${s.nombre} — ${etiqueta(s.tipo)}` }))} />
         <Group grow>
           <TextInput label="Desde" type="date" required value={campos.desde} onChange={(e) => cambiar("desde")(e.currentTarget.value)} />
-          <TextInput label="Hasta" description="vacío = sin fin" type="date" value={campos.hasta}
+          <TextInput label={<>Hasta <Text span size="xs" c="dimmed">(vacío = sin fin)</Text></>} type="date" value={campos.hasta}
             onChange={(e) => cambiar("hasta")(e.currentTarget.value)} />
         </Group>
         <TextInput label="Hora de la función" type="time" required value={campos.horaInicio}
