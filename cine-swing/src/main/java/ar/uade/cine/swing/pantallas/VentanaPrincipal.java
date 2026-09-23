@@ -139,6 +139,12 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
             case "Importador" -> () -> new PantallaImportador(api, this);
             case "Salas" -> () -> new PantallaSalas(api, this);
             case "Funciones" -> () -> new PantallaFunciones(api, this);
+            case "Grilla" -> () -> new PantallaProgramaciones(api, this);
+            case "Planificador" -> () -> new PantallaPlanificador(api, this);
+            case "Agenda" -> () -> new PantallaAgenda(api, this);
+            case "Reservas" -> () -> new PantallaReservas(api, this);
+            case "Promociones" -> () -> new PantallaPromociones(api, this);
+            case "Candy" -> () -> new PantallaCandy(api, this);
             case "Caja" -> () -> new PantallaCaja(api);
             case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api, this);
             case "Puerta" -> () -> new PantallaPuerta(api);
