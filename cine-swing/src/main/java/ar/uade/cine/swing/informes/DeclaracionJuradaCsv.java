@@ -5,7 +5,9 @@ import ar.uade.cine.swing.api.dto.FuncionDeclarada;
 import ar.uade.cine.swing.api.dto.PeliculaDeclarada;
 import ar.uade.cine.swing.api.dto.Total;
 import ar.uade.cine.swing.api.dto.TotalDeclarado;
+import ar.uade.cine.swing.comun.Formato;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +49,8 @@ public final class DeclaracionJuradaCsv {
         fila(csv, concatenar(List.of("registro", "funcion_id", "fecha", "hora", "sala", "pelicula", "clasificacion",
                 "version", "proyeccion"), entradas, cierre));
         for (FuncionDeclarada f : declaracion.funciones()) {
-            fila(csv, concatenar(List.of("FUNCION", String.valueOf(f.funcionId()), f.inicio().substring(0, 10),
-                            f.inicio().substring(11, 16), f.sala(), f.pelicula(), f.clasificacion(), f.idioma(),
+            fila(csv, concatenar(List.of("FUNCION", String.valueOf(f.funcionId()), LocalDateTime.parse(f.inicio()).toLocalDate().toString(),
+                            Formato.hora(f.inicio()), f.sala(), f.pelicula(), f.clasificacion(), f.idioma(),
                             f.proyeccion()),
                     tarifas.stream().map(t -> cantidad(f.porTarifa(), t)).toList(),
                     montos(f.espectadores(), f.recaudacionBruta(), f.descuentos(), f.recaudacionNeta())));

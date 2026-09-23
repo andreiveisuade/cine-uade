@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
+import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /**
@@ -123,7 +124,7 @@ final class PantallaProgramaciones extends Pantalla {
     }
 
     private static String cuando(Programacion p) {
-        String hora = p.horaInicio().length() >= 5 ? p.horaInicio().substring(0, 5) : p.horaInicio();
+        String hora = horaDelDia(p.horaInicio());
         if (p.hasta() != null) return p.desde() + " al " + p.hasta() + " · " + hora;
         return p.desde() + " en adelante · " + hora + " (generada hasta "
                 + (p.generadaHasta() == null ? "—" : p.generadaHasta()) + ")";

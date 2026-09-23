@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /** Alta y baja de promociones (CU-17). No se borran: una que ya se usó explica por qué se cobró ese monto. */
@@ -118,7 +119,7 @@ final class PantallaPromociones extends Pantalla {
     }
 
     private static String corta(String hora, String siFalta) {
-        return hora == null ? siFalta : hora.substring(0, Math.min(5, hora.length()));
+        return hora == null ? siFalta : horaDelDia(hora);
     }
 
     private void habilitar() {

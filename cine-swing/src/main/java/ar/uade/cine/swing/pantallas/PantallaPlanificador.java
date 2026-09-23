@@ -38,6 +38,7 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -306,16 +307,16 @@ final class PantallaPlanificador extends Pantalla {
 
     // Por día y, adentro, por sala, en el orden en que llegan: el backend ya los manda ordenados.
     private JComponent pases(List<PaseSugerido> pases) {
-        Map<String, Map<String, List<PaseSugerido>>> porDia = new LinkedHashMap<>();
+        Map<LocalDate, Map<String, List<PaseSugerido>>> porDia = new LinkedHashMap<>();
         for (PaseSugerido p : pases) {
-            porDia.computeIfAbsent(p.inicio().substring(0, 10), d -> new LinkedHashMap<>())
+            porDia.computeIfAbsent(LocalDateTime.parse(p.inicio()).toLocalDate(), d -> new LinkedHashMap<>())
                     .computeIfAbsent(p.sala(), s -> new ArrayList<>()).add(p);
         }
         String gris = Colores.hex(Colores.secundario());
         StringBuilder html = new StringBuilder("<html>");
         porDia.forEach((fecha, salas) -> {
             int cuantos = salas.values().stream().mapToInt(List::size).sum();
-            html.append("<p style='margin-top:8px'><b>").append(dia(fecha + "T00:00:00")).append("</b> · ")
+            html.append("<p style='margin-top:8px'><b>").append(dia(fecha)).append("</b> · ")
                     .append(cuantos).append(" pases</p><table>");
             salas.forEach((sala, deLaSala) -> html.append("<tr><td valign='top' nowrap><font color='" + gris + "'>").append(escapar(sala))
                     .append("</font></td><td>").append(deLaSala.stream()

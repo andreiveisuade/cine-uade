@@ -3,6 +3,7 @@ package ar.uade.cine.swing.comun;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
@@ -35,13 +36,22 @@ public final class Formato {
         return LocalDateTime.parse(iso).format(HORA);
     }
 
+    /** Una hora sin fecha, como la manda el backend para grillas y promos ("20:30:00" o "20:30"). */
+    public static String horaDelDia(String iso) {
+        if (iso == null) return "—";
+        return LocalTime.parse(iso).format(HORA);
+    }
+
     public static String fechaHora(String iso) {
         if (iso == null) return "—";
         return LocalDateTime.parse(iso).format(FECHA_HORA);
     }
 
     public static String dia(String iso) {
-        LocalDate fecha = LocalDateTime.parse(iso).toLocalDate();
+        return dia(LocalDateTime.parse(iso).toLocalDate());
+    }
+
+    public static String dia(LocalDate fecha) {
         long diferencia = ChronoUnit.DAYS.between(LocalDate.now(), fecha);
         if (diferencia == 0) return "Hoy";
         if (diferencia == 1) return "Mañana";
