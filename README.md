@@ -11,7 +11,7 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 |---|---|
 | Backend | Java 21, Spring Boot 3.5, Spring MVC, Spring Data JPA |
 | Base | MySQL 8.4. Redis para los bloqueos de butaca |
-| Frontend | HTML, JavaScript y Tailwind, servido por nginx |
+| Frontend | React, React Router y Mantine, compilado con Vite y servido por nginx |
 | Despliegue | Docker Compose, 5 servicios en dos redes |
 
 ## Estructura

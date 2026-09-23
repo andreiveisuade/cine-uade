@@ -1,6 +1,6 @@
 # Contrato de la API
 
-Base `/api`; cada función de `js/api.js` es un endpoint de acá. Probable en
+Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Probable en
 <http://localhost:8080/swagger-ui.html>.
 
 ## Convenciones

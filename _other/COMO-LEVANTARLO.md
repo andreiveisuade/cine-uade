@@ -93,6 +93,10 @@ docker compose restart backend                     # sin recompilar
 docker compose down                                # bajar, la base queda
 ```
 
+Para desarrollar el front con recarga en caliente, con el sistema levantado:
+`cd cine-frontend && npm install && npm run dev` (en `localhost:5173`; Vite reenvía `/api`
+al 8080).
+
 MySQL sin puerto publicado. Para Workbench/DBeaver, `cine-docker/docker-compose.override.yml`
 (no versionado) y volver a levantar; conectar a `127.0.0.1:3306`, base `appsinteractivas`:
 
