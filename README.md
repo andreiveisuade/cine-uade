@@ -12,6 +12,7 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 | Backend | Java 21, Spring Boot 3.5, Spring MVC, Spring Data JPA |
 | Base | MySQL 8.4. Redis para los bloqueos de butaca |
 | Frontend | React, React Router y Mantine, compilado con Vite y servido por nginx |
+| Escritorio | Java 21 y Swing (FlatLaf, JCalendar): el panel del encargado y la Puerta |
 | Despliegue | Docker Compose, 5 servicios en dos redes |
 
 ## Estructura
@@ -20,6 +21,7 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 |---|---|
 | `cine-backend/` | La API y las reglas de negocio |
 | `cine-frontend/` | Las pantallas del cliente y del panel |
+| `cine-swing/` | El panel del encargado de escritorio, que habla con la API por HTTP |
 | `cine-docker/` | El `docker-compose.yml` que levanta todo |
 | `_other/` | Documentación e instrucciones |
 
@@ -48,7 +50,8 @@ pasa cuando el servidor rechaza una venta— está en
 | [`_other/demo/cine-uade.postman_collection.json`](_other/demo/cine-uade.postman_collection.json) | La demo de la Etapa 1: GET, POST, PUT y DELETE, con casos exitosos y de error. Se importa en Postman, Bruno o Insomnia |
 | `localhost:8080/swagger-ui.html` | El mismo contrato, probable desde el navegador (con el sistema levantado) |
 
-Panel en `localhost:8080/admin.html`: `encargado@cine.uade.ar` / `cine2026` (demo).
+Panel del encargado de escritorio, con el sistema levantado: `cd cine-swing && mvn exec:java`
+(JDK 21), `encargado@cine.uade.ar` / `cine2026` (demo). Ver [`cine-swing/README.md`](cine-swing/README.md).
 
 ## Tareas
 

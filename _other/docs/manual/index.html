@@ -416,6 +416,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#anotaciones" data-target="anotaciones">Anotaciones y sintaxis</a></li>
         <li><a href="#api" data-target="api">API HTTP</a></li>
         <li><a href="#frontend" data-target="frontend">Frontend</a></li>
+        <li><a href="#swing" data-target="swing">Panel del encargado (Swing)</a></li>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y seguridad</a></li>
@@ -459,7 +460,8 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Resumen</h2>
       <p>
         Gestión de un cine: películas y salas, funciones, reservas y pagos de entradas, y ventas del candy.
-        Backend Spring Boot sobre MySQL, frontend React servido por nginx, todo con <code>docker compose up</code>.
+        Backend Spring Boot sobre MySQL, frontend React servido por nginx para la venta al cliente, y el panel
+        del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
         <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 451 tests.</p>
@@ -835,6 +837,47 @@ body.lightbox-locked { overflow: hidden; }
         7 pantallas del cliente y 16 del panel. Ninguna regla vive en el front: lo que anticipa (R3, R8,
         acreditación) es aviso y el backend vuelve a validar.
       </p>
+    </section>
+
+    <section class="doc-section" id="swing">
+      <h2>Panel del encargado (Swing)</h2>
+      <p>
+        El encargado (<code>ADMINISTRADOR</code>) y el acomodador (<code>ACOMODADOR</code>) trabajan con una app de
+        escritorio: <code>cine-swing/</code>, Java 21 y Swing. Es un cliente HTTP más, igual que el front del
+        cliente: los dos hablan con el backend por <code>/api</code> y el backend es el único que toca MySQL.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pieza</th><th>Quién la usa</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td>Web React (<code>cine-frontend</code>)</td><td>Cliente, sin login</td><td>Cartelera, elegir butacas, reservar, ver y cancelar su ticket</td></tr>
+            <tr><td>Swing (<code>cine-swing</code>)</td><td>Encargado y acomodador, con login</td><td>Cartelera, salas, funciones, grilla, planificador, agenda, reservas y cobro, promociones, candy, caja, declaración jurada y Puerta</td></tr>
+            <tr><td>Backend (<code>cine-backend</code>)</td><td>Los dos clientes, por HTTP</td><td>Todas las reglas (R1..R19), seguridad por rol y la base</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Paquete</th><th>Qué hay</th></tr></thead>
+          <tbody>
+            <tr><td><code>api/</code></td><td><code>ApiHttp</code>: una operación por endpoint, Basic en cada pedido y el <code>{"error"}</code> del backend en una <code>ErrorApi</code>. Un 401 vuelve al login. Un record por forma de JSON en <code>dto/</code></td></tr>
+            <tr><td><code>informes/</code></td><td>El borderó en <code>.txt</code> y la declaración jurada en <code>.csv</code>, escritos en la PC. Sin Swing y con tests</td></tr>
+            <tr><td><code>comun/</code></td><td><code>Tarea</code> (pedidos fuera del EDT), <code>Fechas</code> (JCalendar y el cruce <code>Date</code>/<code>java.time</code>), <code>Colores</code>, <code>Tabla</code>, <code>MapaButacas</code></td></tr>
+            <tr><td><code>pantallas/</code></td><td>Login, la ventana con el menú y una clase por pantalla</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Los casos de uso del encargado y del acomodador (alta de películas y salas, programación, cobro, candy,
+        arqueo, informes y control de acceso, CU-18) se hacen desde estas pantallas. Ninguna anticipa una regla:
+        se manda el pedido y se muestra el mensaje del backend tal cual.
+      </p>
+      <ul>
+        <li><strong>FlatLaf oscuro</strong> por defecto (<code>-Dcine.tema=claro</code> para el claro). Los colores que no salen del tema tienen su par claro y oscuro en <code>Colores</code>.</li>
+        <li><strong>JCalendar</strong> para toda fecha: <code>JDateChooser</code> en rangos y filtros, <code>JCalendar</code> en la agenda. En pantalla <code>dd/MM/yyyy</code>; al backend viaja ISO.</li>
+        <li><strong>Borderó y declaración jurada en la PC:</strong> el backend da los números por JSON y el archivo lo escribe el cliente, con el mismo formato que antes generaba el servidor.</li>
+      </ul>
+      <p>Capturas del panel Swing: pendientes de sumar a <code>manual/capturas/</code>.</p>
     </section>
 
     <section class="doc-section" id="dominio">
@@ -1394,6 +1437,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, SLF4J</td></tr>
             <tr><td>Datos</td><td>MySQL 8.4; Redis (bloqueos); H2 (tests)</td></tr>
             <tr><td>Frontend</td><td>React 19 + React Router + Mantine, compilado con Vite, servido por nginx</td></tr>
+            <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar y Jackson; <code>java.net.http</code> contra la API</td></tr>
             <tr><td>Despliegue</td><td>Docker Compose: 5 servicios en dos redes</td></tr>
             <tr><td>Externo</td><td>API de TMDB</td></tr>
           </tbody>
@@ -1435,6 +1479,7 @@ docker compose up -d --build
             <tr><td>Web del cliente</td><td><code>localhost:8080</code></td><td>—</td></tr>
             <tr><td>Panel</td><td><code>localhost:8080/admin.html</code></td><td><code>encargado@cine.uade.ar</code> / <code>cine2026</code></td></tr>
             <tr><td>Puerta</td><td>el mismo panel</td><td><code>puerta@cine.uade.ar</code> / <code>cine2026</code></td></tr>
+            <tr><td>Panel de escritorio</td><td><code>cd cine-swing &amp;&amp; mvn exec:java</code> (JDK 21)</td><td>las mismas del panel</td></tr>
             <tr><td>Swagger</td><td><code>localhost:8080/swagger-ui.html</code></td><td>—</td></tr>
             <tr><td>Adminer</td><td><code>127.0.0.1:8081</code></td><td>servidor <code>mysql</code>, usuario del <code>.env</code></td></tr>
           </tbody>

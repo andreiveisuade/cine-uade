@@ -1,7 +1,8 @@
 # Contrato de la API
 
-Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Probable en
-<http://localhost:8080/swagger-ui.html>.
+Base `/api`. Lo consumen dos clientes: la web del cliente (`src/api/api-http.js`) y el panel
+de escritorio del encargado (`cine-swing`, clase `ApiHttp`), que usa los mismos nombres de
+operación. Probable en <http://localhost:8080/swagger-ui.html>.
 
 ## Convenciones
 
@@ -37,7 +38,7 @@ no tiene permiso para esta operación».
 | `GET /api/idiomas` | `["DOBLADA","SUBTITULADA"]` |
 | `GET /api/proyecciones` | `["DOS_D","TRES_D"]` |
 | `GET /api/medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
-| `GET /api/tarifas` | `[{"nombre":"JUBILADO","multiplicadorPrecio":0.5,"requiereAcreditacion":true}, …]` |
+| `GET /api/tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
 
 El front anticipa con ellos R8 (`multiplicador`, `soportaTresD`), R11 (`requiereAutorizacion`)
 y el «traé el carnet» (`requiereAcreditacion`).

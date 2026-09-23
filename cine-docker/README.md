@@ -42,6 +42,9 @@ docker compose exec -T mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractiva
 
 Empezar de cero: `docker compose down -v && docker compose up -d`.
 
+El panel del encargado de escritorio (`cine-swing/`) se conecta a este mismo `localhost:8080`:
+con el sistema arriba, `cd ../cine-swing && mvn exec:java` (JDK 21).
+
 Para mirar los datos, Adminer en `localhost:8081` — servidor **`mysql`**, no `localhost`.
 O una consulta suelta:
 

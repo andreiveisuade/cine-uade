@@ -23,6 +23,18 @@ docker compose ps                    # repetir hasta mysql y backend (healthy); 
 ./seed/datos-de-ejemplo.sh           # 6 salas, carta del candy y una promoción
 ```
 
+## Panel del encargado (Swing)
+
+Con el sistema levantado, desde otra terminal (requiere JDK 21 y Maven):
+
+```sh
+cd cine-swing
+mvn exec:java                              # o: mvn package && java -jar target/cine-swing.jar
+```
+
+Apunta a `http://localhost:8080`; otro servidor con `-Dcine.api.url=...`. Tema claro con
+`-Dcine.tema=claro`. Detalle en `cine-swing/README.md`.
+
 Películas no se siembran: **Importador** del panel (con `TMDB_TOKEN`) → confirmar en **Por
 revisar** → funciones desde **Grilla** o **Planificador**.
 
@@ -31,6 +43,7 @@ revisar** → funciones desde **Grilla** o **Planificador**.
 | Cliente | <http://localhost:8080> | — |
 | Panel | <http://localhost:8080/admin.html> | `encargado@cine.uade.ar` / `cine2026` |
 | Puerta | el mismo panel | `puerta@cine.uade.ar` / `cine2026` |
+| Panel de escritorio | `cine-swing`, `mvn exec:java` | las mismas: el encargado ve todo, el acomodador solo Puerta |
 | Swagger | <http://localhost:8080/swagger-ui.html> (contrato crudo en `/v3/api-docs`, importable en Postman) | — |
 | Adminer | <http://localhost:8081> | servidor `mysql`, usuario del `.env` |
 
