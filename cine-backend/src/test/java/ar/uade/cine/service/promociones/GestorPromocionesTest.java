@@ -58,8 +58,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void elPorcentajeDescuentaSobreElSubtotal() {
-        Promocion promo = promociones.crearPorcentaje("30 off", 30, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(3000), promo.calcularDescuento(List.of(entrada(5000), entrada(5000))));
     }
@@ -67,8 +67,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** Descontar más que el total dejaría un cobro negativo. */
     @Test
     void elMontoFijoNuncaDescuentaMasQueElTotal() {
-        Promocion promo = promociones.crearMontoFijo("2000 off", Dinero.de(2000), DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearMontoFijo("2000 off", Dinero.de(2000), new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(1500), promo.calcularDescuento(List.of(entrada(1500))));
     }
@@ -76,8 +76,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** El 2x1 regala la más barata, que es lo que hace cualquier cine. */
     @Test
     void elDosPorUnoRegalaLaMasBarata() {
-        Promocion promo = promociones.crearNxM("2x1", 2, 1, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(4000), promo.calcularDescuento(List.of(entrada(6000), entrada(4000))));
     }
@@ -85,8 +85,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** Con tres entradas entra un solo grupo de dos: la tercera se paga entera. */
     @Test
     void elDosPorUnoSoloCuentaGruposCompletos() {
-        Promocion promo = promociones.crearNxM("2x1", 2, 1, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(5000), promo.calcularDescuento(
                 List.of(entrada(5000), entrada(5000), entrada(5000))));
@@ -94,16 +94,16 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void unaSolaEntradaNoActivaElDosPorUno() {
-        Promocion promo = promociones.crearNxM("2x1", 2, 1, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(0), promo.calcularDescuento(List.of(entrada(5000))));
     }
 
     @Test
     void ganaLaQueMasDescuenta() {
-        promociones.crearPorcentaje("10 off", 10, DESDE, HASTA, Set.of(), null, null, Set.of());
-        Promocion dosPorUno = promociones.crearNxM("2x1", 2, 1, DESDE, HASTA, Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("10 off", 10, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        Promocion dosPorUno = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
         Descuento descuento = promociones.calcularPara(dos, JUEVES, MedioPago.EFECTIVO);
@@ -115,8 +115,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** Arbitrario pero determinístico: dos cobros iguales tienen que dar lo mismo. */
     @Test
     void enUnEmpateGanaLaDeMenorId() {
-        Promocion primera = promociones.crearPorcentaje("primera", 20, DESDE, HASTA, Set.of(), null, null, Set.of());
-        promociones.crearPorcentaje("segunda", 20, DESDE, HASTA, Set.of(), null, null, Set.of());
+        Promocion primera = promociones.crearPorcentaje("primera", 20, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("segunda", 20, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         Descuento descuento = promociones.calcularPara(
                 List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO);
@@ -126,7 +126,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void laTarifaReducidaNoParticipaDelDescuento() {
-        promociones.crearPorcentaje("50 off", 50, DESDE, HASTA, Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("50 off", 50, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         List<Entrada> mixta = List.of(entrada(5000), entrada(2500, TipoTarifa.JUBILADO));
 
@@ -136,7 +136,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void sinEntradasGeneralesNoAplicaNinguna() {
-        promociones.crearPorcentaje("50 off", 50, DESDE, HASTA, Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("50 off", 50, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         assertFalse(corre(List.of(entrada(2500, TipoTarifa.JUBILADO)),
                 JUEVES, MedioPago.EFECTIVO));
@@ -144,8 +144,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void laDelMiercolesNoCorreUnJueves() {
-        promociones.crearNxM("Miércoles 2x1", 2, 1, DESDE, HASTA,
-                Set.of(DayOfWeek.WEDNESDAY), null, null, Set.of());
+        promociones.crearNxM("Miércoles 2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(DayOfWeek.WEDNESDAY), null, null, Set.of()));
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
 
@@ -156,8 +156,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** Es la razón por la que el descuento no se puede resolver al reservar. */
     @Test
     void laDelBancoSoloCorreConEseMedioDePago() {
-        promociones.crearMontoFijo("Banco", Dinero.de(1000), DESDE, HASTA,
-                Set.of(), null, null, Set.of(MedioPago.CREDITO));
+        promociones.crearMontoFijo("Banco", Dinero.de(1000), new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of(MedioPago.CREDITO)));
 
         List<Entrada> una = List.of(entrada(5000));
 
@@ -167,16 +167,16 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void fueraDeVigenciaNoCorre() {
-        promociones.crearPorcentaje("Julio", 30, LocalDate.of(2026, 7, 1),
-                LocalDate.of(2026, 7, 31), Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("Julio", 30, new CondicionesPromocion(LocalDate.of(2026, 7, 1),
+                LocalDate.of(2026, 7, 31), Set.of(), null, null, Set.of()));
 
         assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
     }
 
     @Test
     void laTrasnocheNoCorreEnLaFuncionDeLaTarde() {
-        promociones.crearPorcentaje("Trasnoche", 40, DESDE, HASTA,
-                Set.of(), LocalTime.of(23, 0), null, Set.of());
+        promociones.crearPorcentaje("Trasnoche", 40, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), LocalTime.of(23, 0), null, Set.of()));
 
         assertFalse(corre(List.of(entrada(5000)),
                 LocalDateTime.of(2026, 8, 20, 18, 0), MedioPago.EFECTIVO));
@@ -186,8 +186,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void unaPromocionDesactivadaDejaDeCorrer() {
-        Promocion promo = promociones.crearPorcentaje("30 off", 30, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        Promocion promo = promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA,
+                Set.of(), null, null, Set.of()));
         promociones.desactivar(promo.getId());
 
         assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
@@ -197,28 +197,28 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void rechazaUnNxMQueNoDescuenta() {
         assertThrows(IllegalArgumentException.class, () -> promociones.crearNxM("2x2", 2, 2,
-                DESDE, HASTA, Set.of(), null, null, Set.of()));
+                new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
         assertThrows(IllegalArgumentException.class, () -> promociones.crearNxM("2x3", 2, 3,
-                DESDE, HASTA, Set.of(), null, null, Set.of()));
+                new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaUnPorcentajeFueraDeRango() {
         assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("gratis", 100,
-                DESDE, HASTA, Set.of(), null, null, Set.of()));
+                new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaUnaVigenciaAlReves() {
         assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("rara", 10,
-                HASTA, DESDE, Set.of(), null, null, Set.of()));
+                new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaDosPromocionesConElMismoNombre() {
-        promociones.crearPorcentaje("30 off", 30, DESDE, HASTA, Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         assertThrows(IllegalArgumentException.class, () -> promociones.crearMontoFijo("30 off", Dinero.de(500),
-                DESDE, HASTA, Set.of(), null, null, Set.of()));
+                new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 }

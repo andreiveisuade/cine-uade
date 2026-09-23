@@ -24,6 +24,7 @@ import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
+import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,18 +70,18 @@ public class PromocionController {
         Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
         LocalTime horaDesde = pedido.horaDesde() == null ? null : Parseo.hora(pedido.horaDesde(), "la hora de inicio");
         LocalTime horaHasta = pedido.horaHasta() == null ? null : Parseo.hora(pedido.horaHasta(), "la hora de fin");
+        CondicionesPromocion condiciones = new CondicionesPromocion(desde, hasta, dias,
+                horaDesde, horaHasta, medios);
 
         Promocion promocion = switch (tipoDe(pedido.tipo())) {
             case PORCENTAJE -> promociones.crearPorcentaje(pedido.nombre(),
-                    valorObligatorio(pedido.porcentaje(), "porcentaje"),
-                    desde, hasta, dias, horaDesde, horaHasta, medios);
+                    valorObligatorio(pedido.porcentaje(), "porcentaje"), condiciones);
             case MONTO_FIJO -> promociones.crearMontoFijo(pedido.nombre(),
-                    Dinero.de(valorObligatorio(pedido.monto(), "monto")),
-                    desde, hasta, dias, horaDesde, horaHasta, medios);
+                    Dinero.de(valorObligatorio(pedido.monto(), "monto")), condiciones);
             case NXM -> promociones.crearNxM(pedido.nombre(),
                     (int) valorObligatorio(pedido.lleva() == null ? null : pedido.lleva().doubleValue(), "lleva"),
                     (int) valorObligatorio(pedido.paga() == null ? null : pedido.paga().doubleValue(), "paga"),
-                    desde, hasta, dias, horaDesde, horaHasta, medios);
+                    condiciones);
         };
         return vistas.promocion(promocion);
     }

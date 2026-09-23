@@ -18,6 +18,7 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
+import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 
@@ -41,8 +42,8 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void elPorcentajeMandaSuPorcentajeYNadaMas() {
         Promocion promocion = promociones.crearPorcentaje("Martes 30%", 30,
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(DayOfWeek.TUESDAY), null, null, Set.of());
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(DayOfWeek.TUESDAY), null, null, Set.of()));
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -56,8 +57,8 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void elMontoFijoMandaSuMontoYNadaMas() {
         Promocion promocion = promociones.crearMontoFijo("$2000 off", Dinero.de(2000),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of());
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -69,8 +70,8 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void elNxMMandaCuantoSeLlevaYCuantoSePaga() {
         Promocion promocion = promociones.crearNxM("2x1", 2, 1,
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of());
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -88,8 +89,8 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void lasCondicionesVaciasViajanComoListasVacias() {
         Promocion promocion = promociones.crearPorcentaje("Siempre 10%", 10,
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of());
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -102,9 +103,9 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void lasCondicionesCargadasViajanCompletas() {
         Promocion promocion = promociones.crearPorcentaje("Trasnoche", 25,
-                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31),
+                new CondicionesPromocion(LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31),
                 Set.of(DayOfWeek.FRIDAY), LocalTime.of(22, 0), LocalTime.of(23, 59),
-                Set.of(MedioPago.EFECTIVO));
+                Set.of(MedioPago.EFECTIVO)));
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -120,8 +121,8 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     @Test
     void laPromocionDesactivadaViajaMarcadaComoInactiva() {
         Promocion promocion = promociones.crearPorcentaje("Martes 30%", 30,
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of());
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
         assertTrue(vistas.promocion(promocion).activa());
 
         promociones.desactivar(promocion.getId());

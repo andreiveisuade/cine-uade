@@ -1,13 +1,10 @@
 package ar.uade.cine.service.promociones;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,42 +37,41 @@ public class GestorPromociones implements PoliticaPromociones {
         this.promocionRepository = promocionRepository;
     }
 
-    public Promocion crearPorcentaje(String nombre, double porcentaje, LocalDate desde, LocalDate hasta,
-                                     Set<DayOfWeek> dias, LocalTime horaDesde, LocalTime horaHasta,
-                                     Set<MedioPago> medios) {
+    public Promocion crearPorcentaje(String nombre, double porcentaje, CondicionesPromocion condiciones) {
         if (porcentaje <= 0 || porcentaje >= 100) {
             throw new IllegalArgumentException("El porcentaje tiene que estar entre 1 y 99");
         }
-        return guardar(new PromocionPorcentaje(nombre, porcentaje, desde, hasta, dias,
-                horaDesde, horaHasta, medios), nombre, desde, hasta);
+        return guardar(new PromocionPorcentaje(nombre, porcentaje, condiciones.desde(), condiciones.hasta(),
+                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
+                condiciones.mediosPago()), nombre, condiciones);
     }
 
-    public Promocion crearMontoFijo(String nombre, Dinero monto, LocalDate desde, LocalDate hasta,
-                                    Set<DayOfWeek> dias, LocalTime horaDesde, LocalTime horaHasta,
-                                    Set<MedioPago> medios) {
+    public Promocion crearMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
         if (monto == null || !monto.esMayorQue(Dinero.CERO)) {
             throw new IllegalArgumentException("El monto del descuento debe ser mayor a cero");
         }
-        return guardar(new PromocionMontoFijo(nombre, monto, desde, hasta, dias,
-                horaDesde, horaHasta, medios), nombre, desde, hasta);
+        return guardar(new PromocionMontoFijo(nombre, monto, condiciones.desde(), condiciones.hasta(),
+                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
+                condiciones.mediosPago()), nombre, condiciones);
     }
 
-    public Promocion crearNxM(String nombre, int lleva, int paga, LocalDate desde, LocalDate hasta,
-                              Set<DayOfWeek> dias, LocalTime horaDesde, LocalTime horaHasta,
-                              Set<MedioPago> medios) {
+    public Promocion crearNxM(String nombre, int lleva, int paga, CondicionesPromocion condiciones) {
         // Un 2x2 no descuenta nada y un 2x3 cobraría de más: sin esto, la promoción
         // existiría en la carta sin hacer nada, o haciendo lo contrario.
         if (lleva <= paga || paga <= 0) {
             throw new IllegalArgumentException("En un NxM hay que llevar más de lo que se paga");
         }
-        return guardar(new PromocionNxM(nombre, lleva, paga, desde, hasta, dias,
-                horaDesde, horaHasta, medios), nombre, desde, hasta);
+        return guardar(new PromocionNxM(nombre, lleva, paga, condiciones.desde(), condiciones.hasta(),
+                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
+                condiciones.mediosPago()), nombre, condiciones);
     }
 
-    private Promocion guardar(Promocion promocion, String nombre, LocalDate desde, LocalDate hasta) {
+    private Promocion guardar(Promocion promocion, String nombre, CondicionesPromocion condiciones) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("La promoción necesita un nombre");
         }
+        LocalDate desde = condiciones.desde();
+        LocalDate hasta = condiciones.hasta();
         if (desde == null || hasta == null || hasta.isBefore(desde)) {
             throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
         }
