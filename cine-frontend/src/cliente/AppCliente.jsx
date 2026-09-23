@@ -53,8 +53,8 @@ export function AppCliente() {
               <Route path="pelicula/:id" element={<Pelicula />} />
               <Route path="funcion/:id" element={<Funcion />} />
               <Route path="confirmar/:id" element={<Confirmar />} />
-              <Route path="ticket/:id" element={<Ticket />} />
-              <Route path="mis-reservas/:email?" element={<MisReservas />} />
+              <Route path="ticket/:codigo" element={<Ticket />} />
+              <Route path="mis-reservas" element={<MisReservas />} />
               <Route path="registro" element={<Registro />} />
               <Route path="*" element={<NoExiste />} />
             </Routes>

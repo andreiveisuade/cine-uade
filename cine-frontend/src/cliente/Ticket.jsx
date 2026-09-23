@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Alert, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
 import { Link, useLocation, useParams } from "react-router";
 import * as api from "../api/api-http.js";
@@ -87,17 +88,20 @@ function CartaCandy({ productos, reservaId }) {
 }
 
 export function Ticket() {
-  const { id } = useParams();
+  const { codigo } = useParams();
   const avisar = useAvisar();
+  const [cancelando, setCancelando] = useState(false);
+  const [cancelada, setCancelada] = useState(null);
   const recien = useLocation().state?.reserva;
-  // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide. La carta
-  // es opcional: si no carga, el ticket se muestra igual.
+  // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide por código,
+  // que es la única llave del cliente: el id se adivina. La carta es opcional.
   const carga = useCargar(() => Promise.all([
-    recien?.id === Number(id) ? recien : api.obtenerReserva(id),
+    recien?.codigo === codigo ? recien : api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
-  ]), [id]);
+  ]), [codigo]);
   if (!carga.datos) return <EsperaOError carga={carga} />;
-  const [reserva, productos] = carga.datos;
+  const reserva = cancelada || carga.datos[0];
+  const productos = carga.datos[1];
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
 
   async function copiar() {
@@ -105,9 +109,22 @@ export function Ticket() {
     avisar("Comprobante copiado");
   }
 
+  async function cancelar() {
+    setCancelando(true);
+    try {
+      setCancelada(await api.cancelarReservaPorCodigo(reserva.codigo));
+      avisar("Reserva cancelada, las butacas quedaron libres");
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+    setCancelando(false);
+  }
+
   return (
     <Stack gap="md">
-      <Alert color="green">Reserva confirmada. Presentá este comprobante en boletería.</Alert>
+      {reserva.estado === "CANCELADA"
+        ? <Alert color="gray">Esta reserva está cancelada.</Alert>
+        : <Alert color="green">Reserva confirmada. Presentá este comprobante en boletería.</Alert>}
       <Grid gap="md" align="flex-start">
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Stack gap="md">
@@ -122,6 +139,9 @@ export function Ticket() {
             <Group>
               <Button component={Link} to="/">Volver a la cartelera</Button>
               <Button variant="default" onClick={copiar}>Copiar</Button>
+              {reserva.estado === "RESERVADA" && (
+                <Button variant="outline" color="red" loading={cancelando} onClick={cancelar}>Cancelar reserva</Button>
+              )}
             </Group>
           </Stack>
         </Grid.Col>

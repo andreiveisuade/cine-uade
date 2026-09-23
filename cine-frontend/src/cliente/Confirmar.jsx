@@ -53,7 +53,7 @@ export function Confirmar() {
       reservada.current = true;
       setSeleccion({ funcionId: null, butacas: {} });
       // El alta ya trae la reserva entera: el ticket la dibuja sin volver a pedirla.
-      navegar(`/ticket/${reserva.id}`, { state: { reserva } });
+      navegar(`/ticket/${reserva.codigo}`, { state: { reserva } });
     } catch (e) {
       setEnviando(false);
       // 409: alguien tomó la butaca en el medio; vuelve al mapa recargado.

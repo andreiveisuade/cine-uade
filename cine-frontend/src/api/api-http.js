@@ -105,9 +105,6 @@ export const obtenerReservaPorCodigo = (codigo) =>
 export const cancelarReservaPorCodigo = (codigo) =>
   post(`/reservas/codigo/${encodeURIComponent(codigo)}/cancelacion`);
 
-export const obtenerReservasDe = (email) =>
-  get(`/reservas?email=${encodeURIComponent(String(email || "").trim())}`);
-
 export async function login(email, password) {
   const empleado = await post("/sesion", { email, password });
   sessionStorage.setItem(CLAVE_CREDENCIALES, base64(`${email}:${password}`));
