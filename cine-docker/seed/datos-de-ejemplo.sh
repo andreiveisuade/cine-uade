@@ -1,5 +1,10 @@
 #!/bin/sh
-# Carga un complejo de ejemplo: seis salas, unas películas y su programación.
+# Carga un complejo de ejemplo: seis salas, la carta del candy y una promoción.
+#
+# Películas no: las trae el importador de TMDB (botón Importador del panel) y el
+# encargado las confirma en Por revisar. Sembrar películas inventadas mezclaba datos de
+# prueba con la cartelera real, y con ids fijos el seed se rompía apenas la base ya tenía
+# importadas. Las funciones salen después, de la Grilla o del Planificador.
 #
 # Va por la API y no por SQL a propósito: así los datos pasan por las mismas reglas que
 # usa la aplicación —R1, R2, R3, R7, R8— y es imposible sembrar algo que el sistema
@@ -12,39 +17,22 @@
 
 set -e
 API="${API:-http://localhost:8080/api}"
+# Las altas son del encargado: van con sus credenciales, las mismas del seed 02-admin.sql.
+ADMIN="${ADMIN:-encargado@cine.uade.ar:cine2026}"
 
 alta() {
-    respuesta=$(curl -s -w '\n%{http_code}' -X POST "$API/$1" \
+    ULTIMO_ID=""
+    respuesta=$(curl -s -w '\n%{http_code}' -u "$ADMIN" -X POST "$API/$1" \
         -H 'Content-Type: application/json' -d "$2")
     codigo=$(echo "$respuesta" | tail -1)
     cuerpo=$(echo "$respuesta" | sed '$d')
     if [ "$codigo" = "201" ]; then
         echo "  ok    $3"
+        ULTIMO_ID=$(echo "$cuerpo" | sed -n 's/^{"id":\([0-9]*\).*/\1/p')
     else
         echo "  $codigo   $3 -> $cuerpo"
     fi
 }
-
-echo "Películas"
-alta peliculas '{"titulo":"Matrix","duracionMinutos":136,"generos":["ACCION","CIENCIA_FICCION"],
-  "clasificacion":"MAS_16","director":"Lana y Lilly Wachowski","anio":1999,"idiomaOriginal":"Inglés",
-  "sinopsis":"Un programador descubre que la realidad que conoce es una simulación.",
-  "posterUrl":"https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg","enCartelera":true}' "Matrix"
-
-alta peliculas '{"titulo":"El Padrino","duracionMinutos":175,"generos":["DRAMA","SUSPENSO"],
-  "clasificacion":"MAS_16","director":"Francis Ford Coppola","anio":1972,"idiomaOriginal":"Inglés",
-  "sinopsis":"El patriarca de una familia mafiosa le pasa el control a su hijo menor.",
-  "posterUrl":"https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg","enCartelera":true}' "El Padrino"
-
-alta peliculas '{"titulo":"Intensamente","duracionMinutos":95,"generos":["ANIMACION","COMEDIA"],
-  "clasificacion":"ATP","director":"Pete Docter","anio":2015,"idiomaOriginal":"Inglés",
-  "sinopsis":"Las cinco emociones de una nena de once años se quedan sin su guía.",
-  "posterUrl":"https://image.tmdb.org/t/p/w500/2H1TmgdfNtsKlU9jKdeNyYL5y8T.jpg","enCartelera":true}' "Intensamente"
-
-alta peliculas '{"titulo":"El Resplandor","duracionMinutos":146,"generos":["TERROR","SUSPENSO"],
-  "clasificacion":"MAS_18","director":"Stanley Kubrick","anio":1980,"idiomaOriginal":"Inglés",
-  "sinopsis":"Un escritor cuida un hotel vacío durante el invierno y empieza a perder la cabeza.",
-  "posterUrl":"https://image.tmdb.org/t/p/w500/xazWoLealQwEgqZ89MLZklLZD3k.jpg","enCartelera":true}' "El Resplandor"
 
 echo "Salas"
 # En cuña: las filas de adelante son más cortas. Las accesibles van a los bordes de A.
@@ -61,21 +49,23 @@ alta salas '{"nombre":"Sala 5","tipo":"DOS_D","butacasPorFila":[6,6,8,8],
   "codigosPareja":["A1","A2","A3","A4","A5","A6","B1","B2","B3","B4","B5","B6"]}' "Sala 5, 28 butacas de pareja"
 alta salas '{"nombre":"Sala 6","tipo":"CUATRO_D","butacasPorFila":[10,12,12,14,14,12]}' "Sala 6 4D, 74 butacas móviles"
 
-echo "Funciones"
-HOY=$(date +%F)
-# BSD (macOS), GNU (Linux) y BusyBox (Alpine, cuando esto corre dentro de un contenedor).
-# BusyBox no entiende ninguna de las dos primeras, pero sí una fecha epoch.
-MANANA=$(date -v+1d +%F 2>/dev/null \
-      || date -d '+1 day' +%F 2>/dev/null \
-      || date -d "@$(( $(date +%s) + 86400 ))" +%F)
+echo "Candy"
+alta candy/productos '{"nombre":"Pochoclos grandes","tipo":"POCHOCLOS","precio":4000}' "Pochoclos grandes"
+POCHOCLOS=$ULTIMO_ID
+alta candy/productos '{"nombre":"Pochoclos medianos","tipo":"POCHOCLOS","precio":3200}' "Pochoclos medianos"
+alta candy/productos '{"nombre":"Gaseosa 500ml","tipo":"BEBIDA","precio":2500}' "Gaseosa 500ml"
+GASEOSA=$ULTIMO_ID
+alta candy/productos '{"nombre":"Agua 500ml","tipo":"BEBIDA","precio":1800}' "Agua 500ml"
+alta candy/productos '{"nombre":"Chocolate","tipo":"GOLOSINA","precio":1500}' "Chocolate"
+# R14: el combo tiene que salir menos que sus componentes sueltos ($ 6500).
+if [ -n "$POCHOCLOS" ] && [ -n "$GASEOSA" ]; then
+    alta candy/combos "{\"nombre\":\"Combo clásico\",\"precio\":5500,
+      \"componentes\":{\"$POCHOCLOS\":1,\"$GASEOSA\":1}}" "Combo clásico"
+fi
 
-alta funciones "{\"peliculaId\":1,\"salaId\":1,\"inicio\":\"${HOY}T20:30:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}" "Matrix, Sala 1, hoy 20:30"
-alta funciones "{\"peliculaId\":1,\"salaId\":3,\"inicio\":\"${HOY}T22:00:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"TRES_D\",\"precio\":5500}" "Matrix 3D, Sala 3, hoy 22:00"
-alta funciones "{\"peliculaId\":2,\"salaId\":2,\"inicio\":\"${HOY}T19:00:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":4800}" "El Padrino, Sala 2, hoy 19:00"
-alta funciones "{\"peliculaId\":3,\"salaId\":6,\"inicio\":\"${HOY}T15:00:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":4500}" "Intensamente 4D, Sala 6, hoy 15:00"
-alta funciones "{\"peliculaId\":3,\"salaId\":5,\"inicio\":\"${HOY}T17:30:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":4500}" "Intensamente, Sala 5, hoy 17:30"
-alta funciones "{\"peliculaId\":4,\"salaId\":4,\"inicio\":\"${HOY}T23:00:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":5200}" "El Resplandor, Sala 4, hoy 23:00"
-alta funciones "{\"peliculaId\":2,\"salaId\":1,\"inicio\":\"${MANANA}T21:00:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}" "El Padrino, Sala 1, mañana 21:00"
-alta funciones "{\"peliculaId\":4,\"salaId\":3,\"inicio\":\"${MANANA}T22:30:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"TRES_D\",\"precio\":5500}" "El Resplandor 3D, Sala 3, mañana 22:30"
+echo "Promociones"
+DESDE=$(date +%F)
+alta promociones "{\"nombre\":\"Miércoles 2x1\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":1,
+  \"vigenciaDesde\":\"$DESDE\",\"vigenciaHasta\":\"2026-12-31\",\"diasSemana\":[\"WEDNESDAY\"]}" "Miércoles 2x1"
 
-echo "Listo."
+echo "Listo. Las películas se importan desde el panel: Importador y después Por revisar."

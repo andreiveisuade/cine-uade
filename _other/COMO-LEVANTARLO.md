@@ -52,8 +52,12 @@ docker compose ps      # repetir hasta ver mysql y backend (healthy)
 **4. Sembrar**
 
 ```bash
-./seed/datos-de-ejemplo.sh      # 4 películas, 6 salas, 8 funciones
+./seed/datos-de-ejemplo.sh      # 6 salas, carta del candy y una promoción
 ```
+
+Películas no siembra: se traen de TMDB con el botón **Importador** del panel (necesita
+`TMDB_TOKEN` en el `.env`) y se confirman en **Por revisar**. Las funciones se arman
+después desde **Grilla** o **Planificador**.
 
 **5. Entrar**
 
