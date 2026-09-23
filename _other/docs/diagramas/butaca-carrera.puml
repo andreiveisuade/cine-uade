@@ -7,19 +7,23 @@ skinparam ParticipantPadding 14
 
 actor Ana
 actor Beto
-participant "Ocupacion\n+ Redis" as Bloqueo
-database "MySQL\nUNIQUE(funcion,asiento)" as DB
+participant "Ocupacion" as Bloqueo
+database "MySQL" as DB
 
 == Defensa 1: el bloqueo, mientras elige ==
 
 Ana -> Bloqueo : elige C5
 activate Bloqueo
+Bloqueo -> DB : UPDATE bloqueo_butaca (propia o vencida)\n0 filas -> INSERT IGNORE
+DB --> Bloqueo : 1 fila
 Bloqueo --> Ana : bloqueada 180s
 deactivate Bloqueo
 
-Beto -> Bloqueo : abre el mapa
+Beto -> Bloqueo : elige C5
 activate Bloqueo
-Bloqueo --> Beto : C5 aparece TOMADA
+Bloqueo -> DB : el mismo UPDATE\n0 filas -> INSERT IGNORE
+DB --> Bloqueo : 0 filas: PK(funcion,asiento)\nya la tiene Ana
+Bloqueo --> Beto : C5 rechazada, aparece TOMADA
 deactivate Bloqueo
 
 note over Beto
@@ -31,12 +35,12 @@ end note
 == Defensa 2: el UNIQUE, al confirmar ==
 
 note over Bloqueo
-  Si Redis no esta, la etapa 1
-  no existe y las dos llegan
-  aca creyendo que C5 esta libre.
+  El bloqueo es comodidad: vence
+  a los 3 minutos, y quien confirma
+  sin el choca aca igual.
 end note
 
-Ana -> DB : INSERT entrada(f1, C5)
+Ana -> DB : INSERT entrada(f1, C5)\nUNIQUE(funcion,asiento)
 activate DB
 DB --> Ana : ok
 deactivate DB

@@ -62,12 +62,6 @@ package infrastructure {
     class Password
   }
 
-  package bloqueos {
-    interface BloqueoButacas
-    class "BloqueoButacasRedis\nla butaca mientras se elige" as BloqueoRedis
-    class BloqueoButacasMemoria
-  }
-
   package comprobantes {
     interface GeneradorTicket
     interface GeneradorTicketCandy
@@ -116,7 +110,7 @@ package model {
     class "Programacion @Entity" as DomProgramaciones
   }
   package ventas as dom_ventas {
-    class "Reserva, Pago @Entity\nEntrada, EstadoReserva, MedioPago" as DomVentas
+    class "Reserva, Pago, BloqueoButaca @Entity\nEntrada, EstadoReserva, MedioPago" as DomVentas
   }
   package candy as dom_candy {
     class "Producto, CompraCandy @Entity\nItemCombo, ItemCompra, TipoProducto" as DomCandy
@@ -138,6 +132,7 @@ package repository {
   interface ClienteRepository
   interface ReservaRepository
   interface PagoRepository
+  interface "BloqueoButacaRepository\nla butaca mientras se elige" as BloqueoButacaRepository
   interface ProductoRepository
   interface CompraCandyRepository
   interface EmpleadoRepository
@@ -146,7 +141,7 @@ package repository {
   class DineroConverter
 
   note bottom of PeliculaRepository
-    13 interfaces JpaRepository, en un
+    14 interfaces JpaRepository, en un
     subpaquete por subdominio como model/:
     sin implementacion propia y sin
     subcarpeta por tecnologia. Spring
@@ -196,7 +191,7 @@ GestorReservas -down-> GeneradorTicket
 GestorReservas -right-> Ocupacion
 Ocupacion -down-> ReservaRepository
 Ocupacion -down-> AsientoRepository
-Ocupacion -down-> BloqueoButacas
+Ocupacion -down-> BloqueoButacaRepository
 GestorPagos -down-> PagoRepository
 
 ' La carta y las ventas del candy cambian por motivos distintos: una cuando
@@ -213,8 +208,6 @@ GeneradoresTxt ..up|> comprobantes
 GestorPagos -down-> PasarelaPagos
 GestorPagos -down-> GeneradorRecibo
 PasarelaEmulada ..up|> PasarelaPagos
-BloqueoRedis ..up|> BloqueoButacas
-BloqueoButacasMemoria ..up|> BloqueoButacas
 
 GestorInformes -down-> PagoRepository
 GestorInformes -down-> CompraCandyRepository
@@ -240,12 +233,12 @@ legend bottom
   | service | Las reglas de negocio. Cada gestor pide los repositorios que necesita para validarlas. |
   | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. No |
   |  | depende de ninguna otra capa. Solo Promocion es jerarquia real. |
-  | repository | 13 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
+  | repository | 14 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
   | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
   |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |
   |  | **comprobantes**: el ticket que se entrega; no es de persistencia, se imprime y no se |
-  |  | consulta. **importador**: de donde sale la cartelera. **bloqueos**: la butaca mientras se |
-  |  | elige, con Redis o en memoria. **seguridad**: como se guardan las credenciales. |
+  |  | consulta. **importador**: de donde sale la cartelera. **seguridad**: como se guardan |
+  |  | las credenciales. La butaca mientras se elige ya no es un puerto: es una tabla mas. |
 endlegend
 
 @enduml

@@ -15,14 +15,12 @@ Cómo ponerlo a andar: [`_other/COMO-LEVANTARLO.md`](../_other/COMO-LEVANTARLO.m
 | frontend | nginx | **8080** | el navegador |
 | backend | temurin 21 | — | nginx, por `backend:8080` |
 | mysql | mysql:8.4 | — | backend y Adminer, por `mysql:3306` |
-| redis | redis:8 | — | solo el backend |
 | adminer | adminer:5 | 8081, solo en `127.0.0.1` | el navegador de esta máquina |
 
 **Un solo puerto sale al host.** El navegador nunca habla con el backend directo: nginx
 reenvía `/api` por la red interna, así que todo sale del mismo origen y no hace falta CORS.
 
-Dos redes separadas: **web** (frontend ↔ backend) y **datos** (backend y adminer ↔ mysql,
-backend ↔ redis). El frontend no tiene ruta hasta la base. El backend es el único en las dos.
+Dos redes separadas: **web** (frontend ↔ backend) y **datos** (backend y adminer ↔ mysql). El frontend no tiene ruta hasta la base. El backend es el único en las dos.
 
 Arrancan en cadena: `mysql` healthy → `backend` healthy → `frontend`.
 
@@ -33,11 +31,12 @@ Diagramas en el [manual](../_other/docs/manual/index.html#correr): topología y 
 MySQL corre `schema.sql` y `seed/02-admin.sql` **la primera vez**, con el volumen vacío.
 De ahí sale el administrador, que no tiene endpoint de alta.
 
-Sobre una base ya creada, aplicar el schema a mano:
+Sobre una base ya creada, aplicar a mano el `migracion-*.sql` que falte (cada uno dice qué
+agrega). Por ejemplo, la tabla de los bloqueos de butaca:
 
 ```sh
 docker compose exec -T mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas \
-  < ../cine-backend/src/main/resources/schema.sql
+  < ../cine-backend/src/main/resources/migracion-bloqueos.sql
 ```
 
 Empezar de cero: `docker compose down -v && docker compose up -d`.
@@ -67,32 +66,16 @@ services:
       - "127.0.0.1:3306:3306"
 ```
 
-## Redis se puede apagar
+## Los bloqueos de butaca viven en MySQL
 
-```sh
-docker compose stop redis      # el cine sigue vendiendo
-```
+La butaca que alguien está eligiendo queda apartada tres minutos en la tabla
+`bloqueo_butaca`, en la misma base que las entradas. Antes era un contenedor de Redis
+aparte; ahora es una sola fuente de verdad y un servicio menos. Los vencidos los borra el
+backend cada cinco minutos.
 
-Guarda los bloqueos de butaca de mientras alguien elige. Apagado, el mapa deja de mostrar
-como tomadas las que otro está eligiendo y esa butaca se pierde recién al confirmar.
+La garantía contra la doble venta no es esa tabla sino el `UNIQUE (funcion_id, asiento_id)`
+de `entrada`: el bloqueo solo evita que dos personas elijan la misma butaca a la vez.
 
-Lo que **no** cambia: una butaca no se vende dos veces. Eso lo garantiza el
-`UNIQUE (funcion_id, asiento_id)` de MySQL. Por eso el backend lo espera con
-`service_started` y no con `service_healthy` como a la base.
-
-Sin volumen y con `--save ""`: lo que guarda vence en tres minutos.
-
-## El importador
-
-Trae de TMDB lo que está hoy en cartelera en Argentina. **Lo dispara el encargado** desde
-el panel: sin un pedido no gasta una llamada. Es la única llamada saliente del sistema, y
-vive dentro del backend (`infrastructure/importador/`), sin contenedor aparte.
-
-Necesita `TMDB_TOKEN` en el `.env`. Sin token el sistema levanta igual y la pantalla avisa.
-
-Lo que baja **no entra al catálogo**: entra al buzón como pendiente, y pasa por las mismas
-reglas que el alta a mano hasta que el encargado lo confirma.
-
-```sh
-docker compose logs -f backend      # qué trajo la última corrida
-```
+Sobre un despliegue que todavía tiene Redis: aplicar `migracion-bloqueos.sql` (arriba) y
+levantar con `docker compose up -d --build --remove-orphans`, que baja el contenedor
+`cine-redis` que ya no está en el compose.

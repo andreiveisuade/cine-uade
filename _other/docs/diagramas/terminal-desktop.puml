@@ -19,7 +19,6 @@ node "Servidor" as srv {
     node "nginx\n+ frontend" as nginx
     node "backend" as backSrv
     database "MySQL" as dbSrv
-    node "redis" as redis
   }
 }
 
@@ -33,14 +32,13 @@ backLocal --> dbLocal
 web --> nginx
 nginx --> backSrv : proxy /api
 backSrv --> dbSrv
-backSrv ..> redis : bloqueos
 
 backLocal <-> backSrv : sincronizacion HTTP
 
 note right of dbLocal
-  Sin redis: una sola caja,
-  no hay butacas que bloquear
-  entre usuarios.
+  Mismo schema que el servidor,
+  bloqueo_butaca incluida: con una
+  sola caja queda siempre vacia.
 end note
 
 legend bottom

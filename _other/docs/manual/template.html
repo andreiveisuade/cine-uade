@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 451 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 452 tests.</p>
       </div>
     </section>
 
@@ -572,8 +572,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>); los compartidos en <code>catalogos/</code> y <code>comun/</code></td><td>Comportamiento</td></tr>
             <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio con R1..R19</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
             <tr><td><code>model/</code></td><td>Entidades, enums y <code>Dinero</code></td><td>Guardarse o mostrarse</td></tr>
-            <tr><td><code>repository/</code></td><td>13 <code>JpaRepository</code> por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
-            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, Redis, reloj, seguridad) y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
+            <tr><td><code>repository/</code></td><td>14 <code>JpaRepository</code> por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
+            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, reloj, seguridad) y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
           </tbody>
         </table>
       </div>
@@ -648,13 +648,13 @@ body.lightbox-locked { overflow: hidden; }
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
             <tr><td>65 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen; <code>ErrorVistaDTO</code> y <code>PedidoActivacionDTO</code> en <code>comun/</code></td></tr>
-            <tr><td>13 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad, en el subdominio de su entidad; Spring Data genera la implementación</td></tr>
+            <tr><td>14 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad, en el subdominio de su entidad; Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ columna <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización</td></tr>
-            <tr><td><code>BloqueoButacas</code> → <code>BloqueoButacasRedis</code>, <code>BloqueoButacasMemoria</code></td><td>Bloqueo efímero; memoria en tests</td></tr>
+            <tr><td><code>Adaptadores.Tareas</code></td><td><code>@EnableScheduling</code> fuera de los tests: la limpieza de bloqueos vencidos</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
@@ -695,7 +695,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@Component</code></td><td>Bean genérico</td><td>Los <code>Vistas*</code></td></tr>
             <tr><td><code>@Configuration</code> + <code>@Bean</code></td><td>Métodos que fabrican beans cuando hay que elegir</td><td><code>Adaptadores</code></td></tr>
             <tr><td><code>@EnableWebSecurity</code></td><td>Activa Spring Security; un <code>SecurityFilterChain</code> define rutas y roles</td><td><code>ConfiguracionSeguridad</code></td></tr>
-            <tr><td><code>@Profile("!test")</code></td><td>Bean solo fuera de los tests</td><td>Redis, reloj, TMDB</td></tr>
+            <tr><td><code>@Profile("!test")</code></td><td>Bean solo fuera de los tests</td><td>Reloj, TMDB, las tareas programadas</td></tr>
+            <tr><td><code>@Scheduled</code></td><td>Método que Spring corre solo cada tanto (requiere <code>@EnableScheduling</code>)</td><td><code>Ocupacion.borrarBloqueosVencidos</code>, cada 5 min</td></tr>
             <tr><td><code>@Value("${...}")</code></td><td>Inyecta un valor de <code>application.yml</code></td><td><code>Adaptadores</code>, <code>GestorImportaciones</code></td></tr>
             <tr><td><code>@Transactional</code></td><td>Transacción por método: commit al salir, rollback ante excepción (vía proxy). <code>readOnly = true</code> en las lecturas: sin dirty checking ni flush</td><td>Gestores que escriben. Sin ella a propósito: <code>GestorImportaciones</code> y <code>extenderActivas</code>, que cuentan lo que falla y siguen</td></tr>
           </tbody>
@@ -725,9 +726,11 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Anotación</th><th>Qué significa</th><th>Ejemplo</th></tr></thead>
           <tbody>
-            <tr><td><code>@Entity</code></td><td>Clase = tabla, instancia = fila</td><td>Las 19 entidades</td></tr>
+            <tr><td><code>@Entity</code></td><td>Clase = tabla, instancia = fila</td><td>Las 20 entidades</td></tr>
             <tr><td><code>@Table</code></td><td>Nombre y restricciones de unicidad</td><td><code>Entrada</code>: <code>UNIQUE (funcion_id, asiento_id)</code></td></tr>
-            <tr><td><code>@Id</code> + <code>@GeneratedValue(IDENTITY)</code></td><td>PK por <code>AUTO_INCREMENT</code></td><td>Todas</td></tr>
+            <tr><td><code>@Id</code> + <code>@GeneratedValue(IDENTITY)</code></td><td>PK por <code>AUTO_INCREMENT</code></td><td>Todas menos <code>BloqueoButaca</code></td></tr>
+            <tr><td><code>@IdClass</code> + <code>@Id @ManyToOne</code></td><td>PK compuesta por dos FK</td><td><code>BloqueoButaca</code>: <code>(funcion_id, asiento_id)</code></td></tr>
+            <tr><td><code>@Modifying</code> + <code>@Query</code></td><td>Consulta que escribe (<code>UPDATE</code>, <code>DELETE</code>, <code>INSERT</code> nativo)</td><td><code>BloqueoButacaRepository</code></td></tr>
             <tr><td><code>@Column</code></td><td>Nombre de columna o <code>unique</code></td><td><code>Reserva.codigo</code></td></tr>
             <tr><td><code>@Enumerated(STRING)</code></td><td>Enum guardado por nombre: reordenarlo no corrompe datos</td><td>Estados, versión…</td></tr>
             <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse</td><td><code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code></td></tr>
@@ -1067,14 +1070,39 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
             <tr><td>Etapa</td><td>eligiendo</td><td>falta pagar</td></tr>
             <tr><td>Dura</td><td>3 min, renovables</td><td>30 min</td></tr>
             <tr><td>Al vencer</td><td>desaparece</td><td><code>EXPIRADA</code></td></tr>
-            <tr><td>Vive en</td><td>Redis (<code>SET NX PX</code>, una clave por butaca)</td><td>MySQL</td></tr>
+            <tr><td>Vive en</td><td>MySQL, tabla <code>bloqueo_butaca</code> (PK <code>funcion_id, asiento_id</code>)</td><td>MySQL</td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        <code>reservar</code> suelta los bloqueos de la sesión. Sin Redis se vende igual:
-        <code>BloqueoButacasRedis</code> degrada a «ningún bloqueo», y la garantía sigue siendo el
-        <code>UNIQUE</code> (ver <a href="#base-de-datos">doble venta</a>).
+        <code>reservar</code> suelta los bloqueos de la sesión. El bloqueo es comodidad: la garantía contra la
+        doble venta sigue siendo el <code>UNIQUE</code> de <code>entrada</code> (ver <a href="#base-de-datos">doble venta</a>).
+        Pero tiene que ser correcto bajo concurrencia: dos sesiones no pueden tener la misma butaca a la vez.
+      </p>
+      <h3>Tomar la butaca sin leer antes</h3>
+      <p>
+        Vivía en Redis. Pasó a una tabla de MySQL: una sola fuente de verdad con las entradas, un contenedor menos que
+        levantar y explicar, y la atomicidad la dan la clave primaria y un <code>UPDATE</code> condicional en vez de un
+        script Lua. <code>Ocupacion</code> usa <code>BloqueoButacaRepository</code> directo, como cualquier gestor a su
+        repositorio. Tomar o renovar son dos sentencias, y ninguna es un <code>SELECT</code> previo (entre «está libre» y el
+        <code>INSERT</code> cabe otra sesión):
+      </p>
+      <ol>
+        <li><code>UPDATE ... SET sesion, vence_en WHERE funcion, asiento AND (sesion = la mía OR vence_en &lt;= ahora)</code>: renueva la propia o se queda con una vencida. La base bloquea la fila y reevalúa el <code>WHERE</code>, así que de dos que pisan la misma vencida gana una.</li>
+        <li>Si afectó 0 filas, <code>INSERT IGNORE</code>. Si otra sesión la insertó primero, la PK no deja entrar la segunda: 0 filas, butaca rechazada. Sin excepción, así que no deja ninguna transacción <code>rollback-only</code> ni un <code>ERROR</code> en el log por algo que es el caso normal. H2 lo entiende en <code>MODE=MySQL</code>.</li>
+      </ol>
+      <p>
+        Cada una corre en su propia transacción (<code>REQUIRES_NEW</code>): en MySQL el <code>UPDATE</code> que no encuentra
+        fila deja un gap lock hasta el commit, y dos sesiones con ese lock que después insertan terminan en deadlock.
+        Cerrando el <code>UPDATE</code> antes, el segundo <code>INSERT</code> espera al primero y lo ignora. Las lecturas filtran
+        <code>vence_en &gt; reloj.ahora()</code>, con el <code>Reloj</code> inyectado; soltar es un <code>DELETE</code> filtrado por sesión;
+        y un <code>@Scheduled</code> borra los vencidos cada 5 minutos, por higiene (un vencido ya no ocupa nada).
+      </p>
+      <p>
+        La alternativa de JPA es <code>@Lock(PESSIMISTIC_WRITE)</code> (<code>SELECT ... FOR UPDATE</code>) antes de escribir. No hace
+        falta: el <code>FOR UPDATE</code> no bloquea una fila que todavía no existe, que es justo el caso de la primera
+        sesión, y la PK ya serializa a las que compiten. <code>OcupacionTest</code> larga 8 hilos por la misma butaca,
+        libre y vencida, y gana exactamente uno.
       </p>
     </section>
 
@@ -1187,7 +1215,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
     <section class="doc-section" id="persistencia">
       <h2>Persistencia</h2>
       <p>
-        13 interfaces <code>*Repository extends JpaRepository</code>, sin implementación propia. Los gestores
+        14 interfaces <code>*Repository extends JpaRepository</code>, sin implementación propia. Los gestores
         no saben si atrás hay MySQL o H2. Consultas derivadas del nombre; <code>@Query</code> donde no alcanza.
       </p>
       <h3>El costo de las consultas</h3>
@@ -1203,7 +1231,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
 
     <section class="doc-section" id="base-de-datos">
       <h2>Base de datos</h2>
-      <p>MySQL 8.4. Esquema en <code>cine-backend/src/main/resources/schema.sql</code>: 19 tablas.</p>
+      <p>MySQL 8.4. Esquema en <code>cine-backend/src/main/resources/schema.sql</code>: 20 tablas.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Tabla</th><th>Contenido</th></tr></thead>
@@ -1215,6 +1243,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><code>funcion</code></td><td>película, sala, inicio, versión, precio; grilla o <code>NULL</code></td></tr>
             <tr><td><code>reserva</code></td><td>función, cliente, estado, <code>codigo</code> único, <code>ingresada_en</code></td></tr>
             <tr><td><code>entrada</code></td><td>butaca, tarifa, precio; <code>UNIQUE (funcion_id, asiento_id)</code></td></tr>
+            <tr><td><code>bloqueo_butaca</code></td><td>la butaca mientras se elige: sesión y vencimiento, PK <code>(funcion_id, asiento_id)</code>, <code>ON DELETE CASCADE</code></td></tr>
             <tr><td><code>promocion</code>, <code>promocion_dia</code>, <code>promocion_medio</code></td><td>tabla única con discriminador y condiciones</td></tr>
             <tr><td><code>pago</code></td><td>cobro, <code>reserva_id</code> único</td></tr>
             <tr><td><code>producto</code>, <code>combo_item</code></td><td>carta y composición de combos</td></tr>
@@ -1242,7 +1271,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <code>schema.sql</code>. Adminer (<code>localhost:8081</code>) entra con servidor <code>mysql</code>.
       </p>
       <pre><code>docker exec -i cine-mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" appsinteractivas \
-  &lt; cine-backend/src/main/resources/migracion-programaciones.sql</code></pre>
+  &lt; cine-backend/src/main/resources/migracion-bloqueos.sql</code></pre>
     </section>
 
     <section class="doc-section" id="dto">
@@ -1266,9 +1295,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorAcceso</code> valida la puerta, <code>ConsultasReservas</code> busca; <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea, <code>GestorInformes</code> corta por función</td></tr>
             <tr><td><strong>O</strong> · Abierto/cerrado</td><td><code>Promocion.calcularDescuento()</code>: un tipo nuevo es una subclase, el cobro no cambia</td></tr>
-            <tr><td><strong>L</strong> · Liskov</td><td><code>BloqueoButacasRedis</code> y <code>BloqueoButacasMemoria</code> cumplen el mismo contrato</td></tr>
+            <tr><td><strong>L</strong> · Liskov</td><td><code>TmdbHttp</code> y el <code>CatalogoDePrueba</code> de los tests cumplen el mismo <code>CatalogoExterno</code></td></tr>
             <tr><td><strong>I</strong> · Segregación</td><td><code>GestorPagos</code> depende de <code>PoliticaPromociones</code> (un método), no del ABM</td></tr>
-            <tr><td><strong>D</strong> · Inversión</td><td>Los gestores dependen de <code>*Repository</code>, <code>PasarelaPagos</code>, <code>GeneradorTicket</code>, <code>BloqueoButacas</code>, <code>Reloj</code>; <code>Adaptadores</code> elige</td></tr>
+            <tr><td><strong>D</strong> · Inversión</td><td>Los gestores dependen de <code>*Repository</code>, <code>PasarelaPagos</code>, <code>GeneradorTicket</code>, <code>Reloj</code>; <code>Adaptadores</code> elige</td></tr>
           </tbody>
         </table>
       </div>
@@ -1322,7 +1351,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <li><strong>MVC en capas:</strong> <code>model/</code>, front + <code>*VistaDTO</code>, <code>controller/</code>.</li>
         <li><strong>Repository:</strong> los <code>*Repository</code>. <strong>DTO + Assembler:</strong> <code>dto/</code> y <code>Vistas*</code>.</li>
         <li><strong>Strategy:</strong> las subclases de <code>Promocion</code>.</li>
-        <li><strong>Adapter</strong> (puertos): <code>PasarelaPagos</code>, <code>CatalogoExterno</code>, <code>BloqueoButacas</code>, <code>GeneradorTicket</code>, <code>Reloj</code>.</li>
+        <li><strong>Adapter</strong> (puertos): <code>PasarelaPagos</code>, <code>CatalogoExterno</code>, <code>GeneradorTicket</code>, <code>Reloj</code>.</li>
         <li><strong>Singleton:</strong> cada bean de Spring es una instancia única. <strong>Proxy:</strong> <code>@Transactional</code>. <strong>Front Controller:</strong> <code>DispatcherServlet</code>.</li>
       </ul>
     </section>
@@ -1340,7 +1369,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> aplica R1..R19, <code>model/</code> son las entidades, <code>repository/</code> persiste, <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
             <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Las reglas quedarían atadas a HTTP: el importador, que da de alta por <code>GestorRevisionCartelera</code>, y los tests de gestor tendrían que duplicarlas.</td></tr>
             <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>En el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>): es el único paso común a API, importador y seed.</td></tr>
-            <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code> (<code>spring.datasource.url</code>, credenciales; Hibernate deduce el dialecto), el driver en <code>pom.xml</code> y <code>schema.sql</code>. Repositorios y gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2.</td></tr>
+            <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code> (<code>spring.datasource.url</code>, credenciales; Hibernate deduce el dialecto), el driver en <code>pom.xml</code>, <code>schema.sql</code> y el único SQL nativo, el <code>INSERT IGNORE</code> de <code>BloqueoButacaRepository</code>. El resto de repositorios y los gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1350,7 +1379,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 19 <code>@Entity</code>, enums y <code>Dinero</code>, con su lógica propia (<code>Reserva.getTotal()</code>). La View es el front React, que recibe <code>*VistaDTO</code>.</td></tr>
+            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 20 <code>@Entity</code>, enums y <code>Dinero</code>, con su lógica propia (<code>Reserva.getTotal()</code>). La View es el front React, que recibe <code>*VistaDTO</code>.</td></tr>
             <tr><td>¿Cuál es la responsabilidad del Controller?</td><td>Recibir el pedido, validar el DTO (<code>@Valid</code>), llamar al gestor y devolver el DTO con su código: <code>POST /api/reservas</code> → <code>GestorReservas.reservar</code> → 201.</td></tr>
             <tr><td>¿Qué diferencia hay entre Controller y Service?</td><td>El controller sabe de HTTP y no decide; el service decide reglas y transacción (<code>@Transactional</code>) y no sabe de HTTP.</td></tr>
             <tr><td>¿Por qué la View no debería acceder directamente a la base de datos?</td><td>Se saltearía reglas y seguridad y quedaría atada al esquema. En Docker el frontend (red <code>web</code>) ni siquiera tiene ruta a MySQL (red <code>datos</code>).</td></tr>
@@ -1390,7 +1419,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Por qué esta tabla tiene esa clave primaria?</td><td><code>id AUTO_INCREMENT</code> donde hay identidad; PK compuesta en tablas de valores (<code>pelicula_genero (pelicula_id, genero)</code>, <code>combo_item</code>). Lo único de negocio va con <code>UNIQUE</code> (<code>reserva.codigo</code>, <code>usuario.email</code>).</td></tr>
+            <tr><td>¿Por qué esta tabla tiene esa clave primaria?</td><td><code>id AUTO_INCREMENT</code> donde hay identidad; PK compuesta en tablas de valores (<code>pelicula_genero (pelicula_id, genero)</code>, <code>combo_item</code>) y donde el par es lo único (<code>bloqueo_butaca (funcion_id, asiento_id)</code>). Lo único de negocio va con <code>UNIQUE</code> (<code>reserva.codigo</code>, <code>usuario.email</code>).</td></tr>
             <tr><td>¿Qué relación existe entre estas tablas?</td><td>Por FK: <code>funcion</code> → <code>pelicula</code>, <code>sala</code>; <code>reserva</code> → <code>funcion</code>, <code>usuario</code>; <code>entrada</code> → <code>reserva</code>, <code>asiento</code>; <code>pago</code> → <code>reserva</code> (único: 0..1).</td></tr>
             <tr><td>¿Qué sucede cuando eliminás este registro?</td><td>Una sala sin funciones se lleva sus <code>asiento</code> (<code>ON DELETE CASCADE</code>); una película, sus <code>pelicula_genero</code>. Una sala con funciones no se borra: <code>GestorSalas</code> lo rechaza por R12 antes que la FK.</td></tr>
             <tr><td>¿Dónde se está realizando realmente la persistencia?</td><td>En Hibernate, al commit de la transacción del gestor: flush y SQL a MySQL por JDBC (HikariCP). <code>reservar</code> usa <code>saveAndFlush</code> para detectar la butaca duplicada en el momento.</td></tr>
@@ -1422,7 +1451,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Por qué eligieron ese patrón?</td><td>Cada uno aísla lo que cambia: Strategy el descuento, Adapter el proveedor externo, Repository la base, DTO el contrato.</td></tr>
             <tr><td>¿Qué problema solucionaría?</td><td>Sin Strategy, un <code>switch</code> en el cobro; sin Adapter, cambiar la pasarela tocaría gestores; sin DTO, renombrar un atributo rompería el front.</td></tr>
             <tr><td>¿Podrían haberlo hecho de otra manera?</td><td>Sí: JDBC a mano, entidades serializadas, un <code>switch</code> de promociones. Ver <a href="#decisiones">decisiones</a>.</td></tr>
-            <tr><td>¿Qué ventaja aporta esta decisión?</td><td>Cambios locales y testeables: una promo es una clase, una pasarela real otro <code>@Bean</code>, y los tests reemplazan Redis, TMDB y reloj por dobles.</td></tr>
+            <tr><td>¿Qué ventaja aporta esta decisión?</td><td>Cambios locales y testeables: una promo es una clase, una pasarela real otro <code>@Bean</code>, y los tests reemplazan TMDB y reloj por dobles.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1435,10 +1464,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
           <tbody>
             <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, SLF4J</td></tr>
-            <tr><td>Datos</td><td>MySQL 8.4; Redis (bloqueos); H2 (tests)</td></tr>
+            <tr><td>Datos</td><td>MySQL 8.4 (también los bloqueos de butaca); H2 (tests)</td></tr>
             <tr><td>Frontend</td><td>React 19 + React Router + Mantine, compilado con Vite, servido por nginx</td></tr>
             <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar y Jackson; <code>java.net.http</code> contra la API</td></tr>
-            <tr><td>Despliegue</td><td>Docker Compose: 5 servicios en dos redes</td></tr>
+            <tr><td>Despliegue</td><td>Docker Compose: 4 servicios en dos redes</td></tr>
             <tr><td>Externo</td><td>API de TMDB</td></tr>
           </tbody>
         </table>
@@ -1456,7 +1485,6 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><code>spring-boot-starter-security</code></td><td>compile</td><td>Autenticación y roles</td></tr>
             <tr><td><code>springdoc-openapi-starter-webmvc-ui</code></td><td>compile</td><td>Swagger</td></tr>
             <tr><td><code>mysql-connector-j</code></td><td>runtime</td><td>Driver JDBC</td></tr>
-            <tr><td><code>jedis</code></td><td>compile</td><td>Cliente de Redis</td></tr>
             <tr><td><code>h2</code>, <code>spring-boot-starter-test</code></td><td>test</td><td>Base en memoria, JUnit 5, AssertJ, Mockito</td></tr>
           </tbody>
         </table>
@@ -1496,7 +1524,7 @@ docker compose up -d --build
       </figure>
       <p>
         Solo nginx publica puerto. Redes <code>web</code> y <code>datos</code> con el backend como único puente.
-        El backend espera a MySQL <code>service_healthy</code> y a Redis solo <code>service_started</code>: sin Redis igual vende.
+        El backend espera a MySQL <code>service_healthy</code>: sin base no hay nada que servir.
       </p>
 
       <h3>Sin Docker</h3>
@@ -1550,7 +1578,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </figure>
 
       <ul>
-        <li><strong>Swing es un cliente HTTP más</strong> del backend local: no duplica reglas. Sin Redis ni nginx.</li>
+        <li><strong>Swing es un cliente HTTP más</strong> del backend local: no duplica reglas. Sin nginx.</li>
         <li><strong>Pantallas:</strong> Cobrar y Puerta. El arqueo queda en la web.</li>
         <li><strong>Sincronización:</strong> baja cartelera y ventas; sube reservas y pagos. Ids locales desde <code>AUTO_INCREMENT = 1000000</code>.</li>
         <li><strong>Rechazos:</strong> cada venta queda <code>PENDIENTE</code>, <code>SINCRONIZADA</code> o <code>RECHAZADA</code>.</li>
@@ -1566,7 +1594,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
         <table>
           <thead><tr><th>Nivel</th><th>Qué prueba</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td><code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB, Redis</td></tr>
+            <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td><code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB</td></tr>
             <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
             <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09</td></tr>
             <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador</td></tr>
@@ -1575,9 +1603,9 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 451 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
+mvn clean test       # 452 tests, ninguno salteado</code></pre>
       <p>
-        Corren contra H2 (perfil <code>test</code>); Redis, TMDB y el reloj son dobles de
+        Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
         no dependen de la fecha real.
       </p>
@@ -1655,7 +1683,7 @@ mvn clean test       # 451 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>R14</td><td><code>GestorCandyTest</code></td><td>—</td></tr>
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
             <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
-            <tr><td>Bloqueo</td><td><code>OcupacionTest</code>, <code>BloqueoButacasRedisTest</code></td><td>CP-18</td></tr>
+            <tr><td>Bloqueo</td><td><code>OcupacionTest</code></td><td>CP-18</td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td><td>CP-15</td></tr>
             <tr><td>CU-07b, CU-19, CU-20</td><td><code>GestorPagosTest</code>, <code>PagoControllerTest</code>, <code>GestorInformesTest</code></td><td>—</td></tr>
             <tr><td>Planificador, capas, esquema</td><td><code>PlanificadorGrillaTest</code>, <code>ArquitecturaTest</code>, <code>MapeoContraSchemaTest</code></td><td>—</td></tr>
@@ -1720,7 +1748,9 @@ mvn clean test       # 451 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>Descuento en <code>Pago</code></td><td>En la entrada</td><td>El 2x1 es del conjunto</td></tr>
             <tr><td>Liberar con <code>funcion_id = NULL</code></td><td>Borrar entradas</td><td>Historial</td></tr>
             <tr><td>Expiración perezosa</td><td>Scheduler</td><td>El <code>UNIQUE</code> obliga a escribir</td></tr>
-            <tr><td>Bloqueo en Redis, degradable</td><td>Bloquear en el navegador</td><td>Se pierde comodidad, no corrección</td></tr>
+            <tr><td>Bloqueo en el servidor</td><td>Bloquear en el navegador</td><td>El otro tiene que enterarse; se pierde comodidad, no corrección</td></tr>
+            <tr><td>Bloqueo en una tabla de MySQL</td><td>Redis</td><td>Una sola fuente de verdad y un contenedor menos; la atomicidad la dan la PK y el <code>UPDATE</code> condicional</td></tr>
+            <tr><td><code>UPDATE</code> condicional + <code>INSERT IGNORE</code></td><td><code>@Lock(PESSIMISTIC_WRITE)</code></td><td><code>FOR UPDATE</code> no cubre la fila que no existe; la PK ya serializa</td></tr>
             <tr><td>Pasarela emulada</td><td>Código tipeado</td><td>R11 pide un código que el cine no inventa</td></tr>
             <tr><td>Código por reserva, ingreso timestamp</td><td>Por butaca, estado</td><td>El grupo entra junto</td></tr>
             <tr><td>Combo con componentes</td><td>Precio propio</td><td>Permite R14</td></tr>

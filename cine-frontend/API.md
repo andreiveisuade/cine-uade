@@ -93,7 +93,7 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
 - Va la **selección entera** (toma, renueva y suelta; `[]` suelta todo). Idempotente. Renovar antes de `vencenEnSegundos`.
 - Perder una butaca es `200` con `rechazadas`, no `409`. Butaca inexistente: `400`.
 - `sesion` = `crypto.randomUUID()` en `sessionStorage`; no es credencial.
-- Sin Redis responde todo conseguido; la doble venta la frena la base.
+- `sesion` de hasta 64 caracteres (`400` si es más larga).
 
 ## Reserva y pago
 

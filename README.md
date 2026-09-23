@@ -3,17 +3,17 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 19 reglas de negocio sobre MySQL, con 451 tests.
+25 casos de uso y 19 reglas de negocio sobre MySQL, con 452 tests.
 
 ## Stack
 
 | Capa | Tecnología |
 |---|---|
 | Backend | Java 21, Spring Boot 3.5, Spring MVC, Spring Data JPA |
-| Base | MySQL 8.4. Redis para los bloqueos de butaca |
+| Base | MySQL 8.4, también para los bloqueos de butaca mientras se elige |
 | Frontend | React, React Router y Mantine, compilado con Vite y servido por nginx |
 | Escritorio | Java 21 y Swing (FlatLaf, JCalendar): el panel del encargado y la Puerta |
-| Despliegue | Docker Compose, 5 servicios en dos redes |
+| Despliegue | Docker Compose, 4 servicios en dos redes |
 
 ## Estructura
 
