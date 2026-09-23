@@ -278,7 +278,7 @@ obligatorio; default: una semana desde hoy, 14 a 24, ocho títulos.
     "funcionesCreadas": 0 }
 ```
 
-`cierre: "00:00"` = fin del día. `minutosDisponibles` descuenta lo ya programado. Solo películas
+`cierre: "00:00"` = fin del día. `minutosDisponibles` descuenta lo ya programado y, en un plan que arranca hoy, cuenta solo desde el primer pase posible (R20); `ocupacion` se mide sobre eso. Solo películas
 confirmadas (ninguna: `400`); no pisa funciones existentes ni propone pases que ya pasaron (R20: hoy arranca en el primer intento de media hora posterior a ahora). `dias` de 1 a 31 (`400` fuera de rango).
 
 ## Promociones (CU-17)

@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 489 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 490 tests.</p>
       </div>
     </section>
 
@@ -1089,7 +1089,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         <li><strong>Elenco:</strong> goloso, explicable elección por elección. El bono inclina, no decide.</li>
         <li><strong>Votos:</strong> seis votos no valen como miles; cero votos con puntaje es carga manual y vale tal cual.</li>
         <li><strong>Reparto:</strong> cada sala día por día, el pase a la película con más deuda (<code>asignados / puntaje</code>), sin pasar el cierre ni pisar lo programado. Determinista.</li>
-        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que todavía no pasó.</li>
+        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que todavía no pasó. Los minutos disponibles, y con ellos la ocupación, se miden sobre esa misma ventana: lo que ya pasó del día no cuenta, ni las funciones que empezaron antes.</li>
       </ul>
     </section>
 
@@ -1704,7 +1704,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 489 tests, ninguno salteado</code></pre>
+mvn clean test       # 490 tests, ninguno salteado</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos

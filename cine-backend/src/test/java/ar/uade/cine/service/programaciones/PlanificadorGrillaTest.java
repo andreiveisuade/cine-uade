@@ -21,6 +21,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
@@ -376,5 +377,24 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertEquals(reloj.hoy().atTime(15, 30), propuesta.pases().get(0).inicio());
         assertTrue(propuesta.pases().stream().allMatch(p -> p.inicio().isAfter(reloj.ahora())));
         assertEquals(propuesta.pases().size(), funciones.listar().size(), "aplicar no choca con R20");
+    }
+
+    // R20: a las 15:10 la ventana de hoy va de 15:30 a 23:00 (450 minutos). La de las 14:00 ya
+    // empezó y no la ocupa; la de las 20:00 sí descuenta sus 100.
+    @Test
+    void hoyLosMinutosDisponiblesSonSoloLosQueNoPasaron() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        funciones.programar(1, 1, reloj.hoy().atTime(14, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        funciones.programar(1, 1, reloj.hoy().atTime(20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        reloj.mover(reloj.hoy().atTime(15, 10));
+        CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 1, LocalTime.of(14, 0), LocalTime.of(23, 0),
+                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+
+        IndicadoresGrilla indicadores = planificador.proponer(hoy).indicadores();
+
+        assertEquals(350, indicadores.minutosDisponibles());
+        assertEquals((double) indicadores.minutosProgramados() / 350, indicadores.ocupacion());
+        assertTrue(indicadores.ocupacion() <= 1.0, "no se programa más de lo que queda del día");
     }
 }

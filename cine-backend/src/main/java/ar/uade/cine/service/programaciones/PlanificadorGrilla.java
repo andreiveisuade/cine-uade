@@ -149,15 +149,10 @@ public class PlanificadorGrilla {
         for (int dia = 0; dia < criterios.dias(); dia++) {
             LocalDate fecha = criterios.desde().plusDays(dia);
             for (Sala sala : salas) {
-                LocalDateTime momento = fecha.atTime(criterios.apertura());
+                LocalDateTime momento = primerIntento(fecha, criterios);
                 LocalDateTime limite = fecha.atTime(criterios.cierreEfectivo());
 
                 while (momento.isBefore(limite)) {
-                    // R20: hoy arranca en el primer intento que todavía no pasó.
-                    if (funciones.yaPaso(momento)) {
-                        momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
-                        continue;
-                    }
                     Pelicula elegida = conMasDeuda(elenco, asignados, promedio);
                     LocalDateTime fin = momento.plusMinutes(elegida.getDuracionMinutos());
                     if (fin.isAfter(limite)) {
@@ -178,6 +173,18 @@ public class PlanificadorGrilla {
         return pases;
     }
 
+    // R20: hoy arranca en el primer intento que todavía no pasó; en un día que ya pasó da el
+    // cierre o más, sin nada por repartir. Lo usan el reparto y la ventana de los indicadores,
+    // para que la ocupación se mida contra lo que el reparto puede usar de verdad.
+    private LocalDateTime primerIntento(LocalDate fecha, CriteriosGrilla criterios) {
+        LocalDateTime momento = fecha.atTime(criterios.apertura());
+        LocalDateTime limite = fecha.atTime(criterios.cierreEfectivo());
+        while (momento.isBefore(limite) && funciones.yaPaso(momento)) {
+            momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
+        }
+        return momento;
+    }
+
     private Pelicula conMasDeuda(List<Pelicula> elenco, Map<Integer, Integer> asignados,
                                  double promedio) {
         return elenco.stream()
@@ -193,12 +200,18 @@ public class PlanificadorGrilla {
     }
 
     private int minutosLibres(CriteriosGrilla criterios) {
-        long minutosPorDia = Duration.between(criterios.apertura(), criterios.cierreEfectivo()).toMinutes();
-        int ventana = (int) (minutosPorDia * criterios.dias() * salaRepository.count());
+        long minutosPorSala = 0;
+        for (int dia = 0; dia < criterios.dias(); dia++) {
+            LocalDate fecha = criterios.desde().plusDays(dia);
+            minutosPorSala += Math.max(Duration.between(primerIntento(fecha, criterios),
+                    fecha.atTime(criterios.cierreEfectivo())).toMinutes(), 0);
+        }
+        int ventana = (int) (minutosPorSala * salaRepository.count());
 
         LocalDate hasta = criterios.desde().plusDays(criterios.dias() - 1L);
         List<Funcion> programadas = funciones.buscar(null, null, criterios.desde(), hasta).stream()
-                .filter(f -> !f.getInicio().toLocalTime().isBefore(criterios.apertura()))
+                // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
+                .filter(f -> !f.getInicio().isBefore(primerIntento(f.getInicio().toLocalDate(), criterios)))
                 .filter(f -> f.getInicio().toLocalTime().isBefore(criterios.cierreEfectivo()))
                 .toList();
         Map<Integer, Integer> duraciones = peliculaRepository
