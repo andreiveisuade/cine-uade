@@ -1499,7 +1499,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
             <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td><code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB, Redis</td></tr>
             <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
             <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09</td></tr>
-            <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-19, en el navegador</td></tr>
+            <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador</td></tr>
           </tbody>
         </table>
       </div>
@@ -1542,8 +1542,8 @@ mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>CP-14</td><td>Dar de baja la promoción</td><td>Gris con «Reactivar»</td></tr>
             <tr><td>CP-15</td><td>Acomodador tipea <code>#/peliculas</code></td><td>Vuelve a la puerta; backend 403</td></tr>
             <tr><td>CP-16</td><td>Validar un código dos veces</td><td><strong>ADELANTE</strong> y después rechazo</td></tr>
-            <tr><td>CP-18</td><td>Dejar vencer una reserva</td><td><code>EXPIRADA</code>, butacas libres (R17)</td></tr>
-            <tr><td>CP-19</td><td>Elegir en dos pestañas</td><td>La segunda las ve tomadas</td></tr>
+            <tr><td>CP-17</td><td>Dejar vencer una reserva</td><td><code>EXPIRADA</code>, butacas libres (R17)</td></tr>
+            <tr><td>CP-18</td><td>Elegir en dos pestañas</td><td>La segunda las ve tomadas</td></tr>
           </tbody>
         </table>
       </div>
@@ -1562,7 +1562,7 @@ mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
       </figure>
       <figure class="diagram">
         {{IMG_BLOQUEO}}
-        <figcaption>CP-19 · la butaca que otro está eligiendo, ya tomada</figcaption>
+        <figcaption>CP-18 · la butaca que otro está eligiendo, ya tomada</figcaption>
       </figure>
       <figure class="diagram">
         {{IMG_PUERTA_OK}}
@@ -1584,8 +1584,8 @@ mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code></td><td>CP-13</td></tr>
             <tr><td>R14</td><td><code>GestorCandyTest</code></td><td>—</td></tr>
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
-            <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-18</td></tr>
-            <tr><td>Bloqueo</td><td><code>OcupacionTest</code>, <code>BloqueoButacasRedisTest</code></td><td>CP-19</td></tr>
+            <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
+            <tr><td>Bloqueo</td><td><code>OcupacionTest</code>, <code>BloqueoButacasRedisTest</code></td><td>CP-18</td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code></td><td>CP-15</td></tr>
             <tr><td>CU-07b, CU-19, CU-20</td><td><code>GestorPagosTest</code>, <code>PagoControllerTest</code>, <code>GestorInformesTest</code></td><td>—</td></tr>
             <tr><td>Planificador, capas, esquema</td><td><code>PlanificadorGrillaTest</code>, <code>ArquitecturaTest</code>, <code>MapeoContraSchemaTest</code></td><td>—</td></tr>

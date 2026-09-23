@@ -36,7 +36,7 @@ imagen_map = {
     "{{IMG_MAPA}}": CAPTURAS / "cp10-mapa.jpg",
     "{{IMG_TICKET}}": CAPTURAS / "cp10-ticket.jpg",
     "{{IMG_GRILLA}}": CAPTURAS / "cp09-grilla.jpg",
-    "{{IMG_BLOQUEO}}": CAPTURAS / "cp19-bloqueo.jpg",
+    "{{IMG_BLOQUEO}}": CAPTURAS / "cp18-bloqueo.jpg",
     "{{IMG_PUERTA_OK}}": CAPTURAS / "cp16-puerta-adelante.jpg",
     "{{IMG_PUERTA_RECHAZO}}": CAPTURAS / "cp16-puerta-rechazo.jpg",
 }

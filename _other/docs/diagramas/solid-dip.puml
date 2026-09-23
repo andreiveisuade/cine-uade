@@ -24,8 +24,8 @@ package repository {
     +findById(id): Optional<Reserva>
     +findByCodigo(codigo): Optional<Reserva>
     +findAll(): List<Reserva>
-    +findByFuncionId(funcionId): List<Reserva>
-    +findByClienteIdOrderByCreadaEnDesc(clienteId): List<Reserva>
+    +findByFuncion_Id(funcionId): List<Reserva>
+    +findByCliente_IdOrderByCreadaEnDesc(clienteId): List<Reserva>
   }
 }
 

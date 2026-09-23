@@ -29,7 +29,7 @@ alt R19: la funcion ya empezo
 else
   Gestor -> Ocupacion : asientosOcupados(funcionId, sesion)
   activate Ocupacion
-  Ocupacion -> Repo : findByFuncionId(funcionId)
+  Ocupacion -> Repo : findByFuncion_Id(funcionId)
   Ocupacion -> Ocupacion : vence las impagas (R17)\ny suma los bloqueos ajenos
   Ocupacion --> Gestor : ids tomados
   deactivate Ocupacion
