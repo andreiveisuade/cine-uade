@@ -13,6 +13,7 @@ import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { useSesion } from "./sesion.jsx";
 import { Login } from "./Login.jsx";
+import { Caja } from "./Caja.jsx";
 import { Candy } from "./Candy.jsx";
 import { Promociones } from "./Promociones.jsx";
 import { Cobrar, Reservas } from "./Reservas.jsx";
@@ -117,6 +118,7 @@ export function AppAdmin() {
         <Route path="cobrar/:id" element={<Cobrar />} />
         <Route path="promociones" element={<Promociones />} />
         <Route path="candy/:pestana?" element={<Candy />} />
+        <Route path="caja" element={<Caja />} />
         <Route path="*" element={<NoExiste />} />
       </Route>
     </Routes>
