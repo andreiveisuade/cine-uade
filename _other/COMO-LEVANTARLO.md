@@ -186,8 +186,4 @@ cd cine-backend && mvn clean test                                              #
 docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test   # sin instalar nada
 ```
 
-> **Hoy 92 dan rojo y no es culpa tuya.** Los tests tienen fechas escritas a mano
-> (`LocalDateTime.of(2026, 8, 20, ...)`) que ya pasaron, así que las funciones que arman
-> quedan en el pasado y el sistema las rechaza. Está anotado como ticket.
-
 El `clean` importa: sin él Maven corre clases viejas de `target/`.
