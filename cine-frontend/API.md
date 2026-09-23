@@ -14,7 +14,23 @@ como la lectura rápida: qué endpoints hay y qué devuelve cada uno, sin levant
 | Fechas | ISO local sin zona: `2026-08-13T20:30:00`. Solo fecha: `2026-08-13` |
 | Enums | Viaja el nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
-| Errores | Siempre `{"error": "…"}`, y el texto se muestra tal cual al usuario. `400` dato inválido o regla incumplida, `401` login fallido, `404` recurso o ruta inexistente, `405` método que la ruta no acepta, `409` butaca ganada por otro, `415` cuerpo que no es JSON, `500` falla del servidor (detalle solo al log) |
+| Autenticación | HTTP Basic, sin sesión en el servidor: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido. Ver [Quién puede llamar a qué](#quién-puede-llamar-a-qué) |
+| Errores | Siempre `{"error": "…"}`, y el texto se muestra tal cual al usuario. `400` dato inválido o regla incumplida, `401` login fallido o faltan credenciales, `403` el rol no alcanza, `404` recurso o ruta inexistente, `405` método que la ruta no acepta, `409` butaca ganada por otro, `415` cuerpo que no es JSON, `500` falla del servidor (detalle solo al log) |
+
+### Quién puede llamar a qué
+
+| Nivel | Rutas |
+|---|---|
+| Público (sin credenciales) | `POST /api/sesion`; lo que usa el sitio del cliente: `GET /api/cartelera`, `GET /api/peliculas/{id}`, `GET /api/peliculas/{id}/funciones`, `GET /api/funciones/{id}`, `GET /api/reservas/{id}`, `GET /api/reservas?email=…` (con email), `GET /api/candy/productos` y `/{id}` (la carta, que muestra el ticket), los siete catálogos, `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/{id}/cancelacion`; y Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
+| `ACOMODADOR` o `ADMINISTRADOR` | `POST /api/acceso` |
+| `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email y `GET /api/peliculas/pendientes` |
+
+Lo abierto se enumera y lo demás queda cerrado: una ruta nueva nace pidiendo `ADMINISTRADOR`.
+El `401` sale **sin** `WWW-Authenticate`, para que el navegador no abra su propio cuadro de
+login; el mensaje es `"Hace falta iniciar sesión para esta operación"` sin credenciales y
+`"Email o contraseña incorrectos"` con credenciales que no valen. El `403` es
+`"Tu rol no tiene permiso para esta operación"`. Credenciales inválidas se rechazan en
+cualquier ruta, también en las públicas.
 
 ## Catálogos
 
@@ -185,8 +201,10 @@ contraseña equivocada, con `401`.
 
 `rol` es `ADMINISTRADOR` o `ACOMODADOR`. El acomodador solo valida entradas en la puerta.
 
-> Hoy la sesión vive en `sessionStorage` y los endpoints de admin **no piden credenciales**.
-> Si se agrega token, va en `Authorization`.
+No emite token: es la comprobación de las credenciales y los datos para pintar el panel. Si
+contesta bien, el front guarda `email:contraseña` en `sessionStorage` y `js/api-http.js` las
+manda en `Authorization: Basic` en cada pedido siguiente. Ante un `401` fuera del login las
+olvida y el panel vuelve a `#/login`.
 
 ## Cartelera y salas
 

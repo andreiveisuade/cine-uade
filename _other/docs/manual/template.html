@@ -467,7 +467,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los 25 casos de uso y las 19 reglas funcionan de punta a punta —gestor y API
-          HTTP— con <strong>407 tests</strong>, y todos tienen pantalla web: el candy (CU-13 a CU-16), que
+          HTTP— con <strong>416 tests</strong>, y todos tienen pantalla web: el candy (CU-13 a CU-16), que
           era el único que faltaba, ya tiene la suya en el panel. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
@@ -1120,6 +1120,59 @@ body.lightbox-locked { overflow: hidden; }
           le confirmaría a un atacante qué emails están registrados.
         </p>
       </div>
+
+      <h3 id="seguridad">Quién puede llamar a qué</h3>
+      <p>
+        Hasta el 23 de septiembre <code>POST /api/sesion</code> comprobaba la clave y devolvía el empleado, pero
+        ninguna otra ruta volvía a preguntar: el único guard era <code>admin.js</code>, del lado del navegador, y
+        con <code>curl</code> se podía dar de alta una sala. Ahora lo decide <strong>Spring Security</strong>, un
+        filtro que corre antes que cualquier controlador, configurado en
+        <code>infrastructure/seguridad/ConfiguracionSeguridad</code>.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Público</td>
+              <td>El login y lo que usa el sitio del cliente, que compra sin registrarse: cartelera, detalle de
+                  película y de función, catálogos, <code>POST /api/reservas</code>, bloqueos de butaca, alta de
+                  cliente, consultar y cancelar la propia reserva (<code>GET /api/reservas?email=</code>), la carta del
+                  candy que sugiere el ticket. Y
+                  Swagger</td>
+            </tr>
+            <tr><td><code>ACOMODADOR</code></td><td><code>POST /api/acceso</code>, la validación en la puerta</td></tr>
+            <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la puerta</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><strong>HTTP Basic y sin sesión en el servidor.</strong> El panel manda
+          <code>Authorization: Basic</code> con email y contraseña en cada pedido, y el backend no recuerda nada
+          entre uno y otro. Es lo que menos mueve: no hay tokens que emitir ni vencer, el login sigue siendo
+          <code>POST /api/sesion</code>, y los empleados se leen de la tabla <code>usuario</code> con un
+          <code>UserDetailsService</code> sobre <code>EmpleadoRepository</code>. Sin sesión no hay cookie, y sin
+          cookie no hay CSRF: por eso está apagado.</li>
+        <li><strong>Los hashes no se migraron.</strong> <code>PasswordSha256</code> es el
+          <code>PasswordEncoder</code> de Spring y delega en el mismo <code>Password</code> de siempre, así que el
+          encargado del seed y las bases ya desplegadas siguen entrando. Pasar a bcrypt es cambiar esa clase.</li>
+        <li><strong>Lo abierto se enumera; lo demás, cerrado.</strong> Una ruta nueva nace pidiendo
+          <code>ADMINISTRADOR</code>: olvidarse de abrirla se nota enseguida en el sitio público, y olvidarse de
+          cerrarla no se notaría nunca. Los GET no se abrieron en bloque porque hay lecturas del encargado con
+          datos personales o de caja —el listado completo de reservas, el arqueo, el borderó—.</li>
+        <li><strong>El rechazo tiene la forma de siempre.</strong> 401 sin credenciales o con credenciales que
+          no valen, 403 si el rol no alcanza, los dos como <code>{"error": "…"}</code> y <em>sin</em>
+          <code>WWW-Authenticate: Basic</code>, que haría que el navegador abriera su propio cuadro de login
+          encima del panel. Ante un 401, <code>api-http.js</code> olvida las credenciales y el panel vuelve a
+          <code>#/login</code>.</li>
+      </ul>
+      <div class="callout">
+        <p>
+          <strong>Lo que sigue abierto a propósito.</strong> El cliente no tiene clave, así que cancelar y
+          consultar una reserva es tan abierto como antes: alcanza con el id o con el email. Y la contraseña del
+          encargado viaja en cada pedido: detrás de HTTPS es aceptable, en el TP corre en localhost.
+        </p>
+      </div>
     </section>
 
     <section class="doc-section" id="capas">
@@ -1282,6 +1335,17 @@ body.lightbox-locked { overflow: hidden; }
                   <code>TmdbHttp</code>, Redis, los generadores de comprobantes y el reloj</td>
             </tr>
             <tr>
+              <td><code>@EnableWebSecurity</code> + <code>@Bean SecurityFilterChain</code></td>
+              <td>Enciende Spring Security con la configuración propia en vez de la de fábrica (que pediría
+                  una clave generada al arrancar). El <code>@Bean</code> devuelve la cadena de filtros que
+                  corre antes que los controladores: qué rutas son públicas, qué rol pide cada una, y qué se
+                  responde cuando falta la identidad o el permiso. <code>UserDetailsService</code> y
+                  <code>PasswordEncoder</code> son otros dos <code>@Bean</code> que Spring usa para
+                  comprobar las credenciales</td>
+              <td><code>infrastructure/seguridad/ConfiguracionSeguridad</code>. Ver
+                  <a href="#seguridad">Quién puede llamar a qué</a></td>
+            </tr>
+            <tr>
               <td><code>@Profile("!test")</code></td>
               <td>Este bean existe solo si el perfil activo no es <code>test</code>. Es lo que permite que la
                   suite reemplace Redis, TMDB y el reloj por dobles sin tocar el código de producción.</td>
@@ -1357,6 +1421,8 @@ body.lightbox-locked { overflow: hidden; }
               <td><code>ManejadorErrores</code>: <code>IllegalArgumentException</code> → 400,
                   <code>CredencialesInvalidas</code> → 401, <code>NoEncontrado</code> → 404,
                   <code>ButacaOcupadaException</code> → 409, <code>DataAccessException</code> → 500.
+                  El 401 por falta de credenciales y el 403 no pasan por acá: los da el filtro de Spring
+                  Security antes de llegar al controlador, con la misma forma.
                   También los errores del propio HTTP —método que la ruta no acepta (405), cuerpo
                   que no es JSON (415), parámetro faltante (400)— y un último <code>Exception</code>
                   → 500, para que <em>todo</em> error salga con la forma <code>{error}</code> que el
@@ -1855,7 +1921,7 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <div class="callout">
         <p>
-          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 407 tests llaman a los
+          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 416 tests llaman a los
           gestores directo, sin pasar por HTTP. Los 29 que sí abren un puerto (<code>PruebaDeApi</code>) existen
           justamente para probar el controlador en sí —parseo, códigos de estado, el
           <code>@RestControllerAdvice</code>—, no las reglas de negocio: esas ya están cubiertas del otro lado.
@@ -2560,7 +2626,9 @@ POST /api/checkouts/MP-1234567890/confirmacion
         <code>ACOMODADOR</code>, y su aparición rompe la frase que justificaba la herencia de usuarios —«solo
         el administrador tiene credenciales»—. La salida es
         <a href="#usuarios">generalizar <code>AdministradorCine</code> a <code>Empleado</code></a>: el corte
-        nunca fue el cargo, sino tener contraseña.
+        nunca fue el cargo, sino tener contraseña. El rol lo hace cumplir el backend y no solo el menú: con
+        credenciales de acomodador, cualquier ruta que no sea <code>POST /api/acceso</code> contesta 403
+        (ver <a href="#seguridad">Quién puede llamar a qué</a>).
       </p>
       <div class="callout">
         <p>
@@ -3557,7 +3625,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/peliculas   #
 
       <h3>Nivel 1 · las pruebas que corren solas</h3>
       <pre><code>cd cine-backend
-mvn clean test                    # 407 tests: 403 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 416 tests: 412 corren siempre, 4 se saltean</code></pre>
 
       <div class="callout">
         <p>
@@ -3736,7 +3804,7 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
-      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>407 tests</strong>.</p>
+      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>416 tests</strong>.</p>
 
       <div class="callout">
         <p><strong>El reloj es un puerto.</strong> Hasta el 21 de septiembre la suite se puso en
@@ -3753,20 +3821,12 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
 
       <div class="callout">
         <p>
-          <strong>Pendiente conocido y decidido: la API no valida quién llama.</strong>
-          <code>POST /api/sesion</code> verifica las credenciales del encargado, pero ninguna de las otras 35
-          rutas de escritura comprueba que quien la invoca haya iniciado sesión. El guard vive en
-          <code>admin.js</code>, o sea del lado del navegador: alcanza para que la pantalla no muestre lo que no
-          corresponde y no alcanza para nada más. <strong>Con <code>curl</code> se puede hoy dar de baja una
-          película, leer el arqueo del día o validar una entrada sin credencial alguna.</strong>
-        </p>
-        <p>
-          El arreglo es acotado —un filtro de Spring Security que exija un token y compare contra
-          <code>Rol</code>, con las rutas públicas declaradas— y <code>Rol.esEmpleado()</code> ya está modelado,
-          pero toca el contrato HTTP y por lo tanto al frontend: se hace en una pasada propia, con
-          <code>API.md</code> actualizado en el mismo movimiento. Mientras tanto lo que contiene el riesgo es el
-          despliegue y no el código —un solo puerto publicado, Adminer en loopback—, que es una mitigación de
-          entorno y no una defensa de la aplicación.
+          <strong>Resuelto el 23 de septiembre: la API valida quién llama.</strong> Hasta entonces
+          <code>POST /api/sesion</code> era la única ruta que miraba credenciales y el guard vivía en
+          <code>admin.js</code>, del lado del navegador: con <code>curl</code> se podía dar de baja una película
+          o leer el arqueo. Ahora Spring Security pide HTTP Basic de un empleado en todo lo que no usa el sitio
+          del cliente, y el rol lo hace cumplir el servidor. Detalle en
+          <a href="#seguridad">Quién puede llamar a qué</a>.
         </p>
       </div>
 
