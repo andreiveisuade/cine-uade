@@ -72,4 +72,26 @@ class CandyControllerTest extends PruebaDeApi {
                 + " componentes sueltos ($ 4500.00)", respuesta.error());
         assertEquals(4000, get("/api/candy/productos/" + pochoclos).json().get("precio").asDouble());
     }
+
+    @Test
+    void unProductoSacadoDeLaCartaSeRepone() {
+        String ruta = "/api/candy/productos/" + pochoclos + "/disponibilidad";
+        assertEquals(200, put(ruta, "{\"disponible\":false}").estado());
+        assertEquals(false, enLaCarta(pochoclos));
+
+        Respuesta respuesta = put(ruta, "{\"disponible\":true}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(true, respuesta.json().get("disponible").asBoolean());
+        assertEquals(true, enLaCarta(pochoclos));
+    }
+
+    private boolean enLaCarta(int id) {
+        for (var producto : get("/api/candy/productos").json()) {
+            if (producto.get("id").asInt() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

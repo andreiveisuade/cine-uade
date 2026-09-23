@@ -97,4 +97,31 @@ class SalaControllerTest extends PruebaDeApi {
                 respuesta.error());
         assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
     }
+
+    @Test
+    void unaFilaSinButacasEs400() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5,0]}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Cada fila debe tener al menos una butaca", respuesta.error());
+    }
+
+    @Test
+    void unaButacaFueraDeServicioSeRepone() {
+        String ruta = "/api/salas/" + sala + "/asientos/A1";
+        assertEquals("FUERA_DE_SERVICIO", estadoDe(put(ruta, "{\"estado\":\"FUERA_DE_SERVICIO\"}"), "A1"));
+
+        assertEquals("HABILITADO", estadoDe(put(ruta, "{\"estado\":\"HABILITADO\"}"), "A1"));
+        assertEquals("HABILITADO", estadoDe(get("/api/salas/" + sala), "A1"));
+    }
+
+    private static String estadoDe(Respuesta respuesta, String codigo) {
+        assertEquals(200, respuesta.estado());
+        for (var asiento : respuesta.json().get("asientos")) {
+            if (asiento.get("codigo").asText().equals(codigo)) {
+                return asiento.get("estado").asText();
+            }
+        }
+        throw new AssertionError("La sala no tiene la butaca " + codigo);
+    }
 }
