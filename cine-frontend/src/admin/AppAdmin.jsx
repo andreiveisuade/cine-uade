@@ -13,6 +13,7 @@ import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { useSesion } from "./sesion.jsx";
 import { Login } from "./Login.jsx";
+import { Pendientes } from "./Pendientes.jsx";
 import { Peliculas } from "./Peliculas.jsx";
 
 const MENU = [
@@ -94,6 +95,7 @@ export function AppAdmin() {
       <Route element={<Panel />}>
         <Route index element={<Inicio />} />
         <Route path="peliculas" element={<Peliculas />} />
+        <Route path="pendientes" element={<Pendientes />} />
         <Route path="*" element={<NoExiste />} />
       </Route>
     </Routes>
