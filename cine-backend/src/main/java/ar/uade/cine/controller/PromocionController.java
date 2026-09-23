@@ -6,7 +6,6 @@ import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.NoEncontrado;
+import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.Promocion;
@@ -62,12 +62,13 @@ public class PromocionController {
     @PostMapping("/api/promociones")
     @ResponseStatus(HttpStatus.CREATED)
     public PromocionVistaDTO crear(@RequestBody PedidoPromocionDTO pedido) {
-        LocalDate desde = LocalDate.parse(pedido.vigenciaDesde());
-        LocalDate hasta = LocalDate.parse(pedido.vigenciaHasta());
-        Set<DayOfWeek> dias = leer(pedido.diasSemana(), DayOfWeek::valueOf);
-        Set<MedioPago> medios = leer(pedido.mediosPago(), MedioPago::valueOf);
-        LocalTime horaDesde = pedido.horaDesde() == null ? null : LocalTime.parse(pedido.horaDesde());
-        LocalTime horaHasta = pedido.horaHasta() == null ? null : LocalTime.parse(pedido.horaHasta());
+        LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
+        LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
+        // Una lista ausente o vacía significa sin restricción, no "ninguno".
+        Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día"));
+        Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
+        LocalTime horaDesde = pedido.horaDesde() == null ? null : Parseo.hora(pedido.horaDesde(), "la hora de inicio");
+        LocalTime horaHasta = pedido.horaHasta() == null ? null : Parseo.hora(pedido.horaHasta(), "la hora de fin");
 
         Promocion promocion = switch (tipoDe(pedido.tipo())) {
             case PORCENTAJE -> promociones.crearPorcentaje(pedido.nombre(),
@@ -117,15 +118,6 @@ public class PromocionController {
             throw new IllegalArgumentException("Falta " + campo + " para ese tipo de promoción");
         }
         return valor;
-    }
-
-    /** Una lista ausente o vacía significa sin restricción, no "ninguno". */
-    private static <T> Set<T> leer(List<String> valores, Function<String, T> aEnum) {
-        Set<T> conjunto = new LinkedHashSet<>();
-        if (valores != null) {
-            valores.forEach(valor -> conjunto.add(aEnum.apply(valor.trim().toUpperCase())));
-        }
-        return conjunto;
     }
 
     private Promocion buscar(int id) {

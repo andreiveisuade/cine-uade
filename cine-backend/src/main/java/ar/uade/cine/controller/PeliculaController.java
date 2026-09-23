@@ -63,12 +63,8 @@ public class PeliculaController {
     @Operation(summary = "La cartelera pública: solo lo que está en exhibición")
     @GetMapping("/api/cartelera")
     public List<PeliculaVistaDTO> cartelera(@RequestParam(required = false) String genero) {
-        List<Pelicula> peliculas = cartelera.listarEnCartelera();
-        if (genero != null && !genero.isBlank()) {
-            Genero buscado = Parseo.constante(Genero.class, genero, "el género");
-            peliculas = peliculas.stream().filter(p -> p.getGeneros().contains(buscado)).toList();
-        }
-        return peliculas.stream().map(vistas::pelicula).toList();
+        return cartelera.listarEnCartelera(Parseo.constanteOpcional(Genero.class, genero, "el género"))
+                .stream().map(vistas::pelicula).toList();
     }
 
     /**

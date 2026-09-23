@@ -176,6 +176,13 @@ public class GestorCartelera {
                 .toList();
     }
 
+    /** La cartelera de un género, para el filtro del cliente (CU-01b). {@code null} no filtra. */
+    public List<Pelicula> listarEnCartelera(Genero genero) {
+        return listarEnCartelera().stream()
+                .filter(p -> genero == null || p.getGeneros().contains(genero))
+                .toList();
+    }
+
     public List<Pelicula> listar() {
         return peliculaRepository.findAll();
     }
