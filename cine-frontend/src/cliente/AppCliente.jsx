@@ -13,6 +13,8 @@ import { NoExiste } from "../componentes/NoExiste.jsx";
 import { CompraEnCurso } from "./compra.jsx";
 import { Cartelera } from "./Cartelera.jsx";
 import { Pelicula } from "./Pelicula.jsx";
+import { Funcion } from "./Funcion.jsx";
+import { Confirmar } from "./Confirmar.jsx";
 
 function Enlace({ a, children }) {
   return (
@@ -53,6 +55,8 @@ export function AppCliente() {
               <Route index element={<Cartelera />} />
               <Route path="cartelera/:genero?" element={<Cartelera />} />
               <Route path="pelicula/:id" element={<Pelicula />} />
+              <Route path="funcion/:id" element={<Funcion />} />
+              <Route path="confirmar/:id" element={<Confirmar />} />
               <Route path="*" element={<NoExiste />} />
             </Routes>
           </CompraEnCurso>
