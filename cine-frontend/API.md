@@ -195,7 +195,7 @@ Borderó e informe cortan por **función** (INCAA), no por día; la declaración
 ```
 
 - Solo lo **cobrado**; sin ventas da cero. Bruta a lista, neta lo que entró.
-- `POST /api/funciones/{id}/bordero`: escribe `informes/bordero-funcion-<id>.txt`, `201`, pisa el anterior.
+- El archivo del borderó para el INCAA no lo escribe el backend: lo emite el cliente de escritorio del encargado (módulo `cine-swing`) con este `GET`.
 - `GET /api/funciones/{id}/informe`: `{ "boleteria": {borderó}, "comprasCandy": 4, "candy": 12000, "total": 74500 }`. Solo candy con `reservaId`: el de mostrador está en `GET /api/candy/arqueo`.
 
 ### Declaración jurada del período

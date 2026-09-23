@@ -76,7 +76,6 @@ cine:
   comprobantes:
     # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.
     tickets: ${CINE_TICKETS:tickets}
-    informes: ${CINE_INFORMES:informes}
   redis:
     host: ${REDIS_HOST:localhost}
     puerto: ${REDIS_PORT:6379}

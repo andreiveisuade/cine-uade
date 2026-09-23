@@ -22,7 +22,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;

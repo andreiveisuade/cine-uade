@@ -61,7 +61,7 @@ class ArquitecturaTest {
         @Test
         @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
         void laInfraestructuraNoDependeDeLaApi() {
-            // 'service' porque comprobantes/ formatea el record Bordero, un dato de salida.
+            // 'service' porque importador/ devuelve DatosPelicula y seguridad/ responde con CredencialesInvalidas.
             assertSinViolaciones(violacionesDeCapa("infrastructure"));
         }
     }

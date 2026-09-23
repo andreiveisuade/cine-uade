@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -127,15 +125,6 @@ class InformeControllerTest extends PruebaDeApi {
 
         assertEquals(404, respuesta.estado());
         assertEquals("El identificador abc no es válido", respuesta.error());
-    }
-
-    @Test
-    void emitirElBorderoDevuelve201YDejaElArchivo() {
-        Respuesta respuesta = post("/api/funciones/1/bordero", "");
-
-        assertEquals(201, respuesta.estado());
-        assertEquals(2, respuesta.json().get("espectadores").asInt());
-        assertTrue(Files.exists(Path.of("target/comprobantes/informes").resolve("bordero-funcion-1.txt")));
     }
 
     @Test

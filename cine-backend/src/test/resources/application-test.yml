@@ -25,7 +25,6 @@ cine:
   comprobantes:
     # Adentro de target/: `mvn clean` se los lleva y no ensucian el repo.
     tickets: target/comprobantes/tickets
-    informes: target/comprobantes/informes
   redis:
     host: localhost
     puerto: 6379

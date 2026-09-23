@@ -12,13 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.infrastructure.comprobantes.GeneradorBordero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -41,8 +37,6 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 @Transactional(readOnly = true)
 public class GestorInformes {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GestorInformes.class);
-
     private static final Bordero.TotalPorTarifa SIN_ENTRADAS =
             new Bordero.TotalPorTarifa(0, Dinero.CERO);
 
@@ -54,19 +48,17 @@ public class GestorInformes {
     private final ReservaRepository reservaRepository;
     private final PagoRepository pagoRepository;
     private final CompraCandyRepository compraCandyRepository;
-    private final GeneradorBordero generadorBordero;
     private final Reloj reloj;
 
     public GestorInformes(FuncionRepository funcionRepository, PeliculaRepository peliculaRepository, SalaRepository salaRepository,
                           ReservaRepository reservaRepository, PagoRepository pagoRepository, CompraCandyRepository compraCandyRepository,
-                          GeneradorBordero generadorBordero, Reloj reloj) {
+                          Reloj reloj) {
         this.funcionRepository = funcionRepository;
         this.peliculaRepository = peliculaRepository;
         this.salaRepository = salaRepository;
         this.reservaRepository = reservaRepository;
         this.pagoRepository = pagoRepository;
         this.compraCandyRepository = compraCandyRepository;
-        this.generadorBordero = generadorBordero;
         this.reloj = reloj;
     }
 
@@ -173,15 +165,6 @@ public class GestorInformes {
             pagos.put(cobro.getReservaId(), cobro);
         }
         return pagos;
-    }
-
-    public Bordero exportarBordero(int funcionId) {
-        Bordero bordero = borderoDe(funcionId);
-        generadorBordero.emitir(bordero);
-        LOG.info("bordero funcion {} · {} espectadores · bruto {} · neto {}",
-                funcionId, bordero.espectadores(), bordero.recaudacionBruta(),
-                bordero.recaudacionNeta());
-        return bordero;
     }
 
     // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#totalCandyDe).

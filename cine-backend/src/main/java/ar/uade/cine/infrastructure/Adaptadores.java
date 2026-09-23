@@ -8,11 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import ar.uade.cine.infrastructure.comprobantes.GeneradorBordero;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicketCandy;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
@@ -41,11 +39,6 @@ public class Adaptadores {
     @Bean
     public GeneradorRecibo generadorRecibo(@Value("${cine.comprobantes.tickets}") Path directorio) {
         return new GeneradorReciboTxt(directorio);
-    }
-
-    @Bean
-    public GeneradorBordero generadorBordero(@Value("${cine.comprobantes.informes}") Path directorio) {
-        return new GeneradorBorderoTxt(directorio);
     }
 
     // Si Redis cae se vende sin bloqueos: la doble venta la sigue impidiendo el UNIQUE de la base.

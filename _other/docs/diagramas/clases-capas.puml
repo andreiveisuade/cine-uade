@@ -71,10 +71,9 @@ package infrastructure {
     interface GeneradorTicket
     interface GeneradorTicketCandy
     interface GeneradorRecibo
-    interface GeneradorBordero
 
     package txt {
-      class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt, GeneradorBorderoTxt" as GeneradoresTxt
+      class "GeneradorTicketTxt, GeneradorTicketCandyTxt\nGeneradorReciboTxt" as GeneradoresTxt
     }
   }
 
@@ -217,7 +216,6 @@ BloqueoButacasMemoria ..up|> BloqueoButacas
 
 GestorInformes -down-> PagoRepository
 GestorInformes -down-> CompraCandyRepository
-GestorInformes -down-> GeneradorBordero
 
 ' El planificador no persiste nada: propone una grilla y quien decide es el
 ' administrador. Se apoya en GestorFunciones para no reescribir R3.

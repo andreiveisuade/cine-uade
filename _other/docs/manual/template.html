@@ -462,7 +462,7 @@ body.lightbox-locked { overflow: hidden; }
         Backend Spring Boot sobre MySQL, frontend React servido por nginx, todo con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 454 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 451 tests.</p>
       </div>
     </section>
 
@@ -648,7 +648,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización</td></tr>
             <tr><td><code>BloqueoButacas</code> → <code>BloqueoButacasRedis</code>, <code>BloqueoButacasMemoria</code></td><td>Bloqueo efímero; memoria en tests</td></tr>
-            <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code>, <code>GeneradorBordero</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
+            <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
             <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt y el SHA-256 heredado</td></tr>
@@ -1109,12 +1109,15 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         El arqueo (<code>GestorCaja</code>) corta por día; borderó y recaudación (<code>GestorInformes</code>),
         por función. La fuente es el pago: una reserva impaga no vendió nada.
       </p>
-      <pre><code>  GENERAL   :  12    $ 60000.00
-  JUBILADO  :   3    $  7500.00
-  Recaudacion  : $ 67500.00
-  Descuentos   : $  5000.00
-  Neto         : $ 62500.00</code></pre>
-      <p>Se escribe en <code>informes/bordero-funcion-N.txt</code>. La recaudación suma el candy atado a reservas de la función; el de mostrador no se atribuye.</p>
+      <pre><code>{ "funcionId": 3, "pelicula": "Matrix", "sala": "Sala 1", "espectadores": 15,
+  "recaudacionBruta": 67500, "descuentos": 5000, "recaudacionNeta": 62500,
+  "porTarifa": { "GENERAL": {"cantidad":12,"total":60000} } }</code></pre>
+      <p>
+        El backend entrega el borderó en JSON (<code>GET /api/funciones/{id}/bordero</code>) y no escribe archivos
+        de informes: el archivo del borderó que se sube al INCAA lo emite el cliente de escritorio del encargado
+        (módulo <code>cine-swing</code>) en su PC. La recaudación suma el candy atado a reservas de la función; el de
+        mostrador no se atribuye.
+      </p>
       <h3>Declaración jurada del período</h3>
       <p>
         <code>GET /api/declaracion-jurada?desde=&amp;hasta=</code> devuelve en JSON lo que se declara al INCAA. Sin
@@ -1522,7 +1525,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 454 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
+mvn clean test       # 451 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>); Redis, TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos

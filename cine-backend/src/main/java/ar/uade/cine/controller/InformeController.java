@@ -1,15 +1,10 @@
 package ar.uade.cine.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasInformes;
 import ar.uade.cine.dto.ventas.BorderoVistaDTO;
@@ -43,14 +38,6 @@ public class InformeController {
     public BorderoVistaDTO bordero(@PathVariable int id) {
         exigirFuncion(id);
         return vistas.bordero(informes.borderoDe(id));
-    }
-
-    @Operation(summary = "Emitir el archivo del borderó que se sube al INCAA")
-    @PostMapping("/api/funciones/{id}/bordero")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<BorderoVistaDTO> exportarBordero(@PathVariable int id) {
-        exigirFuncion(id);
-        return Creado.en("/api/funciones/" + id + "/bordero", vistas.bordero(informes.exportarBordero(id)));
     }
 
     @Operation(summary = "La recaudación completa de una función: entradas y candy")

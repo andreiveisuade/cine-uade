@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
@@ -51,8 +48,6 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.model.dinero.Dinero;
 
 class GestorInformesTest extends PruebaDeIntegracion {
-
-    private static final Path DIRECTORIO_INFORMES = Path.of("target/comprobantes/informes");
 
     @Autowired
     private GestorReservas reservas;
@@ -167,36 +162,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Test
     void noHayBorderoDeUnaFuncionQueNoExiste() {
         assertThrows(IllegalArgumentException.class, () -> informes.borderoDe(99));
-    }
-
-    @Test
-    void exportarEscribeElArchivoQueSeSubeAlIncaa() {
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-
-        informes.exportarBordero(1);
-
-        Path archivo = DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt");
-        assertTrue(Files.exists(archivo));
-        String texto = leer(archivo);
-        assertTrue(texto.contains("Matrix"));
-        assertTrue(texto.contains("Sala 1"));
-        assertTrue(texto.contains("GENERAL"));
-        assertTrue(texto.contains("5000.00"));
-    }
-
-    @Test
-    void volverAExportarActualizaElMismoArchivo() {
-        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
-        informes.exportarBordero(1);
-
-        Reserva segunda = reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL));
-        pagos.cobrar(segunda.getId(), MedioPago.EFECTIVO, "");
-        Bordero bordero = informes.exportarBordero(1);
-
-        assertEquals(2, bordero.espectadores());
-        assertTrue(leer(DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt")).contains("10000.00"));
     }
 
     @Test
@@ -377,13 +342,5 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     private static Map<String, TipoTarifa> butacas(String codigo, TipoTarifa tarifa) {
         return Map.of(codigo, tarifa);
-    }
-
-    private static String leer(Path archivo) {
-        try {
-            return Files.readString(archivo);
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("No se pudo leer " + archivo, e);
-        }
     }
 }
