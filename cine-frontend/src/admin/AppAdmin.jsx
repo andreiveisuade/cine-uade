@@ -13,6 +13,7 @@ import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { useSesion } from "./sesion.jsx";
 import { Login } from "./Login.jsx";
+import { Peliculas } from "./Peliculas.jsx";
 
 const MENU = [
   ["Cartelera", [["/peliculas", "Películas"], ["/pendientes", "Por revisar"], ["/importador", "Importador"]]],
@@ -92,6 +93,7 @@ export function AppAdmin() {
       <Route path="login" element={<Login />} />
       <Route element={<Panel />}>
         <Route index element={<Inicio />} />
+        <Route path="peliculas" element={<Peliculas />} />
         <Route path="*" element={<NoExiste />} />
       </Route>
     </Routes>
