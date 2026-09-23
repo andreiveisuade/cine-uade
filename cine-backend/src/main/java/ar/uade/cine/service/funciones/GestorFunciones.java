@@ -161,7 +161,7 @@ public class GestorFunciones {
 
     @Transactional(readOnly = true)
     public List<Funcion> listarPorPelicula(int peliculaId) {
-        return funcionRepository.findByPelicula_Id(peliculaId);
+        return funcionRepository.findByPelicula_IdOrderByInicioAsc(peliculaId);
     }
 
     @Transactional(readOnly = true)

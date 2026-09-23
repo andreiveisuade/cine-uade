@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -139,7 +140,8 @@ public class Programacion {
     }
 
     public Set<DayOfWeek> getDiasSemana() {
-        return diasSemana;
+        return Collections.unmodifiableSet(
+                diasSemana.isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana));
     }
 
     public Version getVersion() {

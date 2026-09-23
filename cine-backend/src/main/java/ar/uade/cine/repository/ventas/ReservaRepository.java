@@ -18,7 +18,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
 
     List<Reserva> findByFuncion_Id(int funcionId);
 
-    List<Reserva> findByCliente_IdOrderByCreadaEnDesc(int clienteId);
+    List<Reserva> findAllByOrderByIdDesc();
+
+    List<Reserva> findByCliente_IdOrderByIdDesc(int clienteId);
 
     boolean existsByFuncion_Id(int funcionId);
 
@@ -28,7 +30,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
               join fetch r.funcion f join fetch f.pelicula join fetch r.cliente
             where (:estado is null or r.estado = :estado)
               and (:desde is null or (f.inicio >= :desde and f.inicio < :hasta))
-            order by r.id""")
+            order by r.id desc""")
     List<Reserva> buscar(@Param("estado") EstadoReserva estado, @Param("desde") LocalDateTime desde,
                          @Param("hasta") LocalDateTime hasta);
 

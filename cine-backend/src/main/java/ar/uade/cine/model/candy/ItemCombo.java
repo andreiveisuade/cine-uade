@@ -2,13 +2,16 @@ package ar.uade.cine.model.candy;
 
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Embeddable
 public class ItemCombo {
 
-    @ManyToOne
+    // EAGER a propósito, como las colecciones: el nombre del componente lo leen las vistas,
+    // ya fuera de la transacción.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 

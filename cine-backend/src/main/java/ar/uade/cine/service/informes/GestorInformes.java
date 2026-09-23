@@ -50,8 +50,10 @@ public class GestorInformes {
     }
 
     public Bordero borderoDe(int funcionId) {
-        Funcion funcion = buscarFuncion(funcionId);
-        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
+        return borderoDe(buscarFuncion(funcionId), reservaRepository.findByFuncion_Id(funcionId));
+    }
+
+    private Bordero borderoDe(Funcion funcion, List<Reserva> reservas) {
         return bordero(funcion, funcion.getPelicula().getTitulo(), funcion.getSala().getNombre(), reservas,
                 pagosPorReserva(reservas));
     }
@@ -120,11 +122,12 @@ public class GestorInformes {
 
     // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#totalCandyDe).
     public InformeFuncion informeDe(int funcionId) {
-        Bordero bordero = borderoDe(funcionId);
+        Funcion funcion = buscarFuncion(funcionId);
+        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
+        Bordero bordero = borderoDe(funcion, reservas);
 
-        List<Integer> reservas = reservaRepository.findByFuncion_Id(funcionId).stream()
-                .map(Reserva::getId).toList();
-        List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(reservas);
+        List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(
+                reservas.stream().map(Reserva::getId).toList());
         Dinero candy = Dinero.sumar(compras.stream().map(CompraCandy::getTotal).toList());
 
         return new InformeFuncion(bordero, compras.size(), candy, bordero.recaudacionNeta().mas(candy));

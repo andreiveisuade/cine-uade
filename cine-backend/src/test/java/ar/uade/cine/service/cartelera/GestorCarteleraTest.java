@@ -423,7 +423,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
-        assertTrue(funcionRepository.findByPelicula_Id(pelicula.getId()).isEmpty());
+        assertTrue(funcionRepository.findByPelicula_IdOrderByInicioAsc(pelicula.getId()).isEmpty());
         assertEquals(1, gestor.listar().size());
     }
 

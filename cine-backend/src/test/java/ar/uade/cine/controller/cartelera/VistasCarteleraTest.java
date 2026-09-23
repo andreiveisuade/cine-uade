@@ -114,7 +114,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
     void laFuncionParaElClienteNoTraeNiPeliculaNiButacas() {
         Funcion funcion = programarUnaFuncion();
 
-        FuncionVistaDTO vista = vistas.funcion(funcion);
+        FuncionVistaDTO vista = funcion(funcion);
 
         assertEquals("Sala 1", vista.sala().nombre());
         assertNull(vista.pelicula());
@@ -165,7 +165,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Funcion funcion = funciones.programar(1, imax.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        FuncionVistaDTO vista = vistas.funcion(funcion);
+        FuncionVistaDTO vista = funcion(funcion);
 
         assertEquals(5000.0, vista.precio(), 0.001, "el precio crudo de la función");
         assertEquals(8000.0, vista.precioDesde(), 0.001, "5000 x 1.6 de IMAX, butaca estándar");
@@ -173,12 +173,12 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
 
     @Test
     void elInicioViajaConElFormatoDelContrato() {
-        assertEquals("2026-08-20T20:00:00", vistas.funcion(programarUnaFuncion()).inicio());
+        assertEquals("2026-08-20T20:00:00", funcion(programarUnaFuncion()).inicio());
     }
 
     @Test
     void laVersionYLaProyeccionViajanComoNombre() {
-        FuncionVistaDTO vista = vistas.funcion(programarUnaFuncion());
+        FuncionVistaDTO vista = funcion(programarUnaFuncion());
 
         assertEquals("SUBTITULADA", vista.idioma());
         assertEquals("DOS_D", vista.proyeccion());
@@ -191,7 +191,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Funcion huerfana = new Funcion(matrix, sinGuardar, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        assertThrows(RecursoNoEncontrado.class, () -> vistas.funcion(huerfana));
+        assertThrows(RecursoNoEncontrado.class, () -> funcion(huerfana));
     }
 
     @Test
@@ -260,6 +260,10 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         return funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+    }
+
+    private FuncionVistaDTO funcion(Funcion f) {
+        return vistas.funciones(List.of(f)).get(0);
     }
 
     private static AsientoVistaDTO butaca(FuncionVistaDTO vista, String codigo) {

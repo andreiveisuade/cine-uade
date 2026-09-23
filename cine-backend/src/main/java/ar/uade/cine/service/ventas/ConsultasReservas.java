@@ -39,13 +39,14 @@ public class ConsultasReservas {
     }
 
     public List<Reserva> listarPorCliente(int clienteId) {
-        return reservaRepository.findByCliente_IdOrderByCreadaEnDesc(clienteId);
+        return reservaRepository.findByCliente_IdOrderByIdDesc(clienteId);
     }
 
-    // Estado y día en la base; el texto en memoria porque el código de butaca se arma de fila y número.
+    // La más nueva primero, ordenada en la base. Estado y día también en la base; el texto en
+    // memoria porque el código de butaca se arma de fila y número.
     public List<Reserva> buscar(CriteriosReserva criterios) {
         if (criterios == null || criterios.sinFiltros()) {
-            return reservaRepository.findAll();
+            return reservaRepository.findAllByOrderByIdDesc();
         }
         LocalDateTime desde = criterios.dia() == null ? null : criterios.dia().atStartOfDay();
         LocalDateTime hasta = desde == null ? null : desde.plusDays(1);

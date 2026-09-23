@@ -1,6 +1,5 @@
 package ar.uade.cine.controller.ventas;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -64,14 +63,14 @@ public class ReservaController {
                                         @RequestParam(required = false) String q) {
         if (email != null && !email.isBlank()) {
             // Sin código: la ruta es pública y el email no prueba ser el dueño.
-            return vistas.reservasSinCodigo(ordenadas(clientes.buscarPorEmail(email.trim())
+            return vistas.reservasSinCodigo(clientes.buscarPorEmail(email.trim())
                     .map(c -> consultas.listarPorCliente(c.getId()))
-                    .orElse(List.of())));
+                    .orElse(List.of()));
         }
         // vistas.reservas() y no un map de vistas.reserva(): evita tres consultas por fila.
-        return vistas.reservas(ordenadas(consultas.buscar(new CriteriosReserva(
+        return vistas.reservas(consultas.buscar(new CriteriosReserva(
                 Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
-                Parseo.diaOpcional(dia, "el día"), q))));
+                Parseo.diaOpcional(dia, "el día"), q)));
     }
 
     @Operation(summary = "El detalle de una reserva (encargado)")
@@ -126,10 +125,6 @@ public class ReservaController {
         int id = buscarPorCodigo(codigo).getId();
         reservas.cancelar(id);
         return vistas.reserva(buscar(id));
-    }
-
-    private static List<Reserva> ordenadas(List<Reserva> lista) {
-        return lista.stream().sorted(Comparator.comparing(Reserva::getId).reversed()).toList();
     }
 
     private Reserva buscarPorCodigo(String codigo) {

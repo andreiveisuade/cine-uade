@@ -1,6 +1,5 @@
 package ar.uade.cine.controller.cartelera;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -20,7 +19,6 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.dto.cartelera.PedidoEdicionPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PedidoPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
@@ -87,9 +85,7 @@ public class PeliculaController {
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
         buscar(id);
-        return vistas.funciones(funciones.listarPorPelicula(id).stream()
-                .sorted(Comparator.comparing(Funcion::getInicio))
-                .toList());
+        return vistas.funciones(funciones.listarPorPelicula(id));
     }
 
     @Operation(summary = "Dar de alta una película a mano")

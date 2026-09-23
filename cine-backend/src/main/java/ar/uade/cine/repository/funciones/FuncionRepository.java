@@ -11,7 +11,7 @@ import ar.uade.cine.model.funciones.Funcion;
 
 public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
 
-    List<Funcion> findByPelicula_Id(int peliculaId);
+    List<Funcion> findByPelicula_IdOrderByInicioAsc(int peliculaId);
 
     List<Funcion> findBySala_IdAndInicioBetween(int salaId, LocalDateTime desde, LocalDateTime hasta);
 
@@ -27,7 +27,7 @@ public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
               and (:salaId is null or f.sala.id = :salaId)
               and (:desde is null or f.inicio >= :desde)
               and (:hasta is null or f.inicio < :hasta)
-            order by f.id""")
+            order by f.inicio, f.id""")
     List<Funcion> buscar(@Param("peliculaId") Integer peliculaId, @Param("salaId") Integer salaId,
                          @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 }

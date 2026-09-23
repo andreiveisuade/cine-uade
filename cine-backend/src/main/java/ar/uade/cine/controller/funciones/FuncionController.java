@@ -1,6 +1,5 @@
 package ar.uade.cine.controller.funciones;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -53,10 +52,7 @@ public class FuncionController {
                         Parseo.numeroOpcional(peliculaId, "la película"),
                         Parseo.numeroOpcional(salaId, "la sala"),
                         Parseo.diaOpcional(desde, "la fecha de inicio"),
-                        Parseo.diaOpcional(hasta, "la fecha de fin"))
-                .stream()
-                .sorted(Comparator.comparing(Funcion::getInicio))
-                .toList());
+                        Parseo.diaOpcional(hasta, "la fecha de fin")));
     }
 
     @Operation(summary = "Una función con su mapa de butacas y el precio ya calculado de cada una")
