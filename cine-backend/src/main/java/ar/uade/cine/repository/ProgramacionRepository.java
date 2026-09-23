@@ -14,8 +14,8 @@ public interface ProgramacionRepository extends JpaRepository<Programacion, Inte
 
     @Query("""
             select p from Programacion p
-            where (:peliculaId is null or p.peliculaId = :peliculaId)
-              and (:salaId is null or p.salaId = :salaId)
+            where (:peliculaId is null or p.pelicula.id = :peliculaId)
+              and (:salaId is null or p.sala.id = :salaId)
               and (:activa is null or p.activa = :activa)
             order by p.id""")
     List<Programacion> buscar(@Param("peliculaId") Integer peliculaId, @Param("salaId") Integer salaId,

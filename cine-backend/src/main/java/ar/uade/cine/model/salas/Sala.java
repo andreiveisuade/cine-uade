@@ -1,11 +1,15 @@
 package ar.uade.cine.model.salas;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class Sala {
@@ -22,6 +26,9 @@ public class Sala {
     private TipoSala tipo;
 
     private int minutosLimpieza;
+
+    @OneToMany(mappedBy = "sala")
+    private List<Asiento> asientos = new ArrayList<>();
 
     protected Sala() {
     }
@@ -46,6 +53,10 @@ public class Sala {
 
     public int getMinutosLimpieza() {
         return minutosLimpieza;
+    }
+
+    public List<Asiento> getAsientos() {
+        return asientos;
     }
 
     // No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes.

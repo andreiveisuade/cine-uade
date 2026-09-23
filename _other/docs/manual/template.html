@@ -723,7 +723,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@Id</code> + <code>@GeneratedValue(IDENTITY)</code></td><td>PK por <code>AUTO_INCREMENT</code></td><td>Todas</td></tr>
             <tr><td><code>@Column</code></td><td>Nombre de columna o <code>unique</code></td><td><code>Reserva.codigo</code></td></tr>
             <tr><td><code>@Enumerated(STRING)</code></td><td>Enum guardado por nombre: reordenarlo no corrompe datos</td><td>Estados, versión…</td></tr>
-            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse</td><td><code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code></td></tr>
+            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse</td><td><code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code></td></tr>
+            <tr><td><code>@OneToMany(mappedBy)</code></td><td>Lado inverso: la FK la maneja la otra punta, sin cascada</td><td><code>Sala.asientos</code></td></tr>
+            <tr><td><code>@OnDelete(CASCADE)</code></td><td>Hibernate genera el <code>ON DELETE CASCADE</code> que ya tiene el schema</td><td><code>Asiento.sala</code></td></tr>
             <tr><td><code>@OneToMany(cascade = ALL, orphanRemoval)</code></td><td>Hijas que se guardan y borran con la madre</td><td><code>Reserva.entradas</code>, <code>CompraCandy.items</code></td></tr>
             <tr><td><code>@ElementCollection</code></td><td>Lista de valores en tabla auxiliar</td><td><code>Pelicula.generos</code> → <code>pelicula_genero</code></td></tr>
             <tr><td><code>@Inheritance(SINGLE_TABLE)</code></td><td>Jerarquía en una tabla con discriminador</td><td><code>Promocion</code>, <code>Usuario</code></td></tr>
@@ -854,11 +856,12 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Relación</th><th>Tipo</th><th>Por qué</th></tr></thead>
           <tbody>
-            <tr><td><code>Sala 1 ◆— 1..* Asiento</code></td><td>Composición</td><td>La butaca no existe fuera de su sala</td></tr>
+            <tr><td><code>Sala 1 ◆— 1..* Asiento</code></td><td>Composición</td><td>La butaca no existe fuera de su sala. <code>Asiento.sala</code> es el dueño de la FK; <code>Sala.asientos</code>, el inverso sin cascada: <code>GestorSalas</code> guarda las butacas por su repositorio</td></tr>
             <tr><td><code>Reserva 1 ◆— 1..* Entrada</code></td><td>Composición</td><td>No hay entrada sin reserva</td></tr>
             <tr><td><code>Entrada * → 1 Asiento</code></td><td>Asociación</td><td>Una venta por función, muchas en la historia</td></tr>
             <tr><td><code>Pago 0..1 → 1 Reserva</code></td><td>Asociación</td><td>Nunca dos pagos (<code>UNIQUE</code>)</td></tr>
             <tr><td><code>Funcion * → 1 Pelicula</code>, <code>1 Sala</code></td><td>Asociación</td><td>Muchas funciones por película y sala</td></tr>
+            <tr><td><code>Programacion * → 1 Pelicula</code>, <code>1 Sala</code></td><td>Asociación</td><td>Una grilla es de una película en una sala</td></tr>
             <tr><td><code>Funcion * → 0..1 Programacion</code></td><td>Asociación</td><td>La función suelta no tiene grilla y sobrevive a ella</td></tr>
             <tr><td><code>Producto 1 ◆— 0..* ItemCombo → 1 Producto</code></td><td>Composición</td><td>Un combo contiene productos</td></tr>
             <tr><td><code>Pago * → 0..1 Promocion</code></td><td>Asociación</td><td>Una como mucho (R15), auditable</td></tr>

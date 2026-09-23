@@ -18,7 +18,9 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.repository.FuncionRepository;
+import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ProgramacionRepository;
+import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
@@ -36,13 +38,18 @@ public class GestorProgramaciones {
 
     private final ProgramacionRepository programacionRepository;
     private final FuncionRepository funcionRepository;
+    private final PeliculaRepository peliculaRepository;
+    private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
     private final Reloj reloj;
 
     public GestorProgramaciones(ProgramacionRepository programacionRepository, FuncionRepository funcionRepository,
+                                PeliculaRepository peliculaRepository, SalaRepository salaRepository,
                                 GestorFunciones funciones, Reloj reloj) {
         this.programacionRepository = programacionRepository;
         this.funcionRepository = funcionRepository;
+        this.peliculaRepository = peliculaRepository;
+        this.salaRepository = salaRepository;
         this.funciones = funciones;
         this.reloj = reloj;
     }
@@ -143,7 +150,9 @@ public class GestorProgramaciones {
         if (datos.horaInicio() == null) {
             throw new IllegalArgumentException("Falta la hora de la función");
         }
-        Programacion grilla = new Programacion(datos.peliculaId(), datos.salaId(), desde, hasta,
+        // Referencias sin ir a la base: que existan lo valida validarProgramable, con su 404.
+        Programacion grilla = new Programacion(peliculaRepository.getReferenceById(datos.peliculaId()),
+                salaRepository.getReferenceById(datos.salaId()), desde, hasta,
                 datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
         if (hasta != null && grilla.horarios(hasta).isEmpty()) {
             throw new IllegalArgumentException(

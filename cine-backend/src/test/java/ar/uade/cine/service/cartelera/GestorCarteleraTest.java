@@ -402,7 +402,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     void noBorraLaProgramadaAunqueNoTengaFunciones() {
         Pelicula pelicula = gestor.agregar("La Odisea", 150, List.of(Genero.DRAMA),
                 Clasificacion.ATP);
-        programacionRepository.save(new Programacion(pelicula.getId(), 1,
+        sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
+        programacionRepository.save(new Programacion(pelicula, sala,
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 

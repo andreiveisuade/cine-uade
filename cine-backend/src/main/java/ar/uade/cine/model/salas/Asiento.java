@@ -3,13 +3,18 @@ package ar.uade.cine.model.salas;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.persistence.Column;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Asiento {
@@ -18,8 +23,11 @@ public class Asiento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    // Igual que el ON DELETE CASCADE del schema: borrar la sala se lleva sus butacas.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Sala sala;
 
     private int fila;
 
@@ -34,8 +42,8 @@ public class Asiento {
     protected Asiento() {
     }
 
-    public Asiento(int salaId, int fila, int numero, TipoAsiento tipo) {
-        this.salaId = salaId;
+    public Asiento(Sala sala, int fila, int numero, TipoAsiento tipo) {
+        this.sala = sala;
         this.fila = fila;
         this.numero = numero;
         this.tipo = tipo;
@@ -46,8 +54,13 @@ public class Asiento {
         return id;
     }
 
+    public Sala getSala() {
+        return sala;
+    }
+
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getSalaId() {
-        return salaId;
+        return sala.getId();
     }
 
     public int getFila() {

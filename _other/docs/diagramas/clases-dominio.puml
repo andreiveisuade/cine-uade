@@ -87,11 +87,13 @@ package "model.salas" {
     +getNombre(): String
     +getTipo(): TipoSala
     +getMinutosLimpieza(): int
+    +getAsientos(): List<Asiento>
   }
   ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
   ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
   ' butaca rota lo esta siempre.
   class Asiento <<Entity>> {
+    +getSala(): Sala
     +getSalaId(): int
     +getFila(): int
     +getNumero(): int
@@ -163,6 +165,8 @@ package "model.programaciones" {
   ' diasSemana va como atributo con cardinalidad por lo mismo que generos en
   ' Pelicula, pero el minimo es 0 y no 1: vacio significa todos los dias.
   class Programacion <<Entity>> {
+    +getPelicula(): Pelicula
+    +getSala(): Sala
     +getPeliculaId(): int
     +getSalaId(): int
     --patron temporal--
@@ -471,13 +475,14 @@ end note
 
 note as N2
   **Entre agregados, @ManyToOne LAZY o id.**
-  Funcion -> Pelicula, Funcion -> Sala,
-  Reserva -> Funcion y Reserva -> Cliente son
-  @ManyToOne(fetch = LAZY): el gestor navega
-  funcion.getSala() adentro de su transaccion, y
-  getSalaId() lee el id del proxy sin ir a la base.
-  El resto (Programacion, Pago, CompraCandy,
-  Asiento.salaId) sigue por id.
+  Funcion, Programacion -> Pelicula y Sala,
+  Asiento -> Sala, Reserva -> Funcion y
+  Reserva -> Cliente son @ManyToOne(fetch = LAZY):
+  el gestor navega funcion.getSala() adentro de
+  su transaccion, y getSalaId() lee el id del
+  proxy sin ir a la base. Sala.asientos es el
+  lado inverso (mappedBy). El resto (Pago,
+  CompraCandy) sigue por id.
 
   **Funcion no sabe cuanto dura.** La duracion
   vive en Pelicula, y getFin() la recibe por

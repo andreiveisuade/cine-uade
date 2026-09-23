@@ -70,7 +70,7 @@ public class GestorSalas {
 
         Sala sala = new Sala(nombre, tipo, minutosLimpieza);
         salaRepository.save(sala);
-        asientoRepository.saveAll(generarAsientos(sala.getId(), butacasPorFila, especiales));
+        asientoRepository.saveAll(generarAsientos(sala, butacasPorFila, especiales));
         return sala;
     }
 
@@ -100,13 +100,13 @@ public class GestorSalas {
         return salaRepository.save(sala);
     }
 
-    private List<Asiento> generarAsientos(int salaId, List<Integer> distribucion,
+    private List<Asiento> generarAsientos(Sala sala, List<Integer> distribucion,
                                           Map<String, TipoAsiento> especiales) {
         List<Asiento> asientos = new ArrayList<>();
         for (int fila = 1; fila <= distribucion.size(); fila++) {
             for (int numero = 1; numero <= distribucion.get(fila - 1); numero++) {
                 String codigo = Asiento.codigoDe(fila, numero);
-                asientos.add(new Asiento(salaId, fila, numero,
+                asientos.add(new Asiento(sala, fila, numero,
                         especiales.getOrDefault(codigo, TipoAsiento.ESTANDAR)));
             }
         }
@@ -122,7 +122,7 @@ public class GestorSalas {
     }
 
     private void cambiarEstado(int salaId, String codigo, EstadoAsiento estado) {
-        Asiento asiento = Asiento.conCodigo(asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId), codigo)
+        Asiento asiento = Asiento.conCodigo(asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(salaId), codigo)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en la sala " + salaId));
         asiento.setEstado(estado);
@@ -136,7 +136,7 @@ public class GestorSalas {
 
     @Transactional(readOnly = true)
     public List<Asiento> asientosDe(int salaId) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId);
+        return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(salaId);
     }
 
     @Transactional(readOnly = true)

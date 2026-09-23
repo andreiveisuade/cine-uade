@@ -98,7 +98,7 @@ public class GestorReservas {
 
     private List<Entrada> armarEntradas(Funcion funcion, Sala sala, Map<String, TipoTarifa> butacas,
                                         String sesion) {
-        List<Asiento> deLaSala = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
         Set<Integer> ocupados = ocupacion.asientosOcupados(funcion.getId(), sesion);
 
         List<Entrada> entradas = new ArrayList<>();

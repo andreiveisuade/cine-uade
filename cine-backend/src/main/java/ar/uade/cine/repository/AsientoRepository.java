@@ -8,5 +8,5 @@ import ar.uade.cine.model.salas.Asiento;
 
 public interface AsientoRepository extends JpaRepository<Asiento, Integer> {
 
-    List<Asiento> findBySalaIdOrderByFilaAscNumeroAsc(int salaId);
+    List<Asiento> findBySala_IdOrderByFilaAscNumeroAsc(int salaId);
 }

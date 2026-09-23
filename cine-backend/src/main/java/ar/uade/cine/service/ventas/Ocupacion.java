@@ -133,7 +133,7 @@ public class Ocupacion {
     private List<Asiento> asientosDeLaSala(int funcionId) {
         Funcion funcion = funcionRepository.findById(funcionId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
     }
 
     // R17 sin scheduler: expira quien consulta. Escribe porque el UNIQUE no sabe de vencimientos.

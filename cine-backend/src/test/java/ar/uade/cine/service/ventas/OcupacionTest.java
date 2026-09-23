@@ -227,7 +227,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     }
 
     private int idDe(String codigo) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).stream()
+        return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(1).stream()
                 .filter(a -> a.getCodigo().equals(codigo))
                 .map(Asiento::getId)
                 .findFirst()

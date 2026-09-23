@@ -387,7 +387,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void noSeCobraUnaReservaCuyaFuncionYaEmpezo() {
         Funcion empezada = funcionQueYaEmpezo();
-        Asiento butaca = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).get(0);
+        Asiento butaca = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(1).get(0);
         Reserva reserva = reservaRepository.save(new Reserva(empezada, clientes.buscar(1).orElseThrow(),
                 List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19

@@ -32,7 +32,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     private static final LocalDate DESDE = LocalDate.of(2026, 8, 1);
     private static final LocalDate HASTA = LocalDate.of(2026, 8, 31);
 
-    private static final Asiento A1 = new Asiento(1, 1, 1, TipoAsiento.ESTANDAR);
+    private static final Asiento A1 = new Asiento(null, 1, 1, TipoAsiento.ESTANDAR);
 
     @Autowired
     private GestorPromociones promociones;

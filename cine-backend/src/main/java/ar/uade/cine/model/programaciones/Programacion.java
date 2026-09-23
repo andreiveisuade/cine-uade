@@ -9,9 +9,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -23,6 +25,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Programacion {
@@ -31,11 +34,13 @@ public class Programacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "pelicula_id")
-    private int peliculaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pelicula_id", nullable = false)
+    private Pelicula pelicula;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    private Sala sala;
 
     private LocalDate desde;
 
@@ -65,11 +70,11 @@ public class Programacion {
     protected Programacion() {
     }
 
-    public Programacion(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
+    public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
                         Proyeccion proyeccion, Dinero precio) {
-        this.peliculaId = peliculaId;
-        this.salaId = salaId;
+        this.pelicula = pelicula;
+        this.sala = sala;
         this.desde = desde;
         this.hasta = hasta;
         this.horaInicio = horaInicio;
@@ -104,12 +109,21 @@ public class Programacion {
         return id;
     }
 
+    public Pelicula getPelicula() {
+        return pelicula;
+    }
+
+    public Sala getSala() {
+        return sala;
+    }
+
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
-        return peliculaId;
+        return pelicula.getId();
     }
 
     public int getSalaId() {
-        return salaId;
+        return sala.getId();
     }
 
     public LocalDate getDesde() {
@@ -150,7 +164,7 @@ public class Programacion {
 
     @Override
     public String toString() {
-        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + horaInicio
+        return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + horaInicio
                 + " del " + desde + (hasta == null ? " en adelante" : " al " + hasta)
                 + " - generada hasta " + (generadaHasta == null ? "nunca" : generadaHasta);
     }
