@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Tarea;
 
@@ -15,6 +16,8 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
@@ -22,8 +25,13 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 /** Control de acceso (CU-18). Lo único que ve el acomodador. */
 final class PantallaPuerta extends Pantalla {
 
+    private record Validada(Reserva reserva, Set<String> seAcreditan) {
+    }
+
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
+    // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
+    private volatile Set<String> seAcreditan;
 
     PantallaPuerta(ApiHttp api) {
         super(api, "Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
@@ -54,8 +62,12 @@ final class PantallaPuerta extends Pantalla {
     private void validar() {
         String limpio = codigo.getText().trim().toUpperCase();
         if (limpio.isEmpty()) return;
-        Tarea.ejecutar(this, () -> api.validarEntrada(limpio), reserva -> {
-            mostrarValida(reserva);
+        // El catálogo antes que el acceso: si fallara después, la entrada quedaría usada y en pantalla diría NO PASA.
+        Tarea.ejecutar(this, () -> {
+            Set<String> tarifas = tarifasQueSeAcreditan();
+            return new Validada(api.validarEntrada(limpio), tarifas);
+        }, validada -> {
+            mostrarValida(validada.reserva(), validada.seAcreditan());
             reiniciar();
         }, error -> {
             // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa.
@@ -70,15 +82,23 @@ final class PantallaPuerta extends Pantalla {
         codigo.requestFocusInWindow();
     }
 
-    private void mostrarValida(Reserva reserva) {
+    private Set<String> tarifasQueSeAcreditan() {
+        if (seAcreditan == null) {
+            seAcreditan = api.obtenerTarifas().stream().filter(Tarifa::requiereAcreditacion).map(Tarifa::nombre)
+                    .collect(Collectors.toSet());
+        }
+        return seAcreditan;
+    }
+
+    private void mostrarValida(Reserva reserva, Set<String> seAcreditan) {
         StringBuilder html = new StringBuilder();
         html.append("<p><b>").append(reserva.pelicula() == null ? "" : escapar(reserva.pelicula().titulo()))
                 .append("</b><br>").append(reserva.sala() == null ? "" : escapar(reserva.sala().nombre()))
                 .append(" · ").append(reserva.funcion() == null ? "" : fechaHora(reserva.funcion().inicio()))
                 .append("</p><table>");
         for (Entrada e : reserva.entradas()) {
-            String tarifa = e.tarifa() == null ? "GENERAL" : e.tarifa();
-            boolean pideCarnet = !"GENERAL".equals(tarifa);
+            String tarifa = e.tarifa();
+            boolean pideCarnet = seAcreditan.contains(tarifa);
             html.append("<tr><td><tt><b>").append(e.codigo()).append("</b></tt></td><td>")
                     .append(pideCarnet ? "<b>" + etiqueta(tarifa) + " · pedir carnet</b>" : etiqueta(tarifa))
                     .append("</td></tr>");

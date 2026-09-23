@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.MedioPago;
 import ar.uade.cine.swing.api.dto.Pago;
 import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
@@ -26,6 +27,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.dia;
@@ -39,7 +42,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
  */
 final class PantallaCobro extends Pantalla {
 
-    private record Datos(List<Reserva> reservas, List<MedioPago> medios) {
+    private record Datos(Reserva reserva, List<MedioPago> medios, List<Tarifa> tarifas) {
     }
 
     private final Navegacion navegacion;
@@ -60,23 +63,32 @@ final class PantallaCobro extends Pantalla {
         centro.add(cuerpo, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
 
-        // El listado completo: no hay GET de reserva por id que traiga todo lo embebido.
-        cargar(() -> new Datos(api.obtenerReservas(null), api.obtenerMediosPago()), this::pintar);
+        // GET /api/reservas/{id} trae lo mismo embebido que el listado. Un 404 se muestra en la pantalla, no en un
+        // diálogo: sin reserva no hay nada más que hacer acá.
+        Tarea.ejecutar(this, () -> new Datos(api.obtenerReserva(reservaId), api.obtenerMediosPago(),
+                api.obtenerTarifas()), this::pintar, error -> {
+            if (!error.esSesionVencida()) mostrarNota(error.getMessage());
+        });
+    }
+
+    private void mostrarNota(String texto) {
+        cuerpo.removeAll();
+        cuerpo.add(Componentes.nota(texto), BorderLayout.NORTH);
+        cuerpo.revalidate();
+        cuerpo.repaint();
     }
 
     private void pintar(Datos datos) {
-        cuerpo.removeAll();
-        Reserva reserva = datos.reservas().stream().filter(r -> r.id() == reservaId).findFirst().orElse(null);
-        if (reserva == null) {
-            cuerpo.add(Componentes.nota("No existe la reserva " + reservaId), BorderLayout.NORTH);
-        } else if (!"RESERVADA".equals(reserva.estado())) {
-            cuerpo.add(Componentes.nota(yaNoSeCobra(reserva)), BorderLayout.NORTH);
-        } else {
-            JPanel columnas = new JPanel(new GridLayout(1, 2, 16, 0));
-            columnas.add(new PanelCobro(reserva, datos.medios()));
-            columnas.add(detalle(reserva));
-            cuerpo.add(columnas, BorderLayout.CENTER);
+        Reserva reserva = datos.reserva();
+        if (!"RESERVADA".equals(reserva.estado())) {
+            mostrarNota(yaNoSeCobra(reserva));
+            return;
         }
+        cuerpo.removeAll();
+        JPanel columnas = new JPanel(new GridLayout(1, 2, 16, 0));
+        columnas.add(new PanelCobro(reserva, datos.medios()));
+        columnas.add(detalle(reserva, datos.tarifas()));
+        cuerpo.add(columnas, BorderLayout.CENTER);
         cuerpo.revalidate();
         cuerpo.repaint();
     }
@@ -95,7 +107,10 @@ final class PantallaCobro extends Pantalla {
         return texto;
     }
 
-    private JPanel detalle(Reserva reserva) {
+    private JPanel detalle(Reserva reserva, List<Tarifa> tarifas) {
+        // Qué tarifa se acredita lo dice el catálogo, no el nombre: una tarifa nueva no obliga a tocar esta pantalla.
+        Set<String> seAcreditan = tarifas.stream().filter(Tarifa::requiereAcreditacion).map(Tarifa::nombre)
+                .collect(Collectors.toSet());
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         JPanel arriba = new JPanel();
         arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
@@ -112,10 +127,8 @@ final class PantallaCobro extends Pantalla {
 
         Tabla<Entrada> entradas = new Tabla<>(
                 Columna.<Entrada>de("Butaca", Entrada::codigo),
-                Columna.<Entrada>de("Tarifa", e -> {
-                    String tarifa = e.tarifa() == null ? "GENERAL" : e.tarifa();
-                    return "GENERAL".equals(tarifa) ? etiqueta(tarifa) : etiqueta(tarifa) + " · reducida";
-                }),
+                Columna.<Entrada>de("Tarifa", e -> seAcreditan.contains(e.tarifa())
+                        ? etiqueta(e.tarifa()) + " · se acredita en la puerta" : etiqueta(e.tarifa())),
                 Columna.<Entrada>numero("Precio", e -> precio(e.precio())));
         entradas.mostrar(reserva.entradas());
         panel.add(entradas.conScroll(), BorderLayout.CENTER);

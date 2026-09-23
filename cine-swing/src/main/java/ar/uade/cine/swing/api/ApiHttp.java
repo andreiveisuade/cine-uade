@@ -251,6 +251,10 @@ public final class ApiHttp {
         return lista("/reservas" + consulta(filtros), Reserva.class);
     }
 
+    public Reserva obtenerReserva(int id) {
+        return pedir("GET", "/reservas/" + id, null, tipo(Reserva.class));
+    }
+
     public Reserva cancelarReserva(int id) {
         return pedir("POST", "/reservas/" + id + "/cancelacion", null, tipo(Reserva.class));
     }
