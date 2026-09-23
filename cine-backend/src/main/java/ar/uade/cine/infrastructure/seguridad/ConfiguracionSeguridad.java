@@ -45,6 +45,32 @@ public class ConfiguracionSeguridad {
     private static final String ADMINISTRADOR = Rol.ADMINISTRADOR.name();
     private static final String ACOMODADOR = Rol.ACOMODADOR.name();
 
+    // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
+
+    public static final String[] POST_PUBLICOS = {
+            "/api/sesion",
+            "/api/clientes",
+            "/api/reservas",
+            "/api/funciones/*/bloqueos",
+            // Tan abierto como consultarla: el cliente no tiene clave.
+            "/api/reservas/*/cancelacion"};
+
+    public static final String[] GET_PUBLICOS = {
+            "/api/cartelera",
+            "/api/peliculas/*",
+            "/api/peliculas/*/funciones",
+            "/api/funciones/*",
+            "/api/reservas/*",
+            "/api/candy/productos", "/api/candy/productos/*",
+            "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
+            "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
+            "/api/tarifas"};
+
+    public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
+
+    /** Abierta solo con {@code ?email=}: ningún patrón de ruta mira el parámetro. */
+    public static final String GET_PUBLICO_CON_EMAIL = "/api/reservas";
+
     @Bean
     public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json) throws Exception {
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
@@ -74,26 +100,10 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // Login y compra sin registrarse.
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/sesion",
-                                "/api/clientes",
-                                "/api/reservas",
-                                "/api/funciones/*/bloqueos",
-                                // Tan abierto como consultarla: el cliente no tiene clave.
-                                "/api/reservas/*/cancelacion").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, POST_PUBLICOS).permitAll()
                         // Va antes que /api/peliculas/*, que si no lo abriría por coincidencia.
-                        .requestMatchers(HttpMethod.GET, "/api/peliculas/pendientes").hasRole(ADMINISTRADOR)
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/cartelera",
-                                "/api/peliculas/*",
-                                "/api/peliculas/*/funciones",
-                                "/api/funciones/*",
-                                "/api/reservas/*",
-                                "/api/candy/productos", "/api/candy/productos/*",
-                                "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
-                                "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
-                                "/api/tarifas").permitAll()
+                        .requestMatchers(HttpMethod.GET, GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS).hasRole(ADMINISTRADOR)
+                        .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
                         .requestMatchers(reservasDeUnEmail()).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
@@ -101,13 +111,10 @@ public class ConfiguracionSeguridad {
                 .build();
     }
 
-    /**
-     * Con email es "mis reservas" del cliente; sin email, el listado del encargado. Ningún
-     * patrón de ruta mira el parámetro.
-     */
+    /** Con email es "mis reservas" del cliente; sin email, el listado del encargado. */
     private static RequestMatcher reservasDeUnEmail() {
         return pedido -> HttpMethod.GET.matches(pedido.getMethod())
-                && "/api/reservas".equals(pedido.getServletPath())
+                && GET_PUBLICO_CON_EMAIL.equals(pedido.getServletPath())
                 && pedido.getParameter("email") != null
                 && !pedido.getParameter("email").isBlank();
     }

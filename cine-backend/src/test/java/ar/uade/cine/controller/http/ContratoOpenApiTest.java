@@ -63,23 +63,41 @@ class ContratoOpenApiTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("cada operación documenta los errores que el advice puede devolver")
-    void cadaOperacionDocumentaSusErrores() {
-        JsonNode rutas = get("/v3/api-docs").json().get("paths");
-        List<String> incompletas = new ArrayList<>();
+    @DisplayName("una ruta pública no pide credencial ni promete 401")
+    void rutaPublicaSinCandado() {
+        JsonNode operacion = operacion("/api/cartelera", "get");
 
-        rutas.properties().forEach(ruta -> ruta.getValue().properties().forEach(metodo -> {
-            JsonNode respuestas = metodo.getValue().get("responses");
-            for (String codigo : List.of("400", "401", "403", "404", "409", "500")) {
-                if (respuestas == null || !respuestas.has(codigo)) {
-                    incompletas.add(metodo.getKey().toUpperCase() + " " + ruta.getKey() + " sin " + codigo);
-                }
-            }
-        }));
+        assertThat(operacion.get("security")).isNotNull().isEmpty();
+        assertThat(operacion.get("responses").has("401")).isFalse();
+    }
 
-        // ManejadorErrores aplica a todas las rutas: el contrato no puede prometer menos de lo que
-        // pasa.
-        assertThat(incompletas).isEmpty();
+    @Test
+    @DisplayName("una ruta protegida documenta 401 y 403")
+    void rutaProtegidaConCandado() {
+        JsonNode respuestas = operacion("/api/salas", "post").get("responses");
+
+        assertThat(respuestas.has("401")).isTrue();
+        assertThat(respuestas.has("403")).isTrue();
+    }
+
+    @Test
+    @DisplayName("el 409 queda solo donde se compite por una butaca")
+    void conflictoSoloAlReservar() {
+        assertThat(operacion("/api/generos", "get").get("responses").has("409")).isFalse();
+        assertThat(operacion("/api/reservas", "post").get("responses").has("409")).isTrue();
+    }
+
+    @Test
+    @DisplayName("sin variable de ruta no hay 404, y sin filtros una lectura no tiene 400")
+    void erroresSegunLaForma() {
+        JsonNode generos = operacion("/api/generos", "get").get("responses");
+        assertThat(generos.has("404")).isFalse();
+        assertThat(generos.has("400")).isFalse();
+        assertThat(operacion("/api/peliculas/{id}", "get").get("responses").has("404")).isTrue();
+    }
+
+    private JsonNode operacion(String ruta, String metodo) {
+        return get("/v3/api-docs").json().get("paths").get(ruta).get(metodo);
     }
 
     private static List<String> referencias(JsonNode nodo) {
