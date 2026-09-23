@@ -11,10 +11,7 @@ import { BarraFiltros, Encabezado, FilaVacia, opcionesDe, useAccion } from "./co
 
 const SIN_FILTROS = { peliculaId: "", salaId: "", desde: "", hasta: "" };
 
-/**
- * R8 y R3 se validan en el backend; acá se anticipan para no mandar algo que va a fallar.
- * Devuelve los avisos a mostrar y si la sala puede proyectar en 3D.
- */
+// R8 y R3 los valida el backend; acá se anticipan para no mandar algo que va a fallar.
 function revisarReglas({ peliculaId, salaId, inicio }, { peliculas, salas, funciones, soporta3D }) {
   const sala = salas.find((s) => s.id === Number(salaId));
   const pelicula = peliculas.find((p) => p.id === Number(peliculaId));
@@ -46,7 +43,6 @@ function FormularioFuncion({ datos, alProgramar }) {
   const cambiar = (clave) => (valor) => setCampos((c) => ({ ...c, [clave]: valor }));
   const { avisos, puede3D } = revisarReglas(campos, datos);
 
-  // Una sala que no soporta 3D no puede quedar con 3D elegido.
   useEffect(() => {
     if (!puede3D && campos.proyeccion === "TRES_D") setCampos((c) => ({ ...c, proyeccion: "DOS_D" }));
   }, [puede3D, campos.proyeccion]);
@@ -78,11 +74,7 @@ function FormularioFuncion({ datos, alProgramar }) {
   );
 }
 
-/**
- * `destacada` es la función a la que saltar si se llegó desde la agenda: la tabla tiene
- * ciento cincuenta filas, y aterrizar arriba de todo sería mandar al usuario dos veces al
- * mismo lugar.
- */
+// `destacada`: la fila a la que saltar al llegar desde la agenda.
 export function Funciones() {
   const { destacada } = useParams();
   const [filtros, setFiltros] = useState(SIN_FILTROS);

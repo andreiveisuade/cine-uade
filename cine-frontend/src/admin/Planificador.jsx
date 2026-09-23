@@ -9,21 +9,12 @@ import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Encabezado, Nota, opcionesDe } from "./comun.jsx";
 
-/**
- * Los indicadores de la corrida anterior, para poder decir cuánto mejoró o empeoró la
- * nueva. Vive en el módulo y no en el componente porque comparar dos corridas es el uso
- * normal de esta pantalla, y sobrevive a salir y volver.
- */
+// En el módulo y no en el componente: comparar corridas es el uso normal y sobrevive a salir y volver.
 let corridaAnterior = null;
 
 const porcentaje = (fraccion) => `${Math.round(fraccion * 100)}%`;
 const conDecimal = (numero) => numero.toFixed(1).replace(".", ",");
 
-/**
- * Cuánto cambió un indicador contra la corrida anterior. Es la mitad del valor de la
- * pantalla: el número solo no dice si 79% de ocupación está bien, pero «79%, cuatro
- * puntos más que con seis títulos» sí.
- */
 function Variacion({ actual, anterior, formato }) {
   if (anterior === null || anterior === undefined) return null;
   const delta = actual - anterior;
@@ -68,10 +59,6 @@ function Indicadores({ indicadores: i, pases, anterior }) {
   );
 }
 
-/**
- * Los pases por género, como barras. Es donde se ve el problema que el planificador
- * existe para evitar: una grilla con cuatro películas de acción y nada para el resto.
- */
 function Generos({ pasesPorGenero }) {
   const entradas = Object.entries(pasesPorGenero || {}).sort((a, b) => b[1] - a[1]);
   if (!entradas.length) return null;
@@ -126,10 +113,6 @@ function Elenco({ elenco }) {
   );
 }
 
-/**
- * La grilla propuesta, agrupada por día y sala. Plana serían ciento cincuenta filas
- * ordenadas por hora, donde no se ve ni qué pasa en una sala ni qué se da un día.
- */
 function Pases({ pases }) {
   const dias = new Map();
   for (const pase of pases) {
@@ -195,12 +178,6 @@ function Propuesta({ grilla, anterior }) {
   );
 }
 
-/**
- * Lo que se ve mientras el servidor arma la grilla: el mismo andamiaje que el resultado,
- * en gris. Contar las dos etapas del algoritmo mientras corren es la única parte de la
- * espera que le sirve a quien mira: para cuando aparecen los números, ya sabe de dónde
- * salieron.
- */
 function Calculando({ aplicando }) {
   return (
     <Stack gap="md">
@@ -219,18 +196,7 @@ function Calculando({ aplicando }) {
   );
 }
 
-/**
- * El planificador: qué se da esta semana.
- *
- * La pantalla no es un listado de funciones sino los indicadores primero. Sin ellos,
- * «armame la grilla» es un botón que escupe ciento cincuenta filas que nadie puede
- * juzgar; con ellos, el encargado corre la propuesta con seis títulos y con diez,
- * compara ocupación y variedad, y recién ahí aplica.
- *
- * Mismo par que las programaciones: «Previsualizar» no escribe nada y «Aplicar» crea las
- * funciones con los mismos criterios. Como el planificador es determinista, lo que se ve
- * es lo que se va a crear.
- */
+// Determinista: lo que muestra Previsualizar es exactamente lo que crea Aplicar.
 export function Planificador() {
   const avisar = useAvisar();
   const carga = useCargar(() => Promise.all([api.obtenerIdiomas(), api.obtenerProyecciones()]), []);
@@ -249,7 +215,6 @@ export function Planificador() {
   const [idiomas, proyecciones] = carga.datos;
   const pedido = { ...criterios, idioma: criterios.idioma || idiomas[0], proyeccion: criterios.proyeccion || proyecciones[0] };
 
-  /** Una propuesta vale solo para los criterios con los que se pidió. */
   const cambiar = (clave) => (valor) => { setCriterios((c) => ({ ...c, [clave]: valor })); setResultado(null); };
 
   async function correr(evento, aplicar) {
@@ -260,8 +225,6 @@ export function Planificador() {
     const pedidos = criterios;
     try {
       const grilla = await (aplicar ? api.armarGrilla : api.proponerGrilla)(pedido);
-      // Si tocó un criterio mientras calculaba, lo que llegó ya no describe lo que está en
-      // pantalla: pintarlo sería mostrar una grilla que no es la de estos criterios.
       if (vigentes.current !== pedidos) return;
       setResultado({ grilla, anterior: corridaAnterior, aplicada: aplicar });
       corridaAnterior = { titulos: Number(pedido.cuantasPeliculas), indicadores: grilla.indicadores };
@@ -274,8 +237,7 @@ export function Planificador() {
     }
   }
 
-  // funcionesCreadas viene en 0 al previsualizar y con el número real en el alta: es lo
-  // único que distingue «así quedaría» de «así quedó», porque los pases son los mismos.
+  // funcionesCreadas es 0 al previsualizar: es lo único que distingue «así quedaría» de «así quedó».
   const pases = resultado?.grilla.pases.length || 0;
   const textoAplicar = resultado?.aplicada ? "Aplicada" : resultado ? `Crear ${pases} funciones` : "Aplicar";
 

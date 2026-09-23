@@ -26,8 +26,7 @@ export function Confirmar() {
   const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
   const funcion = carga.datos?.[0];
 
-  // Completar el formulario lleva más de lo que dura un bloqueo: sin renovarlo, la
-  // persona perdería las butacas justo mientras tipea el mail.
+  // Completar el formulario lleva más de lo que dura un bloqueo.
   useRenovarBloqueo(funcion?.id);
 
   if (!funcion) return <EsperaOError carga={carga} />;
@@ -47,11 +46,9 @@ export function Confirmar() {
     try {
       const reserva = await api.crearReserva({
         funcionId: funcion.id, nombre, email, butacas,
-        // La misma sesión con la que se bloquearon: sin esto, el propio bloqueo haría
-        // rebotar la reserva por butaca ocupada.
+        // La misma sesión que bloqueó: si no, el propio bloqueo rebotaría la reserva.
         sesion: sesionDeCompra(),
       });
-      // Comprar sin registrarse igual deja los datos listos para la próxima.
       recordarCliente({ nombre: nombre.trim(), email: email.trim() });
       reservada.current = true;
       setSeleccion({ funcionId: null, butacas: {} });
@@ -59,8 +56,7 @@ export function Confirmar() {
       navegar(`/ticket/${reserva.id}`, { state: { reserva } });
     } catch (e) {
       setEnviando(false);
-      // 409: alguien tomó la butaca en el medio. Dejar el resumen como está sería
-      // mostrarle butacas que ya no puede comprar, así que vuelve al mapa recargado.
+      // 409: alguien tomó la butaca en el medio; vuelve al mapa recargado.
       if (e.status === 409) {
         setSeleccion({ funcionId: funcion.id, butacas: {} });
         avisar(e.message, "error");

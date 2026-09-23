@@ -33,13 +33,7 @@ function EntradaValida({ reserva }) {
   );
 }
 
-/**
- * CU-18: lo que usa el acomodador. Se escanea o se tipea el código de la reserva y se
- * marca la entrada como usada.
- *
- * El foco vuelve al campo después de cada validación porque en la puerta se encadenan
- * una atrás de otra: obligar a hacer clic entre persona y persona sería insufrible.
- */
+// El foco vuelve al campo tras cada validación: en la puerta se encadenan una atrás de otra.
 export function Puerta() {
   const [codigo, setCodigo] = useState("");
   const [resultado, setResultado] = useState(null);
@@ -52,8 +46,7 @@ export function Puerta() {
     try {
       setResultado({ reserva: await api.validarEntrada(limpio) });
     } catch (e) {
-      // Los tres motivos —código inexistente, sin pagar y ya usada— se muestran igual de
-      // fuerte: en la puerta lo único que importa es que no pasa.
+      // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa.
       setResultado({ error: e.message });
     }
     setCodigo("");

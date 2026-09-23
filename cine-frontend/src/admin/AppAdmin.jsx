@@ -1,9 +1,3 @@
-// El panel del encargado: qué vista atiende cada ruta y quién puede entrar.
-//
-// Las rutas son las mismas que antes de React (admin.html#/funciones). El menú pasó de una
-// barra de trece links a una columna agrupada por tarea, que es como se usa el panel: la
-// cartelera se arma de vez en cuando, las ventas y la caja todos los días.
-
 import { useEffect } from "react";
 import { Anchor, AppShell, Badge, Burger, Button, Group, NavLink as EnlaceMenu, ScrollArea, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -42,7 +36,7 @@ function Menu({ alElegir }) {
   );
   return (
     <>
-      {/* El acomodador solo ve Puerta: el rol no es solo cosmético, además la ruta se cierra. */}
+      {/* El rol no es cosmético: además del menú, la ruta se cierra. */}
       {esAdministrador && MENU.map(([grupo, enlaces]) => (
         <div key={grupo}>
           <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="sm" mt="md" mb={4}>{grupo}</Text>
@@ -55,7 +49,6 @@ function Menu({ alElegir }) {
   );
 }
 
-/** Todo lo que no es el login: pide sesión, y el acomodador solo pasa a Puerta. */
 function Panel() {
   const { empleado, esAdministrador, cerrar } = useSesion();
   const { pathname } = useLocation();

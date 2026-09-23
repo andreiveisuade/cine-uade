@@ -13,7 +13,6 @@ import { BarraFiltros, Encabezado, FilaVacia, opcionesDe, useAccion } from "./co
 
 const SIN_FILTROS = { q: "", genero: "", publicada: "" };
 
-/** El mismo formulario sirve para alta y edición: sin `editando` es alta. */
 function FormularioPelicula({ editando, generos, clasificaciones, alGuardar, alCancelar }) {
   const [campos, setCampos] = useState({
     titulo: editando?.titulo || "",

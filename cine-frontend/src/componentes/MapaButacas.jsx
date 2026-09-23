@@ -1,14 +1,9 @@
-// Dibujo de la sala fila por fila. La geometría es la misma para el cliente y para el
-// encargado; lo que cambia es qué significa cada color, así que el pintado se pasa por
-// parámetro.
-
 import { Box, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 
 export const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
 const COLOR_TIPO = { VIP: "yellow", PAREJA: "pink", ACCESIBLE: "blue", ESTANDAR: "gray" };
 
-/** Borde y fondo del tipo de butaca: se lee de un vistazo cuál es VIP sin leer el símbolo. */
 export function estiloTipo(tipo) {
   const color = COLOR_TIPO[tipo];
   return {
@@ -27,12 +22,7 @@ export const ESTILO = {
   },
 };
 
-/**
- * Una sala no es un rectángulo: cada fila tiene la cantidad de butacas que dice
- * butacasPorFila, y las filas se centran entre sí.
- *
- * @param pintar  (asiento) => { estilo, deshabilitado, titulo }
- */
+// pintar: (asiento) => { estilo, deshabilitado, titulo }
 export function MapaButacas({ sala, asientos, pintar, alElegir }) {
   const filas = [];
   for (let fila = 1; fila <= sala.filas; fila++) filas.push(asientos.filter((a) => a.fila === fila));
@@ -64,7 +54,6 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
   );
 }
 
-/** La leyenda de colores. `items` es [[estilo, texto], …]. */
 export function Referencia({ items }) {
   return (
     <Group gap="md" mt="sm">

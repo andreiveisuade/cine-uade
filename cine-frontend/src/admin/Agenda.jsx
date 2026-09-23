@@ -1,9 +1,4 @@
-// La programación vista como calendario: las horas en el eje vertical y cada función
-// como un bloque ubicado y **dimensionado por su duración real**.
-//
-// El listado de funciones sirve para buscar una función puntual y no sirve para nada más:
-// no muestra los huecos, que es justo lo que hay que ver para programar. Que el alto salga
-// de la duración no es decoración: es el dato que decide si dos funciones se pisan (R3).
+// El alto de cada bloque sale de la duración real: es lo que muestra si dos funciones se pisan (R3).
 
 import { Box, Button, Group, Paper, Select, Text } from "@mantine/core";
 import { Link, useNavigate, useParams } from "react-router";
@@ -14,27 +9,18 @@ import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Encabezado, Nota } from "./comun.jsx";
 
-/**
- * Dos preguntas distintas, y por eso dos modos. «¿Qué doy en la Sala 1 esta semana?» es
- * planificación: una sala a lo largo de los días. «¿Cómo queda el cine el sábado?» es
- * operación: todas las salas de un mismo día. En una sola columna, seis funciones
- * simultáneas serían seis bloques pisados e ilegibles.
- */
+// Dos modos: en una sola columna, las funciones simultáneas de varias salas se pisarían.
 const MODOS = {
   semana: { etiqueta: "Semana (una sala)", dias: 7 },
   dia: { etiqueta: "Día (todas las salas)", dias: 1 },
 };
 
-/** Alto de un minuto. Con esto una película de dos horas mide 132px, que se lee bien. */
 const PX_POR_MINUTO = 1.1;
 
-/**
- * Ningún bloque baja de esto aunque dure menos. Rompe a propósito la proporción: el corto
- * de 5 minutos debería medir 5px y ahí no se lee ni el título.
- */
+// Rompe la proporción a propósito: en un corto de 5 minutos no se leería ni el título.
 const ALTO_MINIMO = 26;
 
-/** Un color por película, estable entre recargas: el mismo título siempre igual. */
+// Un color estable por título, entre recargas.
 const COLORES = ["teal", "blue", "yellow", "pink", "violet", "cyan", "orange", "indigo"];
 
 const NOMBRE_DIA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -49,11 +35,7 @@ function correr(fechaISO, dias) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/**
- * La ruta es #/agenda/modo/desde/sala. Entrar a #/agenda pelado tiene que funcionar igual,
- * así que los tres tienen default y se validan: un hash escrito a mano no puede dejar la
- * pantalla en blanco.
- */
+// #/agenda/modo/desde/sala: los tres tienen default para que un hash a mano no deje la pantalla en blanco.
 function leerRuta({ modo, desde, salaId }) {
   return {
     modo: MODOS[modo] ? modo : "semana",
@@ -62,10 +44,6 @@ function leerRuta({ modo, desde, salaId }) {
   };
 }
 
-/**
- * Cada columna sabe dos cosas: qué funciones le tocan y cómo se llama. Lo demás del
- * dibujo no necesita saber si está mirando días o salas.
- */
 function armarColumnas(modo, desde, salas, sala) {
   if (modo === "dia") {
     return salas.map((s) => ({
@@ -87,11 +65,7 @@ function armarColumnas(modo, desde, salas, sala) {
   });
 }
 
-/**
- * De qué hora a qué hora dibujar. Sale de las funciones y no es fijo de 00 a 24: un cine
- * abre a la tarde, y tres cuartos de la grilla vacíos serían tres cuartos de scroll. El
- * final incluye la limpieza, para que el rayado de la última no quede cortado.
- */
+// Sale de las funciones y no de 00 a 24: un cine abre a la tarde. Incluye la limpieza de la última.
 function franjaHoraria(funciones) {
   if (!funciones.length) return null;
   const arranques = funciones.map((f) => minutosDe(f.inicio));
@@ -102,11 +76,7 @@ function franjaHoraria(funciones) {
   };
 }
 
-/**
- * Un enlace y no un div con onClick: la agenda es para mirar, y desde acá se salta a
- * operar sobre esa función. Siendo un enlace de verdad funciona el clic del medio y el
- * teclado, gratis.
- */
+// Un enlace y no un div con onClick: el clic del medio y el teclado funcionan solos.
 function Bloque({ funcion, inicioFranja, columna }) {
   const arranca = minutosDe(funcion.inicio);
   const dura = funcion.pelicula.duracionMinutos;
@@ -126,8 +96,7 @@ function Bloque({ funcion, inicioFranja, columna }) {
         <strong>{enHora(arranca)}</strong> {funcion.pelicula.titulo}
         {alto > 44 && <div style={{ fontSize: 11, opacity: 0.75 }}>{columna.subtitulo(funcion)}</div>}
       </Box>
-      {/* La franja rayada de abajo: el rato en que la sala se está levantando. Sin esto el
-          hueco se ve libre y el encargado descubre la regla recién cuando el alta falla. */}
+      {/* Sin la limpieza rayada el hueco parece libre, y la regla aparece recién cuando el alta falla. */}
       {limpieza > 0 && (
         <Box pos="absolute" left={2} right={2} top={(termina - inicioFranja) * PX_POR_MINUTO} h={limpieza * PX_POR_MINUTO}
           title={`Limpieza de ${funcion.sala.nombre}: ${limpieza} min, hasta ${enHora(termina + limpieza)}`}
@@ -154,8 +123,7 @@ function Grilla({ columnas, funciones, franja }) {
             <Text key={c.clave} component="div" size="sm" fw={500} ta="center" py="xs" style={{ borderLeft: borde }}>{c.titulo}</Text>
           ))}
         </div>
-        {/* El margen arriba y abajo deja entera la etiqueta de la primera y la última hora,
-            que van centradas sobre su línea. */}
+        {/* El margen deja entera la etiqueta de la primera y la última hora, que van centradas. */}
         <div style={{ ...plantilla, padding: "10px 0" }}>
           <div style={{ position: "relative", height: alto }}>
             {horas.map((m) => (

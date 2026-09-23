@@ -14,13 +14,10 @@ import { Encabezado, FilaVacia, Nota, useAccion } from "./comun.jsx";
 const componentesDe = (producto) =>
   producto.componentes?.length ? producto.componentes.map((c) => `${c.cantidad}× ${c.nombre}`).join(" + ") : "—";
 
-/** Solo las cantidades mayores a cero, que es lo que el backend espera: { productoId: cantidad }. */
 const elegidas = (cantidades) =>
   Object.fromEntries(Object.entries(cantidades).filter(([, n]) => Number(n) > 0).map(([id, n]) => [id, Number(n)]));
 
-/* ------------------------------------------------------------------- la carta */
-
-/** La fila en edición: nombre y precio, que es lo único que el backend deja cambiar. */
+// Nombre y precio: lo único que el backend deja cambiar.
 function FilaEdicion({ producto: p, alGuardar, alCancelar }) {
   const [nombre, setNombre] = useState(p.nombre);
   const [valor, setValor] = useState(p.precio);
@@ -81,9 +78,7 @@ function AltaCombo({ sueltos, alCrear }) {
   async function crear(evento) {
     evento.preventDefault();
     const componentes = elegidas(cantidades);
-    // El mínimo de dos también lo valida el backend; acá se ataja antes para no mandar un
-    // pedido que se sabe que vuelve rechazado. R14 no se adelanta: el precio de referencia
-    // lo sabe la carta, y el mensaje del backend ya lo trae.
+    // El mínimo de dos se ataja antes; R14 no, porque el precio de referencia lo sabe la carta.
     if (Object.keys(componentes).length < 2) {
       setError("Un combo tiene que juntar al menos dos productos distintos");
       return;
@@ -206,11 +201,8 @@ function Carta() {
   );
 }
 
-/* --------------------------------------------------------- venta de mostrador */
-
 const LINEA = "=".repeat(40);
 
-/** El ticket con lo que devolvió el backend: precios, total y ahorro salen de ahí. */
 function armarTicket(compra) {
   const renglon = (izquierda, derecha) => ` ${izquierda.padEnd(26)}${derecha.padStart(12)}`;
   return [
@@ -340,9 +332,6 @@ function Venta() {
   );
 }
 
-/* ------------------------------------------------------------ ventas del día */
-
-/** La tabla de compras la comparten estas ventas y el arqueo de la caja. */
 export function TablaCompras({ compras }) {
   return (
     <Table.ScrollContainer minWidth={760}>
@@ -398,13 +387,7 @@ function Ventas() {
   );
 }
 
-/* -------------------------------------------------------------------- candy */
-
-/**
- * Tres pestañas y no una pantalla larga: la carta la toca el encargado de vez en cuando,
- * el mostrador se usa venta tras venta, y mezclarlos obligaba a scrollear entre combos
- * para cobrar un pochoclo. Cada una es una ruta, así que el link lleva a la pestaña.
- */
+// Pestañas y no una pantalla larga: cobrar un pochoclo no puede pedir scrollear entre combos.
 export function Candy() {
   const { pestana = "carta" } = useParams();
   const navegar = useNavigate();

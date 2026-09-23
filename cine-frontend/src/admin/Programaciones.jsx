@@ -15,10 +15,6 @@ const SIN_FILTROS = { peliculaId: "", salaId: "", activa: "" };
 const diasDeLaGrilla = (grilla) =>
   grilla.diasSemana?.length ? grilla.diasSemana.map((d) => etiqueta(d).slice(0, 3)).join(", ") : "todos";
 
-/**
- * El informe, fecha por fecha. Es el mismo dibujo antes y después de confirmar porque
- * es el mismo dato: lo único que cambia es el encabezado.
- */
 function InformePlan({ plan, aplicado }) {
   return (
     <Alert color={aplicado ? "green" : "gray"} mt="sm"
@@ -53,16 +49,7 @@ function FuncionesGeneradas({ grilla }) {
   );
 }
 
-/**
- * La pantalla tiene dos botones y un solo formulario, que es el punto: «Previsualizar»
- * muestra fecha por fecha qué va a pasar sin escribir nada, y «Confirmar» aplica. El
- * informe que devuelven los dos es el mismo, así que lo que se ve antes de confirmar es
- * literalmente lo que se va a guardar.
- *
- * Confirmar arranca deshabilitado a propósito: se habilita recién cuando hay una
- * previsualización de esos mismos datos. Cambiar cualquier campo la invalida, porque un
- * informe de otra grilla no dice nada de esta.
- */
+// Confirmar se habilita solo con una previsualización de estos mismos datos: cambiar un campo la invalida.
 function FormularioGrilla({ peliculas, salas, idiomas, proyecciones, alCrear }) {
   const avisar = useAvisar();
   const [campos, setCampos] = useState({
@@ -93,7 +80,6 @@ function FormularioGrilla({ peliculas, salas, idiomas, proyecciones, alCrear }) 
     try {
       const plan = await api.crearProgramacion(pedido());
       avisar(`Grilla creada: ${plan.generadas} funciones` + (plan.salteadas ? `, ${plan.salteadas} salteadas` : ""));
-      // El informe del alta queda a la vista: es donde se lee qué quedó afuera.
       setInforme({ plan, aplicado: true });
       alCrear();
     } catch (e) {
@@ -138,10 +124,6 @@ function FormularioGrilla({ peliculas, salas, idiomas, proyecciones, alCrear }) 
   );
 }
 
-/**
- * CU-03b: la grilla. Un cine no carga quince funciones de a una, define
- * «Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15».
- */
 export function Programaciones() {
   const [filtros, setFiltros] = useState(SIN_FILTROS);
   const [detalle, setDetalle] = useState(null);

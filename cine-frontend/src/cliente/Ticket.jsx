@@ -42,12 +42,7 @@ function armarTicket(reserva) {
   ].join("\n");
 }
 
-/**
- * El código de acceso, grande y separado en dos grupos de cuatro para poder leerlo de
- * un renglón. No es un QR dibujado: generarlo de verdad pide una librería, y el código
- * en claro cumple la misma función —el acomodador lo escanea o lo tipea— sin sumar una
- * dependencia al proyecto.
- */
+// No es un QR dibujado: el código en claro se escanea o se tipea igual, sin sumar una librería.
 function TarjetaCodigo({ reserva }) {
   if (!reserva.codigo) return null;
   const usada = reserva.ingresadaEn;
@@ -64,11 +59,7 @@ function TarjetaCodigo({ reserva }) {
   );
 }
 
-/**
- * La carta del candy, solo para mirar. No se compra online a propósito: la venta de candy
- * nace cobrada en el mostrador, y un pago web pediría un circuito de reserva que el candy
- * no tiene. Con el número de reserva, en el mostrador la venta se asocia a esta función.
- */
+// Solo para mirar: el candy nace cobrado en el mostrador y no tiene circuito de reserva.
 function CartaCandy({ productos, reservaId }) {
   if (!productos.length) return null;
   return (

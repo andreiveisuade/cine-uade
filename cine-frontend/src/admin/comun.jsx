@@ -1,6 +1,3 @@
-// Lo que se repite en las pantallas del panel: el título con su explicación, la barra de
-// filtros, la fila de "no hay nada" y el patrón de apretar un botón, avisar y recargar.
-
 import { useCallback } from "react";
 import { Button, Group, Stack, Table, Text, Title } from "@mantine/core";
 import { useAvisar } from "../componentes/Avisos.jsx";
@@ -14,10 +11,7 @@ export function Encabezado({ titulo, children }) {
   );
 }
 
-/**
- * Los filtros los resuelve el backend; acá solo se juntan. `total` y `visibles` arman el
- * «mostrando 3 de 40», que es lo que avisa que hay un filtro puesto aunque no se lo mire.
- */
+// `total` y `visibles` arman el «mostrando 3 de 40», que avisa que hay un filtro puesto.
 export function BarraFiltros({ children, alLimpiar, visibles, total }) {
   return (
     <Group align="flex-end" gap="sm" mb="md">
@@ -38,15 +32,10 @@ export function FilaVacia({ columnas, children }) {
   );
 }
 
-/** La aclaración gris al pie de un panel: el porqué de una regla que se ve rara. */
 export function Nota({ children, ...resto }) {
   return <Text size="xs" c="dimmed" {...resto}>{children}</Text>;
 }
 
-/**
- * Corre una acción del encargado: si sale bien avisa y recarga, si el backend la rechaza
- * muestra su mensaje tal cual y la pantalla queda como estaba.
- */
 export function useAccion(recargar) {
   const avisar = useAvisar();
   return useCallback(async (accion, mensaje) => {
@@ -62,5 +51,4 @@ export function useAccion(recargar) {
   }, [avisar, recargar]);
 }
 
-/** Las opciones de un Select de Mantine a partir de una lista de enums. */
 export const opcionesDe = (valores, texto) => valores.map((v) => ({ value: String(v), label: texto(v) }));

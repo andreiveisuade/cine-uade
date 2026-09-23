@@ -1,16 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// El sistema completo corre en Docker con nginx en el 8080. En desarrollo, Vite sirve el
-// front con recarga en caliente y le pasa a ese nginx lo que no es suyo: así el código
-// pide /api igual que en producción y el backend no se entera de que hay otro origen.
+// En desarrollo Vite le pasa al nginx de Docker lo que no es suyo: /api queda en el mismo origen que en producción.
 const SISTEMA = "http://localhost:8080";
 
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Dos entradas, como antes del build: el cliente y el panel no comparten sesión ni
-    // menú, y mantener admin.html deja intactos los links que ya circulan.
+    // Dos entradas: el cliente y el panel no comparten sesión ni menú.
     rolldownOptions: {
       input: {
         cliente: "index.html",

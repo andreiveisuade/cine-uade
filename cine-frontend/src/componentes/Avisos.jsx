@@ -3,11 +3,6 @@ import { Notification, Portal, Stack } from "@mantine/core";
 
 const Contexto = createContext(() => {});
 
-/**
- * Aviso efímero arriba de todo, para el resultado de una acción: «Reserva cancelada», o el
- * `{error}` del backend tal cual. Es un contexto y no una librería de notificaciones porque
- * lo único que hace falta es mostrar un texto tres segundos y medio.
- */
 export function Avisos({ children }) {
   const [avisos, setAvisos] = useState([]);
 
@@ -33,5 +28,4 @@ export function Avisos({ children }) {
   );
 }
 
-/** `avisar(mensaje)` para lo que salió bien, `avisar(mensaje, "error")` para lo otro. */
 export const useAvisar = () => useContext(Contexto);

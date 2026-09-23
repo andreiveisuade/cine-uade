@@ -10,14 +10,7 @@ import { Poster } from "../componentes/Poster.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Encabezado, useAccion } from "./comun.jsx";
 
-/**
- * Una tarjeta y no una fila de tabla: para decidir hay que ver de qué se trata, y eso es
- * el poster y la sinopsis. En una tabla de siete columnas la sinopsis no entra, y sin
- * sinopsis la decisión se toma leyendo un título suelto.
- *
- * Los dos botones quedan deshabilitados mientras la llamada viaja: sin eso, dos clics
- * seguidos mandan confirmar y descartar sobre la misma película.
- */
+// Deshabilitados mientras viaja: dos clics seguidos mandarían confirmar y descartar la misma película.
 function Tarjeta({ pelicula, accion }) {
   const [decidiendo, setDecidiendo] = useState(false);
   const decidir = async (pedido, mensaje) => {
@@ -54,13 +47,6 @@ function Tarjeta({ pelicula, accion }) {
   );
 }
 
-/**
- * Lo que trajo el importador de TMDB y todavía nadie miró.
- *
- * Es una pantalla aparte de Películas y no un filtro más de aquella lista, por lo mismo
- * que estadoRevision es un campo aparte de enCartelera: acá no se está administrando el
- * catálogo, se está decidiendo qué entra.
- */
 export function Pendientes() {
   const carga = useCargar(api.obtenerPeliculasPendientes, []);
   const accion = useAccion(carga.recargar);

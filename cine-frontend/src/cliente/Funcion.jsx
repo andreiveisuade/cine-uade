@@ -28,8 +28,7 @@ export function Funcion() {
   const navegar = useNavigate();
   const avisar = useAvisar();
   const { seleccion, setSeleccion } = useCompra();
-  // La sesión va en el pedido para que las butacas que uno mismo bloqueó no le vuelvan
-  // marcadas como ocupadas: "ocupado" lo decide el backend, no esta pantalla.
+  // Con la sesión, las butacas que uno mismo bloqueó no vuelven como ocupadas.
   const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
   const funcion = carga.datos?.[0];
 
@@ -46,19 +45,16 @@ export function Funcion() {
   const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, butacas[a.codigo]), 0);
 
   async function alternar(asiento) {
-    // Arranca en GENERAL: la tarifa reducida hay que elegirla a propósito, porque
-    // después hay que acreditarla en la puerta.
+    // Arranca en GENERAL: una tarifa reducida hay que acreditarla en la puerta.
     const nuevas = butacas[asiento.codigo]
       ? sinButacas(butacas, [asiento.codigo])
       : { ...butacas, [asiento.codigo]: "GENERAL" };
-    // Se pinta antes de pedir el bloqueo: la butaca se ve elegida en el acto y no
-    // después de un ida y vuelta al servidor.
+    // Se pinta antes del bloqueo para que se vea elegida en el acto.
     setSeleccion({ funcionId: funcion.id, butacas: nuevas });
 
     const rechazadas = await sostenerSeleccion(funcion.id, nuevas).catch(() => []);
     if (rechazadas.length) {
-      // Que se escape una butaca es que otro llegó primero, no una falla. El mapa se
-      // vuelve a pedir porque el que teníamos ya está diciendo algo que no es cierto.
+      // Que se escape una butaca es que otro llegó primero: el mapa se vuelve a pedir.
       setSeleccion((s) => ({ ...s, butacas: sinButacas(s.butacas, rechazadas) }));
       avisar(`${rechazadas.join(", ")}: alguien las está comprando`, "error");
       carga.recargar();
@@ -97,8 +93,6 @@ export function Funcion() {
           ]} />
         </Grid.Col>
 
-        {/* Cada butaca lleva su propia tarifa: quien compra elige acá y ve el precio cambiar,
-            en vez de enterarse del descuento recién en el ticket. */}
         <Grid.Col span={{ base: 12, md: 4 }} style={{ position: "sticky", top: 76 }}>
           <Paper withBorder p="md">
             <Text fw={600} mb="xs">Tu selección</Text>

@@ -19,8 +19,7 @@ function Cifra({ titulo, valor }) {
 
 export function Caja() {
   const [fecha, setFecha] = useState(hoyISO());
-  // Dos cajas, dos pedidos: boletería y candy se cuentan por separado en el backend (el
-  // candy de mostrador no tiene función ni reserva), y acá solo se ponen lado a lado.
+  // Boletería y candy se cuentan por separado: el candy de mostrador no tiene función ni reserva.
   const carga = useCargar(() => Promise.all([api.obtenerArqueo(fecha), api.obtenerArqueoCandy(fecha)]), [fecha]);
 
   return (

@@ -8,7 +8,6 @@ import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Encabezado, FilaVacia, Nota, useAccion } from "./comun.jsx";
 
-/** Cómo se lee el beneficio de cada tipo, que es lo que las diferencia. */
 function beneficioDe(promocion) {
   if (promocion.tipo === "PORCENTAJE") return `${promocion.porcentaje}% off`;
   if (promocion.tipo === "MONTO_FIJO") return `${precio(promocion.monto)} off`;
@@ -31,10 +30,6 @@ const NUEVA = {
   vigenciaDesde: hoyISO(), vigenciaHasta: "", diasSemana: [], horaDesde: "", horaHasta: "", mediosPago: [],
 };
 
-/**
- * El formulario es uno solo y muestra los campos del tipo elegido, igual que la tabla
- * tiene una columna por beneficio y deja en null las que no aplican.
- */
 function FormularioPromocion({ mediosPago, alCrear }) {
   const avisar = useAvisar();
   const [campos, setCampos] = useState(NUEVA);

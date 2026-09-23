@@ -21,11 +21,7 @@ function resumen(corrida) {
   return `${corrida.nuevas} película${corrida.nuevas === 1 ? "" : "s"} nueva${corrida.nuevas === 1 ? "" : "s"} en Por revisar`;
 }
 
-/**
- * El log de la corrida, plegado. Son veinte líneas y casi nunca se miran: lo que se mira
- * son los números. Pero cuando una película no entró, la única respuesta a "por qué" está
- * acá adentro, con el mensaje que tiró la regla del backend.
- */
+// Plegado: casi nunca se mira, pero es lo único que dice por qué una película no entró.
 function Detalle({ corrida, abierto }) {
   if (!corrida.detalle) return <Text c="dimmed">—</Text>;
   return (
@@ -36,20 +32,12 @@ function Detalle({ corrida, abierto }) {
   );
 }
 
-/**
- * El botón que sale a buscar la cartelera real.
- *
- * Sin consultas repetidas: la corrida tarda diez o quince segundos y el botón espera esa
- * respuesta, que ya trae los contadores. La alternativa —contestar "ya te aviso" y
- * preguntar cada dos segundos si terminó— serían treinta pedidos al backend para
- * enterarse de algo que uno solo puede contar.
- */
+// Sin consultas repetidas: la corrida tarda unos quince segundos y su respuesta ya trae los contadores.
 export function Importador() {
   const avisar = useAvisar();
   const carga = useCargar(() => Promise.all([api.obtenerImportaciones(), api.estadoImportador()]), []);
   const [paginas, setPaginas] = useState("1");
   const [trayendo, setTrayendo] = useState(false);
-  // La corrida recién hecha, para dejarle el detalle abierto.
   const [destacada, setDestacada] = useState(null);
   if (!carga.datos) return <EsperaOError carga={carga} />;
   const [corridas, estado] = carga.datos;
@@ -62,8 +50,7 @@ export function Importador() {
       setDestacada(corrida.id);
       carga.recargar();
     } catch (e) {
-      // Un 400 del backend —ya hay una corriendo, corrió recién— no es una pantalla rota:
-      // es una respuesta. Se muestra y la pantalla queda como estaba.
+      // Un 400 (ya hay una corriendo) es una respuesta, no una pantalla rota.
       avisar(e.message, "error");
     }
     setTrayendo(false);
@@ -77,8 +64,6 @@ export function Importador() {
       </Encabezado>
 
       <Stack gap="lg">
-        {/* Si puede correr no se dice nada: que las cosas anden es lo esperable. El detalle
-            ya viene redactado por el backend y dice qué hacer. */}
         {!estado.disponible && (
           <Alert color="yellow" title="El importador no está disponible">{estado.detalle}</Alert>
         )}
@@ -91,8 +76,6 @@ export function Importador() {
           </Group>
         </Paper>
 
-        {/* Quieta, una espera de quince segundos se lee como una pantalla rota y lo que hace
-            el encargado es volver a apretar. */}
         {trayendo && (
           <Paper withBorder p="md">
             <Stack gap="sm">

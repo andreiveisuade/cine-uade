@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { AspectRatio, Center, Image, Text } from "@mantine/core";
 
-/**
- * posterUrl puede venir vacío o con una URL que no carga: entonces queda la inicial del
- * título, y la tarjeta conserva su forma en vez de mostrar un ícono de imagen rota.
- * Siempre 2:3, la proporción de un afiche, para que las tarjetas queden parejas.
- */
 export function Poster({ pelicula, w = "100%" }) {
   const [rota, setRota] = useState(false);
   return (

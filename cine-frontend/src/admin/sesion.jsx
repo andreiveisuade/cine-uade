@@ -2,8 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useNavigate } from "react-router";
 import { olvidarCredenciales } from "../api/api-http.js";
 
-// El empleado que entró, para pintar el panel. Las credenciales no van acá sino en
-// api-http.js, que es el único que las manda.
+// Las credenciales no van acá sino en api-http.js, el único que las manda.
 const CLAVE_SESION = "cine.sesion";
 
 function sesionGuardada() {
@@ -29,8 +28,7 @@ export function Sesion({ children }) {
     navegar("/login");
   }, [navegar]);
 
-  // api-http.js lo dispara ante un 401: sin credenciales que valgan no queda nada que
-  // hacer en el panel más que volver a entrar.
+  // api-http.js lo dispara ante un 401.
   useEffect(() => {
     window.addEventListener("cine:sesion-vencida", cerrar);
     return () => window.removeEventListener("cine:sesion-vencida", cerrar);

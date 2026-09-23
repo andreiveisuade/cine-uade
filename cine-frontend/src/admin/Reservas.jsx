@@ -12,18 +12,14 @@ import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
 import { BarraFiltros, Encabezado, FilaVacia, Nota, opcionesDe, useAccion } from "./comun.jsx";
 
-/**
- * Los estados en el orden en que le importan a quien atiende: primero lo que hay que
- * cobrar hoy, al final lo que ya no se toca.
- */
+// En el orden en que le importan a quien atiende: primero lo que hay que cobrar hoy.
 const ESTADOS = ["RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA"];
 
 const SIN_FILTROS = { q: "", estado: "", dia: "" };
 
 export function Reservas() {
   const [filtros, setFiltros] = useState(SIN_FILTROS);
-  // Con espera, porque cada tecla sería un pedido. Los selects no la necesitan: un cambio
-  // es una decisión, no un tanteo.
+  // Con espera, porque cada tecla sería un pedido; un select es una decisión, no un tanteo.
   const [q] = useDebouncedValue(filtros.q, 200);
   const base = useCargar(api.obtenerReservas, []);
   const visibles = useCargar(() => api.obtenerReservas({ ...filtros, q }), [q, filtros.estado, filtros.dia]);
@@ -100,15 +96,7 @@ export function Reservas() {
   );
 }
 
-/* ------------------------------------------------------------------- cobrar */
-
-/**
- * El checkout abierto: lo que el cliente tiene que aprobar en la pasarela.
- *
- * `codigoQr` es el *contenido* del QR y no una imagen, así que se muestra tal cual: la
- * pasarela es una emulación y el host no existe, de modo que dibujar el cuadrado o linkear
- * la URL harían parecer real algo que no lo es.
- */
+// codigoQr es el contenido y no una imagen: la pasarela es emulada y dibujarlo la haría parecer real.
 function Checkout({ checkout, alConfirmar }) {
   const [confirmando, setConfirmando] = useState(false);
   return (
@@ -143,16 +131,9 @@ function Cobro({ reserva, medios }) {
   const [medio, setMedio] = useState(medios[0]?.nombre);
   const [checkout, setCheckout] = useState(null);
   const [enviando, setEnviando] = useState(false);
-  /**
-   * R11 partido en dos caminos. El código de autorización de un medio electrónico lo
-   * devuelve el procesador, así que dejó de tipearse a mano: ese campo era una invitación
-   * a inventar un código y registrar un cobro que nadie autorizó. El efectivo no tiene
-   * procesador ni código, y se sigue cobrando en la caja.
-   */
+  // R11: en un medio electrónico la autorización la devuelve el procesador, no se tipea. El efectivo se cobra en caja.
   const porCheckout = medios.find((m) => m.nombre === medio)?.requiereAutorizacion;
 
-  /** Con descuento no alcanza con decir cuánto entró: hay que poder explicar por qué se
-   *  cobró menos que el subtotal, que es justo lo que el cliente va a preguntar. */
   function cobrado(pago) {
     avisar(pago.descuento > 0
       ? `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)} · ${precio(pago.descuento)} de descuento`
@@ -165,9 +146,7 @@ function Cobro({ reserva, medios }) {
     setEnviando(true);
     try {
       if (!porCheckout) cobrado(await api.cobrar(reserva.id, medio, ""));
-      // Abrir el checkout todavía no cobra: valida R5, R17 y R19 y devuelve qué tiene que
-      // aprobar el cliente. Se valida acá y no al confirmar porque mandar a pagar una
-      // reserva que no se puede cobrar termina en plata que hay que devolver.
+      // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
       else setCheckout(await api.abrirCheckout(reserva.id, medio));
     } catch (e) {
       avisar(e.message, "error");

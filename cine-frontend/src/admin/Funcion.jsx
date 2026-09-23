@@ -22,10 +22,7 @@ function Renglon({ etiqueta: texto, detalle, valor, c, fuerte }) {
   );
 }
 
-/**
- * @param emitido si se acaba de escribir el archivo. Consultar el borderó y declararlo no
- *                son lo mismo, así que la pantalla tampoco los muestra igual.
- */
+// `emitido`: consultar el borderó y declararlo no son lo mismo, y no se muestran igual.
 function Bordero({ bordero, emitido, alEmitir, emitiendo }) {
   const tarifas = Object.entries(bordero.porTarifa);
   return (
@@ -113,13 +110,7 @@ function Informe({ informe }) {
   );
 }
 
-/**
- * El detalle de una función: cuánto se vendió y cuánto dejó.
- *
- * Los dos informes cuelgan de acá y no de una pantalla propia porque es donde el
- * encargado ya está parado cuando los necesita, y porque los dos se piden por
- * `funcionId`: una pantalla separada empezaría pidiendo que eligiera la función de nuevo.
- */
+// Los informes van acá y no en una pantalla propia: los dos se piden por funcionId.
 export function Funcion() {
   const { id } = useParams();
   const avisar = useAvisar();
@@ -132,8 +123,7 @@ export function Funcion() {
   async function emitir() {
     setEmitiendo(true);
     try {
-      // Emitir no es consultar: escribe el archivo que se sube al organismo. Se muestra
-      // lo que devuelve porque ahí viene el `generadoEn` que fecha lo declarado.
+      // Emitir escribe el archivo que se declara; lo devuelto trae el `generadoEn` que lo fecha.
       const declarado = await api.emitirBordero(funcion.id);
       setEmitido(declarado);
       avisar(`Borderó emitido: ${declarado.espectadores} espectadores, ${precio(declarado.recaudacionNeta)}`);

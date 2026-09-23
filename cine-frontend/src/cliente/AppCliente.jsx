@@ -1,10 +1,3 @@
-// La web del cliente: qué vista atiende cada ruta. Sin login — al cliente se lo
-// reconoce por su email recién al confirmar la compra.
-//
-// Las rutas son las mismas que antes de React (#/pelicula/3), así que los links que ya
-// circulan siguen andando. Lo que comparten las pantallas de compra —la butaca elegida y
-// su tarifa— vive en compra.jsx.
-
 import { useEffect } from "react";
 import { Anchor, AppShell, Container, Group } from "@mantine/core";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
@@ -30,7 +23,7 @@ function Enlace({ a, children }) {
 
 export function AppCliente() {
   const { pathname } = useLocation();
-  // Cada pantalla arranca arriba, como cuando eran páginas.
+  // Cada pantalla arranca arriba, como una página.
   useEffect(() => window.scrollTo(0, 0), [pathname]);
 
   return (
