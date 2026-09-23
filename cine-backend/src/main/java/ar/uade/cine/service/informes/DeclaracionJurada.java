@@ -2,7 +2,9 @@ package ar.uade.cine.service.informes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +19,25 @@ public record DeclaracionJurada(LocalDate desde, LocalDate hasta, LocalDateTime 
                                 List<FilaFuncion> funciones, List<TotalPelicula> peliculas,
                                 Totales total) {
 
-    public record FilaFuncion(Bordero bordero, Version version, Proyeccion proyeccion,
+    // Suma las filas por película y en total. El gestor solo arma las filas.
+    public static DeclaracionJurada de(PeriodoDeclarado periodo, LocalDateTime generadaEn,
+                                       List<FilaFuncion> filas) {
+        Map<Integer, TotalPelicula> porPelicula = new LinkedHashMap<>();
+        Totales total = Totales.CERO;
+        for (FilaFuncion fila : filas) {
+            TotalPelicula acumulado = porPelicula.getOrDefault(fila.peliculaId(),
+                    new TotalPelicula(fila.bordero().pelicula(), fila.clasificacion(), Totales.CERO));
+            porPelicula.put(fila.peliculaId(), new TotalPelicula(acumulado.titulo(),
+                    acumulado.clasificacion(), acumulado.totales().mas(fila.bordero())));
+            total = total.mas(fila.bordero());
+        }
+        List<TotalPelicula> peliculas = porPelicula.values().stream()
+                .sorted(Comparator.comparing(TotalPelicula::titulo))
+                .toList();
+        return new DeclaracionJurada(periodo.desde(), periodo.hasta(), generadaEn, filas, peliculas, total);
+    }
+
+    public record FilaFuncion(int peliculaId, Bordero bordero, Version version, Proyeccion proyeccion,
                               Clasificacion clasificacion) {
     }
 

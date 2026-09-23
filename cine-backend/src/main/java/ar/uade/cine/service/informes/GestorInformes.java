@@ -1,11 +1,7 @@
 package ar.uade.cine.service.informes;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,15 +16,12 @@ import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
-import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -40,22 +33,16 @@ public class GestorInformes {
     private static final Bordero.TotalPorTarifa SIN_ENTRADAS =
             new Bordero.TotalPorTarifa(0, Dinero.CERO);
 
-    public static final int MAXIMO_DIAS_DECLARACION = 31;
-
     private final FuncionRepository funcionRepository;
-    private final PeliculaRepository peliculaRepository;
-    private final SalaRepository salaRepository;
     private final ReservaRepository reservaRepository;
     private final PagoRepository pagoRepository;
     private final CompraCandyRepository compraCandyRepository;
     private final Reloj reloj;
 
-    public GestorInformes(FuncionRepository funcionRepository, PeliculaRepository peliculaRepository, SalaRepository salaRepository,
-                          ReservaRepository reservaRepository, PagoRepository pagoRepository, CompraCandyRepository compraCandyRepository,
+    public GestorInformes(FuncionRepository funcionRepository, ReservaRepository reservaRepository,
+                          PagoRepository pagoRepository, CompraCandyRepository compraCandyRepository,
                           Reloj reloj) {
         this.funcionRepository = funcionRepository;
-        this.peliculaRepository = peliculaRepository;
-        this.salaRepository = salaRepository;
         this.reservaRepository = reservaRepository;
         this.pagoRepository = pagoRepository;
         this.compraCandyRepository = compraCandyRepository;
@@ -64,40 +51,16 @@ public class GestorInformes {
 
     public Bordero borderoDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
-        Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId())
-                .orElseThrow(() -> new RecursoNoEncontrado(
-                        "No existe la película " + funcion.getPeliculaId()));
-        Sala sala = salaRepository.findById(funcion.getSalaId())
-                .orElseThrow(() -> new RecursoNoEncontrado(
-                        "No existe la sala " + funcion.getSalaId()));
-
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
-        return bordero(funcion, pelicula.getTitulo(), sala.getNombre(), reservas,
+        return bordero(funcion, funcion.getPelicula().getTitulo(), funcion.getSala().getNombre(), reservas,
                 pagosPorReserva(reservas));
     }
 
     // Por fecha de la función y no del cobro: el INCAA declara espectadores de lo exhibido en la semana.
     public DeclaracionJurada declaracionJurada(LocalDate desde, LocalDate hasta) {
-        if (desde == null && hasta == null) {
-            LocalDate juevesDeEstaSemana = reloj.hoy().with(TemporalAdjusters.previousOrSame(DayOfWeek.THURSDAY));
-            desde = juevesDeEstaSemana.minusWeeks(1);
-            hasta = juevesDeEstaSemana.minusDays(1);
-        }
-        if (desde == null || hasta == null) {
-            throw new IllegalArgumentException(
-                    "Hay que indicar desde y hasta, o ninguna de las dos para la última semana cinematográfica");
-        }
-        if (desde.isAfter(hasta)) {
-            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta");
-        }
-        // El archivo se arma entero en memoria: el tope lo acota, y un mes cubre cualquier cierre del INCAA.
-        if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS_DECLARACION) {
-            throw new IllegalArgumentException(
-                    "El período no puede superar los " + MAXIMO_DIAS_DECLARACION + " días");
-        }
+        PeriodoDeclarado periodo = PeriodoDeclarado.de(desde, hasta, reloj.hoy());
 
-        List<Reserva> cobradas = reservaRepository.findCobradasDeFuncionesEntre(
-                desde.atStartOfDay(), hasta.plusDays(1).atStartOfDay());
+        List<Reserva> cobradas = reservaRepository.findCobradasDeFuncionesEntre(periodo.inicio(), periodo.fin());
         Map<Integer, Pago> pagos = pagosPorReserva(cobradas);
         Map<Integer, List<Reserva>> porFuncion = new LinkedHashMap<>();
         for (Reserva reserva : cobradas) {
@@ -105,27 +68,15 @@ public class GestorInformes {
         }
 
         List<DeclaracionJurada.FilaFuncion> filas = new ArrayList<>();
-        Map<Integer, DeclaracionJurada.TotalPelicula> porPelicula = new HashMap<>();
-        DeclaracionJurada.Totales total = DeclaracionJurada.Totales.CERO;
         for (List<Reserva> reservas : porFuncion.values()) {
             Funcion funcion = reservas.get(0).getFuncion();
             Pelicula pelicula = funcion.getPelicula();
             Bordero bordero = bordero(funcion, pelicula.getTitulo(), funcion.getSala().getNombre(),
                     reservas, pagos);
-            filas.add(new DeclaracionJurada.FilaFuncion(bordero, funcion.getVersion(),
+            filas.add(new DeclaracionJurada.FilaFuncion(pelicula.getId(), bordero, funcion.getVersion(),
                     funcion.getProyeccion(), pelicula.getClasificacion()));
-            DeclaracionJurada.TotalPelicula acumulado = porPelicula.getOrDefault(pelicula.getId(),
-                    new DeclaracionJurada.TotalPelicula(pelicula.getTitulo(), pelicula.getClasificacion(),
-                            DeclaracionJurada.Totales.CERO));
-            porPelicula.put(pelicula.getId(), new DeclaracionJurada.TotalPelicula(acumulado.titulo(),
-                    acumulado.clasificacion(), acumulado.totales().mas(bordero)));
-            total = total.mas(bordero);
         }
-
-        List<DeclaracionJurada.TotalPelicula> peliculas = porPelicula.values().stream()
-                .sorted(Comparator.comparing(DeclaracionJurada.TotalPelicula::titulo))
-                .toList();
-        return new DeclaracionJurada(desde, hasta, reloj.ahora(), filas, peliculas, total);
+        return DeclaracionJurada.de(periodo, reloj.ahora(), filas);
     }
 
     // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
