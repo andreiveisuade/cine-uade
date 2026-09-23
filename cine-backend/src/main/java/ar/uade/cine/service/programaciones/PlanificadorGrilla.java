@@ -62,6 +62,14 @@ public class PlanificadorGrilla {
      */
     private static final int VOTOS_PARA_CONFIAR = 50;
 
+    /**
+     * Cuánto se corre el horario tentativo cuando choca con algo que la sala ya tiene. Media
+     * hora es la grilla en la que un cine publica sus horarios —20:00, 20:30—: un paso más
+     * fino propondría funciones a las 20:10 y probaría muchos más intentos por noche, y uno
+     * más grueso dejaría la sala vacía más tiempo del necesario después de cada choque.
+     */
+    private static final int MINUTOS_ENTRE_INTENTOS = 30;
+
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
@@ -218,7 +226,7 @@ public class PlanificadorGrilla {
                         break;
                     }
                     if (agendas.get(sala.getId()).chocaEn(momento, fin)) {
-                        momento = momento.plusMinutes(30);
+                        momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
                         continue;
                     }
                     pases.add(new PaseSugerido(elegida.getId(), elegida.getTitulo(),
