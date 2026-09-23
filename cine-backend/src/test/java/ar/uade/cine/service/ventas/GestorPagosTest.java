@@ -143,8 +143,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
-        assertEquals(2, caja.listarDelDia(reloj.hoy()).size());
-        assertEquals(Dinero.de(15000.0), caja.totalCobrado(reloj.hoy()));
+        Arqueo arqueo = caja.arqueoDe(reloj.hoy());
+        assertEquals(2, arqueo.pagos().size());
+        assertEquals(Dinero.de(15000.0), arqueo.total());
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
     }
 
@@ -202,8 +203,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        Dinero arqueo = Dinero.sumar(caja.listarDelDia(reloj.hoy()).stream()
-                .map(Pago::getMonto).toList());
+        Dinero arqueo = caja.arqueoDe(reloj.hoy()).total();
 
         assertEquals(pago.getMonto(), arqueo);
         assertTrue(pago.getSubtotal().esMayorQue(arqueo));
@@ -371,7 +371,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         pagos.confirmarCheckout(checkout.id());
 
         assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout(checkout.id()));
-        assertEquals(1, caja.listarDelDia(reloj.hoy()).size());
+        assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

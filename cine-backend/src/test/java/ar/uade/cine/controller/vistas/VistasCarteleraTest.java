@@ -93,8 +93,9 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
     void laPeliculaViajaConSusDatosDeCatalogo() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         Pelicula completa = cartelera.editar(1,
-                DatosPelicula.deCatalogo("Wachowski", "Un hacker descubre la verdad", 1999,
-                        "Inglés", "http://poster.jpg"));
+                new DatosPelicula(null, null, null, null, "Wachowski",
+                        "Un hacker descubre la verdad", 1999, "Inglés", "http://poster.jpg",
+                        null, null, null));
 
         PeliculaVistaDTO vista = vistas.pelicula(completa);
 

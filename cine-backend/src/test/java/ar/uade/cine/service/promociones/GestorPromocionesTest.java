@@ -1,6 +1,7 @@
 package ar.uade.cine.service.promociones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -23,6 +23,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.service.promociones.PoliticaPromociones.Descuento;
 
 /**
  * R15 (las promociones no se acumulan: gana la que más descuenta) y R16 (las entradas de
@@ -48,6 +49,11 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     /** Sin guardar: el descuento se calcula sobre los precios y no toca la base. */
     private static Entrada entrada(double precio, TipoTarifa tarifa) {
         return new Entrada(A1, tarifa, Dinero.de(precio));
+    }
+
+    /** Si alguna promoción corre para esas entradas, ese horario y ese medio de pago. */
+    private boolean corre(List<Entrada> entradas, LocalDateTime inicioFuncion, MedioPago medio) {
+        return promociones.calcularPara(entradas, inicioFuncion, medio).promocionId() != null;
     }
 
     @Test
@@ -97,36 +103,34 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void ganaLaQueMasDescuenta() {
         promociones.crearPorcentaje("10 off", 10, DESDE, HASTA, Set.of(), null, null, Set.of());
-        promociones.crearNxM("2x1", 2, 1, DESDE, HASTA, Set.of(), null, null, Set.of());
+        Promocion dosPorUno = promociones.crearNxM("2x1", 2, 1, DESDE, HASTA, Set.of(), null, null, Set.of());
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
-        Optional<Promocion> ganadora = promociones.mejorPara(dos, JUEVES, MedioPago.EFECTIVO);
+        Descuento descuento = promociones.calcularPara(dos, JUEVES, MedioPago.EFECTIVO);
 
-        assertTrue(ganadora.isPresent());
-        assertEquals("2x1", ganadora.get().getNombre(), "el 2x1 saca 5000 y el 10% solo 1000");
-        assertEquals(Dinero.de(5000), promociones.descuentoDe(ganadora.get(), dos));
+        assertEquals(dosPorUno.getId(), descuento.promocionId(), "el 2x1 saca 5000 y el 10% solo 1000");
+        assertEquals(Dinero.de(5000), descuento.monto());
     }
 
     /** Arbitrario pero determinístico: dos cobros iguales tienen que dar lo mismo. */
     @Test
     void enUnEmpateGanaLaDeMenorId() {
-        promociones.crearPorcentaje("primera", 20, DESDE, HASTA, Set.of(), null, null, Set.of());
+        Promocion primera = promociones.crearPorcentaje("primera", 20, DESDE, HASTA, Set.of(), null, null, Set.of());
         promociones.crearPorcentaje("segunda", 20, DESDE, HASTA, Set.of(), null, null, Set.of());
 
-        Optional<Promocion> ganadora = promociones.mejorPara(
+        Descuento descuento = promociones.calcularPara(
                 List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO);
 
-        assertEquals("primera", ganadora.orElseThrow().getNombre());
+        assertEquals(primera.getId(), descuento.promocionId());
     }
 
     @Test
     void laTarifaReducidaNoParticipaDelDescuento() {
-        Promocion promo = promociones.crearPorcentaje("50 off", 50, DESDE, HASTA,
-                Set.of(), null, null, Set.of());
+        promociones.crearPorcentaje("50 off", 50, DESDE, HASTA, Set.of(), null, null, Set.of());
 
         List<Entrada> mixta = List.of(entrada(5000), entrada(2500, TipoTarifa.JUBILADO));
 
-        assertEquals(Dinero.de(2500), promociones.descuentoDe(promo, mixta),
+        assertEquals(Dinero.de(2500), promociones.calcularPara(mixta, JUEVES, MedioPago.EFECTIVO).monto(),
                 "el 50% corre solo sobre los 5000 de la general");
     }
 
@@ -134,8 +138,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     void sinEntradasGeneralesNoAplicaNinguna() {
         promociones.crearPorcentaje("50 off", 50, DESDE, HASTA, Set.of(), null, null, Set.of());
 
-        assertTrue(promociones.mejorPara(List.of(entrada(2500, TipoTarifa.JUBILADO)),
-                JUEVES, MedioPago.EFECTIVO).isEmpty());
+        assertFalse(corre(List.of(entrada(2500, TipoTarifa.JUBILADO)),
+                JUEVES, MedioPago.EFECTIVO));
     }
 
     @Test
@@ -145,8 +149,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
 
-        assertTrue(promociones.mejorPara(dos, MIERCOLES, MedioPago.EFECTIVO).isPresent());
-        assertTrue(promociones.mejorPara(dos, JUEVES, MedioPago.EFECTIVO).isEmpty());
+        assertTrue(corre(dos, MIERCOLES, MedioPago.EFECTIVO));
+        assertFalse(corre(dos, JUEVES, MedioPago.EFECTIVO));
     }
 
     /** Es la razón por la que el descuento no se puede resolver al reservar. */
@@ -157,8 +161,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
         List<Entrada> una = List.of(entrada(5000));
 
-        assertTrue(promociones.mejorPara(una, JUEVES, MedioPago.CREDITO).isPresent());
-        assertTrue(promociones.mejorPara(una, JUEVES, MedioPago.EFECTIVO).isEmpty());
+        assertTrue(corre(una, JUEVES, MedioPago.CREDITO));
+        assertFalse(corre(una, JUEVES, MedioPago.EFECTIVO));
     }
 
     @Test
@@ -166,7 +170,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("Julio", 30, LocalDate.of(2026, 7, 1),
                 LocalDate.of(2026, 7, 31), Set.of(), null, null, Set.of());
 
-        assertTrue(promociones.mejorPara(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO).isEmpty());
+        assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
     }
 
     @Test
@@ -174,10 +178,10 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("Trasnoche", 40, DESDE, HASTA,
                 Set.of(), LocalTime.of(23, 0), null, Set.of());
 
-        assertTrue(promociones.mejorPara(List.of(entrada(5000)),
-                LocalDateTime.of(2026, 8, 20, 18, 0), MedioPago.EFECTIVO).isEmpty());
-        assertTrue(promociones.mejorPara(List.of(entrada(5000)),
-                LocalDateTime.of(2026, 8, 20, 23, 30), MedioPago.EFECTIVO).isPresent());
+        assertFalse(corre(List.of(entrada(5000)),
+                LocalDateTime.of(2026, 8, 20, 18, 0), MedioPago.EFECTIVO));
+        assertTrue(corre(List.of(entrada(5000)),
+                LocalDateTime.of(2026, 8, 20, 23, 30), MedioPago.EFECTIVO));
     }
 
     @Test
@@ -186,7 +190,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
                 Set.of(), null, null, Set.of());
         promociones.desactivar(promo.getId());
 
-        assertTrue(promociones.mejorPara(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO).isEmpty());
+        assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
     }
 
     /** Un 2x2 no descuenta nada y un 2x3 cobraría de más. */

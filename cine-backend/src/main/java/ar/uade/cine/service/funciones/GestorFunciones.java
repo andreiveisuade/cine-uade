@@ -121,7 +121,7 @@ public class GestorFunciones {
         int duracion = peliculaRepository.findById(choque.getPeliculaId())
                 .map(Pelicula::getDuracionMinutos)
                 .orElse(0);
-        LocalDateTime finReal = choque.getInicio().plusMinutes(duracion);
+        LocalDateTime finReal = choque.getFin(duracion);
         if (!inicio.isBefore(finReal)) {
             int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
             return "La sala necesita " + limpieza + " minutos de limpieza: la función anterior"
@@ -148,7 +148,7 @@ public class GestorFunciones {
 
         List<AgendaDeSala.Tramo> tomados = funciones.stream()
                 .map(f -> new AgendaDeSala.Tramo(f, f.getInicio(),
-                        f.getInicio().plusMinutes(duraciones.getOrDefault(f.getPeliculaId(), 0))
+                        f.getFin(duraciones.getOrDefault(f.getPeliculaId(), 0))
                                 .plusMinutes(limpieza)))
                 .toList();
         return new AgendaDeSala(limpieza, tomados);

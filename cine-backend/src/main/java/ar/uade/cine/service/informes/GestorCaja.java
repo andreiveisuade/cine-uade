@@ -62,15 +62,6 @@ public class GestorCaja {
         return new Arqueo(fecha, total, entradas, porMedio, delDia);
     }
 
-    /** Cuánto se cobró en boletería en el día, sin el desglose. */
-    public Dinero totalCobrado(LocalDate fecha) {
-        return Dinero.sumar(pagoRepository.findByDia(fecha).stream().map(Pago::getMonto).toList());
-    }
-
-    public List<Pago> listarDelDia(LocalDate fecha) {
-        return pagoRepository.findByDia(fecha);
-    }
-
     /**
      * Cuánto entró por el candy en el día, mostrador incluido. Aparte del arqueo de
      * boletería: el borderó del INCAA solo mira entradas, y sumarlos obligaría a separarlos.

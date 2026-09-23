@@ -32,7 +32,6 @@ package "service.promociones" {
     +desactivar(id)
     +listar(): List<Promocion>
     +buscar(id): Optional<Promocion>
-    +mejorPara(entradas, inicioFuncion, medio)
     --
     +calcularPara(...): Descuento
   }

@@ -87,7 +87,8 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     /**
-     * La promoción que más descuenta para esa reserva, o vacío si no corre ninguna.
+     * Lo que ve quien cobra: el monto a descontar y de qué promoción salió, o ningún
+     * descuento si no corre ninguna.
      *
      * <p>R16: las entradas de tarifa reducida quedan afuera del cálculo. Un jubilado ya
      * tiene su precio especial y no entra además al 2x1, que es como funciona en
@@ -96,15 +97,6 @@ public class GestorPromociones implements PoliticaPromociones {
      *
      * <p>Empate: gana la de menor id. Es arbitrario pero determinístico, que es lo que
      * hace falta para poder testearlo y para que dos cobros iguales den lo mismo.
-     */
-    public Optional<Promocion> mejorPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
-                                         MedioPago medio) {
-        return mejorDescuento(entradas, inicioFuncion, medio).map(Candidata::promocion);
-    }
-
-    /**
-     * Lo que ve quien cobra: el monto a descontar y de qué promoción salió. Que se elija
-     * la que más descuenta, y que las tarifas reducidas queden afuera, es asunto de acá.
      */
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
@@ -134,13 +126,6 @@ public class GestorPromociones implements PoliticaPromociones {
                 // empate es real y lo resuelve el id menor, para que dos cobros iguales den lo mismo.
                 .max(Comparator.comparing(Candidata::monto)
                         .thenComparing(c -> c.promocion().getId(), Comparator.reverseOrder()));
-    }
-
-    /** Cuánto descuenta esa promoción sobre esas entradas, respetando R16. */
-    public Dinero descuentoDe(Promocion promocion, List<Entrada> entradas) {
-        return promocion.calcularDescuento(entradas.stream()
-                .filter(e -> e.tarifa() == TipoTarifa.GENERAL)
-                .toList());
     }
 
     /**

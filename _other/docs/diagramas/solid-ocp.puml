@@ -11,7 +11,7 @@ hide empty members
 ' una clase nueva que implementa calcularDescuento(): PromocionBase ya le
 ' resuelve la vigencia, el dia, el horario y el medio de pago, asi que la
 ' clase nueva no repite nada de eso. En ningun lugar del sistema hay un
-' switch (tipo) que haya que ir a tocar: ni GestorPromociones.mejorPara(),
+' switch (tipo) que haya que ir a tocar: ni GestorPromociones.calcularPara(),
 ' ni GestorPagos.cobrar() saben que implementaciones existen.
 
 package "model.promociones" {

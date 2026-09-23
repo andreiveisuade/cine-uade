@@ -129,12 +129,4 @@ public class Funcion {
     public LocalDateTime getFin(int duracionMinutos) {
         return inicio.plusMinutes(duracionMinutos);
     }
-
-    public boolean estaEnCurso(LocalDateTime ahora, int duracionMinutos) {
-        return yaEmpezo(ahora) && !yaTermino(ahora, duracionMinutos);
-    }
-
-    public boolean yaTermino(LocalDateTime ahora, int duracionMinutos) {
-        return getFin(duracionMinutos).isBefore(ahora);
-    }
 }

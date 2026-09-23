@@ -28,11 +28,4 @@ public record DatosPelicula(String titulo, Integer duracionMinutos, List<Genero>
         return new DatosPelicula(titulo, duracionMinutos, generos, clasificacion,
                 null, null, null, null, null, null, null, null);
     }
-
-    /** Solo los datos de catálogo, para completarlos sin tocar lo demás. */
-    public static DatosPelicula deCatalogo(String director, String sinopsis, Integer anio,
-                                           String idiomaOriginal, String posterUrl) {
-        return new DatosPelicula(null, null, null, null, director, sinopsis, anio,
-                idiomaOriginal, posterUrl, null, null, null);
-    }
 }

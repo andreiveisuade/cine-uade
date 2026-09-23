@@ -295,27 +295,8 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void estaEnCursoEntreElInicioYElFin() {
-        Funcion funcion = funcionDeLas20();
-
-        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 19, 59), DURACION));
-        assertTrue(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 21, 0), DURACION));
-        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 23, 0), DURACION),
-                "a las 23:00 ya termino: empezo 20:00 y dura 2h16");
-    }
-
-    @Test
     void elFinSaleDeLaDuracionDeLaPelicula() {
         assertEquals(LocalDateTime.of(2026, 8, 20, 22, 16), funcionDeLas20().getFin(DURACION));
-    }
-
-    /** El borde: en el minuto exacto del final todavía no terminó. */
-    @Test
-    void enElMinutoDelFinTodaviaNoTermino() {
-        Funcion funcion = funcionDeLas20();
-
-        assertFalse(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 16), DURACION));
-        assertTrue(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 17), DURACION));
     }
 
     /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */

@@ -140,8 +140,6 @@ package "model.funciones" {
     --el paso del tiempo, derivado--
     +yaEmpezo(ahora): boolean
     +getFin(duracionMinutos): LocalDateTime
-    +estaEnCurso(ahora, duracionMinutos): boolean
-    +yaTermino(ahora, duracionMinutos): boolean
   }
   enum Version <<enum>> {
     DOBLADA
@@ -483,7 +481,7 @@ note as N2
   Tiene una consecuencia visible en este diagrama:
   **Funcion no sabe cuanto dura.** Solo tiene un
   peliculaId, y la duracion vive en Pelicula. Por eso
-  getFin() y estaEnCurso() la reciben por parametro
+  getFin() la recibe por parametro
   en vez de calcularla: guardar una copia seria un
   segundo lugar donde vive el mismo dato, y bastaria
   con corregir la duracion de una pelicula para que

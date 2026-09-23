@@ -207,7 +207,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13, "Denis Villeneuve",
                 "Arrakis", 2021, "Inglés", "dune.jpg", true, 8.1, 1200));
 
-        gestor.editar(dune.getId(), DatosPelicula.deCatalogo(null, "Otra sinopsis", null, null, null));
+        gestor.editar(dune.getId(), new DatosPelicula(null, null, null, null,
+                null, "Otra sinopsis", null, null, null, null, null, null));
 
         Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
         assertEquals("Otra sinopsis", leida.getSinopsis());
@@ -254,7 +255,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     void editarUnaPeliculaInexistenteFalla() {
         assertThrows(IllegalArgumentException.class,
-                () -> gestor.editar(99, DatosPelicula.deCatalogo("Alguien", null, null, null, null)));
+                () -> gestor.editar(99, new DatosPelicula(null, null, null, null,
+                        "Alguien", null, null, null, null, null, null, null)));
     }
 
     @Test
