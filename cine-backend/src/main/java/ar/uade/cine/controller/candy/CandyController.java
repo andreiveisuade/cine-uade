@@ -21,7 +21,7 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.dto.candy.ArqueoCandyVistaDTO;
+import ar.uade.cine.dto.informes.ArqueoCandyVistaDTO;
 import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.candy.PedidoComboDTO;
 import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;

@@ -1,4 +1,4 @@
-package ar.uade.cine.dto.ventas;
+package ar.uade.cine.dto.informes;
 
 import java.util.List;
 

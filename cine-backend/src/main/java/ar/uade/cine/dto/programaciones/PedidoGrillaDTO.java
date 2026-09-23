@@ -1,4 +1,4 @@
-package ar.uade.cine.dto.grilla;
+package ar.uade.cine.dto.programaciones;
 
 import jakarta.validation.constraints.NotNull;
 

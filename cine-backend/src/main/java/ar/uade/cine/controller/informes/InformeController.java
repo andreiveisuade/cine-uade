@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Parseo;
-import ar.uade.cine.dto.ventas.BorderoVistaDTO;
-import ar.uade.cine.dto.ventas.DeclaracionJuradaVistaDTO;
-import ar.uade.cine.dto.ventas.InformeFuncionVistaDTO;
+import ar.uade.cine.dto.informes.BorderoVistaDTO;
+import ar.uade.cine.dto.informes.DeclaracionJuradaVistaDTO;
+import ar.uade.cine.dto.informes.InformeFuncionVistaDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.GestorInformes;
 import ar.uade.cine.service.informes.InformeFuncion;

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import ar.uade.cine.dto.ErrorVistaDTO;
+import ar.uade.cine.dto.comun.ErrorVistaDTO;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 import ar.uade.cine.service.ventas.ButacaOcupadaException;
 import ar.uade.cine.service.ConflictoDeNegocio;

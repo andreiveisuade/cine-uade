@@ -1,4 +1,4 @@
-package ar.uade.cine.dto;
+package ar.uade.cine.dto.comun;
 
 import jakarta.validation.constraints.NotNull;
 

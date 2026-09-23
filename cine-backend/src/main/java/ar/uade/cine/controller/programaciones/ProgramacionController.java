@@ -24,7 +24,7 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.dto.PedidoActivacionDTO;
+import ar.uade.cine.dto.comun.PedidoActivacionDTO;
 import ar.uade.cine.dto.programaciones.FuncionGeneradaVistaDTO;
 import ar.uade.cine.dto.programaciones.FuncionPlanificadaVistaDTO;
 import ar.uade.cine.dto.programaciones.PedidoProgramacionDTO;
