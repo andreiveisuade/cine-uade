@@ -21,7 +21,7 @@ Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Prob
 |---|---|
 | Público | `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/codigo/{codigo}/cancelacion`; `GET` de `/api/cartelera`, `/api/peliculas/{id}`, `/api/peliculas/{id}/funciones`, `/api/funciones/{id}`, `/api/reservas/codigo/{codigo}`, `/api/reservas?email=` (con email), `/api/candy/productos` y `/{id}`, los siete catálogos; Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /api/sesion`, `POST /api/acceso` |
-| `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email, las rutas de reserva por `{id}` y `GET /api/peliculas/pendientes`. Una ruta nueva nace así |
+| `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email, las rutas de reserva por `{id}`, `GET /api/peliculas/pendientes` y `GET /api/declaracion-jurada`. Una ruta nueva nace así |
 
 `401` sin `WWW-Authenticate`: «Hace falta iniciar sesión para esta operación» o, con credenciales
 inválidas (rechazadas también en rutas públicas), «Email o contraseña incorrectos». `403`: «Tu rol
@@ -184,7 +184,7 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
               "pelicula": {}, "cliente": {}, "entradas": 3 }] }
 ```
 
-Borderó e informe cortan por **función** (INCAA), no por día.
+Borderó e informe cortan por **función** (INCAA), no por día; la declaración jurada, por período.
 
 `GET /api/funciones/{id}/bordero`
 
@@ -197,6 +197,33 @@ Borderó e informe cortan por **función** (INCAA), no por día.
 - Solo lo **cobrado**; sin ventas da cero. Bruta a lista, neta lo que entró.
 - `POST /api/funciones/{id}/bordero`: escribe `informes/bordero-funcion-<id>.txt`, `201`, pisa el anterior.
 - `GET /api/funciones/{id}/informe`: `{ "boleteria": {borderó}, "comprasCandy": 4, "candy": 12000, "total": 74500 }`. Solo candy con `reservaId`: el de mostrador está en `GET /api/candy/arqueo`.
+
+### Declaración jurada del período
+
+`GET /api/declaracion-jurada?desde=2026-08-20&hasta=2026-08-26`, solo `ADMINISTRADOR`.
+
+- Sin `desde` ni `hasta`: la semana cinematográfica anterior (jueves a miércoles) a la de hoy.
+- `400` si viene una sola fecha, si una no es `AAAA-MM-DD`, si `desde` es posterior a `hasta` o si el período pasa de 31 días.
+- Entran las funciones cuyo **inicio** cae en el período y que tienen entradas cobradas; cada una trae las cifras de su borderó.
+
+```json
+{ "exhibidor": {"razonSocial":"Cine UADE S.A.","cuit":"30-71234567-1","numeroExhibidor":"10452"},
+  "desde":"2026-08-20", "hasta":"2026-08-26", "generadaEn":"2026-08-27T10:00:00",
+  "funciones":[{"funcionId":1,"inicio":"2026-08-20T20:00:00","sala":"Sala 1","pelicula":"Matrix",
+                "clasificacion":"MAS_13","idioma":"SUBTITULADA","proyeccion":"DOS_D",
+                "espectadores":2,"porTarifa":{"GENERAL":{"cantidad":1,"total":5000},"JUBILADO":{"cantidad":1,"total":2500}},
+                "recaudacionBruta":7500,"descuentos":0,"recaudacionNeta":7500}],
+  "peliculas":[{"titulo":"Matrix","clasificacion":"MAS_13","funciones":1,"espectadores":2,
+                "entradasPorTarifa":{"GENERAL":1,"JUBILADO":1},
+                "recaudacionBruta":7500,"descuentos":0,"recaudacionNeta":7500}],
+  "total":{"funciones":1,"espectadores":2,"entradasPorTarifa":{"GENERAL":1,"JUBILADO":1},
+           "recaudacionBruta":7500,"descuentos":0,"recaudacionNeta":7500} }
+```
+
+- `porTarifa` tiene la forma del borderó; `porTarifa` y `entradasPorTarifa` traen solo las tarifas con venta.
+- `peliculas` va ordenado por título; `exhibidor` sale de `cine.incaa.*` (`INCAA_RAZON_SOCIAL`, `INCAA_CUIT`, `INCAA_NUMERO_EXHIBIDOR`).
+- El CSV que se sube al INCAA no lo genera el backend: lo arma el cliente de escritorio del encargado
+  con este JSON (registros etiquetados `EXHIBIDOR`/`FUNCION`/`PELICULA`/`TOTAL`/`DECLARACION`, `;`, UTF-8 con BOM; ver el módulo `cine-swing`).
 
 ## Programaciones (CU-03b)
 
