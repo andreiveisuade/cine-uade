@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
-import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
@@ -101,13 +100,8 @@ public class ReservaController {
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")
     public BloqueoVistaDTO bloquear(@PathVariable int id, @Valid @RequestBody PedidoBloqueoDTO pedido) {
-        List<String> pedidas = pedido.butacas() == null ? List.of() : pedido.butacas();
-        List<String> conseguidas = ocupacion.bloquear(id, pedidas, pedido.sesion());
-        List<String> rechazadas = pedidas.stream()
-                .map(Asiento::normalizarCodigo)
-                .filter(codigo -> !conseguidas.contains(codigo))
-                .toList();
-        return new BloqueoVistaDTO(pedido.sesion(), conseguidas, rechazadas,
+        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(id, pedido.butacas(), pedido.sesion());
+        return new BloqueoVistaDTO(pedido.sesion(), bloqueo.conseguidas(), bloqueo.rechazadas(),
                 Ocupacion.MIENTRAS_ELIGE.toSeconds());
     }
 

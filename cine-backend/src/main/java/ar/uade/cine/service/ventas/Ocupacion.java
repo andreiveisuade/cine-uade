@@ -78,7 +78,11 @@ public class Ocupacion {
                 .toList();
     }
 
-    public List<String> bloquear(int funcionId, Collection<String> codigos, String sesion) {
+    // Perder una butaca no es un error: vuelve en rechazadas, con el código ya normalizado.
+    public record Bloqueo(List<String> conseguidas, List<String> rechazadas) {
+    }
+
+    public Bloqueo bloquear(int funcionId, Collection<String> codigos, String sesion) {
         if (sesion == null || sesion.isBlank()) {
             throw new IllegalArgumentException("Hace falta una sesión para bloquear butacas");
         }
@@ -101,6 +105,10 @@ public class Ocupacion {
                 .filter(a -> tomar(funcionId, a.getId(), sesion, ahora))
                 .map(Asiento::getCodigo)
                 .toList();
+        List<String> rechazadas = pedidos.stream()
+                .map(Asiento::getCodigo)
+                .filter(codigo -> !conseguidas.contains(codigo))
+                .toList();
 
         Set<Integer> sigueEligiendo = pedidos.stream().map(Asiento::getId).collect(Collectors.toSet());
         if (sigueEligiendo.isEmpty()) {
@@ -108,7 +116,7 @@ public class Ocupacion {
         } else {
             bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
         }
-        return conseguidas;
+        return new Bloqueo(conseguidas, rechazadas);
     }
 
     public void liberar(int funcionId, String sesion) {

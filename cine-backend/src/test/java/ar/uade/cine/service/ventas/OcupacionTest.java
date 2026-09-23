@@ -95,22 +95,25 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void dosPersonasPorLaMismaButacaSeLaLlevaLaPrimera() {
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO));
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas());
     }
 
     @Test
     void loQueNoSeConsigueNoArrastraAlResto() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(List.of("A2", "A3"), ocupacion.bloquear(1, List.of("A1", "A2", "A3"), BETO));
+        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(1, List.of("A1", "A2", "A3"), BETO);
+
+        assertEquals(List.of("A2", "A3"), bloqueo.conseguidas());
+        assertEquals(List.of("A1"), bloqueo.rechazadas());
     }
 
     @Test
     void noSeBloqueaUnaButacaYaVendida() {
         reservas.reservar(1, 1, generales("A1"), null);
 
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA));
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
     }
 
     @Test
@@ -128,7 +131,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         avanzar(Ocupacion.MIENTRAS_ELIGE.plusSeconds(1));
 
         assertTrue(codigosLibres(null).contains("A1"));
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), BETO),
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas(),
                 "y el que llega después se la puede llevar");
     }
 
@@ -137,7 +140,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
         avanzar(Duration.ofMinutes(2));
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
 
         avanzar(Duration.ofMinutes(2));
         assertFalse(codigosLibres(BETO).contains("A1"));
@@ -148,7 +151,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO));
+        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO).conseguidas());
     }
 
     @Test
@@ -226,7 +229,7 @@ class OcupacionTest extends PruebaDeIntegracion {
                 String sesion = "sesion-" + i;
                 Callable<List<String>> intento = () -> {
                     largada.await();
-                    return ocupacion.bloquear(1, List.of("A1"), sesion);
+                    return ocupacion.bloquear(1, List.of("A1"), sesion).conseguidas();
                 };
                 resultados.add(hilos.submit(intento));
             }
@@ -265,9 +268,9 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
         reservas.reservar(1, 1, generales("A1"), ANA);
 
-        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO),
+        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO).conseguidas(),
                 "la que no compró vuelve a la venta");
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO),
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas(),
                 "la que compró sigue ocupada, ahora por la reserva");
     }
 
