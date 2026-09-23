@@ -57,4 +57,21 @@ class PromocionControllerTest extends PruebaDeApi {
         assertEquals(400, respuesta.estado());
         assertEquals("Valor inválido para el día: JUEVESITO", respuesta.error());
     }
+
+    @Test
+    void losMensajesDelGestorYDeLaEntidadLleganIntactos() {
+        String vigencia = ",\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\"}";
+
+        Respuesta sinPaga = post("/api/promociones", "{\"nombre\":\"2x1\",\"tipo\":\"NXM\",\"lleva\":2" + vigencia);
+        assertEquals(400, sinPaga.estado());
+        assertEquals("Falta paga para ese tipo de promoción", sinPaga.error());
+
+        Respuesta sinMonto = post("/api/promociones", "{\"nombre\":\"Banco\",\"tipo\":\"MONTO_FIJO\"" + vigencia);
+        assertEquals("Falta monto para ese tipo de promoción", sinMonto.error());
+
+        Respuesta dosPorDos = post("/api/promociones",
+                "{\"nombre\":\"2x2\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":2" + vigencia);
+        assertEquals(400, dosPorDos.estado());
+        assertEquals("En un NxM hay que llevar más de lo que se paga", dosPorDos.error());
+    }
 }

@@ -1,13 +1,8 @@
 package ar.uade.cine.model.promociones;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Set;
 
 import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -21,10 +16,11 @@ public class PromocionMontoFijo extends Promocion {
     protected PromocionMontoFijo() {
     }
 
-    public PromocionMontoFijo(String nombre, Dinero monto, LocalDate vigenciaDesde,
-                              LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
-                              LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {
-        super(nombre, vigenciaDesde, vigenciaHasta, diasSemana, horaDesde, horaHasta, mediosPago);
+    public PromocionMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
+        super(nombre, condiciones);
+        if (monto == null || !monto.esMayorQue(Dinero.CERO)) {
+            throw new IllegalArgumentException("El monto del descuento debe ser mayor a cero");
+        }
         this.monto = monto;
     }
 

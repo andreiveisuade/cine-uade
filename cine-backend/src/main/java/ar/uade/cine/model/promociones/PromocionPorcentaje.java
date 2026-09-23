@@ -1,13 +1,8 @@
 package ar.uade.cine.model.promociones;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Set;
 
 import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
@@ -24,10 +19,11 @@ public class PromocionPorcentaje extends Promocion {
     protected PromocionPorcentaje() {
     }
 
-    public PromocionPorcentaje(String nombre, double porcentaje, LocalDate vigenciaDesde,
-                               LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
-                               LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {
-        super(nombre, vigenciaDesde, vigenciaHasta, diasSemana, horaDesde, horaHasta, mediosPago);
+    public PromocionPorcentaje(String nombre, double porcentaje, CondicionesPromocion condiciones) {
+        super(nombre, condiciones);
+        if (porcentaje <= 0 || porcentaje >= 100) {
+            throw new IllegalArgumentException("El porcentaje tiene que estar entre 1 y 99");
+        }
         this.porcentaje = porcentaje;
     }
 

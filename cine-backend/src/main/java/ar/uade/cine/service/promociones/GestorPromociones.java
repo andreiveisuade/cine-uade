@@ -1,6 +1,5 @@
 package ar.uade.cine.service.promociones;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -9,6 +8,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.PromocionMontoFijo;
 import ar.uade.cine.model.promociones.PromocionNxM;
@@ -31,43 +31,32 @@ public class GestorPromociones implements PoliticaPromociones {
         this.promocionRepository = promocionRepository;
     }
 
-    public Promocion crearPorcentaje(String nombre, double porcentaje, CondicionesPromocion condiciones) {
-        if (porcentaje <= 0 || porcentaje >= 100) {
-            throw new IllegalArgumentException("El porcentaje tiene que estar entre 1 y 99");
-        }
-        return guardar(new PromocionPorcentaje(nombre, porcentaje, condiciones.desde(), condiciones.hasta(),
-                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
-                condiciones.mediosPago()), nombre, condiciones);
+    // Los valores llegan en objeto desde el pedido: que falte el propio del tipo lo dice el gestor,
+    // porque la entidad los recibe primitivos y no tiene cómo enterarse. El resto de las reglas
+    // (rango, NxM, vigencia, nombre) las valida cada clase de Promocion al construirse.
+    public Promocion crearPorcentaje(String nombre, Double porcentaje, CondicionesPromocion condiciones) {
+        return guardar(new PromocionPorcentaje(nombre, obligatorio(porcentaje, "porcentaje"), condiciones));
     }
 
     public Promocion crearMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
-        if (monto == null || !monto.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El monto del descuento debe ser mayor a cero");
-        }
-        return guardar(new PromocionMontoFijo(nombre, monto, condiciones.desde(), condiciones.hasta(),
-                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
-                condiciones.mediosPago()), nombre, condiciones);
+        return guardar(new PromocionMontoFijo(nombre, obligatorio(monto, "monto"), condiciones));
     }
 
-    public Promocion crearNxM(String nombre, int lleva, int paga, CondicionesPromocion condiciones) {
-        // Un 2x2 no descuenta y un 2x3 cobraría de más.
-        if (lleva <= paga || paga <= 0) {
-            throw new IllegalArgumentException("En un NxM hay que llevar más de lo que se paga");
-        }
-        return guardar(new PromocionNxM(nombre, lleva, paga, condiciones.desde(), condiciones.hasta(),
-                condiciones.dias(), condiciones.horaDesde(), condiciones.horaHasta(),
-                condiciones.mediosPago()), nombre, condiciones);
+    public Promocion crearNxM(String nombre, Integer lleva, Integer paga, CondicionesPromocion condiciones) {
+        return guardar(new PromocionNxM(nombre, obligatorio(lleva, "lleva"), obligatorio(paga, "paga"),
+                condiciones));
     }
 
-    private Promocion guardar(Promocion promocion, String nombre, CondicionesPromocion condiciones) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("La promoción necesita un nombre");
+    private static <T> T obligatorio(T valor, String campo) {
+        if (valor == null) {
+            throw new IllegalArgumentException("Falta " + campo + " para ese tipo de promoción");
         }
-        LocalDate desde = condiciones.desde();
-        LocalDate hasta = condiciones.hasta();
-        if (desde == null || hasta == null || hasta.isBefore(desde)) {
-            throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
-        }
+        return valor;
+    }
+
+    // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio.
+    private Promocion guardar(Promocion promocion) {
+        String nombre = promocion.getNombre();
         if (promocionRepository.existsByNombreIgnoreCase(nombre.trim())) {
             throw new ConflictoDeNegocio("Ya hay una promoción llamada " + nombre);
         }

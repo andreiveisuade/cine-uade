@@ -42,7 +42,7 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.Arqueo;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.service.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
@@ -189,7 +189,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
-        promociones.crearPorcentaje("50 off", 50,
+        promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -230,7 +230,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elRepartoPorMedioCuentaElMontoConDescuento() {
-        promociones.crearPorcentaje("50 off", 50,
+        promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -264,7 +264,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elReciboMuestraElDescuentoQueSeAplicoAlCobrar() {
-        promociones.crearPorcentaje("50 off", 50,
+        promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -291,7 +291,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elMontoDelCheckoutYaTraeElDescuentoAplicado() {
-        promociones.crearPorcentaje("50 off", 50,
+        promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));

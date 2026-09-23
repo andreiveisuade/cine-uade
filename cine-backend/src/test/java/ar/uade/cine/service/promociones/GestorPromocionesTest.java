@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoAsiento;
@@ -51,7 +52,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void elPorcentajeDescuentaSobreElSubtotal() {
-        Promocion promo = promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA,
+        Promocion promo = promociones.crearPorcentaje("30 off", 30.0, new CondicionesPromocion(DESDE, HASTA,
                 Set.of(), null, null, Set.of()));
 
         assertEquals(Dinero.de(3000), promo.calcularDescuento(List.of(entrada(5000), entrada(5000))));
@@ -92,7 +93,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void ganaLaQueMasDescuenta() {
-        promociones.crearPorcentaje("10 off", 10, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("10 off", 10.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
         Promocion dosPorUno = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
@@ -104,8 +105,8 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void enUnEmpateGanaLaDeMenorId() {
-        Promocion primera = promociones.crearPorcentaje("primera", 20, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
-        promociones.crearPorcentaje("segunda", 20, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        Promocion primera = promociones.crearPorcentaje("primera", 20.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("segunda", 20.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         Descuento descuento = promociones.calcularPara(
                 List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO);
@@ -115,7 +116,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void laTarifaReducidaNoParticipaDelDescuento() {
-        promociones.crearPorcentaje("50 off", 50, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("50 off", 50.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         List<Entrada> mixta = List.of(entrada(5000), entrada(2500, TipoTarifa.JUBILADO));
 
@@ -125,7 +126,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void sinEntradasGeneralesNoAplicaNinguna() {
-        promociones.crearPorcentaje("50 off", 50, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("50 off", 50.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         assertFalse(corre(List.of(entrada(2500, TipoTarifa.JUBILADO)),
                 JUEVES, MedioPago.EFECTIVO));
@@ -155,7 +156,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void fueraDeVigenciaNoCorre() {
-        promociones.crearPorcentaje("Julio", 30, new CondicionesPromocion(LocalDate.of(2026, 7, 1),
+        promociones.crearPorcentaje("Julio", 30.0, new CondicionesPromocion(LocalDate.of(2026, 7, 1),
                 LocalDate.of(2026, 7, 31), Set.of(), null, null, Set.of()));
 
         assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
@@ -163,7 +164,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void laTrasnocheNoCorreEnLaFuncionDeLaTarde() {
-        promociones.crearPorcentaje("Trasnoche", 40, new CondicionesPromocion(DESDE, HASTA,
+        promociones.crearPorcentaje("Trasnoche", 40.0, new CondicionesPromocion(DESDE, HASTA,
                 Set.of(), LocalTime.of(23, 0), null, Set.of()));
 
         assertFalse(corre(List.of(entrada(5000)),
@@ -174,7 +175,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void unaPromocionDesactivadaDejaDeCorrer() {
-        Promocion promo = promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA,
+        Promocion promo = promociones.crearPorcentaje("30 off", 30.0, new CondicionesPromocion(DESDE, HASTA,
                 Set.of(), null, null, Set.of()));
         promociones.desactivar(promo.getId());
 
@@ -191,19 +192,19 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaUnPorcentajeFueraDeRango() {
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("gratis", 100,
+        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("gratis", 100.0,
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaUnaVigenciaAlReves() {
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("rara", 10,
+        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("rara", 10.0,
                 new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaDosPromocionesConElMismoNombre() {
-        promociones.crearPorcentaje("30 off", 30, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+        promociones.crearPorcentaje("30 off", 30.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
         assertThrows(IllegalArgumentException.class, () -> promociones.crearMontoFijo("30 off", Dinero.de(500),
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));

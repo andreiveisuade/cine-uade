@@ -1,14 +1,9 @@
 package ar.uade.cine.model.promociones;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -23,10 +18,12 @@ public class PromocionNxM extends Promocion {
     protected PromocionNxM() {
     }
 
-    public PromocionNxM(String nombre, int lleva, int paga, LocalDate vigenciaDesde,
-                        LocalDate vigenciaHasta, Set<DayOfWeek> diasSemana,
-                        LocalTime horaDesde, LocalTime horaHasta, Set<MedioPago> mediosPago) {
-        super(nombre, vigenciaDesde, vigenciaHasta, diasSemana, horaDesde, horaHasta, mediosPago);
+    public PromocionNxM(String nombre, int lleva, int paga, CondicionesPromocion condiciones) {
+        super(nombre, condiciones);
+        // Un 2x2 no descuenta y un 2x3 cobraría de más.
+        if (lleva <= paga || paga <= 0) {
+            throw new IllegalArgumentException("En un NxM hay que llevar más de lo que se paga");
+        }
         this.lleva = lleva;
         this.paga = paga;
     }

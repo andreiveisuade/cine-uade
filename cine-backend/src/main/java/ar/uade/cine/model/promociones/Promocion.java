@@ -63,18 +63,28 @@ public abstract class Promocion {
     protected Promocion() {
     }
 
-    protected Promocion(String nombre, LocalDate vigenciaDesde, LocalDate vigenciaHasta,
-                        Set<DayOfWeek> diasSemana, LocalTime horaDesde, LocalTime horaHasta,
-                        Set<MedioPago> mediosPago) {
+    // Lo común a las tres clases se valida acá y lo propio de cada una en su constructor:
+    // así no se puede armar una promoción inválida, venga del gestor o de un test.
+    protected Promocion(String nombre, CondicionesPromocion condiciones) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("La promoción necesita un nombre");
+        }
+        LocalDate desde = condiciones.desde();
+        LocalDate hasta = condiciones.hasta();
+        if (desde == null || hasta == null || hasta.isBefore(desde)) {
+            throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
+        }
         this.nombre = nombre;
-        this.vigenciaDesde = vigenciaDesde;
-        this.vigenciaHasta = vigenciaHasta;
-        this.diasSemana = diasSemana == null || diasSemana.isEmpty()
-                ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana);
-        this.horaDesde = horaDesde;
-        this.horaHasta = horaHasta;
-        this.mediosPago = mediosPago == null || mediosPago.isEmpty()
-                ? EnumSet.noneOf(MedioPago.class) : EnumSet.copyOf(mediosPago);
+        this.vigenciaDesde = desde;
+        this.vigenciaHasta = hasta;
+        Set<DayOfWeek> dias = condiciones.dias();
+        this.diasSemana = dias == null || dias.isEmpty()
+                ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(dias);
+        this.horaDesde = condiciones.horaDesde();
+        this.horaHasta = condiciones.horaHasta();
+        Set<MedioPago> medios = condiciones.mediosPago();
+        this.mediosPago = medios == null || medios.isEmpty()
+                ? EnumSet.noneOf(MedioPago.class) : EnumSet.copyOf(medios);
     }
 
     public abstract TipoPromocion getTipo();

@@ -20,13 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.comun.PedidoActivacionDTO;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
-import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
@@ -73,14 +73,10 @@ public class PromocionController {
                 horaDesde, horaHasta, medios);
 
         Promocion promocion = switch (tipoDe(pedido.tipo())) {
-            case PORCENTAJE -> promociones.crearPorcentaje(pedido.nombre(),
-                    valorObligatorio(pedido.porcentaje(), "porcentaje"), condiciones);
+            case PORCENTAJE -> promociones.crearPorcentaje(pedido.nombre(), pedido.porcentaje(), condiciones);
             case MONTO_FIJO -> promociones.crearMontoFijo(pedido.nombre(),
-                    Dinero.de(valorObligatorio(pedido.monto(), "monto")), condiciones);
-            case NXM -> promociones.crearNxM(pedido.nombre(),
-                    (int) valorObligatorio(pedido.lleva() == null ? null : pedido.lleva().doubleValue(), "lleva"),
-                    (int) valorObligatorio(pedido.paga() == null ? null : pedido.paga().doubleValue(), "paga"),
-                    condiciones);
+                    pedido.monto() == null ? null : Dinero.de(pedido.monto()), condiciones);
+            case NXM -> promociones.crearNxM(pedido.nombre(), pedido.lleva(), pedido.paga(), condiciones);
         };
         return Creado.en("/api/promociones/" + promocion.getId(), vistas.promocion(promocion));
     }
@@ -104,13 +100,6 @@ public class PromocionController {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("El tipo tiene que ser PORCENTAJE, MONTO_FIJO o NXM");
         }
-    }
-
-    private static double valorObligatorio(Double valor, String campo) {
-        if (valor == null) {
-            throw new IllegalArgumentException("Falta " + campo + " para ese tipo de promoción");
-        }
-        return valor;
     }
 
     private Promocion buscar(int id) {
