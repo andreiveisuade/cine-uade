@@ -1,0 +1,108 @@
+package ar.uade.cine.swing.pantallas;
+
+import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.dto.Entrada;
+import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.comun.Tarea;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+
+import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.fechaHora;
+
+/** Control de acceso (CU-18). Lo único que ve el acomodador. */
+final class PantallaPuerta extends Pantalla {
+
+    private static final Color VERDE = new Color(0x2B8A3E);
+    private static final Color ROJO = new Color(0xC92A2A);
+
+    private final JTextField codigo = new JTextField(10);
+    private final JLabel resultado = new JLabel();
+
+    PantallaPuerta(ApiHttp api) {
+        super(api, "Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
+        codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
+        JButton validar = new JButton("Validar");
+        validar.setFont(validar.getFont().deriveFont(18f));
+        JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        fila.add(codigo);
+        fila.add(validar);
+        resultado.setVerticalAlignment(JLabel.TOP);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 16));
+        centro.add(fila, BorderLayout.NORTH);
+        centro.add(resultado, BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
+
+        codigo.addActionListener(e -> validar());
+        validar.addActionListener(e -> validar());
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        codigo.requestFocusInWindow();
+    }
+
+    // El foco vuelve al campo tras cada validación: en la puerta se encadenan una atrás de otra.
+    private void validar() {
+        String limpio = codigo.getText().trim().toUpperCase();
+        if (limpio.isEmpty()) return;
+        Tarea.ejecutar(this, () -> api.validarEntrada(limpio), reserva -> {
+            mostrarValida(reserva);
+            reiniciar();
+        }, error -> {
+            // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa.
+            if (error.esSesionVencida()) return;
+            mostrar(ROJO, "NO PASA", "<p>" + escapar(error.getMessage()) + "</p>");
+            reiniciar();
+        });
+    }
+
+    private void reiniciar() {
+        codigo.setText("");
+        codigo.requestFocusInWindow();
+    }
+
+    private void mostrarValida(Reserva reserva) {
+        StringBuilder html = new StringBuilder();
+        html.append("<p><b>").append(reserva.pelicula() == null ? "" : escapar(reserva.pelicula().titulo()))
+                .append("</b><br>").append(reserva.sala() == null ? "" : escapar(reserva.sala().nombre()))
+                .append(" · ").append(reserva.funcion() == null ? "" : fechaHora(reserva.funcion().inicio()))
+                .append("</p><table>");
+        for (Entrada e : reserva.entradas()) {
+            String tarifa = e.tarifa() == null ? "GENERAL" : e.tarifa();
+            boolean pideCarnet = !"GENERAL".equals(tarifa);
+            html.append("<tr><td><tt><b>").append(e.codigo()).append("</b></tt></td><td>")
+                    .append(pideCarnet ? "<b>" + etiqueta(tarifa) + " · pedir carnet</b>" : etiqueta(tarifa))
+                    .append("</td></tr>");
+        }
+        int personas = reserva.entradas().size();
+        html.append("</table><p>").append(personas).append(personas == 1 ? " persona" : " personas")
+                .append(" · ingreso registrado ").append(fechaHora(reserva.ingresadaEn())).append("</p>");
+        mostrar(VERDE, "ADELANTE", html.toString());
+    }
+
+    private void mostrar(Color color, String titulo, String cuerpo) {
+        resultado.setText("<html><div style='width:460px'><h1 style='color:#" + hex(color) + "'>" + titulo
+                + "</h1>" + cuerpo + "</div></html>");
+        resultado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color, 2),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+    }
+
+    private static String hex(Color color) {
+        return String.format("%06x", color.getRGB() & 0xFFFFFF);
+    }
+
+    private static String escapar(String texto) {
+        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+}

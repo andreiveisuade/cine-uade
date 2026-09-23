@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas;
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Empleado;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Etiquetas;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -77,7 +78,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         marca.setFont(marca.getFont().deriveFont(Font.BOLD, 18f));
         cabecera.add(marca);
         cabecera.add(Box.createHorizontalStrut(12));
-        cabecera.add(new JLabel(ar.uade.cine.swing.comun.Etiquetas.etiqueta(empleado.rol())));
+        cabecera.add(new JLabel(Etiquetas.etiqueta(empleado.rol())));
         cabecera.add(Box.createHorizontalGlue());
         cabecera.add(new JLabel(empleado.nombre() + "  ·  " + api.urlBase()));
         cabecera.add(Box.createHorizontalStrut(12));
@@ -133,6 +134,9 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     private Supplier<JComponent> crear(String destino) {
         return switch (destino) {
+            case "Funciones" -> () -> new PantallaFunciones(api, this);
+            case "Caja" -> () -> new PantallaCaja(api);
+            case "Puerta" -> () -> new PantallaPuerta(api);
             default -> () -> new PantallaPendiente(destino);
         };
     }
