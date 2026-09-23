@@ -1,83 +1,43 @@
 # Cómo levantarlo
 
-Hace falta **Docker Desktop abierto**. Nada más.
+Requisito: **Docker Desktop abierto**.
 
 ## Con el script
 
 ```bash
 git clone https://github.com/andreiveisuade/cine-uade.git
 cd cine-uade/cine-docker
-
 ./setup.sh          # macOS y Linux
-.\setup.ps1         # Windows
+.\setup.ps1         # Windows (si lo bloquea: powershell -ExecutionPolicy Bypass -File .\setup.ps1)
 ```
 
-Arma el `.env`, pide el token de TMDB, levanta, espera y siembra los datos. Se puede
-repetir: no pisa el `.env` ni siembra dos veces.
+Arma el `.env`, pide el token de TMDB, levanta, siembra e imprime las URLs. Repetible: no pisa
+el `.env` ni siembra dos veces.
 
-Windows, si PowerShell lo bloquea: `powershell -ExecutionPolicy Bypass -File .\setup.ps1`
-
-Al terminar imprime las URLs. Listo.
-
-## A mano
-
-Todo parado en `cine-docker/`.
-
-**1. Configurar**
+## A mano (en `cine-docker/`)
 
 ```bash
-cp .env.example .env
+cp .env.example .env                 # cambiar MYSQL_ROOT_PASSWORD y DB_PASSWORD (locales, no se versionan)
+docker compose up -d --build         # la primera vez tarda: Maven baja dependencias
+docker compose ps                    # repetir hasta mysql y backend (healthy); antes 8080 no responde
+./seed/datos-de-ejemplo.sh           # 6 salas, carta del candy y una promoción
 ```
 
-Cambiá `MYSQL_ROOT_PASSWORD` y `DB_PASSWORD` por cualquier cosa: son de tu MySQL, adentro
-de tu Docker. No las comparte nadie. El `.env` no se versiona.
-
-**2. Levantar**
-
-```bash
-docker compose up -d --build
-```
-
-La primera vez tarda minutos: Maven baja las dependencias del backend.
-
-**3. Esperar**
-
-Arrancan en cadena: `mysql` → `backend` → `frontend`. Hasta que el backend no esté sano,
-el puerto 8080 no responde.
-
-```bash
-docker compose ps      # repetir hasta ver mysql y backend (healthy)
-```
-
-**4. Sembrar**
-
-```bash
-./seed/datos-de-ejemplo.sh      # 6 salas, carta del candy y una promoción
-```
-
-Películas no siembra: se traen de TMDB con el botón **Importador** del panel (necesita
-`TMDB_TOKEN` en el `.env`) y se confirman en **Por revisar**. Las funciones se arman
-después desde **Grilla** o **Planificador**.
-
-**5. Entrar**
+Películas no se siembran: **Importador** del panel (con `TMDB_TOKEN`) → confirmar en **Por
+revisar** → funciones desde **Grilla** o **Planificador**.
 
 | | URL | Credenciales |
 |---|---|---|
 | Cliente | <http://localhost:8080> | — |
 | Panel | <http://localhost:8080/admin.html> | `encargado@cine.uade.ar` / `cine2026` |
 | Puerta | el mismo panel | `puerta@cine.uade.ar` / `cine2026` |
-| Swagger | <http://localhost:8080/swagger-ui.html> | — |
+| Swagger | <http://localhost:8080/swagger-ui.html> (contrato crudo en `/v3/api-docs`, importable en Postman) | — |
 | Adminer | <http://localhost:8081> | servidor `mysql`, usuario del `.env` |
 
 ## Token de TMDB
 
-Sirve para importar la cartelera real. **Sin él todo lo demás anda igual**: lo único que
-no vas a poder hacer es traer películas desde el importador.
-
-**Andrei te lo pasa por privado.** No está en el repo: un token en un repo público lo
-levanta cualquiera y TMDB lo revoca.
-
-Pegalo en `cine-docker/.env`, sin comillas ni espacios, en una línea:
+Opcional: sin él solo falta el importador. Andrei lo pasa por privado (repo público: si se
+filtra, se revoca). En `cine-docker/.env`, una línea sin comillas:
 
 ```
 TMDB_TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4ZTM...
@@ -85,55 +45,27 @@ TMDB_TOKEN=eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4ZTM...
 
 ```bash
 docker compose up -d backend
+git config core.hooksPath .githooks   # hook anti-credenciales; setup.sh ya lo activa
 ```
 
 | Síntoma | Causa |
 |---|---|
-| El botón del importador está deshabilitado | Falta el token en el `.env` |
+| Botón del importador deshabilitado | Falta el token |
 | Trae 0 películas, sin error | Se cortó al copiar |
-| Dice que no está autorizado | Mal pegado, o revocado |
+| No autorizado | Mal pegado o revocado |
 
-**El token es de Andrei y el repo es público: si se filtra, hay que revocarlo.** El `.env`
-está en el `.gitignore` —con todas sus variantes— y hay un hook que frena el commit si
-detecta un archivo de credenciales o un token pegado en el código. `setup.sh` lo activa
-solo; a mano es:
+Uno propio: cuenta en [themoviedb.org](https://www.themoviedb.org/signup) → [API](https://www.themoviedb.org/settings/api),
+tipo Developer, copiar el **API Read Access Token** (empieza con `eyJ`), no la API key.
 
-```bash
-git config core.hooksPath .githooks
-```
-
-<details>
-<summary>Sacar uno propio</summary>
-
-Cuenta gratis en [themoviedb.org](https://www.themoviedb.org/signup) → [Configuración →
-API](https://www.themoviedb.org/settings/api) → tipo **Developer**. Copiá el **API Read
-Access Token** (largo, empieza con `eyJ`), no la API key corta.
-</details>
-
-## La API documentada
-
-<http://localhost:8080/swagger-ui.html> lista los 68 endpoints, con el cuerpo que espera
-cada uno y el que devuelve. Se puede probar cualquiera desde ahí, sin `curl`.
-
-Sale de los `@RestController`: no hay un archivo que mantener al día. El contrato crudo,
-para importar en Postman o Insomnia, está en `/v3/api-docs`.
-
-## Desplegar en un Tomcat aparte
-
-El artefacto es un **WAR ejecutable**: sirve para las dos cosas sin recompilar.
+## Tomcat aparte
 
 ```bash
-cd cine-backend && mvn package -DskipTests    # deja target/cine-api.war
+cd cine-backend && mvn package -DskipTests    # target/cine-api.war, WAR ejecutable
+java -jar target/cine-api.war                 # embebido, localhost:8080
 ```
 
-| Cómo | Comando | Queda en |
-|---|---|---|
-| Tomcat embebido | `java -jar target/cine-api.war` | `localhost:8080` |
-| Tomcat instalado | copiar el WAR a `$CATALINA_HOME/webapps/` | `localhost:8080/cine-api` |
-
-En el segundo caso la app cuelga del nombre del archivo. Para que quede en la raíz,
-copiarlo como `ROOT.war`. La base se configura con las mismas variables de entorno
-(`DB_HOST`, `DB_USER`, `DB_PASSWORD`), que en un Tomcat instalado van en `setenv.sh`.
+O copiarlo a `$CATALINA_HOME/webapps/` (queda en `/cine-api`; como `ROOT.war`, en la raíz).
+Base por `DB_HOST`, `DB_USER`, `DB_PASSWORD` (en `setenv.sh`).
 
 ## Si algo falla
 
@@ -142,31 +74,27 @@ copiarlo como `ROOT.war`. La base se configura con las mismas variables de entor
 | `Cannot connect to the Docker daemon` | Abrir Docker Desktop |
 | `falta DB_USER, copiá .env.example a .env` | `cp .env.example .env` |
 | `port is already allocated` | Cambiar `PUERTO_WEB` en el `.env` |
-| `localhost:8080` no responde | Esperar: `docker compose ps` hasta `(healthy)` |
-| `backend` reinicia en loop | `docker compose logs backend`. Casi siempre es el `.env` |
+| `localhost:8080` no responde | `docker compose ps` hasta `(healthy)` |
+| `backend` reinicia en loop | `docker compose logs backend` (casi siempre el `.env`) |
 | La web carga vacía | Falta sembrar |
 | Cambiaste el `.env` y sigue igual | El volumen tiene la clave vieja: `down -v` |
 
-Empezar de cero:
-
 ```bash
-docker compose down -v && docker compose up -d --build && ./seed/datos-de-ejemplo.sh
+docker compose down -v && docker compose up -d --build && ./seed/datos-de-ejemplo.sh   # de cero
 ```
 
 ## Día a día
 
 ```bash
-docker compose logs -f backend                     # ver qué hace
-docker compose up -d --build --no-deps frontend    # tras tocar el front
+docker compose logs -f backend
+docker compose up -d --build --no-deps frontend    # tras tocar el front (--no-deps: no recrea MySQL)
 docker compose up -d --build --no-deps backend     # tras tocar el back
-docker compose restart backend                     # reiniciar sin recompilar
-docker compose down                                # bajar (la base queda)
+docker compose restart backend                     # sin recompilar
+docker compose down                                # bajar, la base queda
 ```
 
-`--no-deps` evita recrear MySQL y esperar su healthcheck de nuevo.
-
-**Abrir la base con Workbench o DBeaver.** MySQL no publica puerto. Creá
-`cine-docker/docker-compose.override.yml` (no se versiona) y volvé a levantar:
+MySQL sin puerto publicado. Para Workbench/DBeaver, `cine-docker/docker-compose.override.yml`
+(no versionado) y volver a levantar; conectar a `127.0.0.1:3306`, base `appsinteractivas`:
 
 ```yaml
 services:
@@ -175,15 +103,11 @@ services:
       - "127.0.0.1:3306:3306"
 ```
 
-Conectás a `127.0.0.1:3306`, base `appsinteractivas`, usuario y clave del `.env`.
-
 ## Tests
 
-416 pruebas contra H2 en memoria, sin Docker ni MySQL.
+419 pruebas contra H2, sin Docker ni MySQL. El `clean` evita correr clases viejas de `target/`.
 
 ```bash
-cd cine-backend && mvn clean test                                              # con Java 21 y Maven
-docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test   # sin instalar nada
+cd cine-backend && mvn clean test
+docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test   # sin Java ni Maven
 ```
-
-El `clean` importa: sin él Maven corre clases viejas de `target/`.

@@ -20,10 +20,8 @@ cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
 cd ../manual && python3 build.py               # inyecta los SVG en el HTML
 ```
 
-`index.html` **no se edita a mano**: se genera desde `manual/template.html`, que tiene los placeholders
-`{{SVG_CASOS_USO}}`, `{{SVG_DOMINIO}}`, `{{SVG_CAPAS}}`, `{{SVG_SECUENCIA}}`, `{{SVG_SECUENCIA_CANDY}}` y
-`{{SVG_DOCKER}}`. Para cambiar texto o diseño del manual, editar el template y volver a correr `build.py`.
-Si agregás un diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
+`index.html` **no se edita a mano**: se edita `manual/template.html` y se corre `build.py`, que
+reemplaza sus placeholders `{{SVG_*}}`. Un diagrama nuevo suma su placeholder al `svg_map` de `build.py`.
 
 ## Diagramas
 

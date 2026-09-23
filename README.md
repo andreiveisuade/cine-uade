@@ -3,7 +3,7 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 19 reglas de negocio sobre MySQL, con 416 tests.
+25 casos de uso y 19 reglas de negocio sobre MySQL, con 419 tests.
 
 ## Stack
 
@@ -47,6 +47,8 @@ pasa cuando el servidor rechaza una venta— está en
 | [`cine-frontend/API.md`](cine-frontend/API.md) | El contrato HTTP, endpoint por endpoint |
 | [`_other/demo/cine-uade.postman_collection.json`](_other/demo/cine-uade.postman_collection.json) | La demo de la Etapa 1: GET, POST, PUT y DELETE, con casos exitosos y de error. Se importa en Postman, Bruno o Insomnia |
 | `localhost:8080/swagger-ui.html` | El mismo contrato, probable desde el navegador (con el sistema levantado) |
+
+Panel en `localhost:8080/admin.html`: `encargado@cine.uade.ar` / `cine2026` (demo).
 
 ## Tareas
 
