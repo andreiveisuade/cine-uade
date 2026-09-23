@@ -69,7 +69,10 @@ public class GestorCandy {
         List<ItemCompra> items = new ArrayList<>();
         for (Map.Entry<Integer, Integer> pedido : cantidades.entrySet()) {
             Producto producto = productos.buscarOFallar(pedido.getKey());
-            int cantidad = pedido.getValue();
+            Integer cantidad = pedido.getValue();
+            if (cantidad == null) {
+                throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
+            }
             if (cantidad <= 0) {
                 throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
                         + " debe ser mayor a cero");

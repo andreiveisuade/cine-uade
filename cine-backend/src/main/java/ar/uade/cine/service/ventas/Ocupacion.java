@@ -94,7 +94,7 @@ public class Ocupacion {
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
 
         List<Asiento> pedidos = codigos == null ? List.of() : codigos.stream()
-                .map(codigo -> Asiento.conCodigo(deLaSala, codigo)
+                .map(codigo -> Asiento.conCodigo(deLaSala, exigirCodigo(codigo))
                         .orElseThrow(() -> new IllegalArgumentException(
                                 "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala")))
                 .toList();
@@ -117,6 +117,13 @@ public class Ocupacion {
             bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
         }
         return new Bloqueo(conseguidas, rechazadas);
+    }
+
+    static String exigirCodigo(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new IllegalArgumentException("Falta el código de una butaca");
+        }
+        return codigo;
     }
 
     public void liberar(int funcionId, String sesion) {

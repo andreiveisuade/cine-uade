@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,14 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import ar.uade.cine.dto.comun.ErrorVistaDTO;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
@@ -73,13 +78,26 @@ public class ManejadorErrores {
         return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    // En la ruta es un recurso que no existe (404); en la query, un dato mal escrito (400).
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e) {
-        return responder(HttpStatus.NOT_FOUND, "El identificador " + e.getValue() + " no es válido");
+        if (e.getParameter().hasParameterAnnotation(PathVariable.class)) {
+            return responder(HttpStatus.NOT_FOUND, "El identificador " + e.getValue() + " no es válido");
+        }
+        return responder(HttpStatus.BAD_REQUEST, "El parámetro " + e.getName() + " no es válido: " + e.getValue());
     }
 
+    // Un JSON bien formado con un tipo equivocado ("precio": "abc") no es "JSON inválido": el
+    // mensaje nombra el campo, que es lo que el usuario puede corregir.
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorVistaDTO> cuerpoIlegible(HttpMessageNotReadableException e) {
+        if (e.getCause() instanceof MismatchedInputException tipo && !tipo.getPath().isEmpty()) {
+            String campo = tipo.getPath().stream()
+                    .map(r -> r.getFieldName() != null ? r.getFieldName() : String.valueOf(r.getIndex()))
+                    .collect(Collectors.joining("."));
+            String valor = tipo instanceof InvalidFormatException formato ? ": " + formato.getValue() : "";
+            return responder(HttpStatus.BAD_REQUEST, "El campo " + campo + " tiene un valor inválido" + valor);
+        }
         return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido no es un JSON válido");
     }
 

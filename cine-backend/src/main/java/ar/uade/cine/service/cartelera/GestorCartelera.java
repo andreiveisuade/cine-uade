@@ -21,6 +21,10 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 @Transactional
 public class GestorCartelera {
 
+    // La primera proyección pública, y un margen para las que se anuncian con años de anticipación.
+    private static final int PRIMER_ANIO = 1895;
+    private static final int ANIOS_POR_DELANTE = 5;
+
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
@@ -94,6 +98,14 @@ public class GestorCartelera {
         }
     }
 
+    // 0 es "sin dato", como lo deja el importador cuando TMDB no trae fecha de estreno.
+    private void validarAnio(int anio) {
+        int maximo = reloj.hoy().getYear() + ANIOS_POR_DELANTE;
+        if (anio != 0 && (anio < PRIMER_ANIO || anio > maximo)) {
+            throw new IllegalArgumentException("El año tiene que estar entre " + PRIMER_ANIO + " y " + maximo);
+        }
+    }
+
     private void aplicarCatalogo(Pelicula pelicula, DatosPelicula datos) {
         if (datos.puntaje() != null) {
             if (datos.puntaje() < 0 || datos.puntaje() > 10) {
@@ -114,6 +126,7 @@ public class GestorCartelera {
             pelicula.setSinopsis(datos.sinopsis());
         }
         if (datos.anio() != null) {
+            validarAnio(datos.anio());
             pelicula.setAnio(datos.anio());
         }
         if (datos.idiomaOriginal() != null) {

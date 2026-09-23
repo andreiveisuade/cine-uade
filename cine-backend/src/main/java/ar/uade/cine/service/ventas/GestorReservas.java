@@ -109,7 +109,7 @@ public class GestorReservas {
 
     private static Asiento butacaVendible(List<Asiento> deLaSala, String codigo, Set<Integer> ocupados) {
         // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
-        Asiento asiento = Asiento.conCodigo(deLaSala, codigo)
+        Asiento asiento = Asiento.conCodigo(deLaSala, Ocupacion.exigirCodigo(codigo))
                 .orElseThrow(() -> new IllegalArgumentException(
                         "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala"));
         if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {

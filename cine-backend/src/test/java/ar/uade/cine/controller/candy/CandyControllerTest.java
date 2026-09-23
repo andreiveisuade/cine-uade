@@ -94,4 +94,13 @@ class CandyControllerTest extends PruebaDeApi {
         }
         return false;
     }
+
+    @Test
+    void unaVentaConUnaCantidadEnNullEs400YNo500() {
+        Respuesta respuesta = post("/api/candy/compras",
+                "{\"cantidades\":{\"" + pochoclos + "\":null},\"medio\":\"EFECTIVO\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta la cantidad de Pochoclos grandes", respuesta.error());
+    }
 }

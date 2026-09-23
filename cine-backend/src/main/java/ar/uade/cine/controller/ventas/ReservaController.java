@@ -108,7 +108,7 @@ public class ReservaController {
     // Por código y no por id: el código es la única credencial del cliente y el id se adivina.
     @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")
     @PostMapping("/api/acceso")
-    public ReservaVistaDTO registrarIngreso(@RequestBody PedidoAccesoDTO pedido) {
+    public ReservaVistaDTO registrarIngreso(@Valid @RequestBody PedidoAccesoDTO pedido) {
         return vistas.reserva(acceso.registrarIngreso(pedido.codigo()));
     }
 

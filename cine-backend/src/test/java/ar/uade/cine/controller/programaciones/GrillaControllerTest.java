@@ -59,6 +59,15 @@ class GrillaControllerTest extends PruebaDeApi {
         assertEquals("Falta el precio de las funciones", respuesta.json().get("error").asText());
     }
 
+    // La propuesta se arma en memoria pase por pase: un pedido de años no puede llegar al planificador.
+    @Test
+    void unaGrillaDeMasDeUnMesEs400() {
+        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000,\"dias\":32}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La grilla no puede cubrir más de 31 días", respuesta.json().get("error").asText());
+    }
+
     @Test
     void conPrecioEnCeroElMensajeEsElDelPlanificador() {
         Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":0}");

@@ -14,7 +14,7 @@ operación. Probable en <http://localhost:8080/swagger-ui.html>.
 | Precios | Número, con los multiplicadores ya aplicados |
 | Altas | `201` con `Location` al recurso creado (`/api/salas/7`), mismo cuerpo. Sin `Location`: checkout, grilla automática, importación y venta de candy, que no tienen `GET` por id. El cliente apunta a `/api/clientes?email=…` y el pago a `/api/reservas/{id}/pago` |
 | Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido |
-| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente, también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, o nombre/email/título ya usado (película, sala, cliente, producto, promoción) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
+| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta; un tipo equivocado en el cuerpo nombra el campo: `El campo precio tiene un valor inválido: abc`; un parámetro de la query mal escrito también es `400`) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente (un id no numérico en la ruta también), también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, o nombre/email/título ya usado (película, sala, cliente, producto, promoción) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
 
 ### Quién puede llamar a qué
 
@@ -94,7 +94,7 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
 ```
 
 - Va la **selección entera** (toma, renueva y suelta; `[]` suelta todo). Idempotente. Renovar antes de `vencenEnSegundos`.
-- Perder una butaca es `200` con `rechazadas`, no `409`. Butaca inexistente: `400`.
+- Perder una butaca es `200` con `rechazadas`, no `409`. Butaca inexistente o sin código: `400`.
 - `sesion` = `crypto.randomUUID()` en `sessionStorage`; no es credencial.
 - `sesion` de hasta 64 caracteres (`400` si es más larga).
 
@@ -162,10 +162,10 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 |---|---|
 | `GET /api/peliculas` | Todas, incluso fuera de cartelera |
 | `GET /api/peliculas/pendientes` | El buzón. Va antes que `/{id}` en las rutas |
-| `POST /api/peliculas` | R1 título único (`409`), R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
+| `POST /api/peliculas` | R1 título único (`409`), R2 duración > 0, R7 un género, R10 clasificación. `puntaje` de 0 a 10, `votos` no negativos, `anio` entre 1895 y cinco años por delante (`0` = sin dato). Nace `CONFIRMADA` |
 | `POST /api/peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /api/peliculas/{id}/descarte` | `DESCARTADA`. `400` si tiene funciones |
-| `PUT /api/peliculas/{id}` | Parcial: nada obligatorio, lo que no viaja queda igual. Título único contra las otras (`409`) |
+| `PUT /api/peliculas/{id}` | Parcial: nada obligatorio, lo que no viaja queda igual; lo que viaja se valida como en el alta (título en blanco, duración ≤ 0, puntaje o año fuera de rango: `400`). Título único contra las otras (`409`) |
 | `DELETE /api/peliculas/{id}` | `400` si tiene funciones o una grilla que la programe |
 | `GET /api/salas` · `GET /api/salas/{id}` | El detalle trae `asientos` |
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional, 15 por defecto, no negativa |
@@ -270,7 +270,7 @@ obligatorio; default: una semana desde hoy, 14 a 24, ocho títulos.
 ```
 
 `cierre: "00:00"` = fin del día. `minutosDisponibles` descuenta lo ya programado. Solo películas
-confirmadas (ninguna: `400`); no pisa funciones existentes.
+confirmadas (ninguna: `400`); no pisa funciones existentes. `dias` de 1 a 31 (`400` fuera de rango).
 
 ## Promociones (CU-17)
 
@@ -318,12 +318,12 @@ confirmadas (ninguna: `400`); no pisa funciones existentes.
     "items": [], "total": 12000, "ahorro": 1500 }
 ```
 
-Sin `reservaId` es venta de mostrador. `ahorro`: descuento del combo.
+Sin `reservaId` es venta de mostrador. `ahorro`: descuento del combo. Cada cantidad tiene que venir y ser mayor a cero (`400`).
 
 ## Control de acceso (CU-18)
 
 `POST /api/acceso` `{ "codigo": "K7M2P9XQ" }` → la reserva con butacas y tarifas. Marca la
-entrada usada: repetido o impago da `400` (R18), inexistente `404`. 8 caracteres sin `O`, `I`, `0`, `1`.
+entrada usada: repetido o impago da `400` (R18), sin `codigo` o en blanco `400`, inexistente `404`. 8 caracteres sin `O`, `I`, `0`, `1`.
 
 ## Importador
 

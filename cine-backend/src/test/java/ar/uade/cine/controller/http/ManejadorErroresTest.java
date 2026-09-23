@@ -95,4 +95,63 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(404, respuesta.estado());
     }
+
+    // Un JSON bien formado con un tipo equivocado no es "JSON inválido": el mensaje nombra el campo.
+    @Test
+    void unTipoEquivocadoEnElCuerpoEs400YNombraElCampo() {
+        Respuesta precio = post("/api/candy/productos", "{\"nombre\":\"Agua\",\"tipo\":\"BEBIDA\",\"precio\":\"abc\"}");
+        Respuesta tarifa = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
+                + "\"butacas\":{\"A1\":\"VIP\"}}");
+
+        assertEquals(400, precio.estado());
+        assertEquals("El campo precio tiene un valor inválido: abc", precio.error());
+        assertEquals(400, tarifa.estado());
+        assertEquals("El campo butacas.A1 tiene un valor inválido: VIP", tarifa.error());
+    }
+
+    @Test
+    void unParametroDeLaQueryMalEscritoEs400YUnIdentificadorDeLaRutaEs404() {
+        Respuesta query = get("/api/candy/productos?todos=quizas");
+        Respuesta ruta = get("/api/funciones/abc");
+
+        assertEquals(400, query.estado());
+        assertEquals("El parámetro todos no es válido: quizas", query.error());
+        assertEquals(404, ruta.estado());
+    }
+
+    @Test
+    void unaFechaMalFormadaEnLaQueryEs400ConElNombreDelDato() {
+        assertEquals("la fecha tiene que ser una fecha válida", get("/api/arqueo?fecha=ayer").error());
+        assertEquals("el día tiene que ser una fecha válida", get("/api/reservas?dia=13-08-2026").error());
+        assertEquals("la fecha de inicio tiene que ser una fecha válida", get("/api/funciones?desde=x").error());
+        assertEquals(400, get("/api/candy/arqueo?fecha=2026-13-45").estado());
+    }
+
+    // Sin @Valid a propósito, porque es parcial: lo que no viaja queda igual, pero lo que viaja se valida.
+    @Test
+    void laEdicionParcialDePeliculaRechazaLoQueVieneMal() {
+        int id = post("/api/peliculas", "{\"titulo\":\"Dune\",\"duracionMinutos\":155,"
+                + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}").json().get("id").asInt();
+        String ruta = "/api/peliculas/" + id;
+
+        assertEquals("El título no puede estar vacío", put(ruta, "{\"titulo\":\"  \"}").error());
+        assertEquals("La duración debe ser mayor a cero", put(ruta, "{\"duracionMinutos\":0}").error());
+        assertEquals("El puntaje va de 0 a 10", put(ruta, "{\"puntaje\":11}").error());
+        assertEquals("Los votos no pueden ser negativos", put(ruta, "{\"votos\":-1}").error());
+        assertEquals("El año tiene que estar entre 1895 y 2031", put(ruta, "{\"anio\":-3}").error());
+        assertEquals(400, put(ruta, "{\"generos\":[]}").estado());
+        assertEquals("Dune", get(ruta).json().get("titulo").asText(), "nada de lo rechazado se guardó");
+        assertEquals(155, get(ruta).json().get("duracionMinutos").asInt());
+    }
+
+    @Test
+    void validarUnaEntradaSinCodigoEs400YNo404() {
+        Respuesta sinCampo = post("/api/acceso", "{}");
+        Respuesta enBlanco = post("/api/acceso", "{\"codigo\":\"  \"}");
+
+        assertEquals(400, sinCampo.estado());
+        assertEquals("Falta el código de acceso", sinCampo.error());
+        assertEquals(400, enBlanco.estado());
+        assertEquals("Falta el código de acceso", enBlanco.error());
+    }
 }

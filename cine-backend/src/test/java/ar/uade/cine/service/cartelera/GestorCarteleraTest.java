@@ -60,7 +60,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programar(peliculaId, reloj.ahora().minusDays(1));
     }
 
-    // Por el repositorio: el gestor no deja programar en el pasado ni sin confirmar.
+    // Por el repositorio: el gestor no deja programar una película sin confirmar.
     private void programar(int peliculaId, LocalDateTime inicio) {
         if (sala == null) {
             sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
@@ -104,6 +104,24 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(18, pelicula.getClasificacion().getEdadMinima());
         assertEquals("+18", pelicula.getClasificacion().getEtiqueta());
         assertEquals("ATP", Clasificacion.ATP.getEtiqueta());
+    }
+
+    @Test
+    void elAnioVaDelCineAUnosAniosPorDelanteYCeroEsSinDato() {
+        DatosPelicula base = DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        Pelicula dune = gestor.agregar(base);
+
+        IllegalArgumentException negativo = assertThrows(IllegalArgumentException.class,
+                () -> gestor.editar(dune.getId(), conAnio(-3)));
+        assertEquals("El año tiene que estar entre 1895 y 2031", negativo.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
+        assertDoesNotThrow(() -> gestor.editar(dune.getId(), conAnio(0)));
+        assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getAnio());
+    }
+
+    private static DatosPelicula conAnio(int anio) {
+        return new DatosPelicula(null, null, null, null, null, null, anio, null, null, null, null, null);
     }
 
     @Test

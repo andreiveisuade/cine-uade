@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +115,17 @@ class OcupacionTest extends PruebaDeIntegracion {
         reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
+    }
+
+    @Test
+    void unaButacaSinCodigoFallaDiciendoQueFaltaYNoConUnCodigoVacio() {
+        IllegalArgumentException alBloquear = assertThrows(IllegalArgumentException.class,
+                () -> ocupacion.bloquear(1, Arrays.asList("A1", null), ANA));
+        IllegalArgumentException alReservar = assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, 1, generales(" "), null));
+
+        assertEquals("Falta el código de una butaca", alBloquear.getMessage());
+        assertEquals("Falta el código de una butaca", alReservar.getMessage());
     }
 
     @Test

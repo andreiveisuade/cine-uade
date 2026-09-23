@@ -26,7 +26,10 @@ public class GestorAcceso {
     }
 
     public Reserva registrarIngreso(String codigo) {
-        Reserva reserva = reservaRepository.findByCodigo(codigo == null ? "" : codigo.trim().toUpperCase())
+        if (codigo == null || codigo.isBlank()) {
+            throw new IllegalArgumentException("Falta el código de acceso");
+        }
+        Reserva reserva = reservaRepository.findByCodigo(codigo.trim().toUpperCase())
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
         reservaRepository.save(reserva);

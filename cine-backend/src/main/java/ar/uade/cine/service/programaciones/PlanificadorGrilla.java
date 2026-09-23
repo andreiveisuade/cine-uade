@@ -42,6 +42,9 @@ public class PlanificadorGrilla {
 
     private static final int MINUTOS_ENTRE_INTENTOS = 30;
 
+    // La propuesta se arma entera en memoria, pase por pase: sin tope, un pedido de años la tumba.
+    public static final int MAXIMO_DIAS = 31;
+
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
@@ -235,6 +238,9 @@ public class PlanificadorGrilla {
         }
         if (criterios.dias() <= 0) {
             throw new IllegalArgumentException("La grilla tiene que cubrir al menos un día");
+        }
+        if (criterios.dias() > MAXIMO_DIAS) {
+            throw new IllegalArgumentException("La grilla no puede cubrir más de " + MAXIMO_DIAS + " días");
         }
         if (criterios.cuantasPeliculas() <= 0) {
             throw new IllegalArgumentException("Hay que programar al menos una película");
