@@ -84,10 +84,6 @@ public class Funcion {
         return sala.getId();
     }
 
-    public Integer getProgramacionId() {
-        return programacionId;
-    }
-
     public LocalDateTime getInicio() {
         return inicio;
     }

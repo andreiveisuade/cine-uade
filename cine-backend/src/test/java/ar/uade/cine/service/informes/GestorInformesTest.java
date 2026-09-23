@@ -93,8 +93,8 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void elBorderoNoCuentaLasReservasSinPagar() {
-        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL));
+        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL), null);
         pagos.cobrar(cobrada.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -105,8 +105,8 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void elBorderoNoCuentaLasEntradasDeOtraFuncion() {
-        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        Reserva otraFuncion = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        Reserva otraFuncion = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(otraFuncion.getId(), MedioPago.EFECTIVO, "");
 
@@ -120,7 +120,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.GENERAL);
         pedido.put("A3", TipoTarifa.JUBILADO);
-        Reserva reserva = reservas.reservar(1, 1, pedido);
+        Reserva reserva = reservas.reservar(1, 1, pedido, null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -138,7 +138,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -167,7 +167,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void elInformeSumaLasEntradasYElCandyDeLaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         candy.venderParaReserva(reserva.getId(), Map.of(pochoclos.getId(), 2),
                 MedioPago.EFECTIVO, "");
@@ -184,7 +184,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void elCandyDeMostradorNoEntraEnElInformeDeNingunaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         candy.vender(null, Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, "");
 
@@ -200,7 +200,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void elCandyDeOtraFuncionNoEntraEnEsteInforme() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(deLaOtra.getId(), MedioPago.EFECTIVO, "");
         candy.venderParaReserva(deLaOtra.getId(), Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
@@ -211,7 +211,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void unaFuncionSinCandyRecaudaLoMismoQueSuBordero() {
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         InformeFuncion informe = informes.informeDe(1);
@@ -243,9 +243,9 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void laDeclaracionSoloTraeLasFuncionesDelPeriodoConEntradasCobradas() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 27, 20, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
-        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
-        Reserva fueraDelPeriodo = reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        Reserva fueraDelPeriodo = reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(cobrada.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(fueraDelPeriodo.getId(), MedioPago.EFECTIVO, "");
 
@@ -265,7 +265,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.JUBILADO);
-        Reserva reserva = reservas.reservar(1, 1, pedido);
+        Reserva reserva = reservas.reservar(1, 1, pedido, null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         DeclaracionJurada.FilaFuncion fila = informes.declaracionJurada(
@@ -285,9 +285,9 @@ class GestorInformesTest extends PruebaDeIntegracion {
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.MENOR);
-        pagos.cobrar(reservas.reservar(1, 1, pedido).getId(), MedioPago.EFECTIVO, "");
-        pagos.cobrar(reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL)).getId(), MedioPago.EFECTIVO, "");
-        pagos.cobrar(reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL)).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(1, 1, pedido, null).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL), null).getId(), MedioPago.EFECTIVO, "");
 
         DeclaracionJurada declaracion = informes.declaracionJurada(
                 LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));

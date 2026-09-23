@@ -26,7 +26,6 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -116,10 +115,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     void losDatosDeCatalogoSeCarganDespuesDelAlta() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        pelicula.setDirector("Denis Villeneuve");
-        pelicula.setAnio(2021);
-        pelicula.setIdiomaOriginal("Inglés");
-        gestor.actualizar(pelicula);
+        gestor.editar(pelicula.getId(), new DatosPelicula(null, null, null, null, "Denis Villeneuve",
+                null, 2021, "Inglés", null, null, null, null));
 
         Pelicula leida = gestor.buscar(pelicula.getId()).orElseThrow();
         assertEquals("Denis Villeneuve", leida.getDirector());
@@ -133,12 +130,11 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarProxima(vieja.getId());
         programarProxima(actual.getId());
 
-        vieja.setEnCartelera(false);
-        gestor.actualizar(vieja);
+        sacarDeCartelera(vieja);
 
         assertEquals(2, gestor.listar().size());
-        assertEquals(1, gestor.listarEnCartelera().size());
-        assertEquals("Dune", gestor.listarEnCartelera().get(0).getTitulo());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
+        assertEquals("Dune", gestor.listarEnCartelera(null).get(0).getTitulo());
     }
 
     @Test
@@ -146,7 +142,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
         assertTrue(pelicula.estaEnCartelera(), "el flag arranca en true");
-        assertEquals(0, gestor.listarEnCartelera().size(), "pero sin funciones no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null).size(), "pero sin funciones no está en cartelera");
     }
 
     @Test
@@ -154,7 +150,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera().size());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
     }
 
     @Test
@@ -163,7 +159,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarPasada(pelicula.getId());
 
         assertTrue(pelicula.estaEnCartelera(), "nadie tocó el flag");
-        assertEquals(0, gestor.listarEnCartelera().size(), "y aun así ya no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null).size(), "y aun así ya no está en cartelera");
     }
 
     @Test
@@ -172,7 +168,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarPasada(pelicula.getId());
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera().size());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
     }
 
     @Test
@@ -180,16 +176,15 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        dune.actualizar("Matrix", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        assertThrows(IllegalArgumentException.class, () -> gestor.actualizar(dune));
+        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
     @Test
     void editarSinCambiarElTituloNoChocaConsigoMisma() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        dune.setDirector("Denis Villeneuve");
-
-        assertDoesNotThrow(() -> gestor.actualizar(dune));
+        assertDoesNotThrow(() -> gestor.editar(dune.getId(),
+                new DatosPelicula("Dune", null, null, null, "Denis Villeneuve", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -220,7 +215,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Wachowski", leida.getDirector());
         assertEquals(1999, leida.getAnio());
         assertFalse(leida.estaEnCartelera());
-        assertTrue(gestor.listarEnCartelera().isEmpty());
+        assertTrue(gestor.listarEnCartelera(null).isEmpty());
     }
 
     @Test
@@ -290,8 +285,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(3, gestor.buscar(null, null, true).size(), "el alta las publica");
 
         Pelicula resplandor = gestor.buscar(3).orElseThrow();
-        resplandor.setEnCartelera(false);
-        gestor.actualizar(resplandor);
+        sacarDeCartelera(resplandor);
 
         assertEquals(2, gestor.buscar(null, null, true).size());
         assertEquals(1, gestor.buscar(null, null, false).size());
@@ -413,5 +407,10 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
         assertTrue(funcionRepository.findByPelicula_Id(pelicula.getId()).isEmpty());
         assertEquals(1, gestor.listar().size());
+    }
+
+    private void sacarDeCartelera(Pelicula pelicula) {
+        gestor.editar(pelicula.getId(), new DatosPelicula(null, null, null, null, null, null, null, null,
+                null, false, null, null));
     }
 }

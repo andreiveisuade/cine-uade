@@ -107,7 +107,7 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
   "butacas": { "C5": "GENERAL", "C6": "JUBILADO" } }
 ```
 
-- `butacas`: código → tarifa (`GENERAL`, `MENOR`, `JUBILADO`, `ESTUDIANTE`). Formato viejo `"codigos": [...]` = todas `GENERAL`.
+- `butacas`: código → tarifa (`GENERAL`, `MENOR`, `JUBILADO`, `ESTUDIANTE`). Una tarifa en `null` es `GENERAL`.
 - `sesion`: la de los bloqueos (sin ella tu bloqueo la rechaza; opcional en boletería). Al confirmar los suelta.
 - R4, R9; alta del cliente si el email es nuevo; `409` si otra compra ganó la butaca. Devuelve `codigo` (QR) y `entradas[].tarifa`.
 
@@ -163,7 +163,6 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 | `GET /api/peliculas` | Todas, incluso fuera de cartelera |
 | `GET /api/peliculas/pendientes` | El buzón. Va antes que `/{id}` en las rutas |
 | `POST /api/peliculas` | R1 título único (`409`), R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
-| `POST /api/peliculas/importadas` | Igual, pero `PENDIENTE` y fuera de cartelera |
 | `POST /api/peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /api/peliculas/{id}/descarte` | `DESCARTADA`. `400` si tiene funciones |
 | `PUT /api/peliculas/{id}` | Parcial: nada obligatorio, lo que no viaja queda igual. Título único contra las otras (`409`) |

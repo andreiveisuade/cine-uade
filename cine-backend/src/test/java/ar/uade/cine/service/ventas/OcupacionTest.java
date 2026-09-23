@@ -80,7 +80,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     void laButacaQueAlguienEstaEligiendoDejaDeAparecerLibre() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(9, ocupacion.lugaresLibres(1));
+        assertEquals(9, asientosLibres(1, null).size());
         assertFalse(codigosLibres(null).contains("A1"));
     }
 
@@ -89,7 +89,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
         assertTrue(codigosLibres(ANA).contains("A1"), "las suyas no le están ocupadas a ella");
-        assertEquals(10, ocupacion.lugaresLibres(1, ANA));
+        assertEquals(10, asientosLibres(1, ANA).size());
         assertFalse(codigosLibres(BETO).contains("A1"), "pero al de al lado sí");
     }
 
@@ -108,7 +108,7 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void noSeBloqueaUnaButacaYaVendida() {
-        reservas.reservar(1, 1, generales("A1"));
+        reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA));
     }
@@ -272,7 +272,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     }
 
     private List<String> codigosLibres(String sesion) {
-        return ocupacion.asientosLibres(1, sesion).stream().map(Asiento::getCodigo).toList();
+        return asientosLibres(1, sesion).stream().map(Asiento::getCodigo).toList();
     }
 
     private static Map<String, TipoTarifa> generales(String... codigos) {
@@ -281,5 +281,11 @@ class OcupacionTest extends PruebaDeIntegracion {
             butacas.put(codigo, TipoTarifa.GENERAL);
         }
         return butacas;
+    }
+
+    // Lo que ve el mapa de butacas (VistasCartelera#funcionConButacas): las de la sala menos las ocupadas.
+    private List<Asiento> asientosLibres(int funcionId, String sesion) {
+        int salaId = funciones.buscar(funcionId).orElseThrow().getSalaId();
+        return Ocupacion.libresEntre(salas.asientosDe(salaId), ocupacion.asientosOcupados(funcionId, sesion));
     }
 }

@@ -96,22 +96,22 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void reservarOcupaSoloLasButacasElegidas() {
-        reservas.reservar(1, 1, generales("A1", "A2"));
+        reservas.reservar(1, 1, generales("A1", "A2"), null);
 
-        assertEquals(8, ocupacion.lugaresLibres(1));
-        assertTrue(ocupacion.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A1")));
-        assertTrue(ocupacion.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A3")));
+        assertEquals(8, asientosLibres(1, null).size());
+        assertTrue(asientosLibres(1, null).stream().noneMatch(a -> a.getCodigo().equals("A1")));
+        assertTrue(asientosLibres(1, null).stream().anyMatch(a -> a.getCodigo().equals("A3")));
     }
 
     @Test
     void rechazaButacaYaOcupada() {
-        reservas.reservar(1, 1, generales("B3"));
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("B3")));
+        reservas.reservar(1, 1, generales("B3"), null);
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("B3"), null));
     }
 
     @Test
     void rechazaButacaInexistente() {
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("Z9")));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("Z9"), null));
     }
 
     @Test
@@ -131,7 +131,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void laMismaButacaDosVecesEsUnaSolaEntrada() {
-        assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1")).getCantidadEntradas());
+        assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1"), null).getCantidadEntradas());
     }
 
     @Test
@@ -140,7 +140,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         butacas.put("A1", TipoTarifa.GENERAL);
         butacas.put("A2", TipoTarifa.JUBILADO);
 
-        Reserva reserva = reservas.reservar(1, 1, butacas);
+        Reserva reserva = reservas.reservar(1, 1, butacas, null);
         Dinero general = precioDe(reserva, "A1");
         Dinero jubilado = precioDe(reserva, "A2");
 
@@ -154,7 +154,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         butacas.put("A1", TipoTarifa.MENOR);
         butacas.put("A2", TipoTarifa.ESTUDIANTE);
 
-        Reserva reserva = reservas.reservar(1, 1, butacas);
+        Reserva reserva = reservas.reservar(1, 1, butacas, null);
 
         assertEquals(TipoTarifa.MENOR, tarifaDe(reserva, "A1"));
         assertEquals(TipoTarifa.ESTUDIANTE, tarifaDe(reserva, "A2"));
@@ -170,25 +170,25 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void cancelarLiberaLasButacas() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"), null);
         reservas.cancelar(reserva.getId());
 
-        assertEquals(10, ocupacion.lugaresLibres(1));
-        assertTrue(ocupacion.asientosLibres(1).stream().anyMatch(a -> a.getCodigo().equals("A1")));
+        assertEquals(10, asientosLibres(1, null).size());
+        assertTrue(asientosLibres(1, null).stream().anyMatch(a -> a.getCodigo().equals("A1")));
     }
 
     @Test
     void noSePuedeCancelarUnaReservaYaCobrada() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
-        assertEquals(9, ocupacion.lugaresLibres(1), "la butaca cobrada sigue ocupada");
+        assertEquals(9, asientosLibres(1, null).size(), "la butaca cobrada sigue ocupada");
     }
 
     @Test
     void noSeCancelaDosVecesLaMismaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
         assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
@@ -198,9 +198,9 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void unaButacaFueraDeServicioNoSePuedeReservar() {
         salas.marcarFueraDeServicio(1, "A3");
 
-        assertEquals(9, ocupacion.lugaresLibres(1));
-        assertTrue(ocupacion.asientosLibres(1).stream().noneMatch(a -> a.getCodigo().equals("A3")));
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("A3")));
+        assertEquals(9, asientosLibres(1, null).size());
+        assertTrue(asientosLibres(1, null).stream().noneMatch(a -> a.getCodigo().equals("A3")));
+        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("A3"), null));
     }
 
     @Test
@@ -208,13 +208,13 @@ class GestorReservasTest extends PruebaDeIntegracion {
         salas.marcarFueraDeServicio(1, "A3");
         salas.reponer(1, "A3");
 
-        assertEquals(10, ocupacion.lugaresLibres(1));
-        assertEquals(1, reservas.reservar(1, 1, generales("A3")).getCantidadEntradas());
+        assertEquals(10, asientosLibres(1, null).size());
+        assertEquals(1, reservas.reservar(1, 1, generales("A3"), null).getCantidadEntradas());
     }
 
     @Test
     void emiteElTicketConLasButacas() throws IOException {
-        Reserva reserva = reservas.reservar(1, 1, generales("B4", "B5"));
+        Reserva reserva = reservas.reservar(1, 1, generales("B4", "B5"), null);
 
         Path ticket = TICKETS.resolve("ticket-" + reserva.getId() + ".txt");
         assertTrue(Files.exists(ticket), "no se generó el ticket");
@@ -234,10 +234,10 @@ class GestorReservasTest extends PruebaDeIntegracion {
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000));
 
-        Reserva vip = reservas.reservar(2, 1, generales("A1"));
+        Reserva vip = reservas.reservar(2, 1, generales("A1"), null);
         assertEquals(Dinero.de(12000.0), vip.getTotal());
 
-        Reserva estandar = reservas.reservar(2, 1, generales("A2"));
+        Reserva estandar = reservas.reservar(2, 1, generales("A2"), null);
         assertEquals(Dinero.de(8000.0), estandar.getTotal());
     }
 
@@ -247,7 +247,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 22, 20, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        assertEquals(Dinero.de(12000.0), reservas.reservar(2, 1, generales("A1")).getTotal());
+        assertEquals(Dinero.de(12000.0), reservas.reservar(2, 1, generales("A1"), null).getTotal());
     }
 
     @Test
@@ -256,12 +256,12 @@ class GestorReservasTest extends PruebaDeIntegracion {
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 23, 20, 0),
                 Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5250.50));
 
-        assertEquals(Dinero.de(6825.65), reservas.reservar(2, 1, generales("A1")).getTotal());
+        assertEquals(Dinero.de(6825.65), reservas.reservar(2, 1, generales("A1"), null).getTotal());
     }
 
     @Test
     void guardaCuandoSeHizoLaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(reloj.hoy(), reserva.getCreadaEn().toLocalDate());
     }
@@ -276,7 +276,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void loGuardadoSeReleeConSusButacasYSuFecha() {
-        reservas.reservar(1, 1, generales("A1", "B2"));
+        reservas.reservar(1, 1, generales("A1", "B2"), null);
 
         Reserva leida = reservaRepository.findById(1).orElseThrow();
 
@@ -295,37 +295,37 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unaReservaSinPagarVencidaLiberaSusButacas() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
-        assertEquals(8, ocupacion.lugaresLibres(1));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
+        assertEquals(8, asientosLibres(1, null).size());
 
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertEquals(10, ocupacion.lugaresLibres(1), "las butacas vuelven a la venta");
+        assertEquals(10, asientosLibres(1, null).size(), "las butacas vuelven a la venta");
         assertEquals(EstadoReserva.EXPIRADA, consultas.buscar(reserva.getId()).orElseThrow().getEstado());
     }
 
     @Test
     void laReservaVencidaSeCierraReciénCuandoAlguienConsulta() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
         assertEquals(EstadoReserva.RESERVADA, reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
-        ocupacion.lugaresLibres(1);
+        ocupacion.asientosOcupados(1, null);
         assertEquals(EstadoReserva.EXPIRADA, reservaRepository.findById(reserva.getId()).orElseThrow().getEstado());
     }
 
     @Test
     void unaReservaPagadaNoVence() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertEquals(9, ocupacion.lugaresLibres(1), "la butaca cobrada sigue ocupada");
+        assertEquals(9, asientosLibres(1, null).size(), "la butaca cobrada sigue ocupada");
     }
 
     @Test
     void noSeCobraUnaReservaVencida() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
         assertThrows(IllegalArgumentException.class,
@@ -334,8 +334,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void elCodigoNoEsElIdYNoSeRepite() {
-        Reserva primera = reservas.reservar(1, 1, generales("A1"));
-        Reserva segunda = reservas.reservar(1, 1, generales("A2"));
+        Reserva primera = reservas.reservar(1, 1, generales("A1"), null);
+        Reserva segunda = reservas.reservar(1, 1, generales("A2"), null);
 
         assertNotEquals(primera.getCodigo(), segunda.getCodigo());
         assertNotEquals(String.valueOf(primera.getId()), primera.getCodigo());
@@ -344,7 +344,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         assertThrows(IllegalArgumentException.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
 
@@ -373,14 +373,14 @@ class GestorReservasTest extends PruebaDeIntegracion {
         int empezada = funcionQueYaEmpezo().getId();
 
         assertThrows(IllegalArgumentException.class,
-                () -> reservas.reservar(empezada, 1, generales("A1")));
+                () -> reservas.reservar(empezada, 1, generales("A1"), null));
     }
 
     @Test
     void laMismaButacaSeVendeParaUnaFuncionFutura() {
         funcionQueYaEmpezo();
 
-        assertEquals(1, reservas.reservar(1, 1, generales("A1")).getCantidadEntradas());
+        assertEquals(1, reservas.reservar(1, 1, generales("A1"), null).getCantidadEntradas());
     }
 
     @Test
@@ -402,16 +402,16 @@ class GestorReservasTest extends PruebaDeIntegracion {
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        reservas.reservar(1, 1, generales("A1", "A2"));
-        reservas.reservar(2, 2, generales("B1"));
-        reservas.cancelar(reservas.reservar(1, 1, generales("A3")).getId());
+        reservas.reservar(1, 1, generales("A1", "A2"), null);
+        reservas.reservar(2, 2, generales("B1"), null);
+        reservas.cancelar(reservas.reservar(1, 1, generales("A3"), null).getId());
     }
 
     @Test
     void buscarSinCriteriosDevuelveTodo() {
         cargarReservas();
 
-        assertEquals(3, consultas.buscar(CriteriosReserva.ninguno()).size());
+        assertEquals(3, consultas.buscar(new CriteriosReserva(null, null, null)).size());
         assertEquals(3, consultas.buscar(null).size(), "null no puede romper: es 'sin filtros'");
     }
 
@@ -458,7 +458,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void elTextoBuscaPorCodigoDeReserva() {
         cargarReservas();
-        String codigo = consultas.buscar(CriteriosReserva.ninguno()).get(0).getCodigo();
+        String codigo = consultas.buscar(new CriteriosReserva(null, null, null)).get(0).getCodigo();
 
         assertEquals(1, buscarTexto(codigo).size());
         assertEquals(1, buscarTexto(codigo.toLowerCase()).size());
@@ -514,5 +514,11 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 .filter(e -> e.codigoAsiento().equals(codigo))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("La reserva no tiene la butaca " + codigo));
+    }
+
+    // Lo que ve el mapa de butacas (VistasCartelera#funcionConButacas): las de la sala menos las ocupadas.
+    private List<Asiento> asientosLibres(int funcionId, String sesion) {
+        int salaId = funciones.buscar(funcionId).orElseThrow().getSalaId();
+        return Ocupacion.libresEntre(salas.asientosDe(salaId), ocupacion.asientosOcupados(funcionId, sesion));
     }
 }

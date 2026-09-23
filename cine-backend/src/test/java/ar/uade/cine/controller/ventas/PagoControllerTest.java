@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.cartelera.GestorCartelera;
@@ -43,9 +42,6 @@ class PagoControllerTest extends PruebaDeApi {
     private GestorFunciones funciones;
 
     @Autowired
-    private GestorPagos pagos;
-
-    @Autowired
     private GestorReservas reservas;
 
     @Autowired
@@ -63,7 +59,7 @@ class PagoControllerTest extends PruebaDeApi {
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
-                Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL));
+                Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL), null);
     }
 
 
@@ -138,7 +134,7 @@ class PagoControllerTest extends PruebaDeApi {
 
         assertEquals(400, segunda.estado());
         assertEquals("La reserva está PAGADA, no se puede cobrar", segunda.error());
-        assertEquals(1, pagos.listar().size());
+        assertEquals(1, get("/api/arqueo?fecha=" + reloj.hoy()).json().get("pagos").size());
     }
 
     @Test

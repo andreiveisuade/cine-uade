@@ -100,13 +100,6 @@ public class PeliculaController {
         return creada(cartelera.agregar(datosDe(pedido)));
     }
 
-    @Operation(summary = "Alta del importador: entra al buzón, no al catálogo")
-    @PostMapping("/api/peliculas/importadas")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<PeliculaVistaDTO> importar(@Valid @RequestBody PedidoPeliculaDTO pedido) {
-        return creada(revision.importar(datosDe(pedido)));
-    }
-
     @Operation(summary = "Aceptar una película del buzón y publicarla")
     @PostMapping("/api/peliculas/{id}/confirmacion")
     public PeliculaVistaDTO confirmar(@PathVariable int id) {

@@ -58,10 +58,6 @@ public class GestorReservas {
         this.reloj = reloj;
     }
 
-    public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
-        return reservar(funcionId, clienteId, butacas, null);
-    }
-
     // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
                             String sesion) {

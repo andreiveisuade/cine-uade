@@ -74,7 +74,7 @@ class AplicacionTest extends PruebaDeIntegracion {
 
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
-                Map.of("A1", TipoTarifa.GENERAL));
+                Map.of("A1", TipoTarifa.GENERAL), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(5000.0), pago.getMonto());
@@ -91,7 +91,7 @@ class AplicacionTest extends PruebaDeIntegracion {
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
-                Map.of("A1", TipoTarifa.GENERAL));
+                Map.of("A1", TipoTarifa.GENERAL), null);
 
         Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
@@ -111,7 +111,7 @@ class AplicacionTest extends PruebaDeIntegracion {
                 LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
-                Map.of("A1", TipoTarifa.GENERAL));
+                Map.of("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));

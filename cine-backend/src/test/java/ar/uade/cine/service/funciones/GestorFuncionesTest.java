@@ -219,7 +219,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     @Test
     void noSeBorraUnaFuncionConReservas() {
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
-        reservas.reservar(1, 1, generales("A1"));
+        reservas.reservar(1, 1, generales("A1"), null);
 
         assertThrows(IllegalArgumentException.class, () -> funciones.eliminar(1));
         assertEquals(1, funciones.listar().size());

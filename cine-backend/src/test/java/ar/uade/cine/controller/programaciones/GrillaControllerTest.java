@@ -16,7 +16,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
-import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.model.salas.TipoSala;
 
 class GrillaControllerTest extends PruebaDeApi {
@@ -35,10 +35,8 @@ class GrillaControllerTest extends PruebaDeApi {
     @BeforeEach
     void levantarLaApiConUnCine() {
 
-        Pelicula matrix = cartelera
-                .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        matrix.setPuntaje(8.7);
-        cartelera.actualizar(matrix);
+        cartelera.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13,
+                null, null, null, null, null, null, 8.7, null));
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
     }
 

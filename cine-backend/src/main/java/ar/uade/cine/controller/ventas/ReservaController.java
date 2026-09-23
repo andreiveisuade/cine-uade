@@ -1,9 +1,7 @@
 package ar.uade.cine.controller.ventas;
 
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +18,6 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoAccesoDTO;
 import ar.uade.cine.dto.ventas.PedidoBloqueoDTO;
@@ -96,7 +93,7 @@ public class ReservaController {
     public ResponseEntity<ReservaVistaDTO> reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
         Reserva reserva = reservas.reservar(pedido.funcionId(),
                 pedido.nombre(), pedido.email(),
-                butacasPedidas(pedido),
+                pedido.butacas(),
                 pedido.sesion());
         return Creado.en("/api/reservas/" + reserva.getId(), vistas.reserva(reserva));
     }
@@ -139,18 +136,6 @@ public class ReservaController {
 
     private static List<Reserva> ordenadas(List<Reserva> lista) {
         return lista.stream().sorted(Comparator.comparing(Reserva::getId).reversed()).toList();
-    }
-
-    private static Map<String, TipoTarifa> butacasPedidas(PedidoReservaDTO pedido) {
-        if (pedido.butacas() != null && !pedido.butacas().isEmpty()) {
-            return pedido.butacas();
-        }
-        if (pedido.codigos() == null) {
-            return Map.of();
-        }
-        Map<String, TipoTarifa> generales = new LinkedHashMap<>();
-        pedido.codigos().forEach(codigo -> generales.put(codigo, TipoTarifa.GENERAL));
-        return generales;
     }
 
     private Reserva buscarPorCodigo(String codigo) {

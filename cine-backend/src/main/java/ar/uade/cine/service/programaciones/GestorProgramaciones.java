@@ -177,11 +177,6 @@ public class GestorProgramaciones {
     }
 
     @Transactional(readOnly = true)
-    public List<Programacion> listar() {
-        return programacionRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
     public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
         return programacionRepository.buscar(peliculaId, salaId, activa);
     }

@@ -22,8 +22,6 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
 
     boolean existsByFuncion_Id(int funcionId);
 
-    boolean existsByCliente_Id(int clienteId);
-
     // Trae función, película y cliente en la misma consulta: el filtro por texto los lee a todos.
     @Query("""
             select r from Reserva r

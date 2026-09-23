@@ -154,8 +154,4 @@ public class GestorPagos {
         return pagoRepository.findByReservaIdIn(reservaIds);
     }
 
-    @Transactional(readOnly = true)
-    public List<Pago> listar() {
-        return pagoRepository.findAll();
-    }
 }

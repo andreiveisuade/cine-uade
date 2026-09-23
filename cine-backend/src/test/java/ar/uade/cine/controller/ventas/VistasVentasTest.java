@@ -132,7 +132,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         butacas.put("A2", TipoTarifa.JUBILADO);
 
         ReservaVistaDTO vista = vistas.reserva(reservas
-                .reservar(1, cliente.getId(), butacas));
+                .reservar(1, cliente.getId(), butacas, null));
 
         assertEquals("GENERAL", entrada(vista, "A1").tarifa());
         assertEquals("JUBILADO", entrada(vista, "A2").tarifa());
@@ -265,7 +265,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         for (String codigo : codigos) {
             butacas.put(codigo, TipoTarifa.GENERAL);
         }
-        return reservas.reservar(1, cliente.getId(), butacas);
+        return reservas.reservar(1, cliente.getId(), butacas, null);
     }
 
     private static EntradaVistaDTO entrada(ReservaVistaDTO vista, String codigo) {

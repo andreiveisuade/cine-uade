@@ -71,14 +71,6 @@ public class GestorCartelera {
         return actual;
     }
 
-    public void actualizar(Pelicula pelicula) {
-        if (!peliculaRepository.existsById(pelicula.getId())) {
-            throw new RecursoNoEncontrado("No existe la película " + pelicula.getId());
-        }
-        validarTituloLibre(pelicula.getTitulo(), pelicula.getId());
-        peliculaRepository.save(pelicula);
-    }
-
     private void validar(String titulo, int duracionMinutos, List<Genero> generos,
                          Clasificacion clasificacion) {
         if (titulo == null || titulo.isBlank()) {
@@ -136,10 +128,6 @@ public class GestorCartelera {
     }
 
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
-    public List<Pelicula> listarEnCartelera() {
-        return listarEnCartelera(null);
-    }
-
     public List<Pelicula> listarEnCartelera(Genero genero) {
         LocalDateTime ahora = reloj.ahora();
         // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.

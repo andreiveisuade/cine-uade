@@ -2,7 +2,6 @@ package ar.uade.cine.service.programaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,15 +83,17 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         int id = plan.programacion().getId();
 
         assertEquals(7, programaciones.funcionesDe(id).size());
-        assertTrue(funciones.listar().stream().allMatch(f -> f.getProgramacionId() == id));
+        assertEquals(funciones.listar().size(), programaciones.funcionesDe(id).size(),
+                "todas las funciones que generó están colgadas de ella");
     }
 
     @Test
     void laFuncionSueltaNoTieneProgramacion() {
+        int id = crearSemana(Set.of()).programacion().getId();
         Funcion suelta = funciones.programar(1, 1, LocalDateTime.of(2026, 10, 1, 20, 30),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        assertNull(suelta.getProgramacionId());
+        assertTrue(programaciones.funcionesDe(id).stream().noneMatch(f -> f.getId() == suelta.getId()));
     }
 
     @Test
@@ -101,7 +102,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         assertEquals(7, plan.funciones().size());
         assertTrue(funciones.listar().isEmpty(), "previsualizar no puede guardar funciones");
-        assertTrue(programaciones.listar().isEmpty(), "ni la grilla");
+        assertTrue(programaciones.buscar(null, null, null).isEmpty(), "ni la grilla");
         assertEquals(0, plan.programacion().getId(), "la grilla previsualizada no tiene id");
     }
 
@@ -154,7 +155,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(7, repetida.salteadas().size());
         assertTrue(repetida.programables().isEmpty());
         assertEquals(7, funciones.listar().size());
-        assertEquals(2, programaciones.listar().size());
+        assertEquals(2, programaciones.buscar(null, null, null).size());
     }
 
     @Test
@@ -191,7 +192,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
-        assertTrue(programaciones.listar().isEmpty(), "la grilla inválida no se guarda");
+        assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
     }
 
     @Test

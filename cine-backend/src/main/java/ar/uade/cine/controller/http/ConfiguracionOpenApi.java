@@ -35,7 +35,7 @@ public class ConfiguracionOpenApi {
     private static final AntPathMatcher RUTAS = new AntPathMatcher();
 
     private static final Set<String> CON_NOMBRE_UNICO = Set.of(
-            "POST /api/peliculas", "POST /api/peliculas/importadas", "PUT /api/peliculas/{id}",
+            "POST /api/peliculas", "PUT /api/peliculas/{id}",
             "POST /api/salas", "PUT /api/salas/{id}",
             "POST /api/clientes", "POST /api/promociones",
             "POST /api/candy/productos", "POST /api/candy/combos", "PUT /api/candy/productos/{id}");

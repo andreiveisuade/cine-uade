@@ -55,10 +55,6 @@ public class Ocupacion {
         this.reloj = reloj;
     }
 
-    public Set<Integer> asientosOcupados(int funcionId) {
-        return asientosOcupados(funcionId, null);
-    }
-
     public Set<Integer> asientosOcupados(int funcionId, String sesion) {
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
         expirarVencidas(reservas);
@@ -75,27 +71,11 @@ public class Ocupacion {
         return ocupados;
     }
 
-    public List<Asiento> asientosLibres(int funcionId) {
-        return asientosLibres(funcionId, null);
-    }
-
-    public List<Asiento> asientosLibres(int funcionId, String sesion) {
-        return libresEntre(asientosDeLaSala(funcionId), asientosOcupados(funcionId, sesion));
-    }
-
     public static List<Asiento> libresEntre(List<Asiento> asientos, Set<Integer> ocupados) {
         return asientos.stream()
                 .filter(a -> a.getEstado() != EstadoAsiento.FUERA_DE_SERVICIO)
                 .filter(a -> !ocupados.contains(a.getId()))
                 .toList();
-    }
-
-    public int lugaresLibres(int funcionId) {
-        return asientosLibres(funcionId).size();
-    }
-
-    public int lugaresLibres(int funcionId, String sesion) {
-        return asientosLibres(funcionId, sesion).size();
     }
 
     public List<String> bloquear(int funcionId, Collection<String> codigos, String sesion) {

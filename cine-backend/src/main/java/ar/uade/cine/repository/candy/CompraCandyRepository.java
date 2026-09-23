@@ -15,8 +15,6 @@ public interface CompraCandyRepository extends JpaRepository<CompraCandy, Intege
 
     List<CompraCandy> findByClienteId(int clienteId);
 
-    boolean existsByClienteId(int clienteId);
-
     List<CompraCandy> findByReservaIdIn(Collection<Integer> reservaIds);
 
     @Query("select c from CompraCandy c where c.fecha >= :desde and c.fecha < :hasta order by c.fecha")

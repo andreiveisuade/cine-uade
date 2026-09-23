@@ -8,9 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
-import ar.uade.cine.repository.candy.CompraCandyRepository;
-import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
@@ -18,13 +15,9 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 public class GestorClientes {
 
     private final ClienteRepository clienteRepository;
-    private final ReservaRepository reservaRepository;
-    private final CompraCandyRepository compraCandyRepository;
 
-    public GestorClientes(ClienteRepository clienteRepository, ReservaRepository reservaRepository, CompraCandyRepository compraCandyRepository) {
+    public GestorClientes(ClienteRepository clienteRepository) {
         this.clienteRepository = clienteRepository;
-        this.reservaRepository = reservaRepository;
-        this.compraCandyRepository = compraCandyRepository;
     }
 
     public Cliente registrar(String nombre, String email) {
@@ -60,19 +53,5 @@ public class GestorClientes {
     @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
         return clienteRepository.findByEmail(email);
-    }
-
-    public void eliminar(int id) {
-        if (!clienteRepository.existsById(id)) {
-            throw new RecursoNoEncontrado("No existe el cliente " + id);
-        }
-        if (reservaRepository.existsByCliente_Id(id)) {
-            throw new IllegalArgumentException("El cliente " + id + " tiene reservas: no se puede eliminar");
-        }
-        if (compraCandyRepository.existsByClienteId(id)) {
-            throw new IllegalArgumentException(
-                    "El cliente " + id + " tiene compras en el candy: no se puede eliminar");
-        }
-        clienteRepository.deleteById(id);
     }
 }

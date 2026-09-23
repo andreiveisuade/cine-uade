@@ -83,7 +83,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elMontoSaleDeLaReservaYNoDeQuienCobra() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
 
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -93,7 +93,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void cobrarDejaLaReservaPagada() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.DEBITO, "AUT-123");
 
         assertEquals(EstadoReserva.PAGADA,
@@ -102,7 +102,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeCobraDosVecesLaMismaReserva() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class,
@@ -111,7 +111,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeCobraUnaReservaCancelada() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
         assertThrows(IllegalArgumentException.class,
@@ -120,7 +120,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "  "));
@@ -128,7 +128,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elEfectivoNoNecesitaCodigo() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertEquals("", pago.getCodigoAutorizacion());
@@ -136,8 +136,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elArqueoDeBoleteriaSumaLoCobradoEnElDia() {
-        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"));
-        Reserva segunda = reservas.reservar(1, 1, generales("B1"));
+        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"), null);
+        Reserva segunda = reservas.reservar(1, 1, generales("B1"), null);
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
@@ -150,7 +150,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         Promocion promo = promociones.crearNxM("2x1", 2, 1,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
@@ -165,7 +165,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void sinPromocionAplicableElMontoEsElSubtotal() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -180,8 +180,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of(MedioPago.CREDITO)));
 
-        Reserva enEfectivo = reservas.reservar(1, 1, generales("A1"));
-        Reserva conTarjeta = reservas.reservar(1, 1, generales("A2"));
+        Reserva enEfectivo = reservas.reservar(1, 1, generales("A1"), null);
+        Reserva conTarjeta = reservas.reservar(1, 1, generales("A2"), null);
 
         assertEquals(Dinero.de(0), pagos.cobrar(enEfectivo.getId(), MedioPago.EFECTIVO, "").getDescuento());
         assertEquals(Dinero.de(1000), pagos.cobrar(conTarjeta.getId(), MedioPago.CREDITO, "AUT-1").getDescuento());
@@ -192,7 +192,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Dinero arqueo = caja.arqueoDe(reloj.hoy()).total();
@@ -203,8 +203,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elArqueoResumeTotalEntradasYRepartoPorMedio() {
-        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"));
-        Reserva segunda = reservas.reservar(1, 1, generales("B1"));
+        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"), null);
+        Reserva segunda = reservas.reservar(1, 1, generales("B1"), null);
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
 
@@ -233,7 +233,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Arqueo arqueo = caja.arqueoDe(reloj.hoy());
@@ -245,7 +245,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elCobroEnEfectivoImprimeElReciboDeCaja() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Path recibo = TICKETS.resolve("recibo-" + pago.getId() + ".txt");
@@ -256,7 +256,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elCobroElectronicoNoImprimeReciboDeCaja() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUT-123");
 
         assertFalse(Files.exists(TICKETS.resolve("recibo-" + pago.getId() + ".txt")));
@@ -267,7 +267,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         String recibo = leer(TICKETS.resolve("recibo-" + pago.getId() + ".txt"));
@@ -278,7 +278,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elCheckoutViajaConElLinkYElQrDeLaPasarela() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
 
@@ -294,14 +294,14 @@ class GestorPagosTest extends PruebaDeIntegracion {
         promociones.crearPorcentaje("50 off", 50.0,
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(Dinero.de(2500.0), pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).monto());
     }
 
     @Test
     void elEfectivoNoAbreCheckout() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.EFECTIVO));
@@ -309,7 +309,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeAbreCheckoutDeUnaReservaYaPagada() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         assertThrows(IllegalArgumentException.class,
@@ -318,7 +318,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void confirmarElCheckoutCobraConElCodigoQueDevolvioLaPasarela() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
 
         Pago pago = pagos.confirmarCheckout(checkout.id());
@@ -338,7 +338,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"));
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
         pagos.confirmarCheckout(checkout.id());
 

@@ -212,7 +212,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5));
         funciones.programar(1, 1, reloj.ahora().plusDays(1),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        Reserva reserva = reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL), null);
 
         CompraCandy compra = candy.venderParaReserva(reserva.getId(),
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");

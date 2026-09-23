@@ -47,10 +47,13 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     }
 
     private Pelicula cargar(String titulo, double puntaje, int duracion, Genero... generos) {
-        Pelicula pelicula = cartelera.agregar(titulo, duracion, List.of(generos), Clasificacion.ATP);
-        pelicula.setPuntaje(puntaje);
-        cartelera.actualizar(pelicula);
-        return pelicula;
+        return cartelera.agregar(new DatosPelicula(titulo, duracion, List.of(generos), Clasificacion.ATP,
+                null, null, null, null, null, null, puntaje, null));
+    }
+
+    private void votar(Pelicula pelicula, int votos) {
+        cartelera.editar(pelicula.getId(), new DatosPelicula(null, null, null, null,
+                null, null, null, null, null, null, null, votos));
     }
 
     private CriteriosGrilla unDia(int cuantasPeliculas) {
@@ -132,11 +135,9 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     @Test
     void unPuntajeAltoConPocosVotosPierdeSuVentaja() {
         Pelicula respaldada = cargar("Respaldada", 8.0, Genero.DRAMA);
-        respaldada.setVotos(5000);
-        cartelera.actualizar(respaldada);
+        votar(respaldada, 5000);
         Pelicula flojita = cargar("Con seis votos", 9.5, Genero.SUSPENSO);
-        flojita.setVotos(6);
-        cartelera.actualizar(flojita);
+        votar(flojita, 6);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
         PropuestaGrilla propuesta = planificador.proponer(unDia(2));
@@ -154,11 +155,9 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     @Test
     void laQueNadieVotoNoSeHundeAlFondo() {
         Pelicula votada = cargar("Votada", 7.0, Genero.DRAMA);
-        votada.setVotos(3000);
-        cartelera.actualizar(votada);
+        votar(votada, 3000);
         Pelicula mala = cargar("Mala de verdad", 3.0, Genero.TERROR);
-        mala.setVotos(2000);
-        cartelera.actualizar(mala);
+        votar(mala, 2000);
         cargar("Recien estrenada", 0.0, Genero.COMEDIA);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
