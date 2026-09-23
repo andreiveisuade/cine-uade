@@ -225,7 +225,7 @@ olvida y el panel vuelve a `#/login`.
 | `PUT /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` |
 | `GET /api/funciones` | Con `pelicula` y `sala` embebidas |
 | `POST /api/funciones` | R3 superposición, R8 3D en sala que no soporta |
-| `DELETE /api/funciones/{id}` | `400` si tiene reservas activas |
+| `DELETE /api/funciones/{id}` | `400` si tiene reservas, incluso canceladas (R12): la reserva se conserva como historial y quedaría apuntando a una función que no existe |
 
 ## Arqueo e informes
 
