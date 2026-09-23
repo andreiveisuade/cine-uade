@@ -21,6 +21,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Version;
 
 @Entity
 public class Reserva {
@@ -57,6 +58,14 @@ public class Reserva {
     private EstadoReserva estado;
 
     private LocalDateTime ingresadaEn;
+
+    // Cobrar, cancelar y expirar leen la reserva, miran su estado y lo escriben. Sin esto,
+    // cobrar y cancelar a la vez pasaban los dos el chequeo y ganaba el último en escribir:
+    // una reserva CANCELADA con su pago adentro. Con la versión, el segundo UPDATE no
+    // encuentra la fila que leyó y falla, y ManejadorErrores lo contesta como 409.
+    // Solo acá: es la única entidad con transiciones de estado que compiten entre sí.
+    @Version
+    private int version;
 
     protected Reserva() {
     }

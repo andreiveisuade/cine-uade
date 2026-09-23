@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.ventas.Reserva;
 
 class ManejadorErroresTest extends PruebaDeApi {
 
@@ -95,6 +97,15 @@ class ManejadorErroresTest extends PruebaDeApi {
                 + "\"duracionMinutos\":90,\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
 
         assertEquals(201, pelicula.estado());
+    }
+
+    @Test
+    void unaReservaQueCambioMientrasSeProcesabaEs409() {
+        var respuesta = new ManejadorErrores()
+                .conflictoDeVersion(new ObjectOptimisticLockingFailureException(Reserva.class, 1));
+
+        assertEquals(409, respuesta.getStatusCode().value());
+        assertEquals("La reserva cambió mientras se procesaba: volvé a intentarlo", respuesta.getBody().error());
     }
 
     @Test

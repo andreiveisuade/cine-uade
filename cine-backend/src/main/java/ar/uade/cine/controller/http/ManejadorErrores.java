@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -76,6 +77,15 @@ public class ManejadorErrores {
     @ExceptionHandler(ButacaOcupadaException.class)
     public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupadaException e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // Dos operaciones sobre la misma reserva a la vez (cobrar y cancelar): la segunda escribe
+    // sobre una versión vieja. Spring ya traduce la OptimisticLockException de JPA a esta, y
+    // controller/ no puede nombrar jakarta.persistence (ArquitecturaTest). Va antes que el
+    // 500 de DataAccessException porque es su subclase.
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorVistaDTO> conflictoDeVersion(OptimisticLockingFailureException e) {
+        return responder(HttpStatus.CONFLICT, "La reserva cambió mientras se procesaba: volvé a intentarlo");
     }
 
     // En la ruta es un recurso que no existe (404); en la query, un dato mal escrito (400).

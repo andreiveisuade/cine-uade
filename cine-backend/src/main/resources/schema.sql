@@ -152,6 +152,10 @@ CREATE TABLE IF NOT EXISTS funcion (
 -- ingresada_en en NULL significa que todavia no entraron. Va como fecha y no como un
 -- estado mas porque el ingreso es otro eje: una reserva puede estar PAGADA y no usada,
 -- y mezclarlos obligaria a revisar las reglas que hoy miran estado (R5, R13).
+--
+-- version es el bloqueo optimista de JPA (@Version): cada UPDATE la incrementa y exige
+-- encontrar la que leyo. Es lo que impide que cobrar y cancelar la misma reserva a la
+-- vez terminen los dos bien.
 CREATE TABLE IF NOT EXISTS reserva (
     id INT PRIMARY KEY AUTO_INCREMENT,
     funcion_id INT NOT NULL,
@@ -160,6 +164,7 @@ CREATE TABLE IF NOT EXISTS reserva (
     creada_en DATETIME NOT NULL,
     codigo VARCHAR(32) NOT NULL UNIQUE,
     ingresada_en DATETIME NULL,
+    version INT NOT NULL DEFAULT 0,
     FOREIGN KEY (funcion_id) REFERENCES funcion(id),
     FOREIGN KEY (cliente_id) REFERENCES usuario(id)
 );

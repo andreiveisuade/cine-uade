@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import ar.uade.cine.PruebaDeIntegracion;
 
@@ -116,6 +117,24 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+    }
+
+    // Las dos transacciones de cobrar y cancelar a la vez: cada una lee la reserva todavía
+    // RESERVADA, pasa su chequeo y escribe. Sin @Version ganaba la última; ahora la segunda
+    // escribe sobre una versión vieja y falla, y la reserva queda como la dejó la primera.
+    @Test
+    void cobrarYCancelarALaVezLaMismaReservaNoTerminanLasDos() {
+        int id = reservas.reservar(1, 1, generales("A1"), null).getId();
+        Reserva laQueCobra = reservaRepository.findById(id).orElseThrow();
+        Reserva laQueCancela = reservaRepository.findById(id).orElseThrow();
+
+        laQueCobra.pagar();
+        reservaRepository.save(laQueCobra);
+        laQueCancela.cancelar();
+
+        assertThrows(ObjectOptimisticLockingFailureException.class,
+                () -> reservaRepository.save(laQueCancela));
+        assertEquals(EstadoReserva.PAGADA, reservaRepository.findById(id).orElseThrow().getEstado());
     }
 
     @Test
