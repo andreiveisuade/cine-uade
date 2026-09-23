@@ -93,7 +93,7 @@ cine:
     numero-exhibidor: ${INCAA_NUMERO_EXHIBIDOR:10452}
 
 logging:
-  # `docker compose logs` mezcla los cinco contenedores en una sola columna, así que cada
+  # `docker compose logs` mezcla los cuatro contenedores en una sola columna, así que cada
   # caracter de prefijo es uno menos de la línea que interesa: la hora sin fecha, el nivel
   # y el nombre corto de la clase.
   pattern:
