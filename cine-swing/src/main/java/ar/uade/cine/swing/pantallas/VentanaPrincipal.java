@@ -148,7 +148,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
             case "Caja" -> () -> new PantallaCaja(api);
             case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api, this);
             case "Puerta" -> () -> new PantallaPuerta(api);
-            default -> () -> new PantallaPendiente(destino);
+            default -> throw new IllegalArgumentException("El menú no tiene la pantalla " + destino);
         };
     }
 }
