@@ -5,12 +5,6 @@ import { avisar, conEspera, escapar } from "../dom.js";
 import { chipEstado, etiqueta } from "../etiquetas.js";
 import { dia, fechaHora, hora, precio } from "../formato.js";
 
-/* -------------------------------------------------------- listado de reservas */
-
-/**
- * Los estados en el orden en que le importan a quien atiende: primero lo que hay que
- * cobrar hoy, al final lo que ya no se toca.
- */
 const ESTADOS = ["RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA"];
 
 export async function vistaReservas(contenedor) {
@@ -49,8 +43,6 @@ export async function vistaReservas(contenedor) {
   const cuenta = contenedor.querySelector("#cuenta");
   const cuerpo = contenedor.querySelector("tbody");
 
-  // El filtro lo resuelve el backend: los criterios son del negocio, no de la pantalla,
-  // y viajando en la URL se pueden probar con un curl y compartir pegando el link.
   async function aplicarFiltros() {
     const visibles = await api.obtenerReservas({
       estado: estado.value, dia: fecha.value, q: busqueda.value,
@@ -60,8 +52,6 @@ export async function vistaReservas(contenedor) {
       ? "" : `mostrando ${visibles.length} de ${reservas.length}`;
   }
 
-  // Con debounce, porque ahora cada tecla sería un pedido: se espera a que deje de
-  // escribir. Los selects no lo necesitan —un cambio es una decisión, no un tanteo.
   busqueda.addEventListener("input", conEspera(aplicarFiltros));
   estado.addEventListener("change", aplicarFiltros);
   fecha.addEventListener("change", aplicarFiltros);
@@ -87,7 +77,6 @@ export async function vistaReservas(contenedor) {
 }
 
 
-/** Una fila por reserva. Se separa para poder repintar solo el cuerpo al filtrar. */
 function filas(reservas) {
   if (!reservas.length) {
     return `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
@@ -123,8 +112,6 @@ function filas(reservas) {
               </td>
             </tr>`).join("");
 }
-
-/* ------------------------------------------------------------------- cobrar */
 
 export async function vistaCobrar(contenedor, id) {
   const [reservas, medios] = await Promise.all([api.obtenerReservas(), api.obtenerMediosPago()]);
@@ -218,14 +205,7 @@ export async function vistaCobrar(contenedor, id) {
   const porCheckout = () =>
     medios.find((m) => m.nombre === formulario.medio.value).requiereAutorizacion;
 
-  /**
-   * R11 partido en dos caminos. El código de autorización de un medio electrónico lo
-   * devuelve el procesador, así que dejó de tipearse a mano: ese campo era una invitación
-   * a inventar un código y registrar un cobro que nadie autorizó. El efectivo no tiene
-   * procesador ni código, y se sigue cobrando en la caja.
-   */
   function ajustarMedio() {
-    // Un checkout es de un medio y un monto concretos: cambiar el medio lo invalida.
     panelCheckout.innerHTML = "";
     botonCobro.textContent = porCheckout() ? "Abrir checkout" : "Registrar cobro";
     comoCobra.textContent = porCheckout()
@@ -235,8 +215,6 @@ export async function vistaCobrar(contenedor, id) {
   formulario.medio.addEventListener("change", ajustarMedio);
   ajustarMedio();
 
-  /** Con descuento no alcanza con decir cuánto entró: hay que poder explicar por qué se
-   *  cobró menos que el subtotal, que es justo lo que el cliente va a preguntar. */
   function avisarCobro(pago) {
     avisar(pago.descuento > 0
       ? `Cobrado ${precio(pago.monto)} con ${etiqueta(pago.medio)} · ${precio(pago.descuento)} de descuento`
@@ -252,10 +230,6 @@ export async function vistaCobrar(contenedor, id) {
         avisarCobro(await api.cobrar(reserva.id, medio, ""));
         return;
       }
-      // Abrir el checkout todavía no cobra: valida R5, R17 y R19 y devuelve qué tiene que
-      // aprobar el cliente. Se valida acá y no al confirmar porque mandar a pagar una
-      // reserva que no se puede cobrar termina en plata que hay que devolver, y la
-      // devolución es justo lo que no existe (R13).
       panelCheckout.innerHTML = dibujarCheckout(await api.abrirCheckout(reserva.id, medio));
     } catch (e) {
       avisar(e.message, "error");
@@ -267,7 +241,6 @@ export async function vistaCobrar(contenedor, id) {
     if (!confirmar) return;
     confirmar.disabled = true;
     try {
-      // Qué se está pagando sale del checkout, no de quien confirma.
       avisarCobro(await api.confirmarCheckout(confirmar.dataset.confirmar));
     } catch (e) {
       confirmar.disabled = false;
@@ -276,13 +249,6 @@ export async function vistaCobrar(contenedor, id) {
   });
 }
 
-/**
- * El checkout abierto: lo que el cliente tiene que aprobar en la pasarela.
- *
- * `codigoQr` es el *contenido* del QR y no una imagen, así que se muestra tal cual: la
- * pasarela es una emulación y el host no existe, de modo que dibujar el cuadrado o linkear
- * la URL harían parecer real algo que no lo es.
- */
 function dibujarCheckout(checkout) {
   return `
     <div class="rounded border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">

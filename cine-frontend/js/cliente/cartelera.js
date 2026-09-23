@@ -4,8 +4,6 @@ import { escapar } from "../dom.js";
 import { chipClasificacion, etiqueta } from "../etiquetas.js";
 import { duracion } from "../formato.js";
 
-/* ---------------------------------------------------------------- cartelera */
-
 export async function vistaCartelera(contenedor, generoFiltrado) {
   const [peliculas, generos] = await Promise.all([
     api.obtenerCartelera(generoFiltrado),

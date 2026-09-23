@@ -7,12 +7,9 @@ import { dia, hora, precio } from "../formato.js";
 import { seleccion, catalogoTarifas, tarifaPorNombre, precioConTarifa, selectorTarifa,
          clienteRecordado, recordarCliente, sesionDeCompra, renovarMientrasSigaAca } from "./compra.js";
 
-/* ------------------------------------------------------------- confirmación */
-
 export async function vistaConfirmar(contenedor, id) {
   const [funcion] = await Promise.all([
     api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]);
-  // Si se recargó la página la selección se perdió: volver al mapa.
   if (seleccion.funcionId !== funcion.id || Object.keys(seleccion.butacas).length === 0) {
     ir(`#/funcion/${funcion.id}`);
     return;
@@ -27,7 +24,6 @@ export async function vistaConfirmar(contenedor, id) {
   const aAcreditar = () => elegidas.filter(
     (a) => tarifaPorNombre(seleccion.butacas[a.codigo]).requiereAcreditacion);
 
-  // El resumen se repinta solo cuando cambia una tarifa, sin tocar el formulario.
   const resumenCompra = () => panel(`
     <h2 class="mb-1 font-semibold">${escapar(funcion.pelicula.titulo)}</h2>
     <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">
@@ -99,8 +95,7 @@ export async function vistaConfirmar(contenedor, id) {
   const formulario = contenedor.querySelector("#datos");
   const errorForm = contenedor.querySelector("#errorForm");
 
-  // Cambiar una tarifa acá repinta solo el resumen y no el formulario: si repintara la
-  // vista entera, se perdería lo que la persona ya tipeó en nombre y email.
+  // Repinta solo el resumen: repintar la vista perdería lo tipeado en nombre y email.
   contenedor.addEventListener("change", (evento) => {
     const select = evento.target.closest("select[data-tarifa-de]");
     if (!select) return;
@@ -116,18 +111,14 @@ export async function vistaConfirmar(contenedor, id) {
         nombre: datos.get("nombre"),
         email: datos.get("email"),
         butacas: seleccion.butacas,
-        // La misma sesión con la que se bloquearon: sin esto, el propio bloqueo haría
-        // rebotar la reserva por butaca ocupada.
+        // La misma sesión que bloqueó: si no, el propio bloqueo rebotaría la reserva.
         sesion: sesionDeCompra(),
       });
-      // Comprar sin registrarse igual deja los datos listos para la próxima.
       recordarCliente({ nombre: datos.get("nombre").trim(), email: datos.get("email").trim() });
       seleccion.funcionId = null;
       seleccion.butacas = {};
       ir(`#/ticket/${reserva.id}`);
     } catch (e) {
-      // 409: alguien tomó la butaca en el medio. Dejar el resumen como está sería
-      // mostrarle butacas que ya no puede comprar, así que vuelve al mapa recargado.
       if (e.status === 409) {
         seleccion.butacas = {};
         avisar(e.message, "error");
@@ -139,7 +130,5 @@ export async function vistaConfirmar(contenedor, id) {
     }
   });
 
-  // Completar el formulario lleva más de lo que dura un bloqueo: sin renovarlo, la
-  // persona perdería las butacas justo mientras tipea el mail.
   renovarMientrasSigaAca(funcion.id);
 }

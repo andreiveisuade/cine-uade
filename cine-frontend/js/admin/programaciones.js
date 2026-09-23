@@ -5,21 +5,6 @@ import { avisar, escapar } from "../dom.js";
 import { DIAS_SEMANA, etiqueta } from "../etiquetas.js";
 import { dia, fechaHora, hoyISO, precio } from "../formato.js";
 
-/* ------------------------------------------------------------ programaciones */
-
-/**
- * CU-03b: la grilla. Un cine no carga quince funciones de a una, define
- * «Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15».
- *
- * La pantalla tiene dos botones y un solo formulario, que es el punto: «Previsualizar»
- * muestra fecha por fecha qué va a pasar sin escribir nada, y «Confirmar» aplica. El
- * informe que devuelven los dos es el mismo, así que lo que se ve antes de confirmar es
- * literalmente lo que se va a guardar.
- *
- * El botón de confirmar arranca deshabilitado a propósito: se habilita recién cuando
- * hay una previsualización de esos mismos datos. Cambiar cualquier campo la invalida y
- * vuelve a apagarlo, porque un informe de otra grilla no dice nada de esta.
- */
 export async function vistaProgramaciones(contenedor) {
   const [programaciones, peliculas, salas, idiomas, proyecciones] = await Promise.all([
     api.obtenerProgramaciones(), api.obtenerPeliculas(), api.obtenerSalas(),
@@ -112,7 +97,6 @@ export async function vistaProgramaciones(contenedor) {
     </div>
   `;
 
-  // --- filtros: los resuelve el backend ---
   const fpelicula = contenedor.querySelector("#fpelicula");
   const fsala = contenedor.querySelector("#fsala");
   const factiva = contenedor.querySelector("#factiva");
@@ -144,7 +128,6 @@ export async function vistaProgramaciones(contenedor) {
       peliculaId: datos.get("peliculaId"),
       salaId: datos.get("salaId"),
       desde: datos.get("desde"),
-      // Vacío viaja como null: es una grilla abierta, no una fecha que falta.
       hasta: datos.get("hasta") || null,
       horaInicio: datos.get("horaInicio"),
       diasSemana: datos.getAll("dia"),
@@ -154,7 +137,6 @@ export async function vistaProgramaciones(contenedor) {
     };
   }
 
-  /** Una previsualización vale solo para los datos con los que se pidió. */
   function invalidarPrevisualizacion() {
     botonConfirmar.disabled = true;
     informe.innerHTML = "";
@@ -189,7 +171,6 @@ export async function vistaProgramaciones(contenedor) {
       avisar(`Grilla creada: ${plan.generadas} funciones`
         + (plan.salteadas ? `, ${plan.salteadas} salteadas` : ""));
       await vistaProgramaciones(contenedor);
-      // El informe del alta sobrevive al repintado: es donde se lee qué quedó afuera.
       contenedor.querySelector("#informe").innerHTML = dibujarInforme(plan, true);
     } catch (e) {
       mostrarError(e.message);
@@ -227,17 +208,12 @@ const tituloDe = (peliculas, id) =>
 const nombreDeSala = (salas, id) =>
   salas.find((s) => s.id === id)?.nombre || `Sala ${id}`;
 
-/** Sin días no quiere decir ninguno: quiere decir todos los del rango. */
 function diasDeLaGrilla(grilla) {
   return grilla.diasSemana?.length
     ? grilla.diasSemana.map((d) => etiqueta(d).slice(0, 3)).join(", ")
     : "todos";
 }
 
-/**
- * El informe, fecha por fecha. Es el mismo dibujo antes y después de confirmar porque
- * es el mismo dato: lo único que cambia es el encabezado.
- */
 function dibujarInforme(plan, aplicado) {
   const titulo = aplicado
     ? `Se generaron ${plan.generadas} funciones`
@@ -275,7 +251,6 @@ function dibujarFuncionesGeneradas(grilla) {
     </div>`;
 }
 
-/** Una fila por grilla. Separada para repintar solo el cuerpo al filtrar. */
 function filas(programaciones, peliculas, salas) {
   if (!programaciones.length) {
     return `<tr><td colspan="6" class="p-6 text-center text-slate-500 dark:text-slate-400">

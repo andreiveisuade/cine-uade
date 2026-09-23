@@ -4,31 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { dia, duracion, hora, hoyISO } from "../formato.js";
 
-/* --------------------------------------------- armado automático de la grilla */
-
-/**
- * El planificador: qué se da esta semana.
- *
- * Con cuatro títulos, programar la semana era obvio. Con el importador trayendo dieciocho
- * por corrida hay que elegir, y el backend elige optimizando tres cosas a la vez: puntaje,
- * diversidad de géneros y ocupación de las salas.
- *
- * Por eso la pantalla no es un listado de funciones sino los indicadores primero. Sin
- * ellos, «armame la grilla» es un botón que escupe ciento cincuenta filas que nadie puede
- * juzgar; con ellos, el encargado corre la propuesta con seis títulos y con diez, compara
- * ocupación y variedad, y recién ahí aplica. El elenco y los pases por película están por
- * el mismo motivo: son los que explican **por qué** entró cada una.
- *
- * Mismo par que las programaciones: «Previsualizar» no escribe nada y «Aplicar» crea las
- * funciones con los mismos criterios. Como el planificador es determinista, lo que se ve
- * es lo que se va a crear.
- */
-
-/**
- * Los indicadores de la corrida anterior, para poder decir cuánto mejoró o empeoró la
- * nueva. Vive en el módulo y no en la vista porque comparar dos corridas es el uso normal
- * de esta pantalla, y la vista se vuelve a armar en cada previsualización.
- */
 let corridaAnterior = null;
 
 export async function vistaPlanificador(contenedor) {
@@ -104,7 +79,6 @@ export async function vistaPlanificador(contenedor) {
 
   const leerCriterios = () => Object.fromEntries(new FormData(formulario));
 
-  /** Una propuesta vale solo para los criterios con los que se pidió. */
   function invalidarPropuesta() {
     botonAplicar.disabled = true;
     botonAplicar.textContent = "Aplicar";
@@ -114,11 +88,6 @@ export async function vistaPlanificador(contenedor) {
   formulario.addEventListener("input", invalidarPropuesta);
   formulario.addEventListener("change", invalidarPropuesta);
 
-  /**
-   * Armar una semana de seis salas le lleva varios segundos al backend: consulta R3 hueco
-   * por hueco. Sin decirlo en pantalla parece colgada, y lo que hace el encargado es
-   * volver a apretar el botón — que son otros tantos segundos de servidor.
-   */
   async function correr(pedir, aplicada) {
     if (!formulario.reportValidity()) return;
     errorCriterios.classList.add("hidden");
@@ -131,15 +100,11 @@ export async function vistaPlanificador(contenedor) {
 
     try {
       const grilla = await pedir(criterios);
-      // Si tocó un criterio mientras calculaba, lo que llegó ya no describe lo que está en
-      // pantalla: pintarlo sería mostrar una grilla que no es la de estos criterios.
+      // Si cambió un criterio mientras calculaba, la respuesta ya no describe lo que está en pantalla.
       if (JSON.stringify(leerCriterios()) !== JSON.stringify(criterios)) return;
 
       propuesta.innerHTML = dibujarPropuesta(grilla, corridaAnterior);
       corridaAnterior = { titulos: Number(criterios.cuantasPeliculas), indicadores: grilla.indicadores };
-      // funcionesCreadas viene en 0 al previsualizar y con el número real en el alta: es
-      // lo único que distingue «así quedaría» de «así quedó», porque los pases son los
-      // mismos en los dos casos.
       botonAplicar.disabled = aplicada || !grilla.pases.length;
       botonAplicar.textContent = aplicada ? "Aplicada" : `Crear ${grilla.pases.length} funciones`;
       if (aplicada) avisar(`Se crearon ${grilla.funcionesCreadas} funciones`);
@@ -161,21 +126,6 @@ export async function vistaPlanificador(contenedor) {
   });
 }
 
-/* -------------------------------------------------------- mientras calcula */
-
-/**
- * Lo que se ve mientras el servidor arma la grilla: el mismo andamiaje que el resultado,
- * en gris.
- *
- * El mensaje no promete tiempos, promete **qué** está pasando: hasta que el backend dejó
- * de preguntar la disponibilidad hueco por hueco, armar una semana tardaba veinte
- * segundos; hoy tarda medio. Lo que no cambia es que es un ida y vuelta al servidor, y que
- * puede volver a alargarse con más salas o más días.
- *
- * Contar las dos etapas del algoritmo mientras corren es, además, la única parte de la
- * espera que le sirve a quien mira: para cuando aparecen los números, ya sabe de dónde
- * salieron.
- */
 function esqueletoPropuesta(aplicada) {
   return `
     <div class="space-y-4">
@@ -208,17 +158,10 @@ function esqueletoPropuesta(aplicada) {
     </div>`;
 }
 
-/* ------------------------------------------------------------- el resultado */
-
 const porcentaje = (fraccion) => `${Math.round(fraccion * 100)}%`;
 
 const conDecimal = (numero) => numero.toFixed(1).replace(".", ",");
 
-/**
- * Cuánto cambió un indicador contra la corrida anterior. Es la mitad del valor de la
- * pantalla: el número solo no dice si 79% de ocupación está bien, pero «79%, cuatro
- * puntos más que con seis títulos» sí.
- */
 function variacion(actual, anterior, formato) {
   if (anterior === null || anterior === undefined) return "";
   const delta = actual - anterior;
@@ -255,10 +198,6 @@ function dibujarIndicadores(indicadores, pases, anterior) {
     </div>`;
 }
 
-/**
- * Los pases por género, como barras. Es donde se ve el problema que el planificador
- * existe para evitar: una grilla con cuatro películas de acción y nada para el resto.
- */
 function dibujarGeneros(pasesPorGenero) {
   const entradas = Object.entries(pasesPorGenero).sort((a, b) => b[1] - a[1]);
   if (!entradas.length) return "";
@@ -280,7 +219,6 @@ function dibujarGeneros(pasesPorGenero) {
   `, "p-4");
 }
 
-/** El elenco elegido: por qué entró cada una y cuánto se lleva. */
 function dibujarElenco(elenco) {
   return panel(`
       <h3 class="p-4 pb-2 font-semibold">Elenco de la semana (${elenco.length})</h3>
@@ -302,11 +240,6 @@ function dibujarElenco(elenco) {
   `, "overflow-x-auto");
 }
 
-/**
- * La grilla propuesta, agrupada por día y sala. Es la vista de la cartelera de la semana:
- * plana serían ciento cincuenta filas ordenadas por hora, donde no se ve ni qué pasa en
- * una sala ni qué se da un día.
- */
 function dibujarPases(pases) {
   const dias = new Map();
   for (const pase of pases) {

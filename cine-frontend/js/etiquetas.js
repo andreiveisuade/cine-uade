@@ -1,6 +1,3 @@
-// Traducción de los enums del dominio a lo que lee una persona. El backend manda
-// MAS_16, esto devuelve "+16".
-
 import { chip } from "./componentes.js";
 
 const ETIQUETAS = {
@@ -69,7 +66,6 @@ const COLOR_CLASIFICACION = {
   MAS_18: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
-/** La clasificación se lee de un vistazo: verde ATP, rojo +18. */
 export function chipClasificacion(clasificacion) {
   return chip(etiqueta(clasificacion), COLOR_CLASIFICACION[clasificacion] || "");
 }
@@ -78,10 +74,7 @@ const COLOR_ESTADO = {
   RESERVADA: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   PAGADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   CANCELADA: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-  // Vencida no es cancelada: al cliente no se le puede decir que canceló algo que no canceló.
   EXPIRADA: "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
-  // Los de una corrida del importador. Comparten el chip con los de una reserva porque
-  // son lo mismo para quien mira: en qué terminó algo que estaba pasando.
   EN_CURSO: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   TERMINADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
   FALLIDA: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
@@ -91,13 +84,6 @@ export function chipEstado(estado) {
   return chip(etiqueta(estado), COLOR_ESTADO[estado] || "");
 }
 
-/** Los días como los nombra el backend, en el orden en que se muestran. */
 export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
-/**
- * Los tipos de producto del candy. No hay catálogo HTTP para ellos, a diferencia de los
- * medios de pago: son cuatro, no cambian y COMBO no se da de alta como suelto, así que la
- * lista vive acá junto a sus etiquetas. Si el enum crece, el backend rechaza lo que no
- * conoce con un 400 y el nombre de la constante.
- */
 export const TIPOS_PRODUCTO_SUELTO = ["POCHOCLOS", "BEBIDA", "GOLOSINA"];

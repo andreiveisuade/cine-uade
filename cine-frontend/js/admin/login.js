@@ -3,8 +3,6 @@ import { ir } from "../router.js";
 import { boton, campo, panel } from "../componentes.js";
 import { abrirSesion, esAdministrador, pintarEncabezado } from "./sesion.js";
 
-/* -------------------------------------------------------------------- login */
-
 export async function vistaLogin(contenedor) {
   contenedor.innerHTML = panel(`
       <h1 class="mb-4 text-xl font-bold">Ingresar</h1>
@@ -27,7 +25,6 @@ export async function vistaLogin(contenedor) {
     try {
       abrirSesion(await api.login(datos.get("email"), datos.get("password")));
       pintarEncabezado();
-      // El acomodador entra directo a la puerta: es lo único que puede hacer.
       ir(esAdministrador() ? "#/peliculas" : "#/puerta");
     } catch (e) {
       errorLogin.textContent = e.message;

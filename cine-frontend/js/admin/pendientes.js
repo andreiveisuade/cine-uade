@@ -4,16 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { chipClasificacion, etiqueta } from "../etiquetas.js";
 import { duracion } from "../formato.js";
 
-/* ------------------------------------------------- el buzón de lo importado */
-
-/**
- * Lo que trajo el importador de TMDB y todavía nadie miró.
- *
- * Es una pantalla aparte de Películas y no un filtro más de aquella lista, por lo mismo
- * que estadoRevision es un campo aparte de enCartelera: acá no se está administrando el
- * catálogo, se está decidiendo qué entra. Son dos tareas distintas y una tiene dos
- * botones que la otra no tiene.
- */
 export async function vistaPendientes(contenedor) {
   const pendientes = await api.obtenerPeliculasPendientes();
 
@@ -40,14 +30,6 @@ export async function vistaPendientes(contenedor) {
   });
 }
 
-/**
- * El resultado de decidir es siempre volver a dibujar: la película sale del buzón y el
- * texto de arriba cambia. Redibujar entero es más barato que sacar la tarjeta a mano y
- * mantener la cuenta sincronizada por las suyas.
- *
- * Los dos botones de la tarjeta quedan deshabilitados mientras la llamada viaja: sin eso,
- * dos clics seguidos mandan confirmar y descartar sobre la misma película.
- */
 async function decidir(contenedor, botonTarjeta, promesa, mensaje) {
   const tarjeta = botonTarjeta.closest("section");
   tarjeta.querySelectorAll("button").forEach((b) => { b.disabled = true; });
@@ -82,11 +64,6 @@ function lista(pendientes) {
   `;
 }
 
-/**
- * Una tarjeta y no una fila de tabla: para decidir hay que ver de qué se trata, y eso es
- * el poster y la sinopsis. En una tabla de siete columnas la sinopsis no entra, y sin
- * sinopsis la decisión se toma leyendo un título suelto.
- */
 function tarjeta(pelicula) {
   return panel(`
       <div class="flex gap-3 p-3">

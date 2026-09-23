@@ -4,9 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { DIAS_SEMANA, etiqueta } from "../etiquetas.js";
 import { dia, hora, hoyISO, precio } from "../formato.js";
 
-/* -------------------------------------------------------------- promociones */
-
-/** Cómo se lee el beneficio de cada tipo, que es lo que las diferencia. */
 function beneficioDe(promocion) {
   if (promocion.tipo === "PORCENTAJE") return `${promocion.porcentaje}% off`;
   if (promocion.tipo === "MONTO_FIJO") return `${precio(promocion.monto)} off`;
@@ -22,7 +19,6 @@ function condicionesDe(promocion) {
     partes.push(`${(promocion.horaDesde || "00:00").slice(0, 5)}–${(promocion.horaHasta || "23:59").slice(0, 5)}`);
   }
   if (promocion.mediosPago?.length) partes.push(promocion.mediosPago.map(etiqueta).join(", "));
-  // Sin condiciones no quiere decir "ninguna": quiere decir que corre siempre.
   return partes.length ? partes.join(" · ") : "todos los días, cualquier medio";
 }
 
@@ -131,8 +127,6 @@ export async function vistaPromociones(contenedor) {
   const errorAlta = contenedor.querySelector("#errorAlta");
   const selectorTipo = contenedor.querySelector("#tipo");
 
-  // El formulario es uno solo y muestra los campos del tipo elegido, igual que la tabla
-  // tiene una columna por beneficio y deja en null las que no aplican.
   function mostrarCamposDelTipo() {
     contenedor.querySelectorAll("[data-campos]").forEach((bloque) => {
       const visible = bloque.dataset.campos === selectorTipo.value;

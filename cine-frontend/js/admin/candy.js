@@ -4,11 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { TIPOS_PRODUCTO_SUELTO, etiqueta } from "../etiquetas.js";
 import { fechaHora, hora, hoyISO, precio, precioExacto } from "../formato.js";
 
-/* -------------------------------------------------------------------- candy */
-
-// Tres pestañas y no una pantalla larga: la carta la toca el encargado de vez en cuando,
-// el mostrador se usa venta tras venta, y mezclarlos obligaba a scrollear entre combos
-// para cobrar un pochoclo.
 const PESTANAS = [
   ["", "Carta"],
   ["venta", "Venta de mostrador"],
@@ -49,8 +44,6 @@ export async function vistaCandy(contenedor, pestana = "") {
   if (pestana === "ventas") return vistaVentas(contenedor);
   return vistaCarta(contenedor);
 }
-
-/* ------------------------------------------------------------------- la carta */
 
 async function vistaCarta(contenedor, editando = null) {
   const productos = await api.obtenerProductosCandy(true);
@@ -153,9 +146,6 @@ async function vistaCarta(contenedor, editando = null) {
       if (Number(input.value) > 0) componentes[input.dataset.componente] = Number(input.value);
     });
     const errorCombo = contenedor.querySelector("#errorCombo");
-    // El mínimo de dos también lo valida el backend; acá se ataja antes para no mandar un
-    // pedido que se sabe que vuelve rechazado. R14 no se adelanta: el precio de referencia
-    // lo sabe la carta, y el mensaje del backend ya lo trae.
     if (Object.keys(componentes).length < 2) {
       mostrarError(errorCombo, "Un combo tiene que juntar al menos dos productos distintos");
       return;
@@ -203,7 +193,6 @@ async function vistaCarta(contenedor, editando = null) {
   });
 }
 
-/** La fila en edición: nombre y precio, que es lo único que el backend deja cambiar. */
 function filaEdicion(p) {
   const clases = "w-full rounded border border-slate-400 px-2 py-1 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
   return `
@@ -221,8 +210,6 @@ function filaEdicion(p) {
       </td>
     </tr>`;
 }
-
-/* --------------------------------------------------------- venta de mostrador */
 
 async function vistaVenta(contenedor) {
   const [productos, medios] = await Promise.all([
@@ -337,7 +324,6 @@ async function vistaVenta(contenedor) {
 
 const LINEA = "=".repeat(40);
 
-/** El ticket con lo que devolvió el backend: precios, total y ahorro salen de ahí. */
 function armarTicket(compra) {
   const renglon = (izquierda, derecha) => ` ${izquierda.padEnd(26)}${derecha.padStart(12)}`;
   return [
@@ -355,8 +341,6 @@ function armarTicket(compra) {
     LINEA,
   ].join("\n");
 }
-
-/* ------------------------------------------------------------ ventas del día */
 
 async function vistaVentas(contenedor, fecha = hoyISO()) {
   const compras = await api.obtenerComprasCandy({ fecha });
@@ -380,7 +364,6 @@ async function vistaVentas(contenedor, fecha = hoyISO()) {
   });
 }
 
-/** La tabla de compras la comparten estas ventas y el arqueo de la caja. */
 export function tablaCompras(compras) {
   return tabla(`
       <tr>

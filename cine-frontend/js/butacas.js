@@ -1,7 +1,3 @@
-// Dibujo de la sala fila por fila. La geometría es la misma para el cliente y para
-// el encargado; lo que cambia es qué significa cada color, así que el pintado se pasa
-// por parámetro.
-
 export const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
 export const CLASES_TIPO = {
@@ -11,12 +7,6 @@ export const CLASES_TIPO = {
   ESTANDAR: "border-slate-400 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200",
 };
 
-/**
- * Una sala no es un rectángulo: cada fila tiene la cantidad de butacas que dice
- * butacasPorFila, y las filas se centran entre sí.
- *
- * @param pintar (asiento) => { clases, deshabilitado, titulo }
- */
 export function dibujarMapa(sala, asientos, pintar) {
   const filas = [];
   for (let fila = 1; fila <= sala.filas; fila++) {

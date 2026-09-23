@@ -4,8 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { fechaHora, precio, precioExacto } from "../formato.js";
 
-/* -------------------------------------------------------------------- ticket */
-
 const LINEA = "=".repeat(44);
 
 function campo(etiquetaTexto, valor) {
@@ -16,12 +14,6 @@ function centrar(texto) {
   return " ".repeat(Math.max(Math.floor((LINEA.length - texto.length) / 2), 0)) + texto;
 }
 
-/**
- * El código de acceso, grande y separado en dos grupos de cuatro para poder leerlo de
- * un renglón. No es un QR dibujado: generarlo de verdad pide una librería, y el código
- * en claro cumple la misma función —el acomodador lo escanea o lo tipea— sin sumar una
- * dependencia al proyecto. Cuando exista la app del escáner, el QR se arma con esto.
- */
 function tarjetaCodigo(reserva) {
   if (!reserva.codigo) return "";
   const legible = `${reserva.codigo.slice(0, 4)} ${reserva.codigo.slice(4)}`;
@@ -40,7 +32,6 @@ function tarjetaCodigo(reserva) {
     </div>`;
 }
 
-/** Mismo contenido y formato que tickets/ticket-<id>.txt del backend. */
 function armarTicket(reserva) {
   return [
     LINEA,
@@ -69,11 +60,6 @@ function armarTicket(reserva) {
   ].join("\n");
 }
 
-/**
- * La carta del candy, solo para mirar. No se compra online a propósito: la venta de candy
- * nace cobrada en el mostrador, y un pago web pediría un circuito de reserva que el candy
- * no tiene. Con el número de reserva, en el mostrador la venta se asocia a esta función.
- */
 function cartaCandy(productos, reservaId) {
   if (!productos.length) return "";
   return `
@@ -98,7 +84,6 @@ function cartaCandy(productos, reservaId) {
 
 export async function vistaTicket(contenedor, id) {
   const reserva = await api.obtenerReserva(id);
-  // Si la carta no carga, el ticket se muestra igual: es lo único imprescindible acá.
   const productos = await api.obtenerProductosCandy().catch(() => []);
   const conAcreditacion = reserva.entradas.filter(
     (e) => e.tarifa && e.tarifa !== "GENERAL");

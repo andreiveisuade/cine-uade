@@ -4,15 +4,6 @@ import { escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { fechaHora } from "../formato.js";
 
-/* -------------------------------------------------------------------- puerta */
-
-/**
- * CU-18: lo que usa el acomodador. Se escanea o se tipea el código de la reserva y se
- * marca la entrada como usada.
- *
- * El foco vuelve al campo después de cada validación porque en la puerta se encadenan
- * una atrás de otra: obligar a hacer clic entre persona y persona sería insufrible.
- */
 export async function vistaPuerta(contenedor) {
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Validar entrada</h1>
@@ -41,8 +32,6 @@ export async function vistaPuerta(contenedor) {
       const reserva = await api.validarEntrada(codigo);
       resultado.innerHTML = entradaValida(reserva);
     } catch (e) {
-      // Los tres motivos —código inexistente, sin pagar y ya usada— se muestran igual
-      // de fuerte: en la puerta lo único que importa es que no pasa.
       resultado.innerHTML = `
         <div class="rounded border-2 border-red-400 bg-red-50 p-4 dark:border-red-700 dark:bg-red-950">
           <p class="text-lg font-bold text-red-900 dark:text-red-300">NO PASA</p>

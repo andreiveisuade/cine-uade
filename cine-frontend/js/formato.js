@@ -1,11 +1,7 @@
-// Formateo de datos del dominio a texto: plata, tiempo y fecha. Ninguna de estas
-// funciones toca el DOM ni arma HTML — son texto, para poner adentro de lo que sea.
-
 export function precio(monto) {
   return "$ " + Math.round(monto).toLocaleString("es-AR");
 }
 
-/** Con dos decimales, como el comprobante .txt del backend. */
 export function precioExacto(monto) {
   return "$ " + monto.toFixed(2);
 }
@@ -44,7 +40,6 @@ export function fechaHora(iso) {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${hora(iso)}`;
 }
 
-/** Agrupa funciones por día calendario, en orden. */
 export function porDia(funciones) {
   const grupos = new Map();
   for (const funcion of funciones) {
@@ -55,7 +50,6 @@ export function porDia(funciones) {
   return [...grupos.entries()];
 }
 
-/** El día de hoy en el formato en que viajan las fechas por la API. */
 export function hoyISO() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");

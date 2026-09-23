@@ -5,11 +5,7 @@ import { etiqueta } from "../etiquetas.js";
 import { hora, hoyISO, precio } from "../formato.js";
 import { tablaCompras } from "./candy.js";
 
-/* ------------------------------------------------------------ arqueo del día */
-
 export async function vistaCaja(contenedor, fecha = hoyISO()) {
-  // Dos cajas, dos pedidos: boletería y candy se cuentan por separado en el backend
-  // (el candy de mostrador no tiene función ni reserva), y acá solo se ponen lado a lado.
   const [arqueo, candy] = await Promise.all([api.obtenerArqueo(fecha), api.obtenerArqueoCandy(fecha)]);
   const medios = Object.entries(arqueo.porMedio);
 

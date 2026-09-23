@@ -4,8 +4,6 @@ import { boton, campo, chip, filaTabla, panel, select, tabla } from "../componen
 import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 
-/* --------------------------------------------------------------- ABM de salas */
-
 function parsearNumeros(texto) {
   return String(texto || "").split(",")
     .map((n) => Number(n.trim()))
@@ -106,7 +104,6 @@ export async function vistaSalas(contenedor, id) {
   });
 }
 
-/** Mapa de la sala para marcar y reponer butacas: acá no hay ocupación, es física. */
 async function vistaMapaSala(contenedor, id) {
   const sala = await api.obtenerSala(id);
   const rotas = sala.asientos.filter((a) => a.estado === "FUERA_DE_SERVICIO");

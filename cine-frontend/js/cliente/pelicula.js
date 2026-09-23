@@ -4,8 +4,6 @@ import { escapar } from "../dom.js";
 import { chipClasificacion, etiqueta } from "../etiquetas.js";
 import { dia, duracion, hora, porDia, precio } from "../formato.js";
 
-/* --------------------------------------------------- detalle de una película */
-
 export async function vistaPelicula(contenedor, id) {
   const [pelicula, funciones] = await Promise.all([
     api.obtenerPelicula(id),

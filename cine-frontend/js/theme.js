@@ -1,5 +1,4 @@
-// Tema claro/oscuro. El <head> de cada página ya aplicó la clase "dark" antes del primer
-// paint (ver script inline) para evitar el flash; acá solo vive el toggle y su persistencia.
+// El <head> ya aplicó la clase "dark" antes del primer paint; acá solo vive el toggle.
 
 const CLAVE = "cine-tema";
 
@@ -17,7 +16,6 @@ function actualizarIcono(boton) {
   boton.setAttribute("aria-label", temaActual() === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
 }
 
-/** Engancha el botón #theme-toggle de la página con el cambio de tema. */
 export function wireToggle() {
   const boton = document.getElementById("theme-toggle");
   if (!boton) return;

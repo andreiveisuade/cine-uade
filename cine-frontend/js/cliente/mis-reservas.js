@@ -6,11 +6,7 @@ import { chipEstado, etiqueta } from "../etiquetas.js";
 import { dia, fechaHora, hora, precio } from "../formato.js";
 import { clienteRecordado } from "./compra.js";
 
-/* --------------------------------------------------------------- mis reservas */
-
-// El cliente no inicia sesión: recupera sus reservas con el email que dejó al comprar.
 export async function vistaMisReservas(contenedor, emailBuscado) {
-  // Sin email en la URL, se usa el del navegador: quien ya compró no vuelve a tipearlo.
   const email = emailBuscado
     ? decodeURIComponent(emailBuscado)
     : (clienteRecordado()?.email || "");
@@ -77,14 +73,9 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
     ir(`#/mis-reservas/${encodeURIComponent(valor)}`);
   });
 
-  // El listener va en cada botón y no en el contenedor: los botones los borra el
-  // innerHTML de arriba, el contenedor no. Enganchado al contenedor, cada búsqueda
-  // sumaba un listener más al mismo elemento vivo —y esta vista se vuelve a dibujar
-  // sola al cancelar—, así que un clic terminaba disparando una cancelación por cada
-  // vez que se había pasado por acá.
+  // El listener va en cada botón y no en el contenedor: en el contenedor se sumaría uno por render.
   contenedor.querySelectorAll("button[data-cancelar]").forEach((botonCancelar) => {
     botonCancelar.addEventListener("click", async () => {
-      // Cancelar tarda: sin esto, dos clics apurados son dos pedidos.
       botonCancelar.disabled = true;
       try {
         await api.cancelarReserva(botonCancelar.dataset.cancelar);

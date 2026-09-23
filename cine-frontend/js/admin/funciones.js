@@ -4,14 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { dia, hora, precio } from "../formato.js";
 
-/* ------------------------------------------------------ programar funciones */
-
-/**
- * @param destacada id de la función a la que saltar, si se llegó desde la agenda. La
- *                  tabla tiene ciento cincuenta filas: aterrizar arriba de todo y que el
- *                  usuario busque a mano la que acaba de clickear sería mandarlo dos
- *                  veces al mismo lugar.
- */
 export async function vistaFunciones(contenedor, destacada) {
   const [funciones, peliculas, salas, tipos, idiomas, proyecciones] = await Promise.all([
     api.obtenerFunciones(), api.obtenerPeliculas(), api.obtenerSalas(),
@@ -66,7 +58,6 @@ export async function vistaFunciones(contenedor, destacada) {
     </div>
   `;
 
-  // --- filtros: el backend los resuelve, acá solo se juntan y se mandan ---
   const cuerpo = contenedor.querySelector("tbody");
   const cuenta = contenedor.querySelector("#cuenta");
   const controles = [...contenedor.querySelectorAll("[name^=f]")]
@@ -91,7 +82,6 @@ export async function vistaFunciones(contenedor, destacada) {
   const formulario = contenedor.querySelector("#alta");
   const avisos = contenedor.querySelector("#avisos");
 
-  // R8 y R3 se validan en el backend; acá se anticipan para no mandar algo que va a fallar.
   function revisarReglas() {
     const sala = salas.find((s) => s.id === Number(formulario.salaId.value));
     const pelicula = peliculas.find((p) => p.id === Number(formulario.peliculaId.value));
@@ -173,7 +163,6 @@ export async function vistaFunciones(contenedor, destacada) {
   }
 }
 
-/** Una fila por función. Separada para repintar solo el cuerpo al filtrar. */
 function filas(funciones) {
   if (!funciones.length) {
     return `<tr><td colspan="6" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">

@@ -4,9 +4,6 @@ import { avisar, conEspera, escapar } from "../dom.js";
 import { chipClasificacion, etiqueta } from "../etiquetas.js";
 import { duracion } from "../formato.js";
 
-/* ---------------------------------------------------------- ABM de películas */
-
-// El mismo formulario sirve para alta y edición: null es alta, un id es edición.
 export async function vistaPeliculas(contenedor, editandoId = null) {
   const [peliculas, generos, clasificaciones] = await Promise.all([
     api.obtenerPeliculas(),
@@ -87,7 +84,6 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
     </div>
   `;
 
-  // --- filtros: los resuelve el backend, acá se juntan y se mandan ---
   const fq = contenedor.querySelector("#fq");
   const fgenero = contenedor.querySelector("#fgenero");
   const fpublicada = contenedor.querySelector("#fpublicada");
@@ -144,8 +140,7 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
 
   contenedor.querySelector("#cancelar")?.addEventListener("click", () => vistaPeliculas(contenedor));
 
-  // El listener va en el tbody, que se reemplaza en cada render: colgarlo del
-  // contenedor lo acumularía una vez por refresco.
+  // El listener va en el tbody, que se reemplaza en cada render: en el contenedor se acumularía.
   contenedor.querySelector("tbody").addEventListener("click", async (evento) => {
     const editar = evento.target.closest("button[data-editar]");
     if (editar) return vistaPeliculas(contenedor, editar.dataset.editar);
@@ -175,7 +170,6 @@ export async function vistaPeliculas(contenedor, editandoId = null) {
   });
 }
 
-/** Una fila por película. Separada para repintar solo el cuerpo al filtrar. */
 function filas(peliculas, editandoId) {
   if (!peliculas.length) {
     return `<tr><td colspan="7" class="p-6 text-center text-sm text-slate-500 dark:text-slate-400">

@@ -2,8 +2,6 @@ import { olvidarCredenciales } from "../api.js";
 import { ir } from "../router.js";
 import { etiqueta } from "../etiquetas.js";
 
-/* ------------------------------------------------------------------- sesión */
-
 const CLAVE_SESION = "cine.sesion";
 
 export function sesionActual() {
@@ -22,7 +20,6 @@ export function cerrarSesion() {
   ir("#/login");
 }
 
-/** El acomodador solo valida entradas: no tiene por qué ver el ABM de la cartelera. */
 export function esAdministrador() {
   return sesionActual()?.rol !== "ACOMODADOR";
 }

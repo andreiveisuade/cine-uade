@@ -1,10 +1,3 @@
-// La web del cliente: qué vista atiende cada ruta. Sin login — al cliente se lo
-// reconoce por su email recién al confirmar la compra.
-//
-// Cada pantalla vive en su propio módulo bajo js/cliente/. Lo que comparten —la butaca
-// elegida, el catálogo de tarifas y el email recordado— está en cliente/compra.js, que
-// es el estado de la compra en curso.
-
 import { iniciarRouter } from "./router.js";
 import { wireToggle } from "./theme.js";
 import { vistaCartelera } from "./cliente/cartelera.js";

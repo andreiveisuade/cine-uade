@@ -4,21 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { dia, fechaHora, hora, precio } from "../formato.js";
 
-/* ------------------------------------------------- una función y sus informes */
-
-/**
- * El detalle de una función: cuánto se vendió y cuánto dejó.
- *
- * Los dos informes cuelgan de acá y no de una pantalla propia porque es donde el
- * encargado ya está parado cuando los necesita —viene de la lista de funciones, de la
- * función que le interesa— y porque los dos se piden por `funcionId`: una pantalla
- * separada empezaría pidiendo que eligiera la función de nuevo.
- *
- * Son dos endpoints y no uno partido en dos: el borderó es la declaración que se sube al
- * INCAA y el informe es la plata que dejó la función entre las dos cajas. El informe trae
- * el borderó completo adentro justamente para que los dos no puedan decir números
- * distintos de lo mismo.
- */
 export async function vistaFuncion(contenedor, id) {
   const [funcion, bordero, informe] = await Promise.all([
     api.obtenerFuncion(id), api.obtenerBordero(id), api.obtenerInformeDeFuncion(id),
@@ -45,9 +30,6 @@ export async function vistaFuncion(contenedor, id) {
   contenedor.querySelector("#bordero").addEventListener("click", async (evento) => {
     if (!evento.target.closest("#emitir")) return;
     try {
-      // Emitir no es consultar: escribe el archivo que se sube al organismo. Se repinta
-      // con lo que devuelve porque ahí viene el `generadoEn` de esta declaración, que es
-      // lo que fecha lo declarado.
       const emitido = await api.emitirBordero(funcion.id);
       contenedor.querySelector("#bordero").innerHTML = dibujarBordero(emitido, true);
       avisar(`Borderó emitido: ${emitido.espectadores} espectadores, ${precio(emitido.recaudacionNeta)}`);
@@ -57,12 +39,6 @@ export async function vistaFuncion(contenedor, id) {
   });
 }
 
-/* ------------------------------------------------------------------ borderó */
-
-/**
- * @param emitido si se acaba de escribir el archivo. Consultar el borderó y declararlo no
- *                son lo mismo, así que la pantalla tampoco los muestra igual.
- */
 function dibujarBordero(bordero, emitido = false) {
   const tarifas = Object.entries(bordero.porTarifa);
 
@@ -135,8 +111,6 @@ function dibujarBordero(bordero, emitido = false) {
       que la película arranca.
     </p>`;
 }
-
-/* ------------------------------------------------------------------ informe */
 
 function dibujarInforme(informe) {
   return `

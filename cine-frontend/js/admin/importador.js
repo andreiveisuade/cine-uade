@@ -4,23 +4,6 @@ import { avisar, escapar } from "../dom.js";
 import { chipEstado } from "../etiquetas.js";
 import { fechaHora } from "../formato.js";
 
-/* ------------------------------------------------- traer cartelera de TMDB */
-
-/**
- * El botón que sale a buscar la cartelera real.
- *
- * Es una pantalla aparte de "Por revisar" y no un botón arriba de aquella lista, por lo
- * mismo que el buzón es una pantalla aparte del catálogo: son dos tareas. Acá se decide
- * traer, allá se decide qué entra. Y el historial —cuándo se trajo cartelera por última vez
- * y cuánto entró— no tendría dónde vivir en una pantalla de tarjetas.
- *
- * Sin consultas repetidas: la corrida tarda diez o quince segundos y el botón espera esa
- * respuesta, que ya trae los contadores. La alternativa —contestar "ya te aviso" y
- * preguntar cada dos segundos si terminó— serían treinta pedidos al backend para
- * enterarse de algo que uno solo puede contar.
- *
- * @param destacada id de la corrida recién hecha, para dejarle el detalle abierto
- */
 export async function vistaImportador(contenedor, destacada) {
   const [corridas, estado] = await Promise.all([
     api.obtenerImportaciones(),
@@ -55,11 +38,6 @@ export async function vistaImportador(contenedor, destacada) {
   contenedor.querySelector("#importar").addEventListener("click", () => traer(contenedor));
 }
 
-/**
- * Mientras corre: el botón deshabilitado con el spinner adentro y un esqueleto donde va a
- * ir el resultado. Quieta, una espera de quince segundos se lee como una pantalla rota y
- * lo que hace el encargado es volver a apretar.
- */
 async function traer(contenedor) {
   const botonImportar = contenedor.querySelector("#importar");
   const paginas = contenedor.querySelector("#paginas").value;
@@ -73,8 +51,6 @@ async function traer(contenedor) {
     avisar(resumen(corrida), corrida.estado === "FALLIDA" ? "error" : "ok");
     await vistaImportador(contenedor, corrida.id);
   } catch (e) {
-    // Un 400 del backend —ya hay una corriendo, corrió recién— no es una pantalla rota:
-    // es una respuesta. Se muestra y la pantalla queda como estaba.
     avisar(e.message, "error");
     contenedor.querySelector("#resultado").innerHTML = "";
     botonImportar.disabled = false;
@@ -88,16 +64,6 @@ const OPCIONES_PAGINAS = `
   <option value="3">Tres páginas (60 títulos)</option>
 `;
 
-/**
- * El aviso de que el importador no puede correr, antes de apretar el botón y esperar una
- * respuesta que no va a llegar. Si puede, no se dice nada: que las cosas anden es lo
- * esperable y no merece un cartel.
- *
- * El detalle ya viene redactado por el backend y dice qué hacer —hoy lo único que puede
- * faltar es el token de TMDB—, así que acá no se agrega ningún comando: el de antes decía
- * cómo levantar un contenedor que dejó de existir cuando el importador pasó a ser parte
- * del backend.
- */
 function avisoDelImportador(estado) {
   if (estado.disponible) return "";
   return `
@@ -162,11 +128,6 @@ function fila(corrida, destacada) {
     </tr>`;
 }
 
-/**
- * El log de la corrida, plegado. Son veinte líneas y casi nunca se miran: lo que se mira
- * son los números. Pero cuando una película no entró, la única respuesta a "por qué" está
- * acá adentro, con el mensaje que tiró la regla del backend.
- */
 function detalle(corrida, abierto) {
   if (!corrida.detalle) return `<span class="text-slate-400">—</span>`;
   return `

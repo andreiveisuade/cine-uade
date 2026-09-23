@@ -4,51 +4,15 @@ import { escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { duracion, hoyISO } from "../formato.js";
 
-/* --------------------------------------------------------------- la agenda */
-/*
- * La programación vista como calendario: las horas en el eje vertical y cada función
- * como un bloque ubicado y **dimensionado por su duración real**.
- *
- * El listado de funciones ya existía y es una tabla ordenada por fecha. Sirve para
- * buscar una función puntual y no sirve para nada más: no muestra los huecos, que es
- * justo lo que hay que ver para programar. Un cine no se planifica leyendo filas, se
- * planifica mirando dónde queda lugar.
- *
- * Que el alto salga de la duración no es decoración: es el dato que decide si dos
- * funciones se pisan (R3). La Odisea ocupa casi tres horas de columna y un corto ocupa
- * una franja mínima, y esa diferencia —que en la tabla es un número que hay que leer y
- * comparar— acá se ve de un vistazo.
- */
-
-/**
- * Dos preguntas distintas, y por eso dos modos.
- *
- * «¿Qué doy en la Sala 1 esta semana?» es planificación: una sala a lo largo de los días.
- * «¿Cómo queda el cine el sábado?» es operación: todas las salas de un mismo día.
- *
- * No se pueden juntar en una sola vista. Un calendario apila por hora, y a las 15:00 hay
- * seis funciones simultáneas en seis salas: en una única columna serían seis bloques
- * pisados e ilegibles. Lo que cambia entre los dos modos es solo qué representa cada
- * columna; el resto del dibujo es el mismo.
- */
 const MODOS = {
   semana: { etiqueta: "Semana (una sala)", dias: 7 },
   dia: { etiqueta: "Día (todas las salas)", dias: 1 },
 };
 
-/** Alto de un minuto. Con esto una película de dos horas mide 132px, que se lee bien. */
 const PX_POR_MINUTO = 1.1;
 
-/**
- * Ningún bloque baja de esto aunque dure menos.
- *
- * Rompe a propósito la proporción: el corto de 5 minutos debería medir 5px y ahí no se
- * lee ni el título. Es la única mentira del dibujo y se paga barato, porque abajo de los
- * veinte minutos la diferencia exacta ya no le cambia la decisión a nadie.
- */
 const ALTO_MINIMO = 26;
 
-/** Un color por película, estable entre recargas: el mismo título siempre igual. */
 const COLORES = [
   "bg-emerald-200 text-emerald-950 dark:bg-emerald-800 dark:text-emerald-50",
   "bg-sky-200 text-sky-950 dark:bg-sky-800 dark:text-sky-50",
@@ -118,8 +82,6 @@ export async function vistaAgenda(contenedor, modoPedido, desdePedido, salaPedid
   contenedor.querySelector("#despues").addEventListener("click", () => ir({ desde: correr(desde, MODOS[modo].dias) }));
 }
 
-/* ----------------------------------------------------------------- el dibujo */
-
 function dibujarGrilla(columnas, funciones, { inicio, fin }) {
   const alto = (fin - inicio) * PX_POR_MINUTO;
   const horas = [];
@@ -162,9 +124,6 @@ function bloque(funcion, inicioFranja, columna) {
   const detalle = `${funcion.pelicula.titulo}\n${enHora(arranca)}–${enHora(arranca + dura)} (${duracion(dura)})`
     + `\n${funcion.sala.nombre} · ${etiqueta(funcion.proyeccion)} · ${etiqueta(funcion.idioma)}`;
 
-  // Un <a> y no un div con onclick: la agenda es para mirar, y desde acá se salta a
-  // operar sobre esa función. Siendo un enlace de verdad funciona el clic del medio,
-  // el "abrir en pestaña nueva" y el teclado, gratis.
   return `
     <a href="#/funciones/${funcion.id}"
        class="absolute inset-x-0.5 block overflow-hidden rounded px-1.5 py-0.5 text-xs leading-tight
@@ -179,17 +138,6 @@ function bloque(funcion, inicioFranja, columna) {
   `;
 }
 
-/**
- * La franja rayada que va pegada abajo de cada función: el rato en que la sala se está
- * levantando y no se puede programar nada.
- *
- * <p>Es lo que vuelve visible por qué la próxima función no puede arrancar donde termina
- * la anterior. Sin esto el hueco existe igual —el backend lo rechaza— pero en la pantalla
- * se ve como espacio libre, y el encargado descubre la regla recién cuando el alta falla.
- *
- * <p>No es un bloque propio ni un enlace: no hay nada que abrir. Se deriva de la función
- * de arriba, igual que la agenda entera se deriva de las funciones.
- */
 function limpieza(funcion, termina, inicioFranja) {
   const minutos = funcion.sala.minutosLimpieza;
   if (!minutos) return "";
@@ -202,12 +150,6 @@ function limpieza(funcion, termina, inicioFranja) {
   `;
 }
 
-/* ------------------------------------------------------------------ columnas */
-
-/**
- * Cada columna sabe dos cosas: qué funciones le tocan y cómo se llama. Lo demás del
- * dibujo no necesita saber si está mirando días o salas.
- */
 function armarColumnas(modo, desde, salas, sala) {
   if (modo === "dia") {
     return salas.map((s) => ({
@@ -227,17 +169,9 @@ function armarColumnas(modo, desde, salas, sala) {
   });
 }
 
-/* -------------------------------------------------------------------- apoyos */
-
-/**
- * De qué hora a qué hora dibujar. Sale de las funciones y no es fijo de 00 a 24: un cine
- * abre a la tarde, y tres cuartos de la grilla vacíos serían tres cuartos de scroll.
- */
 function franjaHoraria(funciones) {
   if (!funciones.length) return null;
   const arranques = funciones.map((f) => minutosDe(f.inicio));
-  // El final incluye la limpieza: si no, la franja termina justo donde acaba la última
-  // película y su rayado queda cortado por el borde de la grilla.
   const finales = funciones.map((f) =>
     minutosDe(f.inicio) + f.pelicula.duracionMinutos + (f.sala.minutosLimpieza || 0));
   return {
@@ -258,11 +192,6 @@ function correr(fechaISO, dias) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/**
- * La ruta es #/agenda/modo/desde/sala, y el router entrega cada tramo por separado.
- * Entrar a #/agenda pelado tiene que funcionar igual, así que los tres tienen default y
- * se validan: un hash escrito a mano no puede dejar la pantalla en blanco.
- */
 function leerRuta(modo, desde, salaId) {
   return {
     modo: MODOS[modo] ? modo : "semana",

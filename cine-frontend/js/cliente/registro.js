@@ -4,8 +4,6 @@ import { boton, campo, panel } from "../componentes.js";
 import { avisar, escapar } from "../dom.js";
 import { clienteRecordado, olvidarCliente, recordarCliente } from "./compra.js";
 
-/* ------------------------------------------------------------------- registro */
-
 export async function vistaRegistro(contenedor) {
   const recordado = clienteRecordado();
 

@@ -8,9 +8,6 @@ import { dia, hora, precio } from "../formato.js";
 import { seleccion, catalogoTarifas, precioConTarifa, selectorTarifa, sesionDeCompra,
          sostenerSeleccion, renovarMientrasSigaAca } from "./compra.js";
 
-/* ------------------------------------------------------- mapa de butacas */
-
-// El fondo dice el estado; el borde y el símbolo, el tipo de butaca.
 function pintarParaComprar(asiento, elegidas) {
   const titulo = `${asiento.codigo} · ${etiqueta(asiento.tipo)} · ${precio(asiento.precio)}`;
   if (asiento.estado === "FUERA_DE_SERVICIO") {
@@ -30,8 +27,6 @@ function pintarParaComprar(asiento, elegidas) {
 }
 
 export async function vistaFuncion(contenedor, id) {
-  // La sesión va en el pedido para que las butacas que uno mismo bloqueó no le vuelvan
-  // marcadas como ocupadas: "ocupado" lo decide el backend, no esta pantalla.
   const [funcion] = await Promise.all([
     api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]);
   if (seleccion.funcionId !== funcion.id) {
@@ -82,8 +77,6 @@ export async function vistaFuncion(contenedor, id) {
     const elegidas = funcion.asientos.filter((a) => codigos.includes(a.codigo));
     const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, seleccion.butacas[a.codigo]), 0);
 
-    // Cada butaca lleva su propia tarifa: quien compra elige acá y ve el precio cambiar,
-    // en vez de enterarse del descuento recién en el ticket.
     const detalle = elegidas.map((a) => `
       <div class="flex items-center justify-between gap-2 border-t border-slate-200 py-1 dark:border-slate-800">
         <span class="font-medium">${a.codigo}</span>
@@ -119,18 +112,12 @@ export async function vistaFuncion(contenedor, id) {
     const botonAsiento = evento.target.closest("button[data-codigo]");
     if (!botonAsiento || botonAsiento.disabled) return;
     const codigo = botonAsiento.dataset.codigo;
-    // Arranca en GENERAL: la tarifa reducida hay que elegirla a propósito, porque
-    // después hay que acreditarla en la puerta.
     if (seleccion.butacas[codigo]) delete seleccion.butacas[codigo];
     else seleccion.butacas[codigo] = "GENERAL";
-    // Se repinta antes de pedir el bloqueo: la butaca se ve elegida en el acto y no
-    // después de un ida y vuelta al servidor.
     refrescar();
 
     const rechazadas = await sostenerSeleccion(funcion.id).catch(() => []);
     if (rechazadas.length) {
-      // Que se escape una butaca es que otro llegó primero, no una falla. El mapa se
-      // vuelve a pedir porque el que teníamos ya está diciendo algo que no es cierto.
       avisar(`${rechazadas.join(", ")}: alguien las está comprando`, "error");
       Object.assign(funcion, await api.obtenerFuncion(id, sesionDeCompra()));
       refrescar();
