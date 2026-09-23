@@ -11,7 +11,8 @@ import javax.swing.SwingUtilities;
 
 /**
  * Arranca el panel del encargado de escritorio. Lleva el ida y vuelta entre login y panel: un 401 en cualquier
- * pantalla cierra el panel y reabre el login, igual que el evento {@code cine:sesion-vencida} del panel web.
+ * pantalla cierra el panel y reabre el login: las credenciales viven solo en memoria, así que una sesión
+ * rechazada no tiene nada que rescatar y lo único útil es volver a pedirlas.
  */
 public final class Principal {
 

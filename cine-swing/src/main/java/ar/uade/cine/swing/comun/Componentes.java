@@ -19,7 +19,7 @@ import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-// Piezas de pantalla que se repiten: el equivalente de admin/comun.jsx.
+// Piezas de pantalla que se repiten, para que cada pantalla arme lo suyo y todas se vean igual.
 public final class Componentes {
 
     private Componentes() {
@@ -114,7 +114,7 @@ public final class Componentes {
         return panel;
     }
 
-    /** Formulario de dos columnas, etiqueta y campo, que es lo que en el panel web arma un Stack de inputs. */
+    /** Formulario de dos columnas, etiqueta y campo, con las etiquetas alineadas para que se lea de un vistazo. */
     public static final class Formulario extends JPanel {
 
         private int fila;

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * El marco del panel: cabecera, menú lateral y la pantalla elegida. El menú es el de {@code admin/AppAdmin.jsx}; cada
+ * El marco del panel: cabecera, menú lateral y la pantalla elegida. El acomodador solo ve Puerta; cada
  * vez que se elige una entrada la pantalla se crea de nuevo, que es lo que hace que muestre datos frescos.
  */
 public final class VentanaPrincipal extends JFrame implements Navegacion {

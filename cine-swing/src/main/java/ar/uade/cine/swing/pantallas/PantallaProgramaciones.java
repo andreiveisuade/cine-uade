@@ -44,7 +44,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
 
 /**
  * Grillas (CU-03b): una programación genera las funciones de un rango de una vez. Confirmar se habilita solo con una
- * previsualización de estos mismos datos: tocar cualquier campo la invalida, igual que en el panel web.
+ * previsualización de estos mismos datos: tocar cualquier campo la invalida, así nunca se confirma algo distinto de lo que se vio.
  */
 final class PantallaProgramaciones extends Pantalla {
 

@@ -45,7 +45,7 @@ final class PantallaImportador extends Pantalla {
             Columna.<Importacion>numero("Nuevas", Importacion::nuevas),
             Columna.<Importacion>numero("Salteadas", Importacion::salteadas),
             Columna.<Importacion>numero("Fallidas", Importacion::fallidas));
-    // Plegado en el panel web: casi nunca se mira, pero es lo único que dice por qué una película no entró.
+    // Casi nunca se mira, pero es lo único que dice por qué una película no entró.
     private final JTextArea detalle = new JTextArea();
 
     PantallaImportador(ApiHttp api, Navegacion navegacion) {

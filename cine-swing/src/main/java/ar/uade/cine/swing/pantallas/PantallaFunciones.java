@@ -35,7 +35,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /**
- * Listado con filtros y alta de funciones. A diferencia del panel web, no anticipa R3 ni R8 antes de mandar: el
+ * Listado con filtros y alta de funciones. No anticipa R3 ni R8 antes de mandar: el
  * backend las valida igual y su mensaje llega tal cual, así la regla vive en un solo lugar.
  */
 final class PantallaFunciones extends Pantalla {

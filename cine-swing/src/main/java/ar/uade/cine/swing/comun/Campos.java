@@ -35,7 +35,7 @@ public final class Campos {
         }
     }
 
-    /** "8,10,12" → [8, 10, 12]; lo que no es número se descarta, igual que en el panel web. */
+    /** "8,10,12" → [8, 10, 12]; lo que no es número se descarta. */
     public static List<Integer> enteros(JTextComponent campo) {
         return Arrays.stream(campo.getText().split(","))
                 .map(String::trim)

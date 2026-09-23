@@ -60,7 +60,7 @@ final class PantallaCobro extends Pantalla {
         centro.add(cuerpo, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
 
-        // El listado completo, como el panel web: no hay GET de reserva por id que traiga todo lo embebido.
+        // El listado completo: no hay GET de reserva por id que traiga todo lo embebido.
         cargar(() -> new Datos(api.obtenerReservas(null), api.obtenerMediosPago()), this::pintar);
     }
 
