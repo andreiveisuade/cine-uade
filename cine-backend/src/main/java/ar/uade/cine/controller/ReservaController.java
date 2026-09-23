@@ -33,6 +33,8 @@ import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -90,9 +92,8 @@ public class ReservaController {
     @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
     @PostMapping("/api/reservas")
     @ResponseStatus(HttpStatus.CREATED)
-    public ReservaVistaDTO reservar(@RequestBody PedidoReservaDTO pedido) {
-        return vistas.reserva(reservas.reservar(
-                pedido.funcionId() == null ? 0 : pedido.funcionId(),
+    public ReservaVistaDTO reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
+        return vistas.reserva(reservas.reservar(pedido.funcionId(),
                 pedido.nombre(), pedido.email(),
                 butacasPedidas(pedido),
                 pedido.sesion()));
@@ -100,7 +101,7 @@ public class ReservaController {
 
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")
-    public BloqueoVistaDTO bloquear(@PathVariable int id, @RequestBody PedidoBloqueoDTO pedido) {
+    public BloqueoVistaDTO bloquear(@PathVariable int id, @Valid @RequestBody PedidoBloqueoDTO pedido) {
         List<String> pedidas = pedido.butacas() == null ? List.of() : pedido.butacas();
         List<String> conseguidas = ocupacion.bloquear(id, pedidas, pedido.sesion());
         List<String> rechazadas = pedidas.stream()

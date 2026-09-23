@@ -31,6 +31,8 @@ import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.programaciones.PlanProgramacion;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -67,14 +69,14 @@ public class ProgramacionController {
 
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
     @PostMapping("/api/programaciones/previsualizar")
-    public PlanVistaDTO previsualizar(@RequestBody PedidoProgramacionDTO pedido) {
+    public PlanVistaDTO previsualizar(@Valid @RequestBody PedidoProgramacionDTO pedido) {
         return plan(aplicar(pedido, false));
     }
 
     @Operation(summary = "Crear la grilla y generar sus funciones")
     @PostMapping("/api/programaciones")
     @ResponseStatus(HttpStatus.CREATED)
-    public PlanVistaDTO crear(@RequestBody PedidoProgramacionDTO pedido) {
+    public PlanVistaDTO crear(@Valid @RequestBody PedidoProgramacionDTO pedido) {
         return plan(aplicar(pedido, true));
     }
 
@@ -95,8 +97,8 @@ public class ProgramacionController {
     }
 
     private PlanProgramacion aplicar(PedidoProgramacionDTO pedido, boolean persistir) {
-        int peliculaId = pedido.peliculaId() == null ? 0 : pedido.peliculaId();
-        int salaId = pedido.salaId() == null ? 0 : pedido.salaId();
+        int peliculaId = pedido.peliculaId();
+        int salaId = pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
         LocalDate hasta = pedido.hasta() == null || pedido.hasta().isBlank()
                 ? null : Parseo.dia(pedido.hasta(), "la fecha de fin");
@@ -105,7 +107,7 @@ public class ProgramacionController {
                 Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "los días de la semana"));
         Version version = Parseo.constante(Version.class, pedido.idioma(), "el idioma");
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
-        Dinero precio = Dinero.de(pedido.precio() == null ? 0 : pedido.precio());
+        Dinero precio = Dinero.de(pedido.precio());
 
         DatosGrilla datos = new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version,
                 proyeccion, precio);

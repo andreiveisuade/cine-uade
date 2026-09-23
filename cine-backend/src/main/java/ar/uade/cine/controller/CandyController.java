@@ -33,6 +33,8 @@ import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.informes.GestorCaja;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -70,38 +72,33 @@ public class CandyController {
     @Operation(summary = "Dar de alta un producto")
     @PostMapping("/api/candy/productos")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductoVistaDTO agregar(@RequestBody PedidoProductoDTO pedido) {
+    public ProductoVistaDTO agregar(@Valid @RequestBody PedidoProductoDTO pedido) {
         Producto producto = carta.agregar(pedido.nombre(),
-                pedido.tipo() == null
-                        ? null : Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
-                Dinero.de(pedido.precio() == null ? 0 : pedido.precio()));
+                Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
+                Dinero.de(pedido.precio()));
         return vistas.producto(producto);
     }
 
     @Operation(summary = "Armar un combo con productos de la carta")
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductoVistaDTO armarCombo(@RequestBody PedidoComboDTO pedido) {
-        return vistas.producto(carta.armarCombo(pedido.nombre(),
-                Dinero.de(pedido.precio() == null ? 0 : pedido.precio()), pedido.componentes()));
+    public ProductoVistaDTO armarCombo(@Valid @RequestBody PedidoComboDTO pedido) {
+        return vistas.producto(carta.armarCombo(pedido.nombre(), Dinero.de(pedido.precio()),
+                pedido.componentes()));
     }
 
     @Operation(summary = "Editar nombre y precio de un producto o combo")
     @PutMapping("/api/candy/productos/{id}")
-    public ProductoVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionProductoDTO pedido) {
+    public ProductoVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionProductoDTO pedido) {
         buscar(id);
-        return vistas.producto(carta.editar(id, pedido.nombre(),
-                Dinero.de(pedido.precio() == null ? 0 : pedido.precio())));
+        return vistas.producto(carta.editar(id, pedido.nombre(), Dinero.de(pedido.precio())));
     }
 
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
     @PutMapping("/api/candy/productos/{id}/disponibilidad")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
-                                                  @RequestBody PedidoDisponibilidadDTO pedido) {
+                                                  @Valid @RequestBody PedidoDisponibilidadDTO pedido) {
         buscar(id);
-        if (pedido.disponible() == null) {
-            throw new IllegalArgumentException("Falta decir si el producto queda disponible");
-        }
         carta.cambiarDisponibilidad(id, pedido.disponible());
         return vistas.producto(buscar(id));
     }
@@ -109,9 +106,8 @@ public class CandyController {
     @Operation(summary = "Vender candy en el mostrador: nace cobrado")
     @PostMapping("/api/candy/compras")
     @ResponseStatus(HttpStatus.CREATED)
-    public CompraCandyVistaDTO vender(@RequestBody PedidoVentaDTO pedido) {
-        MedioPago medio = pedido.medio() == null
-                ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
+    public CompraCandyVistaDTO vender(@Valid @RequestBody PedidoVentaDTO pedido) {
+        MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
 
         CompraCandy compra = pedido.reservaId() == null
                 ? candy.vender(pedido.clienteId(), pedido.cantidades(), medio, pedido.codigoAutorizacion())

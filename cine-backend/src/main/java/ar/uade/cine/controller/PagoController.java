@@ -32,6 +32,8 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -55,10 +57,9 @@ public class PagoController {
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")
     @ResponseStatus(HttpStatus.CREATED)
-    public PagoVistaDTO cobrar(@PathVariable int id, @RequestBody PedidoPagoDTO pedido) {
+    public PagoVistaDTO cobrar(@PathVariable int id, @Valid @RequestBody PedidoPagoDTO pedido) {
         exigirReserva(id);
-        MedioPago medio = pedido.medio() == null
-                ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
+        MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         return vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion()));
     }
 
@@ -74,10 +75,9 @@ public class PagoController {
     @PostMapping("/api/reservas/{id}/checkout")
     @ResponseStatus(HttpStatus.CREATED)
     public CheckoutVistaDTO abrirCheckout(@PathVariable int id,
-                                          @RequestBody PedidoCheckoutDTO pedido) {
+                                          @Valid @RequestBody PedidoCheckoutDTO pedido) {
         exigirReserva(id);
-        MedioPago medio = pedido.medio() == null
-                ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
+        MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
 
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(id, medio);
         return new CheckoutVistaDTO(checkout.id(), checkout.reservaId(), checkout.medio().name(),

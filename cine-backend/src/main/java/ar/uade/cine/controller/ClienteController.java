@@ -18,6 +18,8 @@ import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.usuarios.PedidoClienteDTO;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -46,7 +48,7 @@ public class ClienteController {
     @Operation(summary = "Registrar un cliente")
     @PostMapping("/api/clientes")
     @ResponseStatus(HttpStatus.CREATED)
-    public ClienteVistaDTO registrar(@RequestBody PedidoClienteDTO pedido) {
+    public ClienteVistaDTO registrar(@Valid @RequestBody PedidoClienteDTO pedido) {
         return vistas.cliente(clientes.registrar(pedido.nombre(), pedido.email()));
     }
 }

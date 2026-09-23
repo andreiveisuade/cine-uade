@@ -12,7 +12,7 @@ Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Prob
 | Enums | Nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
 | Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido |
-| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente · `405` método no aceptado · `409` butaca ganada por otro · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
+| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente · `405` método no aceptado · `409` butaca ganada por otro · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
 
 ### Quién puede llamar a qué
 

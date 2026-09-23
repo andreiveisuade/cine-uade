@@ -28,6 +28,8 @@ import ar.uade.cine.service.programaciones.PlanificadorGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -45,22 +47,19 @@ public class GrillaController {
 
     @Operation(summary = "Proponer una semana entera de funciones, sin escribir nada")
     @PostMapping("/api/grilla/propuesta")
-    public PropuestaGrillaDTO proponer(@RequestBody PedidoGrillaDTO pedido) {
+    public PropuestaGrillaDTO proponer(@Valid @RequestBody PedidoGrillaDTO pedido) {
         return propuesta(planificador.proponer(criterios(pedido)), false);
     }
 
     @Operation(summary = "Aplicar la propuesta: crea todas las funciones")
     @PostMapping("/api/grilla")
     @ResponseStatus(HttpStatus.CREATED)
-    public PropuestaGrillaDTO aplicar(@RequestBody PedidoGrillaDTO pedido) {
+    public PropuestaGrillaDTO aplicar(@Valid @RequestBody PedidoGrillaDTO pedido) {
         return propuesta(planificador.aplicar(criterios(pedido)), true);
     }
 
     // El precio no tiene default: es una decisión comercial del cine.
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
-        if (pedido.precio() == null) {
-            throw new IllegalArgumentException("Falta el precio de las funciones");
-        }
         LocalDate desde = pedido.desde() == null || pedido.desde().isBlank()
                 ? reloj.hoy()
                 : Parseo.dia(pedido.desde(), "la fecha de inicio");

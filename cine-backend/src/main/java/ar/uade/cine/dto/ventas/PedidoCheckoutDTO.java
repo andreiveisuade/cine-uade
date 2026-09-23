@@ -1,4 +1,6 @@
 package ar.uade.cine.dto.ventas;
 
-public record PedidoCheckoutDTO(String medio) {
+import jakarta.validation.constraints.NotBlank;
+
+public record PedidoCheckoutDTO(@NotBlank(message = "Falta el medio de pago") String medio) {
 }

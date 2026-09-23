@@ -27,6 +27,8 @@ import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.salas.GestorSalas;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -57,10 +59,9 @@ public class SalaController {
     @Operation(summary = "Dar de alta una sala y generarle las butacas")
     @PostMapping("/api/salas")
     @ResponseStatus(HttpStatus.CREATED)
-    public SalaVistaDTO agregar(@RequestBody PedidoSalaDTO pedido) {
+    public SalaVistaDTO agregar(@Valid @RequestBody PedidoSalaDTO pedido) {
         Sala sala = salas.agregar(pedido.nombre(),
-                pedido.tipo() == null
-                        ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
+                Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                 pedido.butacasPorFila(),
                 especiales(pedido),
                 pedido.minutosLimpieza() == null
@@ -70,11 +71,10 @@ public class SalaController {
 
     @Operation(summary = "Editar nombre, tipo y limpieza de una sala. Las butacas no cambian")
     @PutMapping("/api/salas/{id}")
-    public SalaVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionSalaDTO pedido) {
+    public SalaVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionSalaDTO pedido) {
         buscar(id);
         Sala sala = salas.editar(id, pedido.nombre(),
-                pedido.tipo() == null
-                        ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
+                Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                 pedido.minutosLimpieza());
         return vistas.salaConButacas(sala);
     }
@@ -90,7 +90,7 @@ public class SalaController {
     @Operation(summary = "Marcar una butaca fuera de servicio, o reponerla")
     @PutMapping("/api/salas/{salaId}/asientos/{codigo}")
     public SalaVistaDTO cambiarEstado(@PathVariable int salaId, @PathVariable String codigo,
-                                      @RequestBody PedidoEstadoDTO pedido) {
+                                      @Valid @RequestBody PedidoEstadoDTO pedido) {
         buscar(salaId);
 
         EstadoAsiento estado = Parseo.constante(EstadoAsiento.class, pedido.estado(),

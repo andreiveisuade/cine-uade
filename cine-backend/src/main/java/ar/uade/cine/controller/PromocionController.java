@@ -27,6 +27,8 @@ import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -57,7 +59,7 @@ public class PromocionController {
     @Operation(summary = "Cargar una promoción")
     @PostMapping("/api/promociones")
     @ResponseStatus(HttpStatus.CREATED)
-    public PromocionVistaDTO crear(@RequestBody PedidoPromocionDTO pedido) {
+    public PromocionVistaDTO crear(@Valid @RequestBody PedidoPromocionDTO pedido) {
         LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
         LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
         Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día"));

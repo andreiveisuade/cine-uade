@@ -91,7 +91,7 @@ class PagoControllerTest extends PruebaDeApi {
     }
 
     @Test
-    void sinMedioElErrorLoDaElGestorYNoLaCapaHttp() {
+    void sinMedioEs400ConElMismoMensajeQueElGestor() {
         Respuesta respuesta =
                 post("/api/reservas/" + reserva.getId() + "/checkout", "{}");
 

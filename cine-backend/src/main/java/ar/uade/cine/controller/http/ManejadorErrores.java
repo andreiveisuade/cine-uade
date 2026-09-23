@@ -1,5 +1,9 @@
 package ar.uade.cine.controller.http;
 
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -12,6 +16,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,6 +38,23 @@ public class ManejadorErrores {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorVistaDTO> datoInvalido(IllegalArgumentException e) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorVistaDTO> pedidoIncompleto(MethodArgumentNotValidException e) {
+        return responder(HttpStatus.BAD_REQUEST, primerError(e));
+    }
+
+    // Por orden de declaración en el DTO: el validador no garantiza ninguno y el mensaje cambiaría entre corridas.
+    private static String primerError(MethodArgumentNotValidException e) {
+        Class<?> dto = e.getParameter().getParameterType();
+        List<String> campos = dto.isRecord()
+                ? Arrays.stream(dto.getRecordComponents()).map(RecordComponent::getName).toList()
+                : List.of();
+        return e.getBindingResult().getFieldErrors().stream()
+                .min(Comparator.comparingInt((FieldError error) -> campos.indexOf(error.getField())))
+                .map(FieldError::getDefaultMessage)
+                .orElse("El pedido no es válido");
     }
 
     @ExceptionHandler(NoEncontrado.class)

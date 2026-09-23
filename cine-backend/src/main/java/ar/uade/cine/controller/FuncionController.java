@@ -24,6 +24,8 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
 
+import jakarta.validation.Valid;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -66,16 +68,12 @@ public class FuncionController {
     @Operation(summary = "Programar una función")
     @PostMapping("/api/funciones")
     @ResponseStatus(HttpStatus.CREATED)
-    public FuncionVistaDTO programar(@RequestBody PedidoFuncionDTO pedido) {
-        Funcion funcion = funciones.programar(
-                pedido.peliculaId() == null ? 0 : pedido.peliculaId(),
-                pedido.salaId() == null ? 0 : pedido.salaId(),
-                pedido.inicio() == null ? null : Parseo.momento(pedido.inicio(), "la fecha y hora"),
-                pedido.idioma() == null
-                        ? null : Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
-                pedido.proyeccion() == null
-                        ? null : Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
-                Dinero.de(pedido.precio() == null ? 0 : pedido.precio()));
+    public FuncionVistaDTO programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
+        Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(),
+                Parseo.momento(pedido.inicio(), "la fecha y hora"),
+                Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
+                Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
+                Dinero.de(pedido.precio()));
         return vistas.funcionConPelicula(funcion);
     }
 

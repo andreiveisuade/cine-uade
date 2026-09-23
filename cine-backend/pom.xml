@@ -81,6 +81,13 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
 
+    <!-- Bean Validation: los Pedido*DTO declaran qué campos son obligatorios, con el mismo
+         mensaje que daría el gestor. Las reglas de negocio siguen en el gestor. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
     <!-- Driver JDBC de MySQL. En runtime: nadie lo importa, lo carga el DataSource. -->
     <dependency>
       <groupId>com.mysql</groupId>

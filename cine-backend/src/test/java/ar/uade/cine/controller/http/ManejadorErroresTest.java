@@ -33,6 +33,30 @@ class ManejadorErroresTest extends PruebaDeApi {
     }
 
     @Test
+    void unPedidoIncompletoEs400ConElMensajeDelPrimerCampoQueFalta() {
+        Respuesta respuesta = post("/api/clientes", "{}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El nombre no puede estar vacío", respuesta.error());
+    }
+
+    @Test
+    void unEmailSinFormatoEs400() {
+        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana-sin-arroba\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El email no es válido", respuesta.error());
+    }
+
+    @Test
+    void unaFuncionSinPeliculaNiSalaPideLaPeliculaPrimero() {
+        Respuesta respuesta = post("/api/funciones", "{\"precio\":5000}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta la película", respuesta.error());
+    }
+
+    @Test
     void unaRutaQueNoExisteEs404() {
         Respuesta respuesta = get("/api/no-existe");
 
