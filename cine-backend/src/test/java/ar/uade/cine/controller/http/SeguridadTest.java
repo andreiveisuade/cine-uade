@@ -12,11 +12,6 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
-/**
- * El resto de los tests de API va como administrador y no ve el filtro. Acá: el cliente sin
- * clave, la escritura del encargado rechazada con {@code {"error": "..."}} y sin la cabecera
- * que abre el login del navegador.
- */
 class SeguridadTest extends PruebaDeApi {
 
     private static final String SALA = """
@@ -74,7 +69,6 @@ class SeguridadTest extends PruebaDeApi {
         Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/acceso", "{\"codigo\":\"NOEXISTE\"}",
                 "puerta@cine.test", "clave-puerta");
 
-        // Un código inventado lo rechaza la regla de negocio, no la seguridad.
         assertThat(respuesta.estado()).isNotIn(401, 403);
         assertThat(respuesta.json().has("error")).isTrue();
     }

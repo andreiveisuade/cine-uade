@@ -5,10 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/**
- * Hashea contraseñas con SHA-256 sin salt: alcanza para el TP, no para producción (misma
- * clave, mismo hash; hay tablas precalculadas). Lo correcto sería bcrypt o Argon2.
- */
+// SHA-256 sin salt: alcanza para el TP, no para producción (lo correcto sería bcrypt o Argon2).
 public class Password {
 
     private Password() {

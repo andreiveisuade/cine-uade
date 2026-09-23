@@ -11,10 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-/**
- * Butaca física. No sabe si está ocupada, que es por función (R4); sí si está rota, que es
- * del asiento (R9). La sala va por id: pintar el mapa no necesita cargarla en cada fila.
- */
 @Entity
 public class Asiento {
 
@@ -54,7 +50,6 @@ public class Asiento {
         return salaId;
     }
 
-    /** 1 = fila A. */
     public int getFila() {
         return fila;
     }
@@ -75,7 +70,6 @@ public class Asiento {
         this.estado = estado;
     }
 
-    /** "B7", derivado de fila y número. */
     public String getCodigo() {
         return codigoDe(fila, numero);
     }
@@ -84,7 +78,6 @@ public class Asiento {
         return (char) ('A' + fila - 1) + String.valueOf(numero);
     }
 
-    /** Tolera minúsculas y espacios porque llega tipeado. Acá para que todos busquen igual. */
     public static Optional<Asiento> conCodigo(List<Asiento> asientos, String codigo) {
         String buscado = normalizarCodigo(codigo);
         return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();

@@ -25,11 +25,6 @@ import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Cobro de reservas. Efectivo y checkout por {@link PasarelaPagos} terminan en
- * {@link #cobrar}, así R5, R17 y R19 valen igual por los dos caminos. Recibe
- * {@link PoliticaPromociones} y no el gestor: cobrar necesita un monto, no el ABM.
- */
 @Service
 @Transactional
 public class GestorPagos {
@@ -56,7 +51,6 @@ public class GestorPagos {
         this.reloj = reloj;
     }
 
-    /** El monto no es parámetro: sale de la reserva, así no se puede cobrar otro importe. */
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = buscarReserva(reservaId);
         Funcion funcion = validarQueSePuedaCobrar(reserva, medio);
@@ -74,7 +68,6 @@ public class GestorPagos {
         reserva.pagar();
         reservaRepository.save(reserva);
         emitirRecibo(pago, reserva);
-        // Con la promo nombrada: explica la diferencia cuando la caja no da.
         LOG.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
                 reservaId, medio, reserva.getTotal(),
                 !descuento.monto().esCero()
@@ -85,15 +78,10 @@ public class GestorPagos {
         return pago;
     }
 
-    /**
-     * Valida como al cobrar y no recién al confirmar: mandar a pagar algo incobrable
-     * terminaría en una devolución, que el sistema no modela (R13). El monto ya lleva el
-     * descuento para que lo aprobado coincida con lo cobrado.
-     */
+    // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
         Funcion funcion = validarQueSePuedaCobrar(reserva, medio);
-        // R11: el efectivo va por cobrar, sin pasarela.
         if (!medio.requiereAutorizacion()) {
             throw new IllegalArgumentException("El pago con " + medio
                     + " se cobra en la caja del cine, no por checkout");
@@ -109,10 +97,7 @@ public class GestorPagos {
         return checkout;
     }
 
-    /**
-     * La reserva sale del checkout y no de quien confirma, para que una autorización no se
-     * aplique a otra reserva. El descuento se recalcula: pudo cambiar una promoción.
-     */
+    // La reserva sale del checkout y no de quien confirma. El descuento se recalcula: pudo cambiar una promoción.
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = pasarela.buscar(checkoutId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el checkout " + checkoutId));
@@ -126,10 +111,6 @@ public class GestorPagos {
                 .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + reservaId));
     }
 
-    /**
-     * R5, R17 y R19. El estado también lo exige {@code Reserva.pagar()}, pero el checkout
-     * necesita saberlo antes de cobrar. Devuelve la función para evaluar las promociones.
-     */
     private Funcion validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
         if (reserva.getEstado() != EstadoReserva.RESERVADA) {
             throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
@@ -143,7 +124,6 @@ public class GestorPagos {
         Funcion funcion = funcionRepository.findById(reserva.getFuncionId())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No existe la función " + reserva.getFuncionId()));
-        // R19
         if (funcion.yaEmpezo(ahora)) {
             throw new IllegalArgumentException("La función ya empezó: no se puede cobrar la reserva "
                     + reserva.getId());
@@ -151,14 +131,12 @@ public class GestorPagos {
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
         }
-        // R5, la otra mitad: una sola vez.
         if (pagoRepository.existsByReservaId(reserva.getId())) {
             throw new IllegalArgumentException("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
         return funcion;
     }
 
-    /** Solo efectivo: lo electrónico tiene el cupón del procesador. Se numera por id del pago. */
     private void emitirRecibo(Pago pago, Reserva reserva) {
         if (!pago.getMedio().requiereAutorizacion()) {
             generadorRecibo.emitir(pago, reserva);
@@ -169,7 +147,6 @@ public class GestorPagos {
         return pagoRepository.findByReservaId(reservaId);
     }
 
-    /** De una vez, para que el listado no consulte por fila. */
     public List<Pago> buscarPorReservas(Collection<Integer> reservaIds) {
         return pagoRepository.findByReservaIdIn(reservaIds);
     }

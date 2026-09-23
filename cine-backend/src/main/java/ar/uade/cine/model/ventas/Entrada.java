@@ -14,10 +14,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-/**
- * Butaca vendida dentro de una reserva. El asiento va como {@code @ManyToOne}, a diferencia
- * del resto del dominio, porque cada lectura necesita su código ("B7") para el ticket.
- */
 @Entity
 @Table(uniqueConstraints = {
         // R4: impide vender la misma butaca dos veces por función. Acá también para H2.
@@ -34,18 +30,13 @@ public class Entrada {
     @JoinColumn(name = "asiento_id", nullable = false)
     private Asiento asiento;
 
-    /**
-     * Copiada de la reserva para el UNIQUE de R4. NULL al liberar (R6): la butaca vuelve a
-     * la venta y la entrada queda como registro.
-     */
+    // Copiada de la reserva para el UNIQUE de R4. NULL al liberar (R6): la butaca vuelve a la venta.
     @Column(name = "funcion_id")
     private Integer funcionId;
 
-    /** Por persona y no por reserva: en una pueden ir generales y jubilados. */
     @Enumerated(EnumType.STRING)
     private TipoTarifa tarifa;
 
-    /** Congelado al reservar, con la tarifa aplicada. El descuento vive en el {@link Pago}. */
     private Dinero precio;
 
     protected Entrada() {

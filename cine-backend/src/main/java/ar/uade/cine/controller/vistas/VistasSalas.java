@@ -16,10 +16,6 @@ import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
 
-/**
- * Arma salas y butacas como las espera el front. Necesita {@link GestorSalas} porque la sala
- * no conoce sus butacas: viven en su propio repositorio.
- */
 @Component
 public class VistasSalas {
 
@@ -50,7 +46,6 @@ public class VistasSalas {
                 distribucion.size(), asientos.size(), s.getMinutosLimpieza(), detalle);
     }
 
-    /** La distribución no se guarda: se cuenta desde las butacas, la única fuente de verdad. */
     private List<Integer> butacasPorFila(List<Asiento> asientos) {
         return asientos.stream()
                 .collect(Collectors.groupingBy(Asiento::getFila, TreeMap::new, Collectors.counting()))
@@ -64,7 +59,6 @@ public class VistasSalas {
                 a.getTipo().name(), a.getEstado().name(), null, null);
     }
 
-    /** Precio de tarifa general: la tarifa se elige al reservar, y de ahí el precio solo baja. */
     AsientoVistaDTO asiento(Asiento a, Funcion funcion, Sala sala, Set<Integer> ocupados) {
         return new AsientoVistaDTO(a.getId(), a.getSalaId(), a.getFila(), a.getNumero(), a.getCodigo(),
                 a.getTipo().name(), a.getEstado().name(),

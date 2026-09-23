@@ -61,7 +61,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programar(peliculaId, reloj.ahora().minusDays(1));
     }
 
-    /** Por el repositorio: el gestor no deja programar en el pasado ni sin confirmar. */
+    // Por el repositorio: el gestor no deja programar en el pasado ni sin confirmar.
     private void programar(int peliculaId, LocalDateTime inicio) {
         if (sala == null) {
             sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));

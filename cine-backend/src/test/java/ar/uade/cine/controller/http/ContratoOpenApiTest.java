@@ -14,12 +14,6 @@ import ar.uade.cine.PruebaDeApi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-/**
- * Que el contrato de Swagger sea un documento íntegro: springdoc reemplaza los
- * {@code components.schemas} del bean {@code OpenAPI}, y los {@code $ref} a errores pueden
- * quedar apuntando a la nada sin que nada falle. Qué endpoints hay lo prueban los
- * {@code *ControllerTest}.
- */
 class ContratoOpenApiTest extends PruebaDeApi {
 
     @Test
@@ -36,8 +30,7 @@ class ContratoOpenApiTest extends PruebaDeApi {
     void todasLasRutasEntranEnElContrato() {
         JsonNode rutas = get("/v3/api-docs").json().get("paths");
 
-        // Sin número fijo: se afirma que springdoc encontró los controladores; un contrato vacío
-        // también devolvería 200.
+        // Sin número fijo: un contrato vacío también devolvería 200.
         assertThat(rutas).isNotEmpty();
         rutas.properties().forEach(ruta -> assertThat(ruta.getKey()).startsWith("/api/"));
     }

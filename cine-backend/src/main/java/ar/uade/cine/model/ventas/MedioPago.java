@@ -18,7 +18,6 @@ public enum MedioPago {
         return requiereAutorizacion;
     }
 
-    /** R11. Acá para que boletería y candy lo apliquen igual. */
     public String autorizacion(String codigo) {
         String limpio = codigo == null ? "" : codigo.trim();
         if (requiereAutorizacion && limpio.isEmpty()) {

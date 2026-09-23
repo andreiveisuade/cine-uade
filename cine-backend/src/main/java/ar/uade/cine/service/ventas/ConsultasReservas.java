@@ -19,7 +19,6 @@ import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 
-/** Las lecturas de reservas. Aparte de la venta: no escriben y cruzan otros catálogos. */
 @Service
 @Transactional(readOnly = true)
 public class ConsultasReservas {
@@ -45,15 +44,11 @@ public class ConsultasReservas {
         return reservaRepository.findByCliente_IdOrderByCreadaEnDesc(clienteId);
     }
 
-    /**
-     * En memoria y no con {@code WHERE}: el texto cruza cuatro tablas y un JOIN partiría el
-     * criterio entre el gestor y JPQL. Aguanta decenas de miles de reservas.
-     */
+    // En memoria y no con WHERE: el texto cruza cuatro tablas.
     public List<Reserva> buscar(CriteriosReserva criterios) {
         if (criterios == null || criterios.sinFiltros()) {
             return reservaRepository.findAll();
         }
-        // Catálogos indexados una vez, para no consultar por fila.
         Map<Integer, Funcion> funciones = porId(funcionRepository.findAll(), Funcion::getId);
         Map<Integer, Pelicula> peliculas = porId(peliculaRepository.findAll(), Pelicula::getId);
         Map<Integer, Cliente> clientes = porId(clienteRepository.findAll(), Cliente::getId);
@@ -79,7 +74,6 @@ public class ConsultasReservas {
         return funcion == null ? null : peliculas.get(funcion.getPeliculaId());
     }
 
-    /** Por lo que el cliente tiene a mano: nombre, mail, película, código o butaca. */
     private static boolean coincideElTexto(Reserva reserva, String texto, Cliente cliente,
                                            Pelicula pelicula) {
         if (texto.isEmpty() || contiene(reserva.getCodigo(), texto)) {

@@ -1,9 +1,5 @@
 package ar.uade.cine.model.ventas;
 
-/**
- * Quién ve la película: el tercer eje del precio, junto con sala y butaca. Como el cliente
- * no inicia sesión, la tarifa se declara al comprar y se acredita con carnet en la puerta.
- */
 public enum TipoTarifa {
 
     GENERAL(1.0, false),

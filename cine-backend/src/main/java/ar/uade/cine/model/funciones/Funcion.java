@@ -16,10 +16,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
-/**
- * Una película en una sala a una fecha y hora. Película y sala son LAZY: listar funciones
- * no tiene que traer ambas por fila, y los ids se leen del proxy sin ir a la base.
- */
 @Entity
 public class Funcion {
 
@@ -35,7 +31,6 @@ public class Funcion {
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
-    /** {@code null} si se cargó a mano (preestreno, función especial). */
     @Column(name = "programacion_id")
     private Integer programacionId;
 
@@ -47,13 +42,11 @@ public class Funcion {
     @Enumerated(EnumType.STRING)
     private Proyeccion proyeccion;
 
-    /** Precio de una butaca estándar; los recargos de sala y butaca se aplican aparte. */
     private Dinero precio;
 
     protected Funcion() {
     }
 
-    /** Función suelta de CU-03, sin grilla. */
     public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio) {
         this(pelicula, sala, inicio, version, proyeccion, precio, null);
@@ -82,7 +75,7 @@ public class Funcion {
         return sala;
     }
 
-    /** No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas. */
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
         return pelicula.getId();
     }
@@ -117,12 +110,10 @@ public class Funcion {
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
     }
 
-    /** R19. Recibe el instante en vez de leer el reloj para poder probarlo. */
     public boolean yaEmpezo(LocalDateTime ahora) {
         return !inicio.isAfter(ahora);
     }
 
-    /** La duración es de la película: la pasa quien ya la resolvió, en vez de copiarla acá. */
     public LocalDateTime getFin(int duracionMinutos) {
         return inicio.plusMinutes(duracionMinutos);
     }

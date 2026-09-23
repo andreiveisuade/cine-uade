@@ -1,9 +1,5 @@
 package ar.uade.cine.model.salas;
 
-/**
- * Tecnología de la sala; su multiplicador va sobre el precio base. Lo premium de la butaca
- * lo dice {@link TipoAsiento}: en los dos lados, el recargo se cobraría dos veces.
- */
 public enum TipoSala {
 
     DOS_D(1.0, false),

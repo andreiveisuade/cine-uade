@@ -50,7 +50,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.model.dinero.Dinero;
 
-/** R5: solo se cobra una reserva en estado RESERVADA, y una sola vez. */
 class GestorPagosTest extends PruebaDeIntegracion {
 
     private static final Path TICKETS = Path.of("target/comprobantes/tickets");
@@ -74,7 +73,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
 
-    /** Sala 2D de 10 butacas, función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -151,7 +149,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
     }
 
 
-    /** El total se define al cobrar: recién ahí se sabe el medio y qué promociones corren. */
     @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
@@ -215,7 +212,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Arqueo arqueo = caja.arqueoDe(reloj.hoy());
 
         assertEquals(Dinero.de(15000.0), arqueo.total());
-        // Tres butacas en dos cobros: no sale de la cantidad de pagos.
         assertEquals(3, arqueo.entradas());
         assertEquals(2, arqueo.pagos().size());
         assertEquals(1, arqueo.porMedio().get(MedioPago.EFECTIVO).cantidad());
@@ -248,7 +244,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo.total()));
     }
 
-    /** Sin recibo, el pago en efectivo no deja constancia afuera del cine. */
     @Test
     void elCobroEnEfectivoImprimeElReciboDeCaja() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -260,7 +255,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertTrue(leer(recibo).contains("EFECTIVO"));
     }
 
-    /** El electrónico ya tiene su comprobante: el cupón del que salió el código. */
     @Test
     void elCobroElectronicoNoImprimeReciboDeCaja() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -296,7 +290,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertFalse(checkout.codigoQr().isBlank());
     }
 
-    /** El cliente aprueba un importe en la pantalla del procesador: tiene que ser el final. */
     @Test
     void elMontoDelCheckoutYaTraeElDescuentoAplicado() {
         promociones.crearPorcentaje("50 off", 50,
@@ -307,7 +300,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(2500.0), pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).monto());
     }
 
-    /** R11 al revés: el efectivo no tiene a quién pedirle una autorización. */
     @Test
     void elEfectivoNoAbreCheckout() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -325,7 +317,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
     }
 
-    /** R11: el código de autorización sale de la pasarela, nadie lo tipea. */
     @Test
     void confirmarElCheckoutCobraConElCodigoQueDevolvioLaPasarela() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
@@ -346,7 +337,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout("MP-0000000000"));
     }
 
-    /** Un doble click no cobra dos veces: la segunda confirmación choca contra R5. */
     @Test
     void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));

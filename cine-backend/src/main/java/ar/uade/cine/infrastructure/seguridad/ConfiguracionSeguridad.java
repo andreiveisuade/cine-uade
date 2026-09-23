@@ -31,13 +31,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * Quién puede llamar a qué. HTTP Basic sin sesión: sin cookie no hay CSRF, por eso está
- * apagado. Se enumera lo abierto (sitio del cliente, login, Swagger; CU-18 para el
- * acomodador) y todo lo demás pide ADMINISTRADOR, así una ruta nueva nace protegida.
- * Los 401/403 salen como {@code {"error": "..."}} y sin {@code WWW-Authenticate}, que abriría
- * el cuadro de login del navegador. No usa {@code ErrorVistaDTO}: {@code dto/} está arriba.
- */
+// HTTP Basic sin sesión: sin cookie no hay CSRF, por eso está apagado. Lo no enumerado pide ADMINISTRADOR.
+// Los 401/403 salen sin WWW-Authenticate, que abriría el cuadro de login del navegador.
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
@@ -52,7 +47,6 @@ public class ConfiguracionSeguridad {
             "/api/clientes",
             "/api/reservas",
             "/api/funciones/*/bloqueos",
-            // Tan abierto como consultarla: el cliente no tiene clave.
             "/api/reservas/*/cancelacion"};
 
     public static final String[] GET_PUBLICOS = {
@@ -68,7 +62,7 @@ public class ConfiguracionSeguridad {
 
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
-    /** Abierta solo con {@code ?email=}: ningún patrón de ruta mira el parámetro. */
+    // Abierta solo con ?email=: ningún patrón de ruta mira el parámetro.
     public static final String GET_PUBLICO_CON_EMAIL = "/api/reservas";
 
     @Bean
@@ -99,7 +93,6 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // Login y compra sin registrarse.
                         .requestMatchers(HttpMethod.POST, POST_PUBLICOS).permitAll()
                         // Va antes que /api/peliculas/*, que si no lo abriría por coincidencia.
                         .requestMatchers(HttpMethod.GET, GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS).hasRole(ADMINISTRADOR)
@@ -111,7 +104,6 @@ public class ConfiguracionSeguridad {
                 .build();
     }
 
-    /** Con email es "mis reservas" del cliente; sin email, el listado del encargado. */
     private static RequestMatcher reservasDeUnEmail() {
         return pedido -> HttpMethod.GET.matches(pedido.getMethod())
                 && GET_PUBLICO_CON_EMAIL.equals(pedido.getServletPath())
@@ -119,7 +111,6 @@ public class ConfiguracionSeguridad {
                 && !pedido.getParameter("email").isBlank();
     }
 
-    /** Solo empleados, que son los que tienen contraseña; el {@link Rol} pasa a ser {@code ROLE_*}. */
     @Bean
     public UserDetailsService empleadosComoUsuarios(EmpleadoRepository empleados) {
         return email -> empleados.findByEmail(email)

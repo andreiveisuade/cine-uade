@@ -21,18 +21,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
-/**
- * Butacas de una función a nombre de un cliente. Nace RESERVADA y solo avanza a PAGADA,
- * CANCELADA o EXPIRADA, por métodos que exigen el estado previo: no hay {@code setEstado}.
- * Es un agregado: sus entradas se guardan y se borran con ella.
- */
 @Entity
 public class Reserva {
 
-    /** Minutos que una reserva sin pagar retiene sus butacas (R17). */
     public static final int MINUTOS_PARA_PAGAR = 30;
 
-    /** Sin O, I, 0 ni 1: el código se tipea a mano cuando el escáner no lee. */
+    // Sin O, I, 0 ni 1: el código se tipea a mano cuando el escáner no lee.
     private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int LARGO_CODIGO = 8;
     private static final SecureRandom AZAR = new SecureRandom();
@@ -41,7 +35,6 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    /** LAZY como en {@link Funcion}: los ids salen del proxy y el resto solo si se navega. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "funcion_id", nullable = false)
     private Funcion funcion;
@@ -52,12 +45,10 @@ public class Reserva {
 
     private LocalDateTime creadaEn;
 
-    /** Fijadas al crear: cambiarlas alteraría el total de algo ya cobrado. */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "reserva_id", nullable = false)
     private List<Entrada> entradas = new ArrayList<>();
 
-    /** Código del QR y única credencial del cliente: aleatorio para que no se adivine desde el id. */
     @Column(unique = true)
     private String codigo;
 
@@ -121,7 +112,6 @@ public class Reserva {
         return entradas.size();
     }
 
-    /** Subtotal de lista: el descuento depende del medio de pago y se aplica al cobrar. */
     public Dinero getTotal() {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
@@ -130,25 +120,21 @@ public class Reserva {
         return estado;
     }
 
-    /** R5: se cobra una vez, y solo lo que está esperando pago. */
     public void pagar() {
         exigirEsperandoPago("no se puede cobrar");
         estado = EstadoReserva.PAGADA;
     }
 
-    /** R6 y R13: cancelar libera las butacas; una reserva cobrada no se cancela sin más. */
     public void cancelar() {
         exigirEsperandoPago("solo se puede cancelar una reserva sin cobrar");
         pasarA(EstadoReserva.CANCELADA);
     }
 
-    /** R17: venció sin pagar; las butacas vuelven a la venta. */
     public void expirar() {
         exigirEsperandoPago("no puede expirar");
         pasarA(EstadoReserva.EXPIRADA);
     }
 
-    /** R18: entra al cine una reserva pagada, y una sola vez. */
     public void registrarIngreso(LocalDateTime cuando) {
         if (estado != EstadoReserva.PAGADA) {
             throw new IllegalArgumentException("La reserva está " + estado
@@ -166,7 +152,6 @@ public class Reserva {
         }
     }
 
-    /** R6: dejar de retener butacas y liberarlas es un solo paso. */
     private void pasarA(EstadoReserva nuevo) {
         estado = nuevo;
         entradas.forEach(Entrada::liberar);
@@ -176,7 +161,7 @@ public class Reserva {
         return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.PAGADA;
     }
 
-    /** Si <em>debería</em> expirar: el estado lo escribe la primera operación que se cruza con ella. */
+    // Si debería expirar: el estado lo escribe la primera operación que se cruza con ella.
     public boolean estaVencida(LocalDateTime ahora) {
         return estado == EstadoReserva.RESERVADA
                 && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);

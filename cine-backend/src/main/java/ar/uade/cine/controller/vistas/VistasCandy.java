@@ -12,7 +12,6 @@ import ar.uade.cine.model.candy.ItemCombo;
 import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.candy.Producto;
 
-/** El candy como lo espera el front. Un combo viaja como cualquier producto, con sus componentes. */
 @Component
 public class VistasCandy {
 

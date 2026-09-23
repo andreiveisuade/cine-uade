@@ -28,10 +28,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 
-/**
- * Arma reservas y pagos como los espera el front. Tiene tantos colaboradores porque el
- * ticket junta película, sala, función, cliente y pago, y cada uno vive en otro gestor.
- */
 @Component
 public class VistasVentas {
 
@@ -60,11 +56,7 @@ public class VistasVentas {
         this.vistasUsuarios = vistasUsuarios;
     }
 
-    /**
-     * Un listado con un número fijo de consultas, no cinco por fila (N+1). Los catálogos son
-     * chicos y se traen enteros; los pagos pueden ser miles y se piden con un solo {@code IN}.
-     * Si las funciones llegan a miles, habrá que paginar o filtrar la precarga por id.
-     */
+    // Un número fijo de consultas, no cinco por fila (N+1).
     public List<ReservaVistaDTO> reservas(List<Reserva> lista) {
         if (lista.isEmpty()) {
             return List.of();
@@ -90,7 +82,6 @@ public class VistasVentas {
         return porId;
     }
 
-    /** El mismo DTO que {@link #reserva(Reserva)}, pero leyendo de lo ya precargado. */
     private ReservaVistaDTO armar(Reserva r, Map<Integer, Funcion> porFuncion,
                                   Map<Integer, Sala> porSala, Map<Integer, Pelicula> porPelicula,
                                   Map<Integer, Cliente> porCliente, Map<Integer, Pago> porReserva) {
@@ -117,7 +108,6 @@ public class VistasVentas {
                 pagos.buscarPorReserva(r.getId()).orElse(null));
     }
 
-    /** Película, cliente y pago admiten null: la reserva se muestra igual sin ellos. */
     private ReservaVistaDTO dto(Reserva r, Funcion f, Sala sala, Pelicula pelicula, Cliente cliente, Pago pago) {
         return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
                 Fechas.texto(r.getCreadaEn()), r.getCodigo(),
@@ -140,7 +130,6 @@ public class VistasVentas {
         return dto(p, null, null, null);
     }
 
-    /** El arqueo muestra qué se cobró, no solo cuánto: película, cliente y entradas. */
     public PagoVistaDTO pagoDeArqueo(Pago p) {
         Reserva reserva = reservas.buscar(p.getReservaId()).orElse(null);
         if (reserva == null) {

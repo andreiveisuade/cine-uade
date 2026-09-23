@@ -24,10 +24,6 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
-/**
- * Lo que springdoc no deduce de los controladores: la portada de la API, qué rutas piden
- * credencial y qué errores puede devolver cada una.
- */
 @Configuration
 public class ConfiguracionOpenApi {
 
@@ -61,12 +57,7 @@ public class ConfiguracionOpenApi {
                 .servers(List.of(new Server().url("/").description("Este mismo servidor")));
     }
 
-    /**
-     * Candado y errores ruta por ruta, solo los que pueden pasar. Lo público sale de las
-     * mismas constantes que usa {@link ConfiguracionSeguridad}, así no se desincronizan. El
-     * esquema se registra acá y no en el bean {@code OpenAPI} porque springdoc pisa
-     * {@code components.schemas} después de armar el bean.
-     */
+    // El esquema se registra acá y no en el bean OpenAPI porque springdoc pisa components.schemas después.
     @Bean
     public OpenApiCustomizer erroresYSeguridad() {
         return api -> {
@@ -86,21 +77,18 @@ public class ConfiguracionOpenApi {
         boolean conParametros = operacion.getParameters() != null && operacion.getParameters().stream()
                 .anyMatch(parametro -> "query".equals(parametro.getIn()));
 
-        // Las escrituras las puede rechazar una regla; las lecturas, solo al parsear un filtro.
         if (escribe || conParametros) {
             respuestas.addApiResponse("400", respuestaDeError("El pedido no es válido, o una regla de negocio lo rechazó"));
         }
         if (ruta.contains("{")) {
             respuestas.addApiResponse("404", respuestaDeError("No existe lo que se pidió"));
         }
-        // Solo el alta de reserva compite por el UNIQUE (funcion_id, asiento_id).
         if (metodo == PathItem.HttpMethod.POST && ruta.equals("/api/reservas")) {
             respuestas.addApiResponse("409", respuestaDeError("La butaca ya estaba vendida: se perdió la carrera contra otra compra"));
         }
         if (ruta.equals("/api/sesion")) {
             respuestas.addApiResponse("401", respuestaDeError("Email o contraseña incorrectos"));
         }
-        // El advice atrapa cualquier excepción: una caída de la base puede pasar en todas.
         respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos o la emisión de un comprobante"));
 
         Acceso acceso = accesoDe(ruta, metodo);

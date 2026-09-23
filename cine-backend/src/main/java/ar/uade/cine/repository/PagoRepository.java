@@ -14,15 +14,13 @@ import ar.uade.cine.model.ventas.Pago;
 
 public interface PagoRepository extends JpaRepository<Pago, Integer> {
 
-    /** A lo sumo uno: lo garantiza el UNIQUE de la tabla. */
     Optional<Pago> findByReservaId(int reservaId);
 
     boolean existsByReservaId(int reservaId);
 
-    /** Para que el listado de reservas no haga una consulta por fila. */
     List<Pago> findByReservaIdIn(Collection<Integer> reservaIds);
 
-    /** Por rango y no truncando la fecha: una función en el WHERE deja el índice afuera y varía por motor. */
+    // Por rango y no truncando la fecha: una función en el WHERE deja el índice afuera.
     @Query("select p from Pago p where p.fecha >= :desde and p.fecha < :hasta order by p.fecha")
     List<Pago> findEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 

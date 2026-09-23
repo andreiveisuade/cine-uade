@@ -19,7 +19,6 @@ public interface CompraCandyRepository extends JpaRepository<CompraCandy, Intege
 
     List<CompraCandy> findByReservaIdIn(Collection<Integer> reservaIds);
 
-    /** Por rango, igual que {@link PagoRepository#findEntre}. */
     @Query("select c from CompraCandy c where c.fecha >= :desde and c.fecha < :hasta order by c.fecha")
     List<CompraCandy> findEntre(@Param("desde") LocalDateTime desde,
                                 @Param("hasta") LocalDateTime hasta);

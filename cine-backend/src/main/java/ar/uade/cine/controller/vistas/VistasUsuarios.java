@@ -7,7 +7,6 @@ import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
 
-/** Clientes y empleados como los espera el front. */
 @Component
 public class VistasUsuarios {
 

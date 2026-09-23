@@ -7,10 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-/**
- * Sala de proyección. No guarda su distribución de butacas: se usa una vez para generar
- * los {@link Asiento}, y guardarla también serían dos fuentes de verdad.
- */
 @Entity
 public class Sala {
 
@@ -48,12 +44,11 @@ public class Sala {
         return tipo;
     }
 
-    /** Margen entre funciones. Es de la sala y no global: una sala chica se limpia antes. */
     public int getMinutosLimpieza() {
         return minutosLimpieza;
     }
 
-    /** No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes. */
+    // No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes.
     public void editar(String nombre, TipoSala tipo, int minutosLimpieza) {
         this.nombre = nombre;
         this.tipo = tipo;

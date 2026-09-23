@@ -8,10 +8,6 @@ import ar.uade.cine.model.promociones.PromocionNxM;
 import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 
-/**
- * Las promociones como las espera el front. Es el único lugar que pregunta el tipo: cada uno
- * muestra su beneficio en otro campo. El descuento sigue siendo polimórfico.
- */
 @Component
 public class VistasPromociones {
 

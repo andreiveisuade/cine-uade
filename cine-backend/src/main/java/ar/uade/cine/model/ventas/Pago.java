@@ -11,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-/** Cobro de una reserva. Entidad propia porque el arqueo lista los pagos del día sin pasar por reservas. */
 @Entity
 public class Pago {
 
@@ -24,13 +23,11 @@ public class Pago {
 
     private Dinero subtotal;
 
-    /** Se guarda para poder explicar el cobro aunque la promo ya no exista. {@code null} si no aplicó. */
     @Column(name = "promocion_id")
     private Integer promocionId;
 
     private Dinero descuento;
 
-    /** Lo que entró a caja: es lo que suma el arqueo. */
     private Dinero monto;
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +35,6 @@ public class Pago {
 
     private LocalDateTime fecha;
 
-    /** Vacío en efectivo. */
     private String codigoAutorizacion;
 
     protected Pago() {

@@ -38,10 +38,6 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
-/**
- * El bloqueo mientras se elige entra en la misma definición de "ocupado" que el mapa y la
- * venta, y es comodidad, no garantía: sin Redis se vende igual.
- */
 class OcupacionTest extends PruebaDeIntegracion {
 
     private static final String ANA = "sesion-de-ana";
@@ -76,7 +72,6 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     private LocalDateTime ahora;
 
-    /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
@@ -157,7 +152,6 @@ class OcupacionTest extends PruebaDeIntegracion {
         avanzar(Duration.ofMinutes(2));
         assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
 
-        // Sin la renovación ya habría vencido.
         avanzar(Duration.ofMinutes(2));
         assertFalse(codigosLibres(BETO).contains("A1"));
     }
@@ -197,7 +191,6 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals("La butaca A1 ya está ocupada", error.getMessage());
     }
 
-    /** Confirmada la reserva, el bloqueo sobra; lo que no se compró vuelve sin esperar a que venza. */
     @Test
     void confirmarLaReservaSueltaLosBloqueosDeEsaSesion() {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
@@ -209,10 +202,7 @@ class OcupacionTest extends PruebaDeIntegracion {
                 "la que compró sigue ocupada, ahora por la reserva");
     }
 
-    /**
-     * La garantía contra la doble venta es el UNIQUE de la base, no Redis. El puerto no
-     * tiene nada escuchando a propósito: simula la caída.
-     */
+    // El puerto no tiene nada escuchando a propósito: simula la caída de Redis.
     @Test
     void sinRedisSeSigueVendiendoComoAntes() {
         Ocupacion sinRedis = new Ocupacion(reservaRepository, funcionRepository,

@@ -19,11 +19,6 @@ import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.NoEncontrado;
 
-/**
- * Arma películas y funciones como las espera el front. Una función muestra sala, película,
- * precios y butacas tomadas, y nada de eso vive en ella. Qué está ocupado se le pregunta a
- * {@link Ocupacion}: es una regla, no formato.
- */
 @Component
 public class VistasCartelera {
 
@@ -62,10 +57,6 @@ public class VistasCartelera {
         return funcionConButacas(f, null);
     }
 
-    /**
-     * Las butacas que bloqueó esta sesión no le salen ocupadas. Se resuelve acá y no en el
-     * front para no tener una segunda definición de "ocupado" en la pantalla.
-     */
     public FuncionVistaDTO funcionConButacas(Funcion f, String sesion) {
         Sala sala = salaDe(f);
         List<Asiento> asientos = salas.asientosDe(sala.getId());
@@ -73,7 +64,6 @@ public class VistasCartelera {
         List<AsientoVistaDTO> butacas = asientos.stream()
                 .map(a -> vistasSalas.asiento(a, f, sala, ocupados))
                 .toList();
-        // Sobre la misma foto de la ocupación que el mapa, así los dos números coinciden.
         int libres = Ocupacion.libresEntre(asientos, ocupados).size();
         return armar(f, sala, asientos, peliculaDe(f), butacas, libres);
     }

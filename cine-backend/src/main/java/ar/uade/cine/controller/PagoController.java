@@ -35,11 +35,6 @@ import ar.uade.cine.service.ventas.GestorPagos;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Cobro de una reserva y arqueo del día. El pedido no lleva monto: sale de la reserva, si no
- * se podría cobrar $100 una reserva de $16.000. El cobro electrónico son dos pedidos porque
- * en el medio el cliente escanea y paga.
- */
 @Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController
 public class PagoController {
@@ -62,13 +57,11 @@ public class PagoController {
     @ResponseStatus(HttpStatus.CREATED)
     public PagoVistaDTO cobrar(@PathVariable int id, @RequestBody PedidoPagoDTO pedido) {
         exigirReserva(id);
-        // Sin medio, el null llega al gestor y es él quien avisa (R11 también se valida ahí).
         MedioPago medio = pedido.medio() == null
                 ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         return vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion()));
     }
 
-    /** Sin cobrar no es un error: el front pregunta para saber si se pagó, y recibe {@code null}. */
     @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
     @GetMapping(value = "/api/reservas/{id}/pago", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> pagoDe(@PathVariable int id) {
@@ -91,7 +84,6 @@ public class PagoController {
                 checkout.monto().aPesos(), checkout.urlPago(), checkout.codigoQr());
     }
 
-    /** El id es del procesador, no nuestro: por eso {@code String}. */
     @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")
     @PostMapping("/api/checkouts/{id}/confirmacion")
     @ResponseStatus(HttpStatus.CREATED)
@@ -112,7 +104,6 @@ public class PagoController {
         reservas.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la reserva " + id));
     }
 
-    /** TreeMap: el front lista los medios en el orden en que llegan, y alfabético es estable. */
     private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {
         Map<String, TotalMedioDTO> resumen = new TreeMap<>();
         arqueo.porMedio().forEach((medio, acumulado) ->

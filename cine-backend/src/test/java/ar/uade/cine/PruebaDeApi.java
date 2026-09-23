@@ -22,12 +22,6 @@ import ar.uade.cine.infrastructure.seguridad.Password;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * La API real en un puerto libre contra H2, para probar la traducción a HTTP (códigos,
- * {@code @RestControllerAdvice}, JSON) que es contrato con el front. {@link #get},
- * {@link #post} y {@link #put} van como administrador; los permisos los prueba
- * {@code SeguridadTest} con {@link #pedirComo}.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public abstract class PruebaDeApi {
@@ -37,7 +31,7 @@ public abstract class PruebaDeApi {
     public static final String EMAIL_ADMIN = "admin@prueba.test";
     public static final String CLAVE_ADMIN = "clave-de-prueba";
 
-    /** Fijo y alto: los tests asumen que el primer cliente dado de alta tiene id 1. */
+    // Fijo y alto: los tests asumen que el primer cliente dado de alta tiene id 1.
     private static final int ID_ADMIN = 9000;
 
     @Autowired
@@ -62,7 +56,6 @@ public abstract class PruebaDeApi {
     void dejarLaBaseComoNueva() {
         limpieza.limpiar();
         catalogoExterno.reiniciar();
-        // Bloqueos y reloj son beans compartidos por toda la suite.
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
         jdbc.update("INSERT INTO usuario (id, nombre, email, rol, password_hash) VALUES (?, ?, ?, ?, ?)",
@@ -81,7 +74,6 @@ public abstract class PruebaDeApi {
         return pedirComo(HttpMethod.PUT, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
     }
 
-    /** Un pedido con las credenciales que se digan; con email {@code null}, sin ninguna. */
     protected Respuesta pedirComo(HttpMethod metodo, String ruta, String cuerpo,
                                   String email, String clave) {
         HttpHeaders cabeceras = new HttpHeaders();
@@ -109,7 +101,6 @@ public abstract class PruebaDeApi {
             }
         }
 
-        /** Se compara entero: el contrato dice que el mensaje del gestor llega intacto. */
         public String error() {
             return json().get("error").asText();
         }

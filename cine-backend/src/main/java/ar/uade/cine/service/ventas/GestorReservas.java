@@ -28,11 +28,6 @@ import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
-/**
- * La venta: reservar y cancelar. La puerta ({@link GestorAcceso}) y las búsquedas
- * ({@link ConsultasReservas}) van aparte porque no comparten colaboradores con vender.
- * Lo ocupado lo define {@link Ocupacion}, así vender y dibujar el mapa usan la misma regla.
- */
 @Service
 @Transactional
 public class GestorReservas {
@@ -62,26 +57,17 @@ public class GestorReservas {
         this.reloj = reloj;
     }
 
-    /** Sin sesión: la boletería, donde elegir y confirmar son un solo acto. */
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
         return reservar(funcionId, clienteId, butacas, null);
     }
 
-    /**
-     * Compra sin registro: el email identifica o da de alta al cliente. Va acá para que el
-     * alta comparta la transacción y una reserva rechazada no deje al cliente creado.
-     */
+    // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
                             String sesion) {
         Cliente cliente = clientes.identificar(nombre, email);
         return reservar(funcionId, cliente.getId(), butacas, sesion);
     }
 
-    /**
-     * Butacas como mapa código → tarifa: la tarifa es por persona y el mapa impide repetir.
-     *
-     * @param sesion para que su propio bloqueo no le rechace la reserva
-     */
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas,
                             String sesion) {
         Funcion funcion = buscarFuncion(funcionId);
@@ -99,7 +85,6 @@ public class GestorReservas {
         List<Entrada> entradas = armarEntradas(funcion, sala, butacas, sesion);
         Reserva reserva = guardarCompitiendoPorLasButacas(
                 new Reserva(funcion, cliente, entradas, reloj.ahora()));
-        // Desde acá la butaca la retiene la reserva, no el bloqueo.
         if (sesion != null) {
             ocupacion.liberar(funcionId, sesion);
         }
@@ -110,7 +95,6 @@ public class GestorReservas {
         return reserva;
     }
 
-    /** Asientos y ocupados se leen una vez por pedido, no por butaca. */
     private List<Entrada> armarEntradas(Funcion funcion, Sala sala, Map<String, TipoTarifa> butacas,
                                         String sesion) {
         List<Asiento> deLaSala = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
@@ -131,11 +115,9 @@ public class GestorReservas {
         Asiento asiento = Asiento.conCodigo(deLaSala, codigo)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala"));
-        // R9
         if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
             throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
         }
-        // R4
         if (ocupados.contains(asiento.getId())) {
             throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " ya está ocupada");
         }
@@ -146,7 +128,6 @@ public class GestorReservas {
         generadorTicket.emitir(reserva, funcion, funcion.getPelicula(), sala, cliente);
     }
 
-    /** R6 y R13, en {@link Reserva#cancelar()}. */
     public void cancelar(int reservaId) {
         Reserva reserva = buscarOFallar(reservaId);
         reserva.cancelar();
@@ -155,18 +136,13 @@ public class GestorReservas {
                 reservaId, reserva.getCantidadEntradas());
     }
 
-    /** Para el log: {@code C4(JUBILADO) C5(GENERAL)}. */
     private static String detalleDe(List<Entrada> entradas) {
         return entradas.stream()
                 .map(e -> e.codigoAsiento() + "(" + e.tarifa() + ")")
                 .collect(Collectors.joining(" "));
     }
 
-    /**
-     * Entre validar y escribir otro pudo tomar la butaca: lo corta el {@code UNIQUE
-     * (funcion_id, asiento_id)}, y {@code saveAndFlush} hace que salte acá como 409 y no
-     * como 500 en el commit.
-     */
+    // saveAndFlush: la carrera por el UNIQUE (funcion_id, asiento_id) salta acá como 409 y no como 500 en el commit.
     private Reserva guardarCompitiendoPorLasButacas(Reserva reserva) {
         try {
             return reservaRepository.saveAndFlush(reserva);

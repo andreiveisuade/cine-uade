@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import ar.uade.cine.model.cartelera.Importacion;
 
-/** Se lee siempre acotado: el historial solo crece y la pantalla muestra las últimas. */
 public interface ImportacionRepository extends JpaRepository<Importacion, Integer> {
 
     List<Importacion> findAllByOrderByIdDesc(Limit cuantas);
