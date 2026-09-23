@@ -1,7 +1,14 @@
 package ar.uade.cine.service.informes;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +46,8 @@ public class GestorInformes {
     private static final Bordero.TotalPorTarifa SIN_ENTRADAS =
             new Bordero.TotalPorTarifa(0, Dinero.CERO);
 
+    public static final int MAXIMO_DIAS_DECLARACION = 31;
+
     private final FuncionRepository funcionRepository;
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
@@ -61,7 +70,6 @@ public class GestorInformes {
         this.reloj = reloj;
     }
 
-    // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
     public Bordero borderoDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
         Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId())
@@ -71,16 +79,71 @@ public class GestorInformes {
                 .orElseThrow(() -> new RecursoNoEncontrado(
                         "No existe la sala " + funcion.getSalaId()));
 
+        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
+        return bordero(funcion, pelicula.getTitulo(), sala.getNombre(), reservas,
+                pagosPorReserva(reservas));
+    }
+
+    // Por fecha de la función y no del cobro: el INCAA declara espectadores de lo exhibido en la semana.
+    public DeclaracionJurada declaracionJurada(LocalDate desde, LocalDate hasta) {
+        if (desde == null && hasta == null) {
+            LocalDate juevesDeEstaSemana = reloj.hoy().with(TemporalAdjusters.previousOrSame(DayOfWeek.THURSDAY));
+            desde = juevesDeEstaSemana.minusWeeks(1);
+            hasta = juevesDeEstaSemana.minusDays(1);
+        }
+        if (desde == null || hasta == null) {
+            throw new IllegalArgumentException(
+                    "Hay que indicar desde y hasta, o ninguna de las dos para la última semana cinematográfica");
+        }
+        if (desde.isAfter(hasta)) {
+            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta");
+        }
+        // El archivo se arma entero en memoria: el tope lo acota, y un mes cubre cualquier cierre del INCAA.
+        if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS_DECLARACION) {
+            throw new IllegalArgumentException(
+                    "El período no puede superar los " + MAXIMO_DIAS_DECLARACION + " días");
+        }
+
+        List<Reserva> cobradas = reservaRepository.findCobradasDeFuncionesEntre(
+                desde.atStartOfDay(), hasta.plusDays(1).atStartOfDay());
+        Map<Integer, Pago> pagos = pagosPorReserva(cobradas);
+        Map<Integer, List<Reserva>> porFuncion = new LinkedHashMap<>();
+        for (Reserva reserva : cobradas) {
+            porFuncion.computeIfAbsent(reserva.getFuncionId(), id -> new ArrayList<>()).add(reserva);
+        }
+
+        List<DeclaracionJurada.FilaFuncion> filas = new ArrayList<>();
+        Map<Integer, DeclaracionJurada.TotalPelicula> porPelicula = new HashMap<>();
+        DeclaracionJurada.Totales total = DeclaracionJurada.Totales.CERO;
+        for (List<Reserva> reservas : porFuncion.values()) {
+            Funcion funcion = reservas.get(0).getFuncion();
+            Pelicula pelicula = funcion.getPelicula();
+            Bordero bordero = bordero(funcion, pelicula.getTitulo(), funcion.getSala().getNombre(),
+                    reservas, pagos);
+            filas.add(new DeclaracionJurada.FilaFuncion(bordero, funcion.getVersion(),
+                    funcion.getProyeccion(), pelicula.getClasificacion()));
+            DeclaracionJurada.TotalPelicula acumulado = porPelicula.getOrDefault(pelicula.getId(),
+                    new DeclaracionJurada.TotalPelicula(pelicula.getTitulo(), pelicula.getClasificacion(),
+                            DeclaracionJurada.Totales.CERO));
+            porPelicula.put(pelicula.getId(), new DeclaracionJurada.TotalPelicula(acumulado.titulo(),
+                    acumulado.clasificacion(), acumulado.totales().mas(bordero)));
+            total = total.mas(bordero);
+        }
+
+        List<DeclaracionJurada.TotalPelicula> peliculas = porPelicula.values().stream()
+                .sorted(Comparator.comparing(DeclaracionJurada.TotalPelicula::titulo))
+                .toList();
+        return new DeclaracionJurada(desde, hasta, reloj.ahora(), filas, peliculas, total);
+    }
+
+    // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
+    private Bordero bordero(Funcion funcion, String pelicula, String sala, List<Reserva> reservas,
+                            Map<Integer, Pago> pagosPorReserva) {
         Map<TipoTarifa, Bordero.TotalPorTarifa> porTarifa = new EnumMap<>(TipoTarifa.class);
         int espectadores = 0;
         Dinero bruta = Dinero.CERO;
         Dinero descuentos = Dinero.CERO;
         Dinero neta = Dinero.CERO;
-        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
-        Map<Integer, Pago> pagosPorReserva = new HashMap<>();
-        for (Pago cobro : pagoRepository.findByReservaIdIn(reservas.stream().map(Reserva::getId).toList())) {
-            pagosPorReserva.put(cobro.getReservaId(), cobro);
-        }
 
         for (Reserva reserva : reservas) {
             Pago pago = pagosPorReserva.get(reserva.getId());
@@ -99,9 +162,17 @@ public class GestorInformes {
             neta = neta.mas(pago.getMonto());
         }
 
-        return new Bordero(funcionId, pelicula.getTitulo(), sala.getNombre(), funcion.getInicio(),
+        return new Bordero(funcion.getId(), pelicula, sala, funcion.getInicio(),
                 reloj.ahora(), espectadores,
                 bruta, descuentos, neta, porTarifa);
+    }
+
+    private Map<Integer, Pago> pagosPorReserva(List<Reserva> reservas) {
+        Map<Integer, Pago> pagos = new HashMap<>();
+        for (Pago cobro : pagoRepository.findByReservaIdIn(reservas.stream().map(Reserva::getId).toList())) {
+            pagos.put(cobro.getReservaId(), cobro);
+        }
+        return pagos;
     }
 
     public Bordero exportarBordero(int funcionId) {

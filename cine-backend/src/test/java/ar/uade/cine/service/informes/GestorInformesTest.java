@@ -255,6 +255,126 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(informe.bordero().recaudacionNeta(), informe.total());
     }
 
+    @Test
+    void sinFechasLaDeclaracionEsLaSemanaCinematograficaAnteriorDeJuevesAMiercoles() {
+        reloj.mover(LocalDateTime.of(2026, 8, 28, 10, 0));
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(null, null);
+
+        assertEquals(LocalDate.of(2026, 8, 20), declaracion.desde());
+        assertEquals(LocalDate.of(2026, 8, 26), declaracion.hasta());
+    }
+
+    @Test
+    void unJuevesLaSemanaAnteriorEsLaQueTerminoAyer() {
+        reloj.mover(LocalDateTime.of(2026, 8, 27, 10, 0));
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(null, null);
+
+        assertEquals(LocalDate.of(2026, 8, 20), declaracion.desde());
+        assertEquals(LocalDate.of(2026, 8, 26), declaracion.hasta());
+    }
+
+    @Test
+    void laDeclaracionSoloTraeLasFuncionesDelPeriodoConEntradasCobradas() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 27, 20, 0),
+                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva fueraDelPeriodo = reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL));
+        pagos.cobrar(cobrada.getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(fueraDelPeriodo.getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertEquals(1, declaracion.funciones().size());
+        assertEquals(1, declaracion.funciones().get(0).bordero().funcionId());
+        assertEquals(1, declaracion.total().espectadores());
+    }
+
+    @Test
+    void cadaFilaDeLaDeclaracionEsElBorderoDeSuFuncion() {
+        promociones.crearPorcentaje("50 off", 50,
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
+        Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
+        pedido.put("A1", TipoTarifa.GENERAL);
+        pedido.put("A2", TipoTarifa.JUBILADO);
+        Reserva reserva = reservas.reservar(1, 1, pedido);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada.FilaFuncion fila = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 20)).funciones().get(0);
+
+        assertEquals(informes.borderoDe(1), fila.bordero());
+        assertEquals(Version.DOBLADA, fila.version());
+        assertEquals(Proyeccion.DOS_D, fila.proyeccion());
+        assertEquals(Clasificacion.MAS_13, fila.clasificacion());
+    }
+
+    @Test
+    void laDeclaracionTotalizaPorPeliculaYEnGeneral() {
+        cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4000));
+        Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
+        pedido.put("A1", TipoTarifa.GENERAL);
+        pedido.put("A2", TipoTarifa.MENOR);
+        pagos.cobrar(reservas.reservar(1, 1, pedido).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL)).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL)).getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertEquals(List.of("Dune", "Matrix"),
+                declaracion.peliculas().stream().map(DeclaracionJurada.TotalPelicula::titulo).toList());
+        DeclaracionJurada.Totales matrix = declaracion.peliculas().get(1).totales();
+        assertEquals(2, matrix.funciones());
+        assertEquals(3, matrix.espectadores());
+        assertEquals(2, matrix.entradas(TipoTarifa.GENERAL));
+        assertEquals(1, matrix.entradas(TipoTarifa.MENOR));
+        assertEquals(Dinero.de(13000.0), matrix.recaudacionNeta());
+        DeclaracionJurada.Totales total = declaracion.total();
+        assertEquals(3, total.funciones());
+        assertEquals(4, total.espectadores());
+        assertEquals(Dinero.de(17000.0), total.recaudacionBruta());
+    }
+
+    @Test
+    void unPeriodoSinVentasDaUnaDeclaracionEnCero() {
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertTrue(declaracion.funciones().isEmpty());
+        assertTrue(declaracion.peliculas().isEmpty());
+        assertEquals(0, declaracion.total().espectadores());
+        assertEquals(Dinero.CERO, declaracion.total().recaudacionNeta());
+    }
+
+    @Test
+    void laDeclaracionRechazaUnPeriodoAlReves() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 26), LocalDate.of(2026, 8, 20)));
+
+        assertEquals("La fecha desde no puede ser posterior a la fecha hasta", error.getMessage());
+    }
+
+    @Test
+    void laDeclaracionRechazaUnPeriodoDeMasDeUnMes() {
+        assertThrows(IllegalArgumentException.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)));
+        assertEquals(LocalDate.of(2026, 8, 31), informes.declaracionJurada(
+                LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)).hasta());
+    }
+
+    @Test
+    void laDeclaracionPideLasDosFechasONinguna() {
+        assertThrows(IllegalArgumentException.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 20), null));
+    }
+
     private static Map<String, TipoTarifa> butacas(String codigo, TipoTarifa tarifa) {
         return Map.of(codigo, tarifa);
     }

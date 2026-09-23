@@ -66,7 +66,7 @@ springdoc:
     # en el mismo lugar.
     operations-sorter: method
     tags-sorter: alpha
-    # Sin los modelos desplegados de entrada: son 57 DTO y tapan la lista de endpoints,
+    # Sin los modelos desplegados de entrada: son 65 DTO y tapan la lista de endpoints,
     # que es lo que se viene a buscar.
     default-models-expand-depth: -1
 
@@ -90,6 +90,11 @@ cine:
     token: ${TMDB_TOKEN:}
     region: ${TMDB_REGION:AR}
     base: https://api.themoviedb.org/3
+  incaa:
+    # El encabezado de la declaración jurada. Ficticios: el TP no tiene un exhibidor inscripto.
+    razon-social: ${INCAA_RAZON_SOCIAL:Cine UADE S.A.}
+    cuit: ${INCAA_CUIT:30-71234567-1}
+    numero-exhibidor: ${INCAA_NUMERO_EXHIBIDOR:10452}
 
 logging:
   # `docker compose logs` mezcla los cinco contenedores en una sola columna, así que cada

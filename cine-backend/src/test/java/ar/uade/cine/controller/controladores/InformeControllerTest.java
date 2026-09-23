@@ -13,8 +13,11 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -22,6 +25,7 @@ import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.usuarios.GestorEmpleados;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -32,6 +36,7 @@ import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -62,6 +67,9 @@ class InformeControllerTest extends PruebaDeApi {
 
     @Autowired
     private GestorSalas salas;
+
+    @Autowired
+    private GestorEmpleados empleados;
 
 
     private Reserva reserva;
@@ -160,5 +168,89 @@ class InformeControllerTest extends PruebaDeApi {
         assertEquals(0, informe.get("comprasCandy").asInt());
         assertEquals(0.0, informe.get("candy").asDouble(), 0.001);
         assertEquals(7500.0, informe.get("total").asDouble(), 0.001);
+    }
+
+    @Test
+    void laDeclaracionJuradaViajaConElExhibidorLasFuncionesYLosTotales() throws Exception {
+        Respuesta respuesta = get("/api/declaracion-jurada?desde=2026-08-20&hasta=2026-08-26");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(new ObjectMapper().readTree("""
+                { "exhibidor": {"razonSocial":"Cine UADE S.A.","cuit":"30-71234567-1","numeroExhibidor":"10452"},
+                  "desde":"2026-08-20", "hasta":"2026-08-26", "generadaEn":"2026-08-14T10:00:00",
+                  "funciones":[{"funcionId":1,"inicio":"2026-08-20T20:00:00","sala":"Sala 1","pelicula":"Matrix",
+                                "clasificacion":"MAS_13","idioma":"SUBTITULADA","proyeccion":"DOS_D",
+                                "espectadores":2,
+                                "porTarifa":{"GENERAL":{"cantidad":1,"total":5000.0},
+                                             "JUBILADO":{"cantidad":1,"total":2500.0}},
+                                "recaudacionBruta":7500.0,"descuentos":0.0,"recaudacionNeta":7500.0}],
+                  "peliculas":[{"titulo":"Matrix","clasificacion":"MAS_13","funciones":1,"espectadores":2,
+                                "entradasPorTarifa":{"GENERAL":1,"JUBILADO":1},
+                                "recaudacionBruta":7500.0,"descuentos":0.0,"recaudacionNeta":7500.0}],
+                  "total":{"funciones":1,"espectadores":2,"entradasPorTarifa":{"GENERAL":1,"JUBILADO":1},
+                           "recaudacionBruta":7500.0,"descuentos":0.0,"recaudacionNeta":7500.0} }
+                """), respuesta.json());
+    }
+
+    @Test
+    void laDeclaracionTotalizaCadaPeliculaAparteYSumaTodoEnElTotal() {
+        cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        Funcion funcion = funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4000));
+        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        pagos.cobrar(reservas.reservar(funcion.getId(), cliente.getId(), Map.of("A1", TipoTarifa.MENOR)).getId(),
+                MedioPago.EFECTIVO, "");
+
+        var declaracion = get("/api/declaracion-jurada?desde=2026-08-20&hasta=2026-08-26").json();
+
+        assertEquals(2, declaracion.get("funciones").size());
+        assertEquals("DOBLADA", declaracion.get("funciones").get(1).get("idioma").asText());
+        var dune = declaracion.get("peliculas").get(0);
+        assertEquals("Dune", dune.get("titulo").asText());
+        assertEquals("ATP", dune.get("clasificacion").asText());
+        assertEquals(1, dune.get("entradasPorTarifa").get("MENOR").asInt());
+        assertFalse(dune.get("entradasPorTarifa").has("GENERAL"));
+        assertEquals(2400.0, dune.get("recaudacionNeta").asDouble(), 0.001);
+        assertEquals("Matrix", declaracion.get("peliculas").get(1).get("titulo").asText());
+        var total = declaracion.get("total");
+        assertEquals(2, total.get("funciones").asInt());
+        assertEquals(3, total.get("espectadores").asInt());
+        assertEquals(9900.0, total.get("recaudacionNeta").asDouble(), 0.001);
+    }
+
+    @Test
+    void sinFechasLaDeclaracionEsLaUltimaSemanaCinematografica() {
+        reloj.mover(LocalDateTime.of(2026, 8, 28, 10, 0));
+
+        var declaracion = get("/api/declaracion-jurada").json();
+
+        assertEquals("2026-08-20", declaracion.get("desde").asText());
+        assertEquals("2026-08-26", declaracion.get("hasta").asText());
+        assertEquals(1, declaracion.get("funciones").get(0).get("funcionId").asInt());
+    }
+
+    @Test
+    void unPeriodoAlRevesEs400ConElMensajeDelGestor() {
+        Respuesta respuesta = get("/api/declaracion-jurada?desde=2026-08-26&hasta=2026-08-20");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La fecha desde no puede ser posterior a la fecha hasta", respuesta.error());
+    }
+
+    @Test
+    void unaFechaMalEscritaEs400() {
+        Respuesta respuesta = get("/api/declaracion-jurada?desde=20-08-2026&hasta=2026-08-26");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("la fecha desde tiene que ser una fecha válida", respuesta.error());
+    }
+
+    @Test
+    void laDeclaracionPideSesionYRolDeAdministrador() {
+        empleados.registrar("Portero", "puerta@cine.test", "clave-puerta", Rol.ACOMODADOR);
+
+        assertEquals(401, pedirComo(HttpMethod.GET, "/api/declaracion-jurada", null, null, null).estado());
+        assertEquals(403, pedirComo(HttpMethod.GET, "/api/declaracion-jurada", null,
+                "puerta@cine.test", "clave-puerta").estado());
     }
 }

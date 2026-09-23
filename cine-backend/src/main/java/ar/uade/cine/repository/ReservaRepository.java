@@ -32,4 +32,14 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
             order by r.id""")
     List<Reserva> buscar(@Param("estado") EstadoReserva estado, @Param("desde") LocalDateTime desde,
                          @Param("hasta") LocalDateTime hasta);
+
+    // Solo las cobradas: la declaración jurada no lee las que retienen butaca sin haber vendido.
+    @Query("""
+            select r from Reserva r
+              join fetch r.funcion f join fetch f.pelicula join fetch f.sala
+            where f.inicio >= :desde and f.inicio < :hasta
+              and exists (select p.id from Pago p where p.reservaId = r.id)
+            order by f.inicio, f.id, r.id""")
+    List<Reserva> findCobradasDeFuncionesEntre(@Param("desde") LocalDateTime desde,
+                                               @Param("hasta") LocalDateTime hasta);
 }
