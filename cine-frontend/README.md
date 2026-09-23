@@ -1,103 +1,59 @@
 # Cine UADE — frontend
 
-Interfaz web del sistema de salas de cine de Aplicaciones Interactivas.
-HTML + JavaScript + Tailwind, sin framework ni build step.
-
-Es una de las tres carpetas del monorepo:
-
-```
-cine-uade/
-├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL
-├── cine-frontend/   esta carpeta
-└── cine-docker/     el compose que levanta todo
-```
+Las pantallas del cliente y del panel del encargado. React 19 + React Router + Mantine,
+compilado con Vite y servido por nginx.
 
 ## Cómo correrlo
 
-Con los contenedores, desde `cine-docker`:
+Con el sistema completo, desde `cine-docker`:
 
 ```sh
-docker compose up -d
+docker compose up -d --build --no-deps frontend   # tras tocar el front
 open http://localhost:8080
 ```
 
-- `index.html` — cliente, sin login: cartelera, funciones, butacas, reserva y ticket.
-- `admin.html` — encargado, con login: películas, salas, funciones, grillas, el
-  planificador de la semana, reservas, cobro, informes por función y caja.
-
-Credenciales de prueba del encargado: `encargado@cine.uade.ar` / `cine2026`.
-
-Después de tocar el código hay que rebuildear la imagen. Con `--no-deps`, para que
-Compose no recree también MySQL y el backend:
+Para desarrollar, con el sistema levantado en Docker:
 
 ```sh
-docker compose up -d --build --no-deps frontend
+npm install
+npm run dev        # localhost:5173, recarga en caliente
 ```
 
-## De dónde salen los datos
+El dev server de Vite reenvía `/api` y Swagger al nginx del 8080 (ver `vite.config.js`):
+el código pide `/api` igual que en producción y no hace falta CORS.
 
-Todo el acceso a datos pasa por `js/api.js`, que reexporta `js/api-http.js`: la
-implementación contra la API REST del backend.
+- `index.html` — cliente, sin login: cartelera, película, butacas, confirmación, ticket,
+  mis reservas y registro.
+- `admin.html` — panel, con login. El acomodador solo ve Puerta.
 
-El contrato de los endpoints está en [API.md](API.md).
-
-Para desarrollar hace falta el backend levantado (`docker compose up` en
-`../cine-docker`): `python3 -m http.server` no alcanza, porque `/api` lo resuelve nginx
-como reverse proxy hacia el backend por la red interna, y por eso el front no conoce ni
-el host ni el puerto del backend, y no hace falta CORS.
+Encargado de demo: `encargado@cine.uade.ar` / `cine2026`.
 
 ## Estructura
 
 ```
-index.html        cliente
-admin.html        encargado
-Dockerfile        nginx unprivileged
-nginx.conf        estáticos + reverse proxy de /api
-API.md            contrato con el backend
-js/
-  api.js          reexporta api-http.js
-  api-http.js     implementación contra la API REST
-  router.js       ruteo por hash (#/pelicula/3)
-  theme.js        toggle claro/oscuro, persistido en localStorage
-  butacas.js      dibujo del mapa de la sala, compartido por cliente y encargado
-  componentes.js  piezas de HTML reutilizables (campo, panel, tabla, botón...)
-  etiquetas.js    traducción de los enums del dominio a texto legible
-  formato.js      formateo de plata, fecha y hora
-  dom.js          escapado, avisos por pantalla y el resto del contacto con el DOM
-  cliente.js      mapa de rutas del cliente
-  admin.js        mapa de rutas del encargado + guardia por rol
-  cliente/        una vista por archivo: cartelera, pelicula, funcion, compra,
-                  confirmar, ticket, mis-reservas, registro
-  admin/          una vista por archivo: peliculas, salas, funciones, funcion,
-                  agenda, programaciones, planificador, promociones, reservas,
-                  caja, puerta, importador, pendientes, login, sesion
+index.html  admin.html   las dos entradas; ruteo por hash (#/pelicula/3)
+vite.config.js           build de dos páginas + proxy de desarrollo
+Dockerfile               node compila, nginx sirve dist/
+nginx.conf               estáticos + reverse proxy de /api y Swagger
+API.md                   contrato con el backend
+src/
+  Base.jsx               tema de Mantine, modo oscuro y avisos
+  api/                   api-http.js (único acceso a la API), etiquetas.js, formato.js
+  componentes/           useCargar, MapaButacas, Chips, Poster, Avisos, Estado...
+  cliente/               AppCliente.jsx (rutas) + una vista por archivo; compra.jsx es
+                         la selección en curso y el bloqueo de butacas
+  admin/                 AppAdmin.jsx (rutas, menú y guardia por rol), sesion.jsx,
+                         comun.jsx y una vista por archivo
 ```
 
-Cada vista es una funcion `async (contenedor, ...params)` registrada en el mapa de
-`cliente.js` / `admin.js`. Agregar una pantalla es agregar un archivo y una linea en ese
-mapa: los modulos no se conocen entre si.
+Sumar una pantalla es escribir su componente y agregar su `<Route>` en `AppCliente.jsx`
+o `AppAdmin.jsx`. Sumar una operación es agregarla en `src/api/api-http.js` y en
+[API.md](API.md).
 
-## Dos cosas del dominio que el front respeta
+## Lo que el front respeta
 
-**Una butaca no está ocupada en sí misma**: lo está *en una función*, si alguna reserva
-no cancelada de esa función la tomó. *Fuera de servicio*, en cambio, le pertenece al
-asiento y vale para todas las funciones. Por eso el mapa recibe `ocupado` y `estado`
-como campos separados, y los pinta distinto.
-
-**Una sala no es un rectángulo**: `butacasPorFila` dice cuántas butacas tiene cada fila,
-así que `[8,10,12,12,14]` es una sala en cuña. El mapa se dibuja fila por fila con esa
-lista, no con un ancho fijo.
-
-El precio de cada butaca sale de
-`precio base de la función × multiplicador de sala × multiplicador de butaca`, y lo
-calcula el backend: el front nunca lo recalcula, solo lo muestra.
-
-## Estado
-
-Cubre todos los casos de uso del manual **menos el candy** (CU-13 a CU-16): la API ya
-sirve la carta, los combos y las ventas, y ninguna pantalla las consume todavia. Es la
-unica deuda de este tipo que queda.
-
-Con pantalla y andando: el armado automatico de la grilla (`#/planificador`), la agenda
-(`#/agenda`), el bordero del INCAA y el informe por funcion (`#/funcion/{id}`), el cobro
-por checkout de la pasarela y la validacion de entradas en la puerta (`#/puerta`).
+- Las reglas viven en el backend: el precio, el descuento y la validación los resuelve
+  la API, y su `{"error"}` se muestra tal cual.
+- Los enums viajan con el nombre de la constante; `etiquetas.js` los traduce.
+- *Ocupada* es de la función y *fuera de servicio* es del asiento: el mapa los recibe
+  separados y los pinta distinto. Cada fila tiene su propio largo (`butacasPorFila`).

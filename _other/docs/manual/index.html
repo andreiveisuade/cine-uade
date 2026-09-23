@@ -414,6 +414,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#capas" data-target="capas">Arquitectura en capas</a></li>
         <li><a href="#anotaciones" data-target="anotaciones">Anotaciones y sintaxis</a></li>
         <li><a href="#api" data-target="api">API HTTP</a></li>
+        <li><a href="#frontend" data-target="frontend">Frontend</a></li>
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y seguridad</a></li>
@@ -457,7 +458,7 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         Sistema de gestión de un cine: se cargan películas y salas, se programan funciones, los clientes
         reservan y pagan entradas, y el candy vende productos y combos. Backend en Spring Boot sobre MySQL,
-        frontend sin framework servido por nginx, todo levantado con <code>docker compose up</code>.
+        frontend en React servido por nginx, todo levantado con <code>docker compose up</code>.
       </p>
       <div class="callout">
         <p>
@@ -752,6 +753,32 @@ body.lightbox-locked { overflow: hidden; }
         <code>OpenApiCustomizer</code> en <code>ConfiguracionOpenApi</code>; <code>ContratoOpenApiTest</code>
         falla si algún <code>$ref</code> no resuelve.
       </p>
+    </section>
+
+    <section class="doc-section" id="frontend">
+      <h2>Frontend</h2>
+      <p>
+        Dos páginas que no comparten sesión: <code>index.html</code>, el sitio del cliente (sin login), y
+        <code>admin.html</code>, el panel (login de empleado). React 19 con React Router por hash
+        (<code>#/pelicula/3</code>) y Mantine para los componentes y el modo oscuro. Vite compila; nginx sirve
+        el resultado y reenvía <code>/api</code> al backend, así que el front no conoce su host y no hace falta CORS.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pieza</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API. Manda el <code>Authorization: Basic</code> del empleado guardado en <code>sessionStorage</code>; ante un 401 lo olvida y el panel vuelve al login</td></tr>
+            <tr><td><code>useCargar</code></td><td>Pide los datos de una pantalla y descarta respuestas viejas (un filtro tipeado rápido no pisa el resultado bueno)</td></tr>
+            <tr><td><code>cliente/compra.jsx</code></td><td>La selección en curso (butaca → tarifa) y la renovación del bloqueo mientras la pantalla está abierta</td></tr>
+            <tr><td><code>admin/AppAdmin.jsx</code></td><td>Rutas, menú agrupado y guardia por rol: el acomodador solo entra a Puerta</td></tr>
+            <tr><td><code>MapaButacas</code></td><td>La sala fila por fila; el cliente y el encargado le pasan qué significa cada color</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>7 pantallas del cliente (cartelera, película, butacas, confirmar, ticket, mis reservas, registro) y 16 del panel (login, películas, por revisar, importador, salas, funciones, informes, grilla, planificador, agenda, reservas, cobrar, promociones, candy con sus tres pestañas, caja y puerta).</li>
+        <li>Ninguna regla vive en el front: precio, descuento y validación los resuelve la API, y su <code>{"error"}</code> se muestra tal cual. Lo que el front anticipa (R3, R8, tarjeta de acreditación) es solo aviso; el backend vuelve a validar.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="dominio">
@@ -1406,7 +1433,7 @@ POST /api/checkouts/MP-1234567890/confirmacion
           <tbody>
             <tr><td>Backend</td><td>Java 21 (LTS), Spring Boot 3.5 (Spring MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc (Swagger)</td></tr>
             <tr><td>Datos</td><td>MySQL 8.4; Redis para los bloqueos de butaca; H2 en memoria para los tests</td></tr>
-            <tr><td>Frontend</td><td>HTML + JavaScript (ES modules) + Tailwind por CDN, sin build, servido por nginx</td></tr>
+            <tr><td>Frontend</td><td>React 19 + React Router (ruteo por hash) + Mantine, compilado con Vite y servido por nginx</td></tr>
             <tr><td>Despliegue</td><td>Docker Compose: 5 servicios en dos redes</td></tr>
             <tr><td>Externo</td><td>API de TMDB para importar la cartelera</td></tr>
           </tbody>
