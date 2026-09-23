@@ -27,6 +27,7 @@ import ar.uade.cine.dto.programaciones.FuncionPlanificadaVistaDTO;
 import ar.uade.cine.dto.programaciones.PedidoProgramacionDTO;
 import ar.uade.cine.dto.programaciones.PlanVistaDTO;
 import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
+import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.programaciones.PlanProgramacion;
 
@@ -140,9 +141,9 @@ public class ProgramacionController {
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
         Dinero precio = Dinero.de(pedido.precio() == null ? 0 : pedido.precio());
 
-        return persistir
-                ? programaciones.crear(peliculaId, salaId, desde, hasta, hora, dias, version, proyeccion, precio)
-                : programaciones.previsualizar(peliculaId, salaId, desde, hasta, hora, dias, version, proyeccion, precio);
+        DatosGrilla datos = new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version,
+                proyeccion, precio);
+        return persistir ? programaciones.crear(datos) : programaciones.previsualizar(datos);
     }
 
     private static PlanVistaDTO plan(PlanProgramacion plan) {

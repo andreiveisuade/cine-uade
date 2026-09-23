@@ -216,37 +216,37 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Test
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.previsualizar(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
+                () -> programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
+                () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
         assertTrue(programaciones.listar().isEmpty(), "la grilla inválida no se guarda");
     }
 
     @Test
     void rechazaUnRangoQueTerminaAntesDeEmpezar() {
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     @Test
     void rechazaPrecioCeroYPeliculaInexistente() {
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0)));
+                () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0))));
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                () -> programaciones.crear(new DatosGrilla(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     /** Una grilla de solo lunes sobre un rango de martes a jueves no generaría nada. */
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
         assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
-                        LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                () -> programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
+                        LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     /**
@@ -338,8 +338,8 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
      */
     private void cargarGrillas() {
         crearSemana(Set.of());
-        PlanProgramacion enSala2 = programaciones.crear(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
-                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
+                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         programaciones.desactivar(enSala2.programacion().getId());
     }
 
@@ -384,17 +384,17 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {
-        return programaciones.crear(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private PlanProgramacion crearSemana(Set<DayOfWeek> dias) {
-        return programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, dias,
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, dias,
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private PlanProgramacion previsualizarSemana() {
-        return programaciones.previsualizar(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 }

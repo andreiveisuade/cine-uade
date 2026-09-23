@@ -1,14 +1,11 @@
 package ar.uade.cine.service.programaciones;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,14 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.ProgramacionRepository;
 import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
@@ -75,11 +69,8 @@ public class GestorProgramaciones {
      * Qué haría el alta, sin tocar la base. La grilla que devuelve el informe existe solo
      * en memoria: no se guarda y no tiene id.
      */
-    public PlanProgramacion previsualizar(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
-                                          LocalTime horaInicio, Set<DayOfWeek> diasSemana,
-                                          Version version, Proyeccion proyeccion, Dinero precio) {
-        Programacion grilla = armar(peliculaId, salaId, desde, hasta, horaInicio, diasSemana,
-                version, proyeccion, precio);
+    public PlanProgramacion previsualizar(DatosGrilla datos) {
+        Programacion grilla = armar(datos);
         return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
     }
 
@@ -91,11 +82,8 @@ public class GestorProgramaciones {
      * aunque todas sus fechas choquen: "Matrix va en la Sala 1 a las 20:30" sigue siendo
      * una decisión del cine, y el informe dice qué pasó.
      */
-    public PlanProgramacion crear(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
-                                  LocalTime horaInicio, Set<DayOfWeek> diasSemana,
-                                  Version version, Proyeccion proyeccion, Dinero precio) {
-        Programacion grilla = armar(peliculaId, salaId, desde, hasta, horaInicio, diasSemana,
-                version, proyeccion, precio);
+    public PlanProgramacion crear(DatosGrilla datos) {
+        Programacion grilla = armar(datos);
         // Antes de guardar: una grilla con una película inexistente no tiene por qué quedar en la base.
         Pelicula pelicula = peliculaDe(grilla);
         programacionRepository.save(grilla);
@@ -204,9 +192,9 @@ public class GestorProgramaciones {
     }
 
     /** Lo que valida la grilla en sí; lo de cada función lo pone GestorFunciones. */
-    private Programacion armar(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
-                               LocalTime horaInicio, Set<DayOfWeek> diasSemana,
-                               Version version, Proyeccion proyeccion, Dinero precio) {
+    private Programacion armar(DatosGrilla datos) {
+        LocalDate desde = datos.desde();
+        LocalDate hasta = datos.hasta();
         if (desde == null) {
             throw new IllegalArgumentException("Falta la fecha de inicio");
         }
@@ -214,13 +202,13 @@ public class GestorProgramaciones {
         if (hasta != null && hasta.isBefore(desde)) {
             throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
         }
-        if (horaInicio == null) {
+        if (datos.horaInicio() == null) {
             throw new IllegalArgumentException("Falta la hora de la función");
         }
         // Una grilla de miércoles sobre un rango de lunes a martes se daría de alta sin
         // generar nada. Se mira contra el propio hasta: una abierta siempre cae en algún día.
-        Programacion grilla = new Programacion(peliculaId, salaId, desde, hasta, horaInicio,
-                diasSemana, version, proyeccion, precio);
+        Programacion grilla = new Programacion(datos.peliculaId(), datos.salaId(), desde, hasta,
+                datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
         if (hasta != null && grilla.horarios(hasta).isEmpty()) {
             throw new IllegalArgumentException(
                     "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
