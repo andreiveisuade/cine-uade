@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 452 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 438 tests.</p>
       </div>
     </section>
 
@@ -635,7 +635,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorProductos</code></td><td>Carta del candy y combos (R14)</td></tr>
             <tr><td><code>GestorCandy</code></td><td>Ventas del candy y su ticket</td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó y recaudación por función, declaración jurada del período</td></tr>
-            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>CondicionesPromocion</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code></td></tr>
+            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code></td></tr>
             <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
@@ -669,8 +669,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>Programacion</code></td><td>La grilla que genera funciones</td></tr>
             <tr><td><code>Reserva</code> / <code>Entrada</code></td><td>Compra con estado y código / butaca con tarifa y precio</td></tr>
             <tr><td><code>Pago</code></td><td>Comprobante del cobro con descuento</td></tr>
-            <tr><td><code>Promocion</code> + <code>PromocionPorcentaje</code>, <code>PromocionMontoFijo</code>, <code>PromocionNxM</code></td><td>Cuándo aplica / cuánto descuenta</td></tr>
-            <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el empleado tiene clave y rol</td></tr>
+            <tr><td><code>Promocion</code> + <code>PromocionPorcentaje</code>, <code>PromocionMontoFijo</code>, <code>PromocionNxM</code></td><td>Cuándo aplica / cuánto descuenta; cada una rechaza al construirse lo que la haría inválida</td></tr>
+            <tr><td><code>CondicionesPromocion</code></td><td>Vigencia, días, horario y medios, en un solo valor para los constructores</td></tr>
+            <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el empleado tiene clave y un rol que no puede ser <code>CLIENTE</code></td></tr>
             <tr><td><code>Producto</code> + <code>ItemCombo</code></td><td>Artículo o combo con sus componentes</td></tr>
             <tr><td><code>CompraCandy</code> / <code>ItemCompra</code></td><td>Venta cobrada / renglón con precio congelado</td></tr>
             <tr><td><code>Dinero</code></td><td>Plata en centavos</td></tr>
@@ -987,7 +988,7 @@ body.lightbox-locked { overflow: hidden; }
         <figcaption>La jerarquía de usuarios y el enum que discrimina adentro</figcaption>
       </figure>
       <ul>
-        <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code></strong> en una tabla <code>usuario</code> con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. <code>Rol</code> distingue administrador y acomodador.</li>
+        <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code></strong> en una tabla <code>usuario</code> con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. <code>Rol</code> distingue administrador y acomodador. El discriminador es una fórmula sobre <code>rol</code>, así que un <code>Empleado</code> con rol <code>CLIENTE</code> se releería como <code>Cliente</code>: su constructor lo rechaza, y <code>Usuario</code> valida nombre y email para las dos clases.</li>
         <li><strong>El cliente no tiene login: el <a href="#acceso">código de la reserva</a> es su credencial.</strong> Ticket, cancelación y «Mis reservas» van por <code>/api/reservas/codigo/{codigo}</code>; por <code>{id}</code>, que es secuencial, solo el encargado.</li>
         <li><strong>Contraseñas:</strong> bcrypt, guardado como <code>{bcrypt}$2a$…</code>. Un hash sin prefijo es el SHA-256 sin salt de antes (el del seed): se sigue aceptando y el primer login correcto lo reescribe en bcrypt, porque es el único momento en que se tiene la clave en claro. El login no distingue email inexistente de clave errónea.</li>
       </ul>
@@ -1182,6 +1183,14 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         medios) y cada subclase implementa <code>calcularDescuento()</code>. Recibe solo las entradas de tarifa
         general: R16 hecho firma.
       </p>
+      <p>
+        Cada clase valida lo suyo al construirse, por Experto en información: <code>Promocion</code> el nombre
+        y que la vigencia empiece antes de terminar, <code>PromocionPorcentaje</code> que esté entre 1 y 99,
+        <code>PromocionMontoFijo</code> que el monto sea mayor a cero y <code>PromocionNxM</code> que se lleve
+        más de lo que se paga. No existe una promoción inválida en memoria, venga de donde venga.
+        <code>GestorPromociones</code> se queda con lo que la entidad no puede ver sola: que falte el valor
+        propio del tipo (llega en <code>null</code> desde el pedido) y que el nombre ya esté usado.
+      </p>
     </section>
 
     <section class="doc-section" id="dinero">
@@ -1371,7 +1380,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
+            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>; los constructores de <code>Promocion</code> y sus subclases, y el de <code>Empleado</code>, validan sus propios invariantes. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
             <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>CalculadoraPrecio</code>, <code>AgendaDeSala</code></td></tr>
             <tr><td><strong>Controlador</strong></td><td>Cada <code>*Controller</code>; por eso los tests llaman a los gestores sin HTTP</td></tr>
             <tr><td><strong>Polimorfismo</strong></td><td><code>multiplicadorPrecio</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code></td></tr>
@@ -1408,7 +1417,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Por qué dividieron el proyecto en estas capas?</td><td>Para que cada cambio toque un solo lugar: HTTP, reglas, datos e integraciones están separados. <code>ArquitecturaTest</code> lo hace cumplir.</td></tr>
             <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> aplica R1..R19, <code>model/</code> son las entidades, <code>repository/</code> persiste, <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
             <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Las reglas quedarían atadas a HTTP: el importador, que da de alta por <code>GestorRevisionCartelera</code>, y los tests de gestor tendrían que duplicarlas.</td></tr>
-            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>En el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>): es el único paso común a API, importador y seed.</td></tr>
+            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>En el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>): es el único paso común a API, importador y seed. Lo que depende de un solo objeto, como que un NxM lleve más de lo que paga, va en el constructor de la entidad.</td></tr>
             <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code> (<code>spring.datasource.url</code>, credenciales; Hibernate deduce el dialecto), el driver en <code>pom.xml</code>, <code>schema.sql</code> y el único SQL nativo, el <code>INSERT IGNORE</code> de <code>BloqueoButacaRepository</code>. El resto de repositorios y los gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2.</td></tr>
           </tbody>
         </table>
@@ -1642,7 +1651,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 452 tests, ninguno salteado</code></pre>
+mvn clean test       # 438 tests, ninguno salteado</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
