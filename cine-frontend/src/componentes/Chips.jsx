@@ -3,7 +3,8 @@ import { COLOR_CLASIFICACION, COLOR_ESTADO, etiqueta } from "../api/etiquetas.js
 
 export function Chip({ valor, color = "gray" }) {
   return (
-    <Badge color={color} variant="light" tt="none">
+    // Sin el mínimo, en una columna angosta de tabla Mantine lo recorta a "A…".
+    <Badge color={color} variant="light" tt="none" miw="max-content">
       {etiqueta(valor)}
     </Badge>
   );
