@@ -46,7 +46,8 @@ public class GestorSalas {
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales, int minutosLimpieza) {
-        validarDatos(nombre, tipo, minutosLimpieza);
+        // Antes que las filas y el nombre repetido: los datos de la sala se rechazan primero.
+        Sala sala = new Sala(nombre, tipo, minutosLimpieza);
         if (butacasPorFila == null || butacasPorFila.isEmpty()) {
             throw new IllegalArgumentException("La sala necesita al menos una fila");
         }
@@ -60,7 +61,6 @@ public class GestorSalas {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
 
-        Sala sala = new Sala(nombre, tipo, minutosLimpieza);
         salaRepository.save(sala);
         asientoRepository.saveAll(generarAsientos(sala, butacasPorFila, especiales));
         return sala;
@@ -71,30 +71,19 @@ public class GestorSalas {
         Sala sala = salaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
         int limpieza = minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza;
-        validarDatos(nombre, tipo, limpieza);
-        if (!sala.getNombre().equalsIgnoreCase(nombre.trim())
-                && salaRepository.existsByNombreIgnoreCase(nombre.trim())) {
+        String nuevoNombre = nombre == null ? null : nombre.trim();
+        // Los chequeos contra la base van antes de editar: con la sala ya modificada, la consulta
+        // del nombre repetido haría flush y se encontraría a sí misma.
+        if (nuevoNombre != null && !nuevoNombre.isEmpty() && !sala.getNombre().equalsIgnoreCase(nuevoNombre)
+                && salaRepository.existsByNombreIgnoreCase(nuevoNombre)) {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
-        if (tipo != sala.getTipo() && funcionRepository.existsBySala_Id(id)) {
+        if (tipo != null && tipo != sala.getTipo() && funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(
                     "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
         }
-        sala.editar(nombre.trim(), tipo, limpieza);
+        sala.editar(nuevoNombre, tipo, limpieza);
         return salaRepository.save(sala);
-    }
-
-    // Lo que vale igual al crear y al editar, escrito una sola vez.
-    private static void validarDatos(String nombre, TipoSala tipo, int minutosLimpieza) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de sala");
-        }
-        if (minutosLimpieza < 0) {
-            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
-        }
     }
 
     private List<Asiento> generarAsientos(Sala sala, List<Integer> distribucion,

@@ -20,17 +20,13 @@ public class GestorClientes {
         this.clienteRepository = clienteRepository;
     }
 
+    // Nombre y email los valida Usuario. Se construye antes de buscar el email repetido para que
+    // un dato inválido se rechace primero, como cuando la validación estaba acá.
     public Cliente registrar(String nombre, String email) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (email == null || !email.contains("@")) {
-            throw new IllegalArgumentException("El email no es válido");
-        }
+        Cliente cliente = new Cliente(nombre, email);
         if (clienteRepository.findByEmail(email).isPresent()) {
             throw new ConflictoDeNegocio("Ya hay un cliente registrado con ese email");
         }
-        Cliente cliente = new Cliente(nombre, email);
         clienteRepository.save(cliente);
         return cliente;
     }

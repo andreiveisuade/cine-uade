@@ -27,9 +27,7 @@ public class Sala {
     }
 
     public Sala(String nombre, TipoSala tipo, int minutosLimpieza) {
-        this.nombre = nombre;
-        this.tipo = tipo;
-        this.minutosLimpieza = minutosLimpieza;
+        editar(nombre, tipo, minutosLimpieza);
     }
 
     public int getId() {
@@ -49,7 +47,18 @@ public class Sala {
     }
 
     // No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes.
+    // Valida lo mismo que el alta: el gestor solo chequea lo que necesita la base (nombre
+    // repetido, funciones programadas).
     public void editar(String nombre, TipoSala tipo, int minutosLimpieza) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("Falta el tipo de sala");
+        }
+        if (minutosLimpieza < 0) {
+            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
+        }
         this.nombre = nombre;
         this.tipo = tipo;
         this.minutosLimpieza = minutosLimpieza;
