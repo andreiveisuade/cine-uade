@@ -10,6 +10,7 @@ const tema = createTheme({
 // Los fondos light de Mantine 9 son sólidos y en oscuro gritan; los de la 8 son translúcidos.
 const variables = v8CssVariablesResolver;
 
+// La misma clave la lee el script del <head> que evita el fogonazo blanco al cargar.
 const preferencia = localStorageColorSchemeManager({ key: "cine-tema" });
 
 export function Base({ children }) {
