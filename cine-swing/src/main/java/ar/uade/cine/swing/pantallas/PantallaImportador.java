@@ -61,7 +61,7 @@ final class PantallaImportador extends Pantalla {
         aviso.setForeground(Colores.aviso());
         aviso.setVisible(false);
         JButton porRevisar = new JButton("Ir a Por revisar");
-        porRevisar.addActionListener(e -> navegacion.ir("Por revisar"));
+        porRevisar.addActionListener(e -> navegacion.ir(Destino.POR_REVISAR));
 
         JPanel controles = new JPanel(new FlujoConSalto());
         controles.add(new JLabel("Cuánto traer"));

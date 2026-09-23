@@ -55,7 +55,7 @@ final class PantallaCobro extends Pantalla {
         this.reservaId = reservaId;
 
         JButton volver = new JButton("← Reservas");
-        volver.addActionListener(e -> navegacion.ir("Reservas"));
+        volver.addActionListener(e -> navegacion.ir(Destino.RESERVAS));
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         JPanel fila = new JPanel(new BorderLayout());
         fila.add(volver, BorderLayout.WEST);
@@ -226,7 +226,7 @@ final class PantallaCobro extends Pantalla {
                     ? "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()) + " · "
                     + precio(pago.descuento()) + " de descuento"
                     : "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()));
-            navegacion.ir("Caja");
+            navegacion.ir(Destino.CAJA);
         }
 
         // codigoQr es el contenido y no una imagen: la pasarela es emulada y dibujarlo la haría parecer real.

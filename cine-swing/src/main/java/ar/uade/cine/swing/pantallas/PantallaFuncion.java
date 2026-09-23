@@ -58,7 +58,7 @@ final class PantallaFuncion extends Pantalla {
         this.funcionId = funcionId;
 
         JButton volver = new JButton("← Funciones");
-        volver.addActionListener(e -> navegacion.ir("Funciones"));
+        volver.addActionListener(e -> navegacion.ir(Destino.FUNCIONES));
         JPanel norte = new JPanel(new BorderLayout(0, 6));
         norte.add(volver, BorderLayout.WEST);
         norte.add(subtitulo, BorderLayout.SOUTH);

@@ -51,7 +51,7 @@ final class PantallaPendientes extends Pantalla {
             vacio.add(Componentes.nota("No hay nada esperando. Cuando el importador traiga títulos nuevos van a "
                     + "aparecer acá."));
             JButton importar = new JButton("Traer cartelera ahora");
-            importar.addActionListener(e -> navegacion.ir("Importador"));
+            importar.addActionListener(e -> navegacion.ir(Destino.IMPORTADOR));
             vacio.add(importar);
             tarjetas.add(vacio);
         }

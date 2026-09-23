@@ -33,7 +33,7 @@ final class PantallaMapaSala extends Pantalla {
                 + "vende en ninguna función.");
         this.salaId = salaId;
         JButton volver = new JButton("← Salas");
-        volver.addActionListener(e -> navegacion.ir("Salas"));
+        volver.addActionListener(e -> navegacion.ir(Destino.SALAS));
         JPanel norte = new JPanel(new BorderLayout(0, 6));
         norte.add(volver, BorderLayout.WEST);
         norte.add(resumen, BorderLayout.SOUTH);

@@ -20,7 +20,7 @@ import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -31,18 +31,20 @@ import java.util.function.Supplier;
  */
 public final class VentanaPrincipal extends JFrame implements Navegacion {
 
-    private record Grupo(String titulo, List<String> destinos) {
+    private record Grupo(String titulo, List<Destino> destinos) {
     }
 
     private static final List<Grupo> MENU = List.of(
-            new Grupo("Cartelera", List.of("Películas", "Por revisar", "Importador")),
-            new Grupo("Programación", List.of("Salas", "Funciones", "Grilla", "Planificador", "Agenda")),
-            new Grupo("Ventas", List.of("Reservas", "Promociones", "Candy", "Caja", "Declaración jurada")),
-            new Grupo("Acceso", List.of("Puerta")));
+            new Grupo("Cartelera", List.of(Destino.PELICULAS, Destino.POR_REVISAR, Destino.IMPORTADOR)),
+            new Grupo("Programación", List.of(Destino.SALAS, Destino.FUNCIONES, Destino.GRILLA, Destino.PLANIFICADOR,
+                    Destino.AGENDA)),
+            new Grupo("Ventas", List.of(Destino.RESERVAS, Destino.PROMOCIONES, Destino.CANDY, Destino.CAJA,
+                    Destino.DECLARACION_JURADA)),
+            new Grupo("Acceso", List.of(Destino.PUERTA)));
 
     private final ApiHttp api;
     private final JPanel contenido = new JPanel(new BorderLayout());
-    private final Map<String, JToggleButton> botones = new LinkedHashMap<>();
+    private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private final ButtonGroup grupo = new ButtonGroup();
 
     public VentanaPrincipal(ApiHttp api, Empleado empleado, Runnable alSalir) {
@@ -54,7 +56,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         raiz.add(cabecera(empleado, alSalir), BorderLayout.NORTH);
         // El rol no es cosmético: el acomodador ni ve el resto del menú, y el backend además le cierra las rutas.
         List<Grupo> menu = empleado.esAdministrador() ? MENU
-                : List.of(new Grupo("Acceso", List.of("Puerta")));
+                : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
         JScrollPane lateral = new JScrollPane(menu(menu));
         lateral.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Componentes.gris()));
         lateral.setPreferredSize(new Dimension(200, 0));
@@ -65,7 +67,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         setSize(1280, 800);
         setMinimumSize(new Dimension(960, 600));
         setLocationRelativeTo(null);
-        ir(empleado.esAdministrador() ? "Películas" : "Puerta");
+        ir(empleado.esAdministrador() ? Destino.PELICULAS : Destino.PUERTA);
     }
 
     private JPanel cabecera(Empleado empleado, Runnable alSalir) {
@@ -98,8 +100,8 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
             titulo.setForeground(Componentes.gris());
             titulo.setBorder(BorderFactory.createEmptyBorder(12, 6, 4, 0));
             menu.add(Componentes.izquierda(titulo));
-            for (String destino : g.destinos()) {
-                JToggleButton boton = new JToggleButton(destino);
+            for (Destino destino : g.destinos()) {
+                JToggleButton boton = new JToggleButton(destino.titulo());
                 boton.setHorizontalAlignment(JToggleButton.LEFT);
                 boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, boton.getPreferredSize().height));
                 boton.putClientProperty("JButton.buttonType", "toolBarButton");
@@ -113,7 +115,8 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     }
 
     @Override
-    public void ir(String destino) {
+    public void ir(Destino destino) {
+        // Sin botón es un destino fuera del menú de este rol: el acomodador solo tiene Puerta.
         JToggleButton boton = botones.get(destino);
         if (boton == null) return;
         boton.setSelected(true);
@@ -132,23 +135,23 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         contenido.repaint();
     }
 
-    private Supplier<JComponent> crear(String destino) {
+    // Sin default a propósito: un destino nuevo sin pantalla no compila.
+    private Supplier<JComponent> crear(Destino destino) {
         return switch (destino) {
-            case "Películas" -> () -> new PantallaPeliculas(api);
-            case "Por revisar" -> () -> new PantallaPendientes(api, this);
-            case "Importador" -> () -> new PantallaImportador(api, this);
-            case "Salas" -> () -> new PantallaSalas(api, this);
-            case "Funciones" -> () -> new PantallaFunciones(api, this);
-            case "Grilla" -> () -> new PantallaProgramaciones(api);
-            case "Planificador" -> () -> new PantallaPlanificador(api);
-            case "Agenda" -> () -> new PantallaAgenda(api, this);
-            case "Reservas" -> () -> new PantallaReservas(api, this);
-            case "Promociones" -> () -> new PantallaPromociones(api);
-            case "Candy" -> () -> new PantallaCandy(api);
-            case "Caja" -> () -> new PantallaCaja(api);
-            case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api);
-            case "Puerta" -> () -> new PantallaPuerta(api);
-            default -> throw new IllegalArgumentException("El menú no tiene la pantalla " + destino);
+            case PELICULAS -> () -> new PantallaPeliculas(api);
+            case POR_REVISAR -> () -> new PantallaPendientes(api, this);
+            case IMPORTADOR -> () -> new PantallaImportador(api, this);
+            case SALAS -> () -> new PantallaSalas(api, this);
+            case FUNCIONES -> () -> new PantallaFunciones(api, this);
+            case GRILLA -> () -> new PantallaProgramaciones(api);
+            case PLANIFICADOR -> () -> new PantallaPlanificador(api);
+            case AGENDA -> () -> new PantallaAgenda(api, this);
+            case RESERVAS -> () -> new PantallaReservas(api, this);
+            case PROMOCIONES -> () -> new PantallaPromociones(api);
+            case CANDY -> () -> new PantallaCandy(api);
+            case CAJA -> () -> new PantallaCaja(api);
+            case DECLARACION_JURADA -> () -> new PantallaDeclaracionJurada(api);
+            case PUERTA -> () -> new PantallaPuerta(api);
         };
     }
 }
