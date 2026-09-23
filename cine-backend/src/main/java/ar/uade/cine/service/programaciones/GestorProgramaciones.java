@@ -22,6 +22,7 @@ import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
+import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -104,19 +105,24 @@ public class GestorProgramaciones {
     private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir,
                                         LocalDate tope) {
         LocalDate yaProcesado = grilla.getGeneradaHasta();
+        List<LocalDateTime> pendientes = grilla.horarios(tope).stream()
+                // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
+                // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
+                .filter(inicio -> !funciones.yaPaso(inicio))
+                // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
+                .filter(inicio -> yaProcesado == null || inicio.toLocalDate().isAfter(yaProcesado))
+                .toList();
+        // Una sola lectura de la sala para todo el rango, y no una por horario. Las funciones
+        // que esta misma grilla va creando no están en la agenda: caen una por día, así que
+        // solo chocarían con una película de más de un día, y a esa la frena programar(),
+        // que vuelve a mirar R3 antes de guardar.
+        AgendaDeSala agenda = pendientes.isEmpty() ? null : funciones.agendaDe(grilla.getSalaId(),
+                pendientes.get(0),
+                pendientes.get(pendientes.size() - 1).plusMinutes(pelicula.getDuracionMinutos()));
         List<FuncionPlanificada> plan = new ArrayList<>();
-        for (LocalDateTime inicio : grilla.horarios(tope)) {
-            // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
-            // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
-            if (funciones.yaPaso(inicio)) {
-                continue;
-            }
-            // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
-            if (yaProcesado != null && !inicio.toLocalDate().isAfter(yaProcesado)) {
-                continue;
-            }
+        for (LocalDateTime inicio : pendientes) {
             LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
-            Optional<Funcion> choque = funciones.superpuestaEn(grilla.getSalaId(), inicio, fin);
+            Optional<Funcion> choque = agenda.chocaCon(inicio, fin);
             if (choque.isPresent()) {
                 plan.add(new FuncionPlanificada(inicio, true,
                         "la sala ya tiene la función " + choque.get().getId() + " a las "

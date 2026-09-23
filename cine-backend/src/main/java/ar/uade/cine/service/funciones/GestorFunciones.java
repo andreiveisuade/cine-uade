@@ -108,7 +108,7 @@ public class GestorFunciones {
 
     @Transactional(readOnly = true)
     public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
-        return agendaDe(salaId).chocaCon(inicio, fin);
+        return agendaDe(salaId, inicio, fin).chocaCon(inicio, fin);
     }
 
     private String motivoDeLaSuperposicion(Funcion choque, int salaId, LocalDateTime inicio) {
@@ -125,10 +125,16 @@ public class GestorFunciones {
         return "La sala ya tiene una función en ese horario";
     }
 
+    // Solo las funciones que pueden chocar con algo entre desde y hasta, no la historia entera
+    // de la sala: una que empezó antes choca si sigue proyectándose o limpiándose, y ninguna
+    // dura más que la película más larga del catálogo; una que empieza después choca si
+    // arranca antes de que termine la limpieza de lo que se quiere programar.
     @Transactional(readOnly = true)
-    public AgendaDeSala agendaDe(int salaId) {
+    public AgendaDeSala agendaDe(int salaId, LocalDateTime desde, LocalDateTime hasta) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
-        List<Funcion> funciones = funcionRepository.findBySala_Id(salaId);
+        int margen = peliculaRepository.duracionMaxima() + limpieza;
+        List<Funcion> funciones = funcionRepository.findBySala_IdAndInicioBetween(salaId,
+                desde.minusMinutes(margen), hasta.plusMinutes(limpieza));
         Map<Integer, Integer> duraciones = peliculaRepository
                 .findAllById(funciones.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Pelicula::getId, Pelicula::getDuracionMinutos));

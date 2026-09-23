@@ -156,6 +156,19 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
+    // R3 se busca por rango y no en toda la historia de la sala: el rango tiene que alcanzar a
+    // una función que empezó el día anterior y todavía se está proyectando.
+    @Test
+    void rechazaFuncionQueEmpiezaMientrasCorreUnaLargaDelDiaAnterior() {
+        cartelera.agregar("Satantango", 432, List.of(Genero.DRAMA), Clasificacion.MAS_16);
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 25, 22, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+    }
+
     @Test
     void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
         assertThrows(IllegalArgumentException.class,

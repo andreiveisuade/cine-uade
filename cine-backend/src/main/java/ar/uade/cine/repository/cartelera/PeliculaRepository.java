@@ -17,6 +17,9 @@ public interface PeliculaRepository extends JpaRepository<Pelicula, Integer> {
 
     List<Pelicula> findByEstadoRevision(EstadoRevision estado);
 
+    @Query("select coalesce(max(p.duracionMinutos), 0) from Pelicula p")
+    int duracionMaxima();
+
     @Query("""
             select p from Pelicula p
             where p.enCartelera = true

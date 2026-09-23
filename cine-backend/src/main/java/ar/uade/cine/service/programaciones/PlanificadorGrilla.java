@@ -144,7 +144,9 @@ public class PlanificadorGrilla {
         elenco.forEach(p -> asignados.put(p.getId(), 0));
 
         Map<Integer, AgendaDeSala> agendas = new HashMap<>();
-        salas.forEach(sala -> agendas.put(sala.getId(), funciones.agendaDe(sala.getId())));
+        LocalDateTime desde = criterios.desde().atStartOfDay();
+        LocalDateTime hasta = criterios.desde().plusDays(criterios.dias()).atStartOfDay();
+        salas.forEach(sala -> agendas.put(sala.getId(), funciones.agendaDe(sala.getId(), desde, hasta)));
 
         for (int dia = 0; dia < criterios.dias(); dia++) {
             LocalDate fecha = criterios.desde().plusDays(dia);

@@ -13,7 +13,7 @@ public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
 
     List<Funcion> findByPelicula_Id(int peliculaId);
 
-    List<Funcion> findBySala_Id(int salaId);
+    List<Funcion> findBySala_IdAndInicioBetween(int salaId, LocalDateTime desde, LocalDateTime hasta);
 
     List<Funcion> findByProgramacionId(int programacionId);
 
