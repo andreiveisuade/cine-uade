@@ -46,12 +46,7 @@ public class GestorSalas {
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales, int minutosLimpieza) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de sala");
-        }
+        validarDatos(nombre, tipo, minutosLimpieza);
         if (butacasPorFila == null || butacasPorFila.isEmpty()) {
             throw new IllegalArgumentException("La sala necesita al menos una fila");
         }
@@ -60,9 +55,6 @@ public class GestorSalas {
         }
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
-        }
-        if (minutosLimpieza < 0) {
-            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
         }
         if (salaRepository.existsByNombreIgnoreCase(nombre)) {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
@@ -78,16 +70,8 @@ public class GestorSalas {
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de sala");
-        }
         int limpieza = minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza;
-        if (limpieza < 0) {
-            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
-        }
+        validarDatos(nombre, tipo, limpieza);
         if (!sala.getNombre().equalsIgnoreCase(nombre.trim())
                 && salaRepository.existsByNombreIgnoreCase(nombre.trim())) {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
@@ -98,6 +82,19 @@ public class GestorSalas {
         }
         sala.editar(nombre.trim(), tipo, limpieza);
         return salaRepository.save(sala);
+    }
+
+    // Lo que vale igual al crear y al editar, escrito una sola vez.
+    private static void validarDatos(String nombre, TipoSala tipo, int minutosLimpieza) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("Falta el tipo de sala");
+        }
+        if (minutosLimpieza < 0) {
+            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
+        }
     }
 
     private List<Asiento> generarAsientos(Sala sala, List<Integer> distribucion,
