@@ -10,7 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-// Nombre y precio se congelan al vender para que el ticket no cambie.
+// Nombre, precio y ahorro se congelan al vender para que el ticket no cambie: si después se
+// edita el combo, la compra vieja sigue diciendo lo que se cobró y lo que se ahorró.
 @Entity
 @Table(name = "item_compra")
 public class ItemCompra {
@@ -30,6 +31,9 @@ public class ItemCompra {
     @Column(name = "precio_unitario")
     private Dinero precioUnitario;
 
+    @Column(name = "ahorro_unitario")
+    private Dinero ahorroUnitario;
+
     protected ItemCompra() {
     }
 
@@ -38,6 +42,7 @@ public class ItemCompra {
         this.nombre = producto.getNombre();
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
+        this.ahorroUnitario = producto.getAhorro();
     }
 
     public Producto producto() {
@@ -61,7 +66,7 @@ public class ItemCompra {
     }
 
     public Dinero getAhorro() {
-        return producto.getAhorro().por(cantidad);
+        return ahorroUnitario.por(cantidad);
     }
 
     @Override

@@ -344,8 +344,9 @@ CREATE TABLE IF NOT EXISTS compra_candy (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id)
 );
 
--- El nombre y el precio quedan congelados en la linea, igual que en entrada: el ticket
--- emitido tiene que seguir diciendo lo que se cobro aunque despues cambie la carta.
+-- El nombre, el precio y el ahorro quedan congelados en la linea, igual que en entrada: el
+-- ticket emitido tiene que seguir diciendo lo que se cobro, y lo que se ahorro con el
+-- combo, aunque despues cambie la carta. ahorro_unitario es 0 en lo que no es combo.
 CREATE TABLE IF NOT EXISTS item_compra (
     id INT PRIMARY KEY AUTO_INCREMENT,
     compra_id INT NOT NULL,
@@ -353,6 +354,7 @@ CREATE TABLE IF NOT EXISTS item_compra (
     nombre VARCHAR(60) NOT NULL,
     cantidad INT NOT NULL,
     precio_unitario DECIMAL(10,2) NOT NULL,
+    ahorro_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
     UNIQUE (compra_id, producto_id),
     FOREIGN KEY (compra_id) REFERENCES compra_candy(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES producto(id)

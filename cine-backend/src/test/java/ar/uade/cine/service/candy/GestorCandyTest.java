@@ -123,6 +123,17 @@ class GestorCandyTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void editarElComboDespuesDeVenderNoCambiaElAhorroDeLaCompra() {
+        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
+        candy.vender(1, pedido(combo, 2), MedioPago.EFECTIVO, "");
+
+        carta.editar(combo, "Combo pareja", Dinero.de(6000));
+
+        CompraCandy guardada = candy.listarComprasDe(1).get(0);
+        assertEquals(Dinero.de(2000.0), guardada.getAhorro(), "el ahorro de cuando se vendió, no el de hoy");
+    }
+
+    @Test
     void elTotalSaleDeLaCartaYNoDeQuienVende() {
         CompraCandy compra = candy.vender(1, pochoclosYGaseosa(), MedioPago.EFECTIVO, "");
 
