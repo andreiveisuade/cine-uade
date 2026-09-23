@@ -17,7 +17,7 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.http.NoEncontrado;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Component
 public class VistasCartelera {
@@ -84,7 +84,7 @@ public class VistasCartelera {
 
     private Sala salaDe(Funcion f) {
         return salas.buscar(f.getSalaId())
-                .orElseThrow(() -> new NoEncontrado("No existe la sala " + f.getSalaId()));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + f.getSalaId()));
     }
 
     private PeliculaVistaDTO peliculaDe(Funcion f) {

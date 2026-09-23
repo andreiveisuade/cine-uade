@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasSalas;
 import ar.uade.cine.model.salas.EstadoAsiento;
@@ -26,6 +25,7 @@ import ar.uade.cine.dto.salas.PedidoEstadoDTO;
 import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -104,7 +104,7 @@ public class SalaController {
     }
 
     private Sala buscar(int id) {
-        return salas.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la sala " + id));
+        return salas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
     }
 
     private static Map<String, TipoAsiento> especiales(PedidoSalaDTO pedido) {

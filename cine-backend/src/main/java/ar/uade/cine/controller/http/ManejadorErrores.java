@@ -28,6 +28,8 @@ import ar.uade.cine.dto.ErrorVistaDTO;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 import ar.uade.cine.service.usuarios.CredencialesInvalidas;
 import ar.uade.cine.service.ventas.ButacaOcupadaException;
+import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @RestControllerAdvice
 public class ManejadorErrores {
@@ -57,9 +59,14 @@ public class ManejadorErrores {
                 .orElse("El pedido no es válido");
     }
 
-    @ExceptionHandler(NoEncontrado.class)
-    public ResponseEntity<ErrorVistaDTO> noEncontrado(NoEncontrado e) {
+    @ExceptionHandler(RecursoNoEncontrado.class)
+    public ResponseEntity<ErrorVistaDTO> noEncontrado(RecursoNoEncontrado e) {
         return responder(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(ConflictoDeNegocio.class)
+    public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
+        return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
     @ExceptionHandler(CredencialesInvalidas.class)

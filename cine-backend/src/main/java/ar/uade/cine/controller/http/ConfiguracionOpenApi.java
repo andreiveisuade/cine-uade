@@ -2,6 +2,7 @@ package ar.uade.cine.controller.http;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,12 @@ public class ConfiguracionOpenApi {
     private static final String ESQUEMA_BASIC = "basic";
 
     private static final AntPathMatcher RUTAS = new AntPathMatcher();
+
+    private static final Set<String> CON_NOMBRE_UNICO = Set.of(
+            "POST /api/peliculas", "POST /api/peliculas/importadas", "PUT /api/peliculas/{id}",
+            "POST /api/salas", "PUT /api/salas/{id}",
+            "POST /api/clientes", "POST /api/promociones",
+            "POST /api/candy/productos", "POST /api/candy/combos", "PUT /api/candy/productos/{id}");
 
     @Bean
     public OpenAPI apiDelCine() {
@@ -85,6 +92,8 @@ public class ConfiguracionOpenApi {
         }
         if (metodo == PathItem.HttpMethod.POST && ruta.equals("/api/reservas")) {
             respuestas.addApiResponse("409", respuestaDeError("La butaca ya estaba vendida: se perdió la carrera contra otra compra"));
+        } else if (CON_NOMBRE_UNICO.contains(metodo + " " + ruta)) {
+            respuestas.addApiResponse("409", respuestaDeError("Ya existe otro con ese nombre, email o título"));
         }
         if (ruta.equals("/api/sesion")) {
             respuestas.addApiResponse("401", respuestaDeError("Email o contraseña incorrectos"));

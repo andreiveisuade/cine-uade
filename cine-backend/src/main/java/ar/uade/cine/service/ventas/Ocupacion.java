@@ -26,6 +26,7 @@ import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 // Única definición de butaca ocupada (R4): la usan el mapa y la venta.
 @Service
@@ -131,7 +132,7 @@ public class Ocupacion {
 
     private List<Asiento> asientosDeLaSala(int funcionId) {
         Funcion funcion = funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
         return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
     }
 

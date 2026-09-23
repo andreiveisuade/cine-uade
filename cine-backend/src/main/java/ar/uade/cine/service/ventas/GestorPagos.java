@@ -24,6 +24,7 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -100,7 +101,7 @@ public class GestorPagos {
     // La reserva sale del checkout y no de quien confirma. El descuento se recalcula: pudo cambiar una promoción.
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = pasarela.buscar(checkoutId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el checkout " + checkoutId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));
 
         String codigoAutorizacion = pasarela.autorizar(checkout);
         return cobrar(checkout.reservaId(), checkout.medio(), codigoAutorizacion);
@@ -108,7 +109,7 @@ public class GestorPagos {
 
     private Reserva buscarReserva(int reservaId) {
         return reservaRepository.findById(reservaId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + reservaId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
     }
 
     private Funcion validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
@@ -122,7 +123,7 @@ public class GestorPagos {
                     + " venció: sus butacas volvieron a estar disponibles");
         }
         Funcion funcion = funcionRepository.findById(reserva.getFuncionId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new RecursoNoEncontrado(
                         "No existe la función " + reserva.getFuncionId()));
         if (funcion.yaEmpezo(ahora)) {
             throw new IllegalArgumentException("La función ya empezó: no se puede cobrar la reserva "

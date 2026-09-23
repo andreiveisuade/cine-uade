@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -31,6 +30,7 @@ import ar.uade.cine.service.informes.Arqueo;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -101,7 +101,7 @@ public class PagoController {
     }
 
     private void exigirReserva(int id) {
-        reservas.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la reserva " + id));
+        reservas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
     }
 
     private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {

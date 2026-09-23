@@ -70,10 +70,10 @@ class SalaControllerTest extends PruebaDeApi {
     }
 
     @Test
-    void unNombreQueYaUsaOtraSalaEs400() {
+    void unNombreQueYaUsaOtraSalaEs409() {
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"sala 2\",\"tipo\":\"DOS_D\"}");
 
-        assertEquals(400, respuesta.estado());
+        assertEquals(409, respuesta.estado());
         assertEquals("Ya existe una sala con ese nombre", respuesta.error());
     }
 

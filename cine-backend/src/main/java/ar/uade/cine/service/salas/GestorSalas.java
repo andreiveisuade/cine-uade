@@ -16,6 +16,8 @@ import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -63,7 +65,7 @@ public class GestorSalas {
             throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
         }
         if (salaRepository.existsByNombreIgnoreCase(nombre)) {
-            throw new IllegalArgumentException("Ya existe una sala con ese nombre");
+            throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
 
         Sala sala = new Sala(nombre, tipo, minutosLimpieza);
@@ -75,7 +77,7 @@ public class GestorSalas {
     // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
@@ -88,7 +90,7 @@ public class GestorSalas {
         }
         if (!sala.getNombre().equalsIgnoreCase(nombre.trim())
                 && salaRepository.existsByNombreIgnoreCase(nombre.trim())) {
-            throw new IllegalArgumentException("Ya existe una sala con ese nombre");
+            throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
         if (tipo != sala.getTipo() && funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(
@@ -144,7 +146,7 @@ public class GestorSalas {
 
     public void eliminar(int id) {
         if (!salaRepository.existsById(id)) {
-            throw new IllegalArgumentException("No existe la sala " + id);
+            throw new RecursoNoEncontrado("No existe la sala " + id);
         }
         if (funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(

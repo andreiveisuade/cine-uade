@@ -27,6 +27,7 @@ import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -76,7 +77,7 @@ public class GestorReservas {
             throw new IllegalArgumentException("La función ya empezó: no se pueden reservar butacas");
         }
         Cliente cliente = clientes.buscar(clienteId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
         if (butacas == null || butacas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
@@ -154,11 +155,11 @@ public class GestorReservas {
 
     private Funcion buscarFuncion(int funcionId) {
         return funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
     }
 
     private Reserva buscarOFallar(int id) {
         return reservaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
     }
 }

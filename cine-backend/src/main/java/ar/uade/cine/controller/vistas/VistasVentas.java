@@ -8,7 +8,6 @@ import java.util.function.ToIntFunction;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
@@ -27,6 +26,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Component
 public class VistasVentas {
@@ -95,11 +95,11 @@ public class VistasVentas {
                                   Map<Integer, Cliente> porCliente, Map<Integer, Pago> porReserva) {
         Funcion f = porFuncion.get(r.getFuncionId());
         if (f == null) {
-            throw new NoEncontrado("No existe la función " + r.getFuncionId());
+            throw new RecursoNoEncontrado("No existe la función " + r.getFuncionId());
         }
         Sala sala = porSala.get(f.getSalaId());
         if (sala == null) {
-            throw new NoEncontrado("No existe la sala " + f.getSalaId());
+            throw new RecursoNoEncontrado("No existe la sala " + f.getSalaId());
         }
         return dto(r, f, sala, porPelicula.get(f.getPeliculaId()), porCliente.get(r.getClienteId()),
                 porReserva.get(r.getId()));
@@ -107,9 +107,9 @@ public class VistasVentas {
 
     public ReservaVistaDTO reserva(Reserva r) {
         Funcion f = funciones.buscar(r.getFuncionId())
-                .orElseThrow(() -> new NoEncontrado("No existe la función " + r.getFuncionId()));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + r.getFuncionId()));
         Sala sala = salas.buscar(f.getSalaId())
-                .orElseThrow(() -> new NoEncontrado("No existe la sala " + f.getSalaId()));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + f.getSalaId()));
         return dto(r, f, sala,
                 cartelera.buscar(f.getPeliculaId()).orElse(null),
                 clientes.buscar(r.getClienteId()).orElse(null),

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCandy;
 import ar.uade.cine.model.candy.CompraCandy;
@@ -32,6 +31,7 @@ import ar.uade.cine.dto.candy.ProductoVistaDTO;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.informes.GestorCaja;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -136,6 +136,6 @@ public class CandyController {
     }
 
     private Producto buscar(int id) {
-        return carta.buscar(id).orElseThrow(() -> new NoEncontrado("No existe el producto " + id));
+        return carta.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id));
     }
 }

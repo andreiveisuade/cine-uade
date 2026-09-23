@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCartelera;
 import ar.uade.cine.model.dinero.Dinero;
@@ -23,6 +22,7 @@ import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -87,6 +87,6 @@ public class FuncionController {
 
     private Funcion buscar(int id) {
         return funciones.buscar(id)
-                .orElseThrow(() -> new NoEncontrado("No existe la función " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
     }
 }

@@ -22,6 +22,7 @@ import ar.uade.cine.repository.ProgramacionRepository;
 import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -161,7 +162,7 @@ public class GestorProgramaciones {
 
     private void cambiarEstado(int id, boolean activa) {
         Programacion grilla = programacionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la programación " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
         grilla.setActiva(activa);
         programacionRepository.save(grilla);
     }

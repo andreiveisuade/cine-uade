@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasPromociones;
 import ar.uade.cine.model.dinero.Dinero;
@@ -26,6 +25,7 @@ import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -115,6 +115,6 @@ public class PromocionController {
 
     private Promocion buscar(int id) {
         return promociones.buscar(id)
-                .orElseThrow(() -> new NoEncontrado("No existe la promoción " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la promoción " + id));
     }
 }

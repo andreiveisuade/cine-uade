@@ -142,11 +142,11 @@ class PagoControllerTest extends PruebaDeApi {
     }
 
     @Test
-    void confirmarUnCheckoutQueNoExisteEs400() {
+    void confirmarUnCheckoutQueNoExisteEs404() {
         Respuesta respuesta =
                 post("/api/checkouts/MP-0000000000/confirmacion", "");
 
-        assertEquals(400, respuesta.estado());
+        assertEquals(404, respuesta.estado());
         assertEquals("No existe el checkout MP-0000000000", respuesta.error());
     }
 

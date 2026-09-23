@@ -561,14 +561,14 @@
           }
         },
         {
-          "name": "Título repetido (400, R1)",
+          "name": "Título repetido (409, R1)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"responde 400\", function () { pm.response.to.have.status(400); });"
+                  "pm.test(\"responde 409\", function () { pm.response.to.have.status(409); });"
                 ]
               }
             }

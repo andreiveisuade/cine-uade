@@ -12,7 +12,7 @@ Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Prob
 | Enums | Nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
 | Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido |
-| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente · `405` método no aceptado · `409` butaca ganada por otro · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
+| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente, también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, o nombre/email/título ya usado (película, sala, cliente, producto, promoción) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
 
 ### Quién puede llamar a qué
 
@@ -51,7 +51,7 @@ y el «traé el carnet» (`requiereAcreditacion`).
 | `GET /api/peliculas/{id}` | Una película |
 | `GET /api/peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala embebida |
 | `GET /api/clientes?email=` | El cliente o `null`. Sin distinguir mayúsculas |
-| `POST /api/clientes` | `{nombre, email}`. Email único. Opcional: reservar da de alta igual |
+| `POST /api/clientes` | `{nombre, email}`. Email único (`409`). Opcional: reservar da de alta igual |
 
 **Película**
 
@@ -153,11 +153,11 @@ y ante un `401` fuera del login vuelve a `#/login`.
 |---|---|
 | `GET /api/peliculas` | Todas, incluso fuera de cartelera |
 | `GET /api/peliculas/pendientes` | El buzón. Va antes que `/{id}` en las rutas |
-| `POST /api/peliculas` | R1 título único, R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
+| `POST /api/peliculas` | R1 título único (`409`), R2 duración > 0, R7 un género, R10 clasificación. Nace `CONFIRMADA` |
 | `POST /api/peliculas/importadas` | Igual, pero `PENDIENTE` y fuera de cartelera |
 | `POST /api/peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /api/peliculas/{id}/descarte` | `DESCARTADA`. `400` si tiene funciones |
-| `PUT /api/peliculas/{id}` | Parcial. Título único contra las otras |
+| `PUT /api/peliculas/{id}` | Parcial. Título único contra las otras (`409`) |
 | `DELETE /api/peliculas/{id}` | `400` si tiene funciones o una grilla que la programe |
 | `GET /api/salas` · `GET /api/salas/{id}` | El detalle trae `asientos` |
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional, 15 por defecto, no negativa |
@@ -288,7 +288,7 @@ Sin `reservaId` es venta de mostrador. `ahorro`: descuento del combo.
 ## Control de acceso (CU-18)
 
 `POST /api/acceso` `{ "codigo": "K7M2P9XQ" }` → la reserva con butacas y tarifas. Marca la
-entrada usada: repetido, inexistente o impago da `400` (R18). 8 caracteres sin `O`, `I`, `0`, `1`.
+entrada usada: repetido o impago da `400` (R18), inexistente `404`. 8 caracteres sin `O`, `I`, `0`, `1`.
 
 ## Importador
 

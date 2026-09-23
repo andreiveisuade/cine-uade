@@ -74,10 +74,12 @@ class ContratoOpenApiTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("el 409 queda solo donde se compite por una butaca")
-    void conflictoSoloAlReservar() {
+    @DisplayName("el 409 queda donde se compite por una butaca o hay un nombre único")
+    void conflictoSoloAlReservarOConNombreUnico() {
         assertThat(operacion("/api/generos", "get").get("responses").has("409")).isFalse();
+        assertThat(operacion("/api/funciones", "post").get("responses").has("409")).isFalse();
         assertThat(operacion("/api/reservas", "post").get("responses").has("409")).isTrue();
+        assertThat(operacion("/api/salas", "post").get("responses").has("409")).isTrue();
     }
 
     @Test

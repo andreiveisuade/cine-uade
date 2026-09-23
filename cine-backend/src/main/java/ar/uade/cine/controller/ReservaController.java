@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
 import ar.uade.cine.model.salas.Asiento;
@@ -32,6 +31,7 @@ import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -153,11 +153,11 @@ public class ReservaController {
 
     private Reserva buscarPorCodigo(String codigo) {
         return consultas.buscarPorCodigo(codigo)
-                .orElseThrow(() -> new NoEncontrado("No existe ninguna reserva con ese código"));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
     }
 
     private Reserva buscar(int id) {
         return consultas.buscar(id)
-                .orElseThrow(() -> new NoEncontrado("No existe la reserva " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
     }
 }

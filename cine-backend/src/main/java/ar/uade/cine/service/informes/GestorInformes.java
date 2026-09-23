@@ -28,6 +28,7 @@ import ar.uade.cine.repository.PagoRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional(readOnly = true)
@@ -64,10 +65,10 @@ public class GestorInformes {
     public Bordero borderoDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
         Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new RecursoNoEncontrado(
                         "No existe la película " + funcion.getPeliculaId()));
         Sala sala = salaRepository.findById(funcion.getSalaId())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new RecursoNoEncontrado(
                         "No existe la sala " + funcion.getSalaId()));
 
         Map<TipoTarifa, Bordero.TotalPorTarifa> porTarifa = new EnumMap<>(TipoTarifa.class);
@@ -126,6 +127,6 @@ public class GestorInformes {
 
     private Funcion buscarFuncion(int funcionId) {
         return funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
     }
 }

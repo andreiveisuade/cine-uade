@@ -22,6 +22,7 @@ import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -72,14 +73,14 @@ public class GestorFunciones {
     public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
                                        Proyeccion proyeccion, Dinero precio) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + peliculaId));
         // Si no, programar saltearía el buzón de revisión.
         if (pelicula.getEstadoRevision() != EstadoRevision.CONFIRMADA) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");
         }
         Sala sala = salaRepository.findById(salaId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + salaId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + salaId));
         if (version == null || proyeccion == null) {
             throw new IllegalArgumentException("Falta la versión o el formato de proyección");
         }
@@ -154,7 +155,7 @@ public class GestorFunciones {
 
     public void eliminar(int id) {
         if (!funcionRepository.existsById(id)) {
-            throw new IllegalArgumentException("No existe la función " + id);
+            throw new RecursoNoEncontrado("No existe la función " + id);
         }
         if (reservaRepository.existsByFuncion_Id(id)) {
             throw new IllegalArgumentException(

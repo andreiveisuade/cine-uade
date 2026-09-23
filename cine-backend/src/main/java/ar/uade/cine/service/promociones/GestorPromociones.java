@@ -18,6 +18,8 @@ import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -67,7 +69,7 @@ public class GestorPromociones implements PoliticaPromociones {
             throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
         }
         if (promocionRepository.existsByNombreIgnoreCase(nombre.trim())) {
-            throw new IllegalArgumentException("Ya hay una promoción llamada " + nombre);
+            throw new ConflictoDeNegocio("Ya hay una promoción llamada " + nombre);
         }
         promocionRepository.save(promocion);
         return promocion;
@@ -126,6 +128,6 @@ public class GestorPromociones implements PoliticaPromociones {
 
     private Promocion buscarOFallar(int id) {
         return promocionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la promoción " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la promoción " + id));
     }
 }

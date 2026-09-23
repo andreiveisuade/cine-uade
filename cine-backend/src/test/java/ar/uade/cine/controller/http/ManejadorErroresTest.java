@@ -57,6 +57,25 @@ class ManejadorErroresTest extends PruebaDeApi {
     }
 
     @Test
+    void unClienteConEmailRepetidoEs409() {
+        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");
+
+        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Otra\",\"email\":\"ana@mail.com\"}");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("Ya hay un cliente registrado con ese email", respuesta.error());
+    }
+
+    @Test
+    void unaFuncionDeUnaPeliculaQueNoExisteEs404() {
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":999,\"salaId\":1,"
+                + "\"inicio\":\"2026-08-20T20:00:00\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}");
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la película 999", respuesta.error());
+    }
+
+    @Test
     void unaRutaQueNoExisteEs404() {
         Respuesta respuesta = get("/api/no-existe");
 

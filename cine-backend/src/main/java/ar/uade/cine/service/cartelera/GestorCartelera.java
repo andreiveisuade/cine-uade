@@ -17,6 +17,8 @@ import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -54,7 +56,7 @@ public class GestorCartelera {
 
     public Pelicula editar(int id, DatosPelicula cambios) {
         Pelicula actual = peliculaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
 
         String titulo = cambios.titulo() == null ? actual.getTitulo() : cambios.titulo();
         int duracion = cambios.duracionMinutos() == null
@@ -74,7 +76,7 @@ public class GestorCartelera {
 
     public void actualizar(Pelicula pelicula) {
         if (!peliculaRepository.existsById(pelicula.getId())) {
-            throw new IllegalArgumentException("No existe la película " + pelicula.getId());
+            throw new RecursoNoEncontrado("No existe la película " + pelicula.getId());
         }
         validarTituloLibre(pelicula.getTitulo(), pelicula.getId());
         peliculaRepository.save(pelicula);
@@ -99,7 +101,7 @@ public class GestorCartelera {
     // exceptoId 0 al dar de alta: ninguna película guardada tiene ese id.
     private void validarTituloLibre(String titulo, int exceptoId) {
         if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(titulo, exceptoId)) {
-            throw new IllegalArgumentException("Ya existe una película con ese título");
+            throw new ConflictoDeNegocio("Ya existe una película con ese título");
         }
     }
 
@@ -181,7 +183,7 @@ public class GestorCartelera {
     // La grilla se chequea aparte: puede no haber generado funciones y el borrado daría 500 por la FK.
     public void eliminar(int id) {
         Pelicula pelicula = peliculaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
         if (funcionRepository.existsByPelicula_Id(id)) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");

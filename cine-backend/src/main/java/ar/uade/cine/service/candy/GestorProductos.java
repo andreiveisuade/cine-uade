@@ -12,6 +12,8 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.repository.ProductoRepository;
+import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -93,7 +95,7 @@ public class GestorProductos {
         }
         if (!producto.getNombre().equalsIgnoreCase(nombre.trim())
                 && productoRepository.existsByNombreIgnoreCase(nombre.trim())) {
-            throw new IllegalArgumentException("Ya existe un producto con ese nombre");
+            throw new ConflictoDeNegocio("Ya existe un producto con ese nombre");
         }
 
         producto.editar(nombre.trim(), precio);
@@ -119,7 +121,7 @@ public class GestorProductos {
     @Transactional(readOnly = true)
     public Producto buscarOFallar(int id) {
         return productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el producto " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id));
     }
 
     private void validarAlta(String nombre, TipoProducto tipo, Dinero precio) {
@@ -133,7 +135,7 @@ public class GestorProductos {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
         if (productoRepository.existsByNombreIgnoreCase(nombre.trim())) {
-            throw new IllegalArgumentException("Ya existe un producto con ese nombre");
+            throw new ConflictoDeNegocio("Ya existe un producto con ese nombre");
         }
     }
 }

@@ -43,7 +43,7 @@ import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.service.cartelera.DatosPelicula;
-import ar.uade.cine.controller.http.NoEncontrado;
+import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 
@@ -179,7 +179,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Funcion huerfana = new Funcion(matrix, sinGuardar, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        assertThrows(NoEncontrado.class, () -> vistas.funcion(huerfana));
+        assertThrows(RecursoNoEncontrado.class, () -> vistas.funcion(huerfana));
     }
 
     @Test

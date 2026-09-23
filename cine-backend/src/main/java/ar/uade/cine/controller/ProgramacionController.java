@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
@@ -30,6 +29,7 @@ import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.programaciones.PlanProgramacion;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -141,6 +141,6 @@ public class ProgramacionController {
 
     private Programacion buscar(int id) {
         return programaciones.buscar(id)
-                .orElseThrow(() -> new NoEncontrado("No existe la programación " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
     }
 }

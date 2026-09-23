@@ -9,6 +9,7 @@ import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
 import ar.uade.cine.infrastructure.seguridad.Password;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -35,7 +36,7 @@ public class GestorEmpleados {
             throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
         }
         if (empleadoRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Ya hay un empleado con ese email");
+            throw new ConflictoDeNegocio("Ya hay un empleado con ese email");
         }
         empleadoRepository.save(new Empleado(nombre, email, Password.hashear(password), rol));
     }

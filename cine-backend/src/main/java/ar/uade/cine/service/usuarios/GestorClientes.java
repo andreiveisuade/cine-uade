@@ -10,6 +10,8 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
@@ -33,7 +35,7 @@ public class GestorClientes {
             throw new IllegalArgumentException("El email no es válido");
         }
         if (clienteRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Ya hay un cliente registrado con ese email");
+            throw new ConflictoDeNegocio("Ya hay un cliente registrado con ese email");
         }
         Cliente cliente = new Cliente(nombre, email);
         clienteRepository.save(cliente);
@@ -62,7 +64,7 @@ public class GestorClientes {
 
     public void eliminar(int id) {
         if (!clienteRepository.existsById(id)) {
-            throw new IllegalArgumentException("No existe el cliente " + id);
+            throw new RecursoNoEncontrado("No existe el cliente " + id);
         }
         if (reservaRepository.existsByCliente_Id(id)) {
             throw new IllegalArgumentException("El cliente " + id + " tiene reservas: no se puede eliminar");

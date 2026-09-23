@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.dto.ventas.BorderoVistaDTO;
 import ar.uade.cine.dto.ventas.InformeFuncionVistaDTO;
 import ar.uade.cine.dto.ventas.TotalTarifaDTO;
@@ -19,6 +18,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.Bordero;
 import ar.uade.cine.service.informes.GestorInformes;
 import ar.uade.cine.service.informes.InformeFuncion;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,7 +61,7 @@ public class InformeController {
 
     // Se chequea acá para responder 404 y no el 400 del gestor.
     private void exigirFuncion(int id) {
-        funciones.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la función " + id));
+        funciones.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
     }
 
     private static BorderoVistaDTO vista(Bordero bordero) {

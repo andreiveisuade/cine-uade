@@ -19,6 +19,7 @@ import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -49,14 +50,14 @@ public class GestorCandy {
     public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.findById(reservaId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la reserva " + reservaId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
         return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);
     }
 
     private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
                                MedioPago medio, String codigoAutorizacion) {
         Cliente cliente = clienteId == null ? null : clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
         if (cantidades == null || cantidades.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos un producto");
         }

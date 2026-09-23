@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
@@ -26,7 +27,7 @@ public class GestorAcceso {
 
     public Reserva registrarIngreso(String codigo) {
         Reserva reserva = reservaRepository.findByCodigo(codigo == null ? "" : codigo.trim().toUpperCase())
-                .orElseThrow(() -> new IllegalArgumentException("No existe ninguna reserva con ese código"));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
         reservaRepository.save(reserva);
         LOG.info("ingreso reserva {} · codigo {} · {} personas",

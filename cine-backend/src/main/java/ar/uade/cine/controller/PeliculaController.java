@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -28,6 +27,7 @@ import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.RecursoNoEncontrado;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -135,7 +135,7 @@ public class PeliculaController {
 
     private Pelicula buscar(int id) {
         return cartelera.buscar(id)
-                .orElseThrow(() -> new NoEncontrado("No existe la película " + id));
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
     }
 
     private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {
