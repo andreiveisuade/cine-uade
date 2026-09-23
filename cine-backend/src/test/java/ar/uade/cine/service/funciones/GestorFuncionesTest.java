@@ -71,6 +71,36 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 
+    // R20
+    @Test
+    void noSeProgramaUnaFuncionEnElPasado() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(1, 1, reloj.ahora().minusMinutes(1),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+
+        assertEquals("La función no puede empezar en el pasado", error.getMessage());
+        assertEquals(1, funciones.listar().size(), "solo la del arranque");
+    }
+
+    // R20 con el corte de R19: la que empieza en este instante ya empezó.
+    @Test
+    void ahoraMismoYaCuentaComoPasadoYUnMinutoDespuesNo() {
+        assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(1, 1, reloj.ahora(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+
+        assertDoesNotThrow(() -> funciones.programar(1, 1, reloj.ahora().plusMinutes(1),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+    }
+
+    // R20 mira el alta, no el historial (R12): la que ya pasó sigue ahí.
+    @Test
+    void unaFuncionQueQuedoEnElPasadoSigueListada() {
+        reloj.mover(LocalDateTime.of(2026, 8, 25, 10, 0));
+
+        assertEquals(1, funciones.listar().size());
+    }
+
     @Test
     void buscarSinCriteriosDevuelveTodo() {
         cargarMasFunciones();

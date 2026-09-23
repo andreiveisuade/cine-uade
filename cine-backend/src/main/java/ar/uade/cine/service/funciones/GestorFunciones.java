@@ -22,6 +22,7 @@ import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
@@ -34,13 +35,15 @@ public class GestorFunciones {
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final ReservaRepository reservaRepository;
+    private final Reloj reloj;
 
     public GestorFunciones(FuncionRepository funcionRepository, PeliculaRepository peliculaRepository, SalaRepository salaRepository,
-                           ReservaRepository reservaRepository) {
+                           ReservaRepository reservaRepository, Reloj reloj) {
         this.funcionRepository = funcionRepository;
         this.peliculaRepository = peliculaRepository;
         this.salaRepository = salaRepository;
         this.reservaRepository = reservaRepository;
+        this.reloj = reloj;
     }
 
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
@@ -53,6 +56,9 @@ public class GestorFunciones {
         Pelicula pelicula = validarProgramable(peliculaId, salaId, version, proyeccion, precio);
         if (inicio == null) {
             throw new IllegalArgumentException("Falta la fecha y hora de la función");
+        }
+        if (yaPaso(inicio)) {
+            throw new IllegalArgumentException("La función no puede empezar en el pasado");
         }
 
         // R3
@@ -91,6 +97,13 @@ public class GestorFunciones {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
         return pelicula;
+    }
+
+    // R20, con el mismo corte que R19 (Funcion.yaEmpezo): la que empieza ahora ya empezó, y
+    // nacería sin poder venderse. Pública para que programaciones y grilla salteen con el
+    // mismo criterio que el alta rechaza, en vez de repetir la comparación.
+    public boolean yaPaso(LocalDateTime inicio) {
+        return !inicio.isAfter(reloj.ahora());
     }
 
     @Transactional(readOnly = true)

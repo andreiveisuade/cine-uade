@@ -106,6 +106,11 @@ public class GestorProgramaciones {
         LocalDate yaProcesado = grilla.getGeneradaHasta();
         List<FuncionPlanificada> plan = new ArrayList<>();
         for (LocalDateTime inicio : grilla.horarios(tope)) {
+            // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
+            // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
+            if (funciones.yaPaso(inicio)) {
+                continue;
+            }
             // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
             if (yaProcesado != null && !inicio.toLocalDate().isAfter(yaProcesado)) {
                 continue;
@@ -157,6 +162,11 @@ public class GestorProgramaciones {
         if (hasta != null && grilla.horarios(hasta).isEmpty()) {
             throw new IllegalArgumentException(
                     "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
+        }
+        // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
+        if (hasta != null && grilla.horarios(hasta).stream().allMatch(funciones::yaPaso)) {
+            throw new IllegalArgumentException(
+                    "Todos los horarios del rango ya pasaron: la grilla no generaría funciones");
         }
         return grilla;
     }

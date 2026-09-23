@@ -287,6 +287,59 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(delAlta, funcionRepository.findAll().size());
     }
 
+    // R20: el 14/08 a las 10:00 un pase de las 9:00 ya pasó; el de mañana no.
+    @Test
+    void unaGrillaQueArrancaHoyConLaHoraYaPasadaSalteaEseDia() {
+        PlanProgramacion plan = programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), reloj.hoy().plusDays(2),
+                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        assertEquals(List.of(LocalDateTime.of(2026, 8, 15, 9, 0), LocalDateTime.of(2026, 8, 16, 9, 0)),
+                plan.funciones().stream().map(f -> f.inicio()).toList());
+        assertTrue(plan.salteadas().isEmpty(), "lo que ya pasó no es un choque");
+        assertEquals(2, funcionRepository.findAll().size());
+    }
+
+    // R20
+    @Test
+    void laPrevisualizacionTampocoMuestraLoQueYaPaso() {
+        DatosGrilla datos = new DatosGrilla(1, 1, reloj.hoy().minusDays(3), reloj.hoy().plusDays(2),
+                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+
+        PlanProgramacion previo = programaciones.previsualizar(datos);
+        PlanProgramacion alta = programaciones.crear(datos);
+
+        assertEquals(2, previo.funciones().size());
+        assertEquals(previo.funciones().stream().map(f -> f.inicio()).toList(),
+                alta.funciones().stream().map(f -> f.inicio()).toList());
+    }
+
+    // R20: un rango cerrado que ya pasó entero no deja nada que crear.
+    @Test
+    void rechazaUnRangoQueYaPasoEntero() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, reloj.hoy().minusDays(5), reloj.hoy(),
+                        LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        assertEquals("Todos los horarios del rango ya pasaron: la grilla no generaría funciones",
+                error.getMessage());
+        assertTrue(programaciones.buscar(null, null, null).isEmpty());
+    }
+
+    // R20: una grilla abierta vieja, al extenderse con el reloj adelantado, no rellena días pasados.
+    @Test
+    void extenderNoGeneraFuncionesEnElPasado() {
+        crearAbierta();
+        reloj.mover(reloj.ahora().plusDays(30));
+
+        int generadas = programaciones.extenderActivas(reloj.hoy());
+
+        assertEquals(15, generadas, "de hoy a las 20:30 hasta el horizonte, sin los 15 días del medio");
+        assertTrue(funcionRepository.findAll().stream()
+                        .noneMatch(f -> f.getInicio().toLocalDate().isAfter(LocalDate.of(2026, 8, 28))
+                                && f.getInicio().isBefore(reloj.ahora())),
+                "entre la última del alta y ahora no se rellenó nada");
+    }
+
     private void cargarGrillas() {
         crearSemana(Set.of());
         PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),

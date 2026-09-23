@@ -360,4 +360,21 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class, () -> planificador.proponer(alReves));
     }
+
+    // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).
+    @Test
+    void hoyNoProponePasesQueYaPasaron() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        reloj.mover(reloj.hoy().atTime(15, 10));
+        CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 2, LocalTime.of(8, 0), LocalTime.of(23, 0),
+                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+
+        PropuestaGrilla propuesta = planificador.aplicar(hoy);
+
+        assertFalse(propuesta.pases().isEmpty());
+        assertEquals(reloj.hoy().atTime(15, 30), propuesta.pases().get(0).inicio());
+        assertTrue(propuesta.pases().stream().allMatch(p -> p.inicio().isAfter(reloj.ahora())));
+        assertEquals(propuesta.pases().size(), funciones.listar().size(), "aplicar no choca con R20");
+    }
 }

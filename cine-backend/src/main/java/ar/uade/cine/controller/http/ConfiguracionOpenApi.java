@@ -50,7 +50,7 @@ public class ConfiguracionOpenApi {
                                 Cartelera, funciones, reserva de butacas, cobro, candy e informes. \
                                 TPO de Aplicaciones Interactivas (UADE).
 
-                                Las reglas de negocio (R1..R19) viven en la capa de servicio: esta API \
+                                Las reglas de negocio (R1..R20) viven en la capa de servicio: esta API \
                                 las expone, no las reimplementa.
 
                                 **Autenticación: HTTP Basic** con el email y la contraseña de un \

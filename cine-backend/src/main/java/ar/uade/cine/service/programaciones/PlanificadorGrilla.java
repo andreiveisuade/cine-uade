@@ -153,6 +153,11 @@ public class PlanificadorGrilla {
                 LocalDateTime limite = fecha.atTime(criterios.cierreEfectivo());
 
                 while (momento.isBefore(limite)) {
+                    // R20: hoy arranca en el primer intento que todavía no pasó.
+                    if (funciones.yaPaso(momento)) {
+                        momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
+                        continue;
+                    }
                     Pelicula elegida = conMasDeuda(elenco, asignados, promedio);
                     LocalDateTime fin = momento.plusMinutes(elegida.getDuracionMinutos());
                     if (fin.isAfter(limite)) {
