@@ -44,7 +44,6 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.model.dinero.Dinero;
 

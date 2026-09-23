@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
@@ -14,8 +15,6 @@ import ar.uade.cine.infrastructure.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.tmdb.TmdbHttp;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -41,12 +40,13 @@ public class Adaptadores {
         return new GeneradorReciboTxt(directorio);
     }
 
-    // Si Redis cae se vende sin bloqueos: la doble venta la sigue impidiendo el UNIQUE de la base.
-    @Bean
+    // Las tareas de fondo (hoy, borrar los bloqueos de butaca vencidos) no corren en los
+    // tests: ahí el tiempo lo mueve el RelojMovible, y una tarea que se dispara sola
+    // borraría filas en el medio de una prueba.
+    @Configuration
     @Profile("!test")
-    public BloqueoButacas bloqueoButacas(@Value("${cine.redis.host}") String host,
-                                         @Value("${cine.redis.puerto}") int puerto) {
-        return new BloqueoButacasRedis(host, puerto);
+    @EnableScheduling
+    static class Tareas {
     }
 
     @Bean

@@ -39,7 +39,6 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.RecursoNoEncontrado;

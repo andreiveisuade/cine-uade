@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
@@ -40,11 +38,6 @@ public class ConfiguracionDePrueba {
     @Bean
     public RelojMovible reloj() {
         return new RelojMovible();
-    }
-
-    @Bean
-    public BloqueoButacas bloqueoButacas(RelojMovible reloj) {
-        return new BloqueoButacasMemoria(reloj);
     }
 
     @Bean

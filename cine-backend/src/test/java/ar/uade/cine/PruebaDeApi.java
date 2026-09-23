@@ -14,8 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.infrastructure.seguridad.PasswordSha256;
 
@@ -44,9 +42,6 @@ public abstract class PruebaDeApi {
     private CatalogoDePrueba catalogoExterno;
 
     @Autowired
-    private BloqueoButacas bloqueoButacas;
-
-    @Autowired
     private JdbcTemplate jdbc;
 
     @Autowired
@@ -56,7 +51,6 @@ public abstract class PruebaDeApi {
     void dejarLaBaseComoNueva() {
         limpieza.limpiar();
         catalogoExterno.reiniciar();
-        ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
         // En el formato viejo, como el del seed: toda la suite pasa por el camino de compatibilidad.
         jdbc.update("INSERT INTO usuario (id, nombre, email, rol, password_hash) VALUES (?, ?, ?, ?, ?)",

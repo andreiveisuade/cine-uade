@@ -5,25 +5,26 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.IntPredicate;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.EstadoAsiento;
+import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.salas.AsientoRepository;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -36,14 +37,17 @@ public class Ocupacion {
 
     public static final Duration MIENTRAS_ELIGE = Duration.ofMinutes(3);
 
+    // El largo de la columna bloqueo_butaca.sesion. El front manda un UUID, que mide 36.
+    private static final int LARGO_SESION = 64;
+
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
     private final AsientoRepository asientoRepository;
-    private final BloqueoButacas bloqueos;
+    private final BloqueoButacaRepository bloqueos;
     private final Reloj reloj;
 
     public Ocupacion(ReservaRepository reservaRepository, FuncionRepository funcionRepository, AsientoRepository asientoRepository,
-                     BloqueoButacas bloqueos, Reloj reloj) {
+                     BloqueoButacaRepository bloqueos, Reloj reloj) {
         this.reservaRepository = reservaRepository;
         this.funcionRepository = funcionRepository;
         this.asientoRepository = asientoRepository;
@@ -63,11 +67,11 @@ public class Ocupacion {
                 .flatMap(r -> r.getEntradas().stream())
                 .map(Entrada::asientoId)
                 .collect(Collectors.toCollection(HashSet::new));
-        bloqueos.bloqueadas(funcionId).forEach((asientoId, duenio) -> {
-            if (!duenio.equals(sesion)) {
-                ocupados.add(asientoId);
+        for (BloqueoButaca bloqueo : bloqueos.vigentes(funcionId, reloj.ahora())) {
+            if (!bloqueo.sesion().equals(sesion)) {
+                ocupados.add(bloqueo.asientoId());
             }
-        });
+        }
         return ocupados;
     }
 
@@ -98,6 +102,10 @@ public class Ocupacion {
         if (sesion == null || sesion.isBlank()) {
             throw new IllegalArgumentException("Hace falta una sesión para bloquear butacas");
         }
+        if (sesion.length() > LARGO_SESION) {
+            throw new IllegalArgumentException(
+                    "La sesión no puede tener más de " + LARGO_SESION + " caracteres");
+        }
         List<Asiento> deLaSala = asientosDeLaSala(funcionId);
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
 
@@ -107,27 +115,40 @@ public class Ocupacion {
                                 "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala")))
                 .toList();
 
+        LocalDateTime ahora = reloj.ahora();
         List<String> conseguidas = pedidos.stream()
                 .filter(a -> !ocupados.contains(a.getId()))
-                .filter(a -> bloqueos.bloquear(funcionId, a.getId(), sesion, MIENTRAS_ELIGE))
+                .filter(a -> tomar(funcionId, a.getId(), sesion, ahora))
                 .map(Asiento::getCodigo)
                 .toList();
 
         Set<Integer> sigueEligiendo = pedidos.stream().map(Asiento::getId).collect(Collectors.toSet());
-        soltarDeLaSesion(funcionId, sesion, asientoId -> !sigueEligiendo.contains(asientoId));
+        if (sigueEligiendo.isEmpty()) {
+            liberar(funcionId, sesion);
+        } else {
+            bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
+        }
         return conseguidas;
     }
 
     public void liberar(int funcionId, String sesion) {
-        soltarDeLaSesion(funcionId, sesion, asientoId -> true);
+        bloqueos.liberar(funcionId, sesion);
     }
 
-    private void soltarDeLaSesion(int funcionId, String sesion, IntPredicate corresponde) {
-        for (Map.Entry<Integer, String> bloqueada : bloqueos.bloqueadas(funcionId).entrySet()) {
-            if (bloqueada.getValue().equals(sesion) && corresponde.test(bloqueada.getKey())) {
-                bloqueos.liberar(funcionId, bloqueada.getKey(), sesion);
-            }
-        }
+    // Solo higiene: una fila vencida ya no ocupa nada, porque vigentes() filtra por
+    // vencimiento y renovarOTomarVencida() la pisa. Sin esto la tabla crecería con cada
+    // mapa abandonado. En el perfil test no corre: ver Adaptadores.Tareas.
+    @Scheduled(fixedDelay = 5, initialDelay = 5, timeUnit = TimeUnit.MINUTES)
+    public void borrarBloqueosVencidos() {
+        bloqueos.borrarVencidos(reloj.ahora());
+    }
+
+    // Sin leer antes de escribir: entre un SELECT que dice "libre" y el INSERT cabe otra
+    // sesión. Por qué alcanzan estas dos sentencias, en BloqueoButacaRepository.
+    private boolean tomar(int funcionId, int asientoId, String sesion, LocalDateTime ahora) {
+        LocalDateTime vence = ahora.plus(MIENTRAS_ELIGE);
+        return bloqueos.renovarOTomarVencida(funcionId, asientoId, sesion, vence, ahora) > 0
+                || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
     }
 
     private List<Asiento> asientosDeLaSala(int funcionId) {

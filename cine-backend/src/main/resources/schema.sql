@@ -195,6 +195,31 @@ CREATE TABLE IF NOT EXISTS entrada (
     FOREIGN KEY (funcion_id) REFERENCES funcion(id)
 );
 
+-- La butaca que alguien esta eligiendo en el mapa, apartada tres minutos para que no se
+-- la lleve el de al lado mientras completa sus datos. Es experiencia de usuario, no la
+-- garantia contra la doble venta: esa sigue siendo el UNIQUE de entrada.
+--
+-- La clave primaria (funcion_id, asiento_id) es lo que hace que dos sesiones no puedan
+-- tenerla a la vez: tomarla es un UPDATE condicional (la propia, o una vencida) y si no
+-- habia fila un INSERT IGNORE, y el segundo INSERT de la misma butaca no entra. Ninguno
+-- lee antes de escribir, asi que no hace falta un lock explicito.
+--
+-- Vencer no borra: una fila con vence_en pasado ya no ocupa nada, porque todas las
+-- consultas filtran por vence_en y la siguiente sesion la pisa. La borra una tarea de
+-- fondo cada cinco minutos, por higiene.
+--
+-- ON DELETE CASCADE porque una funcion sin reservas se puede borrar, y que alguien este
+-- mirando su mapa no es motivo para impedirlo.
+CREATE TABLE IF NOT EXISTS bloqueo_butaca (
+    funcion_id INT NOT NULL,
+    asiento_id INT NOT NULL,
+    sesion VARCHAR(64) NOT NULL,
+    vence_en DATETIME NOT NULL,
+    PRIMARY KEY (funcion_id, asiento_id),
+    FOREIGN KEY (funcion_id) REFERENCES funcion(id) ON DELETE CASCADE,
+    FOREIGN KEY (asiento_id) REFERENCES asiento(id) ON DELETE CASCADE
+);
+
 -- Las tres clases de promocion van a la misma tabla con tipo como discriminador, igual
 -- que usuario: comparten todas las condiciones y solo cambia como calculan el descuento.
 -- Por eso las columnas del beneficio son NULL: cada tipo usa la suya y deja las otras
