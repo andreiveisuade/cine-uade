@@ -29,8 +29,12 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -57,9 +61,6 @@ final class PantallaAgenda extends Pantalla {
                            Function<Funcion, String> subtitulo) {
     }
 
-    private record Datos(List<Funcion> funciones, List<Sala> salas) {
-    }
-
     private final Navegacion navegacion;
     private final JComboBox<Opcion<Boolean>> modo = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> sala = new JComboBox<>();
@@ -70,8 +71,9 @@ final class PantallaAgenda extends Pantalla {
     private final JLabel vacio = new JLabel("No hay funciones programadas en este rango.", JLabel.CENTER);
     private final JPanel lienzo = new JPanel(new BorderLayout());
     private LocalDate desde = LocalDate.now();
-    private List<Funcion> funciones = List.of();
     private List<Sala> salas = List.of();
+    // Cada pedido lleva el número de la vista que lo pidió: una respuesta lenta de una semana anterior no pisa la actual.
+    private int vista;
     // Mover el calendario desde el código dispara su propio evento: sin esta marca, se redibujaría dos veces.
     private boolean sincronizando = true;
 
@@ -130,9 +132,8 @@ final class PantallaAgenda extends Pantalla {
         add(izquierda, BorderLayout.WEST);
         add(centro, BorderLayout.CENTER);
 
-        cargar(() -> new Datos(api.obtenerFunciones(null), api.obtenerSalas()), d -> {
-            funciones = d.funciones();
-            salas = d.salas();
+        cargar(api::obtenerSalas, lista -> {
+            salas = lista;
             sala.removeAllItems();
             salas.forEach(s -> sala.addItem(new Opcion<>(s.id(), s.nombre() + " — " + etiqueta(s.tipo()))));
             sincronizando = false;
@@ -161,6 +162,7 @@ final class PantallaAgenda extends Pantalla {
         pintar();
     }
 
+    // Pide solo el rango que se ve, con los filtros de la API: una semana de una sala, o un día de todas.
     private void pintar() {
         if (sincronizando) return;
         boolean semana = porSemana();
@@ -170,26 +172,42 @@ final class PantallaAgenda extends Pantalla {
         Sala elegida = salas.stream().filter(s -> salaId != null && s.id() == salaId).findFirst()
                 .orElse(salas.isEmpty() ? null : salas.get(0));
 
+        LocalDate primerDia = desde;
         List<Columna> columnas = new ArrayList<>();
         if (!semana) {
-            String dia = desde.toString();
             for (Sala s : salas) {
                 columnas.add(new Columna(s.nombre(), etiqueta(s.tipo()),
-                        f -> f.sala().id() == s.id() && f.inicio().startsWith(dia), f -> etiqueta(f.proyeccion())));
+                        f -> f.sala().id() == s.id() && dia(f).equals(primerDia), f -> etiqueta(f.proyeccion())));
             }
         } else if (elegida != null) {
             for (int i = 0; i < 7; i++) {
-                LocalDate fecha = desde.plusDays(i);
-                String dia = fecha.toString();
+                LocalDate fecha = primerDia.plusDays(i);
                 columnas.add(new Columna(SelectorDias.abreviatura(fecha.getDayOfWeek()),
                         String.valueOf(fecha.getDayOfMonth()),
-                        f -> f.sala().id() == elegida.id() && f.inicio().startsWith(dia),
+                        f -> dia(f).equals(fecha),
                         f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma()).toLowerCase()));
             }
         }
+        int pedida = ++vista;
+        if (columnas.isEmpty()) {
+            dibujar(columnas, List.of(), "");
+            return;
+        }
+
+        Map<String, String> filtros = new LinkedHashMap<>();
+        filtros.put("desde", primerDia.toString());
+        filtros.put("hasta", (semana ? primerDia.plusDays(6) : primerDia).toString());
+        if (semana) filtros.put("salaId", String.valueOf(elegida.id()));
+        String donde = semana ? " en " + elegida.nombre() : "";
+        cargar(() -> api.obtenerFunciones(filtros), funciones -> {
+            if (pedida == vista) dibujar(columnas, funciones, donde);
+        });
+    }
+
+    private void dibujar(List<Columna> columnas, List<Funcion> funciones, String donde) {
         List<Funcion> visibles = funciones.stream().filter(f -> columnas.stream().anyMatch(c -> c.toma().test(f)))
                 .toList();
-        conteo.setText(visibles.size() + " funciones" + (semana && elegida != null ? " en " + elegida.nombre() : ""));
+        conteo.setText(visibles.size() + " funciones" + donde);
 
         lienzo.removeAll();
         if (visibles.isEmpty()) {
@@ -202,8 +220,13 @@ final class PantallaAgenda extends Pantalla {
         lienzo.repaint();
     }
 
+    private static LocalDate dia(Funcion f) {
+        return LocalDateTime.parse(f.inicio()).toLocalDate();
+    }
+
     private static int minutosDe(String iso) {
-        return Integer.parseInt(iso.substring(11, 13)) * 60 + Integer.parseInt(iso.substring(14, 16));
+        LocalTime hora = LocalDateTime.parse(iso).toLocalTime();
+        return hora.getHour() * 60 + hora.getMinute();
     }
 
     private static String enHora(int minutos) {
