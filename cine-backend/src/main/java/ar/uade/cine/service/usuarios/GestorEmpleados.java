@@ -53,7 +53,7 @@ public class GestorEmpleados {
     public Empleado iniciarSesion(String email, String password) {
         return empleadoRepository.findByEmail(email)
                 .filter(admin -> Password.coincide(password, admin.getPasswordHash()))
-                .orElseThrow(() -> new IllegalArgumentException("Email o contraseña incorrectos"));
+                .orElseThrow(CredencialesInvalidas::new);
     }
 
     public List<Empleado> listar() {

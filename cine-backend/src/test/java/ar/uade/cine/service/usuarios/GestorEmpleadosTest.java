@@ -34,13 +34,13 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaLaContrasenaEquivocada() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(CredencialesInvalidas.class,
                 () -> empleados.iniciarSesion("encargado@cine.com", "otracosa"));
     }
 
     @Test
     void rechazaUnEmailQueNoExiste() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(CredencialesInvalidas.class,
                 () -> empleados.iniciarSesion("nadie@cine.com", "secreta123"));
     }
 

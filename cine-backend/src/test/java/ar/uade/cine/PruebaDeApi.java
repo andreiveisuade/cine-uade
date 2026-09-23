@@ -71,9 +71,17 @@ public abstract class PruebaDeApi {
     }
 
     protected Respuesta post(String ruta, String cuerpo) {
+        return conCuerpo(HttpMethod.POST, ruta, cuerpo);
+    }
+
+    protected Respuesta put(String ruta, String cuerpo) {
+        return conCuerpo(HttpMethod.PUT, ruta, cuerpo);
+    }
+
+    private Respuesta conCuerpo(HttpMethod metodo, String ruta, String cuerpo) {
         HttpHeaders cabeceras = new HttpHeaders();
         cabeceras.setContentType(MediaType.APPLICATION_JSON);
-        return respuesta(cliente.exchange(URI.create(ruta), HttpMethod.POST,
+        return respuesta(cliente.exchange(URI.create(ruta), metodo,
                 new HttpEntity<>(cuerpo, cabeceras), String.class));
     }
 
