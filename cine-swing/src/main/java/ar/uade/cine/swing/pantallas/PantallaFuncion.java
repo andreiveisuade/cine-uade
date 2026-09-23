@@ -137,6 +137,8 @@ final class PantallaFuncion extends Pantalla {
             fila.add(Componentes.nota(emitido
                     ? "Emitido el " + fechaHora(bordero.generadoEn()) + "."
                     : "Consultado el " + fechaHora(bordero.generadoEn()) + "."), BorderLayout.CENTER);
+            // BoxLayout reparte el sobrante entre lo que no tiene alto máximo: sin tope, el botón crecía.
+            fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
             agregar(contenido, fila);
             agregar(contenido, Componentes.nota("Emitir vuelve a pedir el borderó y lo guarda como texto en esta "
                     + "PC. El de una función es uno solo y vale el último, porque las entradas se siguen vendiendo "

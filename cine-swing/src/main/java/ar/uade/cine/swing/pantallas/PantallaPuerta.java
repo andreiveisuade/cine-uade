@@ -1,8 +1,10 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Tarea;
 
 import javax.swing.BorderFactory;
@@ -12,7 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.Font;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -20,9 +21,6 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 /** Control de acceso (CU-18). Lo único que ve el acomodador. */
 final class PantallaPuerta extends Pantalla {
-
-    private static final Color VERDE = new Color(0x2B8A3E);
-    private static final Color ROJO = new Color(0xC92A2A);
 
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
@@ -32,7 +30,7 @@ final class PantallaPuerta extends Pantalla {
         codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
         JButton validar = new JButton("Validar");
         validar.setFont(validar.getFont().deriveFont(18f));
-        JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel fila = new JPanel(new FlujoConSalto());
         fila.add(codigo);
         fila.add(validar);
         resultado.setVerticalAlignment(JLabel.TOP);
@@ -62,7 +60,7 @@ final class PantallaPuerta extends Pantalla {
         }, error -> {
             // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa.
             if (error.esSesionVencida()) return;
-            mostrar(ROJO, "NO PASA", "<p>" + escapar(error.getMessage()) + "</p>");
+            mostrar(Colores.error(), "NO PASA", "<p>" + escapar(error.getMessage()) + "</p>");
             reiniciar();
         });
     }
@@ -88,18 +86,14 @@ final class PantallaPuerta extends Pantalla {
         int personas = reserva.entradas().size();
         html.append("</table><p>").append(personas).append(personas == 1 ? " persona" : " personas")
                 .append(" · ingreso registrado ").append(fechaHora(reserva.ingresadaEn())).append("</p>");
-        mostrar(VERDE, "ADELANTE", html.toString());
+        mostrar(Colores.exito(), "ADELANTE", html.toString());
     }
 
     private void mostrar(Color color, String titulo, String cuerpo) {
-        resultado.setText("<html><div style='width:460px'><h1 style='color:#" + hex(color) + "'>" + titulo
+        resultado.setText("<html><div style='width:460px'><h1 style='color:" + Colores.hex(color) + "'>" + titulo
                 + "</h1>" + cuerpo + "</div></html>");
         resultado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color, 2),
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-    }
-
-    private static String hex(Color color) {
-        return String.format("%06x", color.getRGB() & 0xFFFFFF);
     }
 
     private static String escapar(String texto) {

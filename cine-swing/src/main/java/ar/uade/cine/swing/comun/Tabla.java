@@ -38,11 +38,13 @@ public final class Tabla<T> {
     private final List<Columna<T>> columnas;
     private final List<T> filas = new ArrayList<>();
     private final Modelo modelo = new Modelo();
-    private final JTable tabla = new JTable(modelo);
+    private final JTable tabla;
 
     @SafeVarargs
     public Tabla(Columna<T>... columnas) {
         this.columnas = List.of(columnas);
+        // Después de las columnas: la JTable le pregunta al modelo cuántas hay apenas se crea.
+        this.tabla = new JTable(modelo);
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabla.setFillsViewportHeight(true);
         tabla.setAutoCreateRowSorter(false);

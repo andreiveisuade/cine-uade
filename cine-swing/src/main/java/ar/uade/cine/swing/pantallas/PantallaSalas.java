@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.api.dto.TipoSala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -19,7 +20,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +58,7 @@ final class PantallaSalas extends Pantalla {
         butacas.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirMapa));
         borrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::borrar));
         tabla.alDobleClic(this::abrirMapa);
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(butacas);
         acciones.add(borrar);
 

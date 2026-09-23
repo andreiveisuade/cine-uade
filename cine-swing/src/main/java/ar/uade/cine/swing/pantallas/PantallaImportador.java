@@ -5,7 +5,9 @@ import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.EstadoImportador;
 import ar.uade.cine.swing.api.dto.Importacion;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -21,8 +23,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.List;
 
@@ -58,12 +58,12 @@ final class PantallaImportador extends Pantalla {
         trayendo.setString("Preguntándole a TMDB qué se está dando, y cargando lo que falte. Son unos segundos.");
         trayendo.setStringPainted(true);
         trayendo.setVisible(false);
-        aviso.setForeground(new Color(0xE67700));
+        aviso.setForeground(Colores.aviso());
         aviso.setVisible(false);
         JButton porRevisar = new JButton("Ir a Por revisar");
         porRevisar.addActionListener(e -> navegacion.ir("Por revisar"));
 
-        JPanel controles = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel controles = new JPanel(new FlujoConSalto());
         controles.add(new JLabel("Cuánto traer"));
         controles.add(paginas);
         controles.add(traer);

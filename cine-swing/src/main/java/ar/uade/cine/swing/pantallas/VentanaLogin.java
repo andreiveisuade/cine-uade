@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Empleado;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Tarea;
 
@@ -14,7 +15,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Font;
 import java.util.function.Consumer;
 
@@ -35,7 +35,7 @@ public final class VentanaLogin extends JFrame {
 
         JLabel titulo = new JLabel("CINE UADE");
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 24f));
-        mensaje.setForeground(new Color(0xC92A2A));
+        mensaje.setForeground(Colores.error());
         if (aviso != null) mensaje.setText(aviso);
 
         Componentes.Formulario formulario = new Componentes.Formulario()

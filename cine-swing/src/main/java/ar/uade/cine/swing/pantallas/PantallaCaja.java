@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.ArqueoCandy;
 import ar.uade.cine.swing.api.dto.CompraCandy;
 import ar.uade.cine.swing.api.dto.Pago;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -18,7 +19,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
@@ -34,7 +34,7 @@ final class PantallaCaja extends Pantalla {
     }
 
     private final JDateChooser fecha = Fechas.selector(LocalDate.now());
-    private final JPanel cifras = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+    private final JPanel cifras = new JPanel(new FlujoConSalto());
     private final JLabel porMedio = new JLabel(" ");
     private final JLabel tituloCandy = Componentes.subtitulo("Candy");
     private final Tabla<Pago> boleteria = new Tabla<>(
@@ -51,7 +51,7 @@ final class PantallaCaja extends Pantalla {
     PantallaCaja(ApiHttp api) {
         super(api, "Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
 
-        JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel barra = new JPanel(new FlujoConSalto());
         JButton anterior = new JButton("◀");
         JButton siguiente = new JButton("▶");
         barra.add(new JLabel("Fecha"));

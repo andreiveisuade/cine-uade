@@ -3,7 +3,9 @@ package ar.uade.cine.swing.pantallas;
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Asiento;
 import ar.uade.cine.swing.api.dto.Sala;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.MapaButacas;
 import ar.uade.cine.swing.comun.MapaButacas.Estilo;
 
@@ -15,7 +17,6 @@ import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -62,10 +63,10 @@ final class PantallaMapaSala extends Pantalla {
 
     private Estilo estilo(Asiento asiento) {
         if ("FUERA_DE_SERVICIO".equals(asiento.estado())) {
-            return new Estilo(MapaButacas.FUERA_DE_SERVICIO, Color.GRAY, true,
+            return new Estilo(Colores.butacaFueraDeServicio(), Colores.borde(), true, true,
                     asiento.codigo() + " · fuera de servicio · clic para reponer");
         }
-        return new Estilo(MapaButacas.colorTipo(asiento.tipo()), Color.GRAY, true,
+        return new Estilo(MapaButacas.colorTipo(asiento.tipo()), Colores.borde(), true, false,
                 asiento.codigo() + " · " + etiqueta(asiento.tipo()) + " · clic para marcar fuera de servicio");
     }
 
@@ -75,9 +76,9 @@ final class PantallaMapaSala extends Pantalla {
     }
 
     private static JPanel referencia() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        JPanel panel = new JPanel(new FlujoConSalto());
         panel.add(muestra(MapaButacas.colorTipo("ESTANDAR"), "disponible"));
-        panel.add(muestra(MapaButacas.FUERA_DE_SERVICIO, "fuera de servicio"));
+        panel.add(muestra(Colores.butacaFueraDeServicio(), "fuera de servicio"));
         panel.add(muestra(MapaButacas.colorTipo("VIP"), "* VIP"));
         panel.add(muestra(MapaButacas.colorTipo("PAREJA"), "& pareja"));
         panel.add(muestra(MapaButacas.colorTipo("ACCESIBLE"), "+ accesible"));
@@ -91,7 +92,7 @@ final class PantallaMapaSala extends Pantalla {
             public void paintIcon(Component c, Graphics g, int x, int y) {
                 g.setColor(color);
                 g.fillRect(x, y, 12, 12);
-                g.setColor(Color.GRAY);
+                g.setColor(Colores.borde());
                 g.drawRect(x, y, 12, 12);
             }
 

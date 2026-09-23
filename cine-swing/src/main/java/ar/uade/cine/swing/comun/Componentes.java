@@ -6,13 +6,18 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicHTML;
+import javax.swing.text.View;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 // Piezas de pantalla que se repiten: el equivalente de admin/comun.jsx.
 public final class Componentes {
@@ -40,17 +45,60 @@ public final class Componentes {
         return etiqueta;
     }
 
-    /** Texto gris que explica; con HTML para que corte línea en vez de estirar la ventana. */
+    /** Texto gris que explica. Corta línea al ancho que le toque, en vez de estirar la ventana o cortarse. */
     public static JLabel nota(String texto) {
-        JLabel etiqueta = new JLabel("<html><div style='width:420px'>" + texto + "</div></html>");
+        JLabel etiqueta = new TextoQueSalta("<html>" + texto + "</html>");
         etiqueta.setForeground(gris());
         etiqueta.setFont(etiqueta.getFont().deriveFont(12f));
         return etiqueta;
     }
 
+    /**
+     * Un JLabel con HTML no corta línea solo: informa el ancho de todo el texto en un renglón. Este mide la altura
+     * que necesita al ancho que el layout le dio, y pide re-layout cuando ese ancho cambia.
+     */
+    private static final class TextoQueSalta extends JLabel {
+
+        private static final int ANCHO_INICIAL = 420;
+        private int anchoMedido = -1;
+
+        TextoQueSalta(String html) {
+            super(html);
+            setVerticalAlignment(TOP);
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    if (getWidth() != anchoMedido) SwingUtilities.invokeLater(TextoQueSalta.this::revalidate);
+                }
+            });
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension natural = super.getPreferredSize();
+            View vista = (View) getClientProperty(BasicHTML.propertyKey);
+            int ancho = getWidth() > 0 ? getWidth() : ANCHO_INICIAL;
+            if (vista == null || natural.width <= ancho) return natural;
+            anchoMedido = ancho;
+            Insets bordes = getInsets();
+            vista.setSize(ancho - bordes.left - bordes.right, 0);
+            int alto = (int) Math.ceil(vista.getPreferredSpan(View.Y_AXIS)) + bordes.top + bordes.bottom;
+            return new Dimension(ancho, alto);
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return new Dimension(0, getPreferredSize().height);
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+        }
+    }
+
     public static Color gris() {
-        Color color = UIManager.getColor("Label.disabledForeground");
-        return color != null ? color : Color.GRAY;
+        return Colores.secundario();
     }
 
     public static JComponent izquierda(JComponent componente) {
@@ -60,9 +108,7 @@ public final class Componentes {
 
     public static JPanel conBorde(JComponent contenido) {
         JPanel panel = new JPanel(new java.awt.BorderLayout());
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor") != null
-                        ? UIManager.getColor("Component.borderColor") : Color.LIGHT_GRAY),
+        panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Colores.borde()),
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)));
         panel.add(contenido);
         return panel;

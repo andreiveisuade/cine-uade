@@ -22,15 +22,12 @@ import java.util.function.Function;
 /** La sala vista de frente, fila por fila, como MapaButacas.jsx. Quien la usa decide cómo se pinta cada butaca. */
 public final class MapaButacas extends JPanel {
 
-    public record Estilo(Color fondo, Color borde, boolean habilitada, String tooltip) {
+    // `punteada`: la butaca no se vende (fuera de servicio u ocupada), aunque siga siendo clicable.
+    public record Estilo(Color fondo, Color borde, boolean habilitada, boolean punteada, String tooltip) {
     }
 
     public static final Map<String, String> SIMBOLO = Map.of("VIP", "*", "PAREJA", "&", "ACCESIBLE", "+",
             "ESTANDAR", "");
-    public static final Color FUERA_DE_SERVICIO = new Color(0xDEE2E6);
-    private static final Map<String, Color> COLOR_TIPO = Map.of(
-            "VIP", new Color(0xFFF3BF), "PAREJA", new Color(0xFFDEEB), "ACCESIBLE", new Color(0xD0EBFF),
-            "ESTANDAR", Color.WHITE);
 
     public MapaButacas(int filas, List<Asiento> asientos, Function<Asiento, Estilo> pintar,
                        Consumer<Asiento> alElegir) {
@@ -41,8 +38,8 @@ public final class MapaButacas extends JPanel {
         pantalla.insets = new Insets(0, 0, 16, 0);
         JLabel etiqueta = new JLabel("P A N T A L L A", SwingConstants.CENTER);
         etiqueta.setOpaque(true);
-        etiqueta.setBackground(new Color(0x343A40));
-        etiqueta.setForeground(Color.WHITE);
+        etiqueta.setBackground(Colores.pantallaDeSala());
+        etiqueta.setForeground(Colores.textoPantallaDeSala());
         etiqueta.setFont(etiqueta.getFont().deriveFont(10f));
         add(etiqueta, pantalla);
 
@@ -60,7 +57,11 @@ public final class MapaButacas extends JPanel {
                 boton.setFont(boton.getFont().deriveFont(Font.PLAIN, 10f));
                 boton.setPreferredSize(new Dimension("PAREJA".equals(asiento.tipo()) ? 48 : 30, 28));
                 boton.setBackground(estilo.fondo());
-                boton.setBorder(BorderFactory.createLineBorder(estilo.borde()));
+                // Punteado lo que no se vende: se distingue por la forma y no solo por el color.
+                boton.setBorder(estilo.habilitada() && !estilo.punteada()
+                        ? BorderFactory.createLineBorder(estilo.borde())
+                        : BorderFactory.createDashedBorder(estilo.borde(), 3, 2));
+                if (estilo.punteada()) boton.setForeground(Colores.secundario());
                 boton.setFocusPainted(false);
                 boton.setEnabled(estilo.habilitada());
                 boton.setToolTipText(estilo.tooltip());
@@ -74,6 +75,6 @@ public final class MapaButacas extends JPanel {
     }
 
     public static Color colorTipo(String tipo) {
-        return COLOR_TIPO.getOrDefault(tipo, Color.WHITE);
+        return Colores.butaca(tipo);
     }
 }

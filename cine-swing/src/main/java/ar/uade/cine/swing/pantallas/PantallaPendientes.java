@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas;
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Pelicula;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tarea;
 
 import javax.swing.JButton;
@@ -10,7 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -46,7 +46,7 @@ final class PantallaPendientes extends Pantalla {
     private void pintar(List<Pelicula> pendientes) {
         tarjetas.removeAll();
         if (pendientes.isEmpty()) {
-            JPanel vacio = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JPanel vacio = new JPanel(new FlujoConSalto());
             vacio.add(Componentes.nota("No hay nada esperando. Cuando el importador traiga títulos nuevos van a "
                     + "aparecer acá."));
             JButton importar = new JButton("Traer cartelera ahora");

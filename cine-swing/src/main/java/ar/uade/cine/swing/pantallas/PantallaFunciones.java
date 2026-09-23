@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.Pelicula;
 import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla;
@@ -21,7 +22,6 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -87,7 +87,7 @@ final class PantallaFunciones extends Pantalla {
     }
 
     private JPanel barraFiltros() {
-        JPanel barra = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel barra = new JPanel(new FlujoConSalto());
         filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
         barra.add(new JLabel("Película"));
         barra.add(filtroPelicula);
@@ -121,7 +121,7 @@ final class PantallaFunciones extends Pantalla {
     }
 
     private JPanel accionesDeFila() {
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel acciones = new JPanel(new FlujoConSalto());
         JButton informes = new JButton("Borderó e informe");
         JButton borrar = new JButton("Borrar");
         informes.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirInformes));
