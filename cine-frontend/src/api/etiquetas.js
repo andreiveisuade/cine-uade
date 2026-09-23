@@ -1,5 +1,3 @@
-import { chip } from "./componentes.js";
-
 const ETIQUETAS = {
   ACCION: "Acción",
   COMEDIA: "Comedia",
@@ -59,30 +57,23 @@ export function etiqueta(valor) {
   return ETIQUETAS[valor] || valor;
 }
 
-const COLOR_CLASIFICACION = {
-  ATP: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  MAS_13: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  MAS_16: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  MAS_18: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+// Nombres de la paleta de Mantine: Chips.jsx resuelve el tono para claro y oscuro.
+export const COLOR_CLASIFICACION = {
+  ATP: "green",
+  MAS_13: "yellow",
+  MAS_16: "orange",
+  MAS_18: "red",
 };
 
-export function chipClasificacion(clasificacion) {
-  return chip(etiqueta(clasificacion), COLOR_CLASIFICACION[clasificacion] || "");
-}
-
-const COLOR_ESTADO = {
-  RESERVADA: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  PAGADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  CANCELADA: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-  EXPIRADA: "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
-  EN_CURSO: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  TERMINADA: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  FALLIDA: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+export const COLOR_ESTADO = {
+  RESERVADA: "yellow",
+  PAGADA: "green",
+  CANCELADA: "gray",
+  EXPIRADA: "gray",
+  EN_CURSO: "yellow",
+  TERMINADA: "green",
+  FALLIDA: "red",
 };
-
-export function chipEstado(estado) {
-  return chip(etiqueta(estado), COLOR_ESTADO[estado] || "");
-}
 
 export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
