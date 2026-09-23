@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 490 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 497 tests.</p>
       </div>
     </section>
 
@@ -745,9 +745,9 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@IdClass</code> + <code>@Id @ManyToOne</code></td><td>PK compuesta por dos FK</td><td><code>BloqueoButaca</code>: <code>(funcion_id, asiento_id)</code></td></tr>
             <tr><td><code>@Modifying</code> + <code>@Query</code></td><td>Consulta que escribe (<code>UPDATE</code>, <code>DELETE</code>, <code>INSERT</code> nativo)</td><td><code>BloqueoButacaRepository</code></td></tr>
             <tr><td><code>@Column</code></td><td>Nombre de columna o <code>unique</code></td><td><code>Reserva.codigo</code></td></tr>
+            <tr><td><code>@Version</code></td><td>Bloqueo optimista: cada <code>UPDATE</code> incrementa la versión y exige la que leyó; si otro escribió antes, falla</td><td><code>Reserva.version</code>: cobrar contra cancelar</td></tr>
             <tr><td><code>@Enumerated(STRING)</code></td><td>Enum guardado por nombre: reordenarlo no corrompe datos</td><td>Estados, versión…</td></tr>
-            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse</td><td><code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code></td></tr>
-            <tr><td><code>@OneToMany(mappedBy)</code></td><td>Lado inverso: la FK la maneja la otra punta, sin cascada</td><td><code>Sala.asientos</code></td></tr>
+            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse. Todas las relaciones son unidireccionales, desde el lado de la FK: no hay ningún <code>@OneToMany(mappedBy)</code></td><td>LAZY: <code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code>. <code>EAGER</code> explícito, porque las vistas los leen fuera de la transacción: <code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code></td></tr>
             <tr><td><code>@OnDelete(CASCADE)</code></td><td>Hibernate genera el <code>ON DELETE CASCADE</code> que ya tiene el schema</td><td><code>Asiento.sala</code></td></tr>
             <tr><td><code>@OneToMany(cascade = ALL, orphanRemoval)</code></td><td>Hijas que se guardan y borran con la madre</td><td><code>Reserva.entradas</code>, <code>CompraCandy.items</code></td></tr>
             <tr><td><code>@ElementCollection</code></td><td>Lista de valores en tabla auxiliar</td><td><code>Pelicula.generos</code> → <code>pelicula_genero</code></td></tr>
@@ -1040,7 +1040,7 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Relación</th><th>Tipo</th><th>Por qué</th></tr></thead>
           <tbody>
-            <tr><td><code>Sala 1 ◆— 1..* Asiento</code></td><td>Composición</td><td>La butaca no existe fuera de su sala. <code>Asiento.sala</code> es el dueño de la FK; <code>Sala.asientos</code>, el inverso sin cascada: <code>GestorSalas</code> guarda las butacas por su repositorio</td></tr>
+            <tr><td><code>Sala 1 ◆— 1..* Asiento</code></td><td>Composición</td><td>La butaca no existe fuera de su sala. La relación es unidireccional desde <code>Asiento.sala</code>, dueño de la FK con <code>ON DELETE CASCADE</code>; <code>Sala</code> no tiene lista de butacas: <code>GestorSalas</code> las guarda y las lee por <code>AsientoRepository</code></td></tr>
             <tr><td><code>Reserva 1 ◆— 1..* Entrada</code></td><td>Composición</td><td>No hay entrada sin reserva</td></tr>
             <tr><td><code>Entrada * → 1 Asiento</code></td><td>Asociación</td><td>Una venta por función, muchas en la historia</td></tr>
             <tr><td><code>Pago 0..1 → 1 Reserva</code></td><td>Asociación</td><td>Nunca dos pagos (<code>UNIQUE</code>)</td></tr>
@@ -1369,9 +1369,12 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>N+1:</strong> el planificador releía la sala por cada horario: 15.702 consultas y 21 s. <code>AgendaDeSala</code> la lee una vez: 230 consultas, 0,6 s.</li>
         <li><strong>Listados de reservas y arqueo:</strong> <code>VistasVentas</code> cargaba todas las funciones, salas, películas y clientes del cine en cada listado, y el arqueo leía reserva, función, película y cliente por pago. Ahora <code>ConsultasReservas#conDetalle</code> trae las reservas con función, película, sala y cliente en un <code>join fetch</code>, los pagos van en otra consulta y las butacas una vez por sala. Con 4 y 16 reservas, <code>GET /api/reservas</code> pasó de 20 y 56 consultas a 7 y 7, y <code>GET /api/arqueo</code> de 19 y 67 a 6 y 6. <code>VistasVentasTest</code> las cuenta con las estadísticas de Hibernate y falla si crecen con las ventas.</li>
+        <li><strong>Listados de funciones:</strong> <code>VistasCartelera</code> leía la sala y sus butacas por cada función, y la película también en <code>/api/funciones</code>. Ahora las películas van en un <code>findAllById</code> y la sala y sus butacas una vez por sala. Con 2 y 8 funciones de una película en dos salas, <code>GET /api/peliculas/{id}/funciones</code> pasó de 6 y 18 consultas a 6 y 6; con 4 y 16 funciones, <code>GET /api/funciones</code> de 13 y 49 a 7 y 7. <code>VistasCarteleraTest</code> las cuenta.</li>
+        <li><strong>R3 por rango:</strong> la superposición traía la historia entera de la sala en cada alta. Ahora trae solo las funciones que pueden chocar (desde el inicio menos la película más larga y la limpieza), y una grilla lee su <code>AgendaDeSala</code> una vez para todos sus horarios en vez de una por horario.</li>
         <li><code>open-in-view: false</code>: nada de consultas mientras se serializa el JSON.</li>
         <li><strong>Filtros en la base:</strong> cartelera, catálogo, funciones, grillas, reservas y combos filtran con <code>@Query</code> (filtro opcional = <code>:x is null or …</code>), no con <code>findAll()</code> y un <code>filter</code> en Java. El buscador de reservas trae función, película y cliente con <code>join fetch</code>; solo el texto se compara en memoria, porque el código de butaca se arma de fila y número.</li>
-        <li><code>@ManyToOne</code> LAZY, navegados solo dentro de la transacción; las vistas usan <code>getSalaId()</code>, que no va a la base.</li>
+        <li><code>@ManyToOne</code> LAZY, navegados solo dentro de la transacción; las vistas usan <code>getSalaId()</code>, que no va a la base. Las tres excepciones (<code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code>) son <code>EAGER</code> escrito, porque las vistas las leen afuera.</li>
+        <li>Los listados salen ordenados de la base (<code>order by</code> o <code>OrderBy</code> en el nombre del método), no con un <code>sorted</code> en el controlador.</li>
         <li>Colecciones <code>EAGER</code> con <code>default_batch_fetch_size: 50</code>: de a 50 ids por <code>IN</code>.</li>
         <li><code>@Transactional(readOnly = true)</code> en las lecturas.</li>
       </ul>
@@ -1412,11 +1415,26 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <li><strong>El gestor valida igual antes</strong> para dar un mensaje claro; el <code>UNIQUE</code> es la red. Lo mismo R12 frente a las <code>FOREIGN KEY</code>.</li>
       </ul>
 
+      <h3>Cobrar contra cancelar</h3>
+      <p>
+        Cobrar, cancelar y expirar leen la reserva, miran que esté <code>RESERVADA</code> y escriben el estado nuevo.
+        Si el cajero cobra mientras el cliente cancela, las dos transacciones pasan el chequeo y ganaba la última
+        en escribir: una reserva <code>CANCELADA</code> con su pago registrado. <code>@Version</code> en <code>Reserva</code>
+        lo cierra: el <code>UPDATE</code> exige la versión que leyó, el segundo no encuentra la fila y Spring lo
+        levanta como <code>ObjectOptimisticLockingFailureException</code>, que <code>ManejadorErrores</code> contesta
+        <code>409</code> con «La reserva cambió mientras se procesaba: volvé a intentarlo». Reintentar da el
+        <code>400</code> de siempre, porque la reserva ya no está <code>RESERVADA</code>. Lo prueba
+        <code>GestorPagosTest</code> leyendo la misma reserva dos veces y guardando las dos.
+      </p>
+
       <h3>Esquema y migraciones</h3>
       <p>
         MySQL corre <code>schema.sql</code> solo con el volumen vacío; sobre una base existente se aplican a mano
-        los <code>migracion-*.sql</code>. <code>MapeoContraSchemaTest</code> valida el mapeo contra
-        <code>schema.sql</code>. Adminer (<code>localhost:8081</code>) entra con servidor <code>mysql</code>.
+        los <code>migracion-*.sql</code>. La suite entera corre sobre H2 creada con ese mismo <code>schema.sql</code>
+        (<code>ddl-auto: validate</code>), así que los <code>UNIQUE</code>, los <code>NOT NULL</code> y el largo de cada
+        <code>VARCHAR</code> se prueban igual que en MySQL; <code>MapeoContraSchemaTest</code> lo verifica en una base aparte.
+        Los textos que tipea el usuario se validan contra el largo de su columna en el gestor o la entidad:
+        pasarse es un <code>400</code> que dice el máximo, no un <code>500</code> de la base. Adminer (<code>localhost:8081</code>) entra con servidor <code>mysql</code>.
       </p>
       <pre><code>docker exec -i cine-mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" appsinteractivas \
   &lt; cine-backend/src/main/resources/migracion-bloqueos.sql</code></pre>
@@ -1557,7 +1575,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Qué relación existe entre una Entity y una tabla?</td><td>Clase = tabla, instancia = fila, atributo = columna (<code>Funcion</code> ↔ <code>funcion</code>). <code>ddl-auto: validate</code> y <code>MapeoContraSchemaTest</code> verifican que coincidan.</td></tr>
             <tr><td>¿Qué representa una relación @OneToMany?</td><td>Un padre con muchos hijos: <code>Reserva.entradas</code> (se guardan y borran con la reserva). Su inverso es <code>@ManyToOne</code>: <code>Funcion.pelicula</code>, <code>Funcion.sala</code> (LAZY). <code>Pelicula.generos</code> es <code>@ElementCollection</code>: valores, no entidades.</td></tr>
             <tr><td>¿Qué ventajas tiene utilizar ORM?</td><td>Sin SQL repetitivo, transacciones declarativas, base intercambiable y mapeo validado al arrancar.</td></tr>
-            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, y lazy fuera de la transacción. Acá: LAZY, <code>open-in-view: false</code>, <code>default_batch_fetch_size: 50</code>, <a href="#persistencia"><code>AgendaDeSala</code></a> y <code>ConsultasReservas#conDetalle</code> para los listados.</td></tr>
+            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, y lazy fuera de la transacción. Acá: LAZY, <code>open-in-view: false</code>, <code>default_batch_fetch_size: 50</code>, <a href="#persistencia"><code>AgendaDeSala</code></a>, <code>ConsultasReservas#conDetalle</code> y <code>VistasCartelera</code> para los listados, contados por test. Y la escritura perdida: dos transacciones que leen lo mismo y la última pisa a la primera; <code>@Version</code> en <code>Reserva</code> la convierte en un <code>409</code>.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1750,9 +1768,9 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 490 tests, ninguno salteado</code></pre>
+mvn clean test       # 497 tests, ninguno salteado</code></pre>
       <p>
-        Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
+        Corren contra H2 creada con el <code>schema.sql</code> real (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos
         no dependen de la fecha real.
       </p>
@@ -1835,12 +1853,28 @@ mvn clean test       # 490 tests, ninguno salteado</code></pre>
         <table>
           <thead><tr><th>Deuda</th><th>Cuándo duele</th></tr></thead>
           <tbody>
-            <tr><td>Listados sin paginar, y el texto del buscador de reservas filtrado en Java</td><td>Con decenas de miles de filas</td></tr>
+            <tr><td>El texto del buscador de reservas filtrado en Java</td><td>Con decenas de miles de reservas</td></tr>
             <tr><td>Colecciones <code>EAGER</code> (en lotes de 50)</td><td>Se traen aunque no se usen</td></tr>
             <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>Con miles de filas en el arqueo</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Lo cubre <code>ClienteRepository</code></td></tr>
             <tr><td>bcrypt en cada pedido (Basic sin sesión)</td><td>Con mucho tráfico del panel</td></tr>
             <tr><td>Alta de promociones con <code>switch</code></td><td>Con muchos tipos</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Qué no hicimos a propósito</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué</th><th>Por qué no</th></tr></thead>
+          <tbody>
+            <tr><td>Paginación</td><td>Los listados de un cine son de cientos de filas y ya filtran en la base; paginar agrega contrato y estado al front sin ganancia a esta escala</td></tr>
+            <tr><td>Proyecciones (DTO desde JPQL)</td><td>Los listados ya cuestan un número fijo de consultas; una proyección por pantalla duplicaría el armado de las <code>Vistas*</code></td></tr>
+            <tr><td><code>equals</code>/<code>hashCode</code> en las entidades</td><td>Ninguna entidad va a un <code>Set</code> ni se compara entre sesiones; uno por id generado cambia al guardar y rompe más de lo que arregla</td></tr>
+            <tr><td>Batch de inserts</td><td>Con <code>IDENTITY</code> Hibernate no puede agrupar: necesita el id de cada fila. Lo más grande que se inserta junto son las butacas de una sala, una vez</td></tr>
+            <tr><td>Caché de segundo nivel</td><td>Un solo backend, la ocupación cambia todo el tiempo y las consultas ya están acotadas; sumaría invalidación sin necesidad</td></tr>
+            <tr><td><code>@Version</code> en el resto de las entidades</td><td>Solo <code>Reserva</code> tiene transiciones que compiten; lo demás lo edita un encargado y la venta de butacas la cierra la base</td></tr>
+            <tr><td><code>@ElementCollection</code> como <code>Set</code> en vez de <code>List</code></td><td><code>Pelicula.generos</code> y <code>Producto.componentes</code> son <code>List</code>: al cambiar se borran y reinsertan, y con dos o tres elementos eso no pesa. Los días ya son <code>Set</code></td></tr>
+            <tr><td>Zona horaria</td><td>Un cine, una zona y sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code> sin zona, como las fechas del contrato</td></tr>
           </tbody>
         </table>
       </div>
@@ -1862,6 +1896,8 @@ mvn clean test       # 490 tests, ninguno salteado</code></pre>
             <tr><td>Paquetes por capa y subdominio</td><td>Por tipo de archivo</td><td>Lo que cambia junto vive junto</td></tr>
             <tr><td>Entidades sin interfaz</td><td>Interfaz + <code>Impl</code></td><td>Un solo implementador no separa nada</td></tr>
             <tr><td><code>@ManyToOne</code> LAZY</td><td>Ids sueltos o EAGER</td><td>El gestor navega sin cadenas de carga</td></tr>
+            <tr><td>Ids sueltos en <code>Pago.reservaId</code>, <code>Pago.promocionId</code>, <code>CompraCandy.clienteId</code>/<code>reservaId</code>, <code>Funcion.programacionId</code></td><td><code>@ManyToOne</code></td><td>Nadie los navega: se buscan en lote por id o se guardan para auditar. La FK está igual en la base</td></tr>
+            <tr><td><code>@Version</code> solo en <code>Reserva</code></td><td>En todas o <code>@Lock</code></td><td>Es la única con transiciones que compiten; las butacas las cierran <code>UNIQUE</code> y PK</td></tr>
             <tr><td>DTO propios</td><td>Serializar entidades</td><td>Contrato independiente del dominio</td></tr>
             <tr><td>Reglas en el gestor y restricciones en la base</td><td>Solo una</td><td>Mensaje claro + carrera cerrada</td></tr>
             <tr><td><code>Reloj</code> como puerto</td><td><code>LocalDateTime.now()</code></td><td>Tests sin fecha real</td></tr>

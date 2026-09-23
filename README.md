@@ -3,7 +3,7 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 20 reglas de negocio sobre MySQL, con 490 tests.
+25 casos de uso y 20 reglas de negocio sobre MySQL, con 497 tests.
 
 ## Stack
 

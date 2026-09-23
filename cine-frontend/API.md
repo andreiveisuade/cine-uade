@@ -14,7 +14,7 @@ operación. Probable en <http://localhost:8080/swagger-ui.html>.
 | Precios | Número, con los multiplicadores ya aplicados |
 | Altas | `201` con `Location` al recurso creado (`/api/salas/7`), mismo cuerpo. Sin `Location`: checkout, grilla automática, importación y venta de candy, que no tienen `GET` por id. El cliente apunta a `/api/clientes?email=…` y el pago a `/api/reservas/{id}/pago` |
 | Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido |
-| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta; un tipo equivocado en el cuerpo nombra el campo: `El campo precio tiene un valor inválido: abc`; un parámetro de la query mal escrito también es `400`) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente (un id no numérico en la ruta también), también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, o nombre/email/título ya usado (película, sala, cliente, producto, promoción) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
+| Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un texto más largo que su columna nombra el máximo: `El título no puede tener más de 100 caracteres`; un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta; un tipo equivocado en el cuerpo nombra el campo: `El campo precio tiene un valor inválido: abc`; un parámetro de la query mal escrito también es `400`) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente (un id no numérico en la ruta también), también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, nombre/email/título ya usado (película, sala, cliente, producto, promoción), o una reserva que otro pedido cambió mientras se procesaba (`La reserva cambió mientras se procesaba: volvé a intentarlo`) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
 
 ### Quién puede llamar a qué
 
@@ -137,6 +137,7 @@ código de autorización (R11) se siguen validando al cobrar.
 
 - El monto no viaja: el descuento depende del medio. `monto` es lo que entra en caja.
 - R5 (solo `RESERVADA`), R11 (código si el medio lo exige), R17 (no cobra vencida), un pago por reserva.
+- Cobrar y cancelar la misma reserva a la vez: gana el primero y el otro recibe `409` (`@Version` en `Reserva`). Reintentarlo da la respuesta de siempre: `400` si la reserva ya no está `RESERVADA`.
 - `GET /api/reservas/{id}/pago`: lo mismo, o `null` si no se cobró.
 
 `POST /api/reservas/{id}/checkout`: medios electrónicos, el código lo da el procesador. Efectivo: `400`.
