@@ -72,7 +72,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
             Columna.<PeliculaDeclarada>numero("Neta", p -> precio(p.recaudacionNeta())));
     private Datos actual;
 
-    PantallaDeclaracionJurada(ApiHttp api, Navegacion navegacion) {
+    PantallaDeclaracionJurada(ApiHttp api) {
         super(api, "Declaración jurada", "Lo cobrado en la semana cinematográfica, de jueves a miércoles, por función "
                 + "y por película. Sin fechas se muestra la última semana cerrada.");
         JButton consultar = new JButton("Consultar");

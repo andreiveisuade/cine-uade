@@ -74,10 +74,6 @@ public final class ApiHttp {
         credenciales = null;
     }
 
-    public boolean tieneCredenciales() {
-        return credenciales != null;
-    }
-
     // --- sesión ---
 
     public Empleado login(String email, String password) {
@@ -265,10 +261,6 @@ public final class ApiHttp {
         cuerpo.put("medio", medio);
         cuerpo.put("codigoAutorizacion", codigoAutorizacion);
         return pedir("POST", "/reservas/" + reservaId + "/pago", cuerpo, tipo(Pago.class));
-    }
-
-    public Pago obtenerPagoDeReserva(int reservaId) {
-        return pedir("GET", "/reservas/" + reservaId + "/pago", null, tipo(Pago.class));
     }
 
     public Checkout abrirCheckout(int reservaId, String medio) {

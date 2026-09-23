@@ -134,19 +134,19 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     private Supplier<JComponent> crear(String destino) {
         return switch (destino) {
-            case "Películas" -> () -> new PantallaPeliculas(api, this);
+            case "Películas" -> () -> new PantallaPeliculas(api);
             case "Por revisar" -> () -> new PantallaPendientes(api, this);
             case "Importador" -> () -> new PantallaImportador(api, this);
             case "Salas" -> () -> new PantallaSalas(api, this);
             case "Funciones" -> () -> new PantallaFunciones(api, this);
-            case "Grilla" -> () -> new PantallaProgramaciones(api, this);
-            case "Planificador" -> () -> new PantallaPlanificador(api, this);
+            case "Grilla" -> () -> new PantallaProgramaciones(api);
+            case "Planificador" -> () -> new PantallaPlanificador(api);
             case "Agenda" -> () -> new PantallaAgenda(api, this);
             case "Reservas" -> () -> new PantallaReservas(api, this);
-            case "Promociones" -> () -> new PantallaPromociones(api, this);
-            case "Candy" -> () -> new PantallaCandy(api, this);
+            case "Promociones" -> () -> new PantallaPromociones(api);
+            case "Candy" -> () -> new PantallaCandy(api);
             case "Caja" -> () -> new PantallaCaja(api);
-            case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api, this);
+            case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api);
             case "Puerta" -> () -> new PantallaPuerta(api);
             default -> throw new IllegalArgumentException("El menú no tiene la pantalla " + destino);
         };

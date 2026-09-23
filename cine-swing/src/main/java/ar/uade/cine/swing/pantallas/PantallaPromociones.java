@@ -70,7 +70,7 @@ final class PantallaPromociones extends Pantalla {
     private final JPanel panelMedios = new JPanel(new GridLayout(0, 3, 4, 0));
     private final JLabel error = new JLabel(" ");
 
-    PantallaPromociones(ApiHttp api, Navegacion navegacion) {
+    PantallaPromociones(ApiHttp api) {
         super(api, "Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
 
         JPanel acciones = new JPanel(new FlujoConSalto());

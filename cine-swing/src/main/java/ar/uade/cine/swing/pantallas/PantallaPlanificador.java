@@ -80,7 +80,7 @@ final class PantallaPlanificador extends Pantalla {
     // Cada cambio de criterio sube la versión: una respuesta de criterios viejos se descarta al llegar.
     private int version;
 
-    PantallaPlanificador(ApiHttp api, Navegacion navegacion) {
+    PantallaPlanificador(ApiHttp api) {
         super(api, "Planificador de la semana", "Elige el elenco con un criterio que mira <b>puntaje y géneros a la "
                 + "vez</b> y reparte los pases entre las salas de forma proporcional al puntaje: la mejor de la semana "
                 + "se lleva cuatro o cinco funciones diarias y la última, una. No pisa funciones ya cargadas.");

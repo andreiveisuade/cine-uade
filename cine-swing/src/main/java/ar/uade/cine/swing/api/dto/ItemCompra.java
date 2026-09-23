@@ -1,4 +1,4 @@
 package ar.uade.cine.swing.api.dto;
 
-public record ItemCompra(int productoId, String nombre, int cantidad, double precioUnitario, double subtotal) {
+public record ItemCompra(String nombre, int cantidad, double subtotal) {
 }

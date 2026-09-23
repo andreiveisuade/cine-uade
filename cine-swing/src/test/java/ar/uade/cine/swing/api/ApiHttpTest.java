@@ -89,6 +89,13 @@ class ApiHttpTest {
         }
     }
 
+    // Lo que ApiHttp guardó se ve en el pedido siguiente: el header que lleva, o ninguno.
+    private String autorizacionDelSiguientePedido() {
+        responder("GET /api/generos", 200, "[]");
+        api.obtenerGeneros();
+        return ultimo().autorizacion();
+    }
+
     private void ingresar() {
         responder("POST /api/sesion", 200,
                 "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\"}");
@@ -108,7 +115,7 @@ class ApiHttpTest {
         assertEquals(BASIC_ENCARGADO, login.autorizacion());
         assertTrue(login.cuerpo().contains("\"email\":\"encargado@cine.uade.ar\""));
         assertTrue(login.cuerpo().contains("\"password\":\"cine2026\""));
-        assertTrue(api.tieneCredenciales());
+        assertEquals(BASIC_ENCARGADO, autorizacionDelSiguientePedido());
     }
 
     @Test
@@ -131,8 +138,8 @@ class ApiHttpTest {
 
         assertEquals("Email o contraseña incorrectos", error.getMessage());
         assertEquals(401, error.estado());
-        assertFalse(api.tieneCredenciales());
         assertEquals(0, avisos.get());
+        assertNull(autorizacionDelSiguientePedido());
     }
 
     @Test
@@ -161,7 +168,7 @@ class ApiHttpTest {
         assertTrue(error.esSesionVencida());
         assertEquals("Hace falta iniciar sesión para esta operación", error.getMessage());
         assertEquals(1, avisos.get());
-        assertFalse(api.tieneCredenciales());
+        assertNull(autorizacionDelSiguientePedido());
     }
 
     @Test
@@ -247,7 +254,7 @@ class ApiHttpTest {
         assertEquals(4, funcion.id());
         assertEquals("Matrix", funcion.pelicula().titulo());
         assertEquals(20, funcion.sala().capacidadSala());
-        assertEquals(6500, funcion.precioDesde());
+        assertEquals(5000, funcion.precio());
         assertNull(funcion.libres());
     }
 

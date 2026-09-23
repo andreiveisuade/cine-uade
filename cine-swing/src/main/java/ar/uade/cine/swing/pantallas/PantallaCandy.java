@@ -63,7 +63,7 @@ final class PantallaCandy extends Pantalla {
 
     private static final List<String> TIPOS_SUELTOS = List.of("POCHOCLOS", "BEBIDA", "GOLOSINA");
 
-    PantallaCandy(ApiHttp api, Navegacion navegacion) {
+    PantallaCandy(ApiHttp api) {
         super(api, "Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Carta", new Carta());

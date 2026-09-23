@@ -84,7 +84,7 @@ final class PantallaProgramaciones extends Pantalla {
     private Plan previsualizado;
     private boolean llenando;
 
-    PantallaProgramaciones(ApiHttp api, Navegacion navegacion) {
+    PantallaProgramaciones(ApiHttp api) {
         super(api, "Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
                 + "con algo ya programado en esa sala se saltean, y el informe dice cuáles.");
 

@@ -1,6 +1,5 @@
 package ar.uade.cine.swing.api.dto;
 
-// `ocupado` es de la función (R4) y solo viene en el mapa de una función; `estado`, del asiento (R9).
-public record Asiento(int id, int salaId, int fila, int numero, String codigo, String tipo, String estado,
-                      Boolean ocupado, Double precio) {
+// Sin `ocupado` ni `precio`: son del mapa de una función, que esta app no muestra. `estado` es del asiento (R9).
+public record Asiento(int id, int fila, int numero, String codigo, String tipo, String estado) {
 }

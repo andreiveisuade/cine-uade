@@ -76,7 +76,7 @@ final class PantallaPeliculas extends Pantalla {
     // El texto espera a que se deje de tipear: sin eso, "Matrix" son seis pedidos.
     private final Timer espera = new Timer(250, e -> buscar());
 
-    PantallaPeliculas(ApiHttp api, Navegacion navegacion) {
+    PantallaPeliculas(ApiHttp api) {
         super(api, "Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
                 + "despublicarla la baja aunque las tenga.");
         espera.setRepeats(false);

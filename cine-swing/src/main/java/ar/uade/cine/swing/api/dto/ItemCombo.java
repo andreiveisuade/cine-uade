@@ -1,4 +1,4 @@
 package ar.uade.cine.swing.api.dto;
 
-public record ItemCombo(int productoId, String nombre, int cantidad) {
+public record ItemCombo(String nombre, int cantidad) {
 }

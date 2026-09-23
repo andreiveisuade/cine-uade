@@ -49,8 +49,4 @@ public final class Formato {
         return DIAS[fecha.getDayOfWeek().getValue() - 1] + " " + fecha.getDayOfMonth() + " "
                 + MESES[fecha.getMonthValue() - 1];
     }
-
-    public static String hoyIso() {
-        return LocalDate.now().toString();
-    }
 }
