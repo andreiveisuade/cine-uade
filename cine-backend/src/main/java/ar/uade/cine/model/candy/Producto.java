@@ -16,10 +16,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
-/**
- * Algo que se vende en el candy. Un combo es también un Producto que además sabe qué trae:
- * por eso las dos claves de {@code combo_item} apuntan a esta tabla.
- */
 @Entity
 public class Producto {
 
@@ -67,7 +63,6 @@ public class Producto {
         return precio;
     }
 
-    /** Un producto no se borra, se deja de ofrecer: puede estar en compras viejas. */
     public boolean estaDisponible() {
         return disponible;
     }
@@ -76,7 +71,6 @@ public class Producto {
         this.disponible = disponible;
     }
 
-    /** Las compras hechas no cambian: cada línea copió nombre y precio al venderse. */
     public void editar(String nombre, Dinero precio) {
         this.nombre = nombre;
         this.precio = precio;

@@ -20,11 +20,7 @@ import ar.uade.cine.service.cartelera.GestorImportaciones;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Pedir cartelera nueva desde el panel. El POST contesta cuando termina la corrida (10-15 s)
- * en vez de un 202 que obligue al navegador a repreguntar; nginx tiene un timeout más largo
- * para esta ruta.
- */
+// Contesta al terminar la corrida (10-15 s): nginx tiene un timeout más largo para esta ruta.
 @Tag(name = "Importación", description = "La cartelera que baja de TMDB")
 @RestController
 public class ImportacionController {
@@ -48,10 +44,6 @@ public class ImportacionController {
         return importaciones.listar().stream().map(ImportacionController::vista).toList();
     }
 
-    /**
-     * POST porque gasta llamadas a TMDB y deja películas en el buzón. El cuerpo es opcional:
-     * el default de páginas lo pone el gestor.
-     */
     @Operation(summary = "Traer cartelera de TMDB. Tarda: contesta cuando terminó")
     @PostMapping("/api/importaciones")
     @ResponseStatus(HttpStatus.CREATED)

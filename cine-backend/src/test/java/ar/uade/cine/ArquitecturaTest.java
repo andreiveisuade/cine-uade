@@ -16,18 +16,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/**
- * Verifica las capas leyendo los {@code import} de cada fuente, para que un import apurado
- * no deje al manual describiendo un sistema que no existe.
- */
 class ArquitecturaTest {
 
     private static final Path RAIZ = Path.of("src/main/java/ar/uade/cine");
 
-    /**
-     * Qué puede importar cada capa: solo las de abajo. Romper una regla es cambiar esta tabla
-     * a mano, a propósito, para que la decisión no pase inadvertida.
-     */
+    // Romper una regla es cambiar esta tabla a mano, a propósito.
     private static final Map<String, Set<String>> PERMITIDO = Map.of(
             "model", Set.of("model"),
             "dto", Set.of("model", "dto"),
@@ -68,8 +61,7 @@ class ArquitecturaTest {
         @Test
         @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
         void laInfraestructuraNoDependeDeLaApi() {
-            // 'service' está permitido porque comprobantes/ formatea el record Bordero, que es
-            // un dato de salida, no un gestor.
+            // 'service' porque comprobantes/ formatea el record Bordero, un dato de salida.
             assertSinViolaciones(violacionesDeCapa("infrastructure"));
         }
     }
@@ -78,7 +70,6 @@ class ArquitecturaTest {
     @DisplayName("Inversión de dependencias: un solo lugar elige la implementación")
     class ImplementacionesConcretas {
 
-        /** Las implementaciones las genera Spring Data; lo que queda por cuidar es el atajo. */
         @Test
         @DisplayName("ningún servicio habla con la base por abajo del repositorio")
         void nadieSeSalteaElRepositorio() {
@@ -116,7 +107,6 @@ class ArquitecturaTest {
         return violaciones;
     }
 
-    /** La capa es la primera carpeta bajo {@code ar/uade/cine/}. Aplicacion.java no tiene. */
     private static String capaDe(Path archivo) {
         Path relativo = RAIZ.relativize(archivo);
         return relativo.getNameCount() == 1 ? "" : relativo.getName(0).toString();

@@ -11,11 +11,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * Deja la base como recién creada entre tests, porque el contexto (y con él H2) se comparte.
- * {@code RESTART IDENTITY} es imprescindible: los tests asumen que el primer id es 1. Las
- * tablas se leen del catálogo para que una entidad nueva no tenga que anotarse en una lista.
- */
+// RESTART IDENTITY: los tests asumen que el primer id es 1.
 @Component
 @Profile("test")
 public class LimpiezaDeBase {
@@ -31,7 +27,6 @@ public class LimpiezaDeBase {
                 "SELECT table_name FROM information_schema.tables WHERE table_schema = 'PUBLIC'",
                 String.class);
 
-        // Sin esto habría que truncar en el orden de las claves foráneas.
         jdbc.execute("SET REFERENTIAL_INTEGRITY FALSE");
         tablas.forEach(tabla -> jdbc.execute("TRUNCATE TABLE " + tabla + " RESTART IDENTITY"));
         jdbc.execute("SET REFERENTIAL_INTEGRITY TRUE");
@@ -39,7 +34,6 @@ public class LimpiezaDeBase {
         borrar(Path.of("target/comprobantes"));
     }
 
-    /** Los ids vuelven a 1: un ticket viejo haría creer al test siguiente que se emitió. */
     private static void borrar(Path directorio) {
         if (!Files.exists(directorio)) {
             return;

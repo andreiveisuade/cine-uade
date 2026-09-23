@@ -31,10 +31,6 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * El único circuito de dos pedidos: se prueba que el id del checkout sirva para confirmarlo.
- * Los mensajes se comparan enteros porque salen intactos al usuario.
- */
 class PagoControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -58,7 +54,6 @@ class PagoControllerTest extends PruebaDeApi {
 
     private Reserva reserva;
 
-    /** Una reserva de dos butacas generales sin cobrar, a $5000 cada una. */
     @BeforeEach
     void levantarLaApiConUnaReservaSinCobrar() {
 
@@ -86,7 +81,6 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(checkout.get("codigoQr").asText().isBlank());
     }
 
-    /** R11 al revés: el efectivo no tiene a quién pedirle una autorización. */
     @Test
     void elEfectivoNoAbreCheckout() {
         Respuesta respuesta = checkout("EFECTIVO");
@@ -121,7 +115,6 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("No existe la reserva 99", respuesta.error());
     }
 
-    /** El código de autorización sale de la pasarela, no lo tipea nadie. */
     @Test
     void confirmarElCheckoutCobraYDevuelveElPagoAutorizado() {
         String id = checkout("QR").json().get("id").asText();
@@ -136,7 +129,6 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(pago.get("codigoAutorizacion").asText().isBlank());
     }
 
-    /** La segunda confirmación choca contra R5. */
     @Test
     void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
         String id = checkout("QR").json().get("id").asText();

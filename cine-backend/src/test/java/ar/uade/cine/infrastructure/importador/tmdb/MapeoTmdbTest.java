@@ -17,10 +17,6 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * Lo caro si se rompe en silencio: que un género ajeno caiga siempre en uno nuestro y que la
- * falta de datos se resuelva del lado prudente.
- */
 class MapeoTmdbTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -33,7 +29,6 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.ACCION), MapeoTmdb.generosDe(detalle));
     }
 
-    /** La pérdida es a propósito: Vaiana entra como acción y ciencia ficción. */
     @Test
     void fantasiaCaeEnCienciaFiccion() {
         JsonNode detalle = json("""
@@ -42,7 +37,6 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.ACCION, Genero.CIENCIA_FICCION), MapeoTmdb.generosDe(detalle));
     }
 
-    /** R7 exige al menos uno: DRAMA es el menos comprometido. */
     @Test
     void sinNingunGeneroReconocibleQuedaDrama() {
         assertEquals(List.of(Genero.DRAMA), MapeoTmdb.generosDe(json("""
@@ -50,10 +44,6 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.DRAMA), MapeoTmdb.generosDe(json("{}")));
     }
 
-    /**
-     * Una clasificación permisiva inventada dejaría entrar a un menor; el error prudente se
-     * corrige a mano.
-     */
     @Test
     void sinCertificacionArgentinaElDefaultEsElRestrictivo() {
         assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe(null));
@@ -61,14 +51,12 @@ class MapeoTmdbTest {
         assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("no la publicaron"));
     }
 
-    /** El INCAA no publica siempre con la misma forma, y TMDB copia lo que le dan. */
     @Test
     void lasTresFormasDeLaMismaCertificacion() {
         assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("+13"));
         assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("13"));
         assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("sam13"));
         assertEquals(Clasificacion.ATP, MapeoTmdb.clasificacionDe(" atp "));
-        // Condicionada: la más restrictiva que publica el INCAA.
         assertEquals(Clasificacion.MAS_18, MapeoTmdb.clasificacionDe("C"));
     }
 
@@ -111,7 +99,6 @@ class MapeoTmdbTest {
         assertEquals("http://poster", pelicula.posterUrl());
     }
 
-    /** Si cambia el buzón, una película que nadie miró no puede ofrecerse sola. */
     @Test
     void laPeliculaNaceFueraDeCartelera() {
         DatosPelicula pelicula = MapeoTmdb.aPelicula(json("{}"), json("""
@@ -120,7 +107,6 @@ class MapeoTmdbTest {
         assertFalse(pelicula.enCartelera());
     }
 
-    /** El alta la rechaza por R2 y así queda nombrada en el detalle de la corrida. */
     @Test
     void sinDetalleQuedaElTituloDelListadoYSinDuracion() {
         JsonNode resumen = json("""

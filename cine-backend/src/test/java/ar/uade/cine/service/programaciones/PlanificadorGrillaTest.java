@@ -29,10 +29,6 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
-/**
- * El planificador optimiza tres cosas a la vez —puntaje, diversidad y ocupación— y cada
- * una se prueba por separado, porque el riesgo es justamente que una se coma a las otras.
- */
 class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -46,7 +42,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     @Autowired
     private PlanificadorGrilla planificador;
 
-    /** Una película de 100 minutos, con el puntaje y los géneros que pida el caso. */
     private Pelicula cargar(String titulo, double puntaje, Genero... generos) {
         return cargar(titulo, puntaje, 100, generos);
     }
@@ -77,7 +72,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /** Sin el bono por género nuevo, la grilla sería acción todo el día. */
     @Test
     void prefiereUnGeneroNuevoAntesQueLaCuartaDelMismoGenero() {
         cargar("Accion 1", 9.0, Genero.ACCION);
@@ -94,7 +88,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "la segunda tiene que ganarse el lugar contra lo que ya hay");
     }
 
-    /** Una diferencia de puntaje grande sí le gana al bono: el bono inclina, no decide. */
     @Test
     void unPuntajeMuchoMejorLeGanaAlBonoPorGeneroNuevo() {
         cargar("Accion 1", 9.5, Genero.ACCION);
@@ -108,10 +101,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /**
-     * TMDB reparte géneros de más: con un bono lineal, cuatro etiquetas le ganaban a la
-     * mejor del catálogo por estar mejor catalogada, no por ser mejor.
-     */
     @Test
     void muchosGenerosNoLeGananALaMejorPelicula() {
         cargar("La mejor", 9.2, Genero.DRAMA, Genero.SUSPENSO);
@@ -127,7 +116,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "y en la segunda vuelta sí pesa la variedad que agrega");
     }
 
-    /** El bono crece cada vez menos, pero sigue creciendo. */
     @Test
     void aIgualPuntajeEntraLaQueAportaMasGeneros() {
         cargar("Ancla", 9.5, Genero.DRAMA);
@@ -141,10 +129,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertEquals("Aporta tres", propuesta.elenco().get(1).getTitulo());
     }
 
-    /**
-     * Seis votos no pesan como cinco mil. No se afirma que gane la respaldada (un 9,5 puede
-     * ser genuino) sino que la ventaja se achica.
-     */
     @Test
     void unPuntajeAltoConPocosVotosPierdeSuVentaja() {
         Pelicula respaldada = cargar("Respaldada", 8.0, Genero.DRAMA);
@@ -167,7 +151,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                         + deLaRespaldada + " contra " + deLaFlojita);
     }
 
-    /** El 0,0 de TMDB es una película que nadie votó todavía, no una nota mala. */
     @Test
     void laQueNadieVotoNoSeHundeAlFondo() {
         Pelicula votada = cargar("Votada", 7.0, Genero.DRAMA);
@@ -186,7 +169,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "sin votos va al promedio, y el promedio le gana a una mala con respaldo: " + elenco);
     }
 
-    /** El puntaje cargado a mano es criterio del encargado, no un promedio con pocos votos. */
     @Test
     void elPuntajeCargadoAManoOrdenaAunqueNoHayaVotos() {
         cargar("Buena", 9.0, Genero.ACCION);
@@ -239,7 +221,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
-    /** Entre dos pases de la misma sala tiene que entrar la limpieza (R3). */
     @Test
     void respetaLaLimpiezaEntreDosPasesDeLaMismaSala() {
         cargar("Una", 8.0, Genero.ACCION);
@@ -258,7 +239,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
-    /** R3: respeta la función cargada a mano en vez de pisarla. */
     @Test
     void noPisaLasFuncionesQueYaEstabanCargadas() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -293,10 +273,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertTrue(indicadores.pasesPorGenero().containsKey(Genero.COMEDIA));
     }
 
-    /**
-     * El tiempo disponible es la ventana menos lo ya programado: si no, una semana llena
-     * daba ocupación baja y parecía vacía.
-     */
     @Test
     void elTiempoDisponibleDescuentaLoQueYaEstabaProgramado() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -312,7 +288,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "los 100 minutos de la función ya cargada dejan de estar disponibles");
     }
 
-    /** Una función fuera de la ventana ocupa la sala, pero no le saca lugar a la grilla. */
     @Test
     void unaFuncionFueraDeLaVentanaNoDescuentaTiempo() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -320,14 +295,12 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
         int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
 
-        // La ventana del test es de 14 a 23: esta función de la mañana queda afuera.
         funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 10, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         assertEquals(sinNada, planificador.proponer(unDia(1)).indicadores().minutosDisponibles());
     }
 
-    /** La ocupación nunca puede pasar de 1: es lo que vuelve comparable el número. */
     @Test
     void laOcupacionNoSePasaDeUnoNiSeVaANegativo() {
         cargar("Una", 8.0, Genero.ACCION);

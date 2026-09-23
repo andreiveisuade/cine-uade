@@ -50,10 +50,6 @@ import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Borderó e informe financiero de una función: los dos cuentan lo cobrado, y casi todos
- * los bordes son plata que parece de la función y no lo es.
- */
 class GestorInformesTest extends PruebaDeIntegracion {
 
     private static final Path DIRECTORIO_INFORMES = Path.of("target/comprobantes/informes");
@@ -81,7 +77,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
 
-    /** Dos funciones de Matrix en la misma sala 2D de 10 butacas, a $5000, y un cliente. */
     @BeforeEach
     void prepararEscenario() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -102,7 +97,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), bordero.funcion());
     }
 
-    /** Lo que se declara es lo que se cobró: una reserva sin pagar no vendió ninguna entrada. */
     @Test
     void elBorderoNoCuentaLasReservasSinPagar() {
         Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
@@ -126,7 +120,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(1, informes.borderoDe(2).espectadores());
     }
 
-    /** El desglose por tarifa es lo que el organismo mira: qué se vendió a precio reducido. */
     @Test
     void elBorderoDesglosaCuantasEntradasSalieronACadaTarifa() {
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
@@ -142,12 +135,10 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(2, bordero.porTarifa().get(TipoTarifa.GENERAL).cantidad());
         assertEquals(Dinero.de(10000.0), bordero.porTarifa().get(TipoTarifa.GENERAL).total());
         assertEquals(1, bordero.porTarifa().get(TipoTarifa.JUBILADO).cantidad());
-        // El promedio por espectador no alcanza para reconstruir el desglose.
         assertEquals(Dinero.de(2500.0), bordero.porTarifa().get(TipoTarifa.JUBILADO).total());
         assertEquals(Dinero.de(12500.0), bordero.recaudacionBruta());
     }
 
-    /** La promoción es un descuento comercial: no cambia el valor declarado de la localidad. */
     @Test
     void elBorderoSeparaElBrutoDelDescuentoYDelNeto() {
         promociones.crearPorcentaje("50 off", 50,
@@ -163,7 +154,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(2500.0), bordero.recaudacionNeta());
     }
 
-    /** Una función que no vendió nada se declara igual: cero también es una declaración. */
     @Test
     void elBorderoDeUnaFuncionSinVentasDaEnCero() {
         Bordero bordero = informes.borderoDe(1);
@@ -195,7 +185,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertTrue(texto.contains("5000.00"));
     }
 
-    /** El borderó de una función es uno solo: el último emitido pisa al anterior. */
     @Test
     void volverAExportarActualizaElMismoArchivo() {
         Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
@@ -227,10 +216,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(11000.0), informe.total());
     }
 
-    /**
-     * Quien compra en el mostrador puede ir a cualquier función o a ninguna. Se chequea el
-     * arqueo del candy para mostrar que queda afuera del informe, no del sistema.
-     */
     @Test
     void elCandyDeMostradorNoEntraEnElInformeDeNingunaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
@@ -247,7 +232,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(3000.0), caja.totalCandyDe(reloj.hoy()));
     }
 
-    /** El candy de la función de al lado tampoco: se atribuye por la reserva, no por el día. */
     @Test
     void elCandyDeOtraFuncionNoEntraEnEsteInforme() {
         Producto pochoclos = productos.agregar("Pochoclos",
@@ -261,7 +245,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(3000.0), informes.informeDe(2).candy());
     }
 
-    /** Sin candy, el informe es el neto del borderó y no otro número. */
     @Test
     void unaFuncionSinCandyRecaudaLoMismoQueSuBordero() {
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));

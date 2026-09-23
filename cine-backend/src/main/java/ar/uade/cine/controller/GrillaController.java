@@ -31,10 +31,6 @@ import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * El armado automático de la grilla semanal. {@code /propuesta} devuelve lo mismo que el
- * alta sin escribir; como el planificador es determinista, lo que se ve es lo que se crea.
- */
 @Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
 public class GrillaController {
@@ -47,7 +43,6 @@ public class GrillaController {
         this.reloj = reloj;
     }
 
-    /** Una consulta como POST: lleva el mismo cuerpo que el alta, ilegible en la query. */
     @Operation(summary = "Proponer una semana entera de funciones, sin escribir nada")
     @PostMapping("/api/grilla/propuesta")
     public PropuestaGrillaDTO proponer(@RequestBody PedidoGrillaDTO pedido) {
@@ -61,10 +56,7 @@ public class GrillaController {
         return propuesta(planificador.aplicar(criterios(pedido)), true);
     }
 
-    /**
-     * Los defaults son comodidad de la pantalla, no reglas, y por eso viven acá. El precio no
-     * tiene default: es una decisión comercial que el sistema no puede tomar por el cine.
-     */
+    // El precio no tiene default: es una decisión comercial del cine.
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         if (pedido.precio() == null) {
             throw new IllegalArgumentException("Falta el precio de las funciones");
@@ -91,7 +83,6 @@ public class GrillaController {
         return valor == null || valor.isBlank() ? porDefecto : Parseo.hora(valor, queEs);
     }
 
-    /** @param creadas distingue "así quedaría" de "así quedó": la cantidad de pases es la misma */
     private static PropuestaGrillaDTO propuesta(PropuestaGrilla propuesta, boolean creadas) {
         Map<Integer, Integer> pasesPorPelicula = new LinkedHashMap<>();
         propuesta.pases().forEach(p -> pasesPorPelicula.merge(p.peliculaId(), 1, Integer::sum));

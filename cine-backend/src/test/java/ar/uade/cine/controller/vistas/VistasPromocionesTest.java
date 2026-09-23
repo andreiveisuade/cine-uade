@@ -22,10 +22,6 @@ import ar.uade.cine.service.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Único lugar que pregunta el tipo de una promoción: cada tipo expone su beneficio en un campo
- * distinto. Un tipo nuevo hace fallar este archivo.
- */
 class VistasPromocionesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -77,7 +73,6 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         assertNull(vista.monto());
     }
 
-    /** Listas vacías y no null porque el front las recorre. */
     @Test
     void lasCondicionesVaciasViajanComoListasVacias() {
         Promocion promocion = promociones.crearPorcentaje("Siempre 10%", 10,
@@ -109,7 +104,6 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         assertEquals("23:59", vista.horaHasta());
     }
 
-    /** El ABM la lista para poder volver a activarla. */
     @Test
     void laPromocionDesactivadaViajaMarcadaComoInactiva() {
         Promocion promocion = promociones.crearPorcentaje("Martes 30%", 30,

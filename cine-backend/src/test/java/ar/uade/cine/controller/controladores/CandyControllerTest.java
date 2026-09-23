@@ -13,7 +13,6 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.candy.GestorProductos;
 
-/** R14 después de un PUT: el combo sigue saliendo menos que sus componentes, se edite cuál se edite. */
 class CandyControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -22,7 +21,6 @@ class CandyControllerTest extends PruebaDeApi {
     private int pochoclos;
     private int combo;
 
-    /** Pochoclos $4000 + gaseosa $2500 = $6500 sueltos; el combo sale $5500. */
     @BeforeEach
     void unaCartaConCombo() {
         pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
@@ -66,7 +64,6 @@ class CandyControllerTest extends PruebaDeApi {
 
     @Test
     void abaratarUnComponenteNoPuedeDejarAlComboSinConvenir() {
-        // Pochoclos a $2000: sueltos saldrían $4500, menos que los $5500 del combo.
         Respuesta respuesta = put("/api/candy/productos/" + pochoclos,
                 "{\"nombre\":\"Pochoclos grandes\",\"precio\":2000}");
 

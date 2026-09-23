@@ -30,10 +30,6 @@ import ar.uade.cine.service.salas.GestorSalas;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * ABM de salas y estado de las butacas. La distribución llega como lista ([8, 10, 12] es
- * fila A con 8, B con 10, C con 12) y las butacas especiales por código en tres listas.
- */
 @Tag(name = "Salas", description = "Las salas del cine y el estado de cada butaca")
 @RestController
 public class SalaController {
@@ -62,7 +58,6 @@ public class SalaController {
     @PostMapping("/api/salas")
     @ResponseStatus(HttpStatus.CREATED)
     public SalaVistaDTO agregar(@RequestBody PedidoSalaDTO pedido) {
-        // minutosLimpieza es opcional: sin él queda el default de la sala.
         Sala sala = salas.agregar(pedido.nombre(),
                 pedido.tipo() == null
                         ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
@@ -92,7 +87,6 @@ public class SalaController {
         salas.eliminar(id);
     }
 
-    /** R9: fuera de servicio es del asiento, así que vale para todas las funciones. */
     @Operation(summary = "Marcar una butaca fuera de servicio, o reponerla")
     @PutMapping("/api/salas/{salaId}/asientos/{codigo}")
     public SalaVistaDTO cambiarEstado(@PathVariable int salaId, @PathVariable String codigo,

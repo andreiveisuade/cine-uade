@@ -12,18 +12,11 @@ import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Reemplaza en el perfil {@code test} lo que sale del proceso: Redis, TMDB y el reloj.
- * La base no se reemplaza: H2 corre el mapeo y las consultas reales.
- */
 @Configuration
 @Profile("test")
 public class ConfiguracionDePrueba {
 
-    /**
-     * Arranca fijo el 14/08/2026 a las 10 para que las fechas de los tests sigan siendo
-     * futuro cuando el calendario las pase, y para probar vencimientos sin esperar.
-     */
+    // Fijo el 14/08/2026 10:00 para que las fechas de los tests sigan siendo futuro.
     public static class RelojMovible implements Reloj {
 
         public static final LocalDateTime INICIO = LocalDateTime.of(2026, 8, 14, 10, 0);
@@ -44,7 +37,6 @@ public class ConfiguracionDePrueba {
         }
     }
 
-    /** Devuelve el tipo concreto para que un test pueda pedirlo y moverlo. */
     @Bean
     public RelojMovible reloj() {
         return new RelojMovible();
@@ -55,7 +47,6 @@ public class ConfiguracionDePrueba {
         return new BloqueoButacasMemoria(reloj);
     }
 
-    /** Devuelve el tipo concreto para que un test pueda pedirlo y decirle qué contestar. */
     @Bean
     public CatalogoDePrueba catalogoExterno() {
         return new CatalogoDePrueba();

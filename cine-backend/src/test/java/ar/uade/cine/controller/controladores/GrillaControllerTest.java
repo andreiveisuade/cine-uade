@@ -19,10 +19,6 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.salas.TipoSala;
 
-/**
- * Lo que no ve {@code PlanificadorGrillaTest}: defaults del cuerpo, campo obligatorio y
- * mensaje de rechazo, que se deciden en el controller.
- */
 class GrillaControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -57,7 +53,6 @@ class GrillaControllerTest extends PruebaDeApi {
                 "previsualizar no escribe: el contador queda en cero");
     }
 
-    /** El precio no tiene default, y el mensaje dice que falta, no que es inválido. */
     @Test
     void sinPrecioAvisaQueFaltaYNoQueEsInvalido() {
         Respuesta respuesta = post("/api/grilla/propuesta", "{}");

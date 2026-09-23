@@ -95,7 +95,6 @@ class SalaControllerTest extends PruebaDeApi {
         assertEquals(400, respuesta.estado());
         assertEquals("La sala " + sala + " tiene funciones programadas: no se le puede cambiar el tipo",
                 respuesta.error());
-        // El nombre sí se puede cambiar con funciones: no afecta a nada de lo vendido.
         assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
     }
 }

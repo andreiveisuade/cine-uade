@@ -40,10 +40,6 @@ import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorReservas;
 
-/**
- * El sistema de punta a punta: lo que el contenedor no garantiza es que el circuito de
- * negocio cierre cuando cada paso lo atiende un gestor distinto.
- */
 class AplicacionTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -87,7 +83,6 @@ class AplicacionTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(5000.0), caja.arqueoDe(pago.getFecha().toLocalDate()).total());
     }
 
-    /** El «¿desea agregar pochoclos?» de después de comprar la entrada. */
     @Test
     void elCandySeEnganchaConLaReservaRecienHecha() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -104,12 +99,10 @@ class AplicacionTest extends PruebaDeIntegracion {
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(6000.0), compra.getTotal());
-        // El cliente sale de la reserva, no se vuelve a pedir.
         assertEquals(cliente.getId(), compra.getClienteId());
         assertTrue(candy.listarComprasDe(cliente.getId()).size() == 1);
     }
 
-    /** Cruza reservas, pagos y candy: un cableado roto no falla, da cero. */
     @Test
     void elInformeDeLaFuncionVeLoQueCobraronLosOtrosGestores() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);

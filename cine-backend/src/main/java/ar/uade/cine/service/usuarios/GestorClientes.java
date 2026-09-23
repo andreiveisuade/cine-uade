@@ -11,7 +11,6 @@ import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
 
-/** Alta y baja de clientes. Usa los repositorios de reservas y candy solo para R12. */
 @Service
 @Transactional
 public class GestorClientes {
@@ -41,11 +40,6 @@ public class GestorClientes {
         return cliente;
     }
 
-    /**
-     * Comprar no exige registro: el email reconoce al cliente o lo da de alta. Es regla del
-     * negocio y vive acá para que todas las interfaces la apliquen igual. El email se
-     * normaliza para no duplicar al cliente en el segundo intento.
-     */
     public Cliente identificar(String nombre, String email) {
         String buscado = email == null ? "" : email.trim();
         return buscarPorEmail(buscado).orElseGet(() -> registrar(nombre, buscado));
@@ -63,7 +57,6 @@ public class GestorClientes {
         return clienteRepository.findByEmail(email);
     }
 
-    /** R12: con historial no se borra; si no, fallaría la foreign key con un error de SQL. */
     public void eliminar(int id) {
         if (!clienteRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe el cliente " + id);

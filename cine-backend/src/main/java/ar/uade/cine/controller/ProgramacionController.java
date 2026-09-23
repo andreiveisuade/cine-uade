@@ -34,11 +34,6 @@ import ar.uade.cine.service.programaciones.PlanProgramacion;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * CU-03b: el ABM de la grilla. {@code /previsualizar} devuelve el mismo informe que el alta
- * sin escribir nada, para ver qué choca antes de confirmar. Arma sus DTO sin un
- * {@code Vistas*} porque una programación no necesita otro gestor para completarse.
- */
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
 public class ProgramacionController {
@@ -70,7 +65,6 @@ public class ProgramacionController {
         return programacion(grilla, programaciones.funcionesDe(grilla.getId()));
     }
 
-    /** Una consulta como POST: lleva el mismo cuerpo que el alta, ilegible en la query. */
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
     @PostMapping("/api/programaciones/previsualizar")
     public PlanVistaDTO previsualizar(@RequestBody PedidoProgramacionDTO pedido) {
@@ -84,7 +78,6 @@ public class ProgramacionController {
         return plan(aplicar(pedido, true));
     }
 
-    /** No hay DELETE: la grilla sigue explicando las funciones que generó. */
     @Operation(summary = "Dar de baja una grilla: deja de generar funciones nuevas")
     @PostMapping("/api/programaciones/{id}/baja")
     public ProgramacionVistaDTO desactivar(@PathVariable int id) {
@@ -101,12 +94,10 @@ public class ProgramacionController {
         return programacion(buscar(id), null);
     }
 
-    /** Una sola lectura del pedido para los dos caminos, así el informe siempre predice el alta. */
     private PlanProgramacion aplicar(PedidoProgramacionDTO pedido, boolean persistir) {
         int peliculaId = pedido.peliculaId() == null ? 0 : pedido.peliculaId();
         int salaId = pedido.salaId() == null ? 0 : pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
-        // Sin fecha de fin la grilla es abierta: corre hasta que la den de baja.
         LocalDate hasta = pedido.hasta() == null || pedido.hasta().isBlank()
                 ? null : Parseo.dia(pedido.hasta(), "la fecha de fin");
         var hora = Parseo.hora(pedido.horaInicio(), "la hora de la función");
@@ -131,7 +122,6 @@ public class ProgramacionController {
                 plan.salteadas().size());
     }
 
-    /** {@code generadas} en null deja el campo afuera: es el listado, no el detalle. */
     private static ProgramacionVistaDTO programacion(Programacion p, List<Funcion> generadas) {
         return new ProgramacionVistaDTO(p.getId(), p.getPeliculaId(), p.getSalaId(),
                 p.getDesde().toString(), texto(p.getHasta()), texto(p.getGeneradaHasta()),

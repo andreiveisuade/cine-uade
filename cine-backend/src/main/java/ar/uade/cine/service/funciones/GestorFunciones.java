@@ -23,10 +23,6 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Las funciones programadas y sus reglas: R3 (no se pisan en la sala) y R8 (3D solo
- * donde se puede). Necesita película y sala porque la duración sale de la película.
- */
 @Service
 @Transactional
 public class GestorFunciones {
@@ -72,10 +68,6 @@ public class GestorFunciones {
         return funcion;
     }
 
-    /**
-     * Lo que no depende del horario. Público para que la grilla lo valide una vez antes de
-     * recorrer el rango. Devuelve la película porque de ella sale la duración.
-     */
     public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
                                        Proyeccion proyeccion, Dinero precio) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
@@ -90,7 +82,6 @@ public class GestorFunciones {
         if (version == null || proyeccion == null) {
             throw new IllegalArgumentException("Falta la versión o el formato de proyección");
         }
-        // R8
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
@@ -100,15 +91,10 @@ public class GestorFunciones {
         return pelicula;
     }
 
-    /**
-     * R3. Devuelve cuál y no un boolean para que la grilla diga contra qué choca. La regla
-     * de solapamiento vive solo en {@link AgendaDeSala}.
-     */
     public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
         return agendaDe(salaId).chocaCon(inicio, fin);
     }
 
-    /** Distingue el choque real del de la limpieza, que si no parece un error del sistema. */
     private String motivoDeLaSuperposicion(Funcion choque, int salaId, LocalDateTime inicio) {
         int duracion = peliculaRepository.findById(choque.getPeliculaId())
                 .map(Pelicula::getDuracionMinutos)
@@ -123,10 +109,6 @@ public class GestorFunciones {
         return "La sala ya tiene una función en ese horario";
     }
 
-    /**
-     * Lo tomado en la sala, en tres consultas: el planificador prueba cientos de horarios.
-     * Los tramos ya incluyen la limpieza, para que nadie tenga que acordarse de sumarla.
-     */
     public AgendaDeSala agendaDe(int salaId) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
         List<Funcion> funciones = funcionRepository.findBySala_Id(salaId);
@@ -146,7 +128,6 @@ public class GestorFunciones {
         return funcionRepository.findAll();
     }
 
-    /** {@code null} no filtra; {@code desde} y {@code hasta} incluyen el día completo. */
     public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
         return funcionRepository.findAll().stream()
                 .filter(f -> peliculaId == null || f.getPeliculaId() == peliculaId)
@@ -164,7 +145,6 @@ public class GestorFunciones {
         return funcionRepository.findById(id);
     }
 
-    /** R12: con reservas, borrarla las dejaría apuntando a la nada. */
     public void eliminar(int id) {
         if (!funcionRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la función " + id);

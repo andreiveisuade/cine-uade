@@ -18,10 +18,6 @@ import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Catálogo de películas y qué está en cartelera. Recibe el gestor de grillas porque de
- * la lectura de cartelera cuelga la extensión de las grillas activas; al revés no.
- */
 @Service
 @Transactional
 public class GestorCartelera {
@@ -56,7 +52,6 @@ public class GestorCartelera {
         return pelicula;
     }
 
-    /** Parcial: {@code null} conserva el valor. Valida como el alta, para no ser una puerta de atrás. */
     public Pelicula editar(int id, DatosPelicula cambios) {
         Pelicula actual = peliculaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
@@ -70,7 +65,6 @@ public class GestorCartelera {
         validar(titulo, duracion, generos, clasificacion);
         validarTituloLibre(titulo, id);
 
-        // Sobre la guardada: lo que el pedido no trae, como el estado de revisión, queda igual.
         actual.actualizar(titulo, duracion, generos, clasificacion);
         aplicarCatalogo(actual, cambios);
 
@@ -78,7 +72,6 @@ public class GestorCartelera {
         return actual;
     }
 
-    /** R1: renombrarla no puede duplicar un título. */
     public void actualizar(Pelicula pelicula) {
         if (!peliculaRepository.existsById(pelicula.getId())) {
             throw new IllegalArgumentException("No existe la película " + pelicula.getId());
@@ -103,7 +96,7 @@ public class GestorCartelera {
         }
     }
 
-    /** R1. exceptoId 0 al dar de alta: ninguna película guardada tiene ese id. */
+    // exceptoId 0 al dar de alta: ninguna película guardada tiene ese id.
     private void validarTituloLibre(String titulo, int exceptoId) {
         if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(titulo, exceptoId)) {
             throw new IllegalArgumentException("Ya existe una película con ese título");
@@ -143,10 +136,7 @@ public class GestorCartelera {
         }
     }
 
-    /**
-     * Estar en cartelera se deriva de tener funciones por delante, porque un flag a mano
-     * termina mintiendo. {@code enCartelera} es solo un veto: saca, no agrega.
-     */
+    // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
     public List<Pelicula> listarEnCartelera() {
         LocalDateTime ahora = reloj.ahora();
         // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.
@@ -162,7 +152,6 @@ public class GestorCartelera {
                 .toList();
     }
 
-    /** CU-01b. {@code null} no filtra. */
     public List<Pelicula> listarEnCartelera(Genero genero) {
         return listarEnCartelera().stream()
                 .filter(p -> genero == null || p.getGeneros().contains(genero))
@@ -173,7 +162,6 @@ public class GestorCartelera {
         return peliculaRepository.findAll();
     }
 
-    /** Cualquier parámetro en {@code null} no filtra. */
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
         String buscado = titulo == null ? "" : titulo.trim().toLowerCase();
         return peliculaRepository.findAll().stream()
@@ -187,10 +175,7 @@ public class GestorCartelera {
         return peliculaRepository.findById(id);
     }
 
-    /**
-     * R12. La grilla se chequea aparte porque puede no haber generado funciones todavía, y
-     * sin el chequeo el borrado terminaría en un 500 de la foreign key.
-     */
+    // La grilla se chequea aparte: puede no haber generado funciones y el borrado daría 500 por la FK.
     public void eliminar(int id) {
         Pelicula pelicula = peliculaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));

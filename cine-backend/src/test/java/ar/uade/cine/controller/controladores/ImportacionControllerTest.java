@@ -14,10 +14,6 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 
 
-/**
- * Lo que no ve {@code GestorImportacionesTest}: pedido sin cuerpo, 400 con el mensaje del
- * gestor intacto y fechas en el formato del contrato.
- */
 class ImportacionControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -53,7 +49,6 @@ class ImportacionControllerTest extends PruebaDeApi {
         assertEquals(2, catalogo.paginasPedidas());
     }
 
-    /** El default de páginas lo pone el gestor. */
     @Test
     void sinCuerpoTambienVale() {
         Respuesta respuesta = post("/api/importaciones", "");
@@ -84,7 +79,6 @@ class ImportacionControllerTest extends PruebaDeApi {
         assertEquals(0, catalogo.consultas());
     }
 
-    /** La corrida queda fallida con su motivo y se responde 201 igual. */
     @Test
     void siTmdbNoContestaLaCorridaQuedaFallidaYNoEsUn500() {
         catalogo.queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
@@ -121,7 +115,6 @@ class ImportacionControllerTest extends PruebaDeApi {
                 respuesta.json().get("detalle").asText());
     }
 
-    /** Si {@code /estado} se tomara como un id, el front no sabría si el importador está. */
     @Test
     void elEstadoNoSeLoComeElListado() {
         assertTrue(get("/api/importaciones/estado").json().has("disponible"));

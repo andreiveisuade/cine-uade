@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.PruebaDeApi;
 
-/** Los errores del propio HTTP también viajan con su código y la forma {@code {error}}. */
 class ManejadorErroresTest extends PruebaDeApi {
 
     @Test

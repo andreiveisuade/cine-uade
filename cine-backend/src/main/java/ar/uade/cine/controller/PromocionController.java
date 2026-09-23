@@ -30,7 +30,6 @@ import ar.uade.cine.service.promociones.GestorPromociones;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/** CU-17: el ABM de promociones del administrador. */
 @Tag(name = "Promociones", description = "Los descuentos que el cine carga desde el panel")
 @RestController
 public class PromocionController {
@@ -61,7 +60,6 @@ public class PromocionController {
     public PromocionVistaDTO crear(@RequestBody PedidoPromocionDTO pedido) {
         LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
         LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
-        // Una lista ausente o vacía significa sin restricción, no "ninguno".
         Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día"));
         Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
         LocalTime horaDesde = pedido.horaDesde() == null ? null : Parseo.hora(pedido.horaDesde(), "la hora de inicio");
@@ -82,7 +80,6 @@ public class PromocionController {
         return vistas.promocion(promocion);
     }
 
-    /** No hay DELETE: una promoción usada tiene que seguir explicando el monto cobrado. */
     @Operation(summary = "Dar de baja una promoción sin borrarla")
     @PostMapping("/api/promociones/{id}/baja")
     public PromocionVistaDTO desactivar(@PathVariable int id) {

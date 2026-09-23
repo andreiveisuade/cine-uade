@@ -37,10 +37,6 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Lo que no ve {@code GestorInformesTest}: forma del JSON y códigos (201 al emitir, 200 al
- * consultar, 404 para una función inexistente en vez del 400 del gestor).
- */
 class InformeControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -70,7 +66,6 @@ class InformeControllerTest extends PruebaDeApi {
 
     private Reserva reserva;
 
-    /** Una función de Matrix con una reserva cobrada: una general y una jubilada. */
     @BeforeEach
     void levantarLaApiConUnaFuncionVendida() {
 
@@ -98,12 +93,10 @@ class InformeControllerTest extends PruebaDeApi {
         assertEquals(7500.0, bordero.get("recaudacionBruta").asDouble(), 0.001);
         assertEquals(0.0, bordero.get("descuentos").asDouble(), 0.001);
         assertEquals(7500.0, bordero.get("recaudacionNeta").asDouble(), 0.001);
-        // La clave es el nombre de la constante, como en todo el contrato.
         assertEquals(1, bordero.get("porTarifa").get("JUBILADO").get("cantidad").asInt());
         assertEquals(2500.0, bordero.get("porTarifa").get("JUBILADO").get("total").asDouble(), 0.001);
     }
 
-    /** Una tarifa sin entradas no viaja en cero: no está, como en el arqueo. */
     @Test
     void elDesgloseSoloTraeLasTarifasConEntradasVendidas() {
         var porTarifa = get("/api/funciones/1/bordero").json().get("porTarifa");
@@ -155,10 +148,6 @@ class InformeControllerTest extends PruebaDeApi {
         assertEquals(13500.0, informe.get("total").asDouble(), 0.001);
     }
 
-    /**
-     * El mostrador no se atribuye a ninguna función: se prueba acá porque es lo que el front
-     * muestra como recaudación de la función.
-     */
     @Test
     void elCandyDeMostradorNoLlegaAlInformeDeLaFuncion() {
         Producto pochoclos = productos

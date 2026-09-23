@@ -8,10 +8,6 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * Catálogo externo que contesta lo que el test le diga: sin él, cada {@code mvn test} gastaría
- * cuota de TMDB y traería películas distintas según el día.
- */
 public class CatalogoDePrueba implements CatalogoExterno {
 
     private List<DatosPelicula> candidatas = List.of();
@@ -46,7 +42,6 @@ public class CatalogoDePrueba implements CatalogoExterno {
         return this;
     }
 
-    /** R1 las hace únicas por título. */
     public CatalogoDePrueba queTraiga(String... titulos) {
         return queTraiga(Arrays.stream(titulos).map(CatalogoDePrueba::pelicula)
                 .toArray(DatosPelicula[]::new));
@@ -62,7 +57,6 @@ public class CatalogoDePrueba implements CatalogoExterno {
         return this;
     }
 
-    /** Es un bean compartido entre las clases de test. */
     public void reiniciar() {
         candidatas = List.of();
         motivoDeFalla = null;
@@ -71,7 +65,6 @@ public class CatalogoDePrueba implements CatalogoExterno {
         paginasPedidas = 0;
     }
 
-    /** Prueba que un pedido rechazado no llegó a correr. */
     public int consultas() {
         return consultas;
     }

@@ -19,10 +19,6 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * La carta de promociones y la regla que elige cuál se aplica. No se acumulan (R15): gana
- * la que más ahorra, porque encadenar varias exigiría un orden y un piso.
- */
 @Service
 @Transactional
 public class GestorPromociones implements PoliticaPromociones {
@@ -77,10 +73,7 @@ public class GestorPromociones implements PoliticaPromociones {
         return promocion;
     }
 
-    /**
-     * R16: las tarifas reducidas quedan afuera; a la promoción solo le llegan las entradas
-     * generales. Empate: gana la de menor id, para que dos cobros iguales den lo mismo.
-     */
+    // R16: solo participan las entradas generales. Empate: gana la de menor id, para que el cobro sea determinístico.
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                   MedioPago medio) {
@@ -104,12 +97,10 @@ public class GestorPromociones implements PoliticaPromociones {
                 .filter(p -> p.aplicaA(inicioFuncion, medio))
                 .map(p -> new Candidata(p, p.calcularDescuento(alcanzadas)))
                 .filter(c -> c.monto().esMayorQue(Dinero.CERO))
-                // R15: gana la que más descuenta; Dinero compara exacto, el empate lo decide el id.
                 .max(Comparator.comparing(Candidata::monto)
                         .thenComparing(c -> c.promocion().getId(), Comparator.reverseOrder()));
     }
 
-    /** En vez de borrar: una promoción usada tiene que seguir explicando el cobro. */
     public void desactivar(int id) {
         Promocion promocion = buscarOFallar(id);
         promocion.setActiva(false);

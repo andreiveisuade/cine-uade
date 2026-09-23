@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.PruebaDeApi;
 
-/** Datos mal escritos en el alta dan 400 con un mensaje mostrable, no 500. */
 class PromocionControllerTest extends PruebaDeApi {
 
     @Test

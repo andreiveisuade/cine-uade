@@ -63,7 +63,6 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
                 () -> empleados.registrar("Otro", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR));
     }
 
-    /** El cliente no tiene contraseña: darlo de alta acá lo dejaría iniciar sesión. */
     @Test
     void noSeRegistraUnClienteComoEmpleado() {
         assertThrows(IllegalArgumentException.class,

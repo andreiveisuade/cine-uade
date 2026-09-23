@@ -10,7 +10,6 @@ import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
 import ar.uade.cine.infrastructure.seguridad.Password;
 
-/** Alta e inicio de sesión de empleados; el cliente compra sin loguearse. */
 @Service
 @Transactional
 public class GestorEmpleados {
@@ -41,7 +40,7 @@ public class GestorEmpleados {
         empleadoRepository.save(new Empleado(nombre, email, Password.hashear(password), rol));
     }
 
-    /** Mismo error para email inexistente y contraseña mala, para no revelar qué emails existen. */
+    // Mismo error para email inexistente y contraseña mala, para no revelar qué emails existen.
     public Empleado iniciarSesion(String email, String password) {
         return empleadoRepository.findByEmail(email)
                 .filter(admin -> Password.coincide(password, admin.getPasswordHash()))

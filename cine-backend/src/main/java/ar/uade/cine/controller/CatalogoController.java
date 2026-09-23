@@ -21,11 +21,6 @@ import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Los enums del dominio, para que el front no repita las listas. Algunos llevan su dato
- * (soportaTresD para R8, requiereAutorizacion para R11) para avisar antes de mandar; la
- * validación de verdad la hace el gestor.
- */
 @Tag(name = "Catálogos", description = "Las listas de constantes que llenan los combos del panel")
 @RestController
 public class CatalogoController {
@@ -52,7 +47,6 @@ public class CatalogoController {
                 .toList();
     }
 
-    /** En el dominio es {@code Version}: cómo se escucha la copia, no el idioma de la película. */
     @Operation(summary = "Subtitulada o doblada")
     @GetMapping("/api/idiomas")
     public List<String> idiomas() {
@@ -73,7 +67,6 @@ public class CatalogoController {
                 .toList();
     }
 
-    /** requiereAcreditacion deja avisar "traé el carnet" al elegir la tarifa, no en la puerta. */
     @Operation(summary = "Las tarifas de entrada y su descuento")
     @GetMapping("/api/tarifas")
     public List<TarifaVistaDTO> tarifas() {

@@ -9,10 +9,6 @@ import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 
-/**
- * Contexto de Spring completo contra H2, con la base limpia antes de cada prueba. Si un
- * gestor pide algo que nadie declara, la suite falla al arrancar.
- */
 @SpringBootTest
 @ActiveProfiles("test")
 public abstract class PruebaDeIntegracion {
@@ -33,7 +29,6 @@ public abstract class PruebaDeIntegracion {
     void dejarLaBaseComoNueva() {
         limpieza.limpiar();
         catalogoExterno.reiniciar();
-        // Bloqueos y reloj son beans compartidos por toda la suite.
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
     }

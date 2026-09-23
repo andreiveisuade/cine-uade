@@ -36,7 +36,6 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
-/** R14: un combo tiene que costar menos que sus componentes sueltos. */
 class GestorCandyTest extends PruebaDeIntegracion {
 
     private static final Path DIRECTORIO_TICKETS = Path.of("target/comprobantes/tickets");
@@ -61,7 +60,6 @@ class GestorCandyTest extends PruebaDeIntegracion {
     private int pochoclos;
     private int gaseosa;
 
-    /** Pochoclos a $4000, gaseosa a $2500, un cliente. */
     @BeforeEach
     void prepararCarta() {
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
@@ -83,7 +81,6 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void elComboTieneQueSalirMenosQueSusComponentes() {
-        // sueltos son 6500: a 6500 o más no es una promoción
         assertThrows(IllegalArgumentException.class,
                 () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa()));
         assertThrows(IllegalArgumentException.class,
@@ -196,7 +193,6 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 () -> carta.agregar("Combo trucho", TipoProducto.COMBO, Dinero.de(5000)));
     }
 
-    /** En el mostrador se compra sin dar el nombre, como en cualquier kiosco. */
     @Test
     void seVendeSinClienteIdentificado() {
         Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
@@ -209,7 +205,6 @@ class GestorCandyTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(3000), compra.getTotal());
     }
 
-    /** El "¿desea agregar pochoclos?" de después de comprar la entrada por la web. */
     @Test
     void laCompraDesdeUnaReservaHeredaSuCliente() {
         Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));

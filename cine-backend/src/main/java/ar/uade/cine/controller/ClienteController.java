@@ -21,7 +21,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/** Registro del cliente (CU-05). Es opcional: reservar también da de alta a quien compra. */
 @Tag(name = "Clientes", description = "El alta y la búsqueda de quien compra")
 @RestController
 public class ClienteController {
@@ -34,10 +33,7 @@ public class ClienteController {
         this.vistas = vistas;
     }
 
-    /**
-     * Si no está, responde el literal {@code null} y no un 404 ni un cuerpo vacío: devolver
-     * null desde el método daría 200 sin cuerpo y el {@code res.json()} del front reventaría.
-     */
+    // Literal null y no 200 sin cuerpo: el res.json() del front reventaría.
     @Operation(summary = "Buscar un cliente por email. Si no está, devuelve null")
     @GetMapping(value = "/api/clientes", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> buscarPorEmail(@RequestParam(required = false) String email) {

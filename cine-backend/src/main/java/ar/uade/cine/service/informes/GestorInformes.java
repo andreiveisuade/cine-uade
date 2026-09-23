@@ -28,10 +28,6 @@ import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
 
-/**
- * Informes cortados <strong>por función</strong>: el borderó para el INCAA y cuánto dejó
- * la función entre entradas y candy. Solo lee, cruzando varios agregados.
- */
 @Service
 public class GestorInformes {
 
@@ -62,7 +58,7 @@ public class GestorInformes {
         this.reloj = reloj;
     }
 
-    /** Se declara lo <strong>cobrado</strong>: una reserva sin pagar retiene butacas pero no vendió. */
+    // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
     public Bordero borderoDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
         Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId())
@@ -105,25 +101,19 @@ public class GestorInformes {
                 bruta, descuentos, neta, porTarifa);
     }
 
-    /** Devuelve lo escrito, para mostrarlo sin volver a pedirlo. */
     public Bordero exportarBordero(int funcionId) {
         Bordero bordero = borderoDe(funcionId);
         generadorBordero.emitir(bordero);
-        // Una declaración jurada deja rastro: es lo que se busca cuando el organismo reclama.
         LOG.info("bordero funcion {} · {} espectadores · bruto {} · neto {}",
                 funcionId, bordero.espectadores(), bordero.recaudacionBruta(),
                 bordero.recaudacionNeta());
         return bordero;
     }
 
-    /**
-     * Solo cuenta el candy con {@code reservaId}: repartir el mostrador entre funciones
-     * sería inventar el dato. Esa plata va al arqueo ({@link GestorCaja#totalCandyDe}).
-     */
+    // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#totalCandyDe).
     public InformeFuncion informeDe(int funcionId) {
         Bordero bordero = borderoDe(funcionId);
 
-        // Una compra del candy nace cobrada.
         List<Integer> reservas = reservaRepository.findByFuncion_Id(funcionId).stream()
                 .map(Reserva::getId).toList();
         List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(reservas);

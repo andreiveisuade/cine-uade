@@ -11,17 +11,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * Único test que ejecuta los scripts Lua contra un Redis real; el resto usa la implementación
- * en memoria. Se saltea sin {@code REDIS_TEST_PORT} para que {@code mvn test} corra solo y no
- * escriba en el Redis de otro proyecto:
- *
- * <pre>
- * docker run -d --rm --name cine-redis-prueba -p 6399:6379 redis:8-alpine
- * REDIS_TEST_PORT=6399 mvn test -Dtest=BloqueoButacasRedisTest
- * docker stop cine-redis-prueba
- * </pre>
- */
+// Se saltea sin REDIS_TEST_PORT. Para correrlo: docker run -d --rm -p 6399:6379 redis:8-alpine
+// y REDIS_TEST_PORT=6399 mvn test -Dtest=BloqueoButacasRedisTest
 class BloqueoButacasRedisTest {
 
     private static final int FUNCION = 99;
@@ -66,7 +57,6 @@ class BloqueoButacasRedisTest {
         assertEquals(Map.of(), bloqueos.bloqueadas(FUNCION));
     }
 
-    /** El vencimiento lo lleva el TTL de Redis: acá sí hay que esperarlo. */
     @Test
     void laClaveVenceSola() throws InterruptedException {
         bloqueos.bloquear(FUNCION, 7, "ana", Duration.ofMillis(300));

@@ -10,10 +10,6 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 
-/**
- * El buzón de revisión de lo importado. Aparte de {@link GestorCartelera} porque aceptar o
- * rechazar propuestas es otro actor y otra pantalla. Depende del catálogo y no al revés.
- */
 @Service
 @Transactional
 public class GestorRevisionCartelera {
@@ -29,10 +25,6 @@ public class GestorRevisionCartelera {
         this.catalogo = catalogo;
     }
 
-    /**
-     * Entra pendiente y fuera de cartelera. Método aparte y no un flag de
-     * {@link GestorCartelera#agregar}: olvidarse el flag publicaría sin revisión.
-     */
     public Pelicula importar(DatosPelicula datos) {
         Pelicula pelicula = catalogo.agregar(datos);
         pelicula.setEstadoRevision(EstadoRevision.PENDIENTE);
@@ -45,7 +37,6 @@ public class GestorRevisionCartelera {
         return peliculaRepository.findByEstadoRevision(EstadoRevision.PENDIENTE);
     }
 
-    /** Confirmada y en cartelera de una vez: «esta la damos» es el caso normal. */
     public Pelicula confirmar(int id) {
         Pelicula pelicula = exigir(id);
         pelicula.setEstadoRevision(EstadoRevision.CONFIRMADA);
@@ -54,7 +45,6 @@ public class GestorRevisionCartelera {
         return pelicula;
     }
 
-    /** Descartada en vez de borrada: si no, la próxima corrida la traería de nuevo. */
     public Pelicula descartar(int id) {
         Pelicula pelicula = exigir(id);
         if (funcionRepository.existsByPelicula_Id(id)) {

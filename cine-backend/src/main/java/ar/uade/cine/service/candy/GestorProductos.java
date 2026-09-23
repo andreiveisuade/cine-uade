@@ -13,11 +13,6 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.repository.ProductoRepository;
 
-/**
- * La carta del candy y única fuente de sus precios: la venta pregunta cuánto sale cada
- * cosa en vez de aceptar el precio que le manden. Aparte de {@link GestorCandy} porque
- * carta y venta cambian por motivos distintos.
- */
 @Service
 @Transactional
 public class GestorProductos {
@@ -38,12 +33,6 @@ public class GestorProductos {
         return producto;
     }
 
-    /**
-     * R14: un combo tiene que salir menos que sus componentes sueltos, validado contra la
-     * lista de precios y no contra lo que diga quien lo carga.
-     *
-     * @param componentes id de producto a cantidad de unidades que trae el combo
-     */
     public Producto armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
         validarAlta(nombre, TipoProducto.COMBO, precio);
         if (componentes == null || componentes.size() < 2) {
@@ -84,17 +73,13 @@ public class GestorProductos {
         return productoRepository.findById(id);
     }
 
-    /** No se borra: hay compras viejas que lo referencian. */
     public void cambiarDisponibilidad(int productoId, boolean disponible) {
         Producto producto = buscarOFallar(productoId);
         producto.setDisponible(disponible);
         productoRepository.save(producto);
     }
 
-    /**
-     * El tipo no se edita: los componentes de un combo se fijan al armarlo. R14 se vuelve
-     * a mirar de los dos lados: el combo editado y cada combo que trae el suelto editado.
-     */
+    // R14 se vuelve a mirar de los dos lados: el combo editado y cada combo que trae el suelto editado.
     public Producto editar(int productoId, String nombre, Dinero precio) {
         Producto producto = buscarOFallar(productoId);
         if (nombre == null || nombre.isBlank()) {

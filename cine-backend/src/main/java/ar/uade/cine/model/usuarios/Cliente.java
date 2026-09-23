@@ -3,7 +3,6 @@ package ar.uade.cine.model.usuarios;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-/** Quien compra. Sin contraseña: reserva sin iniciar sesión, con nombre y email. */
 @Entity
 @DiscriminatorValue("CLIENTE")
 public class Cliente extends Usuario {

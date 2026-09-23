@@ -23,25 +23,14 @@ import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * Cliente de TMDB, la única llamada saliente del backend. TMDB reparte el dato en tres
- * recursos:
- *
- * <pre>
- * /movie/now_playing?region=AR   qué se está dando en Argentina
- * /movie/{id}                    duración y géneros con nombre
- * /movie/{id}/release_dates      la clasificación por edad argentina
- * </pre>
- */
 public class TmdbHttp implements CatalogoExterno {
 
     private static final String BASE_POR_DEFECTO = "https://api.themoviedb.org/3";
     private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
 
-    /** De a una, veinte películas son casi un minuto de pausas; cuatro no rozan el límite de TMDB. */
     private static final int HILOS = 4;
 
-    /** Pausa por hilo, no global: subir {@link #HILOS} sin subir esto termina en 429. */
+    // Pausa por hilo, no global: subir HILOS sin subir esto termina en 429.
     private static final Duration PAUSA_ENTRE_LLAMADAS = Duration.ofMillis(300);
 
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -59,7 +48,6 @@ public class TmdbHttp implements CatalogoExterno {
         this(System.getenv("TMDB_TOKEN"), variable("TMDB_REGION", "AR"), BASE_POR_DEFECTO);
     }
 
-    /** La base entra por parámetro para probar contra un servidor falso sin gastar cuota. */
     public TmdbHttp(String token, String region, String base) {
         this.token = token;
         this.region = region;
@@ -71,7 +59,6 @@ public class TmdbHttp implements CatalogoExterno {
         exigirToken();
         List<JsonNode> resumenes = buscarEnCartelera(paginas);
 
-        // El cierre del try-with-resources espera a que terminen todas.
         try (ExecutorService hilos = Executors.newFixedThreadPool(HILOS)) {
             List<Future<DatosPelicula>> pedidos = new ArrayList<>();
             for (JsonNode resumen : resumenes) {
@@ -87,7 +74,6 @@ public class TmdbHttp implements CatalogoExterno {
             return new Estado(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env "
                     + "y reiniciá el backend");
         }
-        // Sin llamar a TMDB: la pantalla pregunta cada vez que se abre.
         return new Estado(true, "Listo para traer cartelera");
     }
 
@@ -104,10 +90,7 @@ public class TmdbHttp implements CatalogoExterno {
         return resumenes;
     }
 
-    /**
-     * Si TMDB falla en una película se devuelve igual, sin duración: el gestor la rechaza por
-     * R2 y queda contada en el detalle de la corrida en vez de desaparecer.
-     */
+    // Si TMDB falla se devuelve sin duración: el gestor la rechaza por R2 y queda en el detalle.
     private DatosPelicula completar(JsonNode resumen) {
         int id = resumen.path("id").asInt();
         JsonNode detalle = SIN_DETALLE;
@@ -171,7 +154,6 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    /** El idioma va en todas para que los géneros vuelvan en castellano. */
     private String consulta(String... parametros) {
         StringBuilder url = new StringBuilder("?language=es-AR");
         for (int i = 0; i < parametros.length; i += 2) {
@@ -189,7 +171,6 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    /** Un fallo que no es {@link ImportadorError} es un bug y tira la corrida entera. */
     private static List<DatosPelicula> esperar(List<Future<DatosPelicula>> pedidos) {
         List<DatosPelicula> peliculas = new ArrayList<>();
         for (Future<DatosPelicula> pedido : pedidos) {

@@ -6,16 +6,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/**
- * Texto crudo de HTTP a tipos del dominio, con mensajes que lee el usuario: nombran el campo
- * y no dejan asomar clases de Java.
- */
 public final class Parseo {
 
     private Parseo() {
     }
 
-    /** Los enums viajan con el nombre de la constante, nunca con la etiqueta de mostrar. */
     public static <T extends Enum<T>> T constante(Class<T> tipo, String valor, String queEs) {
         if (valor == null || valor.isBlank()) {
             throw new IllegalArgumentException("Falta " + queEs);
@@ -67,8 +62,6 @@ public final class Parseo {
         }
     }
 
-    // Los opcionales son para filtros: si no vino, null y no un error. Mal escrito sí falla.
-
     public static LocalDate diaOpcional(String valor, String queEs) {
         return vacio(valor) ? null : dia(valor, queEs);
     }
@@ -88,7 +81,7 @@ public final class Parseo {
         return vacio(valor) ? null : constante(tipo, valor, queEs);
     }
 
-    /** Boolean y no boolean: null es "no filtres por esto". */
+    // Boolean: null es "no filtres por esto".
     public static Boolean booleanOpcional(String valor, String queEs) {
         if (vacio(valor)) {
             return null;

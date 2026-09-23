@@ -13,14 +13,8 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * Traduce el modelo de TMDB al nuestro en un solo lugar, para que no se filtre al resto.
- * Las tablas apuntan a {@link Genero} y {@link Clasificacion}: renombrar una constante no
- * compila en vez de romper en la próxima importación.
- */
 final class MapeoTmdb {
 
-    /** Los 19 géneros de TMDB caen en el más cercano de los 9 nuestros: pérdida asumida. */
     private static final Map<String, Genero> GENEROS = Map.ofEntries(
             entry("Acción", Genero.ACCION),
             entry("Aventura", Genero.ACCION),
@@ -43,7 +37,6 @@ final class MapeoTmdb {
             entry("Thriller", Genero.SUSPENSO),
             entry("Crimen", Genero.SUSPENSO));
 
-    /** TMDB trae la certificación del INCAA en varias formas: +13, 13, SAM13. */
     private static final Map<String, Clasificacion> CLASIFICACIONES = Map.ofEntries(
             entry("ATP", Clasificacion.ATP),
             entry("+13", Clasificacion.MAS_13),
@@ -55,7 +48,6 @@ final class MapeoTmdb {
             entry("+18", Clasificacion.MAS_18),
             entry("18", Clasificacion.MAS_18),
             entry("SAM18", Clasificacion.MAS_18),
-            // Condicionada: es la más restrictiva que publica el INCAA.
             entry("C", Clasificacion.MAS_18));
 
     private static final Map<String, String> IDIOMAS = Map.ofEntries(
@@ -67,11 +59,7 @@ final class MapeoTmdb {
     private MapeoTmdb() {
     }
 
-    /**
-     * Nace {@code enCartelera = false} para que nada se publique sin que el encargado la mire.
-     *
-     * @param certificacion la argentina, o {@code null} si TMDB no la trae
-     */
+    // Nace enCartelera = false: nada se publica sin que el encargado la mire.
     static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, String certificacion,
                                    String urlPoster) {
         return new DatosPelicula(
@@ -79,20 +67,16 @@ final class MapeoTmdb {
                 detalle.path("runtime").asInt(0),
                 generosDe(detalle),
                 clasificacionDe(certificacion),
-                // Vendría de /credits, una llamada más; lo completa el encargado.
                 "",
                 textoDe(detalle, "overview", ""),
                 anioDe(detalle.path("release_date").asText(null)),
                 idiomaDe(detalle.path("original_language").asText("")),
                 urlPoster,
                 false,
-                // 0..10; el rango lo valida el gestor.
                 detalle.path("vote_average").asDouble(0),
-                // Sin la cantidad de votos, un 0,0 recién estrenado parece una película mala.
                 detalle.path("vote_count").asInt(0));
     }
 
-    /** Al menos uno (R7): si TMDB no trae ninguno reconocible, DRAMA. */
     static List<Genero> generosDe(JsonNode detalle) {
         // TreeSet: orden estable entre corridas de la misma película.
         TreeSet<Genero> traducidos = new TreeSet<>();
@@ -105,7 +89,7 @@ final class MapeoTmdb {
         return traducidos.isEmpty() ? List.of(Genero.DRAMA) : new ArrayList<>(traducidos);
     }
 
-    /** Sin certificación, MAS_13 y no ATP: el default prudente; el encargado lo corrige. */
+    // Sin certificación, MAS_13 y no ATP: el default prudente.
     static Clasificacion clasificacionDe(String certificacion) {
         if (certificacion == null || certificacion.isBlank()) {
             return Clasificacion.MAS_13;

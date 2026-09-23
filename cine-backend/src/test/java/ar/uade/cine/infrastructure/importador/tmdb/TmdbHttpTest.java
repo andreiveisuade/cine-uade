@@ -24,11 +24,6 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * El cliente de TMDB contra un {@code com.sun.net.httpserver} de mentira y no un mock de
- * {@code HttpClient}, para ejercer el pedido real con sus códigos de estado. Los tests de ruta
- * usan {@code CatalogoDePrueba} y nunca pasan por acá.
- */
 class TmdbHttpTest {
 
     private HttpServer servidor;
@@ -65,12 +60,10 @@ class TmdbHttpTest {
         assertEquals("Duna", duna.titulo());
         assertEquals(166, duna.duracionMinutos());
         assertEquals(List.of(Genero.CIENCIA_FICCION), duna.generos());
-        // La argentina, no la primera que aparezca: PG-13 es de Estados Unidos.
         assertEquals(Clasificacion.MAS_13, duna.clasificacion());
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", duna.posterUrl());
     }
 
-    /** El idioma hace que los géneros vuelvan en castellano. */
     @Test
     void elIdiomaYLaRegionViajanEnLaConsulta() {
         StringBuilder recibido = new StringBuilder();
@@ -85,10 +78,6 @@ class TmdbHttpTest {
         assertTrue(recibido.toString().contains("region=AR"), recibido.toString());
     }
 
-    /**
-     * La película sale sin duración para que el alta la rechace y quede nombrada en el detalle, en
-     * vez de desaparecer del reporte.
-     */
     @Test
     void unErrorEnUnaPeliculaNoTiraLaCorrida() {
         levantar(intercambio -> {

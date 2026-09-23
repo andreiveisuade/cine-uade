@@ -1,6 +1,5 @@
 package ar.uade.cine.model.cartelera;
 
-/** Clasificación por edad, con la edad mínima para no traducir la etiqueta con un switch. */
 public enum Clasificacion {
 
     ATP(0),
@@ -22,7 +21,6 @@ public enum Clasificacion {
         return edadMinima == 0 ? "ATP" : "+" + edadMinima;
     }
 
-    /** Lo que se persiste es name(), que no cambia. */
     @Override
     public String toString() {
         return getEtiqueta();

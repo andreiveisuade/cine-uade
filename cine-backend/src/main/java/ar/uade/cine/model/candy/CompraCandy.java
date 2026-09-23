@@ -19,10 +19,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-/**
- * Venta del candy. Sin estados ni {@code Pago}: en el mostrador se paga en el acto, así que
- * nace cobrada y cerrada, con el medio encima.
- */
 @Entity
 @Table(name = "compra_candy")
 public class CompraCandy {
@@ -31,11 +27,9 @@ public class CompraCandy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    /** {@code null} en mostrador: no se pide el nombre para vender pochoclos. */
     @Column(name = "cliente_id")
     private Integer clienteId;
 
-    /** El «¿agregar pochoclos?» tras comprar la entrada: se retira con el mismo QR. {@code null} en mostrador. */
     @Column(name = "reserva_id")
     private Integer reservaId;
 
@@ -44,7 +38,6 @@ public class CompraCandy {
     @Enumerated(EnumType.STRING)
     private MedioPago medio;
 
-    /** Vacío en efectivo. */
     private String codigoAutorizacion;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
@@ -96,7 +89,6 @@ public class CompraCandy {
         return Dinero.sumar(items.stream().map(ItemCompra::getSubtotal).toList());
     }
 
-    /** Ahorro por combos, para el ticket. */
     public Dinero getAhorro() {
         return Dinero.sumar(items.stream().map(ItemCompra::getAhorro).toList());
     }

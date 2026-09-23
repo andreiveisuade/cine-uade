@@ -26,11 +26,6 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 
-/**
- * Descuento sobre el total de una reserva: un monto y no un factor por butaca, porque el 2x1
- * es una regla de grupo y las promos compiten entre sí (R15). Acá viven las condiciones
- * comunes; cada subclase solo dice cuánto descuenta. Tabla única con {@code tipo}.
- */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo")
@@ -47,19 +42,16 @@ public abstract class Promocion {
 
     private LocalDate vigenciaHasta;
 
-    /** Vacío significa todos los días, no ninguno. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "promocion_dia", joinColumns = @JoinColumn(name = "promocion_id"))
     @Column(name = "dia")
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> diasSemana = EnumSet.noneOf(DayOfWeek.class);
 
-    /** {@code null} en cualquiera de los dos: todo el día. */
     private LocalTime horaDesde;
 
     private LocalTime horaHasta;
 
-    /** Vacío es cualquier medio. Por esto el descuento se resuelve al cobrar y no al reservar. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "promocion_medio", joinColumns = @JoinColumn(name = "promocion_id"))
     @Column(name = "medio")
@@ -87,10 +79,8 @@ public abstract class Promocion {
 
     public abstract TipoPromocion getTipo();
 
-    /** Recibe las entradas ya filtradas por R16, así ninguna subclase tiene que acordarse. */
     public abstract Dinero calcularDescuento(List<Entrada> entradas);
 
-    /** Se evalúa contra el horario de la función, no de la compra: el 2x1 del miércoles vale comprando el lunes. */
     public boolean aplicaA(LocalDateTime inicioFuncion, MedioPago medio) {
         if (!activa || inicioFuncion == null) {
             return false;
@@ -112,7 +102,6 @@ public abstract class Promocion {
         return horaHasta == null || !hora.isAfter(horaHasta);
     }
 
-    /** Un descuento mayor al total daría un cobro negativo. */
     protected static Dinero topear(Dinero descuento, List<Entrada> entradas) {
         return descuento.sinBajarDeCero().acotadoA(subtotalDe(entradas));
     }

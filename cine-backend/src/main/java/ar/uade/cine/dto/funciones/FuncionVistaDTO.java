@@ -8,10 +8,6 @@ import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 
-/**
- * Los campos que no aplican se omiten: el listado no manda butacas, y mandarlas vacías haría
- * creer que la sala no tiene.
- */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FuncionVistaDTO(int id, int peliculaId, int salaId, String inicio, String idioma,
                            String proyeccion, double precio, double precioDesde, SalaVistaDTO sala,

@@ -49,10 +49,6 @@ import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * La reserva viaja como ticket completo. Lo crítico es lo que usa la puerta: el código del QR
- * e ingresadaEn, en null mientras nadie entró.
- */
 class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -110,7 +106,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals("RESERVADA", vista.estado());
     }
 
-    /** Se identifica por email porque compra sin registrarse. */
     @Test
     void elClienteViajaSinDatosDeMas() {
         ReservaVistaDTO vista = vistas.reserva(reservar("A1"));
@@ -119,7 +114,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals("andrei@uade.edu.ar", vista.cliente().email());
     }
 
-    /** Para que el acomodador pida el carnet a quien pagó tarifa reducida. */
     @Test
     void cadaEntradaDiceConQueTarifaSeVendio() {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
@@ -134,7 +128,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
     }
 
-    /** El código no es el id: no se puede adivinar. */
     @Test
     void laReservaViajaConElCodigoDelQr() {
         Reserva reserva = reservar("A1");
@@ -189,7 +182,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertNull(vista.entradas());
     }
 
-    /** En el arqueo no hay reserva alrededor para consultar película y cliente. */
     @Test
     void elPagoDelArqueoSiTraeQueSeVendioYAQuien() {
         Reserva reserva = reservar("A1", "A2");

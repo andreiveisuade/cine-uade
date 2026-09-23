@@ -23,12 +23,6 @@ import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Grillas recurrentes ("Matrix en la Sala 1, todos los días a las 20:30") y sus funciones.
- * Una grilla casi siempre pisa algo (R3), así que {@link #previsualizar} informa sin
- * escribir y {@link #crear} guarda las que entran y dice cuáles salteó; ambas usan
- * {@link #planificar}. R3 y R8 los decide {@link GestorFunciones}.
- */
 @Service
 @Transactional
 public class GestorProgramaciones {
@@ -37,10 +31,6 @@ public class GestorProgramaciones {
 
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
-    /**
-     * Días que se materializa una grilla abierta: alcanza para comprar con anticipación
-     * sin atar cientos de funciones vendidas a una decisión que puede cambiar.
-     */
     private static final int HORIZONTE_DIAS = 14;
 
     private final ProgramacionRepository programacionRepository;
@@ -56,16 +46,12 @@ public class GestorProgramaciones {
         this.reloj = reloj;
     }
 
-    /** La grilla del informe queda solo en memoria, sin id. */
     public PlanProgramacion previsualizar(DatosGrilla datos) {
         Programacion grilla = armar(datos);
         return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
     }
 
-    /**
-     * Recalcula R3 porque desde la previsualización otro pudo programar en la sala. La
-     * grilla se guarda aunque choquen todas sus fechas: sigue siendo una decisión del cine.
-     */
+    // Recalcula R3: desde la previsualización otro pudo programar en la sala.
     public PlanProgramacion crear(DatosGrilla datos) {
         Programacion grilla = armar(datos);
         Pelicula pelicula = peliculaDe(grilla);
@@ -73,15 +59,8 @@ public class GestorProgramaciones {
         return planificar(grilla, pelicula, true, topeDe(grilla, reloj.hoy()));
     }
 
-    /**
-     * Materializa hasta el horizonte lo que falta. Sin scheduler: lo dispara quien consulta
-     * la cartelera, e idempotente porque cada grilla recuerda hasta dónde se procesó.
-     *
-     * <p>Corre <strong>fuera</strong> de transacción para que el {@code catch} valga: en una
-     * compartida, la primera grilla rota la marcaría rollback-only y voltearía la cartelera.
-     *
-     * @return cuántas funciones se generaron
-     */
+    // Fuera de transacción para que el catch valga: en una compartida, la primera grilla
+    // rota la marcaría rollback-only y voltearía la cartelera.
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public int extenderActivas(LocalDate hoy) {
         int generadas = 0;
@@ -94,12 +73,10 @@ public class GestorProgramaciones {
                         .programables().size();
                 generadas += nuevas;
                 if (nuevas > 0) {
-                    // Pasa colgada de una lectura: sin log no se sabe de dónde salieron.
                     LOG.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
                             grilla.getId(), nuevas, grilla.getGeneradaHasta());
                 }
             } catch (RuntimeException e) {
-                // Una grilla inválida no rompe la cartelera; se corrige desde el ABM.
                 LOG.warn("grilla {} no se pudo extender: {}", grilla.getId(), e.getMessage());
             }
         }
@@ -111,12 +88,10 @@ public class GestorProgramaciones {
         return hecho != null && !hecho.isBefore(topeDe(grilla, hoy));
     }
 
-    /** Una grilla cerrada genera su rango entero: el informe de choques sirve ahora. */
     private LocalDate topeDe(Programacion grilla, LocalDate hoy) {
         return grilla.getHasta() != null ? grilla.getHasta() : hoy.plusDays(HORIZONTE_DIAS);
     }
 
-    /** {@code persistir} es lo único que separa previsualizar de crear. */
     private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir,
                                         LocalDate tope) {
         LocalDate yaProcesado = grilla.getGeneradaHasta();
@@ -149,7 +124,6 @@ public class GestorProgramaciones {
         return new PlanProgramacion(grilla, plan);
     }
 
-    /** Valida una vez lo que no depende de la fecha (película, sala, R8, precio). */
     private Pelicula peliculaDe(Programacion grilla) {
         return funciones.validarProgramable(grilla.getPeliculaId(), grilla.getSalaId(),
                 grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio());
@@ -167,7 +141,6 @@ public class GestorProgramaciones {
         if (datos.horaInicio() == null) {
             throw new IllegalArgumentException("Falta la hora de la función");
         }
-        // Si no, una grilla de miércoles sobre un rango lunes-martes se guardaría vacía.
         Programacion grilla = new Programacion(datos.peliculaId(), datos.salaId(), desde, hasta,
                 datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
         if (hasta != null && grilla.horarios(hasta).isEmpty()) {
@@ -177,7 +150,6 @@ public class GestorProgramaciones {
         return grilla;
     }
 
-    /** Las funciones ya generadas quedan: pueden tener ventas. Solo deja de generar nuevas. */
     public void desactivar(int id) {
         cambiarEstado(id, false);
     }
@@ -197,7 +169,6 @@ public class GestorProgramaciones {
         return programacionRepository.findAll();
     }
 
-    /** {@code null} no filtra. */
     public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
         return programacionRepository.findAll().stream()
                 .filter(p -> peliculaId == null || p.getPeliculaId() == peliculaId)

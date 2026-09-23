@@ -9,11 +9,6 @@ import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Checkout de MercadoPago emulado, sin credenciales ni red. Los checkouts viven en memoria
- * a propósito: son un dato de MercadoPago, no del cine; lo nuestro queda en {@code pago}.
- * No emula rechazos porque el modelo no los tiene.
- */
 public class MercadoPagoEmulado implements PasarelaPagos {
 
     private static final String HOST = "https://checkout.emulado.local/mp/";
@@ -35,10 +30,7 @@ public class MercadoPagoEmulado implements PasarelaPagos {
         return checkoutId == null ? Optional.empty() : Optional.ofNullable(checkouts.get(checkoutId));
     }
 
-    /**
-     * No borra el checkout: el doble cobro lo impide R5 en el gestor, y cerrarlo acá dejaría
-     * sin reintento a un cobro que falla después de autorizar.
-     */
+    // No borra el checkout: el doble cobro lo impide R5, y así un cobro fallido se puede reintentar.
     @Override
     public String autorizar(Checkout checkout) {
         return "MP-AUT-" + numero(8);

@@ -10,10 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/**
- * Línea de una compra. Nombre y precio se congelan al vender para que el ticket no cambie.
- * Entidad y no {@code @Embeddable} como {@link ItemCombo} porque la tabla le da clave propia.
- */
+// Nombre y precio se congelan al vender para que el ticket no cambie.
 @Entity
 @Table(name = "item_compra")
 public class ItemCompra {

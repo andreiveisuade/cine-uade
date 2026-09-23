@@ -7,11 +7,6 @@ import java.util.Map;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 
-/**
- * Bloqueos en memoria, para que {@code mvn test} pruebe la regla sin Redis. El reloj entra
- * por constructor para probar el vencimiento sin esperar. Sirve para un solo proceso: no
- * reemplaza a Redis en el compose.
- */
 public class BloqueoButacasMemoria implements BloqueoButacas {
 
     private record Bloqueo(String sesion, LocalDateTime vence) {
@@ -65,12 +60,10 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
         return tomadas;
     }
 
-    /** Lo usan los tests: el adaptador es uno solo para toda la suite. */
     public void limpiar() {
         bloqueos.clear();
     }
 
-    /** Saca los vencidos al leer: acá no hay TTL como en Redis ni nadie que limpie. */
     private Bloqueo vigente(String clave) {
         Bloqueo bloqueo = bloqueos.get(clave);
         if (bloqueo == null) {

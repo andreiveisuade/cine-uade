@@ -20,10 +20,6 @@ import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Ventas del candy: se pagan en el mostrador, así que la compra nace cobrada. Los precios
- * los pregunta a {@link GestorProductos}.
- */
 @Service
 @Transactional
 public class GestorCandy {
@@ -45,17 +41,11 @@ public class GestorCandy {
         this.reloj = reloj;
     }
 
-    /**
-     * El total sale de la lista de precios, no se ingresa.
-     *
-     * @param cantidades id de producto a cuántas unidades lleva
-     */
     public CompraCandy vender(Integer clienteId, Map<Integer, Integer> cantidades,
                               MedioPago medio, String codigoAutorizacion) {
         return vender(clienteId, null, cantidades, medio, codigoAutorizacion);
     }
 
-    /** El «¿agregás pochoclos?» de la web; el cliente sale de la reserva. */
     public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.findById(reservaId)
@@ -65,7 +55,6 @@ public class GestorCandy {
 
     private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
                                MedioPago medio, String codigoAutorizacion) {
-        // Sin cliente es una venta de mostrador.
         Cliente cliente = clienteId == null ? null : clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
         if (cantidades == null || cantidades.isEmpty()) {

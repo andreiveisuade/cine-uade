@@ -24,11 +24,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
-/**
- * Grilla: "Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15". Genera funciones
- * reales en vez de calcularlas al vuelo, porque cada función tiene lo suyo (reservas, cambio
- * de sala) que la grilla no sabe.
- */
 @Entity
 public class Programacion {
 
@@ -42,24 +37,18 @@ public class Programacion {
     @Column(name = "sala_id")
     private int salaId;
 
-    // ---------- el patrón temporal ----------
-
     private LocalDate desde;
 
-    /** {@code null} si es abierta: corre hasta que la den de baja. */
     private LocalDate hasta;
 
     private LocalTime horaInicio;
 
-    /** Vacío significa todos los días, no ninguno. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "programacion_dia",
             joinColumns = @JoinColumn(name = "programacion_id"))
     @Column(name = "dia")
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> diasSemana = EnumSet.noneOf(DayOfWeek.class);
-
-    // ---------- lo que se copia a cada función ----------
 
     @Enumerated(EnumType.STRING)
     private Version version;
@@ -102,7 +91,7 @@ public class Programacion {
         return momentos;
     }
 
-    /** Se guarda y no se deriva de la última función: si esa se borra o mueve, se regenerarían fechas. */
+    // Se guarda y no se deriva de la última función: si esa se borra o mueve, se regenerarían fechas.
     public LocalDate getGeneradaHasta() {
         return generadaHasta;
     }
@@ -151,7 +140,6 @@ public class Programacion {
         return precio;
     }
 
-    /** Dada de baja no genera más, pero las ya generadas siguen: nada que produjo ventas se borra. */
     public boolean estaActiva() {
         return activa;
     }

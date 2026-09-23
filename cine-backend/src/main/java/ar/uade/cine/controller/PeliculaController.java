@@ -32,10 +32,6 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Cartelera y ABM de películas. Los campos que faltan se mandan igual al gestor, en null,
- * para que el mensaje de error sea el suyo y no uno inventado en esta capa.
- */
 @Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController
 public class PeliculaController {
@@ -53,7 +49,6 @@ public class PeliculaController {
         this.vistas = vistas;
     }
 
-    /** Lo que ve el cliente: solo lo que está en exhibición (CU-01b para el filtro). */
     @Operation(summary = "La cartelera pública: solo lo que está en exhibición")
     @GetMapping("/api/cartelera")
     public List<PeliculaVistaDTO> cartelera(@RequestParam(required = false) String genero) {
@@ -108,7 +103,6 @@ public class PeliculaController {
         return vistas.pelicula(revision.importar(datosDe(pedido)));
     }
 
-    /** POST y no PUT: no se manda un estado nuevo, se toma una decisión. */
     @Operation(summary = "Aceptar una película del buzón y publicarla")
     @PostMapping("/api/peliculas/{id}/confirmacion")
     public PeliculaVistaDTO confirmar(@PathVariable int id) {
@@ -144,7 +138,6 @@ public class PeliculaController {
                 .orElseThrow(() -> new NoEncontrado("No existe la película " + id));
     }
 
-    /** Solo convierte a tipos del dominio. Un ausente queda en null: el gestor lo lee como "no lo mandé". */
     private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {
         return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos() == null

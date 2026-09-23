@@ -32,10 +32,6 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * La grilla que materializa funciones: que genere las del rango, que respete los días
- * elegidos, que previsualizar no escriba y que el alta saltee lo que choca contra R3.
- */
 class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     private static final LocalDate LUNES = LocalDate.of(2026, 9, 7);
@@ -55,7 +51,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorSalas salas;
 
-    /** Matrix (136') en la Sala 1, que es 2D, y una Sala 2 que sí proyecta en 3D. */
     @BeforeEach
     void prepararCartelera() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -63,7 +58,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2", TipoSala.TRES_D, List.of(5, 5));
     }
 
-    /** El caso del enunciado: una semana entera, una función por día. */
     @Test
     void generaUnaFuncionPorCadaDiaDelRango() {
         PlanProgramacion plan = crearSemana(Set.of());
@@ -111,7 +105,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(0, plan.programacion().getId(), "la grilla previsualizada no tiene id");
     }
 
-    /** R3: la fecha que choca se marca y el resto sigue; rechazar todo haría la grilla inusable. */
     @Test
     void marcaLasFechasQueChocanYGeneraElResto() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
@@ -124,7 +117,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertTrue(plan.salteadas().get(0).motivo().contains("09/09 21:00"),
                 "el informe tiene que decir contra qué choca");
         assertEquals(6, plan.programables().size());
-        // Las seis de la grilla más la que ya estaba cargada.
         assertEquals(7, funciones.listar().size());
     }
 
@@ -141,7 +133,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(previo.salteadas().size(), alta.salteadas().size());
     }
 
-    /** Entre previsualizar y confirmar otro pudo programar en esa sala: el alta revalida. */
     @Test
     void elAltaRevalidaYNoConfiaEnLaPrevisualizacion() {
         PlanProgramacion previo = previsualizarSemana();
@@ -163,11 +154,9 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(7, repetida.salteadas().size());
         assertTrue(repetida.programables().isEmpty());
         assertEquals(7, funciones.listar().size());
-        // La grilla se guarda igual; el informe dice qué pasó.
         assertEquals(2, programaciones.listar().size());
     }
 
-    /** Las funciones ya generadas pueden tener entradas vendidas: la baja solo frena las nuevas. */
     @Test
     void laBajaNoTocaLasFuncionesYaGeneradas() {
         int id = crearSemana(Set.of()).programacion().getId();
@@ -194,7 +183,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class, () -> programaciones.desactivar(99));
     }
 
-    /** R8 vale para la grilla entera, así que falla ya al previsualizar y no al confirmar. */
     @Test
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
         assertThrows(IllegalArgumentException.class,
@@ -223,7 +211,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
-    /** Una grilla de solo lunes sobre un rango de martes a jueves no generaría nada. */
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
         assertThrows(IllegalArgumentException.class,
@@ -231,7 +218,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                         LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
-    /** Sin {@code hasta} el rango no termina: se genera hasta el horizonte. */
     @Test
     void unaGrillaAbiertaGeneraSoloHastaElHorizonte() {
         PlanProgramacion plan = crearAbierta();
@@ -244,7 +230,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void unaGrillaCerradaGeneraTodoSuRangoAunqueSeaLejano() {
-        // El rango de LUNES a DOMINGO cae bastante más allá de dos semanas desde hoy.
         assertEquals(7, crearSemana(Set.of()).funciones().size());
     }
 
@@ -301,7 +286,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(delAlta, funcionRepository.findAll().size());
     }
 
-    /** Dos grillas de la misma película en salas distintas; la de la sala 2, de baja. */
     private void cargarGrillas() {
         crearSemana(Set.of());
         PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
@@ -316,7 +300,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(2, programaciones.buscar(null, null, null).size());
     }
 
-    /** Las dadas de baja no se borran nunca, así que sin este filtro la lista se vuelve ilegible. */
     @Test
     void filtraLasActivasYLasDadasDeBaja() {
         cargarGrillas();
@@ -343,7 +326,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertTrue(programaciones.buscar(99, null, null).isEmpty());
     }
 
-    /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {
         return programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));

@@ -17,7 +17,6 @@ import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.SalaRepository;
 
-/** Salas y butacas. Usa FuncionRepository solo para R12 y para no cambiar el tipo de una sala en uso. */
 @Service
 @Transactional
 public class GestorSalas {
@@ -43,12 +42,6 @@ public class GestorSalas {
         return agregar(nombre, tipo, butacasPorFila, especiales, Sala.LIMPIEZA_POR_DEFECTO);
     }
 
-    /**
-     * La distribución son las butacas por fila de adelante hacia atrás ([8, 10, 12]: A con
-     * 8, B con 10, C con 12). No se guarda: después la sala se describe por sus asientos.
-     *
-     * @param minutosLimpieza cero es válido: se puede encadenar sin corte
-     */
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales, int minutosLimpieza) {
         if (nombre == null || nombre.isBlank()) {
@@ -63,11 +56,9 @@ public class GestorSalas {
         if (butacasPorFila.size() > MAX_FILAS) {
             throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
         }
-        // R2
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
         }
-        // Negativo dejaría empezar la función siguiente antes de que termine la anterior.
         if (minutosLimpieza < 0) {
             throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
         }
@@ -81,10 +72,7 @@ public class GestorSalas {
         return sala;
     }
 
-    /**
-     * Las butacas no se tocan: ver {@link Sala#editar}. El tipo no cambia con funciones,
-     * como R12: una función 3D quedaría en una sala que no la proyecta.
-     */
+    // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + id));
@@ -123,7 +111,6 @@ public class GestorSalas {
         return asientos;
     }
 
-    /** R9: deja de venderse en todas las funciones. */
     public void marcarFueraDeServicio(int salaId, String codigo) {
         cambiarEstado(salaId, codigo, EstadoAsiento.FUERA_DE_SERVICIO);
     }
@@ -152,7 +139,6 @@ public class GestorSalas {
         return salaRepository.findById(id);
     }
 
-    /** R12: dejaría funciones sin sala. */
     public void eliminar(int id) {
         if (!salaRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la sala " + id);

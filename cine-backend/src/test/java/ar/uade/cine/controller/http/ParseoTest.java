@@ -15,7 +15,6 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
-/** El mensaje de rechazo lo lee el usuario, no un programador. */
 class ParseoTest {
 
     @Test
@@ -39,7 +38,6 @@ class ParseoTest {
         assertTrue(e.getMessage().contains("BITCOIN"), "el mensaje no dice qué valor llegó");
     }
 
-    /** El "No enum constant ar.uade.cine..." de Enum.valueOf no puede llegar al usuario. */
     @Test
     void elMensajeNoDejaAsomarNombresDeClases() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
@@ -64,7 +62,6 @@ class ParseoTest {
                 Parseo.constantes(Genero.class, List.of("ACCION", "DRAMA"), "el género"));
     }
 
-    /** La película sin géneros la rechaza el gestor, donde vive esa regla. */
     @Test
     void unaListaAusenteQuedaVacia() {
         assertEquals(List.of(), Parseo.constantes(Genero.class, null, "el género"));

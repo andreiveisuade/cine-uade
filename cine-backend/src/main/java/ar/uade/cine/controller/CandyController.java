@@ -36,10 +36,6 @@ import ar.uade.cine.service.informes.GestorCaja;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * La carta del candy y sus ventas. Es otro circuito que el de las entradas: se paga en el
- * mostrador, así que la compra nace cobrada y no pasa por {@code /api/reservas}.
- */
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
 public class CandyController {
@@ -82,7 +78,6 @@ public class CandyController {
         return vistas.producto(producto);
     }
 
-    /** R14: el combo sale menos que sus componentes sueltos; lo valida el gestor. */
     @Operation(summary = "Armar un combo con productos de la carta")
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
@@ -99,7 +94,6 @@ public class CandyController {
                 Dinero.de(pedido.precio() == null ? 0 : pedido.precio())));
     }
 
-    /** No hay DELETE: borrar un producto dejaría compras viejas apuntando a la nada. */
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
     @PutMapping("/api/candy/productos/{id}/disponibilidad")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
@@ -119,7 +113,6 @@ public class CandyController {
         MedioPago medio = pedido.medio() == null
                 ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
 
-        // Con reserva, el cliente sale de ella y no se lo vuelve a pedir.
         CompraCandy compra = pedido.reservaId() == null
                 ? candy.vender(pedido.clienteId(), pedido.cantidades(), medio, pedido.codigoAutorizacion())
                 : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,

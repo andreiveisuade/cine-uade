@@ -25,13 +25,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.promociones.PoliticaPromociones.Descuento;
 
-/**
- * R15 (las promociones no se acumulan: gana la que más descuenta) y R16 (las entradas de
- * tarifa reducida no participan del descuento), más el cálculo de cada tipo.
- */
 class GestorPromocionesTest extends PruebaDeIntegracion {
 
-    /** 20 de agosto de 2026 es jueves; el 19, miércoles. */
     private static final LocalDateTime JUEVES = LocalDateTime.of(2026, 8, 20, 20, 0);
     private static final LocalDateTime MIERCOLES = LocalDateTime.of(2026, 8, 19, 20, 0);
     private static final LocalDate DESDE = LocalDate.of(2026, 8, 1);
@@ -62,7 +57,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(3000), promo.calcularDescuento(List.of(entrada(5000), entrada(5000))));
     }
 
-    /** Descontar más que el total dejaría un cobro negativo. */
     @Test
     void elMontoFijoNuncaDescuentaMasQueElTotal() {
         Promocion promo = promociones.crearMontoFijo("2000 off", Dinero.de(2000), new CondicionesPromocion(DESDE, HASTA,
@@ -71,7 +65,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(1500), promo.calcularDescuento(List.of(entrada(1500))));
     }
 
-    /** El 2x1 regala la más barata, que es lo que hace cualquier cine. */
     @Test
     void elDosPorUnoRegalaLaMasBarata() {
         Promocion promo = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
@@ -80,7 +73,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(4000), promo.calcularDescuento(List.of(entrada(6000), entrada(4000))));
     }
 
-    /** Con tres entradas entra un solo grupo de dos: la tercera se paga entera. */
     @Test
     void elDosPorUnoSoloCuentaGruposCompletos() {
         Promocion promo = promociones.crearNxM("2x1", 2, 1, new CondicionesPromocion(DESDE, HASTA,
@@ -110,7 +102,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(5000), descuento.monto());
     }
 
-    /** Arbitrario pero determinístico: dos cobros iguales tienen que dar lo mismo. */
     @Test
     void enUnEmpateGanaLaDeMenorId() {
         Promocion primera = promociones.crearPorcentaje("primera", 20, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
@@ -151,7 +142,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertFalse(corre(dos, JUEVES, MedioPago.EFECTIVO));
     }
 
-    /** Es la razón por la que el descuento no se puede resolver al reservar. */
     @Test
     void laDelBancoSoloCorreConEseMedioDePago() {
         promociones.crearMontoFijo("Banco", Dinero.de(1000), new CondicionesPromocion(DESDE, HASTA,
@@ -191,7 +181,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
     }
 
-    /** Un 2x2 no descuenta nada y un 2x3 cobraría de más. */
     @Test
     void rechazaUnNxMQueNoDescuenta() {
         assertThrows(IllegalArgumentException.class, () -> promociones.crearNxM("2x2", 2, 2,

@@ -17,10 +17,6 @@ import ar.uade.cine.repository.PagoRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Cierre de caja <strong>por día</strong>, boletería y candy; {@link GestorInformes} corta
- * por función. Aparte de los gestores que cobran porque cambia por otro motivo. Solo lee.
- */
 @Service
 public class GestorCaja {
 
@@ -36,7 +32,6 @@ public class GestorCaja {
 
     public Arqueo arqueoDe(LocalDate fecha) {
         List<Pago> delDia = pagoRepository.findByDia(fecha);
-        // El pago no guarda cuántas butacas se llevó; las reservas se traen de una vez.
         Map<Integer, Integer> entradasPorReserva = reservaRepository
                 .findAllById(delDia.stream().map(Pago::getReservaId).toList()).stream()
                 .collect(Collectors.toMap(Reserva::getId, Reserva::getCantidadEntradas));
@@ -55,7 +50,6 @@ public class GestorCaja {
         return new Arqueo(fecha, total, entradas, porMedio, delDia);
     }
 
-    /** Mostrador incluido. Aparte del arqueo de boletería porque el borderó solo mira entradas. */
     public Dinero totalCandyDe(LocalDate fecha) {
         return Dinero.sumar(compraCandyRepository.findByDia(fecha).stream()
                 .map(CompraCandy::getTotal).toList());

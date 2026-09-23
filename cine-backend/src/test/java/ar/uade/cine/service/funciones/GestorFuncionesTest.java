@@ -40,7 +40,6 @@ import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
-/** R3: una sala no puede tener dos funciones superpuestas. R12: no se borra lo que está en uso. */
 class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -56,7 +55,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
 
-    /** Película de 120 minutos en la sala 1, con una función a las 20:00. */
     @BeforeEach
     void prepararCartelera() {
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
@@ -65,7 +63,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
     }
 
-    /** Sin este escenario cualquier filtro devolvería todo y los tests pasarían igual. */
     private void cargarMasFunciones() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
@@ -88,11 +85,9 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         assertEquals(2, funciones.buscar(1, null, null, null).size(), "las dos de Interstellar");
         assertEquals(2, funciones.buscar(null, 1, null, null).size(), "las dos de la sala 1");
-        // Cruzar los dos criterios deja una sola: es un Y, no un O.
         assertEquals(1, funciones.buscar(1, 1, null, null).size());
     }
 
-    /** Quien filtra «del 20 al 22» espera ver el 22. */
     @Test
     void elRangoDeFechasIncluyeLosDosExtremos() {
         cargarMasFunciones();
@@ -132,7 +127,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    /** La del setup termina 22:00 y la Sala 1 se limpia en 15 minutos. */
     @Test
     void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
         assertThrows(IllegalArgumentException.class,
@@ -141,7 +135,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    /** Sin nombrar la limpieza, "sala ocupada" a una hora sin funciones parece un error. */
     @Test
     void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
@@ -160,7 +153,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(2, funciones.listar().size());
     }
 
-    /** Cero es válido: una sala que no necesita corte encadena funciones. */
     @Test
     void sinLimpiezaLasFuncionesSePuedenEncadenar() {
         salas.agregar("Sala sin corte", TipoSala.DOS_D, List.of(10, 10), Map.of(), 0);
@@ -172,7 +164,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /** Negativa dejaría empezar la siguiente antes de que termine la anterior. */
     @Test
     void rechazaSalaConLimpiezaNegativa() {
         assertThrows(IllegalArgumentException.class,
@@ -196,7 +187,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500)));
     }
 
-    /** Sin esto, programar saltearía el buzón de revisión. */
     @Test
     void noSePuedeProgramarUnaPeliculaPendienteDeRevision() {
         Pelicula importada = revision.importar(
@@ -227,7 +217,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /** R12: sin esto, borrar la función deja las reservas apuntando a la nada. */
     @Test
     void noSeBorraUnaFuncionConReservas() {
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
@@ -243,7 +232,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(0, funciones.listar().size());
     }
 
-    /** R12: la sala y la película tampoco se borran si tienen funciones programadas. */
     @Test
     void noSeBorraLaSalaNiLaPeliculaConFuncionesProgramadas() {
         assertThrows(IllegalArgumentException.class, () -> salas.eliminar(1));
@@ -255,7 +243,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     }
 
 
-    /** Matrix dura 136 minutos: una función a las 20:00 termina 22:16. */
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {

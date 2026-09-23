@@ -18,20 +18,13 @@ import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.repository.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Importa cartelera desde un {@link CatalogoExterno} y la da de alta por
- * {@link GestorRevisionCartelera}, con las mismas reglas que el alta a mano. Saltear por
- * título (R1) es regla del cine y por eso vive acá, no en el adaptador.
- *
- * <p>Sin {@code @Transactional} a propósito: la corrida no es atómica. Con una transacción,
- * la primera alta rechazada la marcaría rollback-only y se perdería todo, incluso el registro.
- */
+// Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción
+// rollback-only y se perdería la corrida entera, incluso el registro.
 @Service
 public class GestorImportaciones {
 
     private static final int HISTORIAL = 20;
 
-    /** Una página de TMDB son veinte títulos; más de tres tarda demasiado para un botón. */
     private static final int PAGINAS_MAXIMAS = 3;
 
     private final ImportacionRepository importacionRepository;
@@ -42,12 +35,6 @@ public class GestorImportaciones {
     private final Duration esperaEntreCorridas;
     private final Reloj reloj;
 
-    /**
-     * Duraciones configurables para que el perfil de test las baje a cero.
-     *
-     * @param corridaMaxima cuánto puede estar EN_CURSO antes de darla por perdida
-     * @param esperaEntreCorridas el mínimo entre dos corridas seguidas
-     */
     public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
                                GestorCartelera cartelera, GestorRevisionCartelera revision,
                                @Value("${cine.importador.corrida-maxima}") Duration corridaMaxima,
@@ -62,13 +49,6 @@ public class GestorImportaciones {
         this.reloj = reloj;
     }
 
-    /**
-     * Sincrónico: el encargado espera los segundos que tarda TMDB, y así el navegador no
-     * tiene que consultar el estado. Si el catálogo falla, la corrida queda FALLIDA con el
-     * motivo; solo se tira lo que el encargado puede corregir.
-     *
-     * @param paginas cuántas páginas de TMDB traer, o {@code null} para una
-     */
     public Importacion ejecutar(Integer paginas) {
         Importacion importacion = reservarTurno(validarPaginas(paginas));
         try {
@@ -80,7 +60,6 @@ public class GestorImportaciones {
         return importacion;
     }
 
-    /** Una película rechazada no corta la corrida: se anota como fallida y se sigue. */
     private void correr(Importacion importacion) {
         List<DatosPelicula> candidatas = catalogo.enCartelera(importacion.getPaginas());
         Set<String> yaEstan = titulosCargados();
@@ -112,7 +91,7 @@ public class GestorImportaciones {
                 detalle.isEmpty() ? null : detalle.toString().strip(), reloj.ahora());
     }
 
-    /** Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado. */
+    // Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado.
     private Set<String> titulosCargados() {
         Set<String> titulos = new HashSet<>();
         for (Pelicula pelicula : cartelera.listar()) {
@@ -130,10 +109,8 @@ public class GestorImportaciones {
         return titulo == null || titulo.isBlank() ? "(sin título)" : titulo.strip();
     }
 
-    /**
-     * Sincronizado y aparte de la corrida, para rechazar al segundo pedido sin hacerlo
-     * esperar. Alcanza con un candado porque hay un solo backend.
-     */
+    // Sincronizado y aparte de la corrida para rechazar el segundo pedido sin hacerlo esperar.
+    // Alcanza con un candado porque hay un solo backend.
     private synchronized Importacion reservarTurno(int paginas) {
         List<Importacion> ultimas = listar();
         if (!ultimas.isEmpty()) {
@@ -152,7 +129,6 @@ public class GestorImportaciones {
         }
     }
 
-    /** Cada corrida son sesenta llamadas a TMDB, que tiene cuota; dos seguidas no traen nada nuevo. */
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
         LocalDateTime desde = ultima.getTerminoEn();
         if (desde != null && desde.plus(esperaEntreCorridas).isAfter(reloj.ahora())) {
@@ -161,10 +137,7 @@ public class GestorImportaciones {
         }
     }
 
-    /**
-     * De paso da por perdidas las EN_CURSO vencidas: si no, un reinicio a mitad de corrida
-     * bloquearía el importador para siempre.
-     */
+    // De paso caduca las EN_CURSO vencidas: si no, un reinicio a mitad de corrida bloquearía el importador.
     public List<Importacion> listar() {
         List<Importacion> ultimas = importacionRepository.findAllByOrderByIdDesc(Limit.of(HISTORIAL));
         LocalDateTime ahora = reloj.ahora();

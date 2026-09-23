@@ -37,7 +37,6 @@ import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
-    // Estar en cartelera se deriva de tener funciones por delante.
     @Autowired
     private FuncionRepository funcionRepository;
     @Autowired
@@ -54,7 +53,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     private Sala sala;
 
-    /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
     private void programarProxima(int peliculaId) {
         programar(peliculaId, reloj.ahora().plusDays(7));
     }
@@ -143,7 +141,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Dune", gestor.listarEnCartelera().get(0).getTitulo());
     }
 
-    /** Sin funciones no está en cartelera, aunque el flag venga en true. */
     @Test
     void unaPeliculaSinFuncionesNoEstaEnCartelera() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
@@ -178,7 +175,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listarEnCartelera().size());
     }
 
-    /** R1 al editar: quien reconstruya una película con un id existente podría duplicar el título. */
     @Test
     void noSePuedeEditarUnaPeliculaParaQueQuedeConElTituloDeOtra() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
@@ -262,7 +258,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Matrix", gestor.buscar(null, Genero.ACCION, null).get(0).getTitulo());
     }
 
-    /** Tres películas que se solapan en género y estado, para que ningún filtro sea trivial. */
     private void cargarCatalogo() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
         gestor.agregar("Matrix Reloaded", 138, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -274,7 +269,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         cargarCatalogo();
 
         assertEquals(3, gestor.buscar(null, null, null).size());
-        // La cadena vacía es lo que manda un input sin tocar.
         assertEquals(3, gestor.buscar("", null, null).size());
     }
 
@@ -361,7 +355,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertTrue(revision.listarPendientes().isEmpty());
     }
 
-    /** Descartada no es borrada: sin el registro, el importador la traería de nuevo. */
     @Test
     void descartarLaGuardaEnVezDeBorrarla() {
         Pelicula importada = revision.importar(deTmdb("Dune"));
@@ -405,7 +398,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /** Sin funciones de por medio: la grilla sola ya alcanza para frenar el borrado. */
     @Test
     void noBorraLaProgramadaAunqueNoTengaFunciones() {
         Pelicula pelicula = gestor.agregar("La Odisea", 150, List.of(Genero.DRAMA),

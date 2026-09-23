@@ -24,11 +24,6 @@ import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Elige la implementación de cada puerto hacia afuera: es el único lugar que las nombra.
- * Van como {@code @Bean} y no {@code @Component} porque dependen de {@code application.yml}
- * y la decisión se lee mejor junta. Los comprobantes van a disco: se entregan, no se consultan.
- */
 @Configuration
 public class Adaptadores {
 
@@ -53,11 +48,7 @@ public class Adaptadores {
         return new GeneradorBorderoTxt(directorio);
     }
 
-    /**
-     * Redis y no la base: los bloqueos duran minutos y después no importan. Si Redis cae,
-     * se vende sin bloqueos y la doble venta la sigue impidiendo el UNIQUE de la base.
-     * El perfil de test usa la implementación en memoria.
-     */
+    // Si Redis cae se vende sin bloqueos: la doble venta la sigue impidiendo el UNIQUE de la base.
     @Bean
     @Profile("!test")
     public BloqueoButacas bloqueoButacas(@Value("${cine.redis.host}") String host,
@@ -65,7 +56,6 @@ public class Adaptadores {
         return new BloqueoButacasRedis(host, puerto);
     }
 
-    /** El perfil de test pone un reloj que se mueve a mano. */
     @Bean
     @Profile("!test")
     public Reloj reloj() {
@@ -77,10 +67,7 @@ public class Adaptadores {
         return new MercadoPagoEmulado();
     }
 
-    /**
-     * Sin token el bean se arma igual: no poder importar cartelera no debe impedir vender.
-     * La pantalla del importador avisa que falta.
-     */
+    // Sin token el bean se arma igual: no poder importar cartelera no debe impedir vender.
     @Bean
     @Profile("!test")
     public CatalogoExterno catalogoExterno(@Value("${cine.tmdb.token}") String token,

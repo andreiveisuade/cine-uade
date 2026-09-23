@@ -15,19 +15,13 @@ import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
-/**
- * Bloqueos en Redis, una clave por butaca con TTL: el vencimiento viene puesto. Si Redis no
- * responde contesta "sin bloqueos" y se sigue vendiendo, porque la garantía contra la doble
- * venta es el {@code UNIQUE (funcion_id, asiento_id)} de MySQL. Clave por butaca y no hash
- * por función para que butaca y vencimiento se escriban en un solo comando ({@code SET NX PX}).
- */
 public class BloqueoButacasRedis implements BloqueoButacas {
 
     private static final Logger LOG = LoggerFactory.getLogger(BloqueoButacasRedis.class);
 
     private static final String PREFIJO = "cine:bloqueo:";
 
-    /** Script para que tomar y renovar sean atómicos: con GET y SET sueltos cabe otra sesión. */
+    // Script para que tomar y renovar sean atómicos: con GET y SET sueltos cabe otra sesión.
     private static final String TOMAR_O_RENOVAR = """
             if redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then return 1 end
             if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -45,7 +39,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
     private final JedisPooled redis;
     private boolean caido;
 
-    /** No conecta al construirse: el backend levanta aunque Redis no esté arriba. */
+    // No conecta al construirse: el backend levanta aunque Redis no esté arriba.
     public BloqueoButacasRedis() {
         this(variable("REDIS_HOST", "localhost"),
                 Integer.parseInt(variable("REDIS_PORT", "6379")));
@@ -87,7 +81,6 @@ public class BloqueoButacasRedis implements BloqueoButacas {
         }
         Map<Integer, String> tomadas = new LinkedHashMap<>();
         for (int i = 0; i < claves.size(); i++) {
-            // Null si la clave venció entre el SCAN y el MGET.
             if (sesiones.get(i) != null) {
                 tomadas.put(asientoDe(claves.get(i)), sesiones.get(i));
             }
@@ -95,7 +88,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
         return tomadas;
     }
 
-    /** SCAN y no KEYS, que bloquea al servidor mientras recorre todas las claves. */
+    // SCAN y no KEYS, que bloquea al servidor mientras recorre todas las claves.
     private List<String> clavesDe(int funcionId) {
         ScanParams parametros = new ScanParams().match(PREFIJO + funcionId + ":*").count(100);
         List<String> claves = new ArrayList<>();
@@ -108,10 +101,6 @@ public class BloqueoButacasRedis implements BloqueoButacas {
         return claves;
     }
 
-    /**
-     * {@code null} si Redis no está, para contestar como sin bloqueos. Loguea solo el cambio
-     * de estado, no cada consulta.
-     */
     private <T> T intentar(Supplier<T> comando) {
         try {
             T resultado = comando.get();

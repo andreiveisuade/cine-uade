@@ -9,10 +9,6 @@ import java.util.List;
 
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
-/**
- * Formato y escritura comunes a los comprobantes en texto; cada generador solo dice qué
- * líneas lleva el suyo.
- */
 abstract class ComprobanteTxt {
 
     private static final DateTimeFormatter FORMATO_FECHA =
@@ -25,7 +21,6 @@ abstract class ComprobanteTxt {
         this.directorio = directorio;
     }
 
-    /** @param queEs cómo nombrarlo en el error, por ejemplo "el ticket de la reserva 12" */
     protected final void escribir(String nombreArchivo, List<String> lineas, String queEs) {
         try {
             Files.createDirectories(directorio);

@@ -27,10 +27,6 @@ import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 
-/**
- * Contra un catálogo de mentira: qué entra al buzón, qué se saltea y qué queda registrado.
- * El alta es real, por {@link GestorRevisionCartelera}, con las mismas reglas que a mano.
- */
 class GestorImportacionesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -44,10 +40,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorRevisionCartelera revision;
 
-    /**
-     * El bean y no un {@code new}: sin el proxy transaccional no se ven los errores de límite
-     * de transacción. El perfil de test pone la espera entre corridas en cero.
-     */
+    // El bean y no un new: sin el proxy transaccional no se ven los errores de límite de transacción.
     @Autowired
     private GestorImportaciones gestor;
 
@@ -65,7 +58,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, catalogo.consultas());
     }
 
-    /** Lo que baja de un catálogo ajeno es una propuesta, no una decisión del cine. */
     @Test
     void loQueEntraQuedaEnElBuzonYNoEnCartelera() {
         catalogo.queTraiga("Duna");
@@ -77,7 +69,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertFalse(importada.estaEnCartelera(), "no puede ofrecerse antes de que la miren");
     }
 
-    /** La corrida es repetible: R1 rechazaría los títulos que ya están. */
     @Test
     void lasQueYaEstanNoSeVuelvenAProponer() {
         catalogo.queTraiga("Duna", "Vaiana");
@@ -91,7 +82,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(2, peliculaRepository.findAll().size(), "no se duplicó ninguna");
     }
 
-    /** Si la descartada no contara como cargada, cada corrida la volvería a proponer. */
     @Test
     void unaDescartadaTampocoSeVuelveAProponer() {
         catalogo.queTraiga("Duna");
@@ -104,7 +94,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, segunda.getSalteadas());
     }
 
-    /** TMDB puede traer el mismo título dos veces entre páginas. No es una falla. */
     @Test
     void elMismoTituloDosVecesEnLaCorridaCuentaComoSalteado() {
         catalogo.queTraiga("Duna", "Duna");
@@ -116,7 +105,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(0, importacion.getFallidas());
     }
 
-    /** Una corrida que se cae a la mitad es peor que una que no corre. */
     @Test
     void laQueElAltaRechazaQuedaFallidaYLaCorridaSigue() {
         catalogo.queTraiga(sinDuracion("Corto de festival"), pelicula("Duna"));
@@ -157,7 +145,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertTrue(gestor.listar().isEmpty(), "no tendría que haber quedado registro");
     }
 
-    /** Que el catálogo no conteste es un resultado, no un error: queda en el historial. */
     @Test
     void siElCatalogoFallaLaCorridaQuedaFallidaConElMotivo() {
         catalogo.queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
@@ -206,7 +193,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, catalogo.consultas());
     }
 
-    /** Un reinicio a mitad de corrida deja la fila EN_CURSO para siempre; la caduca quien consulta. */
     @Test
     void unaCorridaColgadaCaducaSolaYDesbloqueaElSistema() {
         importacionRepository.save(new Importacion(1, reloj.ahora().minusMinutes(10)));
@@ -234,7 +220,6 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals("Falta el token de TMDB", gestor.estadoDelImportador().detalle());
     }
 
-    /** Lo que TMDB trae sin duración: el alta lo rechaza por R2, y así tiene que ser. */
     private static DatosPelicula sinDuracion(String titulo) {
         return new DatosPelicula(titulo, 0, List.of(Genero.DRAMA), Clasificacion.ATP,
                 "", "", 2026, "Inglés", "", false, 6.0, 50);

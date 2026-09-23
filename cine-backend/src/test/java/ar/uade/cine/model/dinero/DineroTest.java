@@ -12,7 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/** Cada caso de la primera sección es un cálculo que con {@code double} da mal. */
 class DineroTest {
 
     @Nested
@@ -22,7 +21,6 @@ class DineroTest {
         @Test
         @DisplayName("5250.50 x 1.3 daba 6825.650000000001 en double")
         void elCasoDeLaCalculadoraDePrecios() {
-            // Con double no da: obligaría a redondear después de cada cuenta.
             assertNotEquals(6825.65, 5250.50 * 1.3);
 
             assertEquals(Dinero.de(6825.65), Dinero.de(5250.50).por(1.3));
@@ -46,7 +44,6 @@ class DineroTest {
         @Test
         @DisplayName("trescientos cobros con centavos suman exacto: es el arqueo del día")
         void elArqueoDeUnDiaCompletoNoDeriva() {
-            // 300 cobros de $1234,56. Con double, el total se despega de a poco; acá no.
             List<Dinero> cobros = IntStream.range(0, 300)
                     .mapToObj(i -> Dinero.de(1234.56))
                     .toList();

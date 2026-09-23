@@ -9,10 +9,6 @@ import ar.uade.cine.infrastructure.comprobantes.GeneradorBordero;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.informes.Bordero;
 
-/**
- * Escribe el borderó en informes/bordero-funcion-&lt;id&gt;.txt. Lo reescribe cada vez:
- * vale el último, porque se vende hasta que la película arranca.
- */
 public class GeneradorBorderoTxt extends ComprobanteTxt implements GeneradorBordero {
 
     public GeneradorBorderoTxt(Path directorio) {
@@ -39,7 +35,6 @@ public class GeneradorBorderoTxt extends ComprobanteTxt implements GeneradorBord
                     tarifa.getKey(), tarifa.getValue().cantidad(), tarifa.getValue().total()));
         }
         if (bordero.porTarifa().isEmpty()) {
-            // Una función sin ventas se declara igual: cero también es un dato.
             lineas.add(" Sin entradas vendidas");
         }
 

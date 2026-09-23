@@ -23,17 +23,12 @@ import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 import ar.uade.cine.service.usuarios.CredencialesInvalidas;
 import ar.uade.cine.service.ventas.ButacaOcupadaException;
 
-/**
- * Traduce los errores del negocio a códigos HTTP. Un {@code IllegalArgumentException} de un
- * gestor sale como 400 con el mensaje <strong>intacto</strong>: es el texto que el front le
- * muestra al usuario, y hay tests que lo comparan entero.
- */
 @RestControllerAdvice
 public class ManejadorErrores {
 
     private static final Logger LOG = LoggerFactory.getLogger(ManejadorErrores.class);
 
-    /** Lo que rechaza un gestor: dato inválido o regla de negocio incumplida. */
+    // El mensaje sale intacto: es el texto que ve el usuario.
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorVistaDTO> datoInvalido(IllegalArgumentException e) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -44,19 +39,16 @@ public class ManejadorErrores {
         return responder(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    /** El pedido está bien formado pero quien llama no es quien dice ser. */
     @ExceptionHandler(CredencialesInvalidas.class)
     public ResponseEntity<ErrorVistaDTO> credencialesInvalidas(CredencialesInvalidas e) {
         return responder(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
 
-    /** Perder la carrera por una butaca es legítimo, no una falla: 409 y el front repinta el mapa. */
     @ExceptionHandler(ButacaOcupadaException.class)
     public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupadaException e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    /** Un id que no es número: 404 y no 400, porque la URL no apunta a nada. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e) {
         return responder(HttpStatus.NOT_FOUND, "El identificador " + e.getValue() + " no es válido");
@@ -72,7 +64,6 @@ public class ManejadorErrores {
         return responder(HttpStatus.BAD_REQUEST, "Falta el parámetro " + e.getParameterName());
     }
 
-    /** 405 y no 404: la ruta existe, y {@code Allow} dice qué métodos acepta. */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorVistaDTO> metodoNoPermitido(HttpRequestMethodNotSupportedException e) {
         Set<HttpMethod> aceptados = e.getSupportedHttpMethods();
@@ -91,7 +82,6 @@ public class ManejadorErrores {
         return responder(HttpStatus.NOT_FOUND, "No existe la ruta /" + e.getResourcePath());
     }
 
-    /** Una falla de la base no es culpa de quien llama: mensaje genérico y el detalle al log. */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorVistaDTO> falloDePersistencia(DataAccessException e) {
         LOG.error("Falló el acceso a los datos", e);
@@ -104,10 +94,7 @@ public class ManejadorErrores {
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir el comprobante");
     }
 
-    /**
-     * Sin esto Spring contesta con su propio formato y el front, que espera {@code {error}},
-     * mostraría un mensaje vacío. Las de Spring MVC conservan su código (406, 413...).
-     */
+    // Sin esto Spring contesta con su propio formato y el front, que espera {error}, muestra vacío.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorVistaDTO> errorInesperado(Exception e) {
         if (e instanceof ErrorResponse deSpring) {

@@ -6,14 +6,9 @@ import java.util.Optional;
 
 import ar.uade.cine.model.funciones.Funcion;
 
-/**
- * Lo tomado en una sala y la única definición de R3: dos funciones se pisan si cada una
- * empieza antes de que termine la otra, con la limpieza sumada a los dos lados. Se arma
- * con una lectura para que el planificador pregunte cientos de veces sin ir a la base.
- */
+// Única definición de R3: se pisan si cada una empieza antes de que termine la otra, limpieza incluida.
 public final class AgendaDeSala {
 
-    /** La función más su limpieza. */
     public record Tramo(Funcion funcion, LocalDateTime inicio, LocalDateTime fin) {
     }
 

@@ -30,26 +30,16 @@ import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Arma la grilla de la semana: elige películas y las reparte en las salas. Equilibra
- * puntaje, diversidad de géneros y ocupación, porque cualquiera de los tres solo da una
- * grilla mala. Respeta R3 vía {@link GestorFunciones#agendaDe} y es determinista, para
- * que previsualizar y aplicar den lo mismo.
- */
 @Service
 @Transactional
 public class PlanificadorGrilla {
 
-    /**
-     * Bono por géneros que el elenco no cubre: alcanza para que una comedia de 7,0 le gane
-     * a la cuarta de acción de 8,5. Crece con la raíz porque TMDB etiqueta de más.
-     */
+    // Crece con la raíz porque TMDB etiqueta de más.
     private static final double BONO_GENERO_NUEVO = 2.0;
 
-    /** Votos desde los cuales el puntaje vale solo; con menos, pesa el promedio del catálogo. */
+    // Votos desde los cuales el puntaje vale solo; con menos, pesa el promedio del catálogo.
     private static final int VOTOS_PARA_CONFIAR = 50;
 
-    /** Media hora: es la grilla en la que un cine publica horarios (20:00, 20:30). */
     private static final int MINUTOS_ENTRE_INTENTOS = 30;
 
     private final PeliculaRepository peliculaRepository;
@@ -62,7 +52,6 @@ public class PlanificadorGrilla {
         this.funciones = funciones;
     }
 
-    /** La propuesta, sin escribir nada. */
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
         validar(criterios);
         List<Pelicula> elenco = elegirElenco(criterios.cuantasPeliculas());
@@ -74,7 +63,7 @@ public class PlanificadorGrilla {
         return new PropuestaGrilla(elenco, pases, medir(elenco, pases, criterios));
     }
 
-    /** Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada. */
+    // Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada.
     public PropuestaGrilla aplicar(CriteriosGrilla criterios) {
         PropuestaGrilla propuesta = proponer(criterios);
         for (PaseSugerido pase : propuesta.pases()) {
@@ -84,12 +73,6 @@ public class PlanificadorGrilla {
         return propuesta;
     }
 
-    // ---------- etapa 1: quiénes ----------
-
-    /**
-     * Goloso: cada vuelta toma la de mayor puntaje más bono por géneros nuevos. No el
-     * óptimo exacto porque difiere en decimales y el goloso se explica en una pantalla.
-     */
     private List<Pelicula> elegirElenco(int cuantas) {
         List<Pelicula> candidatas = new ArrayList<>(
                 peliculaRepository.findByEstadoRevision(EstadoRevision.CONFIRMADA).stream()
@@ -113,7 +96,7 @@ public class PlanificadorGrilla {
         return elenco;
     }
 
-    /** La primera no lleva bono: premiaría a la que tiene más etiquetas de TMDB. */
+    // La primera no lleva bono: premiaría a la que tiene más etiquetas de TMDB.
     private double valor(Pelicula pelicula, Set<Genero> cubiertos, boolean primera, double promedio) {
         double puntaje = puntajeConfiable(pelicula, promedio);
         if (primera) {
@@ -123,12 +106,7 @@ public class PlanificadorGrilla {
         return puntaje + BONO_GENERO_NUEVO * Math.sqrt(nuevos);
     }
 
-    /**
-     * Puntaje corregido por cantidad de votos (la corrección de IMDb/TMDB): un 8,0 con seis
-     * votos no vale lo mismo que con cinco mil.
-     *
-     * <pre>  valor = (v / (v + m)) × nota  +  (m / (v + m)) × promedio</pre>
-     */
+    // Promedio bayesiano: (v / (v + m)) × nota + (m / (v + m)) × promedio.
     private double puntajeConfiable(Pelicula pelicula, double promedio) {
         int votos = pelicula.getVotos();
         if (votos <= 0) {
@@ -139,7 +117,7 @@ public class PlanificadorGrilla {
         return peso * pelicula.getPuntaje() + (1 - peso) * promedio;
     }
 
-    /** Ponderado por votos; los ceros de las no votadas no entran porque hundirían la referencia. */
+    // Ponderado por votos; los ceros de las no votadas hundirían la referencia.
     private double promedioDelCatalogo(List<Pelicula> candidatas) {
         double votos = candidatas.stream().mapToDouble(Pelicula::getVotos).sum();
         if (votos > 0) {
@@ -154,13 +132,6 @@ public class PlanificadorGrilla {
                 .orElse(0);
     }
 
-    // ---------- etapa 2: dónde y cuándo ----------
-
-    /**
-     * En cada hueco entra la película con más «deuda» (menos pases en relación a su
-     * puntaje); si choca con la agenda (R3) se corre al siguiente. La agenda se lee una
-     * vez por sala porque una consulta por intento es demasiado lenta.
-     */
     private List<PaseSugerido> repartir(List<Pelicula> elenco, CriteriosGrilla criterios,
                                         double promedio) {
         List<Sala> salas = salaRepository.findAll();
@@ -198,7 +169,6 @@ public class PlanificadorGrilla {
         return pases;
     }
 
-    /** La de menor {@code asignados / peso}: con pesos 8 y 4, la primera recibe el doble de pases. */
     private Pelicula conMasDeuda(List<Pelicula> elenco, Map<Integer, Integer> asignados,
                                  double promedio) {
         return elenco.stream()
@@ -208,17 +178,11 @@ public class PlanificadorGrilla {
                 .orElseThrow();
     }
 
-    /** Nunca cero: con puntaje 0 la deuda sería infinita y se llevaría la grilla entera. */
+    // Nunca cero: con puntaje 0 la deuda sería infinita y se llevaría la grilla entera.
     private double peso(Pelicula pelicula, double promedio) {
         return Math.max(puntajeConfiable(pelicula, promedio), 0.1);
     }
 
-    // ---------- los números para poder defenderla ----------
-
-    /**
-     * La ventana menos lo ya programado adentro de ella; sin descontarlo, una semana casi
-     * llena mostraría una ocupación baja.
-     */
     private int minutosLibres(CriteriosGrilla criterios) {
         long minutosPorDia = Duration.between(criterios.apertura(), criterios.cierreEfectivo()).toMinutes();
         int ventana = (int) (minutosPorDia * criterios.dias() * salaRepository.count());

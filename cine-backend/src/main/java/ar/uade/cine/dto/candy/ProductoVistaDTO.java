@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-/** Un combo viaja con sus {@code componentes}, sin endpoint aparte. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ProductoVistaDTO(int id, String nombre, String tipo, double precio,
                             boolean disponible, boolean esCombo,

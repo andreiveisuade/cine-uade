@@ -12,10 +12,6 @@ import ar.uade.cine.service.usuarios.GestorEmpleados;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Inicio de sesión del encargado (CU-10). No se inventa un mensaje propio: el del gestor es
- * el mismo para email inexistente y contraseña equivocada, y no filtra qué emails existen.
- */
 @Tag(name = "Sesión", description = "El login del panel")
 @RestController
 public class SesionController {

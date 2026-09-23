@@ -47,10 +47,6 @@ import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Qué campos trae cada variante de la función: el front decide qué dibujar según lo que
- * venga, y mandar de más es tan error como mandar de menos.
- */
 class VistasCarteleraTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -135,7 +131,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertTrue(vista.asientos().stream().noneMatch(a -> a.ocupado()));
     }
 
-    /** La ocupación la decide Ocupacion (R4), no la vista: así el mapa y la reserva coinciden. */
     @Test
     void elMapaMarcaLasButacasYaReservadas() {
         Funcion funcion = programarUnaFuncion();
@@ -150,7 +145,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals(9, vista.libres());
     }
 
-    /** El precio de la función no contempla la tecnología de la sala; el "desde $" sí. */
     @Test
     void elPrecioDesdeContemplaLaSalaPeroNoElTipoDeButaca() {
         Sala imax = salas.agregar("IMAX", TipoSala.IMAX, List.of(2),
@@ -178,7 +172,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals("DOS_D", vista.proyeccion());
     }
 
-    /** 404 y no 500: el front muestra mensajes distintos. */
     @Test
     void unaFuncionSinSalaEsUnRecursoQueNoExiste() {
         Pelicula matrix = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);

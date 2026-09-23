@@ -15,10 +15,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
-/**
- * Película del catálogo. Lo que participa de reglas va en el constructor; los datos que
- * solo se muestran van por setters, para no tener un constructor de nueve parámetros.
- */
 @Entity
 public class Pelicula {
 
@@ -58,7 +54,6 @@ public class Pelicula {
 
     private int votos;
 
-    /** Cargarla a mano ya es decidirla; solo el importador la deja PENDIENTE. */
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
@@ -99,7 +94,7 @@ public class Pelicula {
         }
     }
 
-    /** Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia. */
+    // Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia.
     public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
         this.titulo = titulo;
@@ -133,7 +128,6 @@ public class Pelicula {
         this.anio = anio;
     }
 
-    /** Distinto de la {@code Version} de la función (doblada o subtitulada). */
     public String getIdiomaOriginal() {
         return idiomaOriginal;
     }
@@ -158,7 +152,6 @@ public class Pelicula {
         this.enCartelera = enCartelera;
     }
 
-    /** {@code vote_average} de TMDB (0 si no hay dato): ordena el planificador. */
     public double getPuntaje() {
         return puntaje;
     }

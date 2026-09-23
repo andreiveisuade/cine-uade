@@ -5,11 +5,6 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
-/**
- * Producto y cantidad dentro de un combo; permite comparar el combo contra comprarlo suelto.
- * {@code @Embeddable} porque no tiene identidad propia. El producto va por objeto porque el
- * ticket necesita su nombre.
- */
 @Embeddable
 public class ItemCombo {
 

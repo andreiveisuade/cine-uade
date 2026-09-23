@@ -10,11 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-/**
- * Corrida del importador. Se persiste porque «¿cuándo trajimos cartelera?» es una pregunta
- * del encargado y sobrevive reinicios. Guarda cuántas películas entraron, no cuáles: eso ya
- * está en las películas con su {@link EstadoRevision}.
- */
 @Entity
 public class Importacion {
 
@@ -37,7 +32,6 @@ public class Importacion {
 
     private int fallidas;
 
-    /** Texto para leer, no para consultar. */
     @Column(columnDefinition = "TEXT")
     private String detalle;
 
@@ -77,7 +71,6 @@ public class Importacion {
         return pedidaEn;
     }
 
-    /** {@code null} mientras la corrida sigue. */
     public LocalDateTime getTerminoEn() {
         return terminoEn;
     }

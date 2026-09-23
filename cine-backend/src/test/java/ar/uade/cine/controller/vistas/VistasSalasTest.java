@@ -35,10 +35,6 @@ import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * El JSON de salas es contrato con el front: un cambio de forma no rompe ninguna regla, así que
- * ningún test de servicio lo atraparía.
- */
 class VistasSalasTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -58,7 +54,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
     }
 
-    /** Contarla en vez de guardarla evita corregir un número al marcar una butaca fuera de servicio. */
     @Test
     void laDistribucionSeDerivaDeLasButacasQueExisten() {
         SalaVistaDTO vista = vistas.sala(salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3, 5, 2)));
@@ -86,7 +81,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
         assertEquals("HABILITADO", butaca(vista, "A1").estado());
     }
 
-    /** Ocupado y precio dependen de la función (R4): sin ella viajan en null, no false y cero. */
     @Test
     void fueraDeUnaFuncionNoSeSabeSiEstaTomadaNiCuantoSale() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(2));
@@ -120,10 +114,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
         assertFalse(vistas.asiento(a2, funcion, sala, Set.of(a1.getId())).ocupado());
     }
 
-    /**
-     * La tarifa de cada persona solo puede bajar el precio: si el mapa mostrara la más barata, el
-     * total superaría lo anunciado.
-     */
     @Test
     void elMapaMuestraElPrecioDeTarifaGeneral() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3));
@@ -151,7 +141,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
     }
 
     private Funcion programarEn(Sala sala, double precio) {
-        // pesos en el test, Dinero en el sistema
         return funciones.programar(1, sala.getId(), LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(precio));
     }

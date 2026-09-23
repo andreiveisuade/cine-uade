@@ -13,7 +13,6 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
-/** Escribe el comprobante en tickets/ticket-&lt;id&gt;.txt. */
 public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicket {
 
     public GeneradorTicketTxt(Path directorio) {
@@ -35,7 +34,6 @@ public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicke
                 campo("Emitido", fecha(reserva.getCreadaEn())),
                 linea()));
 
-        // Con la tarifa de cada butaca: es lo que se acredita en la puerta.
         for (Entrada entrada : reserva.getEntradas()) {
             String butaca = "Butaca " + entrada.codigoAsiento();
             String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + entrada.tarifa();

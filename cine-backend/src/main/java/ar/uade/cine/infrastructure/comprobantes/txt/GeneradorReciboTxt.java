@@ -9,10 +9,6 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 
-/**
- * Escribe el recibo en tickets/recibo-&lt;id de pago&gt;.txt. Se numera por el pago para
- * encontrarlo desde el arqueo; no repite butacas, que ya están en el ticket.
- */
 public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecibo {
 
     public GeneradorReciboTxt(Path directorio) {

@@ -13,11 +13,7 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
-/**
- * Base de las personas del sistema; el empleado tiene credenciales y el cliente no. Tabla
- * única discriminada por {@code rol}, con una fórmula porque tres roles caen en dos clases
- * (ADMINISTRADOR y ACOMODADOR son empleados) y una columna extra duplicaría el dato.
- */
+// Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -33,7 +29,6 @@ public abstract class Usuario {
     @Column(unique = true)
     private String email;
 
-    /** Columna común y no discriminador de JPA: además de la clase, es un dato que se lee. */
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
     private Rol rol;

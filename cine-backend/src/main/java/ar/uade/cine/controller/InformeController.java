@@ -23,10 +23,6 @@ import ar.uade.cine.service.informes.InformeFuncion;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * Los informes por función: el borderó del INCAA y la recaudación completa. Arma sus DTO sin
- * un {@code Vistas*} porque el informe ya viene calculado del gestor.
- */
 @Tag(name = "Informes", description = "El borderó del INCAA y la recaudación por función")
 @RestController
 public class InformeController {
@@ -46,7 +42,6 @@ public class InformeController {
         return vista(informes.borderoDe(id));
     }
 
-    /** POST porque escribe el archivo que se sube al INCAA. */
     @Operation(summary = "Emitir el archivo del borderó que se sube al INCAA")
     @PostMapping("/api/funciones/{id}/bordero")
     @ResponseStatus(HttpStatus.CREATED)
@@ -64,7 +59,7 @@ public class InformeController {
                 informe.candy().aPesos(), informe.total().aPesos());
     }
 
-    /** Se chequea acá para responder 404 y no el 400 del gestor. */
+    // Se chequea acá para responder 404 y no el 400 del gestor.
     private void exigirFuncion(int id) {
         funciones.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la función " + id));
     }

@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Cliente;
 
-/** El cliente compra sin registrarse: se identifica por email y se da de alta la primera vez. */
 class GestorClientesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -34,7 +33,6 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /** Sin normalizar, un espacio de más duplicaría al cliente y partiría su historial. */
     @Test
     void identificarIgnoraLosEspaciosDeMasEnElEmail() {
         Cliente primera = gestor.identificar("Andrei", "andrei@uade.edu.ar");

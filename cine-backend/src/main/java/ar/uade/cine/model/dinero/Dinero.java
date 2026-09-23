@@ -2,20 +2,13 @@ package ar.uade.cine.model.dinero;
 
 import java.util.Collection;
 
-/**
- * Plata en centavos enteros y no {@code double}, que no representa 0,10 exacto: así las
- * sumas son exactas y se redondea una sola vez, al entrar. Decimal solo en los bordes
- * ({@link #de(double)}, {@link #aPesos()}). Comparable por R15: gana la promo que más descuenta.
- *
- * @param centavos puede ser negativo: una diferencia de caja hacia abajo es válida
- */
+// Centavos enteros y no double, que no representa 0,10 exacto.
 public record Dinero(long centavos) implements Comparable<Dinero> {
 
     public static final Dinero CERO = new Dinero(0);
 
     private static final int CENTAVOS_POR_PESO = 100;
 
-    /** La única puerta por donde entra un redondeo. */
     public static Dinero de(double pesos) {
         return new Dinero(Math.round(pesos * CENTAVOS_POR_PESO));
     }
@@ -24,7 +17,6 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return new Dinero(centavos);
     }
 
-    /** Solo para los bordes: hacer cuentas con esto devuelve el problema del {@code double}. */
     public double aPesos() {
         return centavos / (double) CENTAVOS_POR_PESO;
     }
@@ -37,7 +29,6 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return new Dinero(centavos - otro.centavos);
     }
 
-    /** El factor es {@code double} porque 1,3 es una proporción, no plata. */
     public Dinero por(double factor) {
         return new Dinero(Math.round(centavos * factor));
     }
@@ -75,7 +66,6 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return Long.compare(centavos, otro.centavos);
     }
 
-    /** Sin símbolo de moneda: ponerlo es decisión de quien muestra. */
     @Override
     public String toString() {
         long pesos = centavos / CENTAVOS_POR_PESO;

@@ -10,7 +10,6 @@ import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.usuarios.Cliente;
 
-/** Escribe el comprobante en tickets/candy-&lt;id&gt;.txt. */
 public class GeneradorTicketCandyTxt extends ComprobanteTxt implements GeneradorTicketCandy {
 
     public GeneradorTicketCandyTxt(Path directorio) {
@@ -24,7 +23,6 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
                 centrar("CINE UADE - CANDY"),
                 centrar("COMPRA #" + compra.getId()),
                 linea(),
-                // Sin cliente es venta de mostrador.
                 campo("Cliente", cliente == null ? "Consumidor final" : cliente.getNombre()),
                 campo("Fecha", fecha(compra.getFecha())),
                 linea()));
