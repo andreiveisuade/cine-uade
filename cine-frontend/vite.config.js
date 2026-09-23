@@ -6,15 +6,6 @@ const SISTEMA = "http://localhost:8080";
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    // Dos entradas: el cliente y el panel no comparten sesión ni menú.
-    rolldownOptions: {
-      input: {
-        cliente: "index.html",
-        admin: "admin.html",
-      },
-    },
-  },
   server: {
     proxy: {
       "/api": SISTEMA,

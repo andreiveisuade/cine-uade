@@ -49,9 +49,3 @@ export function porDia(funciones) {
   }
   return [...grupos.entries()];
 }
-
-export function hoyISO() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}

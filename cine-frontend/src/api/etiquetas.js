@@ -79,7 +79,3 @@ export const COLOR_ESTADO = {
   TERMINADA: "green",
   FALLIDA: "red",
 };
-
-export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
-
-export const TIPOS_PRODUCTO_SUELTO = ["POCHOCLOS", "BEBIDA", "GOLOSINA"];

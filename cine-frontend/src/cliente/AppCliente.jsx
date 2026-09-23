@@ -37,7 +37,6 @@ export function AppCliente() {
             <Group gap="md" wrap="nowrap">
               <Enlace a="/mis-reservas">Mis reservas</Enlace>
               <Enlace a="/registro">Registrarme</Enlace>
-              <Anchor href="admin.html" size="sm" c="dimmed" visibleFrom="sm">Acceso encargado</Anchor>
               <BotonTema />
             </Group>
           </Group>
