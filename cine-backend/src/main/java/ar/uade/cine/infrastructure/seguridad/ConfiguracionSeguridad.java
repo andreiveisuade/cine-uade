@@ -14,8 +14,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,6 +27,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
+import ar.uade.cine.service.usuarios.GestorEmpleados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -121,9 +125,26 @@ public class ConfiguracionSeguridad {
                 .orElseThrow(() -> new UsernameNotFoundException("No hay un empleado con ese email"));
     }
 
+    // Lo nuevo sale como {bcrypt}…; un hash sin prefijo es el SHA-256 de antes y se sigue
+    // aceptando, para no romper el seed ni las bases ya creadas. Solo bcrypt en el mapa: el
+    // de fábrica de Spring también aceptaría {noop}, una clave en texto plano en la base.
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new PasswordSha256();
+        DelegatingPasswordEncoder claves = new DelegatingPasswordEncoder("bcrypt",
+                Map.of("bcrypt", new BCryptPasswordEncoder()));
+        claves.setDefaultPasswordEncoderForMatches(new PasswordSha256());
+        return claves;
+    }
+
+    // Spring Security lo llama después de un login correcto cuyo hash no es bcrypt: es el único
+    // momento en que se tiene la clave en claro. Sin esto los SHA-256 no migrarían nunca, porque
+    // no hay pantalla para cambiar la contraseña.
+    @Bean
+    public UserDetailsPasswordService rehashearAlEntrar(GestorEmpleados empleados) {
+        return (usuario, hashNuevo) -> {
+            empleados.reemplazarHash(usuario.getUsername(), hashNuevo);
+            return User.withUserDetails(usuario).password(hashNuevo).build();
+        };
     }
 
     private static void responder(HttpServletResponse respuesta, ObjectMapper json,

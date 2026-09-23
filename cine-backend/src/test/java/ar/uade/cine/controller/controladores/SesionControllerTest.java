@@ -46,6 +46,28 @@ class SesionControllerTest extends PruebaDeApi {
     }
 
     @Test
+    @DisplayName("un hash SHA-256 de antes de bcrypt sigue entrando, y ese login lo pasa a bcrypt")
+    void elHashViejoEntraYQuedaEnBcrypt() {
+        assertThat(hashDe(EMAIL_ADMIN)).doesNotStartWith("{");
+
+        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, CLAVE_ADMIN).estado())
+                .isEqualTo(200);
+        assertThat(hashDe(EMAIL_ADMIN)).startsWith("{bcrypt}");
+        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, CLAVE_ADMIN).estado())
+                .isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("una clave equivocada no reescribe el hash")
+    void unaClaveEquivocadaNoMigraElHash() {
+        String antes = hashDe(EMAIL_ADMIN);
+
+        pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, "otra-clave");
+
+        assertThat(hashDe(EMAIL_ADMIN)).isEqualTo(antes);
+    }
+
+    @Test
     @DisplayName("una clave equivocada es 401 con el mismo mensaje que un email inexistente")
     void claveEquivocadaEs401() {
         Respuesta claveMala = pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, "otra-clave");
@@ -75,5 +97,9 @@ class SesionControllerTest extends PruebaDeApi {
 
         assertThat(respuesta.estado()).isEqualTo(200);
         assertThat(respuesta.json().get("email").asText()).isEqualTo(EMAIL_ADMIN);
+    }
+
+    private String hashDe(String email) {
+        return empleados.buscarPorEmail(email).orElseThrow().getPasswordHash();
     }
 }

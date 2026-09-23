@@ -17,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
-import ar.uade.cine.infrastructure.seguridad.Password;
+import ar.uade.cine.infrastructure.seguridad.PasswordSha256;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,8 +58,9 @@ public abstract class PruebaDeApi {
         catalogoExterno.reiniciar();
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
+        // En el formato viejo, como el del seed: toda la suite pasa por el camino de compatibilidad.
         jdbc.update("INSERT INTO usuario (id, nombre, email, rol, password_hash) VALUES (?, ?, ?, ?, ?)",
-                ID_ADMIN, "Admin de prueba", EMAIL_ADMIN, "ADMINISTRADOR", Password.hashear(CLAVE_ADMIN));
+                ID_ADMIN, "Admin de prueba", EMAIL_ADMIN, "ADMINISTRADOR", new PasswordSha256().encode(CLAVE_ADMIN));
     }
 
     protected Respuesta get(String ruta) {

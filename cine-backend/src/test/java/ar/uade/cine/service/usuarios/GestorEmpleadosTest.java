@@ -34,10 +34,11 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void noGuardaLaContrasenaEnTextoPlano() {
+    void unEmpleadoNuevoQuedaEnBcrypt() {
         Empleado admin = empleados.buscarPorEmail("encargado@cine.com").orElseThrow();
 
         assertNotEquals("secreta123", admin.getPasswordHash());
+        assertTrue(admin.getPasswordHash().startsWith("{bcrypt}$2a$"), admin.getPasswordHash());
     }
 
     @Test

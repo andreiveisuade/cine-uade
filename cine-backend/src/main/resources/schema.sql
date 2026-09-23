@@ -63,12 +63,13 @@ CREATE TABLE IF NOT EXISTS asiento (
 -- password_hash solo lo usan los empleados: el cliente compra sin iniciar sesion,
 -- por eso admite NULL. El corte de la herencia no es el cargo sino tener contrasena,
 -- y por eso el acomodador no necesita ni una columna ni una tabla nueva: es un rol mas.
+-- 100 y no 64: un hash bcrypt con su prefijo ({bcrypt}$2a$10$...) mide 68.
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     rol VARCHAR(15) NOT NULL,
-    password_hash VARCHAR(64) NULL
+    password_hash VARCHAR(100) NULL
 );
 
 -- La grilla con la que un cine arma su cartelera: "Matrix en la Sala 1, todos los dias a
