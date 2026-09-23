@@ -104,7 +104,7 @@ final class PantallaReservas extends Pantalla {
 
         tabla.tabla().getSelectionModel().addListSelectionListener(e -> habilitar());
         tabla.alDobleClic(r -> {
-            if ("RESERVADA".equals(r.estado())) abrirCobro(r);
+            if (r.cobrable()) abrirCobro(r);
         });
         cobrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirCobro));
         cancelar.addActionListener(e -> tabla.seleccionada().ifPresent(this::cancelar));
@@ -125,11 +125,11 @@ final class PantallaReservas extends Pantalla {
         return texto;
     }
 
-    // Cobrar y cancelar solo tienen sentido sobre una reserva todavía sin pagar.
+    // Lo decide el backend con las mismas reglas que al cobrar y cancelar (R13, R17, R19): un botón habilitado no
+    // termina en un rechazo por el estado o la hora.
     private void habilitar() {
-        boolean reservada = tabla.seleccionada().map(r -> "RESERVADA".equals(r.estado())).orElse(false);
-        cobrar.setEnabled(reservada);
-        cancelar.setEnabled(reservada);
+        cobrar.setEnabled(tabla.seleccionada().map(Reserva::cobrable).orElse(false));
+        cancelar.setEnabled(tabla.seleccionada().map(Reserva::cancelable).orElse(false));
     }
 
     private Map<String, String> filtros() {
@@ -143,7 +143,7 @@ final class PantallaReservas extends Pantalla {
     private void recargar() {
         cargar(() -> api.obtenerReservas(null), lista -> {
             todas = lista;
-            List<Reserva> aCobrar = todas.stream().filter(x -> "RESERVADA".equals(x.estado())).toList();
+            List<Reserva> aCobrar = todas.stream().filter(Reserva::cobrable).toList();
             long activas = todas.stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
             double pendiente = aCobrar.stream().mapToDouble(Reserva::total).sum();
             resumen.setText(todas.size() + " reservas · " + activas + " activas · " + aCobrar.size()

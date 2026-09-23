@@ -4,6 +4,9 @@ import ar.uade.cine.swing.api.dto.Bordero;
 import ar.uade.cine.swing.api.dto.Empleado;
 import ar.uade.cine.swing.api.dto.Funcion;
 import ar.uade.cine.swing.api.dto.PedidoPelicula;
+import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.api.dto.TipoProducto;
+import ar.uade.cine.swing.api.dto.TipoPromocion;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -303,6 +306,52 @@ class ApiHttpTest {
         api.actualizarPelicula(5, PedidoPelicula.soloPublicacion(false));
 
         assertEquals("{\"enCartelera\":false}", ultimo().cuerpo());
+    }
+
+    @Test
+    void losTiposDeProductoDicenCualEsCombo() {
+        ingresar();
+        responder("GET /api/tipos-producto", 200, """
+                [{"nombre":"POCHOCLOS","esCombo":false},{"nombre":"BEBIDA","esCombo":false},
+                 {"nombre":"GOLOSINA","esCombo":false},{"nombre":"COMBO","esCombo":true}]
+                """);
+
+        List<TipoProducto> tipos = api.obtenerTiposProducto();
+
+        assertEquals(List.of("POCHOCLOS", "BEBIDA", "GOLOSINA"),
+                tipos.stream().filter(t -> !t.esCombo()).map(TipoProducto::nombre).toList());
+    }
+
+    @Test
+    void losTiposDePromocionTraenLosCamposQuePide() {
+        ingresar();
+        responder("GET /api/tipos-promocion", 200, """
+                [{"nombre":"PORCENTAJE","campos":["porcentaje"]},{"nombre":"MONTO_FIJO","campos":["monto"]},
+                 {"nombre":"NXM","campos":["lleva","paga"]}]
+                """);
+
+        List<TipoPromocion> tipos = api.obtenerTiposPromocion();
+
+        assertEquals(3, tipos.size());
+        assertEquals(List.of("lleva", "paga"), tipos.get(2).campos());
+    }
+
+    @Test
+    void laReservaTraeSiSePuedeCobrarYCancelar() {
+        ingresar();
+        responder("GET /api/reservas", 200, """
+                [{"id":1,"estado":"RESERVADA","codigo":"A","entradas":[],"total":9000,
+                  "cobrable":false,"cancelable":true},
+                 {"id":2,"estado":"PAGADA","codigo":"B","entradas":[],"total":9000}]
+                """);
+
+        List<Reserva> reservas = api.obtenerReservas(null);
+
+        assertFalse(reservas.get(0).cobrable());
+        assertTrue(reservas.get(0).cancelable());
+        // Un backend viejo que no los manda deja los botones apagados, no prendidos.
+        assertFalse(reservas.get(1).cobrable());
+        assertFalse(reservas.get(1).cancelable());
     }
 
     @Test

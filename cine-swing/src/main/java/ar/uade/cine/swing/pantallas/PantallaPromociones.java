@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.MedioPago;
 import ar.uade.cine.swing.api.dto.PedidoPromocion;
 import ar.uade.cine.swing.api.dto.Promocion;
+import ar.uade.cine.swing.api.dto.TipoPromocion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -29,6 +30,7 @@ import java.awt.CardLayout;
 import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,19 @@ final class PantallaPromociones extends Pantalla {
     private record Datos(List<Promocion> promociones, List<MedioPago> medios) {
     }
 
+    /**
+     * Lo que Swing sabe de cada campo de beneficio: cómo se muestra, si es entero y con qué arranca. Cuáles pide
+     * cada tipo lo dice {@code GET /api/tipos-promocion}: un tipo nuevo que use estos campos no toca esta pantalla.
+     */
+    private record CampoBeneficio(String etiqueta, boolean entero, String inicial) {
+    }
+
+    private static final Map<String, CampoBeneficio> CAMPOS = Map.of(
+            "porcentaje", new CampoBeneficio("Porcentaje", false, "30"),
+            "monto", new CampoBeneficio("Monto a descontar", false, "2000"),
+            "lleva", new CampoBeneficio("Lleva", true, "2"),
+            "paga", new CampoBeneficio("Paga", true, "1"));
+
     private final JLabel resumen = new JLabel(" ");
     private final JButton alternar = new JButton("Dar de baja");
     private final Tabla<Promocion> tabla = new Tabla<>(
@@ -57,10 +72,8 @@ final class PantallaPromociones extends Pantalla {
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final CardLayout tarjetas = new CardLayout();
     private final JPanel beneficio = new JPanel(tarjetas);
-    private final JTextField porcentaje = Campos.soloDecimal(new JTextField("30"));
-    private final JTextField monto = Campos.soloDecimal(new JTextField("2000"));
-    private final JTextField lleva = Campos.soloEntero(new JTextField("2"));
-    private final JTextField paga = Campos.soloEntero(new JTextField("1"));
+    // Tipo → campo → su caja de texto. Cada tipo tiene las suyas: una caja no puede estar en dos tarjetas.
+    private final Map<String, Map<String, JTextField>> camposPorTipo = new LinkedHashMap<>();
     private final JDateChooser desde = Fechas.selector(LocalDate.now());
     private final JDateChooser hasta = Fechas.selector(null);
     private final SelectorDias dias = new SelectorDias();
@@ -91,16 +104,18 @@ final class PantallaPromociones extends Pantalla {
         alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
                 accion(() -> api.cambiarActivacionPromocion(p.id(), !p.activa()), null, this::recargar)));
         habilitar();
+        cargar(api::obtenerTiposPromocion, this::armarTipos);
         recargar();
     }
 
+    // Por los campos que trae, no por el nombre del tipo: son los mismos que el catálogo dice que pide cada uno.
     static String beneficio(Promocion p) {
-        return switch (p.tipo()) {
-            case "PORCENTAJE" -> (p.porcentaje() % 1 == 0 ? String.valueOf(p.porcentaje().longValue())
+        if (p.porcentaje() != null) {
+            return (p.porcentaje() % 1 == 0 ? String.valueOf(p.porcentaje().longValue())
                     : String.valueOf(p.porcentaje())) + "% off";
-            case "MONTO_FIJO" -> precio(p.monto()) + " off";
-            default -> p.lleva() + "x" + p.paga();
-        };
+        }
+        if (p.monto() != null) return precio(p.monto()) + " off";
+        return p.lleva() + "x" + p.paga();
     }
 
     static String condiciones(Promocion p) {
@@ -129,13 +144,9 @@ final class PantallaPromociones extends Pantalla {
     }
 
     private JScrollPane formulario() {
-        tipo.addItem(new Opcion<>("PORCENTAJE", "Porcentaje"));
-        tipo.addItem(new Opcion<>("MONTO_FIJO", "Monto fijo"));
-        tipo.addItem(new Opcion<>("NXM", "NxM (2x1)"));
-        beneficio.add(new Componentes.Formulario().obligatorio("Porcentaje", porcentaje), "PORCENTAJE");
-        beneficio.add(new Componentes.Formulario().obligatorio("Monto a descontar", monto), "MONTO_FIJO");
-        beneficio.add(new Componentes.Formulario().obligatorio("Lleva", lleva).obligatorio("Paga", paga), "NXM");
-        tipo.addActionListener(e -> tarjetas.show(beneficio, Campos.elegido(tipo)));
+        tipo.addActionListener(e -> {
+            if (Campos.elegido(tipo) != null) tarjetas.show(beneficio, Campos.elegido(tipo));
+        });
 
         horaDesde.setToolTipText("HH:mm, vacío = sin límite");
         horaHasta.setToolTipText("HH:mm, vacío = sin límite");
@@ -165,6 +176,25 @@ final class PantallaPromociones extends Pantalla {
         return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
+    /** Una tarjeta por tipo, con los campos que pide. Cambiar de tipo muestra la suya. */
+    private void armarTipos(List<TipoPromocion> tipos) {
+        for (TipoPromocion t : tipos) {
+            Map<String, JTextField> cajas = new LinkedHashMap<>();
+            Componentes.Formulario tarjeta = new Componentes.Formulario();
+            for (String campo : t.campos()) {
+                CampoBeneficio c = CAMPOS.get(campo);
+                if (c == null) continue;
+                JTextField caja = new JTextField(c.inicial());
+                cajas.put(campo, c.entero() ? Campos.soloEntero(caja) : Campos.soloDecimal(caja));
+                tarjeta.obligatorio(c.etiqueta(), caja);
+            }
+            camposPorTipo.put(t.nombre(), cajas);
+            beneficio.add(tarjeta, t.nombre());
+            tipo.addItem(new Opcion<>(t.nombre(), etiqueta(t.nombre())));
+        }
+        beneficio.revalidate();
+    }
+
     private void recargar() {
         cargar(() -> new Datos(api.obtenerPromociones(), api.obtenerMediosPago()), datos -> {
             long activas = datos.promociones().stream().filter(Promocion::activa).count();
@@ -191,19 +221,22 @@ final class PantallaPromociones extends Pantalla {
         String nombreLeido = v.texto(nombre, "Nombre", true);
         String elegido = v.elegido(tipo, "Tipo");
         // Solo se leen los campos del tipo elegido: los demás viajan en null, como pide el contrato.
-        Double porcentajeLeido = "PORCENTAJE".equals(elegido) ? v.decimal(porcentaje, "Porcentaje", true) : null;
-        Double montoLeido = "MONTO_FIJO".equals(elegido) ? v.decimal(monto, "Monto a descontar", true) : null;
-        Integer llevaLeido = "NXM".equals(elegido) ? v.entero(lleva, "Lleva", true) : null;
-        Integer pagaLeido = "NXM".equals(elegido) ? v.entero(paga, "Paga", true) : null;
+        Map<String, JTextField> cajas = camposPorTipo.getOrDefault(elegido, Map.of());
+        Map<String, Number> leidos = new HashMap<>();
+        cajas.forEach((campo, caja) -> {
+            CampoBeneficio c = CAMPOS.get(campo);
+            leidos.put(campo, c.entero() ? v.entero(caja, c.etiqueta(), true) : v.decimal(caja, c.etiqueta(), true));
+        });
         String vigenciaDesde = v.fecha(desde, "Desde", true);
         String vigenciaHasta = v.fecha(hasta, "Hasta", true);
         String desdeHora = v.hora(horaDesde, "Desde hora", false);
         String hastaHora = v.hora(horaHasta, "Hasta hora", false);
         v.alMencionar("vigencia", desde);
-        v.alMencionar("nxm", lleva);
+        if (cajas.containsKey("lleva")) v.alMencionar("nxm", cajas.get("lleva"));
         if (!v.ok()) return;
-        PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, porcentajeLeido, montoLeido, llevaLeido,
-                pagaLeido, vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(medios));
+        PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
+                (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
+                vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(medios));
         Tarea.ejecutar(this, () -> api.crearPromocion(pedido), creada -> {
             avisar("Promoción creada");
             limpiar();
@@ -213,11 +246,9 @@ final class PantallaPromociones extends Pantalla {
 
     private void limpiar() {
         nombre.setText("");
-        tipo.setSelectedIndex(0);
-        porcentaje.setText("30");
-        monto.setText("2000");
-        lleva.setText("2");
-        paga.setText("1");
+        if (tipo.getItemCount() > 0) tipo.setSelectedIndex(0);
+        camposPorTipo.values().forEach(cajas -> cajas.forEach((campo, caja) ->
+                caja.setText(CAMPOS.get(campo).inicial())));
         Fechas.poner(desde, LocalDate.now());
         hasta.setDate(null);
         dias.limpiar();

@@ -82,7 +82,7 @@ final class PantallaCobro extends Pantalla {
 
     private void pintar(Datos datos) {
         Reserva reserva = datos.reserva();
-        if (!"RESERVADA".equals(reserva.estado())) {
+        if (!reserva.cobrable()) {
             mostrarNota(yaNoSeCobra(reserva));
             return;
         }
@@ -96,8 +96,10 @@ final class PantallaCobro extends Pantalla {
     }
 
     private static String yaNoSeCobra(Reserva reserva) {
-        String texto = "La reserva " + reserva.id() + " está " + etiqueta(reserva.estado()).toLowerCase()
-                + ", no se puede cobrar.";
+        // Cancelable y no cobrable es una reserva que sigue abierta pero ya se pasó de hora (R17 o R19).
+        String texto = "La reserva " + reserva.id() + " no se puede cobrar: "
+                + (reserva.cancelable() ? "venció el plazo para pagarla o la función ya empezó."
+                : "está " + etiqueta(reserva.estado()).toLowerCase() + ".");
         Pago pago = reserva.pago();
         if (pago != null) {
             texto += " Se cobró " + precio(pago.monto()) + " con " + etiqueta(pago.medio());

@@ -111,6 +111,14 @@ public final class ApiHttp {
         return lista("/medios-pago", MedioPago.class);
     }
 
+    public List<TipoProducto> obtenerTiposProducto() {
+        return lista("/tipos-producto", TipoProducto.class);
+    }
+
+    public List<TipoPromocion> obtenerTiposPromocion() {
+        return lista("/tipos-promocion", TipoPromocion.class);
+    }
+
     public List<String> obtenerIdiomas() {
         return lista("/idiomas", String.class);
     }

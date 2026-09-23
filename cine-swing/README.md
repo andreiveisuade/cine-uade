@@ -47,7 +47,10 @@ junto al formulario y el foco va al primero.
 Las **reglas de negocio** (precio mayor a cero, rangos, superposición, R1 a R19) no se anticipan:
 las decide el backend y su mensaje se muestra tal cual en el mismo lugar, marcando el campo si el
 mensaje lo nombra. Tampoco se decide nada por el nombre de una constante: qué tarifa pide carnet y
-qué medio va por checkout salen de `requiereAcreditacion` y `requiereAutorizacion` de los catálogos.
+qué medio va por checkout salen de `requiereAcreditacion` y `requiereAutorizacion` de los catálogos,
+qué tipos de producto se dan de alta sueltos de `esCombo` de `/api/tipos-producto`, qué campos pide
+cada promoción de `campos` de `/api/tipos-promocion`, y Cobrar y Cancelar se habilitan con
+`cobrable` y `cancelable` de la reserva, calculados con las mismas reglas que aplica el backend.
 
 Un 401 fuera del login cierra el panel y vuelve al login. Las credenciales viven en memoria
 y se van al cerrar la app.

@@ -61,8 +61,6 @@ final class PantallaCandy extends Pantalla {
     private record Carga(List<Producto> productos, List<MedioPago> medios) {
     }
 
-    private static final List<String> TIPOS_SUELTOS = List.of("POCHOCLOS", "BEBIDA", "GOLOSINA");
-
     PantallaCandy(ApiHttp api) {
         super(api, "Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
         JTabbedPane pestanas = new JTabbedPane();
@@ -139,6 +137,9 @@ final class PantallaCandy extends Pantalla {
             alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
                     accion(() -> api.cambiarDisponibilidadCandy(p.id(), !p.disponible()), null, this::recargar)));
             habilitar();
+            // Qué tipos se dan de alta sueltos lo dice el catálogo: el combo se arma abajo, con sus componentes.
+            cargar(api::obtenerTiposProducto, tipos -> tipos.stream().filter(t -> !t.esCombo())
+                    .forEach(t -> tipoProducto.addItem(new Opcion<>(t.nombre(), etiqueta(t.nombre())))));
             recargar();
         }
 
@@ -151,7 +152,6 @@ final class PantallaCandy extends Pantalla {
         }
 
         private JScrollPane altas() {
-            Opcion.de(TIPOS_SUELTOS, v -> etiqueta(v)).forEach(tipoProducto::addItem);
             JButton agregar = new JButton("Agregar a la carta");
             agregar.addActionListener(e -> crearProducto());
             JButton armar = new JButton("Armar combo");
