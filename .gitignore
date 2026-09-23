@@ -17,3 +17,6 @@
 .agents/
 .claude/
 skills-lock.json
+
+# Lo que compila Maven en el cliente de escritorio.
+cine-swing/target/
