@@ -13,6 +13,7 @@ import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { useSesion } from "./sesion.jsx";
 import { Login } from "./Login.jsx";
+import { Planificador } from "./Planificador.jsx";
 import { Programaciones } from "./Programaciones.jsx";
 import { Funcion } from "./Funcion.jsx";
 import { Funciones } from "./Funciones.jsx";
@@ -106,6 +107,7 @@ export function AppAdmin() {
         <Route path="funciones/:destacada?" element={<Funciones />} />
         <Route path="funcion/:id" element={<Funcion />} />
         <Route path="programaciones" element={<Programaciones />} />
+        <Route path="planificador" element={<Planificador />} />
         <Route path="*" element={<NoExiste />} />
       </Route>
     </Routes>
