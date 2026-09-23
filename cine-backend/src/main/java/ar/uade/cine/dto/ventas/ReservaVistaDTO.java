@@ -13,6 +13,7 @@ import ar.uade.cine.dto.salas.SalaVistaDTO;
 public record ReservaVistaDTO(int id, int funcionId, int clienteId, String estado, String creadaEn,
                            String codigo, String ingresadaEn,
                            List<EntradaVistaDTO> entradas, int cantidadEntradas, double total,
+                           boolean cobrable, boolean cancelable,
                            FuncionVistaDTO funcion, PeliculaVistaDTO pelicula, SalaVistaDTO sala,
                            ClienteVistaDTO cliente, PagoVistaDTO pago) {
 }

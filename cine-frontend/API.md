@@ -39,6 +39,8 @@ no tiene permiso para esta operación».
 | `GET /api/proyecciones` | `["DOS_D","TRES_D"]` |
 | `GET /api/medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
 | `GET /api/tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
+| `GET /api/tipos-producto` | `[{"nombre":"POCHOCLOS","esCombo":false}, {"nombre":"BEBIDA","esCombo":false}, {"nombre":"GOLOSINA","esCombo":false}, {"nombre":"COMBO","esCombo":true}]`. Los que no son combo se dan de alta en `POST /api/candy/productos`; el combo, en `POST /api/candy/combos` |
+| `GET /api/tipos-promocion` | `[{"nombre":"PORCENTAJE","campos":["porcentaje"]}, {"nombre":"MONTO_FIJO","campos":["monto"]}, {"nombre":"NXM","campos":["lleva","paga"]}]`: los campos de `POST /api/promociones` que pide cada tipo, además de nombre y condiciones |
 
 La web del cliente anticipa con ellos el «traé el carnet» (`requiereAcreditacion`). Swing usa
 `requiereAcreditacion` para el «pedir carnet» de Puerta y del cobro, `requiereAutorizacion` para elegir
@@ -110,6 +112,12 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
 - `butacas`: código → tarifa (`GENERAL`, `MENOR`, `JUBILADO`, `ESTUDIANTE`). Una tarifa en `null` es `GENERAL`.
 - `sesion`: la de los bloqueos (sin ella tu bloqueo la rechaza; opcional en boletería). Al confirmar los suelta.
 - R4, R9; alta del cliente si el email es nuevo; `409` si otra compra ganó la butaca. Devuelve `codigo` (QR) y `entradas[].tarifa`.
+
+Toda reserva (`POST`, `GET` por id, por código o en listados) trae además `"cobrable": true|false` y
+`"cancelable": true|false`. Los calcula `Reserva` con el mismo método que usa el gestor al cobrar y al
+cancelar, así que un `true` no termina en `400` por esas reglas: `cobrable` es `RESERVADA`, no vencida
+(R17) y con la función sin empezar (R19); `cancelable` es `RESERVADA` (R13). El medio de pago y el
+código de autorización (R11) se siguen validando al cobrar.
 
 | Ruta | Qué hace |
 |---|---|

@@ -85,7 +85,7 @@ public class Producto {
     }
 
     public boolean esCombo() {
-        return tipo == TipoProducto.COMBO;
+        return tipo.esCombo();
     }
 
     public Dinero getPrecioSuelto() {

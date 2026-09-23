@@ -1,10 +1,33 @@
 package ar.uade.cine.model.promociones;
 
+import java.util.List;
+
+// Además de nombre y condiciones, cada tipo pide sus propios campos del pedido. Es la única
+// lista: la publica el catálogo y con ella GestorPromociones dice cuál falta.
 public enum TipoPromocion {
 
-    PORCENTAJE,
+    PORCENTAJE("porcentaje"),
 
-    MONTO_FIJO,
+    MONTO_FIJO("monto"),
 
-    NXM
+    NXM("lleva", "paga");
+
+    private final List<String> campos;
+
+    TipoPromocion(String... campos) {
+        this.campos = List.of(campos);
+    }
+
+    public List<String> getCampos() {
+        return campos;
+    }
+
+    // Los valores en el orden de getCampos(): el primero que falte se nombra en el mensaje.
+    public void exigirCampos(Object... valores) {
+        for (int i = 0; i < campos.size(); i++) {
+            if (valores[i] == null) {
+                throw new IllegalArgumentException("Falta " + campos.get(i) + " para ese tipo de promoción");
+            }
+        }
+    }
 }

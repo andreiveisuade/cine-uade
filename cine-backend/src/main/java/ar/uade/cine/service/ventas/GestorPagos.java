@@ -1,6 +1,5 @@
 package ar.uade.cine.service.ventas;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -13,12 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
-import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
@@ -34,18 +31,16 @@ public class GestorPagos {
 
     private final PagoRepository pagoRepository;
     private final ReservaRepository reservaRepository;
-    private final FuncionRepository funcionRepository;
     private final PoliticaPromociones promociones;
     private final PasarelaPagos pasarela;
     private final GeneradorRecibo generadorRecibo;
     private final Reloj reloj;
 
-    public GestorPagos(PagoRepository pagoRepository, ReservaRepository reservaRepository, FuncionRepository funcionRepository,
+    public GestorPagos(PagoRepository pagoRepository, ReservaRepository reservaRepository,
                        PoliticaPromociones promociones, PasarelaPagos pasarela,
                        GeneradorRecibo generadorRecibo, Reloj reloj) {
         this.pagoRepository = pagoRepository;
         this.reservaRepository = reservaRepository;
-        this.funcionRepository = funcionRepository;
         this.promociones = promociones;
         this.pasarela = pasarela;
         this.generadorRecibo = generadorRecibo;
@@ -112,30 +107,20 @@ public class GestorPagos {
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
     }
 
+    // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista);
+    // acá queda lo que viene del pedido y lo que necesita la base.
     private Funcion validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
-        if (reserva.getEstado() != EstadoReserva.RESERVADA) {
-            throw new IllegalArgumentException("La reserva está " + reserva.getEstado() + ", no se puede cobrar");
-        }
-        LocalDateTime ahora = reloj.ahora();
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
-        if (reserva.estaVencida(ahora)) {
-            throw new IllegalArgumentException("La reserva " + reserva.getId()
-                    + " venció: sus butacas volvieron a estar disponibles");
-        }
-        Funcion funcion = funcionRepository.findById(reserva.getFuncionId())
-                .orElseThrow(() -> new RecursoNoEncontrado(
-                        "No existe la función " + reserva.getFuncionId()));
-        if (funcion.yaEmpezo(ahora)) {
-            throw new IllegalArgumentException("La función ya empezó: no se puede cobrar la reserva "
-                    + reserva.getId());
-        }
+        reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
+            throw new IllegalArgumentException(motivo);
+        });
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
         }
         if (pagoRepository.existsByReservaId(reserva.getId())) {
             throw new IllegalArgumentException("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
-        return funcion;
+        return reserva.getFuncion();
     }
 
     private void emitirRecibo(Pago pago, Reserva reserva) {

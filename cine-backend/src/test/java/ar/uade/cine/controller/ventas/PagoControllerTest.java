@@ -150,4 +150,37 @@ class PagoControllerTest extends PruebaDeApi {
         return post("/api/reservas/" + reserva.getId() + "/checkout",
                 "{\"medio\":\"" + medio + "\"}");
     }
+
+    // Los flags salen del mismo método de Reserva que usa el gestor: si dicen que no, el cobro rechaza.
+    @Test
+    void laReservaDiceSiSePuedeCobrarYCancelarConLasMismasReglasQueElGestor() {
+        String ruta = "/api/reservas/" + reserva.getId();
+        assertTrue(get(ruta).json().get("cobrable").asBoolean());
+        assertTrue(get(ruta).json().get("cancelable").asBoolean());
+
+        reloj.mover(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+        assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R17: vencida");
+        assertTrue(get(ruta).json().get("cancelable").asBoolean(), "sigue RESERVADA hasta que alguien la expire");
+        assertEquals(400, post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").estado());
+
+        reloj.reiniciar();
+        post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}");
+        assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R5: ya cobrada");
+        assertFalse(get(ruta).json().get("cancelable").asBoolean(), "R13: cobrada no se cancela");
+        assertEquals(400, post(ruta + "/cancelacion", "").estado());
+    }
+
+    @Test
+    void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
+        // Reservada diez minutos antes: al empezar la función todavía no venció.
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 50));
+        int id = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
+                + "\"butacas\":{\"B1\":\"GENERAL\"}}").json().get("id").asInt();
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 20, 0));
+        String ruta = "/api/reservas/" + id;
+
+        assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R19");
+        assertEquals("La función ya empezó: no se puede cobrar la reserva " + id,
+                post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").error());
+    }
 }

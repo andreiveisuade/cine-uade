@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
@@ -125,8 +126,36 @@ public class Reserva {
         estado = EstadoReserva.PAGADA;
     }
 
+    // Por qué no se puede cobrar ahora, o vacío si se puede: R5 (solo una RESERVADA), R17 (la
+    // vencida ya soltó sus butacas) y R19 (función empezada). Lo usan GestorPagos para rechazar y
+    // la vista para habilitar el cobro, así que el botón y el rechazo no pueden diferir.
+    public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
+        if (estado != EstadoReserva.RESERVADA) {
+            return Optional.of("La reserva está " + estado + ", no se puede cobrar");
+        }
+        if (estaVencida(ahora)) {
+            return Optional.of("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
+        }
+        if (funcion.yaEmpezo(ahora)) {
+            return Optional.of("La función ya empezó: no se puede cobrar la reserva " + id);
+        }
+        return Optional.empty();
+    }
+
+    public boolean esCobrable(LocalDateTime ahora) {
+        return impedimentoParaCobrar(ahora).isEmpty();
+    }
+
+    // R13: se cancela solo lo que todavía no se cobró. Es la misma condición que cancelar().
+    public boolean esCancelable() {
+        return estado == EstadoReserva.RESERVADA;
+    }
+
     public void cancelar() {
-        exigirEsperandoPago("solo se puede cancelar una reserva sin cobrar");
+        if (!esCancelable()) {
+            throw new IllegalArgumentException("La reserva está " + estado
+                    + ", solo se puede cancelar una reserva sin cobrar");
+        }
         pasarA(EstadoReserva.CANCELADA);
     }
 

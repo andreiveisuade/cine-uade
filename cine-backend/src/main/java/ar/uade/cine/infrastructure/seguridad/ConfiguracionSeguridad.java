@@ -60,7 +60,7 @@ public class ConfiguracionSeguridad {
             "/api/candy/productos", "/api/candy/productos/*",
             "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
-            "/api/tarifas"};
+            "/api/tarifas", "/api/tipos-producto", "/api/tipos-promocion"};
 
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 

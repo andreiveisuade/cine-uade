@@ -6,16 +6,20 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.catalogos.ClasificacionVistaDTO;
 import ar.uade.cine.dto.catalogos.MedioPagoVistaDTO;
 import ar.uade.cine.dto.catalogos.TarifaVistaDTO;
+import ar.uade.cine.dto.catalogos.TipoProductoVistaDTO;
+import ar.uade.cine.dto.catalogos.TipoPromocionVistaDTO;
 import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,6 +76,22 @@ public class CatalogoController {
     public List<TarifaVistaDTO> tarifas() {
         return Arrays.stream(TipoTarifa.values())
                 .map(t -> new TarifaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.requiereAcreditacion()))
+                .toList();
+    }
+
+    @Operation(summary = "Los tipos de producto del candy; el combo se arma aparte")
+    @GetMapping("/api/tipos-producto")
+    public List<TipoProductoVistaDTO> tiposDeProducto() {
+        return Arrays.stream(TipoProducto.values())
+                .map(t -> new TipoProductoVistaDTO(t.name(), t.esCombo()))
+                .toList();
+    }
+
+    @Operation(summary = "Los tipos de promoción y los campos que pide cada uno")
+    @GetMapping("/api/tipos-promocion")
+    public List<TipoPromocionVistaDTO> tiposDePromocion() {
+        return Arrays.stream(TipoPromocion.values())
+                .map(t -> new TipoPromocionVistaDTO(t.name(), t.getCampos()))
                 .toList();
     }
 

@@ -237,6 +237,9 @@ package "model.ventas" {
     +getEstado(): EstadoReserva
     +estaVigente(): boolean
     +estaVencida(ahora): boolean
+    +impedimentoParaCobrar(ahora): Optional<String>
+    +esCobrable(ahora): boolean
+    +esCancelable(): boolean
     --control de acceso--
     +getCodigo(): String
     +getIngresadaEn(): LocalDateTime
@@ -325,9 +328,11 @@ package "model.promociones" {
   ' van a la misma tabla porque comparten todas las condiciones y solo cambia
   ' como calculan el descuento.
   enum TipoPromocion <<enum>> {
-    PORCENTAJE
-    MONTO_FIJO
-    NXM
+    PORCENTAJE(porcentaje)
+    MONTO_FIJO(monto)
+    NXM(lleva, paga)
+    +getCampos(): List<String>
+    +exigirCampos(valores...)
   }
   class PromocionPorcentaje {
     +getPorcentaje(): double
@@ -382,6 +387,7 @@ package "model.candy" {
   enum TipoProducto <<enum>> {
     POCHOCLOS / BEBIDA
     GOLOSINA / COMBO
+    +esCombo(): boolean
   }
 }
 

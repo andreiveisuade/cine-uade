@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 474 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 479 tests.</p>
       </div>
     </section>
 
@@ -876,8 +876,13 @@ body.lightbox-locked { overflow: hidden; }
         arqueo, informes y control de acceso, CU-18) se hacen desde estas pantallas. Ninguna anticipa una regla:
         se manda el pedido y se muestra el mensaje del backend tal cual. Lo que el cliente sí necesita saber del
         negocio lo lee de los catálogos, no de nombres fijos: qué tarifa se acredita en la puerta sale de
-        <code>requiereAcreditacion</code> de <code>/api/tarifas</code>, y qué medio va por checkout, de
-        <code>requiereAutorizacion</code> de <code>/api/medios-pago</code>.
+        <code>requiereAcreditacion</code> de <code>/api/tarifas</code>, qué medio va por checkout, de
+        <code>requiereAutorizacion</code> de <code>/api/medios-pago</code>, qué tipos de producto se dan de alta
+        sueltos, de <code>esCombo</code> de <code>/api/tipos-producto</code>, y qué campos pide cada promoción, de
+        <code>campos</code> de <code>/api/tipos-promocion</code> (la misma lista con la que el gestor dice cuál
+        falta). Cobrar y cancelar se habilitan con <code>cobrable</code> y <code>cancelable</code> de la reserva, que
+        <code>Reserva</code> calcula con el mismo método que usan <code>GestorPagos</code> y <code>cancelar()</code>:
+        el botón y el rechazo no pueden diferir.
       </p>
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <p>
@@ -1414,7 +1419,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>; los constructores de <code>Promocion</code> y sus subclases, el de <code>Empleado</code> y el de <code>Sala</code> validan sus propios invariantes. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
+            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>; los constructores de <code>Promocion</code> y sus subclases, el de <code>Empleado</code> y el de <code>Sala</code> validan sus propios invariantes; <code>Reserva.impedimentoParaCobrar()</code> y <code>esCancelable()</code> deciden R5, R13, R17 y R19 para el gestor y para la vista. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
             <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>CalculadoraPrecio</code>, <code>AgendaDeSala</code></td></tr>
             <tr><td><strong>Controlador</strong></td><td>Cada <code>*Controller</code>; por eso los tests llaman a los gestores sin HTTP</td></tr>
             <tr><td><strong>Polimorfismo</strong></td><td><code>multiplicadorPrecio</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code></td></tr>
@@ -1685,7 +1690,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 474 tests, ninguno salteado</code></pre>
+mvn clean test       # 479 tests, ninguno salteado</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos

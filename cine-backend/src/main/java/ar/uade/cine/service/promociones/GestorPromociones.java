@@ -13,6 +13,7 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.PromocionMontoFijo;
 import ar.uade.cine.model.promociones.PromocionNxM;
 import ar.uade.cine.model.promociones.PromocionPorcentaje;
+import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -35,23 +36,18 @@ public class GestorPromociones implements PoliticaPromociones {
     // porque la entidad los recibe primitivos y no tiene cómo enterarse. El resto de las reglas
     // (rango, NxM, vigencia, nombre) las valida cada clase de Promocion al construirse.
     public Promocion crearPorcentaje(String nombre, Double porcentaje, CondicionesPromocion condiciones) {
-        return guardar(new PromocionPorcentaje(nombre, obligatorio(porcentaje, "porcentaje"), condiciones));
+        TipoPromocion.PORCENTAJE.exigirCampos(porcentaje);
+        return guardar(new PromocionPorcentaje(nombre, porcentaje, condiciones));
     }
 
     public Promocion crearMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
-        return guardar(new PromocionMontoFijo(nombre, obligatorio(monto, "monto"), condiciones));
+        TipoPromocion.MONTO_FIJO.exigirCampos(monto);
+        return guardar(new PromocionMontoFijo(nombre, monto, condiciones));
     }
 
     public Promocion crearNxM(String nombre, Integer lleva, Integer paga, CondicionesPromocion condiciones) {
-        return guardar(new PromocionNxM(nombre, obligatorio(lleva, "lleva"), obligatorio(paga, "paga"),
-                condiciones));
-    }
-
-    private static <T> T obligatorio(T valor, String campo) {
-        if (valor == null) {
-            throw new IllegalArgumentException("Falta " + campo + " para ese tipo de promoción");
-        }
-        return valor;
+        TipoPromocion.NXM.exigirCampos(lleva, paga);
+        return guardar(new PromocionNxM(nombre, lleva, paga, condiciones));
     }
 
     // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio.

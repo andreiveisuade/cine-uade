@@ -8,6 +8,7 @@ import java.util.function.ToIntFunction;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.controller.http.Fechas;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
@@ -38,10 +39,12 @@ public class VistasVentas {
     private final VistasCartelera vistasCartelera;
     private final VistasSalas vistasSalas;
     private final VistasUsuarios vistasUsuarios;
+    private final Reloj reloj;
 
     public VistasVentas(GestorPagos pagos, GestorSalas salas, ConsultasReservas reservas,
                         VistasCartelera vistasCartelera, VistasSalas vistasSalas,
-                        VistasUsuarios vistasUsuarios) {
+                        VistasUsuarios vistasUsuarios, Reloj reloj) {
+        this.reloj = reloj;
         this.pagos = pagos;
         this.salas = salas;
         this.reservas = reservas;
@@ -100,6 +103,7 @@ public class VistasVentas {
                 Fechas.texto(r.getIngresadaEn()),
                 r.getEntradas().stream().map(this::entrada).toList(),
                 r.getCantidadEntradas(), r.getTotal().aPesos(),
+                r.esCobrable(reloj.ahora()), r.esCancelable(),
                 vistasCartelera.funcion(f, f.getSala(), asientos),
                 vistasCartelera.pelicula(f.getPelicula()),
                 vistasSalas.sala(f.getSala(), asientos),

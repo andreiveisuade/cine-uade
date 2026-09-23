@@ -26,7 +26,7 @@ public class GestorProductos {
     }
 
     public Producto agregar(String nombre, TipoProducto tipo, Dinero precio) {
-        if (tipo == TipoProducto.COMBO) {
+        if (tipo != null && tipo.esCombo()) {
             throw new IllegalArgumentException("Un combo se arma con armarCombo, para que declare qué trae");
         }
         validarAlta(nombre, tipo, precio);
