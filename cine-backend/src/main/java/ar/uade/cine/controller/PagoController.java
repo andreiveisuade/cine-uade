@@ -29,8 +29,8 @@ import ar.uade.cine.dto.ventas.TotalMedioDTO;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.service.informes.Arqueo;
 import ar.uade.cine.service.informes.GestorCaja;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
-import ar.uade.cine.service.ventas.GestorReservas;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,11 +45,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PagoController {
 
     private final GestorPagos pagos;
-    private final GestorReservas reservas;
+    private final ConsultasReservas reservas;
     private final GestorCaja caja;
     private final VistasVentas vistas;
 
-    public PagoController(GestorPagos pagos, GestorReservas reservas, GestorCaja caja,
+    public PagoController(GestorPagos pagos, ConsultasReservas reservas, GestorCaja caja,
                             VistasVentas vistas) {
         this.pagos = pagos;
         this.reservas = reservas;

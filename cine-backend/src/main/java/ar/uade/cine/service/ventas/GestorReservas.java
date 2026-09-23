@@ -1,12 +1,9 @@
 package ar.uade.cine.service.ventas;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -28,7 +25,6 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
@@ -36,10 +32,9 @@ import ar.uade.cine.repository.SalaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
 /**
- * Ciclo de vida de una reserva: se vende, se cancela o se usa en la puerta. Lo ocupado
- * lo define {@link Ocupacion}, así vender y dibujar el mapa usan la misma regla. Recibe
- * seis repositorios porque vender cruza seis agregados relacionados por id; lo que tiene
- * regla propia (precio, ocupación, alta de cliente) vive en su clase.
+ * La venta: reservar y cancelar. La puerta ({@link GestorAcceso}) y las búsquedas
+ * ({@link ConsultasReservas}) van aparte porque no comparten colaboradores con vender.
+ * Lo ocupado lo define {@link Ocupacion}, así vender y dibujar el mapa usan la misma regla.
  */
 @Service
 @Transactional
@@ -51,7 +46,6 @@ public class GestorReservas {
     private final FuncionRepository funcionRepository;
     private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
-    private final ClienteRepository clienteRepository;
     private final GestorClientes clientes;
     private final PeliculaRepository peliculaRepository;
     private final GeneradorTicket generadorTicket;
@@ -60,7 +54,7 @@ public class GestorReservas {
     private final Reloj reloj;
 
     public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository, SalaRepository salaRepository,
-                          AsientoRepository asientoRepository, ClienteRepository clienteRepository, GestorClientes clientes,
+                          AsientoRepository asientoRepository, GestorClientes clientes,
                           PeliculaRepository peliculaRepository,
                           GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio,
                           Ocupacion ocupacion, Reloj reloj) {
@@ -68,7 +62,6 @@ public class GestorReservas {
         this.funcionRepository = funcionRepository;
         this.salaRepository = salaRepository;
         this.asientoRepository = asientoRepository;
-        this.clienteRepository = clienteRepository;
         this.clientes = clientes;
         this.peliculaRepository = peliculaRepository;
         this.generadorTicket = generadorTicket;
@@ -104,7 +97,7 @@ public class GestorReservas {
         if (funcion.yaEmpezo(reloj.ahora())) {
             throw new IllegalArgumentException("La función ya empezó: no se pueden reservar butacas");
         }
-        Cliente cliente = clienteRepository.findById(clienteId)
+        Cliente cliente = clientes.buscar(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
         if (butacas == null || butacas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
@@ -170,86 +163,6 @@ public class GestorReservas {
         reservaRepository.save(reserva);
         LOG.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
-    }
-
-    /**
-     * R18. Por código y no por id: es la credencial del QR; con el id se entraría probando números.
-     *
-     * @return la reserva, para que el acomodador vea la tarifa de cada butaca
-     */
-    public Reserva registrarIngreso(String codigo) {
-        Reserva reserva = reservaRepository.findByCodigo(codigo == null ? "" : codigo.trim().toUpperCase())
-                .orElseThrow(() -> new IllegalArgumentException("No existe ninguna reserva con ese código"));
-        reserva.registrarIngreso(reloj.ahora());
-        reservaRepository.save(reserva);
-        LOG.info("ingreso reserva {} · codigo {} · {} personas",
-                reserva.getId(), reserva.getCodigo(), reserva.getCantidadEntradas());
-        return reserva;
-    }
-
-    public List<Reserva> listarPorCliente(int clienteId) {
-        return reservaRepository.findByClienteIdOrderByCreadaEnDesc(clienteId);
-    }
-
-    public List<Reserva> listar() {
-        return reservaRepository.findAll();
-    }
-
-    /**
-     * En memoria y no con {@code WHERE}: el texto cruza cuatro tablas y un JOIN partiría el
-     * criterio entre el gestor y JPQL. Aguanta decenas de miles de reservas.
-     */
-    public List<Reserva> buscar(CriteriosReserva criterios) {
-        if (criterios == null || criterios.sinFiltros()) {
-            return listar();
-        }
-        // Catálogos indexados una vez, para no consultar por fila.
-        Map<Integer, Funcion> funciones = porId(funcionRepository.findAll(), Funcion::getId);
-        Map<Integer, Pelicula> peliculas = porId(peliculaRepository.findAll(), Pelicula::getId);
-        Map<Integer, Cliente> clientes = porId(clienteRepository.findAll(), Cliente::getId);
-        String texto = criterios.textoNormalizado();
-        return reservaRepository.findAll().stream()
-                .filter(r -> criterios.estado() == null || r.getEstado() == criterios.estado())
-                .filter(r -> criterios.dia() == null
-                        || esDelDia(funciones.get(r.getFuncionId()), criterios.dia()))
-                .filter(r -> coincideElTexto(r, texto, clientes.get(r.getClienteId()),
-                        peliculaDe(funciones.get(r.getFuncionId()), peliculas)))
-                .toList();
-    }
-
-    private static <T> Map<Integer, T> porId(List<T> elementos, Function<T, Integer> id) {
-        return elementos.stream().collect(Collectors.toMap(id, Function.identity()));
-    }
-
-    private static boolean esDelDia(Funcion funcion, LocalDate dia) {
-        return funcion != null && funcion.getInicio().toLocalDate().equals(dia);
-    }
-
-    private static Pelicula peliculaDe(Funcion funcion, Map<Integer, Pelicula> peliculas) {
-        return funcion == null ? null : peliculas.get(funcion.getPeliculaId());
-    }
-
-    /** Por lo que el cliente tiene a mano: nombre, mail, película, código o butaca. */
-    private static boolean coincideElTexto(Reserva reserva, String texto, Cliente cliente,
-                                           Pelicula pelicula) {
-        if (texto.isEmpty() || contiene(reserva.getCodigo(), texto)) {
-            return true;
-        }
-        if (reserva.getEntradas().stream().anyMatch(e -> contiene(e.codigoAsiento(), texto))) {
-            return true;
-        }
-        if (cliente != null && (contiene(cliente.getNombre(), texto) || contiene(cliente.getEmail(), texto))) {
-            return true;
-        }
-        return pelicula != null && contiene(pelicula.getTitulo(), texto);
-    }
-
-    private static boolean contiene(String campo, String texto) {
-        return campo != null && campo.toLowerCase().contains(texto);
-    }
-
-    public Optional<Reserva> buscar(int id) {
-        return reservaRepository.findById(id);
     }
 
     /** Para el log: {@code C4(JUBILADO) C5(GENERAL)}. */

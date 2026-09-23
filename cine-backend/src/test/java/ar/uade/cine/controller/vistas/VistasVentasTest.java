@@ -19,6 +19,8 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.ConsultasReservas;
+import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.funciones.GestorFunciones;
@@ -70,6 +72,10 @@ class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorReservas reservas;
+    @Autowired
+    private GestorAcceso acceso;
+    @Autowired
+    private ConsultasReservas consultas;
 
     @Autowired
     private GestorSalas salas;
@@ -145,7 +151,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertNull(vistas.reserva(reserva).ingresadaEn());
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-        Reserva ingresada = reservas.registrarIngreso(reserva.getCodigo());
+        Reserva ingresada = acceso.registrarIngreso(reserva.getCodigo());
 
         assertNotNull(vistas.reserva(ingresada).ingresadaEn());
         assertEquals(19, vistas.reserva(ingresada).ingresadaEn().length(),
@@ -162,7 +168,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         Reserva reserva = reservar("A1");
         pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
 
-        ReservaVistaDTO vista = vistas.reserva(reservas
+        ReservaVistaDTO vista = vistas.reserva(consultas
                 .buscar(reserva.getId()).orElseThrow());
 
         assertEquals("PAGADA", vista.estado());

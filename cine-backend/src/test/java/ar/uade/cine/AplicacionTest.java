@@ -37,6 +37,7 @@ import ar.uade.cine.service.informes.InformeFuncion;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorReservas;
 
 /**
@@ -55,6 +56,8 @@ class AplicacionTest extends PruebaDeIntegracion {
     private GestorClientes clientes;
     @Autowired
     private GestorReservas reservas;
+    @Autowired
+    private ConsultasReservas consultas;
     @Autowired
     private GestorPagos pagos;
     @Autowired
@@ -80,7 +83,7 @@ class AplicacionTest extends PruebaDeIntegracion {
 
         assertEquals(Dinero.de(5000.0), pago.getMonto());
         assertEquals(EstadoReserva.PAGADA,
-                reservas.buscar(reserva.getId()).orElseThrow().getEstado());
+                consultas.buscar(reserva.getId()).orElseThrow().getEstado());
         assertEquals(Dinero.de(5000.0), caja.arqueoDe(pago.getFecha().toLocalDate()).total());
     }
 

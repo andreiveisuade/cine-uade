@@ -28,7 +28,6 @@ import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
@@ -73,8 +72,6 @@ class OcupacionTest extends PruebaDeIntegracion {
     private AsientoRepository asientoRepository;
     @Autowired
     private SalaRepository salaRepository;
-    @Autowired
-    private ClienteRepository clienteRepository;
     @Autowired
     private PeliculaRepository peliculaRepository;
 
@@ -223,7 +220,7 @@ class OcupacionTest extends PruebaDeIntegracion {
                 asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999), reloj);
 
         GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
-                salaRepository, asientoRepository, clienteRepository, clientes, peliculaRepository,
+                salaRepository, asientoRepository, clientes, peliculaRepository,
                 new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
                 calculadoraPrecio, sinRedis, reloj);
 

@@ -25,8 +25,8 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
-import ar.uade.cine.service.ventas.GestorReservas;
 
 /**
  * Arma reservas y pagos como los espera el front. Tiene tantos colaboradores porque el
@@ -40,13 +40,13 @@ public class VistasVentas {
     private final GestorCartelera cartelera;
     private final GestorClientes clientes;
     private final GestorPagos pagos;
-    private final GestorReservas reservas;
+    private final ConsultasReservas reservas;
     private final VistasCartelera vistasCartelera;
     private final VistasSalas vistasSalas;
     private final VistasUsuarios vistasUsuarios;
 
     public VistasVentas(GestorFunciones funciones, GestorSalas salas, GestorCartelera cartelera,
-                        GestorClientes clientes, GestorPagos pagos, GestorReservas reservas,
+                        GestorClientes clientes, GestorPagos pagos, ConsultasReservas reservas,
                         VistasCartelera vistasCartelera, VistasSalas vistasSalas,
                         VistasUsuarios vistasUsuarios) {
         this.funciones = funciones;

@@ -58,6 +58,10 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Autowired
     private GestorReservas reservas;
     @Autowired
+    private GestorAcceso acceso;
+    @Autowired
+    private ConsultasReservas consultas;
+    @Autowired
     private Ocupacion ocupacion;
     @Autowired
     private GestorSalas salas;
@@ -308,7 +312,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
         assertEquals(10, ocupacion.lugaresLibres(1), "las butacas vuelven a la venta");
-        assertEquals(EstadoReserva.EXPIRADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
+        assertEquals(EstadoReserva.EXPIRADA, consultas.buscar(reserva.getId()).orElseThrow().getEstado());
     }
 
     /** Se expira al consultar, no con un proceso de fondo. */
@@ -356,18 +360,18 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
         assertThrows(IllegalArgumentException.class,
-                () -> reservas.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
+                () -> acceso.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-        assertNotNull(reservas.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
+        assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
 
         assertThrows(IllegalArgumentException.class,
-                () -> reservas.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
+                () -> acceso.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
     }
 
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
-        assertThrows(IllegalArgumentException.class, () -> reservas.registrarIngreso("XXXXXXXX"));
+        assertThrows(IllegalArgumentException.class, () -> acceso.registrarIngreso("XXXXXXXX"));
     }
 
 
@@ -426,17 +430,17 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void buscarSinCriteriosDevuelveTodo() {
         cargarReservas();
 
-        assertEquals(3, reservas.buscar(CriteriosReserva.ninguno()).size());
-        assertEquals(3, reservas.buscar(null).size(), "null no puede romper: es 'sin filtros'");
+        assertEquals(3, consultas.buscar(CriteriosReserva.ninguno()).size());
+        assertEquals(3, consultas.buscar(null).size(), "null no puede romper: es 'sin filtros'");
     }
 
     @Test
     void filtraPorEstado() {
         cargarReservas();
 
-        assertEquals(2, reservas.buscar(
+        assertEquals(2, consultas.buscar(
                 new CriteriosReserva(EstadoReserva.RESERVADA, null, null)).size());
-        assertEquals(1, reservas.buscar(
+        assertEquals(1, consultas.buscar(
                 new CriteriosReserva(EstadoReserva.CANCELADA, null, null)).size());
     }
 
@@ -445,11 +449,11 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void filtraPorElDiaDeLaFuncion() {
         cargarReservas();
 
-        assertEquals(2, reservas.buscar(
+        assertEquals(2, consultas.buscar(
                 new CriteriosReserva(null, LocalDate.of(2026, 8, 20), null)).size());
-        assertEquals(1, reservas.buscar(
+        assertEquals(1, consultas.buscar(
                 new CriteriosReserva(null, LocalDate.of(2026, 8, 21), null)).size());
-        assertTrue(reservas.buscar(
+        assertTrue(consultas.buscar(
                 new CriteriosReserva(null, LocalDate.of(2026, 8, 22), null)).isEmpty());
     }
 
@@ -476,7 +480,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void elTextoBuscaPorCodigoDeReserva() {
         cargarReservas();
-        String codigo = reservas.buscar(CriteriosReserva.ninguno()).get(0).getCodigo();
+        String codigo = consultas.buscar(CriteriosReserva.ninguno()).get(0).getCodigo();
 
         assertEquals(1, buscarTexto(codigo).size());
         assertEquals(1, buscarTexto(codigo.toLowerCase()).size());
@@ -487,9 +491,9 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void losCriteriosSeCombinan() {
         cargarReservas();
 
-        assertEquals(1, reservas.buscar(
+        assertEquals(1, consultas.buscar(
                 new CriteriosReserva(EstadoReserva.RESERVADA, null, "andrei")).size());
-        assertEquals(1, reservas.buscar(
+        assertEquals(1, consultas.buscar(
                 new CriteriosReserva(EstadoReserva.CANCELADA, null, "andrei")).size());
     }
 
@@ -509,7 +513,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     private List<Reserva> buscarTexto(String texto) {
-        return reservas.buscar(new CriteriosReserva(null, null, texto));
+        return consultas.buscar(new CriteriosReserva(null, null, texto));
     }
 
     private static Map<String, TipoTarifa> generales(String... codigos) {

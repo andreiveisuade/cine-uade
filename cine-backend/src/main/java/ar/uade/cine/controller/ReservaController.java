@@ -27,7 +27,9 @@ import ar.uade.cine.dto.ventas.PedidoBloqueoDTO;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
+import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
 
@@ -44,13 +46,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class ReservaController {
 
     private final GestorReservas reservas;
+    private final GestorAcceso acceso;
+    private final ConsultasReservas consultas;
     private final GestorClientes clientes;
     private final Ocupacion ocupacion;
     private final VistasVentas vistas;
 
-    public ReservaController(GestorReservas reservas, GestorClientes clientes,
-                               Ocupacion ocupacion, VistasVentas vistas) {
+    public ReservaController(GestorReservas reservas, GestorAcceso acceso, ConsultasReservas consultas,
+                             GestorClientes clientes, Ocupacion ocupacion, VistasVentas vistas) {
         this.reservas = reservas;
+        this.acceso = acceso;
+        this.consultas = consultas;
         this.clientes = clientes;
         this.ocupacion = ocupacion;
         this.vistas = vistas;
@@ -64,12 +70,12 @@ public class ReservaController {
                                         @RequestParam(required = false) String dia,
                                         @RequestParam(required = false) String q) {
         List<Reserva> lista = email == null || email.isBlank()
-                ? reservas.buscar(new CriteriosReserva(
+                ? consultas.buscar(new CriteriosReserva(
                         Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
                         Parseo.diaOpcional(dia, "el día"), q))
                 // `email` pide coincidencia exacta, no la parcial de `q`.
                 : clientes.buscarPorEmail(email.trim())
-                        .map(c -> reservas.listarPorCliente(c.getId()))
+                        .map(c -> consultas.listarPorCliente(c.getId()))
                         // Email inexistente y sin reservas son lo mismo: lista vacía, no 404.
                         .orElse(List.of());
         // vistas.reservas() y no un map de vistas.reserva(): evita cinco consultas por fila.
@@ -121,7 +127,7 @@ public class ReservaController {
     @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")
     @PostMapping("/api/acceso")
     public ReservaVistaDTO registrarIngreso(@RequestBody PedidoAccesoDTO pedido) {
-        return vistas.reserva(reservas.registrarIngreso(pedido.codigo()));
+        return vistas.reserva(acceso.registrarIngreso(pedido.codigo()));
     }
 
     /** R6: cancelar libera las butacas, y el cupo de la función deja de contarlas. */
@@ -147,7 +153,7 @@ public class ReservaController {
     }
 
     private Reserva buscar(int id) {
-        return reservas.buscar(id)
+        return consultas.buscar(id)
                 .orElseThrow(() -> new NoEncontrado("No existe la reserva " + id));
     }
 }
