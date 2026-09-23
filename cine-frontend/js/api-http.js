@@ -6,15 +6,37 @@
 
 const BASE = "/api";
 
+/* ------------------------------------------------------------- credenciales */
+
+// El backend no guarda sesión: cada pedido del encargado lleva `Authorization: Basic`.
+// Se guardan acá y no en admin/sesion.js porque el único que las usa es `pedir`, y así
+// ningún módulo del panel tiene que acordarse de mandarlas. sessionStorage y no
+// localStorage: se van al cerrar la pestaña, igual que la sesión.
+const CLAVE_CREDENCIALES = "cine.credenciales";
+
+// btoa solo acepta Latin-1: una contraseña con "ñ" rompería sin pasar antes por UTF-8,
+// que es como la decodifica Spring.
+const base64 = (texto) => btoa(String.fromCharCode(...new TextEncoder().encode(texto)));
+
+export function olvidarCredenciales() {
+  sessionStorage.removeItem(CLAVE_CREDENCIALES);
+}
+
 /**
  * Los errores de validación vienen con 400 y {"error": "..."}: ese texto es el mensaje
  * que tiran los gestores y se muestra tal cual, así que se propaga como Error.
  */
 async function pedir(ruta, opciones = {}) {
+  // El login no manda las viejas: si quedaron vencidas, el filtro lo rechazaría antes de
+  // llegar a comprobar las nuevas.
+  const credenciales = ruta === "/sesion" ? null : sessionStorage.getItem(CLAVE_CREDENCIALES);
+  const cabeceras = opciones.cuerpo ? { "Content-Type": "application/json" } : {};
+  if (credenciales) cabeceras.Authorization = `Basic ${credenciales}`;
+
   let respuesta;
   try {
     respuesta = await fetch(BASE + ruta, {
-      headers: opciones.cuerpo ? { "Content-Type": "application/json" } : {},
+      headers: cabeceras,
       method: opciones.metodo || "GET",
       body: opciones.cuerpo ? JSON.stringify(opciones.cuerpo) : undefined,
       // `fetch` no tiene timeout propio: sin esto, un pedido que no vuelve deja el botón
@@ -40,6 +62,15 @@ async function pedir(ruta, opciones = {}) {
       if (!respuesta.ok) throw new Error(texto);
       throw new Error("El servidor devolvió una respuesta que no se pudo leer");
     }
+  }
+
+  // Un 401 fuera del login es que no hay credenciales válidas: vencieron —la clave cambió,
+  // el empleado se borró— o la sesión es de antes de que el backend las pidiera. Se olvidan
+  // y se avisa; el panel escucha el evento y vuelve al login. El 401 del propio login es
+  // una clave mal tipeada y se muestra como cualquier error.
+  if (respuesta.status === 401 && ruta !== "/sesion") {
+    olvidarCredenciales();
+    window.dispatchEvent(new Event("cine:sesion-vencida"));
   }
 
   if (!respuesta.ok) {
@@ -116,7 +147,12 @@ export const obtenerReservasDe = (email) =>
 
 /* ---------------------------------------------------------------- encargado */
 
-export const login = (email, password) => post("/sesion", { email, password });
+// Si el backend acepta, las mismas credenciales van en cada pedido que siga.
+export async function login(email, password) {
+  const empleado = await post("/sesion", { email, password });
+  sessionStorage.setItem(CLAVE_CREDENCIALES, base64(`${email}:${password}`));
+  return empleado;
+}
 
 /** @param filtros {q, genero, publicada} */
 export const obtenerPeliculas = (filtros) => get(`/peliculas${consulta(filtros)}`);

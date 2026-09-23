@@ -1,3 +1,4 @@
+import { olvidarCredenciales } from "../api.js";
 import { ir } from "../router.js";
 import { etiqueta } from "../etiquetas.js";
 
@@ -16,6 +17,7 @@ export function abrirSesion(admin) {
 
 export function cerrarSesion() {
   sessionStorage.removeItem(CLAVE_SESION);
+  olvidarCredenciales();
   pintarEncabezado();
   ir("#/login");
 }

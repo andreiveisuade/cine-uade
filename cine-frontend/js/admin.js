@@ -24,6 +24,9 @@ import { vistaCandy } from "./admin/candy.js";
 import { vistaPuerta } from "./admin/puerta.js";
 
 document.getElementById("salir").addEventListener("click", cerrarSesion);
+// api-http.js lo dispara ante un 401: sin credenciales que valgan no queda nada que hacer
+// en el panel más que volver a entrar.
+window.addEventListener("cine:sesion-vencida", cerrarSesion);
 pintarEncabezado();
 wireToggle();
 
