@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.PaseSugerido;
 import ar.uade.cine.swing.api.dto.PedidoGrilla;
 import ar.uade.cine.swing.api.dto.PeliculaElegida;
 import ar.uade.cine.swing.api.dto.PropuestaGrilla;
+import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -30,13 +31,11 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.Scrollable;
 import javax.swing.text.DefaultCaret;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Rectangle;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -72,12 +71,12 @@ final class PantallaPlanificador extends Pantalla {
     private final JSpinner cierre = Fechas.hora(LocalTime.MIDNIGHT);
     private final JTextField cuantasPeliculas = Campos.soloEntero(new JTextField("8"));
     private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JButton previsualizar = new JButton("Previsualizar");
     private final JButton aplicar = new JButton("Aplicar");
-    private final JPanel resultado = new AlAnchoDelVisor();
+    private final JPanel resultado = new AlAnchoDelVisor(null, false);
     private PropuestaGrilla propuesta;
     // Cada cambio de criterio sube la versión: una respuesta de criterios viejos se descarta al llegar.
     private int version;
@@ -99,7 +98,7 @@ final class PantallaPlanificador extends Pantalla {
         });
     }
 
-    private JPanel criterios() {
+    private JScrollPane criterios() {
         previsualizar.addActionListener(e -> correr(false));
         aplicar.addActionListener(e -> correr(true));
         aplicar.setEnabled(false);
@@ -139,9 +138,7 @@ final class PantallaPlanificador extends Pantalla {
         Campos.alCambiar(cuantasPeliculas, cambio);
         Campos.alCambiar(precioBase, cambio);
 
-        JPanel panel = Componentes.conBorde(formulario);
-        panel.setPreferredSize(new Dimension(340, 0));
-        return panel;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     private void criteriosCambiados() {
@@ -367,34 +364,5 @@ final class PantallaPlanificador extends Pantalla {
 
     private static String conDecimal(double numero) {
         return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
-    }
-
-    /** Sigue el ancho del scroll en vez de estirarlo: sin esto, lo más ancho del resultado empuja todo hacia afuera. */
-    private static final class AlAnchoDelVisor extends JPanel implements Scrollable {
-
-        @Override
-        public Dimension getPreferredScrollableViewportSize() {
-            return getPreferredSize();
-        }
-
-        @Override
-        public int getScrollableUnitIncrement(Rectangle visible, int orientacion, int direccion) {
-            return 16;
-        }
-
-        @Override
-        public int getScrollableBlockIncrement(Rectangle visible, int orientacion, int direccion) {
-            return visible.height;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportWidth() {
-            return true;
-        }
-
-        @Override
-        public boolean getScrollableTracksViewportHeight() {
-            return false;
-        }
     }
 }

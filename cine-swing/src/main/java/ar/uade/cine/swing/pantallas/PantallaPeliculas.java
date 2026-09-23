@@ -22,8 +22,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.Timer;
+import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -68,7 +68,7 @@ final class PantallaPeliculas extends Pantalla {
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
     private final JButton guardar = new JButton("Agregar");
     private final JButton cancelar = new JButton("Cancelar");
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     // El catálogo sin filtro, para el "N cargadas · M publicadas": se pide al entrar y después de cada cambio, no en
     // cada tecla del buscador.
     private List<Pelicula> todas = List.of();
@@ -185,10 +185,7 @@ final class PantallaPeliculas extends Pantalla {
                 .ancho(botones)
                 .ancho(error)
                 .cerrar();
-        JScrollPane scroll = new JScrollPane(Componentes.conBorde(formulario));
-        scroll.setBorder(null);
-        scroll.setPreferredSize(new Dimension(360, 0));
-        return scroll;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     private Map<String, String> filtros() {
@@ -230,6 +227,8 @@ final class PantallaPeliculas extends Pantalla {
         posterUrl.setText(texto(pelicula.posterUrl()));
         generos.forEach(c -> c.setSelected(pelicula.generos().contains((String) c.getClientProperty("genero"))));
         publicada.setSelected(pelicula.enCartelera());
+        // Al principio y no al final: en el formulario angosto, un título largo se tiene que leer desde el comienzo.
+        for (JTextComponent campo : List.of(titulo, sinopsis, posterUrl)) campo.setCaretPosition(0);
         guardar.setText("Guardar cambios");
         cancelar.setVisible(true);
     }

@@ -9,6 +9,7 @@ import ar.uade.cine.swing.api.dto.PedidoCombo;
 import ar.uade.cine.swing.api.dto.PedidoProducto;
 import ar.uade.cine.swing.api.dto.PedidoVenta;
 import ar.uade.cine.swing.api.dto.Producto;
+import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -107,13 +108,13 @@ final class PantallaCandy extends Pantalla {
         private final JTextField nombreProducto = new JTextField();
         private final JComboBox<Opcion<String>> tipoProducto = new JComboBox<>();
         private final JTextField precioProducto = Campos.soloDecimal(new JTextField());
-        private final JLabel errorProducto = new JLabel(" ");
+        private final JLabel errorProducto = Componentes.texto(" ");
 
         private final JTextField nombreCombo = new JTextField();
         private final JTextField precioCombo = Campos.soloDecimal(new JTextField());
         private final JPanel filasCombo = new JPanel(new GridBagLayout());
         private final Map<Integer, JSpinner> cantidadesCombo = new LinkedHashMap<>();
-        private final JLabel errorCombo = new JLabel(" ");
+        private final JLabel errorCombo = Componentes.texto(" ");
 
         Carta() {
             super(new BorderLayout(12, 8));
@@ -156,16 +157,16 @@ final class PantallaCandy extends Pantalla {
             JButton armar = new JButton("Armar combo");
             armar.addActionListener(e -> armarCombo());
 
-            JPanel columna = new JPanel();
-            columna.setLayout(new BoxLayout(columna, BoxLayout.Y_AXIS));
-            columna.add(Componentes.izquierda(Componentes.conBorde(new Componentes.Formulario()
+            // El de combo abajo y estirado: así el costado llega al fondo como en las demás pantallas.
+            JPanel columna = new JPanel(new BorderLayout(0, 8));
+            columna.add(Componentes.conBorde(new Componentes.Formulario()
                     .ancho(Componentes.subtitulo("Nuevo producto"))
                     .obligatorio("Nombre", nombreProducto)
                     .obligatorio("Tipo", tipoProducto)
                     .obligatorio("Precio", precioProducto)
                     .ancho(agregar)
-                    .ancho(errorProducto))));
-            columna.add(Componentes.izquierda(Componentes.conBorde(new Componentes.Formulario()
+                    .ancho(errorProducto)), BorderLayout.NORTH);
+            columna.add(Componentes.conBorde(new Componentes.Formulario()
                     .ancho(Componentes.subtitulo("Armar combo"))
                     .ancho(Componentes.nota("Al menos dos productos. El combo tiene que salir menos que sus "
                             + "componentes sueltos (R14): si no, no habría motivo para ofrecerlo."))
@@ -174,11 +175,9 @@ final class PantallaCandy extends Pantalla {
                     .ancho(filasCombo)
                     .obligatorio("Precio del combo", precioCombo)
                     .ancho(armar)
-                    .ancho(errorCombo))));
-            JScrollPane scroll = new JScrollPane(columna);
-            scroll.setBorder(null);
-            scroll.setPreferredSize(new Dimension(330, 0));
-            return scroll;
+                    .ancho(errorCombo)
+                    .cerrar()), BorderLayout.CENTER);
+            return Componentes.lateral(columna);
         }
 
         private void recargar() {
@@ -253,7 +252,7 @@ final class PantallaCandy extends Pantalla {
             JTextField nombre = new JTextField(p.nombre(), 20);
             JTextField valor = Campos.soloDecimal(new JTextField(p.precio() % 1 == 0
                     ? String.valueOf((long) p.precio()) : String.valueOf(p.precio())));
-            JLabel error = new JLabel(" ");
+            JLabel error = Componentes.texto(" ");
             Componentes.Formulario formulario = new Componentes.Formulario()
                     .obligatorio("Nombre", nombre)
                     .obligatorio("Precio", valor);
@@ -280,15 +279,16 @@ final class PantallaCandy extends Pantalla {
     /** Venta de mostrador. El total lo calcula el backend con los precios de la carta: acá no se tipea. */
     private final class Venta extends JPanel {
 
-        private final JPanel filas = new JPanel(new GridBagLayout());
+        private final JPanel filas = new AlAnchoDelVisor(new GridBagLayout(), false);
         private final Map<Integer, JSpinner> cantidades = new LinkedHashMap<>();
         private final JComboBox<Opcion<String>> medio = new JComboBox<>();
         private final JTextField codigo = new JTextField();
         private final JLabel etiquetaCodigo = new JLabel("Código de autorización");
         private final JTextField email = new JTextField();
         private final JTextField reserva = Campos.soloEntero(new JTextField());
-        private final JLabel error = new JLabel(" ");
-        private final JTextArea ticket = new JTextArea(18, 42);
+        private final JLabel error = Componentes.texto(" ");
+        // Cuarenta columnas: lo justo para el renglón del ticket, que mide TicketCandy.
+        private final JTextArea ticket = new JTextArea(18, 40);
         private final JLabel tituloTicket = new JLabel(" ");
         private List<MedioPago> medios = List.of();
 
@@ -321,6 +321,8 @@ final class PantallaCandy extends Pantalla {
             add(izquierda, BorderLayout.CENTER);
 
             ticket.setEditable(false);
+            ticket.setLineWrap(true);
+            ticket.setWrapStyleWord(true);
             ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
             ticket.setText("El total lo calcula el backend con los precios de la carta: acá no se tipea.\n"
                     + "Al cobrar aparece el ticket.");
@@ -362,18 +364,28 @@ final class PantallaCandy extends Pantalla {
             for (Producto p : productos) {
                 JLabel nombre = new JLabel(p.nombre());
                 nombre.setFont(nombre.getFont().deriveFont(Font.BOLD));
-                JLabel trae = new JLabel(componentesDe(p));
-                trae.setForeground(Componentes.gris());
+                JPanel producto = new JPanel(new BorderLayout());
+                producto.add(nombre, BorderLayout.NORTH);
+                if (p.esCombo()) {
+                    // Debajo del nombre y sin ancho propio: un combo largo se corta con "…" en vez de empujar el
+                    // precio y la cantidad fuera de la vista.
+                    JLabel trae = new JLabel(componentesDe(p));
+                    trae.setForeground(Componentes.gris());
+                    trae.setToolTipText(componentesDe(p));
+                    trae.setPreferredSize(new Dimension(0, trae.getPreferredSize().height));
+                    producto.add(trae, BorderLayout.CENTER);
+                }
                 JLabel valor = new JLabel(precio(p.precio()));
                 JSpinner spinner = cantidad();
                 cantidades.put(p.id(), spinner);
-                Component[] celdas = {nombre, trae, valor, spinner};
+                Component[] celdas = {producto, valor, spinner};
                 for (int columna = 0; columna < celdas.length; columna++) {
                     GridBagConstraints c = new GridBagConstraints();
                     c.gridx = columna;
                     c.gridy = fila;
-                    c.weightx = columna == 1 ? 1 : 0;
-                    c.anchor = columna >= 2 ? GridBagConstraints.EAST : GridBagConstraints.WEST;
+                    c.weightx = columna == 0 ? 1 : 0;
+                    c.fill = columna == 0 ? GridBagConstraints.HORIZONTAL : GridBagConstraints.NONE;
+                    c.anchor = columna >= 1 ? GridBagConstraints.EAST : GridBagConstraints.WEST;
                     c.insets = new Insets(4, 8, 4, 8);
                     filas.add(celdas[columna], c);
                 }

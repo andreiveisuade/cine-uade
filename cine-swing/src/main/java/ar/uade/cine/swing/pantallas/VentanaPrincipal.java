@@ -59,7 +59,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
                 : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
         JScrollPane lateral = new JScrollPane(menu(menu));
         lateral.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Componentes.gris()));
-        lateral.setPreferredSize(new Dimension(200, 0));
+        lateral.setPreferredSize(new Dimension(180, 0));
         raiz.add(lateral, BorderLayout.WEST);
         raiz.add(contenido, BorderLayout.CENTER);
         setContentPane(raiz);

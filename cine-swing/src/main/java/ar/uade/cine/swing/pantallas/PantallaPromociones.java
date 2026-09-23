@@ -22,10 +22,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -67,8 +67,8 @@ final class PantallaPromociones extends Pantalla {
     private final JTextField horaDesde = new JTextField();
     private final JTextField horaHasta = new JTextField();
     private final Map<String, JCheckBox> medios = new LinkedHashMap<>();
-    private final JPanel panelMedios = new JPanel(new GridLayout(0, 3, 4, 0));
-    private final JLabel error = new JLabel(" ");
+    private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
+    private final JLabel error = Componentes.texto(" ");
 
     PantallaPromociones(ApiHttp api) {
         super(api, "Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
@@ -128,7 +128,7 @@ final class PantallaPromociones extends Pantalla {
         alternar.setText(elegida.map(p -> p.activa() ? "Dar de baja" : "Reactivar").orElse("Dar de baja"));
     }
 
-    private JPanel formulario() {
+    private JScrollPane formulario() {
         tipo.addItem(new Opcion<>("PORCENTAJE", "Porcentaje"));
         tipo.addItem(new Opcion<>("MONTO_FIJO", "Monto fijo"));
         tipo.addItem(new Opcion<>("NXM", "NxM (2x1)"));
@@ -162,9 +162,7 @@ final class PantallaPromociones extends Pantalla {
                         + "contra el momento de la compra: un 2x1 de los miércoles vale para la función del miércoles "
                         + "aunque las entradas se compren el lunes."))
                 .cerrar();
-        JPanel panel = Componentes.conBorde(formulario);
-        panel.setPreferredSize(new Dimension(380, 0));
-        return panel;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     private void recargar() {

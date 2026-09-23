@@ -79,7 +79,7 @@ final class PantallaProgramaciones extends Pantalla {
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     private final JButton confirmar = new JButton("Confirmar");
     private final JTextArea informe = areaDeTexto();
     // El plan previsualizado vale solo para los datos con que se pidió.
@@ -168,7 +168,7 @@ final class PantallaProgramaciones extends Pantalla {
         return acciones;
     }
 
-    private JPanel formulario() {
+    private JScrollPane formulario() {
         JButton previsualizar = new JButton("Previsualizar");
         previsualizar.addActionListener(e -> previsualizar());
         confirmar.addActionListener(e -> confirmar());
@@ -185,15 +185,15 @@ final class PantallaProgramaciones extends Pantalla {
                 .campo("Hasta", hasta)
                 .ancho(Componentes.nota("Hasta vacío = sin fin."))
                 .obligatorio("Hora", horaInicio)
-                .campo("Días", dias)
-                .ancho(Componentes.nota("Ningún día marcado = todos."))
+                .ancho(new JLabel("Días (ninguno = todos)"))
+                .ancho(dias)
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
                 .obligatorio("Precio base", precioBase)
                 .ancho(botones)
                 .ancho(error);
         JScrollPane scrollInforme = new JScrollPane(informe);
-        scrollInforme.setPreferredSize(new Dimension(300, 180));
+        scrollInforme.setPreferredSize(new Dimension(200, 180));
         formulario.ancho(scrollInforme)
                 .ancho(Componentes.nota("Al confirmar, el servidor <b>vuelve a revisar</b> cada fecha: entre que mirás "
                         + "el informe y confirmás, otro puede haber programado algo en esa sala."))
@@ -211,12 +211,7 @@ final class PantallaProgramaciones extends Pantalla {
         dias.alCambiar(invalidar);
         Campos.alCambiar(precioBase, invalidar);
 
-        JScrollPane scroll = new JScrollPane(formulario, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setBorder(null);
-        JPanel panel = Componentes.conBorde(scroll);
-        panel.setPreferredSize(new Dimension(400, 0));
-        return panel;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     private void invalidar() {

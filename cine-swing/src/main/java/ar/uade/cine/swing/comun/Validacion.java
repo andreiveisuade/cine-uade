@@ -285,8 +285,9 @@ public final class Validacion {
     }
 
     private void mostrar(List<String> textos) {
-        mensaje.setText("<html><div style='width:300px'>"
-                + textos.stream().map(Formato::escapar).collect(Collectors.joining("<br>")) + "</div></html>");
+        // Sin ancho fijo: la etiqueta es de Componentes.texto y corta línea al ancho del formulario.
+        mensaje.setText("<html>" + textos.stream().map(Formato::escapar).collect(Collectors.joining("<br>"))
+                + "</html>");
     }
 
     // --- marcas ---

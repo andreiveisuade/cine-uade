@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.dto.Pelicula;
+import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tarea;
@@ -31,7 +32,7 @@ final class PantallaPendientes extends Pantalla {
                 + "se pueden programar ni las ve el cliente. Lo que descartes queda descartado: el importador no lo "
                 + "vuelve a proponer.");
         this.navegacion = navegacion;
-        JPanel arriba = new JPanel(new BorderLayout());
+        JPanel arriba = new AlAnchoDelVisor(new BorderLayout(), false);
         arriba.add(tarjetas, BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(arriba);
         scroll.setBorder(null);
@@ -61,14 +62,14 @@ final class PantallaPendientes extends Pantalla {
     }
 
     private JPanel tarjeta(Pelicula pelicula) {
-        JLabel datos = new JLabel("<html><div style='width:300px'><b style='font-size:13pt'>"
+        // Sin ancho fijo: corta línea al de la tarjeta, que es la mitad de lo que haya.
+        JLabel datos = Componentes.texto("<b style='font-size:13pt'>"
                 + escapar(pelicula.titulo()) + "</b><br>"
                 + (pelicula.anio() > 0 ? pelicula.anio() : "—") + " · " + duracion(pelicula.duracionMinutos())
                 + " · " + etiqueta(pelicula.clasificacion()) + "<br>"
                 + escapar(vacioSi(pelicula.director(), "Sin director")) + "<br>"
                 + pelicula.generos().stream().map(g -> etiqueta(g)).collect(Collectors.joining(", "))
-                + "<p style='margin-top:6px'>" + escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis.")) + "</p>"
-                + "</div></html>");
+                + "<p style='margin-top:6px'>" + escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis.")) + "</p>");
         JButton confirmar = new JButton("Confirmar");
         JButton descartar = new JButton("Descartar");
         JPanel botones = new JPanel(new GridLayout(1, 2, 6, 0));

@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Colores;
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -32,7 +33,7 @@ final class PantallaPuerta extends Pantalla {
 
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
     private volatile Set<String> seAcreditan;
 

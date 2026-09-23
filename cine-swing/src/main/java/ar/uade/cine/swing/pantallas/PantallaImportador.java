@@ -40,7 +40,7 @@ final class PantallaImportador extends Pantalla {
     private final JComboBox<Opcion<Integer>> paginas = new JComboBox<>();
     private final JButton traer = new JButton("Traer cartelera");
     private final JProgressBar trayendo = new JProgressBar();
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     private final Tabla<Importacion> tabla = new Tabla<>(
             Columna.<Importacion>de("Cuándo", c -> fechaHora(c.pedidaEn())).ancho(130),
             Columna.<Importacion>de("Estado", c -> etiqueta(c.estado())),

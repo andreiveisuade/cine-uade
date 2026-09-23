@@ -50,7 +50,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
     private final JDateChooser hasta = Fechas.selector(null);
     private final JLabel encabezado = new JLabel(" ");
     private final JLabel total = new JLabel(" ");
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     private final JButton exportar = new JButton("Exportar CSV");
     private final Tabla<FuncionDeclarada> funciones = new Tabla<>(
             Columna.<FuncionDeclarada>de("Función", f -> fechaHora(f.inicio())).ancho(120),

@@ -25,7 +25,7 @@ public final class VentanaLogin extends JFrame {
     private final Consumer<Empleado> alIngresar;
     private final JTextField email = new JTextField(22);
     private final JPasswordField password = new JPasswordField(22);
-    private final JLabel mensaje = new JLabel(" ");
+    private final JLabel mensaje = Componentes.texto(" ");
     private final JButton ingresar = new JButton("Ingresar");
 
     public VentanaLogin(ApiHttp api, String aviso, Consumer<Empleado> alIngresar) {

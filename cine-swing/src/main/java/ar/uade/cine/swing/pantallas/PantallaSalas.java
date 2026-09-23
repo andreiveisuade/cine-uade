@@ -17,9 +17,9 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ final class PantallaSalas extends Pantalla {
     private final JTextField pareja = new JTextField();
     private final JTextField accesibles = new JTextField();
     private final JTextField limpieza = Campos.soloEntero(new JTextField("15"));
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
 
     PantallaSalas(ApiHttp api, Navegacion navegacion) {
         super(api, "Salas", "Doble clic en una sala abre su mapa, para marcar butacas fuera de servicio.");
@@ -71,7 +71,7 @@ final class PantallaSalas extends Pantalla {
         recargar();
     }
 
-    private JPanel formulario() {
+    private JScrollPane formulario() {
         Font mono = new Font(Font.MONOSPACED, Font.PLAIN, 13);
         for (JTextField campo : List.of(distribucion, vip, pareja, accesibles)) campo.setFont(mono);
         distribucion.setToolTipText("Una fila por número, separadas por coma. La primera es la A. Ej: 8,10,12,12,14");
@@ -98,9 +98,7 @@ final class PantallaSalas extends Pantalla {
                 .ancho(crear)
                 .ancho(error)
                 .cerrar();
-        JPanel panel = Componentes.conBorde(formulario);
-        panel.setPreferredSize(new Dimension(360, 0));
-        return panel;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     // Cuenta filas y butacas mientras se tipea: es aritmética sobre lo tipeado, no una regla.

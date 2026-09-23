@@ -20,10 +20,10 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -66,7 +66,7 @@ final class PantallaFunciones extends Pantalla {
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JTextField precioBase = Campos.soloDecimal(new JTextField());
-    private final JLabel error = new JLabel(" ");
+    private final JLabel error = Componentes.texto(" ");
     // Cuántas hay sin filtro, para el "mostrando 3 de 40": se cuenta al entrar y tras cada alta o baja.
     private int total;
     // Mientras se llenan los combos no hay que disparar búsquedas.
@@ -133,7 +133,7 @@ final class PantallaFunciones extends Pantalla {
         return acciones;
     }
 
-    private JPanel formulario() {
+    private JScrollPane formulario() {
         JButton programar = new JButton("Programar");
         programar.addActionListener(e -> programar());
 
@@ -149,10 +149,8 @@ final class PantallaFunciones extends Pantalla {
                 .ancho(programar)
                 .ancho(error)
                 .cerrar();
-        JPanel panel = Componentes.conBorde(formulario);
-        panel.setPreferredSize(new Dimension(340, 0));
         pelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
-        return panel;
+        return Componentes.lateral(Componentes.conBorde(formulario));
     }
 
     private void cargarCatalogos() {

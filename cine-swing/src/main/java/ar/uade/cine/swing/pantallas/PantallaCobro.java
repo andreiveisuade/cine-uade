@@ -147,7 +147,7 @@ final class PantallaCobro extends Pantalla {
         private final JComboBox<Opcion<String>> medio = new JComboBox<>();
         private final JLabel explicacion = Componentes.nota("");
         private final JButton enviar = new JButton();
-        private final JLabel error = new JLabel(" ");
+        private final JLabel error = Componentes.texto(" ");
         private final JPanel checkout = new JPanel(new BorderLayout());
 
         PanelCobro(Reserva reserva, List<MedioPago> medios) {

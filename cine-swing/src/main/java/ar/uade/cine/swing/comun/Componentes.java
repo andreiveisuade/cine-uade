@@ -6,15 +6,19 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridBagLayoutInfo;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -39,6 +43,26 @@ public final class Componentes {
         return panel;
     }
 
+    /**
+     * Lo que ocupa el formulario al costado de una tabla, igual en todas las pantallas. A 960 px de ventana deja
+     * para la tabla un poco más de lo que se lleva el formulario.
+     */
+    public static final int ANCHO_LATERAL = 340;
+
+    /**
+     * El formulario de al lado de la tabla: ancho fijo, la tabla toma el resto y el scroll es solo vertical. El
+     * contenido se ajusta a ese ancho en vez de estirarlo, así un título largo al editar no lo corta a la derecha.
+     */
+    public static JScrollPane lateral(JComponent contenido) {
+        AlAnchoDelVisor visor = new AlAnchoDelVisor(new BorderLayout(), true);
+        visor.add(contenido, BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(visor, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setBorder(null);
+        scroll.setPreferredSize(new Dimension(ANCHO_LATERAL, 0));
+        return scroll;
+    }
+
     public static JLabel subtitulo(String texto) {
         JLabel etiqueta = new JLabel(texto);
         etiqueta.setFont(etiqueta.getFont().deriveFont(Font.BOLD, 15f));
@@ -47,10 +71,15 @@ public final class Componentes {
 
     /** Texto gris que explica. Corta línea al ancho que le toque, en vez de estirar la ventana o cortarse. */
     public static JLabel nota(String texto) {
-        JLabel etiqueta = new TextoQueSalta("<html>" + texto + "</html>");
+        JLabel etiqueta = texto(texto);
         etiqueta.setForeground(gris());
         etiqueta.setFont(etiqueta.getFont().deriveFont(12f));
         return etiqueta;
+    }
+
+    /** HTML que corta línea al ancho que le toque, con el color y la letra de siempre. */
+    public static JLabel texto(String html) {
+        return new TextoQueSalta("<html>" + html + "</html>");
     }
 
     /**
@@ -107,7 +136,7 @@ public final class Componentes {
     }
 
     public static JPanel conBorde(JComponent contenido) {
-        JPanel panel = new JPanel(new java.awt.BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Colores.borde()),
                 BorderFactory.createEmptyBorder(12, 12, 12, 12)));
         panel.add(contenido);
@@ -128,8 +157,7 @@ public final class Componentes {
         numero.setFont(numero.getFont().deriveFont(Font.BOLD, 22f));
         panel.add(izquierda(arriba));
         panel.add(izquierda(numero));
-        if (detalle != null) panel.add(izquierda(new JLabel("<html><div style='width:150px'>" + detalle
-                + "</div></html>")));
+        if (detalle != null) panel.add(izquierda(texto(detalle)));
         if (variacion != null) {
             JLabel cambio = new JLabel(variacion);
             cambio.setFont(cambio.getFont().deriveFont(11f));
@@ -144,7 +172,7 @@ public final class Componentes {
         private int fila;
 
         public Formulario() {
-            super(new GridBagLayout());
+            super(new AchicaLosCampos());
         }
 
         public Formulario campo(String etiqueta, JComponent campo) {
@@ -179,6 +207,20 @@ public final class Componentes {
             todo.insets = new Insets(4, 0, 4, 0);
             add(componente, todo);
             return this;
+        }
+
+        /**
+         * Cuando el formulario no entra a lo ancho, GridBagLayout pasa <i>todos</i> los componentes a su tamaño
+         * mínimo: las etiquetas se amontonan y los campos quedan de dos letras. Midiendo siempre con el preferido,
+         * la diferencia la absorbe la columna con peso, que es la de los campos: un título largo al editar se ve
+         * cortado adentro de su campo en vez de empujar el formulario fuera de la vista.
+         */
+        private static final class AchicaLosCampos extends GridBagLayout {
+
+            @Override
+            protected GridBagLayoutInfo getLayoutInfo(Container padre, int medida) {
+                return super.getLayoutInfo(padre, PREFERREDSIZE);
+            }
         }
 
         /** Empuja todo hacia arriba: sin esto GridBagLayout centra el formulario en vertical. */
