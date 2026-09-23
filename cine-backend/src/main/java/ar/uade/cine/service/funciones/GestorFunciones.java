@@ -135,12 +135,9 @@ public class GestorFunciones {
 
     @Transactional(readOnly = true)
     public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
-        return funcionRepository.findAll().stream()
-                .filter(f -> peliculaId == null || f.getPeliculaId() == peliculaId)
-                .filter(f -> salaId == null || f.getSalaId() == salaId)
-                .filter(f -> desde == null || !f.getInicio().toLocalDate().isBefore(desde))
-                .filter(f -> hasta == null || !f.getInicio().toLocalDate().isAfter(hasta))
-                .toList();
+        return funcionRepository.buscar(peliculaId, salaId,
+                desde == null ? null : desde.atStartOfDay(),
+                hasta == null ? null : hasta.plusDays(1).atStartOfDay());
     }
 
     @Transactional(readOnly = true)

@@ -174,11 +174,7 @@ public class GestorProgramaciones {
 
     @Transactional(readOnly = true)
     public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
-        return programacionRepository.findAll().stream()
-                .filter(p -> peliculaId == null || p.getPeliculaId() == peliculaId)
-                .filter(p -> salaId == null || p.getSalaId() == salaId)
-                .filter(p -> activa == null || p.estaActiva() == activa)
-                .toList();
+        return programacionRepository.buscar(peliculaId, salaId, activa);
     }
 
     @Transactional(readOnly = true)

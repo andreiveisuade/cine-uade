@@ -1,8 +1,6 @@
 package ar.uade.cine.service.cartelera;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
-import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
@@ -140,24 +137,14 @@ public class GestorCartelera {
 
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
     public List<Pelicula> listarEnCartelera() {
-        LocalDateTime ahora = reloj.ahora();
-        // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.
-        programaciones.extenderActivas(ahora.toLocalDate());
-        Set<Integer> conFuncionesPorDelante = funcionRepository.findAll().stream()
-                .filter(funcion -> !funcion.yaEmpezo(ahora))
-                .map(Funcion::getPeliculaId)
-                .collect(Collectors.toSet());
-
-        return peliculaRepository.findAll().stream()
-                .filter(Pelicula::estaEnCartelera)
-                .filter(pelicula -> conFuncionesPorDelante.contains(pelicula.getId()))
-                .toList();
+        return listarEnCartelera(null);
     }
 
     public List<Pelicula> listarEnCartelera(Genero genero) {
-        return listarEnCartelera().stream()
-                .filter(p -> genero == null || p.getGeneros().contains(genero))
-                .toList();
+        LocalDateTime ahora = reloj.ahora();
+        // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.
+        programaciones.extenderActivas(ahora.toLocalDate());
+        return peliculaRepository.findEnCartelera(ahora, genero);
     }
 
     @Transactional(readOnly = true)
@@ -167,12 +154,8 @@ public class GestorCartelera {
 
     @Transactional(readOnly = true)
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
-        String buscado = titulo == null ? "" : titulo.trim().toLowerCase();
-        return peliculaRepository.findAll().stream()
-                .filter(p -> buscado.isEmpty() || p.getTitulo().toLowerCase().contains(buscado))
-                .filter(p -> genero == null || p.getGeneros().contains(genero))
-                .filter(p -> publicada == null || p.estaEnCartelera() == publicada)
-                .toList();
+        return peliculaRepository.buscar(titulo == null ? "" : titulo.trim().toLowerCase(),
+                genero, publicada);
     }
 
     @Transactional(readOnly = true)

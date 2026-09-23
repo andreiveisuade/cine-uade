@@ -111,11 +111,7 @@ public class GestorProductos {
     }
 
     private List<Producto> combosQueTraen(int productoId) {
-        return productoRepository.findAll().stream()
-                .filter(Producto::esCombo)
-                .filter(combo -> combo.getComponentes().stream()
-                        .anyMatch(item -> item.producto().getId() == productoId))
-                .toList();
+        return productoRepository.findCombosQueTraen(productoId);
     }
 
     @Transactional(readOnly = true)

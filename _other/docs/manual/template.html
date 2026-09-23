@@ -729,7 +729,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@Inheritance(SINGLE_TABLE)</code></td><td>Jerarquía en una tabla con discriminador</td><td><code>Promocion</code>, <code>Usuario</code></td></tr>
             <tr><td><code>@Embeddable</code></td><td>Campos guardados en la tabla del dueño</td><td><code>ItemCombo</code></td></tr>
             <tr><td><code>@Converter(autoApply = true)</code></td><td>Tipo propio ↔ columna</td><td><code>DineroConverter</code></td></tr>
-            <tr><td><code>@Query</code></td><td>JPQL a mano cuando el nombre del método no alcanza</td><td><code>PagoRepository.findEntre</code></td></tr>
+            <tr><td><code>@Query</code></td><td>JPQL a mano cuando el nombre del método no alcanza</td><td><code>PagoRepository.findEntre</code>, <code>PeliculaRepository.findEnCartelera</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -1123,6 +1123,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>N+1:</strong> el planificador releía la sala por cada horario: 15.702 consultas y 21 s. <code>AgendaDeSala</code> la lee una vez: 230 consultas, 0,6 s.</li>
         <li><code>open-in-view: false</code>: nada de consultas mientras se serializa el JSON.</li>
+        <li><strong>Filtros en la base:</strong> cartelera, catálogo, funciones, grillas, reservas y combos filtran con <code>@Query</code> (filtro opcional = <code>:x is null or …</code>), no con <code>findAll()</code> y un <code>filter</code> en Java. El buscador de reservas trae función, película y cliente con <code>join fetch</code>; solo el texto se compara en memoria, porque el código de butaca se arma de fila y número.</li>
         <li><code>@ManyToOne</code> LAZY, navegados solo dentro de la transacción; las vistas usan <code>getSalaId()</code>, que no va a la base.</li>
         <li>Colecciones <code>EAGER</code> con <code>default_batch_fetch_size: 50</code>: de a 50 ids por <code>IN</code>.</li>
         <li><code>@Transactional(readOnly = true)</code> en las lecturas.</li>
@@ -1596,7 +1597,7 @@ mvn clean test       # 431 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
         <table>
           <thead><tr><th>Deuda</th><th>Cuándo duele</th></tr></thead>
           <tbody>
-            <tr><td>Buscadores y duplicados con <code>findAll()</code> filtrando en Java</td><td>Con decenas de miles de filas</td></tr>
+            <tr><td>Listados sin paginar, y el texto del buscador de reservas filtrado en Java</td><td>Con decenas de miles de filas</td></tr>
             <tr><td>Colecciones <code>EAGER</code> (en lotes de 50)</td><td>Se traen aunque no se usen</td></tr>
             <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>Con miles de filas en el arqueo</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Lo cubre <code>ClienteRepository</code></td></tr>
