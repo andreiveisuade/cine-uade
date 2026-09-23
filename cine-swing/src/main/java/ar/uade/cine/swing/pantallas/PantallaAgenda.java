@@ -6,9 +6,10 @@ import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
+import ar.uade.cine.swing.comun.SelectorDias;
 import com.toedter.calendar.JCalendar;
 
 import javax.swing.BorderFactory;
@@ -23,8 +24,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -38,10 +39,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import ar.uade.cine.swing.comun.SelectorDias;
-import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 
 /**
  * La programación como la ve quien la arma: cada bloque ocupa el alto de lo que dura, así se ve si dos funciones se

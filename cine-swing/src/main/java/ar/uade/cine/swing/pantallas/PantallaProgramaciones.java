@@ -9,12 +9,14 @@ import ar.uade.cine.swing.api.dto.Programacion;
 import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -36,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ar.uade.cine.swing.comun.SelectorDias;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.precio;
@@ -76,7 +77,8 @@ final class PantallaProgramaciones extends Pantalla {
     private final SelectorDias dias = new SelectorDias();
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
-    private final JTextField precioBase = new JTextField("5000");
+    private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
+    private final JLabel error = new JLabel(" ");
     private final JButton confirmar = new JButton("Confirmar");
     private final JTextArea informe = areaDeTexto();
     // El plan previsualizado vale solo para los datos con que se pidió.
@@ -176,18 +178,19 @@ final class PantallaProgramaciones extends Pantalla {
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(Componentes.subtitulo("Nueva grilla"))
-                .campo("Película", pelicula)
-                .campo("Sala", sala)
-                .campo("Desde", desde)
+                .obligatorio("Película", pelicula)
+                .obligatorio("Sala", sala)
+                .obligatorio("Desde", desde)
                 .campo("Hasta", hasta)
                 .ancho(Componentes.nota("Hasta vacío = sin fin."))
-                .campo("Hora", horaInicio)
+                .obligatorio("Hora", horaInicio)
                 .campo("Días", dias)
                 .ancho(Componentes.nota("Ningún día marcado = todos."))
-                .campo("Idioma", idioma)
-                .campo("Proyección", proyeccion)
-                .campo("Precio base", precioBase)
-                .ancho(botones);
+                .obligatorio("Idioma", idioma)
+                .obligatorio("Proyección", proyeccion)
+                .obligatorio("Precio base", precioBase)
+                .ancho(botones)
+                .ancho(error);
         JScrollPane scrollInforme = new JScrollPane(informe);
         scrollInforme.setPreferredSize(new Dimension(300, 180));
         formulario.ancho(scrollInforme)
@@ -289,29 +292,41 @@ final class PantallaProgramaciones extends Pantalla {
         });
     }
 
-    private PedidoProgramacion pedido() {
-        LocalTime hora = Fechas.leerHora(horaInicio);
+    /** El pedido leído del formulario, o null si falta algo o hay algo mal tipeado: entonces no se manda. */
+    private PedidoProgramacion pedido(Validacion v) {
+        Integer peliculaId = v.elegido(pelicula, "Película");
+        Integer salaId = v.elegido(sala, "Sala");
+        String inicio = v.fecha(desde, "Desde", true);
         // `hasta` vacío viaja null: es una grilla abierta, no una fecha que falta.
-        return new PedidoProgramacion(Campos.elegido(pelicula), Campos.elegido(sala), Fechas.iso(desde),
-                Fechas.iso(hasta), hora == null ? null : hora.toString(), dias.elegidos(), Campos.elegido(idioma),
-                Campos.elegido(proyeccion), Campos.decimal(precioBase));
+        String fin = v.fecha(hasta, "Hasta", false);
+        String idiomaElegido = v.elegido(idioma, "Idioma");
+        String proyeccionElegida = v.elegido(proyeccion, "Proyección");
+        Double precio = v.decimal(precioBase, "Precio base", true);
+        v.alMencionar("rango", desde);
+        if (!v.ok()) return null;
+        return new PedidoProgramacion(peliculaId, salaId, inicio, fin, Fechas.leerHora(horaInicio).toString(),
+                dias.elegidos(), idiomaElegido, proyeccionElegida, precio);
     }
 
     private void previsualizar() {
-        PedidoProgramacion pedido = pedido();
+        Validacion v = new Validacion(error);
+        PedidoProgramacion pedido = pedido(v);
+        if (pedido == null) return;
         Tarea.ejecutar(this, () -> api.previsualizarProgramacion(pedido), plan -> {
             informe.setText(textoDelPlan(plan, false));
             informe.setCaretPosition(0);
             previsualizado = plan;
             confirmar.setEnabled(plan.generadas() > 0);
-        }, error -> {
+        }, e -> {
             invalidar();
-            if (!error.esSesionVencida()) informe.setText(error.getMessage());
+            v.mostrarError(e);
         });
     }
 
     private void confirmar() {
-        PedidoProgramacion pedido = pedido();
+        Validacion v = new Validacion(error);
+        PedidoProgramacion pedido = pedido(v);
+        if (pedido == null) return;
         confirmar.setEnabled(false);
         Tarea.ejecutar(this, () -> api.crearProgramacion(pedido), plan -> {
             // Se repinta con lo que devolvió el servidor, que revalidó cada fecha al aplicar.
@@ -321,9 +336,9 @@ final class PantallaProgramaciones extends Pantalla {
             avisar("Grilla creada: " + plan.generadas() + " funciones"
                     + (plan.salteadas() > 0 ? ", " + plan.salteadas() + " salteadas" : ""));
             recargar();
-        }, error -> {
+        }, e -> {
             confirmar.setEnabled(previsualizado != null);
-            if (!error.esSesionVencida()) informe.setText(error.getMessage());
+            v.mostrarError(e);
         });
     }
 

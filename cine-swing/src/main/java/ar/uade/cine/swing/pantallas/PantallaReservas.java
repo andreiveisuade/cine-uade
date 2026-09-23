@@ -1,14 +1,14 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;

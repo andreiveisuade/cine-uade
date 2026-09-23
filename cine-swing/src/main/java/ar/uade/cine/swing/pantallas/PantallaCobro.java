@@ -11,9 +11,10 @@ import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -28,6 +29,7 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -145,6 +147,7 @@ final class PantallaCobro extends Pantalla {
         private final JComboBox<Opcion<String>> medio = new JComboBox<>();
         private final JLabel explicacion = Componentes.nota("");
         private final JButton enviar = new JButton();
+        private final JLabel error = new JLabel(" ");
         private final JPanel checkout = new JPanel(new BorderLayout());
 
         PanelCobro(Reserva reserva, List<MedioPago> medios) {
@@ -159,7 +162,7 @@ final class PantallaCobro extends Pantalla {
             JPanel contenido = new JPanel();
             contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
             agregar(contenido, Componentes.subtitulo("Cobro"));
-            agregar(contenido, new JLabel("Medio de pago"));
+            agregar(contenido, new JLabel("Medio de pago *"));
             medio.setMaximumSize(new Dimension(Integer.MAX_VALUE, medio.getPreferredSize().height));
             agregar(contenido, medio);
             agregar(contenido, new JLabel(" "));
@@ -170,6 +173,7 @@ final class PantallaCobro extends Pantalla {
             agregar(contenido, new JLabel(" "));
             agregar(contenido, explicacion);
             agregar(contenido, enviar);
+            agregar(contenido, error);
             agregar(contenido, checkout);
             add(Componentes.conBorde(contenido), BorderLayout.NORTH);
 
@@ -203,22 +207,23 @@ final class PantallaCobro extends Pantalla {
         }
 
         private void enviar() {
-            String elegido = Campos.elegido(medio);
+            Validacion v = new Validacion(error);
+            String elegido = v.elegido(medio, "Medio de pago");
+            if (!v.ok()) return;
             enviar.setEnabled(false);
+            Consumer<ErrorApi> fallo = e -> {
+                enviar.setEnabled(true);
+                v.mostrarError(e);
+            };
             if (!porCheckout()) {
-                Tarea.ejecutar(this, () -> api.cobrar(reserva.id(), elegido, ""), this::cobrado, this::fallo);
+                Tarea.ejecutar(this, () -> api.cobrar(reserva.id(), elegido, ""), this::cobrado, fallo);
             } else {
                 // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
                 Tarea.ejecutar(this, () -> api.abrirCheckout(reserva.id(), elegido), c -> {
                     enviar.setEnabled(true);
                     mostrarCheckout(c);
-                }, this::fallo);
+                }, fallo);
             }
-        }
-
-        private void fallo(ErrorApi error) {
-            enviar.setEnabled(true);
-            if (!error.esSesionVencida()) Tarea.mostrarError(this, error);
         }
 
         private void cobrado(Pago pago) {

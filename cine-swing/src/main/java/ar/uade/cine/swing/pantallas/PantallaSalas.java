@@ -8,8 +8,10 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -40,12 +42,13 @@ final class PantallaSalas extends Pantalla {
 
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
-    private final JTextField distribucion = new JTextField();
+    private final JTextField distribucion = Campos.soloListaDeEnteros(new JTextField());
     private final JLabel resumenDistribucion = new JLabel(" ");
     private final JTextField vip = new JTextField();
     private final JTextField pareja = new JTextField();
     private final JTextField accesibles = new JTextField();
-    private final JTextField limpieza = new JTextField("15");
+    private final JTextField limpieza = Campos.soloEntero(new JTextField("15"));
+    private final JLabel error = new JLabel(" ");
 
     PantallaSalas(ApiHttp api, Navegacion navegacion) {
         super(api, "Salas", "Doble clic en una sala abre su mapa, para marcar butacas fuera de servicio.");
@@ -82,9 +85,9 @@ final class PantallaSalas extends Pantalla {
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(Componentes.subtitulo("Nueva sala"))
-                .campo("Nombre", nombre)
-                .campo("Tipo", tipo)
-                .campo("Butacas por fila", distribucion)
+                .obligatorio("Nombre", nombre)
+                .obligatorio("Tipo", tipo)
+                .obligatorio("Butacas por fila", distribucion)
                 .ancho(resumenDistribucion)
                 .campo("Butacas VIP", vip)
                 .campo("Butacas de pareja", pareja)
@@ -93,6 +96,7 @@ final class PantallaSalas extends Pantalla {
                 .ancho(Componentes.nota("Lo que hay que esperar entre dos funciones. Una sala chica se levanta más "
                         + "rápido."))
                 .ancho(crear)
+                .ancho(error)
                 .cerrar();
         JPanel panel = Componentes.conBorde(formulario);
         panel.setPreferredSize(new Dimension(360, 0));
@@ -101,8 +105,8 @@ final class PantallaSalas extends Pantalla {
 
     // Cuenta filas y butacas mientras se tipea: es aritmética sobre lo tipeado, no una regla.
     private void resumir() {
-        List<Integer> filas = Campos.enteros(distribucion);
-        if (distribucion.getText().isBlank() || filas.isEmpty()) {
+        List<Integer> filas = Validacion.leerEnteros(distribucion.getText(), "", false).valor();
+        if (filas == null || filas.isEmpty()) {
             resumenDistribucion.setText(" ");
             return;
         }
@@ -121,14 +125,25 @@ final class PantallaSalas extends Pantalla {
     }
 
     private void crear() {
-        PedidoSala pedido = new PedidoSala(nombre.getText().trim(), Campos.elegido(tipo), Campos.enteros(distribucion),
-                Campos.codigos(vip), Campos.codigos(pareja), Campos.codigos(accesibles), Campos.entero(limpieza));
-        cargar(() -> api.crearSala(pedido), creada -> {
+        Validacion v = new Validacion(error);
+        String nombreLeido = v.texto(nombre, "Nombre", true);
+        String tipoElegido = v.elegido(tipo, "Tipo");
+        List<Integer> filas = v.enteros(distribucion, "Butacas por fila", true);
+        List<String> codigosVip = v.codigos(vip, "Butacas VIP");
+        List<String> codigosPareja = v.codigos(pareja, "Butacas de pareja");
+        List<String> codigosAccesibles = v.codigos(accesibles, "Butacas accesibles");
+        // Vacío viaja null: el backend usa sus 15 minutos por defecto.
+        Integer minutos = v.entero(limpieza, "Minutos de limpieza", false);
+        v.alMencionar("fila", distribucion);
+        if (!v.ok()) return;
+        PedidoSala pedido = new PedidoSala(nombreLeido, tipoElegido, filas, codigosVip, codigosPareja,
+                codigosAccesibles, minutos);
+        Tarea.ejecutar(this, () -> api.crearSala(pedido), creada -> {
             avisar(creada.nombre() + " creada con " + creada.capacidadSala() + " butacas");
             for (JTextField campo : List.of(nombre, distribucion, vip, pareja, accesibles)) campo.setText("");
             limpieza.setText("15");
             recargar();
-        });
+        }, v::mostrarError);
     }
 
     private void borrar(Sala sala) {

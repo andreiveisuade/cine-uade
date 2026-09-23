@@ -7,11 +7,13 @@ import ar.uade.cine.swing.api.dto.Pelicula;
 import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -63,7 +65,8 @@ final class PantallaFunciones extends Pantalla {
     private final JSpinner hora = Fechas.hora(LocalTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(1));
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
-    private final JTextField precioBase = new JTextField();
+    private final JTextField precioBase = Campos.soloDecimal(new JTextField());
+    private final JLabel error = new JLabel(" ");
     // Cuántas hay sin filtro, para el "mostrando 3 de 40": se cuenta al entrar y tras cada alta o baja.
     private int total;
     // Mientras se llenan los combos no hay que disparar búsquedas.
@@ -136,14 +139,15 @@ final class PantallaFunciones extends Pantalla {
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(Componentes.subtitulo("Programar función"))
-                .campo("Película", pelicula)
-                .campo("Sala", sala)
-                .campo("Día", dia)
-                .campo("Hora", hora)
-                .campo("Idioma", idioma)
-                .campo("Proyección", proyeccion)
-                .campo("Precio base", precioBase)
+                .obligatorio("Película", pelicula)
+                .obligatorio("Sala", sala)
+                .obligatorio("Día", dia)
+                .obligatorio("Hora", hora)
+                .obligatorio("Idioma", idioma)
+                .obligatorio("Proyección", proyeccion)
+                .obligatorio("Precio base", precioBase)
                 .ancho(programar)
+                .ancho(error)
                 .cerrar();
         JPanel panel = Componentes.conBorde(formulario);
         panel.setPreferredSize(new Dimension(340, 0));
@@ -207,12 +211,20 @@ final class PantallaFunciones extends Pantalla {
     }
 
     private void programar() {
-        LocalDate elegido = Fechas.leer(dia);
-        String inicio = elegido == null ? null : Fechas.isoCompleto(elegido.atTime(Fechas.leerHora(hora)));
-        PedidoFuncion pedido = new PedidoFuncion(Campos.elegido(pelicula), Campos.elegido(sala), inicio,
-                Campos.elegido(idioma), Campos.elegido(proyeccion),
-                Campos.decimal(precioBase));
-        accion(() -> api.programarFuncion(pedido), "Función programada", this::recargar);
+        Validacion v = new Validacion(error);
+        Integer peliculaId = v.elegido(pelicula, "Película");
+        Integer salaId = v.elegido(sala, "Sala");
+        String elegido = v.fecha(dia, "Día", true);
+        String idiomaElegido = v.elegido(idioma, "Idioma");
+        String proyeccionElegida = v.elegido(proyeccion, "Proyección");
+        Double precio = v.decimal(precioBase, "Precio base", true);
+        if (!v.ok()) return;
+        String inicio = Fechas.isoCompleto(LocalDate.parse(elegido).atTime(Fechas.leerHora(hora)));
+        PedidoFuncion pedido = new PedidoFuncion(peliculaId, salaId, inicio, idiomaElegido, proyeccionElegida, precio);
+        Tarea.ejecutar(this, () -> api.programarFuncion(pedido), creada -> {
+            avisar("Función programada");
+            recargar();
+        }, v::mostrarError);
     }
 
     private void borrar(Funcion funcion) {

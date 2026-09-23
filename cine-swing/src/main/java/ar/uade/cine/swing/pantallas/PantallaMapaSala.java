@@ -6,8 +6,8 @@ import ar.uade.cine.swing.api.dto.Sala;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
-import ar.uade.cine.swing.comun.MapaButacas;
 import ar.uade.cine.swing.comun.MapaButacas.Estilo;
+import ar.uade.cine.swing.comun.MapaButacas;
 
 import javax.swing.Icon;
 import javax.swing.JButton;

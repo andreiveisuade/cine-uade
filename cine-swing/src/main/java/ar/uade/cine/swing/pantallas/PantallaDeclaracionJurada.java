@@ -9,11 +9,12 @@ import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.api.dto.Total;
 import ar.uade.cine.swing.api.dto.TotalDeclarado;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
-import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.informes.DeclaracionJuradaCsv;
 import com.toedter.calendar.JDateChooser;
 
@@ -49,6 +50,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
     private final JDateChooser hasta = Fechas.selector(null);
     private final JLabel encabezado = new JLabel(" ");
     private final JLabel total = new JLabel(" ");
+    private final JLabel error = new JLabel(" ");
     private final JButton exportar = new JButton("Exportar CSV");
     private final Tabla<FuncionDeclarada> funciones = new Tabla<>(
             Columna.<FuncionDeclarada>de("Función", f -> fechaHora(f.inicio())).ancho(120),
@@ -89,7 +91,8 @@ final class PantallaDeclaracionJurada extends Pantalla {
 
         JPanel norte = new JPanel(new BorderLayout(0, 6));
         norte.add(barra, BorderLayout.NORTH);
-        norte.add(encabezado, BorderLayout.CENTER);
+        norte.add(error, BorderLayout.CENTER);
+        norte.add(encabezado, BorderLayout.SOUTH);
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
         arriba.add(Componentes.subtitulo("Por función"), BorderLayout.NORTH);
         arriba.add(funciones.conScroll());
@@ -108,12 +111,19 @@ final class PantallaDeclaracionJurada extends Pantalla {
         consultar();
     }
 
+    // Las dos fechas o ninguna: con una sola el pedido está incompleto, y la que falta es obligatoria. Que el período
+    // sea válido (desde antes que hasta, hasta 31 días) lo dice el backend.
     private void consultar() {
-        String inicio = Fechas.iso(desde);
-        String fin = Fechas.iso(hasta);
+        boolean hayDesde = Fechas.leer(desde) != null;
+        boolean hayHasta = Fechas.leer(hasta) != null;
+        Validacion v = new Validacion(error);
+        String inicio = v.fecha(desde, "Desde", hayHasta);
+        String fin = v.fecha(hasta, "Hasta", hayDesde);
+        v.alMencionar("período", desde);
+        if (!v.ok()) return;
         exportar.setEnabled(false);
-        cargar(() -> new Datos(api.obtenerDeclaracionJurada(inicio, fin),
-                api.obtenerTarifas().stream().map(Tarifa::nombre).toList()), this::pintar);
+        Tarea.ejecutar(this, () -> new Datos(api.obtenerDeclaracionJurada(inicio, fin),
+                api.obtenerTarifas().stream().map(Tarifa::nombre).toList()), this::pintar, v::mostrarError);
     }
 
     private void pintar(Datos datos) {

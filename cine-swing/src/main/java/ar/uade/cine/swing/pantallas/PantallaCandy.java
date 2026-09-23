@@ -12,12 +12,15 @@ import ar.uade.cine.swing.api.dto.Producto;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.TablaCompras;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.informes.TicketCandy;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BoxLayout;
@@ -45,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ar.uade.cine.swing.comun.TablaCompras;
-import ar.uade.cine.swing.informes.TicketCandy;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -91,18 +92,6 @@ final class PantallaCandy extends Pantalla {
         return elegidas;
     }
 
-    private static JLabel etiquetaError() {
-        JLabel error = new JLabel(" ");
-        error.setForeground(Colores.error());
-        return error;
-    }
-
-    private static void mostrarError(JLabel etiqueta, ErrorApi error) {
-        if (!error.esSesionVencida()) {
-            etiqueta.setText("<html><div style='width:320px'>" + error.getMessage() + "</div></html>");
-        }
-    }
-
     /** La carta: altas, edición de nombre y precio, y sacar o reponer. Los productos no se borran. */
     private final class Carta extends JPanel {
 
@@ -117,14 +106,14 @@ final class PantallaCandy extends Pantalla {
 
         private final JTextField nombreProducto = new JTextField();
         private final JComboBox<Opcion<String>> tipoProducto = new JComboBox<>();
-        private final JTextField precioProducto = new JTextField();
-        private final JLabel errorProducto = etiquetaError();
+        private final JTextField precioProducto = Campos.soloDecimal(new JTextField());
+        private final JLabel errorProducto = new JLabel(" ");
 
         private final JTextField nombreCombo = new JTextField();
-        private final JTextField precioCombo = new JTextField();
+        private final JTextField precioCombo = Campos.soloDecimal(new JTextField());
         private final JPanel filasCombo = new JPanel(new GridBagLayout());
         private final Map<Integer, JSpinner> cantidadesCombo = new LinkedHashMap<>();
-        private final JLabel errorCombo = etiquetaError();
+        private final JLabel errorCombo = new JLabel(" ");
 
         Carta() {
             super(new BorderLayout(12, 8));
@@ -171,19 +160,19 @@ final class PantallaCandy extends Pantalla {
             columna.setLayout(new BoxLayout(columna, BoxLayout.Y_AXIS));
             columna.add(Componentes.izquierda(Componentes.conBorde(new Componentes.Formulario()
                     .ancho(Componentes.subtitulo("Nuevo producto"))
-                    .campo("Nombre", nombreProducto)
-                    .campo("Tipo", tipoProducto)
-                    .campo("Precio", precioProducto)
+                    .obligatorio("Nombre", nombreProducto)
+                    .obligatorio("Tipo", tipoProducto)
+                    .obligatorio("Precio", precioProducto)
                     .ancho(agregar)
                     .ancho(errorProducto))));
             columna.add(Componentes.izquierda(Componentes.conBorde(new Componentes.Formulario()
                     .ancho(Componentes.subtitulo("Armar combo"))
                     .ancho(Componentes.nota("Al menos dos productos. El combo tiene que salir menos que sus "
                             + "componentes sueltos (R14): si no, no habría motivo para ofrecerlo."))
-                    .campo("Nombre", nombreCombo)
+                    .obligatorio("Nombre", nombreCombo)
                     .ancho(new JLabel("Qué trae (cantidad)"))
                     .ancho(filasCombo)
-                    .campo("Precio del combo", precioCombo)
+                    .obligatorio("Precio del combo", precioCombo)
                     .ancho(armar)
                     .ancho(errorCombo))));
             JScrollPane scroll = new JScrollPane(columna);
@@ -228,48 +217,63 @@ final class PantallaCandy extends Pantalla {
         }
 
         private void crearProducto() {
-            PedidoProducto pedido = new PedidoProducto(Campos.texto(nombreProducto), Campos.elegido(tipoProducto),
-                    Campos.decimal(precioProducto));
-            errorProducto.setText(" ");
+            Validacion v = new Validacion(errorProducto);
+            String nombre = v.texto(nombreProducto, "Nombre", true);
+            String tipo = v.elegido(tipoProducto, "Tipo");
+            Double precio = v.decimal(precioProducto, "Precio", true);
+            if (!v.ok()) return;
+            PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio);
             Tarea.ejecutar(this, () -> api.crearProductoCandy(pedido), creado -> {
                 avisar("Producto agregado");
                 nombreProducto.setText("");
                 precioProducto.setText("");
                 recargar();
-            }, e -> mostrarError(errorProducto, e));
+            }, v::mostrarError);
         }
 
         // El mínimo de dos productos y R14 los valida el backend: su mensaje aparece abajo del formulario.
         private void armarCombo() {
-            PedidoCombo pedido = new PedidoCombo(Campos.texto(nombreCombo), Campos.decimal(precioCombo),
-                    elegidas(cantidadesCombo));
-            errorCombo.setText(" ");
+            Validacion v = new Validacion(errorCombo);
+            String nombre = v.texto(nombreCombo, "Nombre", true);
+            Double precio = v.decimal(precioCombo, "Precio del combo", true);
+            v.alMencionar("combo", precioCombo);
+            if (!v.ok()) return;
+            PedidoCombo pedido = new PedidoCombo(nombre, precio, elegidas(cantidadesCombo));
             Tarea.ejecutar(this, () -> api.armarComboCandy(pedido), creado -> {
                 avisar("Combo armado");
                 nombreCombo.setText("");
                 precioCombo.setText("");
                 recargar();
-            }, e -> mostrarError(errorCombo, e));
+            }, v::mostrarError);
         }
 
-        // Nombre y precio: lo único que el backend deja cambiar.
+        // Nombre y precio: lo único que el backend deja cambiar. Con un campo mal, el diálogo vuelve a abrirse con el
+        // motivo en vez de cerrarse y perder lo tipeado.
         private void editar(Producto p) {
             JTextField nombre = new JTextField(p.nombre(), 20);
-            JTextField valor = new JTextField(p.precio() % 1 == 0 ? String.valueOf((long) p.precio())
-                    : String.valueOf(p.precio()));
+            JTextField valor = Campos.soloDecimal(new JTextField(p.precio() % 1 == 0
+                    ? String.valueOf((long) p.precio()) : String.valueOf(p.precio())));
+            JLabel error = new JLabel(" ");
             Componentes.Formulario formulario = new Componentes.Formulario()
-                    .campo("Nombre", nombre)
-                    .campo("Precio", valor);
+                    .obligatorio("Nombre", nombre)
+                    .obligatorio("Precio", valor);
             if (p.esCombo()) {
                 formulario.ancho(Componentes.nota("Trae " + componentesDe(p) + ". Los componentes se fijan al armarlo."));
             }
-            int opcion = JOptionPane.showConfirmDialog(this, formulario, "Editar " + p.nombre(),
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (opcion != JOptionPane.OK_OPTION) return;
-            String nuevoNombre = Campos.texto(nombre);
-            Double nuevoPrecio = Campos.decimal(valor);
-            accion(() -> api.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio), "Producto actualizado",
-                    this::recargar);
+            formulario.ancho(error);
+            while (true) {
+                int opcion = JOptionPane.showConfirmDialog(this, formulario, "Editar " + p.nombre(),
+                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                if (opcion != JOptionPane.OK_OPTION) return;
+                Validacion v = new Validacion(error);
+                String nuevoNombre = v.texto(nombre, "Nombre", true);
+                Double nuevoPrecio = v.decimal(valor, "Precio", true);
+                if (v.ok()) {
+                    accion(() -> api.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio), "Producto actualizado",
+                            this::recargar);
+                    return;
+                }
+            }
         }
     }
 
@@ -282,8 +286,8 @@ final class PantallaCandy extends Pantalla {
         private final JTextField codigo = new JTextField();
         private final JLabel etiquetaCodigo = new JLabel("Código de autorización");
         private final JTextField email = new JTextField();
-        private final JTextField reserva = new JTextField();
-        private final JLabel error = etiquetaError();
+        private final JTextField reserva = Campos.soloEntero(new JTextField());
+        private final JLabel error = new JLabel(" ");
         private final JTextArea ticket = new JTextArea(18, 42);
         private final JLabel tituloTicket = new JLabel(" ");
         private List<MedioPago> medios = List.of();
@@ -297,7 +301,7 @@ final class PantallaCandy extends Pantalla {
             reserva.setToolTipText("Con reserva, el cliente sale de ella y la venta suma al informe de esa función.");
 
             JPanel datos = new JPanel(new GridBagLayout());
-            agregarCampo(datos, 0, new JLabel("Medio de pago"), medio);
+            agregarCampo(datos, 0, new JLabel("Medio de pago *"), medio);
             agregarCampo(datos, 1, etiquetaCodigo, codigo);
             agregarCampo(datos, 2, new JLabel("Cliente (opcional)"), email);
             agregarCampo(datos, 3, new JLabel("Reserva (opcional)"), reserva);
@@ -395,17 +399,19 @@ final class PantallaCandy extends Pantalla {
         }
 
         private void cobrar() {
-            error.setText(" ");
+            Validacion v = new Validacion(error);
+            String medioElegido = v.elegido(medio, "Medio de pago");
+            String correo = v.email(email, "Cliente", false);
+            Integer reservaId = v.entero(reserva, "Reserva", false);
+            v.alMencionar("autorización", codigo);
+            if (!v.ok()) return;
             Map<Integer, Integer> pedidas = elegidas(cantidades);
-            String medioElegido = Campos.elegido(medio);
+            // Si el código hace falta (R11) lo decide el backend: acá solo se deja de mandar donde no aplica.
             String autorizacion = requiereCodigo() ? codigo.getText().trim() : "";
-            String correo = email.getText().trim();
-            Integer reservaId = Campos.entero(reserva);
-            String reservaTipeada = reserva.getText().trim();
             Tarea.ejecutar(this, () -> {
                 Integer clienteId = null;
                 // Con reserva el email sobra: el backend toma el cliente de la reserva.
-                if (!correo.isEmpty() && reservaTipeada.isEmpty()) {
+                if (correo != null && reservaId == null) {
                     Cliente cliente = api.buscarClientePorEmail(correo);
                     if (cliente == null) throw new ErrorApi(404, "No hay ningún cliente con el email " + correo);
                     clienteId = cliente.id();
@@ -417,7 +423,7 @@ final class PantallaCandy extends Pantalla {
                 ticket.setText(TicketCandy.escribir(compra));
                 cantidades.values().forEach(s -> s.setValue(0));
                 codigo.setText("");
-            }, e -> mostrarError(error, e));
+            }, v::mostrarError);
         }
     }
 

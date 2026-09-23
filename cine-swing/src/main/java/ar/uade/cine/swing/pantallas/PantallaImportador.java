@@ -9,9 +9,10 @@ import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -39,6 +40,7 @@ final class PantallaImportador extends Pantalla {
     private final JComboBox<Opcion<Integer>> paginas = new JComboBox<>();
     private final JButton traer = new JButton("Traer cartelera");
     private final JProgressBar trayendo = new JProgressBar();
+    private final JLabel error = new JLabel(" ");
     private final Tabla<Importacion> tabla = new Tabla<>(
             Columna.<Importacion>de("Cuándo", c -> fechaHora(c.pedidaEn())).ancho(130),
             Columna.<Importacion>de("Estado", c -> etiqueta(c.estado())),
@@ -64,7 +66,7 @@ final class PantallaImportador extends Pantalla {
         porRevisar.addActionListener(e -> navegacion.ir(Destino.POR_REVISAR));
 
         JPanel controles = new JPanel(new FlujoConSalto());
-        controles.add(new JLabel("Cuánto traer"));
+        controles.add(new JLabel("Cuánto traer *"));
         controles.add(paginas);
         controles.add(traer);
         controles.add(porRevisar);
@@ -72,6 +74,7 @@ final class PantallaImportador extends Pantalla {
         arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
         arriba.add(Componentes.izquierda(aviso));
         arriba.add(Componentes.izquierda(controles));
+        arriba.add(Componentes.izquierda(error));
         arriba.add(Componentes.izquierda(trayendo));
 
         detalle.setEditable(false);
@@ -114,7 +117,9 @@ final class PantallaImportador extends Pantalla {
 
     // Sin consultas repetidas: la corrida tarda unos quince segundos y su respuesta ya trae los contadores.
     private void traer() {
-        Integer cuantas = Campos.elegido(paginas);
+        Validacion v = new Validacion(error);
+        Integer cuantas = v.elegido(paginas, "Cuánto traer");
+        if (!v.ok()) return;
         traer.setEnabled(false);
         paginas.setEnabled(false);
         trayendo.setVisible(true);
@@ -126,11 +131,11 @@ final class PantallaImportador extends Pantalla {
                 avisar(resumen(corrida));
             }
             recargar(corrida.id());
-        }, error -> {
-            // Un 400 (ya hay una corriendo) es una respuesta, no una pantalla rota.
+        }, e -> {
+            // Un 400 (ya hay una corriendo) es una respuesta, no una pantalla rota: va junto al botón.
             terminar();
             traer.setEnabled(true);
-            if (!error.esSesionVencida()) Tarea.mostrarError(this, error);
+            v.mostrarError(e);
         });
     }
 

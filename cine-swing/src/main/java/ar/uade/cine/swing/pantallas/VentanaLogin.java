@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -41,8 +42,8 @@ public final class VentanaLogin extends JFrame {
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(titulo)
                 .ancho(Componentes.nota("Panel del encargado. Servidor: " + api.urlBase()))
-                .campo("Email", email)
-                .campo("Contraseña", password)
+                .obligatorio("Email", email)
+                .obligatorio("Contraseña", password)
                 .ancho(mensaje)
                 .ancho(ingresar);
 
@@ -59,10 +60,12 @@ public final class VentanaLogin extends JFrame {
     }
 
     private void ingresar() {
-        String correo = email.getText().trim();
+        Validacion v = new Validacion(mensaje);
+        String correo = v.texto(email, "Email", true);
+        v.exigir(password.getPassword().length > 0, password, "Contraseña");
+        if (!v.ok()) return;
         String clave = new String(password.getPassword());
         ingresar.setEnabled(false);
-        mensaje.setText(" ");
         Tarea.ejecutar(this, () -> api.login(correo, clave), empleado -> {
             dispose();
             alIngresar.accept(empleado);

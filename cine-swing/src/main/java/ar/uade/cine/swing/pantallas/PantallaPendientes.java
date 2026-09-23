@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 
 /** El buzón de lo que trajo el importador: hasta que se confirma, no se programa ni lo ve el cliente. */
 final class PantallaPendientes extends Pantalla {

@@ -1,12 +1,13 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.api.dto.Entrada;
 import ar.uade.cine.swing.api.dto.Reserva;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.comun.Colores;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -19,8 +20,8 @@ import java.awt.Font;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 /** Control de acceso (CU-18). Lo único que ve el acomodador. */
@@ -31,6 +32,7 @@ final class PantallaPuerta extends Pantalla {
 
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
+    private final JLabel error = new JLabel(" ");
     // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
     private volatile Set<String> seAcreditan;
 
@@ -44,8 +46,11 @@ final class PantallaPuerta extends Pantalla {
         fila.add(validar);
         resultado.setVerticalAlignment(JLabel.TOP);
 
+        JPanel arriba = new JPanel(new BorderLayout(0, 4));
+        arriba.add(fila, BorderLayout.NORTH);
+        arriba.add(error, BorderLayout.SOUTH);
         JPanel centro = new JPanel(new BorderLayout(0, 16));
-        centro.add(fila, BorderLayout.NORTH);
+        centro.add(arriba, BorderLayout.NORTH);
         centro.add(resultado, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
 
@@ -61,8 +66,10 @@ final class PantallaPuerta extends Pantalla {
 
     // El foco vuelve al campo tras cada validación: en la puerta se encadenan una atrás de otra.
     private void validar() {
-        String limpio = codigo.getText().trim().toUpperCase();
-        if (limpio.isEmpty()) return;
+        Validacion v = new Validacion(error);
+        String tipeado = v.texto(codigo, "Código", true);
+        if (!v.ok()) return;
+        String limpio = tipeado.toUpperCase();
         // El catálogo antes que el acceso: si fallara después, la entrada quedaría usada y en pantalla diría NO PASA.
         Tarea.ejecutar(this, () -> {
             Set<String> tarifas = tarifasQueSeAcreditan();

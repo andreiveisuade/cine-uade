@@ -8,8 +8,8 @@ import ar.uade.cine.swing.api.dto.InformeFuncion;
 import ar.uade.cine.swing.api.dto.Tarifa;
 import ar.uade.cine.swing.api.dto.Total;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.informes.BorderoTxt;
 

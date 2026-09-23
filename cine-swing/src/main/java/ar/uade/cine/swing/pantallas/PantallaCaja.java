@@ -6,10 +6,11 @@ import ar.uade.cine.swing.api.dto.ArqueoCandy;
 import ar.uade.cine.swing.api.dto.CompraCandy;
 import ar.uade.cine.swing.api.dto.Pago;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
-import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.TablaCompras;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BorderFactory;
@@ -22,7 +23,6 @@ import java.awt.BorderLayout;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
-import ar.uade.cine.swing.comun.TablaCompras;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;

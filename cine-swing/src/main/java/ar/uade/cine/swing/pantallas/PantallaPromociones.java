@@ -7,12 +7,14 @@ import ar.uade.cine.swing.api.dto.Promocion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -32,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import ar.uade.cine.swing.comun.SelectorDias;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -55,10 +56,10 @@ final class PantallaPromociones extends Pantalla {
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final CardLayout tarjetas = new CardLayout();
     private final JPanel beneficio = new JPanel(tarjetas);
-    private final JTextField porcentaje = new JTextField("30");
-    private final JTextField monto = new JTextField("2000");
-    private final JTextField lleva = new JTextField("2");
-    private final JTextField paga = new JTextField("1");
+    private final JTextField porcentaje = Campos.soloDecimal(new JTextField("30"));
+    private final JTextField monto = Campos.soloDecimal(new JTextField("2000"));
+    private final JTextField lleva = Campos.soloEntero(new JTextField("2"));
+    private final JTextField paga = Campos.soloEntero(new JTextField("1"));
     private final JDateChooser desde = Fechas.selector(LocalDate.now());
     private final JDateChooser hasta = Fechas.selector(null);
     private final SelectorDias dias = new SelectorDias();
@@ -130,25 +131,24 @@ final class PantallaPromociones extends Pantalla {
         tipo.addItem(new Opcion<>("PORCENTAJE", "Porcentaje"));
         tipo.addItem(new Opcion<>("MONTO_FIJO", "Monto fijo"));
         tipo.addItem(new Opcion<>("NXM", "NxM (2x1)"));
-        beneficio.add(new Componentes.Formulario().campo("Porcentaje", porcentaje), "PORCENTAJE");
-        beneficio.add(new Componentes.Formulario().campo("Monto a descontar", monto), "MONTO_FIJO");
-        beneficio.add(new Componentes.Formulario().campo("Lleva", lleva).campo("Paga", paga), "NXM");
+        beneficio.add(new Componentes.Formulario().obligatorio("Porcentaje", porcentaje), "PORCENTAJE");
+        beneficio.add(new Componentes.Formulario().obligatorio("Monto a descontar", monto), "MONTO_FIJO");
+        beneficio.add(new Componentes.Formulario().obligatorio("Lleva", lleva).obligatorio("Paga", paga), "NXM");
         tipo.addActionListener(e -> tarjetas.show(beneficio, Campos.elegido(tipo)));
 
         horaDesde.setToolTipText("HH:mm, vacío = sin límite");
         horaHasta.setToolTipText("HH:mm, vacío = sin límite");
-        error.setForeground(Colores.error());
 
         JButton crear = new JButton("Crear promoción");
         crear.addActionListener(e -> crear());
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(Componentes.subtitulo("Nueva promoción"))
-                .campo("Nombre", nombre)
-                .campo("Tipo", tipo)
+                .obligatorio("Nombre", nombre)
+                .obligatorio("Tipo", tipo)
                 .ancho(beneficio)
-                .campo("Desde", desde)
-                .campo("Hasta", hasta)
+                .obligatorio("Desde", desde)
+                .obligatorio("Hasta", hasta)
                 .ancho(new JLabel("Días (ninguno = todos)"))
                 .ancho(dias)
                 .campo("Desde hora", horaDesde)
@@ -188,23 +188,28 @@ final class PantallaPromociones extends Pantalla {
     }
 
     private void crear() {
-        String elegido = Campos.elegido(tipo);
-        // Los campos de beneficio que no aplican van en null; los números mal tipeados también, y el backend avisa.
-        PedidoPromocion pedido = new PedidoPromocion(Campos.texto(nombre), elegido,
-                "PORCENTAJE".equals(elegido) ? Campos.decimal(porcentaje) : null,
-                "MONTO_FIJO".equals(elegido) ? Campos.decimal(monto) : null,
-                "NXM".equals(elegido) ? Campos.entero(lleva) : null,
-                "NXM".equals(elegido) ? Campos.entero(paga) : null,
-                Fechas.iso(desde), Fechas.iso(hasta), dias.elegidos(),
-                Campos.texto(horaDesde), Campos.texto(horaHasta), tildados(medios));
-        error.setText(" ");
+        Validacion v = new Validacion(error);
+        String nombreLeido = v.texto(nombre, "Nombre", true);
+        String elegido = v.elegido(tipo, "Tipo");
+        // Solo se leen los campos del tipo elegido: los demás viajan en null, como pide el contrato.
+        Double porcentajeLeido = "PORCENTAJE".equals(elegido) ? v.decimal(porcentaje, "Porcentaje", true) : null;
+        Double montoLeido = "MONTO_FIJO".equals(elegido) ? v.decimal(monto, "Monto a descontar", true) : null;
+        Integer llevaLeido = "NXM".equals(elegido) ? v.entero(lleva, "Lleva", true) : null;
+        Integer pagaLeido = "NXM".equals(elegido) ? v.entero(paga, "Paga", true) : null;
+        String vigenciaDesde = v.fecha(desde, "Desde", true);
+        String vigenciaHasta = v.fecha(hasta, "Hasta", true);
+        String desdeHora = v.hora(horaDesde, "Desde hora", false);
+        String hastaHora = v.hora(horaHasta, "Hasta hora", false);
+        v.alMencionar("vigencia", desde);
+        v.alMencionar("nxm", lleva);
+        if (!v.ok()) return;
+        PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, porcentajeLeido, montoLeido, llevaLeido,
+                pagaLeido, vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(medios));
         Tarea.ejecutar(this, () -> api.crearPromocion(pedido), creada -> {
             avisar("Promoción creada");
             limpiar();
             recargar();
-        }, e -> {
-            if (!e.esSesionVencida()) error.setText("<html><div style='width:320px'>" + e.getMessage() + "</div></html>");
-        });
+        }, v::mostrarError);
     }
 
     private void limpiar() {

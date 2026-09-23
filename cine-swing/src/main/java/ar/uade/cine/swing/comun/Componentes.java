@@ -164,6 +164,11 @@ public final class Componentes {
             return this;
         }
 
+        /** Un campo que hay que completar: el asterisco lo avisa antes de que el envío lo rechace. */
+        public Formulario obligatorio(String etiqueta, JComponent campo) {
+            return campo(etiqueta + " *", campo);
+        }
+
         public Formulario ancho(JComponent componente) {
             GridBagConstraints todo = new GridBagConstraints();
             todo.gridx = 0;

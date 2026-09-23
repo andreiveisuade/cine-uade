@@ -8,8 +8,10 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
+import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -54,8 +56,8 @@ final class PantallaPeliculas extends Pantalla {
 
     private final JLabel tituloFormulario = Componentes.subtitulo("Nueva película");
     private final JTextField titulo = new JTextField();
-    private final JTextField duracionMinutos = new JTextField();
-    private final JTextField anio = new JTextField();
+    private final JTextField duracionMinutos = Campos.soloEntero(new JTextField());
+    private final JTextField anio = Campos.soloEntero(new JTextField());
     private final JComboBox<Opcion<String>> clasificacion = new JComboBox<>();
     private final JTextField director = new JTextField();
     private final JTextField idiomaOriginal = new JTextField();
@@ -66,6 +68,7 @@ final class PantallaPeliculas extends Pantalla {
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
     private final JButton guardar = new JButton("Agregar");
     private final JButton cancelar = new JButton("Cancelar");
+    private final JLabel error = new JLabel(" ");
     // El catálogo sin filtro, para el "N cargadas · M publicadas": se pide al entrar y después de cada cambio, no en
     // cada tecla del buscador.
     private List<Pelicula> todas = List.of();
@@ -168,18 +171,19 @@ final class PantallaPeliculas extends Pantalla {
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(tituloFormulario)
-                .campo("Título", titulo)
-                .campo("Duración (min)", duracionMinutos)
+                .obligatorio("Título", titulo)
+                .obligatorio("Duración (min)", duracionMinutos)
                 .campo("Año", anio)
-                .campo("Clasificación", clasificacion)
+                .obligatorio("Clasificación", clasificacion)
                 .campo("Dirección", director)
                 .campo("Idioma original", idiomaOriginal)
                 .campo("Sinopsis", new JScrollPane(sinopsis))
                 .campo("Poster (URL)", posterUrl)
-                .ancho(new JLabel("Géneros (al menos uno)"))
+                .ancho(new JLabel("Géneros (al menos uno) *"))
                 .ancho(panelGeneros)
                 .ancho(publicada)
                 .ancho(botones)
+                .ancho(error)
                 .cerrar();
         JScrollPane scroll = new JScrollPane(Componentes.conBorde(formulario));
         scroll.setBorder(null);
@@ -242,29 +246,35 @@ final class PantallaPeliculas extends Pantalla {
         publicada.setSelected(true);
         guardar.setText("Agregar");
         cancelar.setVisible(false);
+        error.setText(" ");
     }
 
     private void guardar() {
         List<String> elegidos = generos.stream().filter(JCheckBox::isSelected)
                 .map(c -> (String) c.getClientProperty("genero")).toList();
-        // Los textos viajan aunque estén vacíos, para poder borrar un director al editar; un título vacío lo
-        // rechaza el backend con su mensaje. Un número que no es número viaja null y el mensaje también es de allá.
-        PedidoPelicula pedido = new PedidoPelicula(titulo.getText().trim(), Campos.entero(duracionMinutos), elegidos,
-                Campos.elegido(clasificacion), director.getText().trim(), sinopsis.getText().trim(),
-                Campos.entero(anio), idiomaOriginal.getText().trim(), posterUrl.getText().trim(),
-                publicada.isSelected());
+        Validacion v = new Validacion(error);
+        String tituloLeido = v.texto(titulo, "Título", true);
+        Integer duracion = v.entero(duracionMinutos, "Duración", true);
+        Integer anioLeido = v.entero(anio, "Año", false);
+        String clasificacionElegida = v.elegido(clasificacion, "Clasificación");
+        v.exigir(!elegidos.isEmpty(), panelGeneros, "Géneros");
+        if (!v.ok()) return;
+        // Los textos opcionales viajan aunque estén vacíos, para poder borrar un director al editar.
+        PedidoPelicula pedido = new PedidoPelicula(tituloLeido, duracion, elegidos, clasificacionElegida,
+                director.getText().trim(), sinopsis.getText().trim(), anioLeido, idiomaOriginal.getText().trim(),
+                posterUrl.getText().trim(), publicada.isSelected());
         Pelicula actual = editando;
-        if (actual == null) {
-            accion(() -> api.crearPelicula(pedido), "Película agregada", () -> {
-                limpiarFormulario();
-                recargar();
-            });
-        } else {
-            accion(() -> api.actualizarPelicula(actual.id(), pedido), "Cambios guardados", () -> {
-                limpiarFormulario();
-                recargar();
-            });
-        }
+        guardar.setEnabled(false);
+        Tarea.ejecutar(this, () -> actual == null ? api.crearPelicula(pedido)
+                : api.actualizarPelicula(actual.id(), pedido), guardada -> {
+            guardar.setEnabled(true);
+            avisar(actual == null ? "Película agregada" : "Cambios guardados");
+            limpiarFormulario();
+            recargar();
+        }, e -> {
+            guardar.setEnabled(true);
+            v.mostrarError(e);
+        });
     }
 
     private static String texto(String valor) {
