@@ -68,6 +68,7 @@ public class GestorFunciones {
         return funcion;
     }
 
+    @Transactional(readOnly = true)
     public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
                                        Proyeccion proyeccion, Dinero precio) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
@@ -91,6 +92,7 @@ public class GestorFunciones {
         return pelicula;
     }
 
+    @Transactional(readOnly = true)
     public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
         return agendaDe(salaId).chocaCon(inicio, fin);
     }
@@ -109,6 +111,7 @@ public class GestorFunciones {
         return "La sala ya tiene una función en ese horario";
     }
 
+    @Transactional(readOnly = true)
     public AgendaDeSala agendaDe(int salaId) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
         List<Funcion> funciones = funcionRepository.findBySala_Id(salaId);
@@ -124,10 +127,12 @@ public class GestorFunciones {
         return new AgendaDeSala(limpieza, tomados);
     }
 
+    @Transactional(readOnly = true)
     public List<Funcion> listar() {
         return funcionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
         return funcionRepository.findAll().stream()
                 .filter(f -> peliculaId == null || f.getPeliculaId() == peliculaId)
@@ -137,10 +142,12 @@ public class GestorFunciones {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<Funcion> listarPorPelicula(int peliculaId) {
         return funcionRepository.findByPelicula_Id(peliculaId);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Funcion> buscar(int id) {
         return funcionRepository.findById(id);
     }

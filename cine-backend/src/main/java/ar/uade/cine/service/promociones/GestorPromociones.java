@@ -74,6 +74,7 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     // R16: solo participan las entradas generales. Empate: gana la de menor id, para que el cobro sea determinístico.
+    @Transactional(readOnly = true)
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                   MedioPago medio) {
@@ -113,10 +114,12 @@ public class GestorPromociones implements PoliticaPromociones {
         promocionRepository.save(promocion);
     }
 
+    @Transactional(readOnly = true)
     public List<Promocion> listar() {
         return promocionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Promocion> buscar(int id) {
         return promocionRepository.findById(id);
     }

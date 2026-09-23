@@ -127,14 +127,17 @@ public class GestorSalas {
         asientoRepository.save(asiento);
     }
 
+    @Transactional(readOnly = true)
     public List<Sala> listar() {
         return salaRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Asiento> asientosDe(int salaId) {
         return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Sala> buscar(int id) {
         return salaRepository.findById(id);
     }

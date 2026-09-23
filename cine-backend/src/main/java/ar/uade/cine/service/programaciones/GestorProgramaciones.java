@@ -46,6 +46,7 @@ public class GestorProgramaciones {
         this.reloj = reloj;
     }
 
+    @Transactional(readOnly = true)
     public PlanProgramacion previsualizar(DatosGrilla datos) {
         Programacion grilla = armar(datos);
         return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
@@ -165,10 +166,12 @@ public class GestorProgramaciones {
         programacionRepository.save(grilla);
     }
 
+    @Transactional(readOnly = true)
     public List<Programacion> listar() {
         return programacionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
         return programacionRepository.findAll().stream()
                 .filter(p -> peliculaId == null || p.getPeliculaId() == peliculaId)
@@ -177,10 +180,12 @@ public class GestorProgramaciones {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Programacion> buscar(int id) {
         return programacionRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<Funcion> funcionesDe(int id) {
         return funcionRepository.findByProgramacionId(id);
     }

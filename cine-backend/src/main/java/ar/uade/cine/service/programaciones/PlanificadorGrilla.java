@@ -52,6 +52,7 @@ public class PlanificadorGrilla {
         this.funciones = funciones;
     }
 
+    @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
         validar(criterios);
         List<Pelicula> elenco = elegirElenco(criterios.cuantasPeliculas());

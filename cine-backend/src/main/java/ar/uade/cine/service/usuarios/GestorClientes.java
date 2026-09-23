@@ -45,14 +45,17 @@ public class GestorClientes {
         return buscarPorEmail(buscado).orElseGet(() -> registrar(nombre, buscado));
     }
 
+    @Transactional(readOnly = true)
     public List<Cliente> listar() {
         return clienteRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Cliente> buscar(int id) {
         return clienteRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
         return clienteRepository.findByEmail(email);
     }

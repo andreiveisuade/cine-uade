@@ -85,10 +85,12 @@ public class GestorCandy {
         return compra;
     }
 
+    @Transactional(readOnly = true)
     public List<CompraCandy> listarComprasDelDia(LocalDate fecha) {
         return compraCandyRepository.findByDia(fecha);
     }
 
+    @Transactional(readOnly = true)
     public List<CompraCandy> listarComprasDe(int clienteId) {
         return compraCandyRepository.findByClienteId(clienteId);
     }

@@ -61,14 +61,17 @@ public class GestorProductos {
         return combo;
     }
 
+    @Transactional(readOnly = true)
     public List<Producto> listarDisponibles() {
         return productoRepository.findByDisponibleTrue();
     }
 
+    @Transactional(readOnly = true)
     public List<Producto> listar() {
         return productoRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Producto> buscar(int id) {
         return productoRepository.findById(id);
     }
@@ -113,6 +116,7 @@ public class GestorProductos {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Producto buscarOFallar(int id) {
         return productoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el producto " + id));

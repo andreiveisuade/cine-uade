@@ -33,6 +33,7 @@ public class GestorRevisionCartelera {
         return pelicula;
     }
 
+    @Transactional(readOnly = true)
     public List<Pelicula> listarPendientes() {
         return peliculaRepository.findByEstadoRevision(EstadoRevision.PENDIENTE);
     }

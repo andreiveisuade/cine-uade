@@ -158,10 +158,12 @@ public class GestorCartelera {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<Pelicula> listar() {
         return peliculaRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
         String buscado = titulo == null ? "" : titulo.trim().toLowerCase();
         return peliculaRepository.findAll().stream()
@@ -171,6 +173,7 @@ public class GestorCartelera {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Pelicula> buscar(int id) {
         return peliculaRepository.findById(id);
     }

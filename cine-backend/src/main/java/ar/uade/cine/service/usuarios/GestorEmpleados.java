@@ -41,12 +41,14 @@ public class GestorEmpleados {
     }
 
     // Mismo error para email inexistente y contraseña mala, para no revelar qué emails existen.
+    @Transactional(readOnly = true)
     public Empleado iniciarSesion(String email, String password) {
         return empleadoRepository.findByEmail(email)
                 .filter(admin -> Password.coincide(password, admin.getPasswordHash()))
                 .orElseThrow(CredencialesInvalidas::new);
     }
 
+    @Transactional(readOnly = true)
     public List<Empleado> listar() {
         return empleadoRepository.findAll();
     }

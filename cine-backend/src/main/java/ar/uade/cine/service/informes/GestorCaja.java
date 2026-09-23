@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -18,6 +19,7 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
 @Service
+@Transactional(readOnly = true)
 public class GestorCaja {
 
     private final PagoRepository pagoRepository;

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorBordero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
@@ -29,6 +30,7 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
 
 @Service
+@Transactional(readOnly = true)
 public class GestorInformes {
 
     private static final Logger LOG = LoggerFactory.getLogger(GestorInformes.class);

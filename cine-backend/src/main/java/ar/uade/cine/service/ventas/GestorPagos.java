@@ -143,14 +143,17 @@ public class GestorPagos {
         }
     }
 
+    @Transactional(readOnly = true)
     public Optional<Pago> buscarPorReserva(int reservaId) {
         return pagoRepository.findByReservaId(reservaId);
     }
 
+    @Transactional(readOnly = true)
     public List<Pago> buscarPorReservas(Collection<Integer> reservaIds) {
         return pagoRepository.findByReservaIdIn(reservaIds);
     }
 
+    @Transactional(readOnly = true)
     public List<Pago> listar() {
         return pagoRepository.findAll();
     }
