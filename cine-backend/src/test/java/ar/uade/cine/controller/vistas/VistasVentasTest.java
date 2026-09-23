@@ -48,12 +48,8 @@ import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * La reserva viaja como un ticket completo —qué película, en qué sala, a qué hora, de
- * quién y si ya se pagó— porque eso es lo que el front muestra en una sola pantalla.
- *
- * <p>Los dos campos que más importan acá son los que usa la puerta: el código del QR y
- * cuándo se ingresó. El segundo viaja en null mientras nadie entró, y esa distinción es
- * la que le permite al acomodador saber si el ticket ya se usó.
+ * La reserva viaja como ticket completo. Lo crítico es lo que usa la puerta: el código del QR
+ * e ingresadaEn, en null mientras nadie entró.
  */
 class VistasVentasTest extends PruebaDeIntegracion {
 
@@ -108,7 +104,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals("RESERVADA", vista.estado());
     }
 
-    /** El email del cliente viaja: es con lo que se identifica al comprar sin registrarse. */
+    /** Se identifica por email porque compra sin registrarse. */
     @Test
     void elClienteViajaSinDatosDeMas() {
         ReservaVistaDTO vista = vistas.reserva(reservar("A1"));
@@ -117,10 +113,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals("andrei@uade.edu.ar", vista.cliente().email());
     }
 
-    /**
-     * La tarifa viaja por entrada para que el acomodador sepa a quién pedirle el carnet:
-     * un jubilado y un menor pagaron menos y tienen que poder acreditarlo.
-     */
+    /** Para que el acomodador pida el carnet a quien pagó tarifa reducida. */
     @Test
     void cadaEntradaDiceConQueTarifaSeVendio() {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
@@ -135,7 +128,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
     }
 
-    /** El código del QR no es el id: es lo que se escanea y no se puede adivinar. */
+    /** El código no es el id: no se puede adivinar. */
     @Test
     void laReservaViajaConElCodigoDelQr() {
         Reserva reserva = reservar("A1");
@@ -146,10 +139,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertTrue(!vista.codigo().equals(String.valueOf(vista.id())));
     }
 
-    /**
-     * Mientras nadie entró, ingresadaEn viaja en null y el campo ni aparece en el JSON.
-     * Es distinto de una fecha vacía: el escáner lee "todavía no se usó".
-     */
     @Test
     void ingresadaEnEstaEnNullHastaQueAlguienEntra() {
         Reserva reserva = reservar("A1");
@@ -182,11 +171,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals(5000.0, vista.pago().monto());
     }
 
-    /**
-     * El pago embebido en la reserva no repite la película ni el cliente: ya vienen en la
-     * reserva que lo contiene. Mandarlos otra vez sería duplicar el mismo dato en un JSON
-     * que el front ya sabe leer de un solo lugar.
-     */
     @Test
     void elPagoEmbebidoNoRepiteLoQueYaTraeLaReserva() {
         Reserva reserva = reservar("A1");
@@ -199,11 +183,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertNull(vista.entradas());
     }
 
-    /**
-     * El arqueo es la vista del encargado: muestra qué se cobró, no solo cuánto. Ahí sí
-     * cada pago tiene que traer la película y el cliente, porque la reserva no está
-     * alrededor para consultarla.
-     */
+    /** En el arqueo no hay reserva alrededor para consultar película y cliente. */
     @Test
     void elPagoDelArqueoSiTraeQueSeVendioYAQuien() {
         Reserva reserva = reservar("A1", "A2");

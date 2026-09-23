@@ -12,26 +12,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * El único lugar donde se ejecutan de verdad los comandos de Redis. Todo lo demás
- * —{@link ar.uade.cine.service.ventas.OcupacionTest}— corre contra la implementación en memoria,
- * así que los dos scripts Lua de esta clase no tendrían ninguna cobertura sin este test.
- *
- * <p><strong>Se saltea salvo que se le diga contra qué Redis correr.</strong> No usa el
- * puerto por defecto a propósito: escribiría en el Redis que la máquina tenga levantado,
- * que puede ser el de otro proyecto. Hay que darle uno descartable:
+ * Único test que ejecuta los scripts Lua contra un Redis real; el resto usa la implementación
+ * en memoria. Se saltea sin {@code REDIS_TEST_PORT} para que {@code mvn test} corra solo y no
+ * escriba en el Redis de otro proyecto:
  *
  * <pre>
  * docker run -d --rm --name cine-redis-prueba -p 6399:6379 redis:8-alpine
  * REDIS_TEST_PORT=6399 mvn test -Dtest=BloqueoButacasRedisTest
  * docker stop cine-redis-prueba
  * </pre>
- *
- * <p>Que se saltee y no falle es lo que mantiene la regla de que {@code mvn test} corre
- * solo, sin levantar nada.
  */
 class BloqueoButacasRedisTest {
 
-    /** Una función que no existe en ninguna base: las claves son solo de este test. */
     private static final int FUNCION = 99;
 
     private BloqueoButacasRedis bloqueos;
@@ -74,7 +66,7 @@ class BloqueoButacasRedisTest {
         assertEquals(Map.of(), bloqueos.bloqueadas(FUNCION));
     }
 
-    /** El vencimiento lo lleva Redis con el TTL de la clave: acá sí hay que esperarlo. */
+    /** El vencimiento lo lleva el TTL de Redis: acá sí hay que esperarlo. */
     @Test
     void laClaveVenceSola() throws InterruptedException {
         bloqueos.bloquear(FUNCION, 7, "ana", Duration.ofMillis(300));

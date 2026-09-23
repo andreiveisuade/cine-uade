@@ -18,13 +18,8 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
 /**
- * La traducción del modelo de TMDB al nuestro.
- *
- * <p>Es la pieza que más vale probar de todo el importador, y hasta que se la absorbió no
- * tenía un solo test: vivía en un {@code mapeo.py} de un repo aparte, acoplada por texto a
- * los enums de {@code dominio}. Lo que se verifica acá es lo que cuesta caro cuando se
- * rompe en silencio: que un género ajeno caiga siempre en uno nuestro, y que la falta de
- * datos se resuelva del lado prudente.
+ * Lo caro si se rompe en silencio: que un género ajeno caiga siempre en uno nuestro y que la
+ * falta de datos se resuelva del lado prudente.
  */
 class MapeoTmdbTest {
 
@@ -38,7 +33,7 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.ACCION), MapeoTmdb.generosDe(detalle));
     }
 
-    /** Vaiana entra como acción y ciencia ficción: la pérdida es a propósito. */
+    /** La pérdida es a propósito: Vaiana entra como acción y ciencia ficción. */
     @Test
     void fantasiaCaeEnCienciaFiccion() {
         JsonNode detalle = json("""
@@ -47,7 +42,7 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.ACCION, Genero.CIENCIA_FICCION), MapeoTmdb.generosDe(detalle));
     }
 
-    /** R7 exige al menos uno y el alta lo rechazaría: DRAMA es el menos comprometido. */
+    /** R7 exige al menos uno: DRAMA es el menos comprometido. */
     @Test
     void sinNingunGeneroReconocibleQuedaDrama() {
         assertEquals(List.of(Genero.DRAMA), MapeoTmdb.generosDe(json("""
@@ -56,8 +51,8 @@ class MapeoTmdbTest {
     }
 
     /**
-     * El default no es ATP y no es un detalle: inventar una clasificación permisiva dejaría
-     * entrar a un menor a cualquier cosa. El error prudente es el que se corrige a mano.
+     * Una clasificación permisiva inventada dejaría entrar a un menor; el error prudente se
+     * corrige a mano.
      */
     @Test
     void sinCertificacionArgentinaElDefaultEsElRestrictivo() {
@@ -116,10 +111,7 @@ class MapeoTmdbTest {
         assertEquals("http://poster", pelicula.posterUrl());
     }
 
-    /**
-     * Nace apagada aunque el buzón la ponga pendiente igual: si mañana cambia el buzón, una
-     * película que nadie miró no puede terminar ofreciéndose sola.
-     */
+    /** Si cambia el buzón, una película que nadie miró no puede ofrecerse sola. */
     @Test
     void laPeliculaNaceFueraDeCartelera() {
         DatosPelicula pelicula = MapeoTmdb.aPelicula(json("{}"), json("""
@@ -128,11 +120,7 @@ class MapeoTmdbTest {
         assertFalse(pelicula.enCartelera());
     }
 
-    /**
-     * Cuando TMDB no pudo dar el detalle, el título sale del listado y la duración queda en
-     * cero: la película llega igual y el alta la rechaza por R2, que es lo que la deja
-     * contada y nombrada en el detalle de la corrida en vez de desaparecer.
-     */
+    /** El alta la rechaza por R2 y así queda nombrada en el detalle de la corrida. */
     @Test
     void sinDetalleQuedaElTituloDelListadoYSinDuracion() {
         JsonNode resumen = json("""

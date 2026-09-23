@@ -20,10 +20,6 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 
-/**
- * La edición de una sala por PUT: qué se puede cambiar, qué no, y con qué código contesta
- * cada rechazo.
- */
 class SalaControllerTest extends PruebaDeApi {
 
     @Autowired

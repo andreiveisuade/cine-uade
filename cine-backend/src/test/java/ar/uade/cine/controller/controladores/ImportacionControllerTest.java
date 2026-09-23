@@ -15,11 +15,8 @@ import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 
 
 /**
- * Pedir cartelera por HTTP, con un importador que no sale a TMDB.
- *
- * <p>Lo que agrega sobre {@code GestorImportacionesTest} es el borde: que el pedido sin
- * cuerpo valga, que el rechazo del gestor salga como 400 con el mensaje intacto, y que las
- * fechas viajen en el formato del contrato.
+ * Lo que no ve {@code GestorImportacionesTest}: pedido sin cuerpo, 400 con el mensaje del
+ * gestor intacto y fechas en el formato del contrato.
  */
 class ImportacionControllerTest extends PruebaDeApi {
 
@@ -56,7 +53,7 @@ class ImportacionControllerTest extends PruebaDeApi {
         assertEquals(2, catalogo.paginasPedidas());
     }
 
-    /** «Traeme cartelera» es un pedido completo: el default de páginas lo pone el gestor. */
+    /** El default de páginas lo pone el gestor. */
     @Test
     void sinCuerpoTambienVale() {
         Respuesta respuesta = post("/api/importaciones", "");
@@ -78,10 +75,6 @@ class ImportacionControllerTest extends PruebaDeApi {
                 "una corrida fallida igual terminó");
     }
 
-    /**
-     * El rechazo del gestor sale como 400 con el texto intacto, que es lo que el front
-     * muestra tal cual. Es justamente lo que un test de gestor no puede ver.
-     */
     @Test
     void pedirCuatroPaginasEs400ConElMensajeDelGestor() {
         Respuesta respuesta = post("/api/importaciones", "{\"paginas\":4}");
@@ -91,10 +84,7 @@ class ImportacionControllerTest extends PruebaDeApi {
         assertEquals(0, catalogo.consultas());
     }
 
-    /**
-     * Que TMDB no conteste no es un error de la API: la corrida queda registrada como
-     * fallida y se responde 201 igual. El motivo se le muestra al encargado.
-     */
+    /** La corrida queda fallida con su motivo y se responde 201 igual. */
     @Test
     void siTmdbNoContestaLaCorridaQuedaFallidaYNoEsUn500() {
         catalogo.queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
@@ -131,11 +121,7 @@ class ImportacionControllerTest extends PruebaDeApi {
                 respuesta.json().get("detalle").asText());
     }
 
-    /**
-     * Spring elige la ruta más específica y no la primera registrada, así que el orden de
-     * los métodos ya no decide nada. Igual se prueba: si un día {@code /estado} entrara como
-     * un id del listado, el front no tendría cómo saber si el importador está.
-     */
+    /** Si {@code /estado} se tomara como un id, el front no sabría si el importador está. */
     @Test
     void elEstadoNoSeLoComeElListado() {
         assertTrue(get("/api/importaciones/estado").json().has("disponible"));

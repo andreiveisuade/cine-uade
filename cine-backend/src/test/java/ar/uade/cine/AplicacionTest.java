@@ -40,14 +40,8 @@ import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 
 /**
- * El sistema completo, atravesado de punta a punta.
- *
- * <p>Antes probaba además que los gestores quedaran todos armados y conectados al mismo
- * DAO: eso lo garantiza ahora el contenedor, y de una forma más fuerte que un
- * {@code assertNotNull} —si un gestor le pide algo que nadie declara, el contexto no
- * levanta y no corre ni un test—. Lo que queda es lo que el contenedor no puede saber: que
- * el circuito de negocio cierre, que el arqueo vea el cobro que acaba de entrar y que el
- * informe cruce lo que guardaron tres gestores distintos.
+ * El sistema de punta a punta: lo que el contenedor no garantiza es que el circuito de
+ * negocio cierre cuando cada paso lo atiende un gestor distinto.
  */
 class AplicacionTest extends PruebaDeIntegracion {
 
@@ -72,11 +66,6 @@ class AplicacionTest extends PruebaDeIntegracion {
     @Autowired
     private GestorInformes informes;
 
-    /**
-     * Comprar una entrada de punta a punta. Cada paso lo atiende un gestor distinto, así
-     * que si dos quedaran conectados a DAOs distintos, alguno no encontraría lo que el
-     * anterior acaba de guardar.
-     */
     @Test
     void elCircuitoDeCompraAtraviesaLosGestoresYaConectados() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -92,15 +81,10 @@ class AplicacionTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(5000.0), pago.getMonto());
         assertEquals(EstadoReserva.PAGADA,
                 reservas.buscar(reserva.getId()).orElseThrow().getEstado());
-        // El arqueo lo arma GestorCaja y tiene que ver el cobro que acaba de entrar.
         assertEquals(Dinero.de(5000.0), caja.arqueoDe(pago.getFecha().toLocalDate()).total());
     }
 
-    /**
-     * El candy engancha con la reserva: es el «¿desea agregar pochoclos?» de después de
-     * comprar la entrada. Que funcione prueba que GestorCandy y GestorReservas comparten
-     * el mismo ReservaDAO.
-     */
+    /** El «¿desea agregar pochoclos?» de después de comprar la entrada. */
     @Test
     void elCandySeEnganchaConLaReservaRecienHecha() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -122,11 +106,7 @@ class AplicacionTest extends PruebaDeIntegracion {
         assertTrue(candy.listarComprasDe(cliente.getId()).size() == 1);
     }
 
-    /**
-     * El informe de una función es el gestor que más lejos mira: cruza lo que guardaron
-     * reservas, pagos y candy. Si quedara colgado de otros DAOs, no fallaría nada — daría
-     * cero, que es la clase de error que este test existe para encontrar.
-     */
+    /** Cruza reservas, pagos y candy: un cableado roto no falla, da cero. */
     @Test
     void elInformeDeLaFuncionVeLoQueCobraronLosOtrosGestores() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);

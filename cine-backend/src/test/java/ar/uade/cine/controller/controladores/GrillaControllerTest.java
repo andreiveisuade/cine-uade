@@ -20,12 +20,8 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.salas.TipoSala;
 
 /**
- * El armado de la grilla, pedido por HTTP.
- *
- * <p>Lo que agrega sobre {@code PlanificadorGrillaTest} es qué pasa con el cuerpo del
- * pedido: qué campos tienen default, cuál es obligatorio y con qué mensaje se rechaza. Eso
- * se decide en {@code api/} y no se ve desde un test del planificador, que recibe los
- * criterios ya armados.
+ * Lo que no ve {@code PlanificadorGrillaTest}: defaults del cuerpo, campo obligatorio y
+ * mensaje de rechazo, que se deciden en el controller.
  */
 class GrillaControllerTest extends PruebaDeApi {
 
@@ -51,10 +47,6 @@ class GrillaControllerTest extends PruebaDeApi {
     }
 
 
-    /**
-     * El resto de los campos sí tiene default: con solo el precio alcanza para una semana
-     * de 14 a 24 con ocho títulos, que es lo que promete el contrato.
-     */
     @Test
     void conSoloElPrecioArmaLaGrillaConLosDefaults() {
         Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000}");
@@ -65,11 +57,7 @@ class GrillaControllerTest extends PruebaDeApi {
                 "previsualizar no escribe: el contador queda en cero");
     }
 
-    /**
-     * El precio no tiene default a propósito, y el mensaje tiene que decir que falta y no
-     * que es inválido: sin esto, mandar el cuerpo vacío respondía "el precio debe ser mayor
-     * a cero" sobre un precio que nadie mandó.
-     */
+    /** El precio no tiene default, y el mensaje dice que falta, no que es inválido. */
     @Test
     void sinPrecioAvisaQueFaltaYNoQueEsInvalido() {
         Respuesta respuesta = post("/api/grilla/propuesta", "{}");
@@ -78,7 +66,6 @@ class GrillaControllerTest extends PruebaDeApi {
         assertEquals("Falta el precio de las funciones", respuesta.json().get("error").asText());
     }
 
-    /** Un precio mandado pero imposible sigue siendo el otro error, el del planificador. */
     @Test
     void conPrecioEnCeroElMensajeEsElDelPlanificador() {
         Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":0}");
@@ -87,7 +74,6 @@ class GrillaControllerTest extends PruebaDeApi {
         assertEquals("El precio debe ser mayor a cero", respuesta.json().get("error").asText());
     }
 
-    /** El alta sí escribe, y lo dice en el mismo campo que la previsualización deja en cero. */
     @Test
     void elAltaDevuelve201YCuentaLasFuncionesCreadas() {
         Respuesta respuesta = post("/api/grilla",

@@ -13,12 +13,9 @@ import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
 /**
- * Los tres niveles de {@code ConfiguracionSeguridad}, pidiendo de verdad.
- *
- * <p>El resto de los tests de API va autenticado como administrador y por eso no ve el
- * filtro. Acá se prueba justamente lo que ellos dan por hecho: que el sitio del cliente
- * funciona sin clave, que una escritura del encargado no, y que el rechazo sale con la forma
- * {@code {"error": "..."}} y sin la cabecera que abre el cuadro de login del navegador.
+ * El resto de los tests de API va como administrador y no ve el filtro. Acá: el cliente sin
+ * clave, la escritura del encargado rechazada con {@code {"error": "..."}} y sin la cabecera
+ * que abre el login del navegador.
  */
 class SeguridadTest extends PruebaDeApi {
 

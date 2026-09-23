@@ -9,12 +9,8 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
 /**
- * Un catálogo externo que no sale a ningún lado: contesta lo que el test le haya dicho que
- * conteste.
- *
- * <p>Es el equivalente de {@code persistencia/memoria} para el otro lado del sistema. Sin
- * esto, probar el circuito de importaciones necesitaría un token de TMDB de verdad, y cada
- * corrida de {@code mvn test} gastaría cuota y traería películas distintas según el día.
+ * Catálogo externo que contesta lo que el test le diga: sin él, cada {@code mvn test} gastaría
+ * cuota de TMDB y traería películas distintas según el día.
  */
 public class CatalogoDePrueba implements CatalogoExterno {
 
@@ -39,7 +35,6 @@ public class CatalogoDePrueba implements CatalogoExterno {
         return estado;
     }
 
-    /** Una película válida, que el alta va a aceptar. Lo que se prueba es el circuito. */
     public static DatosPelicula pelicula(String titulo) {
         return new DatosPelicula(titulo, 120, List.of(Genero.DRAMA), Clasificacion.ATP,
                 "", "", 2026, "Inglés", "", false, 7.5, 100);
@@ -51,7 +46,7 @@ public class CatalogoDePrueba implements CatalogoExterno {
         return this;
     }
 
-    /** Por título, que es el caso normal: lo que importa del alta es que R1 las hace únicas. */
+    /** R1 las hace únicas por título. */
     public CatalogoDePrueba queTraiga(String... titulos) {
         return queTraiga(Arrays.stream(titulos).map(CatalogoDePrueba::pelicula)
                 .toArray(DatosPelicula[]::new));
@@ -67,8 +62,7 @@ public class CatalogoDePrueba implements CatalogoExterno {
         return this;
     }
 
-    /** Cuántas veces se lo consultó: es lo que prueba que un pedido rechazado no corrió. */
-    /** Lo deja como recién creado: es un bean compartido entre las clases de test. */
+    /** Es un bean compartido entre las clases de test. */
     public void reiniciar() {
         candidatas = List.of();
         motivoDeFalla = null;
@@ -77,6 +71,7 @@ public class CatalogoDePrueba implements CatalogoExterno {
         paginasPedidas = 0;
     }
 
+    /** Prueba que un pedido rechazado no llegó a correr. */
     public int consultas() {
         return consultas;
     }

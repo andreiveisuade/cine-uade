@@ -38,13 +38,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * Los dos informes que cortan por función, pedidos por HTTP.
- *
- * <p>Lo que agrega esta prueba sobre {@code GestorInformesTest} es la forma del JSON y el
- * código de respuesta: que el desglose por tarifa viaje con el nombre del enum como clave,
- * que emitir sea 201 y consultar 200, y que una función inexistente sea 404 y no el 400 con
- * el que el gestor rechaza todo. Esa diferencia se decide en {@code api/} y no se ve desde
- * un test de gestor.
+ * Lo que no ve {@code GestorInformesTest}: forma del JSON y códigos (201 al emitir, 200 al
+ * consultar, 404 para una función inexistente en vez del 400 del gestor).
  */
 class InformeControllerTest extends PruebaDeApi {
 
@@ -108,7 +103,7 @@ class InformeControllerTest extends PruebaDeApi {
         assertEquals(2500.0, bordero.get("porTarifa").get("JUBILADO").get("total").asDouble(), 0.001);
     }
 
-    /** Una tarifa sin entradas no viaja en cero: directamente no está, como en el arqueo. */
+    /** Una tarifa sin entradas no viaja en cero: no está, como en el arqueo. */
     @Test
     void elDesgloseSoloTraeLasTarifasConEntradasVendidas() {
         var porTarifa = get("/api/funciones/1/bordero").json().get("porTarifa");
@@ -117,10 +112,6 @@ class InformeControllerTest extends PruebaDeApi {
         assertFalse(porTarifa.has("ESTUDIANTE"));
     }
 
-    /**
-     * Una función que no existe es 404 y no 400. El gestor la rechaza igual, pero con el
-     * código de una regla incumplida: distinguirlas es trabajo de la ruta.
-     */
     @Test
     void elBorderoDeUnaFuncionQueNoExisteEs404() {
         Respuesta respuesta = get("/api/funciones/99/bordero");
@@ -137,7 +128,6 @@ class InformeControllerTest extends PruebaDeApi {
         assertEquals("El identificador abc no es válido", respuesta.error());
     }
 
-    /** Emitir escribe: por eso es POST y devuelve 201, no 200. */
     @Test
     void emitirElBorderoDevuelve201YDejaElArchivo() {
         Respuesta respuesta = post("/api/funciones/1/bordero", "");
@@ -147,7 +137,6 @@ class InformeControllerTest extends PruebaDeApi {
         assertTrue(Files.exists(Path.of("target/comprobantes/informes").resolve("bordero-funcion-1.txt")));
     }
 
-    /** El informe embebe el borderó completo, no una versión recortada. */
     @Test
     void elInformeSumaLaBoleteriaYElCandyDeLaFuncion() {
         Producto pochoclos = productos
@@ -167,9 +156,8 @@ class InformeControllerTest extends PruebaDeApi {
     }
 
     /**
-     * La regla que más se va a preguntar cuando alguien mire los números: el mostrador no se
-     * atribuye a ninguna función. Se prueba también acá y no solo en el gestor porque es lo
-     * que el front va a mostrar como «recaudación de la función».
+     * El mostrador no se atribuye a ninguna función: se prueba acá porque es lo que el front
+     * muestra como recaudación de la función.
      */
     @Test
     void elCandyDeMostradorNoLlegaAlInformeDeLaFuncion() {

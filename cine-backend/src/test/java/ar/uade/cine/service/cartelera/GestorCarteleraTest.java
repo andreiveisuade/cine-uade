@@ -31,26 +31,18 @@ import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
-/**
- * Gracias a que GestorCartelera depende de la interfaz, se puede testear la lógica
- * con el DAO en memoria: los tests corren sin MySQL levantado.
- */
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
-    // El DAO de funciones queda accesible porque estar en cartelera se deriva de tener
-    // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
+    // Estar en cartelera se deriva de tener funciones por delante.
     @Autowired
     private FuncionRepository funcionRepository;
     @Autowired
     private PeliculaRepository peliculaRepository;
-    // Sin grillas cargadas, extenderActivas no encuentra nada que hacer: acá el gestor de
-    // programaciones está para que la cartelera pueda pedírselo, no para que genere.
     @Autowired
     private GestorCartelera gestor;
     @Autowired
     private ProgramacionRepository programacionRepository;
 
-    /** El buzon del importador es otro gestor: mismo subdominio, otra responsabilidad. */
     @Autowired
     private GestorRevisionCartelera revision;
 
@@ -121,7 +113,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(2021, leida.getAnio());
     }
 
-    /** El flag sigue pudiendo bajar una película, aunque tenga funciones programadas. */
     @Test
     void laCarteleraExcluyeLasPeliculasDadasDeBaja() {
         Pelicula vieja = gestor.agregar("Titanic", 194, List.of(Genero.ROMANCE), Clasificacion.MAS_13);
@@ -137,10 +128,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Dune", gestor.listarEnCartelera().get(0).getTitulo());
     }
 
-    /**
-     * Lo que antes había que declarar a mano: una película cargada pero sin funciones no
-     * está en cartelera, por más que el flag venga en true al darla de alta.
-     */
+    /** Sin funciones no está en cartelera, aunque el flag venga en true. */
     @Test
     void unaPeliculaSinFuncionesNoEstaEnCartelera() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
@@ -157,7 +145,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listarEnCartelera().size());
     }
 
-    /** El caso que el flag manual nunca resolvía: la última función ya pasó. */
     @Test
     void saleDeCarteleraSolaCuandoSusFuncionesQuedaronAtras() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
@@ -176,10 +163,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listarEnCartelera().size());
     }
 
-    /**
-     * R1 al editar. Hoy Pelicula no deja cambiar el título, pero quien reconstruya una
-     * película con un id existente —un adaptador HTTP, por ejemplo— sí podría duplicarlo.
-     */
+    /** R1 al editar: quien reconstruya una película con un id existente podría duplicar el título. */
     @Test
     void noSePuedeEditarUnaPeliculaParaQueQuedeConElTituloDeOtra() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
@@ -197,10 +181,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertDoesNotThrow(() -> gestor.actualizar(dune));
     }
 
-    /**
-     * La edición parcial vive en el gestor y no en cada interfaz: es lo que hace que
-     * editar por la web y editar por consola signifiquen lo mismo.
-     */
     @Test
     void editarSoloPisaLoQueVieneEnElPedido() {
         Pelicula dune = gestor.agregar(new DatosPelicula("Dune", 155,
@@ -241,7 +221,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
-    /** Una edición no es una puerta de atrás: valida con las mismas reglas que el alta. */
     @Test
     void editarNoDejaUnaPeliculaSinTituloNiConDuracionCero() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
@@ -275,17 +254,15 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("El Resplandor", 146, List.of(Genero.TERROR), Clasificacion.MAS_18);
     }
 
-    /** Sin criterios devuelve todo: es el estado inicial de la pantalla. */
     @Test
     void buscarSinCriteriosDevuelveTodo() {
         cargarCatalogo();
 
         assertEquals(3, gestor.buscar(null, null, null).size());
-        // La cadena vacía es lo que manda un input sin tocar, y tiene que valer lo mismo.
+        // La cadena vacía es lo que manda un input sin tocar.
         assertEquals(3, gestor.buscar("", null, null).size());
     }
 
-    /** Parcial y sin distinguir mayúsculas: nadie tipea el título exacto. */
     @Test
     void buscarPorTituloEsParcialYNoDistingueMayusculas() {
         cargarCatalogo();
@@ -293,7 +270,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(2, gestor.buscar("matrix", null, null).size());
         assertEquals(2, gestor.buscar("MATRIX", null, null).size());
         assertEquals(1, gestor.buscar("reloaded", null, null).size());
-        // También coincide en el medio del título, no solo al principio.
         assertEquals(1, gestor.buscar("esplandor", null, null).size());
     }
 
@@ -313,7 +289,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(3, gestor.buscar(null, null, null).size(), "null es todas, no ninguna");
     }
 
-    /** Los criterios se acumulan: es un Y, no un O. */
     @Test
     void losCriteriosSeCombinan() {
         cargarCatalogo();
@@ -371,10 +346,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertTrue(revision.listarPendientes().isEmpty());
     }
 
-    /**
-     * Descartada no es borrada: tiene que quedar el registro de la decisión, o la próxima
-     * corrida del importador la traería de nuevo y habría que descartarla otra vez.
-     */
+    /** Descartada no es borrada: sin el registro, el importador la traería de nuevo. */
     @Test
     void descartarLaGuardaEnVezDeBorrarla() {
         Pelicula importada = revision.importar(deTmdb("Dune"));

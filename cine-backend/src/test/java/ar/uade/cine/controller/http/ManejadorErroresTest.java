@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.PruebaDeApi;
 
-/**
- * Los errores que no salen de un gestor sino del propio HTTP: que también viajen con
- * código correcto y con la forma {@code {error}} que el front sabe mostrar.
- */
+/** Los errores del propio HTTP también viajan con su código y la forma {@code {error}}. */
 class ManejadorErroresTest extends PruebaDeApi {
 
     @Test

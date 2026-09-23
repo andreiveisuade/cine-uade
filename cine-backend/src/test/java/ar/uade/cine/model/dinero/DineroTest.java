@@ -12,13 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/**
- * Lo que {@link Dinero} promete en su javadoc, escrito de manera que no pueda mentir.
- *
- * <p>Cada caso de la primera sección es un cálculo que con {@code double} daba mal. No son
- * ejemplos inventados: salen de los comentarios que había en {@code CalculadoraPrecio} y
- * en el arqueo, donde el problema estaba descrito en prosa y sin nada que lo verificara.
- */
+/** Cada caso de la primera sección es un cálculo que con {@code double} da mal. */
 class DineroTest {
 
     @Nested
@@ -28,7 +22,7 @@ class DineroTest {
         @Test
         @DisplayName("5250.50 x 1.3 daba 6825.650000000001 en double")
         void elCasoDeLaCalculadoraDePrecios() {
-            // Lo que pasaba antes, y que obligó a redondear después de cada cuenta.
+            // Con double no da: obligaría a redondear después de cada cuenta.
             assertNotEquals(6825.65, 5250.50 * 1.3);
 
             assertEquals(Dinero.de(6825.65), Dinero.de(5250.50).por(1.3));
@@ -82,7 +76,6 @@ class DineroTest {
         @DisplayName("por() es el multiplicador de sala, de butaca y de tarifa")
         void multiplicaPorUnFactorSinUnidad() {
             assertEquals(Dinero.de(6500), Dinero.de(5000).por(1.3));
-            // Un jubilado paga la mitad.
             assertEquals(Dinero.de(2500), Dinero.de(5000).por(0.5));
         }
 

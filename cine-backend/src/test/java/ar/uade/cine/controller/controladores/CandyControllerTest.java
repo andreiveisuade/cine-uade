@@ -13,10 +13,7 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.candy.GestorProductos;
 
-/**
- * La edición de un producto por PUT, y R14 vuelta a mirar después del cambio: el combo
- * tiene que seguir saliendo menos que sus componentes, se edite el combo o un componente.
- */
+/** R14 después de un PUT: el combo sigue saliendo menos que sus componentes, se edite cuál se edite. */
 class CandyControllerTest extends PruebaDeApi {
 
     @Autowired

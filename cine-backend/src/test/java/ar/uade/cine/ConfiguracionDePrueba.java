@@ -13,25 +13,16 @@ import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * Lo que el perfil {@code test} pone en lugar de los tres adaptadores que salen del proceso:
- * Redis, TMDB y el reloj de la máquina.
- *
- * <p>No se reemplaza la base —esa es H2 de verdad, con el mapeo y las consultas reales— sino
- * lo que no se puede pedir en un test: que Redis esté levantado, que TMDB conteste sin
- * gastar cuota ni depender de la red, y que hoy sea siempre el mismo día.
+ * Reemplaza en el perfil {@code test} lo que sale del proceso: Redis, TMDB y el reloj.
+ * La base no se reemplaza: H2 corre el mapeo y las consultas reales.
  */
 @Configuration
 @Profile("test")
 public class ConfiguracionDePrueba {
 
     /**
-     * El reloj de todo el sistema bajo prueba, movible a mano. Arranca siempre el 14 de
-     * agosto de 2026 a las 10: las fechas escritas en los tests —la función del 20 a las
-     * 20:00, la promo de todo el año— son futuro respecto de ese instante, y lo siguen
-     * siendo el día que el calendario de la máquina las pase. Es el mismo criterio que
-     * {@link ar.uade.cine.model.ventas.Reserva#estaVencida(LocalDateTime)}: probar que algo
-     * vence no puede costar esperar a que venza, y una espera real vuelve al test
-     * dependiente de lo cargada que esté la máquina.
+     * Arranca fijo el 14/08/2026 a las 10 para que las fechas de los tests sigan siendo
+     * futuro cuando el calendario las pase, y para probar vencimientos sin esperar.
      */
     public static class RelojMovible implements Reloj {
 

@@ -10,14 +10,8 @@ import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 
 /**
- * La base de los tests que necesitan el sistema armado: el contexto de Spring completo,
- * contra H2, con la base limpia antes de cada prueba.
- *
- * <p>Reemplaza al armado a mano que hacía cada test —trece DAO en memoria y los gestores
- * cableados uno por uno en el {@code @BeforeEach}— por lo que ya sabe hacer el contenedor.
- * Además de ahorrar el andamiaje, esto prueba algo que antes no se probaba: que el sistema
- * <em>levanta</em>. Si un gestor le pide al contenedor algo que nadie declara, la suite
- * entera falla al arrancar en vez de descubrirse al abrir la aplicación.
+ * Contexto de Spring completo contra H2, con la base limpia antes de cada prueba. Si un
+ * gestor pide algo que nadie declara, la suite falla al arrancar.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -32,7 +26,6 @@ public abstract class PruebaDeIntegracion {
     @Autowired
     private BloqueoButacas bloqueoButacas;
 
-    /** El reloj del sistema bajo prueba: lo que los gestores leen como "ahora". */
     @Autowired
     protected ConfiguracionDePrueba.RelojMovible reloj;
 
@@ -40,9 +33,7 @@ public abstract class PruebaDeIntegracion {
     void dejarLaBaseComoNueva() {
         limpieza.limpiar();
         catalogoExterno.reiniciar();
-        // El adaptador de bloqueos y el reloj son beans, o sea uno solo para toda la suite:
-        // sin esto, la butaca que un test dejó elegida le aparece tomada al siguiente, y la
-        // hora a la que otro movió el reloj le queda al que sigue.
+        // Bloqueos y reloj son beans compartidos por toda la suite.
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
     }

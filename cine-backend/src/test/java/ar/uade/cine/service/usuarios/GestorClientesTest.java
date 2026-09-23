@@ -10,11 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Cliente;
 
-/**
- * El cliente compra sin registrarse: se identifica con su email y, si es la primera vez,
- * se lo da de alta en el momento. Esa regla es del gestor, así que reservar por consola y
- * reservar por la web tienen que resolverla igual.
- */
+/** El cliente compra sin registrarse: se identifica por email y se da de alta la primera vez. */
 class GestorClientesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -29,7 +25,6 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals("andrei@uade.edu.ar", cliente.getEmail());
     }
 
-    /** La segunda compra tiene que caer sobre el mismo cliente, no crear otro. */
     @Test
     void identificarDosVecesDevuelveElMismoCliente() {
         Cliente primera = gestor.identificar("Andrei", "andrei@uade.edu.ar");
@@ -39,11 +34,7 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /**
-     * El email que se busca y el que se guarda tienen que ser el mismo. Sin normalizar,
-     * la compra con un espacio de más daría de alta un cliente repetido y le partiría el
-     * historial en dos.
-     */
+    /** Sin normalizar, un espacio de más duplicaría al cliente y partiría su historial. */
     @Test
     void identificarIgnoraLosEspaciosDeMasEnElEmail() {
         Cliente primera = gestor.identificar("Andrei", "andrei@uade.edu.ar");
@@ -53,7 +44,6 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /** Identificar no relaja las validaciones del alta: el alta sigue siendo un alta. */
     @Test
     void identificarRechazaUnEmailInvalido() {
         assertThrows(IllegalArgumentException.class, () -> gestor.identificar("Andrei", "sin-arroba"));

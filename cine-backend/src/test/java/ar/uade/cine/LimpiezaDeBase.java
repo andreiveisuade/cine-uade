@@ -12,20 +12,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Deja la base como recién creada entre un test y el siguiente.
- *
- * <p>Hace falta porque el contexto de Spring se comparte entre las clases de test —es lo
- * que hace que la suite tarde segundos y no minutos— y con él la base H2. Sin esto, la
- * película que crea un test aparecería en el siguiente.
- *
- * <p>{@code RESTART IDENTITY} es la parte que no se puede omitir: borrar las filas no
- * reinicia el contador de {@code AUTO_INCREMENT}, y los tests se escribieron sabiendo que
- * la primera película que dan de alta es la número uno. Un {@code deleteAll} de los
- * repositorios dejaría la base vacía pero la numeración corrida.
- *
- * <p>Las tablas se leen del catálogo en vez de listarlas acá: una entidad nueva no tiene que
- * acordarse de sumarse a una lista, que es la clase de olvido que se descubre como un test
- * que falla sin motivo aparente.
+ * Deja la base como recién creada entre tests, porque el contexto (y con él H2) se comparte.
+ * {@code RESTART IDENTITY} es imprescindible: los tests asumen que el primer id es 1. Las
+ * tablas se leen del catálogo para que una entidad nueva no tenga que anotarse en una lista.
  */
 @Component
 @Profile("test")
@@ -42,8 +31,7 @@ public class LimpiezaDeBase {
                 "SELECT table_name FROM information_schema.tables WHERE table_schema = 'PUBLIC'",
                 String.class);
 
-        // Sin desactivar las claves foráneas habría que truncar en el orden exacto de las
-        // dependencias, y ese orden cambia cada vez que se agrega una relación.
+        // Sin esto habría que truncar en el orden de las claves foráneas.
         jdbc.execute("SET REFERENTIAL_INTEGRITY FALSE");
         tablas.forEach(tabla -> jdbc.execute("TRUNCATE TABLE " + tabla + " RESTART IDENTITY"));
         jdbc.execute("SET REFERENTIAL_INTEGRITY TRUE");
@@ -51,11 +39,7 @@ public class LimpiezaDeBase {
         borrar(Path.of("target/comprobantes"));
     }
 
-    /**
-     * Los comprobantes también, y por el mismo motivo que las tablas: los ids vuelven a
-     * empezar en uno, así que el ticket de una corrida anterior queda con el nombre que va a
-     * buscar el test siguiente y le hace creer que se emitió.
-     */
+    /** Los ids vuelven a 1: un ticket viejo haría creer al test siguiente que se emitió. */
     private static void borrar(Path directorio) {
         if (!Files.exists(directorio)) {
             return;

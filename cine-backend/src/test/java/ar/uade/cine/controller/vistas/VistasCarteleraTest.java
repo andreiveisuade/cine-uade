@@ -49,10 +49,8 @@ import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * Una función arrastra más de lo que guarda: la sala, la película, el precio de cada
- * butaca y cuáles están tomadas. Estas pruebas fijan qué trae cada variante —la del
- * cliente, la del encargado y la del mapa de butacas— porque el front decide qué dibujar
- * según qué campos vengan, y mandar de más es tan un error como mandar de menos.
+ * Qué campos trae cada variante de la función: el front decide qué dibujar según lo que
+ * venga, y mandar de más es tan error como mandar de menos.
  */
 class VistasCarteleraTest extends PruebaDeIntegracion {
 
@@ -88,7 +86,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals("MAS_13", vista.clasificacion());
     }
 
-    /** Los datos de catálogo son los que llenan la ficha del cliente. */
     @Test
     void laPeliculaViajaConSusDatosDeCatalogo() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -106,7 +103,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Un hacker descubre la verdad", vista.sinopsis());
     }
 
-    /** El listado del cliente: la función con su sala, sin película ni mapa de butacas. */
     @Test
     void laFuncionParaElClienteNoTraeNiPeliculaNiButacas() {
         Funcion funcion = programarUnaFuncion();
@@ -140,11 +136,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertTrue(vista.asientos().stream().noneMatch(a -> a.ocupado()));
     }
 
-    /**
-     * Qué butaca está tomada se le pregunta a Ocupacion: es una regla de negocio y
-     * no una cuestión de formato. Si la vista lo recalculara por su cuenta, el mapa y la
-     * validación de la reserva podrían no coincidir.
-     */
+    /** La ocupación la decide Ocupacion (R4), no la vista: así el mapa y la reserva coinciden. */
     @Test
     void elMapaMarcaLasButacasYaReservadas() {
         Funcion funcion = programarUnaFuncion();
@@ -159,10 +151,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals(9, vista.libres());
     }
 
-    /**
-     * El "desde $" de la cartelera: lo que sale la butaca más barata de esa función. No
-     * es el precio de la función, que no contempla la tecnología de la sala.
-     */
+    /** El precio de la función no contempla la tecnología de la sala; el "desde $" sí. */
     @Test
     void elPrecioDesdeContemplaLaSalaPeroNoElTipoDeButaca() {
         Sala imax = salas.agregar("IMAX", TipoSala.IMAX, List.of(2),
@@ -190,10 +179,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertEquals("DOS_D", vista.proyeccion());
     }
 
-    /**
-     * Una función sin sala es un 404, no un 500: el recurso que se pide no existe. La
-     * distinción importa porque el front muestra mensajes distintos.
-     */
+    /** 404 y no 500: el front muestra mensajes distintos. */
     @Test
     void unaFuncionSinSalaEsUnRecursoQueNoExiste() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
@@ -203,7 +189,6 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertThrows(NoEncontrado.class, () -> vistas.funcion(huerfana));
     }
 
-    /** El listado del encargado no se cae por una película borrada: la manda en null. */
     @Test
     void unaFuncionSinPeliculaNoRompeElListado() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));

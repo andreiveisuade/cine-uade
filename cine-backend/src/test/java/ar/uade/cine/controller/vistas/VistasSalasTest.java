@@ -36,9 +36,8 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * El JSON de las salas es un contrato con el front: la grilla del ABM y el mapa de
- * butacas se dibujan con estos campos. Un cambio de forma acá no rompe ninguna regla de
- * negocio —por eso ningún test de servicio lo atraparía— pero deja una pantalla en blanco.
+ * El JSON de salas es contrato con el front: un cambio de forma no rompe ninguna regla, así que
+ * ningún test de servicio lo atraparía.
  */
 class VistasSalasTest extends PruebaDeIntegracion {
 
@@ -59,11 +58,7 @@ class VistasSalasTest extends PruebaDeIntegracion {
                 .agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
     }
 
-    /**
-     * La distribución no se guarda: se cuenta. Es la misma decisión que la capacidad, y
-     * lo que la sostiene es que marcar una butaca fuera de servicio no tiene que obligar
-     * a corregir un número guardado en otro lado.
-     */
+    /** Contarla en vez de guardarla evita corregir un número al marcar una butaca fuera de servicio. */
     @Test
     void laDistribucionSeDerivaDeLasButacasQueExisten() {
         SalaVistaDTO vista = vistas.sala(salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3, 5, 2)));
@@ -73,7 +68,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
         assertEquals(10, vista.capacidadSala());
     }
 
-    /** Embebida en una función, la sala va sin butacas: son cientos y no se muestran ahí. */
     @Test
     void laSalaEmbebidaNoArrastraElDetalleDeButacas() {
         assertNull(vistas.sala(salas.agregar("Sala 1", TipoSala.DOS_D, List.of(4))).asientos());
@@ -92,11 +86,7 @@ class VistasSalasTest extends PruebaDeIntegracion {
         assertEquals("HABILITADO", butaca(vista, "A1").estado());
     }
 
-    /**
-     * Sin función de por medio no hay respuesta para "¿está ocupada?" ni para "¿cuánto
-     * sale?": la butaca está tomada en una función y libre en otra. Viajan en null y el
-     * front no las muestra, que es distinto de mandar false y cero.
-     */
+    /** Ocupado y precio dependen de la función (R4): sin ella viajan en null, no false y cero. */
     @Test
     void fueraDeUnaFuncionNoSeSabeSiEstaTomadaNiCuantoSale() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(2));
@@ -107,7 +97,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
         assertNull(butaca.precio());
     }
 
-    /** Una butaca rota se sigue dibujando: el front la pinta distinto, no la esconde. */
     @Test
     void laButacaFueraDeServicioViajaConSuEstado() {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(3));
@@ -132,9 +121,8 @@ class VistasSalasTest extends PruebaDeIntegracion {
     }
 
     /**
-     * El mapa muestra el precio de tarifa general. La tarifa de cada persona se elige al
-     * reservar y de ahí solo puede bajar: si el mapa mostrara la más barata, el total de
-     * la compra saldría más caro que lo anunciado.
+     * La tarifa de cada persona solo puede bajar el precio: si el mapa mostrara la más barata, el
+     * total superaría lo anunciado.
      */
     @Test
     void elMapaMuestraElPrecioDeTarifaGeneral() {
@@ -149,7 +137,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
                 "estaría anunciando un precio que no es el que se cobra por defecto");
     }
 
-    /** La butaca VIP sale más cara que la estándar de la misma función. */
     @Test
     void elPrecioDelMapaContemplaElTipoDeButaca() {
         Sala sala = salas.agregar("Sala 1", TipoSala.IMAX, List.of(2),

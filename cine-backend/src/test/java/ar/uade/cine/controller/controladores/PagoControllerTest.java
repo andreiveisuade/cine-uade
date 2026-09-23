@@ -32,12 +32,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * El cobro electrónico por HTTP: abrir el checkout y confirmarlo.
- *
- * <p>Es el único circuito del sistema que son <strong>dos</strong> pedidos, y por eso hace
- * falta probarlo así: lo que se prueba no es una llamada sino que el id que devuelve el
- * primero sirva para el segundo. Los mensajes de error se comparan enteros porque el
- * contrato dice que salen intactos desde el gestor y se le muestran al usuario tal cual.
+ * El único circuito de dos pedidos: se prueba que el id del checkout sirva para confirmarlo.
+ * Los mensajes se comparan enteros porque salen intactos al usuario.
  */
 class PagoControllerTest extends PruebaDeApi {
 
@@ -125,7 +121,7 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("No existe la reserva 99", respuesta.error());
     }
 
-    /** El código no lo tipea nadie: sale de la pasarela y llega en el pago. */
+    /** El código de autorización sale de la pasarela, no lo tipea nadie. */
     @Test
     void confirmarElCheckoutCobraYDevuelveElPagoAutorizado() {
         String id = checkout("QR").json().get("id").asText();
@@ -140,7 +136,7 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(pago.get("codigoAutorizacion").asText().isBlank());
     }
 
-    /** Un doble click no cobra dos veces: la segunda choca contra R5. */
+    /** La segunda confirmación choca contra R5. */
     @Test
     void confirmarDosVecesElMismoCheckoutNoCobraDeNuevo() {
         String id = checkout("QR").json().get("id").asText();

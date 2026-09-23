@@ -10,12 +10,8 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 
 /**
- * El doble clic sobre el botón de importar.
- *
- * <p>Vive en su propia clase porque necesita lo contrario que el resto de las pruebas del
- * importador: la espera entre corridas puesta. El perfil de test la deja en cero para que
- * ninguna prueba tenga que dormir un minuto, así que acá se la vuelve a declarar —y eso
- * levanta un contexto aparte, que es el precio de probar una configuración distinta.
+ * Clase aparte porque necesita la espera entre corridas puesta, que el perfil de test deja en
+ * cero; eso levanta un contexto propio.
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -25,10 +21,7 @@ class EsperaEntreImportacionesTest extends PruebaDeApi {
     @Autowired
     private CatalogoDePrueba catalogo;
 
-    /**
-     * El segundo pedido no llega a TMDB: la cartelera no cambió en veinte segundos y cada
-     * corrida son sesenta llamadas contra una cuota.
-     */
+    /** Cada corrida son sesenta llamadas contra la cuota de TMDB. */
     @Test
     void apretarDosVecesSeguidoNoCorreDosVeces() {
         post("/api/importaciones", "{}");

@@ -15,19 +15,10 @@ import ar.uade.cine.PruebaDeApi;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Que el contrato que publica Swagger sea un documento válido.
- *
- * <p>Existe por un error concreto. Los cuatro errores comunes se agregan a cada operación
- * con un {@code $ref} al esquema compartido, y ese esquema estaba declarado en el bean
- * {@code OpenAPI}. Pero springdoc arma {@code components.schemas} desde los tipos que
- * encuentra en los controladores y <strong>reemplaza</strong> lo que hubiera puesto el
- * bean, así que el esquema desaparecía y quedaban 272 referencias apuntando a la nada. La
- * aplicación levantaba igual, {@code /v3/api-docs} devolvía 200 y Swagger UI abría: el
- * único síntoma era que los cuerpos de error salían vacíos, que es justo lo que nadie mira.
- *
- * <p>De ahí que las afirmaciones sean sobre la <em>integridad</em> del documento y no sobre
- * su contenido: qué endpoints hay ya lo prueban los {@code *ControllerTest}, y fijar acá la
- * lista obligaría a tocar este archivo cada vez que se agrega una ruta.
+ * Que el contrato de Swagger sea un documento íntegro: springdoc reemplaza los
+ * {@code components.schemas} del bean {@code OpenAPI}, y los {@code $ref} a errores pueden
+ * quedar apuntando a la nada sin que nada falle. Qué endpoints hay lo prueban los
+ * {@code *ControllerTest}.
  */
 class ContratoOpenApiTest extends PruebaDeApi {
 
@@ -45,8 +36,8 @@ class ContratoOpenApiTest extends PruebaDeApi {
     void todasLasRutasEntranEnElContrato() {
         JsonNode rutas = get("/v3/api-docs").json().get("paths");
 
-        // Sin número fijo: crece con el sistema. Lo que se afirma es que springdoc encontró
-        // los controladores, no cuántos hay — un contrato vacío también devolvería 200.
+        // Sin número fijo: se afirma que springdoc encontró los controladores; un contrato vacío
+        // también devolvería 200.
         assertThat(rutas).isNotEmpty();
         rutas.properties().forEach(ruta -> assertThat(ruta.getKey()).startsWith("/api/"));
     }
@@ -86,12 +77,11 @@ class ContratoOpenApiTest extends PruebaDeApi {
             }
         }));
 
-        // ManejadorErrores es un @RestControllerAdvice: los aplica a todas, las declare o no
-        // su método. Si el customizer deja de correr, el contrato promete menos de lo que pasa.
+        // ManejadorErrores aplica a todas las rutas: el contrato no puede prometer menos de lo que
+        // pasa.
         assertThat(incompletas).isEmpty();
     }
 
-    /** Todos los {@code $ref} del documento, a cualquier profundidad. */
     private static List<String> referencias(JsonNode nodo) {
         List<String> encontradas = new ArrayList<>();
         if (nodo.isObject()) {

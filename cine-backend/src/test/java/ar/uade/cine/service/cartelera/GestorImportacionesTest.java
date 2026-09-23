@@ -28,16 +28,8 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 
 /**
- * El gestor contra un catálogo de mentira: acá se prueba qué entra al buzón, qué se saltea y
- * qué queda registrado, no que TMDB conteste.
- *
- * <p>El alta es de verdad —{@link GestorRevisionCartelera} contra los DAO en memoria— porque
- * es justamente lo que se quiso recuperar al absorber el importador: que la corrida pase por
- * las mismas reglas que el alta a mano y que eso se pueda probar sin levantar nada.
- *
- * <p>La espera entre corridas va en cero en el gestor de la mayoría de los tests. Es una
- * protección contra el doble clic y tiene su propio test; dejarla puesta en todos obligaría
- * a que cada uno durmiera un minuto.
+ * Contra un catálogo de mentira: qué entra al buzón, qué se saltea y qué queda registrado.
+ * El alta es real, por {@link GestorRevisionCartelera}, con las mismas reglas que a mano.
  */
 class GestorImportacionesTest extends PruebaDeIntegracion {
 
@@ -53,12 +45,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     private GestorRevisionCartelera revision;
 
     /**
-     * El bean de verdad, no uno armado con {@code new}. La diferencia importa: un gestor
-     * construido a mano no pasa por el proxy que le pone las transacciones, así que un test
-     * que lo arme por su cuenta no puede ver los errores de límite transaccional —y este
-     * archivo dejó pasar uno justamente así, el que hacía fallar la corrida entera cuando el
-     * alta de una película se rechazaba—. La espera entre corridas la pone el perfil de test
-     * en cero, que es lo que permite usar el bean tal cual.
+     * El bean y no un {@code new}: sin el proxy transaccional no se ven los errores de límite
+     * de transacción. El perfil de test pone la espera entre corridas en cero.
      */
     @Autowired
     private GestorImportaciones gestor;
@@ -77,11 +65,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, catalogo.consultas());
     }
 
-    /**
-     * La propiedad que sostiene todo el circuito: lo que baja de un catálogo ajeno es una
-     * propuesta, no una decisión. Si entrara publicada, la cartelera del cine dejaría de ser
-     * suya para pasar a ser una copia de lo que se está dando afuera.
-     */
+    /** Lo que baja de un catálogo ajeno es una propuesta, no una decisión del cine. */
     @Test
     void loQueEntraQuedaEnElBuzonYNoEnCartelera() {
         catalogo.queTraiga("Duna");
@@ -93,10 +77,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertFalse(importada.estaEnCartelera(), "no puede ofrecerse antes de que la miren");
     }
 
-    /**
-     * Lo que hace la corrida repetible: la de mañana no puede fallar entera porque R1 rechaza
-     * los títulos que ya están.
-     */
+    /** La corrida es repetible: R1 rechazaría los títulos que ya están. */
     @Test
     void lasQueYaEstanNoSeVuelvenAProponer() {
         catalogo.queTraiga("Duna", "Vaiana");
@@ -110,10 +91,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(2, peliculaRepository.findAll().size(), "no se duplicó ninguna");
     }
 
-    /**
-     * Descartar una vez tiene que alcanzar: si la descartada no contara como cargada, la
-     * corrida siguiente la volvería a proponer y habría que descartarla todas las noches.
-     */
+    /** Si la descartada no contara como cargada, cada corrida la volvería a proponer. */
     @Test
     void unaDescartadaTampocoSeVuelveAProponer() {
         catalogo.queTraiga("Duna");
@@ -138,10 +116,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(0, importacion.getFallidas());
     }
 
-    /**
-     * Una película que el alta rechaza no corta la corrida: queda anotada y se sigue con la
-     * siguiente. Una corrida que se cae a la mitad es peor que una que no corre.
-     */
+    /** Una corrida que se cae a la mitad es peor que una que no corre. */
     @Test
     void laQueElAltaRechazaQuedaFallidaYLaCorridaSigue() {
         catalogo.queTraiga(sinDuracion("Corto de festival"), pelicula("Duna"));
@@ -182,10 +157,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertTrue(gestor.listar().isEmpty(), "no tendría que haber quedado registro");
     }
 
-    /**
-     * Que el catálogo externo no conteste no es un error del sistema: es un resultado. La
-     * corrida queda anotada como fallida con el motivo y el encargado lo ve en el historial.
-     */
+    /** Que el catálogo no conteste es un resultado, no un error: queda en el historial. */
     @Test
     void siElCatalogoFallaLaCorridaQuedaFallidaConElMotivo() {
         catalogo.queFalleCon("TMDB rechazó el token: revisá TMDB_TOKEN");
@@ -234,10 +206,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, catalogo.consultas());
     }
 
-    /**
-     * Si el backend se reinicia a mitad de corrida, la fila queda EN_CURSO para siempre y
-     * con ella el sistema no aceptaría una importación nunca más. La caduca el que consulta.
-     */
+    /** Un reinicio a mitad de corrida deja la fila EN_CURSO para siempre; la caduca quien consulta. */
     @Test
     void unaCorridaColgadaCaducaSolaYDesbloqueaElSistema() {
         importacionRepository.save(new Importacion(1, reloj.ahora().minusMinutes(10)));

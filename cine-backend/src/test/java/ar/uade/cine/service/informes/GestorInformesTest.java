@@ -51,9 +51,8 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * El borderó del INCAA y el informe financiero de una función. Las dos preguntas se
- * responden con lo <strong>cobrado</strong>, y casi todos los casos de borde de acá son
- * plata que parece de la función y no lo es.
+ * Borderó e informe financiero de una función: los dos cuentan lo cobrado, y casi todos
+ * los bordes son plata que parece de la función y no lo es.
  */
 class GestorInformesTest extends PruebaDeIntegracion {
 
@@ -143,16 +142,12 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(2, bordero.porTarifa().get(TipoTarifa.GENERAL).cantidad());
         assertEquals(Dinero.de(10000.0), bordero.porTarifa().get(TipoTarifa.GENERAL).total());
         assertEquals(1, bordero.porTarifa().get(TipoTarifa.JUBILADO).cantidad());
-        // La jubilada sale la mitad, y por eso el promedio por espectador no alcanza para
-        // reconstruir este desglose.
+        // El promedio por espectador no alcanza para reconstruir el desglose.
         assertEquals(Dinero.de(2500.0), bordero.porTarifa().get(TipoTarifa.JUBILADO).total());
         assertEquals(Dinero.de(12500.0), bordero.recaudacionBruta());
     }
 
-    /**
-     * El bruto es a precio de lista y el neto lo que entró: la promoción es un descuento
-     * comercial del cine y no cambia el valor declarado de la localidad.
-     */
+    /** La promoción es un descuento comercial: no cambia el valor declarado de la localidad. */
     @Test
     void elBorderoSeparaElBrutoDelDescuentoYDelNeto() {
         promociones.crearPorcentaje("50 off", 50,
@@ -233,10 +228,8 @@ class GestorInformesTest extends PruebaDeIntegracion {
     }
 
     /**
-     * La venta de mostrador no se atribuye a ninguna función: quien compra un balde puede
-     * estar yendo a cualquiera de las funciones de esa hora, o a ninguna. Esa plata se
-     * cuenta en el arqueo del día del candy, que acá se chequea justamente para dejar claro
-     * que no se pierde: queda afuera del informe, no del sistema.
+     * Quien compra en el mostrador puede ir a cualquier función o a ninguna. Se chequea el
+     * arqueo del candy para mostrar que queda afuera del informe, no del sistema.
      */
     @Test
     void elCandyDeMostradorNoEntraEnElInformeDeNingunaFuncion() {

@@ -7,11 +7,7 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * El formato en que viajan las fechas es un contrato con el front: si una respuesta lo
- * cambiara, el front lo parsearía mal en esa pantalla y en ninguna otra. Es la clase de
- * error que se descubre tarde y en producción, así que se fija acá.
- */
+/** El formato de fecha es contrato con el front; un cambio rompe una sola pantalla y tarde. */
 class FechasTest {
 
     @Test
@@ -21,9 +17,8 @@ class FechasTest {
     }
 
     /**
-     * ISO_LOCAL_DATE_TIME omite los segundos cuando son cero, y ahí el front recibe dos
-     * largos distintos para el mismo campo. Por eso el formato es explícito y no el que
-     * trae Java de fábrica.
+     * ISO_LOCAL_DATE_TIME omite los segundos en cero y el front recibiría dos largos distintos
+     * para el mismo campo.
      */
     @Test
     void losSegundosViajanSiempreAunqueSeanCero() {
@@ -31,7 +26,7 @@ class FechasTest {
         assertEquals(19, Fechas.texto(LocalDateTime.of(2026, 8, 20, 20, 30)).length());
     }
 
-    /** null es "todavía no pasó" —una reserva sin ingresar—, no una fecha vacía. */
+    /** null es "todavía no pasó", no una fecha vacía. */
     @Test
     void loQueNoPasoTodaviaViajaComoNull() {
         assertNull(Fechas.texto(null));

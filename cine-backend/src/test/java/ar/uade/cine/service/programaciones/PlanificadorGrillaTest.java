@@ -77,11 +77,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /**
-     * El caso que justifica todo el algoritmo: la cuarta película de acción está mejor
-     * puntuada que la única comedia, y aun así entra la comedia. Sin el bono por género
-     * nuevo, la grilla de la semana sería acción todo el día.
-     */
+    /** Sin el bono por género nuevo, la grilla sería acción todo el día. */
     @Test
     void prefiereUnGeneroNuevoAntesQueLaCuartaDelMismoGenero() {
         cargar("Accion 1", 9.0, Genero.ACCION);
@@ -113,11 +109,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     }
 
     /**
-     * El caso que aparece con datos de TMDB y no con películas de test: los géneros de ahí
-     * son generosos, y una película figura a la vez como acción, animación, ciencia ficción
-     * y comedia. Con un bono lineal esas cuatro etiquetas valían ocho puntos y le ganaban a
-     * la mejor del catálogo por estar mejor catalogada, no por ser mejor ni por aportar
-     * cuatro veces más variedad.
+     * TMDB reparte géneros de más: con un bono lineal, cuatro etiquetas le ganaban a la
+     * mejor del catálogo por estar mejor catalogada, no por ser mejor.
      */
     @Test
     void muchosGenerosNoLeGananALaMejorPelicula() {
@@ -134,10 +127,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "y en la segunda vuelta sí pesa la variedad que agrega");
     }
 
-    /**
-     * El bono crece cada vez menos, pero sigue creciendo: entre dos películas de igual
-     * puntaje, la que aporta más géneros nuevos entra antes.
-     */
+    /** El bono crece cada vez menos, pero sigue creciendo. */
     @Test
     void aIgualPuntajeEntraLaQueAportaMasGeneros() {
         cargar("Ancla", 9.5, Genero.DRAMA);
@@ -152,12 +142,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     }
 
     /**
-     * Seis votos no pesan como cinco mil, y el reparto de pases lo tiene que mostrar.
-     *
-     * <p>La afirmación no es que la respaldada gane —un 9,5 puede ser genuino y el sistema
-     * no tiene cómo saberlo—, sino que la <strong>ventaja se achica</strong>: sin corregir,
-     * la diferencia de puntaje es de 1,5 puntos y se traduce en muchos más pases; corregida,
-     * las dos quedan a la par, que es lo honesto cuando de una hay seis opiniones.
+     * Seis votos no pesan como cinco mil. No se afirma que gane la respaldada (un 9,5 puede
+     * ser genuino) sino que la ventaja se achica.
      */
     @Test
     void unPuntajeAltoConPocosVotosPierdeSuVentaja() {
@@ -181,10 +167,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                         + deLaRespaldada + " contra " + deLaFlojita);
     }
 
-    /**
-     * El 0,0 de TMDB no es una nota mala sino una película que nadie vio todavía: siete de
-     * cada veinte de la cartelera argentina están así. Sin esto quedaban últimas siempre.
-     */
+    /** El 0,0 de TMDB es una película que nadie votó todavía, no una nota mala. */
     @Test
     void laQueNadieVotoNoSeHundeAlFondo() {
         Pelicula votada = cargar("Votada", 7.0, Genero.DRAMA);
@@ -203,11 +186,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "sin votos va al promedio, y el promedio le gana a una mala con respaldo: " + elenco);
     }
 
-    /**
-     * El puntaje que carga el encargado a mano no es un promedio flojo: es su criterio. Sin
-     * esta distinción, un catálogo entero sin votos quedaba con todas las películas valiendo
-     * lo mismo y el ranking desaparecía.
-     */
+    /** El puntaje cargado a mano es criterio del encargado, no un promedio con pocos votos. */
     @Test
     void elPuntajeCargadoAManoOrdenaAunqueNoHayaVotos() {
         cargar("Buena", 9.0, Genero.ACCION);
@@ -232,7 +211,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /** El reparto es proporcional al puntaje, no en partes iguales. */
     @Test
     void laMejorPuntuadaSeLlevaMasPases() {
         cargar("Muy buena", 9.0, Genero.ACCION);
@@ -247,7 +225,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "la mejor puntuada tiene que ir más veces: " + deLaBuena + " vs " + deLaFloja);
     }
 
-    /** Ningún pase puede terminar después del cierre, aunque empiece antes. */
     @Test
     void ningunPaseSePasaDelHorarioDeCierre() {
         cargar("Larga", 8.0, 180, Genero.DRAMA);
@@ -281,10 +258,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
-    /**
-     * No reescribe R3: si la sala ya tiene una función cargada a mano, la propuesta la
-     * respeta en vez de pisarla.
-     */
+    /** R3: respeta la función cargada a mano en vez de pisarla. */
     @Test
     void noPisaLasFuncionesQueYaEstabanCargadas() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -320,10 +294,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     }
 
     /**
-     * El caso que apareció con la base cargada: una semana que ya tiene funciones daba una
-     * ocupación baja —la propuesta apenas encontraba huecos— y se leía como que el cine
-     * estaba vacío, cuando era exactamente al revés. El tiempo que la propuesta podía usar
-     * es la ventana menos lo ya programado, no la ventana entera.
+     * El tiempo disponible es la ventana menos lo ya programado: si no, una semana llena
+     * daba ocupación baja y parecía vacía.
      */
     @Test
     void elTiempoDisponibleDescuentaLoQueYaEstabaProgramado() {
@@ -377,7 +349,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertFalse(propuesta.pases().isEmpty(), "la propuesta no puede estar vacía");
     }
 
-    /** Determinista: dos corridas con los mismos criterios dan lo mismo. */
     @Test
     void proponerDosVecesDaLaMismaGrilla() {
         cargar("Accion", 9.0, Genero.ACCION);

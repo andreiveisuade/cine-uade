@@ -17,26 +17,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Las capas, escritas de manera que no puedan mentir.
- *
- * <p>Que {@code dominio/} no dependa de nadie y que la implementación concreta de cada DAO
- * se elija en un solo lugar son las dos afirmaciones que sostienen el manual y los diagramas
- * de SOLID del TP. Hasta acá eran ciertas por disciplina: nada impedía que un import apurado
- * las rompiera y que el diagrama quedara describiendo un sistema que ya no existe. Este test
- * las lee del código fuente en cada {@code mvn test}.
- *
- * <p>No hace falta ninguna dependencia nueva: alcanza con leer los {@code import} de cada
- * archivo, porque es exactamente lo que se quiere restringir.
+ * Verifica las capas leyendo los {@code import} de cada fuente, para que un import apurado
+ * no deje al manual describiendo un sistema que no existe.
  */
 class ArquitecturaTest {
 
     private static final Path RAIZ = Path.of("src/main/java/ar/uade/cine");
 
     /**
-     * Hacia dónde puede importar cada capa. La lectura es "de arriba hacia abajo": una capa
-     * sólo puede nombrar a las que tiene debajo, nunca a las de arriba, y por eso
-     * {@code service} no incluye ni {@code controller} ni {@code dto} (las reglas de negocio
-     * no saben que existe HTTP) y {@code model} no incluye nada más que a sí mismo.
+     * Qué puede importar cada capa: solo las de abajo. Romper una regla es cambiar esta tabla
+     * a mano, a propósito, para que la decisión no pase inadvertida.
      */
     private static final Map<String, Set<String>> PERMITIDO = Map.of(
             "model", Set.of("model"),
@@ -78,10 +68,8 @@ class ArquitecturaTest {
         @Test
         @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
         void laInfraestructuraNoDependeDeLaApi() {
-            // La excepción viva es comprobantes/, que importa el record servicio.informes.Bordero
-            // para poder formatearlo. Es un dato de salida, no un gestor; por eso 'servicio'
-            // está permitido acá. Si algún día un adaptador importara un Gestor*, esta regla
-            // habría que ajustarla a mano, y esa discusión es justamente lo que se quiere forzar.
+            // 'service' está permitido porque comprobantes/ formatea el record Bordero, que es
+            // un dato de salida, no un gestor.
             assertSinViolaciones(violacionesDeCapa("infrastructure"));
         }
     }
@@ -90,17 +78,7 @@ class ArquitecturaTest {
     @DisplayName("Inversión de dependencias: un solo lugar elige la implementación")
     class ImplementacionesConcretas {
 
-        /**
-         * Antes esta regla decía "sólo Aplicacion nombra un DAO concreto", y era la forma de
-         * sostener a mano lo que ahora sostiene el contenedor: los servicios dependen de las
-         * interfaces {@code *Repository} y de quién las implementa no se entera nadie —la
-         * implementación la genera Spring Data en tiempo de arranque, así que ni siquiera
-         * existe una clase que se pueda nombrar por accidente—.
-         *
-         * <p>Lo que queda por cuidar es el otro lado: que un servicio no se salte su
-         * repositorio y hable con la base por abajo. Un {@code JdbcTemplate} o un
-         * {@code EntityManager} adentro de {@code service/} sería exactamente eso.
-         */
+        /** Las implementaciones las genera Spring Data; lo que queda por cuidar es el atajo. */
         @Test
         @DisplayName("ningún servicio habla con la base por abajo del repositorio")
         void nadieSeSalteaElRepositorio() {
@@ -144,7 +122,6 @@ class ArquitecturaTest {
         return relativo.getNameCount() == 1 ? "" : relativo.getName(0).toString();
     }
 
-    /** Los {@code import ar.uade.cine.X} de un archivo, ya sin el prefijo del paquete. */
     private static List<String> importsInternos(Path archivo) {
         try {
             return Files.readAllLines(archivo).stream()
@@ -159,7 +136,6 @@ class ArquitecturaTest {
         }
     }
 
-    /** Los {@code import} que no son del proyecto: con esos se detecta el atajo a la base. */
     private static List<String> importsExternos(Path archivo) {
         try {
             return Files.readAllLines(archivo).stream()

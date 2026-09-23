@@ -151,10 +151,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     }
 
 
-    /**
-     * El total definitivo no existe hasta que se cobra: recién ahí se sabe el medio de
-     * pago, y con él qué promociones corren.
-     */
+    /** El total se define al cobrar: recién ahí se sabe el medio y qué promociones corren. */
     @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
@@ -181,7 +178,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(pago.getSubtotal(), pago.getMonto());
     }
 
-    /** El descuento del banco depende del medio, que se elige acá y no al reservar. */
     @Test
     void elDescuentoBancarioSoloEntraSiSePagaConEseMedio() {
         promociones.crearMontoFijo("Banco", Dinero.de(1000),
@@ -195,7 +191,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(1000), pagos.cobrar(conTarjeta.getId(), MedioPago.CREDITO, "AUT-1").getDescuento());
     }
 
-    /** El arqueo suma lo que entró en la caja, no lo que salía de lista. */
     @Test
     void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
         promociones.crearPorcentaje("50 off", 50,
@@ -210,10 +205,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo));
     }
 
-    /**
-     * El arqueo es una cuenta del gestor y no de quien lo muestra: la consola y la API
-     * tienen que dar estos mismos tres números.
-     */
     @Test
     void elArqueoResumeTotalEntradasYRepartoPorMedio() {
         Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"));
@@ -224,7 +215,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Arqueo arqueo = caja.arqueoDe(reloj.hoy());
 
         assertEquals(Dinero.de(15000.0), arqueo.total());
-        // Tres butacas vendidas en dos cobros: el número no sale de la cantidad de pagos.
+        // Tres butacas en dos cobros: no sale de la cantidad de pagos.
         assertEquals(3, arqueo.entradas());
         assertEquals(2, arqueo.pagos().size());
         assertEquals(1, arqueo.porMedio().get(MedioPago.EFECTIVO).cantidad());
@@ -232,7 +223,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(5000.0), arqueo.porMedio().get(MedioPago.QR).total());
     }
 
-    /** Un día sin cobros no es un error: es una caja en cero. */
     @Test
     void elArqueoDeUnDiaSinCobrosDaEnCero() {
         Arqueo arqueo = caja.arqueoDe(reloj.hoy().minusDays(1));
@@ -243,7 +233,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertTrue(arqueo.porMedio().isEmpty());
     }
 
-    /** Lo que entró por caja es lo cobrado, con el descuento ya aplicado. */
     @Test
     void elRepartoPorMedioCuentaElMontoConDescuento() {
         promociones.crearPorcentaje("50 off", 50,
@@ -259,10 +248,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertTrue(pago.getSubtotal().esMayorQue(arqueo.total()));
     }
 
-    /**
-     * El efectivo no deja rastro afuera del cine: si no se imprime el recibo, el cliente se
-     * va sin constancia de haber pagado.
-     */
+    /** Sin recibo, el pago en efectivo no deja constancia afuera del cine. */
     @Test
     void elCobroEnEfectivoImprimeElReciboDeCaja() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -283,7 +269,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertFalse(Files.exists(TICKETS.resolve("recibo-" + pago.getId() + ".txt")));
     }
 
-    /** Lo que el recibo dice y el ticket no puede: el descuento se resuelve recién al cobrar. */
     @Test
     void elReciboMuestraElDescuentoQueSeAplicoAlCobrar() {
         promociones.crearPorcentaje("50 off", 50,
@@ -340,10 +325,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
     }
 
-    /**
-     * El código no lo inventa el cine: sale de la pasarela y es lo que después permite
-     * reclamarle el cobro. R11 se cumple sin que nadie tipee nada.
-     */
+    /** R11: el código de autorización sale de la pasarela, nadie lo tipea. */
     @Test
     void confirmarElCheckoutCobraConElCodigoQueDevolvioLaPasarela() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"));
@@ -375,7 +357,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 
-    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
         for (String codigo : codigos) {

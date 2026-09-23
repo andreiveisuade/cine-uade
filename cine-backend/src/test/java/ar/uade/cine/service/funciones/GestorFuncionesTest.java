@@ -65,17 +65,12 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
     }
 
-    /**
-     * Segunda película y segunda sala, más funciones repartidas en tres días. Sin este
-     * escenario cualquier filtro devolvería todo y los tests pasarían sin probar nada.
-     */
+    /** Sin este escenario cualquier filtro devolvería todo y los tests pasarían igual. */
     private void cargarMasFunciones() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
-        // Interstellar en la sala 2, el mismo día que la del setup.
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
-        // Matrix en la sala 1, dos días después.
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
@@ -97,10 +92,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.buscar(1, 1, null, null).size());
     }
 
-    /**
-     * El rango incluye los dos extremos. Quien filtra «del 20 al 22» espera ver el 22:
-     * un rango semiabierto acá sería una sorpresa, no una convención.
-     */
+    /** Quien filtra «del 20 al 22» espera ver el 22. */
     @Test
     void elRangoDeFechasIncluyeLosDosExtremos() {
         cargarMasFunciones();
@@ -140,10 +132,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    /**
-     * La función del setup termina 22:00 y la Sala 1 se limpia en 15 minutos, así que
-     * pegar una a las 22:00 ya no alcanza: la sala está ocupada limpiándose.
-     */
+    /** La del setup termina 22:00 y la Sala 1 se limpia en 15 minutos. */
     @Test
     void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
         assertThrows(IllegalArgumentException.class,
@@ -152,11 +141,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    /**
-     * El mensaje tiene que decir que el problema es la limpieza y hasta cuándo dura. Sin
-     * eso, el encargado ve "la sala está ocupada" a una hora en la que la cartelera no
-     * muestra nada y lo lee como un error del sistema.
-     */
+    /** Sin nombrar la limpieza, "sala ocupada" a una hora sin funciones parece un error. */
     @Test
     void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
@@ -175,7 +160,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(2, funciones.listar().size());
     }
 
-    /** Cero es válido: una sala que no necesita corte encadena funciones como antes. */
+    /** Cero es válido: una sala que no necesita corte encadena funciones. */
     @Test
     void sinLimpiezaLasFuncionesSePuedenEncadenar() {
         salas.agregar("Sala sin corte", TipoSala.DOS_D, List.of(10, 10), Map.of(), 0);
@@ -187,17 +172,13 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /**
-     * Una limpieza negativa adelantaría el permiso para la función siguiente y la dejaría
-     * empezar antes de que termine la anterior: es un dato mal cargado, no "sin limpieza".
-     */
+    /** Negativa dejaría empezar la siguiente antes de que termine la anterior. */
     @Test
     void rechazaSalaConLimpiezaNegativa() {
         assertThrows(IllegalArgumentException.class,
                 () -> salas.agregar("Sala rota", TipoSala.DOS_D, List.of(10, 10), Map.of(), -5));
     }
 
-    /** La limpieza es de la sala: la de al lado sigue libre a la misma hora. */
     @Test
     void laLimpiezaNoAfectaALasOtrasSalas() {
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(6, 8), Map.of(), 30);
@@ -215,10 +196,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500)));
     }
 
-    /**
-     * Sin esto el buzón de revisión no serviría de nada: bastaría con programar desde ahí
-     * para meter en la cartelera del cine algo que nunca nadie aprobó.
-     */
+    /** Sin esto, programar saltearía el buzón de revisión. */
     @Test
     void noSePuedeProgramarUnaPeliculaPendienteDeRevision() {
         Pelicula importada = revision.importar(
@@ -299,7 +277,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(LocalDateTime.of(2026, 8, 20, 22, 16), funcionDeLas20().getFin(DURACION));
     }
 
-    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
         for (String codigo : codigos) {

@@ -23,13 +23,8 @@ import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * Esta vista es el único lugar del sistema que pregunta de qué tipo es una promoción, y
- * con un motivo: cada tipo expresa su beneficio con un campo distinto y el JSON tiene que
- * mostrarlo. El cálculo del descuento sigue siendo polimórfico y no pasa por acá.
- *
- * <p>Estas pruebas fijan las dos mitades de esa decisión: que cada tipo mande su campo, y
- * que <strong>no</strong> mande los de los otros. Si mañana aparece un tipo nuevo, este
- * archivo es el que avisa que hay que tocarlo.
+ * Único lugar que pregunta el tipo de una promoción: cada tipo expone su beneficio en un campo
+ * distinto. Un tipo nuevo hace fallar este archivo.
  */
 class VistasPromocionesTest extends PruebaDeIntegracion {
 
@@ -82,10 +77,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         assertNull(vista.monto());
     }
 
-    /**
-     * Sin días significa todos los días y sin medios significa cualquiera: es como lo lee
-     * el gestor. Viajan como listas vacías y no como null, porque el front las recorre.
-     */
+    /** Listas vacías y no null porque el front las recorre. */
     @Test
     void lasCondicionesVaciasViajanComoListasVacias() {
         Promocion promocion = promociones.crearPorcentaje("Siempre 10%", 10,
@@ -117,7 +109,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         assertEquals("23:59", vista.horaHasta());
     }
 
-    /** Desactivada sigue viajando: el ABM la lista para poder volver a prenderla. */
+    /** El ABM la lista para poder volver a activarla. */
     @Test
     void laPromocionDesactivadaViajaMarcadaComoInactiva() {
         Promocion promocion = promociones.crearPorcentaje("Martes 30%", 30,

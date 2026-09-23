@@ -46,12 +46,10 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         return entrada(precio, TipoTarifa.GENERAL);
     }
 
-    /** Sin guardar: el descuento se calcula sobre los precios y no toca la base. */
     private static Entrada entrada(double precio, TipoTarifa tarifa) {
         return new Entrada(A1, tarifa, Dinero.de(precio));
     }
 
-    /** Si alguna promoción corre para esas entradas, ese horario y ese medio de pago. */
     private boolean corre(List<Entrada> entradas, LocalDateTime inicioFuncion, MedioPago medio) {
         return promociones.calcularPara(entradas, inicioFuncion, medio).promocionId() != null;
     }

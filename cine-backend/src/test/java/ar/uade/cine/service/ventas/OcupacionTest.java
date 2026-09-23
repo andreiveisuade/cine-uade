@@ -39,19 +39,11 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
 /**
- * El bloqueo de butacas mientras alguien las está eligiendo: la etapa anterior a que
- * exista una reserva.
- *
- * <p>Lo que se prueba acá es que esa etapa entra en la <strong>misma</strong> definición de
- * "ocupado" que ya usaban el mapa y la venta —si quedara afuera, el mapa ofrecería una
- * butaca que la reserva después rechaza— y que sigue siendo una comodidad y no una
- * garantía: sin el medio donde vive el bloqueo, el sistema vende igual.
- *
- * <p>Corre sin Redis levantado, incluido el caso que justamente prueba que no hace falta.
+ * El bloqueo mientras se elige entra en la misma definición de "ocupado" que el mapa y la
+ * venta, y es comodidad, no garantía: sin Redis se vende igual.
  */
 class OcupacionTest extends PruebaDeIntegracion {
 
-    /** Dos sesiones distintas eligiendo la misma función, que es el conflicto a probar. */
     private static final String ANA = "sesion-de-ana";
     private static final String BETO = "sesion-de-beto";
 
@@ -101,7 +93,6 @@ class OcupacionTest extends PruebaDeIntegracion {
         reloj.mover(ahora);
     }
 
-    /** Mueve el reloj de los bloqueos, que es el único que este test necesita adelantar. */
     private void avanzar(Duration cuanto) {
         ahora = ahora.plus(cuanto);
         reloj.mover(ahora);
@@ -130,7 +121,6 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO));
     }
 
-    /** Perder una butaca no invalida el resto del pedido: se contesta lo que sí se consiguió. */
     @Test
     void loQueNoSeConsigueNoArrastraAlResto() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
@@ -168,11 +158,10 @@ class OcupacionTest extends PruebaDeIntegracion {
     void volverATocarElMapaRenuevaElBloqueo() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        // Dos minutos después toca el mapa de nuevo: no perdió la butaca por tardar.
         avanzar(Duration.ofMinutes(2));
         assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
 
-        // Cuatro minutos desde el primer bloqueo: sin la renovación ya habría vencido.
+        // Sin la renovación ya habría vencido.
         avanzar(Duration.ofMinutes(2));
         assertFalse(codigosLibres(BETO).contains("A1"));
     }
@@ -212,11 +201,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals("La butaca A1 ya está ocupada", error.getMessage());
     }
 
-    /**
-     * Las dos ventanas no se solapan: confirmada la reserva, la butaca la retiene ella y
-     * el bloqueo sobra. Y lo que se miró sin comprar vuelve a la venta en el acto, sin
-     * esperar a que venza.
-     */
+    /** Confirmada la reserva, el bloqueo sobra; lo que no se compró vuelve sin esperar a que venza. */
     @Test
     void confirmarLaReservaSueltaLosBloqueosDeEsaSesion() {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
@@ -229,12 +214,8 @@ class OcupacionTest extends PruebaDeIntegracion {
     }
 
     /**
-     * Redis caído no puede voltear la venta: el bloqueo es comodidad, y la garantía de que
-     * una butaca no se venda dos veces la sigue dando el UNIQUE de la base. El sistema
-     * vuelve a comportarse como antes de que el bloqueo existiera.
-     *
-     * <p>El puerto no tiene nada escuchando a propósito: es la forma de probar la caída sin
-     * tener que levantar Redis para después apagarlo.
+     * La garantía contra la doble venta es el UNIQUE de la base, no Redis. El puerto no
+     * tiene nada escuchando a propósito: simula la caída.
      */
     @Test
     void sinRedisSeSigueVendiendoComoAntes() {

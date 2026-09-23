@@ -25,16 +25,9 @@ import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
 /**
- * El cliente de TMDB, contra un servidor de mentira que contesta lo que el test quiera.
- *
- * <p>Es la única pieza del circuito que los tests de ruta no ven: {@code ApiEnMemoria} usa un
- * {@code CatalogoDePrueba} y nunca sale por HTTP. Lo que se prueba acá es que las tres
- * llamadas se compongan bien y que un error de TMDB se convierta en un mensaje que se le
- * pueda mostrar al encargado.
- *
- * <p>Con {@code com.sun.net.httpserver} del JDK y no con un mock de {@code HttpClient}: así se
- * ejerce el pedido de verdad, códigos de estado incluidos. Puerto 0, que lo elige el sistema
- * operativo, por lo mismo que {@code ApiEnMemoria}.
+ * El cliente de TMDB contra un {@code com.sun.net.httpserver} de mentira y no un mock de
+ * {@code HttpClient}, para ejercer el pedido real con sus códigos de estado. Los tests de ruta
+ * usan {@code CatalogoDePrueba} y nunca pasan por acá.
  */
 class TmdbHttpTest {
 
@@ -77,7 +70,7 @@ class TmdbHttpTest {
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", duna.posterUrl());
     }
 
-    /** El idioma va en toda llamada: es lo que hace que los géneros vuelvan en castellano. */
+    /** El idioma hace que los géneros vuelvan en castellano. */
     @Test
     void elIdiomaYLaRegionViajanEnLaConsulta() {
         StringBuilder recibido = new StringBuilder();
@@ -93,9 +86,8 @@ class TmdbHttpTest {
     }
 
     /**
-     * Si TMDB falla en una película puntual, la película sale igual y sin duración: el alta la
-     * va a rechazar y va a quedar nombrada en el detalle, en vez de desaparecer del reporte y
-     * dejar al encargado creyendo que TMDB trajo menos títulos de los que trajo.
+     * La película sale sin duración para que el alta la rechace y quede nombrada en el detalle, en
+     * vez de desaparecer del reporte.
      */
     @Test
     void unErrorEnUnaPeliculaNoTiraLaCorrida() {
@@ -115,7 +107,6 @@ class TmdbHttpTest {
         assertEquals(0, peliculas.get(0).duracionMinutos());
     }
 
-    /** Que el listado entero falle sí es una corrida fallida, y el mensaje se le muestra. */
     @Test
     void elTokenRechazadoSeDiceConLoQueHayQueHacer() {
         levantar(intercambio -> responder(intercambio, 401, "{}"));

@@ -50,11 +50,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Reglas R4 (butaca libre), R6 (cancelar libera las butacas) y R13 (no se cancela una
- * reserva ya cobrada). Usa ReservaDAOTxt sobre un directorio temporal, así de paso se
- * prueba el DAO de archivo.
- */
+/** R4 (butaca libre), R6 (cancelar libera las butacas) y R13 (no se cancela lo cobrado). */
 class GestorReservasTest extends PruebaDeIntegracion {
 
     private static final Path TICKETS = Path.of("target/comprobantes/tickets");
@@ -132,11 +128,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
     }
 
-    /**
-     * Antes esto era un error validado a mano. Con las butacas como mapa de código a
-     * tarifa, pedir A1 dos veces es imposible de expresar: queda una sola entrada. La
-     * regla no desapareció, se volvió estructural.
-     */
+    /** Las butacas viajan como mapa de código a tarifa: pedir A1 dos veces no se puede expresar. */
     @Test
     void laMismaButacaDosVecesEsUnaSolaEntrada() {
         assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1")).getCantidadEntradas());
@@ -252,10 +244,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(8000.0), estandar.getTotal());
     }
 
-    /**
-     * El recargo premium se cobra una sola vez. Antes TipoSala tenía VIP además de
-     * TipoAsiento, y una butaca VIP en sala VIP pagaba 2.0 x 1.5 = 3 veces la base.
-     */
     @Test
     void elRecargoPremiumSeAplicaUnaSolaVez() {
         salas.agregar("Sala VIP", TipoSala.IMAX, List.of(2), Map.of("A1", TipoAsiento.VIP));
@@ -291,11 +279,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
     }
 
-    /**
-     * Lo guardado se relee entero. El código de butaca es lo que más importa acá: no está
-     * en la tabla entrada —sale del asiento— así que si la relación quedara mal mapeada, el
-     * ticket saldría sin butacas y ninguna regla de negocio se enteraría.
-     */
+    /** El código de butaca no está en la tabla entrada, sale del asiento por la relación. */
     @Test
     void loGuardadoSeReleeConSusButacasYSuFecha() {
         reservas.reservar(1, 1, generales("A1", "B2"));
@@ -308,13 +292,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
 
-    /**
-     * Envejece la reserva reescribiéndola con otra fecha de creación: es lo mismo que
-     * pasaría en la base media hora después, sin tener que esperarla.
-     *
-     * <p>Relee del DAO en vez de usar la instancia que tiene el test: cobrar() modifica
-     * la copia que leyó el gestor, no esta, y escribir la vieja pisaría el PAGADA.
-     */
+    /** Corre la fecha de creación hacia atrás en vez de esperar el vencimiento. */
     private void envejecer(int reservaId, int minutos) {
         jdbc.update("UPDATE reserva SET creada_en = ? WHERE id = ?",
                 reservaRepository.findById(reservaId).orElseThrow()
@@ -333,7 +311,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals(EstadoReserva.EXPIRADA, reservas.buscar(reserva.getId()).orElseThrow().getEstado());
     }
 
-    /** Se expira al consultar, no con un proceso de fondo: nadie la marca hasta que alguien mira. */
+    /** Se expira al consultar, no con un proceso de fondo. */
     @Test
     void laReservaVencidaSeCierraReciénCuandoAlguienConsulta() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"));
@@ -393,11 +371,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
 
-    /**
-     * Se guarda por el DAO y no con GestorFunciones.programar porque programar en el
-     * pasado no es algo que el sistema deba permitir: lo que se está simulando es el
-     * paso del tiempo sobre una función que se programó normalmente.
-     */
+    /** Por el repositorio: el gestor no deja programar en el pasado. */
     private int funcionQueYaEmpezo() {
         return funcionRepository.save(new Funcion(1, 1, reloj.ahora().minusMinutes(30),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
@@ -411,7 +385,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 () -> reservas.reservar(empezada, 1, generales("A1")));
     }
 
-    /** La misma butaca sí se vende para la función que todavía no arrancó. */
     @Test
     void laMismaButacaSeVendeParaUnaFuncionFutura() {
         funcionQueYaEmpezo();
@@ -420,15 +393,11 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     /**
-     * El caso que más se parece a la realidad: se reservó con la función por delante y
-     * el cliente llega a la boletería después de que arrancó.
+     * R19: reservó a tiempo y llega a la boletería tarde. La reserva va por el repositorio
+     * porque el gestor ya rechaza reservar una función empezada.
      */
     @Test
     void noSeCobraUnaReservaCuyaFuncionYaEmpezo() {
-        // La reserva se guarda por el DAO, no por el gestor: reservar ya rechaza la
-        // función empezada (R19 de este lado), así que por la puerta de adelante este
-        // escenario no se puede armar. Es el cliente que reservó a tiempo y llega tarde
-        // a la boletería.
         int empezada = funcionQueYaEmpezo();
         Asiento butaca = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).get(0);
         Reserva reserva = reservaRepository.save(new Reserva(empezada, 1,
@@ -440,22 +409,16 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
-    /**
-     * Dos clientes, dos funciones en días distintos y tres reservas, una de ellas
-     * cancelada. Es el mínimo para que ningún filtro devuelva la lista entera por
-     * casualidad y parezca que funciona.
-     */
+    /** El mínimo para que ningún filtro devuelva la lista entera por casualidad. */
     private void cargarReservas() {
         clientes.registrar("Sofía Pérez", "sofia@ejemplo.com");
-        // Segunda película y función, para poder filtrar por título y por día.
         cartelera.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         reservas.reservar(1, 1, generales("A1", "A2"));   // Andrei, Matrix, el 20
         reservas.reservar(2, 2, generales("B1"));          // Sofía, El Padrino, el 21
-        // La tercera también es de Andrei: así tiene una vigente y una cancelada, que es
-        // lo que hace que combinar estado + texto no sea trivial.
+        // Andrei queda con una vigente y una cancelada: combinar estado + texto importa.
         reservas.cancelar(reservas.reservar(1, 1, generales("A3")).getId());
     }
 
@@ -490,10 +453,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 new CriteriosReserva(null, LocalDate.of(2026, 8, 22), null)).isEmpty());
     }
 
-    /**
-     * El texto busca sobre lo que la persona tiene a mano en el mostrador. Cada uno de
-     * estos campos vive en una tabla distinta, y por eso el criterio no es un WHERE.
-     */
+    /** Cada campo vive en una tabla distinta: por eso el criterio no es un WHERE. */
     @Test
     void elTextoBuscaPorClienteEmailPeliculaYButaca() {
         cargarReservas();

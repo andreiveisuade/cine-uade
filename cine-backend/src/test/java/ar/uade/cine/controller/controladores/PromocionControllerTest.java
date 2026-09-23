@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.PruebaDeApi;
 
-/**
- * El alta de una promoción con datos mal escritos: tiene que ser 400 con un mensaje que se
- * pueda mostrar, no el 500 que salía cuando la fecha se parseaba sin atrapar el error.
- */
+/** Datos mal escritos en el alta dan 400 con un mensaje mostrable, no 500. */
 class PromocionControllerTest extends PruebaDeApi {
 
     @Test
