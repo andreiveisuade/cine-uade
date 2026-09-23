@@ -15,6 +15,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
@@ -24,6 +27,8 @@ import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
 public class TmdbHttp implements CatalogoExterno {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TmdbHttp.class);
 
     private static final String BASE_POR_DEFECTO = "https://api.themoviedb.org/3";
     private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
@@ -99,8 +104,7 @@ public class TmdbHttp implements CatalogoExterno {
             detalle = pedir("/movie/" + id);
             certificacion = certificacionArgentina(id);
         } catch (ImportadorError e) {
-            System.err.println("TMDB no pudo completar «"
-                    + resumen.path("title").asText("?") + "»: " + e.getMessage());
+            LOG.warn("TMDB no pudo completar «{}»: {}", resumen.path("title").asText("?"), e.getMessage());
         }
         return MapeoTmdb.aPelicula(resumen, detalle, certificacion,
                 urlPoster(resumen.path("poster_path").asText(null)));
