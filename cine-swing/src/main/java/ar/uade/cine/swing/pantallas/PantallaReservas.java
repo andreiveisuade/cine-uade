@@ -17,8 +17,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.Timer;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,24 +90,7 @@ final class PantallaReservas extends Pantalla {
         add(centro, BorderLayout.CENTER);
 
         // Con espera, porque cada tecla sería un pedido; un combo es una decisión, no un tanteo.
-        Timer espera = new Timer(200, e -> buscar());
-        espera.setRepeats(false);
-        buscar.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-        });
+        Timer espera = Campos.alDejarDeTipear(buscar, this::buscar);
         estado.addActionListener(e -> buscar());
         diaFuncion.addPropertyChangeListener("date", e -> buscar());
         limpiar.addActionListener(e -> {

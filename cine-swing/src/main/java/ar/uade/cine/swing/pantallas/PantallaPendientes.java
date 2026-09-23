@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
 
@@ -101,9 +102,5 @@ final class PantallaPendientes extends Pantalla {
 
     private static String vacioSi(String valor, String reemplazo) {
         return valor == null || valor.isBlank() ? reemplazo : valor;
-    }
-
-    private static String escapar(String texto) {
-        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

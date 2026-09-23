@@ -19,10 +19,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
+import ar.uade.cine.swing.comun.TablaCompras;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
@@ -46,7 +46,7 @@ final class PantallaCaja extends Pantalla {
             Columna.<Pago>de("Autorización", p -> p.codigoAutorizacion() == null ? "—" : p.codigoAutorizacion()),
             Columna.<Pago>numero("Descuento", p -> p.descuento() > 0 ? "−" + precio(p.descuento()) : "—"),
             Columna.<Pago>numero("Monto", p -> precio(p.monto())));
-    private final Tabla<CompraCandy> candy = tablaCompras();
+    private final Tabla<CompraCandy> candy = TablaCompras.crear();
 
     PantallaCaja(ApiHttp api) {
         super(api, "Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
@@ -86,21 +86,6 @@ final class PantallaCaja extends Pantalla {
         recargar();
     }
 
-    static Tabla<CompraCandy> tablaCompras() {
-        return new Tabla<>(
-                Columna.<CompraCandy>de("Hora", c -> hora(c.fecha())).ancho(60),
-                Columna.<CompraCandy>de("Venta", c -> "#" + c.id()).ancho(60),
-                Columna.<CompraCandy>de("Qué se llevó", c -> c.items().stream()
-                        .map(i -> i.cantidad() + "× " + i.nombre()).collect(Collectors.joining(", "))).ancho(260),
-                Columna.<CompraCandy>de("Reserva", c -> c.reservaId() == null ? "—" : "#" + c.reservaId()),
-                Columna.<CompraCandy>de("Medio", c -> etiqueta(c.medio())),
-                Columna.<CompraCandy>de("Autorización",
-                        c -> c.codigoAutorizacion() == null || c.codigoAutorizacion().isEmpty()
-                                ? "—" : c.codigoAutorizacion()),
-                Columna.<CompraCandy>numero("Ahorro", c -> c.ahorro() > 0 ? precio(c.ahorro()) : "—"),
-                Columna.<CompraCandy>numero("Total", c -> precio(c.total())));
-    }
-
     private void mover(int dias) {
         LocalDate actual = Fechas.leer(fecha);
         // Cambiar la fecha dispara la recarga por el listener de "date".
@@ -115,10 +100,10 @@ final class PantallaCaja extends Pantalla {
     private void pintar(Datos datos) {
         Arqueo arqueo = datos.arqueo();
         cifras.removeAll();
-        cifras.add(cifra("Boletería", precio(arqueo.total())));
-        cifras.add(cifra("Candy", precio(datos.candy().total())));
-        cifras.add(cifra("Operaciones", String.valueOf(arqueo.pagos().size())));
-        cifras.add(cifra("Entradas", String.valueOf(arqueo.entradas())));
+        cifras.add(Componentes.cifra("Boletería", precio(arqueo.total()), null, null));
+        cifras.add(Componentes.cifra("Candy", precio(datos.candy().total()), null, null));
+        cifras.add(Componentes.cifra("Operaciones", String.valueOf(arqueo.pagos().size()), null, null));
+        cifras.add(Componentes.cifra("Entradas", String.valueOf(arqueo.entradas()), null, null));
         cifras.revalidate();
         cifras.repaint();
         porMedio.setText(arqueo.porMedio().isEmpty() ? "No se cobró nada en boletería ese día."
@@ -128,17 +113,5 @@ final class PantallaCaja extends Pantalla {
         boleteria.mostrar(arqueo.pagos());
         tituloCandy.setText("Candy · " + datos.candy().compras().size() + " ventas");
         candy.mostrar(datos.candy().compras());
-    }
-
-    private static JPanel cifra(String titulo, String valor) {
-        JLabel arriba = new JLabel(titulo.toUpperCase());
-        arriba.setForeground(Componentes.gris());
-        arriba.setFont(arriba.getFont().deriveFont(11f));
-        JLabel numero = new JLabel(valor);
-        numero.setFont(numero.getFont().deriveFont(Font.BOLD, 22f));
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(arriba, BorderLayout.NORTH);
-        panel.add(numero, BorderLayout.CENTER);
-        return Componentes.conBorde(panel);
     }
 }

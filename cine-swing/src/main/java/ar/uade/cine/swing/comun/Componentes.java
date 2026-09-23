@@ -114,6 +114,30 @@ public final class Componentes {
         return panel;
     }
 
+    /**
+     * Una cifra grande con su título arriba, en un recuadro: el arqueo y los indicadores del planificador. {@code
+     * detalle} y {@code variacion} son opcionales.
+     */
+    public static JPanel cifra(String titulo, String valor, String detalle, String variacion) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JLabel arriba = new JLabel(titulo.toUpperCase());
+        arriba.setForeground(gris());
+        arriba.setFont(arriba.getFont().deriveFont(11f));
+        JLabel numero = new JLabel(valor);
+        numero.setFont(numero.getFont().deriveFont(Font.BOLD, 22f));
+        panel.add(izquierda(arriba));
+        panel.add(izquierda(numero));
+        if (detalle != null) panel.add(izquierda(new JLabel("<html><div style='width:150px'>" + detalle
+                + "</div></html>")));
+        if (variacion != null) {
+            JLabel cambio = new JLabel(variacion);
+            cambio.setFont(cambio.getFont().deriveFont(11f));
+            panel.add(izquierda(cambio));
+        }
+        return conBorde(panel);
+    }
+
     /** Formulario de dos columnas, etiqueta y campo, con las etiquetas alineadas para que se lea de un vistazo. */
     public static final class Formulario extends JPanel {
 

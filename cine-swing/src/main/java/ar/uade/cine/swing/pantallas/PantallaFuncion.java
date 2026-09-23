@@ -115,8 +115,8 @@ final class PantallaFuncion extends Pantalla {
                         Columna.<Map.Entry<String, Total>>numero("Total", e -> precio(e.getValue().total())));
                 tabla.mostrar(tarifas);
                 var scroll = tabla.conScroll();
-                scroll.setPreferredSize(new Dimension(300, 28 + 26 * tarifas.size()));
-                scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28 + 26 * tarifas.size()));
+                scroll.setPreferredSize(new Dimension(300, Tabla.altoPara(tarifas.size())));
+                scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, Tabla.altoPara(tarifas.size())));
                 agregar(contenido, scroll);
                 agregar(contenido, new JLabel(bordero.espectadores() + " espectadores"));
             }

@@ -26,8 +26,6 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.time.LocalDate;
@@ -38,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ar.uade.cine.swing.comun.SelectorDias;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.precio;
@@ -204,22 +203,7 @@ final class PantallaProgramaciones extends Pantalla {
         hasta.addPropertyChangeListener("date", e -> invalidar.run());
         horaInicio.addChangeListener(e -> invalidar.run());
         dias.alCambiar(invalidar);
-        precioBase.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                invalidar.run();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                invalidar.run();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                invalidar.run();
-            }
-        });
+        Campos.alCambiar(precioBase, invalidar);
 
         JScrollPane scroll = new JScrollPane(formulario, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

@@ -16,8 +16,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -78,22 +76,7 @@ final class PantallaSalas extends Pantalla {
         pareja.setToolTipText("Ej: A1,A2");
         accesibles.setToolTipText("Ej: A1,A8");
         resumenDistribucion.setForeground(Componentes.gris());
-        distribucion.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                resumir();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                resumir();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                resumir();
-            }
-        });
+        Campos.alCambiar(distribucion, this::resumir);
         JButton crear = new JButton("Crear sala");
         crear.addActionListener(e -> crear());
 

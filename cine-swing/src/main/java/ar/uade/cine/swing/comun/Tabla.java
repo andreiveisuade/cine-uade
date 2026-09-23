@@ -20,6 +20,15 @@ import java.util.function.Function;
  */
 public final class Tabla<T> {
 
+    public static final int ALTO_FILA = 26;
+    // El encabezado de columnas más el borde del scroll: lo que hay que sumar para que no aparezca la barra.
+    private static final int ALTO_ENCABEZADO = 30;
+
+    /** El alto de scroll que muestra {@code filas} filas enteras, para una tabla corta que no debe scrollear. */
+    public static int altoPara(int filas) {
+        return ALTO_ENCABEZADO + ALTO_FILA * filas;
+    }
+
     public record Columna<T>(String titulo, Function<T, Object> valor, boolean aLaDerecha, int ancho) {
 
         public static <T> Columna<T> de(String titulo, Function<T, Object> valor) {
@@ -48,7 +57,7 @@ public final class Tabla<T> {
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabla.setFillsViewportHeight(true);
         tabla.setAutoCreateRowSorter(false);
-        tabla.setRowHeight(26);
+        tabla.setRowHeight(ALTO_FILA);
         DefaultTableCellRenderer derecha = new DefaultTableCellRenderer();
         derecha.setHorizontalAlignment(JLabel.RIGHT);
         for (int i = 0; i < columnas.length; i++) {

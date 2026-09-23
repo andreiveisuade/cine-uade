@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import ar.uade.cine.swing.comun.SelectorDias;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
 
@@ -50,7 +52,6 @@ final class PantallaAgenda extends Pantalla {
     private static final int ANCHO_HORAS = 56;
     private static final int ALTO_CABECERA = 44;
     private static final int MARGEN = 10;
-    private static final String[] NOMBRE_DIA = {"Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"};
 
     private record Columna(String titulo, String detalle, Predicate<Funcion> toma,
                            Function<Funcion, String> subtitulo) {
@@ -180,7 +181,7 @@ final class PantallaAgenda extends Pantalla {
             for (int i = 0; i < 7; i++) {
                 LocalDate fecha = desde.plusDays(i);
                 String dia = fecha.toString();
-                columnas.add(new Columna(NOMBRE_DIA[fecha.getDayOfWeek().getValue() - 1],
+                columnas.add(new Columna(SelectorDias.abreviatura(fecha.getDayOfWeek()),
                         String.valueOf(fecha.getDayOfMonth()),
                         f -> f.sala().id() == elegida.id() && f.inicio().startsWith(dia),
                         f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma()).toLowerCase()));
@@ -340,7 +341,7 @@ final class PantallaAgenda extends Pantalla {
                 int arriba = y(termina);
                 int alto = (int) Math.round(limpieza * PX_POR_MINUTO);
                 Graphics2D rayado = (Graphics2D) g2.create(x, arriba, ancho - 4, alto);
-                rayado.setColor(new Color(100, 116, 139, 70));
+                rayado.setColor(Colores.limpieza());
                 rayado.setStroke(new BasicStroke(2));
                 for (int d = -alto; d < ancho; d += 8) rayado.drawLine(d, alto, d + alto, 0);
                 rayado.setColor(gris);
@@ -356,9 +357,5 @@ final class PantallaAgenda extends Pantalla {
             int w = g2.getFontMetrics().stringWidth(texto);
             g2.drawString(texto, x + (ancho - w) / 2, y);
         }
-    }
-
-    private static String escapar(String texto) {
-        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

@@ -20,8 +20,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.Timer;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -73,13 +71,11 @@ final class PantallaPeliculas extends Pantalla {
     private final JButton cancelar = new JButton("Cancelar");
     private Pelicula editando;
     private boolean llenando;
-    // El texto espera a que se deje de tipear: sin eso, "Matrix" son seis pedidos.
-    private final Timer espera = new Timer(250, e -> buscar());
+    private final Timer espera = Campos.alDejarDeTipear(buscar, this::buscar);
 
     PantallaPeliculas(ApiHttp api) {
         super(api, "Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
                 + "despublicarla la baja aunque las tenga.");
-        espera.setRepeats(false);
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         centro.add(barraFiltros(), BorderLayout.NORTH);
@@ -124,22 +120,6 @@ final class PantallaPeliculas extends Pantalla {
         barra.add(limpiar);
         barra.add(conteo);
 
-        buscar.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                espera.restart();
-            }
-        });
         filtroGenero.addActionListener(e -> buscar());
         filtroEstado.addActionListener(e -> buscar());
         limpiar.addActionListener(e -> {

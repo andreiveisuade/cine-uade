@@ -71,6 +71,12 @@ public final class Colores {
         return par(0xE9ECEF, 0x262626);
     }
 
+    // Semitransparente: el rayado de la limpieza en la agenda deja ver la grilla de horas de abajo.
+    public static Color limpieza() {
+        Color base = par(0x64748B, 0x94A3B8);
+        return new Color(base.getRed(), base.getGreen(), base.getBlue(), 70);
+    }
+
     public static Color pantallaDeSala() {
         return par(0x343A40, 0xADB5BD);
     }

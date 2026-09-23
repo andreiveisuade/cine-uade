@@ -4,7 +4,6 @@ import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.Cliente;
 import ar.uade.cine.swing.api.dto.CompraCandy;
-import ar.uade.cine.swing.api.dto.ItemCompra;
 import ar.uade.cine.swing.api.dto.MedioPago;
 import ar.uade.cine.swing.api.dto.PedidoCombo;
 import ar.uade.cine.swing.api.dto.PedidoProducto;
@@ -15,7 +14,6 @@ import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Fechas;
-import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -42,13 +40,13 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ar.uade.cine.swing.comun.TablaCompras;
+import ar.uade.cine.swing.informes.TicketCandy;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -416,43 +414,11 @@ final class PantallaCandy extends Pantalla {
             }, compra -> {
                 avisar("Cobrado " + precio(compra.total()));
                 tituloTicket.setText("Venta #" + compra.id());
-                ticket.setText(ticketDe(compra));
+                ticket.setText(TicketCandy.escribir(compra));
                 cantidades.values().forEach(s -> s.setValue(0));
                 codigo.setText("");
             }, e -> mostrarError(error, e));
         }
-    }
-
-    private static final String LINEA = "=".repeat(40);
-
-    static String ticketDe(CompraCandy compra) {
-        List<String> lineas = new ArrayList<>();
-        lineas.add(LINEA);
-        lineas.add("  CINE UADE · CANDY");
-        lineas.add("  " + Formato.fechaHora(compra.fecha()));
-        lineas.add(LINEA);
-        for (ItemCompra i : compra.items()) {
-            String izquierda = i.cantidad() + "x " + i.nombre();
-            lineas.add(renglon(izquierda.length() > 26 ? izquierda.substring(0, 26) : izquierda, exacto(i.subtotal())));
-        }
-        lineas.add(LINEA);
-        lineas.add(renglon("TOTAL", exacto(compra.total())));
-        if (compra.ahorro() > 0) lineas.add(renglon("Ahorro por combos", exacto(compra.ahorro())));
-        lineas.add(renglon("Medio", etiqueta(compra.medio())));
-        if (compra.codigoAutorizacion() != null && !compra.codigoAutorizacion().isEmpty()) {
-            lineas.add(renglon("Autorizacion", compra.codigoAutorizacion()));
-        }
-        if (compra.reservaId() != null) lineas.add(renglon("Reserva", "#" + compra.reservaId()));
-        lineas.add(LINEA);
-        return String.join("\n", lineas);
-    }
-
-    private static String renglon(String izquierda, String derecha) {
-        return " " + String.format("%-26s", izquierda) + String.format("%12s", derecha);
-    }
-
-    private static String exacto(double monto) {
-        return "$ " + String.format(Locale.ROOT, "%.2f", monto);
     }
 
     /** Las ventas de un día. El total cobrado está en Caja, al lado de la boletería. */
@@ -460,7 +426,7 @@ final class PantallaCandy extends Pantalla {
 
         private final JDateChooser fecha = Fechas.selector(LocalDate.now());
         private final JLabel cantidad = new JLabel(" ");
-        private final Tabla<CompraCandy> tabla = PantallaCaja.tablaCompras();
+        private final Tabla<CompraCandy> tabla = TablaCompras.crear();
 
         Ventas() {
             super(new BorderLayout(0, 8));

@@ -19,6 +19,7 @@ import java.awt.Font;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
@@ -114,9 +115,5 @@ final class PantallaPuerta extends Pantalla {
                 + "</h1>" + cuerpo + "</div></html>");
         resultado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color, 2),
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-    }
-
-    private static String escapar(String texto) {
-        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

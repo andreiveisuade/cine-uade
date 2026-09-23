@@ -1,6 +1,9 @@
 package ar.uade.cine.swing.comun;
 
 import javax.swing.JComboBox;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -66,5 +69,39 @@ public final class Campos {
                 return;
             }
         }
+    }
+
+    // Lo que tarda en dispararse una búsqueda desde que se deja de tipear: sin espera, "Matrix" son seis pedidos.
+    private static final int ESPERA_AL_TIPEAR_MS = 250;
+
+    /** Corre {@code accion} con cada cambio del texto, se tipee, se borre o se pegue. */
+    public static void alCambiar(JTextComponent campo, Runnable accion) {
+        campo.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                accion.run();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                accion.run();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                accion.run();
+            }
+        });
+    }
+
+    /**
+     * Corre {@code accion} cuando se deja de tipear. Devuelve el Timer para que un "Limpiar" que vacía el campo pueda
+     * pararlo y buscar una sola vez.
+     */
+    public static Timer alDejarDeTipear(JTextComponent campo, Runnable accion) {
+        Timer espera = new Timer(ESPERA_AL_TIPEAR_MS, e -> accion.run());
+        espera.setRepeats(false);
+        alCambiar(campo, espera::restart);
+        return espera;
     }
 }

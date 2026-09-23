@@ -30,8 +30,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.Scrollable;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.DefaultCaret;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -48,6 +46,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.dia;
 import static ar.uade.cine.swing.comun.Formato.duracion;
@@ -130,25 +129,9 @@ final class PantallaPlanificador extends Pantalla {
         cierre.addChangeListener(e -> cambio.run());
         idioma.addActionListener(e -> cambio.run());
         proyeccion.addActionListener(e -> cambio.run());
-        DocumentListener alTipear = new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                cambio.run();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                cambio.run();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                cambio.run();
-            }
-        };
-        dias.getDocument().addDocumentListener(alTipear);
-        cuantasPeliculas.getDocument().addDocumentListener(alTipear);
-        precioBase.getDocument().addDocumentListener(alTipear);
+        Campos.alCambiar(dias, cambio);
+        Campos.alCambiar(cuantasPeliculas, cambio);
+        Campos.alCambiar(precioBase, cambio);
 
         JPanel panel = Componentes.conBorde(formulario);
         panel.setPreferredSize(new Dimension(340, 0));
@@ -236,17 +219,17 @@ final class PantallaPlanificador extends Pantalla {
 
     private JPanel indicadores(IndicadoresGrilla i, int pases, IndicadoresGrilla anterior) {
         JPanel tarjetas = new JPanel(new GridLayout(2, 2, 8, 8));
-        tarjetas.add(tarjeta("Ocupación de las salas", porcentaje(i.ocupacion()),
+        tarjetas.add(Componentes.cifra("Ocupación de las salas", porcentaje(i.ocupacion()),
                 String.format(Locale.ROOT, "%,d de %,d minutos libres", i.minutosProgramados(),
                         i.minutosDisponibles()).replace(',', '.'),
                 variacion(i, anterior, IndicadoresGrilla::ocupacion, PantallaPlanificador::porcentaje)));
-        tarjetas.add(tarjeta("Puntaje promedio", conDecimal(i.puntajePromedio()),
+        tarjetas.add(Componentes.cifra("Puntaje promedio", conDecimal(i.puntajePromedio()),
                 "por pase: una película con más funciones pesa más",
                 variacion(i, anterior, IndicadoresGrilla::puntajePromedio, PantallaPlanificador::conDecimal)));
-        tarjetas.add(tarjeta("Géneros cubiertos", i.generosCubiertos() + " de " + i.generosTotales(),
+        tarjetas.add(Componentes.cifra("Géneros cubiertos", i.generosCubiertos() + " de " + i.generosTotales(),
                 "géneros del catálogo que aparecen en la semana",
                 variacion(i, anterior, x -> (double) x.generosCubiertos(), d -> String.valueOf(Math.round(d)))));
-        tarjetas.add(tarjeta("Pases", String.valueOf(pases), "funciones que arma la propuesta", null));
+        tarjetas.add(Componentes.cifra("Pases", String.valueOf(pases), "funciones que arma la propuesta", null));
         tarjetas.setMaximumSize(new Dimension(Integer.MAX_VALUE, tarjetas.getPreferredSize().height));
         return tarjetas;
     }
@@ -259,25 +242,6 @@ final class PantallaPlanificador extends Pantalla {
         return (delta > 0 ? "▲ " : "▼ ") + formato.apply(Math.abs(delta)) + " vs. la corrida anterior";
     }
 
-    private static JPanel tarjeta(String titulo, String valor, String detalle, String variacion) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        JLabel arriba = new JLabel(titulo.toUpperCase());
-        arriba.setForeground(Componentes.gris());
-        arriba.setFont(arriba.getFont().deriveFont(11f));
-        JLabel numero = new JLabel(valor);
-        numero.setFont(numero.getFont().deriveFont(Font.BOLD, 24f));
-        panel.add(arriba);
-        panel.add(numero);
-        panel.add(new JLabel("<html><div style='width:150px'>" + detalle + "</div></html>"));
-        if (variacion != null) {
-            JLabel cambio = new JLabel(variacion);
-            cambio.setFont(cambio.getFont().deriveFont(11f));
-            panel.add(cambio);
-        }
-        return Componentes.conBorde(panel);
-    }
-
     private JComponent elenco(List<PeliculaElegida> elenco) {
         Tabla<PeliculaElegida> tabla = new Tabla<>(
                 Columna.<PeliculaElegida>de("Película", p -> p.titulo()).ancho(240),
@@ -288,7 +252,7 @@ final class PantallaPlanificador extends Pantalla {
                 Columna.<PeliculaElegida>numero("Pases", PeliculaElegida::pases));
         tabla.mostrar(elenco);
         JScrollPane scroll = tabla.conScroll();
-        int alto = 30 + 26 * elenco.size();
+        int alto = Tabla.altoPara(elenco.size());
         scroll.setPreferredSize(new Dimension(600, alto));
         scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, alto));
         JPanel panel = new JPanel(new BorderLayout(0, 6));
@@ -334,12 +298,13 @@ final class PantallaPlanificador extends Pantalla {
             porDia.computeIfAbsent(p.inicio().substring(0, 10), d -> new LinkedHashMap<>())
                     .computeIfAbsent(p.sala(), s -> new ArrayList<>()).add(p);
         }
+        String gris = Colores.hex(Colores.secundario());
         StringBuilder html = new StringBuilder("<html>");
         porDia.forEach((fecha, salas) -> {
             int cuantos = salas.values().stream().mapToInt(List::size).sum();
             html.append("<p style='margin-top:8px'><b>").append(dia(fecha + "T00:00:00")).append("</b> · ")
                     .append(cuantos).append(" pases</p><table>");
-            salas.forEach((sala, deLaSala) -> html.append("<tr><td valign='top' nowrap><font color='gray'>").append(sala)
+            salas.forEach((sala, deLaSala) -> html.append("<tr><td valign='top' nowrap><font color='" + gris + "'>").append(escapar(sala))
                     .append("</font></td><td>").append(deLaSala.stream()
                             .map(p -> "<b>" + hora(p.inicio()) + "</b> " + escapar(p.titulo()))
                             .collect(Collectors.joining(" &nbsp;·&nbsp; "))).append("</td></tr>"));
@@ -395,10 +360,6 @@ final class PantallaPlanificador extends Pantalla {
 
     private static String conDecimal(double numero) {
         return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
-    }
-
-    private static String escapar(String texto) {
-        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     /** Sigue el ancho del scroll en vez de estirarlo: sin esto, lo más ancho del resultado empuja todo hacia afuera. */

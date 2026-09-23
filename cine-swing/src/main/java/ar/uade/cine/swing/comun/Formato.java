@@ -11,7 +11,6 @@ import java.util.Locale;
 public final class Formato {
 
     private static final Locale ARGENTINA = Locale.forLanguageTag("es-AR");
-    private static final String[] DIAS = {"lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"};
     private static final String[] MESES = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct",
             "nov", "dic"};
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
@@ -46,7 +45,13 @@ public final class Formato {
         long diferencia = ChronoUnit.DAYS.between(LocalDate.now(), fecha);
         if (diferencia == 0) return "Hoy";
         if (diferencia == 1) return "Mañana";
-        return DIAS[fecha.getDayOfWeek().getValue() - 1] + " " + fecha.getDayOfMonth() + " "
-                + MESES[fecha.getMonthValue() - 1];
+        return Etiquetas.etiqueta(fecha.getDayOfWeek().name()).toLowerCase(ARGENTINA) + " " + fecha.getDayOfMonth()
+                + " " + MESES[fecha.getMonthValue() - 1];
+    }
+
+    /** Para meter texto del backend en el HTML de un JLabel: un título con "<" o "&" rompería el renglón. */
+    public static String escapar(String texto) {
+        if (texto == null) return "";
+        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }

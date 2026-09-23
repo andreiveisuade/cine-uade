@@ -32,14 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ar.uade.cine.swing.comun.SelectorDias;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /** Alta y baja de promociones (CU-17). No se borran: una que ya se usó explica por qué se cobró ese monto. */
 final class PantallaPromociones extends Pantalla {
-
-    private static final List<String> DIAS = List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY",
-            "SATURDAY", "SUNDAY");
 
     private record Datos(List<Promocion> promociones, List<MedioPago> medios) {
     }
@@ -63,7 +61,7 @@ final class PantallaPromociones extends Pantalla {
     private final JTextField paga = new JTextField("1");
     private final JDateChooser desde = Fechas.selector(LocalDate.now());
     private final JDateChooser hasta = Fechas.selector(null);
-    private final Map<String, JCheckBox> dias = new LinkedHashMap<>();
+    private final SelectorDias dias = new SelectorDias();
     private final JTextField horaDesde = new JTextField();
     private final JTextField horaHasta = new JTextField();
     private final Map<String, JCheckBox> medios = new LinkedHashMap<>();
@@ -106,7 +104,7 @@ final class PantallaPromociones extends Pantalla {
     static String condiciones(Promocion p) {
         List<String> partes = new ArrayList<>();
         if (p.diasSemana() != null && !p.diasSemana().isEmpty()) {
-            partes.add(p.diasSemana().stream().map(d -> etiqueta(d).substring(0, 3)).collect(Collectors.joining(", ")));
+            partes.add(SelectorDias.resumen(p.diasSemana()));
         }
         if (p.horaDesde() != null || p.horaHasta() != null) {
             partes.add(corta(p.horaDesde(), "00:00") + "–" + corta(p.horaHasta(), "23:59"));
@@ -137,12 +135,6 @@ final class PantallaPromociones extends Pantalla {
         beneficio.add(new Componentes.Formulario().campo("Lleva", lleva).campo("Paga", paga), "NXM");
         tipo.addActionListener(e -> tarjetas.show(beneficio, Campos.elegido(tipo)));
 
-        JPanel panelDias = new JPanel(new GridLayout(0, 4, 4, 0));
-        for (String dia : DIAS) {
-            JCheckBox caja = new JCheckBox(etiqueta(dia).substring(0, 3));
-            dias.put(dia, caja);
-            panelDias.add(caja);
-        }
         horaDesde.setToolTipText("HH:mm, vacío = sin límite");
         horaHasta.setToolTipText("HH:mm, vacío = sin límite");
         error.setForeground(Colores.error());
@@ -158,7 +150,7 @@ final class PantallaPromociones extends Pantalla {
                 .campo("Desde", desde)
                 .campo("Hasta", hasta)
                 .ancho(new JLabel("Días (ninguno = todos)"))
-                .ancho(panelDias)
+                .ancho(dias)
                 .campo("Desde hora", horaDesde)
                 .campo("Hasta hora", horaHasta)
                 .ancho(new JLabel("Medios (ninguno = cualquiera)"))
@@ -203,7 +195,7 @@ final class PantallaPromociones extends Pantalla {
                 "MONTO_FIJO".equals(elegido) ? Campos.decimal(monto) : null,
                 "NXM".equals(elegido) ? Campos.entero(lleva) : null,
                 "NXM".equals(elegido) ? Campos.entero(paga) : null,
-                Fechas.iso(desde), Fechas.iso(hasta), tildados(dias),
+                Fechas.iso(desde), Fechas.iso(hasta), dias.elegidos(),
                 Campos.texto(horaDesde), Campos.texto(horaHasta), tildados(medios));
         error.setText(" ");
         Tarea.ejecutar(this, () -> api.crearPromocion(pedido), creada -> {
@@ -224,7 +216,7 @@ final class PantallaPromociones extends Pantalla {
         paga.setText("1");
         Fechas.poner(desde, LocalDate.now());
         hasta.setDate(null);
-        dias.values().forEach(c -> c.setSelected(false));
+        dias.limpiar();
         horaDesde.setText("");
         horaHasta.setText("");
         medios.values().forEach(c -> c.setSelected(false));

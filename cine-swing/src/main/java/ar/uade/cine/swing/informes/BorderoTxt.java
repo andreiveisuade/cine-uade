@@ -2,9 +2,8 @@ package ar.uade.cine.swing.informes;
 
 import ar.uade.cine.swing.api.dto.Bordero;
 import ar.uade.cine.swing.api.dto.Total;
+import ar.uade.cine.swing.comun.Formato;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.Map;
  */
 public final class BorderoTxt {
 
-    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String LINEA = "=".repeat(44);
 
     private BorderoTxt() {
@@ -40,9 +38,9 @@ public final class BorderoTxt {
                 LINEA,
                 campo("Pelicula", bordero.pelicula()),
                 campo("Sala", bordero.sala()),
-                campo("Funcion", fecha(bordero.funcion())),
+                campo("Funcion", Formato.fechaHora(bordero.funcion())),
                 // El `generadoEn` del backend y no el reloj de esta PC: el borderó se fecha donde se calculó.
-                campo("Generado", fecha(bordero.generadoEn())),
+                campo("Generado", Formato.fechaHora(bordero.generadoEn())),
                 LINEA,
                 " Entradas vendidas por tarifa"));
 
@@ -75,10 +73,6 @@ public final class BorderoTxt {
     private static int posicion(List<String> orden, String tarifa) {
         int i = orden.indexOf(tarifa);
         return i < 0 ? Integer.MAX_VALUE : i;
-    }
-
-    private static String fecha(String iso) {
-        return LocalDateTime.parse(iso).format(FORMATO_FECHA);
     }
 
     private static String campo(String etiqueta, String valor) {
