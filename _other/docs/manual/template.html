@@ -462,7 +462,7 @@ body.lightbox-locked { overflow: hidden; }
         Backend Spring Boot sobre MySQL, frontend React servido por nginx, todo con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 435 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 439 tests.</p>
       </div>
     </section>
 
@@ -624,12 +624,12 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19)</td></tr>
             <tr><td><code>Ocupacion</code></td><td>Butacas tomadas en una función; expira vencidas</td></tr>
             <tr><td><code>CalculadoraPrecio</code></td><td>Precio de lista de cada entrada</td></tr>
-            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta de clientes por email / alta y login de empleados</td></tr>
+            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta de clientes por email / alta de empleados y rehash de su clave</td></tr>
             <tr><td><code>GestorProductos</code></td><td>Carta del candy y combos (R14)</td></tr>
             <tr><td><code>GestorCandy</code></td><td>Ventas del candy y su ticket</td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó y recaudación por función</td></tr>
             <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>CondicionesPromocion</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code></td></tr>
-            <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code>, <code>CredencialesInvalidas</code></td><td>Rechazos que salen como 404, 409, 409 y 401</td></tr>
+            <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
             <tr><td>14 <code>*Controller</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>)</td></tr>
@@ -651,7 +651,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code>, <code>GeneradorBordero</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
-            <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordSha256</code>, <code>Password</code></td><td>Rutas por rol, HTTP Basic, hash de claves</td></tr>
+            <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt y el SHA-256 heredado</td></tr>
             <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas del puerto (500 / aviso del importador)</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>model/</code></td></tr>
@@ -898,7 +898,7 @@ body.lightbox-locked { overflow: hidden; }
       <ul>
         <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code></strong> en una tabla <code>usuario</code> con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. <code>Rol</code> distingue administrador y acomodador.</li>
         <li><strong>El cliente no tiene login: el <a href="#acceso">código de la reserva</a> es su credencial.</strong> Ticket, cancelación y «Mis reservas» van por <code>/api/reservas/codigo/{codigo}</code>; por <code>{id}</code>, que es secuencial, solo el encargado.</li>
-        <li><strong>Contraseñas:</strong> hash SHA-256 sin salt (<code>Password</code>); en producción, bcrypt. El login no distingue email inexistente de clave errónea.</li>
+        <li><strong>Contraseñas:</strong> bcrypt, guardado como <code>{bcrypt}$2a$…</code>. Un hash sin prefijo es el SHA-256 sin salt de antes (el del seed): se sigue aceptando y el primer login correcto lo reescribe en bcrypt, porque es el único momento en que se tiene la clave en claro. El login no distingue email inexistente de clave errónea.</li>
       </ul>
 
       <h3 id="seguridad">Quién puede llamar a qué</h3>
@@ -907,14 +907,15 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
-            <tr><td>Público</td><td>Login, cartelera, catálogos, reservar, bloqueos, alta de cliente, la propia reserva <em>por código</em>, carta del candy, Swagger</td></tr>
-            <tr><td><code>ACOMODADOR</code></td><td><code>POST /api/acceso</code></td></tr>
+            <tr><td>Público</td><td>Cartelera, catálogos, reservar, bloqueos, alta de cliente, la propia reserva <em>por código</em>, carta del candy, Swagger</td></tr>
+            <tr><td><code>ACOMODADOR</code></td><td>El login (<code>POST /api/sesion</code>) y <code>POST /api/acceso</code></td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la puerta</td></tr>
           </tbody>
         </table>
       </div>
       <ul>
         <li><strong>HTTP Basic sin sesión:</strong> <code>Authorization</code> en cada pedido, sin cookie; por eso CSRF está apagado.</li>
+        <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más. El filtro Basic valida email y clave y <code>SesionController</code> solo devuelve el empleado ya autenticado; antes el gestor comparaba la clave por su cuenta y había dos caminos que podían no coincidir.</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
@@ -1184,7 +1185,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         y una respuesta suele juntar varias (la función con sala, película, precios y butacas tomadas).
       </p>
       <ul>
-        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios. Sin anotaciones <code>PedidoSesionDTO</code> (debe dar 401). Los gestores validan igual, porque también los llaman el importador y los tests.</li>
+        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios. Los gestores validan igual, porque también los llaman el importador y los tests.</li>
         <li><code>*VistaDTO</code> (sale): opcionales con <code>@JsonInclude(NON_NULL)</code>.</li>
         <li>Los arman los <code>Vistas*</code> (Assembler). El DTO no tiene lógica.</li>
       </ul>
@@ -1505,7 +1506,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
+mvn clean test       # 439 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>); Redis, TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
@@ -1586,7 +1587,7 @@ mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
             <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
             <tr><td>Bloqueo</td><td><code>OcupacionTest</code>, <code>BloqueoButacasRedisTest</code></td><td>CP-18</td></tr>
-            <tr><td>Seguridad</td><td><code>SeguridadTest</code></td><td>CP-15</td></tr>
+            <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td><td>CP-15</td></tr>
             <tr><td>CU-07b, CU-19, CU-20</td><td><code>GestorPagosTest</code>, <code>PagoControllerTest</code>, <code>GestorInformesTest</code></td><td>—</td></tr>
             <tr><td>Planificador, capas, esquema</td><td><code>PlanificadorGrillaTest</code>, <code>ArquitecturaTest</code>, <code>MapeoContraSchemaTest</code></td><td>—</td></tr>
           </tbody>
@@ -1604,7 +1605,7 @@ mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TE
             <tr><td>Colecciones <code>EAGER</code> (en lotes de 50)</td><td>Se traen aunque no se usen</td></tr>
             <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>Con miles de filas en el arqueo</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Lo cubre <code>ClienteRepository</code></td></tr>
-            <tr><td>SHA-256 sin salt</td><td>En producción</td></tr>
+            <tr><td>bcrypt en cada pedido (Basic sin sesión)</td><td>Con mucho tráfico del panel</td></tr>
             <tr><td>Alta de promociones con <code>switch</code></td><td>Con muchos tipos</td></tr>
           </tbody>
         </table>
