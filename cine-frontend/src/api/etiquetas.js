@@ -69,13 +69,3 @@ export const COLOR_CLASIFICACION = {
   MAS_16: "orange",
   MAS_18: "red",
 };
-
-export const COLOR_ESTADO = {
-  RESERVADA: "yellow",
-  PAGADA: "green",
-  CANCELADA: "gray",
-  EXPIRADA: "gray",
-  EN_CURSO: "yellow",
-  TERMINADA: "green",
-  FALLIDA: "red",
-};

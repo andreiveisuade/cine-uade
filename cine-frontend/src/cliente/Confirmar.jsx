@@ -3,19 +3,21 @@ import { Alert, Anchor, Button, Grid, Paper, Stack, Table, Text, TextInput, Titl
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
-import { dia, hora, precio } from "../api/formato.js";
+import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
-import { catalogoTarifas, clienteRecordado, precioConTarifa, recordarCliente, SelectorTarifa, sesionDeCompra,
-         tarifaPorNombre, useCompra, useRenovarBloqueo } from "./compra.jsx";
+import { catalogoTarifas, clienteRecordado, DatosFuncion, precioConTarifa, recordarCliente, resumenCompra,
+         SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
+         useRenovarBloqueo } from "./compra.jsx";
 
 export function Confirmar() {
   const { id } = useParams();
   const navegar = useNavigate();
   const avisar = useAvisar();
   const { seleccion, setSeleccion } = useCompra();
+  const cambiarTarifa = useCambiarTarifa();
   const [recordado] = useState(clienteRecordado);
   const [nombre, setNombre] = useState(recordado?.nombre || "");
   const [email, setEmail] = useState(recordado?.email || "");
@@ -36,8 +38,7 @@ export function Confirmar() {
   }
 
   const butacas = seleccion.butacas;
-  const elegidas = funcion.asientos.filter((a) => butacas[a.codigo]);
-  const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, butacas[a.codigo]), 0);
+  const { elegidas, total } = resumenCompra(funcion, butacas);
   const aAcreditar = elegidas.filter((a) => tarifaPorNombre(butacas[a.codigo]).requiereAcreditacion);
 
   async function confirmar(evento) {
@@ -96,10 +97,7 @@ export function Confirmar() {
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Paper withBorder p="md">
             <Title order={2} size="h4">{funcion.pelicula.titulo}</Title>
-            <Text size="sm" c="dimmed" mb="sm">
-              {dia(funcion.inicio)} {hora(funcion.inicio)} · {funcion.sala.nombre} ({etiqueta(funcion.sala.tipo)}) ·{" "}
-              {etiqueta(funcion.proyeccion)} · {etiqueta(funcion.idioma)}
-            </Text>
+            <DatosFuncion funcion={funcion} c="dimmed" mb="sm" />
             <Table>
               <Table.Thead>
                 <Table.Tr>
@@ -113,8 +111,7 @@ export function Confirmar() {
                     <Table.Td fw={500}>{a.codigo}</Table.Td>
                     <Table.Td>{etiqueta(a.tipo)}</Table.Td>
                     <Table.Td>
-                      <SelectorTarifa valor={butacas[a.codigo]}
-                        alCambiar={(t) => setSeleccion((s) => ({ ...s, butacas: { ...s.butacas, [a.codigo]: t } }))} />
+                      <SelectorTarifa valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
                     </Table.Td>
                     <Table.Td ta="right">{precio(precioConTarifa(a, butacas[a.codigo]))}</Table.Td>
                   </Table.Tr>

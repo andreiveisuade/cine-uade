@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { NativeSelect } from "@mantine/core";
+import { NativeSelect, Text } from "@mantine/core";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
+import { dia, hora } from "../api/formato.js";
 
 // Código de butaca → tarifa, porque la tarifa es por persona.
 // En memoria y no en el navegador: recargar la pierde, igual que vence el bloqueo del backend.
@@ -74,6 +75,28 @@ export function tarifaPorNombre(nombre) {
 /** El precio de esa butaca con esa tarifa. asiento.precio siempre viene en GENERAL. */
 export function precioConTarifa(asiento, nombreTarifa) {
   return Math.round(asiento.precio * tarifaPorNombre(nombreTarifa).multiplicador * 100) / 100;
+}
+
+/** Las butacas elegidas de esa función y lo que suman con sus tarifas: el mapa y la confirmación dicen lo mismo. */
+export function resumenCompra(funcion, butacas) {
+  const elegidas = funcion.asientos.filter((a) => butacas[a.codigo]);
+  const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, butacas[a.codigo]), 0);
+  return { elegidas, total };
+}
+
+export function useCambiarTarifa() {
+  const { setSeleccion } = useCompra();
+  return (codigo, tarifa) => setSeleccion((s) => ({ ...s, butacas: { ...s.butacas, [codigo]: tarifa } }));
+}
+
+/** Cuándo, dónde y en qué formato: el encabezado de la función en el mapa y en la confirmación. */
+export function DatosFuncion({ funcion, ...props }) {
+  return (
+    <Text size="sm" {...props}>
+      {dia(funcion.inicio)} {hora(funcion.inicio)} · {funcion.sala.nombre} ({etiqueta(funcion.sala.tipo)}) ·{" "}
+      {etiqueta(funcion.proyeccion)} · {etiqueta(funcion.idioma)}
+    </Text>
+  );
 }
 
 export function SelectorTarifa({ valor, alCambiar }) {

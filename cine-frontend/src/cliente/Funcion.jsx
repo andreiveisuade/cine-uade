@@ -3,14 +3,14 @@ import { Button, Divider, Grid, Group, Paper, ScrollArea, Stack, Text, Title } f
 import { useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
-import { dia, hora, precio } from "../api/formato.js";
+import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/MapaButacas.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
-import { catalogoTarifas, precioConTarifa, SelectorTarifa, sesionDeCompra, sinButacas, sostenerSeleccion,
-         useCompra, useRenovarBloqueo } from "./compra.jsx";
+import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
+         sostenerSeleccion, useCambiarTarifa, useCompra, useRenovarBloqueo } from "./compra.jsx";
 
 // El fondo dice el estado; el borde y el símbolo, el tipo de butaca.
 function pintarParaComprar(asiento, elegidas) {
@@ -28,6 +28,7 @@ export function Funcion() {
   const navegar = useNavigate();
   const avisar = useAvisar();
   const { seleccion, setSeleccion } = useCompra();
+  const cambiarTarifa = useCambiarTarifa();
   // Con la sesión, las butacas que uno mismo bloqueó no vuelven como ocupadas.
   const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
   const funcion = carga.datos?.[0];
@@ -41,8 +42,7 @@ export function Funcion() {
 
   if (!funcion) return <EsperaOError carga={carga} />;
   const butacas = seleccion.funcionId === funcion.id ? seleccion.butacas : {};
-  const elegidas = funcion.asientos.filter((a) => butacas[a.codigo]);
-  const total = elegidas.reduce((suma, a) => suma + precioConTarifa(a, butacas[a.codigo]), 0);
+  const { elegidas, total } = resumenCompra(funcion, butacas);
 
   async function alternar(asiento) {
     // Arranca en GENERAL: una tarifa reducida hay que acreditarla en la puerta.
@@ -61,18 +61,12 @@ export function Funcion() {
     }
   }
 
-  const cambiarTarifa = (codigo, tarifa) =>
-    setSeleccion((s) => ({ ...s, butacas: { ...s.butacas, [codigo]: tarifa } }));
-
   return (
     <Stack gap="md">
       <Volver a={`/pelicula/${funcion.peliculaId}`}>{funcion.pelicula.titulo}</Volver>
       <div>
         <Title order={1}>{funcion.pelicula.titulo}</Title>
-        <Text size="sm">
-          {dia(funcion.inicio)} {hora(funcion.inicio)} · {funcion.sala.nombre} ({etiqueta(funcion.sala.tipo)}) ·{" "}
-          {etiqueta(funcion.proyeccion)} · {etiqueta(funcion.idioma)}
-        </Text>
+        <DatosFuncion funcion={funcion} />
         <Text size="sm" c="dimmed">
           {funcion.libres} butacas libres de {funcion.sala.capacidadSala} · precio base {precio(funcion.precio)}
         </Text>
