@@ -634,6 +634,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
             <tr><td>14 <code>*Controller</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>)</td></tr>
             <tr><td><code>http/</code>: <code>Parseo</code>, <code>Fechas</code></td><td>Convierten parámetros de texto a tipos</td></tr>
+            <tr><td><code>http/Creado</code></td><td>El <code>201</code> con <code>Location</code> de las altas</td></tr>
             <tr><td><code>http/ManejadorErrores</code></td><td>Excepciones → código HTTP y <code>{"error"}</code></td></tr>
             <tr><td><code>http/ConfiguracionOpenApi</code></td><td>Errores comunes en Swagger</td></tr>
             <tr><td><code>vistas/</code>: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasVentas</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores</td></tr>
@@ -1179,7 +1180,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         y una respuesta suele juntar varias (la función con sala, película, precios y butacas tomadas).
       </p>
       <ul>
-        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. Sin anotaciones <code>PedidoPeliculaDTO</code> (también edita parcial) y <code>PedidoSesionDTO</code> (debe dar 401). Los gestores validan igual, porque también los llaman el importador y los tests.</li>
+        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios. Sin anotaciones <code>PedidoSesionDTO</code> (debe dar 401). Los gestores validan igual, porque también los llaman el importador y los tests.</li>
         <li><code>*VistaDTO</code> (sale): opcionales con <code>@JsonInclude(NON_NULL)</code>.</li>
         <li>Los arman los <code>Vistas*</code> (Assembler). El DTO no tiene lógica.</li>
       </ul>

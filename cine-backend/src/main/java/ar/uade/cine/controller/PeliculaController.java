@@ -22,6 +22,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.dto.cartelera.PedidoEdicionPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PedidoPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
@@ -30,6 +31,8 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.RecursoNoEncontrado;
+
+import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -94,14 +97,14 @@ public class PeliculaController {
     @Operation(summary = "Dar de alta una película a mano")
     @PostMapping("/api/peliculas")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<PeliculaVistaDTO> agregar(@RequestBody PedidoPeliculaDTO pedido) {
+    public ResponseEntity<PeliculaVistaDTO> agregar(@Valid @RequestBody PedidoPeliculaDTO pedido) {
         return creada(cartelera.agregar(datosDe(pedido)));
     }
 
     @Operation(summary = "Alta del importador: entra al buzón, no al catálogo")
     @PostMapping("/api/peliculas/importadas")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<PeliculaVistaDTO> importar(@RequestBody PedidoPeliculaDTO pedido) {
+    public ResponseEntity<PeliculaVistaDTO> importar(@Valid @RequestBody PedidoPeliculaDTO pedido) {
         return creada(revision.importar(datosDe(pedido)));
     }
 
@@ -121,7 +124,7 @@ public class PeliculaController {
 
     @Operation(summary = "Editar una película")
     @PutMapping("/api/peliculas/{id}")
-    public PeliculaVistaDTO editar(@PathVariable int id, @RequestBody PedidoPeliculaDTO pedido) {
+    public PeliculaVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionPeliculaDTO pedido) {
         // Se busca antes para responder 404 y no el 400 del gestor.
         buscar(id);
         return vistas.pelicula(cartelera.editar(id, datosDe(pedido)));
@@ -145,6 +148,13 @@ public class PeliculaController {
     }
 
     private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {
+        return datosDe(new PedidoEdicionPeliculaDTO(pedido.titulo(), pedido.duracionMinutos(),
+                pedido.generos(), pedido.clasificacion(), pedido.director(), pedido.sinopsis(),
+                pedido.anio(), pedido.idiomaOriginal(), pedido.posterUrl(), pedido.enCartelera(),
+                pedido.puntaje(), pedido.votos()));
+    }
+
+    private static DatosPelicula datosDe(PedidoEdicionPeliculaDTO pedido) {
         return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos() == null
                         ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"),

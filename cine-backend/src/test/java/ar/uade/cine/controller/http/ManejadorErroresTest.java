@@ -57,6 +57,19 @@ class ManejadorErroresTest extends PruebaDeApi {
     }
 
     @Test
+    void elAltaDePeliculaSinDuracionEs400ConElMensajeDelGestorYLaEdicionParcialNoLaPide() {
+        Respuesta alta = post("/api/peliculas", "{\"titulo\":\"Dune\",\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
+        assertEquals(400, alta.estado());
+        assertEquals("La duración debe ser mayor a cero", alta.error());
+
+        int id = post("/api/peliculas", "{\"titulo\":\"Dune\",\"duracionMinutos\":155,"
+                + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}").json().get("id").asInt();
+        Respuesta edicion = put("/api/peliculas/" + id, "{\"titulo\":\"Dune: Parte Uno\"}");
+        assertEquals(200, edicion.estado());
+        assertEquals(155, edicion.json().get("duracionMinutos").asInt());
+    }
+
+    @Test
     void unClienteConEmailRepetidoEs409() {
         post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");
 

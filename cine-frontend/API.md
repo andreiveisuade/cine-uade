@@ -158,7 +158,7 @@ y ante un `401` fuera del login vuelve a `#/login`.
 | `POST /api/peliculas/importadas` | Igual, pero `PENDIENTE` y fuera de cartelera |
 | `POST /api/peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /api/peliculas/{id}/descarte` | `DESCARTADA`. `400` si tiene funciones |
-| `PUT /api/peliculas/{id}` | Parcial. Título único contra las otras (`409`) |
+| `PUT /api/peliculas/{id}` | Parcial: nada obligatorio, lo que no viaja queda igual. Título único contra las otras (`409`) |
 | `DELETE /api/peliculas/{id}` | `400` si tiene funciones o una grilla que la programe |
 | `GET /api/salas` · `GET /api/salas/{id}` | El detalle trae `asientos` |
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional, 15 por defecto, no negativa |
