@@ -14,9 +14,9 @@ hide empty members
 
 package "service.ventas" {
   class Ocupacion {
-    +asientosOcupados(funcionId): Set<Integer>
-    +asientosLibres(funcionId): List<Asiento>
-    +bloquear(funcionId, codigos, sesion)
+    +asientosOcupados(funcionId, sesion): Set<Integer>
+    {static} +libresEntre(asientos, ocupados): List<Asiento>
+    +bloquear(funcionId, codigos, sesion): Bloqueo
     +liberar(funcionId, sesion)
   }
   class CalculadoraPrecio {

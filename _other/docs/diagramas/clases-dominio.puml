@@ -87,7 +87,7 @@ package "model.salas" {
     +getNombre(): String
     +getTipo(): TipoSala
     +getMinutosLimpieza(): int
-    +getAsientos(): List<Asiento>
+    +editar(nombre, tipo, minutosLimpieza)
   }
   ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
   ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una

@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 461 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 474 tests.</p>
       </div>
     </section>
 
@@ -635,7 +635,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorProductos</code></td><td>Carta del candy y combos (R14)</td></tr>
             <tr><td><code>GestorCandy</code></td><td>Ventas del candy y su ticket</td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó y recaudación por función, declaración jurada del período</td></tr>
-            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code></td></tr>
+            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code>, <code>PeriodoDeclarado</code></td></tr>
             <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
@@ -799,10 +799,10 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Caso</th><th>HTTP</th></tr></thead>
           <tbody>
-            <tr><td>Dato inválido (Bean Validation, JSON mal formado, parámetro faltante) o regla R1..R19 (<code>IllegalArgumentException</code>)</td><td>400</td></tr>
+            <tr><td>Dato inválido (Bean Validation, JSON mal formado o con un tipo equivocado —el mensaje nombra el campo—, parámetro de la query faltante o mal escrito) o regla R1..R19 (<code>IllegalArgumentException</code>)</td><td>400</td></tr>
             <tr><td>Sin credenciales o credenciales inválidas</td><td>401</td></tr>
             <tr><td>Rol insuficiente</td><td>403</td></tr>
-            <tr><td>Recurso inexistente (<code>RecursoNoEncontrado</code>)</td><td>404</td></tr>
+            <tr><td>Recurso inexistente (<code>RecursoNoEncontrado</code>) o id no numérico en la ruta</td><td>404</td></tr>
             <tr><td>Butaca tomada (<code>ButacaOcupadaException</code>) o nombre, email o título duplicado (<code>ConflictoDeNegocio</code>)</td><td>409</td></tr>
             <tr><td>Falla del servidor (detalle al log por SLF4J)</td><td>500</td></tr>
           </tbody>
@@ -1219,6 +1219,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         más de lo que se paga. No existe una promoción inválida en memoria, venga de donde venga.
         <code>GestorPromociones</code> se queda con lo que la entidad no puede ver sola: que falte el valor
         propio del tipo (llega en <code>null</code> desde el pedido) y que el nombre ya esté usado.
+        Lo mismo <code>Sala</code>: el constructor y <code>editar</code> rechazan un nombre vacío, la falta de tipo
+        y una limpieza negativa, y <code>GestorSalas</code> solo chequea lo que pide la base (nombre repetido,
+        funciones programadas antes de cambiar el tipo).
       </p>
     </section>
 
@@ -1278,9 +1281,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         fechas toma la semana cinematográfica anterior (jueves a miércoles) según el <code>Reloj</code>. Cada
         función es el borderó de una función cuyo <strong>inicio</strong> cae en el período —se declara lo
         exhibido, no la fecha del cobro— y solo si tiene entradas cobradas. <code>GestorInformes#declaracionJurada</code>
-        reusa el mismo cálculo que <code>borderoDe</code> y suma por película y en total; las reservas cobradas del
-        período salen de una sola consulta. Rechaza <code>desde</code> posterior a <code>hasta</code> y más de 31 días:
-        todo se arma en memoria y un mes cubre cualquier cierre.
+        arma cada fila con el mismo cálculo que <code>borderoDe</code>, y <code>DeclaracionJurada.de</code> suma por
+        película y en total; las reservas cobradas del período salen de una sola consulta. El período es un valor
+        aparte, <code>PeriodoDeclarado</code>: la semana por defecto y el rechazo de <code>desde</code> posterior a
+        <code>hasta</code> y de más de 31 días (todo se arma en memoria y un mes cubre cualquier cierre).
       </p>
       <p>
         <code>VistasInformes</code> arma el <code>DeclaracionJuradaVistaDTO</code> y le suma el exhibidor (razón social,
@@ -1299,6 +1303,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h3>El costo de las consultas</h3>
       <ul>
         <li><strong>N+1:</strong> el planificador releía la sala por cada horario: 15.702 consultas y 21 s. <code>AgendaDeSala</code> la lee una vez: 230 consultas, 0,6 s.</li>
+        <li><strong>Listados de reservas y arqueo:</strong> <code>VistasVentas</code> cargaba todas las funciones, salas, películas y clientes del cine en cada listado, y el arqueo leía reserva, función, película y cliente por pago. Ahora <code>ConsultasReservas#conDetalle</code> trae las reservas con función, película, sala y cliente en un <code>join fetch</code>, los pagos van en otra consulta y las butacas una vez por sala. Con 4 y 16 reservas, <code>GET /api/reservas</code> pasó de 20 y 56 consultas a 7 y 7, y <code>GET /api/arqueo</code> de 19 y 67 a 6 y 6. <code>VistasVentasTest</code> las cuenta con las estadísticas de Hibernate y falla si crecen con las ventas.</li>
         <li><code>open-in-view: false</code>: nada de consultas mientras se serializa el JSON.</li>
         <li><strong>Filtros en la base:</strong> cartelera, catálogo, funciones, grillas, reservas y combos filtran con <code>@Query</code> (filtro opcional = <code>:x is null or …</code>), no con <code>findAll()</code> y un <code>filter</code> en Java. El buscador de reservas trae función, película y cliente con <code>join fetch</code>; solo el texto se compara en memoria, porque el código de butaca se arma de fila y número.</li>
         <li><code>@ManyToOne</code> LAZY, navegados solo dentro de la transacción; las vistas usan <code>getSalaId()</code>, que no va a la base.</li>
@@ -1359,7 +1364,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         y una respuesta suele juntar varias (la función con sala, película, precios y butacas tomadas).
       </p>
       <ul>
-        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios. Los gestores validan igual, porque también los llaman el importador y los tests.</li>
+        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios: lo que viaja lo valida <code>GestorCartelera</code> igual que en el alta. Los gestores validan igual, porque también los llaman el importador y los tests.</li>
         <li><code>*VistaDTO</code> (sale): opcionales con <code>@JsonInclude(NON_NULL)</code>.</li>
         <li>Los arman los <code>Vistas*</code> (Assembler). El DTO no tiene lógica.</li>
       </ul>
@@ -1409,7 +1414,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>; los constructores de <code>Promocion</code> y sus subclases, y el de <code>Empleado</code>, validan sus propios invariantes. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
+            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>; los constructores de <code>Promocion</code> y sus subclases, el de <code>Empleado</code> y el de <code>Sala</code> validan sus propios invariantes. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
             <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>CalculadoraPrecio</code>, <code>AgendaDeSala</code></td></tr>
             <tr><td><strong>Controlador</strong></td><td>Cada <code>*Controller</code>; por eso los tests llaman a los gestores sin HTTP</td></tr>
             <tr><td><strong>Polimorfismo</strong></td><td><code>multiplicadorPrecio</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code></td></tr>
@@ -1487,7 +1492,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Qué relación existe entre una Entity y una tabla?</td><td>Clase = tabla, instancia = fila, atributo = columna (<code>Funcion</code> ↔ <code>funcion</code>). <code>ddl-auto: validate</code> y <code>MapeoContraSchemaTest</code> verifican que coincidan.</td></tr>
             <tr><td>¿Qué representa una relación @OneToMany?</td><td>Un padre con muchos hijos: <code>Reserva.entradas</code> (se guardan y borran con la reserva). Su inverso es <code>@ManyToOne</code>: <code>Funcion.pelicula</code>, <code>Funcion.sala</code> (LAZY). <code>Pelicula.generos</code> es <code>@ElementCollection</code>: valores, no entidades.</td></tr>
             <tr><td>¿Qué ventajas tiene utilizar ORM?</td><td>Sin SQL repetitivo, transacciones declarativas, base intercambiable y mapeo validado al arrancar.</td></tr>
-            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, y lazy fuera de la transacción. Acá: LAZY, <code>open-in-view: false</code>, <code>default_batch_fetch_size: 50</code> y <a href="#persistencia"><code>AgendaDeSala</code></a>.</td></tr>
+            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, y lazy fuera de la transacción. Acá: LAZY, <code>open-in-view: false</code>, <code>default_batch_fetch_size: 50</code>, <a href="#persistencia"><code>AgendaDeSala</code></a> y <code>ConsultasReservas#conDetalle</code> para los listados.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1680,7 +1685,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 461 tests, ninguno salteado</code></pre>
+mvn clean test       # 474 tests, ninguno salteado</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
