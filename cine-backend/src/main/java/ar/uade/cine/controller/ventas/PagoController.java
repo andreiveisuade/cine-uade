@@ -99,7 +99,7 @@ public class PagoController {
         Arqueo arqueo = caja.arqueoDe(Parseo.dia(fecha, "la fecha"));
         return new ArqueoVistaDTO(arqueo.fecha().toString(), arqueo.total().aPesos(),
                 arqueo.entradas(), porMedio(arqueo),
-                arqueo.pagos().stream().map(vistas::pagoDeArqueo).toList());
+                vistas.pagosDeArqueo(arqueo.pagos()));
     }
 
     private void exigirReserva(int id) {

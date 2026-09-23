@@ -13,6 +13,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -47,6 +49,8 @@ import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.model.dinero.Dinero;
 
+import jakarta.persistence.EntityManagerFactory;
+
 class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -79,6 +83,15 @@ class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
     private VistasVentas vistas;
+
+    @Autowired
+    private ReservaController reservaController;
+
+    @Autowired
+    private PagoController pagoController;
+
+    @Autowired
+    private EntityManagerFactory emf;
 
     private Cliente cliente;
 
@@ -185,12 +198,66 @@ class VistasVentasTest extends PruebaDeIntegracion {
         Reserva reserva = reservar("A1", "A2");
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        PagoVistaDTO vista = vistas.pagoDeArqueo(pago);
+        PagoVistaDTO vista = vistas.pagosDeArqueo(List.of(pago)).get(0);
 
         assertEquals("Matrix", vista.pelicula().titulo());
         assertEquals("Andrei", vista.cliente().nombre());
         assertEquals(2, vista.entradas());
         assertEquals(10000.0, vista.monto());
+    }
+
+    // Cada venta suma una película, una función y un cliente distintos: si el listado
+    // leyera alguno de ellos por fila, las consultas crecerían con las ventas.
+    @Test
+    void losListadosCuestanLasMismasConsultasConDosVentasQueConOcho() {
+        vender(2);
+        long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null, null));
+        long delClienteConDos = consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null));
+        long arqueoConDos = consultasDe(() -> pagoController.arqueo(reloj.ahora().toLocalDate().toString()));
+
+        vender(6);
+        assertEquals(16, reservaController.listar(null, null, null, null).size());
+
+        assertEquals(reservasConDos, consultasDe(() -> reservaController.listar(null, null, null, null)),
+                "GET /api/reservas");
+        assertEquals(delClienteConDos,
+                consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null)),
+                "GET /api/reservas?email=");
+        assertEquals(arqueoConDos,
+                consultasDe(() -> pagoController.arqueo(reloj.ahora().toLocalDate().toString())),
+                "GET /api/arqueo");
+    }
+
+    private int vendidas;
+
+    private void vender(int cuantas) {
+        Sala sala = salas.listar().get(0);
+        for (int i = 0; i < cuantas; i++) {
+            vendidas++;
+            int pelicula = cartelera.agregar("Película " + vendidas, 90, List.of(Genero.DRAMA),
+                    Clasificacion.ATP).getId();
+            int funcion = funciones.programar(pelicula, sala.getId(),
+                    LocalDateTime.of(2026, 9, 1, 10, 0).plusHours(3L * vendidas),
+                    Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)).getId();
+            Cliente otro = clientes.identificar("Cliente " + vendidas, "cliente" + vendidas + "@uade.edu.ar");
+            for (int clienteId : List.of(cliente.getId(), otro.getId())) {
+                Reserva reserva = reservas.reservar(funcion, clienteId,
+                        Map.of(clienteId == cliente.getId() ? "A1" : "A2", TipoTarifa.GENERAL), null);
+                pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+            }
+        }
+    }
+
+    private long consultasDe(Runnable listado) {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+            listado.run();
+            return estadisticas.getPrepareStatementCount();
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
     }
 
     private Reserva reservar(String... codigos) {

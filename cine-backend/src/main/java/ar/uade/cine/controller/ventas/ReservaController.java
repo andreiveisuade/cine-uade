@@ -72,7 +72,7 @@ public class ReservaController {
                     .map(c -> consultas.listarPorCliente(c.getId()))
                     .orElse(List.of())));
         }
-        // vistas.reservas() y no un map de vistas.reserva(): evita cinco consultas por fila.
+        // vistas.reservas() y no un map de vistas.reserva(): evita tres consultas por fila.
         return vistas.reservas(ordenadas(consultas.buscar(new CriteriosReserva(
                 Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
                 Parseo.diaOpcional(dia, "el día"), q))));

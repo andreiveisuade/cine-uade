@@ -1,6 +1,7 @@
 package ar.uade.cine.repository.ventas;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,14 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
             order by r.id""")
     List<Reserva> buscar(@Param("estado") EstadoReserva estado, @Param("desde") LocalDateTime desde,
                          @Param("hasta") LocalDateTime hasta);
+
+    // Lo que muestra una reserva, en una sola consulta: los listados la usan en vez de leer
+    // función, película, sala y cliente por fila.
+    @Query("""
+            select r from Reserva r
+              join fetch r.funcion f join fetch f.pelicula join fetch f.sala join fetch r.cliente
+            where r.id in :ids""")
+    List<Reserva> findConDetalle(@Param("ids") Collection<Integer> ids);
 
     // Solo las cobradas: la declaración jurada no lee las que retienen butaca sin haber vendido.
     @Query("""

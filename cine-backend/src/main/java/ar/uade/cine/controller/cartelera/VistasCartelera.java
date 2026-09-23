@@ -50,6 +50,11 @@ public class VistasCartelera {
         return armar(f, null, null, null);
     }
 
+    // Con la sala y sus butacas ya leídas: un listado las lee una vez por sala y no por fila.
+    public FuncionVistaDTO funcion(Funcion f, Sala sala, List<Asiento> asientos) {
+        return armar(f, sala, asientos, null, null, null);
+    }
+
     public FuncionVistaDTO funcionConPelicula(Funcion f) {
         return armar(f, peliculaDe(f), null, null);
     }

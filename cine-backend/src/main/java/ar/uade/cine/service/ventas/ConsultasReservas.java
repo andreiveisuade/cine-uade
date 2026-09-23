@@ -1,6 +1,7 @@
 package ar.uade.cine.service.ventas;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,12 @@ public class ConsultasReservas {
     public Optional<Reserva> buscarPorCodigo(String codigo) {
         return codigo == null ? Optional.empty()
                 : reservaRepository.findByCodigo(codigo.trim().toUpperCase());
+    }
+
+    // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay
+    // sesión que los traiga, y traerlos de a uno es la consulta por fila que se quiere evitar.
+    public List<Reserva> conDetalle(Collection<Integer> ids) {
+        return ids.isEmpty() ? List.of() : reservaRepository.findConDetalle(ids);
     }
 
     public List<Reserva> listarPorCliente(int clienteId) {
