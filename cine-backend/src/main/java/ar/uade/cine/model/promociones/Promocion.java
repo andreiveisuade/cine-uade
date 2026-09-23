@@ -69,6 +69,10 @@ public abstract class Promocion {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("La promoción necesita un nombre");
         }
+        // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
+        if (nombre.length() > 60) {
+            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
+        }
         LocalDate desde = condiciones.desde();
         LocalDate hasta = condiciones.hasta();
         if (desde == null || hasta == null || hasta.isBefore(desde)) {

@@ -43,6 +43,13 @@ public abstract class Usuario {
         if (email == null || !email.contains("@")) {
             throw new IllegalArgumentException("El email no es válido");
         }
+        // Los VARCHAR(100) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
+        if (nombre.length() > 100) {
+            throw new IllegalArgumentException("El nombre no puede tener más de 100 caracteres");
+        }
+        if (email.length() > 100) {
+            throw new IllegalArgumentException("El email no puede tener más de 100 caracteres");
+        }
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;

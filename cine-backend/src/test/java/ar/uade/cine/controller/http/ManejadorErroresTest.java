@@ -70,6 +70,33 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals(155, edicion.json().get("duracionMinutos").asInt());
     }
 
+    // Sin validar el largo, el INSERT lo rechaza la base y el usuario ve un 500 genérico.
+    @Test
+    void unTextoMasLargoQueSuColumnaEs400ConElLargoMaximo() {
+        Respuesta pelicula = post("/api/peliculas", "{\"titulo\":\"" + "x".repeat(101) + "\","
+                + "\"duracionMinutos\":90,\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
+        assertEquals(400, pelicula.estado());
+        assertEquals("El título no puede tener más de 100 caracteres", pelicula.error());
+
+        Respuesta sala = post("/api/salas", "{\"nombre\":\"" + "x".repeat(51) + "\","
+                + "\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
+        assertEquals(400, sala.estado());
+        assertEquals("El nombre no puede tener más de 50 caracteres", sala.error());
+
+        Respuesta cliente = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@"
+                + ("m".repeat(31) + ".").repeat(3) + "com\"}");
+        assertEquals(400, cliente.estado());
+        assertEquals("El email no puede tener más de 100 caracteres", cliente.error());
+    }
+
+    @Test
+    void unTituloDeCienCaracteresEntraJusto() {
+        Respuesta pelicula = post("/api/peliculas", "{\"titulo\":\"" + "x".repeat(100) + "\","
+                + "\"duracionMinutos\":90,\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
+
+        assertEquals(201, pelicula.estado());
+    }
+
     @Test
     void unClienteConEmailRepetidoEs409() {
         post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");

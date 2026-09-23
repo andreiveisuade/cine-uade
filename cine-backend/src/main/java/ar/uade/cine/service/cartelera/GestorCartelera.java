@@ -80,6 +80,7 @@ public class GestorCartelera {
         if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("El título no puede estar vacío");
         }
+        exigirLargo(titulo, 100, "El título");
         if (duracionMinutos <= 0) {
             throw new IllegalArgumentException("La duración debe ser mayor a cero");
         }
@@ -106,6 +107,13 @@ public class GestorCartelera {
         }
     }
 
+    // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
+    private static void exigirLargo(String texto, int maximo, String que) {
+        if (texto.length() > maximo) {
+            throw new IllegalArgumentException(que + " no puede tener más de " + maximo + " caracteres");
+        }
+    }
+
     private void aplicarCatalogo(Pelicula pelicula, DatosPelicula datos) {
         if (datos.puntaje() != null) {
             if (datos.puntaje() < 0 || datos.puntaje() > 10) {
@@ -120,6 +128,7 @@ public class GestorCartelera {
             pelicula.setVotos(datos.votos());
         }
         if (datos.director() != null) {
+            exigirLargo(datos.director(), 100, "El director");
             pelicula.setDirector(datos.director());
         }
         if (datos.sinopsis() != null) {
@@ -130,9 +139,11 @@ public class GestorCartelera {
             pelicula.setAnio(datos.anio());
         }
         if (datos.idiomaOriginal() != null) {
+            exigirLargo(datos.idiomaOriginal(), 40, "El idioma original");
             pelicula.setIdiomaOriginal(datos.idiomaOriginal());
         }
         if (datos.posterUrl() != null) {
+            exigirLargo(datos.posterUrl(), 255, "La URL del póster");
             pelicula.setPosterUrl(datos.posterUrl());
         }
         if (datos.enCartelera() != null) {

@@ -90,6 +90,7 @@ public class GestorProductos {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
+        exigirLargoDelNombre(nombre);
         if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
@@ -120,10 +121,18 @@ public class GestorProductos {
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id));
     }
 
+    // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
+    private static void exigirLargoDelNombre(String nombre) {
+        if (nombre.trim().length() > 60) {
+            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
+        }
+    }
+
     private void validarAlta(String nombre, TipoProducto tipo, Dinero precio) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
+        exigirLargoDelNombre(nombre);
         if (tipo == null) {
             throw new IllegalArgumentException("Falta el tipo de producto");
         }

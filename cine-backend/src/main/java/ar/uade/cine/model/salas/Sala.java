@@ -53,6 +53,10 @@ public class Sala {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
+        // El VARCHAR(50) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
+        if (nombre.length() > 50) {
+            throw new IllegalArgumentException("El nombre no puede tener más de 50 caracteres");
+        }
         if (tipo == null) {
             throw new IllegalArgumentException("Falta el tipo de sala");
         }
