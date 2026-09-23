@@ -124,7 +124,7 @@
   </dependencies>
 
   <build>
-    <!-- El jar se sigue llamando cine-api.jar: es lo que copia el Dockerfile. -->
+    <!-- Se llama cine-api.war: es lo que copia el Dockerfile. -->
     <finalName>cine-api</finalName>
     <plugins>
       <!-- Arma el jar ejecutable con las dependencias adentro y el main apuntado a la
