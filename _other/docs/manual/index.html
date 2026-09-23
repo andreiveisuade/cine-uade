@@ -1714,7 +1714,7 @@ mvn clean test       # 416 tests; los 4 de BloqueoButacasRedisTest se saltean si
           <thead><tr><th>Deuda</th><th>Cuándo duele</th></tr></thead>
           <tbody>
             <tr><td>Los buscadores y chequeos de duplicado usan <code>findAll()</code> y filtran en Java</td><td>Con decenas de miles de filas. El criterio cruza tablas y bajarlo a SQL lo partiría en dos lugares</td></tr>
-            <tr><td>Colecciones <code>EAGER</code></td><td>Se suma a lo anterior: cada película trae sus géneros</td></tr>
+            <tr><td>Colecciones <code>EAGER</code></td><td>Se suma a lo anterior: cada película trae sus géneros. <code>default_batch_fetch_size: 50</code> las carga de a 50 por <code>IN</code> y no una consulta por fila, pero se siguen trayendo aunque no se usen</td></tr>
             <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>El arqueo hace scan completo; con cientos de filas no se nota</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Costo de la tabla única; lo cubre <code>ClienteRepository</code>, que filtra por discriminador</td></tr>
             <tr><td>Contraseñas SHA-256 sin salt</td><td>En producción: pasar a bcrypt es cambiar <code>PasswordSha256</code></td></tr>

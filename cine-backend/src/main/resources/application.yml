@@ -40,6 +40,10 @@ spring:
     # solo ahi— y el controlador ya trabaja con objetos cerrados. Dejarlo en true esconde consultas que salen mientras se serializa
     # el JSON, y es el default que Spring Boot avisa por log que conviene apagar.
     open-in-view: false
+    properties:
+      hibernate:
+        # Las colecciones EAGER y los LAZY de una lista se cargan de a 50 ids por IN, no uno por fila.
+        default_batch_fetch_size: 50
 
   jackson:
     deserialization:
