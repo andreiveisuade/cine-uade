@@ -18,7 +18,6 @@ import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -103,13 +102,9 @@ public class ReservaController {
     @PostMapping("/api/reservas")
     @ResponseStatus(HttpStatus.CREATED)
     public ReservaVistaDTO reservar(@RequestBody PedidoReservaDTO pedido) {
-        // Que al cliente nuevo se lo dé de alta acá mismo es la regla de comprar sin
-        // registrarse, y vive en el gestor: esta capa solo pasa lo que llegó.
-        Cliente cliente = clientes.identificar(pedido.nombre(), pedido.email());
-
         return vistas.reserva(reservas.reservar(
                 pedido.funcionId() == null ? 0 : pedido.funcionId(),
-                cliente.getId(),
+                pedido.nombre(), pedido.email(),
                 butacasPedidas(pedido),
                 pedido.sesion()));
     }

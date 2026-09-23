@@ -117,6 +117,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("Z9")));
     }
 
+    @Test
+    void reservarDaDeAltaAlClienteQueNoExistia() {
+        Reserva reserva = reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("A1"), null);
+
+        assertEquals(clientes.buscarPorEmail("nueva@uade.edu.ar").orElseThrow().getId(), reserva.getClienteId());
+    }
+
+    @Test
+    void unaReservaRechazadaNoDejaAlClienteDadoDeAlta() {
+        assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("Z9"), null));
+
+        assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
+    }
+
     /**
      * Antes esto era un error validado a mano. Con las butacas como mapa de código a
      * tarifa, pedir A1 dos veces es imposible de expresar: queda una sola entrada. La

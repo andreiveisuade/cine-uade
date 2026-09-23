@@ -33,6 +33,7 @@ import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.service.usuarios.GestorClientes;
 
 /**
  * El ciclo de vida de una reserva: nace al vender, se cancela, o se usa en la puerta.
@@ -51,6 +52,7 @@ public class GestorReservas {
     private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
     private final ClienteRepository clienteRepository;
+    private final GestorClientes clientes;
     private final PeliculaRepository peliculaRepository;
     private final GeneradorTicket generadorTicket;
     private final CalculadoraPrecio calculadoraPrecio;
@@ -58,7 +60,8 @@ public class GestorReservas {
     private final Reloj reloj;
 
     public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository, SalaRepository salaRepository,
-                          AsientoRepository asientoRepository, ClienteRepository clienteRepository, PeliculaRepository peliculaRepository,
+                          AsientoRepository asientoRepository, ClienteRepository clienteRepository, GestorClientes clientes,
+                          PeliculaRepository peliculaRepository,
                           GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio,
                           Ocupacion ocupacion, Reloj reloj) {
         this.reservaRepository = reservaRepository;
@@ -66,6 +69,7 @@ public class GestorReservas {
         this.salaRepository = salaRepository;
         this.asientoRepository = asientoRepository;
         this.clienteRepository = clienteRepository;
+        this.clientes = clientes;
         this.peliculaRepository = peliculaRepository;
         this.generadorTicket = generadorTicket;
         this.calculadoraPrecio = calculadoraPrecio;
@@ -80,6 +84,18 @@ public class GestorReservas {
      */
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas) {
         return reservar(funcionId, clienteId, butacas, null);
+    }
+
+    /**
+     * Comprar sin registrarse: el email identifica al cliente y, si no existía, lo da de
+     * alta. Va acá y no en el controller porque el alta tiene que compartir la transacción
+     * de la reserva: llamados por separado, una reserva rechazada dejaba igual al cliente
+     * nuevo en la base.
+     */
+    public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
+                            String sesion) {
+        Cliente cliente = clientes.identificar(nombre, email);
+        return reservar(funcionId, cliente.getId(), butacas, sesion);
     }
 
     /**

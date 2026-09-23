@@ -242,7 +242,7 @@ class OcupacionTest extends PruebaDeIntegracion {
                 asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999), reloj);
 
         GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
-                salaRepository, asientoRepository, clienteRepository, peliculaRepository,
+                salaRepository, asientoRepository, clienteRepository, clientes, peliculaRepository,
                 new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
                 calculadoraPrecio, sinRedis, reloj);
 
