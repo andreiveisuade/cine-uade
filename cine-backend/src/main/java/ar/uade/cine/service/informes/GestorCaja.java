@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -18,22 +19,12 @@ import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * El cierre de caja de un día: cuánto entró, por qué medio, y por cuál de las dos cajas
- * del cine —la boletería y la barra del candy—.
+ * —boletería y candy—. Es el corte <strong>por día</strong>, al lado de
+ * {@link GestorInformes} que corta por función.
  *
- * <p>Es el informe que se corta <strong>por día</strong>, al lado de {@link GestorInformes}
- * que corta <strong>por función</strong>. Los dos son lecturas y ninguno escribe nada del
- * negocio, por eso viven en el mismo paquete.
- *
- * <p><strong>Por qué existe:</strong> antes el arqueo estaba repartido en los gestores que
- * cobran. El de boletería vivía en {@code GestorPagos} y el de candy en
- * {@code GestorCandy}, así que "cuánto entró hoy" no se podía contestar sin preguntarle a
- * dos gestores transaccionales y sumar afuera. Eran dos razones de cambio metidas en la
- * misma clase: cobrar cambia cuando cambia cómo se cobra, y el arqueo cuando cambia qué se
- * declara. Sacarlo de ahí deja a {@code GestorPagos} haciendo una sola cosa —cobrar— y
- * pone las dos cajas juntas, que es como se leen.
- *
- * <p>No cobra ni corrige nada: solo lee. Si un número no cierra, la respuesta está en los
- * pagos, no acá.
+ * <p>Antes el arqueo vivía en los gestores que cobran, y "cuánto entró hoy" obligaba a
+ * preguntarle a dos y sumar afuera. Eran dos razones de cambio en la misma clase: cobrar
+ * cambia cuando cambia cómo se cobra; el arqueo, cuando cambia qué se declara. Solo lee.
  */
 @Service
 public class GestorCaja {
@@ -48,15 +39,14 @@ public class GestorCaja {
         this.compraCandyRepository = compraCandyRepository;
     }
 
-    /**
-     * El cierre de la boletería del día: el total, cuántas entradas se vendieron y cuánto
-     * entró por cada medio de pago.
-     *
-     * <p>Se recorre una sola vez la lista de cobros del día: los tres números salen de la
-     * misma pasada.
-     */
+    /** El cierre de la boletería del día: total, entradas vendidas y reparto por medio de pago. */
     public Arqueo arqueoDe(LocalDate fecha) {
         List<Pago> delDia = pagoRepository.findByDia(fecha);
+        // El pago no guarda cuántas butacas se llevó —sería el dato en dos lados—; se
+        // traen las reservas de una vez y no una consulta por pago.
+        Map<Integer, Integer> entradasPorReserva = reservaRepository
+                .findAllById(delDia.stream().map(Pago::getReservaId).toList()).stream()
+                .collect(Collectors.toMap(Reserva::getId, Reserva::getCantidadEntradas));
 
         Map<MedioPago, Arqueo.TotalPorMedio> porMedio = new EnumMap<>(MedioPago.class);
         Dinero total = Dinero.CERO;
@@ -67,7 +57,7 @@ public class GestorCaja {
             porMedio.put(pago.getMedio(), new Arqueo.TotalPorMedio(acumulado.cantidad() + 1,
                     acumulado.total().mas(pago.getMonto())));
             total = total.mas(pago.getMonto());
-            entradas += entradasDe(pago);
+            entradas += entradasPorReserva.getOrDefault(pago.getReservaId(), 0);
         }
         return new Arqueo(fecha, total, entradas, porMedio, delDia);
     }
@@ -82,25 +72,12 @@ public class GestorCaja {
     }
 
     /**
-     * Cuánto entró por el candy en el día, mostrador incluido.
-     *
-     * <p>Es la otra mitad de la caja y va aparte del arqueo de boletería a propósito: son
-     * dos circuitos con dos comprobantes distintos, y el borderó que se le declara al INCAA
-     * solo mira el de entradas. Sumarlos en un número único obligaría a volver a separarlos
-     * para declarar.
+     * Cuánto entró por el candy en el día, mostrador incluido. Aparte del arqueo de
+     * boletería: el borderó del INCAA solo mira entradas, y sumarlos obligaría a separarlos.
      */
     public Dinero totalCandyDe(LocalDate fecha) {
         return Dinero.sumar(compraCandyRepository.findByDia(fecha).stream()
                 .map(CompraCandy::getTotal).toList());
     }
 
-    /**
-     * Cuántas butacas se llevó ese cobro. El pago no lo guarda —sería el mismo dato en dos
-     * lados— así que se cuenta sobre las entradas de su reserva.
-     */
-    private int entradasDe(Pago pago) {
-        return reservaRepository.findById(pago.getReservaId())
-                .map(Reserva::getCantidadEntradas)
-                .orElse(0);
-    }
 }

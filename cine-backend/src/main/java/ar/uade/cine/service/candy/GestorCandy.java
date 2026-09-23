@@ -1,7 +1,6 @@
 package ar.uade.cine.service.candy;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.usuarios.Cliente;
@@ -20,7 +18,6 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
@@ -86,9 +83,7 @@ public class GestorCandy {
         if (medio == null) {
             throw new IllegalArgumentException("Falta el medio de pago");
         }
-        if (medio.requiereAutorizacion() && (codigoAutorizacion == null || codigoAutorizacion.isBlank())) {
-            throw new IllegalArgumentException("El pago con " + medio + " necesita código de autorización");
-        }
+        String autorizacion = medio.autorizacion(codigoAutorizacion);
 
         List<ItemCompra> items = new ArrayList<>();
         for (Map.Entry<Integer, Integer> pedido : cantidades.entrySet()) {
@@ -104,10 +99,9 @@ public class GestorCandy {
             items.add(new ItemCompra(producto, cantidad, producto.getPrecio()));
         }
 
-        CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio,
-                codigoAutorizacion == null ? "" : codigoAutorizacion.trim(), items);
+        CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, autorizacion, items);
         compraCandyRepository.save(compra);
-        generadorTicket.emitir(compra, cliente, productos.ahorroDe(compra));
+        generadorTicket.emitir(compra, cliente, compra.getAhorro());
         return compra;
     }
 

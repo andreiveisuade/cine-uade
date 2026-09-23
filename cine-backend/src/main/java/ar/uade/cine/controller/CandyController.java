@@ -131,7 +131,7 @@ public class CandyController {
                 : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,
                         pedido.codigoAutorizacion());
 
-        return vistas.compra(compra, carta.ahorroDe(compra));
+        return vistas.compra(compra);
     }
 
     /** El arqueo del candy es la otra caja del cine, aparte de la boletería. */
@@ -142,7 +142,7 @@ public class CandyController {
         List<CompraCandy> compras = clienteId != null && !clienteId.isBlank()
                 ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el cliente"))
                 : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
-        return compras.stream().map(c -> vistas.compra(c, carta.ahorroDe(c))).toList();
+        return compras.stream().map(vistas::compra).toList();
     }
 
     @Operation(summary = "El arqueo del candy de un día")
@@ -150,9 +150,7 @@ public class CandyController {
     public ArqueoCandyVistaDTO arqueo(@RequestParam(required = false) String fecha) {
         LocalDate dia = Parseo.dia(fecha, "la fecha");
         return new ArqueoCandyVistaDTO(dia.toString(), caja.totalCandyDe(dia).aPesos(),
-                candy.listarComprasDelDia(dia).stream()
-                        .map(c -> vistas.compra(c, carta.ahorroDe(c)))
-                        .toList());
+                candy.listarComprasDelDia(dia).stream().map(vistas::compra).toList());
     }
 
     private Producto buscar(int id) {

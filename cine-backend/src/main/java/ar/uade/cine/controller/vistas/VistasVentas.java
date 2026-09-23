@@ -1,31 +1,32 @@
 package ar.uade.cine.controller.vistas;
 
-import org.springframework.stereotype.Component;
-
-import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.salas.Sala;
-import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.Pago;
-import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
-import ar.uade.cine.dto.ventas.EntradaVistaDTO;
-import ar.uade.cine.dto.ventas.PagoVistaDTO;
-import ar.uade.cine.dto.ventas.ReservaVistaDTO;
-import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.ventas.GestorPagos;
-import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.http.NoEncontrado;
-import ar.uade.cine.model.dinero.Dinero;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
+
+import org.springframework.stereotype.Component;
+
+import ar.uade.cine.controller.http.Fechas;
+import ar.uade.cine.controller.http.NoEncontrado;
+import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
+import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
+import ar.uade.cine.dto.ventas.EntradaVistaDTO;
+import ar.uade.cine.dto.ventas.PagoVistaDTO;
+import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.ventas.Pago;
+import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.GestorReservas;
 
 /**
  * Arma las reservas y los pagos en la forma que espera el front.
@@ -121,10 +122,24 @@ public class VistasVentas {
         if (sala == null) {
             throw new NoEncontrado("No existe la sala " + f.getSalaId());
         }
-        Pelicula pelicula = porPelicula.get(f.getPeliculaId());
-        Cliente cliente = porCliente.get(r.getClienteId());
-        Pago pago = porReserva.get(r.getId());
+        return dto(r, f, sala, porPelicula.get(f.getPeliculaId()), porCliente.get(r.getClienteId()),
+                porReserva.get(r.getId()));
+    }
 
+    /** La reserva con todo lo que necesita el ticket: función, película, sala y cliente. */
+    public ReservaVistaDTO reserva(Reserva r) {
+        Funcion f = funciones.buscar(r.getFuncionId())
+                .orElseThrow(() -> new NoEncontrado("No existe la función " + r.getFuncionId()));
+        Sala sala = salas.buscar(f.getSalaId())
+                .orElseThrow(() -> new NoEncontrado("No existe la sala " + f.getSalaId()));
+        return dto(r, f, sala,
+                cartelera.buscar(f.getPeliculaId()).orElse(null),
+                clientes.buscar(r.getClienteId()).orElse(null),
+                pagos.buscarPorReserva(r.getId()).orElse(null));
+    }
+
+    /** Película, cliente y pago admiten null: la reserva se muestra igual sin ellos. */
+    private ReservaVistaDTO dto(Reserva r, Funcion f, Sala sala, Pelicula pelicula, Cliente cliente, Pago pago) {
         return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
                 Fechas.texto(r.getCreadaEn()), r.getCodigo(),
                 Fechas.texto(r.getIngresadaEn()),
@@ -137,33 +152,13 @@ public class VistasVentas {
                 pago == null ? null : pago(pago));
     }
 
-    /** La reserva con todo lo que necesita el ticket: función, película, sala y cliente. */
-    public ReservaVistaDTO reserva(Reserva r) {
-        Funcion f = funciones.buscar(r.getFuncionId())
-                .orElseThrow(() -> new NoEncontrado("No existe la función " + r.getFuncionId()));
-        Sala sala = salas.buscar(f.getSalaId())
-                .orElseThrow(() -> new NoEncontrado("No existe la sala " + f.getSalaId()));
-        return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
-                Fechas.texto(r.getCreadaEn()), r.getCodigo(),
-                Fechas.texto(r.getIngresadaEn()),
-                r.getEntradas().stream().map(this::entrada).toList(),
-                r.getCantidadEntradas(), r.getTotal().aPesos(),
-                vistasCartelera.funcion(f),
-                cartelera.buscar(f.getPeliculaId()).map(vistasCartelera::pelicula).orElse(null),
-                vistasSalas.sala(sala),
-                clientes.buscar(r.getClienteId()).map(vistasUsuarios::cliente).orElse(null),
-                pagos.buscarPorReserva(r.getId()).map(this::pago).orElse(null));
-    }
-
     private EntradaVistaDTO entrada(Entrada e) {
         return new EntradaVistaDTO(e.asientoId(), e.codigoAsiento(), e.tarifa().name(),
                 e.precio().aPesos());
     }
 
     public PagoVistaDTO pago(Pago p) {
-        return new PagoVistaDTO(p.getId(), p.getReservaId(), p.getSubtotal().aPesos(), p.getPromocionId(),
-                p.getDescuento().aPesos(), p.getMonto().aPesos(), p.getMedio().name(),
-                Fechas.texto(p.getFecha()), p.getCodigoAutorizacion(), null, null, null);
+        return dto(p, null, null, null);
     }
 
     /**
@@ -179,10 +174,14 @@ public class VistasVentas {
                 .flatMap(f -> cartelera.buscar(f.getPeliculaId()))
                 .map(vistasCartelera::pelicula)
                 .orElse(null);
-        return new PagoVistaDTO(p.getId(), p.getReservaId(), p.getSubtotal().aPesos(), p.getPromocionId(),
-                p.getDescuento().aPesos(), p.getMonto().aPesos(), p.getMedio().name(),
-                Fechas.texto(p.getFecha()), p.getCodigoAutorizacion(), pelicula,
+        return dto(p, pelicula,
                 clientes.buscar(reserva.getClienteId()).map(vistasUsuarios::cliente).orElse(null),
                 reserva.getCantidadEntradas());
+    }
+
+    private static PagoVistaDTO dto(Pago p, PeliculaVistaDTO pelicula, ClienteVistaDTO cliente, Integer entradas) {
+        return new PagoVistaDTO(p.getId(), p.getReservaId(), p.getSubtotal().aPesos(), p.getPromocionId(),
+                p.getDescuento().aPesos(), p.getMonto().aPesos(), p.getMedio().name(),
+                Fechas.texto(p.getFecha()), p.getCodigoAutorizacion(), pelicula, cliente, entradas);
     }
 }

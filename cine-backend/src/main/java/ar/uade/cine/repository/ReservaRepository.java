@@ -29,4 +29,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
     List<Reserva> findByFuncionId(int funcionId);
 
     List<Reserva> findByClienteIdOrderByCreadaEnDesc(int clienteId);
+
+    /** Para R12: saber si hay alguna, sin cargar las reservas con sus entradas. */
+    boolean existsByFuncionId(int funcionId);
+
+    boolean existsByClienteId(int clienteId);
 }

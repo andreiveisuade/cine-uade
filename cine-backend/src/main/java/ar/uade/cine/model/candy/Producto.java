@@ -60,10 +60,6 @@ public class Producto {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getNombre() {
         return nombre;
     }
@@ -74,10 +70,6 @@ public class Producto {
 
     public Dinero getPrecio() {
         return precio;
-    }
-
-    public void setPrecio(Dinero precio) {
-        this.precio = precio;
     }
 
     /**
@@ -103,6 +95,16 @@ public class Producto {
 
     public boolean esCombo() {
         return tipo == TipoProducto.COMBO;
+    }
+
+    /** Lo que costarían los componentes comprados sueltos. Cero si no es combo. */
+    public Dinero getPrecioSuelto() {
+        return Dinero.sumar(componentes.stream().map(ItemCombo::precioSuelto).toList());
+    }
+
+    /** Cuánto se ahorra llevando el combo en vez de sus componentes sueltos. */
+    public Dinero getAhorro() {
+        return esCombo() ? getPrecioSuelto().menos(precio) : Dinero.CERO;
     }
 
     @Override

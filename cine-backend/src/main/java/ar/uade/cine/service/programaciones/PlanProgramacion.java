@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.service.informes.Arqueo;
 
 /**
  * Qué funciones genera una grilla, fecha por fecha, y cuáles no puede generar.
@@ -15,7 +14,7 @@ import ar.uade.cine.service.informes.Arqueo;
  * se separara.
  *
  * <p>Es el resultado de una cuenta del negocio, no una forma de mostrarla —mismo criterio
- * que {@link Arqueo}—: los momentos van como {@code LocalDateTime} y no formateados.
+ * que {@code Arqueo}—: los momentos van como {@code LocalDateTime} y no formateados.
  *
  * @param programacion la grilla evaluada. En una previsualización todavía no tiene id:
  *                     existe en memoria y no se guardó

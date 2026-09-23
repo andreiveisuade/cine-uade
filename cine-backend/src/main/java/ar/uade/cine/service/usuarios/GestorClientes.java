@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
@@ -81,13 +80,13 @@ public class GestorClientes {
      * —y la baja fallaría igual, pero con un error de SQL en vez de un mensaje entendible.
      */
     public void eliminar(int id) {
-        if (clienteRepository.findById(id).isEmpty()) {
+        if (!clienteRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe el cliente " + id);
         }
-        if (!reservaRepository.findByClienteIdOrderByCreadaEnDesc(id).isEmpty()) {
+        if (reservaRepository.existsByClienteId(id)) {
             throw new IllegalArgumentException("El cliente " + id + " tiene reservas: no se puede eliminar");
         }
-        if (!compraCandyRepository.findByClienteId(id).isEmpty()) {
+        if (compraCandyRepository.existsByClienteId(id)) {
             throw new IllegalArgumentException(
                     "El cliente " + id + " tiene compras en el candy: no se puede eliminar");
         }

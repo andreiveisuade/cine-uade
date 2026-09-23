@@ -1,5 +1,8 @@
 package ar.uade.cine.model.salas;
 
+import java.util.List;
+import java.util.Optional;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,10 +59,6 @@ public class Asiento {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public int getSalaId() {
         return salaId;
     }
@@ -87,7 +86,25 @@ public class Asiento {
 
     /** Identificación legible: "B7". Se deriva de la fila y el número, no se guarda. */
     public String getCodigo() {
+        return codigoDe(fila, numero);
+    }
+
+    public static String codigoDe(int fila, int numero) {
         return (char) ('A' + fila - 1) + String.valueOf(numero);
+    }
+
+    /**
+     * La butaca de esa lista con ese código, tolerando minúsculas y espacios: es lo que
+     * llega tipeado desde el mostrador. Vive acá para que reservar, bloquear y dar de
+     * baja una butaca la busquen igual.
+     */
+    public static Optional<Asiento> conCodigo(List<Asiento> asientos, String codigo) {
+        String buscado = normalizarCodigo(codigo);
+        return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();
+    }
+
+    public static String normalizarCodigo(String codigo) {
+        return codigo == null ? "" : codigo.trim().toUpperCase();
     }
 
     @Override

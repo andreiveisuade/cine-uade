@@ -79,7 +79,7 @@ public class GestorPromociones implements PoliticaPromociones {
         if (desde == null || hasta == null || hasta.isBefore(desde)) {
             throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
         }
-        if (promocionRepository.findAll().stream().anyMatch(p -> p.getNombre().equalsIgnoreCase(nombre.trim()))) {
+        if (promocionRepository.existsByNombreIgnoreCase(nombre.trim())) {
             throw new IllegalArgumentException("Ya hay una promoción llamada " + nombre);
         }
         promocionRepository.save(promocion);
@@ -99,19 +99,7 @@ public class GestorPromociones implements PoliticaPromociones {
      */
     public Optional<Promocion> mejorPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                          MedioPago medio) {
-        List<Entrada> alcanzadas = entradas.stream()
-                .filter(e -> e.tarifa() == TipoTarifa.GENERAL)
-                .toList();
-        if (alcanzadas.isEmpty()) {
-            return Optional.empty();
-        }
-        return promocionRepository.findByActivaTrue().stream()
-                .filter(p -> p.aplicaA(inicioFuncion, medio))
-                .filter(p -> p.calcularDescuento(alcanzadas).esMayorQue(Dinero.CERO))
-                // R15: gana la que mas descuenta. Comparar Dinero es exacto, asi que dos
-                // promociones que descuentan lo mismo empatan de verdad y desempata el id.
-                .max(Comparator.comparing((Promocion p) -> p.calcularDescuento(alcanzadas))
-                        .thenComparing(Comparator.comparingInt(Promocion::getId).reversed()));
+        return mejorDescuento(entradas, inicioFuncion, medio).map(Candidata::promocion);
     }
 
     /**
@@ -121,9 +109,31 @@ public class GestorPromociones implements PoliticaPromociones {
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                   MedioPago medio) {
-        return mejorPara(entradas, inicioFuncion, medio)
-                .map(promocion -> new Descuento(promocion.getId(), descuentoDe(promocion, entradas)))
+        return mejorDescuento(entradas, inicioFuncion, medio)
+                .map(c -> new Descuento(c.promocion().getId(), c.monto()))
                 .orElseGet(Descuento::ninguno);
+    }
+
+    /** Una promoción que corre y lo que descuenta, calculado una sola vez. */
+    private record Candidata(Promocion promocion, Dinero monto) {
+    }
+
+    private Optional<Candidata> mejorDescuento(List<Entrada> entradas, LocalDateTime inicioFuncion,
+                                               MedioPago medio) {
+        List<Entrada> alcanzadas = entradas.stream()
+                .filter(e -> e.tarifa() == TipoTarifa.GENERAL)
+                .toList();
+        if (alcanzadas.isEmpty()) {
+            return Optional.empty();
+        }
+        return promocionRepository.findByActivaTrue().stream()
+                .filter(p -> p.aplicaA(inicioFuncion, medio))
+                .map(p -> new Candidata(p, p.calcularDescuento(alcanzadas)))
+                .filter(c -> c.monto().esMayorQue(Dinero.CERO))
+                // R15: gana la que más descuenta. Comparar Dinero es exacto, así que un
+                // empate es real y lo resuelve el id menor, para que dos cobros iguales den lo mismo.
+                .max(Comparator.comparing(Candidata::monto)
+                        .thenComparing(c -> c.promocion().getId(), Comparator.reverseOrder()));
     }
 
     /** Cuánto descuenta esa promoción sobre esas entradas, respetando R16. */

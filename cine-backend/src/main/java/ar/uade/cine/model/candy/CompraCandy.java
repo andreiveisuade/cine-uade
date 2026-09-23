@@ -83,10 +83,6 @@ public class CompraCandy {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public Integer getClienteId() {
         return clienteId;
     }
@@ -115,6 +111,11 @@ public class CompraCandy {
     /** Derivado de los items: no se guarda por separado. */
     public Dinero getTotal() {
         return Dinero.sumar(items.stream().map(ItemCompra::getSubtotal).toList());
+    }
+
+    /** Lo que el cliente se ahorró por los combos. Va en el ticket, no se guarda. */
+    public Dinero getAhorro() {
+        return Dinero.sumar(items.stream().map(ItemCompra::getAhorro).toList());
     }
 
     @Override

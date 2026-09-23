@@ -6,7 +6,6 @@ import java.util.Map;
 
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.service.informes.Arqueo;
 
 /**
  * Qué grilla propone el planificador, y con qué números se la puede defender.
@@ -18,7 +17,7 @@ import ar.uade.cine.service.informes.Arqueo;
  * criterio en vez de con una corazonada.
  *
  * <p>Es el resultado de una cuenta del negocio y no una forma de mostrarla, mismo criterio
- * que {@link Arqueo} y {@link PlanProgramacion}: los momentos van como
+ * que {@code Arqueo} y {@link PlanProgramacion}: los momentos van como
  * {@code LocalDateTime} y los géneros como el enum, no formateados.
  */
 public record PropuestaGrilla(List<Pelicula> elenco, List<PaseSugerido> pases,

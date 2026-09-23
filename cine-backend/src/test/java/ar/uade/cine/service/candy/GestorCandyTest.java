@@ -114,7 +114,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
         CompraCandy compra = candy.vender(1, pedido(combo, 2), MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(11000.0), compra.getTotal());
-        assertEquals(Dinero.de(2000.0), carta.ahorroDe(compra), "6500 sueltos contra 5500, por dos combos");
+        assertEquals(Dinero.de(2000.0), compra.getAhorro(), "6500 sueltos contra 5500, por dos combos");
     }
 
     @Test

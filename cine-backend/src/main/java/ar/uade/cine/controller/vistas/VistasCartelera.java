@@ -18,7 +18,6 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.NoEncontrado;
-import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * Arma las películas y las funciones en la forma que espera el front: los DTO de
@@ -85,17 +84,24 @@ public class VistasCartelera {
      */
     public FuncionVistaDTO funcionConButacas(Funcion f, String sesion) {
         Sala sala = salaDe(f);
+        List<Asiento> asientos = salas.asientosDe(sala.getId());
         Set<Integer> ocupados = ocupacion.asientosOcupados(f.getId(), sesion);
-        List<AsientoVistaDTO> butacas = salas.asientosDe(sala.getId()).stream()
+        List<AsientoVistaDTO> butacas = asientos.stream()
                 .map(a -> vistasSalas.asiento(a, f, sala, ocupados))
                 .toList();
-        return armar(f, peliculaDe(f), butacas, ocupacion.lugaresLibres(f.getId(), sesion));
+        // Sobre la misma foto de la ocupación que el mapa, así los dos números coinciden.
+        int libres = Ocupacion.libresEntre(asientos, ocupados).size();
+        return armar(f, sala, asientos, peliculaDe(f), butacas, libres);
     }
 
     private FuncionVistaDTO armar(Funcion f, PeliculaVistaDTO pelicula, List<AsientoVistaDTO> butacas,
-                               Integer libres) {
+                                  Integer libres) {
         Sala sala = salaDe(f);
-        List<Asiento> asientos = salas.asientosDe(sala.getId());
+        return armar(f, sala, salas.asientosDe(sala.getId()), pelicula, butacas, libres);
+    }
+
+    private FuncionVistaDTO armar(Funcion f, Sala sala, List<Asiento> asientos, PeliculaVistaDTO pelicula,
+                                  List<AsientoVistaDTO> butacas, Integer libres) {
         return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
                 Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
                 f.getPrecio().aPesos(), calculadora.precioBaseEnSala(f, sala).aPesos(),

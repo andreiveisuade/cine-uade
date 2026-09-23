@@ -5,14 +5,13 @@ import java.util.List;
 
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * Qué descuento le corresponde a una compra. Es lo único que necesita saber quien cobra:
  * un monto y de qué promoción salió.
  *
- * <p>Existe para que {@link GestorPagos} no dependa de {@link GestorPromociones}. Era el
+ * <p>Existe para que {@code GestorPagos} no dependa de {@link GestorPromociones}. Era el
  * único lugar del sistema donde un gestor estaba atado a otro gestor concreto, y no por
  * necesidad: cobrar no necesita el ABM de promociones, ni saber que se elige la que más
  * descuenta. Necesita el número.

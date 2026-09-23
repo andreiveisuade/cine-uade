@@ -2,16 +2,15 @@ package ar.uade.cine.controller.vistas;
 
 import org.springframework.stereotype.Component;
 
-import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.candy.ItemCombo;
-import ar.uade.cine.model.candy.ItemCompra;
-import ar.uade.cine.model.candy.Producto;
+import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.candy.ItemComboVistaDTO;
 import ar.uade.cine.dto.candy.ItemCompraVistaDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
-import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.candy.ItemCombo;
+import ar.uade.cine.model.candy.ItemCompra;
+import ar.uade.cine.model.candy.Producto;
 
 /**
  * La carta del candy y sus ventas, en la forma que espera el front.
@@ -29,17 +28,17 @@ public class VistasCandy {
     }
 
     private ItemComboVistaDTO componente(ItemCombo c) {
-        return new ItemComboVistaDTO(c.productoId(), c.nombre(), c.cantidad());
+        return new ItemComboVistaDTO(c.producto().getId(), c.nombre(), c.cantidad());
     }
 
-    public CompraCandyVistaDTO compra(CompraCandy c, Dinero ahorro) {
+    public CompraCandyVistaDTO compra(CompraCandy c) {
         return new CompraCandyVistaDTO(c.getId(), c.getClienteId(), c.getReservaId(),
                 Fechas.texto(c.getFecha()), c.getMedio().name(), c.getCodigoAutorizacion(),
-                c.getItems().stream().map(this::item).toList(), c.getTotal().aPesos(), ahorro.aPesos());
+                c.getItems().stream().map(this::item).toList(), c.getTotal().aPesos(), c.getAhorro().aPesos());
     }
 
     private ItemCompraVistaDTO item(ItemCompra i) {
-        return new ItemCompraVistaDTO(i.productoId(), i.nombre(), i.cantidad(),
+        return new ItemCompraVistaDTO(i.producto().getId(), i.nombre(), i.cantidad(),
                 i.precioUnitario().aPesos(), i.getSubtotal().aPesos());
     }
 }

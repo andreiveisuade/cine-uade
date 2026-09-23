@@ -1,5 +1,6 @@
 package ar.uade.cine.model.candy;
 
+import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -33,13 +34,17 @@ public class ItemCombo {
         this.cantidad = cantidad;
     }
 
-    public int productoId() {
-        return producto.getId();
+    public Producto producto() {
+        return producto;
     }
 
-    /** Copiado del producto para armar el detalle del ticket sin otra consulta. */
     public String nombre() {
         return producto.getNombre();
+    }
+
+    /** Lo que costarían estas unidades compradas sueltas, a precio de hoy. */
+    public Dinero precioSuelto() {
+        return producto.getPrecio().por(cantidad);
     }
 
     public int cantidad() {

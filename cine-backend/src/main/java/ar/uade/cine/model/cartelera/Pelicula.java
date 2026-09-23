@@ -16,18 +16,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
 /**
- * Una película del catálogo. Lo que la identifica en el negocio —título, duración,
- * géneros, clasificación— va separado de los datos de catálogo de más abajo (director,
- * sinopsis, año...), que se muestran pero no participan de ninguna regla.
+ * Una película del catálogo. Lo que participa de las reglas —título, duración, géneros,
+ * clasificación— va en el constructor; los datos de catálogo (director, sinopsis, año...)
+ * solo se muestran y se cargan con setters. Un constructor de nueve parámetros se
+ * invocaría con los argumentos cambiados sin que nadie lo note.
  *
- * <p>Lo que identifica a la película va en el constructor; los datos de catálogo se cargan
- * después con setters. Un constructor de nueve parámetros sería imposible de leer y
- * facilísimo de invocar con los argumentos cambiados de orden.
- *
- * <p>Los géneros son una {@code @ElementCollection} y no una entidad: un género no tiene
- * identidad propia ni vida fuera de la película —es una constante del enum— y por eso la
- * tabla {@code pelicula_genero} guarda el nombre de la constante y nada más. Es la misma
- * decisión que ya estaba tomada en el schema, ahora dicha en el mapeo.
+ * <p>Los géneros son {@code @ElementCollection}: un género es una constante del enum, sin
+ * identidad propia.
  */
 @Entity
 public class Pelicula {
@@ -43,12 +38,7 @@ public class Pelicula {
     @Enumerated(EnumType.STRING)
     private Clasificacion clasificacion;
 
-    /**
-     * EAGER y no LAZY: no hay ninguna pantalla que muestre una película sin sus géneros
-     * —la cartelera los pinta como etiquetas y el planificador de la grilla los usa para
-     * repartir— así que diferirlos solo agregaría una consulta por película y el riesgo de
-     * tocarlos fuera de la sesión.
-     */
+    /** EAGER: ninguna pantalla muestra una película sin sus géneros. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "pelicula_genero",
             joinColumns = @JoinColumn(name = "pelicula_id"))
@@ -68,17 +58,13 @@ public class Pelicula {
 
     private boolean enCartelera = true;
 
-    // La columna es DECIMAL(3,1) y el campo un double: sin decírselo, Hibernate espera un
-    // FLOAT y `validate` corta el arranque.
+    // Sin decirle DECIMAL(3,1), Hibernate espera FLOAT y `validate` corta el arranque.
     @Column(columnDefinition = "DECIMAL(3,1)")
     private double puntaje;
 
     private int votos;
 
-    /**
-     * Confirmada por defecto: el alta normal es la del encargado, y cargarla a mano ya es
-     * haberla decidido. Sólo el importador la baja a PENDIENTE.
-     */
+    /** Confirmada por defecto: cargarla a mano ya es haberla decidido. Solo el importador la baja a PENDIENTE. */
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
@@ -96,10 +82,6 @@ public class Pelicula {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getTitulo() {
@@ -126,12 +108,9 @@ public class Pelicula {
     }
 
     /**
-     * Cambia lo que identifica a la película: título, duración, géneros y clasificación.
-     *
-     * <p>Existe desde que la edición muta la entidad cargada en vez de armar otra con el
-     * mismo id. Eso último era lo que hacía falta cuando un DAO escribía el UPDATE a mano;
-     * con un contexto de persistencia de por medio son dos objetos peleando por la misma
-     * fila, y el que gana es el que Hibernate tiene adentro.
+     * Cambia lo que identifica a la película. La edición muta la entidad cargada y no arma
+     * otra con el mismo id: con un contexto de persistencia serían dos objetos peleando por
+     * la misma fila.
      */
     public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
@@ -194,13 +173,7 @@ public class Pelicula {
         this.enCartelera = enCartelera;
     }
 
-    /**
-     * Qué tan bien valorada está, de 0 a 10. Es el {@code vote_average} de TMDB para lo
-     * importado, y cero para lo que se carga a mano sin dato.
-     *
-     * <p>Existe para que el planificador de la grilla pueda ordenar: sin un número que
-     * compare dos películas, "programar las mejores" no se puede resolver.
-     */
+    /** De 0 a 10: el {@code vote_average} de TMDB, o cero si se cargó a mano sin dato. Es lo que ordena el planificador. */
     public double getPuntaje() {
         return puntaje;
     }
@@ -209,13 +182,7 @@ public class Pelicula {
         this.puntaje = puntaje;
     }
 
-    /**
-     * Sobre cuántos votos se calculó el puntaje.
-     *
-     * <p>Es lo que dice cuánto vale ese puntaje, y sin esto no se puede leer. Un 8,0 sobre
-     * seis votos y un 8,0 sobre cinco mil son el mismo número y no la misma información; un
-     * 0,0 sobre cero votos no es una película mala, es una que todavía nadie vio.
-     */
+    /** Sobre cuántos votos se calculó el puntaje: un 8,0 sobre seis no es lo mismo que sobre cinco mil. */
     public int getVotos() {
         return votos;
     }
@@ -224,11 +191,6 @@ public class Pelicula {
         this.votos = votos;
     }
 
-    /**
-     * Si el encargado ya decidió qué hacer con ella. Las que carga él nacen
-     * {@link EstadoRevision#CONFIRMADA} —cargarla ya es haberla decidido— y las que trae el
-     * importador nacen {@link EstadoRevision#PENDIENTE}.
-     */
     public EstadoRevision getEstadoRevision() {
         return estadoRevision;
     }

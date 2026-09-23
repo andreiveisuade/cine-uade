@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
@@ -130,7 +131,7 @@ public class ReservaController {
         List<String> conseguidas = ocupacion.bloquear(id, pedidas, pedido.sesion());
         // Las que se escaparon van aparte y no como error: las otras sí se consiguieron.
         List<String> rechazadas = pedidas.stream()
-                .map(codigo -> codigo.trim().toUpperCase())
+                .map(Asiento::normalizarCodigo)
                 .filter(codigo -> !conseguidas.contains(codigo))
                 .toList();
         return new BloqueoVistaDTO(pedido.sesion(), conseguidas, rechazadas,

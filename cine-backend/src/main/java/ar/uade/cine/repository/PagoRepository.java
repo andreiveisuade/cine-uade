@@ -18,6 +18,8 @@ public interface PagoRepository extends JpaRepository<Pago, Integer> {
     /** Una reserva tiene a lo sumo un pago: el UNIQUE de la tabla lo garantiza. */
     Optional<Pago> findByReservaId(int reservaId);
 
+    boolean existsByReservaId(int reservaId);
+
     /**
      * Los pagos de varias reservas de una vez. Existe para que el listado de reservas no
      * pregunte el pago de cada fila por separado: cincuenta reservas eran cincuenta

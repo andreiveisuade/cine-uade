@@ -21,4 +21,16 @@ public enum MedioPago {
     public boolean requiereAutorizacion() {
         return requiereAutorizacion;
     }
+
+    /**
+     * R11: el código de autorización, limpio, o el error si el medio lo exige y no vino.
+     * Vive acá para que boletería y candy lo apliquen igual.
+     */
+    public String autorizacion(String codigo) {
+        String limpio = codigo == null ? "" : codigo.trim();
+        if (requiereAutorizacion && limpio.isEmpty()) {
+            throw new IllegalArgumentException("El pago con " + this + " necesita código de autorización");
+        }
+        return limpio;
+    }
 }

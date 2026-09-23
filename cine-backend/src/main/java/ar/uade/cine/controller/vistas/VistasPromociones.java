@@ -7,7 +7,6 @@ import ar.uade.cine.model.promociones.PromocionMontoFijo;
 import ar.uade.cine.model.promociones.PromocionNxM;
 import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
-import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * Las promociones, en la forma que espera el front.

@@ -15,4 +15,6 @@ public interface PromocionRepository extends JpaRepository<Promocion, Integer> {
 
     /** Las candidatas de un cobro: una promoción dada de baja no descuenta más. */
     List<Promocion> findByActivaTrue();
+
+    boolean existsByNombreIgnoreCase(String nombre);
 }

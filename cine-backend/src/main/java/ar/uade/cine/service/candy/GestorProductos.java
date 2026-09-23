@@ -7,27 +7,19 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.ItemCombo;
-import ar.uade.cine.model.candy.ItemCompra;
-import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.repository.ProductoRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.repository.ProductoRepository;
 
 /**
  * La carta del candy: qué se vende y a qué precio.
  *
- * <p>Está separada de {@link GestorCandy}, que registra las ventas, porque las dos cosas
- * cambian por motivos distintos: la carta se toca cuando el cine suma un producto o
- * arma una promoción, y la venta cuando cambia cómo se cobra o qué dice el ticket.
- * Cuando vivían juntas, un cambio de precios y un cambio de facturación tocaban el mismo
- * archivo sin tener nada que ver entre sí.
- *
- * <p>Es además la <strong>única</strong> fuente de precios del candy: la venta le pregunta
- * cuánto sale cada cosa en vez de aceptar el precio que le manden, igual que el pago de
- * una reserva toma el monto de la reserva y no de quien cobra.
+ * <p>Separada de {@link GestorCandy}, que registra las ventas, porque cambian por motivos
+ * distintos: la carta cuando el cine suma un producto, la venta cuando cambia cómo se
+ * cobra. Es la única fuente de precios del candy: la venta le pregunta cuánto sale cada
+ * cosa en vez de aceptar el precio que le manden.
  */
 @Service
 @Transactional
@@ -66,7 +58,6 @@ public class GestorProductos {
         }
 
         Producto combo = new Producto(nombre.trim(), TipoProducto.COMBO, precio);
-        Dinero suelto = Dinero.CERO;
         for (Map.Entry<Integer, Integer> componente : componentes.entrySet()) {
             Producto producto = buscarOFallar(componente.getKey());
             int cantidad = componente.getValue();
@@ -78,40 +69,14 @@ public class GestorProductos {
                 throw new IllegalArgumentException("Un combo no puede contener otro combo: " + producto.getNombre());
             }
             combo.agregarComponente(new ItemCombo(producto, cantidad));
-            suelto = suelto.mas(producto.getPrecio().por(cantidad));
         }
 
-        if (!suelto.esMayorQue(precio)) {
-            throw new IllegalArgumentException(
-                    "El combo tiene que salir menos que sus componentes sueltos ($ " + suelto + ")");
+        if (!combo.getPrecioSuelto().esMayorQue(precio)) {
+            throw new IllegalArgumentException("El combo tiene que salir menos que sus componentes sueltos ($ "
+                    + combo.getPrecioSuelto() + ")");
         }
         productoRepository.save(combo);
         return combo;
-    }
-
-    /**
-     * Cuánto se ahorró el cliente por llevar combos en lugar de los productos sueltos.
-     *
-     * <p>Vive con la carta y no con la venta porque el ahorro sale de comparar precios, y
-     * los precios los sabe la carta: la compra guarda lo que se cobró, no lo que habría
-     * costado de otra manera.
-     */
-    public Dinero ahorroDe(CompraCandy compra) {
-        Dinero ahorro = Dinero.CERO;
-        for (ItemCompra item : compra.getItems()) {
-            Producto producto = buscarOFallar(item.productoId());
-            if (producto.esCombo()) {
-                ahorro = ahorro.mas(precioSuelto(producto).menos(producto.getPrecio())
-                        .por(item.cantidad()));
-            }
-        }
-        return ahorro;
-    }
-
-    private Dinero precioSuelto(Producto combo) {
-        return Dinero.sumar(combo.getComponentes().stream()
-                .map(c -> buscarOFallar(c.productoId()).getPrecio().por(c.cantidad()))
-                .toList());
     }
 
     /** La carta que ve el cliente. */
@@ -150,9 +115,7 @@ public class GestorProductos {
         if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
-        boolean repetido = productoRepository.findAll().stream()
-                .anyMatch(p -> p.getNombre().equalsIgnoreCase(nombre.trim()));
-        if (repetido) {
+        if (productoRepository.existsByNombreIgnoreCase(nombre.trim())) {
             throw new IllegalArgumentException("Ya existe un producto con ese nombre");
         }
     }

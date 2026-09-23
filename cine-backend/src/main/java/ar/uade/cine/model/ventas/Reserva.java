@@ -19,31 +19,21 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 
 /**
- * Butacas de una función a nombre de un cliente. Nace {@link EstadoReserva#RESERVADA} y
- * desde ahí solo avanza: a PAGADA cuando se cobra, o a CANCELADA cuando se libera sin
- * cobrar. No hay vuelta atrás entre esos dos estados finales.
+ * Butacas de una función a nombre de un cliente. Nace RESERVADA y desde ahí solo avanza:
+ * PAGADA al cobrar, CANCELADA o EXPIRADA al liberarse sin cobrar. Las transiciones son
+ * métodos con nombre ({@link #pagar}, {@link #cancelar}...) y cada uno exige el estado
+ * que corresponde: no hay un {@code setEstado} que permita saltos.
  *
- * <p>Reservar y comprar son el mismo registro en distinto estado.
- *
- * <p>Es el agregado más claro del sistema y por eso sus entradas sí van mapeadas como
- * relación: una entrada no existe sin su reserva, se guarda con ella y se borra con ella.
- * {@code cascade} y {@code orphanRemoval} son lo que antes hacía a mano la transacción del
- * DAO, que insertaba la cabecera y el detalle o no insertaba ninguno.
+ * <p>Es el agregado más claro del sistema y por eso sus entradas van como relación: una
+ * entrada no existe sin su reserva, se guarda y se borra con ella.
  */
 @Entity
 public class Reserva {
 
-    /**
-     * Minutos que una reserva sin pagar retiene sus butacas. Es una regla de negocio, no un
-     * detalle de implementación: en un cine una reserva abandonada no puede dejar una función
-     * sin lugares que en realidad nadie compró.
-     */
+    /** Minutos que una reserva sin pagar retiene sus butacas. Regla de negocio, no detalle técnico. */
     public static final int MINUTOS_PARA_PAGAR = 30;
 
-    /**
-     * Sin O, I, 0 ni 1: el código se lee de un ticket impreso y se tipea a mano cuando el
-     * escáner no lee, y ahí esos cuatro caracteres se confunden entre sí.
-     */
+    /** Sin O, I, 0 ni 1: el código se tipea a mano cuando el escáner no lee. */
     private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int LARGO_CODIGO = 8;
     private static final SecureRandom AZAR = new SecureRandom();
@@ -58,24 +48,19 @@ public class Reserva {
     @Column(name = "cliente_id")
     private int clienteId;
 
-    /** Cuándo se hizo. Sin esto no se puede ordenar el historial ni auditar una venta. */
     private LocalDateTime creadaEn;
 
     /**
-     * Una entrada por butaca elegida. Se fijan al crear la reserva y no se tocan más: una
-     * butaca de menos o de más cambiaría el total de algo que ya se cobró.
-     *
-     * <p>EAGER porque no hay nada que se haga con una reserva sin sus butacas: el ticket, el
-     * total, el borderó y el mapa de la sala las piden todos.
+     * Una entrada por butaca, fijadas al crear: cambiarlas cambiaría el total de algo ya
+     * cobrado. EAGER porque nada se hace con una reserva sin sus butacas.
      */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "reserva_id", nullable = false)
     private List<Entrada> entradas = new ArrayList<>();
 
     /**
-     * El código que va en el QR de la entrada. Como el cliente no inicia sesión, es la única
-     * credencial que existe en el sistema: por eso no puede ser el id, o con la reserva 5 en
-     * la mano se imprime la 6.
+     * El código del QR. Es la única credencial del cliente, que no inicia sesión: por eso
+     * es aleatorio y no el id, o con la reserva 5 en la mano se imprime la 6.
      */
     @Column(unique = true)
     private String codigo;
@@ -102,10 +87,6 @@ public class Reserva {
         });
     }
 
-    /**
-     * Aleatorio y no correlativo: es la única credencial del cliente, que no inicia sesión.
-     * Con un id autoincremental, quien tiene la reserva 5 imprime la 6.
-     */
     private static String generarCodigo() {
         StringBuilder codigo = new StringBuilder(LARGO_CODIGO);
         for (int i = 0; i < LARGO_CODIGO; i++) {
@@ -116,10 +97,6 @@ public class Reserva {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getFuncionId() {
@@ -144,11 +121,7 @@ public class Reserva {
         return entradas.size();
     }
 
-    /**
-     * Suma de los precios de lista de las butacas. Es un <em>subtotal</em>: el total
-     * definitivo aparece recién al cobrar, cuando se sabe el medio de pago y con él qué
-     * promoción aplica.
-     */
+    /** Suma de los precios de lista. Es un subtotal: el descuento se sabe recién al cobrar. */
     public Dinero getTotal() {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
@@ -157,37 +130,59 @@ public class Reserva {
         return estado;
     }
 
-    /**
-     * Pasa de RESERVADA a PAGADA, CANCELADA o EXPIRADA. Cuando el estado nuevo deja de
-     * retener butacas, las libera en el mismo movimiento (R6): eso lo hacía el DAO con un
-     * UPDATE aparte, y era la clase de regla que no se puede confiar a que quien actualice
-     * se acuerde de correr también la otra sentencia.
-     */
-    public void setEstado(EstadoReserva estado) {
-        this.estado = estado;
-        if (!estaVigente()) {
-            entradas.forEach(Entrada::liberar);
+    /** R5: se cobra una vez, y solo lo que está esperando pago. */
+    public void pagar() {
+        exigirEsperandoPago("no se puede cobrar");
+        estado = EstadoReserva.PAGADA;
+    }
+
+    /** R6 y R13: cancelar libera las butacas; una reserva cobrada no se cancela sin más. */
+    public void cancelar() {
+        exigirEsperandoPago("solo se puede cancelar una reserva sin cobrar");
+        pasarA(EstadoReserva.CANCELADA);
+    }
+
+    /** R17: venció sin pagar; las butacas vuelven a la venta. */
+    public void expirar() {
+        exigirEsperandoPago("no puede expirar");
+        pasarA(EstadoReserva.EXPIRADA);
+    }
+
+    /** R18: entra al cine una reserva pagada, y una sola vez. */
+    public void registrarIngreso(LocalDateTime cuando) {
+        if (estado != EstadoReserva.PAGADA) {
+            throw new IllegalArgumentException("La reserva está " + estado
+                    + ": solo se ingresa con una reserva pagada");
+        }
+        if (ingresadaEn != null) {
+            throw new IllegalArgumentException("Esa entrada ya se usó el " + ingresadaEn);
+        }
+        ingresadaEn = cuando;
+    }
+
+    private void exigirEsperandoPago(String queNoSePuede) {
+        if (estado != EstadoReserva.RESERVADA) {
+            throw new IllegalArgumentException("La reserva está " + estado + ", " + queNoSePuede);
         }
     }
 
     /**
-     * Si sigue reteniendo sus butacas. Lo son la que está esperando pago y la ya cobrada; no
-     * lo son la cancelada ni la expirada.
-     *
-     * <p>Existe para no repetir la doble negación {@code estado != CANCELADA} en cada
-     * consulta, que además se volvió incorrecta al aparecer EXPIRADA.
+     * Los estados que dejan de retener butacas las liberan en el mismo movimiento (R6):
+     * es la clase de regla que no se puede confiar a que quien actualice se acuerde.
      */
+    private void pasarA(EstadoReserva nuevo) {
+        estado = nuevo;
+        entradas.forEach(Entrada::liberar);
+    }
+
+    /** Si sigue reteniendo sus butacas: esperando pago o ya cobrada. */
     public boolean estaVigente() {
         return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.PAGADA;
     }
 
     /**
-     * Si está esperando pago desde hace más de {@link #MINUTOS_PARA_PAGAR}. Recibe el
-     * instante por parámetro y no lo pide al reloj para que se pueda probar sin esperar
-     * media hora.
-     *
-     * <p>Vencida no es lo mismo que EXPIRADA: esto dice que <em>debería</em> expirar. El
-     * estado lo escribe la primera operación que se cruza con ella.
+     * Si <em>debería</em> expirar: espera pago desde hace más de {@link #MINUTOS_PARA_PAGAR}.
+     * El estado lo escribe la primera operación que se cruza con ella.
      */
     public boolean estaVencida(LocalDateTime ahora) {
         return estado == EstadoReserva.RESERVADA
@@ -200,10 +195,6 @@ public class Reserva {
 
     public LocalDateTime getIngresadaEn() {
         return ingresadaEn;
-    }
-
-    public void setIngresadaEn(LocalDateTime ingresadaEn) {
-        this.ingresadaEn = ingresadaEn;
     }
 
     @Override

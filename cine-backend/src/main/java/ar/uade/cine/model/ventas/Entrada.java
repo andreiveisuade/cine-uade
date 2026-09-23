@@ -15,25 +15,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Una butaca vendida dentro de una reserva. No se consulta sola: se guarda y se lee
- * siempre junto con su reserva, que es su dueña.
+ * Una butaca vendida dentro de una reserva. No se consulta sola: vive con su reserva.
  *
- * <p>Era un {@code record}, y dejó de serlo porque la tabla {@code entrada} tiene una clave
- * propia que hay que mapear —y un record no puede ser una entidad—. Los accesores conservan
- * los nombres de entonces ({@code precio()}, {@code tarifa()}) para que el resto del sistema
- * la siga leyendo igual.
- *
- * <p>El asiento sí entra como {@code @ManyToOne}, a diferencia de las referencias por id del
- * resto del dominio: el ticket necesita el código de la butaca —"B7"— y ese dato vive en el
- * asiento. Antes lo resolvía un JOIN escrito a mano en el DAO que traía la fila y el número
- * para rearmar el código; con la relación mapeada, eso lo hace Hibernate.
+ * <p>El asiento entra como {@code @ManyToOne}, a diferencia del resto del dominio: cada
+ * vez que se lee una entrada hace falta el código de la butaca ("B7") para el ticket.
  */
 @Entity
 @Table(uniqueConstraints = {
-        // Lo que impide de verdad vender la misma butaca dos veces en la misma función
-        // (R4). Estaba escrito solo en schema.sql, y desde que Hibernate arma la base de
-        // los tests tiene que estar acá también: si no, la suite probaría contra un motor
-        // sin la restricción que sostiene la regla.
+        // R4: lo que de verdad impide vender la misma butaca dos veces en la misma función.
+        // Va acá además del schema para que los tests sobre H2 también lo tengan.
         @UniqueConstraint(columnNames = {"funcion_id", "asiento_id"}),
         @UniqueConstraint(columnNames = {"reserva_id", "asiento_id"})
 })
@@ -48,29 +38,20 @@ public class Entrada {
     private Asiento asiento;
 
     /**
-     * La función de la reserva, copiada acá. No es un dato nuevo: es lo que hace posible el
-     * {@code UNIQUE (funcion_id, asiento_id)} que impide vender la misma butaca dos veces en
-     * la misma función.
-     *
-     * <p>Se pone en NULL al cancelar (R6): la fila deja de participar del UNIQUE, así que la
-     * butaca vuelve a la venta, pero la entrada sigue existiendo con su precio y su tarifa
-     * para que la reserva cancelada pueda contar qué tenía.
+     * La función de la reserva, copiada acá para que exista el {@code UNIQUE (funcion_id,
+     * asiento_id)}. Se pone en NULL al liberar (R6): la butaca vuelve a la venta y la
+     * entrada sigue existiendo para contar qué tenía la reserva.
      */
     @Column(name = "funcion_id")
     private Integer funcionId;
 
-    /**
-     * Quién la compra. Es por persona, y por eso está acá y no en la reserva: en una reserva
-     * de cuatro puede haber dos generales, un menor y un jubilado.
-     */
+    /** Por persona, y por eso acá y no en la reserva: en una de cuatro puede haber dos generales y un jubilado. */
     @Enumerated(EnumType.STRING)
     private TipoTarifa tarifa;
 
     /**
-     * El precio <strong>de lista</strong> de esta butaca, ya con la tarifa aplicada,
-     * congelado al reservar: si mañana sube el precio de la función, el ticket ya emitido
-     * tiene que seguir diciendo lo que se pagó. Ninguna promoción lo toca: el descuento se
-     * calcula sobre el total y vive en el {@link Pago}.
+     * El precio de lista con la tarifa aplicada, congelado al reservar: si mañana sube el
+     * precio, el ticket sigue diciendo lo que se pagó. El descuento vive en el {@link Pago}.
      */
     private Dinero precio;
 

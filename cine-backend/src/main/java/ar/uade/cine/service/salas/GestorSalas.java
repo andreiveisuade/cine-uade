@@ -9,9 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.EstadoAsiento;
-import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
@@ -82,9 +80,7 @@ public class GestorSalas {
         if (minutosLimpieza < 0) {
             throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
         }
-        boolean repetida = salaRepository.findAll().stream()
-                .anyMatch(s -> s.getNombre().equalsIgnoreCase(nombre));
-        if (repetida) {
+        if (salaRepository.existsByNombreIgnoreCase(nombre)) {
             throw new IllegalArgumentException("Ya existe una sala con ese nombre");
         }
 
@@ -99,17 +95,12 @@ public class GestorSalas {
         List<Asiento> asientos = new ArrayList<>();
         for (int fila = 1; fila <= distribucion.size(); fila++) {
             for (int numero = 1; numero <= distribucion.get(fila - 1); numero++) {
-                String codigo = (char) ('A' + fila - 1) + String.valueOf(numero);
+                String codigo = Asiento.codigoDe(fila, numero);
                 asientos.add(new Asiento(salaId, fila, numero,
                         especiales.getOrDefault(codigo, TipoAsiento.ESTANDAR)));
             }
         }
         return asientos;
-    }
-
-    /** Butacas que tiene la sala. Se cuentan: los asientos son la única fuente de verdad. */
-    public int capacidad(int salaId) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId).size();
     }
 
     /** Una butaca rota deja de venderse en todas las funciones, presentes y futuras. */
@@ -122,12 +113,9 @@ public class GestorSalas {
     }
 
     private void cambiarEstado(int salaId, String codigo, EstadoAsiento estado) {
-        String buscado = codigo == null ? "" : codigo.trim().toUpperCase();
-        Asiento asiento = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId).stream()
-                .filter(a -> a.getCodigo().equals(buscado))
-                .findFirst()
+        Asiento asiento = Asiento.conCodigo(asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId), codigo)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "La butaca " + buscado + " no existe en la sala " + salaId));
+                        "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en la sala " + salaId));
         asiento.setEstado(estado);
         asientoRepository.save(asiento);
     }
@@ -146,10 +134,10 @@ public class GestorSalas {
 
     /** R12: borrar una sala con funciones programadas dejaría esas funciones sin sala. */
     public void eliminar(int id) {
-        if (salaRepository.findById(id).isEmpty()) {
+        if (!salaRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la sala " + id);
         }
-        if (!funcionRepository.findBySalaId(id).isEmpty()) {
+        if (funcionRepository.existsBySalaId(id)) {
             throw new IllegalArgumentException(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
         }

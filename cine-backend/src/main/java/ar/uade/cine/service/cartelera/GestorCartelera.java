@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
@@ -20,8 +19,11 @@ import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * Reglas de negocio del catálogo. Depende de la interfaz PeliculaRepository, no de una
- * implementación concreta: por eso funciona igual con memoria, MySQL o lo que venga.
+ * El catálogo de películas: alta, edición, qué está en cartelera.
+ *
+ * <p>Recibe el gestor de grillas porque la cartelera es la lectura de la que cuelga la
+ * extensión: antes de decir qué hay en cartel, las grillas activas materializan lo que
+ * les toca. La dependencia va en esta dirección: las grillas no saben de la cartelera.
  */
 @Service
 @Transactional
@@ -32,13 +34,6 @@ public class GestorCartelera {
     private final GestorProgramaciones programaciones;
     private final Reloj reloj;
 
-    /**
-     * Recibe el gestor de grillas porque la cartelera es la lectura de la que cuelga la
-     * extensión: antes de decir qué hay en cartel hay que asegurarse de que las grillas
-     * activas hayan materializado lo que les toca. Es la misma dependencia entre gestores
-     * que ya tienen {@code GestorPagos} con {@code GestorPromociones}, y va en esta
-     * dirección y no en la otra: las grillas no necesitan saber nada de la cartelera.
-     */
     public GestorCartelera(PeliculaRepository peliculaRepository, FuncionRepository funcionRepository,
                            GestorProgramaciones programaciones, Reloj reloj) {
         this.peliculaRepository = peliculaRepository;
@@ -53,10 +48,7 @@ public class GestorCartelera {
         return agregar(DatosPelicula.deAlta(titulo, duracionMinutos, generos, clasificacion));
     }
 
-    /**
-     * El alta completa, con los datos de catálogo incluidos y en un solo guardado. Los
-     * datos de catálogo que no vengan quedan como los deja la película recién creada.
-     */
+    /** El alta completa, con los datos de catálogo que vengan. */
     public Pelicula agregar(DatosPelicula datos) {
         int duracion = datos.duracionMinutos() == null ? 0 : datos.duracionMinutos();
         validar(datos.titulo(), duracion, datos.generos(), datos.clasificacion());
@@ -70,14 +62,9 @@ public class GestorCartelera {
     }
 
     /**
-     * Edición parcial: lo que viene en {@code null} conserva el valor que ya tenía.
-     *
-     * <p>Que el criterio viva acá y no en la capa HTTP es lo que hace que editar por la web
-     * y editar desde el importador signifiquen lo mismo. Se valida con las mismas reglas que
-     * el alta: una edición no es una puerta de atrás para dejar una película sin título
-     * o con duración cero.
-     *
-     * @param cambios solo los campos a pisar; el resto se toma de la película guardada
+     * Edición parcial: lo que viene en {@code null} conserva el valor que tenía. Se valida
+     * con las mismas reglas que el alta, así una edición no es una puerta de atrás para
+     * dejar una película sin título o con duración cero.
      */
     public Pelicula editar(int id, DatosPelicula cambios) {
         Pelicula actual = peliculaRepository.findById(id)
@@ -92,10 +79,8 @@ public class GestorCartelera {
         validar(titulo, duracion, generos, clasificacion);
         validarTituloLibre(titulo, id);
 
-        // Se edita la película que está guardada, no una copia con el mismo id: los datos
-        // de catálogo que el pedido no trae quedan como estaban sin tener que copiarlos uno
-        // por uno, y el estado de revisión tampoco se pierde —editarle el título a una del
-        // buzón no la da por confirmada.
+        // Se edita la guardada y no una copia: lo que el pedido no trae —incluido el estado
+        // de revisión— queda como estaba.
         actual.actualizar(titulo, duracion, generos, clasificacion);
         aplicarCatalogo(actual, cambios);
 
@@ -103,9 +88,9 @@ public class GestorCartelera {
         return actual;
     }
 
-    /** R1 también al editar: si no, renombrar una película permitiría duplicar un título. */
+    /** Guarda una película ya modificada, con R1: renombrarla no puede duplicar un título. */
     public void actualizar(Pelicula pelicula) {
-        if (peliculaRepository.findById(pelicula.getId()).isEmpty()) {
+        if (!peliculaRepository.existsById(pelicula.getId())) {
             throw new IllegalArgumentException("No existe la película " + pelicula.getId());
         }
         validarTituloLibre(pelicula.getTitulo(), pelicula.getId());
@@ -130,10 +115,7 @@ public class GestorCartelera {
 
     /** exceptoId 0 al dar de alta: ninguna película guardada tiene ese id. */
     private void validarTituloLibre(String titulo, int exceptoId) {
-        boolean repetida = peliculaRepository.findAll().stream()
-                .filter(p -> p.getId() != exceptoId)
-                .anyMatch(p -> p.getTitulo().equalsIgnoreCase(titulo));
-        if (repetida) {
+        if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(titulo, exceptoId)) {
             throw new IllegalArgumentException("Ya existe una película con ese título");
         }
     }
@@ -173,27 +155,15 @@ public class GestorCartelera {
     }
 
     /**
-     * Lo que ve el cliente: las películas que tienen alguna función por delante.
-     *
-     * <p>Estar en cartelera <strong>se deriva</strong>, no se declara. Antes era un flag
-     * que alguien tenía que mantener a mano, y un flag así siempre termina mintiendo: se
-     * programan funciones y nadie lo prende, o la última función pasó hace un mes y sigue
-     * anunciada. Es el mismo argumento por el que la sala no guarda su capacidad — dos
-     * fuentes de verdad para el mismo hecho se separan solas.
-     *
-     * <p>El flag no desapareció, cambió de rol: pasó de <em>anuncio</em> a <em>veto</em>.
-     * Puede sacar de la cartelera una película que tiene funciones, pero no puede meter
-     * una que no las tiene. Eso lo deja como interruptor del administrador —para bajar
-     * algo de la web sin tocar la programación— sin volver a ser una fuente de verdad
-     * paralela: cuando los dos hablan, manda la programación.
+     * Lo que ve el cliente: las películas con alguna función por delante. Estar en
+     * cartelera <strong>se deriva</strong> de las funciones, no se declara: un flag a mano
+     * siempre termina mintiendo. El flag {@code enCartelera} quedó como veto del
+     * administrador: puede sacar una película que tiene funciones, no meter una que no.
      */
     public List<Pelicula> listarEnCartelera() {
         LocalDateTime ahora = reloj.ahora();
-        // Las grillas activas materializan acá lo que les falta. Sin esto un cine con
-        // grillas abiertas amanecería vacío el día que se pasara el último rango generado:
-        // la cartelera se deriva de las funciones, y las funciones alguien las tiene que
-        // crear. Es el mismo momento que elige GestorReservas para expirar las vencidas —
-        // el trabajo lo hace quien consulta, no un proceso de fondo.
+        // Las grillas activas materializan acá lo que les falta: sin esto un cine con
+        // grillas abiertas amanecería vacío al pasar el último rango generado.
         programaciones.extenderActivas(ahora.toLocalDate());
         Set<Integer> conFuncionesPorDelante = funcionRepository.findAll().stream()
                 .filter(funcion -> !funcion.yaEmpezo(ahora))
@@ -206,26 +176,14 @@ public class GestorCartelera {
                 .toList();
     }
 
-    public List<Pelicula> listarPorGenero(Genero genero) {
-        return peliculaRepository.findAll().stream()
-                .filter(p -> p.getGeneros().contains(genero))
-                .toList();
-    }
-
     public List<Pelicula> listar() {
         return peliculaRepository.findAll();
     }
 
     /**
-     * El catálogo filtrado. Cualquier parámetro en {@code null} no filtra.
+     * El catálogo filtrado; cualquier parámetro en {@code null} no filtra.
      *
-     * <p>Desde que el importador trae la cartelera real, el catálogo dejó de ser una lista
-     * de cuatro títulos de prueba: son veintidós y van a ser más en cada corrida. Buscar
-     * por título es lo primero que se necesita cuando la lista pasa de una pantalla.
-     *
-     * @param publicada {@code true} solo las publicadas, {@code false} solo las
-     *                  despublicadas, {@code null} todas. Es {@code Boolean} y no
-     *                  {@code boolean} justamente para que exista ese tercer caso
+     * @param publicada {@code Boolean} y no {@code boolean} para que exista el tercer caso: todas
      */
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
         String buscado = titulo == null ? "" : titulo.trim().toLowerCase();
@@ -241,22 +199,16 @@ public class GestorCartelera {
     }
 
     /**
-     * R12: una película con funciones no se borra. Para sacarla de circulación sin perder
-     * el historial está estaEnCartelera, que es lo que corresponde casi siempre.
-     *
-     * <p>La grilla cuenta igual que la función, y por su cuenta: una grilla recién creada
-     * que todavía no materializó nada —abierta más allá del horizonte, o con todas sus
-     * fechas chocadas— deja a la película sin funciones pero programada. Sin este chequeo
-     * el borrado llegaba hasta la base y lo frenaba la foreign key de programacion, así que
-     * el usuario recibía un 500 genérico en lugar del motivo.
-     *
-     * <p>Los mensajes nombran a la película por título y no por id, que es lo único que el
-     * usuario ve en pantalla: un "la película 37" manda a buscar cuál era la 37.
+     * R12: una película con funciones o en una grilla no se borra; para sacarla de
+     * circulación está {@code enCartelera}. La grilla cuenta aparte porque una recién
+     * creada puede no haber materializado nada todavía, y sin el chequeo el borrado
+     * terminaba en un 500 de la foreign key. Los mensajes nombran por título, que es lo
+     * que el usuario ve.
      */
     public void eliminar(int id) {
         Pelicula pelicula = peliculaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + id));
-        if (!funcionRepository.findByPeliculaId(id).isEmpty()) {
+        if (funcionRepository.existsByPeliculaId(id)) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
         }

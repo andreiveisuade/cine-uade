@@ -48,8 +48,8 @@ public class ItemCompra {
         this.precioUnitario = precioUnitario;
     }
 
-    public int productoId() {
-        return producto.getId();
+    public Producto producto() {
+        return producto;
     }
 
     public String nombre() {
@@ -66,6 +66,11 @@ public class ItemCompra {
 
     public Dinero getSubtotal() {
         return precioUnitario.por(cantidad);
+    }
+
+    /** Lo que se ahorró llevando esto en combo en vez de suelto. Cero si no es combo. */
+    public Dinero getAhorro() {
+        return producto.getAhorro().por(cantidad);
     }
 
     @Override

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Empleado;
-import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
 import ar.uade.cine.infrastructure.seguridad.Password;

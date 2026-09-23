@@ -15,13 +15,10 @@ import jakarta.persistence.Id;
  * Una función programada: una película en una sala, a una fecha y hora, con su versión,
  * formato y precio base.
  *
- * <p>Referencia película y sala <strong>por id</strong> y no con un {@code @ManyToOne}:
- * quien necesite los datos completos se los pide al repositorio. No es una traducción
- * incompleta, es la misma decisión de siempre dicha en el mapeo. Listar las funciones de
- * una semana son cien filas, y con la referencia al objeto cada una arrastraría su película
- * y su sala aunque la pantalla solo pinte el horario. Las relaciones sí se mapean donde una
- * cosa no existe sin la otra —las entradas de una reserva, los géneros de una película—,
- * que es lo que distingue una parte de un vecino.
+ * <p>Referencia película y sala <strong>por id</strong> y no con {@code @ManyToOne}: cien
+ * funciones de una semana arrastrarían cada una su película y su sala aunque la pantalla
+ * solo pinte el horario. Las relaciones se mapean donde una cosa no existe sin la otra
+ * —las entradas de una reserva—, que es lo que distingue una parte de un vecino.
  */
 @Entity
 public class Funcion {
@@ -36,14 +33,7 @@ public class Funcion {
     @Column(name = "sala_id")
     private int salaId;
 
-    /**
-     * De qué grilla salió, o {@code null} si la cargó el administrador a mano. Es lo que
-     * materializa la asociación con {@link ar.uade.cine.model.programaciones.Programacion}.
-     *
-     * <p>Admite null y es {@code Integer} y no {@code int} porque la programación no
-     * reemplaza a CU-03: una función suelta —el preestreno del jueves, la función especial—
-     * sigue siendo válida y no pertenece a ninguna grilla.
-     */
+    /** De qué grilla salió, o {@code null} si la cargó el administrador a mano (el preestreno, la función especial). */
     @Column(name = "programacion_id")
     private Integer programacionId;
 
@@ -80,10 +70,6 @@ public class Funcion {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getPeliculaId() {

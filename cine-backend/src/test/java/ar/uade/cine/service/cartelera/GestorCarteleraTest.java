@@ -262,8 +262,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
         gestor.agregar("Amelie", 122, List.of(Genero.ROMANCE), Clasificacion.ATP);
 
-        assertEquals(1, gestor.listarPorGenero(Genero.CIENCIA_FICCION).size());
-        assertEquals("Matrix", gestor.listarPorGenero(Genero.ACCION).get(0).getTitulo());
+        assertEquals(1, gestor.buscar(null, Genero.CIENCIA_FICCION, null).size());
+        assertEquals("Matrix", gestor.buscar(null, Genero.ACCION, null).get(0).getTitulo());
     }
 
     /** Tres películas que se solapan en género y estado, para que ningún filtro sea trivial. */

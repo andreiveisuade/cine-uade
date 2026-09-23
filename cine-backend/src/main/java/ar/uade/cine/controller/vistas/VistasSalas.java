@@ -15,7 +15,6 @@ import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.dinero.Dinero;
 
 /**
  * Arma las salas y sus butacas en la forma que espera el front.

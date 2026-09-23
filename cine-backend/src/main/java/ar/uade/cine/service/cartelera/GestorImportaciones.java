@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import ar.uade.cine.model.cartelera.EstadoImportacion;
 import ar.uade.cine.model.cartelera.Importacion;
-import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
@@ -20,35 +19,17 @@ import ar.uade.cine.repository.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * Pedir cartelera nueva, ahora.
+ * Pedir cartelera nueva, ahora, desde el panel del encargado.
  *
- * <p>Hasta acá el importador corría solo cada seis horas y solo se lo podía adelantar desde
- * una terminal. Este gestor es la puerta para que el encargado lo pida desde el panel, que
- * es donde está parado cuando se da cuenta de que falta cartelera.
+ * <p><strong>No sabe qué es TMDB.</strong> Le pide candidatas a un {@link CatalogoExterno}
+ * y las da de alta por {@link GestorRevisionCartelera}, así entran al buzón con las mismas
+ * reglas que el alta a mano. Saltear lo que ya está —por título, que es lo que R1 hace
+ * único— es regla del cine y por eso vive acá y no en el adaptador.
  *
- * <p><strong>No sabe qué es TMDB.</strong> Le pide candidatas a un {@link CatalogoExterno} y
- * las da de alta por {@link GestorRevisionCartelera}, o sea que entran al buzón pasando por
- * las mismas reglas que el alta a mano. De dónde salieron esas películas es problema del
- * adaptador; qué se hace con ellas, de este gestor.
- *
- * <p>La corrida vive acá y no del otro lado de la interfaz por una razón concreta: saltear lo
- * que ya está —comparando por título, que es lo que R1 hace único— es una regla del cine, no
- * una decisión del catálogo ajeno. Cuando el importador era un proceso Python aparte, esa
- * comparación estaba escrita por segunda vez allá, y las dos copias se podían separar sin que
- * nadie se enterara.
- *
- * <p>Es el vecino del buzón y no del catálogo por lo mismo que
- * {@link GestorRevisionCartelera} está separado de {@link GestorCartelera}: acá no se
- * administra qué películas hay, se administra de dónde vienen.
- */
-/*
- * Sin @Transactional a nivel de clase, a diferencia del resto de los gestores que escriben,
- * y no es un olvido: una corrida NO es una unidad atómica. Su razón de ser es justamente que
- * unas películas entren, otras se salteen y otras fallen, y que eso quede contado. Con una
- * transacción envolviendo todo, el `catch` que anota una película como fallida se encuentra
- * con que el alta ya marcó la transacción como rollback-only, y al terminar la corrida el
- * commit explota con UnexpectedRollbackException: no entra nada, ni siquiera el registro de
- * la corrida. Cada alta abre la suya —la de GestorRevisionCartelera— y falla sola.
+ * <p>Sin {@code @Transactional}, y no es un olvido: una corrida no es atómica. Su razón
+ * de ser es que unas películas entren, otras se salteen y otras fallen, y que eso quede
+ * contado. Con una transacción envolviendo todo, el primer alta rechazada marcaría
+ * rollback-only y el commit final tiraría todo, incluso el registro de la corrida.
  */
 @Service
 public class GestorImportaciones {
@@ -56,8 +37,7 @@ public class GestorImportaciones {
     /** Cuántas corridas muestra la pantalla. El historial crece para siempre; la tabla no. */
     private static final int HISTORIAL = 20;
 
-    /** Una página de TMDB son veinte títulos. Más de tres es pedirle a un botón un trabajo
-     * de cron: tarda demasiado y trae cosas cada vez menos parecidas a la cartelera de hoy. */
+    /** Una página de TMDB son veinte títulos; más de tres tarda demasiado para un botón. */
     private static final int PAGINAS_MAXIMAS = 3;
 
     private final ImportacionRepository importacionRepository;
@@ -69,10 +49,8 @@ public class GestorImportaciones {
     private final Reloj reloj;
 
     /**
-     * Las dos duraciones salen de la configuración y no de constantes acá adentro para poder
-     * probarlas: esperar cinco minutos de reloj para ver que una corrida colgada caduca no es
-     * un test, es una siesta. El perfil de test las baja a cero y así puede usar este mismo
-     * bean, con su proxy transaccional puesto, en vez de armarse uno con {@code new}.
+     * Las dos duraciones salen de la configuración para poder probarlas: el perfil de test
+     * las baja a cero en vez de esperar cinco minutos de reloj.
      *
      * @param corridaMaxima cuánto puede estar EN_CURSO antes de darla por perdida
      * @param esperaEntreCorridas el mínimo entre dos corridas seguidas
@@ -92,17 +70,12 @@ public class GestorImportaciones {
     }
 
     /**
-     * Corre una importación y vuelve cuando terminó.
+     * Corre una importación y vuelve cuando terminó. Bloquea el pedido los diez o quince
+     * segundos que tarda TMDB: el encargado está esperando, y un «después te aviso»
+     * obligaría al navegador a preguntar cada dos segundos.
      *
-     * <p>Bloquea el hilo del pedido diez o quince segundos, que es lo que tardan las llamadas
-     * a TMDB. Es a propósito: el encargado está esperando la respuesta y devolverle un
-     * «después te aviso» obligaría a que el navegador pregunte cada dos segundos si ya
-     * terminó, o sea a inventar tráfico para simular una espera que ya existe.
-     *
-     * <p>Que el catálogo externo falle <strong>no</strong> hace fallar esto: la corrida queda
-     * registrada como FALLIDA con el motivo, que es un resultado y no un error del sistema.
-     * Lo único que tira es lo que el encargado puede corregir: pedir mal las páginas, o pedir
-     * una corrida cuando no corresponde.
+     * <p>Que el catálogo externo falle no hace fallar esto: la corrida queda FALLIDA con el
+     * motivo, que es un resultado. Solo tira lo que el encargado puede corregir.
      *
      * @param paginas cuántas páginas de TMDB traer, o {@code null} para una
      */
@@ -118,15 +91,8 @@ public class GestorImportaciones {
     }
 
     /**
-     * La corrida: traer, saltear lo que ya está y mandar el resto al buzón.
-     *
-     * <p>Las altas van de a una y en orden, aunque las consultas a TMDB se hayan hecho en
-     * paralelo: son escrituras que pasan por R1 y dos hilos mandando el mismo título se
-     * pisarían contra el título único.
-     *
-     * <p>Una película que el alta rechaza no corta la corrida: queda anotada como fallida con
-     * el mensaje del gestor y se sigue con la siguiente. Una corrida que se cae a la mitad y
-     * deja medio trabajo hecho es peor que una que no corre.
+     * La corrida: traer, saltear lo que ya está y mandar el resto al buzón. Una película
+     * que el alta rechaza no corta la corrida: queda anotada como fallida y se sigue.
      */
     private void correr(Importacion importacion) {
         List<DatosPelicula> candidatas = catalogo.enCartelera(importacion.getPaginas());
@@ -137,9 +103,8 @@ public class GestorImportaciones {
         int fallidas = 0;
 
         for (DatosPelicula candidata : candidatas) {
-            // El mismo Set resuelve los dos casos: la película que ya está en el catálogo y la
-            // que TMDB trajo dos veces entre páginas. Sin lo segundo, el duplicado se mandaría
-            // igual y volvería rechazado por R1: contado como falla, cuando no lo es.
+            // El mismo Set saltea lo que ya está en el catálogo y lo que TMDB trajo dos
+            // veces entre páginas; si no, el duplicado volvería rechazado por R1 como falla.
             String clave = clave(candidata.titulo());
             if (!clave.isEmpty() && !yaEstan.add(clave)) {
                 salteadas++;
@@ -151,8 +116,7 @@ public class GestorImportaciones {
                         .append(creada.getTitulo()).append('\n');
                 nuevas++;
             } catch (IllegalArgumentException e) {
-                // El alta la rechazó por una regla de negocio. No es un error del importador:
-                // es el sistema haciendo su trabajo, y queda registrado para poder mirarlo.
+                // Rechazada por una regla de negocio: es el sistema haciendo su trabajo.
                 detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
                         .append(e.getMessage()).append('\n');
                 fallidas++;
@@ -164,11 +128,8 @@ public class GestorImportaciones {
     }
 
     /**
-     * Los títulos que ya están, en minúscula y sin espacios de más.
-     *
-     * <p>Incluye a las descartadas a propósito: si no, la corrida siguiente volvería a
-     * proponer lo que el encargado ya rechazó y habría que descartarlo todas las veces.
-     * Descartar una vez alcanza.
+     * Los títulos que ya están, normalizados. Incluye las descartadas a propósito: si no,
+     * cada corrida volvería a proponer lo que el encargado ya rechazó.
      */
     private Set<String> titulosCargados() {
         Set<String> titulos = new HashSet<>();
@@ -189,16 +150,10 @@ public class GestorImportaciones {
     }
 
     /**
-     * Deja anotado que esta corrida arrancó, si es que puede arrancar.
-     *
-     * <p>Está sincronizado y aparte del método de arriba por la misma razón: es lo único
-     * que dos pedidos simultáneos no pueden hacer a la vez. La corrida en sí queda afuera
-     * del candado porque dura quince segundos, y encerrarla haría que el segundo pedido
-     * esperara todo ese rato para recibir el rechazo que se merecía enseguida.
-     *
-     * <p>Alcanza con un candado porque hay un solo backend. Con dos haría falta que la
-     * exclusión la garantice la base, y MySQL no puede expresarla acá: sería un UNIQUE
-     * sobre "las filas EN_CURSO", que es un índice parcial y no existe.
+     * Deja anotado que esta corrida arrancó, si puede arrancar. Sincronizado y aparte de
+     * la corrida: es lo único que dos pedidos simultáneos no pueden hacer a la vez, y
+     * encerrar los quince segundos de la corrida haría esperar al segundo para rechazarlo.
+     * Alcanza con un candado porque hay un solo backend.
      */
     private synchronized Importacion reservarTurno(int paginas) {
         List<Importacion> ultimas = listar();
@@ -218,11 +173,7 @@ public class GestorImportaciones {
         }
     }
 
-    /**
-     * El botón está a un clic de distancia y cada corrida son sesenta llamadas a TMDB, que
-     * tiene cuota. Apretarlo dos veces seguidas no trae nada nuevo —la cartelera no cambió
-     * en veinte segundos— y sí gasta el doble.
-     */
+    /** Cada corrida son sesenta llamadas a TMDB, que tiene cuota; dos seguidas no traen nada nuevo. */
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
         LocalDateTime desde = ultima.getTerminoEn();
         if (desde != null && desde.plus(esperaEntreCorridas).isAfter(reloj.ahora())) {
@@ -232,16 +183,9 @@ public class GestorImportaciones {
     }
 
     /**
-     * Las últimas corridas, de la más nueva a la más vieja.
-     *
-     * <p>De paso da por perdidas las que quedaron EN_CURSO de más. Se hace acá, en la
-     * consulta, y no con un proceso de fondo: es el mismo criterio con el que
-     * {@link GestorCartelera#listarEnCartelera()} extiende las programaciones vencidas —el
-     * trabajo lo hace quien consulta—, y evita tener el único hilo de fondo del sistema
-     * para vigilar una fila que casi nunca existe.
-     *
-     * <p>Sin esto, un backend reiniciado a mitad de corrida dejaría una importación EN_CURSO
-     * para siempre, y con ella el sistema no aceptaría ninguna importación nueva nunca más.
+     * Las últimas corridas, de la más nueva a la más vieja. De paso da por perdidas las que
+     * quedaron EN_CURSO de más: sin esto, un backend reiniciado a mitad de corrida dejaría
+     * el importador bloqueado para siempre. Lo hace quien consulta, no un proceso de fondo.
      */
     public List<Importacion> listar() {
         List<Importacion> ultimas = importacionRepository.findAllByOrderByIdDesc(Limit.of(HISTORIAL));
@@ -261,10 +205,7 @@ public class GestorImportaciones {
                 && importacion.getPedidaEn().plus(corridaMaxima).isBefore(ahora);
     }
 
-    /**
-     * Si el catálogo externo está en condiciones de contestar. La pantalla lo pregunta al
-     * abrirse para poder avisar antes de que alguien apriete el botón y espere en vano.
-     */
+    /** Si el catálogo externo puede contestar: la pantalla avisa antes de que alguien espere en vano. */
     public CatalogoExterno.Estado estadoDelImportador() {
         return catalogo.consultar();
     }

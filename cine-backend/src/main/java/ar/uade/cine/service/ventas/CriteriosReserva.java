@@ -3,13 +3,12 @@ package ar.uade.cine.service.ventas;
 import java.time.LocalDate;
 
 import ar.uade.cine.model.ventas.EstadoReserva;
-import ar.uade.cine.service.cartelera.DatosPelicula;
 
 /**
  * Con qué se busca una reserva en el listado del panel.
  *
  * <p>Existe como tipo propio y no como tres parámetros sueltos por lo mismo que
- * {@link DatosPelicula}: son tres hoy y van a ser cinco, y una firma de cinco argumentos
+ * {@code DatosPelicula}: son tres hoy y van a ser cinco, y una firma de cinco argumentos
  * del mismo tipo es una invitación a pasarlos en el orden equivocado sin que el
  * compilador diga nada.
  *

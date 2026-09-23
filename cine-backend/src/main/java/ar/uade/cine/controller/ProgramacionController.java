@@ -2,8 +2,6 @@ package ar.uade.cine.controller;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.NoEncontrado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
@@ -51,9 +50,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
 public class ProgramacionController {
-
-    /** El contrato pide ISO local sin zona, con los segundos siempre presentes. */
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final GestorProgramaciones programaciones;
 
@@ -153,7 +149,7 @@ public class ProgramacionController {
         return new PlanVistaDTO(
                 programacion(plan.programacion(), null),
                 plan.funciones().stream()
-                        .map(f -> new FuncionPlanificadaVistaDTO(fecha(f.inicio()), f.choca(), f.motivo()))
+                        .map(f -> new FuncionPlanificadaVistaDTO(Fechas.texto(f.inicio()), f.choca(), f.motivo()))
                         .toList(),
                 plan.programables().size(),
                 plan.salteadas().size());
@@ -167,17 +163,13 @@ public class ProgramacionController {
                 p.getDiasSemana().stream().map(Enum::name).toList(),
                 p.getVersion().name(), p.getProyeccion().name(), p.getPrecio().aPesos(), p.estaActiva(),
                 generadas == null ? null : generadas.stream()
-                        .map(f -> new FuncionGeneradaVistaDTO(f.getId(), fecha(f.getInicio())))
+                        .map(f -> new FuncionGeneradaVistaDTO(f.getId(), Fechas.texto(f.getInicio())))
                         .toList());
     }
 
     /** Las fechas que admiten null viajan como null, no como cadena vacía. */
     private static String texto(LocalDate fecha) {
         return fecha == null ? null : fecha.toString();
-    }
-
-    private static String fecha(LocalDateTime momento) {
-        return momento.format(ISO);
     }
 
     private Programacion buscar(int id) {

@@ -2,7 +2,6 @@ package ar.uade.cine.controller;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -12,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
@@ -42,8 +42,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
 public class GrillaController {
-
-    private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final PlanificadorGrilla planificador;
     private final Reloj reloj;
@@ -132,7 +130,7 @@ public class GrillaController {
 
     private static PaseSugeridoDTO pase(PaseSugerido pase) {
         return new PaseSugeridoDTO(pase.peliculaId(), pase.titulo(), pase.salaId(), pase.sala(),
-                pase.inicio().format(ISO), pase.duracionMinutos());
+                Fechas.texto(pase.inicio()), pase.duracionMinutos());
     }
 
     private static IndicadoresGrillaDTO indicadores(PropuestaGrilla propuesta) {

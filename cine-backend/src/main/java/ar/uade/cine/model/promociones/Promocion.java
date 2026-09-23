@@ -27,28 +27,15 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 
 /**
- * Un descuento sobre el total de una reserva.
+ * Un descuento sobre el total de una reserva. Es un monto sobre el conjunto y no un
+ * factor por butaca porque el 2x1 es una regla sobre el grupo, y porque las promociones
+ * compiten entre sí (R15) y tienen que producir la misma unidad.
  *
- * <p><strong>Por qué el descuento es un monto sobre el conjunto y no un factor por
- * butaca:</strong> el 2x1 —"cada dos entradas, una gratis"— es una regla sobre el grupo, y
- * no existe multiplicador por butaca que lo exprese. Como además las promociones no se
- * acumulan y gana la que más descuenta (R15), todas tienen que ser comparables entre sí, o
- * sea producir la misma unidad. Esa unidad es un monto en pesos.
- *
- * <p>Es abstracta y no una clase con un {@code switch} porque hay tres implementaciones de
- * verdad, que es cuando la abstracción paga: sumar un tipo de beneficio nuevo es una clase,
- * no un {@code case} más adentro de un switch que hay que ir a buscar. Es la única jerarquía
- * del dominio que sobrevivió al pasaje a JPA con la forma que tenía —el resto eran interfaces
- * con un solo implementador— y acá el polimorfismo es real: cada subclase calcula distinto.
- *
- * <p>Las tres van a la misma tabla con {@code tipo} como discriminador, que es lo que ya
- * hacía el schema. Las columnas del beneficio —porcentaje, monto, lleva, paga— son NULL en
- * las clases que no las usan: con tres tablas separadas se ganaba normalización y se perdía
- * poder leer una promoción entera de un SELECT.
- *
- * <p>Acá viven además las condiciones que comparten las tres: cuándo corre y con qué se
- * paga. Sin eso, cada implementación tendría su copia de la evaluación de vigencia, día,
- * horario y medio, y las tres copias se irían separando con el tiempo.
+ * <p>Abstracta y no un {@code switch}: hay tres implementaciones de verdad y sumar un
+ * beneficio nuevo es una clase, no un {@code case}. Acá viven las condiciones que las tres
+ * comparten —vigencia, día, horario, medio—; cada subclase solo dice cuánto descuenta.
+ * Van a la misma tabla con {@code tipo} como discriminador; las columnas del beneficio
+ * quedan NULL en las clases que no las usan.
  */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -78,10 +65,7 @@ public abstract class Promocion {
 
     private LocalTime horaHasta;
 
-    /**
-     * Vacío significa con cualquier medio. Esto es lo que obliga a que el descuento se
-     * resuelva al cobrar y no al reservar: el medio de pago se elige recién ahí.
-     */
+    /** Vacío significa cualquier medio. Es lo que obliga a resolver el descuento al cobrar y no al reservar. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "promocion_medio", joinColumns = @JoinColumn(name = "promocion_id"))
     @Column(name = "medio")
@@ -111,24 +95,15 @@ public abstract class Promocion {
     public abstract TipoPromocion getTipo();
 
     /**
-     * Cuánto descuenta sobre esas entradas.
-     *
-     * <p>Recibe una lista de entradas y no la reserva entera por R16: las de tarifa reducida
-     * no participan del descuento, así que el gestor le pasa solo las que corresponden. Si la
-     * regla viviera adentro, habría que acordarse de repetirla en cada implementación.
+     * Cuánto descuenta sobre esas entradas. Recibe la lista ya filtrada por R16 (sin las
+     * tarifas reducidas) para que ninguna subclase tenga que acordarse de esa regla.
      */
     public abstract Dinero calcularDescuento(List<Entrada> entradas);
 
     /**
-     * Si corre para esa función pagada con ese medio.
-     *
-     * <p>Todo se evalúa contra el horario de la <strong>función</strong> y no contra el
-     * momento de la compra: un 2x1 de los miércoles es para la función del miércoles, aunque
-     * las entradas se compren el lunes.
-     *
-     * <p>Un conjunto vacío no restringe: quiere decir "todos los días" o "cualquier medio", y
-     * no "ninguno". Es lo mismo que en la base, donde la promoción sin filas en
-     * promocion_dia corre siempre.
+     * Si corre para esa función pagada con ese medio. Se evalúa contra el horario de la
+     * <strong>función</strong>, no de la compra: el 2x1 del miércoles es para la función
+     * del miércoles aunque se compre el lunes. Un conjunto vacío no restringe.
      */
     public boolean aplicaA(LocalDateTime inicioFuncion, MedioPago medio) {
         if (!activa || inicioFuncion == null) {
@@ -163,10 +138,6 @@ public abstract class Promocion {
 
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getNombre() {

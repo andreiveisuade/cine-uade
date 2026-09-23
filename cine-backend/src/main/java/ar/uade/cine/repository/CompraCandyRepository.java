@@ -2,6 +2,7 @@ package ar.uade.cine.repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,10 @@ public interface CompraCandyRepository extends JpaRepository<CompraCandy, Intege
 
     List<CompraCandy> findByClienteId(int clienteId);
 
-    List<CompraCandy> findByReservaId(int reservaId);
+    boolean existsByClienteId(int clienteId);
+
+    /** Las compras atribuidas a esas reservas, de una vez: es lo que suma el informe de una función. */
+    List<CompraCandy> findByReservaIdIn(Collection<Integer> reservaIds);
 
     /** Por rango y no por la parte de fecha de la columna, igual que los pagos. */
     @Query("select c from CompraCandy c where c.fecha >= :desde and c.fecha < :hasta order by c.fecha")
