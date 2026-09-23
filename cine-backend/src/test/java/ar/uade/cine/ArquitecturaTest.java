@@ -61,7 +61,7 @@ class ArquitecturaTest {
         @Test
         @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
         void laInfraestructuraNoDependeDeLaApi() {
-            // 'service' porque importador/ devuelve DatosPelicula y seguridad/ responde con CredencialesInvalidas.
+            // 'service' porque importador/ devuelve DatosPelicula y seguridad/ re-hashea claves por GestorEmpleados.
             assertSinViolaciones(violacionesDeCapa("infrastructure"));
         }
     }
