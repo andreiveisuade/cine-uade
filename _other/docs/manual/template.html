@@ -865,16 +865,45 @@ body.lightbox-locked { overflow: hidden; }
           <thead><tr><th>Paquete</th><th>Qué hay</th></tr></thead>
           <tbody>
             <tr><td><code>api/</code></td><td><code>ApiHttp</code>: una operación por endpoint, Basic en cada pedido y el <code>{"error"}</code> del backend en una <code>ErrorApi</code>. Un 401 vuelve al login. Un record por forma de JSON en <code>dto/</code></td></tr>
-            <tr><td><code>informes/</code></td><td>El borderó en <code>.txt</code> y la declaración jurada en <code>.csv</code>, escritos en la PC. Sin Swing y con tests</td></tr>
-            <tr><td><code>comun/</code></td><td><code>Tarea</code> (pedidos fuera del EDT), <code>Fechas</code> (JCalendar y el cruce <code>Date</code>/<code>java.time</code>), <code>Colores</code>, <code>Tabla</code>, <code>MapaButacas</code></td></tr>
-            <tr><td><code>pantallas/</code></td><td>Login, la ventana con el menú y una clase por pantalla</td></tr>
+            <tr><td><code>informes/</code></td><td>El borderó en <code>.txt</code>, la declaración jurada en <code>.csv</code> y el ticket de candy, escritos en la PC. Sin Swing y con tests</td></tr>
+            <tr><td><code>comun/</code></td><td><code>Tarea</code> (pedidos fuera del EDT), <code>Validacion</code> y <code>Campos</code> (formularios), <code>Fechas</code> (JCalendar y el cruce <code>Date</code>/<code>java.time</code>), <code>Colores</code>, <code>Tabla</code>, <code>MapaButacas</code>, <code>SelectorDias</code></td></tr>
+            <tr><td><code>pantallas/</code></td><td>Login, la ventana con el menú (sus entradas son el enum <code>Destino</code>) y una clase por pantalla</td></tr>
           </tbody>
         </table>
       </div>
       <p>
         Los casos de uso del encargado y del acomodador (alta de películas y salas, programación, cobro, candy,
         arqueo, informes y control de acceso, CU-18) se hacen desde estas pantallas. Ninguna anticipa una regla:
-        se manda el pedido y se muestra el mensaje del backend tal cual.
+        se manda el pedido y se muestra el mensaje del backend tal cual. Lo que el cliente sí necesita saber del
+        negocio lo lee de los catálogos, no de nombres fijos: qué tarifa se acredita en la puerta sale de
+        <code>requiereAcreditacion</code> de <code>/api/tarifas</code>, y qué medio va por checkout, de
+        <code>requiereAutorizacion</code> de <code>/api/medios-pago</code>.
+      </p>
+      <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
+      <p>
+        Antes de mandar un formulario, Swing revisa dos cosas y nada más: que estén los campos
+        <strong>obligatorios</strong> (marcados con <code>*</code>) y que lo tipeado tenga <strong>formato</strong>
+        (un número donde va un número, <code>8,10,12</code> en butacas por fila, <code>A1</code> en un código de
+        butaca, <code>HH:mm</code> en una hora). Eso no es una regla del cine: es un pedido mal armado. Antes viajaba
+        igual, convertido en <code>null</code>, y el resultado era engañoso: <code>abc</code> en el precio respondía
+        «El precio es obligatorio», y la <code>x</code> de <code>8,x,12</code> se descartaba en silencio.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Cliente (Swing)</th><th>Backend</th></tr></thead>
+          <tbody>
+            <tr><td>Qué valida</td><td>Obligatoriedad y formato de lo tipeado</td><td>Todas las reglas: precio mayor a cero, rangos, superposición (R3), 3D (R8), R1 a R19</td></tr>
+            <tr><td>Cuándo</td><td>Al tipear (los campos numéricos no aceptan letras) y al enviar</td><td>Al recibir el pedido</td></tr>
+            <tr><td>Cómo avisa</td><td>No manda nada: marca el campo con el borde de error de FlatLaf, escribe el motivo junto al formulario y deja el foco en el primero</td><td><code>400</code> con el mensaje, que el formulario muestra tal cual en el mismo lugar; si nombra un campo («El precio…»), lo marca</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El mecanismo es uno solo, <code>comun/Validacion</code>, y lo usan todos los formularios: películas, salas,
+        funciones, grilla, planificador, promociones, candy (carta, combos, edición y venta), cobro, importador,
+        Puerta, declaración jurada y el login. Un precio negativo o cero pasa el cliente a propósito: es un número
+        bien escrito, y si vale lo decide el gestor. Duplicar esa regla en Swing daría dos lugares que se pueden
+        contradecir.
       </p>
       <ul>
         <li><strong>FlatLaf oscuro</strong> por defecto (<code>-Dcine.tema=claro</code> para el claro). Los colores que no salen del tema tienen su par claro y oscuro en <code>Colores</code>.</li>

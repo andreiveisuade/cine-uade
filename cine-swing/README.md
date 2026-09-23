@@ -31,9 +31,23 @@ elija el encargado: el backend solo da los números.
 | Paquete | Qué hay |
 |---|---|
 | `api/` | `ApiHttp`, el equivalente de `api-http.js`: una operación por endpoint de `cine-frontend/API.md`. `ErrorApi` lleva el mensaje del backend. `dto/`, un record por forma de JSON |
-| `informes/` | Lo que se escribe en la PC: el borderó en `.txt` (mismo formato que generaba el backend) y la declaración jurada en `.csv`. Sin Swing, con tests |
-| `comun/` | `Tarea` (pedidos fuera del EDT), `Fechas` (el único cruce `Date` ↔ `java.time`), `Tabla`, `Etiquetas`, `Formato` y piezas de pantalla |
-| `pantallas/` | Login, la ventana con el menú y una clase por pantalla |
+| `informes/` | Lo que se escribe en la PC: el borderó en `.txt` (mismo formato que generaba el backend), la declaración jurada en `.csv` y el ticket de candy. Sin Swing, con tests |
+| `comun/` | `Tarea` (pedidos fuera del EDT), `Validacion` y `Campos` (formularios), `Fechas` (el único cruce `Date` ↔ `java.time`), `Tabla`, `Etiquetas`, `Formato`, `SelectorDias` y piezas de pantalla |
+| `pantallas/` | Login, la ventana con el menú (sus entradas son el enum `Destino`) y una clase por pantalla |
+
+## Formularios: qué valida el cliente
+
+Antes de mandar, cada formulario pasa por `comun/Validacion`, que mira solo **formato y
+obligatoriedad**: los campos con `*` no pueden quedar vacíos (un `JDateChooser` vacío cuenta como
+faltante), los numéricos no dejan tipear letras (`Campos.soloEntero`, `soloDecimal`,
+`soloListaDeEnteros`) y una lista como `8,x,12` se rechaza nombrando la `x` en vez de descartarla.
+Si algo falla no se manda nada: el campo queda con el borde de error de FlatLaf, el motivo aparece
+junto al formulario y el foco va al primero.
+
+Las **reglas de negocio** (precio mayor a cero, rangos, superposición, R1 a R19) no se anticipan:
+las decide el backend y su mensaje se muestra tal cual en el mismo lugar, marcando el campo si el
+mensaje lo nombra. Tampoco se decide nada por el nombre de una constante: qué tarifa pide carnet y
+qué medio va por checkout salen de `requiereAcreditacion` y `requiereAutorizacion` de los catálogos.
 
 Un 401 fuera del login cierra el panel y vuelve al login. Las credenciales viven en memoria
 y se van al cerrar la app.

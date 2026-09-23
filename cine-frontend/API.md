@@ -40,9 +40,11 @@ no tiene permiso para esta operación».
 | `GET /api/medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
 | `GET /api/tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
 
-La web del cliente anticipa con ellos el «traé el carnet» (`requiereAcreditacion`); Swing, R11
-(`requiereAutorizacion`) y el `multiplicador` de cada tipo de sala. R8 (`soportaTresD`) no se
-anticipa: la valida el backend al dar de alta la función.
+La web del cliente anticipa con ellos el «traé el carnet» (`requiereAcreditacion`). Swing usa
+`requiereAcreditacion` para el «pedir carnet» de Puerta y del cobro, `requiereAutorizacion` para elegir
+entre cobro en caja y checkout (que el código haga falta, R11, lo sigue rechazando el backend) y el
+`multiplicador` de cada tipo de sala. R8 (`soportaTresD`) no se anticipa: la valida el backend al dar
+de alta la función. Ningún cliente decide por el nombre de una constante lo que dice un catálogo.
 
 ---
 
@@ -171,7 +173,7 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 | `PUT /api/salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Butacas no editables; sin limpieza conserva la anterior; tipo fijo si tiene funciones (`400`) |
 | `DELETE /api/salas/{id}` | `400` si tiene funciones |
 | `PUT /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
-| `GET /api/funciones` | Con `pelicula` y `sala` embebidas |
+| `GET /api/funciones?peliculaId=&salaId=&desde=&hasta=` | Con `pelicula` y `sala` embebidas, por `inicio`. Filtros opcionales; `desde` y `hasta` son días (`AAAA-MM-DD`) y `hasta` incluye todo ese día |
 | `POST /api/funciones` | R3 superposición, R8 3D en sala que no soporta |
 | `DELETE /api/funciones/{id}` | `400` si tiene reservas, aun canceladas (R12: son historial) |
 
