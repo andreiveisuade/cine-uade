@@ -11,7 +11,7 @@ import ar.uade.cine.model.candy.ItemCombo;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.repository.ProductoRepository;
+import ar.uade.cine.repository.candy.ProductoRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 

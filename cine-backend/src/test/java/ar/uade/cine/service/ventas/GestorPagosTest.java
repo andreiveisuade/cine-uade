@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
 
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Proyeccion;

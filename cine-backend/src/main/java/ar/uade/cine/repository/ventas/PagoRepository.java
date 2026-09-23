@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.ventas;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

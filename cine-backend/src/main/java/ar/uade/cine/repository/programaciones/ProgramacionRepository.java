@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.programaciones;
 
 import java.util.List;
 

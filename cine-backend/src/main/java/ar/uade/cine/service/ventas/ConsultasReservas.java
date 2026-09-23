@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 
 @Service
 @Transactional(readOnly = true)

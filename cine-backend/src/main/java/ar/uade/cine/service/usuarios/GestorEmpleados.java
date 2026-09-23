@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.repository.EmpleadoRepository;
+import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service

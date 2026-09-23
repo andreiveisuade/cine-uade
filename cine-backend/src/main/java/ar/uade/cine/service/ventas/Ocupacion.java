@@ -21,10 +21,10 @@ import ar.uade.cine.model.salas.EstadoAsiento;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.AsientoRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 

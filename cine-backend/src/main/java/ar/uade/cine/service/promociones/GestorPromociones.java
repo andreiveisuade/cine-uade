@@ -16,7 +16,7 @@ import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.PromocionRepository;
+import ar.uade.cine.repository.promociones.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;

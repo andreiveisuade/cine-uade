@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.candy;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

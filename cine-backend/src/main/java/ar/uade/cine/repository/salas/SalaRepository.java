@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.salas;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

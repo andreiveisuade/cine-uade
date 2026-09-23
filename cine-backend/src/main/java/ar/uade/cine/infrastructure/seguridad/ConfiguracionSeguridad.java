@@ -26,7 +26,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.repository.EmpleadoRepository;
+import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

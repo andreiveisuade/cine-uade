@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service

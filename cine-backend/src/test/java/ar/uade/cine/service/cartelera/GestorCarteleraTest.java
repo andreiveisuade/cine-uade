@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.ProgramacionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
-import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.cartelera.Clasificacion;

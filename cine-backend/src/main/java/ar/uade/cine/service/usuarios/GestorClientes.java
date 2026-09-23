@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.repository.ClienteRepository;
-import ar.uade.cine.repository.CompraCandyRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
+import ar.uade.cine.repository.candy.CompraCandyRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 

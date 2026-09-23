@@ -15,7 +15,7 @@ import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
-import ar.uade.cine.repository.ImportacionRepository;
+import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 // Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción

@@ -22,9 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Funcion;

@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.dinero;
 
 import java.math.BigDecimal;
 

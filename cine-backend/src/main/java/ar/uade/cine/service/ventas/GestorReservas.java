@@ -23,9 +23,9 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.RecursoNoEncontrado;
 

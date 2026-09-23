@@ -1,4 +1,4 @@
-package ar.uade.cine.repository;
+package ar.uade.cine.repository.funciones;
 
 import java.time.LocalDateTime;
 import java.util.List;

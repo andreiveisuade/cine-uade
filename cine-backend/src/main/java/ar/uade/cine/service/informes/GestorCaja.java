@@ -13,9 +13,9 @@ import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.CompraCandyRepository;
-import ar.uade.cine.repository.PagoRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.candy.CompraCandyRepository;
+import ar.uade.cine.repository.ventas.PagoRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
 @Service

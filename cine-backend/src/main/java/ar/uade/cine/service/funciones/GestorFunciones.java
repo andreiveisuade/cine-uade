@@ -17,10 +17,10 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Sala;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
-import ar.uade.cine.repository.ReservaRepository;
-import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.RecursoNoEncontrado;
 

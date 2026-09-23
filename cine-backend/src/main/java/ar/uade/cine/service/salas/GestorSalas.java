@@ -13,9 +13,9 @@ import ar.uade.cine.model.salas.EstadoAsiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 

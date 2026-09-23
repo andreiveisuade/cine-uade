@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
