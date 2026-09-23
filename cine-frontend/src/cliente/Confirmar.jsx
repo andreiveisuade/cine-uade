@@ -8,7 +8,7 @@ import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
-import { catalogoTarifas, clienteRecordado, DatosFuncion, precioConTarifa, recordarCliente, resumenCompra,
+import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
          SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
          useRenovarBloqueo } from "./compra.jsx";
 
@@ -22,6 +22,7 @@ export function Confirmar() {
   const [nombre, setNombre] = useState(recordado?.nombre || "");
   const [email, setEmail] = useState(recordado?.email || "");
   const [error, setError] = useState(null);
+  const [faltan, setFaltan] = useState({});
   const [enviando, setEnviando] = useState(false);
   // La reserva ya está hecha y se va al ticket: vaciar la selección no es "se perdió".
   const reservada = useRef(false);
@@ -43,10 +44,17 @@ export function Confirmar() {
 
   async function confirmar(evento) {
     evento.preventDefault();
+    const vacios = faltantes({
+      nombre: { valor: nombre, etiqueta: "tu nombre" },
+      email: { valor: email, etiqueta: "tu email" },
+    });
+    setFaltan(vacios);
+    if (Object.keys(vacios).length) return;
+    setError(null);
     setEnviando(true);
     try {
       const reserva = await api.crearReserva({
-        funcionId: funcion.id, nombre, email, butacas,
+        funcionId: funcion.id, nombre: nombre.trim(), email: email.trim(), butacas,
         // La misma sesión que bloqueó: si no, el propio bloqueo rebotaría la reserva.
         sesion: sesionDeCompra(),
       });
@@ -79,8 +87,10 @@ export function Confirmar() {
             <Title order={2} size="h4" mb="sm">Tus datos</Title>
             <form onSubmit={confirmar}>
               <Stack gap="sm">
-                <TextInput label="Nombre" required value={nombre} onChange={(e) => setNombre(e.currentTarget.value)} />
-                <TextInput label="Email" type="email" required value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+                <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
+                  onChange={(e) => setNombre(e.currentTarget.value)} />
+                <TextInput label="Email" type="email" required value={email} error={faltan.email}
+                  onChange={(e) => setEmail(e.currentTarget.value)} />
                 <Button type="submit" loading={enviando}>Confirmar reserva</Button>
                 {error && <ErrorCaja>{error}</ErrorCaja>}
                 {!recordado && (

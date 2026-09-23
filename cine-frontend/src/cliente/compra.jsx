@@ -106,6 +106,18 @@ export function SelectorTarifa({ valor, alCambiar }) {
   );
 }
 
+/**
+ * Los campos que quedaron vacíos o solo con espacios, con el texto que va debajo de cada uno. `required` del navegador
+ * frena el vacío pero no "   ", que llegaría al backend como un nombre en blanco.
+ */
+export function faltantes(campos) {
+  return Object.fromEntries(
+    Object.entries(campos)
+      .filter(([, { valor }]) => !valor.trim())
+      .map(([clave, { etiqueta }]) => [clave, `Completá ${etiqueta}`]),
+  );
+}
+
 const CLAVE_CLIENTE = "cine.cliente";
 
 export function clienteRecordado() {

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import * as api from "../api/api-http.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja } from "../componentes/Estado.jsx";
-import { clienteRecordado, olvidarCliente, recordarCliente } from "./compra.jsx";
+import { clienteRecordado, faltantes, olvidarCliente, recordarCliente } from "./compra.jsx";
 
 export function Registro() {
   const navegar = useNavigate();
@@ -13,11 +13,19 @@ export function Registro() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
+  const [faltan, setFaltan] = useState({});
 
   async function registrar(evento) {
     evento.preventDefault();
+    const vacios = faltantes({
+      nombre: { valor: nombre, etiqueta: "tu nombre" },
+      email: { valor: email, etiqueta: "tu email" },
+    });
+    setFaltan(vacios);
+    if (Object.keys(vacios).length) return;
+    setError(null);
     try {
-      const cliente = await api.registrarCliente({ nombre, email });
+      const cliente = await api.registrarCliente({ nombre: nombre.trim(), email: email.trim() });
       recordarCliente(cliente);
       avisar(`Listo, ${cliente.nombre}`);
       navegar("/");
@@ -43,8 +51,10 @@ export function Registro() {
       <Paper withBorder p="md">
         <form onSubmit={registrar}>
           <Stack gap="sm">
-            <TextInput label="Nombre" required value={nombre} onChange={(e) => setNombre(e.currentTarget.value)} />
-            <TextInput label="Email" type="email" required value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+            <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
+              onChange={(e) => setNombre(e.currentTarget.value)} />
+            <TextInput label="Email" type="email" required value={email} error={faltan.email}
+              onChange={(e) => setEmail(e.currentTarget.value)} />
             <Button type="submit">Registrarme</Button>
             {error && <ErrorCaja>{error}</ErrorCaja>}
           </Stack>
