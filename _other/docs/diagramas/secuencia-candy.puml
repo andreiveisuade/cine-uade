@@ -9,7 +9,7 @@ participant "CandyController" as UI
 participant "GestorCandy" as Gestor
 participant "GestorProductos" as Carta
 participant "ProductoRepository" as Productos <<interface>>
-participant "CompraCandyRepository" as DAO <<interface>>
+participant "CompraCandyRepository" as Repo <<interface>>
 participant "GeneradorTicketCandy" as Ticket <<interface>>
 
 == Antes: el administrador arma la promocion ==
@@ -24,7 +24,7 @@ deactivate Productos
 alt el combo cuesta igual o mas que sus componentes
   Carta --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
 else 5500 < 6500
-  Carta -> Productos : guardar(combo con sus componentes)
+  Carta -> Productos : save(combo con sus componentes)
   Carta --> UI : combo
 end
 deactivate Carta
@@ -56,10 +56,10 @@ else todo en orden
     reserva. Cada ItemCompra lo congela.
   end note
 
-  Gestor -> DAO : guardar(compra)
-  activate DAO
-  DAO --> Gestor : compra con id asignado
-  deactivate DAO
+  Gestor -> Repo : save(compra)
+  activate Repo
+  Repo --> Gestor : compra con id asignado
+  deactivate Repo
 
   Gestor -> Carta : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
   activate Carta
@@ -76,7 +76,7 @@ end
 deactivate Gestor
 deactivate UI
 
-note over DAO, Ticket
+note over Repo, Ticket
   No hay estados ni cobro posterior: en el mostrador se paga
   en el acto, asi que la compra nace pagada y lleva encima
   el medio. Reservar y cobrar despues es solo para las butacas.
