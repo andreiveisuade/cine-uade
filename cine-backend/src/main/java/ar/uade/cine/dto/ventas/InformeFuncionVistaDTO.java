@@ -1,12 +1,8 @@
 package ar.uade.cine.dto.ventas;
 
 /**
- * Cuánto recaudó una función entre sus dos cajas. {@code boleteria} es el mismo borderó que
- * devuelve su propio endpoint —no una versión recortada— justamente para que los dos
- * informes no puedan decir números distintos de lo mismo.
- *
- * <p>{@code candy} es solo el que se pudo atribuir a esta función: el del mostrador no
- * dice a qué función va quien lo compró y se cuenta en el arqueo del día.
+ * {@code boleteria} es el mismo borderó de su endpoint, para que los dos informes no
+ * difieran. {@code candy} es solo el atribuible a la función; el de mostrador va al arqueo.
  */
 public record InformeFuncionVistaDTO(BorderoVistaDTO boleteria, int comprasCandy, double candy,
                                   double total) {

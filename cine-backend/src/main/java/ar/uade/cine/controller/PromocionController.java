@@ -30,11 +30,7 @@ import ar.uade.cine.service.promociones.GestorPromociones;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-/**
- * CU-17: el ABM de promociones del administrador. Es lo que justifica que Promocion sea
- * una entidad y no tres constantes en el código: si el cine no las puede cargar desde el
- * sistema, no hacía falta modelarla.
- */
+/** CU-17: el ABM de promociones del administrador. */
 @Tag(name = "Promociones", description = "Los descuentos que el cine carga desde el panel")
 @RestController
 public class PromocionController {
@@ -86,10 +82,7 @@ public class PromocionController {
         return vistas.promocion(promocion);
     }
 
-    /**
-     * No hay DELETE: una promoción usada en un cobro tiene que seguir existiendo para poder
-     * explicar por qué se cobró ese monto. Se da de baja, no se borra.
-     */
+    /** No hay DELETE: una promoción usada tiene que seguir explicando el monto cobrado. */
     @Operation(summary = "Dar de baja una promoción sin borrarla")
     @PostMapping("/api/promociones/{id}/baja")
     public PromocionVistaDTO desactivar(@PathVariable int id) {

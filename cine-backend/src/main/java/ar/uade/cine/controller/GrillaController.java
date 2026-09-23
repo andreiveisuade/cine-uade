@@ -32,12 +32,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * El armado automático de la grilla semanal.
- *
- * <p>Dos endpoints para una sola operación, igual que las programaciones:
- * {@code /propuesta} devuelve exactamente lo mismo que devolvería el alta, sin escribir. El
- * encargado puede probar seis títulos contra diez, comparar los indicadores y recién ahí
- * confirmar. Como el planificador es determinista, lo que ve es lo que se va a crear.
+ * El armado automático de la grilla semanal. {@code /propuesta} devuelve lo mismo que el
+ * alta sin escribir; como el planificador es determinista, lo que se ve es lo que se crea.
  */
 @Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
@@ -51,10 +47,7 @@ public class GrillaController {
         this.reloj = reloj;
     }
 
-    /**
-     * Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que el
-     * alta, y meter ocho campos en la query string sería ilegible.
-     */
+    /** Una consulta como POST: lleva el mismo cuerpo que el alta, ilegible en la query. */
     @Operation(summary = "Proponer una semana entera de funciones, sin escribir nada")
     @PostMapping("/api/grilla/propuesta")
     public PropuestaGrillaDTO proponer(@RequestBody PedidoGrillaDTO pedido) {
@@ -69,15 +62,8 @@ public class GrillaController {
     }
 
     /**
-     * Los defaults viven acá y no en el planificador porque son una comodidad de la
-     * pantalla, no una regla: un cine que abra a las 10 solo tiene que mandar el campo.
-     *
-     * <p>El precio es la excepción y no tiene default a propósito. Los otros siete son
-     * convenciones razonables —una semana, de 14 a 24, ocho títulos—, pero cuánto sale la
-     * entrada es una decisión comercial que el sistema no puede tomar por el cine: si
-     * inventara un número y el encargado no lo mirara, se venderían entradas a un precio que
-     * no decidió nadie. Comprobar que un campo obligatorio del pedido esté presente es
-     * traducción, no una regla de negocio.
+     * Los defaults son comodidad de la pantalla, no reglas, y por eso viven acá. El precio no
+     * tiene default: es una decisión comercial que el sistema no puede tomar por el cine.
      */
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         if (pedido.precio() == null) {
@@ -105,11 +91,7 @@ public class GrillaController {
         return valor == null || valor.isBlank() ? porDefecto : Parseo.hora(valor, queEs);
     }
 
-    /**
-     * @param creadas si las funciones se escribieron de verdad. El front necesita distinguir
-     *                "así quedaría" de "así quedó", y contar los pases no alcanza: son el
-     *                mismo número en los dos casos
-     */
+    /** @param creadas distingue "así quedaría" de "así quedó": la cantidad de pases es la misma */
     private static PropuestaGrillaDTO propuesta(PropuestaGrilla propuesta, boolean creadas) {
         Map<Integer, Integer> pasesPorPelicula = new LinkedHashMap<>();
         propuesta.pases().forEach(p -> pasesPorPelicula.merge(p.peliculaId(), 1, Integer::sum));

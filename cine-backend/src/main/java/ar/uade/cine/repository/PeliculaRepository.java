@@ -8,16 +8,12 @@ import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
 
 /**
- * El catálogo de películas.
- *
- * <p>Declara solo las preguntas que se contestan con una condición entera: la búsqueda
- * del encargado —título, género y publicada, todos opcionales— la resuelve
- * {@code GestorCartelera} sobre la lista, porque tres condiciones combinables serían
- * ocho consultas o una con tres OR que no se puede leer.
+ * La búsqueda con filtros opcionales no está acá: la resuelve {@code GestorCartelera} sobre
+ * la lista, porque tres condiciones combinables serían ocho consultas.
  */
 public interface PeliculaRepository extends JpaRepository<Pelicula, Integer> {
 
-    /** R1: el título es único sin distinguir mayúsculas. Al editar se excluye la propia. */
+    /** R1. Al editar se excluye la propia. */
     boolean existsByTituloIgnoreCaseAndIdNot(String titulo, int id);
 
     List<Pelicula> findByEstadoRevision(EstadoRevision estado);

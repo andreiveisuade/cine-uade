@@ -35,13 +35,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Reservar, consultar y cancelar. El cliente no inicia sesión: se identifica con su
- * email, y si es la primera vez que compra se lo da de alta en el momento.
- *
- * <p>El bloqueo de butacas cuelga de la función porque son sus butacas las que se toman,
- * pero se atiende acá y no en {@link FuncionController}: es la primera etapa del
- * circuito de compra, no una operación sobre la programación. Un controlador agrupa por lo
- * que se pide, no por el prefijo de la URL.
+ * El circuito de compra. El cliente no inicia sesión: se identifica con su email y se lo da
+ * de alta en la primera compra. El bloqueo de butacas vive acá y no en
+ * {@link FuncionController} porque es la primera etapa de la compra.
  */
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
@@ -60,13 +56,7 @@ public class ReservaController {
         this.vistas = vistas;
     }
 
-    /**
-     * Sin email es el listado del encargado; con email, las reservas de ese cliente.
-     *
-     * <p>Que el criterio viaje en la URL y no se resuelva en la pantalla tiene dos
-     * consecuencias que se pagan solas: el filtro se puede probar con un curl, y una
-     * búsqueda se puede compartir pegando el link.
-     */
+    /** Sin email es el listado del encargado; con email, las reservas de ese cliente. */
     @Operation(summary = "Las reservas del cine; con email, las de ese cliente")
     @GetMapping("/api/reservas")
     public List<ReservaVistaDTO> listar(@RequestParam(required = false) String email,
@@ -77,16 +67,12 @@ public class ReservaController {
                 ? reservas.buscar(new CriteriosReserva(
                         Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
                         Parseo.diaOpcional(dia, "el día"), q))
-                // `email` es aparte: es el buscador del cliente en la web pública, que pide
-                // la coincidencia exacta y no la parcial de `q`.
+                // `email` pide coincidencia exacta, no la parcial de `q`.
                 : clientes.buscarPorEmail(email.trim())
                         .map(c -> reservas.listarPorCliente(c.getId()))
-                        // Que el email no exista y que no tenga reservas son lo mismo para
-                        // quien pregunta: lista vacía, no un 404.
+                        // Email inexistente y sin reservas son lo mismo: lista vacía, no 404.
                         .orElse(List.of());
-        // vistas.reservas() y no un map de vistas.reserva(): el segundo pide la funcion, la
-        // sala, la pelicula, el cliente y el pago de cada fila por separado, o sea cinco
-        // consultas por reserva listada.
+        // vistas.reservas() y no un map de vistas.reserva(): evita cinco consultas por fila.
         return vistas.reservas(lista.stream()
                 .sorted(Comparator.comparing(Reserva::getId).reversed())
                 .toList());
@@ -110,14 +96,9 @@ public class ReservaController {
     }
 
     /**
-     * La etapa de antes de la reserva: mientras alguien elige, sus butacas dejan de aparecer
-     * libres para el resto. Vence solo, así que cerrar la pestaña las devuelve a la venta sin
-     * que nadie avise.
-     *
-     * <p>Es POST y no PUT aunque sea idempotente porque no crea ni reemplaza un recurso con
-     * URL propia: no hay un {@code GET /api/funciones/1/bloqueos/xxx} que devuelva esto. Se
-     * manda la selección entera —y {@code butacas: []} para soltar todo— para que una sola
-     * llamada por click alcance para tomar, renovar y soltar.
+     * Mientras alguien elige, sus butacas dejan de aparecer libres; vence solo, así que cerrar
+     * la pestaña las devuelve a la venta. Se manda la selección entera ({@code []} suelta todo)
+     * para que una llamada por click alcance para tomar, renovar y soltar.
      */
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")
@@ -134,12 +115,8 @@ public class ReservaController {
     }
 
     /**
-     * CU-18: lo que llama el acomodador al escanear el QR. Va por código y no por id porque
-     * el código es lo que trae el QR y, como el cliente no inicia sesión, es la única
-     * credencial: con el id se entraría probando números.
-     *
-     * <p>Es POST y no GET porque no es una consulta: marca la entrada como usada, y
-     * repetirlo falla a propósito (R18).
+     * CU-18. Por código y no por id: el código es la única credencial del cliente, y con el
+     * id se entraría probando números. POST porque marca la entrada como usada (R18).
      */
     @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")
     @PostMapping("/api/acceso")

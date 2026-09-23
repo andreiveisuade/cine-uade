@@ -13,13 +13,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-/**
- * Llevás n, pagás m: el 2x1 de toda la vida.
- *
- * <p>Es la razón de que el descuento se modele como un monto sobre el conjunto. Las otras
- * dos se podrían haber escrito como un factor sobre cada butaca; esta no: "cada dos
- * entradas, una gratis" no existe a nivel de una entrada sola.
- */
+/** Llevás n, pagás m. Es la razón de que el descuento sea sobre el conjunto y no por butaca. */
 @Entity
 @DiscriminatorValue("NXM")
 public class PromocionNxM extends Promocion {
@@ -51,11 +45,7 @@ public class PromocionNxM extends Promocion {
         return TipoPromocion.NXM;
     }
 
-    /**
-     * Regala las más baratas, no las más caras: es lo que hace cualquier cine y lo que
-     * el cliente espera. Con cinco entradas y un 2x1 entran dos grupos completos —cuatro
-     * butacas— y la quinta se paga entera.
-     */
+    /** Regala las más baratas. Solo grupos completos: cinco entradas en un 2x1 regalan dos. */
     @Override
     public Dinero calcularDescuento(List<Entrada> entradas) {
         int grupos = entradas.size() / lleva;

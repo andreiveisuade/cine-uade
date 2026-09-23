@@ -18,13 +18,8 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * El cierre de caja de un día: cuánto entró, por qué medio, y por cuál de las dos cajas
- * —boletería y candy—. Es el corte <strong>por día</strong>, al lado de
- * {@link GestorInformes} que corta por función.
- *
- * <p>Antes el arqueo vivía en los gestores que cobran, y "cuánto entró hoy" obligaba a
- * preguntarle a dos y sumar afuera. Eran dos razones de cambio en la misma clase: cobrar
- * cambia cuando cambia cómo se cobra; el arqueo, cuando cambia qué se declara. Solo lee.
+ * Cierre de caja <strong>por día</strong>, boletería y candy; {@link GestorInformes} corta
+ * por función. Aparte de los gestores que cobran porque cambia por otro motivo. Solo lee.
  */
 @Service
 public class GestorCaja {
@@ -39,11 +34,9 @@ public class GestorCaja {
         this.compraCandyRepository = compraCandyRepository;
     }
 
-    /** El cierre de la boletería del día: total, entradas vendidas y reparto por medio de pago. */
     public Arqueo arqueoDe(LocalDate fecha) {
         List<Pago> delDia = pagoRepository.findByDia(fecha);
-        // El pago no guarda cuántas butacas se llevó —sería el dato en dos lados—; se
-        // traen las reservas de una vez y no una consulta por pago.
+        // El pago no guarda cuántas butacas se llevó; las reservas se traen de una vez.
         Map<Integer, Integer> entradasPorReserva = reservaRepository
                 .findAllById(delDia.stream().map(Pago::getReservaId).toList()).stream()
                 .collect(Collectors.toMap(Reserva::getId, Reserva::getCantidadEntradas));
@@ -62,10 +55,7 @@ public class GestorCaja {
         return new Arqueo(fecha, total, entradas, porMedio, delDia);
     }
 
-    /**
-     * Cuánto entró por el candy en el día, mostrador incluido. Aparte del arqueo de
-     * boletería: el borderó del INCAA solo mira entradas, y sumarlos obligaría a separarlos.
-     */
+    /** Mostrador incluido. Aparte del arqueo de boletería porque el borderó solo mira entradas. */
     public Dinero totalCandyDe(LocalDate fecha) {
         return Dinero.sumar(compraCandyRepository.findByDia(fecha).stream()
                 .map(CompraCandy::getTotal).toList());

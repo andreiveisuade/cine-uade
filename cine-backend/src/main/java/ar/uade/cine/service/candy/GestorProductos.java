@@ -14,12 +14,9 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.repository.ProductoRepository;
 
 /**
- * La carta del candy: qué se vende y a qué precio.
- *
- * <p>Separada de {@link GestorCandy}, que registra las ventas, porque cambian por motivos
- * distintos: la carta cuando el cine suma un producto, la venta cuando cambia cómo se
- * cobra. Es la única fuente de precios del candy: la venta le pregunta cuánto sale cada
- * cosa en vez de aceptar el precio que le manden.
+ * La carta del candy y única fuente de sus precios: la venta pregunta cuánto sale cada
+ * cosa en vez de aceptar el precio que le manden. Aparte de {@link GestorCandy} porque
+ * carta y venta cambian por motivos distintos.
  */
 @Service
 @Transactional
@@ -42,12 +39,8 @@ public class GestorProductos {
     }
 
     /**
-     * Arma la promoción: pochoclos + gaseosa a un precio menor que comprarlos por separado.
-     *
-     * <p>R14 es lo que hace que un combo sea una promoción y no un producto con nombre
-     * bonito: si costara igual o más que sus componentes sueltos, no habría motivo para
-     * ofrecerlo. Por eso se valida contra la lista de precios en vez de confiar en quien
-     * lo carga.
+     * R14: un combo tiene que salir menos que sus componentes sueltos, validado contra la
+     * lista de precios y no contra lo que diga quien lo carga.
      *
      * @param componentes id de producto a cantidad de unidades que trae el combo
      */
@@ -79,7 +72,6 @@ public class GestorProductos {
         return combo;
     }
 
-    /** La carta que ve el cliente. */
     public List<Producto> listarDisponibles() {
         return productoRepository.findByDisponibleTrue();
     }
@@ -92,7 +84,7 @@ public class GestorProductos {
         return productoRepository.findById(id);
     }
 
-    /** Sacar de la carta o reponer. No se borra: hay compras viejas que lo referencian. */
+    /** No se borra: hay compras viejas que lo referencian. */
     public void cambiarDisponibilidad(int productoId, boolean disponible) {
         Producto producto = buscarOFallar(productoId);
         producto.setDisponible(disponible);
@@ -100,12 +92,8 @@ public class GestorProductos {
     }
 
     /**
-     * Cambia nombre y precio. El tipo no se edita: un suelto no pasa a ser combo sin
-     * declarar qué trae, y los componentes de un combo se fijan al armarlo.
-     *
-     * <p>R14 se vuelve a mirar después del cambio, de los dos lados: si lo editado es un
-     * combo, tiene que seguir saliendo menos que sus componentes; si es un suelto, cada
-     * combo que lo trae tiene que seguir conviniendo con el precio nuevo.
+     * El tipo no se edita: los componentes de un combo se fijan al armarlo. R14 se vuelve
+     * a mirar de los dos lados: el combo editado y cada combo que trae el suelto editado.
      */
     public Producto editar(int productoId, String nombre, Dinero precio) {
         Producto producto = buscarOFallar(productoId);
@@ -140,7 +128,6 @@ public class GestorProductos {
                 .toList();
     }
 
-    /** Lo que necesita la venta: el producto o el error, nunca un Optional vacío. */
     public Producto buscarOFallar(int id) {
         return productoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el producto " + id));

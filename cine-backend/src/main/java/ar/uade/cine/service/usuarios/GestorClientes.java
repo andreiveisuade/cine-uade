@@ -11,11 +11,7 @@ import ar.uade.cine.repository.ClienteRepository;
 import ar.uade.cine.repository.CompraCandyRepository;
 import ar.uade.cine.repository.ReservaRepository;
 
-/**
- * Alta y baja de clientes. Depende de ReservaRepository y CompraCandyRepository además de ClienteRepository
- * solo para R12: antes de borrar hay que saber si el cliente tiene historial en cualquiera
- * de los dos circuitos de venta.
- */
+/** Alta y baja de clientes. Usa los repositorios de reservas y candy solo para R12. */
 @Service
 @Transactional
 public class GestorClientes {
@@ -30,7 +26,6 @@ public class GestorClientes {
         this.compraCandyRepository = compraCandyRepository;
     }
 
-    /** Devuelve el cliente ya con su id, para poder reservar a continuación. */
     public Cliente registrar(String nombre, String email) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
@@ -47,14 +42,9 @@ public class GestorClientes {
     }
 
     /**
-     * Reconoce al cliente por su email y, si es la primera vez que compra, lo da de alta
-     * en el momento.
-     *
-     * <p>Es una regla del negocio —comprar no exige registrarse antes— y no un atajo de
-     * quien la llama: si la resolviera cada interfaz por su cuenta, una podría exigir el
-     * registro previo y la otra no. Por eso el email se normaliza acá también: el que se
-     * busca y el que se guarda tienen que ser el mismo, o el segundo intento de compra
-     * daría de alta un cliente repetido.
+     * Comprar no exige registro: el email reconoce al cliente o lo da de alta. Es regla del
+     * negocio y vive acá para que todas las interfaces la apliquen igual. El email se
+     * normaliza para no duplicar al cliente en el segundo intento.
      */
     public Cliente identificar(String nombre, String email) {
         String buscado = email == null ? "" : email.trim();
@@ -69,16 +59,11 @@ public class GestorClientes {
         return clienteRepository.findById(id);
     }
 
-    /** El email identifica al cliente: es lo único que deja al comprar sin registrarse. */
     public Optional<Cliente> buscarPorEmail(String email) {
         return clienteRepository.findByEmail(email);
     }
 
-    /**
-     * R12: un cliente con historial no se borra. Tanto <code>reserva</code> como
-     * <code>compra_candy</code> lo referencian, así que borrarlo dejaría ventas huérfanas
-     * —y la baja fallaría igual, pero con un error de SQL en vez de un mensaje entendible.
-     */
+    /** R12: con historial no se borra; si no, fallaría la foreign key con un error de SQL. */
     public void eliminar(int id) {
         if (!clienteRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe el cliente " + id);

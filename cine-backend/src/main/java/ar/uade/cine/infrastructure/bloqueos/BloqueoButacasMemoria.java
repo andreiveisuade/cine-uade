@@ -8,23 +8,12 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 
 
 /**
- * Implementación en memoria: sirve para probar el bloqueo sin levantar Redis.
- *
- * <p>Es lo que hace que {@code mvn test} siga corriendo solo. Si la única implementación
- * fuera la de Redis, probar que dos personas no se llevan la misma butaca pediría un
- * servicio levantado, y una regla de negocio dejaría de poder probarse sin infraestructura.
- *
- * <p>El reloj entra por constructor por el mismo motivo que
- * {@link ar.uade.cine.model.ventas.Reserva#estaVencida(LocalDateTime)} recibe el
- * instante: probar que un bloqueo vence no puede costar esperar tres minutos.
- *
- * <p>Sirve además de un solo proceso, así que en el compose no reemplaza a Redis: dos
- * backends detrás del mismo nginx tendrían cada uno su mapa y se ofrecerían las mismas
- * butacas.
+ * Bloqueos en memoria, para que {@code mvn test} pruebe la regla sin Redis. El reloj entra
+ * por constructor para probar el vencimiento sin esperar. Sirve para un solo proceso: no
+ * reemplaza a Redis en el compose.
  */
 public class BloqueoButacasMemoria implements BloqueoButacas {
 
-    /** Quién tiene la butaca y hasta cuándo. */
     private record Bloqueo(String sesion, LocalDateTime vence) {
     }
 
@@ -63,8 +52,7 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
     public Map<Integer, String> bloqueadas(int funcionId) {
         String prefijo = funcionId + ":";
         Map<Integer, String> tomadas = new LinkedHashMap<>();
-        // Copia de las claves: vigente() borra las vencidas al pasar, y recorrer el mapa
-        // mientras se lo modifica revienta con ConcurrentModificationException.
+        // Copia de las claves: vigente() borra al pasar y daría ConcurrentModificationException.
         for (String clave : bloqueos.keySet().toArray(new String[0])) {
             if (!clave.startsWith(prefijo)) {
                 continue;
@@ -77,16 +65,12 @@ public class BloqueoButacasMemoria implements BloqueoButacas {
         return tomadas;
     }
 
-    /**
-     * El bloqueo si todavía no venció, y de paso lo saca si venció. Redis lo hace solo con
-     * el TTL de la clave; acá el vencimiento hay que mirarlo al leer, porque nadie más va a
-     * pasar a limpiar.
-     */
-    /** Deja el mapa vacío. Lo usan los tests: el adaptador es uno solo para toda la suite. */
+    /** Lo usan los tests: el adaptador es uno solo para toda la suite. */
     public void limpiar() {
         bloqueos.clear();
     }
 
+    /** Saca los vencidos al leer: acá no hay TTL como en Redis ni nadie que limpie. */
     private Bloqueo vigente(String clave) {
         Bloqueo bloqueo = bloqueos.get(clave);
         if (bloqueo == null) {

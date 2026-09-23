@@ -20,10 +20,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 /**
- * Una venta del candy. A diferencia de la reserva de butacas, no hay estados: en el
- * mostrador se paga en el acto, así que la compra ya nace cobrada y lleva encima con qué se
- * pagó. Por eso tampoco pasa por Pago, que existe para el circuito de reservar primero y
- * cobrar después.
+ * Venta del candy. Sin estados ni {@code Pago}: en el mostrador se paga en el acto, así que
+ * nace cobrada y cerrada, con el medio encima.
  */
 @Entity
 @Table(name = "compra_candy")
@@ -33,19 +31,11 @@ public class CompraCandy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    /**
-     * Quién compró, o {@code null} si la venta fue de mostrador y nadie se identificó: pedir
-     * el nombre para vender pochoclos no tiene sentido.
-     */
+    /** {@code null} en mostrador: no se pide el nombre para vender pochoclos. */
     @Column(name = "cliente_id")
     private Integer clienteId;
 
-    /**
-     * La reserva a la que se le agregó esta compra, o {@code null} si fue de mostrador. Es el
-     * <em>«¿desea agregar pochoclos?»</em> que aparece después de comprar la entrada por la
-     * web: de ahí sale el cliente sin volver a pedírselo, permite retirar mostrando el mismo
-     * QR de la entrada, y le da al arqueo cuánto vende el upsell contra el mostrador.
-     */
+    /** El «¿agregar pochoclos?» tras comprar la entrada: se retira con el mismo QR. {@code null} en mostrador. */
     @Column(name = "reserva_id")
     private Integer reservaId;
 
@@ -54,14 +44,9 @@ public class CompraCandy {
     @Enumerated(EnumType.STRING)
     private MedioPago medio;
 
-    /** Código del procesador. Vacío cuando se pagó en efectivo. */
+    /** Vacío en efectivo. */
     private String codigoAutorizacion;
 
-    /**
-     * Qué se llevó. Se fijan al vender y no cambian: en el mostrador se paga en el acto, así
-     * que la compra nace cerrada. Es un agregado, igual que la reserva con sus entradas: los
-     * ítems no existen sin su compra, y por eso van con cascade y orphanRemoval.
-     */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "compra_id", nullable = false)
     private List<ItemCompra> items = new ArrayList<>();
@@ -103,17 +88,15 @@ public class CompraCandy {
         return codigoAutorizacion;
     }
 
-    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     public List<ItemCompra> getItems() {
         return new ArrayList<>(items);
     }
 
-    /** Derivado de los items: no se guarda por separado. */
     public Dinero getTotal() {
         return Dinero.sumar(items.stream().map(ItemCompra::getSubtotal).toList());
     }
 
-    /** Lo que el cliente se ahorró por los combos. Va en el ticket, no se guarda. */
+    /** Ahorro por combos, para el ticket. */
     public Dinero getAhorro() {
         return Dinero.sumar(items.stream().map(ItemCompra::getAhorro).toList());
     }

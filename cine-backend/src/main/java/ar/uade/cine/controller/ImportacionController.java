@@ -21,16 +21,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Pedir cartelera nueva desde el panel.
- *
- * <p>El POST tarda lo que tarda la corrida —diez, quince segundos— y contesta cuando
- * terminó. No devuelve 202 con un id para ir a preguntar después: eso obligaría al navegador
- * a repreguntar cada dos segundos, o sea a hacer treinta pedidos para enterarse de algo que
- * este puede contar de una. nginx tiene un timeout más largo para esta ruta justamente por
- * eso.
- *
- * <p>No hay {@code /{id}}: una importación no tiene pantalla propia. Se la ve en el
- * historial, que es donde tiene sentido —al lado de las anteriores— y de a veinte.
+ * Pedir cartelera nueva desde el panel. El POST contesta cuando termina la corrida (10-15 s)
+ * en vez de un 202 que obligue al navegador a repreguntar; nginx tiene un timeout más largo
+ * para esta ruta.
  */
 @Tag(name = "Importación", description = "La cartelera que baja de TMDB")
 @RestController
@@ -56,12 +49,8 @@ public class ImportacionController {
     }
 
     /**
-     * POST y no GET aunque parezca una consulta: gasta llamadas a TMDB y deja películas en
-     * el buzón. Es el mismo criterio que /api/acceso.
-     *
-     * <p>El cuerpo es opcional —{@code required = false}— porque «traeme cartelera» es un
-     * pedido completo y el default de páginas lo pone el gestor. Sin eso, un POST vacío
-     * moriría en el parseo del JSON y el error saldría con otra forma que la del contrato.
+     * POST porque gasta llamadas a TMDB y deja películas en el buzón. El cuerpo es opcional:
+     * el default de páginas lo pone el gestor.
      */
     @Operation(summary = "Traer cartelera de TMDB. Tarda: contesta cuando terminó")
     @PostMapping("/api/importaciones")

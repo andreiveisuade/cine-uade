@@ -31,9 +31,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * ABM de salas y estado de las butacas. La distribución llega como lista —[8, 10, 12]
- * es fila A con 8, B con 10 y C con 12— y las butacas que no son estándar vienen por
- * código en tres listas, que es como el gestor espera el mapa de especiales.
+ * ABM de salas y estado de las butacas. La distribución llega como lista ([8, 10, 12] es
+ * fila A con 8, B con 10, C con 12) y las butacas especiales por código en tres listas.
  */
 @Tag(name = "Salas", description = "Las salas del cine y el estado de cada butaca")
 @RestController
@@ -63,8 +62,7 @@ public class SalaController {
     @PostMapping("/api/salas")
     @ResponseStatus(HttpStatus.CREATED)
     public SalaVistaDTO agregar(@RequestBody PedidoSalaDTO pedido) {
-        // Sin minutosLimpieza queda el default de la sala: el ABM viejo del front no lo
-        // manda, y omitirlo tiene que seguir siendo un alta válida.
+        // minutosLimpieza es opcional: sin él queda el default de la sala.
         Sala sala = salas.agregar(pedido.nombre(),
                 pedido.tipo() == null
                         ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
@@ -94,10 +92,7 @@ public class SalaController {
         salas.eliminar(id);
     }
 
-    /**
-     * Una butaca rota deja de venderse en todas las funciones, presentes y futuras: por eso
-     * el estado es del asiento y no de la reserva (R9).
-     */
+    /** R9: fuera de servicio es del asiento, así que vale para todas las funciones. */
     @Operation(summary = "Marcar una butaca fuera de servicio, o reponerla")
     @PutMapping("/api/salas/{salaId}/asientos/{codigo}")
     public SalaVistaDTO cambiarEstado(@PathVariable int salaId, @PathVariable String codigo,
@@ -118,7 +113,6 @@ public class SalaController {
         return salas.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la sala " + id));
     }
 
-    /** Cada butaca es estándar salvo que su código esté en alguna de las tres listas. */
     private static Map<String, TipoAsiento> especiales(PedidoSalaDTO pedido) {
         Map<String, TipoAsiento> especiales = new HashMap<>();
         marcar(especiales, pedido.codigosVip(), TipoAsiento.VIP);

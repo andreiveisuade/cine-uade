@@ -1,9 +1,6 @@
 package ar.uade.cine.model.cartelera;
 
-/**
- * Clasificación por edad. Guarda la edad mínima para que la validación al vender —cuando
- * se implemente— no tenga que traducir la etiqueta a un número con un switch.
- */
+/** Clasificación por edad, con la edad mínima para no traducir la etiqueta con un switch. */
 public enum Clasificacion {
 
     ATP(0),
@@ -25,7 +22,7 @@ public enum Clasificacion {
         return edadMinima == 0 ? "ATP" : "+" + edadMinima;
     }
 
-    /** Para mostrarla. Lo que se persiste es name(), que no cambia. */
+    /** Lo que se persiste es name(), que no cambia. */
     @Override
     public String toString() {
         return getEtiqueta();

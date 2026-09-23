@@ -15,15 +15,12 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Una butaca vendida dentro de una reserva. No se consulta sola: vive con su reserva.
- *
- * <p>El asiento entra como {@code @ManyToOne}, a diferencia del resto del dominio: cada
- * vez que se lee una entrada hace falta el código de la butaca ("B7") para el ticket.
+ * Butaca vendida dentro de una reserva. El asiento va como {@code @ManyToOne}, a diferencia
+ * del resto del dominio, porque cada lectura necesita su código ("B7") para el ticket.
  */
 @Entity
 @Table(uniqueConstraints = {
-        // R4: lo que de verdad impide vender la misma butaca dos veces en la misma función.
-        // Va acá además del schema para que los tests sobre H2 también lo tengan.
+        // R4: impide vender la misma butaca dos veces por función. Acá también para H2.
         @UniqueConstraint(columnNames = {"funcion_id", "asiento_id"}),
         @UniqueConstraint(columnNames = {"reserva_id", "asiento_id"})
 })
@@ -38,21 +35,17 @@ public class Entrada {
     private Asiento asiento;
 
     /**
-     * La función de la reserva, copiada acá para que exista el {@code UNIQUE (funcion_id,
-     * asiento_id)}. Se pone en NULL al liberar (R6): la butaca vuelve a la venta y la
-     * entrada sigue existiendo para contar qué tenía la reserva.
+     * Copiada de la reserva para el UNIQUE de R4. NULL al liberar (R6): la butaca vuelve a
+     * la venta y la entrada queda como registro.
      */
     @Column(name = "funcion_id")
     private Integer funcionId;
 
-    /** Por persona, y por eso acá y no en la reserva: en una de cuatro puede haber dos generales y un jubilado. */
+    /** Por persona y no por reserva: en una pueden ir generales y jubilados. */
     @Enumerated(EnumType.STRING)
     private TipoTarifa tarifa;
 
-    /**
-     * El precio de lista con la tarifa aplicada, congelado al reservar: si mañana sube el
-     * precio, el ticket sigue diciendo lo que se pagó. El descuento vive en el {@link Pago}.
-     */
+    /** Congelado al reservar, con la tarifa aplicada. El descuento vive en el {@link Pago}. */
     private Dinero precio;
 
     protected Entrada() {
@@ -72,7 +65,6 @@ public class Entrada {
         return asiento.getId();
     }
 
-    /** El código de la butaca —"B7"— que va impreso en el ticket. */
     public String codigoAsiento() {
         return asiento.getCodigo();
     }
@@ -85,12 +77,10 @@ public class Entrada {
         return precio;
     }
 
-    /** La ata a su función, que es lo que la hace ocupar la butaca. */
     void ocupar(int funcionId) {
         this.funcionId = funcionId;
     }
 
-    /** Devuelve la butaca a la venta sin borrar la entrada. */
     void liberar() {
         this.funcionId = null;
     }

@@ -1,17 +1,8 @@
 package ar.uade.cine.model.ventas;
 
 /**
- * Quién compra la entrada. Es el tercer eje del precio: los otros dos son la tecnología
- * de la sala y el tipo de butaca, que dicen <em>dónde</em> se ve la película; este dice
- * <em>quién</em> la ve.
- *
- * <p>Va en la {@link Entrada} y no en la reserva porque es por persona: en una reserva de
- * cuatro butacas puede haber dos generales, un menor y un jubilado.
- *
- * <p>Como el cliente no inicia sesión, el sistema no tiene fecha de nacimiento ni forma de
- * comprobar que alguien es jubilado: la tarifa se <strong>declara</strong> al comprar y se
- * <strong>acredita en la puerta</strong>, igual que en un cine real. Por eso cada tarifa
- * sabe si hay que pedir un carnet, y quien valida la entrada lo ve en pantalla.
+ * Quién ve la película: el tercer eje del precio, junto con sala y butaca. Como el cliente
+ * no inicia sesión, la tarifa se declara al comprar y se acredita con carnet en la puerta.
  */
 public enum TipoTarifa {
 
@@ -32,7 +23,6 @@ public enum TipoTarifa {
         return multiplicadorPrecio;
     }
 
-    /** Si en la puerta hay que pedir un carnet que respalde lo que se declaró al comprar. */
     public boolean requiereAcreditacion() {
         return requiereAcreditacion;
     }

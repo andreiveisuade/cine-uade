@@ -24,16 +24,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Los informes que se cortan por función: el borderó del INCAA y la recaudación completa.
- *
- * <p>Cuelgan de <code>/api/funciones/{id}</code> porque son informes <em>de una función</em>
- * —igual que el mapa de butacas— pero los atiende este controlador y no
- * {@link FuncionController}: se agrupa por lo que se pide, no por el prefijo de la URL,
- * y estos dos los resuelve un gestor distinto.
- *
- * <p>Arma sus DTO acá adentro en vez de delegar en un {@code Vistas*}, con el mismo criterio
- * que las programaciones: un informe se dibuja solo, ya viene calculado del gestor y no
- * necesita pedirle nada a nadie más para completarse.
+ * Los informes por función: el borderó del INCAA y la recaudación completa. Arma sus DTO sin
+ * un {@code Vistas*} porque el informe ya viene calculado del gestor.
  */
 @Tag(name = "Informes", description = "El borderó del INCAA y la recaudación por función")
 @RestController
@@ -54,11 +46,7 @@ public class InformeController {
         return vista(informes.borderoDe(id));
     }
 
-    /**
-     * POST y no GET porque escribe: emite el archivo que se sube al INCAA en
-     * informes/bordero-funcion-&lt;id&gt;.txt. Pedir dos veces el mismo borderó no es lo
-     * mismo que declararlo dos veces.
-     */
+    /** POST porque escribe el archivo que se sube al INCAA. */
     @Operation(summary = "Emitir el archivo del borderó que se sube al INCAA")
     @PostMapping("/api/funciones/{id}/bordero")
     @ResponseStatus(HttpStatus.CREATED)
@@ -76,18 +64,13 @@ public class InformeController {
                 informe.candy().aPesos(), informe.total().aPesos());
     }
 
-    /**
-     * Una función que no existe es un 404 y no un 400: el gestor la rechazaría igual, pero
-     * con el código de una regla incumplida. Es el mismo chequeo que hace el controlador de
-     * pagos antes de cobrar.
-     */
+    /** Se chequea acá para responder 404 y no el 400 del gestor. */
     private void exigirFuncion(int id) {
         funciones.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la función " + id));
     }
 
     private static BorderoVistaDTO vista(Bordero bordero) {
-        // TreeMap por lo mismo que el arqueo: el front lista las tarifas en el orden en que
-        // vienen, y alfabético es un orden estable.
+        // TreeMap: el front lista las tarifas en el orden en que llegan.
         Map<String, TotalTarifaDTO> porTarifa = new TreeMap<>();
         bordero.porTarifa().forEach((tarifa, total) ->
                 porTarifa.put(tarifa.name(), new TotalTarifaDTO(total.cantidad(), total.total().aPesos())));

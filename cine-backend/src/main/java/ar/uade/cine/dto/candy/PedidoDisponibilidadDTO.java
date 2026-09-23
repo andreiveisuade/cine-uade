@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.candy;
 
-/** Sacar un producto de la carta o reponerlo. No hay DELETE: viviría en compras viejas. */
+/** No hay DELETE de productos: quedan referenciados en compras viejas. */
 public record PedidoDisponibilidadDTO(Boolean disponible) {
 }

@@ -1,10 +1,5 @@
 package ar.uade.cine.dto.cartelera;
 
-/**
- * Si el importador está levantado, para que la pantalla avise antes de que alguien apriete
- * el botón y espere una respuesta que no va a llegar.
- *
- * @param detalle qué le pasa, en el mismo castellano en que se muestra
- */
+/** Para que la pantalla avise que el importador no está antes de que alguien lo dispare. */
 public record EstadoImportadorDTO(boolean disponible, String detalle) {
 }

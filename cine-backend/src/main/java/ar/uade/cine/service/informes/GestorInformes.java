@@ -29,12 +29,8 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.repository.SalaRepository;
 
 /**
- * Los informes que se cortan <strong>por función</strong>: el borderó para el INCAA y
- * cuánto dejó la función sumando entradas y candy.
- *
- * <p>Aparte de {@code GestorPagos} porque el sujeto es otro: cobrar opera sobre una
- * reserva; informar es una lectura que cruza película, sala, reservas, cobros y candy sin
- * escribir nada. Por eso tiene tantos repositorios, y todos de lectura.
+ * Informes cortados <strong>por función</strong>: el borderó para el INCAA y cuánto dejó
+ * la función entre entradas y candy. Solo lee, cruzando varios agregados.
  */
 @Service
 public class GestorInformes {
@@ -66,11 +62,7 @@ public class GestorInformes {
         this.reloj = reloj;
     }
 
-    /**
-     * Qué se vendió para esa función y a qué valor. Se declara lo que se <strong>cobró</strong>:
-     * la fuente es el pago, no el estado de la reserva, porque una reserva sin pagar
-     * retiene butacas pero no vendió nada.
-     */
+    /** Se declara lo <strong>cobrado</strong>: una reserva sin pagar retiene butacas pero no vendió. */
     public Bordero borderoDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
         Pelicula pelicula = peliculaRepository.findById(funcion.getPeliculaId())
@@ -102,8 +94,7 @@ public class GestorInformes {
                         acumulado.total().mas(entrada.precio())));
                 espectadores++;
             }
-            // El desglose por tarifa va a precio de lista y los totales con el pago, que es
-            // el único que sabe cuánto sacó la promoción (es sobre el total, no por butaca).
+            // Desglose a precio de lista; totales con el pago, único que sabe cuánto sacó la promo.
             bruta = bruta.mas(pago.getSubtotal());
             descuentos = descuentos.mas(pago.getDescuento());
             neta = neta.mas(pago.getMonto());
@@ -114,7 +105,7 @@ public class GestorInformes {
                 bruta, descuentos, neta, porTarifa);
     }
 
-    /** Emite el borderó a un archivo y devuelve lo que se escribió, para mostrarlo sin volver a pedirlo. */
+    /** Devuelve lo escrito, para mostrarlo sin volver a pedirlo. */
     public Bordero exportarBordero(int funcionId) {
         Bordero bordero = borderoDe(funcionId);
         generadorBordero.emitir(bordero);
@@ -126,16 +117,13 @@ public class GestorInformes {
     }
 
     /**
-     * Cuánto dejó la función entre las dos cajas. El candy de mostrador queda afuera a
-     * propósito: solo se atribuye a una función la compra que tiene {@code reservaId}.
-     * Repartir el mostrador entre las funciones del día sería inventar el dato; esa plata
-     * se cuenta en el arqueo del día ({@link GestorCaja#totalCandyDe}). Por eso la suma de
-     * los informes de un día es menor o igual al arqueo, y la diferencia es el mostrador.
+     * Solo cuenta el candy con {@code reservaId}: repartir el mostrador entre funciones
+     * sería inventar el dato. Esa plata va al arqueo ({@link GestorCaja#totalCandyDe}).
      */
     public InformeFuncion informeDe(int funcionId) {
         Bordero bordero = borderoDe(funcionId);
 
-        // Sin mirar el estado de la reserva: una compra del candy nace cobrada.
+        // Una compra del candy nace cobrada.
         List<Integer> reservas = reservaRepository.findByFuncionId(funcionId).stream()
                 .map(Reserva::getId).toList();
         List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(reservas);
@@ -144,7 +132,6 @@ public class GestorInformes {
         return new InformeFuncion(bordero, compras.size(), candy, bordero.recaudacionNeta().mas(candy));
     }
 
-    /** El informe de una función que no existe no es una lista vacía: es un pedido mal hecho. */
     private Funcion buscarFuncion(int funcionId) {
         return funcionRepository.findById(funcionId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));

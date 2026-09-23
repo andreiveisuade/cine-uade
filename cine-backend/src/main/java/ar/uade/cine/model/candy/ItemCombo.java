@@ -6,16 +6,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 /**
- * Un producto que viene adentro de un combo, con cuántas unidades trae. Es lo que convierte
- * al combo en una promoción de verdad y no en un producto con nombre bonito: sabiendo qué
- * contiene se puede comparar su precio contra el de comprarlo suelto.
- *
- * <p>Es {@code @Embeddable} y no una entidad porque no tiene identidad propia: la fila de
- * {@code combo_item} se identifica por el combo y el producto, que es exactamente su clave
- * primaria. Vive y muere con el combo que la contiene.
- *
- * <p>Al producto lo referencia por objeto y no por id porque el detalle del ticket necesita
- * su nombre, y ese dato vive del otro lado. Antes lo traía un JOIN escrito a mano.
+ * Producto y cantidad dentro de un combo; permite comparar el combo contra comprarlo suelto.
+ * {@code @Embeddable} porque no tiene identidad propia. El producto va por objeto porque el
+ * ticket necesita su nombre.
  */
 @Embeddable
 public class ItemCombo {
@@ -42,7 +35,6 @@ public class ItemCombo {
         return producto.getNombre();
     }
 
-    /** Lo que costarían estas unidades compradas sueltas, a precio de hoy. */
     public Dinero precioSuelto() {
         return producto.getPrecio().por(cantidad);
     }

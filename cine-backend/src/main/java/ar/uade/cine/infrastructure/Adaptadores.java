@@ -25,25 +25,9 @@ import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * Los puertos hacia afuera, elegidos y configurados: dónde caen los comprobantes, quién
- * cobra y de dónde salen las películas que el cine no cargó a mano.
- *
- * <p>Es el único lugar del sistema que nombra una implementación concreta de un puerto. Se
- * declaran con {@code @Bean} en vez de anotarse con {@code @Component}
- * —los tres necesitan configuración que sale de {@code application.yml}, así que hay algo
- * que decidir, y esa decisión se lee mejor junta que repartida en anotaciones.
- *
- * <p>Los tickets van a disco y no a la base a propósito. Un comprobante es un papel que se
- * entrega, no un dato que se consulta: por eso su contrato es {@link GeneradorTicket} y no
- * un DAO.
- *
- * <p>{@link MercadoPagoEmulado} es la única implementación de pasarela que hay, y este es
- * el único lugar que la nombra: enchufar la integración de verdad —con credenciales y
- * llamadas de red— es cambiar este método, sin tocar una regla de negocio.
- *
- * <p>{@link TmdbHttp} es lo mismo del otro lado: de dónde salen las películas importadas es
- * una decisión de armado, y este es el único lugar que nombra a TMDB. Un test le pasa otro
- * catálogo y prueba el circuito entero sin gastar cuota.
+ * Elige la implementación de cada puerto hacia afuera: es el único lugar que las nombra.
+ * Van como {@code @Bean} y no {@code @Component} porque dependen de {@code application.yml}
+ * y la decisión se lee mejor junta. Los comprobantes van a disco: se entregan, no se consultan.
  */
 @Configuration
 public class Adaptadores {
@@ -70,13 +54,9 @@ public class Adaptadores {
     }
 
     /**
-     * Los bloqueos van a Redis y no a la base porque son lo contrario de todo lo demás que
-     * se guarda: duran tres minutos y después no le importan a nadie. Si Redis no está,
-     * {@link BloqueoButacasRedis} degrada a "ningún bloqueo" y el sistema sigue vendiendo
-     * como antes de que existiera —la doble venta la sigue impidiendo el UNIQUE de la base.
-     *
-     * <p>Fuera del perfil de test, que usa la implementación en memoria con un reloj que se
-     * puede mover a mano: probar que un bloqueo vence no puede costar tres minutos de espera.
+     * Redis y no la base: los bloqueos duran minutos y después no importan. Si Redis cae,
+     * se vende sin bloqueos y la doble venta la sigue impidiendo el UNIQUE de la base.
+     * El perfil de test usa la implementación en memoria.
      */
     @Bean
     @Profile("!test")
@@ -85,11 +65,7 @@ public class Adaptadores {
         return new BloqueoButacasRedis(host, puerto);
     }
 
-    /**
-     * El reloj de la máquina. Fuera del perfil de test, que pone uno que se mueve a mano:
-     * es lo que permite que un test arme una función "para el 20 de agosto" y siga siendo
-     * futuro el 21 de septiembre.
-     */
+    /** El perfil de test pone un reloj que se mueve a mano. */
     @Bean
     @Profile("!test")
     public Reloj reloj() {
@@ -102,10 +78,8 @@ public class Adaptadores {
     }
 
     /**
-     * Sin token el bean se arma igual, con la cadena vacía: el sistema tiene que levantar
-     * aunque nadie haya sacado su credencial de TMDB, y la pantalla del importador es la
-     * que avisa que falta. Que la aplicación no arranque por esto sería impedir vender
-     * entradas por no poder importar cartelera.
+     * Sin token el bean se arma igual: no poder importar cartelera no debe impedir vender.
+     * La pantalla del importador avisa que falta.
      */
     @Bean
     @Profile("!test")

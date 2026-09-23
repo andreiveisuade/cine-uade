@@ -29,12 +29,8 @@ import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 
 /**
- * Arma las reservas y los pagos en la forma que espera el front.
- *
- * <p>Es el ensamblador con más colaboradores del sistema, y no por desprolijidad: el front
- * muestra la reserva como un ticket completo —qué película, en qué sala, a qué hora, de
- * quién y si ya se pagó— y cada uno de esos datos vive en un lado distinto. Reducir esta
- * lista sería cambiar el contrato de la API, no reacomodar código.
+ * Arma reservas y pagos como los espera el front. Tiene tantos colaboradores porque el
+ * ticket junta película, sala, función, cliente y pago, y cada uno vive en otro gestor.
  */
 @Component
 public class VistasVentas {
@@ -65,25 +61,9 @@ public class VistasVentas {
     }
 
     /**
-     * Un listado entero de reservas, armado con un número fijo de consultas en vez de una
-     * por fila.
-     *
-     * <p><strong>Por qué existe:</strong> {@link #reserva(Reserva)} necesita cinco cosas
-     * que no están en la reserva —su función, la sala, la película, el cliente y el pago—
-     * y las pide una por una. Para una reserva suelta está bien; para el listado del panel
-     * significaba cinco consultas <em>por fila</em>: doscientas reservas eran mil consultas
-     * para dibujar una tabla. Es el problema que se conoce como N+1, y no se nota en
-     * desarrollo con cuatro reservas de prueba.
-     *
-     * <p>Acá los catálogos se traen enteros una sola vez y se indexan por id. Son listas
-     * chicas y acotadas por el negocio —un cine tiene unas pocas salas y unas decenas de
-     * películas— así que traerlas completas cuesta menos que ir a buscarlas de a una. Los
-     * pagos son la excepción: pueden ser miles, así que se piden solo los de estas
-     * reservas, con un único {@code IN}.
-     *
-     * <p>Tiene un techo, y conviene tenerlo escrito: cuando las funciones pasen de unos
-     * miles, traerlas todas para dibujar una página dejará de convenir y habrá que paginar
-     * el listado o filtrar la precarga por los ids que realmente aparecen.
+     * Un listado con un número fijo de consultas, no cinco por fila (N+1). Los catálogos son
+     * chicos y se traen enteros; los pagos pueden ser miles y se piden con un solo {@code IN}.
+     * Si las funciones llegan a miles, habrá que paginar o filtrar la precarga por id.
      */
     public List<ReservaVistaDTO> reservas(List<Reserva> lista) {
         if (lista.isEmpty()) {
@@ -126,7 +106,6 @@ public class VistasVentas {
                 porReserva.get(r.getId()));
     }
 
-    /** La reserva con todo lo que necesita el ticket: función, película, sala y cliente. */
     public ReservaVistaDTO reserva(Reserva r) {
         Funcion f = funciones.buscar(r.getFuncionId())
                 .orElseThrow(() -> new NoEncontrado("No existe la función " + r.getFuncionId()));
@@ -161,10 +140,7 @@ public class VistasVentas {
         return dto(p, null, null, null);
     }
 
-    /**
-     * El arqueo muestra qué se cobró, no solo cuánto: cada pago viaja con la película y
-     * el cliente de su reserva, y con cuántas entradas se llevó.
-     */
+    /** El arqueo muestra qué se cobró, no solo cuánto: película, cliente y entradas. */
     public PagoVistaDTO pagoDeArqueo(Pago p) {
         Reserva reserva = reservas.buscar(p.getReservaId()).orElse(null);
         if (reserva == null) {

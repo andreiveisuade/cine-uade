@@ -31,43 +31,25 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * Arma la grilla de la semana: elige qué películas se dan y las reparte en las salas.
- *
- * <p>Optimiza tres cosas a la vez porque ninguna sola alcanza: <strong>puntaje</strong>
- * (solo con eso la grilla es monotemática), <strong>diversidad</strong> de géneros (solo
- * con eso entra cualquier cosa) y <strong>ocupación</strong> de sala (solo con eso gana la
- * película más corta).
- *
- * <p>No reescribe R3: le pregunta a {@link GestorFunciones#agendaDe} y respeta las
- * funciones ya cargadas. Es determinista —mismos criterios, misma propuesta—, que es lo
- * que permite previsualizar y aplicar como dos llamadas sin que el resultado cambie.
+ * Arma la grilla de la semana: elige películas y las reparte en las salas. Equilibra
+ * puntaje, diversidad de géneros y ocupación, porque cualquiera de los tres solo da una
+ * grilla mala. Respeta R3 vía {@link GestorFunciones#agendaDe} y es determinista, para
+ * que previsualizar y aplicar den lo mismo.
  */
 @Service
 @Transactional
 public class PlanificadorGrilla {
 
     /**
-     * Cuánto vale que una película traiga géneros que el elenco todavía no cubre. Dos
-     * puntos sobre diez alcanza para que una comedia de 7,0 le gane a la cuarta de acción
-     * de 8,5. El bono crece con la raíz de los géneros nuevos, no linealmente: TMDB
-     * etiqueta con generosidad y una película de cuatro géneros no aporta cuatro veces
-     * más variedad.
+     * Bono por géneros que el elenco no cubre: alcanza para que una comedia de 7,0 le gane
+     * a la cuarta de acción de 8,5. Crece con la raíz porque TMDB etiqueta de más.
      */
     private static final double BONO_GENERO_NUEVO = 2.0;
 
-    /**
-     * Votos a partir de los cuales el puntaje vale por sí solo. En la cartelera real la
-     * mediana es treinta y cuatro y siete de veinte títulos no tienen ninguno: con
-     * cincuenta, la mitad del catálogo queda entre su nota y el promedio general.
-     */
+    /** Votos desde los cuales el puntaje vale solo; con menos, pesa el promedio del catálogo. */
     private static final int VOTOS_PARA_CONFIAR = 50;
 
-    /**
-     * Cuánto se corre el horario tentativo cuando choca con algo que la sala ya tiene. Media
-     * hora es la grilla en la que un cine publica sus horarios —20:00, 20:30—: un paso más
-     * fino propondría funciones a las 20:10 y probaría muchos más intentos por noche, y uno
-     * más grueso dejaría la sala vacía más tiempo del necesario después de cada choque.
-     */
+    /** Media hora: es la grilla en la que un cine publica horarios (20:00, 20:30). */
     private static final int MINUTOS_ENTRE_INTENTOS = 30;
 
     private final PeliculaRepository peliculaRepository;
@@ -92,11 +74,7 @@ public class PlanificadorGrilla {
         return new PropuestaGrilla(elenco, pases, medir(elenco, pases, criterios));
     }
 
-    /**
-     * La misma propuesta, creando las funciones. Se recalcula en vez de recibirla hecha:
-     * si el cliente mandara la propuesta de vuelta, podría mandar una distinta o una
-     * vieja, y el alta escribiría algo que ninguna regla revisó.
-     */
+    /** Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada. */
     public PropuestaGrilla aplicar(CriteriosGrilla criterios) {
         PropuestaGrilla propuesta = proponer(criterios);
         for (PaseSugerido pase : propuesta.pases()) {
@@ -109,10 +87,8 @@ public class PlanificadorGrilla {
     // ---------- etapa 1: quiénes ----------
 
     /**
-     * Elige el elenco con un goloso: cada vuelta toma la de mayor valor —su puntaje más un
-     * bono por los géneros que todavía nadie cubre— y al elegirla esos géneros dejan de
-     * sumar. Goloso y no el óptimo exacto porque la diferencia es de decimales y el
-     * resultado tiene que poder explicarse en una pantalla.
+     * Goloso: cada vuelta toma la de mayor puntaje más bono por géneros nuevos. No el
+     * óptimo exacto porque difiere en decimales y el goloso se explica en una pantalla.
      */
     private List<Pelicula> elegirElenco(int cuantas) {
         List<Pelicula> candidatas = new ArrayList<>(
@@ -137,11 +113,7 @@ public class PlanificadorGrilla {
         return elenco;
     }
 
-    /**
-     * Cuánto vale esta película con el elenco a medio armar. La primera no lleva bono: el
-     * bono mide cuánta variedad <em>agrega</em>, y con el elenco vacío no hay a qué
-     * agregarle; aplicarlo igual premiaría a la que tiene más etiquetas de TMDB.
-     */
+    /** La primera no lleva bono: premiaría a la que tiene más etiquetas de TMDB. */
     private double valor(Pelicula pelicula, Set<Genero> cubiertos, boolean primera, double promedio) {
         double puntaje = puntajeConfiable(pelicula, promedio);
         if (primera) {
@@ -152,29 +124,22 @@ public class PlanificadorGrilla {
     }
 
     /**
-     * El puntaje corregido por cuánta gente lo votó: un 8,0 sobre seis votos no es la
-     * misma información que sobre cinco mil, y un 0,0 sin votos es una película que nadie
-     * vio, no una mala. Es la corrección que usan IMDb y TMDB: la nota pesa más cuantos
-     * más votos tiene, y el resto lo pone el promedio del catálogo.
+     * Puntaje corregido por cantidad de votos (la corrección de IMDb/TMDB): un 8,0 con seis
+     * votos no vale lo mismo que con cinco mil.
      *
      * <pre>  valor = (v / (v + m)) × nota  +  (m / (v + m)) × promedio</pre>
      */
     private double puntajeConfiable(Pelicula pelicula, double promedio) {
         int votos = pelicula.getVotos();
         if (votos <= 0) {
-            // Con puntaje y sin votos es la que cargó el encargado a mano: ese número es su
-            // criterio, no se corrige. En cero y sin votos es la de TMDB que nadie vio: "no sé".
+            // Con puntaje y sin votos la cargó el encargado a mano: su criterio no se corrige.
             return pelicula.getPuntaje() > 0 ? pelicula.getPuntaje() : promedio;
         }
         double peso = (double) votos / (votos + VOTOS_PARA_CONFIAR);
         return peso * pelicula.getPuntaje() + (1 - peso) * promedio;
     }
 
-    /**
-     * La nota promedio del catálogo, ponderada por votos: una con seis votos no puede mover
-     * la referencia tanto como una con cinco mil. Los ceros de las no votadas no entran,
-     * porque hundirían la referencia contra la que se las corrige.
-     */
+    /** Ponderado por votos; los ceros de las no votadas no entran porque hundirían la referencia. */
     private double promedioDelCatalogo(List<Pelicula> candidatas) {
         double votos = candidatas.stream().mapToDouble(Pelicula::getVotos).sum();
         if (votos > 0) {
@@ -182,7 +147,6 @@ public class PlanificadorGrilla {
                     .mapToDouble(p -> p.getPuntaje() * p.getVotos())
                     .sum() / votos;
         }
-        // Sin ninguna votada, el promedio de las que tienen puntaje es mejor referencia que cero.
         return candidatas.stream()
                 .mapToDouble(Pelicula::getPuntaje)
                 .filter(p -> p > 0)
@@ -193,13 +157,9 @@ public class PlanificadorGrilla {
     // ---------- etapa 2: dónde y cuándo ----------
 
     /**
-     * Llena cada sala, día por día, desde la apertura hasta que no entre una función más.
-     * En cada hueco entra la película con más «deuda» —menos pases en relación a su
-     * puntaje—, así la mejor termina con cuatro o cinco funciones diarias y la octava con
-     * una. Si el hueco ya está tomado (R3, preguntado a la agenda) se corre al siguiente.
-     *
-     * <p>La agenda se lee una vez por sala: con una consulta por intento, una semana
-     * tardaba más de veinte segundos.
+     * En cada hueco entra la película con más «deuda» (menos pases en relación a su
+     * puntaje); si choca con la agenda (R3) se corre al siguiente. La agenda se lee una
+     * vez por sala porque una consulta por intento es demasiado lenta.
      */
     private List<PaseSugerido> repartir(List<Pelicula> elenco, CriteriosGrilla criterios,
                                         double promedio) {
@@ -221,8 +181,7 @@ public class PlanificadorGrilla {
                     Pelicula elegida = conMasDeuda(elenco, asignados, promedio);
                     LocalDateTime fin = momento.plusMinutes(elegida.getDuracionMinutos());
                     if (fin.isAfter(limite)) {
-                        // No se prueba con una más corta: dejaría el último turno del día
-                        // siempre para la película de menor duración.
+                        // No se prueba una más corta: se llevaría siempre el último turno.
                         break;
                     }
                     if (agendas.get(sala.getId()).chocaEn(momento, fin)) {
@@ -239,11 +198,7 @@ public class PlanificadorGrilla {
         return pases;
     }
 
-    /**
-     * La que más lejos está de los pases que le corresponden: la de menor
-     * {@code asignados / peso}. Con pesos 8 y 4, la primera recibe dos pases por cada uno
-     * de la segunda sin que nadie escriba esa tabla.
-     */
+    /** La de menor {@code asignados / peso}: con pesos 8 y 4, la primera recibe el doble de pases. */
     private Pelicula conMasDeuda(List<Pelicula> elenco, Map<Integer, Integer> asignados,
                                  double promedio) {
         return elenco.stream()
@@ -253,10 +208,7 @@ public class PlanificadorGrilla {
                 .orElseThrow();
     }
 
-    /**
-     * Nunca cero: una película con puntaje 0 —recién cargada a mano, sin valorar— quedaría
-     * con deuda infinita y se llevaría la grilla entera.
-     */
+    /** Nunca cero: con puntaje 0 la deuda sería infinita y se llevaría la grilla entera. */
     private double peso(Pelicula pelicula, double promedio) {
         return Math.max(puntajeConfiable(pelicula, promedio), 0.1);
     }
@@ -264,10 +216,8 @@ public class PlanificadorGrilla {
     // ---------- los números para poder defenderla ----------
 
     /**
-     * El tiempo de sala que la propuesta podía usar: la ventana menos lo ya programado.
-     * Sin descontarlo, una semana con las salas casi llenas daba «ocupación 27%» y se leía
-     * como cine vacío. Solo cuentan las funciones que empiezan dentro de la ventana: una
-     * de la mañana no le saca lugar a una grilla que arranca a las 14.
+     * La ventana menos lo ya programado adentro de ella; sin descontarlo, una semana casi
+     * llena mostraría una ocupación baja.
      */
     private int minutosLibres(CriteriosGrilla criterios) {
         long minutosPorDia = Duration.between(criterios.apertura(), criterios.cierreEfectivo()).toMinutes();

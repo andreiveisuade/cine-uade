@@ -7,19 +7,13 @@ import java.util.Optional;
 import ar.uade.cine.model.funciones.Funcion;
 
 /**
- * Lo que una sala ya tiene tomado, y la única definición de R3: dos funciones se pisan
- * si cada una empieza antes de que termine la otra, contando la limpieza.
- *
- * <p>Lo que ocupa una función es su duración <strong>más la limpieza</strong>: programar
- * a las 22:05 algo que termina 22:00 es empezar con la gente adentro barriendo. El margen
- * se suma a los dos lados porque la función nueva también deja la sala sucia.
- *
- * <p>Existe como objeto aparte por costo: {@code GestorFunciones} la arma con una lectura
- * y el planificador le pregunta cientos de veces sin volver a la base.
+ * Lo tomado en una sala y la única definición de R3: dos funciones se pisan si cada una
+ * empieza antes de que termine la otra, con la limpieza sumada a los dos lados. Se arma
+ * con una lectura para que el planificador pregunte cientos de veces sin ir a la base.
  */
 public final class AgendaDeSala {
 
-    /** Un rato en que la sala está tomada: la función más su limpieza. */
+    /** La función más su limpieza. */
     public record Tramo(Funcion funcion, LocalDateTime inicio, LocalDateTime fin) {
     }
 
@@ -31,7 +25,6 @@ public final class AgendaDeSala {
         this.tomados = tomados;
     }
 
-    /** La función que se pisa con ese rango, si hay alguna. */
     public Optional<Funcion> chocaCon(LocalDateTime inicio, LocalDateTime fin) {
         LocalDateTime finConLimpieza = fin.plusMinutes(minutosLimpieza);
         return tomados.stream()

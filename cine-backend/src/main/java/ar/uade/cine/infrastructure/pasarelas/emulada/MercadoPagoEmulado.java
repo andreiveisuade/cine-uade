@@ -10,42 +10,21 @@ import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * El checkout de MercadoPago, emulado: arma el link y el QR, y devuelve un código de
- * autorización como lo haría el procesador. <strong>No hay credenciales ni llamadas de
- * red</strong>, y por eso el nombre lo dice: nadie tiene que abrir el archivo para
- * descubrir que atrás no hay nada.
- *
- * <p>Los checkouts viven en memoria y se pierden al reiniciar. Es a propósito y no una
- * simplificación pendiente: en la integración de verdad el checkout es un objeto de
- * MercadoPago, no del cine, y guardarlo en una tabla nuestra sería duplicar un dato ajeno
- * que además vence solo. Lo que sí es nuestro —que esa reserva se cobró, con qué medio y
- * con qué autorización— se persiste, pero en {@code pago}, cuando el pago se confirma.
- *
- * <p>Emula lo que se puede emular sin mentir: la ida —abrir el checkout— y la vuelta —el
- * código—. Lo que no emula es el rechazo, porque el modelo tampoco lo tiene: acá un pago
- * registrado es un pago exitoso, y una tarjeta sin fondos hoy no se puede representar en
- * ninguna parte del sistema.
- *
- * <p>El host es {@code emulado.local} para que sea imposible confundirlo con uno real: un
- * link que arranque con el dominio verdadero terminaría copiado en una demo.
+ * Checkout de MercadoPago emulado, sin credenciales ni red. Los checkouts viven en memoria
+ * a propósito: son un dato de MercadoPago, no del cine; lo nuestro queda en {@code pago}.
+ * No emula rechazos porque el modelo no los tiene.
  */
 public class MercadoPagoEmulado implements PasarelaPagos {
 
     private static final String HOST = "https://checkout.emulado.local/mp/";
     private static final SecureRandom AZAR = new SecureRandom();
 
-    /**
-     * Concurrente porque la API atiende varios pedidos a la vez: dos personas pagando al
-     * mismo tiempo son dos hilos escribiendo este mapa.
-     */
     private final Map<String, Checkout> checkouts = new ConcurrentHashMap<>();
 
     @Override
     public Checkout crear(int reservaId, MedioPago medio, Dinero monto) {
         String id = "MP-" + numero(10);
-        // El QR no lleva la reserva ni el monto sueltos: lleva el id del checkout, que es
-        // lo que el procesador sabe resolver. Poner el monto adentro dejaría que alguien
-        // lo editara antes de pagar.
+        // El QR lleva solo el id: con el monto adentro, alguien podría editarlo antes de pagar.
         Checkout checkout = new Checkout(id, reservaId, medio, monto, HOST + id, "MP-QR|" + id);
         checkouts.put(id, checkout);
         return checkout;
@@ -57,11 +36,8 @@ public class MercadoPagoEmulado implements PasarelaPagos {
     }
 
     /**
-     * El checkout no se borra al autorizar, y no es un olvido: quien impide que la misma
-     * reserva se cobre dos veces es R5, en el gestor. Si la pasarela lo cerrara, un cobro
-     * que falla después de autorizar —la reserva venció mientras el cliente pagaba—
-     * dejaría el checkout quemado y sin forma de reintentar, que es peor que un mapa que
-     * crece: en la integración de verdad, el que vence los checkouts es MercadoPago.
+     * No borra el checkout: el doble cobro lo impide R5 en el gestor, y cerrarlo acá dejaría
+     * sin reintento a un cobro que falla después de autorizar.
      */
     @Override
     public String autorizar(Checkout checkout) {

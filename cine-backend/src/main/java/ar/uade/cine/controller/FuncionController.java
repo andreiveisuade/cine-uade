@@ -28,9 +28,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Programación de funciones y mapa de butacas. El detalle de una función es el endpoint
- * con el que el cliente elige dónde sentarse: por eso trae cada asiento con su precio ya
- * calculado y si está tomado en esa proyección.
+ * Programación de funciones y mapa de butacas. El detalle trae cada asiento con su precio
+ * ya calculado y si está tomado: es donde el cliente elige dónde sentarse.
  */
 @Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
@@ -44,10 +43,6 @@ public class FuncionController {
         this.vistas = vistas;
     }
 
-    /**
-     * Es la lista más larga del sistema: una semana de seis salas pasa de cien funciones.
-     * Los filtros son los que usa quien programa.
-     */
     @Operation(summary = "Buscar funciones por película, sala y rango de fechas")
     @GetMapping("/api/funciones")
     public List<FuncionVistaDTO> buscar(@RequestParam(required = false) String peliculaId,
@@ -65,10 +60,7 @@ public class FuncionController {
                 .toList();
     }
 
-    /**
-     * {@code sesion} es opcional y solo cambia una cosa: las butacas que esa sesión tiene
-     * bloqueadas mientras elige no le vuelven marcadas como ocupadas a ella misma.
-     */
+    /** Con {@code sesion}, las butacas que esa sesión bloqueó no le vuelven como ocupadas. */
     @Operation(summary = "Una función con su mapa de butacas y el precio ya calculado de cada una")
     @GetMapping("/api/funciones/{id}")
     public FuncionVistaDTO detalle(@PathVariable int id,

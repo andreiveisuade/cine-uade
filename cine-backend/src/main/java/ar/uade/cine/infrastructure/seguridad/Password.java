@@ -6,12 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * Hashea contraseñas para no guardarlas en texto plano: si alguien ve la base, no
- * puede leer las claves.
- *
- * <p>Es SHA-256 sin salt, que alcanza para el TP pero NO para producción: dos usuarios
- * con la misma clave dan el mismo hash, y existen tablas precalculadas para revertirlo.
- * Lo correcto en un sistema real es bcrypt o Argon2.
+ * Hashea contraseñas con SHA-256 sin salt: alcanza para el TP, no para producción (misma
+ * clave, mismo hash; hay tablas precalculadas). Lo correcto sería bcrypt o Argon2.
  */
 public class Password {
 

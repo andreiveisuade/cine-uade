@@ -17,10 +17,7 @@ import ar.uade.cine.repository.AsientoRepository;
 import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.SalaRepository;
 
-/**
- * Reglas de negocio de salas y butacas. Depende de SalaRepository y AsientoRepository por interfaz,
- * y de FuncionRepository solo para R12 (no borrar una sala con funciones programadas).
- */
+/** Salas y butacas. Usa FuncionRepository solo para R12 y para no cambiar el tipo de una sala en uso. */
 @Service
 @Transactional
 public class GestorSalas {
@@ -47,15 +44,10 @@ public class GestorSalas {
     }
 
     /**
-     * Crea la sala y genera sus butacas. La distribución es cuántas butacas tiene cada
-     * fila de adelante hacia atrás: [8, 10, 12] es fila A con 8, B con 10 y C con 12.
-     * No se guarda en la sala, se usa una sola vez acá: a partir de este momento la sala
-     * se describe por los asientos que quedaron creados.
+     * La distribución son las butacas por fila de adelante hacia atrás ([8, 10, 12]: A con
+     * 8, B con 10, C con 12). No se guarda: después la sala se describe por sus asientos.
      *
-     * <p>El mapa marca por código las butacas que no son estándar; el resto lo son.
-     *
-     * @param minutosLimpieza cuánto hay que esperar entre dos funciones de esta sala. Cero
-     *                        es válido y significa que se puede encadenar sin corte
+     * @param minutosLimpieza cero es válido: se puede encadenar sin corte
      */
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales, int minutosLimpieza) {
@@ -71,12 +63,11 @@ public class GestorSalas {
         if (butacasPorFila.size() > MAX_FILAS) {
             throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
         }
-        // R2: butacas de cada fila mayores a cero.
+        // R2
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
         }
-        // Negativo no es "sin limpieza", es un dato mal cargado: adelantaría el permiso
-        // para la función siguiente y la dejaría empezar antes de que termine la anterior.
+        // Negativo dejaría empezar la función siguiente antes de que termine la anterior.
         if (minutosLimpieza < 0) {
             throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
         }
@@ -91,11 +82,8 @@ public class GestorSalas {
     }
 
     /**
-     * Edita nombre, tipo y limpieza. Las butacas no se tocan: ver {@link Sala#editar}.
-     *
-     * <p>El tipo no cambia si la sala ya tiene funciones, por el mismo motivo que R12 no
-     * la deja borrar: una función 3D quedaría en una sala que no la puede proyectar, y el
-     * precio de las entradas que faltan vender cambiaría con la función ya publicada.
+     * Las butacas no se tocan: ver {@link Sala#editar}. El tipo no cambia con funciones,
+     * como R12: una función 3D quedaría en una sala que no la proyecta.
      */
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.findById(id)
@@ -135,7 +123,7 @@ public class GestorSalas {
         return asientos;
     }
 
-    /** Una butaca rota deja de venderse en todas las funciones, presentes y futuras. */
+    /** R9: deja de venderse en todas las funciones. */
     public void marcarFueraDeServicio(int salaId, String codigo) {
         cambiarEstado(salaId, codigo, EstadoAsiento.FUERA_DE_SERVICIO);
     }
@@ -164,7 +152,7 @@ public class GestorSalas {
         return salaRepository.findById(id);
     }
 
-    /** R12: borrar una sala con funciones programadas dejaría esas funciones sin sala. */
+    /** R12: dejaría funciones sin sala. */
     public void eliminar(int id) {
         if (!salaRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la sala " + id);

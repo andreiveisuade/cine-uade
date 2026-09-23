@@ -37,15 +37,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * La carta del candy y sus ventas por HTTP.
- *
- * <p>El candy llegó a existir sin estar publicado: existía el gestor, con sus reglas y sus
- * tests, pero la puerta HTTP nunca lo expuso. No fue una decisión, fue la consecuencia de
- * que cada arranque armara la aplicación por su cuenta y uno se olvidara de ese gestor. Con
- * el contenedor eso ya no puede pasar por olvido: un controlador anotado se descubre solo.
- *
- * <p>Son dos circuitos de venta distintos: acá no se reserva nada, se paga en el mostrador
- * y se entrega, así que la compra nace cobrada y no pasa por {@code /api/reservas}.
+ * La carta del candy y sus ventas. Es otro circuito que el de las entradas: se paga en el
+ * mostrador, así que la compra nace cobrada y no pasa por {@code /api/reservas}.
  */
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
@@ -64,7 +57,6 @@ public class CandyController {
         this.vistas = vistas;
     }
 
-    /** La carta que ve el cliente: solo lo que está a la venta. */
     @Operation(summary = "La carta del candy")
     @GetMapping("/api/candy/productos")
     public List<ProductoVistaDTO> productos(
@@ -90,10 +82,7 @@ public class CandyController {
         return vistas.producto(producto);
     }
 
-    /**
-     * R14: el combo tiene que salir menos que sus componentes sueltos, y eso lo valida el
-     * gestor contra la lista de precios.
-     */
+    /** R14: el combo sale menos que sus componentes sueltos; lo valida el gestor. */
     @Operation(summary = "Armar un combo con productos de la carta")
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
@@ -110,10 +99,7 @@ public class CandyController {
                 Dinero.de(pedido.precio() == null ? 0 : pedido.precio())));
     }
 
-    /**
-     * No hay DELETE: un producto puede estar en compras viejas, y borrarlo dejaría esos
-     * tickets apuntando a la nada. Se saca de la carta y se repone.
-     */
+    /** No hay DELETE: borrar un producto dejaría compras viejas apuntando a la nada. */
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
     @PutMapping("/api/candy/productos/{id}/disponibilidad")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
@@ -133,8 +119,7 @@ public class CandyController {
         MedioPago medio = pedido.medio() == null
                 ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
 
-        // Con reserva, el cliente sale de ella: es el «¿desea agregar pochoclos?» de después
-        // de comprar la entrada, y no se lo vuelve a pedir.
+        // Con reserva, el cliente sale de ella y no se lo vuelve a pedir.
         CompraCandy compra = pedido.reservaId() == null
                 ? candy.vender(pedido.clienteId(), pedido.cantidades(), medio, pedido.codigoAutorizacion())
                 : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,
@@ -143,7 +128,6 @@ public class CandyController {
         return vistas.compra(compra);
     }
 
-    /** El arqueo del candy es la otra caja del cine, aparte de la boletería. */
     @Operation(summary = "Las compras de candy de un día, o las de un cliente")
     @GetMapping("/api/candy/compras")
     public List<CompraCandyVistaDTO> compras(@RequestParam(required = false) String fecha,

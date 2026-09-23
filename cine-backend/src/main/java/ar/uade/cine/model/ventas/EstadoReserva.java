@@ -1,13 +1,8 @@
 package ar.uade.cine.model.ventas;
 
 /**
- * Estados por los que pasa una {@link Reserva}, siempre en un solo sentido: nace
- * RESERVADA y de ahí avanza a PAGADA, CANCELADA o EXPIRADA. Cancelar una ya pagada no
- * está contemplado acá —hace falta una devolución, que es otro circuito.
- *
- * <p>Es el eje del <strong>cobro</strong>. El ingreso al cine es otro eje y no vive acá:
- * lo lleva {@code Reserva.ingresadaEn}, porque una reserva puede estar PAGADA y todavía
- * no usada, y mezclarlos obligaría a revisar cada regla que mira el estado.
+ * Eje del cobro de una {@link Reserva}, en un solo sentido. El ingreso al cine es otro eje
+ * ({@code ingresadaEn}): una reserva PAGADA puede no estar usada todavía.
  */
 public enum EstadoReserva {
 
@@ -15,10 +10,6 @@ public enum EstadoReserva {
     PAGADA,
     CANCELADA,
 
-    /**
-     * Nadie la pagó dentro de la ventana y sus butacas volvieron a la venta. Es distinta
-     * de CANCELADA a propósito: en el historial del cliente no se le puede mostrar
-     * "cancelada" a algo que él no canceló.
-     */
+    /** R17. Distinta de CANCELADA: al cliente no se le muestra "cancelada" algo que no canceló. */
     EXPIRADA
 }

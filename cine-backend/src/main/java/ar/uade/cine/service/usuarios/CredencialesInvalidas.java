@@ -1,11 +1,8 @@
 package ar.uade.cine.service.usuarios;
 
 /**
- * Email o contraseña que no corresponden a ningún empleado.
- *
- * <p>No es un {@code IllegalArgumentException} porque el pedido está bien formado: lo que
- * falla es la identidad de quien llama, y eso es 401 y no 400. El mensaje no dice cuál de
- * los dos datos está mal para no confirmarle a nadie qué emails existen.
+ * No es {@code IllegalArgumentException} porque el pedido está bien formado: falla la
+ * identidad, y eso es 401 y no 400.
  */
 public class CredencialesInvalidas extends RuntimeException {
 

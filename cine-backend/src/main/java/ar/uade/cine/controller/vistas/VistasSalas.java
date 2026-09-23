@@ -17,11 +17,8 @@ import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
 
 /**
- * Arma las salas y sus butacas en la forma que espera el front.
- *
- * <p>Necesita GestorSalas porque una sala no sabe cuáles son sus butacas —las guarda el
- * AsientoRepository, no la sala— y la respuesta las incluye. Es justamente lo que el DTO no
- * puede hacer por su cuenta.
+ * Arma salas y butacas como las espera el front. Necesita {@link GestorSalas} porque la sala
+ * no conoce sus butacas: viven en su propio repositorio.
  */
 @Component
 public class VistasSalas {
@@ -34,17 +31,14 @@ public class VistasSalas {
         this.calculadora = calculadora;
     }
 
-    /** La sala sola, para embeberla en una función. */
     public SalaVistaDTO sala(Sala s) {
         return sala(s, salas.asientosDe(s.getId()));
     }
 
-    /** Con los asientos ya leídos, para no volver a pedirlos cuando quien llama los tiene. */
     public SalaVistaDTO sala(Sala s, List<Asiento> asientos) {
         return armar(s, asientos, null);
     }
 
-    /** La sala con el detalle de cada butaca, que es lo que necesita el ABM de salas. */
     public SalaVistaDTO salaConButacas(Sala s) {
         List<Asiento> asientos = salas.asientosDe(s.getId());
         return armar(s, asientos, asientos.stream().map(this::asiento).toList());
@@ -56,10 +50,7 @@ public class VistasSalas {
                 distribucion.size(), asientos.size(), s.getMinutosLimpieza(), detalle);
     }
 
-    /**
-     * La distribución no se guarda en ningún lado: se reconstruye contando las butacas
-     * de cada fila, que son la única fuente de verdad de cómo es la sala.
-     */
+    /** La distribución no se guarda: se cuenta desde las butacas, la única fuente de verdad. */
     private List<Integer> butacasPorFila(List<Asiento> asientos) {
         return asientos.stream()
                 .collect(Collectors.groupingBy(Asiento::getFila, TreeMap::new, Collectors.counting()))
@@ -73,13 +64,7 @@ public class VistasSalas {
                 a.getTipo().name(), a.getEstado().name(), null, null);
     }
 
-    /**
-     * La butaca dentro del mapa de una función: ahí sí se sabe si está tomada y cuánto
-     * sale.
-     *
-     * <p>Muestra el precio de tarifa general: la tarifa de cada persona se elige recién al
-     * reservar, y de ahí para abajo el precio solo puede bajar.
-     */
+    /** Precio de tarifa general: la tarifa se elige al reservar, y de ahí el precio solo baja. */
     AsientoVistaDTO asiento(Asiento a, Funcion funcion, Sala sala, Set<Integer> ocupados) {
         return new AsientoVistaDTO(a.getId(), a.getSalaId(), a.getFila(), a.getNumero(), a.getCodigo(),
                 a.getTipo().name(), a.getEstado().name(),

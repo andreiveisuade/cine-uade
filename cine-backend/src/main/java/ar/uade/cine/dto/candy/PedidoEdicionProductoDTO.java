@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.candy;
 
-/** Lo que se puede cambiar de un producto o combo ya cargado. El tipo queda fijo. */
+/** El tipo no se edita. */
 public record PedidoEdicionProductoDTO(String nombre, Double precio) {
 }

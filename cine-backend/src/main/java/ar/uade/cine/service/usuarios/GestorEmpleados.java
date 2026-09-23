@@ -10,10 +10,7 @@ import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.EmpleadoRepository;
 import ar.uade.cine.infrastructure.seguridad.Password;
 
-/**
- * Alta e inicio de sesión de los empleados. El cliente no pasa por acá: compra
- * sin loguearse.
- */
+/** Alta e inicio de sesión de empleados; el cliente compra sin loguearse. */
 @Service
 @Transactional
 public class GestorEmpleados {
@@ -34,8 +31,7 @@ public class GestorEmpleados {
         if (password == null || password.length() < 6) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
-        // Un CLIENTE no tiene contraseña: darlo de alta acá lo convertiría en un usuario
-        // que puede iniciar sesión, que es justo lo que el modelo dice que no existe.
+        // Un CLIENTE no tiene contraseña: darlo de alta acá le permitiría iniciar sesión.
         if (rol == null || !rol.esEmpleado()) {
             throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
         }
@@ -45,11 +41,7 @@ public class GestorEmpleados {
         empleadoRepository.save(new Empleado(nombre, email, Password.hashear(password), rol));
     }
 
-    /**
-     * Devuelve el empleado si las credenciales son correctas. El mensaje de error
-     * es el mismo para email inexistente y contraseña equivocada: decir cuál de los dos
-     * falló le confirma a un atacante qué emails están registrados.
-     */
+    /** Mismo error para email inexistente y contraseña mala, para no revelar qué emails existen. */
     public Empleado iniciarSesion(String email, String password) {
         return empleadoRepository.findByEmail(email)
                 .filter(admin -> Password.coincide(password, admin.getPasswordHash()))

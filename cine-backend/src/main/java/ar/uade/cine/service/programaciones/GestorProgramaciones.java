@@ -24,17 +24,10 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * La grilla del cine: "Matrix en la Sala 1, todos los días a las 20:30, del 1 al 15".
- * Da de alta la programación y materializa sus funciones.
- *
- * <p><strong>Previsualizar y después aplicar.</strong> Una grilla de quince días casi
- * siempre pisa algo (R3), y ni rechazarla entera ni guardarla sin avisar sirve. Por eso
- * {@link #previsualizar} calcula el informe sin escribir y {@link #crear} hace la misma
- * cuenta, guarda las que entran y dice cuáles salteó. La cuenta está una sola vez, en
- * {@link #planificar}: lo único que cambia es si persiste.
- *
- * <p>Las reglas por función (R3, R8) se le preguntan a {@link GestorFunciones}, no se
- * repiten acá.
+ * Grillas recurrentes ("Matrix en la Sala 1, todos los días a las 20:30") y sus funciones.
+ * Una grilla casi siempre pisa algo (R3), así que {@link #previsualizar} informa sin
+ * escribir y {@link #crear} guarda las que entran y dice cuáles salteó; ambas usan
+ * {@link #planificar}. R3 y R8 los decide {@link GestorFunciones}.
  */
 @Service
 @Transactional
@@ -42,13 +35,11 @@ public class GestorProgramaciones {
 
     private static final Logger LOG = LoggerFactory.getLogger(GestorProgramaciones.class);
 
-    /** Para nombrar contra qué choca cada fecha en un mensaje que se pueda leer. */
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     /**
-     * Hasta cuántos días adelante se materializa una grilla abierta. Dos semanas: lo que
-     * hace falta para comprar con anticipación, y lo bastante poco para que cambiar de
-     * opinión no obligue a tocar cientos de funciones ya vendidas.
+     * Días que se materializa una grilla abierta: alcanza para comprar con anticipación
+     * sin atar cientos de funciones vendidas a una decisión que puede cambiar.
      */
     private static final int HORIZONTE_DIAS = 14;
 
@@ -65,40 +56,29 @@ public class GestorProgramaciones {
         this.reloj = reloj;
     }
 
-    /**
-     * Qué haría el alta, sin tocar la base. La grilla que devuelve el informe existe solo
-     * en memoria: no se guarda y no tiene id.
-     */
+    /** La grilla del informe queda solo en memoria, sin id. */
     public PlanProgramacion previsualizar(DatosGrilla datos) {
         Programacion grilla = armar(datos);
         return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
     }
 
     /**
-     * Da de alta la grilla y genera sus funciones, salteando las fechas que chocan.
-     *
-     * <p>Recalcula R3 en vez de confiar en la previsualización: entre que el encargado
-     * miró el informe y confirmó, otro pudo programar en esa sala. La grilla se guarda
-     * aunque todas sus fechas choquen: "Matrix va en la Sala 1 a las 20:30" sigue siendo
-     * una decisión del cine, y el informe dice qué pasó.
+     * Recalcula R3 porque desde la previsualización otro pudo programar en la sala. La
+     * grilla se guarda aunque choquen todas sus fechas: sigue siendo una decisión del cine.
      */
     public PlanProgramacion crear(DatosGrilla datos) {
         Programacion grilla = armar(datos);
-        // Antes de guardar: una grilla con una película inexistente no tiene por qué quedar en la base.
         Pelicula pelicula = peliculaDe(grilla);
         programacionRepository.save(grilla);
         return planificar(grilla, pelicula, true, topeDe(grilla, reloj.hoy()));
     }
 
     /**
-     * Materializa lo que las grillas activas todavía no generaron, hasta el horizonte.
-     * Sin scheduler: lo hace quien consulta la cartelera, y es idempotente porque cada
-     * grilla recuerda hasta qué fecha se procesó.
+     * Materializa hasta el horizonte lo que falta. Sin scheduler: lo dispara quien consulta
+     * la cartelera, e idempotente porque cada grilla recuerda hasta dónde se procesó.
      *
-     * <p>Corre <strong>fuera</strong> de transacción para que el {@code catch} valga:
-     * cada grilla escribe en la transacción de {@code GestorFunciones}, y si una falla
-     * las demás siguen. Adentro de una compartida, la primera rota marcaría rollback-only
-     * y una grilla inválida voltearía la pantalla de cartelera.
+     * <p>Corre <strong>fuera</strong> de transacción para que el {@code catch} valga: en una
+     * compartida, la primera grilla rota la marcaría rollback-only y voltearía la cartelera.
      *
      * @return cuántas funciones se generaron
      */
@@ -114,46 +94,35 @@ public class GestorProgramaciones {
                         .programables().size();
                 generadas += nuevas;
                 if (nuevas > 0) {
-                    // Pasa sola, colgada de una lectura: sin registro, un cine que amanece
-                    // con funciones nuevas no puede decir de dónde salieron.
+                    // Pasa colgada de una lectura: sin log no se sabe de dónde salieron.
                     LOG.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
                             grilla.getId(), nuevas, grilla.getGeneradaHasta());
                 }
             } catch (RuntimeException e) {
-                // Una grilla que dejó de ser válida no puede romper la cartelera de quien
-                // pasaba a mirarla; se corrige desde el ABM. Pero queda registrado.
+                // Una grilla inválida no rompe la cartelera; se corrige desde el ABM.
                 LOG.warn("grilla {} no se pudo extender: {}", grilla.getId(), e.getMessage());
             }
         }
         return generadas;
     }
 
-    /** Ya se procesaron todas las fechas que le tocan. */
     private boolean estaAlDia(Programacion grilla, LocalDate hoy) {
         LocalDate hecho = grilla.getGeneradaHasta();
         return hecho != null && !hecho.isBefore(topeDe(grilla, hoy));
     }
 
-    /**
-     * Hasta qué fecha materializar. El horizonte es solo para las grillas abiertas; una
-     * cerrada genera su rango entero, porque el informe de choques le sirve al encargado
-     * ahora y no dentro de dos semanas.
-     */
+    /** Una grilla cerrada genera su rango entero: el informe de choques sirve ahora. */
     private LocalDate topeDe(Programacion grilla, LocalDate hoy) {
         return grilla.getHasta() != null ? grilla.getHasta() : hoy.plusDays(HORIZONTE_DIAS);
     }
 
-    /**
-     * La cuenta, una sola vez: {@code persistir} es lo único que separa previsualizar
-     * de crear. Cuando persiste, cada función guardada la ve la fecha siguiente.
-     */
+    /** {@code persistir} es lo único que separa previsualizar de crear. */
     private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir,
                                         LocalDate tope) {
         LocalDate yaProcesado = grilla.getGeneradaHasta();
         List<FuncionPlanificada> plan = new ArrayList<>();
         for (LocalDateTime inicio : grilla.horarios(tope)) {
-            // Se filtra por fecha procesada y no por "¿existe la función?": una que chocó no
-            // generó nada y se reintentaría para siempre.
+            // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
             if (yaProcesado != null && !inicio.toLocalDate().isAfter(yaProcesado)) {
                 continue;
             }
@@ -173,40 +142,32 @@ public class GestorProgramaciones {
             plan.add(new FuncionPlanificada(inicio, false, null));
         }
         if (persistir) {
-            // Se marca el tope y no la última generada: las fechas que chocaron también
-            // quedan procesadas, si no la próxima vuelta las listaría como nuevas.
+            // El tope y no la última generada: las que chocaron también quedan procesadas.
             grilla.setGeneradaHasta(tope);
             programacionRepository.save(grilla);
         }
         return new PlanProgramacion(grilla, plan);
     }
 
-    /**
-     * Valida una vez lo que no depende de la fecha (película, sala, R8, precio) y devuelve
-     * la película, de donde sale la duración. Si la sala no proyecta en 3D no hay ninguna
-     * fecha en la que sí: así previsualizar falla con el mismo mensaje que el alta.
-     */
+    /** Valida una vez lo que no depende de la fecha (película, sala, R8, precio). */
     private Pelicula peliculaDe(Programacion grilla) {
         return funciones.validarProgramable(grilla.getPeliculaId(), grilla.getSalaId(),
                 grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio());
     }
 
-    /** Lo que valida la grilla en sí; lo de cada función lo pone GestorFunciones. */
     private Programacion armar(DatosGrilla datos) {
         LocalDate desde = datos.desde();
         LocalDate hasta = datos.hasta();
         if (desde == null) {
             throw new IllegalArgumentException("Falta la fecha de inicio");
         }
-        // hasta null es una grilla abierta; lo que no se admite es un rango dado vuelta.
         if (hasta != null && hasta.isBefore(desde)) {
             throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
         }
         if (datos.horaInicio() == null) {
             throw new IllegalArgumentException("Falta la hora de la función");
         }
-        // Una grilla de miércoles sobre un rango de lunes a martes se daría de alta sin
-        // generar nada. Se mira contra el propio hasta: una abierta siempre cae en algún día.
+        // Si no, una grilla de miércoles sobre un rango lunes-martes se guardaría vacía.
         Programacion grilla = new Programacion(datos.peliculaId(), datos.salaId(), desde, hasta,
                 datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
         if (hasta != null && grilla.horarios(hasta).isEmpty()) {
@@ -216,11 +177,7 @@ public class GestorProgramaciones {
         return grilla;
     }
 
-    /**
-     * Da de baja la grilla. Las funciones ya generadas <strong>quedan</strong>: pueden
-     * tener reservas vendidas, y en este sistema nada que haya producido ventas se borra.
-     * Lo que la baja evita es que se generen nuevas.
-     */
+    /** Las funciones ya generadas quedan: pueden tener ventas. Solo deja de generar nuevas. */
     public void desactivar(int id) {
         cambiarEstado(id, false);
     }
@@ -240,10 +197,7 @@ public class GestorProgramaciones {
         return programacionRepository.findAll();
     }
 
-    /**
-     * Las grillas que cumplen los criterios; {@code null} no filtra. Las dadas de baja no
-     * se borran nunca —explican las funciones que crearon—, así que la lista solo crece.
-     */
+    /** {@code null} no filtra. */
     public List<Programacion> buscar(Integer peliculaId, Integer salaId, Boolean activa) {
         return programacionRepository.findAll().stream()
                 .filter(p -> peliculaId == null || p.getPeliculaId() == peliculaId)
@@ -256,7 +210,6 @@ public class GestorProgramaciones {
         return programacionRepository.findById(id);
     }
 
-    /** Qué funciones generó esa grilla, para verlas desde el ABM. */
     public List<Funcion> funcionesDe(int id) {
         return funcionRepository.findByProgramacionId(id);
     }

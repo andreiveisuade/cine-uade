@@ -46,13 +46,11 @@ public class GestorFunciones {
         this.reservaRepository = reservaRepository;
     }
 
-    /** La función suelta que carga el administrador: no salió de ninguna grilla. */
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
                              Version version, Proyeccion proyeccion, Dinero precio) {
         return programar(peliculaId, salaId, inicio, version, proyeccion, precio, null);
     }
 
-    /** La misma alta, dejando escrito de qué grilla salió. */
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, Version version,
                              Proyeccion proyeccion, Dinero precio, Integer programacionId) {
         Pelicula pelicula = validarProgramable(peliculaId, salaId, version, proyeccion, precio);
@@ -60,7 +58,7 @@ public class GestorFunciones {
             throw new IllegalArgumentException("Falta la fecha y hora de la función");
         }
 
-        // R3: una sala no puede tener dos funciones superpuestas, contando la limpieza.
+        // R3
         LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
         Optional<Funcion> choque = superpuestaEn(salaId, inicio, fin);
         if (choque.isPresent()) {
@@ -74,15 +72,14 @@ public class GestorFunciones {
     }
 
     /**
-     * Lo que tiene que valer sin mirar el horario. Devuelve la película porque de ella
-     * sale la duración. Es público para que la grilla lo valide una vez antes de recorrer
-     * el rango: si la sala no proyecta en 3D, no hay ninguna fecha en la que sí.
+     * Lo que no depende del horario. Público para que la grilla lo valide una vez antes de
+     * recorrer el rango. Devuelve la película porque de ella sale la duración.
      */
     public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
                                        Proyeccion proyeccion, Dinero precio) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe la película " + peliculaId));
-        // Sin esto el buzón no serviría: bastaría programar para dar algo que nadie aprobó.
+        // Si no, programar saltearía el buzón de revisión.
         if (pelicula.getEstadoRevision() != EstadoRevision.CONFIRMADA) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");
@@ -92,7 +89,7 @@ public class GestorFunciones {
         if (version == null || proyeccion == null) {
             throw new IllegalArgumentException("Falta la versión o el formato de proyección");
         }
-        // R8: no programar 3D en una sala que no lo soporta.
+        // R8
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
@@ -103,20 +100,14 @@ public class GestorFunciones {
     }
 
     /**
-     * R3: la función de esa sala que se pisa con ese rango, si hay alguna. Devuelve cuál
-     * y no un boolean para que la grilla pueda decir contra qué choca cada fecha.
-     *
-     * <p>Es {@link #agendaDe} preguntada una vez: la regla de solapamiento —con la
-     * limpieza sumada a los dos lados— vive en la agenda y en ningún otro lado.
+     * R3. Devuelve cuál y no un boolean para que la grilla diga contra qué choca. La regla
+     * de solapamiento vive solo en {@link AgendaDeSala}.
      */
     public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
         return agendaDe(salaId).chocaCon(inicio, fin);
     }
 
-    /**
-     * Distingue el choque real del que produce la limpieza: la anterior termina 22:00, el
-     * encargado programa 22:05 y "sala ocupada" parece un error del sistema.
-     */
+    /** Distingue el choque real del de la limpieza, que si no parece un error del sistema. */
     private String motivoDeLaSuperposicion(Funcion choque, int salaId, LocalDateTime inicio) {
         int duracion = peliculaRepository.findById(choque.getPeliculaId())
                 .map(Pelicula::getDuracionMinutos)
@@ -132,12 +123,8 @@ public class GestorFunciones {
     }
 
     /**
-     * Lo que la sala ya tiene tomado, leído de una vez: sus funciones y la duración de
-     * cada película, en tres consultas. El planificador prueba cientos de horarios por
-     * corrida y con una lectura por intento una propuesta tardaba más de veinte segundos.
-     *
-     * <p>Devuelve la agenda armada y no la lista cruda: los tramos ya incluyen la
-     * limpieza, así que quien pregunta no tiene que acordarse de sumarla.
+     * Lo tomado en la sala, en tres consultas: el planificador prueba cientos de horarios.
+     * Los tramos ya incluyen la limpieza, para que nadie tenga que acordarse de sumarla.
      */
     public AgendaDeSala agendaDe(int salaId) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
@@ -158,12 +145,7 @@ public class GestorFunciones {
         return funcionRepository.findAll();
     }
 
-    /**
-     * Las funciones que cumplen los criterios; {@code null} no filtra.
-     *
-     * @param desde incluye ese día completo; {@code hasta} también: quien filtra «del 16
-     *              al 20» espera ver el 20
-     */
+    /** {@code null} no filtra; {@code desde} y {@code hasta} incluyen el día completo. */
     public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
         return funcionRepository.findAll().stream()
                 .filter(f -> peliculaId == null || f.getPeliculaId() == peliculaId)
@@ -181,7 +163,7 @@ public class GestorFunciones {
         return funcionRepository.findById(id);
     }
 
-    /** R12: si tiene entradas vendidas, borrarla dejaría reservas apuntando a la nada. */
+    /** R12: con reservas, borrarla las dejaría apuntando a la nada. */
     public void eliminar(int id) {
         if (!funcionRepository.existsById(id)) {
             throw new IllegalArgumentException("No existe la función " + id);

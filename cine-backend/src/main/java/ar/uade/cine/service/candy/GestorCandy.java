@@ -21,12 +21,8 @@ import ar.uade.cine.repository.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 /**
- * Las ventas del candy. Es un circuito distinto al de las butacas: acá no se reserva
- * nada, se paga en el mostrador y se entrega, así que la compra nace cobrada.
- *
- * <p>Qué se vende y a qué precio no es asunto suyo: eso lo sabe {@link GestorProductos},
- * al que le pregunta. Esa separación es la que hace que cargar un producto nuevo y
- * cambiar cómo se cobra sean dos cambios en dos archivos distintos.
+ * Ventas del candy: se pagan en el mostrador, así que la compra nace cobrada. Los precios
+ * los pregunta a {@link GestorProductos}.
  */
 @Service
 @Transactional
@@ -50,9 +46,7 @@ public class GestorCandy {
     }
 
     /**
-     * Registra la venta y emite el ticket. El total sale de la lista de precios, no se
-     * ingresa: es la misma razón por la que el pago de una reserva toma el monto de la
-     * reserva y no de quien cobra.
+     * El total sale de la lista de precios, no se ingresa.
      *
      * @param cantidades id de producto a cuántas unidades lleva
      */
@@ -61,10 +55,7 @@ public class GestorCandy {
         return vender(clienteId, null, cantidades, medio, codigoAutorizacion);
     }
 
-    /**
-     * El <em>«¿desea agregar pochoclos + gaseosa?»</em> de después de comprar la entrada
-     * por la web. El cliente no se vuelve a pedir: sale de la reserva.
-     */
+    /** El «¿agregás pochoclos?» de la web; el cliente sale de la reserva. */
     public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.findById(reservaId)
@@ -74,7 +65,7 @@ public class GestorCandy {
 
     private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
                                MedioPago medio, String codigoAutorizacion) {
-        // Sin cliente es una venta de mostrador: se cobra y se entrega, sin nombre.
+        // Sin cliente es una venta de mostrador.
         Cliente cliente = clienteId == null ? null : clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new IllegalArgumentException("No existe el cliente " + clienteId));
         if (cantidades == null || cantidades.isEmpty()) {

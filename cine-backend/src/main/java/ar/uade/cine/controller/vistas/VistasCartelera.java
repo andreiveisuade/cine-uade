@@ -20,16 +20,9 @@ import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.NoEncontrado;
 
 /**
- * Arma las películas y las funciones en la forma que espera el front: los DTO de
- * {@link ar.uade.cine.dto}.
- *
- * <p>Una función arrastra más de lo que guarda: la sala donde va, la película que
- * proyecta, el precio de cada butaca y cuáles están tomadas. Nada de eso vive en la
- * función, así que hay que ir a buscarlo. Ese es el trabajo de esta clase, y es la razón
- * por la que el DTO no se sabe armar solo: tendría que conocer estos cuatro gestores.
- *
- * <p>Qué butaca está ocupada se le pregunta a {@link Ocupacion} y no se recalcula acá: es
- * una regla de negocio, no una cuestión de formato.
+ * Arma películas y funciones como las espera el front. Una función muestra sala, película,
+ * precios y butacas tomadas, y nada de eso vive en ella. Qué está ocupado se le pregunta a
+ * {@link Ocupacion}: es una regla, no formato.
  */
 @Component
 public class VistasCartelera {
@@ -57,30 +50,21 @@ public class VistasCartelera {
                 p.getEstadoRevision().name(), p.getPuntaje(), p.getVotos());
     }
 
-    /** Para el listado del cliente: la función con su sala, sin el mapa de butacas. */
     public FuncionVistaDTO funcion(Funcion f) {
         return armar(f, null, null, null);
     }
 
-    /** Para el listado del encargado, que muestra qué película va en cada función. */
     public FuncionVistaDTO funcionConPelicula(Funcion f) {
         return armar(f, peliculaDe(f), null, null);
     }
 
-    /** El mapa de butacas: cada asiento de la sala con su precio y si está tomado acá. */
     public FuncionVistaDTO funcionConButacas(Funcion f) {
         return funcionConButacas(f, null);
     }
 
     /**
-     * El mismo mapa, visto por quien está eligiendo: las butacas que esa sesión bloqueó no
-     * le salen ocupadas a ella.
-     *
-     * <p>La sesión llega hasta acá y no se resuelve en el navegador a propósito. Que el
-     * front pintara su propia selección por encima del flag {@code ocupado} sería una
-     * segunda definición de "ocupado" viviendo en la pantalla, justo lo que
-     * {@link Ocupacion} existe para evitar, y además una regla en la capa que no lleva
-     * reglas.
+     * Las butacas que bloqueó esta sesión no le salen ocupadas. Se resuelve acá y no en el
+     * front para no tener una segunda definición de "ocupado" en la pantalla.
      */
     public FuncionVistaDTO funcionConButacas(Funcion f, String sesion) {
         Sala sala = salaDe(f);

@@ -10,13 +10,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.informes.Bordero;
 
 /**
- * Escribe el borderó en informes/bordero-funcion-&lt;id&gt;.txt.
- *
- * <p>Va a <code>informes/</code> y no a <code>tickets/</code>: un ticket se le entrega a
- * un cliente y un borderó se le presenta a un organismo.
- *
- * <p>Reescribe el archivo de esa función cada vez: el borderó de una función es uno solo
- * y vale el último, porque las entradas se venden hasta que la película arranca.
+ * Escribe el borderó en informes/bordero-funcion-&lt;id&gt;.txt. Lo reescribe cada vez:
+ * vale el último, porque se vende hasta que la película arranca.
  */
 public class GeneradorBorderoTxt extends ComprobanteTxt implements GeneradorBordero {
 
@@ -39,7 +34,6 @@ public class GeneradorBorderoTxt extends ComprobanteTxt implements GeneradorBord
                 linea(),
                 " Entradas vendidas por tarifa"));
 
-        // Solo las tarifas con ventas: las que están en cero no se declaran.
         for (Map.Entry<TipoTarifa, Bordero.TotalPorTarifa> tarifa : bordero.porTarifa().entrySet()) {
             lineas.add(String.format(" %-13s: %3d   $ %10s",
                     tarifa.getKey(), tarifa.getValue().cantidad(), tarifa.getValue().total()));

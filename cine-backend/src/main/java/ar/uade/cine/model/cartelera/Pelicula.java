@@ -16,13 +16,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
 /**
- * Una película del catálogo. Lo que participa de las reglas —título, duración, géneros,
- * clasificación— va en el constructor; los datos de catálogo (director, sinopsis, año...)
- * solo se muestran y se cargan con setters. Un constructor de nueve parámetros se
- * invocaría con los argumentos cambiados sin que nadie lo note.
- *
- * <p>Los géneros son {@code @ElementCollection}: un género es una constante del enum, sin
- * identidad propia.
+ * Película del catálogo. Lo que participa de reglas va en el constructor; los datos que
+ * solo se muestran van por setters, para no tener un constructor de nueve parámetros.
  */
 @Entity
 public class Pelicula {
@@ -38,7 +33,6 @@ public class Pelicula {
     @Enumerated(EnumType.STRING)
     private Clasificacion clasificacion;
 
-    /** EAGER: ninguna pantalla muestra una película sin sus géneros. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "pelicula_genero",
             joinColumns = @JoinColumn(name = "pelicula_id"))
@@ -64,14 +58,13 @@ public class Pelicula {
 
     private int votos;
 
-    /** Confirmada por defecto: cargarla a mano ya es haberla decidido. Solo el importador la baja a PENDIENTE. */
+    /** Cargarla a mano ya es decidirla; solo el importador la deja PENDIENTE. */
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
     protected Pelicula() {
     }
 
-    /** Película nueva: todavía no tiene id, lo asigna la base al guardarla. */
     public Pelicula(String titulo, int duracionMinutos, List<Genero> generos,
                     Clasificacion clasificacion) {
         this.titulo = titulo;
@@ -96,7 +89,6 @@ public class Pelicula {
         return clasificacion;
     }
 
-    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     public List<Genero> getGeneros() {
         return new ArrayList<>(generos);
     }
@@ -107,11 +99,7 @@ public class Pelicula {
         }
     }
 
-    /**
-     * Cambia lo que identifica a la película. La edición muta la entidad cargada y no arma
-     * otra con el mismo id: con un contexto de persistencia serían dos objetos peleando por
-     * la misma fila.
-     */
+    /** Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia. */
     public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
         this.titulo = titulo;
@@ -120,8 +108,6 @@ public class Pelicula {
         this.generos.clear();
         generos.forEach(this::agregarGenero);
     }
-
-    // --- datos de catálogo: para mostrar la película, sin reglas asociadas ---
 
     public String getDirector() {
         return director;
@@ -147,7 +133,7 @@ public class Pelicula {
         this.anio = anio;
     }
 
-    /** Idioma hablado en la película, distinto de si la función va doblada o subtitulada. */
+    /** Distinto de la {@code Version} de la función (doblada o subtitulada). */
     public String getIdiomaOriginal() {
         return idiomaOriginal;
     }
@@ -164,7 +150,6 @@ public class Pelicula {
         this.posterUrl = posterUrl;
     }
 
-    /** Una película cargada no necesariamente sigue en cartelera. */
     public boolean estaEnCartelera() {
         return enCartelera;
     }
@@ -173,7 +158,7 @@ public class Pelicula {
         this.enCartelera = enCartelera;
     }
 
-    /** De 0 a 10: el {@code vote_average} de TMDB, o cero si se cargó a mano sin dato. Es lo que ordena el planificador. */
+    /** {@code vote_average} de TMDB (0 si no hay dato): ordena el planificador. */
     public double getPuntaje() {
         return puntaje;
     }
@@ -182,7 +167,6 @@ public class Pelicula {
         this.puntaje = puntaje;
     }
 
-    /** Sobre cuántos votos se calculó el puntaje: un 8,0 sobre seis no es lo mismo que sobre cinco mil. */
     public int getVotos() {
         return votos;
     }

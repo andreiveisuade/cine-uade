@@ -19,18 +19,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 
 /**
- * Butacas de una función a nombre de un cliente. Nace RESERVADA y desde ahí solo avanza:
- * PAGADA al cobrar, CANCELADA o EXPIRADA al liberarse sin cobrar. Las transiciones son
- * métodos con nombre ({@link #pagar}, {@link #cancelar}...) y cada uno exige el estado
- * que corresponde: no hay un {@code setEstado} que permita saltos.
- *
- * <p>Es el agregado más claro del sistema y por eso sus entradas van como relación: una
- * entrada no existe sin su reserva, se guarda y se borra con ella.
+ * Butacas de una función a nombre de un cliente. Nace RESERVADA y solo avanza a PAGADA,
+ * CANCELADA o EXPIRADA, por métodos que exigen el estado previo: no hay {@code setEstado}.
+ * Es un agregado: sus entradas se guardan y se borran con ella.
  */
 @Entity
 public class Reserva {
 
-    /** Minutos que una reserva sin pagar retiene sus butacas. Regla de negocio, no detalle técnico. */
+    /** Minutos que una reserva sin pagar retiene sus butacas (R17). */
     public static final int MINUTOS_PARA_PAGAR = 30;
 
     /** Sin O, I, 0 ni 1: el código se tipea a mano cuando el escáner no lee. */
@@ -50,31 +46,23 @@ public class Reserva {
 
     private LocalDateTime creadaEn;
 
-    /**
-     * Una entrada por butaca, fijadas al crear: cambiarlas cambiaría el total de algo ya
-     * cobrado. EAGER porque nada se hace con una reserva sin sus butacas.
-     */
+    /** Fijadas al crear: cambiarlas alteraría el total de algo ya cobrado. */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "reserva_id", nullable = false)
     private List<Entrada> entradas = new ArrayList<>();
 
-    /**
-     * El código del QR. Es la única credencial del cliente, que no inicia sesión: por eso
-     * es aleatorio y no el id, o con la reserva 5 en la mano se imprime la 6.
-     */
+    /** Código del QR y única credencial del cliente: aleatorio para que no se adivine desde el id. */
     @Column(unique = true)
     private String codigo;
 
     @Enumerated(EnumType.STRING)
     private EstadoReserva estado;
 
-    /** Cuándo entraron al cine, o {@code null} si todavía no lo hicieron. */
     private LocalDateTime ingresadaEn;
 
     protected Reserva() {
     }
 
-    /** Reserva nueva: arranca RESERVADA, todavía no tiene id. */
     public Reserva(int funcionId, int clienteId, List<Entrada> entradas, LocalDateTime creadaEn) {
         this.funcionId = funcionId;
         this.clienteId = clienteId;
@@ -111,17 +99,15 @@ public class Reserva {
         return creadaEn;
     }
 
-    /** Copia defensiva: la lista de butacas de una reserva no se toca desde afuera. */
     public List<Entrada> getEntradas() {
         return new ArrayList<>(entradas);
     }
 
-    /** Derivada de las entradas: no se guarda por separado. */
     public int getCantidadEntradas() {
         return entradas.size();
     }
 
-    /** Suma de los precios de lista. Es un subtotal: el descuento se sabe recién al cobrar. */
+    /** Subtotal de lista: el descuento depende del medio de pago y se aplica al cobrar. */
     public Dinero getTotal() {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
@@ -166,24 +152,17 @@ public class Reserva {
         }
     }
 
-    /**
-     * Los estados que dejan de retener butacas las liberan en el mismo movimiento (R6):
-     * es la clase de regla que no se puede confiar a que quien actualice se acuerde.
-     */
+    /** R6: dejar de retener butacas y liberarlas es un solo paso. */
     private void pasarA(EstadoReserva nuevo) {
         estado = nuevo;
         entradas.forEach(Entrada::liberar);
     }
 
-    /** Si sigue reteniendo sus butacas: esperando pago o ya cobrada. */
     public boolean estaVigente() {
         return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.PAGADA;
     }
 
-    /**
-     * Si <em>debería</em> expirar: espera pago desde hace más de {@link #MINUTOS_PARA_PAGAR}.
-     * El estado lo escribe la primera operación que se cruza con ella.
-     */
+    /** Si <em>debería</em> expirar: el estado lo escribe la primera operación que se cruza con ella. */
     public boolean estaVencida(LocalDateTime ahora) {
         return estado == EstadoReserva.RESERVADA
                 && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);

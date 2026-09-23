@@ -12,26 +12,17 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.ventas.Pago;
 
-/** Los cobros de las reservas. Es lo que lee el arqueo del día. */
 public interface PagoRepository extends JpaRepository<Pago, Integer> {
 
-    /** Una reserva tiene a lo sumo un pago: el UNIQUE de la tabla lo garantiza. */
+    /** A lo sumo uno: lo garantiza el UNIQUE de la tabla. */
     Optional<Pago> findByReservaId(int reservaId);
 
     boolean existsByReservaId(int reservaId);
 
-    /**
-     * Los pagos de varias reservas de una vez. Existe para que el listado de reservas no
-     * pregunte el pago de cada fila por separado: cincuenta reservas eran cincuenta
-     * consultas.
-     */
+    /** Para que el listado de reservas no haga una consulta por fila. */
     List<Pago> findByReservaIdIn(Collection<Integer> reservaIds);
 
-    /**
-     * Los cobros de un día. El corte se hace con un rango y no comparando la parte de fecha
-     * de la columna porque una función de fecha en el WHERE deja el índice afuera —y porque
-     * cómo se trunca una fecha lo escribe distinto cada motor.
-     */
+    /** Por rango y no truncando la fecha: una función en el WHERE deja el índice afuera y varía por motor. */
     @Query("select p from Pago p where p.fecha >= :desde and p.fecha < :hasta order by p.fecha")
     List<Pago> findEntre(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 

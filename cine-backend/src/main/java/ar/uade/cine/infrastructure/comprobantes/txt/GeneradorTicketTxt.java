@@ -35,7 +35,7 @@ public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicke
                 campo("Emitido", fecha(reserva.getCreadaEn())),
                 linea()));
 
-        // Una línea por butaca, con su tarifa: es lo que hay que acreditar en la puerta.
+        // Con la tarifa de cada butaca: es lo que se acredita en la puerta.
         for (Entrada entrada : reserva.getEntradas()) {
             String butaca = "Butaca " + entrada.codigoAsiento();
             String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + entrada.tarifa();

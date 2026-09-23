@@ -13,12 +13,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-/** Un porcentaje del subtotal: el "miércoles 30% off". */
 @Entity
 @DiscriminatorValue("PORCENTAJE")
 public class PromocionPorcentaje extends Promocion {
 
-    // DECIMAL(5,2) en la base, double acá: hay que decírselo o `validate` no arranca.
+    // Sin columnDefinition, Hibernate espera FLOAT y `validate` corta el arranque.
     @Column(columnDefinition = "DECIMAL(5,2)")
     private double porcentaje;
 
@@ -43,8 +42,6 @@ public class PromocionPorcentaje extends Promocion {
 
     @Override
     public Dinero calcularDescuento(List<Entrada> entradas) {
-        // Sin redondeo propio: Dinero ya trabaja en centavos enteros. Este metodo
-        // tenia su copia del Math.round de CalculadoraPrecio, en otro paquete.
         return topear(subtotalDe(entradas).porcentaje(porcentaje), entradas);
     }
 }

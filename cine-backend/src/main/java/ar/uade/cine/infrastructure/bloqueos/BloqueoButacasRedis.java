@@ -16,37 +16,10 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
 /**
- * El bloqueo efímero, en Redis. Una clave por butaca, con vencimiento propio.
- *
- * <h2>Por qué Redis y no una tabla</h2>
- * <p>Lo que se guarda acá es basura a los tres minutos y no le importa a nadie después: no
- * se audita, no entra en el arqueo y no tiene que sobrevivir a un reinicio. Una tabla lo
- * soportaría, pero habría que barrerla —o filtrar por fecha en cada consulta, como ya hace
- * la expiración de reservas— y quedaría un dato temporal mezclado con los permanentes. El
- * vencimiento por clave es exactamente el mecanismo que hace falta, y Redis lo trae puesto.
- *
- * <h2>Si Redis no responde, el sistema sigue vendiendo</h2>
- * <p>Esta clase <strong>no propaga el fallo de conexión</strong>: lo loguea y contesta como
- * si no hubiera ningún bloqueo. Es lo contrario de lo que hace la capa de datos, que
- * propaga el fallo, y la diferencia no es un descuido: <em>una base caída significa que el
- * dato no está, y un lock caído significa que nadie la reservó todavía</em>, que es cierto.
- * La primera afirmación no se puede inventar; la segunda es la respuesta correcta.
- *
- * <p>El fondo es que este bloqueo <strong>no es la garantía</strong> de que una butaca no se
- * venda dos veces: esa la sigue dando el {@code UNIQUE (funcion_id, asiento_id)} de MySQL,
- * que arbitra la carrera aunque Redis no exista. Lo que se pierde sin Redis es comodidad
- * —volver a la etapa en que la butaca se pierde recién al confirmar— y no corrección. Hacer
- * que el sistema deje de vender por eso sería voltear algo que hoy funciona sin Redis para
- * proteger algo que la base ya protege.
- *
- * <h2>Una clave por butaca, y no un hash por función</h2>
- * <p>Un hash por función daría un {@code HGETALL} en vez del {@code SCAN} de
- * {@link #bloqueadas(int)}, pero el vencimiento por campo son dos comandos
- * —{@code HSETNX} y {@code HEXPIRE}—, y morirse entre los dos deja una butaca bloqueada
- * <em>para siempre</em>: la única falla que este mecanismo no puede permitirse, porque nadie
- * la limpia después. Con {@code SET NX PX} la butaca y su vencimiento se escriben en un solo
- * comando, así que ese estado no existe. El costo es un {@code SCAN} por consulta, que a la
- * escala de un cine —decenas de claves vivas— no se nota.
+ * Bloqueos en Redis, una clave por butaca con TTL: el vencimiento viene puesto. Si Redis no
+ * responde contesta "sin bloqueos" y se sigue vendiendo, porque la garantía contra la doble
+ * venta es el {@code UNIQUE (funcion_id, asiento_id)} de MySQL. Clave por butaca y no hash
+ * por función para que butaca y vencimiento se escriban en un solo comando ({@code SET NX PX}).
  */
 public class BloqueoButacasRedis implements BloqueoButacas {
 
@@ -54,11 +27,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
 
     private static final String PREFIJO = "cine:bloqueo:";
 
-    /**
-     * Tomar y renovar en un solo comando. El {@code NX} es lo que hace atómica la carrera:
-     * dos sesiones que piden la misma butaca en el mismo instante entran las dos, pero solo
-     * una escribe. Sin el script serían un GET y un SET, y entre los dos cabe la otra.
-     */
+    /** Script para que tomar y renovar sean atómicos: con GET y SET sueltos cabe otra sesión. */
     private static final String TOMAR_O_RENOVAR = """
             if redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then return 1 end
             if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -68,7 +37,6 @@ public class BloqueoButacasRedis implements BloqueoButacas {
             return 0
             """;
 
-    /** Borra solo si la butaca es de esa sesión: soltar la de otro la devolvería a la venta. */
     private static final String SOLTAR_SI_ES_MIA = """
             if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) end
             return 0
@@ -77,12 +45,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
     private final JedisPooled redis;
     private boolean caido;
 
-    /**
-     * Si Redis está caído no se entera acá: el cliente no conecta al construirse, sino en el
-     * primer comando. Es a propósito: levantar el backend no puede depender de que Redis ya
-     * esté arriba. Es lo mismo que hace el pool de conexiones de Spring Boot, que abre la
-     * primera recién cuando alguien la pide.
-     */
+    /** No conecta al construirse: el backend levanta aunque Redis no esté arriba. */
     public BloqueoButacasRedis() {
         this(variable("REDIS_HOST", "localhost"),
                 Integer.parseInt(variable("REDIS_PORT", "6379")));
@@ -124,8 +87,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
         }
         Map<Integer, String> tomadas = new LinkedHashMap<>();
         for (int i = 0; i < claves.size(); i++) {
-            // Puede venir en null: la clave venció entre el SCAN y el MGET, que es
-            // justamente lo que este mecanismo espera que pase.
+            // Null si la clave venció entre el SCAN y el MGET.
             if (sesiones.get(i) != null) {
                 tomadas.put(asientoDe(claves.get(i)), sesiones.get(i));
             }
@@ -133,10 +95,7 @@ public class BloqueoButacasRedis implements BloqueoButacas {
         return tomadas;
     }
 
-    /**
-     * SCAN y no KEYS: KEYS recorre el espacio de claves entero bloqueando al servidor
-     * mientras lo hace, y es el comando que Redis desaconseja fuera de una consola.
-     */
+    /** SCAN y no KEYS, que bloquea al servidor mientras recorre todas las claves. */
     private List<String> clavesDe(int funcionId) {
         ScanParams parametros = new ScanParams().match(PREFIJO + funcionId + ":*").count(100);
         List<String> claves = new ArrayList<>();
@@ -150,12 +109,8 @@ public class BloqueoButacasRedis implements BloqueoButacas {
     }
 
     /**
-     * Corre el comando, y si Redis no está devuelve {@code null} para que quien llame
-     * conteste lo que contestaría un sistema sin bloqueos.
-     *
-     * <p>El log avisa una sola vez por caída y otra por vuelta. Una línea por consulta
-     * llenaría el archivo justo cuando hay que leerlo, y el estado que importa es el
-     * cambio: que Redis está caído hace media hora se dice una vez.
+     * {@code null} si Redis no está, para contestar como sin bloqueos. Loguea solo el cambio
+     * de estado, no cada consulta.
      */
     private <T> T intentar(Supplier<T> comando) {
         try {

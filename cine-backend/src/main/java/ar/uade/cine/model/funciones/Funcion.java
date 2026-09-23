@@ -12,13 +12,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 /**
- * Una función programada: una película en una sala, a una fecha y hora, con su versión,
- * formato y precio base.
- *
- * <p>Referencia película y sala <strong>por id</strong> y no con {@code @ManyToOne}: cien
- * funciones de una semana arrastrarían cada una su película y su sala aunque la pantalla
- * solo pinte el horario. Las relaciones se mapean donde una cosa no existe sin la otra
- * —las entradas de una reserva—, que es lo que distingue una parte de un vecino.
+ * Una película en una sala a una fecha y hora. Referencia película y sala por id y no con
+ * {@code @ManyToOne}: son vecinos, no partes, y cargarlos en cada función sobra. Las
+ * relaciones se mapean solo donde una cosa no existe sin la otra (entradas de una reserva).
  */
 @Entity
 public class Funcion {
@@ -33,7 +29,7 @@ public class Funcion {
     @Column(name = "sala_id")
     private int salaId;
 
-    /** De qué grilla salió, o {@code null} si la cargó el administrador a mano (el preestreno, la función especial). */
+    /** {@code null} si se cargó a mano (preestreno, función especial). */
     @Column(name = "programacion_id")
     private Integer programacionId;
 
@@ -45,13 +41,13 @@ public class Funcion {
     @Enumerated(EnumType.STRING)
     private Proyeccion proyeccion;
 
-    /** Precio base: lo que cuesta una butaca estándar. Los recargos se calculan aparte. */
+    /** Precio de una butaca estándar; los recargos de sala y butaca se aplican aparte. */
     private Dinero precio;
 
     protected Funcion() {
     }
 
-    /** La función suelta de CU-03: no salió de ninguna grilla. */
+    /** Función suelta de CU-03, sin grilla. */
     public Funcion(int peliculaId, int salaId, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio) {
         this(peliculaId, salaId, inicio, version, proyeccion, precio, null);
@@ -88,7 +84,6 @@ public class Funcion {
         return inicio;
     }
 
-    /** Doblada o subtitulada: es de esta proyección, no de la película. */
     public Version getVersion() {
         return version;
     }
@@ -107,25 +102,12 @@ public class Funcion {
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
     }
 
-    // ---------- el paso del tiempo ----------
-
-    /**
-     * Si la función ya arrancó. Recibe el instante por parámetro y no lo pide al reloj, por
-     * lo mismo que {@code Reserva.estaVencida}: así se puede probar sin esperar.
-     *
-     * <p>Es lo único de este bloque que no necesita saber cuánto dura la película, y es
-     * también lo que sostiene R19: una vez que empezó, no se vende ni se cobra.
-     */
+    /** R19. Recibe el instante en vez de leer el reloj para poder probarlo. */
     public boolean yaEmpezo(LocalDateTime ahora) {
         return !inicio.isAfter(ahora);
     }
 
-    /**
-     * Cuándo termina. La duración entra por parámetro porque la función no la conoce: vive
-     * en la película, y acá solo hay un {@code peliculaId}. Quien llama ya tuvo que resolver
-     * esa relación —es lo mismo que hace {@code GestorFunciones} para validar R3—, así que
-     * pedírsela es más honesto que guardar una copia del dato.
-     */
+    /** La duración es de la película: la pasa quien ya la resolvió, en vez de copiarla acá. */
     public LocalDateTime getFin(int duracionMinutos) {
         return inicio.plusMinutes(duracionMinutos);
     }

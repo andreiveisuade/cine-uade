@@ -7,23 +7,12 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 /**
- * Cómo viaja la plata entre el dominio y la base: {@link Dinero} de un lado, DECIMAL(10,2)
- * del otro.
- *
- * <p>{@code Dinero} guarda centavos enteros a propósito —un {@code double} no puede
- * representar 0,10 exactamente y las cuentas mienten de a poco— pero las columnas son
- * DECIMAL porque el schema ya está desplegado y porque es lo que cualquiera espera ver al
- * abrir la tabla en Adminer. Esta clase es el único lugar donde se cruza esa frontera, que
- * antes eran cincuenta y nueve {@code rs.getDouble("precio")} repartidos por los DAO.
- *
- * <p>{@code autoApply = true}: se aplica sola a todo campo de tipo Dinero, así que ninguna
- * entidad tiene que acordarse de anotarlo. Una entidad nueva con un importe adentro ya
- * queda bien mapeada sin hacer nada.
+ * Único cruce entre {@link Dinero} (centavos) y las columnas DECIMAL(10,2), que se leen
+ * bien en Adminer. {@code autoApply}: ninguna entidad tiene que acordarse de anotarlo.
  */
 @Converter(autoApply = true)
 public class DineroConverter implements AttributeConverter<Dinero, BigDecimal> {
 
-    /** Dos posiciones: de centavos a pesos y al reves, sin dividir ni multiplicar. */
     private static final int DECIMALES = 2;
 
     @Override

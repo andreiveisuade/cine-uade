@@ -22,16 +22,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Los enums del dominio, tal como están. El front los pide para armar los combos de
- * sus formularios sin tener que repetir las listas de su lado.
- *
- * <p>Tres de ellos exponen además el dato calculado que lleva la constante: con
- * soportaTresD el front puede avisar de R8 antes de mandar la función, y con
- * requiereAutorizacion pide el código de R11 solo cuando hace falta. La validación de
- * verdad la sigue haciendo el gestor.
- *
- * <p>Es el único controlador sin colaboradores: no le pide nada a ningún gestor porque no
- * hay nada que preguntar —las constantes son las que son.
+ * Los enums del dominio, para que el front no repita las listas. Algunos llevan su dato
+ * (soportaTresD para R8, requiereAutorizacion para R11) para avisar antes de mandar; la
+ * validación de verdad la hace el gestor.
  */
 @Tag(name = "Catálogos", description = "Las listas de constantes que llenan los combos del panel")
 @RestController
@@ -59,10 +52,7 @@ public class CatalogoController {
                 .toList();
     }
 
-    /**
-     * El enum se llama Version en el dominio: es cómo se escucha esta copia, no el idioma
-     * hablado de la película. La ruta conserva el nombre que usa el front.
-     */
+    /** En el dominio es {@code Version}: cómo se escucha la copia, no el idioma de la película. */
     @Operation(summary = "Subtitulada o doblada")
     @GetMapping("/api/idiomas")
     public List<String> idiomas() {
@@ -83,12 +73,7 @@ public class CatalogoController {
                 .toList();
     }
 
-    /**
-     * El multiplicador va porque el front muestra el precio de cada butaca antes de
-     * reservar: sin esto tendría que repetir los factores de su lado, y serían dos fuentes
-     * de verdad para lo mismo. requiereAcreditacion es lo que le permite avisar "traé el
-     * carnet" al elegir la tarifa, y no recién en la puerta.
-     */
+    /** requiereAcreditacion deja avisar "traé el carnet" al elegir la tarifa, no en la puerta. */
     @Operation(summary = "Las tarifas de entrada y su descuento")
     @GetMapping("/api/tarifas")
     public List<TarifaVistaDTO> tarifas() {

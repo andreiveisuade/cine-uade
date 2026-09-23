@@ -9,11 +9,8 @@ import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 
 /**
- * Las promociones, en la forma que espera el front.
- *
- * <p>Es el único lugar donde se pregunta de qué tipo es una promoción, y con un motivo:
- * el JSON tiene que mostrar el beneficio, y cada tipo lo expresa con un campo distinto.
- * El cálculo del descuento sigue siendo polimórfico y no pasa por acá.
+ * Las promociones como las espera el front. Es el único lugar que pregunta el tipo: cada uno
+ * muestra su beneficio en otro campo. El descuento sigue siendo polimórfico.
  */
 @Component
 public class VistasPromociones {

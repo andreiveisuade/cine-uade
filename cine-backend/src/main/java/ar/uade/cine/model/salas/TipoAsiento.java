@@ -1,9 +1,5 @@
 package ar.uade.cine.model.salas;
 
-/**
- * No todas las butacas de una sala son iguales: las accesibles van al final de fila,
- * las de pareja no tienen apoyabrazos en el medio y las VIP son más caras.
- */
 public enum TipoAsiento {
 
     ESTANDAR(1.0),

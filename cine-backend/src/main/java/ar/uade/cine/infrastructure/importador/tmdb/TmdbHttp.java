@@ -24,52 +24,28 @@ import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
 /**
- * TMDB, acotado a lo que el cine necesita.
- *
- * <p>Son tres llamadas por película, porque TMDB reparte el dato en tres recursos:
+ * Cliente de TMDB, la única llamada saliente del backend. TMDB reparte el dato en tres
+ * recursos:
  *
  * <pre>
  * /movie/now_playing?region=AR   qué se está dando en Argentina
  * /movie/{id}                    duración y géneros con nombre
  * /movie/{id}/release_dates      la clasificación por edad argentina
  * </pre>
- *
- * <p>Esa separación es una decisión de diseño de ellos: cada recurso trae una cosa y el
- * cliente compone. Nuestra API hace lo contrario —{@code GET /funciones/{id}} ya trae sala,
- * película y butacas— porque el frontend dibuja el mapa de una sola llamada. Ninguna de las
- * dos está mal: TMDB no puede saber qué combinación necesita cada uno de sus miles de
- * clientes, y nosotros sí sabemos qué necesita el nuestro.
- *
- * <p>Es la <strong>única</strong> llamada saliente del backend. Antes tampoco salía a
- * internet —le pedía la corrida a un proceso Python que era el que hablaba con TMDB—, y esa
- * indirección se eliminó: lo que el proceso aparte traducía es una decisión nuestra y no
- * tenía por qué vivir afuera del sistema.
  */
 public class TmdbHttp implements CatalogoExterno {
 
     private static final String BASE_POR_DEFECTO = "https://api.themoviedb.org/3";
     private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
 
-    /**
-     * Cuántas películas se completan en paralelo. Son dos llamadas a TMDB por película y cada
-     * una duerme {@link #PAUSA_ENTRE_LLAMADAS} al terminar: de a una, veinte películas son
-     * casi un minuto de espera pura, y el encargado que aprieta el botón lo espera mirando la
-     * pantalla. Cuatro lo dejan en diez o quince segundos sin acercarse al límite de TMDB.
-     */
+    /** De a una, veinte películas son casi un minuto de pausas; cuatro no rozan el límite de TMDB. */
     private static final int HILOS = 4;
 
-    /**
-     * Sin tocar: TMDB pide una pausa entre llamadas y hacemos tres por película.
-     *
-     * <p>La pausa es por hilo, no global: cada llamada duerme la suya al terminar. Con cuatro
-     * hilos el ritmo real es de unas trece llamadas por segundo, muy por debajo de lo que TMDB
-     * acepta. Subir los hilos sin subir esta pausa es lo que empieza a devolver 429.
-     */
+    /** Pausa por hilo, no global: subir {@link #HILOS} sin subir esto termina en 429. */
     private static final Duration PAUSA_ENTRE_LLAMADAS = Duration.ofMillis(300);
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** Lo que se usa como detalle cuando TMDB no lo pudo dar. Ver {@link #completar}. */
     private static final JsonNode SIN_DETALLE = MissingNode.getInstance();
 
     private final String token;
@@ -79,15 +55,11 @@ public class TmdbHttp implements CatalogoExterno {
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    /** Como corre en producción: el token y la región salen del entorno. */
     public TmdbHttp() {
         this(System.getenv("TMDB_TOKEN"), variable("TMDB_REGION", "AR"), BASE_POR_DEFECTO);
     }
 
-    /**
-     * La dirección entra por constructor para poder probar el cliente contra un servidor de
-     * mentira, sin token de verdad y sin gastar cuota.
-     */
+    /** La base entra por parámetro para probar contra un servidor falso sin gastar cuota. */
     public TmdbHttp(String token, String region, String base) {
         this.token = token;
         this.region = region;
@@ -99,8 +71,7 @@ public class TmdbHttp implements CatalogoExterno {
         exigirToken();
         List<JsonNode> resumenes = buscarEnCartelera(paginas);
 
-        // El cierre del try-with-resources espera a que terminen todas: no hace falta un
-        // awaitTermination a mano.
+        // El cierre del try-with-resources espera a que terminen todas.
         try (ExecutorService hilos = Executors.newFixedThreadPool(HILOS)) {
             List<Future<DatosPelicula>> pedidos = new ArrayList<>();
             for (JsonNode resumen : resumenes) {
@@ -116,19 +87,16 @@ public class TmdbHttp implements CatalogoExterno {
             return new Estado(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env "
                     + "y reiniciá el backend");
         }
-        // No se le pega a TMDB para responder esto: la pantalla lo pregunta cada vez que se
-        // abre y sería gastar cuota para contestar algo que ya sabemos.
+        // Sin llamar a TMDB: la pantalla pregunta cada vez que se abre.
         return new Estado(true, "Listo para traer cartelera");
     }
 
-    /** Las películas que hoy están en cines argentinos, sin completar. */
     private List<JsonNode> buscarEnCartelera(int paginas) {
         List<JsonNode> resumenes = new ArrayList<>();
         for (int pagina = 1; pagina <= paginas; pagina++) {
             JsonNode datos = pedir("/movie/now_playing",
                     "region", region, "page", String.valueOf(pagina));
             datos.path("results").forEach(resumenes::add);
-            // TMDB pagina: pedir de más no rompe, pero tampoco trae nada nuevo.
             if (pagina >= datos.path("total_pages").asInt(1)) {
                 break;
             }
@@ -137,14 +105,8 @@ public class TmdbHttp implements CatalogoExterno {
     }
 
     /**
-     * Las dos llamadas que faltan para una película: duración y géneros por un lado, la
-     * clasificación argentina por el otro. Es lo único que se paraleliza.
-     *
-     * <p>Si TMDB falla en una película puntual —un 429, un 500— la película <strong>se
-     * devuelve igual</strong>, con lo que trajo el listado y sin duración. No es un descuido:
-     * así el gestor la rechaza por R2 y queda contada y nombrada en el detalle de la corrida,
-     * en vez de desaparecer del reporte y dejar al encargado creyendo que TMDB tenía menos
-     * títulos de los que tenía. El motivo real queda en el log del backend.
+     * Si TMDB falla en una película se devuelve igual, sin duración: el gestor la rechaza por
+     * R2 y queda contada en el detalle de la corrida en vez de desaparecer.
      */
     private DatosPelicula completar(JsonNode resumen) {
         int id = resumen.path("id").asInt();
@@ -161,13 +123,6 @@ public class TmdbHttp implements CatalogoExterno {
                 urlPoster(resumen.path("poster_path").asText(null)));
     }
 
-    /**
-     * La clasificación por edad tal como la publica el INCAA: ATP, 13, 16, 18.
-     *
-     * <p>TMDB la modela como par (país, certificación) porque cada país tiene la suya.
-     * Nosotros la tenemos como enum argentino fijo, que es más simple y alcanza para un cine
-     * que opera en un solo país.
-     */
     private String certificacionArgentina(int id) {
         JsonNode datos = pedir("/movie/" + id + "/release_dates");
         for (JsonNode pais : datos.path("results")) {
@@ -216,7 +171,7 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    /** El idioma va en todas: es lo que hace que los géneros vuelvan en castellano. */
+    /** El idioma va en todas para que los géneros vuelvan en castellano. */
     private String consulta(String... parametros) {
         StringBuilder url = new StringBuilder("?language=es-AR");
         for (int i = 0; i < parametros.length; i += 2) {
@@ -234,12 +189,7 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    /**
-     * Junta lo que trajo cada hilo. Si uno se rompió por algo que no es un
-     * {@link ImportadorError} —quedarse sin memoria, un bug del mapeo— la corrida entera
-     * falla: eso no es «TMDB anda mal», es el importador roto, y esconderlo dejaría corridas
-     * a medias sin que nadie se entere.
-     */
+    /** Un fallo que no es {@link ImportadorError} es un bug y tira la corrida entera. */
     private static List<DatosPelicula> esperar(List<Future<DatosPelicula>> pedidos) {
         List<DatosPelicula> peliculas = new ArrayList<>();
         for (Future<DatosPelicula> pedido : pedidos) {

@@ -20,12 +20,8 @@ import ar.uade.cine.repository.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
 /**
- * La carta de promociones y, sobre todo, la regla que elige cuál se aplica.
- *
- * <p>Las promociones <strong>no se acumulan</strong> (R15): se evalúan todas las que
- * corren para esa función y ese medio de pago, y gana la que más plata le ahorra al
- * cliente. Aplicar varias en cadena obligaría a definir un orden —que cambia el
- * resultado— y a poner un piso para que el precio no llegue a cero.
+ * La carta de promociones y la regla que elige cuál se aplica. No se acumulan (R15): gana
+ * la que más ahorra, porque encadenar varias exigiría un orden y un piso.
  */
 @Service
 @Transactional
@@ -56,8 +52,7 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     public Promocion crearNxM(String nombre, int lleva, int paga, CondicionesPromocion condiciones) {
-        // Un 2x2 no descuenta nada y un 2x3 cobraría de más: sin esto, la promoción
-        // existiría en la carta sin hacer nada, o haciendo lo contrario.
+        // Un 2x2 no descuenta y un 2x3 cobraría de más.
         if (lleva <= paga || paga <= 0) {
             throw new IllegalArgumentException("En un NxM hay que llevar más de lo que se paga");
         }
@@ -83,16 +78,8 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     /**
-     * Lo que ve quien cobra: el monto a descontar y de qué promoción salió, o ningún
-     * descuento si no corre ninguna.
-     *
-     * <p>R16: las entradas de tarifa reducida quedan afuera del cálculo. Un jubilado ya
-     * tiene su precio especial y no entra además al 2x1, que es como funciona en
-     * cualquier cine. Por eso lo que se le pasa a la promoción es el subconjunto de
-     * entradas generales, no la reserva entera.
-     *
-     * <p>Empate: gana la de menor id. Es arbitrario pero determinístico, que es lo que
-     * hace falta para poder testearlo y para que dos cobros iguales den lo mismo.
+     * R16: las tarifas reducidas quedan afuera; a la promoción solo le llegan las entradas
+     * generales. Empate: gana la de menor id, para que dos cobros iguales den lo mismo.
      */
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
@@ -102,7 +89,6 @@ public class GestorPromociones implements PoliticaPromociones {
                 .orElseGet(Descuento::ninguno);
     }
 
-    /** Una promoción que corre y lo que descuenta, calculado una sola vez. */
     private record Candidata(Promocion promocion, Dinero monto) {
     }
 
@@ -118,16 +104,12 @@ public class GestorPromociones implements PoliticaPromociones {
                 .filter(p -> p.aplicaA(inicioFuncion, medio))
                 .map(p -> new Candidata(p, p.calcularDescuento(alcanzadas)))
                 .filter(c -> c.monto().esMayorQue(Dinero.CERO))
-                // R15: gana la que más descuenta. Comparar Dinero es exacto, así que un
-                // empate es real y lo resuelve el id menor, para que dos cobros iguales den lo mismo.
+                // R15: gana la que más descuenta; Dinero compara exacto, el empate lo decide el id.
                 .max(Comparator.comparing(Candidata::monto)
                         .thenComparing(c -> c.promocion().getId(), Comparator.reverseOrder()));
     }
 
-    /**
-     * Desactivar reemplaza al borrado, igual que en el candy: una promoción ya usada en
-     * un cobro tiene que seguir existiendo para poder explicar por qué se cobró eso.
-     */
+    /** En vez de borrar: una promoción usada tiene que seguir explicando el cobro. */
     public void desactivar(int id) {
         Promocion promocion = buscarOFallar(id);
         promocion.setActiva(false);

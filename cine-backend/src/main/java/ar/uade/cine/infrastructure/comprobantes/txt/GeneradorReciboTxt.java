@@ -10,12 +10,8 @@ import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 
 /**
- * Escribe el recibo en tickets/recibo-&lt;id de pago&gt;.txt, en la misma carpeta que el
- * ticket: los dos se le entregan a la misma persona en el mismo mostrador.
- *
- * <p>Se numera por el id del pago porque documenta el cobro, y así se lo encuentra desde
- * el arqueo. No repite película ni butacas —eso ya lo dice el ticket—: acá va la plata,
- * que al reservar todavía no se conocía.
+ * Escribe el recibo en tickets/recibo-&lt;id de pago&gt;.txt. Se numera por el pago para
+ * encontrarlo desde el arqueo; no repite butacas, que ya están en el ticket.
  */
 public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecibo {
 
@@ -36,7 +32,6 @@ public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecib
                 linea(),
                 campo("Subtotal", "$ " + pago.getSubtotal())));
 
-        // Solo si hubo descuento: un "Descuento: $ 0.00" invita a preguntar por qué.
         if (pago.getDescuento().esMayorQue(Dinero.CERO)) {
             lineas.add(campo("Descuento", "$ " + pago.getDescuento()));
         }

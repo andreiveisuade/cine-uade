@@ -13,12 +13,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Inicio de sesión del encargado (CU-10). El cliente no pasa por acá: compra sin
- * registrarse.
- *
- * <p>El gestor devuelve el mismo mensaje para email inexistente y contraseña equivocada,
- * así que esta capa no tiene que hacer nada para no filtrar qué emails están registrados:
- * le alcanza con no inventarle un mensaje propio.
+ * Inicio de sesión del encargado (CU-10). No se inventa un mensaje propio: el del gestor es
+ * el mismo para email inexistente y contraseña equivocada, y no filtra qué emails existen.
  */
 @Tag(name = "Sesión", description = "El login del panel")
 @RestController

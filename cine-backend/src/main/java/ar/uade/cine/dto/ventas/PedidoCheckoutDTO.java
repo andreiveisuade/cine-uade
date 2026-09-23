@@ -1,9 +1,8 @@
 package ar.uade.cine.dto.ventas;
 
 /**
- * Para abrir un checkout alcanza con el medio: la reserva va en la ruta y el monto lo
- * calcula el backend, igual que en el cobro. No lleva código de autorización porque es
- * justamente lo que todavía no existe — el checkout se abre para conseguirlo.
+ * Solo el medio: la reserva va en la ruta, el monto lo calcula el backend y el código de
+ * autorización es lo que el checkout sale a conseguir.
  */
 public record PedidoCheckoutDTO(String medio) {
 }

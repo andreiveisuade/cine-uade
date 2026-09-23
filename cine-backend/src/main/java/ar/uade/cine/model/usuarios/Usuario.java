@@ -14,17 +14,9 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
 /**
- * Base de las personas que el sistema conoce. Los subtipos no se diferencian solo por una
- * etiqueta: el administrador tiene credenciales y el cliente no, porque el cliente compra
- * sin registrarse con contraseña.
- *
- * <p>Las dos van a la misma tabla —{@code SINGLE_TABLE}, que es lo que ya hacía el schema—
- * y el discriminador es la columna {@code rol}. Tiene una vuelta: {@code rol} lleva tres
- * valores y las clases son dos, porque ADMINISTRADOR y ACOMODADOR son los dos empleados. Un
- * {@code @DiscriminatorValue} solo sabe comparar contra un valor, así que el discriminador
- * se calcula con una fórmula que agrupa a los dos. La alternativa era sumarle a la tabla una
- * columna que dijera lo mismo que rol pero más gruesa, y eso es un dato duplicado que un día
- * no coincide.
+ * Base de las personas del sistema; el empleado tiene credenciales y el cliente no. Tabla
+ * única discriminada por {@code rol}, con una fórmula porque tres roles caen en dos clases
+ * (ADMINISTRADOR y ACOMODADOR son empleados) y una columna extra duplicaría el dato.
  */
 @Entity
 @Table(name = "usuario")
@@ -41,11 +33,7 @@ public abstract class Usuario {
     @Column(unique = true)
     private String email;
 
-    /**
-     * Se mapea como una columna común y no como el discriminador de JPA porque es las dos
-     * cosas a la vez: distingue la clase y además es un dato que el negocio lee —el front
-     * muestra si el que entró es administrador o acomodador.
-     */
+    /** Columna común y no discriminador de JPA: además de la clase, es un dato que se lee. */
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
     private Rol rol;
@@ -71,7 +59,6 @@ public abstract class Usuario {
         return email;
     }
 
-    /** Qué puede hacer, y a la vez de qué clase es la fila. */
     public Rol getRol() {
         return rol;
     }

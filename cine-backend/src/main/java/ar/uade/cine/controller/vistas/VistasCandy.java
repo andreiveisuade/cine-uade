@@ -12,12 +12,7 @@ import ar.uade.cine.model.candy.ItemCombo;
 import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.candy.Producto;
 
-/**
- * La carta del candy y sus ventas, en la forma que espera el front.
- *
- * <p>Un combo es un producto que además dice qué trae: por eso {@code componentes} viaja
- * en la misma forma que cualquier otro producto y no en un endpoint aparte.
- */
+/** El candy como lo espera el front. Un combo viaja como cualquier producto, con sus componentes. */
 @Component
 public class VistasCandy {
 

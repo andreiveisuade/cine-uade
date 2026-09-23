@@ -12,7 +12,6 @@ import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-/** Una cantidad fija de plata: el "$2000 off pagando con tal banco". */
 @Entity
 @DiscriminatorValue("MONTO_FIJO")
 public class PromocionMontoFijo extends Promocion {
@@ -38,7 +37,6 @@ public class PromocionMontoFijo extends Promocion {
         return TipoPromocion.MONTO_FIJO;
     }
 
-    /** Topeado al subtotal: un descuento de $2000 sobre una entrada de $1500 la deja en cero, no en negativo. */
     @Override
     public Dinero calcularDescuento(List<Entrada> entradas) {
         return topear(monto, entradas);

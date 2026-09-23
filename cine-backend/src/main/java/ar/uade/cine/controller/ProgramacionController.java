@@ -35,18 +35,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * CU-03b: el ABM de la grilla. Programar quince funciones de a una es el trabajo que esta
- * entidad viene a sacar del medio.
- *
- * <p>Son dos endpoints para un solo alta, y es a propósito: {@code /previsualizar} devuelve
- * exactamente el mismo informe que devolvería el alta, sin escribir nada. El administrador
- * ve qué fechas chocan contra lo que ya hay en esa sala <em>antes</em> de confirmar.
- *
- * <p>Es el único controlador que arma sus propios DTO en vez de delegar en una clase
- * {@code Vistas*}: una programación se dibuja sola —no necesita preguntarle nada a otro
- * gestor para completarse—, así que darle un ensamblador propio sería sumar una indirección
- * sin ganar nada. Las formas viven igual en {@link ar.uade.cine.dto.programaciones}, con
- * todas las demás.
+ * CU-03b: el ABM de la grilla. {@code /previsualizar} devuelve el mismo informe que el alta
+ * sin escribir nada, para ver qué choca antes de confirmar. Arma sus DTO sin un
+ * {@code Vistas*} porque una programación no necesita otro gestor para completarse.
  */
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
@@ -58,10 +49,6 @@ public class ProgramacionController {
         this.programaciones = programaciones;
     }
 
-    /**
-     * Las grillas dadas de baja no se borran nunca: siguen explicando las funciones que
-     * crearon. La lista solo crece, y {@code activa=true} es la pregunta frecuente.
-     */
     @Operation(summary = "Las grillas cargadas, activas y dadas de baja")
     @GetMapping("/api/programaciones")
     public List<ProgramacionVistaDTO> listar(@RequestParam(required = false) String peliculaId,
@@ -83,10 +70,7 @@ public class ProgramacionController {
         return programacion(grilla, programaciones.funcionesDe(grilla.getId()));
     }
 
-    /**
-     * Sin efecto: es una consulta escrita como POST porque lleva el mismo cuerpo que el
-     * alta, y meter nueve campos en la query string sería ilegible.
-     */
+    /** Una consulta como POST: lleva el mismo cuerpo que el alta, ilegible en la query. */
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
     @PostMapping("/api/programaciones/previsualizar")
     public PlanVistaDTO previsualizar(@RequestBody PedidoProgramacionDTO pedido) {
@@ -100,11 +84,7 @@ public class ProgramacionController {
         return plan(aplicar(pedido, true));
     }
 
-    /**
-     * No hay DELETE, por lo mismo que en promociones: una grilla que ya generó funciones con
-     * entradas vendidas tiene que seguir existiendo para explicarlas. Dar de baja solo evita
-     * que genere nuevas; las ya generadas no se tocan.
-     */
+    /** No hay DELETE: la grilla sigue explicando las funciones que generó. */
     @Operation(summary = "Dar de baja una grilla: deja de generar funciones nuevas")
     @PostMapping("/api/programaciones/{id}/baja")
     public ProgramacionVistaDTO desactivar(@PathVariable int id) {
@@ -121,17 +101,12 @@ public class ProgramacionController {
         return programacion(buscar(id), null);
     }
 
-    /**
-     * La misma lectura del pedido para los dos caminos: si previsualizar y aplicar leyeran
-     * el cuerpo por su cuenta, un día uno aceptaría algo que el otro rechaza y el informe
-     * dejaría de predecir el alta.
-     */
+    /** Una sola lectura del pedido para los dos caminos, así el informe siempre predice el alta. */
     private PlanProgramacion aplicar(PedidoProgramacionDTO pedido, boolean persistir) {
         int peliculaId = pedido.peliculaId() == null ? 0 : pedido.peliculaId();
         int salaId = pedido.salaId() == null ? 0 : pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
-        // Sin fecha de fin la grilla es abierta: corre hasta que la den de baja. Por eso no
-        // se exige, a diferencia de desde.
+        // Sin fecha de fin la grilla es abierta: corre hasta que la den de baja.
         LocalDate hasta = pedido.hasta() == null || pedido.hasta().isBlank()
                 ? null : Parseo.dia(pedido.hasta(), "la fecha de fin");
         var hora = Parseo.hora(pedido.horaInicio(), "la hora de la función");
@@ -168,7 +143,6 @@ public class ProgramacionController {
                         .toList());
     }
 
-    /** Las fechas que admiten null viajan como null, no como cadena vacía. */
     private static String texto(LocalDate fecha) {
         return fecha == null ? null : fecha.toString();
     }

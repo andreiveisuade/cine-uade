@@ -36,16 +36,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Cobro de una reserva y arqueo del día.
- *
- * <p>El pedido de cobro no lleva monto a propósito: sale del total de la reserva, que a
- * su vez es lo que se congeló en cada entrada al reservar. Si el importe fuera un dato
- * de entrada, se podría cobrar $100 una reserva de $16.000.
- *
- * <p>El cobro electrónico son dos pedidos y no uno —abrir el checkout, confirmarlo— porque
- * en el medio pasa algo que no depende del cine: el cliente escanea y paga. Lo que devuelve
- * el segundo es un pago igual al del efectivo; la diferencia es de dónde salió el código de
- * autorización.
+ * Cobro de una reserva y arqueo del día. El pedido no lleva monto: sale de la reserva, si no
+ * se podría cobrar $100 una reserva de $16.000. El cobro electrónico son dos pedidos porque
+ * en el medio el cliente escanea y paga.
  */
 @Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController
@@ -69,18 +62,13 @@ public class PagoController {
     @ResponseStatus(HttpStatus.CREATED)
     public PagoVistaDTO cobrar(@PathVariable int id, @RequestBody PedidoPagoDTO pedido) {
         exigirReserva(id);
-        // Sin medio, el null llega al gestor y es él quien avisa que falta (R11 se valida
-        // ahí mismo, según lo que exija la constante).
+        // Sin medio, el null llega al gestor y es él quien avisa (R11 también se valida ahí).
         MedioPago medio = pedido.medio() == null
                 ? null : Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         return vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion()));
     }
 
-    /**
-     * Una reserva sin cobrar no es un error: el front pregunta justamente para saber si ya
-     * se pagó, así que la respuesta es el literal {@code null}. Es el mismo caso que la
-     * búsqueda de cliente por email, y por eso también se arma con {@link ResponseEntity}.
-     */
+    /** Sin cobrar no es un error: el front pregunta para saber si se pagó, y recibe {@code null}. */
     @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
     @GetMapping(value = "/api/reservas/{id}/pago", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> pagoDe(@PathVariable int id) {
@@ -89,7 +77,6 @@ public class PagoController {
         return ResponseEntity.ok(pago.map(p -> (Object) vistas.pago(p)).orElse("null"));
     }
 
-    /** Abrir el checkout: lo que devuelve es el QR y el link que ve el cliente. */
     @Operation(summary = "Abrir el checkout electrónico: devuelve el QR y el link de pago")
     @PostMapping("/api/reservas/{id}/checkout")
     @ResponseStatus(HttpStatus.CREATED)
@@ -104,10 +91,7 @@ public class PagoController {
                 checkout.monto().aPesos(), checkout.urlPago(), checkout.codigoQr());
     }
 
-    /**
-     * El id del checkout es del procesador y no un número nuestro, así que viaja como
-     * {@code String} y no como {@code int}: no es un id de los nuestros.
-     */
+    /** El id es del procesador, no nuestro: por eso {@code String}. */
     @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")
     @PostMapping("/api/checkouts/{id}/confirmacion")
     @ResponseStatus(HttpStatus.CREATED)
@@ -128,10 +112,7 @@ public class PagoController {
         reservas.buscar(id).orElseThrow(() -> new NoEncontrado("No existe la reserva " + id));
     }
 
-    /**
-     * El reparto por medio, con el nombre de la constante como clave. En TreeMap porque el
-     * front lista los medios en el orden en que vienen y alfabético es un orden estable.
-     */
+    /** TreeMap: el front lista los medios en el orden en que llegan, y alfabético es estable. */
     private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {
         Map<String, TotalMedioDTO> resumen = new TreeMap<>();
         arqueo.porMedio().forEach((medio, acumulado) ->

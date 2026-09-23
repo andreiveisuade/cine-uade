@@ -11,22 +11,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 /**
- * Una corrida del importador de cartelera: cuándo se pidió, cómo terminó y qué trajo.
- *
- * <p>Es una entidad y no un dato de infraestructura, y por eso se guarda. La pregunta que
- * responde —«¿cuándo fue la última vez que trajimos cartelera, y cuánto entró?»— es del
- * encargado un lunes a la mañana, no del que despliega: si viviera en memoria, un reinicio
- * del backend la borraría y la pantalla no tendría nada que mostrar.
- *
- * <p>No guarda <em>qué</em> películas entraron, solo cuántas. Las películas ya están
- * guardadas, con su {@link EstadoRevision}, y son las que se ven en el buzón: repetir acá
- * la lista sería tener dos fuentes de verdad para lo mismo y que un día no coincidan.
- * {@link #getDetalle()} es un texto para leer, no un dato para consultar.
- *
- * <p>Nace EN_CURSO: una importación existe porque alguien la pidió y ya se está haciendo.
- * El momento entra por parámetro en vez de tomarlo de {@code LocalDateTime.now()} acá
- * adentro, que es lo que deja probar la caducidad de una corrida colgada sin esperar cinco
- * minutos de reloj.
+ * Corrida del importador. Se persiste porque «¿cuándo trajimos cartelera?» es una pregunta
+ * del encargado y sobrevive reinicios. Guarda cuántas películas entraron, no cuáles: eso ya
+ * está en las películas con su {@link EstadoRevision}.
  */
 @Entity
 public class Importacion {
@@ -50,7 +37,7 @@ public class Importacion {
 
     private int fallidas;
 
-    /** El log de la corrida, o el motivo si falló: es texto para leer, no para consultar. */
+    /** Texto para leer, no para consultar. */
     @Column(columnDefinition = "TEXT")
     private String detalle;
 
@@ -90,7 +77,7 @@ public class Importacion {
         return pedidaEn;
     }
 
-    /** Null mientras la corrida sigue: es "todavía no terminó", no una fecha vacía. */
+    /** {@code null} mientras la corrida sigue. */
     public LocalDateTime getTerminoEn() {
         return terminoEn;
     }

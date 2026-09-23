@@ -10,12 +10,8 @@ import java.util.List;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
 /**
- * Lo que comparten los cuatro comprobantes en texto: el ancho, el formato de fecha, cómo
- * se arma una línea y cómo se escribe el archivo. Cada generador solo dice qué líneas
- * lleva el suyo.
- *
- * <p>Antes cada uno tenía su copia de todo esto, y un cambio de formato —el ancho de la
- * línea, el directorio— había que hacerlo cuatro veces.
+ * Formato y escritura comunes a los comprobantes en texto; cada generador solo dice qué
+ * líneas lleva el suyo.
  */
 abstract class ComprobanteTxt {
 
@@ -29,12 +25,7 @@ abstract class ComprobanteTxt {
         this.directorio = directorio;
     }
 
-    /**
-     * Escribe el archivo, creando el directorio si hace falta.
-     *
-     * @param queEs cómo nombrar el comprobante en el error, por ejemplo "el ticket de la
-     *              reserva 12"
-     */
+    /** @param queEs cómo nombrarlo en el error, por ejemplo "el ticket de la reserva 12" */
     protected final void escribir(String nombreArchivo, List<String> lineas, String queEs) {
         try {
             Files.createDirectories(directorio);

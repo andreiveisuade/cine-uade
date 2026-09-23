@@ -33,14 +33,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- * Cartelera y ABM de películas. Los campos que faltan en el pedido se mandan igual al
- * gestor —en null o en cero— para que el mensaje de error sea el suyo y no uno que
- * invente esta capa: el front lo muestra tal cual al usuario.
- *
- * <p>Los tres gestores y la vista entran por constructor y los pone el contenedor. Que un
- * controlador reciba <strong>solo</strong> lo que usa se sigue cuidando igual que cuando
- * se los pasaba a mano: pedir menos colaboradores es lo que hace evidente qué depende de
- * qué.
+ * Cartelera y ABM de películas. Los campos que faltan se mandan igual al gestor, en null,
+ * para que el mensaje de error sea el suyo y no uno inventado en esta capa.
  */
 @Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController
@@ -67,11 +61,6 @@ public class PeliculaController {
                 .stream().map(vistas::pelicula).toList();
     }
 
-    /**
-     * Lo que ve el encargado: el catálogo entero, esté o no en cartelera. El catálogo dejó
-     * de ser cuatro títulos de prueba desde que el importador trae la cartelera real:
-     * filtrar por título es lo primero que hace falta.
-     */
     @Operation(summary = "Buscar en el catálogo entero, esté o no en cartelera")
     @GetMapping("/api/peliculas")
     public List<PeliculaVistaDTO> buscar(@RequestParam(required = false) String q,
@@ -83,11 +72,6 @@ public class PeliculaController {
                 .stream().map(vistas::pelicula).toList();
     }
 
-    /**
-     * El buzón: lo que trajo el importador y todavía nadie miró. Con Javalin había que
-     * registrarlo antes que {@code /{id}} porque resolvía por orden; Spring elige la ruta
-     * más específica, así que el orden de los métodos ya no decide nada.
-     */
     @Operation(summary = "El buzón: lo que trajo el importador y todavía nadie revisó")
     @GetMapping("/api/peliculas/pendientes")
     public List<PeliculaVistaDTO> pendientes() {
@@ -117,11 +101,6 @@ public class PeliculaController {
         return vistas.pelicula(cartelera.agregar(datosDe(pedido)));
     }
 
-    /**
-     * El alta del importador, separada de la del encargado: lo que baja de TMDB es una
-     * propuesta y entra al buzón, no al catálogo. Es la misma forma de pedido, así que el
-     * importador no tiene que aprender otro cuerpo, solo otra URL.
-     */
     @Operation(summary = "Alta del importador: entra al buzón, no al catálogo")
     @PostMapping("/api/peliculas/importadas")
     @ResponseStatus(HttpStatus.CREATED)
@@ -129,10 +108,7 @@ public class PeliculaController {
         return vistas.pelicula(revision.importar(datosDe(pedido)));
     }
 
-    /**
-     * Confirmar y descartar son POST y no PUT por lo mismo que la baja de una promoción:
-     * no se está mandando un estado nuevo, se está tomando una decisión sobre la película.
-     */
+    /** POST y no PUT: no se manda un estado nuevo, se toma una decisión. */
     @Operation(summary = "Aceptar una película del buzón y publicarla")
     @PostMapping("/api/peliculas/{id}/confirmacion")
     public PeliculaVistaDTO confirmar(@PathVariable int id) {
@@ -150,8 +126,7 @@ public class PeliculaController {
     @Operation(summary = "Editar una película")
     @PutMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO editar(@PathVariable int id, @RequestBody PedidoPeliculaDTO pedido) {
-        // El gestor rechaza el id inexistente como dato inválido; acá se pregunta antes
-        // para poder responder 404 y no 400.
+        // Se busca antes para responder 404 y no el 400 del gestor.
         buscar(id);
         return vistas.pelicula(cartelera.editar(id, datosDe(pedido)));
     }
@@ -169,16 +144,7 @@ public class PeliculaController {
                 .orElseThrow(() -> new NoEncontrado("No existe la película " + id));
     }
 
-    /**
-     * Lo único que hace esta capa con el pedido: pasar el texto que llegó a los tipos del
-     * dominio. Qué campos son obligatorios, cuáles pisan a los guardados y cuáles se
-     * conservan lo decide el gestor, que es donde ese criterio sirve para las dos
-     * interfaces.
-     *
-     * <p>Un campo ausente viaja en null a propósito: es lo que el gestor lee como "no lo
-     * mandé". En el alta, ese mismo null es el que dispara el error de dato faltante, con
-     * el mensaje del gestor y no con uno que invente esta capa.
-     */
+    /** Solo convierte a tipos del dominio. Un ausente queda en null: el gestor lo lee como "no lo mandé". */
     private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {
         return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos() == null

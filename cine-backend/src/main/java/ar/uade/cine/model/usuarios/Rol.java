@@ -1,21 +1,14 @@
 package ar.uade.cine.model.usuarios;
 
-/**
- * Discriminador de la tabla única de usuarios, y a la vez qué puede hacer cada uno.
- * CLIENTE es el que compra; los otros dos son {@link Empleado} y tienen contraseña.
- */
+/** Discriminador de usuarios y a la vez permiso. Los que no son CLIENTE son {@link Empleado}. */
 public enum Rol {
 
     CLIENTE,
     ADMINISTRADOR,
 
-    /**
-     * Valida entradas en la puerta y nada más. No administra la cartelera: por eso es un
-     * rol propio y no un administrador con menos opciones de menú.
-     */
+    /** Solo valida entradas en la puerta (R18). */
     ACOMODADOR;
 
-    /** Los dos roles con credenciales, que es lo que separa a un empleado de un cliente. */
     public boolean esEmpleado() {
         return this == ADMINISTRADOR || this == ACOMODADOR;
     }

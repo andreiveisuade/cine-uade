@@ -12,17 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 /**
- * Butaca física de una sala. No sabe si está ocupada: eso depende de la función, porque la
- * misma butaca puede estar tomada a las 20:00 y libre a las 22:30. Sí sabe si está rota,
- * porque eso no cambia entre funciones.
- *
- * <p>A la sala la referencia por id y no con un {@code @ManyToOne}. Es a propósito y no una
- * traducción a medias: el dominio ya estaba escrito así —"referencia por id, el repositorio
- * trae el objeto completo cuando hace falta"— y mantenerlo deja cada entidad cargando con
- * sus propios datos y nada más. Con la referencia al objeto, listar las butacas de una sala
- * arrastraría la sala en cada fila, y quien solo quiere pintar el mapa no necesita nada de
- * eso. Las relaciones sí se mapean donde el objeto es parte del agregado —las entradas de
- * una reserva, los ítems de una compra—, que es donde una cosa no existe sin la otra.
+ * Butaca física. No sabe si está ocupada, que es por función (R4); sí si está rota, que es
+ * del asiento (R9). La sala va por id: pintar el mapa no necesita cargarla en cada fila.
  */
 @Entity
 public class Asiento {
@@ -63,7 +54,7 @@ public class Asiento {
         return salaId;
     }
 
-    /** 1 = fila A, 2 = fila B, y así. */
+    /** 1 = fila A. */
     public int getFila() {
         return fila;
     }
@@ -84,7 +75,7 @@ public class Asiento {
         this.estado = estado;
     }
 
-    /** Identificación legible: "B7". Se deriva de la fila y el número, no se guarda. */
+    /** "B7", derivado de fila y número. */
     public String getCodigo() {
         return codigoDe(fila, numero);
     }
@@ -93,11 +84,7 @@ public class Asiento {
         return (char) ('A' + fila - 1) + String.valueOf(numero);
     }
 
-    /**
-     * La butaca de esa lista con ese código, tolerando minúsculas y espacios: es lo que
-     * llega tipeado desde el mostrador. Vive acá para que reservar, bloquear y dar de
-     * baja una butaca la busquen igual.
-     */
+    /** Tolera minúsculas y espacios porque llega tipeado. Acá para que todos busquen igual. */
     public static Optional<Asiento> conCodigo(List<Asiento> asientos, String codigo) {
         String buscado = normalizarCodigo(codigo);
         return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();

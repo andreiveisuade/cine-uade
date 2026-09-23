@@ -5,11 +5,8 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Una promoción con el beneficio expuesto en el campo que corresponde a su tipo: las otras
- * dos columnas viajan en null y Jackson las deja afuera.
- *
- * <p>Las condiciones vacías viajan como listas vacías, que es como las lee el gestor:
- * sin días significa todos los días, sin medios significa cualquiera.
+ * Solo el campo de beneficio de su tipo viaja; los otros van en null y se omiten. Sin días es
+ * todos los días; sin medios, cualquiera.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PromocionVistaDTO(int id, String nombre, String tipo, Double porcentaje, Double monto,

@@ -1,13 +1,8 @@
 package ar.uade.cine.model.salas;
 
 /**
- * Tecnología de proyección que tiene instalada la sala. El multiplicador es sobre el
- * precio base de la función: una butaca de IMAX cuesta más que una de 2D aunque den la
- * misma película.
- *
- * <p>Solo describe la tecnología, no la categoría comercial: lo premium de una butaca
- * lo dice {@link TipoAsiento}. Si estuviera en los dos lados el recargo se cobraría
- * dos veces.
+ * Tecnología de la sala; su multiplicador va sobre el precio base. Lo premium de la butaca
+ * lo dice {@link TipoAsiento}: en los dos lados, el recargo se cobraría dos veces.
  */
 public enum TipoSala {
 
@@ -28,7 +23,6 @@ public enum TipoSala {
         return multiplicadorPrecio;
     }
 
-    /** Una sala 2D no tiene el proyector para dar funciones en 3D. */
     public boolean soportaTresD() {
         return soportaTresD;
     }

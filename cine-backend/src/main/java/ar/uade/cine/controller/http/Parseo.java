@@ -7,14 +7,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * Lectura de lo que entra por HTTP: texto crudo a los tipos del dominio. Los mensajes
- * son los que va a leer el usuario, así que no dejan asomar nombres de clases de Java.
- *
- * <p>Ya no tiene el {@code id(Context)} que tenía con Javalin: un {@code @PathVariable int}
- * lo convierte Spring, y cuando el valor no es un número el que devuelve el 404 con el
- * mismo mensaje de siempre es {@link ManejadorErrores}. Lo que queda acá es lo que Spring
- * no puede saber: qué enum se esperaba, qué campo era y cómo se le explica al usuario que
- * mandó cualquier cosa.
+ * Texto crudo de HTTP a tipos del dominio, con mensajes que lee el usuario: nombran el campo
+ * y no dejan asomar clases de Java.
  */
 public final class Parseo {
 
@@ -73,14 +67,8 @@ public final class Parseo {
         }
     }
 
-    /*
-     * Los tres de abajo son para query params de búsqueda, donde "no vino" y "no filtres
-     * por eso" son lo mismo. Por eso devuelven null en vez de fallar, al revés que los de
-     * arriba: un campo que falta en un alta es un error del que manda, pero un filtro que
-     * falta es lo normal.
-     */
+    // Los opcionales son para filtros: si no vino, null y no un error. Mal escrito sí falla.
 
-    /** Una fecha de filtro, o null si no vino. Si vino mal escrita sí falla. */
     public static LocalDate diaOpcional(String valor, String queEs) {
         return vacio(valor) ? null : dia(valor, queEs);
     }
@@ -100,11 +88,7 @@ public final class Parseo {
         return vacio(valor) ? null : constante(tipo, valor, queEs);
     }
 
-    /**
-     * Un filtro de sí/no con tres estados: true, false y "no filtres por esto". Por eso
-     * devuelve Boolean y no boolean — la diferencia entre "solo las despublicadas" y
-     * "todas" se perdería con un primitivo.
-     */
+    /** Boolean y no boolean: null es "no filtres por esto". */
     public static Boolean booleanOpcional(String valor, String queEs) {
         if (vacio(valor)) {
             return null;

@@ -8,29 +8,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ar.uade.cine.model.ventas.Reserva;
 
 /**
- * Las reservas, con sus entradas: la relación es del agregado, así que se guardan y se leen
- * juntas sin que nadie tenga que pedirlo.
- *
- * <p>Lo que <strong>no</strong> está acá y sigue estando en la base es la garantía de que una
- * butaca no se venda dos veces en la misma función. {@code GestorReservas} la valida antes
- * para poder dar un mensaje claro, pero entre esa lectura y la escritura hay una ventana:
- * dos clientes simultáneos pueden ver la misma butaca libre. Lo que la cierra es el
- * {@code UNIQUE (funcion_id, asiento_id)} de la tabla entrada, que solo la base puede hacer
- * cumplir. El gestor traduce esa violación a {@link ButacaOcupadaException}.
+ * R4 no se garantiza acá: el gestor la valida para dar un mensaje claro, pero la carrera
+ * entre dos clientes la cierra el UNIQUE (funcion_id, asiento_id) de entrada, que el gestor
+ * traduce a {@code ButacaOcupadaException}.
  */
 public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
 
-    /**
-     * Por el código del QR y no por id: como el cliente no inicia sesión, el código es la
-     * única credencial que existe. Con el id se entraría probando números.
-     */
+    /** Por código y no por id: es la única credencial del cliente, y el id se adivina. */
     Optional<Reserva> findByCodigo(String codigo);
 
     List<Reserva> findByFuncionId(int funcionId);
 
     List<Reserva> findByClienteIdOrderByCreadaEnDesc(int clienteId);
 
-    /** Para R12: saber si hay alguna, sin cargar las reservas con sus entradas. */
+    /** R12, sin cargar reservas con sus entradas. */
     boolean existsByFuncionId(int funcionId);
 
     boolean existsByClienteId(int clienteId);

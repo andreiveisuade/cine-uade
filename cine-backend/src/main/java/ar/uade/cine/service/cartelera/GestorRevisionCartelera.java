@@ -11,13 +11,8 @@ import ar.uade.cine.repository.FuncionRepository;
 import ar.uade.cine.repository.PeliculaRepository;
 
 /**
- * El buzón de revisión: lo que trae el importador y todavía nadie miró.
- *
- * <p>Separado de {@link GestorCartelera} porque son propuestas que alguien tiene que
- * aceptar o rechazar: distinto actor, distinta pantalla y distinta razón para cambiar.
- * Juntos, el catálogo "administraba <em>y</em> revisaba", la señal de dos
- * responsabilidades en una clase. Depende del catálogo y no al revés: revisar necesita
- * dar de alta, el catálogo no necesita saber que existe un importador.
+ * El buzón de revisión de lo importado. Aparte de {@link GestorCartelera} porque aceptar o
+ * rechazar propuestas es otro actor y otra pantalla. Depende del catálogo y no al revés.
  */
 @Service
 @Transactional
@@ -35,9 +30,8 @@ public class GestorRevisionCartelera {
     }
 
     /**
-     * El alta del importador: entra al buzón, pendiente y fuera de cartelera. Es un método
-     * aparte y no un flag de {@link GestorCartelera#agregar}: olvidarse el flag metería
-     * dieciocho títulos al catálogo sin que nadie los mire.
+     * Entra pendiente y fuera de cartelera. Método aparte y no un flag de
+     * {@link GestorCartelera#agregar}: olvidarse el flag publicaría sin revisión.
      */
     public Pelicula importar(DatosPelicula datos) {
         Pelicula pelicula = catalogo.agregar(datos);
@@ -47,15 +41,11 @@ public class GestorRevisionCartelera {
         return pelicula;
     }
 
-    /** Las que trajo el importador y todavía nadie miró. Es la pantalla de revisión. */
     public List<Pelicula> listarPendientes() {
         return peliculaRepository.findByEstadoRevision(EstadoRevision.PENDIENTE);
     }
 
-    /**
-     * El encargado la acepta: confirmada y en cartelera de una vez, porque «esta la damos»
-     * es el caso normal. Aceptarla para más adelante ya tiene el interruptor de cartelera.
-     */
+    /** Confirmada y en cartelera de una vez: «esta la damos» es el caso normal. */
     public Pelicula confirmar(int id) {
         Pelicula pelicula = exigir(id);
         pelicula.setEstadoRevision(EstadoRevision.CONFIRMADA);
@@ -64,10 +54,7 @@ public class GestorRevisionCartelera {
         return pelicula;
     }
 
-    /**
-     * El encargado no la quiere. Queda descartada en vez de borrarse: si no, la próxima
-     * corrida la traería de nuevo.
-     */
+    /** Descartada en vez de borrada: si no, la próxima corrida la traería de nuevo. */
     public Pelicula descartar(int id) {
         Pelicula pelicula = exigir(id);
         if (funcionRepository.existsByPeliculaId(id)) {

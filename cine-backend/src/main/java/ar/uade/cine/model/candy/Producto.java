@@ -17,12 +17,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
 /**
- * Algo que se vende en el candy. Un combo es también un Producto —tiene precio y se vende
- * como una unidad— y no una entidad aparte: lo único que lo distingue es que además sabe qué
- * trae adentro.
- *
- * <p>Por eso las dos claves de {@code combo_item} apuntan a esta misma tabla: un combo se
- * puede armar con cualquier otro producto.
+ * Algo que se vende en el candy. Un combo es también un Producto que además sabe qué trae:
+ * por eso las dos claves de {@code combo_item} apuntan a esta tabla.
  */
 @Entity
 public class Producto {
@@ -41,7 +37,6 @@ public class Producto {
 
     private boolean disponible;
 
-    /** Qué trae el combo. Lista vacía en un producto suelto. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "combo_item", joinColumns = @JoinColumn(name = "combo_id"))
     private List<ItemCombo> componentes = new ArrayList<>();
@@ -72,10 +67,7 @@ public class Producto {
         return precio;
     }
 
-    /**
-     * Si se sigue ofreciendo. Un producto no se borra: puede estar en compras viejas, y
-     * borrarlo dejaría esos tickets apuntando a la nada.
-     */
+    /** Un producto no se borra, se deja de ofrecer: puede estar en compras viejas. */
     public boolean estaDisponible() {
         return disponible;
     }
@@ -84,16 +76,12 @@ public class Producto {
         this.disponible = disponible;
     }
 
-    /**
-     * Cambia nombre y precio. Las compras ya hechas no se enteran: cada línea copió los dos
-     * al venderse, así que los tickets emitidos siguen diciendo lo que dijeron.
-     */
+    /** Las compras hechas no cambian: cada línea copió nombre y precio al venderse. */
     public void editar(String nombre, Dinero precio) {
         this.nombre = nombre;
         this.precio = precio;
     }
 
-    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     public List<ItemCombo> getComponentes() {
         return new ArrayList<>(componentes);
     }
@@ -106,12 +94,10 @@ public class Producto {
         return tipo == TipoProducto.COMBO;
     }
 
-    /** Lo que costarían los componentes comprados sueltos. Cero si no es combo. */
     public Dinero getPrecioSuelto() {
         return Dinero.sumar(componentes.stream().map(ItemCombo::precioSuelto).toList());
     }
 
-    /** Cuánto se ahorra llevando el combo en vez de sus componentes sueltos. */
     public Dinero getAhorro() {
         return esCombo() ? getPrecioSuelto().menos(precio) : Dinero.CERO;
     }

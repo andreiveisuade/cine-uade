@@ -6,10 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import ar.uade.cine.model.funciones.Funcion;
 
-/**
- * Las funciones programadas: qué pasa esta película, qué pasa en esta sala, qué generó
- * esta grilla. Los {@code exists} son para R12, que solo necesita saber si hay alguna.
- */
+/** Los {@code exists} son para R12, que solo necesita saber si hay alguna. */
 public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
 
     List<Funcion> findByPeliculaId(int peliculaId);
