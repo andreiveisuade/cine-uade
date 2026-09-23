@@ -1,21 +1,6 @@
 package ar.uade.cine.swing.api;
 
-import ar.uade.cine.swing.api.dto.Arqueo;
-import ar.uade.cine.swing.api.dto.ArqueoCandy;
-import ar.uade.cine.swing.api.dto.Bordero;
-import ar.uade.cine.swing.api.dto.Clasificacion;
-import ar.uade.cine.swing.api.dto.DeclaracionJurada;
-import ar.uade.cine.swing.api.dto.Empleado;
-import ar.uade.cine.swing.api.dto.Funcion;
-import ar.uade.cine.swing.api.dto.InformeFuncion;
-import ar.uade.cine.swing.api.dto.PedidoFuncion;
-import ar.uade.cine.swing.api.dto.PedidoPelicula;
-import ar.uade.cine.swing.api.dto.PedidoSala;
-import ar.uade.cine.swing.api.dto.Pelicula;
-import ar.uade.cine.swing.api.dto.Reserva;
-import ar.uade.cine.swing.api.dto.Sala;
-import ar.uade.cine.swing.api.dto.Tarifa;
-import ar.uade.cine.swing.api.dto.TipoSala;
+import ar.uade.cine.swing.api.dto.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -46,6 +31,9 @@ import java.util.stream.Collectors;
 public final class ApiHttp {
 
     public static final String URL_POR_DEFECTO = "http://localhost:8080";
+    private static final Duration ESPERA = Duration.ofSeconds(30);
+    // La importación contesta al terminar (10-15 s, hasta 120 s en el backend): la espera normal la cortaría.
+    private static final Duration ESPERA_IMPORTACION = Duration.ofSeconds(180);
 
     private final String base;
     private final HttpClient http;
@@ -123,6 +111,10 @@ public final class ApiHttp {
         return lista("/tarifas", Tarifa.class);
     }
 
+    public List<MedioPago> obtenerMediosPago() {
+        return lista("/medios-pago", MedioPago.class);
+    }
+
     public List<String> obtenerIdiomas() {
         return lista("/idiomas", String.class);
     }
@@ -135,6 +127,31 @@ public final class ApiHttp {
 
     public List<Pelicula> obtenerPeliculas(Map<String, String> filtros) {
         return lista("/peliculas" + consulta(filtros), Pelicula.class);
+    }
+
+    public List<Pelicula> obtenerPeliculasPendientes() {
+        return lista("/peliculas/pendientes", Pelicula.class);
+    }
+
+    public Pelicula confirmarPelicula(int id) {
+        return pedir("POST", "/peliculas/" + id + "/confirmacion", Map.of(), tipo(Pelicula.class));
+    }
+
+    public Pelicula descartarPelicula(int id) {
+        return pedir("POST", "/peliculas/" + id + "/descarte", Map.of(), tipo(Pelicula.class));
+    }
+
+    public Importacion importarAhora(int paginas) {
+        return pedir("POST", "/importaciones", Map.of("paginas", paginas), tipo(Importacion.class), credenciales,
+                true, ESPERA_IMPORTACION);
+    }
+
+    public List<Importacion> obtenerImportaciones() {
+        return lista("/importaciones", Importacion.class);
+    }
+
+    public EstadoImportador estadoImportador() {
+        return pedir("GET", "/importaciones/estado", null, tipo(EstadoImportador.class));
     }
 
     public Pelicula crearPelicula(PedidoPelicula pelicula) {
@@ -155,12 +172,21 @@ public final class ApiHttp {
         return lista("/salas", Sala.class);
     }
 
+    public Sala obtenerSala(int id) {
+        return pedir("GET", "/salas/" + id, null, tipo(Sala.class));
+    }
+
     public Sala crearSala(PedidoSala sala) {
         return pedir("POST", "/salas", sala, tipo(Sala.class));
     }
 
     public void eliminarSala(int id) {
         pedir("DELETE", "/salas/" + id, null, tipo(JsonNode.class));
+    }
+
+    public Asiento cambiarEstadoAsiento(int salaId, String codigo, String estado) {
+        return pedir("PUT", "/salas/" + salaId + "/asientos/" + segmento(codigo.trim().toUpperCase()),
+                Map.of("estado", nulo(estado)), tipo(Asiento.class));
     }
 
     // --- funciones e informes ---
@@ -187,6 +213,119 @@ public final class ApiHttp {
 
     public InformeFuncion obtenerInformeDeFuncion(int funcionId) {
         return pedir("GET", "/funciones/" + funcionId + "/informe", null, tipo(InformeFuncion.class));
+    }
+
+    // --- programaciones y grilla ---
+
+    public List<Programacion> obtenerProgramaciones(Map<String, String> filtros) {
+        return lista("/programaciones" + consulta(filtros), Programacion.class);
+    }
+
+    public Programacion obtenerProgramacion(int id) {
+        return pedir("GET", "/programaciones/" + id, null, tipo(Programacion.class));
+    }
+
+    public Plan previsualizarProgramacion(PedidoProgramacion programacion) {
+        return pedir("POST", "/programaciones/previsualizar", programacion, tipo(Plan.class));
+    }
+
+    public Plan crearProgramacion(PedidoProgramacion programacion) {
+        return pedir("POST", "/programaciones", programacion, tipo(Plan.class));
+    }
+
+    public Programacion cambiarActivacionProgramacion(int id, boolean activa) {
+        return pedir("PATCH", "/programaciones/" + id, Map.of("activa", activa), tipo(Programacion.class));
+    }
+
+    public PropuestaGrilla proponerGrilla(PedidoGrilla criterios) {
+        return pedir("POST", "/grilla/propuesta", criterios, tipo(PropuestaGrilla.class));
+    }
+
+    public PropuestaGrilla armarGrilla(PedidoGrilla criterios) {
+        return pedir("POST", "/grilla", criterios, tipo(PropuestaGrilla.class));
+    }
+
+    // --- reservas y cobro ---
+
+    public List<Reserva> obtenerReservas(Map<String, String> filtros) {
+        return lista("/reservas" + consulta(filtros), Reserva.class);
+    }
+
+    public Reserva cancelarReserva(int id) {
+        return pedir("POST", "/reservas/" + id + "/cancelacion", null, tipo(Reserva.class));
+    }
+
+    /** El monto no viaja: el descuento depende del medio y lo resuelve el backend al cobrar. */
+    public Pago cobrar(int reservaId, String medio, String codigoAutorizacion) {
+        Map<String, String> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("medio", medio);
+        cuerpo.put("codigoAutorizacion", codigoAutorizacion);
+        return pedir("POST", "/reservas/" + reservaId + "/pago", cuerpo, tipo(Pago.class));
+    }
+
+    public Pago obtenerPagoDeReserva(int reservaId) {
+        return pedir("GET", "/reservas/" + reservaId + "/pago", null, tipo(Pago.class));
+    }
+
+    public Checkout abrirCheckout(int reservaId, String medio) {
+        return pedir("POST", "/reservas/" + reservaId + "/checkout", Map.of("medio", nulo(medio)),
+                tipo(Checkout.class));
+    }
+
+    public Pago confirmarCheckout(String checkoutId) {
+        return pedir("POST", "/checkouts/" + segmento(checkoutId) + "/confirmacion", null, tipo(Pago.class));
+    }
+
+    // --- promociones ---
+
+    public List<Promocion> obtenerPromociones() {
+        return lista("/promociones", Promocion.class);
+    }
+
+    public Promocion crearPromocion(PedidoPromocion promocion) {
+        return pedir("POST", "/promociones", promocion, tipo(Promocion.class));
+    }
+
+    public Promocion cambiarActivacionPromocion(int id, boolean activa) {
+        return pedir("PATCH", "/promociones/" + id, Map.of("activa", activa), tipo(Promocion.class));
+    }
+
+    // --- candy ---
+
+    public List<Producto> obtenerProductosCandy(boolean todos) {
+        return lista("/candy/productos" + (todos ? "?todos=true" : ""), Producto.class);
+    }
+
+    public Producto crearProductoCandy(PedidoProducto producto) {
+        return pedir("POST", "/candy/productos", producto, tipo(Producto.class));
+    }
+
+    public Producto armarComboCandy(PedidoCombo combo) {
+        return pedir("POST", "/candy/combos", combo, tipo(Producto.class));
+    }
+
+    public Producto editarProductoCandy(int id, String nombre, Double precio) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("nombre", nombre);
+        cuerpo.put("precio", precio);
+        return pedir("PUT", "/candy/productos/" + id, cuerpo, tipo(Producto.class));
+    }
+
+    public Producto cambiarDisponibilidadCandy(int id, boolean disponible) {
+        return pedir("PUT", "/candy/productos/" + id + "/disponibilidad", Map.of("disponible", disponible),
+                tipo(Producto.class));
+    }
+
+    public CompraCandy venderCandy(PedidoVenta venta) {
+        return pedir("POST", "/candy/compras", venta, tipo(CompraCandy.class));
+    }
+
+    public List<CompraCandy> obtenerComprasCandy(Map<String, String> filtros) {
+        return lista("/candy/compras" + consulta(filtros), CompraCandy.class);
+    }
+
+    public Cliente buscarClientePorEmail(String email) {
+        return pedir("GET", "/clientes" + consulta(Map.of("email", nulo(email))), null, tipo(Cliente.class));
     }
 
     // --- caja y puerta ---
@@ -218,6 +357,11 @@ public final class ApiHttp {
         return pedir("GET", ruta, null, json.getTypeFactory().constructCollectionType(List.class, elemento));
     }
 
+    // Un código de butaca o de checkout va en la ruta: con URLEncoder un espacio sería "+", que ahí no es espacio.
+    private static String segmento(String valor) {
+        return URLEncoder.encode(valor, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
     private JavaType tipo(Class<?> clase) {
         return json.getTypeFactory().constructType(clase);
     }
@@ -241,10 +385,15 @@ public final class ApiHttp {
         return pedir(metodo, ruta, cuerpo, tipo, credenciales, true);
     }
 
-    // `avisaVencida`: un 401 del login es "clave incorrecta", no una sesión que se cayó.
     private <T> T pedir(String metodo, String ruta, Object cuerpo, JavaType tipo, String clave,
                         boolean avisaVencida) {
-        HttpResponse<byte[]> respuesta = enviar(metodo, ruta, cuerpo, clave, avisaVencida);
+        return pedir(metodo, ruta, cuerpo, tipo, clave, avisaVencida, ESPERA);
+    }
+
+    // `avisaVencida`: un 401 del login es "clave incorrecta", no una sesión que se cayó.
+    private <T> T pedir(String metodo, String ruta, Object cuerpo, JavaType tipo, String clave,
+                        boolean avisaVencida, Duration espera) {
+        HttpResponse<byte[]> respuesta = enviar(metodo, ruta, cuerpo, clave, avisaVencida, espera);
         String texto = new String(respuesta.body(), StandardCharsets.UTF_8);
         if (texto.isBlank()) return null;
         try {
@@ -257,9 +406,8 @@ public final class ApiHttp {
 
     /** Manda el pedido y convierte cualquier estado de error en {@link ErrorApi}; el cuerpo de un 2xx queda crudo. */
     private HttpResponse<byte[]> enviar(String metodo, String ruta, Object cuerpo, String clave,
-                                        boolean avisaVencida) {
-        HttpRequest.Builder pedido = HttpRequest.newBuilder(URI.create(base + ruta))
-                .timeout(Duration.ofSeconds(30));
+                                        boolean avisaVencida, Duration espera) {
+        HttpRequest.Builder pedido = HttpRequest.newBuilder(URI.create(base + ruta)).timeout(espera);
         if (clave != null) pedido.header("Authorization", "Basic " + clave);
         if (cuerpo != null) {
             pedido.header("Content-Type", "application/json");
