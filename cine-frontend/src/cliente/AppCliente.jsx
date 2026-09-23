@@ -11,6 +11,8 @@ import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { CompraEnCurso } from "./compra.jsx";
+import { Cartelera } from "./Cartelera.jsx";
+import { Pelicula } from "./Pelicula.jsx";
 
 function Enlace({ a, children }) {
   return (
@@ -48,6 +50,9 @@ export function AppCliente() {
         <Container size="lg" py="md">
           <CompraEnCurso>
             <Routes>
+              <Route index element={<Cartelera />} />
+              <Route path="cartelera/:genero?" element={<Cartelera />} />
+              <Route path="pelicula/:id" element={<Pelicula />} />
               <Route path="*" element={<NoExiste />} />
             </Routes>
           </CompraEnCurso>
