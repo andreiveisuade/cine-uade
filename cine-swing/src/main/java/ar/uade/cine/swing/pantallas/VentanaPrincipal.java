@@ -37,7 +37,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     private static final List<Grupo> MENU = List.of(
             new Grupo("Cartelera", List.of("Películas", "Por revisar", "Importador")),
             new Grupo("Programación", List.of("Salas", "Funciones", "Grilla", "Planificador", "Agenda")),
-            new Grupo("Ventas", List.of("Reservas", "Promociones", "Candy", "Caja")),
+            new Grupo("Ventas", List.of("Reservas", "Promociones", "Candy", "Caja", "Declaración jurada")),
             new Grupo("Acceso", List.of("Puerta")));
 
     private final ApiHttp api;
@@ -65,7 +65,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         setSize(1280, 800);
         setMinimumSize(new Dimension(960, 600));
         setLocationRelativeTo(null);
-        ir(empleado.esAdministrador() ? "Funciones" : "Puerta");
+        ir(empleado.esAdministrador() ? "Películas" : "Puerta");
     }
 
     private JPanel cabecera(Empleado empleado, Runnable alSalir) {
@@ -134,8 +134,13 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     private Supplier<JComponent> crear(String destino) {
         return switch (destino) {
+            case "Películas" -> () -> new PantallaPeliculas(api, this);
+            case "Por revisar" -> () -> new PantallaPendientes(api, this);
+            case "Importador" -> () -> new PantallaImportador(api, this);
+            case "Salas" -> () -> new PantallaSalas(api, this);
             case "Funciones" -> () -> new PantallaFunciones(api, this);
             case "Caja" -> () -> new PantallaCaja(api);
+            case "Declaración jurada" -> () -> new PantallaDeclaracionJurada(api, this);
             case "Puerta" -> () -> new PantallaPuerta(api);
             default -> () -> new PantallaPendiente(destino);
         };
