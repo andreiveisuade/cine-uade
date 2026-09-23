@@ -39,8 +39,8 @@ export function FilaVacia({ columnas, children }) {
 }
 
 /** La aclaración gris al pie de un panel: el porqué de una regla que se ve rara. */
-export function Nota({ children }) {
-  return <Text size="xs" c="dimmed">{children}</Text>;
+export function Nota({ children, ...resto }) {
+  return <Text size="xs" c="dimmed" {...resto}>{children}</Text>;
 }
 
 /**
