@@ -1353,8 +1353,12 @@ body.lightbox-locked { overflow: hidden; }
               <td>Una clase cuyos métodos atrapan excepciones de <em>todos</em> los controladores, cada uno
                   para un tipo. Es donde una excepción del negocio se convierte en un código HTTP.</td>
               <td><code>ManejadorErrores</code>: <code>IllegalArgumentException</code> → 400,
-                  <code>NoEncontrado</code> → 404, <code>ButacaOcupadaException</code> → 409,
-                  <code>DataAccessException</code> → 500</td>
+                  <code>CredencialesInvalidas</code> → 401, <code>NoEncontrado</code> → 404,
+                  <code>ButacaOcupadaException</code> → 409, <code>DataAccessException</code> → 500.
+                  También los errores del propio HTTP —método que la ruta no acepta (405), cuerpo
+                  que no es JSON (415), parámetro faltante (400)— y un último <code>Exception</code>
+                  → 500, para que <em>todo</em> error salga con la forma <code>{error}</code> que el
+                  front sabe mostrar y no con la de Spring</td>
             </tr>
             <tr>
               <td><code>@JsonInclude(NON_NULL)</code></td>
@@ -3285,7 +3289,7 @@ java -jar target/cine-api.war # busca la base en DB_HOST/DB_PORT/DB_NAME/DB_USER
         <p>
           <strong>Los cuatro errores se declaran una vez, no 68 veces.</strong>
           <code>ManejadorErrores</code> es un <code>@RestControllerAdvice</code>: cualquier ruta puede
-          devolver 400, 404, 409 o 500 aunque su método no los mencione. Anotarlos endpoint por endpoint
+          devolver 400, 404, 409 o 500 aunque su método no los mencione (401 solo lo devuelve el login). Anotarlos endpoint por endpoint
           serían 68 repeticiones que se desincronizan con la primera excepción nueva, así que los agrega un
           <code>OpenApiCustomizer</code> a todas las operaciones.
         </p>

@@ -99,6 +99,47 @@ public class GestorProductos {
         productoRepository.save(producto);
     }
 
+    /**
+     * Cambia nombre y precio. El tipo no se edita: un suelto no pasa a ser combo sin
+     * declarar qué trae, y los componentes de un combo se fijan al armarlo.
+     *
+     * <p>R14 se vuelve a mirar después del cambio, de los dos lados: si lo editado es un
+     * combo, tiene que seguir saliendo menos que sus componentes; si es un suelto, cada
+     * combo que lo trae tiene que seguir conviniendo con el precio nuevo.
+     */
+    public Producto editar(int productoId, String nombre, Dinero precio) {
+        Producto producto = buscarOFallar(productoId);
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
+            throw new IllegalArgumentException("El precio debe ser mayor a cero");
+        }
+        if (!producto.getNombre().equalsIgnoreCase(nombre.trim())
+                && productoRepository.existsByNombreIgnoreCase(nombre.trim())) {
+            throw new IllegalArgumentException("Ya existe un producto con ese nombre");
+        }
+
+        producto.editar(nombre.trim(), precio);
+        List<Producto> afectados = producto.esCombo() ? List.of(producto) : combosQueTraen(productoId);
+        for (Producto combo : afectados) {
+            if (!combo.getPrecioSuelto().esMayorQue(combo.getPrecio())) {
+                throw new IllegalArgumentException("Con ese precio, el combo " + combo.getNombre()
+                        + " dejaría de salir menos que sus componentes sueltos ($ "
+                        + combo.getPrecioSuelto() + ")");
+            }
+        }
+        return productoRepository.save(producto);
+    }
+
+    private List<Producto> combosQueTraen(int productoId) {
+        return productoRepository.findAll().stream()
+                .filter(Producto::esCombo)
+                .filter(combo -> combo.getComponentes().stream()
+                        .anyMatch(item -> item.producto().getId() == productoId))
+                .toList();
+    }
+
     /** Lo que necesita la venta: el producto o el error, nunca un Optional vacío. */
     public Producto buscarOFallar(int id) {
         return productoRepository.findById(id)

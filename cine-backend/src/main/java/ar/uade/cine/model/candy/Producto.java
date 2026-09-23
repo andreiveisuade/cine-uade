@@ -84,6 +84,15 @@ public class Producto {
         this.disponible = disponible;
     }
 
+    /**
+     * Cambia nombre y precio. Las compras ya hechas no se enteran: cada línea copió los dos
+     * al venderse, así que los tickets emitidos siguen diciendo lo que dijeron.
+     */
+    public void editar(String nombre, Dinero precio) {
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
     /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     public List<ItemCombo> getComponentes() {
         return new ArrayList<>(componentes);

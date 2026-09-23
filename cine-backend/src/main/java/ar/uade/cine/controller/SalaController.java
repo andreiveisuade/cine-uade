@@ -21,6 +21,7 @@ import ar.uade.cine.model.salas.EstadoAsiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.dto.salas.PedidoEdicionSalaDTO;
 import ar.uade.cine.dto.salas.PedidoEstadoDTO;
 import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
@@ -71,6 +72,17 @@ public class SalaController {
                 especiales(pedido),
                 pedido.minutosLimpieza() == null
                         ? Sala.LIMPIEZA_POR_DEFECTO : pedido.minutosLimpieza());
+        return vistas.salaConButacas(sala);
+    }
+
+    @Operation(summary = "Editar nombre, tipo y limpieza de una sala. Las butacas no cambian")
+    @PutMapping("/api/salas/{id}")
+    public SalaVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionSalaDTO pedido) {
+        buscar(id);
+        Sala sala = salas.editar(id, pedido.nombre(),
+                pedido.tipo() == null
+                        ? null : Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
+                pedido.minutosLimpieza());
         return vistas.salaConButacas(sala);
     }
 

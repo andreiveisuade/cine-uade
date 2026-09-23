@@ -25,6 +25,7 @@ import ar.uade.cine.dto.candy.ArqueoCandyVistaDTO;
 import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.candy.PedidoComboDTO;
 import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;
+import ar.uade.cine.dto.candy.PedidoEdicionProductoDTO;
 import ar.uade.cine.dto.candy.PedidoProductoDTO;
 import ar.uade.cine.dto.candy.PedidoVentaDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
@@ -99,6 +100,14 @@ public class CandyController {
     public ProductoVistaDTO armarCombo(@RequestBody PedidoComboDTO pedido) {
         return vistas.producto(carta.armarCombo(pedido.nombre(),
                 Dinero.de(pedido.precio() == null ? 0 : pedido.precio()), pedido.componentes()));
+    }
+
+    @Operation(summary = "Editar nombre y precio de un producto o combo")
+    @PutMapping("/api/candy/productos/{id}")
+    public ProductoVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionProductoDTO pedido) {
+        buscar(id);
+        return vistas.producto(carta.editar(id, pedido.nombre(),
+                Dinero.de(pedido.precio() == null ? 0 : pedido.precio())));
     }
 
     /**

@@ -14,7 +14,7 @@ como la lectura rápida: qué endpoints hay y qué devuelve cada uno, sin levant
 | Fechas | ISO local sin zona: `2026-08-13T20:30:00`. Solo fecha: `2026-08-13` |
 | Enums | Viaja el nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
-| Errores | `400`, `404`, `409` o `500` con `{"error": "…"}`. El texto se muestra tal cual al usuario |
+| Errores | Siempre `{"error": "…"}`, y el texto se muestra tal cual al usuario. `400` dato inválido o regla incumplida, `401` login fallido, `404` recurso o ruta inexistente, `405` método que la ruta no acepta, `409` butaca ganada por otro, `415` cuerpo que no es JSON, `500` falla del servidor (detalle solo al log) |
 
 ## Catálogos
 
@@ -181,7 +181,7 @@ doble click no cobra dos veces.
 ### `POST /api/sesion`
 
 `{email, password}` → el empleado sin el hash. **Mismo error** para email inexistente y
-contraseña equivocada.
+contraseña equivocada, con `401`.
 
 `rol` es `ADMINISTRADOR` o `ACOMODADOR`. El acomodador solo valida entradas en la puerta.
 
@@ -202,6 +202,7 @@ contraseña equivocada.
 | `DELETE /api/peliculas/{id}` | `400` si tiene funciones o una grilla que la programe |
 | `GET /api/salas` · `GET /api/salas/{id}` | El detalle trae `asientos` |
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional: 15 por defecto, no negativa |
+| `PUT /api/salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan. Sin limpieza conserva la que tenía. El tipo no cambia si tiene funciones (`400`) |
 | `DELETE /api/salas/{id}` | `400` si tiene funciones |
 | `PUT /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` |
 | `GET /api/funciones` | Con `pelicula` y `sala` embebidas |
@@ -362,7 +363,8 @@ Implementado en el backend; **todavía sin pantalla**.
 | `GET /api/candy/productos/{id}` | Un producto |
 | `POST /api/candy/productos` | `{nombre, tipo, precio}` |
 | `POST /api/candy/combos` | `{nombre, precio, componentes}` — `componentes` es `{productoId: cantidad}` |
-| `PUT /api/candy/productos/{id}/disponibilidad` | Saca o repone de la carta |
+| `PUT /api/candy/productos/{id}` | `{nombre, precio}`. El tipo no se edita. R14 se revalida: `400` si el combo, o algún combo que trae este producto, deja de salir menos que sus componentes |
+| `PUT /api/candy/productos/{id}/disponibilidad` | Saca o repone de la carta. No hay `DELETE`: el producto vive en compras viejas |
 | `POST /api/candy/compras` | La venta |
 | `GET /api/candy/compras?fecha=&clienteId=` | Con `clienteId` gana el cliente; si no, el día |
 | `GET /api/candy/arqueo?fecha=` | `{fecha, total, compras}` — la otra caja, aparte de boletería |

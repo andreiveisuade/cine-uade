@@ -90,6 +90,38 @@ public class GestorSalas {
         return sala;
     }
 
+    /**
+     * Edita nombre, tipo y limpieza. Las butacas no se tocan: ver {@link Sala#editar}.
+     *
+     * <p>El tipo no cambia si la sala ya tiene funciones, por el mismo motivo que R12 no
+     * la deja borrar: una función 3D quedaría en una sala que no la puede proyectar, y el
+     * precio de las entradas que faltan vender cambiaría con la función ya publicada.
+     */
+    public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
+        Sala sala = salaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe la sala " + id));
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("Falta el tipo de sala");
+        }
+        int limpieza = minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza;
+        if (limpieza < 0) {
+            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
+        }
+        if (!sala.getNombre().equalsIgnoreCase(nombre.trim())
+                && salaRepository.existsByNombreIgnoreCase(nombre.trim())) {
+            throw new IllegalArgumentException("Ya existe una sala con ese nombre");
+        }
+        if (tipo != sala.getTipo() && funcionRepository.existsBySalaId(id)) {
+            throw new IllegalArgumentException(
+                    "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
+        }
+        sala.editar(nombre.trim(), tipo, limpieza);
+        return salaRepository.save(sala);
+    }
+
     private List<Asiento> generarAsientos(int salaId, List<Integer> distribucion,
                                           Map<String, TipoAsiento> especiales) {
         List<Asiento> asientos = new ArrayList<>();

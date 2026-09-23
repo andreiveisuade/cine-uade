@@ -78,6 +78,16 @@ public class Sala {
         return minutosLimpieza;
     }
 
+    /**
+     * Cambia los datos de la sala, no sus butacas: la distribución se fija al crearla y
+     * rehacerla dejaría a las entradas vendidas apuntando a asientos que ya no existen.
+     */
+    public void editar(String nombre, TipoSala tipo, int minutosLimpieza) {
+        this.nombre = nombre;
+        this.tipo = tipo;
+        this.minutosLimpieza = minutosLimpieza;
+    }
+
     @Override
     public String toString() {
         return "[" + id + "] " + nombre + " - " + tipo;
