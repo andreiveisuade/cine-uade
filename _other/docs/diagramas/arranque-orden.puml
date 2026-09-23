@@ -30,7 +30,7 @@ activate frontend
 frontend --> compose : Up
 deactivate frontend
 
-dev -> frontend : localhost:8080
+dev -> frontend : localhost:8080\n(web del cliente y /api del panel Swing)
 frontend -> backend : proxy_pass /api
 
 legend bottom

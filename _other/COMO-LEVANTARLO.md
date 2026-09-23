@@ -41,9 +41,8 @@ revisar** → funciones desde **Grilla** o **Planificador**.
 | | URL | Credenciales |
 |---|---|---|
 | Cliente | <http://localhost:8080> | — |
-| Panel | <http://localhost:8080/admin.html> | `encargado@cine.uade.ar` / `cine2026` |
-| Puerta | el mismo panel | `puerta@cine.uade.ar` / `cine2026` |
-| Panel de escritorio | `cine-swing`, `mvn exec:java` | las mismas: el encargado ve todo, el acomodador solo Puerta |
+| Panel del encargado | `cine-swing`, `mvn exec:java` | `encargado@cine.uade.ar` / `cine2026` (ve todo) |
+| Puerta | el mismo panel de escritorio | `puerta@cine.uade.ar` / `cine2026` (solo Puerta) |
 | Swagger | <http://localhost:8080/swagger-ui.html> (contrato crudo en `/v3/api-docs`, importable en Postman) | — |
 | Adminer | <http://localhost:8081> | servidor `mysql`, usuario del `.env` |
 

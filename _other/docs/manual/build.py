@@ -35,10 +35,18 @@ svg_map = {
 imagen_map = {
     "{{IMG_MAPA}}": CAPTURAS / "cp10-mapa.jpg",
     "{{IMG_TICKET}}": CAPTURAS / "cp10-ticket.jpg",
-    "{{IMG_GRILLA}}": CAPTURAS / "cp09-grilla.jpg",
     "{{IMG_BLOQUEO}}": CAPTURAS / "cp18-bloqueo.jpg",
-    "{{IMG_PUERTA_OK}}": CAPTURAS / "cp16-puerta-adelante.jpg",
-    "{{IMG_PUERTA_RECHAZO}}": CAPTURAS / "cp16-puerta-rechazo.jpg",
+    # El panel del encargado en Swing, en el tema oscuro por defecto.
+    "{{IMG_SWING_PELICULAS}}": CAPTURAS / "swing-peliculas.jpg",
+    "{{IMG_SWING_IMPORTADOR}}": CAPTURAS / "swing-importador.jpg",
+    "{{IMG_SWING_BUTACAS}}": CAPTURAS / "swing-butacas.jpg",
+    "{{IMG_SWING_GRILLA}}": CAPTURAS / "swing-grilla.jpg",
+    "{{IMG_SWING_PLANIFICADOR}}": CAPTURAS / "swing-planificador.jpg",
+    "{{IMG_SWING_AGENDA}}": CAPTURAS / "swing-agenda.jpg",
+    "{{IMG_SWING_COBRO}}": CAPTURAS / "swing-cobro.jpg",
+    "{{IMG_SWING_BORDERO}}": CAPTURAS / "swing-bordero.jpg",
+    "{{IMG_SWING_CAJA}}": CAPTURAS / "swing-caja.jpg",
+    "{{IMG_SWING_PUERTA}}": CAPTURAS / "swing-puerta.jpg",
 }
 
 

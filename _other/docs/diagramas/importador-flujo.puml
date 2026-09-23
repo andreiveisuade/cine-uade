@@ -13,7 +13,7 @@ participant "MapeoTmdb" as MAP
 participant "GestorRevisionCartelera" as GR
 database MySQL as DB
 
-E -> NG : POST /api/importaciones\n(boton en #/importador)
+E -> NG : POST /api/importaciones\n(boton Traer cartelera\ndel panel Swing)
 NG -> GI : proxy_read_timeout 180s
 activate GI
 

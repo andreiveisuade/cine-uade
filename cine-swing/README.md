@@ -1,9 +1,10 @@
 # cine-swing
 
 El panel del encargado (y la Puerta del acomodador) como app de escritorio: Java 21 y Swing
-puro, con FlatLaf oscuro de look and feel y JCalendar para elegir fechas. Habla con el backend por HTTP con Basic, igual que lo
-hacía el panel web: las reglas siguen solo en los gestores, y el error del backend se
-muestra tal cual.
+puro, con FlatLaf oscuro de look and feel y JCalendar para elegir fechas. Habla con el backend por HTTP con Basic, igual que la
+web del cliente pero con login: las reglas siguen solo en los gestores, y el error del
+backend se muestra tal cual. Es la única interfaz del encargado y del acomodador; la web
+React quedó solo para la venta al cliente.
 
 ## Correrlo
 

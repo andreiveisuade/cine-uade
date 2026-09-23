@@ -40,8 +40,9 @@ no tiene permiso para esta operación».
 | `GET /api/medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
 | `GET /api/tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
 
-El front anticipa con ellos R8 (`multiplicador`, `soportaTresD`), R11 (`requiereAutorizacion`)
-y el «traé el carnet» (`requiereAcreditacion`).
+La web del cliente anticipa con ellos el «traé el carnet» (`requiereAcreditacion`); Swing, R11
+(`requiereAutorizacion`) y el `multiplicador` de cada tipo de sala. R8 (`soportaTresD`) no se
+anticipa: la valida el backend al dar de alta la función.
 
 ---
 

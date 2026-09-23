@@ -46,7 +46,7 @@ legend bottom
   | Peliculas, funciones, salas | baja | La terminal las consume, no las crea |
   | Reservas ya vendidas | baja | Para poder validar en la puerta un codigo comprado por web |
   | Reservas y pagos de la terminal | sube | Al toque de cada venta |
-  | Arqueo | — | Solo en la version web, despues de sincronizar |
+  | Arqueo | — | Solo en el panel del encargado contra el servidor, despues de sincronizar |
   |  |  |  |
   |= Estado local |= Que significa |= Que se hace |
   | PENDIENTE | Todavia no subio | Reintentar desde el boton |

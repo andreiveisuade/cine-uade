@@ -3,9 +3,9 @@ title Casos de uso - Sistema de cine
 
 left to right direction
 
-actor Cliente as cliente
-actor "Administrador\ndel cine" as admin
-actor Acomodador as acomodador
+actor "Cliente\n(web)" as cliente
+actor "Administrador\ndel cine\n(app Swing)" as admin
+actor "Acomodador\n(app Swing)" as acomodador
 
 rectangle Sistema {
   usecase "CU-01 Gestionar peliculas" as CU01
@@ -61,12 +61,14 @@ admin --> CU14
 admin --> CU17
 admin --> CU19
 admin --> CU20
+acomodador --> CU10
 acomodador --> CU18
 
 note bottom of CU10
-  Solo el administrador inicia sesion.
-  El cliente compra sin registrarse
-  con contrasena.
+  Solo los empleados inician sesion,
+  en la app de escritorio (Swing).
+  El cliente compra en la web sin
+  registrarse con contrasena.
 end note
 
 note bottom of CU03b

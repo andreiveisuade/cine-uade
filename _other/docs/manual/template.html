@@ -514,7 +514,7 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="casos-de-uso">
       <h2>Casos de uso</h2>
-      <p>Actores: <strong>Administrador</strong>, <strong>Cliente</strong> (sin contraseña) y <strong>Acomodador</strong> (solo la puerta).</p>
+      <p>Actores: <strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta), que entran con contraseña al <a href="#swing">panel de escritorio</a>, y <strong>Cliente</strong> (sin contraseña), que compra en la web.</p>
 
       <figure class="diagram">
         {{SVG_CASOS_USO}}
@@ -538,7 +538,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-07b</td><td>Cliente</td><td>Pagar por <a href="#pasarela">checkout</a> con QR</td><td>R5, R11, R17, R19</td></tr>
             <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6, R13</td></tr>
             <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td></tr>
-            <tr><td>CU-10</td><td>Admin</td><td>Iniciar sesión</td><td>—</td></tr>
+            <tr><td>CU-10</td><td>Admin, Acomodador</td><td>Iniciar sesión en el panel de escritorio</td><td>—</td></tr>
             <tr><td>CU-11</td><td>Admin</td><td>Marcar o reponer una butaca fuera de servicio</td><td>R9</td></tr>
             <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día</td><td>—</td></tr>
             <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy</td><td>—</td></tr>
@@ -819,26 +819,26 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="frontend">
       <h2>Frontend</h2>
       <p>
-        Dos páginas: <code>index.html</code> (cliente, sin login) y <code>admin.html</code> (panel, login de
-        empleado). React 19, React Router por hash (<code>#/pelicula/3</code>) y Mantine, en
-        <code>cine-frontend/src</code>. Vite compila en una etapa del Dockerfile y nginx sirve el resultado y
+        Una sola página, <code>index.html</code>: la venta al cliente, sin login. El encargado y el acomodador
+        no usan la web sino el <a href="#swing">panel de escritorio</a>. React 19, React Router por hash
+        (<code>#/pelicula/3</code>) y Mantine, en <code>cine-frontend/src</code>. Vite compila en una etapa del Dockerfile y nginx sirve el resultado y
         reenvía <code>/api</code>: sin CORS.
       </p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Pieza</th><th>Qué hace</th></tr></thead>
           <tbody>
-            <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API; manda el <code>Authorization: Basic</code> guardado en <code>sessionStorage</code> y ante un 401 vuelve al login</td></tr>
+            <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API; convierte el <code>{"error"}</code> del backend en el mensaje que se muestra</td></tr>
             <tr><td><code>useCargar</code></td><td>Carga los datos de una pantalla y descarta respuestas viejas</td></tr>
             <tr><td><code>cliente/compra.jsx</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
-            <tr><td><code>admin/AppAdmin.jsx</code></td><td>Rutas, menú y guardia por rol: el acomodador solo ve Puerta</td></tr>
-            <tr><td><code>MapaButacas</code></td><td>La sala fila por fila, compartida por cliente y panel</td></tr>
+            <tr><td><code>cliente/AppCliente.jsx</code></td><td>Las rutas del cliente</td></tr>
+            <tr><td><code>MapaButacas</code></td><td>La sala fila por fila, con ocupadas y fuera de servicio separadas</td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        7 pantallas del cliente y 16 del panel. Ninguna regla vive en el front: lo que anticipa (R3, R8,
-        acreditación) es aviso y el backend vuelve a validar.
+        7 pantallas. Ninguna regla vive en el front: lo único que anticipa, pedir el carnet de las tarifas
+        reducidas, es un aviso y el backend vuelve a validar.
       </p>
     </section>
 
@@ -880,7 +880,47 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>JCalendar</strong> para toda fecha: <code>JDateChooser</code> en rangos y filtros, <code>JCalendar</code> en la agenda. En pantalla <code>dd/MM/yyyy</code>; al backend viaja ISO.</li>
         <li><strong>Borderó y declaración jurada en la PC:</strong> el backend da los números por JSON y el archivo lo escribe el cliente, con el mismo formato que antes generaba el servidor.</li>
       </ul>
-      <p>Capturas del panel Swing: pendientes de sumar a <code>manual/capturas/</code>.</p>
+      <h3>Las pantallas</h3>
+      <figure class="diagram">
+        {{IMG_SWING_PELICULAS}}
+        <figcaption>Películas: el listado con filtros y el alta al lado</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_IMPORTADOR}}
+        <figcaption>Importador: trae la cartelera de TMDB al buzón de Por revisar</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_BUTACAS}}
+        <figcaption>Butacas de una sala: un clic marca o repone una fuera de servicio (R9)</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_GRILLA}}
+        <figcaption>Grilla (CU-03b): Confirmar se habilita solo después de previsualizar</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_PLANIFICADOR}}
+        <figcaption>Planificador de la semana: previsualizar no escribe nada</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_AGENDA}}
+        <figcaption>Agenda: la programación de una sala, con el calendario de JCalendar</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_COBRO}}
+        <figcaption>Cobro de una reserva: el monto sale de las butacas y el descuento se resuelve al cobrar</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_BORDERO}}
+        <figcaption>Borderó e informe de una función (CU-19, CU-20): el archivo se guarda en la PC</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_CAJA}}
+        <figcaption>Arqueo del día (CU-12): boletería y candy, cada una con su caja</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{IMG_SWING_PUERTA}}
+        <figcaption>Puerta (CU-18): lo único que ve el acomodador</figcaption>
+      </figure>
     </section>
 
     <section class="doc-section" id="dominio">
@@ -1379,7 +1419,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 20 <code>@Entity</code>, enums y <code>Dinero</code>, con su lógica propia (<code>Reserva.getTotal()</code>). La View es el front React, que recibe <code>*VistaDTO</code>.</td></tr>
+            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 20 <code>@Entity</code>, enums y <code>Dinero</code>, con su lógica propia (<code>Reserva.getTotal()</code>). La View son los dos clientes, la web React y el panel Swing, que reciben <code>*VistaDTO</code> como JSON.</td></tr>
             <tr><td>¿Cuál es la responsabilidad del Controller?</td><td>Recibir el pedido, validar el DTO (<code>@Valid</code>), llamar al gestor y devolver el DTO con su código: <code>POST /api/reservas</code> → <code>GestorReservas.reservar</code> → 201.</td></tr>
             <tr><td>¿Qué diferencia hay entre Controller y Service?</td><td>El controller sabe de HTTP y no decide; el service decide reglas y transacción (<code>@Transactional</code>) y no sabe de HTTP.</td></tr>
             <tr><td>¿Por qué la View no debería acceder directamente a la base de datos?</td><td>Se saltearía reglas y seguridad y quedaría atada al esquema. En Docker el frontend (red <code>web</code>) ni siquiera tiene ruta a MySQL (red <code>datos</code>).</td></tr>
@@ -1505,9 +1545,8 @@ docker compose up -d --build
           <thead><tr><th>Qué</th><th>Dónde</th><th>Credenciales</th></tr></thead>
           <tbody>
             <tr><td>Web del cliente</td><td><code>localhost:8080</code></td><td>—</td></tr>
-            <tr><td>Panel</td><td><code>localhost:8080/admin.html</code></td><td><code>encargado@cine.uade.ar</code> / <code>cine2026</code></td></tr>
-            <tr><td>Puerta</td><td>el mismo panel</td><td><code>puerta@cine.uade.ar</code> / <code>cine2026</code></td></tr>
-            <tr><td>Panel de escritorio</td><td><code>cd cine-swing &amp;&amp; mvn exec:java</code> (JDK 21)</td><td>las mismas del panel</td></tr>
+            <tr><td>Panel del encargado</td><td><code>cd cine-swing &amp;&amp; mvn exec:java</code> (JDK 21)</td><td><code>encargado@cine.uade.ar</code> / <code>cine2026</code></td></tr>
+            <tr><td>Puerta</td><td>el mismo panel de escritorio</td><td><code>puerta@cine.uade.ar</code> / <code>cine2026</code></td></tr>
             <tr><td>Swagger</td><td><code>localhost:8080/swagger-ui.html</code></td><td>—</td></tr>
             <tr><td>Adminer</td><td><code>127.0.0.1:8081</code></td><td>servidor <code>mysql</code>, usuario del <code>.env</code></td></tr>
           </tbody>
@@ -1579,7 +1618,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
 
       <ul>
         <li><strong>Swing es un cliente HTTP más</strong> del backend local: no duplica reglas. Sin nginx.</li>
-        <li><strong>Pantallas:</strong> Cobrar y Puerta. El arqueo queda en la web.</li>
+        <li><strong>Pantallas:</strong> Cobrar y Puerta. El arqueo queda en el panel del encargado, contra el servidor.</li>
         <li><strong>Sincronización:</strong> baja cartelera y ventas; sube reservas y pagos. Ids locales desde <code>AUTO_INCREMENT = 1000000</code>.</li>
         <li><strong>Rechazos:</strong> cada venta queda <code>PENDIENTE</code>, <code>SINCRONIZADA</code> o <code>RECHAZADA</code>.</li>
       </ul>
@@ -1597,7 +1636,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
             <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td><code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB</td></tr>
             <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
             <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09</td></tr>
-            <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador</td></tr>
+            <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador y en el panel Swing</td></tr>
           </tbody>
         </table>
       </div>
@@ -1638,7 +1677,7 @@ mvn clean test       # 452 tests, ninguno salteado</code></pre>
             <tr><td>CP-12</td><td>«Mis reservas» con un código inexistente</td><td>Aviso, no error</td></tr>
             <tr><td>CP-13</td><td>Promo del 30% y cobrar</td><td>Descuento informado; la caja lo suma</td></tr>
             <tr><td>CP-14</td><td>Dar de baja la promoción</td><td>Gris con «Reactivar»</td></tr>
-            <tr><td>CP-15</td><td>Acomodador tipea <code>#/peliculas</code></td><td>Vuelve a la puerta; backend 403</td></tr>
+            <tr><td>CP-15</td><td>Acomodador entra al panel Swing</td><td>El menú solo tiene Puerta; cualquier otra ruta, backend 403</td></tr>
             <tr><td>CP-16</td><td>Validar un código dos veces</td><td><strong>ADELANTE</strong> y después rechazo</td></tr>
             <tr><td>CP-17</td><td>Dejar vencer una reserva</td><td><code>EXPIRADA</code>, butacas libres (R17)</td></tr>
             <tr><td>CP-18</td><td>Elegir en dos pestañas</td><td>La segunda las ve tomadas</td></tr>
@@ -1655,20 +1694,8 @@ mvn clean test       # 452 tests, ninguno salteado</code></pre>
         <figcaption>CP-10 · el ticket con el código de acceso</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_GRILLA}}
-        <figcaption>CP-09 · la grilla previsualizada antes de aplicarla</figcaption>
-      </figure>
-      <figure class="diagram">
         {{IMG_BLOQUEO}}
         <figcaption>CP-18 · la butaca que otro está eligiendo, ya tomada</figcaption>
-      </figure>
-      <figure class="diagram">
-        {{IMG_PUERTA_OK}}
-        <figcaption>CP-16 · entrada válida</figcaption>
-      </figure>
-      <figure class="diagram">
-        {{IMG_PUERTA_RECHAZO}}
-        <figcaption>CP-16 · la misma entrada, la segunda vez</figcaption>
       </figure>
 
       <h3>Matriz de trazabilidad</h3>
