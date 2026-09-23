@@ -55,7 +55,8 @@ export function Confirmar() {
       recordarCliente({ nombre: nombre.trim(), email: email.trim() });
       reservada.current = true;
       setSeleccion({ funcionId: null, butacas: {} });
-      navegar(`/ticket/${reserva.id}`);
+      // El alta ya trae la reserva entera: el ticket la dibuja sin volver a pedirla.
+      navegar(`/ticket/${reserva.id}`, { state: { reserva } });
     } catch (e) {
       setEnviando(false);
       // 409: alguien tomó la butaca en el medio. Dejar el resumen como está sería

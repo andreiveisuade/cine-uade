@@ -1,5 +1,5 @@
 import { Alert, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
 import { fechaHora, precio, precioExacto } from "../api/formato.js";
@@ -98,8 +98,13 @@ function CartaCandy({ productos, reservaId }) {
 export function Ticket() {
   const { id } = useParams();
   const avisar = useAvisar();
-  // Si la carta no carga, el ticket se muestra igual: es lo único imprescindible acá.
-  const carga = useCargar(() => Promise.all([api.obtenerReserva(id), api.obtenerProductosCandy().catch(() => [])]), [id]);
+  const recien = useLocation().state?.reserva;
+  // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide. La carta
+  // es opcional: si no carga, el ticket se muestra igual.
+  const carga = useCargar(() => Promise.all([
+    recien?.id === Number(id) ? recien : api.obtenerReserva(id),
+    api.obtenerProductosCandy().catch(() => []),
+  ]), [id]);
   if (!carga.datos) return <EsperaOError carga={carga} />;
   const [reserva, productos] = carga.datos;
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
