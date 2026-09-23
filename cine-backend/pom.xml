@@ -71,6 +71,16 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
+    <!-- Quién llama. Antes cualquiera con curl podía dar de alta una sala: el login solo
+         comprobaba la clave y devolvía el empleado, y ninguna otra ruta volvía a
+         preguntar. Spring Security pone un filtro delante de todos los controladores, así
+         que una ruta nueva nace cerrada y abrirla es una decisión escrita en un solo lugar
+         (infrastructure/seguridad/ConfiguracionSeguridad). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
     <!-- Driver JDBC de MySQL. En runtime: nadie lo importa, lo carga el DataSource. -->
     <dependency>
       <groupId>com.mysql</groupId>

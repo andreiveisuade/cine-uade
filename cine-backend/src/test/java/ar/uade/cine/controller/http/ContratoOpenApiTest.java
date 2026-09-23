@@ -79,7 +79,7 @@ class ContratoOpenApiTest extends PruebaDeApi {
 
         rutas.properties().forEach(ruta -> ruta.getValue().properties().forEach(metodo -> {
             JsonNode respuestas = metodo.getValue().get("responses");
-            for (String codigo : List.of("400", "404", "409", "500")) {
+            for (String codigo : List.of("400", "401", "403", "404", "409", "500")) {
                 if (respuestas == null || !respuestas.has(codigo)) {
                     incompletas.add(metodo.getKey().toUpperCase() + " " + ruta.getKey() + " sin " + codigo);
                 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -16,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
 import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
+import ar.uade.cine.infrastructure.seguridad.Password;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,12 +34,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * los controladores a mano dejaría afuera justamente lo que se quiere comprobar —el
  * {@code @RestControllerAdvice} y el mapper de JSON— y el test seguiría en verde el día que
  * alguno de los dos cambie.
+ *
+ * <p>Por la misma razón pasa por Spring Security: cada pedido de {@link #get}, {@link #post}
+ * y {@link #put} va autenticado como un administrador de prueba, así los tests de cada
+ * controlador siguen probando su regla y no el permiso. Qué pasa sin credenciales o con
+ * otro rol lo prueba {@code SeguridadTest} con {@link #pedirComo}.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public abstract class PruebaDeApi {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    public static final String EMAIL_ADMIN = "admin@prueba.test";
+    public static final String CLAVE_ADMIN = "clave-de-prueba";
+
+    /**
+     * Lejos de los ids que generan los tests: el usuario es una tabla sola para clientes y
+     * empleados, y hay tests escritos sabiendo que el primer cliente que dan de alta es el
+     * número uno. Guardarlo por el repositorio le robaría ese uno.
+     */
+    private static final int ID_ADMIN = 9000;
 
     @Autowired
     private TestRestTemplate cliente;
@@ -50,6 +67,9 @@ public abstract class PruebaDeApi {
 
     @Autowired
     private BloqueoButacas bloqueoButacas;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     /** El reloj del sistema bajo prueba: lo que los gestores leen como "ahora". */
     @Autowired
@@ -64,33 +84,42 @@ public abstract class PruebaDeApi {
         // hora a la que otro movió el reloj le queda al que sigue.
         ((BloqueoButacasMemoria) bloqueoButacas).limpiar();
         reloj.reiniciar();
+        jdbc.update("INSERT INTO usuario (id, nombre, email, rol, password_hash) VALUES (?, ?, ?, ?, ?)",
+                ID_ADMIN, "Admin de prueba", EMAIL_ADMIN, "ADMINISTRADOR", Password.hashear(CLAVE_ADMIN));
     }
 
     protected Respuesta get(String ruta) {
-        return respuesta(cliente.getForEntity(ruta, String.class));
+        return pedirComo(HttpMethod.GET, ruta, null, EMAIL_ADMIN, CLAVE_ADMIN);
     }
 
     protected Respuesta post(String ruta, String cuerpo) {
-        return conCuerpo(HttpMethod.POST, ruta, cuerpo);
+        return pedirComo(HttpMethod.POST, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
     }
 
     protected Respuesta put(String ruta, String cuerpo) {
-        return conCuerpo(HttpMethod.PUT, ruta, cuerpo);
+        return pedirComo(HttpMethod.PUT, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
     }
 
-    private Respuesta conCuerpo(HttpMethod metodo, String ruta, String cuerpo) {
+    /** Un pedido con las credenciales que se digan; con email {@code null}, sin ninguna. */
+    protected Respuesta pedirComo(HttpMethod metodo, String ruta, String cuerpo,
+                                  String email, String clave) {
         HttpHeaders cabeceras = new HttpHeaders();
-        cabeceras.setContentType(MediaType.APPLICATION_JSON);
+        if (cuerpo != null) {
+            cabeceras.setContentType(MediaType.APPLICATION_JSON);
+        }
+        if (email != null) {
+            cabeceras.setBasicAuth(email, clave);
+        }
         return respuesta(cliente.exchange(URI.create(ruta), metodo,
                 new HttpEntity<>(cuerpo, cabeceras), String.class));
     }
 
     private static Respuesta respuesta(ResponseEntity<String> entidad) {
-        return new Respuesta(entidad.getStatusCode().value(), entidad.getBody());
+        return new Respuesta(entidad.getStatusCode().value(), entidad.getBody(), entidad.getHeaders());
     }
 
-    /** Lo que contestó el servidor, sin interpretar: el código y el cuerpo crudo. */
-    public record Respuesta(int estado, String cuerpo) {
+    /** Lo que contestó el servidor, sin interpretar: el código, el cuerpo crudo y las cabeceras. */
+    public record Respuesta(int estado, String cuerpo, HttpHeaders cabeceras) {
 
         public JsonNode json() {
             try {

@@ -15,6 +15,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
 /**
@@ -35,6 +37,9 @@ public class ConfiguracionOpenApi {
     /** El nombre del esquema compartido de error. Uno solo, igual que {@code ErrorVistaDTO}. */
     private static final String ESQUEMA_ERROR = "Error";
 
+    /** El esquema de seguridad: es lo que hace aparecer el botón Authorize en Swagger UI. */
+    private static final String ESQUEMA_BASIC = "basic";
+
     @Bean
     public OpenAPI apiDelCine() {
         return new OpenAPI()
@@ -48,9 +53,12 @@ public class ConfiguracionOpenApi {
                                 Las reglas de negocio (R1..R19) viven en la capa de servicio: esta API \
                                 las expone, no las reimplementa.
 
-                                **La API todavía no valida quién llama.** Solo `POST /api/sesion` \
-                                verifica credenciales; el resto de las rutas de escritura no comprueba \
-                                que haya sesión iniciada. Está anotado como pendiente.
+                                **Autenticación: HTTP Basic** con el email y la contraseña de un \
+                                empleado (botón *Authorize*). Sin credenciales se puede usar lo que \
+                                usa el sitio del cliente —cartelera, detalle de película y función, \
+                                catálogos, carta del candy, reservar, bloquear butacas, consultar y cancelar la propia \
+                                reserva— y `POST /api/sesion`. `POST /api/acceso` pide ACOMODADOR o \
+                                ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
                                 """))
                 // Relativo: sirve igual detrás del nginx del compose que contra el backend directo.
                 .servers(List.of(new Server().url("/").description("Este mismo servidor")));
@@ -59,9 +67,10 @@ public class ConfiguracionOpenApi {
     /**
      * Suma los errores comunes a todas las operaciones.
      *
-     * <p>Los cuatro salen de {@link ManejadorErrores}, que los aplica globalmente con un
-     * {@code @RestControllerAdvice}: cualquier ruta puede devolverlos aunque su método no
-     * los mencione. Anotarlos endpoint por endpoint serían 68 repeticiones que se
+     * <p>Los cuatro de negocio salen de {@link ManejadorErrores}, que los aplica globalmente
+     * con un {@code @RestControllerAdvice}: cualquier ruta puede devolverlos aunque su método
+     * no los mencione. El 401 y el 403 los da el filtro de Spring Security antes de llegar al
+     * controlador, con la misma forma. Anotarlos endpoint por endpoint serían 68 repeticiones que se
      * desincronizan a la primera excepción nueva; acá se declaran una vez y salen en todas.
      *
      * <p>El esquema compartido también se registra acá y no en el bean {@code OpenAPI}:
@@ -76,12 +85,20 @@ public class ConfiguracionOpenApi {
     public OpenApiCustomizer erroresComunes() {
         return api -> {
             api.getComponents().addSchemas(ESQUEMA_ERROR, esquemaDeError());
+            // Global y no por operación: las rutas públicas lo ignoran, y marcarlas una por
+            // una repetiría la lista de ConfiguracionSeguridad, que es la que manda.
+            api.getComponents().addSecuritySchemes(ESQUEMA_BASIC, new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP).scheme("basic")
+                    .description("Email y contraseña de un empleado"));
+            api.addSecurityItem(new SecurityRequirement().addList(ESQUEMA_BASIC));
             api.getPaths().values().stream()
                     .flatMap(ruta -> ruta.readOperations().stream())
                     .forEach(operacion -> {
                         ApiResponses respuestas = operacion.getResponses();
                         Map.of(
                                 "400", "El pedido no es válido, o una regla de negocio lo rechazó",
+                                "401", "Faltan las credenciales, o no corresponden a ningún empleado",
+                                "403", "El rol de quien llama no alcanza para esta operación",
                                 "404", "No existe lo que se pidió",
                                 "409", "La butaca ya estaba vendida: se perdió la carrera contra otra compra",
                                 "500", "Falló el acceso a los datos o la emisión de un comprobante")
