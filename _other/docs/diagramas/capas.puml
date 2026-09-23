@@ -8,17 +8,14 @@ skinparam ranksep 40
 hide members
 
 package controller {
-  package vistas {
-    class "6 Vistas*\n(ensambladores de DTO)" as VistasInternas
-  }
   package http {
     class "Parseo, Fechas, NoEncontrado\nManejadorErrores" as Http
   }
-  class "14 @RestController\n(uno por area, sin fachada)" as Controllers
+  class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n14 @RestController (uno por area, sin fachada)\ny al lado de cada uno su Vistas* (ensamblador de DTO)" as Controllers
 }
 
 package dto {
-  class "candy, cartelera, catalogos, funciones\ngrilla, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
+  class "candy, cartelera, catalogos, comun, funciones\ninformes, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
 }
 
 package service {
@@ -56,7 +53,7 @@ package model {
 }
 
 package repository {
-  class "13 interfaces JpaRepository\n(planas, sin implementacion propia)\n+ DineroConverter" as Repos
+  class "13 interfaces JpaRepository por subdominio\n(sin implementacion propia)\n+ dinero/DineroConverter" as Repos
 }
 
 package infrastructure {
@@ -66,9 +63,7 @@ package infrastructure {
 class Aplicacion
 
 Controllers -down-> service
-Controllers -right-> VistasInternas
 Controllers ..> Dtos
-VistasInternas ..> Dtos
 
 service ..> repository
 service ..> infrastructure
@@ -82,6 +77,12 @@ note bottom of model
   terceros salvo java.time. Es la unica
   capa que se podria llevar a otro
   proyecto tal cual.
+end note
+
+note top of Dtos
+  Todas las capas usan la misma lista de
+  subdominios: sabiendo el subdominio se
+  sabe el paquete en cualquiera de ellas.
 end note
 
 Aplicacion .. Controllers

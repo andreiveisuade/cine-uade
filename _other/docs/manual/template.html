@@ -566,17 +566,22 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Capa</th><th>Responsabilidad</th><th>No hace</th></tr></thead>
           <tbody>
-            <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. <code>http/</code> (parseo, errores, OpenAPI) y <code>vistas/</code> (arman DTO)</td><td>Reglas, base</td></tr>
-            <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>)</td><td>Comportamiento</td></tr>
+            <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. Un subpaquete por subdominio con su <code>*Controller</code> y su <code>Vistas*</code> (arma los DTO), más <code>catalogos/</code> y <code>http/</code> (parseo, errores, OpenAPI)</td><td>Reglas, base</td></tr>
+            <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>); los compartidos en <code>catalogos/</code> y <code>comun/</code></td><td>Comportamiento</td></tr>
             <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio con R1..R19</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
             <tr><td><code>model/</code></td><td>Entidades, enums y <code>Dinero</code></td><td>Guardarse o mostrarse</td></tr>
-            <tr><td><code>repository/</code></td><td>13 <code>JpaRepository</code> y <code>DineroConverter</code></td><td>Validar reglas</td></tr>
+            <tr><td><code>repository/</code></td><td>13 <code>JpaRepository</code> por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
             <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, Redis, reloj, seguridad) y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
           </tbody>
         </table>
       </div>
       <p>
         Adentro, por subdominio: <code>candy/ cartelera/ funciones/ informes/ programaciones/ promociones/ salas/ usuarios/ ventas/</code>.
+        Todas las capas usan la misma lista de subdominios, así que sabiendo el subdominio se sabe el paquete en
+        cualquiera de ellas (<code>controller/ventas/</code>, <code>dto/ventas/</code>, <code>service/ventas/</code>,
+        <code>model/ventas/</code>, <code>repository/ventas/</code>). Los transversales van aparte y solo donde hacen
+        falta: <code>catalogos/</code> (controller y dto), <code>dinero/</code> (model y repository), <code>comun/</code>
+        (dto) y <code>http/</code> (controller).
         <code>ArquitecturaTest</code> lee los <code>import</code> y falla si una capa nombra a otra que no tiene
         debajo, o si <code>service/</code> o <code>controller/</code> usan <code>jakarta.persistence</code>,
         <code>java.sql</code> o JDBC.
@@ -632,16 +637,16 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
-            <tr><td>14 <code>*Controller</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>)</td></tr>
+            <tr><td>14 <code>*Controller</code>, en <code>controller/&lt;subdominio&gt;/</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>)</td></tr>
             <tr><td><code>http/</code>: <code>Parseo</code>, <code>Fechas</code></td><td>Convierten parámetros de texto a tipos</td></tr>
             <tr><td><code>http/Creado</code></td><td>El <code>201</code> con <code>Location</code> de las altas</td></tr>
             <tr><td><code>http/ManejadorErrores</code></td><td>Excepciones → código HTTP y <code>{"error"}</code></td></tr>
             <tr><td><code>http/ConfiguracionOpenApi</code></td><td>Errores comunes en Swagger</td></tr>
-            <tr><td><code>vistas/</code>: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasVentas</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code>, <code>VistasInformes</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores</td></tr>
+            <tr><td>Junto a su controlador: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasVentas</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code>, <code>VistasInformes</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
-            <tr><td>65 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen</td></tr>
-            <tr><td>13 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad; Spring Data genera la implementación</td></tr>
+            <tr><td>65 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen; <code>ErrorVistaDTO</code> y <code>PedidoActivacionDTO</code> en <code>comun/</code></td></tr>
+            <tr><td>13 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad, en el subdominio de su entidad; Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ columna <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>

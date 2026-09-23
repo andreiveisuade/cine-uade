@@ -13,10 +13,10 @@ box "contenedor frontend\nred: web" #F7EBE3
 end box
 
 box "contenedor backend\nredes: web + datos" #F2F0ED
-  participant "ReservaController\ncontroller/" as CTRL
-  participant "VistasVentas\ncontroller/vistas/" as VIS
+  participant "ReservaController\ncontroller/ventas/" as CTRL
+  participant "VistasVentas\ncontroller/ventas/" as VIS
   participant "GestorReservas\nservice/ventas/" as GEST
-  participant "ReservaRepository\nrepository/" as REPO
+  participant "ReservaRepository\nrepository/ventas/" as REPO
 end box
 
 box "contenedor mysql\nred: datos" #F2F0ED

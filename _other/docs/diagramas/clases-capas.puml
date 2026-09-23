@@ -8,21 +8,22 @@ skinparam ranksep 45
 hide members
 
 package controller {
-  ' Divididos en http/ (Parseo, Fechas, NoEncontrado, ManejadorErrores) y vistas/.
+  ' Un subpaquete por subdominio con el controlador y su Vistas* juntos, mas
+  ' catalogos/ y http/ (Parseo, Fechas, NoEncontrado, ManejadorErrores).
   ' Ya no hay rutas/: cada controlador es publico y Spring lo descubre solo.
 
   class "CandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nSalaController, SesionController" as Controllers
-  class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy" as Vistas
+  class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy\nVistasInformes" as Vistas
   class Parseo
   class Fechas
   class NoEncontrado
   class ManejadorErrores
 }
 
-' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes espejan
-' a model/, asi que de que entidad viene cada forma se lee en la ruta del archivo.
+' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes son los
+' mismos subdominios que en las demas capas, mas catalogos/ y comun/.
 package dto {
-  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, catalogos\ngrilla\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
+  class "cartelera, funciones, programaciones, salas\nventas, candy, promociones, usuarios, informes\ncatalogos, comun\n\nPedido*DTO lo que entra · *VistaDTO lo que sale" as Dtos
 }
 
 package service {
@@ -145,7 +146,8 @@ package repository {
   class DineroConverter
 
   note bottom of PeliculaRepository
-    13 interfaces JpaRepository, planas:
+    13 interfaces JpaRepository, en un
+    subpaquete por subdominio como model/:
     sin implementacion propia y sin
     subcarpeta por tecnologia. Spring
     Data genera la unica que existe.
@@ -229,8 +231,8 @@ service ..> infrastructure
 legend bottom
   |= Capa |= De que se ocupa |
   | controller | Como se habla con la aplicacion: HTTP. 14 @RestController traducen a JSON, las |
-  |  | seis Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Ninguna regla |
-  |  | vive aca: Spring los descubre por component scan. |
+  |  | siete Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Cada Vistas* vive |
+  |  | en el subpaquete de su controlador. Ninguna regla vive aca: Spring los descubre por component scan. |
   | dto | La forma del JSON, en objetos sin comportamiento: un tipo por mensaje que entra o sale. |
   | Aplicacion | Solo @SpringBootApplication + main(). Cada @Service, @Repository |
   |  | y @RestController se conecta solo. Que implementacion de infrastructure/ se usa lo decide |
@@ -238,7 +240,7 @@ legend bottom
   | service | Las reglas de negocio. Cada gestor pide los repositorios que necesita para validarlas. |
   | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. No |
   |  | depende de ninguna otra capa. Solo Promocion es jerarquia real. |
-  | repository | 13 interfaces JpaRepository planas. Spring Data genera la implementacion. |
+  | repository | 13 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
   | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
   |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |
   |  | **comprobantes**: el ticket que se entrega; no es de persistencia, se imprime y no se |
