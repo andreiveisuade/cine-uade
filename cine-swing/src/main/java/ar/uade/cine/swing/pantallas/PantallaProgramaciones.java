@@ -82,6 +82,8 @@ final class PantallaProgramaciones extends Pantalla {
     // El plan previsualizado vale solo para los datos con que se pidió.
     private Plan previsualizado;
     private boolean llenando;
+    // Cuántas grillas hay sin filtro: se cuenta al entrar y tras crear o dar de baja, no en cada filtro.
+    private int total;
 
     PantallaProgramaciones(ApiHttp api) {
         super(api, "Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
@@ -149,7 +151,7 @@ final class PantallaProgramaciones extends Pantalla {
             filtroSala.setSelectedIndex(0);
             filtroEstado.setSelectedIndex(0);
             llenando = false;
-            buscar();
+            recargar();
         });
         return barra;
     }
@@ -158,7 +160,7 @@ final class PantallaProgramaciones extends Pantalla {
         JPanel acciones = new JPanel(new FlujoConSalto());
         cambiarActivacion.addActionListener(e -> tabla.seleccionada().ifPresent(p ->
                 accion(() -> api.cambiarActivacionProgramacion(p.id(), !p.activa()),
-                        p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::buscar)));
+                        p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::recargar)));
         acciones.add(cambiarActivacion);
         return acciones;
     }
@@ -242,7 +244,7 @@ final class PantallaProgramaciones extends Pantalla {
             proyeccion.removeAllItems();
             Opcion.de(c.proyecciones(), v -> etiqueta(v)).forEach(proyeccion::addItem);
             llenando = false;
-            buscar();
+            recargar();
         });
     }
 
@@ -256,16 +258,20 @@ final class PantallaProgramaciones extends Pantalla {
         return filtros;
     }
 
-    private record Resultado(int total, List<Programacion> visibles) {
+    private void recargar() {
+        cargar(() -> api.obtenerProgramaciones(null).size(), cuantas -> {
+            total = cuantas;
+            buscar();
+        });
     }
 
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> new Resultado(api.obtenerProgramaciones(null).size(), api.obtenerProgramaciones(filtros)), r -> {
-            tabla.mostrar(r.visibles());
-            conteo.setText(r.visibles().size() == r.total() ? r.total() + " grillas"
-                    : "mostrando " + r.visibles().size() + " de " + r.total());
+        cargar(() -> api.obtenerProgramaciones(filtros), visibles -> {
+            tabla.mostrar(visibles);
+            conteo.setText(visibles.size() == total ? total + " grillas"
+                    : "mostrando " + visibles.size() + " de " + total);
         });
     }
 
@@ -314,7 +320,7 @@ final class PantallaProgramaciones extends Pantalla {
             previsualizado = null;
             avisar("Grilla creada: " + plan.generadas() + " funciones"
                     + (plan.salteadas() > 0 ? ", " + plan.salteadas() + " salteadas" : ""));
-            buscar();
+            recargar();
         }, error -> {
             confirmar.setEnabled(previsualizado != null);
             if (!error.esSesionVencida()) informe.setText(error.getMessage());

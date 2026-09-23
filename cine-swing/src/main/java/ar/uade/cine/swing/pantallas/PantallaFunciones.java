@@ -44,9 +44,6 @@ final class PantallaFunciones extends Pantalla {
                              List<String> proyecciones) {
     }
 
-    private record Resultado(int total, List<Funcion> visibles) {
-    }
-
     private final Navegacion navegacion;
     private final JComboBox<Opcion<Integer>> filtroPelicula = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> filtroSala = new JComboBox<>();
@@ -67,6 +64,8 @@ final class PantallaFunciones extends Pantalla {
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JTextField precioBase = new JTextField();
+    // Cuántas hay sin filtro, para el "mostrando 3 de 40": se cuenta al entrar y tras cada alta o baja.
+    private int total;
     // Mientras se llenan los combos no hay que disparar búsquedas.
     private boolean llenando;
 
@@ -115,7 +114,7 @@ final class PantallaFunciones extends Pantalla {
             desde.setDate(null);
             hasta.setDate(null);
             llenando = false;
-            buscar();
+            recargar();
         });
         return barra;
     }
@@ -168,7 +167,7 @@ final class PantallaFunciones extends Pantalla {
             proyeccion.removeAllItems();
             Opcion.de(catalogos.proyecciones(), v -> etiqueta(v)).forEach(proyeccion::addItem);
             llenando = false;
-            buscar();
+            recargar();
         });
     }
 
@@ -189,15 +188,21 @@ final class PantallaFunciones extends Pantalla {
         return filtros;
     }
 
+    private void recargar() {
+        cargar(() -> api.obtenerFunciones(null).size(), cuantas -> {
+            total = cuantas;
+            buscar();
+        });
+    }
+
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        // El total sin filtro arma el "mostrando 3 de 40", que avisa que hay un filtro puesto.
-        cargar(() -> new Resultado(api.obtenerFunciones(null).size(), api.obtenerFunciones(filtros)), r -> {
-            tabla.mostrar(r.visibles());
-            conteo.setText(r.visibles().size() == r.total()
-                    ? r.total() + " programadas"
-                    : "mostrando " + r.visibles().size() + " de " + r.total());
+        cargar(() -> api.obtenerFunciones(filtros), visibles -> {
+            tabla.mostrar(visibles);
+            conteo.setText(visibles.size() == total
+                    ? total + " programadas"
+                    : "mostrando " + visibles.size() + " de " + total);
         });
     }
 
@@ -207,7 +212,7 @@ final class PantallaFunciones extends Pantalla {
         PedidoFuncion pedido = new PedidoFuncion(Campos.elegido(pelicula), Campos.elegido(sala), inicio,
                 Campos.elegido(idioma), Campos.elegido(proyeccion),
                 Campos.decimal(precioBase));
-        accion(() -> api.programarFuncion(pedido), "Función programada", this::buscar);
+        accion(() -> api.programarFuncion(pedido), "Función programada", this::recargar);
     }
 
     private void borrar(Funcion funcion) {
@@ -216,7 +221,7 @@ final class PantallaFunciones extends Pantalla {
         accion(() -> {
             api.eliminarFuncion(funcion.id());
             return null;
-        }, "Función borrada", this::buscar);
+        }, "Función borrada", this::recargar);
     }
 
     private void abrirInformes(Funcion funcion) {

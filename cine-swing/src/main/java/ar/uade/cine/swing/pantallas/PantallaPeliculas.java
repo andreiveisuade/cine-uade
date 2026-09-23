@@ -38,9 +38,6 @@ final class PantallaPeliculas extends Pantalla {
     private record Catalogos(List<String> generos, List<Clasificacion> clasificaciones) {
     }
 
-    private record Resultado(List<Pelicula> todas, List<Pelicula> visibles) {
-    }
-
     private final JTextField buscar = new JTextField(16);
     private final JComboBox<Opcion<String>> filtroGenero = new JComboBox<>();
     private final JComboBox<Opcion<String>> filtroEstado = new JComboBox<>();
@@ -69,6 +66,9 @@ final class PantallaPeliculas extends Pantalla {
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
     private final JButton guardar = new JButton("Agregar");
     private final JButton cancelar = new JButton("Cancelar");
+    // El catálogo sin filtro, para el "N cargadas · M publicadas": se pide al entrar y después de cada cambio, no en
+    // cada tecla del buscador.
+    private List<Pelicula> todas = List.of();
     private Pelicula editando;
     private boolean llenando;
     private final Timer espera = Campos.alDejarDeTipear(buscar, this::buscar);
@@ -101,7 +101,7 @@ final class PantallaPeliculas extends Pantalla {
             }
             panelGeneros.revalidate();
             llenando = false;
-            buscar();
+            recargar();
         });
     }
 
@@ -141,13 +141,13 @@ final class PantallaPeliculas extends Pantalla {
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(this::editar));
         publicar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> accion(
                 () -> api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
-                p.enCartelera() ? "Despublicada" : "Publicada", this::buscar)));
+                p.enCartelera() ? "Despublicada" : "Publicada", this::recargar)));
         borrar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
             if (!confirmar("¿Borrar " + p.titulo() + "?")) return;
             accion(() -> {
                 api.eliminarPelicula(p.id());
                 return null;
-            }, "Película borrada", this::buscar);
+            }, "Película borrada", this::recargar);
         }));
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(editar);
@@ -195,14 +195,21 @@ final class PantallaPeliculas extends Pantalla {
         return filtros;
     }
 
+    private void recargar() {
+        cargar(() -> api.obtenerPeliculas(null), lista -> {
+            todas = lista;
+            buscar();
+        });
+    }
+
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> new Resultado(api.obtenerPeliculas(null), api.obtenerPeliculas(filtros)), r -> {
-            tabla.mostrar(r.visibles());
-            long publicadas = r.todas().stream().filter(Pelicula::enCartelera).count();
-            conteo.setText(r.todas().size() + " cargadas · " + publicadas + " publicadas"
-                    + (r.visibles().size() == r.todas().size() ? "" : " · mostrando " + r.visibles().size()));
+        cargar(() -> api.obtenerPeliculas(filtros), visibles -> {
+            tabla.mostrar(visibles);
+            long publicadas = todas.stream().filter(Pelicula::enCartelera).count();
+            conteo.setText(todas.size() + " cargadas · " + publicadas + " publicadas"
+                    + (visibles.size() == todas.size() ? "" : " · mostrando " + visibles.size()));
         });
     }
 
@@ -250,12 +257,12 @@ final class PantallaPeliculas extends Pantalla {
         if (actual == null) {
             accion(() -> api.crearPelicula(pedido), "Película agregada", () -> {
                 limpiarFormulario();
-                buscar();
+                recargar();
             });
         } else {
             accion(() -> api.actualizarPelicula(actual.id(), pedido), "Cambios guardados", () -> {
                 limpiarFormulario();
-                buscar();
+                recargar();
             });
         }
     }

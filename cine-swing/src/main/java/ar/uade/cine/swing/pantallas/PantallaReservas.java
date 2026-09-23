@@ -34,9 +34,6 @@ final class PantallaReservas extends Pantalla {
     // En el orden en que le importan a quien atiende: primero lo que hay que cobrar hoy.
     private static final List<String> ESTADOS = List.of("RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA");
 
-    private record Resultado(List<Reserva> todas, List<Reserva> visibles) {
-    }
-
     private final Navegacion navegacion;
     private final JTextField buscar = new JTextField(22);
     private final JComboBox<Opcion<String>> estado = new JComboBox<>();
@@ -55,6 +52,8 @@ final class PantallaReservas extends Pantalla {
             Columna.<Reserva>numero("Total", r -> precio(r.total())),
             Columna.<Reserva>de("Estado", PantallaReservas::estado).ancho(170));
     private boolean limpiando;
+    // Todas, sin filtro: arman el resumen de arriba. Se piden al entrar y tras cancelar, no en cada tecla.
+    private List<Reserva> todas = List.of();
 
     PantallaReservas(ApiHttp api, Navegacion navegacion) {
         super(api, "Reservas", null);
@@ -110,7 +109,7 @@ final class PantallaReservas extends Pantalla {
         cobrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirCobro));
         cancelar.addActionListener(e -> tabla.seleccionada().ifPresent(this::cancelar));
         habilitar();
-        buscar();
+        recargar();
     }
 
     private static String funcion(Reserva r) {
@@ -141,18 +140,25 @@ final class PantallaReservas extends Pantalla {
         return filtros;
     }
 
+    private void recargar() {
+        cargar(() -> api.obtenerReservas(null), lista -> {
+            todas = lista;
+            List<Reserva> aCobrar = todas.stream().filter(x -> "RESERVADA".equals(x.estado())).toList();
+            long activas = todas.stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
+            double pendiente = aCobrar.stream().mapToDouble(Reserva::total).sum();
+            resumen.setText(todas.size() + " reservas · " + activas + " activas · " + aCobrar.size()
+                    + " pendientes de cobro" + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")"));
+            buscar();
+        });
+    }
+
     private void buscar() {
         if (limpiando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> new Resultado(api.obtenerReservas(null), api.obtenerReservas(filtros)), r -> {
-            List<Reserva> aCobrar = r.todas().stream().filter(x -> "RESERVADA".equals(x.estado())).toList();
-            long activas = r.todas().stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
-            double pendiente = aCobrar.stream().mapToDouble(Reserva::total).sum();
-            resumen.setText(r.todas().size() + " reservas · " + activas + " activas · " + aCobrar.size()
-                    + " pendientes de cobro" + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")"));
-            conteo.setText(r.visibles().size() == r.todas().size() ? ""
-                    : "mostrando " + r.visibles().size() + " de " + r.todas().size());
-            tabla.mostrar(r.visibles());
+        cargar(() -> api.obtenerReservas(filtros), visibles -> {
+            conteo.setText(visibles.size() == todas.size() ? ""
+                    : "mostrando " + visibles.size() + " de " + todas.size());
+            tabla.mostrar(visibles);
             habilitar();
         });
     }
@@ -164,6 +170,6 @@ final class PantallaReservas extends Pantalla {
     private void cancelar(Reserva reserva) {
         if (!confirmar("¿Cancelar la reserva #" + reserva.id() + "? Las butacas quedan libres.")) return;
         accion(() -> api.cancelarReserva(reserva.id()), "Reserva cancelada, las butacas quedaron libres",
-                this::buscar);
+                this::recargar);
     }
 }
