@@ -467,7 +467,7 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los 25 casos de uso y las 19 reglas funcionan de punta a punta —gestor y API
-          HTTP— con <strong>381 tests</strong>. Lo único que no tiene pantalla web es el candy
+          HTTP— con <strong>407 tests</strong>. Lo único que no tiene pantalla web es el candy
           (CU-13 a CU-16): la API ya lo sirve. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
@@ -1599,15 +1599,22 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         Las tres heredan de la clase abstracta <code>Promocion</code>, que resuelve lo único que comparten
         —cuándo corre la promoción: vigencia, día, horario, medio de pago— y deja abierto
-        <code>calcularDescuento()</code>. En
-        todo el sistema <strong>no hay un solo <code>switch</code> por tipo de promoción</strong>: quien cobra
-        llama al método y la clase que le tocó hace lo suyo.
+        <code>calcularDescuento()</code>. Al <strong>cobrar</strong> no hay un solo <code>switch</code> por
+        tipo de promoción: quien cobra llama al método y la clase que le tocó hace lo suyo.
       </p>
       <p>
-        La prueba de que está bien puesto el corte: agregar un "3x2 solo para estudiantes los martes" es
-        escribir una clase nueva y sumar una constante al enum. No se toca <code>GestorPagos</code>, no se toca
-        <code>GestorPromociones</code>, no se toca ninguna de las otras dos promociones. Con un
-        <code>switch</code>, cada tipo nuevo obligaría a editar —y volver a probar— el método que ya andaba.
+        La prueba de que está bien puesto el corte: agregar un "3x2 solo para estudiantes los martes" no
+        toca <code>GestorPagos</code> ni ninguna de las otras dos promociones. Con un <code>switch</code> en el
+        cobro, cada tipo nuevo obligaría a editar —y volver a probar— el método que ya andaba.
+      </p>
+      <p>
+        <strong>Donde todavía no se cumple: el alta y la vista.</strong> Crear una promoción desde el JSON sí
+        pasa por un <code>switch</code> en <code>PromocionController</code> y un <code>crearX</code> por tipo en
+        <code>GestorPromociones</code>, y <code>VistasPromociones</code> arma la respuesta con
+        <code>instanceof</code>. Un tipo nuevo toca esos tres lugares. Lo cerraría una fábrica que elija la
+        subclase por el <code>tipo</code> del pedido y un método de la propia promoción que describa sus
+        parámetros; quedó anotado como deuda porque el costo hoy es bajo —tres tipos, que cambian poco— y lo
+        que más varía, el cálculo, ya está protegido.
       </p>
 
       <h3>L — Sustitución de Liskov</h3>
@@ -1616,8 +1623,8 @@ body.lightbox-locked { overflow: hidden; }
         entere de cuál le tocó.
       </p>
       <p>
-        La demostración más clara la da <code>BloqueoButacas</code>, la única interfaz del sistema con dos
-        implementaciones de verdad escritas a mano: <code>BloqueoButacasRedis</code> en producción y
+        La demostración más clara la da <code>BloqueoButacas</code>, una de las interfaces con dos
+        implementaciones escritas a mano —las otras son <code>CatalogoExterno</code> y <code>Reloj</code>—: <code>BloqueoButacasRedis</code> en producción y
         <code>BloqueoButacasMemoria</code> en los tests, con el mismo contrato y el mismo comportamiento
         esperado. Los repositorios ya no dan este ejemplo —Spring Data genera una sola implementación por
         interfaz, no hay una segunda para sustituir—; lo que ahí se verifica es otra cosa, contra qué base
@@ -1670,7 +1677,7 @@ body.lightbox-locked { overflow: hidden; }
 
       <figure class="diagram">
         {{SVG_SOLID_DIP}}
-        <figcaption><code>Aplicacion</code> es el único lugar del sistema que nombra una implementación concreta</figcaption>
+        <figcaption><code>infrastructure/Adaptadores</code> es el único lugar del sistema que elige una implementación concreta</figcaption>
       </figure>
 
       <p>
@@ -1846,7 +1853,7 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <div class="callout">
         <p>
-          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 381 tests llaman a los
+          <strong>Cómo se nota que está bien puesto el corte.</strong> La mayoría de los 407 tests llaman a los
           gestores directo, sin pasar por HTTP. Los 29 que sí abren un puerto (<code>PruebaDeApi</code>) existen
           justamente para probar el controlador en sí —parseo, códigos de estado, el
           <code>@RestControllerAdvice</code>—, no las reglas de negocio: esas ya están cubiertas del otro lado.
@@ -3548,7 +3555,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/peliculas   #
 
       <h3>Nivel 1 · las pruebas que corren solas</h3>
       <pre><code>cd cine-backend
-mvn clean test                    # 381 tests: 377 corren siempre, 4 se saltean</code></pre>
+mvn clean test                    # 407 tests: 403 corren siempre, 4 se saltean</code></pre>
 
       <div class="callout">
         <p>
@@ -3727,7 +3734,7 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
 
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
-      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>381 tests</strong>.</p>
+      <p>Los 25 casos de uso y las 19 reglas funcionan contra MySQL, con <strong>407 tests</strong>.</p>
 
       <div class="callout">
         <p><strong>El reloj es un puerto.</strong> Hasta el 21 de septiembre la suite se puso en
@@ -3892,14 +3899,14 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
               <td>Catálogo cerrado y conocido; evita altas con errores de tipeo y ahorra un CRUD entero</td>
             </tr>
             <tr>
-              <td>Interfaz + <code>Impl</code> en las entidades</td>
-              <td>Clases sueltas</td>
-              <td>Requisito de la cátedra, y en las entidades sí paga: cada DAO tiene versión MySQL y en memoria</td>
+              <td>Entidades como clases <code>@Entity</code>, sin interfaz (salvo <code>Promocion</code>, abstracta)</td>
+              <td>Interfaz + <code>Impl</code> por entidad</td>
+              <td>La interfaz la pone el repositorio, que es donde hay dos lados de verdad: el gestor depende de <code>*Repository</code> y la implementación la genera Spring Data. Una interfaz por entidad con una sola implementación era andamiaje
             </tr>
             <tr>
-              <td><code>record</code> en los value objects</td>
-              <td>Interfaz + <code>Impl</code> también acá</td>
-              <td><code>Entrada</code>, <code>ItemCombo</code> e <code>ItemCompra</code> no tienen identidad ni DAO: una interfaz de una sola implementación para un dato inmutable es andamiaje</td>
+              <td><code>ItemCombo</code> como <code>@Embeddable</code></td>
+              <td>Entidad con id propio</td>
+              <td>No tiene identidad: la fila de <code>combo_item</code> se identifica por el combo y el producto, y vive y muere con el combo. <code>Entrada</code> e <code>ItemCompra</code> sí son entidades porque su tabla les da clave propia</td>
             </tr>
             <tr>
               <td>Leer la agenda de la sala una vez, no una por hueco</td>
