@@ -109,7 +109,7 @@ services:
 
 ## Tests
 
-431 pruebas contra H2, sin Docker ni MySQL. El `clean` evita correr clases viejas de `target/`.
+435 pruebas contra H2, sin Docker ni MySQL. El `clean` evita correr clases viejas de `target/`.
 
 ```bash
 cd cine-backend && mvn clean test

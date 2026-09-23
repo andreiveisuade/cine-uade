@@ -462,7 +462,7 @@ body.lightbox-locked { overflow: hidden; }
         Backend Spring Boot sobre MySQL, frontend React servido por nginx, todo con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 431 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 19 reglas de punta a punta (gestor, API y pantalla), con 435 tests.</p>
       </div>
     </section>
 
@@ -1505,7 +1505,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 431 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
+mvn clean test       # 435 tests; BloqueoButacasRedisTest se saltea sin REDIS_TEST_PORT</code></pre>
       <p>
         Corren contra H2 (perfil <code>test</code>); Redis, TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19 y los vencimientos
