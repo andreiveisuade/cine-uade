@@ -13,6 +13,7 @@ import { BotonTema } from "../componentes/BotonTema.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { useSesion } from "./sesion.jsx";
 import { Login } from "./Login.jsx";
+import { Salas } from "./Salas.jsx";
 import { Importador } from "./Importador.jsx";
 import { Pendientes } from "./Pendientes.jsx";
 import { Peliculas } from "./Peliculas.jsx";
@@ -98,6 +99,7 @@ export function AppAdmin() {
         <Route path="peliculas" element={<Peliculas />} />
         <Route path="pendientes" element={<Pendientes />} />
         <Route path="importador" element={<Importador />} />
+        <Route path="salas/:id?" element={<Salas />} />
         <Route path="*" element={<NoExiste />} />
       </Route>
     </Routes>
