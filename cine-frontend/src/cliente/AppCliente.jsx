@@ -16,6 +16,8 @@ import { Pelicula } from "./Pelicula.jsx";
 import { Funcion } from "./Funcion.jsx";
 import { Confirmar } from "./Confirmar.jsx";
 import { Ticket } from "./Ticket.jsx";
+import { MisReservas } from "./MisReservas.jsx";
+import { Registro } from "./Registro.jsx";
 
 function Enlace({ a, children }) {
   return (
@@ -59,6 +61,8 @@ export function AppCliente() {
               <Route path="funcion/:id" element={<Funcion />} />
               <Route path="confirmar/:id" element={<Confirmar />} />
               <Route path="ticket/:id" element={<Ticket />} />
+              <Route path="mis-reservas/:email?" element={<MisReservas />} />
+              <Route path="registro" element={<Registro />} />
               <Route path="*" element={<NoExiste />} />
             </Routes>
           </CompraEnCurso>
