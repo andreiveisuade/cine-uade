@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -92,15 +94,15 @@ public class PeliculaController {
     @Operation(summary = "Dar de alta una película a mano")
     @PostMapping("/api/peliculas")
     @ResponseStatus(HttpStatus.CREATED)
-    public PeliculaVistaDTO agregar(@RequestBody PedidoPeliculaDTO pedido) {
-        return vistas.pelicula(cartelera.agregar(datosDe(pedido)));
+    public ResponseEntity<PeliculaVistaDTO> agregar(@RequestBody PedidoPeliculaDTO pedido) {
+        return creada(cartelera.agregar(datosDe(pedido)));
     }
 
     @Operation(summary = "Alta del importador: entra al buzón, no al catálogo")
     @PostMapping("/api/peliculas/importadas")
     @ResponseStatus(HttpStatus.CREATED)
-    public PeliculaVistaDTO importar(@RequestBody PedidoPeliculaDTO pedido) {
-        return vistas.pelicula(revision.importar(datosDe(pedido)));
+    public ResponseEntity<PeliculaVistaDTO> importar(@RequestBody PedidoPeliculaDTO pedido) {
+        return creada(revision.importar(datosDe(pedido)));
     }
 
     @Operation(summary = "Aceptar una película del buzón y publicarla")
@@ -131,6 +133,10 @@ public class PeliculaController {
     public void eliminar(@PathVariable int id) {
         buscar(id);
         cartelera.eliminar(id);
+    }
+
+    private ResponseEntity<PeliculaVistaDTO> creada(Pelicula pelicula) {
+        return Creado.en("/api/peliculas/" + pelicula.getId(), vistas.pelicula(pelicula));
     }
 
     private Pelicula buscar(int id) {

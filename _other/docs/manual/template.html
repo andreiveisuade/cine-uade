@@ -699,12 +699,12 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Anotación</th><th>Qué hace</th><th>Ejemplo</th></tr></thead>
           <tbody>
-            <tr><td><code>@GetMapping</code> <code>@PostMapping</code> <code>@PutMapping</code> <code>@DeleteMapping</code></td><td>Verbo + ruta del método</td><td><code>@GetMapping("/api/peliculas/{id}")</code></td></tr>
+            <tr><td><code>@GetMapping</code> <code>@PostMapping</code> <code>@PutMapping</code> <code>@PatchMapping</code> <code>@DeleteMapping</code></td><td>Verbo + ruta del método</td><td><code>@GetMapping("/api/peliculas/{id}")</code></td></tr>
             <tr><td><code>@PathVariable</code></td><td>Parámetro de la ruta; si no convierte → 404</td><td><code>@PathVariable int id</code></td></tr>
             <tr><td><code>@RequestParam</code></td><td>Parámetro de la query; <code>required = false</code> es filtro opcional</td><td><code>?genero=ACCION</code></td></tr>
             <tr><td><code>@RequestBody</code></td><td>Jackson convierte el JSON al DTO</td><td><code>@RequestBody PedidoPeliculaDTO p</code></td></tr>
             <tr><td><code>@Valid</code> + <code>@NotNull</code> <code>@NotBlank</code> <code>@NotEmpty</code> <code>@Positive</code> <code>@Email</code></td><td>Bean Validation: formato y presencia en el <code>Pedido*DTO</code>, antes del gestor → 400</td><td><code>@Valid @RequestBody</code></td></tr>
-            <tr><td><code>@ResponseStatus</code></td><td>Código si termina bien: 201 en altas, 204 en borrados</td><td>20 métodos</td></tr>
+            <tr><td><code>@ResponseStatus</code></td><td>Código si termina bien: 201 en altas, 204 en borrados. Las altas devuelven además <code>ResponseEntity.created(uri)</code>, que agrega el <code>Location</code></td><td>20 métodos</td></tr>
             <tr><td><code>@RestControllerAdvice</code> + <code>@ExceptionHandler</code></td><td>Traducen excepciones a HTTP</td><td><code>ManejadorErrores</code></td></tr>
             <tr><td><code>@JsonInclude(NON_NULL)</code></td><td>Omite campos <code>null</code></td><td><code>*VistaDTO</code></td></tr>
           </tbody>
@@ -749,7 +749,7 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="api">
       <h2>API HTTP</h2>
-      <p>72 endpoints REST bajo <code>/api</code>, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
+      <p>70 endpoints REST bajo <code>/api</code>, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Controlador</th><th>Rutas</th><th>Qué cubre</th></tr></thead>
@@ -776,6 +776,7 @@ body.lightbox-locked { overflow: hidden; }
         <li>Enums por nombre de constante (<code>MAS_16</code>); fechas ISO sin zona (<code>2026-08-13T20:30:00</code>).</li>
         <li>El precio lo calcula el backend; el monto del pago no viaja en el request.</li>
         <li>Filtros por query, resueltos en el gestor: <code>GET /api/reservas?estado=RESERVADA&amp;q=perez</code>.</li>
+        <li>Un alta responde <code>201</code> con <code>Location</code> al recurso creado. Dar de baja o reactivar una promoción o una grilla es <code>PATCH</code> con <code>{"activa": false|true}</code>: cambia un campo del recurso, no es una acción aparte.</li>
       </ul>
 
       <h3>Errores</h3>

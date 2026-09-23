@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCandy;
 import ar.uade.cine.model.candy.CompraCandy;
@@ -72,18 +74,18 @@ public class CandyController {
     @Operation(summary = "Dar de alta un producto")
     @PostMapping("/api/candy/productos")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductoVistaDTO agregar(@Valid @RequestBody PedidoProductoDTO pedido) {
+    public ResponseEntity<ProductoVistaDTO> agregar(@Valid @RequestBody PedidoProductoDTO pedido) {
         Producto producto = carta.agregar(pedido.nombre(),
                 Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
                 Dinero.de(pedido.precio()));
-        return vistas.producto(producto);
+        return creado(producto);
     }
 
     @Operation(summary = "Armar un combo con productos de la carta")
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductoVistaDTO armarCombo(@Valid @RequestBody PedidoComboDTO pedido) {
-        return vistas.producto(carta.armarCombo(pedido.nombre(), Dinero.de(pedido.precio()),
+    public ResponseEntity<ProductoVistaDTO> armarCombo(@Valid @RequestBody PedidoComboDTO pedido) {
+        return creado(carta.armarCombo(pedido.nombre(), Dinero.de(pedido.precio()),
                 pedido.componentes()));
     }
 
@@ -133,6 +135,10 @@ public class CandyController {
         LocalDate dia = Parseo.dia(fecha, "la fecha");
         return new ArqueoCandyVistaDTO(dia.toString(), caja.totalCandyDe(dia).aPesos(),
                 candy.listarComprasDelDia(dia).stream().map(vistas::compra).toList());
+    }
+
+    private ResponseEntity<ProductoVistaDTO> creado(Producto producto) {
+        return Creado.en("/api/candy/productos/" + producto.getId(), vistas.producto(producto));
     }
 
     private Producto buscar(int id) {

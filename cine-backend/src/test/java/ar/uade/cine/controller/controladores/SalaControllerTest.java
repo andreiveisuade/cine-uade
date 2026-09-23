@@ -99,6 +99,16 @@ class SalaControllerTest extends PruebaDeApi {
     }
 
     @Test
+    void elAltaDevuelveLaUbicacionDeLaSalaCreada() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
+
+        assertEquals(201, respuesta.estado());
+        String ubicacion = respuesta.cabeceras().getLocation().toString();
+        assertEquals("/api/salas/" + respuesta.json().get("id").asInt(), ubicacion);
+        assertEquals("Sala 3", get(ubicacion).json().get("nombre").asText());
+    }
+
+    @Test
     void unaFilaSinButacasEs400() {
         Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5,0]}");
 

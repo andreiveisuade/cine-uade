@@ -1286,7 +1286,7 @@
                 "1"
               ]
             },
-            "description": "Las promociones se dan de baja, no se borran."
+            "description": "Las promociones se dan de baja con PATCH {\"activa\": false}, no se borran."
           }
         },
         {

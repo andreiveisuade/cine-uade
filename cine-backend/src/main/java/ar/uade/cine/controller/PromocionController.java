@@ -8,19 +8,23 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.MedioPago;
+import ar.uade.cine.dto.PedidoActivacionDTO;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.CondicionesPromocion;
@@ -59,7 +63,7 @@ public class PromocionController {
     @Operation(summary = "Cargar una promoción")
     @PostMapping("/api/promociones")
     @ResponseStatus(HttpStatus.CREATED)
-    public PromocionVistaDTO crear(@Valid @RequestBody PedidoPromocionDTO pedido) {
+    public ResponseEntity<PromocionVistaDTO> crear(@Valid @RequestBody PedidoPromocionDTO pedido) {
         LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
         LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
         Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día"));
@@ -79,22 +83,19 @@ public class PromocionController {
                     (int) valorObligatorio(pedido.paga() == null ? null : pedido.paga().doubleValue(), "paga"),
                     condiciones);
         };
-        return vistas.promocion(promocion);
+        return Creado.en("/api/promociones/" + promocion.getId(), vistas.promocion(promocion));
     }
 
-    @Operation(summary = "Dar de baja una promoción sin borrarla")
-    @PostMapping("/api/promociones/{id}/baja")
-    public PromocionVistaDTO desactivar(@PathVariable int id) {
+    @Operation(summary = "Dar de baja una promoción sin borrarla, o reactivarla")
+    @PatchMapping("/api/promociones/{id}")
+    public PromocionVistaDTO cambiarActivacion(@PathVariable int id,
+                                               @Valid @RequestBody PedidoActivacionDTO pedido) {
         buscar(id);
-        promociones.desactivar(id);
-        return vistas.promocion(buscar(id));
-    }
-
-    @Operation(summary = "Volver a activar una promoción dada de baja")
-    @PostMapping("/api/promociones/{id}/alta")
-    public PromocionVistaDTO activar(@PathVariable int id) {
-        buscar(id);
-        promociones.activar(id);
+        if (pedido.activa()) {
+            promociones.activar(id);
+        } else {
+            promociones.desactivar(id);
+        }
         return vistas.promocion(buscar(id));
     }
 

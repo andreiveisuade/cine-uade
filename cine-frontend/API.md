@@ -11,6 +11,7 @@ Base `/api`; cada función de `src/api/api-http.js` es un endpoint de acá. Prob
 | Fechas | ISO local sin zona: `2026-08-13T20:30:00`; solo fecha `2026-08-13` |
 | Enums | Nombre de la constante (`MAS_16`, `TRES_D`). El front traduce |
 | Precios | Número, con los multiplicadores ya aplicados |
+| Altas | `201` con `Location` al recurso creado (`/api/salas/7`), mismo cuerpo. Sin `Location`: checkout, grilla automática, importación y venta de candy, que no tienen `GET` por id. El cliente apunta a `/api/clientes?email=…` y el pago a `/api/reservas/{id}/pago` |
 | Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` de un empleado en cada pedido |
 | Errores | `{"error": "…"}`, texto que se muestra tal cual. `400` dato inválido o regla incumplida (un campo obligatorio que falta se rechaza antes de buscar el recurso de la ruta) · `401` login fallido o sin credenciales · `403` el rol no alcanza · `404` recurso o ruta inexistente, también un id del cuerpo que no existe (`peliculaId`, `salaId`, `clienteId`, `reservaId`…) · `405` método no aceptado · `409` butaca ganada por otro, o nombre/email/título ya usado (película, sala, cliente, producto, promoción) · `415` cuerpo no JSON · `500` falla del servidor (detalle solo al log) |
 
@@ -216,7 +217,7 @@ Genera funciones reales. `POST /api/programaciones/previsualizar` (no escribe) y
 |---|---|
 | `GET /api/programaciones` | Todas, sin sus funciones |
 | `GET /api/programaciones/{id}` | Con `funciones: [{id, inicio}, …]` |
-| `POST /api/programaciones/{id}/baja` · `POST /api/programaciones/{id}/alta` | No hay `DELETE`. La baja no toca las funciones generadas |
+| `PATCH /api/programaciones/{id}` | `{"activa": false}` la da de baja, `true` la reactiva. No hay `DELETE`. La baja no toca las funciones generadas |
 
 ## Grilla automática
 
@@ -254,7 +255,7 @@ confirmadas (ninguna: `400`); no pisa funciones existentes.
 | `NXM` | `lleva` > `paga` | 2x1 |
 
 - Listas vacías no restringen; se evalúa contra el horario de la **función**.
-- `GET /api/promociones` y `GET /api/promociones/{id}`: activas e inactivas. `POST /api/promociones/{id}/baja` · `POST /api/promociones/{id}/alta`; sin `DELETE`.
+- `GET /api/promociones` y `GET /api/promociones/{id}`: activas e inactivas. `PATCH /api/promociones/{id}` con `{"activa": false}` la da de baja y con `true` la reactiva (sin `activa`: `400`); sin `DELETE`.
 - R15: no se acumulan, gana el mayor descuento (empate: menor id). R16: tarifas reducidas afuera.
 
 ## Candy (CU-13 a CU-16)

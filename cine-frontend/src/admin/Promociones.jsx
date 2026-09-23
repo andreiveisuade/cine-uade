@@ -135,7 +135,7 @@ export function Promociones() {
                       <Table.Td fz="xs">{condicionesDe(p)}</Table.Td>
                       <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
                         <Anchor component="button" size="xs" c={p.activa ? "red" : "green"}
-                          onClick={() => accion(() => (p.activa ? api.darDeBajaPromocion(p.id) : api.darDeAltaPromocion(p.id)))}>
+                          onClick={() => accion(() => api.cambiarActivacionPromocion(p.id, !p.activa))}>
                           {p.activa ? "Dar de baja" : "Reactivar"}
                         </Anchor>
                       </Table.Td>

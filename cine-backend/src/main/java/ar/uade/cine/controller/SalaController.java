@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasSalas;
 import ar.uade.cine.model.salas.EstadoAsiento;
@@ -59,14 +61,14 @@ public class SalaController {
     @Operation(summary = "Dar de alta una sala y generarle las butacas")
     @PostMapping("/api/salas")
     @ResponseStatus(HttpStatus.CREATED)
-    public SalaVistaDTO agregar(@Valid @RequestBody PedidoSalaDTO pedido) {
+    public ResponseEntity<SalaVistaDTO> agregar(@Valid @RequestBody PedidoSalaDTO pedido) {
         Sala sala = salas.agregar(pedido.nombre(),
                 Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                 pedido.butacasPorFila(),
                 especiales(pedido),
                 pedido.minutosLimpieza() == null
                         ? Sala.LIMPIEZA_POR_DEFECTO : pedido.minutosLimpieza());
-        return vistas.salaConButacas(sala);
+        return Creado.en("/api/salas/" + sala.getId(), vistas.salaConButacas(sala));
     }
 
     @Operation(summary = "Editar nombre, tipo y limpieza de una sala. Las butacas no cambian")

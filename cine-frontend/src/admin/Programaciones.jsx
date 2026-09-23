@@ -184,7 +184,7 @@ export function Programaciones() {
                       <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{precio(p.precio)}</Table.Td>
                       <Table.Td ta="right" style={{ whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
                         <Anchor component="button" size="xs" c={p.activa ? "red" : "green"}
-                          onClick={() => accion(() => (p.activa ? api.darDeBajaProgramacion(p.id) : api.darDeAltaProgramacion(p.id)))}>
+                          onClick={() => accion(() => api.cambiarActivacionProgramacion(p.id, !p.activa))}>
                           {p.activa ? "Dar de baja" : "Reactivar"}
                         </Anchor>
                       </Table.Td>

@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.vistas.VistasUsuarios;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
@@ -48,7 +50,10 @@ public class ClienteController {
     @Operation(summary = "Registrar un cliente")
     @PostMapping("/api/clientes")
     @ResponseStatus(HttpStatus.CREATED)
-    public ClienteVistaDTO registrar(@Valid @RequestBody PedidoClienteDTO pedido) {
-        return vistas.cliente(clientes.registrar(pedido.nombre(), pedido.email()));
+    public ResponseEntity<ClienteVistaDTO> registrar(@Valid @RequestBody PedidoClienteDTO pedido) {
+        ClienteVistaDTO cliente = vistas.cliente(clientes.registrar(pedido.nombre(), pedido.email()));
+        // No hay GET por id: el cliente se busca por email.
+        return Creado.en(UriComponentsBuilder.fromPath("/api/clientes")
+                .queryParam("email", cliente.email()).encode().toUriString(), cliente);
     }
 }

@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasCartelera;
 import ar.uade.cine.model.dinero.Dinero;
@@ -68,13 +70,13 @@ public class FuncionController {
     @Operation(summary = "Programar una función")
     @PostMapping("/api/funciones")
     @ResponseStatus(HttpStatus.CREATED)
-    public FuncionVistaDTO programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
+    public ResponseEntity<FuncionVistaDTO> programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
         Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(),
                 Parseo.momento(pedido.inicio(), "la fecha y hora"),
                 Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
                 Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
                 Dinero.de(pedido.precio()));
-        return vistas.funcionConPelicula(funcion);
+        return Creado.en("/api/funciones/" + funcion.getId(), vistas.funcionConPelicula(funcion));
     }
 
     @Operation(summary = "Borrar una función")

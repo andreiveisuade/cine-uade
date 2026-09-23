@@ -63,6 +63,7 @@ async function pedir(ruta, opciones = {}) {
 const get = (ruta) => pedir(ruta);
 const post = (ruta, cuerpo) => pedir(ruta, { metodo: "POST", cuerpo });
 const put = (ruta, cuerpo) => pedir(ruta, { metodo: "PUT", cuerpo });
+const patch = (ruta, cuerpo) => pedir(ruta, { metodo: "PATCH", cuerpo });
 const borrar = (ruta) => pedir(ruta, { metodo: "DELETE" });
 
 export const obtenerGeneros = () => get("/generos");
@@ -184,8 +185,7 @@ export const previsualizarProgramacion = (grilla) =>
 export const crearProgramacion = (grilla) =>
   post("/programaciones", cuerpoProgramacion(grilla));
 
-export const darDeBajaProgramacion = (id) => post(`/programaciones/${id}/baja`);
-export const darDeAltaProgramacion = (id) => post(`/programaciones/${id}/alta`);
+export const cambiarActivacionProgramacion = (id, activa) => patch(`/programaciones/${id}`, { activa });
 
 const cuerpoGrilla = ({ desde, dias, apertura, cierre,
                         cuantasPeliculas, precio, idioma, proyeccion }) => ({
@@ -225,8 +225,7 @@ export const obtenerArqueo = (fecha) => get(`/arqueo?fecha=${encodeURIComponent(
 
 export const obtenerPromociones = () => get("/promociones");
 export const crearPromocion = (promocion) => post("/promociones", promocion);
-export const darDeBajaPromocion = (id) => post(`/promociones/${id}/baja`);
-export const darDeAltaPromocion = (id) => post(`/promociones/${id}/alta`);
+export const cambiarActivacionPromocion = (id, activa) => patch(`/promociones/${id}`, { activa });
 
 export const obtenerProductosCandy = (todos = false) =>
   get(`/candy/productos${todos ? "?todos=true" : ""}`);

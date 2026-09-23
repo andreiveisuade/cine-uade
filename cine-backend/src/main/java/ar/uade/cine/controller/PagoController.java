@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -57,10 +58,11 @@ public class PagoController {
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")
     @ResponseStatus(HttpStatus.CREATED)
-    public PagoVistaDTO cobrar(@PathVariable int id, @Valid @RequestBody PedidoPagoDTO pedido) {
+    public ResponseEntity<PagoVistaDTO> cobrar(@PathVariable int id, @Valid @RequestBody PedidoPagoDTO pedido) {
         exigirReserva(id);
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
-        return vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion()));
+        return Creado.en("/api/reservas/" + id + "/pago",
+                vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion())));
     }
 
     @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
@@ -87,8 +89,9 @@ public class PagoController {
     @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")
     @PostMapping("/api/checkouts/{id}/confirmacion")
     @ResponseStatus(HttpStatus.CREATED)
-    public PagoVistaDTO confirmarCheckout(@PathVariable String id) {
-        return vistas.pago(pagos.confirmarCheckout(id));
+    public ResponseEntity<PagoVistaDTO> confirmarCheckout(@PathVariable String id) {
+        PagoVistaDTO pago = vistas.pago(pagos.confirmarCheckout(id));
+        return Creado.en("/api/reservas/" + pago.reservaId() + "/pago", pago);
     }
 
     @Operation(summary = "El arqueo de boletería de un día")

@@ -74,6 +74,10 @@ public abstract class PruebaDeApi {
         return pedirComo(HttpMethod.PUT, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
     }
 
+    protected Respuesta patch(String ruta, String cuerpo) {
+        return pedirComo(HttpMethod.PATCH, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
+    }
+
     protected Respuesta pedirComo(HttpMethod metodo, String ruta, String cuerpo,
                                   String email, String clave) {
         HttpHeaders cabeceras = new HttpHeaders();

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.vistas.VistasVentas;
 import ar.uade.cine.model.salas.Asiento;
@@ -92,11 +94,12 @@ public class ReservaController {
     @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
     @PostMapping("/api/reservas")
     @ResponseStatus(HttpStatus.CREATED)
-    public ReservaVistaDTO reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
-        return vistas.reserva(reservas.reservar(pedido.funcionId(),
+    public ResponseEntity<ReservaVistaDTO> reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
+        Reserva reserva = reservas.reservar(pedido.funcionId(),
                 pedido.nombre(), pedido.email(),
                 butacasPedidas(pedido),
-                pedido.sesion()));
+                pedido.sesion());
+        return Creado.en("/api/reservas/" + reserva.getId(), vistas.reserva(reserva));
     }
 
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")

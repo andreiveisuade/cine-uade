@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
@@ -21,6 +24,7 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.dto.PedidoActivacionDTO;
 import ar.uade.cine.dto.programaciones.FuncionGeneradaVistaDTO;
 import ar.uade.cine.dto.programaciones.FuncionPlanificadaVistaDTO;
 import ar.uade.cine.dto.programaciones.PedidoProgramacionDTO;
@@ -76,23 +80,21 @@ public class ProgramacionController {
     @Operation(summary = "Crear la grilla y generar sus funciones")
     @PostMapping("/api/programaciones")
     @ResponseStatus(HttpStatus.CREATED)
-    public PlanVistaDTO crear(@Valid @RequestBody PedidoProgramacionDTO pedido) {
-        return plan(aplicar(pedido, true));
+    public ResponseEntity<PlanVistaDTO> crear(@Valid @RequestBody PedidoProgramacionDTO pedido) {
+        PlanVistaDTO plan = plan(aplicar(pedido, true));
+        return Creado.en("/api/programaciones/" + plan.programacion().id(), plan);
     }
 
-    @Operation(summary = "Dar de baja una grilla: deja de generar funciones nuevas")
-    @PostMapping("/api/programaciones/{id}/baja")
-    public ProgramacionVistaDTO desactivar(@PathVariable int id) {
+    @Operation(summary = "Dar de baja una grilla (deja de generar funciones nuevas), o reactivarla")
+    @PatchMapping("/api/programaciones/{id}")
+    public ProgramacionVistaDTO cambiarActivacion(@PathVariable int id,
+                                                  @Valid @RequestBody PedidoActivacionDTO pedido) {
         buscar(id);
-        programaciones.desactivar(id);
-        return programacion(buscar(id), null);
-    }
-
-    @Operation(summary = "Volver a activar una grilla")
-    @PostMapping("/api/programaciones/{id}/alta")
-    public ProgramacionVistaDTO activar(@PathVariable int id) {
-        buscar(id);
-        programaciones.activar(id);
+        if (pedido.activa()) {
+            programaciones.activar(id);
+        } else {
+            programaciones.desactivar(id);
+        }
         return programacion(buscar(id), null);
     }
 
