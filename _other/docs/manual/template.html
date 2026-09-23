@@ -467,8 +467,8 @@ body.lightbox-locked { overflow: hidden; }
       <div class="callout">
         <p>
           <strong>Estado:</strong> los 25 casos de uso y las 19 reglas funcionan de punta a punta —gestor y API
-          HTTP— con <strong>407 tests</strong>. Lo único que no tiene pantalla web es el candy
-          (CU-13 a CU-16): la API ya lo sirve. Ver <a href="#estado">Estado y pendientes</a>.
+          HTTP— con <strong>407 tests</strong>, y todos tienen pantalla web: el candy (CU-13 a CU-16), que
+          era el único que faltaba, ya tiene la suya en el panel. Ver <a href="#estado">Estado y pendientes</a>.
         </p>
       </div>
     </section>
@@ -577,10 +577,12 @@ body.lightbox-locked { overflow: hidden; }
 
       <div class="callout">
         <p>
-          <strong>«hecho» no es lo mismo que «en la web».</strong> CU-13 a CU-16 (candy) están implementados en
-          <code>GestorCandy</code>, y las expone <code>CandyController</code>, que las publica
-          por HTTP. Lo que falta es del lado de <code>cine-frontend</code>: la API ya sirve la carta, los combos
-          y las ventas, pero ninguna pantalla web las consume todavía. CU-15b ya modela cómo se integraría a la compra web.
+          <strong>El candy se vende en el mostrador, no online.</strong> CU-13 a CU-16 viven en
+          <code>GestorProductos</code> y <code>GestorCandy</code>, los publica <code>CandyController</code> y
+          los consume la pestaña <strong>Candy</strong> del panel: la carta (alta, combos, edición, sacar y
+          reponer), la venta de mostrador y las ventas del día. CU-15b se resuelve ahí mismo, cargando el número
+          de reserva: el ticket web del cliente le muestra la carta y le pide que lo diga en el mostrador, porque
+          una venta de candy nace cobrada y no tiene el circuito de reserva que haría falta para pagarla online.
         </p>
       </div>
     </section>
@@ -3773,13 +3775,16 @@ docker exec cine-mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" check_schema
         <table>
           <thead><tr><th>Qué</th><th>Gestor</th><th>HTTP</th><th>Web</th></tr></thead>
           <tbody>
-            <tr><td>Candy: carta, combos y ventas (CU-13 a CU-16)</td><td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-pend">falta</span></td></tr>
+            <tr><td>Candy: carta, combos y ventas (CU-13 a CU-16)</td><td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td><td><span class="tag tag-ok">sí</span></td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        Es la única deuda de este tipo que queda: la API sirve la carta, los combos y las ventas, y ninguna
-        vista las consume. El trabajo es de <code>cine-frontend</code>, no del modelo.
+        Ya no queda ninguna. El candy era la última: ahora tiene la pestaña <strong>Candy</strong> del panel
+        —carta, venta de mostrador y ventas del día—, y la <strong>Caja</strong> muestra su arqueo al lado del
+        de boletería, con la misma fecha. Para poder corregir un precio sin dar de baja el producto se sumó
+        <code>PUT /api/candy/productos/{id}</code>, que vuelve a mirar R14 sobre el combo editado y sobre los
+        combos que traen al producto.
       </p>
 
       <h3>Deudas anotadas</h3>

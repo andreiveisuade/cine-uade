@@ -52,6 +52,10 @@ const ETIQUETAS = {
   EN_CURSO: "En curso",
   TERMINADA: "Terminada",
   FALLIDA: "Falló",
+  POCHOCLOS: "Pochoclos",
+  BEBIDA: "Bebida",
+  GOLOSINA: "Golosina",
+  COMBO: "Combo",
 };
 
 export function etiqueta(valor) {
@@ -89,3 +93,11 @@ export function chipEstado(estado) {
 
 /** Los días como los nombra el backend, en el orden en que se muestran. */
 export const DIAS_SEMANA = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
+/**
+ * Los tipos de producto del candy. No hay catálogo HTTP para ellos, a diferencia de los
+ * medios de pago: son cuatro, no cambian y COMBO no se da de alta como suelto, así que la
+ * lista vive acá junto a sus etiquetas. Si el enum crece, el backend rechaza lo que no
+ * conoce con un 400 y el nombre de la constante.
+ */
+export const TIPOS_PRODUCTO_SUELTO = ["POCHOCLOS", "BEBIDA", "GOLOSINA"];

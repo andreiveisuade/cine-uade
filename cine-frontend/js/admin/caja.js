@@ -3,22 +3,28 @@ import { campo, filaTabla, panel, tabla } from "../componentes.js";
 import { escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { hora, hoyISO, precio } from "../formato.js";
+import { tablaCompras } from "./candy.js";
 
 /* ------------------------------------------------------------ arqueo del día */
 
 export async function vistaCaja(contenedor, fecha = hoyISO()) {
-  const arqueo = await api.obtenerArqueo(fecha);
+  // Dos cajas, dos pedidos: boletería y candy se cuentan por separado en el backend
+  // (el candy de mostrador no tiene función ni reserva), y acá solo se ponen lado a lado.
+  const [arqueo, candy] = await Promise.all([api.obtenerArqueo(fecha), api.obtenerArqueoCandy(fecha)]);
   const medios = Object.entries(arqueo.porMedio);
 
   contenedor.innerHTML = `
     <h1 class="mb-1 text-2xl font-bold">Arqueo</h1>
-    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">Lo cobrado en el día, por medio de pago.</p>
+    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.</p>
 
     <div class="mb-5 flex flex-wrap items-end gap-4">
       ${campo({ nombre: "fecha", etiqueta: "Fecha", tipo: "date", valor: arqueo.fecha, ancho: "block" })}
       ${panel(`
-        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Total cobrado</span>
+        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Boletería</span>
         <p class="text-2xl font-bold">${precio(arqueo.total)}</p>`, "px-4 py-2")}
+      ${panel(`
+        <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Candy</span>
+        <p class="text-2xl font-bold">${precio(candy.total)}</p>`, "px-4 py-2")}
       ${panel(`
         <span class="text-xs uppercase text-slate-500 dark:text-slate-400">Operaciones</span>
         <p class="text-2xl font-bold">${arqueo.pagos.length}</p>`, "px-4 py-2")}
@@ -35,6 +41,7 @@ export async function vistaCaja(contenedor, fecha = hoyISO()) {
             <span class="ml-2 font-semibold">${precio(datos.total)}</span>`, "px-3 py-2 text-sm")).join("")}
       </div>` : ""}
 
+    <h2 class="mb-2 font-semibold">Boletería</h2>
     ${panel(tabla(`
           <tr>
             <th class="p-2">Hora</th><th>Reserva</th><th>Película</th><th>Cliente</th>
@@ -54,6 +61,9 @@ export async function vistaCaja(contenedor, fecha = hoyISO()) {
               <td class="text-right whitespace-nowrap font-medium">${precio(p.monto)}</td>
             </tr>`).join("")
             : '<tr><td colspan="8" class="p-6 text-center text-slate-500 dark:text-slate-400">No se cobró nada ese día.</td></tr>'), "overflow-x-auto")}
+
+    <h2 class="mb-2 mt-6 font-semibold">Candy · ${candy.compras.length} ventas</h2>
+    ${panel(tablaCompras(candy.compras), "overflow-x-auto")}
   `;
 
   contenedor.querySelector("#fecha").addEventListener("change", (evento) => {

@@ -355,7 +355,8 @@ cobro tiene que seguir existiendo para explicar ese monto.
 
 ## Candy (CU-13 a CU-16)
 
-Implementado en el backend; **todavía sin pantalla**.
+Pantalla: la pestaña **Candy** del panel (carta, venta de mostrador, ventas del día) y el arqueo del
+candy en **Caja**. El cliente ve la carta en su ticket, solo para mirar: el candy se cobra en el mostrador.
 
 | Ruta | Notas |
 |---|---|
@@ -364,7 +365,7 @@ Implementado en el backend; **todavía sin pantalla**.
 | `POST /api/candy/productos` | `{nombre, tipo, precio}` |
 | `POST /api/candy/combos` | `{nombre, precio, componentes}` — `componentes` es `{productoId: cantidad}` |
 | `PUT /api/candy/productos/{id}` | `{nombre, precio}`. El tipo no se edita. R14 se revalida: `400` si el combo, o algún combo que trae este producto, deja de salir menos que sus componentes |
-| `PUT /api/candy/productos/{id}/disponibilidad` | Saca o repone de la carta. No hay `DELETE`: el producto vive en compras viejas |
+| `PUT /api/candy/productos/{id}/disponibilidad` | `{disponible}`. Saca o repone de la carta. No hay `DELETE`: el producto vive en compras viejas |
 | `POST /api/candy/compras` | La venta |
 | `GET /api/candy/compras?fecha=&clienteId=` | Con `clienteId` gana el cliente; si no, el día |
 | `GET /api/candy/arqueo?fecha=` | `{fecha, total, compras}` — la otra caja, aparte de boletería |

@@ -272,6 +272,39 @@ export const crearPromocion = (promocion) => post("/promociones", promocion);
 export const darDeBajaPromocion = (id) => post(`/promociones/${id}/baja`);
 export const darDeAltaPromocion = (id) => post(`/promociones/${id}/alta`);
 
+/* -------------------------------------------------------------------- candy */
+
+// Sin `todos` es la carta que ve el cliente: solo lo que está a la venta.
+export const obtenerProductosCandy = (todos = false) =>
+  get(`/candy/productos${todos ? "?todos=true" : ""}`);
+
+export const crearProductoCandy = ({ nombre, tipo, precio }) =>
+  post("/candy/productos", { nombre, tipo, precio: Number(precio) });
+
+// componentes es { productoId: cantidad }. Si el combo no sale menos que sus componentes
+// sueltos (R14), el 400 trae el precio de referencia en el mensaje.
+export const armarComboCandy = ({ nombre, precio, componentes }) =>
+  post("/candy/combos", { nombre, precio: Number(precio), componentes });
+
+export const editarProductoCandy = (id, { nombre, precio }) =>
+  put(`/candy/productos/${id}`, { nombre, precio: Number(precio) });
+
+export const cambiarDisponibilidadCandy = (id, disponible) =>
+  put(`/candy/productos/${id}/disponibilidad`, { disponible });
+
+// El total no viaja: lo calcula el backend desde la carta, igual que el monto de un pago.
+export const venderCandy = ({ clienteId, reservaId, cantidades, medio, codigoAutorizacion }) =>
+  post("/candy/compras", {
+    clienteId: clienteId ? Number(clienteId) : null,
+    reservaId: reservaId ? Number(reservaId) : null,
+    cantidades, medio, codigoAutorizacion,
+  });
+
+/** @param filtros {fecha, clienteId}; con clienteId gana el cliente. */
+export const obtenerComprasCandy = (filtros) => get(`/candy/compras${consulta(filtros)}`);
+
+export const obtenerArqueoCandy = (fecha) => get(`/candy/arqueo?fecha=${encodeURIComponent(fecha)}`);
+
 /* ----------------------------------------------------------- control de acceso */
 
 // POST y no GET porque marca la entrada como usada: repetirlo falla a propósito.

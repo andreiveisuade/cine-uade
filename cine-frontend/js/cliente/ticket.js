@@ -69,8 +69,37 @@ function armarTicket(reserva) {
   ].join("\n");
 }
 
+/**
+ * La carta del candy, solo para mirar. No se compra online a propósito: la venta de candy
+ * nace cobrada en el mostrador, y un pago web pediría un circuito de reserva que el candy
+ * no tiene. Con el número de reserva, en el mostrador la venta se asocia a esta función.
+ */
+function cartaCandy(productos, reservaId) {
+  if (!productos.length) return "";
+  return `
+    <section class="mt-6 rounded border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      <h2 class="font-semibold">¿Pochoclos para la función?</h2>
+      <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
+        Comprá en el mostrador del candy antes de entrar. Si decís tu número de reserva
+        (#${escapar(reservaId)}), la compra queda a tu nombre.
+      </p>
+      <ul class="divide-y divide-slate-200 text-sm dark:divide-slate-800">
+        ${productos.map((p) => `
+          <li class="flex items-baseline justify-between gap-3 py-1.5">
+            <span>${escapar(p.nombre)}
+              ${p.componentes?.length ? `<span class="block text-xs text-slate-500 dark:text-slate-400">${
+                escapar(p.componentes.map((c) => `${c.cantidad}× ${c.nombre}`).join(" + "))}</span>` : ""}
+            </span>
+            <span class="whitespace-nowrap font-medium">${precio(p.precio)}</span>
+          </li>`).join("")}
+      </ul>
+    </section>`;
+}
+
 export async function vistaTicket(contenedor, id) {
   const reserva = await api.obtenerReserva(id);
+  // Si la carta no carga, el ticket se muestra igual: es lo único imprescindible acá.
+  const productos = await api.obtenerProductosCandy().catch(() => []);
   const conAcreditacion = reserva.entradas.filter(
     (e) => e.tarifa && e.tarifa !== "GENERAL");
 
@@ -92,6 +121,8 @@ export async function vistaTicket(contenedor, id) {
       <a href="#/" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Volver a la cartelera</a>
       ${botonSecundario("Copiar", { tamano: "px-4 py-2", atributos: 'id="copiar"', clases: "dark:text-slate-100" })}
     </div>
+
+    ${cartaCandy(productos, reserva.id)}
   `;
 
   contenedor.querySelector("#copiar").addEventListener("click", async () => {

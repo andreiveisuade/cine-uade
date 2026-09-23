@@ -20,6 +20,7 @@ import { vistaAgenda } from "./admin/agenda.js";
 import { vistaReservas, vistaCobrar } from "./admin/reservas.js";
 import { vistaCaja } from "./admin/caja.js";
 import { vistaPromociones } from "./admin/promociones.js";
+import { vistaCandy } from "./admin/candy.js";
 import { vistaPuerta } from "./admin/puerta.js";
 
 document.getElementById("salir").addEventListener("click", cerrarSesion);
@@ -51,6 +52,7 @@ iniciarRouter({
     cobrar: vistaCobrar,
     caja: vistaCaja,
     promociones: vistaPromociones,
+    candy: vistaCandy,
     puerta: vistaPuerta,
   },
 });
