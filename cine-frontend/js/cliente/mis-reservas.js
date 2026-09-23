@@ -4,7 +4,7 @@ import { boton, panel } from "../componentes.js";
 import { avisar, escapar } from "../dom.js";
 import { chipEstado, etiqueta } from "../etiquetas.js";
 import { dia, fechaHora, hora, precio } from "../formato.js";
-import { clienteRecordado } from "./compra.js";
+import { clienteRecordado, codigoRecordado } from "./compra.js";
 
 export async function vistaMisReservas(contenedor, emailBuscado) {
   const email = emailBuscado
@@ -37,13 +37,16 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
         ? `<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
              Pagada con ${etiqueta(r.pago.medio)} el ${escapar(fechaHora(r.pago.fecha))}</p>`
         : ""}
-      <div class="mt-3 flex gap-2">
-        <a href="#/ticket/${r.id}" class="rounded border border-slate-400 px-3 py-1 text-sm dark:border-slate-600 dark:text-slate-100">Ver ticket</a>
-        ${r.estado === "RESERVADA"
-          ? `<button type="button" data-cancelar="${r.id}"
-               class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-400">Cancelar</button>`
-          : ""}
-      </div>
+      ${codigoRecordado(r.id) ? `
+        <div class="mt-3 flex gap-2">
+          <a href="#/ticket/${encodeURIComponent(codigoRecordado(r.id))}" class="rounded border border-slate-400 px-3 py-1 text-sm dark:border-slate-600 dark:text-slate-100">Ver ticket</a>
+          ${r.estado === "RESERVADA"
+            ? `<button type="button" data-cancelar="${escapar(codigoRecordado(r.id))}"
+                 class="rounded border border-red-300 px-3 py-1 text-sm text-red-700 dark:border-red-800 dark:text-red-400">Cancelar</button>`
+            : ""}
+        </div>`
+        : `<p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+             Para ver el ticket o cancelar, ingresá el código de acceso abajo.</p>`}
     `, `p-4 ${r.estado === "CANCELADA" ? "opacity-60" : ""}`)).join("");
 
   contenedor.innerHTML = `
@@ -57,6 +60,12 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
         placeholder="tu@email.com"
         class="min-w-64 flex-1 rounded border border-slate-400 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
       ${boton("Buscar", { ancho: "" })}
+    </form>
+
+    <form id="porCodigo" class="mb-5 flex flex-wrap gap-2">
+      <input name="codigo" required placeholder="Código de acceso del ticket"
+        class="min-w-64 flex-1 rounded border border-slate-400 px-2 py-1.5 font-mono uppercase dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+      ${boton("Ver ticket", { ancho: "" })}
     </form>
 
     ${reservas === null
@@ -73,12 +82,18 @@ export async function vistaMisReservas(contenedor, emailBuscado) {
     ir(`#/mis-reservas/${encodeURIComponent(valor)}`);
   });
 
+  contenedor.querySelector("#porCodigo").addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const codigo = new FormData(evento.target).get("codigo").replace(/\s/g, "").toUpperCase();
+    ir(`#/ticket/${encodeURIComponent(codigo)}`);
+  });
+
   // El listener va en cada botón y no en el contenedor: en el contenedor se sumaría uno por render.
   contenedor.querySelectorAll("button[data-cancelar]").forEach((botonCancelar) => {
     botonCancelar.addEventListener("click", async () => {
       botonCancelar.disabled = true;
       try {
-        await api.cancelarReserva(botonCancelar.dataset.cancelar);
+        await api.cancelarReservaPorCodigo(botonCancelar.dataset.cancelar);
         avisar("Reserva cancelada, las butacas quedaron libres");
       } catch (e) {
         avisar(e.message, "error");

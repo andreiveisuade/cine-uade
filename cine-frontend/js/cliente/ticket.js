@@ -1,5 +1,6 @@
 import * as api from "../api.js";
 import { botonSecundario } from "../componentes.js";
+import { recordarCodigo } from "./compra.js";
 import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { fechaHora, precio, precioExacto } from "../formato.js";
@@ -82,16 +83,21 @@ function cartaCandy(productos, reservaId) {
     </section>`;
 }
 
-export async function vistaTicket(contenedor, id) {
-  const reserva = await api.obtenerReserva(id);
+export async function vistaTicket(contenedor, codigo) {
+  const reserva = await api.obtenerReservaPorCodigo(decodeURIComponent(codigo));
+  recordarCodigo(reserva.id, reserva.codigo);
   const productos = await api.obtenerProductosCandy().catch(() => []);
   const conAcreditacion = reserva.entradas.filter(
     (e) => e.tarifa && e.tarifa !== "GENERAL");
 
   contenedor.innerHTML = `
-    <div class="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-      Reserva confirmada. Presentá este comprobante en boletería.
-    </div>
+    ${reserva.estado === "CANCELADA" ? `
+      <div class="rounded border border-slate-300 bg-slate-100 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        Esta reserva está cancelada.
+      </div>` : `
+      <div class="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+        Reserva confirmada. Presentá este comprobante en boletería.
+      </div>`}
 
     ${tarjetaCodigo(reserva)}
 
@@ -105,6 +111,10 @@ export async function vistaTicket(contenedor, id) {
     <div class="mt-4 flex gap-2">
       <a href="#/" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">Volver a la cartelera</a>
       ${botonSecundario("Copiar", { tamano: "px-4 py-2", atributos: 'id="copiar"', clases: "dark:text-slate-100" })}
+      ${reserva.estado === "RESERVADA"
+        ? `<button type="button" id="cancelar"
+             class="rounded border border-red-300 px-4 py-2 text-sm text-red-700 dark:border-red-800 dark:text-red-400">Cancelar reserva</button>`
+        : ""}
     </div>
 
     ${cartaCandy(productos, reserva.id)}
@@ -113,5 +123,16 @@ export async function vistaTicket(contenedor, id) {
   contenedor.querySelector("#copiar").addEventListener("click", async () => {
     await navigator.clipboard.writeText(armarTicket(reserva));
     avisar("Comprobante copiado");
+  });
+
+  contenedor.querySelector("#cancelar")?.addEventListener("click", async (evento) => {
+    evento.target.disabled = true;
+    try {
+      await api.cancelarReservaPorCodigo(reserva.codigo);
+      avisar("Reserva cancelada, las butacas quedaron libres");
+    } catch (e) {
+      avisar(e.message, "error");
+    }
+    vistaTicket(contenedor, codigo);
   });
 }

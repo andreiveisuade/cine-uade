@@ -99,7 +99,11 @@ export const buscarClientePorEmail = (email) =>
 export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
   post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });
 
-export const obtenerReserva = (id) => get(`/reservas/${id}`);
+export const obtenerReservaPorCodigo = (codigo) =>
+  get(`/reservas/codigo/${encodeURIComponent(codigo)}`);
+
+export const cancelarReservaPorCodigo = (codigo) =>
+  post(`/reservas/codigo/${encodeURIComponent(codigo)}/cancelacion`);
 
 export const obtenerReservasDe = (email) =>
   get(`/reservas?email=${encodeURIComponent(String(email || "").trim())}`);

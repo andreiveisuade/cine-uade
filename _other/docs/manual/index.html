@@ -851,7 +851,7 @@ body.lightbox-locked { overflow: hidden; }
       <ul>
         <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code>.</strong> Herencia y no un enum suelto porque difieren en datos: el empleado tiene contraseña y el cliente no. <code>Rol</code> (<code>ADMINISTRADOR</code>, <code>ACOMODADOR</code>) distingue dentro de <code>Empleado</code>.</li>
         <li><strong>Una tabla <code>usuario</code></strong> con columna <code>rol</code> como discriminador; <code>password_hash</code> admite <code>NULL</code> para el cliente. Un email se busca en un solo lugar.</li>
-        <li><strong>El cliente no tiene login.</strong> «Mis reservas» se consulta por email: quien conoce un email ajeno ve esas reservas. Se acepta porque no hay datos más sensibles y lo que habilita a entrar es el <a href="#acceso">código de la reserva</a>.</li>
+        <li><strong>El cliente no tiene login: el <a href="#acceso">código de la reserva</a> es su credencial.</strong> El ticket y la cancelación van por <code>/api/reservas/codigo/{codigo}</code>; por <code>{id}</code>, secuencial y adivinable, solo el encargado. «Mis reservas» se consulta por email y devuelve las reservas <em>sin</em> el código: quien conoce un email ajeno ve funciones y butacas, pero no puede entrar ni cancelar. El sitio recuerda en el navegador los códigos de lo que compró ahí, y acepta tipear uno.</li>
         <li><strong>Contraseñas:</strong> se guarda el hash SHA-256 (<code>Password</code>). Sin salt: alcanza para el TP, no para producción (bcrypt o Argon2). El login da el mismo mensaje para email inexistente y clave equivocada.</li>
       </ul>
 
@@ -861,7 +861,7 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
-            <tr><td>Público</td><td>Login, cartelera y detalle, catálogos, reservar, bloqueos, alta de cliente, consultar y cancelar la propia reserva, carta del candy, Swagger</td></tr>
+            <tr><td>Público</td><td>Login, cartelera y detalle, catálogos, reservar, bloqueos, alta de cliente, consultar y cancelar la propia reserva <em>por código</em>, «mis reservas» por email (sin códigos), carta del candy, Swagger</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td><code>POST /api/acceso</code></td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la puerta</td></tr>
           </tbody>

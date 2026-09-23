@@ -18,9 +18,9 @@ Base `/api`; cada función de `js/api.js` es un endpoint de acá. Probable en
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST /api/sesion`, `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/{id}/cancelacion`; `GET` de `/api/cartelera`, `/api/peliculas/{id}`, `/api/peliculas/{id}/funciones`, `/api/funciones/{id}`, `/api/reservas/{id}`, `/api/reservas?email=` (con email), `/api/candy/productos` y `/{id}`, los siete catálogos; Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
+| Público | `POST /api/sesion`, `POST /api/clientes`, `POST /api/reservas`, `POST /api/funciones/{id}/bloqueos`, `POST /api/reservas/codigo/{codigo}/cancelacion`; `GET` de `/api/cartelera`, `/api/peliculas/{id}`, `/api/peliculas/{id}/funciones`, `/api/funciones/{id}`, `/api/reservas/codigo/{codigo}`, `/api/reservas?email=` (con email), `/api/candy/productos` y `/{id}`, los siete catálogos; Swagger (`/swagger-ui/**`, `/v3/api-docs/**`) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /api/acceso` |
-| `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email y `GET /api/peliculas/pendientes`. Una ruta nueva nace así |
+| `ADMINISTRADOR` | Todo lo demás, incluidos `GET /api/reservas` sin email, las rutas de reserva por `{id}` y `GET /api/peliculas/pendientes`. Una ruta nueva nace así |
 
 `401` sin `WWW-Authenticate`: «Hace falta iniciar sesión para esta operación» o, con credenciales
 inválidas (rechazadas también en rutas públicas), «Email o contraseña incorrectos». `403`: «Tu rol
@@ -108,10 +108,11 @@ siempre `sesion` en la compra: sin ella tus propios bloqueos se ven ocupados.
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /api/reservas/{id}` | Con `funcion`, `pelicula`, `sala`, `cliente`, `total` (subtotal de lista), `codigo`, `ingresadaEn` |
-| `GET /api/reservas?email=` | Las de ese cliente. Sin cliente: `200` con `[]` |
+| `GET /api/reservas/codigo/{codigo}` | El ticket del cliente: con `funcion`, `pelicula`, `sala`, `cliente`, `total` (subtotal de lista), `codigo`, `ingresadaEn`. Sin distinguir mayúsculas; inexistente: `404` |
+| `POST /api/reservas/codigo/{codigo}/cancelacion` | El cliente cancela la suya. R6 libera butacas. R13: solo si está `RESERVADA` |
+| `GET /api/reservas?email=` | Las de ese cliente, **sin `codigo`**: el email no prueba ser el dueño. Sin cliente: `200` con `[]` |
+| `GET /api/reservas/{id}`, `POST /api/reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id es secuencial y se adivina |
 | `GET /api/reservas` | Todas (listado del encargado) |
-| `POST /api/reservas/{id}/cancelacion` | R6 libera butacas. R13: solo si está `RESERVADA` |
 
 `POST /api/reservas/{id}/pago`
 

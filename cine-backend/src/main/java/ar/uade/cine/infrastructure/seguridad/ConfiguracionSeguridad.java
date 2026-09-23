@@ -47,14 +47,14 @@ public class ConfiguracionSeguridad {
             "/api/clientes",
             "/api/reservas",
             "/api/funciones/*/bloqueos",
-            "/api/reservas/*/cancelacion"};
+            "/api/reservas/codigo/*/cancelacion"};
 
     public static final String[] GET_PUBLICOS = {
             "/api/cartelera",
             "/api/peliculas/*",
             "/api/peliculas/*/funciones",
             "/api/funciones/*",
-            "/api/reservas/*",
+            "/api/reservas/codigo/*",
             "/api/candy/productos", "/api/candy/productos/*",
             "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",

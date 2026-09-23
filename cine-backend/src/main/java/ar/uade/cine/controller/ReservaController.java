@@ -57,29 +57,34 @@ public class ReservaController {
         this.vistas = vistas;
     }
 
-    @Operation(summary = "Las reservas del cine; con email, las de ese cliente")
+    @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
     @GetMapping("/api/reservas")
     public List<ReservaVistaDTO> listar(@RequestParam(required = false) String email,
                                         @RequestParam(required = false) String estado,
                                         @RequestParam(required = false) String dia,
                                         @RequestParam(required = false) String q) {
-        List<Reserva> lista = email == null || email.isBlank()
-                ? consultas.buscar(new CriteriosReserva(
-                        Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
-                        Parseo.diaOpcional(dia, "el día"), q))
-                : clientes.buscarPorEmail(email.trim())
-                        .map(c -> consultas.listarPorCliente(c.getId()))
-                        .orElse(List.of());
+        if (email != null && !email.isBlank()) {
+            // Sin código: la ruta es pública y el email no prueba ser el dueño.
+            return vistas.reservasSinCodigo(ordenadas(clientes.buscarPorEmail(email.trim())
+                    .map(c -> consultas.listarPorCliente(c.getId()))
+                    .orElse(List.of())));
+        }
         // vistas.reservas() y no un map de vistas.reserva(): evita cinco consultas por fila.
-        return vistas.reservas(lista.stream()
-                .sorted(Comparator.comparing(Reserva::getId).reversed())
-                .toList());
+        return vistas.reservas(ordenadas(consultas.buscar(new CriteriosReserva(
+                Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
+                Parseo.diaOpcional(dia, "el día"), q))));
     }
 
-    @Operation(summary = "El detalle de una reserva")
+    @Operation(summary = "El detalle de una reserva (encargado)")
     @GetMapping("/api/reservas/{id}")
     public ReservaVistaDTO detalle(@PathVariable int id) {
         return vistas.reserva(buscar(id));
+    }
+
+    @Operation(summary = "El ticket del cliente, por su código de acceso")
+    @GetMapping("/api/reservas/codigo/{codigo}")
+    public ReservaVistaDTO detallePorCodigo(@PathVariable String codigo) {
+        return vistas.reserva(buscarPorCodigo(codigo));
     }
 
     @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
@@ -113,12 +118,24 @@ public class ReservaController {
         return vistas.reserva(acceso.registrarIngreso(pedido.codigo()));
     }
 
-    @Operation(summary = "Cancelar una reserva y liberar sus butacas")
+    @Operation(summary = "Cancelar una reserva y liberar sus butacas (encargado)")
     @PostMapping("/api/reservas/{id}/cancelacion")
     public ReservaVistaDTO cancelar(@PathVariable int id) {
         buscar(id);
         reservas.cancelar(id);
         return vistas.reserva(buscar(id));
+    }
+
+    @Operation(summary = "El cliente cancela su reserva con el código de acceso")
+    @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
+    public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo) {
+        int id = buscarPorCodigo(codigo).getId();
+        reservas.cancelar(id);
+        return vistas.reserva(buscar(id));
+    }
+
+    private static List<Reserva> ordenadas(List<Reserva> lista) {
+        return lista.stream().sorted(Comparator.comparing(Reserva::getId).reversed()).toList();
     }
 
     private static Map<String, TipoTarifa> butacasPedidas(PedidoReservaDTO pedido) {
@@ -131,6 +148,11 @@ public class ReservaController {
         Map<String, TipoTarifa> generales = new LinkedHashMap<>();
         pedido.codigos().forEach(codigo -> generales.put(codigo, TipoTarifa.GENERAL));
         return generales;
+    }
+
+    private Reserva buscarPorCodigo(String codigo) {
+        return consultas.buscarPorCodigo(codigo)
+                .orElseThrow(() -> new NoEncontrado("No existe ninguna reserva con ese código"));
     }
 
     private Reserva buscar(int id) {

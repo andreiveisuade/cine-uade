@@ -40,6 +40,11 @@ public class ConsultasReservas {
         return reservaRepository.findById(id);
     }
 
+    public Optional<Reserva> buscarPorCodigo(String codigo) {
+        return codigo == null ? Optional.empty()
+                : reservaRepository.findByCodigo(codigo.trim().toUpperCase());
+    }
+
     public List<Reserva> listarPorCliente(int clienteId) {
         return reservaRepository.findByCliente_IdOrderByCreadaEnDesc(clienteId);
     }

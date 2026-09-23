@@ -2,6 +2,10 @@ package ar.uade.cine.controller.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,8 +13,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.cartelera.Clasificacion;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
+import ar.uade.cine.service.ventas.GestorReservas;
 
 class SeguridadTest extends PruebaDeApi {
 
@@ -19,6 +36,18 @@ class SeguridadTest extends PruebaDeApi {
 
     @Autowired
     private GestorEmpleados empleados;
+
+    @Autowired
+    private GestorCartelera cartelera;
+
+    @Autowired
+    private GestorSalas salas;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorReservas reservas;
 
     @BeforeEach
     void unAcomodador() {
@@ -102,5 +131,63 @@ class SeguridadTest extends PruebaDeApi {
     void pendientesEsDelEncargado() {
         assertThat(pedirComo(HttpMethod.GET, "/api/peliculas/pendientes", null, null, null).estado())
                 .isEqualTo(401);
+    }
+
+    @Test
+    @DisplayName("la reserva por id es del encargado: el id se adivina")
+    void reservaPorIdEsDelEncargado() {
+        Reserva reserva = unaReserva();
+
+        assertThat(pedirComo(HttpMethod.GET, "/api/reservas/" + reserva.getId(), null, null, null).estado())
+                .isEqualTo(401);
+        assertThat(pedirComo(HttpMethod.POST, "/api/reservas/" + reserva.getId() + "/cancelacion",
+                null, null, null).estado()).isEqualTo(401);
+        assertThat(get("/api/reservas/" + reserva.getId()).estado()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("el cliente ve y cancela su reserva con el código, sin credenciales")
+    void reservaPorCodigoEsPublica() {
+        Reserva reserva = unaReserva();
+        String ruta = "/api/reservas/codigo/" + reserva.getCodigo().toLowerCase();
+
+        Respuesta detalle = pedirComo(HttpMethod.GET, ruta, null, null, null);
+        assertThat(detalle.estado()).isEqualTo(200);
+        assertThat(detalle.json().get("id").asInt()).isEqualTo(reserva.getId());
+
+        Respuesta cancelada = pedirComo(HttpMethod.POST, ruta + "/cancelacion", null, null, null);
+        assertThat(cancelada.estado()).isEqualTo(200);
+        assertThat(cancelada.json().get("estado").asText()).isEqualTo("CANCELADA");
+    }
+
+    @Test
+    @DisplayName("un código inexistente es 404, no 401")
+    void codigoInexistenteEs404() {
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/reservas/codigo/NOEXISTE", null, null, null);
+
+        assertThat(respuesta.estado()).isEqualTo(404);
+        assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
+    }
+
+    @Test
+    @DisplayName("mis reservas por email no revela el código de acceso")
+    void misReservasSinCodigo() {
+        unaReserva();
+
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/reservas?email=andrei@uade.edu.ar",
+                null, null, null);
+
+        assertThat(respuesta.json()).hasSize(1);
+        assertThat(respuesta.json().get(0).has("codigo")).isFalse();
+        assertThat(get("/api/reservas").json().get(0).has("codigo")).isTrue();
+    }
+
+    private Reserva unaReserva() {
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        Funcion funcion = funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return reservas.reservar(funcion.getId(), "Andrei", "andrei@uade.edu.ar",
+                Map.of("A1", TipoTarifa.GENERAL), null);
     }
 }

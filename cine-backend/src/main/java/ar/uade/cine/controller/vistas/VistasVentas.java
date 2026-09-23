@@ -74,6 +74,14 @@ public class VistasVentas {
                 .toList();
     }
 
+    public List<ReservaVistaDTO> reservasSinCodigo(List<Reserva> lista) {
+        return reservas(lista).stream()
+                .map(d -> new ReservaVistaDTO(d.id(), d.funcionId(), d.clienteId(), d.estado(), d.creadaEn(),
+                        null, d.ingresadaEn(), d.entradas(), d.cantidadEntradas(), d.total(),
+                        d.funcion(), d.pelicula(), d.sala(), d.cliente(), d.pago()))
+                .toList();
+    }
+
     private static <T> Map<Integer, T> indexar(List<T> elementos, ToIntFunction<T> clave) {
         Map<Integer, T> porId = new HashMap<>();
         for (T elemento : elementos) {

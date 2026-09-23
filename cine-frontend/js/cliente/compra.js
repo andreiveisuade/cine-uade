@@ -77,3 +77,23 @@ export function recordarCliente(cliente) {
 export function olvidarCliente() {
   localStorage.removeItem(CLAVE_CLIENTE);
 }
+
+// El listado por email no trae el código: el ticket y la cancelación usan los que se compraron acá.
+const CLAVE_CODIGOS = "cine.codigos";
+
+function codigosRecordados() {
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_CODIGOS)) || {};
+  } catch {
+    return {};
+  }
+}
+
+export function codigoRecordado(reservaId) {
+  return codigosRecordados()[reservaId] || null;
+}
+
+export function recordarCodigo(reservaId, codigo) {
+  localStorage.setItem(CLAVE_CODIGOS,
+    JSON.stringify({ ...codigosRecordados(), [reservaId]: codigo }));
+}

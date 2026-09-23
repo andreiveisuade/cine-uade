@@ -5,7 +5,7 @@ import { avisar, escapar } from "../dom.js";
 import { etiqueta } from "../etiquetas.js";
 import { dia, hora, precio } from "../formato.js";
 import { seleccion, catalogoTarifas, tarifaPorNombre, precioConTarifa, selectorTarifa,
-         clienteRecordado, recordarCliente, sesionDeCompra, renovarMientrasSigaAca } from "./compra.js";
+         clienteRecordado, recordarCliente, recordarCodigo, sesionDeCompra, renovarMientrasSigaAca } from "./compra.js";
 
 export async function vistaConfirmar(contenedor, id) {
   const [funcion] = await Promise.all([
@@ -115,9 +115,10 @@ export async function vistaConfirmar(contenedor, id) {
         sesion: sesionDeCompra(),
       });
       recordarCliente({ nombre: datos.get("nombre").trim(), email: datos.get("email").trim() });
+      recordarCodigo(reserva.id, reserva.codigo);
       seleccion.funcionId = null;
       seleccion.butacas = {};
-      ir(`#/ticket/${reserva.id}`);
+      ir(`#/ticket/${reserva.codigo}`);
     } catch (e) {
       if (e.status === 409) {
         seleccion.butacas = {};
