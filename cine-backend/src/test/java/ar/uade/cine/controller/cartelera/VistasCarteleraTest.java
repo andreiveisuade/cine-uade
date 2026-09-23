@@ -14,6 +14,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -44,6 +46,9 @@ import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.controller.funciones.FuncionController;
+
+import jakarta.persistence.EntityManagerFactory;
 
 class VistasCarteleraTest extends PruebaDeIntegracion {
 
@@ -64,6 +69,15 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
 
     @Autowired
     private VistasCartelera vistas;
+
+    @Autowired
+    private PeliculaController peliculaController;
+
+    @Autowired
+    private FuncionController funcionController;
+
+    @Autowired
+    private EntityManagerFactory emf;
 
     @Test
     void laPeliculaViajaConSusEnumsComoNombre() {
@@ -191,6 +205,54 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
 
         assertNull(vista.pelicula());
         assertNotNull(vista.sala());
+    }
+
+    // Las funciones nuevas caen todas en las mismas dos salas y cada una es de una película
+    // distinta: si el listado leyera sala, butacas o película por fila, las consultas crecerían.
+    @Test
+    void losListadosDeFuncionesCuestanLasMismasConsultasConDosQueConOcho() {
+        int matrix = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP).getId();
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(5, 5));
+        programar(matrix, 2);
+        long deLaPeliculaConDos = consultasDe(() -> peliculaController.funcionesDe(matrix));
+        long todasConDos = consultasDe(() -> funcionController.buscar(null, null, null, null));
+
+        programar(matrix, 6);
+        assertEquals(16, funcionController.buscar(null, null, null, null).size());
+
+        assertEquals(deLaPeliculaConDos, consultasDe(() -> peliculaController.funcionesDe(matrix)),
+                "GET /api/peliculas/{id}/funciones");
+        assertEquals(todasConDos, consultasDe(() -> funcionController.buscar(null, null, null, null)),
+                "GET /api/funciones");
+    }
+
+    private int programadas;
+
+    // Por cada vuelta, una función de Matrix y una de una película nueva, alternando la sala.
+    private void programar(int matrix, int cuantas) {
+        for (int i = 0; i < cuantas; i++) {
+            programadas++;
+            int otra = cartelera.agregar("Película " + programadas, 90, List.of(Genero.DRAMA),
+                    Clasificacion.ATP).getId();
+            LocalDateTime inicio = LocalDateTime.of(2026, 9, 1, 10, 0).plusDays(programadas);
+            int sala = programadas % 2 + 1;
+            funciones.programar(matrix, sala, inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+            funciones.programar(otra, sala, inicio.plusHours(4), Version.SUBTITULADA, Proyeccion.DOS_D,
+                    Dinero.de(5000));
+        }
+    }
+
+    private long consultasDe(Runnable listado) {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+            listado.run();
+            return estadisticas.getPrepareStatementCount();
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
     }
 
     private Funcion programarUnaFuncion() {

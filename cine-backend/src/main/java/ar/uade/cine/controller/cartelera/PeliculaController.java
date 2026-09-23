@@ -87,10 +87,9 @@ public class PeliculaController {
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
         buscar(id);
-        return funciones.listarPorPelicula(id).stream()
+        return vistas.funciones(funciones.listarPorPelicula(id).stream()
                 .sorted(Comparator.comparing(Funcion::getInicio))
-                .map(vistas::funcion)
-                .toList();
+                .toList());
     }
 
     @Operation(summary = "Dar de alta una película a mano")

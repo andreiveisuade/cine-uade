@@ -49,15 +49,14 @@ public class FuncionController {
                                         @RequestParam(required = false) String salaId,
                                         @RequestParam(required = false) String desde,
                                         @RequestParam(required = false) String hasta) {
-        return funciones.buscar(
+        return vistas.funcionesConPelicula(funciones.buscar(
                         Parseo.numeroOpcional(peliculaId, "la película"),
                         Parseo.numeroOpcional(salaId, "la sala"),
                         Parseo.diaOpcional(desde, "la fecha de inicio"),
                         Parseo.diaOpcional(hasta, "la fecha de fin"))
                 .stream()
                 .sorted(Comparator.comparing(Funcion::getInicio))
-                .map(vistas::funcionConPelicula)
-                .toList();
+                .toList());
     }
 
     @Operation(summary = "Una función con su mapa de butacas y el precio ya calculado de cada una")

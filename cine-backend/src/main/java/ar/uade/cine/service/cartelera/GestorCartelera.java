@@ -1,6 +1,7 @@
 package ar.uade.cine.service.cartelera;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -168,6 +169,11 @@ public class GestorCartelera {
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
         return peliculaRepository.buscar(titulo == null ? "" : titulo.trim().toLowerCase(),
                 genero, publicada);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pelicula> buscar(Collection<Integer> ids) {
+        return peliculaRepository.findAllById(ids);
     }
 
     @Transactional(readOnly = true)

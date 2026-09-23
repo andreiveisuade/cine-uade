@@ -1,7 +1,10 @@
 package ar.uade.cine.controller.cartelera;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -20,6 +23,9 @@ import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.controller.salas.VistasSalas;
 
+// Un listado de N funciones cuesta un número fijo de consultas por sala y no por fila: las
+// películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
+// sentencias.
 @Component
 public class VistasCartelera {
 
@@ -57,6 +63,27 @@ public class VistasCartelera {
 
     public FuncionVistaDTO funcionConPelicula(Funcion f) {
         return armar(f, peliculaDe(f), null, null);
+    }
+
+    public List<FuncionVistaDTO> funciones(List<Funcion> lista) {
+        return listar(lista, Map.of());
+    }
+
+    public List<FuncionVistaDTO> funcionesConPelicula(List<Funcion> lista) {
+        Map<Integer, PeliculaVistaDTO> peliculas = cartelera
+                .buscar(lista.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Pelicula::getId, this::pelicula));
+        return listar(lista, peliculas);
+    }
+
+    private List<FuncionVistaDTO> listar(List<Funcion> lista, Map<Integer, PeliculaVistaDTO> peliculas) {
+        Map<Integer, Sala> salasPorId = new HashMap<>();
+        Map<Integer, List<Asiento>> asientosPorSala = new HashMap<>();
+        return lista.stream()
+                .map(f -> armar(f, salasPorId.computeIfAbsent(f.getSalaId(), id -> salaDe(f)),
+                        asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe),
+                        peliculas.get(f.getPeliculaId()), null, null))
+                .toList();
     }
 
     public FuncionVistaDTO funcionConButacas(Funcion f) {
