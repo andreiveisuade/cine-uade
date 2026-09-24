@@ -35,7 +35,7 @@ frontend -> backend : proxy_pass /api
 
 legend bottom
   |= Momento |= Que pasa |
-  | Primera vez | Maven baja las dependencias para compilar el jar: tarda minutos. |
+  | Primera vez | Maven baja las dependencias para compilar el war: tarda minutos. |
   |  | Despues Docker reusa esa capa y son segundos. |
   | Antes del healthy del backend | localhost:8080 NO responde. No esta roto: el frontend |
   |  | todavia no arranco porque espera al backend. |

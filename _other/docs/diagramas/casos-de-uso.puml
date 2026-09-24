@@ -31,7 +31,7 @@ rectangle Sistema {
   usecase "CU-15b Agregar candy\na mi compra web" as CU15b
   usecase "CU-17 Gestionar\npromociones" as CU17
   usecase "CU-18 Validar entrada\nen la puerta" as CU18
-  usecase "CU-19 Emitir el bordero\nde una funcion" as CU19
+  usecase "CU-19 Emitir el bordero\nde una funcion y la\ndeclaracion jurada" as CU19
   usecase "CU-20 Recaudacion de\nuna funcion" as CU20
 }
 
@@ -119,7 +119,8 @@ note bottom of CU19
   Lo que el cine declara al INCAA de cada
   proyeccion: espectadores, desglose por tarifa
   y recaudacion. Declara lo cobrado, no lo
-  reservado, y se exporta a un archivo.
+  reservado. El backend da los numeros en JSON
+  y Swing escribe el .txt y el .csv en la PC.
 end note
 
 note bottom of CU20

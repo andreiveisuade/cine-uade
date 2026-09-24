@@ -27,14 +27,14 @@ deactivate TM
 
 loop una por vez, en orden
   GI -> GI : R1: ya esta ese titulo?
-  GI -> GR : alta(datos)
+  GI -> GR : importar(datos)
   GR -> GR : R2, R7, R10
   GR -> DB : estadoRevision = PENDIENTE\n(fuera de cartelera)
 end
 
 GI --> NG : contadores de la corrida
 deactivate GI
-NG --> E : 200 + resumen
+NG --> E : 201 + resumen
 
 note over GR, DB
   Cae en el buzon "Por revisar", no en

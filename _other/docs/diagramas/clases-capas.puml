@@ -9,14 +9,14 @@ hide members
 
 package controller {
   ' Un subpaquete por subdominio con el controlador y su Vistas* juntos, mas
-  ' catalogos/ y http/ (Parseo, Fechas, NoEncontrado, ManejadorErrores).
+  ' catalogos/ y http/ (Parseo, Fechas, Creado, ManejadorErrores, ConfiguracionOpenApi).
   ' Ya no hay rutas/: cada controlador es publico y Spring lo descubre solo.
 
   class "CandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nSalaController, SesionController" as Controllers
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy\nVistasInformes" as Vistas
   class Parseo
   class Fechas
-  class NoEncontrado
+  class Creado
   class ManejadorErrores
 }
 
@@ -39,6 +39,8 @@ package service {
   class GestorClientes
   class GestorReservas
   class GestorPagos
+  class GestorAcceso
+  class ConsultasReservas
   class GestorCandy
   class GestorProductos
   class GestorEmpleados
@@ -49,7 +51,7 @@ package service {
   class CalculadoraPrecio
   class Ocupacion
   interface PoliticaPromociones
-  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla" as DatosDeServicio
+  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla\nDeclaracionJurada, PeriodoDeclarado" as DatosDeServicio
 }
 
 ' Los adaptadores de salida. Cada uno es una interfaz que declara service/ y una
@@ -59,7 +61,12 @@ package service {
 package infrastructure {
 
   package seguridad {
-    class Password
+    class "ConfiguracionSeguridad\nSpring Security: rutas por rol, Basic, bcrypt" as ConfiguracionSeguridad
+    class PasswordSha256
+  }
+
+  package reloj {
+    interface Reloj
   }
 
   package comprobantes {
@@ -98,7 +105,7 @@ package infrastructure {
 
 package model {
   package cartelera as dom_cartelera {
-    class "Pelicula @Entity\nGenero, Clasificacion" as DomCartelera
+    class "Pelicula, Importacion @Entity\nGenero, Clasificacion, EstadoRevision" as DomCartelera
   }
   package salas as dom_salas {
     class "Sala, Asiento @Entity\nTipoSala, TipoAsiento, EstadoAsiento" as DomSalas
@@ -110,13 +117,13 @@ package model {
     class "Programacion @Entity" as DomProgramaciones
   }
   package ventas as dom_ventas {
-    class "Reserva, Pago, BloqueoButaca @Entity\nEntrada, EstadoReserva, MedioPago" as DomVentas
+    class "Reserva, Entrada, Pago, BloqueoButaca @Entity\nEstadoReserva, MedioPago, TipoTarifa" as DomVentas
   }
   package candy as dom_candy {
-    class "Producto, CompraCandy @Entity\nItemCombo, ItemCompra, TipoProducto" as DomCandy
+    class "Producto, CompraCandy, ItemCompra @Entity\nItemCombo, TipoProducto" as DomCandy
   }
   package promociones as dom_promociones {
-    class "Promocion (abstract @Entity)\nPorcentaje, MontoFijo, NxM\nTipoPromocion" as DomPromociones
+    class "Promocion (abstract @Entity)\nPorcentaje, MontoFijo, NxM\nCondicionesPromocion, TipoPromocion" as DomPromociones
   }
   package usuarios as dom_usuarios {
     class "Usuario, Cliente, Empleado @Entity\nRol" as DomUsuarios
@@ -189,6 +196,8 @@ GestorReservas -down-> GeneradorTicket
 ' Que butacas estan tomadas es una pregunta sobre la funcion, no sobre una
 ' reserva: por eso Ocupacion es una clase y no un metodo de GestorReservas.
 GestorReservas -right-> Ocupacion
+GestorAcceso -down-> ReservaRepository
+ConsultasReservas -down-> ReservaRepository
 Ocupacion -down-> ReservaRepository
 Ocupacion -down-> AsientoRepository
 Ocupacion -down-> BloqueoButacaRepository
@@ -202,7 +211,8 @@ GestorCandy -down-> CompraCandyRepository
 GestorCandy -down-> GeneradorTicketCandy
 GestorEmpleados -down-> EmpleadoRepository
 GestorReservas ..> CalculadoraPrecio
-GestorEmpleados ..> Password
+ConfiguracionSeguridad ..> EmpleadoRepository
+ConfiguracionSeguridad ..> PasswordSha256
 GeneradoresTxt ..up|> comprobantes
 
 GestorPagos -down-> PasarelaPagos
@@ -232,13 +242,14 @@ legend bottom
   |  | un perfil de Spring, no una linea de codigo. |
   | service | Las reglas de negocio. Cada gestor pide los repositorios que necesita para validarlas. |
   | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. No |
-  |  | depende de ninguna otra capa. Solo Promocion es jerarquia real. |
+  |  | depende de ninguna otra capa. Las jerarquias reales son Promocion y Usuario. |
   | repository | 14 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
   | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
   |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |
   |  | **comprobantes**: el ticket que se entrega; no es de persistencia, se imprime y no se |
-  |  | consulta. **importador**: de donde sale la cartelera. **seguridad**: como se guardan |
-  |  | las credenciales. La butaca mientras se elige ya no es un puerto: es una tabla mas. |
+  |  | consulta. **importador**: de donde sale la cartelera. **reloj**: la hora, reemplazable en tests. |
+  |  | **seguridad**: quien entra y con que rol (Spring Security, bcrypt). La butaca mientras se elige |
+  |  | ya no es un puerto: es una tabla mas. |
 endlegend
 
 @enduml

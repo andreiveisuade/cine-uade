@@ -9,7 +9,7 @@ hide members
 
 package controller {
   package http {
-    class "Parseo, Fechas, NoEncontrado\nManejadorErrores" as Http
+    class "Parseo, Fechas, Creado\nManejadorErrores, ConfiguracionOpenApi" as Http
   }
   class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n14 @RestController (uno por area, sin fachada)\ny al lado de cada uno su Vistas* (ensamblador de DTO)" as Controllers
 }
@@ -23,13 +23,13 @@ package service {
     class "GestorCandy\nGestorProductos" as SrvCandy
   }
   package cartelera as srv_cartelera {
-    class "GestorCartelera\nDatosPelicula" as SrvCartelera
+    class "GestorCartelera, GestorRevisionCartelera\nGestorImportaciones, DatosPelicula" as SrvCartelera
   }
   package funciones as srv_funciones {
     class "GestorFunciones\nAgendaDeSala" as SrvFunciones
   }
   package informes as srv_informes {
-    class "GestorInformes\nArqueo, Bordero\nInformeFuncion" as SrvInformes
+    class "GestorInformes, GestorCaja\nArqueo, Bordero, InformeFuncion\nDeclaracionJurada, PeriodoDeclarado" as SrvInformes
   }
   package programaciones as srv_programaciones {
     class "GestorProgramaciones, PlanificadorGrilla\nPlanProgramacion, CriteriosGrilla\nPropuestaGrilla" as SrvProgramaciones
@@ -44,7 +44,7 @@ package service {
     class "GestorClientes\nGestorEmpleados" as SrvUsuarios
   }
   package ventas as srv_ventas {
-    class "GestorReservas, GestorPagos\nOcupacion, CalculadoraPrecio\nCriteriosReserva" as SrvVentas
+    class "GestorReservas, GestorPagos, GestorAcceso\nConsultasReservas, Ocupacion\nCalculadoraPrecio, CriteriosReserva" as SrvVentas
   }
 }
 
@@ -53,11 +53,11 @@ package model {
 }
 
 package repository {
-  class "13 interfaces JpaRepository por subdominio\n(sin implementacion propia)\n+ dinero/DineroConverter" as Repos
+  class "14 interfaces JpaRepository por subdominio\n(sin implementacion propia)\n+ dinero/DineroConverter" as Repos
 }
 
 package infrastructure {
-  class "bloqueos, comprobantes\npasarelas, importador, seguridad" as Infra
+  class "comprobantes, importador, pasarelas\nreloj, seguridad + Adaptadores" as Infra
 }
 
 class Aplicacion

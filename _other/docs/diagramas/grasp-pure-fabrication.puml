@@ -20,14 +20,14 @@ package "service.ventas" {
     +liberar(funcionId, sesion)
   }
   class CalculadoraPrecio {
-    +precioDe(Funcion, Sala, Asiento,\nTipoTarifa): double
-    +precioBaseEnSala(Funcion, Sala): double
+    +precioDe(Funcion, Sala, Asiento,\nTipoTarifa): Dinero
+    +precioBaseEnSala(Funcion, Sala): Dinero
   }
 }
 
 package "service.funciones" {
   class GestorFunciones {
-    +agendaDe(salaId): AgendaDeSala
+    +agendaDe(salaId, desde, hasta): AgendaDeSala
   }
   class AgendaDeSala {
     +chocaEn(inicio, fin): boolean
@@ -49,7 +49,7 @@ note right of Ocupacion
   Reserva -no sabe de otras reservas- ni en Sala
   -no sabe de horarios-, y ponerla en GestorReservas
   la hubiera dejado escondida ahi cuando la API
-  y la consola necesitan la misma pregunta para
+  necesita la misma pregunta para
   dibujar el mapa antes de que exista ninguna
   reserva. Es la unica definicion de "ocupado"
   del sistema.

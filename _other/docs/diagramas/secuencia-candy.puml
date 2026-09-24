@@ -53,7 +53,7 @@ else todo en orden
     El precio se lo pregunta a la carta, no lo
     sabe ni lo recibe: la misma razon por la que
     el pago de una reserva toma el monto de la
-    reserva. Cada ItemCompra lo congela.
+    reserva. Cada ItemCompra congela precio y ahorro.
   end note
 
   Gestor -> Repo : save(compra)
@@ -61,10 +61,7 @@ else todo en orden
   Repo --> Gestor : compra con id asignado
   deactivate Repo
 
-  Gestor -> Carta : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
-  activate Carta
-  Carta --> Gestor : $ 2000
-  deactivate Carta
+  Gestor -> Gestor : compra.getAhorro():\nsuma el ahorro que cada ItemCompra\ncongelo al vender ($ 2000)
   Gestor -> Ticket : emitir(compra, cliente, ahorro)
   activate Ticket
   Ticket -> Ticket : escribe\ntickets/candy-N.txt

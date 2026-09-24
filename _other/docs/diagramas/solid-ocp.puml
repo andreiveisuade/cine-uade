@@ -8,45 +8,39 @@ hide empty members
 ' Las tres promociones que hay hoy no agotan lo que un cine puede querer
 ' ofrecer: un 3x2, un descuento que crece con la cantidad de entradas,
 ' una promo que solo corre para socios. Sumar cualquiera de esas es escribir
-' una clase nueva que implementa calcularDescuento(): PromocionBase ya le
+' una clase nueva que implementa calcularDescuento(): Promocion ya le
 ' resuelve la vigencia, el dia, el horario y el medio de pago, asi que la
 ' clase nueva no repite nada de eso. En ningun lugar del sistema hay un
 ' switch (tipo) que haya que ir a tocar: ni GestorPromociones.calcularPara(),
 ' ni GestorPagos.cobrar() saben que implementaciones existen.
 
 package "model.promociones" {
-  interface Promocion {
+  abstract class Promocion <<@Entity>> {
+    -condiciones: vigencia,\ndia, horario, medio
     +aplicaA(inicioFuncion, medio): boolean
-    +calcularDescuento(entradas): double
-  }
-
-  abstract class PromocionBase {
-    #cumpleCondiciones: vigencia,\ndia, horario, medio
-    +aplicaA(inicioFuncion, medio): boolean
-    {abstract} +calcularDescuento(entradas): double
+    {abstract} +calcularDescuento(entradas): Dinero
   }
 
   class PromocionPorcentaje {
     -porcentaje: double
-    +calcularDescuento(entradas): double
+    +calcularDescuento(entradas): Dinero
   }
   class PromocionMontoFijo {
-    -monto: double
-    +calcularDescuento(entradas): double
+    -monto: Dinero
+    +calcularDescuento(entradas): Dinero
   }
   class PromocionNxM {
     -lleva: int
     -paga: int
-    +calcularDescuento(entradas): double
+    +calcularDescuento(entradas): Dinero
   }
 }
 
-PromocionBase .up.|> Promocion
-PromocionPorcentaje -up-|> PromocionBase
-PromocionMontoFijo -up-|> PromocionBase
-PromocionNxM -up-|> PromocionBase
+PromocionPorcentaje -up-|> Promocion
+PromocionMontoFijo -up-|> Promocion
+PromocionNxM -up-|> Promocion
 
-note right of PromocionBase
+note right of Promocion
   aplicaA() esta ESCRITA UNA VEZ ACA y las tres
   hijas la heredan sin tocarla: vigencia, dia de
   semana, horario y medio de pago se evaluan
@@ -89,7 +83,7 @@ note as N2
   **Cerrado a modificacion:** ninguna de las
   clases existentes cambia para sumar un
   beneficio nuevo.
-  **Abierto a extension:** PromocionBase se
+  **Abierto a extension:** Promocion se
   extiende con una clase mas, que GestorPromociones
   ya sabe usar porque solo conoce Promocion.
 end note

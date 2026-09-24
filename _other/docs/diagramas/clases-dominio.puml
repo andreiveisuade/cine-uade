@@ -223,7 +223,8 @@ package "model.ventas" {
   ' credencial: por eso no puede ser el id. ingresadaEn null = no entraron aun.
   ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
   ' en Funcion, para poder probarla sin esperar media hora; MINUTOS_PARA_PAGAR
-  ' es lo que define ese plazo.
+  ' es lo que define ese plazo. Lleva @Version: si cobrar y cancelar compiten,
+  ' el segundo en escribir falla (409) en vez de pisar al primero.
   class Reserva <<Entity>> {
     {static} +MINUTOS_PARA_PAGAR: int = 30
     +getFuncion(): Funcion
@@ -244,12 +245,12 @@ package "model.ventas" {
     +getCodigo(): String
     +getIngresadaEn(): LocalDateTime
   }
-  ' Value object: sin identidad ni DAO, vive y muere con su reserva.
+  ' Sin DAO propio: vive y muere con su reserva (cascade + orphanRemoval).
   ' precio es el de lista (funcion x TipoSala x TipoAsiento x TipoTarifa), se
   ' congela al reservar y ninguna promocion lo toca.
   ' La tarifa va aca porque es por persona: en una reserva de cuatro puede
   ' haber dos generales, un menor y un jubilado.
-  class Entrada <<Embeddable>> {
+  class Entrada <<Entity>> {
     +asientoId(): int
     +codigoAsiento(): String
     +tarifa(): TipoTarifa
@@ -269,6 +270,13 @@ package "model.ventas" {
     +getMedio(): MedioPago
     +getFecha(): LocalDateTime
     +getCodigoAutorizacion(): String
+  }
+  ' La butaca mientras se elige: 3 minutos a nombre de una sesion anonima.
+  ' PK (funcion_id, asiento_id): la base no deja que dos sesiones la tengan.
+  ' Nadie la instancia: se toma, renueva y suelta con sentencias atomicas.
+  class BloqueoButaca <<Entity>> {
+    +asientoId(): int
+    +sesion(): String
   }
   enum EstadoReserva <<enum>> {
     RESERVADA / PAGADA
@@ -359,8 +367,9 @@ package "model.candy" {
   ' con nombre bonito: sabiendo que trae se valida que cueste menos que
   ' comprarlo suelto (R14).
   class ItemCombo <<Embeddable>> {
-    +productoId(): int
+    +producto(): Producto
     +nombre(): String
+    +precioSuelto(): Dinero
     +cantidad(): int
   }
   ' No pasa por Pago y no tiene estados: en el mostrador se cobra en el acto,
@@ -377,12 +386,15 @@ package "model.candy" {
     +getItems(): List<ItemCompra>
     +getTotal(): Dinero
   }
-  class ItemCompra <<Embeddable>> {
-    +productoId(): int
+  ' Nombre, precio y ahorro del combo quedan congelados al vender: editar el
+  ' producto despues no cambia una compra vieja.
+  class ItemCompra <<Entity>> {
+    +producto(): Producto
     +nombre(): String
     +cantidad(): int
     +precioUnitario(): Dinero
     +getSubtotal(): Dinero
+    +getAhorro(): Dinero
   }
   enum TipoProducto <<enum>> {
     POCHOCLOS / BEBIDA
@@ -452,6 +464,9 @@ note on link
    entrada.reserva.funcion.sala}
 end note
 
+BloqueoButaca "*" --> "1" Funcion
+BloqueoButaca "*" --> "1" Asiento
+
 Pago "0..1" --> "1" Reserva
 Pago "*" --> "0..1" Promocion
 
@@ -486,9 +501,10 @@ note as N2
   Reserva -> Cliente son @ManyToOne(fetch = LAZY):
   el gestor navega funcion.getSala() adentro de
   su transaccion, y getSalaId() lee el id del
-  proxy sin ir a la base. Sala.asientos es el
-  lado inverso (mappedBy). El resto (Pago,
-  CompraCandy) sigue por id.
+  proxy sin ir a la base. Todas son
+  unidireccionales: Sala no tiene lista de
+  asientos, se leen por AsientoRepository.
+  El resto (Pago, CompraCandy) sigue por id.
 
   **Funcion no sabe cuanto dura.** La duracion
   vive en Pelicula, y getFin() la recibe por
