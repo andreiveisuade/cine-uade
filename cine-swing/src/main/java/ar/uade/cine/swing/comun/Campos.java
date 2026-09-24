@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * Lo que se hace con un campo mientras se lo usa: qué se deja tipear, qué opción está elegida y cuándo reaccionar a
  * lo tipeado. Leer el valor para mandarlo es de {@link Validacion}, que separa dos cosas: el formato y la
  * obligatoriedad (un número mal tipeado, un obligatorio vacío) los revisa el cliente antes de mandar, porque no son
- * reglas del cine sino un pedido mal armado; las reglas de negocio (precio mayor a cero, rangos, R1 a R19) las
+ * reglas del cine sino un pedido mal armado; las reglas de negocio (precio mayor a cero, rangos, R1 a R20) las
  * decide solo el backend, y su mensaje se muestra tal cual.
  */
 public final class Campos {

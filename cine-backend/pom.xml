@@ -95,8 +95,8 @@
       <scope>runtime</scope>
     </dependency>
 
-    <!-- La base de los tests: en memoria, creada por Hibernate desde las entidades y
-         tirada al terminar. Es lo que reemplaza a las catorce implementaciones en
+    <!-- La base de los tests: en memoria, creada con el mismo schema.sql que MySQL
+         (application-test.yml) y tirada al terminar. Es lo que reemplaza a las catorce implementaciones en
          memoria de los DAO — con la diferencia de que ahora los tests pasan por el
          mapeo y las consultas de verdad, así que un @Query roto se ve en `mvn test` y
          no recién contra MySQL. -->
@@ -106,7 +106,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Tests. scope=test => no se empaqueta en el jar final. El starter trae JUnit 5,
+    <!-- Tests. scope=test => no se empaqueta en el war final. El starter trae JUnit 5,
          AssertJ, Mockito y el soporte de Spring para levantar el contexto en una prueba. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -119,7 +119,7 @@
     <!-- Se llama cine-api.war: es lo que copia el Dockerfile. -->
     <finalName>cine-api</finalName>
     <plugins>
-      <!-- Arma el jar ejecutable con las dependencias adentro y el main apuntado a la
+      <!-- Arma el war ejecutable con las dependencias adentro y el main apuntado a la
            clase @SpringBootApplication. Reemplaza al shade: la imagen de Docker corre un
            JRE pelado, sin Maven ni repositorio local del que sacar las dependencias.
            `mvn spring-boot:run` levanta la app sin empaquetar. -->

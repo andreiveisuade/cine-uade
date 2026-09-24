@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * Revisa el <b>formato y la obligatoriedad</b> de un formulario antes de mandarlo, y nada más. Un campo obligatorio
  * vacío, "abc" en un precio o una "x" en "8,x,12" no son reglas del cine: son un pedido mal armado, y mandarlo igual
  * solo conseguía un mensaje engañoso ("El precio es obligatorio" cuando se tipeó "abc") o un dato perdido en silencio.
- * Lo que sí es regla —precio mayor a cero, rangos, fechas que se pisan, R1 a R19— no se mira acá: lo decide el gestor
+ * Lo que sí es regla —precio mayor a cero, rangos, fechas que se pisan, R1 a R20— no se mira acá: lo decide el gestor
  * del backend, y su mensaje se muestra tal cual con {@link #mostrarError}.
  *
  * <p>Se usa una por envío: cada lectura devuelve el valor listo para el pedido (o null si falló) y anota qué falló;

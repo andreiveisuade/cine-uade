@@ -77,8 +77,8 @@ public final class ApiHttp {
     // --- sesión ---
 
     public Empleado login(String email, String password) {
-        // Van las credenciales nuevas en Basic y también en el cuerpo: el backend de hoy valida el cuerpo (y rechaza
-        // un Basic inválido), y el que valida con Spring Security mira solo el header. Así anda contra los dos.
+        // Las credenciales nuevas van en Basic, que es lo único que valida el backend (Spring Security). El cuerpo
+        // es del login anterior, que las leía de ahí: hoy el backend lo ignora.
         // Nunca las viejas: si vencieron, el filtro rechazaría el pedido antes de probar las nuevas.
         String nuevas = Base64.getEncoder()
                 .encodeToString((nulo(email) + ":" + nulo(password)).getBytes(StandardCharsets.UTF_8));
