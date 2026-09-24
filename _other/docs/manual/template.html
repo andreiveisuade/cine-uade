@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 497 tests.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 474 tests en el backend y 55 en Swing.</p>
       </div>
     </section>
 
@@ -659,7 +659,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>Junto a su controlador: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasVentas</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code>, <code>VistasInformes</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
-            <tr><td>65 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen; <code>ErrorVistaDTO</code> y <code>PedidoActivacionDTO</code> en <code>comun/</code></td></tr>
+            <tr><td>66 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen; <code>ErrorVistaDTO</code> y <code>PedidoActivacionDTO</code> en <code>comun/</code></td></tr>
             <tr><td>14 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad, en el subdominio de su entidad; Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ columna <code>DECIMAL</code></td></tr>
 
@@ -710,7 +710,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@EnableWebSecurity</code></td><td>Activa Spring Security; un <code>SecurityFilterChain</code> define rutas y roles</td><td><code>ConfiguracionSeguridad</code></td></tr>
             <tr><td><code>@Profile("!test")</code></td><td>Bean solo fuera de los tests</td><td>Reloj, TMDB, las tareas programadas</td></tr>
             <tr><td><code>@Scheduled</code></td><td>Método que Spring corre solo cada tanto (requiere <code>@EnableScheduling</code>)</td><td><code>Ocupacion.borrarBloqueosVencidos</code>, cada 5 min</td></tr>
-            <tr><td><code>@Value("${...}")</code></td><td>Inyecta un valor de <code>application.yml</code></td><td><code>Adaptadores</code>, <code>GestorImportaciones</code></td></tr>
+            <tr><td><code>@Value("${...}")</code></td><td>Inyecta un valor de <code>application.yml</code></td><td><code>Adaptadores</code>, <code>GestorImportaciones</code>, <code>VistasInformes</code> (el exhibidor)</td></tr>
             <tr><td><code>@Transactional</code></td><td>Transacción por método: commit al salir, rollback ante excepción (vía proxy). <code>readOnly = true</code> en las lecturas: sin dirty checking ni flush</td><td>Gestores que escriben. Sin ella a propósito: <code>GestorImportaciones</code> y <code>extenderActivas</code>, que cuentan lo que falla y siguen</td></tr>
           </tbody>
         </table>
@@ -726,7 +726,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@RequestParam</code></td><td>Parámetro de la query; <code>required = false</code> es filtro opcional</td><td><code>?genero=ACCION</code></td></tr>
             <tr><td><code>@RequestBody</code></td><td>Jackson convierte el JSON al DTO</td><td><code>@RequestBody PedidoPeliculaDTO p</code></td></tr>
             <tr><td><code>@Valid</code> + <code>@NotNull</code> <code>@NotBlank</code> <code>@NotEmpty</code> <code>@Positive</code> <code>@Email</code></td><td>Bean Validation: formato y presencia en el <code>Pedido*DTO</code>, antes del gestor → 400</td><td><code>@Valid @RequestBody</code></td></tr>
-            <tr><td><code>@ResponseStatus</code></td><td>Código si termina bien: 201 en altas, 204 en borrados. Las altas devuelven además <code>ResponseEntity.created(uri)</code>, que agrega el <code>Location</code></td><td>20 métodos</td></tr>
+            <tr><td><code>@ResponseStatus</code></td><td>Código si termina bien: 201 en altas, 204 en borrados. Las altas devuelven además <code>ResponseEntity.created(uri)</code>, que agrega el <code>Location</code></td><td>18 métodos</td></tr>
             <tr><td><code>@RestControllerAdvice</code> + <code>@ExceptionHandler</code></td><td>Traducen excepciones a HTTP</td><td><code>ManejadorErrores</code></td></tr>
             <tr><td><code>@JsonInclude(NON_NULL)</code></td><td>Omite campos <code>null</code></td><td><code>*VistaDTO</code></td></tr>
           </tbody>
@@ -747,8 +747,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@Column</code></td><td>Nombre de columna o <code>unique</code></td><td><code>Reserva.codigo</code></td></tr>
             <tr><td><code>@Version</code></td><td>Bloqueo optimista: cada <code>UPDATE</code> incrementa la versión y exige la que leyó; si otro escribió antes, falla</td><td><code>Reserva.version</code>: cobrar contra cancelar</td></tr>
             <tr><td><code>@Enumerated(STRING)</code></td><td>Enum guardado por nombre: reordenarlo no corrompe datos</td><td>Estados, versión…</td></tr>
-            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse. Todas las relaciones son unidireccionales, desde el lado de la FK: no hay ningún <code>@OneToMany(mappedBy)</code></td><td>LAZY: <code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code>. <code>EAGER</code> explícito, porque las vistas los leen fuera de la transacción: <code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code></td></tr>
-            <tr><td><code>@OnDelete(CASCADE)</code></td><td>Hibernate genera el <code>ON DELETE CASCADE</code> que ya tiene el schema</td><td><code>Asiento.sala</code></td></tr>
+            <tr><td><code>@ManyToOne</code> + <code>@JoinColumn</code></td><td>FK cargada como objeto; <code>LAZY</code> = proxy que va a la base al usarse. Todas las relaciones son unidireccionales, desde el lado de la FK: no hay ningún <code>@OneToMany(mappedBy)</code></td><td>LAZY: <code>Funcion.pelicula</code>, <code>Funcion.sala</code>, <code>Programacion.pelicula</code>, <code>Programacion.sala</code>, <code>Asiento.sala</code>, <code>Reserva.funcion</code>, <code>Reserva.cliente</code>, <code>BloqueoButaca.funcion</code>, <code>BloqueoButaca.asiento</code>. <code>EAGER</code> explícito, porque las vistas los leen fuera de la transacción: <code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code></td></tr>
+            <tr><td><code>@OnDelete(CASCADE)</code></td><td>Hibernate genera el <code>ON DELETE CASCADE</code> que ya tiene el schema</td><td><code>Asiento.sala</code>, <code>BloqueoButaca.funcion</code> y <code>.asiento</code></td></tr>
             <tr><td><code>@OneToMany(cascade = ALL, orphanRemoval)</code></td><td>Hijas que se guardan y borran con la madre</td><td><code>Reserva.entradas</code>, <code>CompraCandy.items</code></td></tr>
             <tr><td><code>@ElementCollection</code></td><td>Lista de valores en tabla auxiliar</td><td><code>Pelicula.generos</code> → <code>pelicula_genero</code></td></tr>
             <tr><td><code>@Inheritance(SINGLE_TABLE)</code></td><td>Jerarquía en una tabla con discriminador</td><td><code>Promocion</code>, <code>Usuario</code></td></tr>
@@ -775,7 +775,7 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="api">
       <h2>API HTTP</h2>
-      <p>70 endpoints REST bajo <code>/api</code>, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
+      <p>71 endpoints REST bajo <code>/api</code>, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Controlador</th><th>Rutas</th><th>Qué cubre</th></tr></thead>
@@ -815,7 +815,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>Sin credenciales o credenciales inválidas</td><td>401</td></tr>
             <tr><td>Rol insuficiente</td><td>403</td></tr>
             <tr><td>Recurso inexistente (<code>RecursoNoEncontrado</code>) o id no numérico en la ruta</td><td>404</td></tr>
-            <tr><td>Butaca tomada (<code>ButacaOcupadaException</code>) o nombre, email o título duplicado (<code>ConflictoDeNegocio</code>)</td><td>409</td></tr>
+            <tr><td>Butaca tomada (<code>ButacaOcupadaException</code>), nombre, email o título duplicado (<code>ConflictoDeNegocio</code>) o reserva que otro pedido cambió a la vez (<code>@Version</code>)</td><td>409</td></tr>
+            <tr><td>Método no aceptado en esa ruta / cuerpo que no es JSON</td><td>405 / 415</td></tr>
             <tr><td>Falla del servidor (detalle al log por SLF4J)</td><td>500</td></tr>
           </tbody>
         </table>
@@ -1430,7 +1431,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h3>Esquema y migraciones</h3>
       <p>
         MySQL corre <code>schema.sql</code> solo con el volumen vacío; sobre una base existente se aplican a mano
-        los <code>migracion-*.sql</code>. La suite entera corre sobre H2 creada con ese mismo <code>schema.sql</code>
+        los <code>migracion-*.sql</code> que falten, en este orden: <code>programaciones</code>, <code>grilla-abierta</code>,
+        <code>limpieza</code>, <code>staging</code>, <code>puntaje</code>, <code>votos</code>, <code>importaciones</code>,
+        <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code> y <code>ahorro-congelado</code>. La suite entera corre sobre H2 creada con ese mismo <code>schema.sql</code>
         (<code>ddl-auto: validate</code>), así que los <code>UNIQUE</code>, los <code>NOT NULL</code> y el largo de cada
         <code>VARCHAR</code> se prueban igual que en MySQL; <code>MapeoContraSchemaTest</code> lo verifica en una base aparte.
         Los textos que tipea el usuario se validan contra el largo de su columna en el gestor o la entidad:
@@ -1443,7 +1446,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
     <section class="doc-section" id="dto">
       <h2>El patrón DTO</h2>
       <p>
-        65 <code>record</code>, uno por forma de JSON. Serializar entidades ataría el contrato a su forma interna,
+        66 <code>record</code>, uno por forma de JSON. Serializar entidades ataría el contrato a su forma interna,
         y una respuesta suele juntar varias (la función con sala, película, precios y butacas tomadas).
       </p>
       <ul>
@@ -1742,6 +1745,10 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
         <figcaption>Las dos instalaciones y qué viaja en cada sentido</figcaption>
       </figure>
 
+      <p>
+        El <a href="#swing">panel Swing</a> de hoy ya cobra y valida en la Puerta, pero en línea contra el servidor.
+        Lo pendiente es esta instalación local que sigue vendiendo sin red.
+      </p>
       <ul>
         <li><strong>Swing es un cliente HTTP más</strong> del backend local: no duplica reglas. Sin nginx.</li>
         <li><strong>Pantallas:</strong> Cobrar y Puerta. El arqueo queda en el panel del encargado, contra el servidor.</li>
@@ -1768,7 +1775,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 497 tests, ninguno salteado</code></pre>
+mvn clean test       # 474 tests, ninguno salteado (cine-swing: 55)</code></pre>
       <p>
         Corren contra H2 creada con el <code>schema.sql</code> real (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos
@@ -1830,7 +1837,8 @@ mvn clean test       # 497 tests, ninguno salteado</code></pre>
         <table>
           <thead><tr><th>Requisito</th><th>Prueba automática</th><th>Manual</th></tr></thead>
           <tbody>
-            <tr><td>R1, R2, R7</td><td><code>GestorCarteleraTest</code></td><td>—</td></tr>
+            <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code></td><td>—</td></tr>
+            <tr><td>R8</td><td><code>GestorReservasTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>R3, R12</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code>, <code>PlanificadorGrillaTest</code>, <code>FuncionControllerTest</code></td><td>CP-19</td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td><td>CP-11</td></tr>
@@ -1838,6 +1846,7 @@ mvn clean test       # 497 tests, ninguno salteado</code></pre>
             <tr><td>R14</td><td><code>GestorCandyTest</code></td><td>—</td></tr>
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
             <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
+            <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td><td>—</td></tr>
             <tr><td>Bloqueo</td><td><code>OcupacionTest</code></td><td>CP-18</td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td><td>CP-15</td></tr>
             <tr><td>CU-07b, CU-19, CU-20</td><td><code>GestorPagosTest</code>, <code>PagoControllerTest</code>, <code>GestorInformesTest</code></td><td>—</td></tr>
