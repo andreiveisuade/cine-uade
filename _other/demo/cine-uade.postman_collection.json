@@ -272,6 +272,62 @@
           }
         },
         {
+          "name": "Tipos de producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-producto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-producto"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tipos de promoción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-promocion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-promocion"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
           "name": "Cartelera",
           "event": [
             {
