@@ -2,7 +2,7 @@
 
 Base `/api`. Lo consumen dos clientes: la web del cliente (`src/api/api-http.js`) y el panel
 de escritorio del encargado (`cine-swing`, clase `ApiHttp`), que usa los mismos nombres de
-operación. Probable en <http://localhost:8080/swagger-ui.html>.
+operación. Se prueba en <http://localhost:8080/swagger-ui.html>.
 
 ## Convenciones
 
@@ -57,7 +57,7 @@ de alta la función. Ningún cliente decide por el nombre de una constante lo qu
 | `GET /api/cartelera?genero=` | Solo en exhibición. `genero` opcional |
 | `GET /api/peliculas/{id}` | Una película |
 | `GET /api/peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala embebida |
-| `GET /api/clientes?email=` | El cliente o `null`. Sin distinguir mayúsculas |
+| `GET /api/clientes?email=` | El cliente o `null`. Sin distinguir mayúsculas. Solo `ADMINISTRADOR` (lo usa Swing) |
 | `POST /api/clientes` | `{nombre, email}`. Email único (`409`). Opcional: reservar da de alta igual |
 
 **Película**
@@ -66,7 +66,7 @@ de alta la función. Ningún cliente decide por el nombre de una constante lo qu
 { "id": 1, "titulo": "Matrix", "duracionMinutos": 136, "generos": ["ACCION"],
   "clasificacion": "MAS_16", "posterUrl": "…", "director": "…", "anio": 1999,
   "idiomaOriginal": "Inglés", "sinopsis": "…",
-  "enCartelera": true, "estadoRevision": "CONFIRMADA" }
+  "enCartelera": true, "estadoRevision": "CONFIRMADA", "puntaje": 8.2, "votos": 26000 }
 ```
 
 `estadoRevision` (`PENDIENTE`/`CONFIRMADA`/`DESCARTADA`): si entró al catálogo; lo importado
@@ -125,14 +125,15 @@ código de autorización (R11) se siguen validando al cobrar.
 | `POST /api/reservas/codigo/{codigo}/cancelacion` | El cliente cancela la suya. R6 libera butacas. R13: solo si está `RESERVADA` |
 | `GET /api/reservas?email=` | Las de ese cliente, **sin `codigo`**: el email no prueba ser el dueño. Sin cliente: `200` con `[]` |
 | `GET /api/reservas/{id}`, `POST /api/reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id es secuencial y se adivina |
-| `GET /api/reservas` | Todas (listado del encargado) |
+| `GET /api/reservas?estado=&dia=&q=` | Todas (listado del encargado), de la más nueva a la más vieja. Filtros opcionales: `estado` (`RESERVADA`…), `dia` (`AAAA-MM-DD`, día de la función) y `q` (texto en código, butaca, cliente, email o película) |
 
 `POST /api/reservas/{id}/pago`
 
 ```json
 { "medio": "CREDITO", "codigoAutorizacion": "AUTH-40219" }
 → { "id": 2, "reservaId": 25, "subtotal": 15360, "promocionId": 1,
-    "descuento": 7680, "monto": 7680, "medio": "EFECTIVO" }
+    "descuento": 7680, "monto": 7680, "medio": "CREDITO",
+    "fecha": "2026-08-13T19:40:00", "codigoAutorizacion": "AUTH-40219" }
 ```
 
 - El monto no viaja: el descuento depende del medio. `monto` es lo que entra en caja.
@@ -169,14 +170,14 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 
 | Ruta | Notas |
 |---|---|
-| `GET /api/peliculas` | Todas, incluso fuera de cartelera |
+| `GET /api/peliculas?q=&genero=&publicada=` | Todas, incluso fuera de cartelera. Filtros opcionales: `q` (texto en el título), `genero` y `publicada` (`true`/`false`, el flag `enCartelera`) |
 | `GET /api/peliculas/pendientes` | El buzón. Va antes que `/{id}` en las rutas |
 | `POST /api/peliculas` | R1 título único (`409`), R2 duración > 0, R7 un género, R10 clasificación. `puntaje` de 0 a 10, `votos` no negativos, `anio` entre 1895 y cinco años por delante (`0` = sin dato). Nace `CONFIRMADA` |
 | `POST /api/peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /api/peliculas/{id}/descarte` | `DESCARTADA`. `400` si tiene funciones |
 | `PUT /api/peliculas/{id}` | Parcial: nada obligatorio, lo que no viaja queda igual; lo que viaja se valida como en el alta (título en blanco, duración ≤ 0, puntaje o año fuera de rango: `400`). Título único contra las otras (`409`) |
 | `DELETE /api/peliculas/{id}` | `400` si tiene funciones o una grilla que la programe |
-| `GET /api/salas` · `GET /api/salas/{id}` | El detalle trae `asientos` |
+| `GET /api/salas` · `GET /api/salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle trae además `asientos` |
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional, 15 por defecto, no negativa |
 | `PUT /api/salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Butacas no editables; sin limpieza conserva la anterior; tipo fijo si tiene funciones (`400`) |
 | `DELETE /api/salas/{id}` | `400` si tiene funciones |
@@ -201,7 +202,8 @@ Borderó e informe cortan por **función** (INCAA), no por día; la declaración
 `GET /api/funciones/{id}/bordero`
 
 ```json
-{ "funcionId": 3, "pelicula": "Matrix", "sala": "Sala 1", "espectadores": 15,
+{ "funcionId": 3, "pelicula": "Matrix", "sala": "Sala 1", "funcion": "2026-08-13T20:30:00",
+  "generadoEn": "2026-08-14T09:00:00", "espectadores": 15,
   "recaudacionBruta": 67500, "descuentos": 5000, "recaudacionNeta": 62500,
   "porTarifa": { "GENERAL": {"cantidad":12,"total":60000} } }
 ```
@@ -271,11 +273,14 @@ obligatorio; default: una semana desde hoy, 14 a 24, ocho títulos.
 ```json
 { "desde": "2026-09-01", "dias": 7, "apertura": "14:00", "cierre": "00:00",
   "cuantasPeliculas": 8, "precio": 5000, "idioma": "SUBTITULADA", "proyeccion": "DOS_D" }
-→ { "elenco": [{ "id": 4, "titulo": "…", "puntaje": 8.2, "duracionMinutos": 166, "pases": 12 }],
-    "pases": [{ "peliculaId": 4, "salaId": 1, "inicio": "2026-09-01T14:00:00" }],
+→ { "elenco": [{ "id": 4, "titulo": "…", "puntaje": 8.2, "duracionMinutos": 166,
+                 "generos": ["DRAMA"], "pases": 12 }],
+    "pases": [{ "peliculaId": 4, "titulo": "…", "salaId": 1, "sala": "Sala 1",
+                "inicio": "2026-09-01T14:00:00", "duracionMinutos": 166 }],
     "indicadores": { "minutosProgramados": 3320, "minutosDisponibles": 4200,
                      "ocupacion": 0.79, "puntajePromedio": 7.8,
-                     "generosCubiertos": 6, "generosTotales": 9 },
+                     "generosCubiertos": 6, "generosTotales": 9,
+                     "pasesPorGenero": { "DRAMA": 12 } },
     "funcionesCreadas": 0 }
 ```
 
@@ -325,10 +330,12 @@ confirmadas (ninguna: `400`); no pisa funciones existentes ni propone pases que 
 { "clienteId": 3, "reservaId": 25, "cantidades": { "1": 2, "4": 1 },
   "medio": "EFECTIVO", "codigoAutorizacion": "" }
 → { "id": 8, "clienteId": 3, "reservaId": 25, "fecha": "…", "medio": "EFECTIVO",
-    "items": [], "total": 12000, "ahorro": 1500 }
+    "items": [{ "productoId": 4, "nombre": "Combo clásico", "cantidad": 1,
+                "precioUnitario": 5500, "subtotal": 5500 }],
+    "total": 12000, "ahorro": 1500 }
 ```
 
-Sin `reservaId` es venta de mostrador. `ahorro`: descuento del combo. Cada cantidad tiene que venir y ser mayor a cero (`400`).
+Sin `reservaId` es venta de mostrador. `ahorro`: descuento de los combos, congelado al vender (editar el combo después no cambia una compra vieja). Cada cantidad tiene que venir y ser mayor a cero (`400`).
 
 ## Control de acceso (CU-18)
 
@@ -345,7 +352,8 @@ entrada usada: repetido o impago da `400` (R18), sin `codigo` o en blanco `400`,
 
 ```json
 { "paginas": 2 }
-→ { "id": 7, "estado": "TERMINADA", "paginas": 2, "nuevas": 9, "salteadas": 20,
+→ { "id": 7, "estado": "TERMINADA", "paginas": 2, "pedidaEn": "2026-08-14T10:00:00",
+    "terminoEn": "2026-08-14T10:00:12", "nuevas": 9, "salteadas": 20,
     "fallidas": 1, "detalle": "+ [41] Hablan las aves\n✗ Yo, narciso: La duración…" }
 ```
 
