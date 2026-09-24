@@ -29,10 +29,13 @@ Diagramas en el [manual](../_other/docs/manual/index.html#correr): topología y 
 ## La base
 
 MySQL corre `schema.sql` y `seed/02-admin.sql` **la primera vez**, con el volumen vacío.
-De ahí sale el administrador, que no tiene endpoint de alta.
+De ahí salen los dos usuarios de demo, que no tienen endpoint de alta: `encargado@cine.uade.ar`
+(administrador) y `puerta@cine.uade.ar` (acomodador), los dos con `cine2026`.
 
-Sobre una base ya creada, aplicar a mano el `migracion-*.sql` que falte (cada uno dice qué
-agrega). Por ejemplo, la tabla de los bloqueos de butaca:
+Sobre una base ya creada, aplicar a mano los `migracion-*.sql` que falten (cada uno dice qué
+agrega), en el orden en que se sumaron: `programaciones`, `grilla-abierta`, `limpieza`,
+`staging`, `puntaje`, `votos`, `importaciones`, `bcrypt`, `bloqueos`, `version-reserva` y
+`ahorro-congelado`. Por ejemplo, la tabla de los bloqueos de butaca:
 
 ```sh
 docker compose exec -T mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas \

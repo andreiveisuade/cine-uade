@@ -90,6 +90,7 @@ Base por `DB_HOST`, `DB_USER`, `DB_PASSWORD` (en `setenv.sh`).
 | `backend` reinicia en loop | `docker compose logs backend` (casi siempre el `.env`) |
 | La web carga vacía | Falta sembrar |
 | Cambiaste el `.env` y sigue igual | El volumen tiene la clave vieja: `down -v` |
+| El backend no levanta tras un `git pull` (`ddl-auto: validate`) | La base es vieja: aplicar los `migracion-*.sql` que falten (ver `cine-docker/README.md`) o `down -v` |
 
 ```bash
 docker compose down -v && docker compose up -d --build && ./seed/datos-de-ejemplo.sh   # de cero
@@ -121,9 +122,11 @@ services:
 
 ## Tests
 
-452 pruebas contra H2, sin Docker ni MySQL. El `clean` evita correr clases viejas de `target/`.
+Backend: 474 pruebas contra H2 creada con el `schema.sql` real, sin Docker ni MySQL. Swing: 55,
+contra un servidor HTTP falso. El `clean` evita correr clases viejas de `target/`.
 
 ```bash
 cd cine-backend && mvn clean test
+cd cine-swing && mvn clean test
 docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test   # sin Java ni Maven
 ```

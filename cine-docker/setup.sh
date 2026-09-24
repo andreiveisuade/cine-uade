@@ -109,7 +109,7 @@ paso "5/5  Datos de ejemplo"
 if [ "$(docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM pelicula"' 2>/dev/null || echo 0)" -gt 0 ]; then
   ok "Ya hay datos cargados, no siembro de nuevo"
 else
-  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 && ok "4 películas, 6 salas y 8 funciones" \
+  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 && ok "6 salas, la carta del candy y una promoción" \
     || aviso "Falló el sembrado. Probá a mano: ./seed/datos-de-ejemplo.sh"
 fi
 

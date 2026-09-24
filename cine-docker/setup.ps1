@@ -134,7 +134,7 @@ if ($hayDatos) {
   } else {
     docker run --rm --network $red -v "${PWD}/seed:/seed:ro" -e API=http://frontend:8080/api `
       --entrypoint sh curlimages/curl:latest /seed/datos-de-ejemplo.sh *> $null
-    if ($LASTEXITCODE -eq 0) { Ok "4 peliculas, 6 salas y 8 funciones" }
+    if ($LASTEXITCODE -eq 0) { Ok "6 salas, la carta del candy y una promocion" }
     else { Aviso "Fallo el sembrado. Proba a mano: ./seed/datos-de-ejemplo.sh" }
   }
 }

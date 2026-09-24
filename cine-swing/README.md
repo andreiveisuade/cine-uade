@@ -13,7 +13,7 @@ Con el sistema levantado (`cine-docker`, `docker compose up -d --build`):
 ```bash
 mvn exec:java                                   # sin empaquetar
 mvn package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
-mvn test                                        # contra un servidor HTTP falso, sin backend
+mvn clean test                                  # 55 tests, contra un servidor HTTP falso, sin backend
 ```
 
 Por defecto apunta a `http://localhost:8080` (nginx del docker, que reenvía `/api`). Otro
@@ -21,7 +21,8 @@ servidor: `-Dcine.api.url=http://host:puerto` o la variable `CINE_API_URL`.
 
 Requisitos: JDK 21 y Maven. Tema claro: `-Dcine.tema=claro` (también con `mvn exec:java`).
 
-Demo: `encargado@cine.uade.ar` / `cine2026` ve el menú completo; un acomodador ve solo Puerta.
+Demo: `encargado@cine.uade.ar` / `cine2026` ve el menú completo; `puerta@cine.uade.ar` / `cine2026`
+(acomodador) ve solo Puerta.
 
 El borderó (`.txt`) y la declaración jurada (`.csv`) se generan en esta PC y se guardan donde
 elija el encargado: el backend solo da los números.
@@ -44,7 +45,7 @@ faltante), los numéricos no dejan tipear letras (`Campos.soloEntero`, `soloDeci
 Si algo falla no se manda nada: el campo queda con el borde de error de FlatLaf, el motivo aparece
 junto al formulario y el foco va al primero.
 
-Las **reglas de negocio** (precio mayor a cero, rangos, superposición, R1 a R19) no se anticipan:
+Las **reglas de negocio** (precio mayor a cero, rangos, superposición, R1 a R20) no se anticipan:
 las decide el backend y su mensaje se muestra tal cual en el mismo lugar, marcando el campo si el
 mensaje lo nombra. Tampoco se decide nada por el nombre de una constante: qué tarifa pide carnet y
 qué medio va por checkout salen de `requiereAcreditacion` y `requiereAutorizacion` de los catálogos,

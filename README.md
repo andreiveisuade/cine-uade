@@ -3,7 +3,7 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 20 reglas de negocio sobre MySQL, con 497 tests.
+25 casos de uso y 20 reglas de negocio sobre MySQL, con 474 tests en el backend y 55 en Swing.
 
 ## Stack
 
@@ -20,7 +20,7 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 | Carpeta | Qué hay |
 |---|---|
 | `cine-backend/` | La API y las reglas de negocio |
-| `cine-frontend/` | Las pantallas del cliente y del panel |
+| `cine-frontend/` | Las pantallas del cliente (la venta web, sin login) |
 | `cine-swing/` | El panel del encargado de escritorio, que habla con la API por HTTP |
 | `cine-docker/` | El `docker-compose.yml` que levanta todo |
 | `_other/` | Documentación e instrucciones |
@@ -48,10 +48,10 @@ pasa cuando el servidor rechaza una venta— está en
 | [`_other/docs/manual/index.html`](_other/docs/manual/index.html) | El manual: requerimientos, casos de uso, reglas, arquitectura y 18 diagramas |
 | [`cine-frontend/API.md`](cine-frontend/API.md) | El contrato HTTP, endpoint por endpoint |
 | [`_other/demo/cine-uade.postman_collection.json`](_other/demo/cine-uade.postman_collection.json) | La demo de la Etapa 1: GET, POST, PUT y DELETE, con casos exitosos y de error. Se importa en Postman, Bruno o Insomnia |
-| `localhost:8080/swagger-ui.html` | El mismo contrato, probable desde el navegador (con el sistema levantado) |
+| `localhost:8080/swagger-ui.html` | El mismo contrato, para probar desde el navegador (con el sistema levantado) |
 
 Panel del encargado de escritorio, con el sistema levantado: `cd cine-swing && mvn exec:java`
-(JDK 21), `encargado@cine.uade.ar` / `cine2026` (demo). Ver [`cine-swing/README.md`](cine-swing/README.md).
+(JDK 21), `encargado@cine.uade.ar` / `cine2026` (demo; `puerta@cine.uade.ar` / `cine2026` entra solo a Puerta). Ver [`cine-swing/README.md`](cine-swing/README.md).
 
 ## Tareas
 

@@ -7,13 +7,13 @@
 # importadas. Las funciones salen después, de la Grilla o del Planificador.
 #
 # Va por la API y no por SQL a propósito: así los datos pasan por las mismas reglas que
-# usa la aplicación —R1, R2, R3, R7, R8— y es imposible sembrar algo que el sistema
+# usa la aplicación —R2, R14, nombres únicos— y es imposible sembrar algo que el sistema
 # después rechazaría. De paso sirve de prueba de humo de los endpoints de alta.
 #
 #     ./seed/datos-de-ejemplo.sh
 #
-# Es acumulativo, no idempotente: correrlo dos veces deja errores de título y nombre
-# repetidos (R1), que son inofensivos. Para empezar limpio: docker compose down -v.
+# Es acumulativo, no idempotente: correrlo dos veces deja errores 409 de nombre repetido,
+# que son inofensivos. Para empezar limpio: docker compose down -v.
 
 set -e
 API="${API:-http://localhost:8080/api}"
