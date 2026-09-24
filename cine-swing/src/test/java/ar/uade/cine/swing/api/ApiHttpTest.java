@@ -106,7 +106,7 @@ class ApiHttpTest {
     }
 
     @Test
-    void elLoginMandaLasCredencialesNuevasEnBasicYEnElCuerpo() {
+    void elLoginMandaLasCredencialesNuevasSoloEnBasic() {
         responder("POST /api/sesion", 200,
                 "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\"}");
 
@@ -116,8 +116,7 @@ class ApiHttpTest {
         assertTrue(empleado.esAdministrador());
         Recibido login = ultimo();
         assertEquals(BASIC_ENCARGADO, login.autorizacion());
-        assertTrue(login.cuerpo().contains("\"email\":\"encargado@cine.uade.ar\""));
-        assertTrue(login.cuerpo().contains("\"password\":\"cine2026\""));
+        assertTrue(login.cuerpo().isEmpty(), "la contraseña no viaja en el cuerpo");
         assertEquals(BASIC_ENCARGADO, autorizacionDelSiguientePedido());
     }
 

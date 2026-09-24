@@ -3,7 +3,7 @@
 Sistema de gestión de un cine: cartelera, funciones, reserva de butacas, cobro, candy y
 arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
-25 casos de uso y 20 reglas de negocio sobre MySQL, con 474 tests en el backend y 55 en Swing.
+25 casos de uso y 20 reglas de negocio sobre MySQL, con 497 tests en el backend y 55 en Swing.
 
 ## Stack
 
@@ -27,18 +27,18 @@ arqueo de caja. TPO de Aplicaciones Interactivas (UADE).
 
 ## Hacia dónde va
 
-Tres frentes, en este orden:
-
-| | Qué | Cuándo |
+| | Qué | Estado |
 |---|---|---|
-| **1** | Backend sólido y **terminal de boletería en Java Swing**, con base local que sincroniza | Primera entrega |
-| **2** | Migrar las pantallas web a **React** | Segunda entrega |
-| **3** | **Desplegar** en un servidor | Segunda entrega |
+| **1** | Backend con las reglas R1..R20, API REST y Spring Security | Hecho |
+| **2** | Web del cliente en **React** (cartelera, compra, ticket) | Hecho |
+| **3** | Panel del encargado y Puerta en **Java Swing**, en línea contra la API | Hecho |
+| **4** | **Terminal de boletería** Swing que vende sin red, con base local que sincroniza | Pendiente |
+| **5** | **Desplegar** en un servidor | Pendiente |
 
-La terminal vende y valida entradas sin depender del servidor: tiene su propia base y sube
-cada venta al toque. Cómo está pensada —qué corre en cada lado, qué se sincroniza y qué
-pasa cuando el servidor rechaza una venta— está en
-[la sección del manual](_other/docs/manual/index.html#terminal).
+La terminal del punto 4 es otra cosa que el panel del punto 3: vende y valida entradas sin
+depender del servidor, con su propia base, y sube cada venta al volver la conexión. Cómo
+está pensada —qué corre en cada lado, qué se sincroniza y qué pasa cuando el servidor
+rechaza una venta— está en [la sección del manual](_other/docs/manual/index.html#terminal).
 
 ## Documentación
 

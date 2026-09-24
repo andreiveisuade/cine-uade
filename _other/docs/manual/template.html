@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 474 tests en el backend y 55 en Swing.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 497 tests en el backend y 55 en Swing.</p>
       </div>
     </section>
 
@@ -1776,7 +1776,7 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 474 tests, ninguno salteado (cine-swing: 55)</code></pre>
+mvn clean test       # 497 tests, ninguno salteado (cine-swing: 55)</code></pre>
       <p>
         Corren contra H2 creada con el <code>schema.sql</code> real (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos

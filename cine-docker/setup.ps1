@@ -121,7 +121,7 @@ Paso "5/5  Datos de ejemplo"
 
 # Windows no trae shell POSIX ni curl garantizados, asi que el seed corre adentro de un
 # contenedor conectado a la red del compose. No depende de Git Bash.
-$cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM pelicula"' 2>$null
+$cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>$null
 $hayDatos = $false
 if ($cuenta) { $n = 0; if ([int]::TryParse(("$cuenta").Trim(), [ref]$n)) { $hayDatos = $n -gt 0 } }
 

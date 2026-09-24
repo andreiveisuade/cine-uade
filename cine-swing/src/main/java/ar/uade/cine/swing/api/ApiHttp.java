@@ -77,13 +77,11 @@ public final class ApiHttp {
     // --- sesión ---
 
     public Empleado login(String email, String password) {
-        // Las credenciales nuevas van en Basic, que es lo único que valida el backend (Spring Security). El cuerpo
-        // es del login anterior, que las leía de ahí: hoy el backend lo ignora.
+        // Las credenciales nuevas van en Basic, que es lo único que valida el backend (Spring Security).
         // Nunca las viejas: si vencieron, el filtro rechazaría el pedido antes de probar las nuevas.
         String nuevas = Base64.getEncoder()
                 .encodeToString((nulo(email) + ":" + nulo(password)).getBytes(StandardCharsets.UTF_8));
-        Empleado empleado = pedir("POST", "/sesion", Map.of("email", nulo(email), "password", nulo(password)),
-                tipo(Empleado.class), nuevas, false);
+        Empleado empleado = pedir("POST", "/sesion", null, tipo(Empleado.class), nuevas, false);
         // Solo se guardan si el login contestó bien: un 401 sale por excepción antes de llegar acá.
         credenciales = nuevas;
         return empleado;

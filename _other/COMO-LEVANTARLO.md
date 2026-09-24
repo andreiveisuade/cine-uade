@@ -122,7 +122,7 @@ services:
 
 ## Tests
 
-Backend: 474 pruebas contra H2 creada con el `schema.sql` real, sin Docker ni MySQL. Swing: 55,
+Backend: 497 pruebas contra H2 creada con el `schema.sql` real, sin Docker ni MySQL. Swing: 55,
 contra un servidor HTTP falso. El `clean` evita correr clases viejas de `target/`.
 
 ```bash

@@ -33,3 +33,15 @@ reemplaza sus placeholders `{{SVG_*}}`. Un diagrama nuevo suma su placeholder al
 | `secuencia-reserva.puml` | Flujo de reservar butacas hasta emitir el ticket |
 | `secuencia-candy.puml` | Armado del combo promocional y venta en el candy |
 | `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué repo construye a cada uno |
+| `capas.puml` | Capas y paquetes de Spring Boot + Spring Data JPA |
+| `peticion-capas.puml` | Una petición de punta a punta: contenedores, puertos y capas |
+| `arranque-orden.puml` | Orden de arranque de `docker compose up -d --build` |
+| `butaca-carrera.puml` | Dos personas, la misma butaca: el bloqueo en MySQL y el UNIQUE de `entrada` |
+| `importador-flujo.puml` | Importador de cartelera: TMDB entra por las reglas del cine |
+| `promociones-herencia.puml` | Promociones: una jerarquía, no un switch |
+| `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
+| `solid-ocp.puml` | SOLID, abierto-cerrado: un beneficio nuevo es una clase |
+| `solid-isp.puml` | SOLID, segregación de interfaces |
+| `solid-dip.puml` | SOLID, inversión de dependencias |
+| `grasp-pure-fabrication.puml` | GRASP, fabricación pura |
+| `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
