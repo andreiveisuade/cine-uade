@@ -70,16 +70,20 @@ public class PeliculaController {
     @Operation(summary = "El detalle de una película; sin sesión de administrador, solo las confirmadas")
     @GetMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO detalle(@PathVariable int id, HttpServletRequest pedido) {
-        return vistas.pelicula(pedido.isUserInRole(Rol.ADMINISTRADOR.name())
-                ? cartelera.obtener(id) : cartelera.obtenerPublica(id));
+        return vistas.pelicula(visiblePara(pedido, id));
     }
 
     @Operation(summary = "Las funciones programadas de una película")
     @GetMapping("/api/peliculas/{id}/funciones")
-    public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
-        // Se busca antes solo acá: sin ella el listado saldría vacío, y vacío no es 404.
-        cartelera.obtener(id);
+    public List<FuncionVistaDTO> funcionesDe(@PathVariable int id, HttpServletRequest pedido) {
+        // Se busca antes: sin ella el listado saldría vacío, y vacío no es 404. Con el mismo criterio que
+        // el detalle, así una pendiente no se delata respondiendo [] donde el detalle dice que no existe.
+        visiblePara(pedido, id);
         return vistas.funciones(funciones.listarPorPelicula(id));
+    }
+
+    private Pelicula visiblePara(HttpServletRequest pedido, int id) {
+        return pedido.isUserInRole(Rol.ADMINISTRADOR.name()) ? cartelera.obtener(id) : cartelera.obtenerPublica(id);
     }
 
     @Operation(summary = "Dar de alta una película a mano")
