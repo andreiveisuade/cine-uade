@@ -22,6 +22,7 @@ import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.SesionDeCompra;
 import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
@@ -37,9 +38,6 @@ public class Ocupacion {
 
     public static final Duration MIENTRAS_ELIGE = Duration.ofMinutes(3);
 
-    // El largo de la columna bloqueo_butaca.sesion. El front manda un UUID, que mide 36.
-    private static final int LARGO_SESION = 64;
-
     // R19 dice lo mismo en el mapa y en la venta: GestorReservas usa este texto.
     static final String FUNCION_EMPEZADA = "La función ya empezó: no se pueden reservar butacas";
 
@@ -50,6 +48,7 @@ public class Ocupacion {
     private final Reloj reloj;
 
     public Set<Integer> asientosOcupados(int funcionId, String sesion) {
+        String propia = SesionDeCompra.comoSeGuarda(sesion);
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
         expirarVencidas(reservas);
         Set<Integer> ocupados = reservas.stream()
@@ -58,7 +57,7 @@ public class Ocupacion {
                 .map(Entrada::asientoId)
                 .collect(Collectors.toCollection(HashSet::new));
         for (BloqueoButaca bloqueo : bloqueos.vigentes(funcionId, reloj.ahora())) {
-            if (!bloqueo.sesion().equals(sesion)) {
+            if (!bloqueo.sesion().equals(propia)) {
                 ocupados.add(bloqueo.asientoId());
             }
         }
@@ -76,14 +75,8 @@ public class Ocupacion {
     public record Bloqueo(List<String> conseguidas, List<String> rechazadas) {
     }
 
-    public Bloqueo bloquear(int funcionId, Collection<String> codigos, String sesion) {
-        if (sesion == null || sesion.isBlank()) {
-            throw new DatoInvalido("Falta la sesión para bloquear butacas");
-        }
-        if (sesion.length() > LARGO_SESION) {
-            throw new DatoInvalido(
-                    "La sesión no puede tener más de " + LARGO_SESION + " caracteres");
-        }
+    public Bloqueo bloquear(int funcionId, Collection<String> codigos, String textoSesion) {
+        String sesion = new SesionDeCompra(textoSesion).valor();
         Funcion funcion = buscarFuncion(funcionId);
         LocalDateTime ahora = reloj.ahora();
         // R19: una función empezada ya no se vende, así que tampoco se le apartan butacas.
@@ -119,7 +112,7 @@ public class Ocupacion {
     }
 
     public void liberar(int funcionId, String sesion) {
-        bloqueos.liberar(funcionId, sesion);
+        bloqueos.liberar(funcionId, SesionDeCompra.comoSeGuarda(sesion));
     }
 
     // Solo higiene: una fila vencida ya no ocupa nada, porque vigentes() filtra por

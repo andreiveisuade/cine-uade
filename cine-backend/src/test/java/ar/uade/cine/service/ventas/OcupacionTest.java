@@ -249,6 +249,16 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals("La sesión no puede tener más de 64 caracteres", error.getMessage());
     }
 
+    // La sesión se guarda recortada: con los espacios que traiga, sigue siendo la misma al volver al mapa.
+    @Test
+    void laSesionSeReconoceSinLosEspaciosDeLasPuntas() {
+        ocupacion.bloquear(1, List.of("A1"), "  " + ANA + " ");
+
+        assertTrue(codigosLibres(ANA).contains("A1"), "la bloqueó ella");
+        assertEquals(1, reservas.reservar(1, 1, generales("A1"), " " + ANA).getCantidadEntradas());
+        assertEquals(0, bloqueos.count(), "reservar soltó sus bloqueos");
+    }
+
     @Test
     void muchasSesionesALaVezPorLaMismaButacaSeLaLlevaUnaSola() throws Exception {
         assertEquals(1, ganadoresDeUnaCarrera(), "una sola la consigue");
