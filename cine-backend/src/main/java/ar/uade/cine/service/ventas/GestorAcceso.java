@@ -11,6 +11,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Ingreso a la sala por código de acceso (R18); coordina y la reserva decide si puede entrar.
 @Service
 @Transactional
 @RequiredArgsConstructor

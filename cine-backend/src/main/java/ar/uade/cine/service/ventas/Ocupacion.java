@@ -28,7 +28,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
-// Única definición de butaca ocupada (R4): la usan el mapa y la venta.
+// Única definición de butaca ocupada (R4), la del mapa y la venta; reservas vigentes más bloqueos ajenos.
 @Service
 @RequiredArgsConstructor
 @Slf4j

@@ -2,6 +2,7 @@ package ar.uade.cine.model.cartelera;
 
 import lombok.Getter;
 
+// Clasificación por edad de una película (R10); cada constante sabe su edad mínima y arma su etiqueta.
 @Getter
 public enum Clasificacion {
 

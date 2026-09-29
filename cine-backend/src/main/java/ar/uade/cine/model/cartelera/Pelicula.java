@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+// Película del catálogo (R2, R7, R10); Experto: valida sus datos y decide su estado de revisión.
 @Entity
 @Getter
 public class Pelicula {

@@ -17,6 +17,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Butaca vendida con tarifa y precio fijos; su funcion_id sostiene el UNIQUE de R4 y se vacía al soltar (R6).
 @Entity
 @Table(uniqueConstraints = {
         // R4: impide vender la misma butaca dos veces por función. Acá también para H2.

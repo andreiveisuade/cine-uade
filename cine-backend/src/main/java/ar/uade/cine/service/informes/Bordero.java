@@ -6,6 +6,7 @@ import java.util.Map;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Borderó de una función: espectadores y recaudación por tarifa; record de resultado de GestorInformes.
 public record Bordero(int funcionId, String pelicula, String sala, LocalDateTime funcion,
                       LocalDateTime generadoEn, int espectadores,
                       Dinero recaudacionBruta, Dinero descuentos, Dinero recaudacionNeta,

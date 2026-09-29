@@ -7,6 +7,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Descuento que corresponde a un cobro; interfaz: GestorPagos depende de la regla y no del gestor (DIP).
 public interface PoliticaPromociones {
 
     Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion, MedioPago medio);

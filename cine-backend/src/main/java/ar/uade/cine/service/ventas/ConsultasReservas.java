@@ -14,6 +14,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
+// Lecturas de reservas para listados y búsquedas; aparte de GestorReservas, con join fetch contra el N+1.
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor

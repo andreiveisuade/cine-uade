@@ -27,6 +27,7 @@ import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Borderó e informe por función y declaración jurada del INCAA; solo lo cobrado, con consultas batch.
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor

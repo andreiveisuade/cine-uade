@@ -8,6 +8,7 @@ import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Corte de caja de un día, por medio de pago; record de resultado que arma GestorCaja.
 public record Arqueo(LocalDate fecha, Dinero total, int entradas,
                      Map<MedioPago, TotalPorMedio> porMedio, List<Pago> pagos) {
 

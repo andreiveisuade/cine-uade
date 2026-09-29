@@ -16,6 +16,7 @@ import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
+// Corre el importador de TMDB y registra cada corrida; de a una por vez y con espera entre corridas.
 // Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción
 // rollback-only y se perdería la corrida entera, incluso el registro.
 @Service

@@ -28,6 +28,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Vende y cancela butacas de una función (R4, R6, R9, R13, R19); coordina y cada entidad valida lo suyo.
 @Service
 @Transactional
 @RequiredArgsConstructor

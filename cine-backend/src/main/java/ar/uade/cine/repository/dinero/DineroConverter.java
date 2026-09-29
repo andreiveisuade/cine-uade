@@ -6,6 +6,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
+// Guarda Dinero como DECIMAL en pesos en toda entidad; AttributeConverter autoApply, exacto en centavos.
 @Converter(autoApply = true)
 public class DineroConverter implements AttributeConverter<Dinero, BigDecimal> {
 

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.ventas.BloqueoButaca;
 
+// Persistencia del bloqueo efímero de butacas; Repository con el único SQL nativo del backend.
 // Tomar una butaca son dos sentencias y ninguna lee antes de escribir: renovar y, si no
 // había fila que renovar, insertar. La atomicidad la da la base —el UPDATE condicional
 // bloquea la fila y reevalúa el WHERE, y la clave primaria no deja entrar un segundo

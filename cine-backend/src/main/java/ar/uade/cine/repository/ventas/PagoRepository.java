@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.ventas.Pago;
 
+// Persistencia de pagos; Repository de Spring Data, con el corte por día como rango para usar el índice.
 public interface PagoRepository extends JpaRepository<Pago, Integer> {
 
     Optional<Pago> findByReservaId(int reservaId);

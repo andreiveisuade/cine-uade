@@ -6,8 +6,9 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 
-// Qué días cubre una declaración jurada. Separado de la acumulación (DeclaracionJurada#de) para
-// que las reglas del período —el default, que desde no pase a hasta, el tope— estén en un solo lugar.
+// Qué días cubre una declaración jurada; Value Object que se valida al construirse.
+// Separado de la acumulación (DeclaracionJurada#de) para que las reglas del período —el default, que
+// desde no pase a hasta, el tope— estén en un solo lugar.
 public record PeriodoDeclarado(LocalDate desde, LocalDate hasta) {
 
     // El archivo se arma entero en memoria: el tope lo acota, y un mes cubre cualquier cierre del INCAA.

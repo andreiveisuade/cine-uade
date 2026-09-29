@@ -9,6 +9,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 
+// Descuenta un porcentaje del subtotal, de 1 a 99; Polimorfismo sobre Promocion.
 @Entity
 @DiscriminatorValue("PORCENTAJE")
 @Getter

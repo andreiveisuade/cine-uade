@@ -2,6 +2,7 @@ package ar.uade.cine.model.salas;
 
 import lombok.Getter;
 
+// Tipo de butaca; cada constante trae su multiplicador de precio, así el cálculo no necesita un switch.
 @Getter
 public enum TipoAsiento {
 

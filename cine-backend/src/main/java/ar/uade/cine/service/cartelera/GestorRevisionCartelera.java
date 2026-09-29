@@ -12,6 +12,7 @@ import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Buzón de lo que trae el importador: confirmar o descartar; el alta pasa por GestorCartelera y sus reglas.
 @Service
 @Transactional
 @RequiredArgsConstructor

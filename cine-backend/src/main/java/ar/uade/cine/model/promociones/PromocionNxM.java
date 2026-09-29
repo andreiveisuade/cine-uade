@@ -9,6 +9,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 
+// Lleva N y paga M: regala las N-M más baratas por cada N entradas; Polimorfismo sobre Promocion.
 @Entity
 @DiscriminatorValue("NXM")
 @Getter

@@ -18,9 +18,9 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
-// La butaca que alguien está eligiendo, por función: dura MIENTRAS_ELIGE y es solo
-// experiencia de usuario, la doble venta la impide el UNIQUE de entrada. La clave es el
-// par función-butaca, así que la base no deja que dos sesiones la tengan a la vez.
+// La butaca que alguien está eligiendo, por función, durante MIENTRAS_ELIGE; solo experiencia de usuario.
+// La doble venta la impide el UNIQUE de entrada. La clave es el par función-butaca, así que la base
+// no deja que dos sesiones la tengan a la vez.
 // Nadie la instancia: se toma, renueva y suelta con consultas de BloqueoButacaRepository,
 // porque cada una tiene que ser una sola sentencia atómica.
 @Entity

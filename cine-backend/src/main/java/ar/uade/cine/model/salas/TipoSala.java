@@ -3,6 +3,7 @@ package ar.uade.cine.model.salas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Formato de sala; cada constante trae su multiplicador de precio y si proyecta 3D (R8).
 @Getter
 public enum TipoSala {
 

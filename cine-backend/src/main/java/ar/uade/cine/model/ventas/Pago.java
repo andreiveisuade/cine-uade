@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 
+// Cobro de una reserva, uno solo por reserva (R5); congela subtotal, descuento y monto al cobrar.
 @Entity
 @Getter
 public class Pago {

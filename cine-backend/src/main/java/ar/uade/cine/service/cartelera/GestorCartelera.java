@@ -19,6 +19,7 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
+// Catálogo de películas (R1, R12); coordina: la película valida sus datos, el gestor lo que pide la base.
 @Service
 @Transactional
 @RequiredArgsConstructor

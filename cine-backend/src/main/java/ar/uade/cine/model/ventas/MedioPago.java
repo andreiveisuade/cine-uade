@@ -3,6 +3,7 @@ package ar.uade.cine.model.ventas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Medio de pago (R11); Experto: exige código de autorización a los electrónicos y valida su largo.
 @Getter
 @Accessors(fluent = true)
 public enum MedioPago {

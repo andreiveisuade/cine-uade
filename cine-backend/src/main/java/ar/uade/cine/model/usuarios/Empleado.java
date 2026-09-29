@@ -5,6 +5,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 
+// Encargado o acomodador, entra con contraseña hasheada; Experto: rechaza un rol que no sea de empleado.
 @Entity
 @DiscriminatorValue("EMPLEADO")
 @Getter

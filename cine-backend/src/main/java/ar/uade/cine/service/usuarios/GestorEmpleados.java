@@ -12,6 +12,7 @@ import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
+// Empleados para la sesión y el re-hash a bcrypt al entrar; el alta existe solo para los tests.
 @Service
 @Transactional
 @RequiredArgsConstructor

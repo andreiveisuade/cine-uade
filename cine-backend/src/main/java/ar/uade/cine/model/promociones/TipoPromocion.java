@@ -4,6 +4,7 @@ import java.util.List;
 
 import lombok.Getter;
 
+// Los tres tipos de promoción; Experto en los campos propios que exige cada uno al crearla.
 // Además de nombre y condiciones, cada tipo pide sus propios campos del pedido. Es la única
 // lista: la publica el catálogo y con ella GestorPromociones dice cuál falta.
 @Getter

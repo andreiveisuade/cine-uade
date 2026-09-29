@@ -18,6 +18,7 @@ import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
+// ABM de salas y sus butacas (R9, R12); la sala valida y crea sus butacas, el gestor consulta la base.
 @Service
 @Transactional
 @RequiredArgsConstructor

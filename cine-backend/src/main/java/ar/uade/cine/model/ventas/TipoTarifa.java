@@ -3,6 +3,7 @@ package ar.uade.cine.model.ventas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Tarifa de una entrada; cada constante trae su multiplicador de precio y si pide acreditación.
 @Getter
 public enum TipoTarifa {
 

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import ar.uade.cine.model.usuarios.Cliente;
 
+// Persistencia de clientes; Repository de Spring Data, que los busca por email.
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     Optional<Cliente> findByEmail(String email);

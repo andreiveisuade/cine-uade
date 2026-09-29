@@ -25,6 +25,7 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+// Reserva de butacas (R5, R6, R13, R17-R19); Experto en sus transiciones, con @Version contra carreras.
 @Entity
 @Getter
 public class Reserva {

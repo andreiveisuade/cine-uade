@@ -22,6 +22,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Cobra reservas en caja o por checkout (R5, R11, R15, R17, R19); coordina reserva, promociones y pasarela.
 @Service
 @Transactional
 @RequiredArgsConstructor

@@ -19,6 +19,7 @@ import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Corte de caja por día de cobro: pagos por medio y total de candy; solo lectura, sin recalcular precios.
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor

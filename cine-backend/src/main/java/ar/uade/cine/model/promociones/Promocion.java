@@ -28,6 +28,7 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+// Promoción sobre entradas; Polimorfismo: cada subclase calcula su descuento, esta decide si aplica.
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo")

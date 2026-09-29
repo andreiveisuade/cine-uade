@@ -23,6 +23,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
+// Alta, activación y mejor promoción al cobrar (R15, R16); implementa PoliticaPromociones.
 @Service
 @Transactional
 @RequiredArgsConstructor

@@ -11,6 +11,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
+// Registro e identificación de clientes por email; Usuario valida los datos y el gestor el email repetido.
 @Service
 @Transactional
 @RequiredArgsConstructor

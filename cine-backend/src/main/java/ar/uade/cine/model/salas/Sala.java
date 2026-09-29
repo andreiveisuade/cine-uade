@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 
+// Sala de proyección (R2); Experto en sus datos y Creador de sus butacas, que genera solo en el alta.
 @Entity
 @Getter
 public class Sala {

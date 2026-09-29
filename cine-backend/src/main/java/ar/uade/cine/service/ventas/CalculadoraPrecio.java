@@ -8,6 +8,7 @@ import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
+// Precio de una entrada: base × sala × butaca × tarifa; Fabricación pura que usan la venta y las vistas.
 @Service
 public class CalculadoraPrecio {
 

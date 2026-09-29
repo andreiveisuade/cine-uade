@@ -2,6 +2,7 @@ package ar.uade.cine.model.dinero;
 
 import java.util.Collection;
 
+// Importe en pesos; Value Object inmutable con su propia aritmética para precios, descuentos y totales.
 // Centavos enteros y no double, que no representa 0,10 exacto.
 public record Dinero(long centavos) implements Comparable<Dinero> {
 

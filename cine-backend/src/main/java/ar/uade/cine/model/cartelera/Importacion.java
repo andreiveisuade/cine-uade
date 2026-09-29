@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 
+// Registro de una corrida del importador de TMDB; Experto: sabe si terminó, falló o quedó colgada.
 @Entity
 @Getter
 public class Importacion {

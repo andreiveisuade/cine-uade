@@ -11,6 +11,7 @@ import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 
+// Persistencia de películas; Repository de Spring Data, con el título de R1 y los filtros en JPQL.
 public interface PeliculaRepository extends JpaRepository<Pelicula, Integer> {
 
     boolean existsByTituloIgnoreCaseAndIdNot(String titulo, int id);

@@ -14,6 +14,7 @@ import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
+// Declaración jurada de espectadores para el INCAA; Experto en sumar los borderós por película y en total.
 // Cada fila es el borderó de la función: el período no tiene reglas propias, suma las de cada una.
 public record DeclaracionJurada(LocalDate desde, LocalDate hasta, LocalDateTime generadaEn,
                                 List<FilaFuncion> funciones, List<TotalPelicula> peliculas,

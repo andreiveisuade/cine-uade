@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+// Butaca de una sala; Experto en su código (A5) y en su estado, que vale para toda función (R9).
 @Entity
 @Getter
 public class Asiento {
