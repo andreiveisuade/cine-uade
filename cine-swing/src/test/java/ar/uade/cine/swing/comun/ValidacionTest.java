@@ -36,8 +36,8 @@ class ValidacionTest {
         assertTrue(Marcas.marcado(titulo));
         assertTrue(Marcas.marcado(precio));
         assertFalse(Marcas.marcado(director));
-        assertEquals(List.of("Falta completar «Título».", "«Precio»: «abc» no es un número."), v.errores());
-        assertTrue(mensaje.getText().contains("Falta completar «Título»."));
+        assertEquals(List.of("Falta completar «Título»", "«Precio»: «abc» no es un número"), v.errores());
+        assertTrue(mensaje.getText().contains("Falta completar «Título»"));
     }
 
     @Test

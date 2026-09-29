@@ -17,7 +17,7 @@ class LecturasTest {
 
     @Test
     void unObligatorioVacioOEnBlancoFalta() {
-        assertEquals("Falta completar «Título».", Lecturas.leerTexto("   ", "Título", true).error());
+        assertEquals("Falta completar «Título»", Lecturas.leerTexto("   ", "Título", true).error());
         assertTrue(Lecturas.leerTexto("", "Dirección", false).valida());
         assertNull(Lecturas.leerTexto("", "Dirección", false).valor());
         assertEquals("Matrix", Lecturas.leerTexto("  Matrix ", "Título", true).valor());
@@ -28,7 +28,7 @@ class LecturasTest {
         Lectura<Double> precio = Lecturas.leerDecimal("abc", "Precio", true);
 
         assertFalse(precio.valida());
-        assertEquals("«Precio»: «abc» no es un número.", precio.error());
+        assertEquals("«Precio»: «abc» no es un número", precio.error());
     }
 
     @Test
@@ -57,15 +57,15 @@ class LecturasTest {
         Lectura<List<Integer>> filas = Lecturas.leerEnteros("8,x,12", "Butacas por fila", true);
 
         assertFalse(filas.valida());
-        assertEquals("«Butacas por fila»: «x» no es un número entero.", filas.error());
+        assertEquals("«Butacas por fila»: «x» no es un número entero", filas.error());
     }
 
     @Test
     void unaListaBienEscritaSeLeeEntera() {
         assertEquals(List.of(8, 10, 12), Lecturas.leerEnteros(" 8, 10 ,12", "Butacas por fila", true).valor());
-        assertEquals("«Butacas por fila»: hay un valor vacío entre comas.",
+        assertEquals("«Butacas por fila»: hay un valor vacío entre comas",
                 Lecturas.leerEnteros("8,,12", "Butacas por fila", true).error());
-        assertEquals("Falta completar «Butacas por fila».",
+        assertEquals("Falta completar «Butacas por fila»",
                 Lecturas.leerEnteros("", "Butacas por fila", true).error());
     }
 
@@ -73,7 +73,7 @@ class LecturasTest {
     void losCodigosDeButacaSeNormalizanYSeRechazaLoQueNoLoEs() {
         assertEquals(List.of("A1", "B12"), Lecturas.leerCodigos("a1, B12", "Butacas VIP").valor());
         assertEquals(List.of(), Lecturas.leerCodigos("", "Butacas VIP").valor());
-        assertEquals("«Butacas VIP»: «1A» no es un código de butaca (fila y número, como A1).",
+        assertEquals("«Butacas VIP»: «1A» no es un código de butaca (fila y número, como A1)",
                 Lecturas.leerCodigos("A1,1A", "Butacas VIP").error());
     }
 

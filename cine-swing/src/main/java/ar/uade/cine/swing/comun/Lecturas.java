@@ -107,7 +107,7 @@ public final class Lecturas {
     }
 
     static String falta(String nombre) {
-        return "Falta completar «" + nombre + "».";
+        return "Falta completar «" + nombre + "»";
     }
 
     // Con "8,10," el último vacío también cuenta: split con -1 no lo tira.
@@ -117,10 +117,10 @@ public final class Lecturas {
     }
 
     private static String noEs(String nombre, String valor, String que) {
-        return "«" + nombre + "»: «" + valor + "» no es " + que + ".";
+        return "«" + nombre + "»: «" + valor + "» no es " + que;
     }
 
     private static String sobraComa(String nombre) {
-        return "«" + nombre + "»: hay un valor vacío entre comas.";
+        return "«" + nombre + "»: hay un valor vacío entre comas";
     }
 }

@@ -52,7 +52,9 @@ public final class PantallaSalas extends Pantalla {
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final JTextField distribucion = Campos.soloListaDeEnteros(new JTextField());
-    private final JLabel resumenDistribucion = new JLabel(" ");
+    // Vacío dice cómo se escribe; con filas, las cuenta. El formato no se adivina por el nombre del campo.
+    private static final String FORMATO_FILAS = "Las butacas de cada fila, separadas por coma: 10, 10, 12";
+    private final JLabel resumenDistribucion = new JLabel(FORMATO_FILAS);
     private final JTextField vip = new JTextField();
     private final JTextField pareja = new JTextField();
     private final JTextField accesibles = new JTextField();
@@ -103,6 +105,7 @@ public final class PantallaSalas extends Pantalla {
                 .campo("Butacas VIP", vip)
                 .campo("Butacas de pareja", pareja)
                 .campo("Butacas accesibles", accesibles)
+                .ancho(Componentes.nota("Códigos separados por coma, como A1, A2. Cada butaca va en una sola lista."))
                 .campo("Minutos de limpieza", limpieza)
                 .ancho(Componentes.nota("Lo que hay que esperar entre dos funciones. Una sala chica se levanta más "
                         + "rápido."))
@@ -116,7 +119,7 @@ public final class PantallaSalas extends Pantalla {
     private void resumir() {
         List<Integer> filas = Lecturas.leerEnteros(distribucion.getText(), "", false).valor();
         if (filas == null || filas.isEmpty()) {
-            resumenDistribucion.setText(" ");
+            resumenDistribucion.setText(FORMATO_FILAS);
             return;
         }
         resumenDistribucion.setText(filas.size() + " filas (A–" + (char) ('A' + filas.size() - 1) + "), "
