@@ -315,6 +315,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals(400, query.estado());
         assertEquals("El filtro todos tiene que ser true o false", query.error());
         assertEquals(404, ruta.estado());
+        assertEquals("No existe la ruta /api/funciones/abc", ruta.error());
     }
 
     @Test

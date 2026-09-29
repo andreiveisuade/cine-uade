@@ -124,7 +124,7 @@ class InformeControllerTest extends PruebaDeApi {
         Respuesta respuesta = get("/api/funciones/abc/bordero");
 
         assertEquals(404, respuesta.estado());
-        assertEquals("El identificador abc no es válido", respuesta.error());
+        assertEquals("No existe la ruta /api/funciones/abc/bordero", respuesta.error());
     }
 
     @Test

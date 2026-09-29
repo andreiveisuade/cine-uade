@@ -125,9 +125,11 @@ public class ManejadorErrores {
     }
 
     // Solo las variables de ruta llegan tipadas (int id): la query viaja como String y la lee Parseo.
+    // /api/funciones/abc no nombra ninguna función: para el usuario es lo mismo que una ruta que no existe.
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e) {
-        return responder(HttpStatus.NOT_FOUND, "El identificador " + e.getValue() + " no es válido");
+    public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e,
+                                                               HttpServletRequest pedido) {
+        return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
     }
 
     // Un JSON bien formado con un tipo equivocado ("precio": "abc") no es "JSON inválido": el
