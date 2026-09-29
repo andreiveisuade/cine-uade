@@ -133,6 +133,17 @@ class ApisTest {
     }
 
     @Test
+    void elClienteSeBuscaEnUnaListaQuePuedeVenirVacia() {
+        servidor.responder("GET /api/clientes?email=ana%40mail.com", 200,
+                "[{\"id\":3,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}]");
+        servidor.responder("GET /api/clientes?email=nadie%40mail.com", 200, "[]");
+        ApiClientes clientes = new ApiClientes(http);
+
+        assertEquals(3, clientes.buscarClientePorEmail("ana@mail.com").orElseThrow().id());
+        assertTrue(clientes.buscarClientePorEmail("nadie@mail.com").isEmpty());
+    }
+
+    @Test
     void laReservaTraeSiSePuedeCobrarYCancelar() {
         servidor.responder("GET /api/reservas", 200, """
                 [{"id":1,"estado":"RESERVADA","codigo":"A","entradas":[],"total":9000,

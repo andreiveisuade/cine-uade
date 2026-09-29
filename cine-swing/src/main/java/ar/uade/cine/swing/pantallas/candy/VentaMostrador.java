@@ -7,7 +7,6 @@ import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.candy.PedidoVenta;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
-import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
@@ -197,9 +196,8 @@ final class VentaMostrador extends Seccion {
             Integer clienteId = null;
             // Con reserva el email sobra: el backend toma el cliente de la reserva.
             if (correo != null && reservaId == null) {
-                Cliente cliente = apiClientes.buscarClientePorEmail(correo);
-                if (cliente == null) throw new ErrorApi(404, "No hay ningún cliente con el email " + correo);
-                clienteId = cliente.id();
+                clienteId = apiClientes.buscarClientePorEmail(correo)
+                        .orElseThrow(() -> new ErrorApi(404, "No hay ningún cliente con el email " + correo)).id();
             }
             return apiCandy.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido.nombre(),
                     autorizacion));
