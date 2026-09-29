@@ -56,7 +56,11 @@ public class GestorProductos {
 
     public void cambiarDisponibilidad(int productoId, boolean disponible) {
         Producto producto = buscarOFallar(productoId);
-        producto.setDisponible(disponible);
+        if (disponible) {
+            producto.volverALaVenta();
+        } else {
+            producto.sacarDeLaVenta();
+        }
         productoRepository.save(producto);
     }
 

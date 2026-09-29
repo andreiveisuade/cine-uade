@@ -313,8 +313,9 @@ CREATE TABLE IF NOT EXISTS producto (
 
 -- Que trae cada combo. Las dos claves apuntan a producto: el combo y lo que contiene
 -- son productos, y por eso un combo puede armarse con cualquiera de los otros.
--- Que el precio del combo sea menor a la suma de sus componentes lo valida GestorCandy:
--- es una comparacion entre filas distintas y la base no la puede expresar.
+-- Que el precio del combo sea menor a la suma de sus componentes (R14) lo valida Producto,
+-- y GestorProductos al cambiar el precio de un suelto: es una comparacion entre filas
+-- distintas y la base no la puede expresar.
 CREATE TABLE IF NOT EXISTS combo_item (
     combo_id INT NOT NULL,
     producto_id INT NOT NULL,

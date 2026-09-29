@@ -48,7 +48,7 @@ class CompraCandyTest {
     void cadaRenglonTieneCantidadYUnProductoDisponible() {
         Map<Producto, Integer> sinCantidad = new LinkedHashMap<>();
         sinCantidad.put(pochoclos, null);
-        gaseosa.setDisponible(false);
+        gaseosa.sacarDeLaVenta();
 
         rechaza("Falta la cantidad de Pochoclos", () -> comprar(MedioPago.EFECTIVO, "", sinCantidad));
         rechaza("La cantidad de Pochoclos debe ser mayor a cero",

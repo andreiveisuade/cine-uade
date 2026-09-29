@@ -86,8 +86,13 @@ public class Producto {
         return disponible;
     }
 
-    public void setDisponible(boolean disponible) {
-        this.disponible = disponible;
+    // Sin stock no se borra: vive en compras viejas. Sale de la venta y vuelve cuando hay.
+    public void sacarDeLaVenta() {
+        disponible = false;
+    }
+
+    public void volverALaVenta() {
+        disponible = true;
     }
 
     // Los componentes no cambian: se fijan al armar el combo. Si rechaza, no toca nada.
