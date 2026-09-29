@@ -463,7 +463,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     // Por el repositorio: el gestor no deja programar en el pasado.
     private Funcion funcionQueYaEmpezo() {
         return funcionRepository.save(new Funcion(cartelera.buscar(1).orElseThrow(),
-                salas.buscar(1).orElseThrow(), reloj.ahora().minusMinutes(30),
+                salas.obtener(1), reloj.ahora().minusMinutes(30),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 

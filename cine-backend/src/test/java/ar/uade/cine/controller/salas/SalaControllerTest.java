@@ -177,7 +177,7 @@ class SalaControllerTest extends PruebaDeApi {
     @Test
     void unaSalaEnUnaGrillaNoSeBorraAunqueNoTengaFunciones() {
         Pelicula pelicula = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
-        programaciones.save(new Programacion(pelicula, salas.buscar(sala).orElseThrow(),
+        programaciones.save(new Programacion(pelicula, salas.obtener(sala),
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 

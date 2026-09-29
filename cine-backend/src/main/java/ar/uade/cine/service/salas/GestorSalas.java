@@ -3,7 +3,6 @@ package ar.uade.cine.service.salas;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -114,11 +113,6 @@ public class GestorSalas {
     @Transactional(readOnly = true)
     public List<Asiento> asientosDe(int salaId) {
         return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(salaId);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Sala> buscar(int id) {
-        return salaRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
