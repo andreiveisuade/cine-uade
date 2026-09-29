@@ -1,9 +1,9 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Clasificacion;
-import ar.uade.cine.swing.api.dto.PedidoPelicula;
-import ar.uade.cine.swing.api.dto.Pelicula;
+import ar.uade.cine.swing.api.dto.cartelera.PedidoPelicula;
+import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;

@@ -1,8 +1,8 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Funcion;
-import ar.uade.cine.swing.api.dto.Sala;
+import ar.uade.cine.swing.api.dto.funciones.Funcion;
+import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;

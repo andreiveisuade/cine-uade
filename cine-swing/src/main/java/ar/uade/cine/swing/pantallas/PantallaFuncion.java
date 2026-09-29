@@ -2,11 +2,11 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.ErrorApi;
-import ar.uade.cine.swing.api.dto.Bordero;
-import ar.uade.cine.swing.api.dto.Funcion;
-import ar.uade.cine.swing.api.dto.InformeFuncion;
-import ar.uade.cine.swing.api.dto.Tarifa;
-import ar.uade.cine.swing.api.dto.Total;
+import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
+import ar.uade.cine.swing.api.dto.funciones.Funcion;
+import ar.uade.cine.swing.api.dto.informes.Bordero;
+import ar.uade.cine.swing.api.dto.informes.InformeFuncion;
+import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla.Columna;

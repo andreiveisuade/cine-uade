@@ -1,8 +1,8 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Entrada;
-import ar.uade.cine.swing.api.dto.Reserva;
+import ar.uade.cine.swing.api.dto.ventas.Entrada;
+import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;

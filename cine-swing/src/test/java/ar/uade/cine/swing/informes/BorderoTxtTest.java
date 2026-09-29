@@ -1,7 +1,7 @@
 package ar.uade.cine.swing.informes;
 
-import ar.uade.cine.swing.api.dto.Bordero;
-import ar.uade.cine.swing.api.dto.Total;
+import ar.uade.cine.swing.api.dto.informes.Bordero;
+import ar.uade.cine.swing.api.dto.informes.Total;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;

@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.comun;
 
-import ar.uade.cine.swing.api.dto.Asiento;
+import ar.uade.cine.swing.api.dto.salas.Asiento;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;

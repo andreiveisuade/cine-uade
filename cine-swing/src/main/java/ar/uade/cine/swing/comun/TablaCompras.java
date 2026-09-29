@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.comun;
 
-import ar.uade.cine.swing.api.dto.CompraCandy;
+import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 
 import java.util.stream.Collectors;

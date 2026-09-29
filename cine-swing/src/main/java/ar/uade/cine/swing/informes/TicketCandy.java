@@ -1,7 +1,7 @@
 package ar.uade.cine.swing.informes;
 
-import ar.uade.cine.swing.api.dto.CompraCandy;
-import ar.uade.cine.swing.api.dto.ItemCompra;
+import ar.uade.cine.swing.api.dto.candy.CompraCandy;
+import ar.uade.cine.swing.api.dto.candy.ItemCompra;
 import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Formato;
 

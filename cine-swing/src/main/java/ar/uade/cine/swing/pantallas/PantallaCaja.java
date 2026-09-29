@@ -1,10 +1,10 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Arqueo;
-import ar.uade.cine.swing.api.dto.ArqueoCandy;
-import ar.uade.cine.swing.api.dto.CompraCandy;
-import ar.uade.cine.swing.api.dto.Pago;
+import ar.uade.cine.swing.api.dto.candy.CompraCandy;
+import ar.uade.cine.swing.api.dto.informes.Arqueo;
+import ar.uade.cine.swing.api.dto.informes.ArqueoCandy;
+import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;

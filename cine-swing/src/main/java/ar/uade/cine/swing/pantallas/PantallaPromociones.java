@@ -1,10 +1,10 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.MedioPago;
-import ar.uade.cine.swing.api.dto.PedidoPromocion;
-import ar.uade.cine.swing.api.dto.Promocion;
-import ar.uade.cine.swing.api.dto.TipoPromocion;
+import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
+import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
+import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
+import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;

@@ -1,11 +1,11 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.IndicadoresGrilla;
-import ar.uade.cine.swing.api.dto.PaseSugerido;
-import ar.uade.cine.swing.api.dto.PedidoGrilla;
-import ar.uade.cine.swing.api.dto.PeliculaElegida;
-import ar.uade.cine.swing.api.dto.PropuestaGrilla;
+import ar.uade.cine.swing.api.dto.programaciones.IndicadoresGrilla;
+import ar.uade.cine.swing.api.dto.programaciones.PaseSugerido;
+import ar.uade.cine.swing.api.dto.programaciones.PedidoGrilla;
+import ar.uade.cine.swing.api.dto.programaciones.PeliculaElegida;
+import ar.uade.cine.swing.api.dto.programaciones.PropuestaGrilla;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;

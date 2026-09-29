@@ -2,8 +2,8 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.ErrorApi;
-import ar.uade.cine.swing.api.dto.EstadoImportador;
-import ar.uade.cine.swing.api.dto.Importacion;
+import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
+import ar.uade.cine.swing.api.dto.cartelera.Importacion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;

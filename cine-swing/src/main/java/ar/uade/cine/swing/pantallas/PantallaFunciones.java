@@ -1,10 +1,10 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Funcion;
-import ar.uade.cine.swing.api.dto.PedidoFuncion;
-import ar.uade.cine.swing.api.dto.Pelicula;
-import ar.uade.cine.swing.api.dto.Sala;
+import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.funciones.Funcion;
+import ar.uade.cine.swing.api.dto.funciones.PedidoFuncion;
+import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;

@@ -2,12 +2,12 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.ErrorApi;
-import ar.uade.cine.swing.api.dto.Checkout;
-import ar.uade.cine.swing.api.dto.Entrada;
-import ar.uade.cine.swing.api.dto.MedioPago;
-import ar.uade.cine.swing.api.dto.Pago;
-import ar.uade.cine.swing.api.dto.Reserva;
-import ar.uade.cine.swing.api.dto.Tarifa;
+import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
+import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
+import ar.uade.cine.swing.api.dto.ventas.Checkout;
+import ar.uade.cine.swing.api.dto.ventas.Entrada;
+import ar.uade.cine.swing.api.dto.ventas.Pago;
+import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;

@@ -1,7 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.Empleado;
+import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;

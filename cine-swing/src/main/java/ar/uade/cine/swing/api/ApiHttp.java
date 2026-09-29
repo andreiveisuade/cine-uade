@@ -1,6 +1,15 @@
 package ar.uade.cine.swing.api;
 
-import ar.uade.cine.swing.api.dto.*;
+import ar.uade.cine.swing.api.dto.candy.*;
+import ar.uade.cine.swing.api.dto.cartelera.*;
+import ar.uade.cine.swing.api.dto.catalogos.*;
+import ar.uade.cine.swing.api.dto.funciones.*;
+import ar.uade.cine.swing.api.dto.informes.*;
+import ar.uade.cine.swing.api.dto.programaciones.*;
+import ar.uade.cine.swing.api.dto.promociones.*;
+import ar.uade.cine.swing.api.dto.salas.*;
+import ar.uade.cine.swing.api.dto.usuarios.*;
+import ar.uade.cine.swing.api.dto.ventas.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;

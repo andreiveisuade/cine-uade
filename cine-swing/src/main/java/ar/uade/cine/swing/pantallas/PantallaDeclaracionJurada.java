@@ -2,12 +2,12 @@ package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.api.ErrorApi;
-import ar.uade.cine.swing.api.dto.DeclaracionJurada;
-import ar.uade.cine.swing.api.dto.FuncionDeclarada;
-import ar.uade.cine.swing.api.dto.PeliculaDeclarada;
-import ar.uade.cine.swing.api.dto.Tarifa;
-import ar.uade.cine.swing.api.dto.Total;
-import ar.uade.cine.swing.api.dto.TotalDeclarado;
+import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
+import ar.uade.cine.swing.api.dto.informes.DeclaracionJurada;
+import ar.uade.cine.swing.api.dto.informes.FuncionDeclarada;
+import ar.uade.cine.swing.api.dto.informes.PeliculaDeclarada;
+import ar.uade.cine.swing.api.dto.informes.Total;
+import ar.uade.cine.swing.api.dto.informes.TotalDeclarado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;

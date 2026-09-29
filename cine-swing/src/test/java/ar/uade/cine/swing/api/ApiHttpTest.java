@@ -1,12 +1,12 @@
 package ar.uade.cine.swing.api;
 
-import ar.uade.cine.swing.api.dto.Bordero;
-import ar.uade.cine.swing.api.dto.Empleado;
-import ar.uade.cine.swing.api.dto.Funcion;
-import ar.uade.cine.swing.api.dto.PedidoPelicula;
-import ar.uade.cine.swing.api.dto.Reserva;
-import ar.uade.cine.swing.api.dto.TipoProducto;
-import ar.uade.cine.swing.api.dto.TipoPromocion;
+import ar.uade.cine.swing.api.dto.cartelera.PedidoPelicula;
+import ar.uade.cine.swing.api.dto.catalogos.TipoProducto;
+import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
+import ar.uade.cine.swing.api.dto.funciones.Funcion;
+import ar.uade.cine.swing.api.dto.informes.Bordero;
+import ar.uade.cine.swing.api.dto.usuarios.Empleado;
+import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;

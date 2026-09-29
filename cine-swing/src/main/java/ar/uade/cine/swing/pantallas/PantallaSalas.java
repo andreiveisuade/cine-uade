@@ -1,9 +1,9 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.api.ApiHttp;
-import ar.uade.cine.swing.api.dto.PedidoSala;
-import ar.uade.cine.swing.api.dto.Sala;
-import ar.uade.cine.swing.api.dto.TipoSala;
+import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
+import ar.uade.cine.swing.api.dto.salas.PedidoSala;
+import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
