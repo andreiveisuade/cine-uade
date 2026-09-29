@@ -26,6 +26,8 @@ svg_map = {
     "{{SVG_SOLID_ISP}}": DIAGRAMAS / "solid-isp.svg",
     "{{SVG_SOLID_OCP}}": DIAGRAMAS / "solid-ocp.svg",
     "{{SVG_GRASP_FABRICACION}}": DIAGRAMAS / "grasp-pure-fabrication.svg",
+    "{{SVG_PATRON_STATE}}": DIAGRAMAS / "patron-state.svg",
+    "{{SVG_PATRON_OBSERVER}}": DIAGRAMAS / "patron-observer.svg",
 }
 
 

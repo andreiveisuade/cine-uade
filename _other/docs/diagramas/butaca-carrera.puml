@@ -3,7 +3,6 @@ title Dos personas, la misma butaca: las dos defensas
 
 skinparam sequenceMessageAlign left
 skinparam maxMessageSize 210
-skinparam ParticipantPadding 14
 
 actor Ana
 actor Beto

@@ -262,7 +262,7 @@ figure.diagram {
   overflow-x: auto;
 }
 figure.diagram .diagram-click { cursor: zoom-in; }
-figure.diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+figure.diagram svg, figure.diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 figure.diagram::after {
   content: "Click para ampliar";
   position: absolute;
@@ -1106,43 +1106,43 @@ body.lightbox-locked { overflow: hidden; }
       </ul>
       <h3>Las pantallas</h3>
       <figure class="diagram">
-        {{IMG_SWING_PELICULAS}}
+        <img src="{{IMG_SWING_PELICULAS}}" alt="Películas: el listado con filtros y el alta al lado" loading="lazy">
         <figcaption>Películas: el listado con filtros y el alta al lado</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_IMPORTADOR}}
+        <img src="{{IMG_SWING_IMPORTADOR}}" alt="Importador: trae la cartelera de TMDB al buzón de Por revisar" loading="lazy">
         <figcaption>Importador: trae la cartelera de TMDB al buzón de Por revisar</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_BUTACAS}}
+        <img src="{{IMG_SWING_BUTACAS}}" alt="Butacas de una sala: un clic marca o repone una fuera de servicio (R9)" loading="lazy">
         <figcaption>Butacas de una sala: un clic marca o repone una fuera de servicio (R9)</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_GRILLA}}
+        <img src="{{IMG_SWING_GRILLA}}" alt="Grilla (CU-03b): Confirmar se habilita solo después de previsualizar" loading="lazy">
         <figcaption>Grilla (CU-03b): Confirmar se habilita solo después de previsualizar</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_PLANIFICADOR}}
+        <img src="{{IMG_SWING_PLANIFICADOR}}" alt="Planificador de la semana: previsualizar no escribe nada" loading="lazy">
         <figcaption>Planificador de la semana: previsualizar no escribe nada</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_AGENDA}}
+        <img src="{{IMG_SWING_AGENDA}}" alt="Agenda: la programación de una sala, con el calendario de JCalendar" loading="lazy">
         <figcaption>Agenda: la programación de una sala, con el calendario de JCalendar</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_COBRO}}
+        <img src="{{IMG_SWING_COBRO}}" alt="Cobro de una reserva: el monto sale de las butacas y el descuento se resuelve al cobrar" loading="lazy">
         <figcaption>Cobro de una reserva: el monto sale de las butacas y el descuento se resuelve al cobrar</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_BORDERO}}
+        <img src="{{IMG_SWING_BORDERO}}" alt="Borderó e informe de una función (CU-19, CU-20): el archivo se guarda en la PC" loading="lazy">
         <figcaption>Borderó e informe de una función (CU-19, CU-20): el archivo se guarda en la PC</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_CAJA}}
+        <img src="{{IMG_SWING_CAJA}}" alt="Arqueo del día (CU-12): boletería y candy, cada una con su caja" loading="lazy">
         <figcaption>Arqueo del día (CU-12): boletería y candy, cada una con su caja</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_SWING_PUERTA}}
+        <img src="{{IMG_SWING_PUERTA}}" alt="Puerta (CU-18): lo único que ve el acomodador" loading="lazy">
         <figcaption>Puerta (CU-18): lo único que ve el acomodador</figcaption>
       </figure>
     </section>
@@ -1741,6 +1741,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         compila hasta decir qué hace en cada operación. Es un enum y no una jerarquía de clases porque los estados no
         tienen datos propios, y JPA sigue guardando el nombre de la constante sin ningún mapeo extra.
       </p>
+      <figure class="diagram">
+        {{SVG_PATRON_STATE}}
+        <figcaption>Cada estado de la reserva decide sus transiciones; la reserva solo asigna el que le devuelven</figcaption>
+      </figure>
 
       <h3 id="observer">Observer: los comprobantes, después del commit</h3>
       <p>
@@ -1759,6 +1763,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         transacción propia de solo lectura (<code>REQUIRES_NEW</code>). Si el archivo falla, la venta ya existe: queda
         en el log para reimprimirlo. De paso, los gestores dejaron de depender de los generadores.
       </p>
+      <figure class="diagram">
+        {{SVG_PATRON_OBSERVER}}
+        <figcaption>El gestor publica el evento; el comprobante se escribe recién cuando la venta confirmó</figcaption>
+      </figure>
 
       <h3 id="decorator">Decorator: bcrypt con un límite</h3>
       <p>
@@ -2160,15 +2168,15 @@ mvn clean test       # 1149 tests, ninguno salteado (cine-swing: 60, contra un s
       </div>
 
       <figure class="diagram">
-        {{IMG_MAPA}}
+        <img src="{{IMG_MAPA}}" alt="CP-10 · el mapa de la sala con las tarifas por butaca" loading="lazy">
         <figcaption>CP-10 · el mapa de la sala con las tarifas por butaca</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_TICKET}}
+        <img src="{{IMG_TICKET}}" alt="CP-10 · el ticket con el código de acceso" loading="lazy">
         <figcaption>CP-10 · el ticket con el código de acceso</figcaption>
       </figure>
       <figure class="diagram">
-        {{IMG_BLOQUEO}}
+        <img src="{{IMG_BLOQUEO}}" alt="CP-18 · la butaca que otro está eligiendo, ya tomada" loading="lazy">
         <figcaption>CP-18 · la butaca que otro está eligiendo, ya tomada</figcaption>
       </figure>
 

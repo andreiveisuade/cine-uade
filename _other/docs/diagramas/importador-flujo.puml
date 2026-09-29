@@ -3,7 +3,6 @@ title Importador de cartelera: TMDB entra por las reglas del cine
 
 skinparam sequenceMessageAlign left
 skinparam maxMessageSize 200
-skinparam ParticipantPadding 12
 
 actor "Encargado" as E
 participant "nginx" as NG
