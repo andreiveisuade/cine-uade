@@ -27,7 +27,6 @@ import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.salas.GestorSalas;
 
@@ -279,7 +278,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         cargar("Comedia", 7.0, Genero.COMEDIA);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
-        PropuestaGrilla.IndicadoresGrilla indicadores = planificador.proponer(unDia(2)).indicadores();
+        IndicadoresGrilla indicadores = planificador.proponer(unDia(2)).indicadores();
 
         assertTrue(indicadores.ocupacion() > 0.5,
                 "nueve horas de sala con películas de 100 minutos deberían llenarse bastante");

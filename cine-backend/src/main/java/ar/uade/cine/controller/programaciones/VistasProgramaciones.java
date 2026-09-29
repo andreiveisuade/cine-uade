@@ -21,7 +21,7 @@ import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.dto.programaciones.PropuestaGrillaVistaDTO;
 import ar.uade.cine.service.programaciones.PlanProgramacion;
 import ar.uade.cine.service.programaciones.PropuestaGrilla;
-import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
+import ar.uade.cine.service.programaciones.IndicadoresGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 
 // Arma los JSON de programaciones, sus planes y la grilla automática; Assembler de los dos controllers.
