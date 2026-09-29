@@ -102,8 +102,8 @@ public class VistasReservas {
                 e.precio().aPesos());
     }
 
-    public BloqueoVistaDTO bloqueo(String sesion, Ocupacion.Bloqueo bloqueo) {
-        return new BloqueoVistaDTO(sesion, bloqueo.conseguidas(), bloqueo.rechazadas(),
+    public BloqueoVistaDTO bloqueo(Ocupacion.Bloqueo bloqueo) {
+        return new BloqueoVistaDTO(bloqueo.sesion(), bloqueo.conseguidas(), bloqueo.rechazadas(),
                 Ocupacion.MIENTRAS_ELIGE.toSeconds());
     }
 }

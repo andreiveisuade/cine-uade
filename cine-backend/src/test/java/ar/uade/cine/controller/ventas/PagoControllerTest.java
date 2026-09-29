@@ -299,6 +299,17 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("Falta la sesión para bloquear butacas", respuesta.error());
     }
 
+    // Devolvía la sesión tal como llegó; el bloqueo la guarda recortada, y es esa la que vale al reservar.
+    @Test
+    void elBloqueoDevuelveLaSesionComoQuedoGuardada() {
+        Respuesta respuesta = post("/api/funciones/1/bloqueos",
+                "{\"sesion\":\"  abc  \",\"butacas\":[\"A3\"]}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals("abc", respuesta.json().get("sesion").asText());
+        assertEquals("A3", respuesta.json().get("butacas").get(0).asText());
+    }
+
     @Test
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.

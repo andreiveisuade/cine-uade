@@ -28,6 +28,6 @@ public class BloqueoController {
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")
     public BloqueoVistaDTO bloquear(@PathVariable int id, @Valid @RequestBody PedidoBloqueoDTO pedido) {
-        return vistas.bloqueo(pedido.sesion(), ocupacion.bloquear(id, pedido.butacas(), pedido.sesion()));
+        return vistas.bloqueo(ocupacion.bloquear(id, pedido.butacas(), pedido.sesion()));
     }
 }

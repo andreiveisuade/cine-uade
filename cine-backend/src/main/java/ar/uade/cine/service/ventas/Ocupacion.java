@@ -69,8 +69,9 @@ public class Ocupacion {
                 .toList();
     }
 
-    // Perder una butaca no es un error: vuelve en rechazadas, con el código ya normalizado.
-    public record Bloqueo(List<String> conseguidas, List<String> rechazadas) {
+    // Perder una butaca no es un error: vuelve en rechazadas, con el código ya normalizado. La sesión, como
+    // quedó guardada: es la que el cliente tiene que mandar al reservar.
+    public record Bloqueo(String sesion, List<String> conseguidas, List<String> rechazadas) {
     }
 
     public Bloqueo bloquear(int funcionId, Collection<String> codigos, String textoSesion) {
@@ -95,7 +96,7 @@ public class Ocupacion {
         } else {
             bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
         }
-        return new Bloqueo(conseguidas, rechazadas);
+        return new Bloqueo(sesion, conseguidas, rechazadas);
     }
 
     public void liberar(int funcionId, String sesion) {
