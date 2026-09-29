@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+import ar.uade.cine.model.cartelera.validacion.ValidadorPelicula;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Película del catálogo (R2, R7, R10); Experto: valida sus datos y decide su estado de revisión.
@@ -83,29 +84,17 @@ public class Pelicula {
 
     // El alta pasa por acá: alta y edición validan lo mismo, y todo antes de tocar un campo.
     // Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia.
-    // La duración llega como Integer porque en el alta viene del pedido: la que no vino falta, no es cero.
     public void actualizar(String titulo, Integer duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
-        String tituloLimpio = tituloValido(titulo);
-        if (duracionMinutos == null) {
-            throw new DatoInvalido("Falta la duración");
-        }
-        if (duracionMinutos <= 0) {
-            throw new DatoInvalido("La duración tiene que ser mayor a cero");
-        }
-        if (generos == null || generos.isEmpty()) {
-            throw new DatoInvalido("La película necesita al menos un género");
-        }
-        if (clasificacion == null) {
-            throw new DatoInvalido("Falta la clasificación por edad");
-        }
-        // Sin repetidos: la clave de pelicula_genero es (pelicula_id, genero).
-        List<Genero> sinRepetir = generos.stream().distinct().toList();
-        this.titulo = tituloLimpio;
-        this.duracionMinutos = duracionMinutos;
-        this.clasificacion = clasificacion;
+        String tituloValido = ValidadorPelicula.titulo(titulo);
+        int duracionValida = ValidadorPelicula.duracion(duracionMinutos);
+        List<Genero> generosValidos = ValidadorPelicula.generos(generos);
+        Clasificacion clasificacionValida = ValidadorPelicula.clasificacion(clasificacion);
+        this.titulo = tituloValido;
+        this.duracionMinutos = duracionValida;
+        this.clasificacion = clasificacionValida;
         this.generos.clear();
-        this.generos.addAll(sinRepetir);
+        this.generos.addAll(generosValidos);
     }
 
     public void cambiarPuntaje(double puntaje) {
@@ -189,16 +178,6 @@ public class Pelicula {
     public void descartar() {
         estadoRevision = EstadoRevision.DESCARTADA;
         enCartelera = false;
-    }
-
-    // Recortado: " Matrix" pasaría el chequeo de título repetido de R1 como si fuera otra película.
-    private static String tituloValido(String titulo) {
-        if (titulo == null || titulo.isBlank()) {
-            throw new DatoInvalido("El título no puede estar vacío");
-        }
-        String limpio = titulo.strip();
-        exigirLargo(limpio, 100, "El título");
-        return limpio;
     }
 
     // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.

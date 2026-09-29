@@ -319,7 +319,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         ConflictoDeNegocio titulo = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(
                 dune.getId(), new DatosPelicula("Matrix", 150, null, null, null, null, null, null, null, null, 15.0, null)));
 
-        assertEquals("La duración tiene que ser mayor a cero", datos.getMessage());
+        assertEquals("La duración tiene que estar entre 1 y 600 minutos", datos.getMessage());
         assertEquals("Ya existe una película con ese título", titulo.getMessage());
         Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
         assertEquals("Dune", leida.getTitulo());

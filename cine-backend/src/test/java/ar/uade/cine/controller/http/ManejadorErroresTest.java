@@ -404,8 +404,9 @@ class ManejadorErroresTest extends PruebaDeApi {
                 + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}").json().get("id").asInt();
         String ruta = "/api/peliculas/" + id;
 
-        assertEquals("El título no puede estar vacío", put(ruta, "{\"titulo\":\"  \"}").error());
-        assertEquals("La duración tiene que ser mayor a cero", put(ruta, "{\"duracionMinutos\":0}").error());
+        assertEquals("Falta el título", put(ruta, "{\"titulo\":\"  \"}").error());
+        assertEquals("La duración tiene que estar entre 1 y 600 minutos",
+                put(ruta, "{\"duracionMinutos\":0}").error());
         assertEquals("El puntaje tiene que estar entre 0 y 10", put(ruta, "{\"puntaje\":11}").error());
         assertEquals("Los votos no pueden ser negativos", put(ruta, "{\"votos\":-1}").error());
         assertEquals("El año tiene que estar entre 1895 y 2031", put(ruta, "{\"anio\":-3}").error());

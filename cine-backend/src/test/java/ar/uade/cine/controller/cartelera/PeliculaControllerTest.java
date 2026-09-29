@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
@@ -30,6 +32,20 @@ class PeliculaControllerTest extends PruebaDeApi {
         assertEquals("No existe la película 99", editada.error());
         assertEquals(404, borrada.estado());
         assertEquals("No existe la película 99", borrada.error());
+    }
+
+    // El pedido solo mira que venga: el rango lo pone la película, así el alta y la edición dicen lo mismo.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            cero,                 0
+            el entero más grande, 2147483647
+            """)
+    void unaDuracionFueraDeRangoEs400ConElTextoDeLaPelicula(String caso, int minutos) {
+        Respuesta respuesta = post("/api/peliculas", "{\"titulo\":\"Dune\",\"duracionMinutos\":" + minutos
+                + ",\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La duración tiene que estar entre 1 y 600 minutos", respuesta.error());
     }
 
     @Test

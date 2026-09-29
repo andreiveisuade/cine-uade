@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -34,17 +35,34 @@ class PeliculaTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            sin título,           ,     155, DRAMA, ATP, El título no puede estar vacío
-            título en blanco,     '  ', 155, DRAMA, ATP, El título no puede estar vacío
-            duración cero,        Dune, 0,   DRAMA, ATP, La duración tiene que ser mayor a cero
-            duración negativa,    Dune, -5,  DRAMA, ATP, La duración tiene que ser mayor a cero
-            sin género,           Dune, 155, ,      ATP, La película necesita al menos un género
-            sin clasificación,    Dune, 155, DRAMA, ,    Falta la clasificación por edad
-            todo mal: gana el título, '', 0, ,      ,    El título no puede estar vacío
+            sin título,           ,     155,        DRAMA, ATP, Falta el título
+            título en blanco,     '  ', 155,        DRAMA, ATP, Falta el título
+            sin duración,         Dune, ,           DRAMA, ATP, Falta la duración
+            duración cero,        Dune, 0,          DRAMA, ATP, La duración tiene que estar entre 1 y 600 minutos
+            duración negativa,    Dune, -5,         DRAMA, ATP, La duración tiene que estar entre 1 y 600 minutos
+            más de diez horas,    Dune, 601,        DRAMA, ATP, La duración tiene que estar entre 1 y 600 minutos
+            el entero más grande, Dune, 2147483647, DRAMA, ATP, La duración tiene que estar entre 1 y 600 minutos
+            sin género,           Dune, 155,        ,      ATP, La película tiene que tener al menos un género
+            sin clasificación,    Dune, 155,        DRAMA, ,    Falta la clasificación por edad
+            todo mal: gana el título, '', 0,        ,      ,    Falta el título
             """)
     void unaPeliculaSinTituloDuracionGeneroOClasificacionNoSeConstruye(String caso, String titulo,
-            int duracion, Genero genero, Clasificacion clasificacion, String mensaje) {
+            Integer duracion, Genero genero, Clasificacion clasificacion, String mensaje) {
         rechaza(mensaje, () -> new Pelicula(titulo, duracion, generos(genero), clasificacion));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 600})
+    void laDuracionVaDeUnMinutoADiezHoras(int minutos) {
+        assertEquals(minutos, new Pelicula("Dune", minutos, List.of(Genero.DRAMA), Clasificacion.ATP)
+                .getDuracionMinutos());
+    }
+
+    // Del JSON, `"generos": [null]` llega como una lista con un elemento.
+    @Test
+    void unGeneroNuloFalta() {
+        rechaza("Falta el género", () -> new Pelicula("Dune", 155, Arrays.asList(Genero.DRAMA, null),
+                Clasificacion.ATP));
     }
 
     @Test
@@ -72,9 +90,9 @@ class PeliculaTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            título vacío,      '',    120, DRAMA, ATP, El título no puede estar vacío
-            duración cero,     Otra,  0,   DRAMA, ATP, La duración tiene que ser mayor a cero
-            sin género,        Otra,  120, ,      ATP, La película necesita al menos un género
+            título vacío,      '',    120, DRAMA, ATP, Falta el título
+            duración cero,     Otra,  0,   DRAMA, ATP, La duración tiene que estar entre 1 y 600 minutos
+            sin género,        Otra,  120, ,      ATP, La película tiene que tener al menos un género
             sin clasificación, Otra,  120, DRAMA, ,    Falta la clasificación por edad
             """)
     void actualizarPideLoMismoQueElAltaYNoTocaNadaSiRechaza(String caso, String titulo, int duracion,
