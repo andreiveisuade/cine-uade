@@ -47,8 +47,6 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 

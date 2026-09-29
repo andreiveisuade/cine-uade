@@ -7,12 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
@@ -25,10 +23,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -42,10 +36,8 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
-import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
-import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.controller.funciones.FuncionController;
 

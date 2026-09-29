@@ -30,7 +30,6 @@ import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 

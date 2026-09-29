@@ -14,7 +14,6 @@ import jakarta.persistence.EntityManagerFactory;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,8 +29,6 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
 
 class GestorImportacionesTest extends PruebaDeIntegracion {
 

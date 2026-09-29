@@ -24,7 +24,6 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Alta, baja y consulta de funciones; @Service que aplica lo que la función no ve sola: R3, R12 y R20.
 @Service

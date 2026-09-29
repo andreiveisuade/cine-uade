@@ -20,10 +20,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
-import ar.uade.cine.model.rechazos.DatoInvalido;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
-
 class ArquitecturaTest {
 
     private static final Path RAIZ = Path.of("src/main/java/ar/uade/cine");
