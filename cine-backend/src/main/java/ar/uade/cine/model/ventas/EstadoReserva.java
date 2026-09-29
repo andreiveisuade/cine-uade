@@ -1,8 +1,5 @@
 package ar.uade.cine.model.ventas;
 
-import lombok.Getter;
-import lombok.experimental.Accessors;
-
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Estados de una reserva y sus transiciones (R5, R13, R17, R18); patrón State con una constante por estado.
@@ -14,8 +11,6 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 // rechaza con «La reserva está <etiqueta>: <lo que no se puede>». Una transición devuelve el estado
 // siguiente y Reserva lo asigna: `estado = estado.pagar()`.
 // La etiqueta es para los mensajes ("La reserva está vencida"); en el JSON y en la base va name().
-@Getter
-@Accessors(fluent = true)
 public enum EstadoReserva {
 
     RESERVADA("sin pagar") {

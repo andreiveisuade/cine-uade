@@ -8,8 +8,6 @@ import ar.uade.cine.model.validacion.Regla;
 
 // Medio de pago (R11) y su etiqueta; Experto: qué autorización lleva cada uno y por dónde se cobra.
 // La etiqueta es para los mensajes ("el pago con crédito"); en el JSON y en la base va name().
-@Getter
-@Accessors(fluent = true)
 public enum MedioPago {
 
     EFECTIVO("efectivo", false),
@@ -22,6 +20,9 @@ public enum MedioPago {
     private static final int LARGO_AUTORIZACION = 50;
 
     private final String etiqueta;
+    // Lo publica el catálogo: los clientes piden el código sin decidirlo por el nombre de la constante.
+    @Getter
+    @Accessors(fluent = true)
     private final boolean requiereAutorizacion;
 
     MedioPago(String etiqueta, boolean requiereAutorizacion) {
