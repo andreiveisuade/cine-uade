@@ -59,7 +59,7 @@ public class PeliculaController {
                                          @RequestParam(required = false) String publicada) {
         return cartelera.buscar(q,
                         Parseo.constanteOpcional(Genero.class, genero, "el género"),
-                        Parseo.booleanOpcional(publicada, "publicada"))
+                        Parseo.booleanOpcional(publicada, "el filtro publicada"))
                 .stream().map(vistas::pelicula).toList();
     }
 
@@ -119,7 +119,7 @@ public class PeliculaController {
                         ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"),
                 pedido.clasificacion() == null
                         ? null : Parseo.constante(Clasificacion.class, pedido.clasificacion(),
-                                "la clasificación"),
+                                "la clasificación por edad"),
                 pedido.director(), pedido.sinopsis(), pedido.anio(), pedido.idiomaOriginal(),
                 pedido.posterUrl(), pedido.enCartelera(), pedido.puntaje(), pedido.votos());
     }

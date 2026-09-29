@@ -52,7 +52,7 @@ public class ReservaController {
         }
         // vistas.reservas() y no un map de vistas.reserva(): evita tres consultas por fila.
         return vistas.reservas(consultas.buscar(new CriteriosReserva(
-                Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado"),
+                Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado de la reserva"),
                 Parseo.diaOpcional(dia, "el día"), q)));
     }
 

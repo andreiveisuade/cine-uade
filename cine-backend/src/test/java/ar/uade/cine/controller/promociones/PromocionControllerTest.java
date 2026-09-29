@@ -16,7 +16,7 @@ class PromocionControllerTest extends PruebaDeApi {
                 + "\"porcentaje\":20,\"vigenciaDesde\":\"2026-13-45\",\"vigenciaHasta\":\"2026-12-31\"}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("el inicio de la vigencia tiene que ser una fecha válida", respuesta.error());
+        assertEquals("El inicio de la vigencia no es válido: usá AAAA-MM-DD", respuesta.error());
     }
 
     @Test
@@ -55,7 +55,7 @@ class PromocionControllerTest extends PruebaDeApi {
                 + "\"diasSemana\":[\"JUEVESITO\"]}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Valor inválido para el día: JUEVESITO", respuesta.error());
+        assertEquals("Valor inválido para el día de la semana: JUEVESITO", respuesta.error());
     }
 
     @Test

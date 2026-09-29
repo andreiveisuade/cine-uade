@@ -45,9 +45,9 @@ public class ProductoController {
 
     @Operation(summary = "La carta del candy")
     @GetMapping("/api/candy/productos")
-    public List<ProductoVistaDTO> productos(
-            @RequestParam(required = false, defaultValue = "false") boolean todos) {
-        List<Producto> productos = todos ? carta.listar() : carta.listarDisponibles();
+    public List<ProductoVistaDTO> productos(@RequestParam(required = false) String todos) {
+        List<Producto> productos = Boolean.TRUE.equals(Parseo.booleanOpcional(todos, "el filtro todos"))
+                ? carta.listar() : carta.listarDisponibles();
         return productos.stream().map(vistas::producto).toList();
     }
 

@@ -51,9 +51,9 @@ public class ProgramacionController {
                                              @RequestParam(required = false) String salaId,
                                              @RequestParam(required = false) String activa) {
         return programaciones.buscar(
-                        Parseo.numeroOpcional(peliculaId, "la película"),
-                        Parseo.numeroOpcional(salaId, "la sala"),
-                        Parseo.booleanOpcional(activa, "activa"))
+                        Parseo.numeroOpcional(peliculaId, "el id de la película"),
+                        Parseo.numeroOpcional(salaId, "el id de la sala"),
+                        Parseo.booleanOpcional(activa, "el filtro activa"))
                 .stream()
                 .map(vistas::programacion)
                 .toList();
@@ -96,7 +96,7 @@ public class ProgramacionController {
         LocalDate hasta = Parseo.diaOpcional(pedido.hasta(), "la fecha de fin");
         var hora = Parseo.hora(pedido.horaInicio(), "la hora de la función");
         Set<DayOfWeek> dias = Set.copyOf(
-                Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "los días de la semana"));
+                Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
         Version version = Parseo.constante(Version.class, pedido.idioma(), "el idioma");
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
         Dinero precio = Dinero.de(pedido.precio());

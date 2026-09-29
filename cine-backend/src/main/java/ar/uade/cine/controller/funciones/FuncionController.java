@@ -47,8 +47,8 @@ public class FuncionController {
                                         @RequestParam(required = false) String desde,
                                         @RequestParam(required = false) String hasta) {
         return vistas.funcionesConPelicula(funciones.buscar(
-                        Parseo.numeroOpcional(peliculaId, "la película"),
-                        Parseo.numeroOpcional(salaId, "la sala"),
+                        Parseo.numeroOpcional(peliculaId, "el id de la película"),
+                        Parseo.numeroOpcional(salaId, "el id de la sala"),
                         Parseo.diaOpcional(desde, "la fecha de inicio"),
                         Parseo.diaOpcional(hasta, "la fecha de fin")));
     }
@@ -67,7 +67,7 @@ public class FuncionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<FuncionVistaDTO> programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
         Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(),
-                Parseo.momento(pedido.inicio(), "la fecha y hora"),
+                Parseo.momento(pedido.inicio(), "la fecha y hora de la función"),
                 Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
                 Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
                 Dinero.de(pedido.precio()));

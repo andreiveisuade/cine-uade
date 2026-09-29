@@ -2,14 +2,59 @@ package ar.uade.cine.controller.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.net.URI;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 
 class ManejadorErroresTest extends PruebaDeApi {
+
+    @Autowired
+    private TestRestTemplate cliente;
+
+    // Una carrera no se repite a pedido: esta ruta, que solo existe en este test, graba dos clientes con
+    // el mismo email por el repositorio, salteando al gestor, como dos altas simultáneas que pasaron su
+    // existsBy… La base rechaza la segunda con la excepción de verdad.
+    @TestConfiguration
+    static class RutaQueChocaConLaBase {
+
+        static final String RUTA = "/api/prueba/choque";
+
+        // Clase miembro de un @TestConfiguration: Spring la registra sola, sin @Bean.
+        @RestController
+        static class Choque {
+
+            private final ClienteRepository clientes;
+
+            Choque(ClienteRepository clientes) {
+                this.clientes = clientes;
+            }
+
+            @PostMapping(RUTA)
+            public void chocar() {
+                clientes.save(new Cliente("Ana", "ana@mail.com"));
+                clientes.save(new Cliente("Otra Ana", "ana@mail.com"));
+            }
+        }
+    }
 
     @Test
     void credencialesEquivocadasSon401() {
@@ -33,6 +78,17 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals("El cuerpo del pedido no es un JSON válido", respuesta.error());
+    }
+
+    @Test
+    void unPedidoSinCuerpoEs400YDiceQueFalta() {
+        Respuesta sinCuerpo = post("/api/salas", null);
+        Respuesta vacio = post("/api/salas", "");
+
+        assertEquals(400, sinCuerpo.estado());
+        assertEquals("Falta el cuerpo del pedido", sinCuerpo.error());
+        assertEquals(400, vacio.estado());
+        assertEquals("Falta el cuerpo del pedido", vacio.error());
     }
 
     @Test
@@ -127,11 +183,47 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("No existe la película 999", respuesta.error());
     }
 
+    // La ruta tal como llegó: con la barra final recortada, /api/salas/ decía que no existe /api/salas.
     @Test
-    void unaRutaQueNoExisteEs404() {
+    void unaRutaQueNoExisteEs404YLaNombraComoLlego() {
         Respuesta respuesta = get("/api/no-existe");
+        Respuesta conBarraFinal = get("/api/salas/");
 
         assertEquals(404, respuesta.estado());
+        assertEquals("No existe la ruta /api/no-existe", respuesta.error());
+        assertEquals(404, conBarraFinal.estado());
+        assertEquals("No existe la ruta /api/salas/", conBarraFinal.error());
+    }
+
+    // Sin el Content-Type fijado, Spring negociaba el error contra el Accept y no podía escribirlo:
+    // un 500 vacío con XML, la página Whitelabel con HTML.
+    @ParameterizedTest
+    @ValueSource(strings = {"application/xml", "text/html"})
+    void unErrorSaleEnJsonAunqueElClientePidaOtroFormato(String formato) {
+        Respuesta respuesta = pedirAceptando("/api/no-existe", formato);
+
+        assertEquals(404, respuesta.estado());
+        assertEquals(MediaType.APPLICATION_JSON, respuesta.cabeceras().getContentType());
+        assertEquals("No existe la ruta /api/no-existe", respuesta.error());
+    }
+
+    @Test
+    void pedirUnaRespuestaQueNoSeaJsonEs406() {
+        Respuesta respuesta = pedirAceptando("/api/cartelera", "application/xml");
+
+        assertEquals(406, respuesta.estado());
+        assertEquals(MediaType.APPLICATION_JSON, respuesta.cabeceras().getContentType());
+        assertEquals("Esta API responde solo JSON", respuesta.error());
+    }
+
+    // Dos altas que pasan el mismo existsBy… y chocan en el UNIQUE: no es una base caída, es 409 y no 500.
+    @Test
+    void unAltaQueChocaConUnaRestriccionDeLaBaseEs409() {
+        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA, null);
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("Otro pedido cambió estos datos al mismo tiempo: recargá y volvé a intentarlo",
+                respuesta.error());
     }
 
     // Un JSON bien formado con un tipo equivocado no es "JSON inválido": el mensaje nombra el campo.
@@ -153,16 +245,40 @@ class ManejadorErroresTest extends PruebaDeApi {
         Respuesta ruta = get("/api/funciones/abc");
 
         assertEquals(400, query.estado());
-        assertEquals("El parámetro todos no es válido: quizas", query.error());
+        assertEquals("El filtro todos tiene que ser true o false", query.error());
         assertEquals(404, ruta.estado());
     }
 
     @Test
     void unaFechaMalFormadaEnLaQueryEs400ConElNombreDelDato() {
-        assertEquals("la fecha tiene que ser una fecha válida", get("/api/arqueo?fecha=ayer").error());
-        assertEquals("el día tiene que ser una fecha válida", get("/api/reservas?dia=13-08-2026").error());
-        assertEquals("la fecha de inicio tiene que ser una fecha válida", get("/api/funciones?desde=x").error());
+        assertEquals("La fecha no es válida: usá AAAA-MM-DD", get("/api/arqueo?fecha=ayer").error());
+        assertEquals("El día no es válido: usá AAAA-MM-DD", get("/api/reservas?dia=13-08-2026").error());
+        assertEquals("La fecha de inicio no es válida: usá AAAA-MM-DD", get("/api/funciones?desde=x").error());
         assertEquals(400, get("/api/candy/arqueo?fecha=2026-13-45").estado());
+    }
+
+    @Test
+    void unNumeroOUnFiltroMalEscritoEnLaQueryEs400ConElNombreDelDato() {
+        assertEquals("El id del cliente tiene que ser un número", get("/api/candy/compras?clienteId=abc").error());
+        assertEquals("El id de la película tiene que ser un número", get("/api/funciones?peliculaId=x").error());
+        assertEquals("El id de la sala tiene que ser un número", get("/api/programaciones?salaId=x").error());
+        assertEquals("El filtro publicada tiene que ser true o false", get("/api/peliculas?publicada=quizas").error());
+        assertEquals("El filtro activa tiene que ser true o false", get("/api/programaciones?activa=x").error());
+    }
+
+    @Test
+    void unDiaDeLaSemanaInvalidoDiceLoMismoEnPromocionesYEnProgramaciones() {
+        Respuesta promocion = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":20,\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\","
+                + "\"diasSemana\":[\"JUEVESITO\"]}");
+        Respuesta programacion = post("/api/programaciones/previsualizacion", "{\"peliculaId\":1,\"salaId\":1,"
+                + "\"desde\":\"2026-09-01\",\"horaInicio\":\"20:30\",\"diasSemana\":[\"JUEVESITO\"],"
+                + "\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}");
+
+        assertEquals(400, promocion.estado());
+        assertEquals("Valor inválido para el día de la semana: JUEVESITO", promocion.error());
+        assertEquals(400, programacion.estado());
+        assertEquals(promocion.error(), programacion.error());
     }
 
     // Sin @Valid a propósito, porque es parcial: lo que no viaja queda igual, pero lo que viaja se valida.
@@ -191,5 +307,14 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("Falta el código de acceso", sinCampo.error());
         assertEquals(400, enBlanco.estado());
         assertEquals("Falta el código de acceso", enBlanco.error());
+    }
+
+    private Respuesta pedirAceptando(String ruta, String formato) {
+        HttpHeaders cabeceras = new HttpHeaders();
+        cabeceras.setBasicAuth(EMAIL_ADMIN, CLAVE_ADMIN);
+        cabeceras.setAccept(List.of(MediaType.parseMediaType(formato)));
+        ResponseEntity<String> respuesta = cliente.exchange(URI.create(ruta), HttpMethod.GET,
+                new HttpEntity<>(cabeceras), String.class);
+        return new Respuesta(respuesta.getStatusCode().value(), respuesta.getBody(), respuesta.getHeaders());
     }
 }

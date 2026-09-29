@@ -10,8 +10,10 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
@@ -85,13 +87,36 @@ class ParseoTest {
         assertEquals(LocalTime.of(20, 30), Parseo.hora("20:30", "la hora"));
     }
 
+    // El mensaje llega tal cual al usuario: arranca en mayúscula y dice cómo escribirlo bien.
     @Test
-    void unaFechaMalEscritaLoDiceEnCastellano() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Parseo.momento("20/08/2026", "el inicio de la función"));
+    void unaFechaOUnaHoraMalEscritaDiceElFormatoQueEspera() {
+        assertEquals("La fecha y hora de la función no es válida: usá AAAA-MM-DDTHH:MM",
+                mensaje(() -> Parseo.momento("20/08/2026", "la fecha y hora de la función")));
+        assertEquals("La fecha de inicio no es válida: usá AAAA-MM-DD",
+                mensaje(() -> Parseo.dia("ayer", "la fecha de inicio")));
+        assertEquals("La hora de apertura no es válida: usá HH:MM",
+                mensaje(() -> Parseo.hora("25:00", "la hora de apertura")));
+    }
 
-        assertTrue(e.getMessage().contains("el inicio de la función"));
-        assertTrue(!e.getMessage().contains("DateTimeParseException"), "se filtró la excepción de Java");
+    @Test
+    void elAdjetivoConcuerdaConElDatoQueFallo() {
+        assertEquals("El inicio de la vigencia no es válido: usá AAAA-MM-DD",
+                mensaje(() -> Parseo.dia("2026-13-45", "el inicio de la vigencia")));
+    }
+
+    @Test
+    void unNumeroOUnFiltroMalEscritoArrancaEnMayuscula() {
+        assertEquals("El id del cliente tiene que ser un número",
+                mensaje(() -> Parseo.numeroOpcional("abc", "el id del cliente")));
+        assertEquals("El filtro publicada tiene que ser true o false",
+                mensaje(() -> Parseo.booleanOpcional("quizas", "el filtro publicada")));
+    }
+
+    @Test
+    void unaConstanteQueNoExisteDiceQueValorLlego() {
+        assertEquals("Valor inválido para el idioma: KLINGON",
+                mensaje(() -> Parseo.constante(Version.class, "KLINGON", "el idioma")));
+        assertEquals("Falta el idioma", mensaje(() -> Parseo.constante(Version.class, " ", "el idioma")));
     }
 
     @Test
@@ -106,5 +131,9 @@ class ParseoTest {
                 () -> Parseo.dia(null, "la fecha")).getMessage().contains("Falta"));
         assertTrue(assertThrows(IllegalArgumentException.class,
                 () -> Parseo.dia("ayer", "la fecha")).getMessage().contains("válida"));
+    }
+
+    private static String mensaje(Executable accion) {
+        return assertThrows(IllegalArgumentException.class, accion).getMessage();
     }
 }

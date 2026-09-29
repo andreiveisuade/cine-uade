@@ -63,7 +63,7 @@ public class PromocionController {
     public ResponseEntity<PromocionVistaDTO> crear(@Valid @RequestBody PedidoPromocionDTO pedido) {
         LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
         LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
-        Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día"));
+        Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
         Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
         LocalTime horaDesde = pedido.horaDesde() == null ? null : Parseo.hora(pedido.horaDesde(), "la hora de inicio");
         LocalTime horaHasta = pedido.horaHasta() == null ? null : Parseo.hora(pedido.horaHasta(), "la hora de fin");

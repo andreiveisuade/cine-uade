@@ -52,7 +52,7 @@ public class CompraCandyController {
     public List<CompraCandyVistaDTO> compras(@RequestParam(required = false) String fecha,
                                              @RequestParam(required = false) String clienteId) {
         List<CompraCandy> compras = clienteId != null && !clienteId.isBlank()
-                ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el cliente"))
+                ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el id del cliente"))
                 : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
         return compras.stream().map(vistas::compra).toList();
     }

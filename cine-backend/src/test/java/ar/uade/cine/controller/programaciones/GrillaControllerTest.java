@@ -62,7 +62,7 @@ class GrillaControllerTest extends PruebaDeApi {
             # El precio se valida con el pedido, como en funciones y programaciones: antes que cualquier formato.
             un precio negativo gana contra una hora inválida,     '{"precio":-1,"apertura":"25:00"}', El precio debe ser mayor a cero
             # Primero se lee todo el pedido y después se validan los criterios: gana el error de formato.
-            con dos errores gana el de formato,                   '{"precio":5000,"dias":0,"apertura":"25:00"}', la hora de apertura tiene que ser una hora válida
+            con dos errores gana el de formato,                   '{"precio":5000,"dias":0,"apertura":"25:00"}', 'La hora de apertura no es válida: usá HH:MM'
             """)
     void unaPropuestaInvalidaEs400ConSuMensaje(String caso, String cuerpo, String mensaje) {
         Respuesta respuesta = post("/api/grilla/propuesta", cuerpo);

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.Function;
 
 // Pasa los textos del pedido a enums, fechas y números; lo inválido sale como IllegalArgumentException (400).
+// queEs nombra el dato con su artículo («la fecha de inicio»): el mensaje lo usa para concordar.
 public final class Parseo {
 
     private Parseo() {
@@ -30,15 +31,15 @@ public final class Parseo {
     }
 
     public static LocalDateTime momento(String valor, String queEs) {
-        return tiempo(valor, queEs, LocalDateTime::parse, "una fecha y hora válida");
+        return tiempo(valor, queEs, LocalDateTime::parse, "AAAA-MM-DDTHH:MM");
     }
 
     public static LocalTime hora(String valor, String queEs) {
-        return tiempo(valor, queEs, LocalTime::parse, "una hora válida");
+        return tiempo(valor, queEs, LocalTime::parse, "HH:MM");
     }
 
     public static LocalDate dia(String valor, String queEs) {
-        return tiempo(valor, queEs, LocalDate::parse, "una fecha válida");
+        return tiempo(valor, queEs, LocalDate::parse, "AAAA-MM-DD");
     }
 
     public static LocalDate diaOpcional(String valor, String queEs) {
@@ -56,7 +57,7 @@ public final class Parseo {
         try {
             return Integer.valueOf(valor.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser un número");
+            throw new IllegalArgumentException(conMayuscula(queEs) + " tiene que ser un número");
         }
     }
 
@@ -73,15 +74,17 @@ public final class Parseo {
         if (limpio.equals("true") || limpio.equals("false")) {
             return Boolean.valueOf(limpio);
         }
-        throw new IllegalArgumentException(queEs + " tiene que ser true o false");
+        throw new IllegalArgumentException(conMayuscula(queEs) + " tiene que ser true o false");
     }
 
+    // El formato va en el mensaje: «no es válida» solo, sin decir cómo escribirla, no le sirve a nadie.
     private static <T> T tiempo(String valor, String queEs, Function<String, T> parser, String formato) {
         exigir(valor, queEs);
         try {
             return parser.apply(valor.trim());
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser " + formato);
+            String valida = queEs.startsWith("la ") ? "válida" : "válido";
+            throw new IllegalArgumentException(conMayuscula(queEs) + " no es " + valida + ": usá " + formato);
         }
     }
 
@@ -93,5 +96,9 @@ public final class Parseo {
 
     private static boolean vacio(String valor) {
         return valor == null || valor.isBlank();
+    }
+
+    private static String conMayuscula(String texto) {
+        return Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
 }

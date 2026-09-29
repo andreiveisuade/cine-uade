@@ -231,7 +231,7 @@ class InformeControllerTest extends PruebaDeApi {
         Respuesta respuesta = get("/api/declaracion-jurada?desde=20-08-2026&hasta=2026-08-26");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("la fecha desde tiene que ser una fecha válida", respuesta.error());
+        assertEquals("La fecha desde no es válida: usá AAAA-MM-DD", respuesta.error());
     }
 
     @Test
