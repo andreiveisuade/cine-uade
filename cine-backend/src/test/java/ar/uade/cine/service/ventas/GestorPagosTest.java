@@ -38,14 +38,11 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.Arqueo;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
@@ -179,7 +176,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(15000.0), arqueo.total());
         assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
     }
-
 
     @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {

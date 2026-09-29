@@ -14,7 +14,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.validacion.Regla;
 import ar.uade.cine.model.ventas.Entrada;
 
-// Lo que tiene que traer una reserva al nacer: función, cliente, momento y de 1 a 10 butacas sin repetir.
+// Qué trae una reserva al nacer: función, cliente, fecha y de 1 a 10 butacas sin repetir; guardas de Regla.
 // Lo llama Reserva y nadie más: la regla es de la entidad aunque se lea en su propia clase.
 public final class ValidadorReserva {
 

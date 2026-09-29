@@ -28,7 +28,7 @@ import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.Ocupacion;
 
-// Arma los JSON de reservas y del bloqueo de butacas; Assembler que compone Cartelera, Salas, Usuarios y Pagos.
+// Arma los JSON de reservas y del bloqueo de butacas; Assembler que compone Cartelera, Salas y Pagos.
 // Un listado de N reservas cuesta un número fijo de consultas: las reservas con su función,
 // película, sala y cliente en una (ConsultasReservas#conDetalle), sus pagos en otra, y las
 // butacas una vez por sala, no por fila. VistasVentasTest cuenta las sentencias.

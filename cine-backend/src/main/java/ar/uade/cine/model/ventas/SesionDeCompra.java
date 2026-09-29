@@ -2,7 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import ar.uade.cine.model.validacion.Regla;
 
-// La sesión del navegador que está eligiendo butacas; Value Object presente, recortado y del largo de la columna.
+// Sesión del navegador que elige butacas; Value Object presente, recortado y del largo de la columna.
 // No es una credencial: dice de quién es un bloqueo, y la doble venta la sigue impidiendo el UNIQUE de entrada.
 public record SesionDeCompra(String valor) {
 

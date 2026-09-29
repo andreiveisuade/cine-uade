@@ -3,7 +3,7 @@ package ar.uade.cine.model.ventas;
 import java.security.SecureRandom;
 import java.util.Locale;
 
-// Código de acceso de una reserva, la credencial del cliente en la puerta; Value Object que lo genera y normaliza.
+// Código de acceso de una reserva, credencial del cliente en la puerta; Value Object que genera y normaliza.
 // No valida la forma a propósito: un código mal tipeado no es un pedido mal armado sino uno que no
 // encuentra reserva, así que sigue saliendo como 404 y no le cuenta a nadie cómo es un código válido.
 public record CodigoDeAcceso(String valor) {

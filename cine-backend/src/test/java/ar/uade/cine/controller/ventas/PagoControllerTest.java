@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,6 @@ class PagoControllerTest extends PruebaDeApi {
     @Autowired
     private GestorSalas salas;
 
-
     private Reserva reserva;
 
     @BeforeEach
@@ -61,7 +59,6 @@ class PagoControllerTest extends PruebaDeApi {
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL), null);
     }
-
 
     @Test
     void abrirElCheckoutDevuelveElLinkYElQrConElMontoAPagar() {

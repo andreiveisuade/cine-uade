@@ -27,9 +27,6 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
@@ -51,8 +48,6 @@ import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
@@ -337,7 +332,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals(reloj.hoy(), leida.getCreadaEn().toLocalDate());
     }
 
-
     private void envejecer(int reservaId, int minutos) {
         jdbc.update("UPDATE reserva SET creada_en = ? WHERE id = ?",
                 reservaRepository.findById(reservaId).orElseThrow()
@@ -459,7 +453,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(log.getOut().contains("ingreso reserva " + reserva.getId()), "el ingreso se sigue logueando");
         assertFalse(log.getAll().contains(reserva.getCodigo()));
     }
-
 
     // Por el repositorio: el gestor no deja programar en el pasado.
     private Funcion funcionQueYaEmpezo() {

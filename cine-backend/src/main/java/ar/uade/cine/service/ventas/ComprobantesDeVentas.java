@@ -16,7 +16,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
-// Emite el ticket de una reserva y el recibo de un cobro cuando ya quedaron guardados; Observer tras el commit.
+// Emite ticket de reserva y recibo de cobro cuando ya quedaron guardados; Observer que corre tras el commit.
 //
 // Patrón Observer (GoF): el sujeto avisa que algo pasó y no sabe quién escucha ni qué hace con el aviso.
 // Acá los sujetos son GestorReservas y GestorPagos, que publican ReservaCreada y PagoRegistrado con el

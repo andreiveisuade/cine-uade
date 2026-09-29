@@ -4,8 +4,8 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.validacion.Regla;
 import ar.uade.cine.model.ventas.MedioPago;
 
-// Lo que tiene que cumplir un cobro al registrarse: un medio de pago e importes que cierren (R5, R15).
-// Lo llama Pago. Los importes no los tipea nadie, salen de la reserva y de la promoción: si no cierran es
+// Qué cumple un cobro al registrarse: medio de pago e importes que cierran; guardas de Regla que llama Pago.
+// Los importes no los tipea nadie, salen de la reserva y de la promoción: si no cierran es
 // un error del cálculo, y es mejor frenarlo acá que guardar un monto negativo en la caja.
 public final class ValidadorPago {
 

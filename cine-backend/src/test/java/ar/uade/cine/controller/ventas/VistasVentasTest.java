@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,10 +27,6 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -46,7 +41,6 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
-import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.model.dinero.Dinero;
 
 import jakarta.persistence.EntityManagerFactory;
