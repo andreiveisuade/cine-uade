@@ -90,8 +90,14 @@ public class Asiento {
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException("Falta el código de una butaca");
         }
-        return conCodigo(deLaSala, codigo).orElseThrow(() -> new IllegalArgumentException(
-                "La butaca " + normalizarCodigo(codigo) + " no existe en esa sala"));
+        return conCodigo(deLaSala, codigo)
+                .orElseThrow(() -> new IllegalArgumentException(inexistente(codigo)));
+    }
+
+    // El mismo texto llegue la butaca en la ruta (404), en una venta, un bloqueo o el alta de la
+    // sala (400). Sin nombrar la sala: quien pide ya sabe cuál es, y la lista puede no traerla.
+    public static String inexistente(String codigo) {
+        return "La butaca " + normalizarCodigo(codigo) + " no existe en la sala";
     }
 
     public static String normalizarCodigo(String codigo) {

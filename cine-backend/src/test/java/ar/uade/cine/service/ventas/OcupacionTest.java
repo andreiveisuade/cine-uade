@@ -139,10 +139,13 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void laButacaInexistenteFallaConElMismoMensajeQueAlReservar() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException alBloquear = assertThrows(IllegalArgumentException.class,
                 () -> ocupacion.bloquear(1, List.of("Z9"), ANA));
+        IllegalArgumentException alReservar = assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, 1, generales("z9"), null));
 
-        assertEquals("La butaca Z9 no existe en esa sala", error.getMessage());
+        assertEquals("La butaca Z9 no existe en la sala", alBloquear.getMessage());
+        assertEquals("La butaca Z9 no existe en la sala", alReservar.getMessage());
     }
 
     @Test
