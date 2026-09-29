@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -105,6 +106,9 @@ public class GestorCartelera {
     }
 
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
+    // Sin transacción propia: si no, retendría su conexión mientras extenderActivas, que corre fuera
+    // de transacción, pide otra. Con el pool entero pidiendo la cartelera a la vez, todos esperarían.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<Pelicula> listarEnCartelera(Genero genero) {
         LocalDateTime ahora = reloj.ahora();
         // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.

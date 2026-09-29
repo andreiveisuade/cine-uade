@@ -6,10 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+
+import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,6 +62,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     private GestorRevisionCartelera revision;
     @Autowired
     private SalaRepository salaRepository;
+    @Autowired
+    private DataSource dataSource;
 
     private Sala sala;
 
@@ -206,6 +218,28 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarProxima(pelicula.getId());
 
         assertEquals(1, gestor.listarEnCartelera(null).size());
+    }
+
+    // Si retuviera su conexión mientras extiende las grillas, pediría una segunda: con el pool
+    // entero pidiendo la cartelera a la vez, todos esperarían una que nadie suelta.
+    @Test
+    void laCarteleraPublicaSeArreglaConUnaSolaConexionLibre() throws Exception {
+        HikariDataSource pool = dataSource.unwrap(HikariDataSource.class);
+        List<Connection> tomadas = new ArrayList<>();
+        try (ExecutorService hilo = Executors.newSingleThreadExecutor()) {
+            try {
+                while (tomadas.size() < pool.getMaximumPoolSize() - 1) {
+                    tomadas.add(pool.getConnection());
+                }
+                Future<List<Pelicula>> cartelera = hilo.submit(() -> gestor.listarEnCartelera(null));
+
+                assertDoesNotThrow(() -> cartelera.get(5, TimeUnit.SECONDS));
+            } finally {
+                for (Connection conexion : tomadas) {
+                    conexion.close();
+                }
+            }
+        }
     }
 
     @Test
