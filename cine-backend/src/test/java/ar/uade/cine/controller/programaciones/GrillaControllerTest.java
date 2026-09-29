@@ -63,6 +63,9 @@ class GrillaControllerTest extends PruebaDeApi {
             un precio de cien millones es 400,                    '{"precio":100000000}',      El precio no puede superar $ 1000000.00
             # El precio se valida con el pedido, como en funciones y programaciones: antes que cualquier formato.
             un precio negativo gana contra una hora inválida,     '{"precio":-1,"apertura":"25:00"}', El precio tiene que ser mayor a cero
+            # hoy es el 14/08/2026: una grilla desde ayer daba 201 sin crear ninguna función (R20).
+            una grilla que empieza en el pasado es 400,           '{"precio":5000,"desde":"2026-08-13"}', La grilla no puede empezar en el pasado
+            más de veinte películas es 400,                       '{"precio":5000,"cuantasPeliculas":21}', La grilla no puede tener más de 20 películas
             # Primero se lee todo el pedido y después se validan los criterios: gana el error de formato.
             con dos errores gana el de formato,                   '{"precio":5000,"dias":0,"apertura":"25:00"}', 'La hora de apertura no es válida: usá HH:MM'
             """)
@@ -71,6 +74,15 @@ class GrillaControllerTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals(mensaje, respuesta.json().get("error").asText());
+    }
+
+    // Como las fechas y las horas: antes un "" decía «Falta el idioma» en un campo que no es obligatorio.
+    @Test
+    void unIdiomaYUnaProyeccionVaciosCuentanComoNoEnviados() {
+        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000,\"idioma\":\"\",\"proyeccion\":\" \"}");
+
+        assertEquals(200, respuesta.estado());
+        assertTrue(respuesta.json().get("pases").size() > 0);
     }
 
     @Test

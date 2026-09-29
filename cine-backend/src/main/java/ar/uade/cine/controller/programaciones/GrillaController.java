@@ -51,17 +51,16 @@ public class GrillaController {
         return vistas.propuesta(aplicada, aplicada.pases().size());
     }
 
-    // El precio no tiene default: es una decisión comercial del cine. Acá solo se lee el pedido;
-    // lo que falte lo completa CriteriosGrilla, salvo el día de hoy, que sale del reloj.
+    // El precio no tiene default: es una decisión comercial del cine. Acá solo se lee el pedido; lo
+    // que falte lo completa CriteriosGrilla, con el día de hoy que sale del reloj.
+    // Un idioma o una proyección vacíos cuentan como no enviados, igual que las fechas y las horas.
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         LocalDate desde = Parseo.diaOpcional(pedido.desde(), "la fecha de inicio");
         LocalTime apertura = Parseo.horaOpcional(pedido.apertura(), "la hora de apertura");
         LocalTime cierre = Parseo.horaOpcional(pedido.cierre(), "la hora de cierre");
-        Version version = pedido.idioma() == null
-                ? null : Parseo.constante(Version.class, pedido.idioma(), "el idioma");
-        Proyeccion proyeccion = pedido.proyeccion() == null
-                ? null : Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
-        return CriteriosGrilla.completando(desde == null ? reloj.hoy() : desde, pedido.dias(), apertura,
-                cierre, pedido.cuantasPeliculas(), Dinero.de(pedido.precio()), version, proyeccion);
+        Version version = Parseo.constanteOpcional(Version.class, pedido.idioma(), "el idioma");
+        Proyeccion proyeccion = Parseo.constanteOpcional(Proyeccion.class, pedido.proyeccion(), "la proyección");
+        return CriteriosGrilla.completando(reloj.hoy(), desde, pedido.dias(), apertura, cierre,
+                pedido.cuantasPeliculas(), Dinero.de(pedido.precio()), version, proyeccion);
     }
 }
