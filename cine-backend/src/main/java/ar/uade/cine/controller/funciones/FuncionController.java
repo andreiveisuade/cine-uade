@@ -57,7 +57,9 @@ public class FuncionController {
     @GetMapping("/api/funciones/{id}")
     public FuncionVistaDTO detalle(@PathVariable int id,
                                    @RequestParam(required = false) String sesion) {
-        return vistas.funcionConButacas(buscar(id), sesion);
+        Funcion funcion = funciones.buscar(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
+        return vistas.funcionConButacas(funcion, sesion);
     }
 
     @Operation(summary = "Programar una función")
@@ -76,12 +78,6 @@ public class FuncionController {
     @DeleteMapping("/api/funciones/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
-        buscar(id);
         funciones.eliminar(id);
-    }
-
-    private Funcion buscar(int id) {
-        return funciones.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
     }
 }

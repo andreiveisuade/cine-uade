@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -49,5 +50,13 @@ class FuncionControllerTest extends PruebaDeApi {
 
         assertEquals(201, respuesta.estado());
         assertEquals("2026-08-14T20:30:00", respuesta.json().get("inicio").asText());
+    }
+
+    @Test
+    void borrarUnaFuncionQueNoExisteEs404ConSuMensaje() {
+        Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/funciones/99", null, EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la función 99", respuesta.error());
     }
 }
