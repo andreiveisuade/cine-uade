@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
@@ -48,12 +49,16 @@ final class PantallaCobro extends Pantalla {
     private record Datos(Reserva reserva, List<MedioPago> medios, List<Tarifa> tarifas) {
     }
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiVentas apiVentas;
     private final Navegacion navegacion;
     private final int reservaId;
     private final JPanel cuerpo = new JPanel(new BorderLayout());
 
-    PantallaCobro(ApiHttp api, Navegacion navegacion, int reservaId) {
-        super(api, "Cobrar reserva #" + reservaId, null);
+    PantallaCobro(ApiCatalogos apiCatalogos, ApiVentas apiVentas, Navegacion navegacion, int reservaId) {
+        super("Cobrar reserva #" + reservaId, null);
+        this.apiCatalogos = apiCatalogos;
+        this.apiVentas = apiVentas;
         this.navegacion = navegacion;
         this.reservaId = reservaId;
 
@@ -68,8 +73,8 @@ final class PantallaCobro extends Pantalla {
 
         // GET /api/reservas/{id} trae lo mismo embebido que el listado. Un 404 se muestra en la pantalla, no en un
         // diálogo: sin reserva no hay nada más que hacer acá.
-        Tarea.ejecutar(this, () -> new Datos(api.obtenerReserva(reservaId), api.obtenerMediosPago(),
-                api.obtenerTarifas()), this::pintar, error -> {
+        Tarea.ejecutar(this, () -> new Datos(apiVentas.obtenerReserva(reservaId), apiCatalogos.obtenerMediosPago(),
+                apiCatalogos.obtenerTarifas()), this::pintar, error -> {
             if (!error.esSesionVencida()) mostrarNota(error.getMessage());
         });
     }
@@ -222,11 +227,11 @@ final class PantallaCobro extends Pantalla {
                 if (!Mensajes.confirmar(this, "¿Registrar el cobro de la reserva #" + reserva.id() + " en "
                         + etiqueta(elegido).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) return;
                 enviar.setEnabled(false);
-                Tarea.ejecutar(this, () -> api.cobrar(reserva.id(), elegido, ""), this::cobrado, fallo);
+                Tarea.ejecutar(this, () -> apiVentas.cobrar(reserva.id(), elegido, ""), this::cobrado, fallo);
             } else {
                 // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
                 enviar.setEnabled(false);
-                Tarea.ejecutar(this, () -> api.abrirCheckout(reserva.id(), elegido), c -> {
+                Tarea.ejecutar(this, () -> apiVentas.abrirCheckout(reserva.id(), elegido), c -> {
                     enviar.setEnabled(true);
                     mostrarCheckout(c);
                 }, fallo);
@@ -261,7 +266,7 @@ final class PantallaCobro extends Pantalla {
                         + "el cobro y no se puede deshacer.", "Sí, confirmar el pago")) return;
                 confirmar.setEnabled(false);
                 // Qué se está pagando sale del checkout, no de quien confirma.
-                Tarea.ejecutar(this, () -> api.confirmarCheckout(c.id()), this::cobrado, error -> {
+                Tarea.ejecutar(this, () -> apiVentas.confirmarCheckout(c.id()), this::cobrado, error -> {
                     confirmar.setEnabled(true);
                     Mensajes.error(this, error);
                 });

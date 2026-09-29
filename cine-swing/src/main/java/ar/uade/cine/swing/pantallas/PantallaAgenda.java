@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiFunciones;
+import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
@@ -61,6 +62,8 @@ final class PantallaAgenda extends Pantalla {
                            Function<Funcion, String> subtitulo) {
     }
 
+    private final ApiFunciones apiFunciones;
+    private final ApiSalas apiSalas;
     private final Navegacion navegacion;
     private final JComboBox<Opcion<Boolean>> modo = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> sala = new JComboBox<>();
@@ -77,9 +80,11 @@ final class PantallaAgenda extends Pantalla {
     // Mover el calendario desde el código dispara su propio evento: sin esta marca, se redibujaría dos veces.
     private boolean sincronizando = true;
 
-    PantallaAgenda(ApiHttp api, Navegacion navegacion) {
-        super(api, "Agenda", "La programación como la ve quien la arma: cada bloque ocupa el alto de lo que dura. "
+    PantallaAgenda(ApiFunciones apiFunciones, ApiSalas apiSalas, Navegacion navegacion) {
+        super("Agenda", "La programación como la ve quien la arma: cada bloque ocupa el alto de lo que dura. "
                 + "Los huecos son dónde entra algo nuevo. Clic en un bloque para ver su borderó e informe.");
+        this.apiFunciones = apiFunciones;
+        this.apiSalas = apiSalas;
         this.navegacion = navegacion;
 
         modo.addItem(new Opcion<>(true, "Semana (una sala)"));
@@ -132,7 +137,7 @@ final class PantallaAgenda extends Pantalla {
         add(izquierda, BorderLayout.WEST);
         add(centro, BorderLayout.CENTER);
 
-        cargar(api::obtenerSalas, lista -> {
+        cargar(apiSalas::obtenerSalas, lista -> {
             salas = lista;
             sala.removeAllItems();
             salas.forEach(s -> sala.addItem(new Opcion<>(s.id(), s.nombre() + " — " + etiqueta(s.tipo()))));
@@ -199,7 +204,7 @@ final class PantallaAgenda extends Pantalla {
         filtros.put("hasta", (semana ? primerDia.plusDays(6) : primerDia).toString());
         if (semana) filtros.put("salaId", String.valueOf(elegida.id()));
         String donde = semana ? " en " + elegida.nombre() : "";
-        cargar(() -> api.obtenerFunciones(filtros), funciones -> {
+        cargar(() -> apiFunciones.obtenerFunciones(filtros), funciones -> {
             if (pedida == vista) dibujar(columnas, funciones, donde);
         });
     }
@@ -289,7 +294,7 @@ final class PantallaAgenda extends Pantalla {
             etiqueta.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    navegacion.abrir(new PantallaFuncion(api, navegacion, f.id()));
+                    navegacion.abrirInforme(f.id());
                 }
             });
             return etiqueta;

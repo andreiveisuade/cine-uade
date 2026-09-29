@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Etiquetas;
@@ -43,18 +43,18 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
                     Destino.DECLARACION_JURADA)),
             new Grupo("Acceso", List.of(Destino.PUERTA)));
 
-    private final ApiHttp api;
+    private final Apis apis;
     private final JPanel contenido = new JPanel(new BorderLayout());
     private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private final ButtonGroup grupo = new ButtonGroup();
 
-    public VentanaPrincipal(ApiHttp api, Empleado empleado, Runnable alSalir) {
+    public VentanaPrincipal(Apis apis, String servidor, Empleado empleado, Runnable alSalir) {
         super("Cine UADE · " + empleado.nombre());
-        this.api = api;
+        this.apis = apis;
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         JPanel raiz = new JPanel(new BorderLayout());
-        raiz.add(cabecera(empleado, alSalir), BorderLayout.NORTH);
+        raiz.add(cabecera(empleado, servidor, alSalir), BorderLayout.NORTH);
         // El rol no es cosmético: el acomodador ni ve el resto del menú, y el backend además le cierra las rutas.
         List<Grupo> menu = empleado.esAdministrador() ? MENU
                 : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
@@ -72,7 +72,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         ir(empleado.esAdministrador() ? Destino.PELICULAS : Destino.PUERTA);
     }
 
-    private JPanel cabecera(Empleado empleado, Runnable alSalir) {
+    private JPanel cabecera(Empleado empleado, String servidor, Runnable alSalir) {
         JPanel cabecera = new JPanel();
         cabecera.setLayout(new BoxLayout(cabecera, BoxLayout.X_AXIS));
         cabecera.setBorder(BorderFactory.createCompoundBorder(
@@ -84,7 +84,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         cabecera.add(Box.createHorizontalStrut(12));
         cabecera.add(new JLabel(Etiquetas.etiqueta(empleado.rol())));
         cabecera.add(Box.createHorizontalGlue());
-        cabecera.add(new JLabel(empleado.nombre() + "  ·  " + api.urlBase()));
+        cabecera.add(new JLabel(empleado.nombre() + "  ·  " + servidor));
         cabecera.add(Box.createHorizontalStrut(12));
         JButton salir = new JButton("Salir");
         salir.addActionListener(e -> alSalir.run());
@@ -126,8 +126,18 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     }
 
     @Override
-    public void abrir(JComponent pantalla) {
-        mostrar(pantalla);
+    public void abrirInforme(int funcionId) {
+        mostrar(new PantallaFuncion(apis.catalogos(), apis.funciones(), apis.informes(), this, funcionId));
+    }
+
+    @Override
+    public void abrirCobro(int reservaId) {
+        mostrar(new PantallaCobro(apis.catalogos(), apis.ventas(), this, reservaId));
+    }
+
+    @Override
+    public void abrirMapa(int salaId) {
+        mostrar(new PantallaMapaSala(apis.salas(), this, salaId));
     }
 
     private void mostrar(JComponent pantalla) {
@@ -140,20 +150,22 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     // Sin default a propósito: un destino nuevo sin pantalla no compila.
     private Supplier<JComponent> crear(Destino destino) {
         return switch (destino) {
-            case PELICULAS -> () -> new PantallaPeliculas(api);
-            case POR_REVISAR -> () -> new PantallaPendientes(api, this);
-            case IMPORTADOR -> () -> new PantallaImportador(api, this);
-            case SALAS -> () -> new PantallaSalas(api, this);
-            case FUNCIONES -> () -> new PantallaFunciones(api, this);
-            case GRILLA -> () -> new PantallaProgramaciones(api);
-            case PLANIFICADOR -> () -> new PantallaPlanificador(api);
-            case AGENDA -> () -> new PantallaAgenda(api, this);
-            case RESERVAS -> () -> new PantallaReservas(api, this);
-            case PROMOCIONES -> () -> new PantallaPromociones(api);
-            case CANDY -> () -> new PantallaCandy(api);
-            case CAJA -> () -> new PantallaCaja(api);
-            case DECLARACION_JURADA -> () -> new PantallaDeclaracionJurada(api);
-            case PUERTA -> () -> new PantallaPuerta(api);
+            case PELICULAS -> () -> new PantallaPeliculas(apis.cartelera(), apis.catalogos());
+            case POR_REVISAR -> () -> new PantallaPendientes(apis.cartelera(), this);
+            case IMPORTADOR -> () -> new PantallaImportador(apis.cartelera(), this);
+            case SALAS -> () -> new PantallaSalas(apis.catalogos(), apis.salas(), this);
+            case FUNCIONES -> () -> new PantallaFunciones(apis.cartelera(), apis.catalogos(), apis.funciones(),
+                    apis.salas(), this);
+            case GRILLA -> () -> new PantallaProgramaciones(apis.cartelera(), apis.catalogos(), apis.programaciones(),
+                    apis.salas());
+            case PLANIFICADOR -> () -> new PantallaPlanificador(apis.catalogos(), apis.programaciones());
+            case AGENDA -> () -> new PantallaAgenda(apis.funciones(), apis.salas(), this);
+            case RESERVAS -> () -> new PantallaReservas(apis.ventas(), this);
+            case PROMOCIONES -> () -> new PantallaPromociones(apis.catalogos(), apis.promociones());
+            case CANDY -> () -> new PantallaCandy(apis.candy(), apis.catalogos(), apis.clientes());
+            case CAJA -> () -> new PantallaCaja(apis.informes());
+            case DECLARACION_JURADA -> () -> new PantallaDeclaracionJurada(apis.catalogos(), apis.informes());
+            case PUERTA -> () -> new PantallaPuerta(apis.catalogos(), apis.ventas());
         };
     }
 }

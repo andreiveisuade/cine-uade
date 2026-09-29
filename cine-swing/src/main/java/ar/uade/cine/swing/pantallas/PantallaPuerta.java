@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
@@ -32,14 +33,19 @@ final class PantallaPuerta extends Pantalla {
     private record Validada(Reserva reserva, Set<String> seAcreditan) {
     }
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiVentas apiVentas;
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
     private final JLabel error = Componentes.texto(" ");
     // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
     private volatile Set<String> seAcreditan;
 
-    PantallaPuerta(ApiHttp api) {
-        super(api, "Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
+    PantallaPuerta(ApiCatalogos apiCatalogos, ApiVentas apiVentas) {
+        super("Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
+        this.apiCatalogos = apiCatalogos;
+        this.apiVentas = apiVentas;
+
         codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
         JButton validar = new JButton("Validar");
         validar.setFont(validar.getFont().deriveFont(18f));
@@ -75,7 +81,7 @@ final class PantallaPuerta extends Pantalla {
         // El catálogo antes que el acceso: si fallara después, la entrada quedaría usada y en pantalla diría NO PASA.
         Tarea.ejecutar(this, () -> {
             Set<String> tarifas = tarifasQueSeAcreditan();
-            return new Validada(api.validarEntrada(limpio), tarifas);
+            return new Validada(apiVentas.validarEntrada(limpio), tarifas);
         }, validada -> {
             mostrarValida(validada.reserva(), validada.seAcreditan());
             reiniciar();
@@ -100,8 +106,8 @@ final class PantallaPuerta extends Pantalla {
 
     private Set<String> tarifasQueSeAcreditan() {
         if (seAcreditan == null) {
-            seAcreditan = api.obtenerTarifas().stream().filter(Tarifa::requiereAcreditacion).map(Tarifa::nombre)
-                    .collect(Collectors.toSet());
+            seAcreditan = apiCatalogos.obtenerTarifas().stream().filter(Tarifa::requiereAcreditacion)
+                    .map(Tarifa::nombre).collect(Collectors.toSet());
         }
         return seAcreditan;
     }

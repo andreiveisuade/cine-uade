@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
@@ -31,6 +32,8 @@ final class PantallaSalas extends Pantalla {
     private record Datos(List<Sala> salas, List<TipoSala> tipos) {
     }
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiSalas apiSalas;
     private final Navegacion navegacion;
     private final Tabla<Sala> tabla = new Tabla<>(
             Columna.<Sala>de("Sala", Sala::nombre).ancho(160),
@@ -50,8 +53,10 @@ final class PantallaSalas extends Pantalla {
     private final JTextField limpieza = Campos.soloEntero(new JTextField("15"));
     private final JLabel error = Componentes.texto(" ");
 
-    PantallaSalas(ApiHttp api, Navegacion navegacion) {
-        super(api, "Salas", "Doble clic en una sala abre su mapa, para marcar butacas fuera de servicio.");
+    PantallaSalas(ApiCatalogos apiCatalogos, ApiSalas apiSalas, Navegacion navegacion) {
+        super("Salas", "Doble clic en una sala abre su mapa, para marcar butacas fuera de servicio.");
+        this.apiCatalogos = apiCatalogos;
+        this.apiSalas = apiSalas;
         this.navegacion = navegacion;
 
         JButton butacas = new JButton("Butacas");
@@ -113,7 +118,7 @@ final class PantallaSalas extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> new Datos(api.obtenerSalas(), api.obtenerTiposSala()), datos -> {
+        cargar(() -> new Datos(apiSalas.obtenerSalas(), apiCatalogos.obtenerTiposSala()), datos -> {
             tabla.mostrar(datos.salas());
             if (tipo.getItemCount() == 0) {
                 datos.tipos().forEach(t -> tipo.addItem(new Opcion<>(t.nombre(),
@@ -136,7 +141,7 @@ final class PantallaSalas extends Pantalla {
         if (!v.ok()) return;
         PedidoSala pedido = new PedidoSala(nombreLeido, tipoElegido, filas, codigosVip, codigosPareja,
                 codigosAccesibles, minutos);
-        Tarea.ejecutar(this, () -> api.crearSala(pedido), creada -> {
+        Tarea.ejecutar(this, () -> apiSalas.crearSala(pedido), creada -> {
             avisar(creada.nombre() + " creada con " + creada.capacidadSala() + " butacas");
             for (JTextField campo : List.of(nombre, distribucion, vip, pareja, accesibles)) campo.setText("");
             limpieza.setText("15");
@@ -147,12 +152,12 @@ final class PantallaSalas extends Pantalla {
     private void borrar(Sala sala) {
         if (!confirmar("¿Borrar " + sala.nombre() + "?", "Sí, borrar")) return;
         accion(() -> {
-            api.eliminarSala(sala.id());
+            apiSalas.eliminarSala(sala.id());
             return null;
         }, "Sala borrada", this::recargar);
     }
 
     private void abrirMapa(Sala sala) {
-        navegacion.abrir(new PantallaMapaSala(api, navegacion, sala.id()));
+        navegacion.abrirMapa(sala.id());
     }
 }

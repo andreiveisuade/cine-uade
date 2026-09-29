@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
@@ -35,6 +35,7 @@ final class PantallaReservas extends Pantalla {
     // En el orden en que le importan a quien atiende: primero lo que hay que cobrar hoy.
     private static final List<String> ESTADOS = List.of("RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA");
 
+    private final ApiVentas apiVentas;
     private final Navegacion navegacion;
     private final JTextField buscar = new JTextField(22);
     private final JComboBox<Opcion<String>> estado = new JComboBox<>();
@@ -56,8 +57,9 @@ final class PantallaReservas extends Pantalla {
     // Todas, sin filtro: arman el resumen de arriba. Se piden al entrar y tras cancelar, no en cada tecla.
     private List<Reserva> todas = List.of();
 
-    PantallaReservas(ApiHttp api, Navegacion navegacion) {
-        super(api, "Reservas", null);
+    PantallaReservas(ApiVentas apiVentas, Navegacion navegacion) {
+        super("Reservas", null);
+        this.apiVentas = apiVentas;
         this.navegacion = navegacion;
 
         estado.addItem(new Opcion<>(null, "Todos"));
@@ -142,7 +144,7 @@ final class PantallaReservas extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> api.obtenerReservas(null), lista -> {
+        cargar(() -> apiVentas.obtenerReservas(null), lista -> {
             todas = lista;
             List<Reserva> aCobrar = todas.stream().filter(Reserva::cobrable).toList();
             long activas = todas.stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
@@ -156,7 +158,7 @@ final class PantallaReservas extends Pantalla {
     private void buscar() {
         if (limpiando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> api.obtenerReservas(filtros), visibles -> {
+        cargar(() -> apiVentas.obtenerReservas(filtros), visibles -> {
             conteo.setText(visibles.size() == todas.size() ? ""
                     : "mostrando " + visibles.size() + " de " + todas.size());
             tabla.mostrar(visibles);
@@ -165,13 +167,13 @@ final class PantallaReservas extends Pantalla {
     }
 
     private void abrirCobro(Reserva reserva) {
-        navegacion.abrir(new PantallaCobro(api, navegacion, reserva.id()));
+        navegacion.abrirCobro(reserva.id());
     }
 
     private void cancelar(Reserva reserva) {
         if (!Mensajes.confirmar(this, "¿Cancelar la reserva #" + reserva.id() + "? Las butacas quedan libres.",
                 "Sí, cancelar la reserva", "Volver")) return;
-        accion(() -> api.cancelarReserva(reserva.id()), "Reserva cancelada, las butacas quedaron libres",
+        accion(() -> apiVentas.cancelarReserva(reserva.id()), "Reserva cancelada, las butacas quedaron libres",
                 this::recargar);
     }
 }

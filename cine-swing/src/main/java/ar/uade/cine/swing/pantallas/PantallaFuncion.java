@@ -1,6 +1,8 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiFunciones;
+import ar.uade.cine.swing.api.ApiInformes;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
@@ -49,12 +51,19 @@ final class PantallaFuncion extends Pantalla {
     private record Emision(Bordero bordero, List<String> tarifas) {
     }
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiFunciones apiFunciones;
+    private final ApiInformes apiInformes;
     private final int funcionId;
     private final JPanel cuerpo = new JPanel(new GridLayout(1, 2, 16, 0));
     private final JLabel subtitulo = new JLabel(" ");
 
-    PantallaFuncion(ApiHttp api, Navegacion navegacion, int funcionId) {
-        super(api, "Borderó e informe", null);
+    PantallaFuncion(ApiCatalogos apiCatalogos, ApiFunciones apiFunciones, ApiInformes apiInformes, Navegacion navegacion,
+                    int funcionId) {
+        super("Borderó e informe", null);
+        this.apiCatalogos = apiCatalogos;
+        this.apiFunciones = apiFunciones;
+        this.apiInformes = apiInformes;
         this.funcionId = funcionId;
 
         JButton volver = new JButton("← Funciones");
@@ -67,8 +76,8 @@ final class PantallaFuncion extends Pantalla {
         arriba.add(cuerpo, BorderLayout.CENTER);
         add(arriba, BorderLayout.CENTER);
 
-        cargar(() -> new Datos(api.obtenerFuncion(funcionId), api.obtenerBordero(funcionId),
-                api.obtenerInformeDeFuncion(funcionId)), this::pintar);
+        cargar(() -> new Datos(apiFunciones.obtenerFuncion(funcionId), apiInformes.obtenerBordero(funcionId),
+                apiInformes.obtenerInformeDeFuncion(funcionId)), this::pintar);
     }
 
     private void pintar(Datos datos) {
@@ -150,8 +159,8 @@ final class PantallaFuncion extends Pantalla {
 
         // Se pide de nuevo al emitir: lo que está en pantalla puede haber quedado viejo.
         private void emitir() {
-            cargar(() -> new Emision(api.obtenerBordero(funcionId),
-                    api.obtenerTarifas().stream().map(Tarifa::nombre).toList()), emision -> {
+            cargar(() -> new Emision(apiInformes.obtenerBordero(funcionId),
+                    apiCatalogos.obtenerTarifas().stream().map(Tarifa::nombre).toList()), emision -> {
                 pintar(emision.bordero(), true);
                 JFileChooser elegir = new JFileChooser();
                 elegir.setSelectedFile(new File(BorderoTxt.nombreArchivo(funcionId)));

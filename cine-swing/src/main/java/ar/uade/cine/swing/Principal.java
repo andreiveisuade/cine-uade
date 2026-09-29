@@ -1,6 +1,7 @@
 package ar.uade.cine.swing;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.Apis;
+import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.pantallas.VentanaLogin;
 import ar.uade.cine.swing.pantallas.VentanaPrincipal;
@@ -16,7 +17,8 @@ import javax.swing.SwingUtilities;
  */
 public final class Principal {
 
-    private final ApiHttp api = new ApiHttp(ApiHttp.urlConfigurada());
+    private final ClienteHttp http = new ClienteHttp(ClienteHttp.urlConfigurada());
+    private final Apis apis = Apis.sobre(http);
     private VentanaPrincipal panel;
 
     public static void main(String[] args) {
@@ -31,7 +33,7 @@ public final class Principal {
     }
 
     private void arrancar() {
-        api.alVencerSesion(() -> SwingUtilities.invokeLater(() -> {
+        http.alVencerSesion(() -> SwingUtilities.invokeLater(() -> {
             // Varias pantallas pueden recibir el 401 a la vez: solo la primera cierra el panel.
             if (panel == null) return;
             panel.dispose();
@@ -42,12 +44,12 @@ public final class Principal {
     }
 
     private void mostrarLogin(String aviso) {
-        new VentanaLogin(api, aviso, this::abrirPanel).setVisible(true);
+        new VentanaLogin(apis.sesion(), http.urlBase(), aviso, this::abrirPanel).setVisible(true);
     }
 
     private void abrirPanel(Empleado empleado) {
-        panel = new VentanaPrincipal(api, empleado, () -> {
-            api.olvidarCredenciales();
+        panel = new VentanaPrincipal(apis, http.urlBase(), empleado, () -> {
+            http.olvidarCredenciales();
             panel.dispose();
             panel = null;
             mostrarLogin(null);

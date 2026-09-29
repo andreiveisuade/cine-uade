@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Componentes;
@@ -25,14 +25,17 @@ import static ar.uade.cine.swing.comun.Formato.escapar;
 /** El buzón de lo que trajo el importador: hasta que se confirma, no se programa ni lo ve el cliente. */
 final class PantallaPendientes extends Pantalla {
 
+    private final ApiCartelera apiCartelera;
     private final Navegacion navegacion;
     private final JPanel tarjetas = new JPanel(new GridLayout(0, 2, 12, 12));
 
-    PantallaPendientes(ApiHttp api, Navegacion navegacion) {
-        super(api, "Por revisar", "Lo que trajo el importador de TMDB y todavía nadie miró. Hasta que las confirmes no "
+    PantallaPendientes(ApiCartelera apiCartelera, Navegacion navegacion) {
+        super("Por revisar", "Lo que trajo el importador de TMDB y todavía nadie miró. Hasta que las confirmes no "
                 + "se pueden programar ni las ve el cliente. Lo que descartes queda descartado: el importador no lo "
                 + "vuelve a proponer.");
+        this.apiCartelera = apiCartelera;
         this.navegacion = navegacion;
+
         JPanel arriba = new AlAnchoDelVisor(new BorderLayout(), false);
         arriba.add(tarjetas, BorderLayout.NORTH);
         JScrollPane scroll = new JScrollPane(arriba);
@@ -43,7 +46,7 @@ final class PantallaPendientes extends Pantalla {
     }
 
     private void recargar() {
-        cargar(api::obtenerPeliculasPendientes, this::pintar);
+        cargar(apiCartelera::obtenerPeliculasPendientes, this::pintar);
     }
 
     private void pintar(List<Pelicula> pendientes) {
@@ -77,13 +80,14 @@ final class PantallaPendientes extends Pantalla {
         botones.add(confirmar);
         botones.add(descartar);
         // Deshabilitados mientras viaja: dos clics seguidos mandarían confirmar y descartar la misma película.
-        confirmar.addActionListener(e -> decidir(confirmar, descartar, () -> api.confirmarPelicula(pelicula.id()),
+        confirmar.addActionListener(e -> decidir(confirmar, descartar,
+                () -> apiCartelera.confirmarPelicula(pelicula.id()),
                 pelicula.titulo() + " confirmada: ya se puede programar"));
         descartar.addActionListener(e -> {
             // No tiene vuelta atrás: el importador no la vuelve a proponer.
             if (!confirmar("¿Descartar " + pelicula.titulo() + "? El importador no la vuelve a proponer.",
                     "Sí, descartar")) return;
-            decidir(confirmar, descartar, () -> api.descartarPelicula(pelicula.id()),
+            decidir(confirmar, descartar, () -> apiCartelera.descartarPelicula(pelicula.id()),
                     pelicula.titulo() + " descartada");
         });
 

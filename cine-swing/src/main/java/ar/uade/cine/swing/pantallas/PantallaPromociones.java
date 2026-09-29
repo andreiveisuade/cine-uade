@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
@@ -59,6 +60,8 @@ final class PantallaPromociones extends Pantalla {
             "lleva", new CampoBeneficio("Lleva", true, "2"),
             "paga", new CampoBeneficio("Paga", true, "1"));
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiPromociones apiPromociones;
     private final JLabel resumen = new JLabel(" ");
     private final JButton alternar = new JButton("Dar de baja");
     private final Tabla<Promocion> tabla = new Tabla<>(
@@ -83,8 +86,10 @@ final class PantallaPromociones extends Pantalla {
     private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
     private final JLabel error = Componentes.texto(" ");
 
-    PantallaPromociones(ApiHttp api) {
-        super(api, "Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
+    PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones) {
+        super("Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
+        this.apiCatalogos = apiCatalogos;
+        this.apiPromociones = apiPromociones;
 
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(alternar);
@@ -104,11 +109,11 @@ final class PantallaPromociones extends Pantalla {
         alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
             if (p.activa() && !confirmar("¿Dar de baja " + p.nombre() + "? Deja de aplicarse en los cobros.",
                     "Sí, dar de baja")) return;
-            accion(() -> api.cambiarActivacionPromocion(p.id(), !p.activa()),
+            accion(() -> apiPromociones.cambiarActivacionPromocion(p.id(), !p.activa()),
                     p.nombre() + (p.activa() ? " dada de baja" : " reactivada"), this::recargar);
         }));
         habilitar();
-        cargar(api::obtenerTiposPromocion, this::armarTipos);
+        cargar(apiCatalogos::obtenerTiposPromocion, this::armarTipos);
         recargar();
     }
 
@@ -200,7 +205,7 @@ final class PantallaPromociones extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> new Datos(api.obtenerPromociones(), api.obtenerMediosPago()), datos -> {
+        cargar(() -> new Datos(apiPromociones.obtenerPromociones(), apiCatalogos.obtenerMediosPago()), datos -> {
             long activas = datos.promociones().stream().filter(Promocion::activa).count();
             resumen.setText(activas + " activas de " + datos.promociones().size());
             tabla.mostrar(datos.promociones());
@@ -241,7 +246,7 @@ final class PantallaPromociones extends Pantalla {
         PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
                 (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
                 vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(medios));
-        Tarea.ejecutar(this, () -> api.crearPromocion(pedido), creada -> {
+        Tarea.ejecutar(this, () -> apiPromociones.crearPromocion(pedido), creada -> {
             avisar("Promoción creada");
             limpiar();
             recargar();

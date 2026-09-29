@@ -1,6 +1,9 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCartelera;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiFunciones;
+import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.funciones.PedidoFuncion;
@@ -46,6 +49,10 @@ final class PantallaFunciones extends Pantalla {
                              List<String> proyecciones) {
     }
 
+    private final ApiCartelera apiCartelera;
+    private final ApiCatalogos apiCatalogos;
+    private final ApiFunciones apiFunciones;
+    private final ApiSalas apiSalas;
     private final Navegacion navegacion;
     private final JComboBox<Opcion<Integer>> filtroPelicula = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> filtroSala = new JComboBox<>();
@@ -72,9 +79,14 @@ final class PantallaFunciones extends Pantalla {
     // Mientras se llenan los combos no hay que disparar búsquedas.
     private boolean llenando;
 
-    PantallaFunciones(ApiHttp api, Navegacion navegacion) {
-        super(api, "Funciones", "Es la lista más larga del panel: una semana de seis salas pasa de cien funciones. "
+    PantallaFunciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiFunciones apiFunciones,
+                      ApiSalas apiSalas, Navegacion navegacion) {
+        super("Funciones", "Es la lista más larga del panel: una semana de seis salas pasa de cien funciones. "
                 + "Doble clic en una función abre su borderó e informe.");
+        this.apiCartelera = apiCartelera;
+        this.apiCatalogos = apiCatalogos;
+        this.apiFunciones = apiFunciones;
+        this.apiSalas = apiSalas;
         this.navegacion = navegacion;
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
@@ -154,8 +166,8 @@ final class PantallaFunciones extends Pantalla {
     }
 
     private void cargarCatalogos() {
-        cargar(() -> new Catalogos(api.obtenerPeliculas(null), api.obtenerSalas(), api.obtenerIdiomas(),
-                api.obtenerProyecciones()), catalogos -> {
+        cargar(() -> new Catalogos(apiCartelera.obtenerPeliculas(null), apiSalas.obtenerSalas(),
+                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), catalogos -> {
             llenando = true;
             llenar(pelicula, catalogos.peliculas().stream()
                     .map(p -> new Opcion<>(p.id(), p.titulo() + " (" + p.duracionMinutos() + "′)")).toList(), false);
@@ -191,7 +203,7 @@ final class PantallaFunciones extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> api.obtenerFunciones(null).size(), cuantas -> {
+        cargar(() -> apiFunciones.obtenerFunciones(null).size(), cuantas -> {
             total = cuantas;
             buscar();
         });
@@ -200,7 +212,7 @@ final class PantallaFunciones extends Pantalla {
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> api.obtenerFunciones(filtros), visibles -> {
+        cargar(() -> apiFunciones.obtenerFunciones(filtros), visibles -> {
             tabla.mostrar(visibles);
             conteo.setText(visibles.size() == total
                     ? total + " programadas"
@@ -219,7 +231,7 @@ final class PantallaFunciones extends Pantalla {
         if (!v.ok()) return;
         String inicio = Fechas.isoCompleto(LocalDate.parse(elegido).atTime(Fechas.leerHora(hora)));
         PedidoFuncion pedido = new PedidoFuncion(peliculaId, salaId, inicio, idiomaElegido, proyeccionElegida, precio);
-        Tarea.ejecutar(this, () -> api.programarFuncion(pedido), creada -> {
+        Tarea.ejecutar(this, () -> apiFunciones.programarFuncion(pedido), creada -> {
             avisar("Función programada");
             recargar();
         }, v::mostrarError);
@@ -229,12 +241,12 @@ final class PantallaFunciones extends Pantalla {
         if (!confirmar("¿Borrar la función de " + funcion.pelicula().titulo() + " del " + dia(funcion.inicio())
                 + " " + hora(funcion.inicio()) + "?", "Sí, borrar")) return;
         accion(() -> {
-            api.eliminarFuncion(funcion.id());
+            apiFunciones.eliminarFuncion(funcion.id());
             return null;
         }, "Función borrada", this::recargar);
     }
 
     private void abrirInformes(Funcion funcion) {
-        navegacion.abrir(new PantallaFuncion(api, navegacion, funcion.id()));
+        navegacion.abrirInforme(funcion.id());
     }
 }

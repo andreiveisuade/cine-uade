@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
 import ar.uade.cine.swing.api.dto.cartelera.Importacion;
@@ -37,6 +37,7 @@ final class PantallaImportador extends Pantalla {
     private record Datos(List<Importacion> corridas, EstadoImportador estado) {
     }
 
+    private final ApiCartelera apiCartelera;
     private final JLabel aviso = new JLabel();
     private final JComboBox<Opcion<Integer>> paginas = new JComboBox<>();
     private final JButton traer = new JButton("Traer cartelera");
@@ -51,9 +52,11 @@ final class PantallaImportador extends Pantalla {
     // Casi nunca se mira, pero es lo único que dice por qué una película no entró.
     private final JTextArea detalle = new JTextArea();
 
-    PantallaImportador(ApiHttp api, Navegacion navegacion) {
-        super(api, "Importador", "Trae de TMDB las películas que están hoy en cartelera en Argentina. Nada se "
+    PantallaImportador(ApiCartelera apiCartelera, Navegacion navegacion) {
+        super("Importador", "Trae de TMDB las películas que están hoy en cartelera en Argentina. Nada se "
                 + "publica: todo cae en Por revisar y espera que alguien lo confirme.");
+        this.apiCartelera = apiCartelera;
+
         paginas.addItem(new Opcion<>(1, "Una página (20 títulos)"));
         paginas.addItem(new Opcion<>(2, "Dos páginas (40 títulos)"));
         paginas.addItem(new Opcion<>(3, "Tres páginas (60 títulos)"));
@@ -103,7 +106,7 @@ final class PantallaImportador extends Pantalla {
     }
 
     private void recargar(Integer destacada) {
-        cargar(() -> new Datos(api.obtenerImportaciones(), api.estadoImportador()), datos -> {
+        cargar(() -> new Datos(apiCartelera.obtenerImportaciones(), apiCartelera.estadoImportador()), datos -> {
             aviso.setText("El importador no está disponible: " + datos.estado().detalle());
             aviso.setVisible(!datos.estado().disponible());
             traer.setEnabled(datos.estado().disponible());
@@ -124,7 +127,7 @@ final class PantallaImportador extends Pantalla {
         traer.setEnabled(false);
         paginas.setEnabled(false);
         trayendo.setVisible(true);
-        Tarea.ejecutar(this, () -> api.importarAhora(cuantas), corrida -> {
+        Tarea.ejecutar(this, () -> apiCartelera.importarAhora(cuantas), corrida -> {
             terminar();
             if ("FALLIDA".equals(corrida.estado())) {
                 Mensajes.error(this, new ErrorApi(-1, resumen(corrida)));

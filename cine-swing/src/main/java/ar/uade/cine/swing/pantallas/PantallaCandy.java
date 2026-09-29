@@ -1,6 +1,8 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCandy;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiClientes;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
@@ -62,8 +64,15 @@ final class PantallaCandy extends Pantalla {
     private record Carga(List<Producto> productos, List<MedioPago> medios) {
     }
 
-    PantallaCandy(ApiHttp api) {
-        super(api, "Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
+    private final ApiCandy apiCandy;
+    private final ApiCatalogos apiCatalogos;
+    private final ApiClientes apiClientes;
+    PantallaCandy(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes) {
+        super("Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
+        this.apiCandy = apiCandy;
+        this.apiCatalogos = apiCatalogos;
+        this.apiClientes = apiClientes;
+
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Carta", new Carta());
         pestanas.addTab("Venta de mostrador", new Venta());
@@ -138,12 +147,12 @@ final class PantallaCandy extends Pantalla {
             alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
                 if (p.disponible() && !confirmar("¿Sacar " + p.nombre() + " de la carta? Deja de venderse en el "
                         + "mostrador.", "Sí, sacar")) return;
-                accion(() -> api.cambiarDisponibilidadCandy(p.id(), !p.disponible()),
+                accion(() -> apiCandy.cambiarDisponibilidadCandy(p.id(), !p.disponible()),
                         p.nombre() + (p.disponible() ? " salió de la carta" : " volvió a la carta"), this::recargar);
             }));
             habilitar();
             // Qué tipos se dan de alta sueltos lo dice el catálogo: el combo se arma abajo, con sus componentes.
-            cargar(api::obtenerTiposProducto, tipos -> tipos.stream().filter(t -> !t.esCombo())
+            cargar(apiCatalogos::obtenerTiposProducto, tipos -> tipos.stream().filter(t -> !t.esCombo())
                     .forEach(t -> tipoProducto.addItem(new Opcion<>(t.nombre(), etiqueta(t.nombre())))));
             recargar();
         }
@@ -186,7 +195,7 @@ final class PantallaCandy extends Pantalla {
         }
 
         private void recargar() {
-            cargar(() -> api.obtenerProductosCandy(true), productos -> {
+            cargar(() -> apiCandy.obtenerProductosCandy(true), productos -> {
                 tabla.mostrar(productos);
                 pintarComponentes(productos.stream().filter(p -> !p.esCombo()).toList());
                 habilitar();
@@ -227,7 +236,7 @@ final class PantallaCandy extends Pantalla {
             Double precio = v.decimal(precioProducto, "Precio", true);
             if (!v.ok()) return;
             PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio);
-            Tarea.ejecutar(this, () -> api.crearProductoCandy(pedido), creado -> {
+            Tarea.ejecutar(this, () -> apiCandy.crearProductoCandy(pedido), creado -> {
                 avisar("Producto agregado");
                 nombreProducto.setText("");
                 precioProducto.setText("");
@@ -243,7 +252,7 @@ final class PantallaCandy extends Pantalla {
             v.alMencionar("combo", precioCombo);
             if (!v.ok()) return;
             PedidoCombo pedido = new PedidoCombo(nombre, precio, elegidas(cantidadesCombo));
-            Tarea.ejecutar(this, () -> api.armarComboCandy(pedido), creado -> {
+            Tarea.ejecutar(this, () -> apiCandy.armarComboCandy(pedido), creado -> {
                 avisar("Combo armado");
                 nombreCombo.setText("");
                 precioCombo.setText("");
@@ -284,7 +293,8 @@ final class PantallaCandy extends Pantalla {
                 String nuevoNombre = v.texto(nombre, "Nombre", true);
                 Double nuevoPrecio = v.decimal(valor, "Precio", true);
                 if (v.ok()) {
-                    Tarea.ejecutar(this, () -> api.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio), editado -> {
+                    Tarea.ejecutar(this, () -> apiCandy.editarProductoCandy(p.id(), nuevoNombre, nuevoPrecio),
+                            editado -> {
                         avisar("Producto actualizado");
                         recargar();
                     }, e -> {
@@ -353,7 +363,7 @@ final class PantallaCandy extends Pantalla {
             derecha.add(new JScrollPane(ticket), BorderLayout.CENTER);
             add(derecha, BorderLayout.EAST);
 
-            cargar(() -> new Carga(api.obtenerProductosCandy(false), api.obtenerMediosPago()), carga -> {
+            cargar(() -> new Carga(apiCandy.obtenerProductosCandy(false), apiCatalogos.obtenerMediosPago()), carga -> {
                 medios = carga.medios();
                 medios.forEach(m -> medio.addItem(new Opcion<>(m.nombre(), etiqueta(m.nombre()))));
                 pintar(carga.productos());
@@ -452,11 +462,11 @@ final class PantallaCandy extends Pantalla {
                 Integer clienteId = null;
                 // Con reserva el email sobra: el backend toma el cliente de la reserva.
                 if (correo != null && reservaId == null) {
-                    Cliente cliente = api.buscarClientePorEmail(correo);
+                    Cliente cliente = apiClientes.buscarClientePorEmail(correo);
                     if (cliente == null) throw new ErrorApi(404, "No hay ningún cliente con el email " + correo);
                     clienteId = cliente.id();
                 }
-                return api.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido, autorizacion));
+                return apiCandy.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido, autorizacion));
             }, compra -> {
                 avisar("Cobrado " + precio(compra.total()));
                 tituloTicket.setText("Venta #" + compra.id());
@@ -491,7 +501,7 @@ final class PantallaCandy extends Pantalla {
         private void recargar() {
             Map<String, String> filtros = new LinkedHashMap<>();
             filtros.put("fecha", Fechas.iso(fecha));
-            cargar(() -> api.obtenerComprasCandy(filtros), compras -> {
+            cargar(() -> apiCandy.obtenerComprasCandy(filtros), compras -> {
                 cantidad.setText(compras.size() + (compras.size() == 1 ? " venta" : " ventas"));
                 tabla.mostrar(compras);
             });

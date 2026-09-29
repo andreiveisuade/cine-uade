@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCartelera;
+import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.dto.cartelera.PedidoPelicula;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
@@ -40,6 +41,8 @@ final class PantallaPeliculas extends Pantalla {
     private record Catalogos(List<String> generos, List<Clasificacion> clasificaciones) {
     }
 
+    private final ApiCartelera apiCartelera;
+    private final ApiCatalogos apiCatalogos;
     private final JTextField buscar = new JTextField(16);
     private final JComboBox<Opcion<String>> filtroGenero = new JComboBox<>();
     private final JComboBox<Opcion<String>> filtroEstado = new JComboBox<>();
@@ -76,9 +79,11 @@ final class PantallaPeliculas extends Pantalla {
     private boolean llenando;
     private final Timer espera = Campos.alDejarDeTipear(buscar, this::buscar);
 
-    PantallaPeliculas(ApiHttp api) {
-        super(api, "Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
+    PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos) {
+        super("Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
                 + "despublicarla la baja aunque las tenga.");
+        this.apiCartelera = apiCartelera;
+        this.apiCatalogos = apiCatalogos;
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         centro.add(barraFiltros(), BorderLayout.NORTH);
@@ -88,7 +93,7 @@ final class PantallaPeliculas extends Pantalla {
         add(formulario(), BorderLayout.EAST);
         tabla.alDobleClic(this::editar);
 
-        cargar(() -> new Catalogos(api.obtenerGeneros(), api.obtenerClasificaciones()), catalogos -> {
+        cargar(() -> new Catalogos(apiCatalogos.obtenerGeneros(), apiCatalogos.obtenerClasificaciones()), catalogos -> {
             llenando = true;
             filtroGenero.addItem(new Opcion<>(null, "Todos"));
             Opcion.de(catalogos.generos(), g -> etiqueta(g)).forEach(filtroGenero::addItem);
@@ -146,13 +151,13 @@ final class PantallaPeliculas extends Pantalla {
             // Despublicar la baja de la cartelera del cliente aunque tenga funciones: se pregunta. Publicar no.
             if (p.enCartelera() && !confirmar("¿Despublicar " + p.titulo() + "? Deja de verse en la cartelera "
                     + "aunque tenga funciones.", "Sí, despublicar")) return;
-            accion(() -> api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
+            accion(() -> apiCartelera.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
                     p.enCartelera() ? "Despublicada" : "Publicada", this::recargar);
         }));
         borrar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
             if (!confirmar("¿Borrar " + p.titulo() + "?", "Sí, borrar")) return;
             accion(() -> {
-                api.eliminarPelicula(p.id());
+                apiCartelera.eliminarPelicula(p.id());
                 return null;
             }, "Película borrada", this::recargar);
         }));
@@ -201,7 +206,7 @@ final class PantallaPeliculas extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> api.obtenerPeliculas(null), lista -> {
+        cargar(() -> apiCartelera.obtenerPeliculas(null), lista -> {
             todas = lista;
             buscar();
         });
@@ -210,7 +215,7 @@ final class PantallaPeliculas extends Pantalla {
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> api.obtenerPeliculas(filtros), visibles -> {
+        cargar(() -> apiCartelera.obtenerPeliculas(filtros), visibles -> {
             tabla.mostrar(visibles);
             long publicadas = todas.stream().filter(Pelicula::enCartelera).count();
             conteo.setText(todas.size() + " cargadas · " + publicadas + " publicadas"
@@ -268,8 +273,8 @@ final class PantallaPeliculas extends Pantalla {
                 posterUrl.getText().trim(), publicada.isSelected());
         Pelicula actual = editando;
         guardar.setEnabled(false);
-        Tarea.ejecutar(this, () -> actual == null ? api.crearPelicula(pedido)
-                : api.actualizarPelicula(actual.id(), pedido), guardada -> {
+        Tarea.ejecutar(this, () -> actual == null ? apiCartelera.crearPelicula(pedido)
+                : apiCartelera.actualizarPelicula(actual.id(), pedido), guardada -> {
             guardar.setEnabled(true);
             avisar(actual == null ? "Película agregada" : "Cambios guardados");
             limpiarFormulario();

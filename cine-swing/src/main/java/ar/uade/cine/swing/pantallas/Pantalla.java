@@ -1,6 +1,5 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
@@ -14,11 +13,8 @@ import java.util.function.Consumer;
 /** Lo común a toda pantalla del panel: margen, encabezado y los pedidos fuera del EDT con su aviso. */
 abstract class Pantalla extends JPanel {
 
-    protected final ApiHttp api;
-
-    Pantalla(ApiHttp api, String titulo, String descripcion) {
+    Pantalla(String titulo, String descripcion) {
         super(new BorderLayout(12, 12));
-        this.api = api;
         setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
         add(Componentes.encabezado(titulo, descripcion), BorderLayout.NORTH);
     }

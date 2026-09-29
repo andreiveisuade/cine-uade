@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiInformes;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.api.dto.informes.Arqueo;
 import ar.uade.cine.swing.api.dto.informes.ArqueoCandy;
@@ -33,6 +33,7 @@ final class PantallaCaja extends Pantalla {
     private record Datos(Arqueo arqueo, ArqueoCandy candy) {
     }
 
+    private final ApiInformes apiInformes;
     private final JDateChooser fecha = Fechas.selector(LocalDate.now());
     private final JPanel cifras = new JPanel(new FlujoConSalto());
     private final JLabel porMedio = new JLabel(" ");
@@ -48,8 +49,9 @@ final class PantallaCaja extends Pantalla {
             Columna.<Pago>numero("Monto", p -> precio(p.monto())));
     private final Tabla<CompraCandy> candy = TablaCompras.crear();
 
-    PantallaCaja(ApiHttp api) {
-        super(api, "Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
+    PantallaCaja(ApiInformes apiInformes) {
+        super("Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
+        this.apiInformes = apiInformes;
 
         JPanel barra = new JPanel(new FlujoConSalto());
         JButton anterior = new JButton("◀");
@@ -94,7 +96,7 @@ final class PantallaCaja extends Pantalla {
 
     private void recargar() {
         String dia = Fechas.iso(fecha);
-        cargar(() -> new Datos(api.obtenerArqueo(dia), api.obtenerArqueoCandy(dia)), this::pintar);
+        cargar(() -> new Datos(apiInformes.obtenerArqueo(dia), apiInformes.obtenerArqueoCandy(dia)), this::pintar);
     }
 
     private void pintar(Datos datos) {

@@ -1,6 +1,9 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCartelera;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiProgramaciones;
+import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.programaciones.FuncionPlanificada;
 import ar.uade.cine.swing.api.dto.programaciones.PedidoProgramacion;
@@ -53,6 +56,10 @@ final class PantallaProgramaciones extends Pantalla {
                              List<String> idiomas, List<String> proyecciones) {
     }
 
+    private final ApiCartelera apiCartelera;
+    private final ApiCatalogos apiCatalogos;
+    private final ApiProgramaciones apiProgramaciones;
+    private final ApiSalas apiSalas;
     private final Map<Integer, String> titulos = new HashMap<>();
     private final Map<Integer, String> nombresSala = new HashMap<>();
     private final JComboBox<Opcion<Integer>> filtroPelicula = new JComboBox<>();
@@ -88,9 +95,14 @@ final class PantallaProgramaciones extends Pantalla {
     // Cuántas grillas hay sin filtro: se cuenta al entrar y tras crear o dar de baja, no en cada filtro.
     private int total;
 
-    PantallaProgramaciones(ApiHttp api) {
-        super(api, "Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
+    PantallaProgramaciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones,
+                           ApiSalas apiSalas) {
+        super("Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
                 + "con algo ya programado en esa sala se saltean, y el informe dice cuáles.");
+        this.apiCartelera = apiCartelera;
+        this.apiCatalogos = apiCatalogos;
+        this.apiProgramaciones = apiProgramaciones;
+        this.apiSalas = apiSalas;
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         centro.add(barraFiltros(), BorderLayout.NORTH);
@@ -164,7 +176,7 @@ final class PantallaProgramaciones extends Pantalla {
         cambiarActivacion.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
             if (p.activa() && !confirmar("¿Dar de baja esta grilla? Deja de generar funciones; las que ya generó "
                     + "quedan.", "Sí, dar de baja")) return;
-            accion(() -> api.cambiarActivacionProgramacion(p.id(), !p.activa()),
+            accion(() -> apiProgramaciones.cambiarActivacionProgramacion(p.id(), !p.activa()),
                     p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::recargar);
         }));
         acciones.add(cambiarActivacion);
@@ -225,8 +237,8 @@ final class PantallaProgramaciones extends Pantalla {
     }
 
     private void cargarCatalogos() {
-        cargar(() -> new Catalogos(api.obtenerPeliculas(null), api.obtenerSalas(),
-                api.obtenerIdiomas(), api.obtenerProyecciones()), c -> {
+        cargar(() -> new Catalogos(apiCartelera.obtenerPeliculas(null), apiSalas.obtenerSalas(),
+                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), c -> {
             llenando = true;
             c.peliculas().forEach(p -> titulos.put(p.id(), p.titulo()));
             c.salas().forEach(s -> nombresSala.put(s.id(), s.nombre()));
@@ -261,7 +273,7 @@ final class PantallaProgramaciones extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> api.obtenerProgramaciones(null).size(), cuantas -> {
+        cargar(() -> apiProgramaciones.obtenerProgramaciones(null).size(), cuantas -> {
             total = cuantas;
             buscar();
         });
@@ -270,7 +282,7 @@ final class PantallaProgramaciones extends Pantalla {
     private void buscar() {
         if (llenando) return;
         Map<String, String> filtros = filtros();
-        cargar(() -> api.obtenerProgramaciones(filtros), visibles -> {
+        cargar(() -> apiProgramaciones.obtenerProgramaciones(filtros), visibles -> {
             tabla.mostrar(visibles);
             conteo.setText(visibles.size() == total ? total + " grillas"
                     : "mostrando " + visibles.size() + " de " + total);
@@ -279,7 +291,7 @@ final class PantallaProgramaciones extends Pantalla {
 
     private void verDetalle(Programacion elegida) {
         cambiarActivacion.setText(elegida.activa() ? "Dar de baja" : "Reactivar");
-        cargar(() -> api.obtenerProgramacion(elegida.id()), grilla -> {
+        cargar(() -> apiProgramaciones.obtenerProgramacion(elegida.id()), grilla -> {
             if (grilla.funciones() == null || grilla.funciones().isEmpty()) {
                 detalle.setText("Esta grilla no generó ninguna función: todas sus fechas chocaban con algo ya "
                         + "programado.");
@@ -311,7 +323,7 @@ final class PantallaProgramaciones extends Pantalla {
         Validacion v = new Validacion(error);
         PedidoProgramacion pedido = pedido(v);
         if (pedido == null) return;
-        Tarea.ejecutar(this, () -> api.previsualizarProgramacion(pedido), plan -> {
+        Tarea.ejecutar(this, () -> apiProgramaciones.previsualizarProgramacion(pedido), plan -> {
             informe.setText(textoDelPlan(plan, false));
             informe.setCaretPosition(0);
             previsualizado = plan;
@@ -327,7 +339,7 @@ final class PantallaProgramaciones extends Pantalla {
         PedidoProgramacion pedido = pedido(v);
         if (pedido == null) return;
         confirmar.setEnabled(false);
-        Tarea.ejecutar(this, () -> api.crearProgramacion(pedido), plan -> {
+        Tarea.ejecutar(this, () -> apiProgramaciones.crearProgramacion(pedido), plan -> {
             // Se repinta con lo que devolvió el servidor, que revalidó cada fecha al aplicar.
             informe.setText(textoDelPlan(plan, true));
             informe.setCaretPosition(0);

@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiSesion;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -22,16 +22,16 @@ import java.util.function.Consumer;
 
 public final class VentanaLogin extends JFrame {
 
-    private final ApiHttp api;
+    private final ApiSesion apiSesion;
     private final Consumer<Empleado> alIngresar;
     private final JTextField email = new JTextField(22);
     private final JPasswordField password = new JPasswordField(22);
     private final JLabel mensaje = Componentes.texto(" ");
     private final JButton ingresar = new JButton("Ingresar");
 
-    public VentanaLogin(ApiHttp api, String aviso, Consumer<Empleado> alIngresar) {
+    public VentanaLogin(ApiSesion apiSesion, String servidor, String aviso, Consumer<Empleado> alIngresar) {
         super("Cine UADE · Encargado");
-        this.api = api;
+        this.apiSesion = apiSesion;
         this.alIngresar = alIngresar;
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
@@ -42,7 +42,7 @@ public final class VentanaLogin extends JFrame {
 
         Componentes.Formulario formulario = new Componentes.Formulario()
                 .ancho(titulo)
-                .ancho(Componentes.nota("Panel del encargado. Servidor: " + api.urlBase()))
+                .ancho(Componentes.nota("Panel del encargado. Servidor: " + servidor))
                 .obligatorio("Email", email)
                 .obligatorio("Contraseña", password)
                 .ancho(mensaje)
@@ -67,7 +67,7 @@ public final class VentanaLogin extends JFrame {
         if (!v.ok()) return;
         String clave = new String(password.getPassword());
         ingresar.setEnabled(false);
-        Tarea.ejecutar(this, () -> api.login(correo, clave), empleado -> {
+        Tarea.ejecutar(this, () -> apiSesion.login(correo, clave), empleado -> {
             dispose();
             alIngresar.accept(empleado);
         }, error -> {

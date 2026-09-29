@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.salas.Asiento;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Colores;
@@ -24,14 +24,17 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 /** Mapa de la sala para marcar y reponer butacas (R9): acá no hay ocupación, es el estado físico del asiento. */
 final class PantallaMapaSala extends Pantalla {
 
+    private final ApiSalas apiSalas;
     private final int salaId;
     private final JLabel resumen = new JLabel(" ");
     private final JPanel mapa = new JPanel(new BorderLayout());
 
-    PantallaMapaSala(ApiHttp api, Navegacion navegacion, int salaId) {
-        super(api, "Butacas", "Clic en una butaca para marcarla fuera de servicio o reponerla. Una butaca rota no se "
+    PantallaMapaSala(ApiSalas apiSalas, Navegacion navegacion, int salaId) {
+        super("Butacas", "Clic en una butaca para marcarla fuera de servicio o reponerla. Una butaca rota no se "
                 + "vende en ninguna función.");
+        this.apiSalas = apiSalas;
         this.salaId = salaId;
+
         JButton volver = new JButton("← Salas");
         volver.addActionListener(e -> navegacion.ir(Destino.SALAS));
         JPanel norte = new JPanel(new BorderLayout(0, 6));
@@ -47,7 +50,7 @@ final class PantallaMapaSala extends Pantalla {
     }
 
     private void recargar() {
-        cargar(() -> api.obtenerSala(salaId), this::pintar);
+        cargar(() -> apiSalas.obtenerSala(salaId), this::pintar);
     }
 
     private void pintar(Sala sala) {
@@ -72,7 +75,7 @@ final class PantallaMapaSala extends Pantalla {
 
     private void alternar(Asiento asiento) {
         String nuevo = "FUERA_DE_SERVICIO".equals(asiento.estado()) ? "HABILITADO" : "FUERA_DE_SERVICIO";
-        cargar(() -> api.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), hecho -> recargar());
+        cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), hecho -> recargar());
     }
 
     private static JPanel referencia() {

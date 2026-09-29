@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiProgramaciones;
 import ar.uade.cine.swing.api.dto.programaciones.IndicadoresGrilla;
 import ar.uade.cine.swing.api.dto.programaciones.PaseSugerido;
 import ar.uade.cine.swing.api.dto.programaciones.PedidoGrilla;
@@ -65,6 +66,8 @@ final class PantallaPlanificador extends Pantalla {
     // Estático y no de la pantalla: comparar corridas es el uso normal y sobrevive a salir y volver.
     private static IndicadoresGrilla corridaAnterior;
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiProgramaciones apiProgramaciones;
     private final JDateChooser desde = Fechas.selector(LocalDate.now());
     private final JTextField dias = Campos.soloEntero(new JTextField("7"));
     private final JSpinner apertura = Fechas.hora(LocalTime.of(14, 0));
@@ -81,17 +84,20 @@ final class PantallaPlanificador extends Pantalla {
     // Cada cambio de criterio sube la versión: una respuesta de criterios viejos se descarta al llegar.
     private int version;
 
-    PantallaPlanificador(ApiHttp api) {
-        super(api, "Planificador de la semana", "Elige el elenco con un criterio que mira <b>puntaje y géneros a la "
+    PantallaPlanificador(ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones) {
+        super("Planificador de la semana", "Elige el elenco con un criterio que mira <b>puntaje y géneros a la "
                 + "vez</b> y reparte los pases entre las salas de forma proporcional al puntaje: la mejor de la semana "
                 + "se lleva cuatro o cinco funciones diarias y la última, una. No pisa funciones ya cargadas.");
+        this.apiCatalogos = apiCatalogos;
+        this.apiProgramaciones = apiProgramaciones;
+
         resultado.setLayout(new BoxLayout(resultado, BoxLayout.Y_AXIS));
         JScrollPane scroll = new JScrollPane(resultado);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         add(criterios(), BorderLayout.WEST);
         add(scroll, BorderLayout.CENTER);
-        cargar(() -> new Idiomas(api.obtenerIdiomas(), api.obtenerProyecciones()), c -> {
+        cargar(() -> new Idiomas(apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), c -> {
             Opcion.de(c.idiomas(), v -> etiqueta(v)).forEach(idioma::addItem);
             Opcion.de(c.proyecciones(), v -> etiqueta(v)).forEach(proyeccion::addItem);
             version++;
@@ -173,7 +179,8 @@ final class PantallaPlanificador extends Pantalla {
         previsualizar.setEnabled(false);
         aplicar.setEnabled(false);
         mostrarEspera(aplicando);
-        Tarea.ejecutar(this, () -> aplicando ? api.armarGrilla(pedido) : api.proponerGrilla(pedido), grilla -> {
+        Tarea.ejecutar(this, () -> aplicando ? apiProgramaciones.armarGrilla(pedido)
+                : apiProgramaciones.proponerGrilla(pedido), grilla -> {
             previsualizar.setEnabled(true);
             if (pedidaEn != version) return;
             IndicadoresGrilla anterior = corridaAnterior;

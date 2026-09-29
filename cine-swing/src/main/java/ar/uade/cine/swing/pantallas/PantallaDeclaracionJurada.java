@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
-import ar.uade.cine.swing.api.ApiHttp;
+import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiInformes;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.informes.DeclaracionJurada;
@@ -47,6 +48,8 @@ final class PantallaDeclaracionJurada extends Pantalla {
     private record Datos(DeclaracionJurada declaracion, List<String> tarifas) {
     }
 
+    private final ApiCatalogos apiCatalogos;
+    private final ApiInformes apiInformes;
     private final JDateChooser desde = Fechas.selector(null);
     private final JDateChooser hasta = Fechas.selector(null);
     private final JLabel encabezado = new JLabel(" ");
@@ -75,9 +78,12 @@ final class PantallaDeclaracionJurada extends Pantalla {
             Columna.<PeliculaDeclarada>numero("Neta", p -> precio(p.recaudacionNeta())));
     private Datos actual;
 
-    PantallaDeclaracionJurada(ApiHttp api) {
-        super(api, "Declaración jurada", "Lo cobrado en la semana cinematográfica, de jueves a miércoles, por función "
+    PantallaDeclaracionJurada(ApiCatalogos apiCatalogos, ApiInformes apiInformes) {
+        super("Declaración jurada", "Lo cobrado en la semana cinematográfica, de jueves a miércoles, por función "
                 + "y por película. Sin fechas se muestra la última semana cerrada.");
+        this.apiCatalogos = apiCatalogos;
+        this.apiInformes = apiInformes;
+
         JButton consultar = new JButton("Consultar");
         consultar.addActionListener(e -> consultar());
         exportar.addActionListener(e -> exportar());
@@ -123,8 +129,8 @@ final class PantallaDeclaracionJurada extends Pantalla {
         v.alMencionar("período", desde);
         if (!v.ok()) return;
         exportar.setEnabled(false);
-        Tarea.ejecutar(this, () -> new Datos(api.obtenerDeclaracionJurada(inicio, fin),
-                api.obtenerTarifas().stream().map(Tarifa::nombre).toList()), this::pintar, v::mostrarError);
+        Tarea.ejecutar(this, () -> new Datos(apiInformes.obtenerDeclaracionJurada(inicio, fin),
+                apiCatalogos.obtenerTarifas().stream().map(Tarifa::nombre).toList()), this::pintar, v::mostrarError);
     }
 
     private void pintar(Datos datos) {
