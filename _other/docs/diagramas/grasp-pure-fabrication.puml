@@ -5,7 +5,7 @@ skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 hide empty members
 
-' Las tres no son una entidad del dominio -no representan un concepto del
+' Las cuatro no son una entidad del dominio -no representan un concepto del
 ' cine que un cliente reconozca, como Reserva o Funcion- ni son el gestor de
 ' un caso de uso -no tienen un CU-XX propio en el manual-. Existen porque
 ' asignarle esa responsabilidad a la entidad o al gestor mas cercano rompia
@@ -36,10 +36,15 @@ package "service.funciones" {
 
 package "service.programaciones" {
   class PlanificadorGrilla
+  class PuntajeConfiable {
+    ~PuntajeConfiable(catalogo: List<Pelicula>)
+    ~de(Pelicula): double
+  }
 }
 
 GestorFunciones -right-> AgendaDeSala : agendaDe()\nconstruye y devuelve
 PlanificadorGrilla -up-> AgendaDeSala : chocaEn(), una vez\npor sala por corrida
+PlanificadorGrilla -right-> PuntajeConfiable : una por corrida,\nde() por pelicula
 
 note right of Ocupacion
   Que butacas estan tomadas es un hecho sobre
@@ -83,8 +88,19 @@ note bottom of AgendaDeSala
   cambia en un solo lugar.
 end note
 
+note bottom of PuntajeConfiable
+  El puntaje de una pelicula corregido por sus
+  votos: un promedio bayesiano contra el
+  catalogo, para que un 9 con tres votos no le
+  gane a un 8 con miles. No cabia en Pelicula
+  -no sabe de las otras peliculas- y en el
+  planificador era un promedio suelto que se
+  pasaba entre cuatro metodos. Es cuenta pura,
+  sin base ni reloj: se prueba con una lista.
+end note
+
 note as N1
-  Las tres son fabricacion pura por el mismo
+  Las cuatro son fabricacion pura por el mismo
   motivo: existen para que otra clase -una
   entidad o un gestor- no cargue con una
   responsabilidad que no es la suya, sin que

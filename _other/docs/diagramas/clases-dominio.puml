@@ -15,10 +15,16 @@ package "model.cartelera" {
   ' generos va como atributo con cardinalidad y no como flecha: es la unica
   ' relacion multivaluada del modelo (R7 exige minimo uno) y ese [1..*] se
   ' perderia si quedara escondido dentro de un List<Genero>.
+  ' Sin setters: el alta y la edicion pasan por actualizar(), que valida R2, R7 y
+  ' R10 antes de tocar un campo, y cada dato de catalogo cambia por un metodo que
+  ' valida el suyo. cambiarAnio recibe el dia de hoy por lo mismo que yaEmpezo()
+  ' recibe el instante: el reloj lo tiene el gestor. La revision del importador
+  ' son transiciones de la pelicula, no dos campos que el gestor escribe a mano.
   class Pelicula <<Entity>> {
     +getTitulo(): String
     +getDuracionMinutos(): int
     +getClasificacion(): Clasificacion
+    +actualizar(titulo, duracion, generos, clasificacion)
     --
     generos: Genero [1..*]
     --datos de catalogo--
@@ -27,12 +33,17 @@ package "model.cartelera" {
     +getAnio(): int
     +getIdiomaOriginal(): String
     +getPosterUrl(): String
+    +cambiarDirector / Sinopsis / IdiomaOriginal / Poster(texto)
+    +cambiarAnio(anio, hoy)
     +estaEnCartelera(): boolean
+    +ponerEnCartelera() / sacarDeCartelera()
     --calidad, para ordenar la grilla--
     +getPuntaje(): double
     +getVotos(): int
+    +cambiarPuntaje(double) / cambiarVotos(int)
     --revision del importador--
     +getEstadoRevision(): EstadoRevision
+    +dejarPendiente() / confirmar() / descartar()
   }
   enum Genero <<enum>> {
     ACCION / COMEDIA / DRAMA
@@ -58,6 +69,8 @@ package "model.cartelera" {
   ' trajo. No guarda QUE peliculas entraron -eso ya esta en el buzon, en
   ' Pelicula.estadoRevision- sino solo cuantas: repetir la lista aca seria una
   ' segunda fuente de verdad. Por eso Importacion no tiene flecha a Pelicula.
+  ' Si se puede correr otra lo responde ella, con el instante por parametro, en
+  ' vez de que el gestor compare sus getters.
   class Importacion <<Entity>> {
     +getPaginas(): int
     +getPedidaEn(): LocalDateTime
@@ -67,6 +80,10 @@ package "model.cartelera" {
     +getSalteadas(): int
     +getFallidas(): int
     +getDetalle(): String [0..1]
+    --si se puede correr otra--
+    +estaEnCurso(): boolean
+    +quedoColgada(plazo, ahora): boolean
+    +terminoHaceMenosDe(espera, ahora): boolean
   }
   ' Tres y no cuatro: no hay PENDIENTE. La corrida arranca en el mismo
   ' instante en que se la pide, asi que nunca hay una esperando su turno.
@@ -82,16 +99,21 @@ package "model.salas" {
   ' una funcion y el inicio de la siguiente en la misma sala hay que dejar un
   ' margen, y no es igual en todas las salas -una de 200 butacas tarda mas que
   ' una de 60-, asi que vive como dato de la sala y no como constante fija.
+  ' Creadora de sus butacas porque las contiene: generarAsientos() valida la
+  ' distribucion (R2) y las arma, solo en el alta. editar() no las toca.
   class Sala <<Entity>> {
     {static} +LIMPIEZA_POR_DEFECTO: int = 15
     +getNombre(): String
     +getTipo(): TipoSala
     +getMinutosLimpieza(): int
     +editar(nombre, tipo, minutosLimpieza)
+    +generarAsientos(butacasPorFila, especiales): List<Asiento>
   }
   ' El asiento no tiene estado "ocupado": lo esta para una funcion, si alguna
   ' reserva vigente de esa funcion lo tomo. Si tiene estado fisico, porque una
-  ' butaca rota lo esta siempre.
+  ' butaca rota lo esta siempre. Ese estado cambia por marcarFueraDeServicio y
+  ' reponer, y R9 se pregunta a la butaca. exigirConCodigo es la busqueda de la
+  ' butaca de un pedido, venta o bloqueo, con el mismo mensaje en los dos.
   class Asiento <<Entity>> {
     +getSala(): Sala
     +getSalaId(): int
@@ -100,6 +122,9 @@ package "model.salas" {
     +getTipo(): TipoAsiento
     +getEstado(): EstadoAsiento
     +getCodigo(): String
+    +marcarFueraDeServicio() / reponer()
+    +estaFueraDeServicio(): boolean
+    {static} +exigirConCodigo(deLaSala, codigo): Asiento
   }
   ' TipoSala es tecnologia, no precio premium: cuando el recargo estaba tambien
   ' aca, una butaca VIP en sala VIP pagaba 2.0 x 1.5, tres veces la base.
@@ -131,6 +156,10 @@ package "model.funciones" {
   ' probarlo sin esperar; la duracion tambien, pero por otro motivo: ver N2.
   ' getFin() es lo que hace legible la restriccion de superposicion R3, y
   ' yaEmpezo() es lo que sostiene R19.
+  ' validarProgramable() es lo que la funcion valida al nacer (formato, R8,
+  ' precio). Es estatica para que una programacion rechace los mismos datos, con
+  ' el mismo mensaje, antes de generar la primera. R3 y R20 no son suyos:
+  ' dependen de las otras funciones y del reloj, y los ve GestorFunciones.
   class Funcion <<Entity>> {
     +getPelicula(): Pelicula
     +getSala(): Sala
@@ -141,6 +170,7 @@ package "model.funciones" {
     +getVersion(): Version
     +getProyeccion(): Proyeccion
     +getPrecio(): Dinero
+    {static} +validarProgramable(sala, version, proyeccion, precio)
     --el paso del tiempo, derivado--
     +yaEmpezo(ahora): boolean
     +getFin(duracionMinutos): LocalDateTime
@@ -180,6 +210,7 @@ package "model.programaciones" {
     +getProyeccion(): Proyeccion
     +getPrecio(): Dinero
     +estaActiva(): boolean
+    +activar() / desactivar()
     --lo que ya paso--
     +getGeneradaHasta(): LocalDate [0..1]
   }
@@ -221,6 +252,8 @@ package "model.ventas" {
   ' primera operacion que se cruza con una vencida la cierra al pasar.
   ' codigo es el del QR y, como el cliente no inicia sesion, es su unica
   ' credencial: por eso no puede ser el id. ingresadaEn null = no entraron aun.
+  ' Cuando el escaner no lee se tipea a mano: normalizarCodigo() lo deja como se
+  ' genero, y lo usan la Puerta y la busqueda por codigo. Sin entradas no se arma.
   ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
   ' en Funcion, para poder probarla sin esperar media hora; MINUTOS_PARA_PAGAR
   ' es lo que define ese plazo. Lleva @Version: si cobrar y cancelar compiten,
@@ -244,6 +277,7 @@ package "model.ventas" {
     --control de acceso--
     +getCodigo(): String
     +getIngresadaEn(): LocalDateTime
+    {static} +normalizarCodigo(codigo): String
   }
   ' Sin DAO propio: vive y muere con su reserva (cascade + orphanRemoval).
   ' precio es el de lista (funcion x TipoSala x TipoAsiento x TipoTarifa), se
@@ -326,6 +360,7 @@ package "model.promociones" {
     +getHoraHasta(): LocalTime
     +getMediosPago(): Set<MedioPago>
     +estaActiva(): boolean
+    +activar() / desactivar()
     +aplicaA(inicioFuncion, medio): boolean
     --beneficio--
     +{abstract} calcularDescuento(List<Entrada>): Dinero
@@ -355,6 +390,12 @@ package "model.promociones" {
 }
 
 package "model.candy" {
+  ' Un combo nace solo por armarCombo(), que crea sus ItemCombo (Creador) y
+  ' valida R14 antes de devolverlo: no hay combo sin componentes declarados.
+  ' editar() revisa R14 sobre el combo editado; exigirQueSigaConviniendo() es
+  ' el otro lado, el combo al que le abarataron un componente suelto: el combo
+  ' no se entera solo, se lo pregunta el gestor. Sin stock no se borra, sale de
+  ' la venta: vive en compras viejas.
   class Producto <<Entity>> {
     +getNombre(): String
     +getTipo(): TipoProducto
@@ -362,10 +403,14 @@ package "model.candy" {
     +estaDisponible(): boolean
     +getComponentes(): List<ItemCombo>
     +esCombo(): boolean
+    {static} +armarCombo(nombre, precio, componentes): Producto
+    +editar(nombre, precio)
+    +exigirQueSigaConviniendo()
+    +sacarDeLaVenta() / volverALaVenta()
   }
   ' La autoreferencia es lo que hace al combo una promocion y no un producto
-  ' con nombre bonito: sabiendo que trae se valida que cueste menos que
-  ' comprarlo suelto (R14).
+  ' con nombre bonito: sabiendo que trae, el propio Producto valida que cueste
+  ' menos que comprarlo suelto (R14).
   class ItemCombo <<Embeddable>> {
     +producto(): Producto
     +nombre(): String
@@ -377,6 +422,8 @@ package "model.candy" {
   ' Las dos asociaciones en 0..1 no son redundantes: la venta de mostrador no
   ' tiene ninguna, y la del "desea agregar pochoclos?" posterior a la compra
   ' web tiene reserva, de donde sale el cliente sin volver a pedirlo.
+  ' Creadora de sus renglones: recibe cada producto con su cantidad, exige
+  ' medio de pago y R11, y arma cada ItemCompra, que exige cantidad y stock.
   class CompraCandy <<Entity>> {
     +getClienteId(): Integer
     +getReservaId(): Integer
@@ -433,7 +480,7 @@ PromocionPorcentaje --|> Promocion
 PromocionMontoFijo --|> Promocion
 PromocionNxM --|> Promocion
 
-Sala "1" *-- "1..*" Asiento
+Sala "1" *-- "1..*" Asiento : crea >
 Funcion "*" --> "1" Pelicula
 
 Funcion "*" --> "1" Sala
@@ -470,7 +517,7 @@ BloqueoButaca "*" --> "1" Asiento
 Pago "0..1" --> "1" Reserva
 Pago "*" --> "0..1" Promocion
 
-Producto "1" *-- "0..*" ItemCombo : contiene >
+Producto "1" *-- "0..*" ItemCombo : contiene y crea >
 note on link
   {0 si tipo != COMBO,
    >= 2 si tipo = COMBO}
@@ -479,7 +526,7 @@ end note
 ItemCombo "*" --> "1" Producto : refiere a >
 CompraCandy "*" --> "0..1" Cliente
 CompraCandy "*" --> "0..1" Reserva
-CompraCandy "1" *-- "1..*" ItemCompra
+CompraCandy "1" *-- "1..*" ItemCompra : crea >
 ItemCompra "*" --> "1" Producto
 
 note as N1

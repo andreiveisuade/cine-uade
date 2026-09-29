@@ -9,7 +9,9 @@ participant "ReservaController" as Ctrl
 participant "GestorReservas" as Gestor
 participant "GestorClientes" as Clientes
 participant "Ocupacion" as Ocupacion
+participant "Asiento" as Asiento <<Entity>>
 participant "CalculadoraPrecio" as Precio
+participant "Reserva" as Reserva <<Entity>>
 participant "ReservaRepository" as Repo <<interface>>
 participant "GeneradorTicket" as Ticket <<interface>>
 
@@ -23,7 +25,7 @@ activate Clientes
 Clientes --> Gestor : cliente (lo da de alta si no existia)
 deactivate Clientes
 
-alt R19: la funcion ya empezo
+alt R19: funcion.yaEmpezo(ahora)
   Gestor --> Ctrl : IllegalArgumentException
   Ctrl --> Cliente : 400 {error}
 else
@@ -35,12 +37,21 @@ else
   deactivate Ocupacion
 
   loop por cada butaca pedida
-    Gestor -> Gestor : butacaVendible()\nde esta sala, R9, R4
+    Gestor -> Asiento : exigirConCodigo(deLaSala, codigo)
+    activate Asiento
+    Asiento --> Gestor : la butaca, si es de esta sala
+    deactivate Asiento
+    Gestor -> Asiento : estaFueraDeServicio() (R9)
+    Gestor -> Gestor : no esta entre los tomados (R4)
     Gestor -> Precio : precioDe(funcion, sala,\nasiento, tarifa)
     Precio --> Gestor : precio congelado en la Entrada
   end
 
-  alt alguna butaca no se puede vender
+  create Reserva
+  Gestor -> Reserva : new Reserva(funcion, cliente,\nentradas, ahora)
+  Reserva -> Reserva : exige al menos una entrada\ny genera el codigo de acceso
+
+  alt alguna butaca no se puede vender\no no se pidio ninguna
     Gestor --> Ctrl : IllegalArgumentException
     Ctrl --> Cliente : 400 {error}
   else
@@ -51,7 +62,7 @@ else
       Gestor --> Ctrl : ButacaOcupadaException
       Ctrl --> Cliente : 409 {error}
     else
-      Repo --> Gestor : reserva con id y codigo
+      Repo --> Gestor : reserva con id
       deactivate Repo
       Gestor -> Ocupacion : liberar(funcionId, sesion)
       Gestor -> Ticket : emitir(reserva, funcion,\npelicula, sala, cliente)

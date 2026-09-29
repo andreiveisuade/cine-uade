@@ -8,6 +8,8 @@ actor Cliente
 participant "CandyController" as UI
 participant "GestorCandy" as Gestor
 participant "GestorProductos" as Carta
+participant "Producto" as Producto <<Entity>>
+participant "CompraCandy" as Compra <<Entity>>
 participant "ProductoRepository" as Productos <<interface>>
 participant "CompraCandyRepository" as Repo <<interface>>
 participant "GeneradorTicketCandy" as Ticket <<interface>>
@@ -16,18 +18,34 @@ participant "GeneradorTicketCandy" as Ticket <<interface>>
 
 UI -> Carta : armarCombo("Combo pareja", 5500,\n{pochoclos:1, gaseosa:1})
 activate Carta
-Carta -> Productos : buscarPorId por cada componente
+Carta -> Productos : findById por cada componente
 activate Productos
 Productos --> Carta : pochoclos $4000, gaseosa $2500
 deactivate Productos
 
-alt el combo cuesta igual o mas que sus componentes
-  Carta --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
+Carta -> Producto : armarCombo(nombre, 5500,\n{pochoclos:1, gaseosa:1})
+activate Producto
+Producto -> Producto : crea sus ItemCombo:\ncantidad > 0, ninguno es combo
+
+alt R14: el combo cuesta igual o mas que sus componentes
+  Producto --> Carta : IllegalArgumentException\n"tiene que salir menos que $ 6500"
+  Carta --> UI : el mismo mensaje
 else 5500 < 6500
-  Carta -> Productos : save(combo con sus componentes)
+  Producto --> Carta : combo con sus componentes
+  deactivate Producto
+  Carta -> Productos : save(combo)
   Carta --> UI : combo
 end
 deactivate Carta
+
+note right of Carta
+  El gestor se queda con lo que pide la base:
+  el nombre repetido y buscar los componentes.
+  R14 lo valida el combo al armarse (Experto),
+  y los ItemCombo los crea el que los contiene
+  (Creador): no existe un combo sin declarar
+  que trae.
+end note
 
 == Despues: el cliente compra ==
 
@@ -36,24 +54,34 @@ activate UI
 UI -> Gestor : vender(clienteId, {combo:2},\nmedio, autorizacion)
 activate Gestor
 
+Gestor -> Carta : buscarOFallar({combo:2})
+activate Carta
+Carta -> Productos : findById por cada producto
+activate Productos
+Productos --> Carta : combo $5500
+deactivate Productos
+Carta --> Gestor : {Producto combo: 2}
+deactivate Carta
+
+create Compra
+Gestor -> Compra : new CompraCandy(clienteId, sin reserva,\nahora, medio, autorizacion, {combo: 2})
+activate Compra
+Compra -> Compra : exige productos, medio y\nautorizacion (R11);\ncrea cada ItemCompra, que exige\ncantidad y stock y congela\nnombre, precio y ahorro
+
 alt el producto no esta disponible, la cantidad\nno es valida o falta la autorizacion
-  Gestor --> UI : IllegalArgumentException
+  Compra --> Gestor : IllegalArgumentException
+  Gestor --> UI : el mismo mensaje
   UI --> Cliente : motivo del rechazo
 else todo en orden
-  Gestor -> Carta : buscarOFallar(productoId)
-  activate Carta
-  Carta -> Productos : buscarPorId(productoId)
-  activate Productos
-  Productos --> Carta : producto con su precio
-  deactivate Productos
-  Carta --> Gestor : producto con su precio
-  deactivate Carta
+  Compra --> Gestor : compra
+  deactivate Compra
 
   note right of Gestor
-    El precio se lo pregunta a la carta, no lo
-    sabe ni lo recibe: la misma razon por la que
-    el pago de una reserva toma el monto de la
-    reserva. Cada ItemCompra congela precio y ahorro.
+    El precio no viaja en el pedido: el gestor
+    busca los productos en la carta y cada
+    ItemCompra lo toma del producto, la misma
+    razon por la que el pago de una reserva
+    toma el monto de la reserva.
   end note
 
   Gestor -> Repo : save(compra)
@@ -61,7 +89,8 @@ else todo en orden
   Repo --> Gestor : compra con id asignado
   deactivate Repo
 
-  Gestor -> Gestor : compra.getAhorro():\nsuma el ahorro que cada ItemCompra\ncongelo al vender ($ 2000)
+  Gestor -> Compra : getAhorro()
+  Compra --> Gestor : $ 2000: la suma de lo que\ncada ItemCompra congelo al vender
   Gestor -> Ticket : emitir(compra, cliente, ahorro)
   activate Ticket
   Ticket -> Ticket : escribe\ntickets/candy-N.txt

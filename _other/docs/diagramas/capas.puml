@@ -11,7 +11,7 @@ package controller {
   package http {
     class "Parseo, Fechas, Creado\nManejadorErrores, ConfiguracionOpenApi" as Http
   }
-  class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n14 @RestController (uno por area, sin fachada)\ny al lado de cada uno su Vistas* (ensamblador de DTO)" as Controllers
+  class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n18 @RestController (una familia de rutas cada uno, sin fachada)\ny en el mismo subpaquete su Vistas* (ensamblador de DTO)" as Controllers
 }
 
 package dto {
@@ -32,7 +32,7 @@ package service {
     class "GestorInformes, GestorCaja\nArqueo, Bordero, InformeFuncion\nDeclaracionJurada, PeriodoDeclarado" as SrvInformes
   }
   package programaciones as srv_programaciones {
-    class "GestorProgramaciones, PlanificadorGrilla\nPlanProgramacion, CriteriosGrilla\nPropuestaGrilla" as SrvProgramaciones
+    class "GestorProgramaciones, PlanificadorGrilla\nPuntajeConfiable, PlanProgramacion\nCriteriosGrilla, PropuestaGrilla" as SrvProgramaciones
   }
   package promociones as srv_promociones {
     class "GestorPromociones\nPoliticaPromociones" as SrvPromociones

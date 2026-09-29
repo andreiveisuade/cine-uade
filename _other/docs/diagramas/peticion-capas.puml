@@ -39,7 +39,7 @@ CTRL -> CTRL : PedidoReservaDTO\n(Jackson deserializa)
 CTRL -> GEST : reservar(funcionId, nombre,\nemail, butacas, sesion)
 activate GEST
 
-GEST -> GEST : valida R4, R19, tarifas
+GEST -> GEST : coordina R19 y R4; Funcion,\nAsiento y Reserva validan lo suyo
 GEST -> REPO : saveAndFlush(reserva)
 REPO -> DB : INSERT reserva + entrada
 DB --> REPO : id

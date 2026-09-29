@@ -28,8 +28,9 @@ deactivate TM
 loop una por vez, en orden
   GI -> GI : R1: ya esta ese titulo?
   GI -> GR : importar(datos)
-  GR -> GR : R2, R7, R10
-  GR -> DB : estadoRevision = PENDIENTE\n(fuera de cartelera)
+  GR -> GR : alta por GestorCartelera:\nPelicula valida R2, R7, R10
+  GR -> GR : pelicula.dejarPendiente()\n(PENDIENTE, fuera de cartelera)
+  GR -> DB : save(pelicula)
 end
 
 GI --> NG : contadores de la corrida

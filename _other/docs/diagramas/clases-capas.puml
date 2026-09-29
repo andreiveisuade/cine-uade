@@ -11,8 +11,11 @@ package controller {
   ' Un subpaquete por subdominio con el controlador y su Vistas* juntos, mas
   ' catalogos/ y http/ (Parseo, Fechas, Creado, ManejadorErrores, ConfiguracionOpenApi).
   ' Ya no hay rutas/: cada controlador es publico y Spring lo descubre solo.
+  ' Una familia de rutas por controlador: el bloqueo de butacas, la Puerta, los
+  ' arqueos y el buzon de importadas tienen el suyo en vez de colgar de
+  ' ReservaController, PagoController, CandyController o PeliculaController.
 
-  class "CandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nSalaController, SesionController" as Controllers
+  class "AccesoController, BloqueoController, CajaController\nCandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nRevisionController, SalaController, SesionController" as Controllers
   class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy\nVistasInformes" as Vistas
   class Parseo
   class Fechas
@@ -233,16 +236,19 @@ service ..> infrastructure
 
 legend bottom
   |= Capa |= De que se ocupa |
-  | controller | Como se habla con la aplicacion: HTTP. 14 @RestController traducen a JSON, las |
-  |  | siete Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Cada Vistas* vive |
+  | controller | Como se habla con la aplicacion: HTTP. 18 @RestController, una familia de rutas cada uno, |
+  |  | traducen a JSON, las siete Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Cada Vistas* vive |
   |  | en el subpaquete de su controlador. Ninguna regla vive aca: Spring los descubre por component scan. |
   | dto | La forma del JSON, en objetos sin comportamiento: un tipo por mensaje que entra o sale. |
   | Aplicacion | Solo @SpringBootApplication + main(). Cada @Service, @Repository |
   |  | y @RestController se conecta solo. Que implementacion de infrastructure/ se usa lo decide |
   |  | un perfil de Spring, no una linea de codigo. |
-  | service | Las reglas de negocio. Cada gestor pide los repositorios que necesita para validarlas. |
-  | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. No |
-  |  | depende de ninguna otra capa. Las jerarquias reales son Promocion y Usuario. |
+  | service | Las reglas que necesitan la base, el reloj u otros objetos. Cada gestor pide los repositorios |
+  |  | que necesita para validarlas; lo que un objeto valida con sus propios datos queda en la entidad. |
+  | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. Valida sus |
+  |  | datos al nacer y al cambiar, y crea lo que contiene: Sala sus butacas, Producto |
+  |  | sus ItemCombo, CompraCandy sus ItemCompra. No depende de ninguna otra capa. Las jerarquias |
+  |  | reales son Promocion y Usuario. |
   | repository | 14 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
   | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
   |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |

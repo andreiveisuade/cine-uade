@@ -6,7 +6,7 @@ skinparam packageStyle rectangle
 hide empty members
 
 ' El caso testigo es ReservaRepository, pero la misma forma se repite en las
-' otras doce interfaces de repository/. Antes el DIP se sostenia con
+' otras trece interfaces de repository/. Antes el DIP se sostenia con
 ' disciplina: un solo lugar (Aplicacion) nombraba la implementacion concreta
 ' de cada DAO. Hoy la forma es mas fuerte: Spring Data genera la unica
 ' implementacion en tiempo de arranque, asi que no existe una clase que se
@@ -25,7 +25,7 @@ package repository {
     +findByCodigo(codigo): Optional<Reserva>
     +findAll(): List<Reserva>
     +findByFuncion_Id(funcionId): List<Reserva>
-    +findByCliente_IdOrderByCreadaEnDesc(clienteId): List<Reserva>
+    +findByCliente_IdOrderByIdDesc(clienteId): List<Reserva>
   }
 }
 
