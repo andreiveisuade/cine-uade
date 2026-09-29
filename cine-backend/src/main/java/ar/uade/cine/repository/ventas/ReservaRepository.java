@@ -5,15 +5,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de reservas; Repository de Spring Data, con join fetch para listar sin N+1.
-public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
+public interface ReservaRepository extends Repositorio<Reserva> {
 
     Optional<Reserva> findByCodigo(String codigo);
 

@@ -15,27 +15,30 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
@@ -43,8 +46,6 @@ import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
-import ar.uade.cine.service.informes.GestorCaja;
-import ar.uade.cine.model.dinero.Dinero;
 
 class GestorInformesTest extends PruebaDeIntegracion {
 
@@ -160,7 +161,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void noHayBorderoDeUnaFuncionQueNoExiste() {
-        assertThrows(IllegalArgumentException.class, () -> informes.borderoDe(99));
+        assertThrows(Rechazo.class, () -> informes.borderoDe(99));
     }
 
     @Test
@@ -319,7 +320,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void laDeclaracionRechazaUnPeriodoAlReves() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 26), LocalDate.of(2026, 8, 20)));
 
         assertEquals("El período tiene que empezar antes de terminar", error.getMessage());
@@ -327,7 +328,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void laDeclaracionRechazaUnPeriodoDeMasDeUnMes() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)));
         assertEquals(LocalDate.of(2026, 8, 31), informes.declaracionJurada(
                 LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)).hasta());
@@ -335,7 +336,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void laDeclaracionPideLasDosFechasONinguna() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 20), null));
     }
 

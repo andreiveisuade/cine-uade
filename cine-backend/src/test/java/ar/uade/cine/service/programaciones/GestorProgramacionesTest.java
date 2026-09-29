@@ -20,18 +20,19 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.dinero.Dinero;
 
 class GestorProgramacionesTest extends PruebaDeIntegracion {
 
@@ -183,15 +184,15 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
-        assertThrows(IllegalArgumentException.class, () -> programaciones.desactivar(99));
+        assertThrows(Rechazo.class, () -> programaciones.desactivar(99));
     }
 
     @Test
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
         assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
@@ -199,24 +200,24 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaUnRangoQueTerminaAntesDeEmpezar() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     @Test
     void rechazaPrecioCeroYPeliculaInexistente() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0))));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
                         LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
@@ -320,7 +321,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     // R20: un rango cerrado que ya pasó entero no deja nada que crear.
     @Test
     void rechazaUnRangoQueYaPasoEntero() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, reloj.hoy().minusDays(5), reloj.hoy(),
                         LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
 

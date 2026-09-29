@@ -5,14 +5,14 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de las ventas del candy; Repository de Spring Data, con el corte por día del arqueo.
-public interface CompraCandyRepository extends JpaRepository<CompraCandy, Integer> {
+public interface CompraCandyRepository extends Repositorio<CompraCandy> {
 
     List<CompraCandy> findByClienteId(int clienteId);
 

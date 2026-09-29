@@ -16,15 +16,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.Promocion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.service.promociones.PoliticaPromociones.Descuento;
 
 class GestorPromocionesTest extends PruebaDeIntegracion {
@@ -185,21 +186,21 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaUnNxMQueNoDescuenta() {
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearNxM("2x2", 2, 2,
+        assertThrows(Rechazo.class, () -> promociones.crearNxM("2x2", 2, 2,
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearNxM("2x3", 2, 3,
+        assertThrows(Rechazo.class, () -> promociones.crearNxM("2x3", 2, 3,
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaUnPorcentajeFueraDeRango() {
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("gratis", 100.0,
+        assertThrows(Rechazo.class, () -> promociones.crearPorcentaje("gratis", 100.0,
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 
     @Test
     void rechazaUnaVigenciaAlReves() {
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearPorcentaje("rara", 10.0,
+        assertThrows(Rechazo.class, () -> promociones.crearPorcentaje("rara", 10.0,
                 new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of())));
     }
 
@@ -207,7 +208,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     void rechazaDosPromocionesConElMismoNombre() {
         promociones.crearPorcentaje("30 off", 30.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
 
-        assertThrows(IllegalArgumentException.class, () -> promociones.crearMontoFijo("30 off", Dinero.de(500),
+        assertThrows(Rechazo.class, () -> promociones.crearMontoFijo("30 off", Dinero.de(500),
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
     }
 

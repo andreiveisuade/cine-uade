@@ -3,16 +3,16 @@ package ar.uade.cine.repository.cartelera;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de películas; Repository de Spring Data, con el título de R1 y los filtros en JPQL.
-public interface PeliculaRepository extends JpaRepository<Pelicula, Integer> {
+public interface PeliculaRepository extends Repositorio<Pelicula> {
 
     boolean existsByTituloIgnoreCaseAndIdNot(String titulo, int id);
 

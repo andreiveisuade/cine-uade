@@ -11,9 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 class GestorEmpleadosTest extends PruebaDeIntegracion {
 
@@ -47,7 +48,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaContrasenaCorta() {
-        assertEquals("La contraseña tiene que tener al menos 6 caracteres", assertThrows(IllegalArgumentException.class,
+        assertEquals("La contraseña tiene que tener al menos 6 caracteres", assertThrows(Rechazo.class,
                 () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR)).getMessage());
     }
 
@@ -77,7 +78,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeRegistraUnClienteComoEmpleado() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.CLIENTE));
     }
 }

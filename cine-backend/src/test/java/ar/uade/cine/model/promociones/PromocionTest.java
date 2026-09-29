@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.Rechazo;
 
 // Sin Spring ni base: los invariantes viven en los constructores, así que se prueban con new.
 class PromocionTest {
@@ -23,7 +24,7 @@ class PromocionTest {
             new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of());
 
     private static void rechaza(String mensaje, Executable construir) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, construir).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, construir).getMessage());
     }
 
     @ParameterizedTest(name = "{0}")

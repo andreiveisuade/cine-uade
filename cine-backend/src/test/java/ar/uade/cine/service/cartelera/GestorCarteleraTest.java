@@ -27,25 +27,26 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.programaciones.ProgramacionRepository;
-import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.repository.cartelera.PeliculaRepository;
-import ar.uade.cine.repository.salas.SalaRepository;
-import ar.uade.cine.model.salas.Sala;
-import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
+import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
-import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
@@ -94,7 +95,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     void rechazaTituloRepetido() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP));
     }
 
@@ -116,14 +117,14 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaDuracionInvalida() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin duración", 0, List.of(Genero.DRAMA), Clasificacion.ATP));
     }
 
     // El mismo texto que el pedido HTTP: una duración que no vino falta, no es "cero".
     @Test
     void unaAltaSinDuracionDiceQueFalta() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> gestor.agregar(
+        Rechazo error = assertThrows(Rechazo.class, () -> gestor.agregar(
                 new DatosPelicula("Dune", null, List.of(Genero.DRAMA), Clasificacion.ATP,
                         null, null, null, null, null, null, null, null)));
 
@@ -132,7 +133,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPeliculaSinGenero() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin género", 100, List.of(), Clasificacion.ATP));
     }
 
@@ -152,11 +153,11 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         DatosPelicula base = DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         Pelicula dune = gestor.agregar(base);
 
-        IllegalArgumentException negativo = assertThrows(IllegalArgumentException.class,
+        Rechazo negativo = assertThrows(Rechazo.class,
                 () -> gestor.editar(dune.getId(), conAnio(-3)));
         assertEquals("El año tiene que estar entre 1895 y 2031", negativo.getMessage());
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
         assertDoesNotThrow(() -> gestor.editar(dune.getId(), conAnio(0)));
         assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getAnio());
     }
@@ -167,7 +168,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPeliculaSinClasificacion() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin clasificar", 100, List.of(Genero.DRAMA), null));
     }
 
@@ -257,7 +258,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
@@ -304,7 +305,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
@@ -313,7 +314,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        IllegalArgumentException datos = assertThrows(IllegalArgumentException.class, () -> gestor.editar(
+        Rechazo datos = assertThrows(Rechazo.class, () -> gestor.editar(
                 dune.getId(), new DatosPelicula("Matrix", 0, null, null, null, null, null, null, null, null, 15.0, null)));
         ConflictoDeNegocio titulo = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(
                 dune.getId(), new DatosPelicula("Matrix", 150, null, null, null, null, null, null, null, null, 15.0, null)));
@@ -329,15 +330,15 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     void editarNoDejaUnaPeliculaSinTituloNiConDuracionCero() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("  ", null, null, null, null, null, null, null, null, null, null, null)));
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula(null, 0, null, null, null, null, null, null, null, null, null, null)));
     }
 
     @Test
     void editarUnaPeliculaInexistenteFalla() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.editar(99, new DatosPelicula(null, null, null, null,
                         "Alguien", null, null, null, null, null, null, null)));
     }
@@ -426,7 +427,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     void publicarUnaPendienteSeRechazaYNoGuardaNada() {
         Pelicula importada = revision.importar(deTmdb("Dune"));
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> gestor.editar(importada.getId(), new DatosPelicula(null, null, null, null,
                         "Denis Villeneuve", null, null, null, null, true, null, null)));
 
@@ -473,7 +474,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         revision.confirmar(importada.getId());
         programarProxima(importada.getId());
 
-        assertThrows(IllegalArgumentException.class, () -> revision.descartar(importada.getId()));
+        assertThrows(Rechazo.class, () -> revision.descartar(importada.getId()));
     }
 
     @Test
@@ -492,7 +493,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("Matrix"), e.getMessage());
@@ -508,7 +509,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());

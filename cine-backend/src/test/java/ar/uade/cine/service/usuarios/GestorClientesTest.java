@@ -9,10 +9,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Rol;
 
 class GestorClientesTest extends PruebaDeIntegracion {
 
@@ -51,15 +52,15 @@ class GestorClientesTest extends PruebaDeIntegracion {
 
     @Test
     void identificarRechazaUnEmailInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> gestor.identificar("Andrei", "sin-arroba"));
-        assertThrows(IllegalArgumentException.class, () -> gestor.identificar("", "nuevo@uade.edu.ar"));
+        assertThrows(Rechazo.class, () -> gestor.identificar("Andrei", "sin-arroba"));
+        assertThrows(Rechazo.class, () -> gestor.identificar("", "nuevo@uade.edu.ar"));
     }
 
     @Test
     void noSeRegistraDosVecesElMismoEmail() {
         gestor.registrar("Andrei", "andrei@uade.edu.ar");
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.registrar("Otro", "andrei@uade.edu.ar"));
     }
 
@@ -111,7 +112,7 @@ class GestorClientesTest extends PruebaDeIntegracion {
     // POST /api/reservas no pasa por el DTO: la forma del email la tiene que exigir Usuario.
     @Test
     void identificarRechazaUnEmailSinDominio() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> gestor.identificar("Ana", "a@"));
 
         assertEquals("El email tiene que tener la forma usuario@dominio.com", error.getMessage());

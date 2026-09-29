@@ -2,14 +2,14 @@ package ar.uade.cine.repository.programaciones;
 
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de programaciones; Repository de Spring Data, con los filtros opcionales resueltos en la base.
-public interface ProgramacionRepository extends JpaRepository<Programacion, Integer> {
+public interface ProgramacionRepository extends Repositorio<Programacion> {
 
     List<Programacion> findByActivaTrue();
 

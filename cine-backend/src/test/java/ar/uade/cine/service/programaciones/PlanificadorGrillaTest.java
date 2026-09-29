@@ -18,17 +18,18 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
-import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
+import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
+import ar.uade.cine.service.salas.GestorSalas;
 
 class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
@@ -353,7 +354,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     void sinPeliculasConfirmadasAvisaQueRevisenElBuzon() {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> planificador.proponer(unDia(3)));
 
         assertTrue(e.getMessage().contains("buzón"), e.getMessage());
@@ -364,7 +365,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         cargar("Una", 8.0, Genero.ACCION);
 
         assertEquals("No hay salas cargadas para programar",
-                assertThrows(IllegalArgumentException.class, () -> planificador.proponer(unDia(1))).getMessage());
+                assertThrows(Rechazo.class, () -> planificador.proponer(unDia(1))).getMessage());
     }
 
     // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).

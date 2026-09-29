@@ -21,6 +21,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
 
@@ -46,7 +47,7 @@ class ProgramacionTest {
             LocalTime hora, DayOfWeek dia, String mensaje) {
         Set<DayOfWeek> dias = dia == null ? Set.of() : Set.of(dia);
 
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class,
+        assertEquals(mensaje, assertThrows(Rechazo.class,
                 () -> grilla(desde, hasta, hora, dias)).getMessage());
     }
 

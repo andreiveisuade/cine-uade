@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 
 class CriteriosGrillaTest {
 
@@ -29,7 +30,7 @@ class CriteriosGrillaTest {
             """)
     void unosCriteriosImposiblesNoSeConstruyen(String caso, LocalDate desde, int dias, LocalTime apertura,
             LocalTime cierre, int cuantas, double precio, String mensaje) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class,
+        assertEquals(mensaje, assertThrows(Rechazo.class,
                 () -> new CriteriosGrilla(desde, dias, apertura, cierre, cuantas, Dinero.de(precio),
                         Version.SUBTITULADA, Proyeccion.DOS_D)).getMessage());
     }

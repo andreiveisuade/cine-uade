@@ -3,14 +3,14 @@ package ar.uade.cine.repository.funciones;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de funciones; Repository de Spring Data, con los filtros opcionales resueltos en la base.
-public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
+public interface FuncionRepository extends Repositorio<Funcion> {
 
     List<Funcion> findByPelicula_IdOrderByInicioAsc(int peliculaId);
 

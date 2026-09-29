@@ -11,10 +11,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import ar.uade.cine.model.rechazos.Rechazo;
+
 class EmpleadoTest {
 
     private static void rechaza(String mensaje, Executable construir) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, construir).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, construir).getMessage());
     }
 
     // La fórmula del discriminador lo releería como Cliente: no puede existir.

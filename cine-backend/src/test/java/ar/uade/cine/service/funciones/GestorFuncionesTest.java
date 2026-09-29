@@ -23,26 +23,27 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
-import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
 import jakarta.persistence.EntityManagerFactory;
 
@@ -83,7 +84,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     // R20
     @Test
     void noSeProgramaUnaFuncionEnElPasado() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, reloj.ahora().minusMinutes(1),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -94,7 +95,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     // R20 con el corte de R19: la que empieza en este instante ya empezó.
     @Test
     void ahoraMismoYaCuentaComoPasadoYUnMinutoDespuesNo() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, reloj.ahora(),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -153,7 +154,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
             pegada al final de la anterior por la limpieza, 22:00
             """)
     void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio) {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDate.of(2026, 8, 20).atTime(inicio),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
         assertEquals(1, funciones.listar().size());
@@ -167,14 +168,14 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 25, 22, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
     @Test
     void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 5),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -203,7 +204,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaSalaConLimpiezaNegativa() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> salas.agregar("Sala rota", TipoSala.DOS_D, List.of(10, 10), Map.of(), -5));
     }
 
@@ -229,7 +230,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         Pelicula importada = revision.importar(
                 DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -243,7 +244,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
         revision.descartar(importada.getId());
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -263,7 +264,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPeliculaInexistente() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
@@ -273,7 +274,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(IllegalArgumentException.class, () -> funciones.eliminar(1));
+        assertThrows(Rechazo.class, () -> funciones.eliminar(1));
         assertEquals(1, funciones.listar().size());
     }
 
@@ -285,8 +286,8 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSeBorraLaSalaNiLaPeliculaConFuncionesProgramadas() {
-        assertThrows(IllegalArgumentException.class, () -> salas.eliminar(1));
-        assertThrows(IllegalArgumentException.class, () -> cartelera.eliminar(1));
+        assertThrows(Rechazo.class, () -> salas.eliminar(1));
+        assertThrows(Rechazo.class, () -> cartelera.eliminar(1));
 
         funciones.eliminar(1);
         assertDoesNotThrow(() -> cartelera.eliminar(1));

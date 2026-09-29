@@ -20,11 +20,12 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -34,8 +35,8 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.ArqueoCandy;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorReservas;
 
 class GestorCandyTest extends PruebaDeIntegracion {
 
@@ -82,9 +83,9 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void elComboTieneQueSalirMenosQueSusComponentes() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa()));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.armarCombo("Combo carísimo", Dinero.de(7000), pochoclosYGaseosa()));
     }
 
@@ -99,7 +100,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void unComboNecesitaAlMenosDosProductos() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.armarCombo("Combo de uno", Dinero.de(3000), pedido(pochoclos, 1)));
     }
 
@@ -109,7 +110,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
         Map<Integer, Integer> anidado = pedido(combo, 1);
         anidado.put(gaseosa, 1);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.armarCombo("Combo del combo", Dinero.de(6000), anidado));
     }
 
@@ -146,7 +147,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
     void noSeVendeUnProductoQueSeSacoDeLaCarta() {
         carta.sacarDeLaVenta(gaseosa);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> candy.vender(1, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
         assertEquals(1, carta.listarDisponibles().size());
         assertEquals(2, carta.listar().size(), "sacarlo de la carta no lo borra");
@@ -154,15 +155,15 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> candy.vender(1, pedido(pochoclos, 1), MedioPago.CREDITO, "  "));
     }
 
     @Test
     void rechazaCantidadesInvalidas() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> candy.vender(1, pedido(pochoclos, 0), MedioPago.EFECTIVO, ""));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> candy.vender(1, Map.of(), MedioPago.EFECTIVO, ""));
     }
 
@@ -195,15 +196,15 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaProductoRepetidoOPrecioInvalido() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.agregar("pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0)));
     }
 
     @Test
     void unComboNoSeDaDeAltaComoProductoSuelto() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> carta.agregar("Combo trucho", TipoProducto.COMBO, Dinero.de(5000)));
     }
 
@@ -239,7 +240,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
     void noSeAgregaCandyAUnaReservaInexistente() {
         Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
 
-        assertThrows(IllegalArgumentException.class, () -> candy.venderParaReserva(999,
+        assertThrows(Rechazo.class, () -> candy.venderParaReserva(999,
                 Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, ""));
     }
 }

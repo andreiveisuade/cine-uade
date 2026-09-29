@@ -18,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -147,7 +148,7 @@ class DineroTest {
         void rechazaLoQueNoSePuedeCobrarNiGuardar(String caso, Double pesos, String mensaje) {
             Dinero importe = pesos == null ? null : Dinero.de(pesos);
 
-            assertEquals(mensaje, assertThrows(IllegalArgumentException.class,
+            assertEquals(mensaje, assertThrows(Rechazo.class,
                     () -> Dinero.importeValido(importe, "precio")).getMessage());
         }
 

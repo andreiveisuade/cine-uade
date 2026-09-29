@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.Rechazo;
 
 // Sin Spring ni base: los invariantes viven en el producto, así que se prueban con new.
 class ProductoTest {
@@ -21,7 +22,7 @@ class ProductoTest {
     private final Producto gaseosa = new Producto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
 
     private static void rechaza(String mensaje, Executable accion) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
     }
 
     private static Dinero pesos(Double pesos) {

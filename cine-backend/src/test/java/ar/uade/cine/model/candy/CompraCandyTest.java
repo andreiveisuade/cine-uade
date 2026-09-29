@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 
 // Sin Spring ni base: la compra y sus renglones se validan al construirse, así que se prueban con new.
@@ -22,7 +23,7 @@ class CompraCandyTest {
     private final Producto gaseosa = new Producto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
 
     private static void rechaza(String mensaje, Executable accion) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
     }
 
     private static CompraCandy comprar(MedioPago medio, String codigo, Map<Producto, Integer> cantidades) {

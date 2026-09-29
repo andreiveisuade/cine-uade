@@ -16,6 +16,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
 
@@ -25,7 +26,7 @@ class FuncionTest {
     private static final LocalDateTime LAS_20 = LocalDateTime.of(2026, 8, 20, 20, 0);
 
     private static void rechaza(String mensaje, Executable accion) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
     }
 
     @ParameterizedTest(name = "{0}")

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.Rechazo;
 
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
@@ -115,7 +116,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -124,7 +125,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -150,7 +151,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "  "));
 
         assertEquals("Falta el código de autorización del pago con crédito", error.getMessage());
@@ -333,7 +334,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elEfectivoNoAbreCheckout() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.EFECTIVO));
     }
 
@@ -342,7 +343,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
     }
 
@@ -363,7 +364,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeConfirmaUnCheckoutQueNoExiste() {
-        assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout("MP-0000000000"));
+        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout("MP-0000000000"));
     }
 
     @Test
@@ -372,7 +373,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
         pagos.confirmarCheckout(checkout.id());
 
-        assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout(checkout.id()));
+        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout(checkout.id()));
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 
@@ -388,7 +389,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
         reservas.cancelar(reserva.getId());
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> conEsaPasarela.confirmarCheckout(checkout));
 
         assertEquals("La reserva está cancelada: no se puede cobrar", error.getMessage());

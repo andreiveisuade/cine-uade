@@ -44,7 +44,7 @@ import jakarta.servlet.http.HttpServletRequest;
 // Traduce cada excepción a status HTTP y JSON {error}; @RestControllerAdvice: ningún controller atrapa.
 // Dentro de este advice Spring elige el handler de la excepción más cercana en la jerarquía
 // (ExceptionDepthComparator), no el primero declarado: el orden de los métodos no cambia nada.
-// Por eso un Rechazo cae en el handler de su tipo y nunca en el de IllegalArgumentException.
+// Un Rechazo cae en el handler de su tipo; la IllegalArgumentException, que ya no es su base, en el suyo.
 // La política de respuestas de toda la API, éxitos incluidos, está en la cabecera de Creado.
 @RestControllerAdvice
 @Slf4j

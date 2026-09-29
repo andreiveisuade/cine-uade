@@ -27,33 +27,34 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.model.rechazos.ButacaOcupada;
-import ar.uade.cine.repository.salas.AsientoRepository;
-import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.model.cartelera.Clasificacion;
-import ar.uade.cine.model.cartelera.Genero;
-import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.funciones.Version;
-import ar.uade.cine.model.salas.TipoAsiento;
-import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.model.ventas.EstadoReserva;
-import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
+import ar.uade.cine.model.cartelera.Clasificacion;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.TipoAsiento;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.ventas.EstadoReserva;
+import ar.uade.cine.model.ventas.MedioPago;
+import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.model.dinero.Dinero;
 
 class GestorReservasTest extends PruebaDeIntegracion {
 
@@ -122,7 +123,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaButacaInexistente() {
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("Z9"), null));
+        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("Z9"), null));
     }
 
     @Test
@@ -134,7 +135,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unaReservaRechazadaNoDejaAlClienteDadoDeAlta() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("Z9"), null));
 
         assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
@@ -142,9 +143,9 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void sinButacasNoHayReserva() {
-        IllegalArgumentException vacio = assertThrows(IllegalArgumentException.class,
+        Rechazo vacio = assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, 1, Map.of(), null));
-        IllegalArgumentException sinCampo = assertThrows(IllegalArgumentException.class,
+        Rechazo sinCampo = assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, 1, null, null));
 
         assertEquals("Hay que elegir al menos una butaca", vacio.getMessage());
@@ -160,7 +161,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     // UNIQUE y salía el 409 de "alguien tomó una de esas butacas", que no era lo que pasaba.
     @Test
     void laMismaButacaEscritaDeDosManerasSeRechazaComoRepetida() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, 1, generales("a1", "A1"), null));
 
         assertEquals("La butaca A1 está repetida en el pedido", error.getMessage());
@@ -214,7 +215,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> reservas.cancelar(reserva.getId()));
 
         assertEquals("La reserva está pagada: solo se puede cancelar una reserva sin cobrar",
@@ -227,7 +228,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
+        assertThrows(Rechazo.class, () -> reservas.cancelar(reserva.getId()));
     }
 
     @Test
@@ -236,7 +237,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(9, asientosLibres(1, null).size());
         assertTrue(asientosLibres(1, null).stream().noneMatch(a -> a.getCodigo().equals("A3")));
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("A3"), null));
+        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("A3"), null));
     }
 
     @Test
@@ -305,7 +306,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void noSePuedeProgramar3DEnUnaSalaQueNoLoSoporta() {
         salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 24, 20, 0),
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
     }
@@ -364,7 +365,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -375,7 +376,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
         ocupacion.asientosOcupados(1, null);
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
 
         assertEquals("La reserva está vencida: no se puede cobrar", error.getMessage());
@@ -394,14 +395,14 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        IllegalArgumentException sinPagar = assertThrows(IllegalArgumentException.class,
+        Rechazo sinPagar = assertThrows(Rechazo.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 42, 12, 345_678_000));
         assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
 
-        IllegalArgumentException dosVeces = assertThrows(IllegalArgumentException.class,
+        Rechazo dosVeces = assertThrows(Rechazo.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
 
         assertEquals("La reserva está sin pagar: solo se ingresa con una reserva pagada",
@@ -412,7 +413,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
-        assertThrows(IllegalArgumentException.class, () -> acceso.registrarIngreso("XXXXXXXX"));
+        assertThrows(Rechazo.class, () -> acceso.registrarIngreso("XXXXXXXX"));
     }
 
     // El código es la única credencial del cliente: con leer el log no se tiene que poder entrar.
@@ -440,7 +441,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void noSeReservaUnaFuncionQueYaEmpezo() {
         int empezada = funcionQueYaEmpezo().getId();
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> reservas.reservar(empezada, 1, generales("A1"), null));
     }
 
@@ -460,7 +461,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 

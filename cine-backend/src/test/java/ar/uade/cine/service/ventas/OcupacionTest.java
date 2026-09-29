@@ -29,6 +29,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -129,9 +130,9 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void unaButacaSinCodigoFallaDiciendoQueFaltaYNoConUnCodigoVacio() {
-        IllegalArgumentException alBloquear = assertThrows(IllegalArgumentException.class,
+        Rechazo alBloquear = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, Arrays.asList("A1", null), ANA));
-        IllegalArgumentException alReservar = assertThrows(IllegalArgumentException.class,
+        Rechazo alReservar = assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, 1, generales(" "), null));
 
         assertEquals("Falta el código de una butaca", alBloquear.getMessage());
@@ -140,9 +141,9 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void laButacaInexistenteFallaConElMismoMensajeQueAlReservar() {
-        IllegalArgumentException alBloquear = assertThrows(IllegalArgumentException.class,
+        Rechazo alBloquear = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, List.of("Z9"), ANA));
-        IllegalArgumentException alReservar = assertThrows(IllegalArgumentException.class,
+        Rechazo alReservar = assertThrows(Rechazo.class,
                 () -> reservas.reservar(1, 1, generales("z9"), null));
 
         assertEquals("La butaca Z9 no existe en la sala", alBloquear.getMessage());
@@ -154,7 +155,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     void noSeBloqueaUnaButacaDeUnaFuncionQueYaEmpezo() {
         reloj.mover(LocalDateTime.of(2026, 12, 20, 20, 5));
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, List.of("A1"), ANA));
 
         assertEquals("La función ya empezó: no se pueden reservar butacas", error.getMessage());
@@ -234,7 +235,7 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void sinSesionNoSeBloquea() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, List.of("A1"), " "));
 
         assertEquals("Falta la sesión para bloquear butacas", error.getMessage());
@@ -242,7 +243,7 @@ class OcupacionTest extends PruebaDeIntegracion {
 
     @Test
     void unaSesionMasLargaQueLaColumnaSeRechazaConMensaje() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo error = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, List.of("A1"), "x".repeat(65)));
 
         assertEquals("La sesión no puede tener más de 64 caracteres", error.getMessage());

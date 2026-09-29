@@ -14,12 +14,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import ar.uade.cine.model.rechazos.Rechazo;
+
 class PeliculaTest {
 
     private static final LocalDate HOY = LocalDate.of(2026, 8, 13);
 
     private static void rechaza(String mensaje, Executable accion) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
     }
 
     private static Pelicula dune() {

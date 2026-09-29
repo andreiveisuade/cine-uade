@@ -15,10 +15,12 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import ar.uade.cine.model.rechazos.Rechazo;
+
 class SalaTest {
 
     private static void rechaza(String mensaje, Executable accion) {
-        assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
+        assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
     }
 
     @ParameterizedTest(name = "{0}")

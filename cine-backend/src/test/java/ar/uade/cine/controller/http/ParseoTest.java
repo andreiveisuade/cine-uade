@@ -14,6 +14,7 @@ import org.junit.jupiter.api.function.Executable;
 
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
@@ -33,7 +34,7 @@ class ParseoTest {
 
     @Test
     void unValorQueNoExisteEsUnError() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
         assertTrue(e.getMessage().contains("el medio de pago"), "el mensaje no dice qué campo falló");
@@ -42,7 +43,7 @@ class ParseoTest {
 
     @Test
     void elMensajeNoDejaAsomarNombresDeClases() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
         assertTrue(e.getMessage().contains("Valor inválido"), "no es el mensaje de esta capa");
@@ -52,9 +53,9 @@ class ParseoTest {
 
     @Test
     void faltarElValorTambienEsUnError() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, null, "el medio"));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "   ", "el medio"));
     }
 
@@ -71,7 +72,7 @@ class ParseoTest {
 
     @Test
     void unaListaConUnValorInvalidoFallaEntera() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constantes(Genero.class, List.of("ACCION", "MUSICAL_INVENTADO"), "el género"));
     }
 
@@ -121,19 +122,19 @@ class ParseoTest {
 
     @Test
     void unDiaQueNoExisteEnElCalendarioSeRechaza() {
-        assertThrows(IllegalArgumentException.class, () -> Parseo.dia("2026-02-30", "la fecha"));
-        assertThrows(IllegalArgumentException.class, () -> Parseo.hora("25:00", "la hora"));
+        assertThrows(Rechazo.class, () -> Parseo.dia("2026-02-30", "la fecha"));
+        assertThrows(Rechazo.class, () -> Parseo.hora("25:00", "la hora"));
     }
 
     @Test
     void faltarLaFechaEsUnErrorDistintoAQueEsteMalEscrita() {
-        assertTrue(assertThrows(IllegalArgumentException.class,
+        assertTrue(assertThrows(Rechazo.class,
                 () -> Parseo.dia(null, "la fecha")).getMessage().contains("Falta"));
-        assertTrue(assertThrows(IllegalArgumentException.class,
+        assertTrue(assertThrows(Rechazo.class,
                 () -> Parseo.dia("ayer", "la fecha")).getMessage().contains("válida"));
     }
 
     private static String mensaje(Executable accion) {
-        return assertThrows(IllegalArgumentException.class, accion).getMessage();
+        return assertThrows(Rechazo.class, accion).getMessage();
     }
 }
