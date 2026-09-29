@@ -29,9 +29,6 @@ import ar.uade.cine.service.cartelera.DatosPelicula;
 @Slf4j
 public class TmdbHttp implements CatalogoExterno {
 
-    private static final String BASE_POR_DEFECTO = "https://api.themoviedb.org/3";
-    private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
-
     private static final int HILOS = 4;
 
     // Pausa por hilo, no global: subir HILOS sin subir esto termina en 429.
@@ -39,7 +36,7 @@ public class TmdbHttp implements CatalogoExterno {
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private static final JsonNode SIN_DETALLE = MissingNode.getInstance();
+    private static final JsonNode SIN_RESPUESTA = MissingNode.getInstance();
 
     private final String token;
     private final String region;
@@ -47,10 +44,6 @@ public class TmdbHttp implements CatalogoExterno {
     private final HttpClient cliente = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
-
-    public TmdbHttp() {
-        this(System.getenv("TMDB_TOKEN"), variable("TMDB_REGION", "AR"), BASE_POR_DEFECTO);
-    }
 
     public TmdbHttp(String token, String region, String base) {
         this.token = token;
@@ -60,7 +53,11 @@ public class TmdbHttp implements CatalogoExterno {
 
     @Override
     public List<DatosPelicula> enCartelera(int paginas) {
-        exigirToken();
+        if (sinToken()) {
+            throw new ImportadorError(
+                    "Falta el token de TMDB. Se saca gratis en themoviedb.org/settings/api "
+                    + "y se carga en TMDB_TOKEN, en el .env del compose.");
+        }
         List<JsonNode> resumenes = buscarEnCartelera(paginas);
 
         try (ExecutorService hilos = Executors.newFixedThreadPool(HILOS)) {
@@ -74,7 +71,7 @@ public class TmdbHttp implements CatalogoExterno {
 
     @Override
     public Estado consultar() {
-        if (token == null || token.isBlank()) {
+        if (sinToken()) {
             return new Estado(false, "Falta el token de TMDB: cargá TMDB_TOKEN en el .env "
                     + "y reiniciá el backend");
         }
@@ -97,36 +94,15 @@ public class TmdbHttp implements CatalogoExterno {
     // Si TMDB falla se devuelve sin duración: el gestor la rechaza por R2 y queda en el detalle.
     private DatosPelicula completar(JsonNode resumen) {
         int id = resumen.path("id").asInt();
-        JsonNode detalle = SIN_DETALLE;
-        String certificacion = null;
+        JsonNode detalle = SIN_RESPUESTA;
+        JsonNode estrenos = SIN_RESPUESTA;
         try {
             detalle = pedir("/movie/" + id);
-            certificacion = certificacionArgentina(id);
+            estrenos = pedir("/movie/" + id + "/release_dates");
         } catch (ImportadorError e) {
             log.warn("TMDB no pudo completar «{}»: {}", resumen.path("title").asText("?"), e.getMessage());
         }
-        return MapeoTmdb.aPelicula(resumen, detalle, certificacion,
-                urlPoster(resumen.path("poster_path").asText(null)));
-    }
-
-    private String certificacionArgentina(int id) {
-        JsonNode datos = pedir("/movie/" + id + "/release_dates");
-        for (JsonNode pais : datos.path("results")) {
-            if (!"AR".equals(pais.path("iso_3166_1").asText())) {
-                continue;
-            }
-            for (JsonNode estreno : pais.path("release_dates")) {
-                String certificacion = estreno.path("certification").asText("");
-                if (!certificacion.isBlank()) {
-                    return certificacion.strip();
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String urlPoster(String posterPath) {
-        return posterPath == null || posterPath.isBlank() ? "" : IMAGENES + posterPath;
+        return MapeoTmdb.aPelicula(resumen, detalle, estrenos);
     }
 
     private JsonNode pedir(String ruta, String... parametros) {
@@ -192,16 +168,7 @@ public class TmdbHttp implements CatalogoExterno {
         return peliculas;
     }
 
-    private void exigirToken() {
-        if (token == null || token.isBlank()) {
-            throw new ImportadorError(
-                    "Falta el token de TMDB. Se saca gratis en themoviedb.org/settings/api "
-                    + "y se carga en TMDB_TOKEN, en el .env del compose.");
-        }
-    }
-
-    private static String variable(String nombre, String siNoEsta) {
-        String valor = System.getenv(nombre);
-        return valor == null || valor.isBlank() ? siNoEsta : valor;
+    private boolean sinToken() {
+        return token == null || token.isBlank();
     }
 }

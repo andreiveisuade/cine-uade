@@ -2,6 +2,7 @@ package ar.uade.cine.infrastructure.importador.tmdb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -62,6 +63,33 @@ class MapeoTmdbTest {
         assertEquals(esperada, MapeoTmdb.clasificacionDe(certificacion));
     }
 
+    @Test
+    void laCertificacionEsLaDelEstrenoArgentinoYNoLaDeOtroPais() {
+        JsonNode estrenos = json("""
+                {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "PG-13"}]},
+                             {"iso_3166_1": "AR", "release_dates": [{"certification": ""},
+                                                                    {"certification": " +16 "}]}]}""");
+
+        assertEquals("+16", MapeoTmdb.certificacionArgentina(estrenos));
+    }
+
+    @Test
+    void sinEstrenoArgentinoOSinRespuestaNoHayCertificacion() {
+        assertNull(MapeoTmdb.certificacionArgentina(json("""
+                {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "PG-13"}]}]}""")));
+        assertNull(MapeoTmdb.certificacionArgentina(MissingNode.getInstance()));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            con póster,  /duna.jpg, https://image.tmdb.org/t/p/w500/duna.jpg
+            sin póster,           , ''
+            póster vacío,       '', ''
+            """)
+    void elPosterSeArmaConLaBaseDeImagenesYSinElQuedaVacio(String caso, String posterPath, String url) {
+        assertEquals(url, MapeoTmdb.urlPoster(posterPath));
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             inglés,                            en, Inglés
@@ -93,7 +121,10 @@ class MapeoTmdbTest {
                  "vote_average": 8.2, "vote_count": 5400,
                  "genres": [{"name": "Ciencia ficción"}, {"name": "Aventura"}]}""");
 
-        DatosPelicula pelicula = MapeoTmdb.aPelicula(resumen, detalle, "+13", "http://poster");
+        JsonNode estrenos = json("""
+                {"results": [{"iso_3166_1": "AR", "release_dates": [{"certification": "+13"}]}]}""");
+
+        DatosPelicula pelicula = MapeoTmdb.aPelicula(resumen, detalle, estrenos);
 
         assertEquals("Duna: Parte dos", pelicula.titulo());
         assertEquals(166, pelicula.duracionMinutos());
@@ -104,13 +135,13 @@ class MapeoTmdbTest {
         assertEquals("Inglés", pelicula.idiomaOriginal());
         assertEquals(8.2, pelicula.puntaje());
         assertEquals(5400, pelicula.votos());
-        assertEquals("http://poster", pelicula.posterUrl());
+        assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", pelicula.posterUrl());
     }
 
     @Test
     void laPeliculaNaceFueraDeCartelera() {
         DatosPelicula pelicula = MapeoTmdb.aPelicula(json("{}"), json("""
-                {"title": "Duna", "runtime": 166}"""), "ATP", "");
+                {"title": "Duna", "runtime": 166}"""), MissingNode.getInstance());
 
         assertFalse(pelicula.enCartelera());
     }
@@ -121,7 +152,7 @@ class MapeoTmdbTest {
                 {"id": 7, "title": "Una que TMDB no completó"}""");
 
         DatosPelicula pelicula = MapeoTmdb.aPelicula(
-                resumen, MissingNode.getInstance(), null, "");
+                resumen, MissingNode.getInstance(), MissingNode.getInstance());
 
         assertEquals("Una que TMDB no completó", pelicula.titulo());
         assertEquals(0, pelicula.duracionMinutos());

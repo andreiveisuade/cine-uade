@@ -13,8 +13,10 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-// Traduce el JSON de TMDB a DatosPelicula (géneros, clasificación, idioma); Fabricación pura, sin estado.
+// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, idioma, póster); Fabricación pura.
 final class MapeoTmdb {
+
+    private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
 
     private static final Map<String, Genero> GENEROS = Map.ofEntries(
             entry("Acción", Genero.ACCION),
@@ -60,19 +62,19 @@ final class MapeoTmdb {
     private MapeoTmdb() {
     }
 
+    // Las tres respuestas de TMDB por película: la del listado, el detalle y las fechas de estreno.
     // Nace enCartelera = false: nada se publica sin que el encargado la mire.
-    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, String certificacion,
-                                   String urlPoster) {
+    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, JsonNode estrenos) {
         return new DatosPelicula(
                 textoDe(detalle, "title", textoDe(resumen, "title", "")),
                 detalle.path("runtime").asInt(0),
                 generosDe(detalle),
-                clasificacionDe(certificacion),
+                clasificacionDe(certificacionArgentina(estrenos)),
                 "",
                 textoDe(detalle, "overview", ""),
                 anioDe(detalle.path("release_date").asText(null)),
                 idiomaDe(detalle.path("original_language").asText("")),
-                urlPoster,
+                urlPoster(resumen.path("poster_path").asText(null)),
                 false,
                 detalle.path("vote_average").asDouble(0),
                 detalle.path("vote_count").asInt(0));
@@ -88,6 +90,22 @@ final class MapeoTmdb {
             }
         }
         return traducidos.isEmpty() ? List.of(Genero.DRAMA) : new ArrayList<>(traducidos);
+    }
+
+    // La primera no vacía de los estrenos en la Argentina; null si no hay, y la clasificación decide.
+    static String certificacionArgentina(JsonNode estrenos) {
+        for (JsonNode pais : estrenos.path("results")) {
+            if (!"AR".equals(pais.path("iso_3166_1").asText())) {
+                continue;
+            }
+            for (JsonNode estreno : pais.path("release_dates")) {
+                String certificacion = estreno.path("certification").asText("");
+                if (!certificacion.isBlank()) {
+                    return certificacion.strip();
+                }
+            }
+        }
+        return null;
     }
 
     // Sin certificación, MAS_13 y no ATP: el default prudente.
@@ -112,6 +130,10 @@ final class MapeoTmdb {
 
     static String idiomaDe(String codigo) {
         return IDIOMAS.getOrDefault(codigo, codigo);
+    }
+
+    static String urlPoster(String posterPath) {
+        return posterPath == null || posterPath.isBlank() ? "" : IMAGENES + posterPath;
     }
 
     private static String textoDe(JsonNode nodo, String campo, String siNoEsta) {
