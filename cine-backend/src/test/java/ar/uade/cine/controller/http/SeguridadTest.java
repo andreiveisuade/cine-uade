@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -90,6 +91,18 @@ class SeguridadTest extends PruebaDeApi {
 
         assertThat(respuesta.estado()).isEqualTo(403);
         assertThat(respuesta.error()).isEqualTo("Tu rol no tiene permiso para esta operación");
+    }
+
+    // El mismo Content-Type que los errores de ManejadorErrores: un cliente no tiene por qué distinguirlos.
+    @Test
+    @DisplayName("un 401 o un 403 sale como application/json, igual que cualquier otro error, y con tildes")
+    void losErroresDeSeguridadSalenComoLosDeLaApi() {
+        Respuesta sinCredenciales = pedirComo(HttpMethod.POST, "/api/salas", SALA, null, null);
+        Respuesta sinPermiso = pedirComo(HttpMethod.POST, "/api/salas", SALA, "puerta@cine.test", "clave-puerta");
+
+        assertThat(sinCredenciales.cabeceras().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(sinPermiso.cabeceras().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(sinCredenciales.error()).isEqualTo("Hace falta iniciar sesión para esta operación");
     }
 
     @Test

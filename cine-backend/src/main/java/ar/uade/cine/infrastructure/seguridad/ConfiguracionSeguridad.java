@@ -150,11 +150,12 @@ public class ConfiguracionSeguridad {
         };
     }
 
+    // Sin charset, igual que los errores de ManejadorErrores: Jackson escribe los bytes en UTF-8 de
+    // todos modos, y JSON es UTF-8 por definición.
     private static void responder(HttpServletResponse respuesta, ObjectMapper json,
                                   HttpStatus estado, String mensaje) throws IOException {
         respuesta.setStatus(estado.value());
         respuesta.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        respuesta.setCharacterEncoding("UTF-8");
         json.writeValue(respuesta.getOutputStream(), Map.of("error", mensaje));
     }
 }
