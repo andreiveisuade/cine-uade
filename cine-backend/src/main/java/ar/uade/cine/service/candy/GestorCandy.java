@@ -17,6 +17,7 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Venta del candy en mostrador o para una reserva; Controlador: busca, CompraCandy valida y sale el ticket.
 @Service
@@ -36,9 +37,21 @@ public class GestorCandy {
         return vender(clienteId, null, cantidades, medio, codigoAutorizacion);
     }
 
-    public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
+    // El cliente sale de la reserva; si el pedido además nombra uno, tiene que ser ese: antes se lo
+    // descartaba en silencio y la compra quedaba a nombre de otro sin que nadie se enterara.
+    // Solo sobre una reserva pagada: el candy se retira con el QR de la entrada, y una cancelada o
+    // vencida no tiene entrada que mostrar.
+    public CompraCandy venderParaReserva(int reservaId, Integer clienteId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
+        if (clienteId != null && clienteId != reserva.getClienteId()) {
+            throw new DatoInvalido("La reserva " + reservaId
+                    + " es de otro cliente: revisá la reserva o el cliente");
+        }
+        if (!reserva.estaPagada()) {
+            throw new DatoInvalido("La reserva " + reservaId
+                    + " no está pagada: cobrala antes de agregarle candy");
+        }
         return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);
     }
 

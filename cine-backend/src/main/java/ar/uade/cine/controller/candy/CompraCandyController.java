@@ -42,7 +42,7 @@ public class CompraCandyController {
 
         CompraCandy compra = pedido.reservaId() == null
                 ? candy.vender(pedido.clienteId(), pedido.cantidades(), medio, pedido.codigoAutorizacion())
-                : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,
+                : candy.venderParaReserva(pedido.reservaId(), pedido.clienteId(), pedido.cantidades(), medio,
                         pedido.codigoAutorizacion());
 
         return vistas.compra(compra);

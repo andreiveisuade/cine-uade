@@ -170,7 +170,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-        candy.venderParaReserva(reserva.getId(), Map.of(pochoclos.getId(), 2),
+        candy.venderParaReserva(reserva.getId(), null, Map.of(pochoclos.getId(), 2),
                 MedioPago.EFECTIVO, "");
 
         InformeFuncion informe = informes.informeDe(1);
@@ -203,7 +203,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
         Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(deLaOtra.getId(), MedioPago.EFECTIVO, "");
-        candy.venderParaReserva(deLaOtra.getId(), Map.of(pochoclos.getId(), 1),
+        candy.venderParaReserva(deLaOtra.getId(), null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(0), informes.informeDe(1).candy());

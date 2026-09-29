@@ -14,6 +14,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -26,7 +28,9 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -37,6 +41,7 @@ import ar.uade.cine.service.informes.ArqueoCandy;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 
 class GestorCandyTest extends PruebaDeIntegracion {
@@ -59,6 +64,8 @@ class GestorCandyTest extends PruebaDeIntegracion {
     private GestorFunciones funciones;
     @Autowired
     private GestorReservas reservas;
+    @Autowired
+    private GestorPagos pagos;
 
     private int pochoclos;
     private int gaseosa;
@@ -221,17 +228,27 @@ class GestorCandyTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(3000), compra.getTotal());
     }
 
-    @Test
-    void laCompraDesdeUnaReservaHeredaSuCliente() {
-        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+    // Una reserva de mañana del cliente 1, sin cobrar.
+    private Reserva reservar() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5));
         funciones.programar(1, 1, reloj.ahora().plusDays(1),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        Reserva reserva = reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL), null);
+        return reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL), null);
+    }
 
-        CompraCandy compra = candy.venderParaReserva(reserva.getId(),
-                Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
+    private Reserva reservarYCobrar() {
+        Reserva reserva = reservar();
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        return reserva;
+    }
+
+    @Test
+    void laCompraDesdeUnaReservaHeredaSuCliente() {
+        Reserva reserva = reservarYCobrar();
+
+        CompraCandy compra = candy.venderParaReserva(reserva.getId(), null,
+                pedido(pochoclos, 2), MedioPago.EFECTIVO, "");
 
         assertEquals(reserva.getId(), compra.getReservaId());
         assertEquals(reserva.getClienteId(), compra.getClienteId(), "el cliente sale de la reserva");
@@ -239,10 +256,44 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void noSeAgregaCandyAUnaReservaInexistente() {
-        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+        RecursoNoEncontrado error = assertThrows(RecursoNoEncontrado.class, () -> candy.venderParaReserva(999,
+                null, pedido(pochoclos, 1), MedioPago.EFECTIVO, ""));
 
-        assertThrows(Rechazo.class, () -> candy.venderParaReserva(999,
-                Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, ""));
+        assertEquals("No existe la reserva 999", error.getMessage());
+    }
+
+    // El candy se retira con el QR de la entrada: una reserva sin cobrar o cancelada no tiene entrada.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin cobrar, false
+            cancelada,  true
+            """)
+    void soloUnaReservaPagadaLlevaCandy(String caso, boolean cancelarla) {
+        Reserva reserva = reservar();
+        if (cancelarla) {
+            reservas.cancelar(reserva.getId());
+        }
+
+        DatoInvalido error = assertThrows(DatoInvalido.class, () -> candy.venderParaReserva(reserva.getId(),
+                null, pedido(pochoclos, 1), MedioPago.EFECTIVO, ""));
+
+        assertEquals("La reserva " + reserva.getId() + " no está pagada: cobrala antes de agregarle candy",
+                error.getMessage());
+        assertEquals(List.of(), candy.listarComprasDe(1));
+    }
+
+    @Test
+    void siElPedidoNombraAlClienteTieneQueSerElDeLaReserva() {
+        Reserva reserva = reservarYCobrar();
+        int otro = clientes.registrar("Otra", "otra@uade.edu.ar").getId();
+
+        DatoInvalido error = assertThrows(DatoInvalido.class, () -> candy.venderParaReserva(reserva.getId(),
+                otro, pedido(pochoclos, 1), MedioPago.EFECTIVO, ""));
+
+        assertEquals("La reserva " + reserva.getId() + " es de otro cliente: revisá la reserva o el cliente",
+                error.getMessage());
+        assertEquals(reserva.getId(), candy.venderParaReserva(reserva.getId(), 1, pedido(pochoclos, 1),
+                MedioPago.EFECTIVO, "").getReservaId(), "con el mismo cliente, se vende");
     }
 
     // Quién es igual a quién lo decide la base y no Java: la collation de MySQL ignora acentos ("Maní" y

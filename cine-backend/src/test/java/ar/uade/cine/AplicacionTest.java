@@ -84,7 +84,7 @@ class AplicacionTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void elCandySeEnganchaConLaReservaRecienHecha() {
+    void elCandySeEnganchaConLaReservaRecienCobrada() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, sala.getId(),
@@ -92,10 +92,11 @@ class AplicacionTest extends PruebaDeIntegracion {
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL), null);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        CompraCandy compra = candy.venderParaReserva(reserva.getId(),
+        CompraCandy compra = candy.venderParaReserva(reserva.getId(), null,
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(6000.0), compra.getTotal());
@@ -115,7 +116,7 @@ class AplicacionTest extends PruebaDeIntegracion {
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        candy.venderParaReserva(reserva.getId(), Map.of(pochoclos.getId(), 1),
+        candy.venderParaReserva(reserva.getId(), null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 
         InformeFuncion informe = informes.informeDe(funcion.getId());

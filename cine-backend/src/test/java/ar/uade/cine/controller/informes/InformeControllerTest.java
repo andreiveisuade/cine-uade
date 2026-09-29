@@ -131,7 +131,7 @@ class InformeControllerTest extends PruebaDeApi {
     void elInformeSumaLaBoleteriaYElCandyDeLaFuncion() {
         Producto pochoclos = productos
                 .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
-        candy.venderParaReserva(reserva.getId(),
+        candy.venderParaReserva(reserva.getId(), null,
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
         Respuesta respuesta = get("/api/funciones/1/informe");
