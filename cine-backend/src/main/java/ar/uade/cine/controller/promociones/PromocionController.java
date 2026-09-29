@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
@@ -90,7 +91,7 @@ public class PromocionController {
     // constantes, a diferencia de Parseo.constante.
     private static TipoPromocion tipoDe(String tipo) {
         try {
-            return TipoPromocion.valueOf(tipo.trim().toUpperCase());
+            return TipoPromocion.valueOf(tipo.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new DatoInvalido("El tipo de promoción tiene que ser porcentaje, monto fijo o NxM");
         }

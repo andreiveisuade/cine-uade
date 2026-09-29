@@ -3,6 +3,7 @@ package ar.uade.cine.service.cartelera;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
@@ -90,7 +91,7 @@ public class GestorImportaciones {
     }
 
     private static String clave(String titulo) {
-        return titulo == null ? "" : titulo.strip().toLowerCase();
+        return titulo == null ? "" : titulo.strip().toLowerCase(Locale.ROOT);
     }
 
     // El texto de un Rechazo es para el encargado; el de cualquier otra falla es técnico y va al log.

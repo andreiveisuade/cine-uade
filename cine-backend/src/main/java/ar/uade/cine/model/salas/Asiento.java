@@ -1,6 +1,7 @@
 package ar.uade.cine.model.salas;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import lombok.Getter;
@@ -111,7 +112,7 @@ public class Asiento {
     }
 
     public static String normalizarCodigo(String codigo) {
-        return codigo == null ? "" : codigo.trim().toUpperCase();
+        return codigo == null ? "" : codigo.trim().toUpperCase(Locale.ROOT);
     }
 
     @Override

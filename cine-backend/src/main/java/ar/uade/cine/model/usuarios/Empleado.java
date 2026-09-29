@@ -1,5 +1,7 @@
 package ar.uade.cine.model.usuarios;
 
+import java.util.Locale;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -32,6 +34,6 @@ public class Empleado extends Usuario {
     @Override
     public String toString() {
         return "[" + getId() + "] " + getNombre() + " <" + getEmail() + "> ("
-                + getRol().name().toLowerCase() + ")";
+                + getRol().name().toLowerCase(Locale.ROOT) + ")";
     }
 }

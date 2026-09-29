@@ -3,6 +3,7 @@ package ar.uade.cine.service.ventas;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,6 @@ public class ConsultasReservas {
     }
 
     private static boolean contiene(String campo, String texto) {
-        return campo != null && campo.toLowerCase().contains(texto);
+        return campo != null && campo.toLowerCase(Locale.ROOT).contains(texto);
     }
 }

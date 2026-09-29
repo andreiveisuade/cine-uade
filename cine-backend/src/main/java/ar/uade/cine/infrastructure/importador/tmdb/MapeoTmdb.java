@@ -4,6 +4,7 @@ import static java.util.Map.entry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -114,7 +115,7 @@ final class MapeoTmdb {
             return Clasificacion.MAS_13;
         }
         return CLASIFICACIONES.getOrDefault(
-                certificacion.strip().toUpperCase(), Clasificacion.MAS_13);
+                certificacion.strip().toUpperCase(Locale.ROOT), Clasificacion.MAS_13);
     }
 
     static int anioDe(String fechaEstreno) {

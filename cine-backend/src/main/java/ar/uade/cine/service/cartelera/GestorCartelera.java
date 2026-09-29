@@ -3,6 +3,7 @@ package ar.uade.cine.service.cartelera;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
@@ -109,7 +110,7 @@ public class GestorCartelera {
 
     @Transactional(readOnly = true)
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
-        return peliculaRepository.buscar(titulo == null ? "" : titulo.trim().toLowerCase(),
+        return peliculaRepository.buscar(titulo == null ? "" : titulo.trim().toLowerCase(Locale.ROOT),
                 genero, publicada);
     }
 
