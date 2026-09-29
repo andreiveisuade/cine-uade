@@ -46,6 +46,11 @@ spring:
       # Un campo de más en el pedido no es motivo para rechazarlo: el front puede mandar
       # algo que este backend todavía no usa.
       fail-on-unknown-properties: false
+      # Sin estas dos, Jackson convierte en silencio: {"peliculaId": 1.9} programaba la película
+      # 1, una cantidad de 1.5 vendía 1 y una tarifa escrita como 1 era la segunda del enum. Así
+      # es un 400 que nombra el campo.
+      accept-float-as-int: false
+      fail-on-numbers-for-enums: true
 
 server:
   port: ${PORT:8080}
