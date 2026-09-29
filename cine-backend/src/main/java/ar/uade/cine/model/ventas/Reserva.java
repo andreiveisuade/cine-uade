@@ -2,6 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,9 @@ public class Reserva {
     private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int LARGO_CODIGO = 8;
     private static final SecureRandom AZAR = new SecureRandom();
+
+    // Como la lee el acomodador en la puerta: el toString de LocalDateTime traía segundos y nanos.
+    private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -148,7 +152,7 @@ public class Reserva {
     // la vista para habilitar el cobro, así que el botón y el rechazo no pueden diferir.
     public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
         if (estado != EstadoReserva.RESERVADA) {
-            return Optional.of("La reserva está " + estado + ", no se puede cobrar");
+            return Optional.of("La reserva está " + estado.etiqueta() + ": no se puede cobrar");
         }
         if (estaVencida(ahora)) {
             return Optional.of("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
@@ -170,8 +174,8 @@ public class Reserva {
 
     public void cancelar() {
         if (!esCancelable()) {
-            throw new IllegalArgumentException("La reserva está " + estado
-                    + ", solo se puede cancelar una reserva sin cobrar");
+            throw new IllegalArgumentException("La reserva está " + estado.etiqueta()
+                    + ": solo se puede cancelar una reserva sin cobrar");
         }
         pasarA(EstadoReserva.CANCELADA);
     }
@@ -183,18 +187,18 @@ public class Reserva {
 
     public void registrarIngreso(LocalDateTime cuando) {
         if (estado != EstadoReserva.PAGADA) {
-            throw new IllegalArgumentException("La reserva está " + estado
+            throw new IllegalArgumentException("La reserva está " + estado.etiqueta()
                     + ": solo se ingresa con una reserva pagada");
         }
         if (ingresadaEn != null) {
-            throw new IllegalArgumentException("Esa entrada ya se usó el " + ingresadaEn);
+            throw new IllegalArgumentException("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
         ingresadaEn = cuando;
     }
 
     private void exigirEsperandoPago(String queNoSePuede) {
         if (estado != EstadoReserva.RESERVADA) {
-            throw new IllegalArgumentException("La reserva está " + estado + ", " + queNoSePuede);
+            throw new IllegalArgumentException("La reserva está " + estado.etiqueta() + ": " + queNoSePuede);
         }
     }
 

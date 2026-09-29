@@ -150,8 +150,10 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "  "));
+
+        assertEquals("Falta el código de autorización del pago con crédito", error.getMessage());
     }
 
     @Test
@@ -389,7 +391,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> conEsaPasarela.confirmarCheckout(checkout));
 
-        assertEquals("La reserva está CANCELADA, no se puede cobrar", error.getMessage());
+        assertEquals("La reserva está cancelada: no se puede cobrar", error.getMessage());
         assertEquals(0, pasarela.autorizaciones);
     }
 

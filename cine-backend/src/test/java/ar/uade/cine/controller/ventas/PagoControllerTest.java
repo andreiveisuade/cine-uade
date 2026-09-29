@@ -82,7 +82,7 @@ class PagoControllerTest extends PruebaDeApi {
         Respuesta respuesta = checkout("EFECTIVO");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("El pago con EFECTIVO se cobra en la caja del cine, no por checkout",
+        assertEquals("El pago con efectivo no va por checkout: se cobra en la caja del cine",
                 respuesta.error());
     }
 
@@ -144,7 +144,7 @@ class PagoControllerTest extends PruebaDeApi {
         Respuesta segunda = post("/api/checkouts/" + id + "/confirmacion", "");
 
         assertEquals(400, segunda.estado());
-        assertEquals("La reserva está PAGADA, no se puede cobrar", segunda.error());
+        assertEquals("La reserva está pagada: no se puede cobrar", segunda.error());
         assertEquals(1, get("/api/arqueo?fecha=" + reloj.hoy()).json().get("pagos").size());
     }
 

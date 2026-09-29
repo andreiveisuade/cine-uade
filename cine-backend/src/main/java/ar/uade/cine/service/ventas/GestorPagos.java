@@ -70,8 +70,8 @@ public class GestorPagos {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva, medio);
         if (!medio.requiereAutorizacion()) {
-            throw new IllegalArgumentException("El pago con " + medio
-                    + " se cobra en la caja del cine, no por checkout");
+            throw new IllegalArgumentException("El pago con " + medio.etiqueta()
+                    + " no va por checkout: se cobra en la caja del cine");
         }
 
         Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());

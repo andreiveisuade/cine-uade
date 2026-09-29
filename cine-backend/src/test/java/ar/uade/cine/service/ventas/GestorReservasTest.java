@@ -213,7 +213,11 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(IllegalArgumentException.class, () -> reservas.cancelar(reserva.getId()));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> reservas.cancelar(reserva.getId()));
+
+        assertEquals("La reserva está pagada: solo se puede cancelar una reserva sin cobrar",
+                error.getMessage());
         assertEquals(9, asientosLibres(1, null).size(), "la butaca cobrada sigue ocupada");
     }
 
@@ -363,6 +367,19 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
+    // El estado con su etiqueta, no con la constante (EXPIRADA) que viaja en el JSON.
+    @Test
+    void unaReservaYaExpiradaDiceQueEstaVencida() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+        ocupacion.asientosOcupados(1, null);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+
+        assertEquals("La reserva está vencida: no se puede cobrar", error.getMessage());
+    }
+
     @Test
     void elCodigoNoEsElIdYNoSeRepite() {
         Reserva primera = reservas.reservar(1, 1, generales("A1"), null);
@@ -376,14 +393,20 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException sinPagar = assertThrows(IllegalArgumentException.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 42, 12, 345_678_000));
         assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
 
-        assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException dosVeces = assertThrows(IllegalArgumentException.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
+
+        assertEquals("La reserva está sin pagar: solo se ingresa con una reserva pagada",
+                sinPagar.getMessage());
+        // La hora como la lee el acomodador, no el toString de LocalDateTime (2026-08-20T19:42:12.345678).
+        assertEquals("Esa entrada ya se usó el 20/08 19:42", dosVeces.getMessage());
     }
 
     @Test
