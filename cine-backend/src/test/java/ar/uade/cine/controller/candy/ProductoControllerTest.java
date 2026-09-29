@@ -6,7 +6,10 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -46,6 +49,31 @@ class ProductoControllerTest extends PruebaDeApi {
         assertEquals(404, respuesta.estado());
         assertEquals("No existe el producto 99", respuesta.error());
         assertEquals(404, patch("/api/candy/productos/99", "{\"disponible\":false}").estado());
+        assertEquals("No existe el producto 99", get("/api/candy/productos/99").error());
+    }
+
+    // Sin el @Positive del DTO, el precio lo valida Dinero.importe al convertirlo en el controller: igual
+    // que antes, un precio inválido se rechaza antes de buscar el nombre repetido o el producto.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            alta en cero con nombre repetido    | POST | /api/candy/productos    | {"nombre":"Pochoclos grandes","tipo":"POCHOCLOS","precio":0} | El precio tiene que ser mayor a cero
+            combo con tres decimales y repetido | POST | /api/candy/combos       | {"nombre":"Combo clásico","precio":10.555,"componentes":{}} | El precio tiene que tener como máximo 2 decimales
+            edición negativa de uno que no está | PUT  | /api/candy/productos/99 | {"nombre":"X","precio":-1}                                     | El precio tiene que ser mayor a cero
+            """)
+    void unPrecioInvalidoSeRechazaAntesDeBuscarNada(String caso, String metodo, String ruta, String cuerpo,
+            String mensaje) {
+        Respuesta respuesta = pedirComo(HttpMethod.valueOf(metodo), ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
+    @Test
+    void sinNombreDiceQueFalta() {
+        Respuesta respuesta = post("/api/candy/productos", "{\"nombre\":\" \",\"tipo\":\"BEBIDA\",\"precio\":100}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta el nombre", respuesta.error());
     }
 
     @Test

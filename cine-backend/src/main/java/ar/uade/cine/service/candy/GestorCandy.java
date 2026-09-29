@@ -17,7 +17,6 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Venta del candy en mostrador o para una reserva; Controlador: busca, CompraCandy valida y sale el ticket.
 @Service
@@ -39,17 +38,15 @@ public class GestorCandy {
 
     public CompraCandy venderParaReserva(int reservaId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
-        Reserva reserva = reservaRepository.findById(reservaId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
+        Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
         return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);
     }
 
     private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
                                MedioPago medio, String codigoAutorizacion) {
-        Cliente cliente = clienteId == null ? null : clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
+        Cliente cliente = clienteId == null ? null : clienteRepository.exigir(clienteId, "el cliente");
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
-                productos.buscarOFallar(cantidades));
+                productos.obtener(cantidades));
         compraCandyRepository.save(compra);
         generadorTicket.emitir(compra, cliente);
         return compra;

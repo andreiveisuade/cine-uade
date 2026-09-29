@@ -2,10 +2,10 @@ package ar.uade.cine.dto.candy;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 // Lo que entra al dar de alta un producto suelto (POST /api/candy/productos); exige nombre, tipo y precio.
-public record PedidoProductoDTO(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
+// Solo presencia: el precio lo valida Dinero.importe al convertirlo en el controller.
+public record PedidoProductoDTO(@NotBlank(message = "Falta el nombre") String nombre,
                                 @NotBlank(message = "Falta el tipo de producto") String tipo,
-                                @NotNull(message = "Falta el precio") @Positive(message = "El precio tiene que ser mayor a cero") Double precio) {
+                                @NotNull(message = "Falta el precio") Double precio) {
 }

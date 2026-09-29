@@ -35,10 +35,7 @@ class PrecioDeLosPedidosTest {
                         "DOS_D", precio)),
                 pedido("programación", precio -> new PedidoProgramacionDTO(1, 1, "2026-09-01", null, "20:00",
                         List.of(), "SUBTITULADA", "DOS_D", precio)),
-                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)),
-                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio)),
-                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of())),
-                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio)));
+                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)));
     }
 
     private static Arguments pedido(String nombre, Function<Double, Object> conPrecio) {
@@ -61,5 +58,21 @@ class PrecioDeLosPedidosTest {
         return VALIDADOR.validate(pedido).stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toSet());
+    }
+
+    // Los del candy solo exigen que el precio venga: el valor lo valida Dinero.importe al convertirlo en el
+    // controller, con los mismos textos (ProductoControllerTest los prueba por HTTP).
+    static Stream<Arguments> pedidosDelCandy() {
+        return Stream.of(
+                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio)),
+                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of())),
+                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio)));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("pedidosDelCandy")
+    void enElCandyElPedidoSoloExigeQueElPrecioVenga(String nombre, Function<Double, Object> conPrecio) {
+        assertEquals(Set.of("Falta el precio"), errores(conPrecio.apply(null)));
+        assertEquals(Set.of(), errores(conPrecio.apply(0.0)));
     }
 }

@@ -25,6 +25,7 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -242,5 +243,22 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
         assertThrows(Rechazo.class, () -> candy.venderParaReserva(999,
                 Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, ""));
+    }
+
+    // Quién es igual a quién lo decide la base y no Java: la collation de MySQL ignora acentos ("Maní" y
+    // "Mani") y el UPPER de H2 convierte la ß en SS. Comparando en Java, el producto chocaba consigo mismo.
+    @Test
+    void renombrarUnProductoComoLoComparaLaBaseNoChocaConsigoMismo() {
+        int weiss = carta.agregar("Weiß", TipoProducto.BEBIDA, Dinero.de(3000)).getId();
+
+        assertEquals("WEISS", carta.editar(weiss, "WEISS", Dinero.de(3000)).getNombre());
+    }
+
+    @Test
+    void renombrarloComoOtroProductoEsRepetido() {
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                () -> carta.editar(gaseosa, " pochoclos GRANDES ", Dinero.de(2500)));
+
+        assertEquals("Ya existe un producto con ese nombre", error.getMessage());
     }
 }

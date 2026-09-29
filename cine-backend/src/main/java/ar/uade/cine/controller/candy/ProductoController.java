@@ -26,7 +26,6 @@ import ar.uade.cine.dto.candy.PedidoEdicionProductoDTO;
 import ar.uade.cine.dto.candy.PedidoProductoDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
 import ar.uade.cine.service.candy.GestorProductos;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -54,17 +53,16 @@ public class ProductoController {
     @Operation(summary = "El detalle de un producto")
     @GetMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO producto(@PathVariable int id) {
-        return vistas.producto(carta.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id)));
+        return vistas.producto(carta.obtener(id));
     }
 
     @Operation(summary = "Dar de alta un producto")
     @PostMapping("/api/candy/productos")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductoVistaDTO> agregar(@Valid @RequestBody PedidoProductoDTO pedido) {
+        Dinero precio = precio(pedido.precio());
         Producto producto = carta.agregar(pedido.nombre(),
-                Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"),
-                Dinero.de(pedido.precio()));
+                Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"), precio);
         return creado(producto);
     }
 
@@ -72,14 +70,13 @@ public class ProductoController {
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductoVistaDTO> armarCombo(@Valid @RequestBody PedidoComboDTO pedido) {
-        return creado(carta.armarCombo(pedido.nombre(), Dinero.de(pedido.precio()),
-                pedido.componentes()));
+        return creado(carta.armarCombo(pedido.nombre(), precio(pedido.precio()), pedido.componentes()));
     }
 
     @Operation(summary = "Editar nombre y precio de un producto o combo")
     @PutMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionProductoDTO pedido) {
-        return vistas.producto(carta.editar(id, pedido.nombre(), Dinero.de(pedido.precio())));
+        return vistas.producto(carta.editar(id, pedido.nombre(), precio(pedido.precio())));
     }
 
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
@@ -88,6 +85,12 @@ public class ProductoController {
                                                   @Valid @RequestBody PedidoDisponibilidadDTO pedido) {
         Producto producto = pedido.disponible() ? carta.volverALaVenta(id) : carta.sacarDeLaVenta(id);
         return vistas.producto(producto);
+    }
+
+    // Al convertirlo y antes que nada: un precio inválido no espera a que se busque el producto, el
+    // nombre repetido ni los componentes del combo.
+    private static Dinero precio(Double pesos) {
+        return Dinero.importe(pesos, "precio");
     }
 
     private ResponseEntity<ProductoVistaDTO> creado(Producto producto) {
