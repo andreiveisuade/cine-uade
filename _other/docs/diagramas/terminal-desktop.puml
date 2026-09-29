@@ -10,7 +10,7 @@ node "Boleteria del cine" as term {
   }
   frame "docker compose (reducido)" {
     node "backend\nSpring Boot" as backLocal
-    database "MySQL local\nAUTO_INCREMENT = 1000000" as dbLocal
+    database "MySQL local\nAUTO_INCREMENT = 1000000\n(mismo schema, bloqueo_butaca incluida)" as dbLocal
   }
 }
 
@@ -34,12 +34,6 @@ nginx --> backSrv : proxy /api
 backSrv --> dbSrv
 
 backLocal <-> backSrv : sincronizacion HTTP
-
-note right of dbLocal
-  Mismo schema que el servidor,
-  bloqueo_butaca incluida: con una
-  sola caja queda siempre vacia.
-end note
 
 legend bottom
   |= Que | = Sentido |= Detalle |

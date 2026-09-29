@@ -1,0 +1,90 @@
+@startuml patron-state
+title State: el estado decide que se puede hacer, no un if en su dueno
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Patron State con un enum de cuerpo por constante: cada constante es un estado
+' concreto y sobrescribe solo lo que ella permite. Es enum y no una jerarquia de
+' clases porque los estados no tienen datos propios, y JPA guarda el nombre de
+' la constante como antes. Las transiciones son de paquete: afuera se le habla a
+' la entidad (reserva.pagar(), pelicula.exigirProgramable()), no a su estado.
+' Antes Reserva preguntaba estado == RESERVADA en cinco metodos, y Pelicula y
+' GestorFunciones comparaban contra CONFIRMADA y DESCARTADA cada uno con su texto.
+
+package "model.ventas" {
+  class Reserva <<Entity>> <<Contexto>> {
+    -estado: EstadoReserva
+    +pagar()
+    +cancelar() / expirar()
+    +registrarIngreso(cuando)
+    +esCancelable(): boolean
+    +estaVigente(): boolean
+  }
+  abstract class EstadoReserva <<enum>> <<State>> {
+    ~pagar(): EstadoReserva
+    ~cancelar(): EstadoReserva
+    ~expirar(): EstadoReserva
+    ~ingresar(): EstadoReserva
+    +esperaPago(): boolean
+    +ocupaButacas(): boolean
+    +estaPagada(): boolean
+  }
+  class RESERVADA <<constante>> {
+    pagar() -> PAGADA
+    cancelar() -> CANCELADA (R13)
+    expirar() -> EXPIRADA (R17)
+    esperaPago(), ocupaButacas(): true
+  }
+  class PAGADA <<constante>> {
+    ingresar() -> PAGADA (R18)
+    ocupaButacas(), estaPagada(): true
+  }
+  class "CANCELADA\nEXPIRADA" as Cerradas <<constante>> {
+    no sobrescriben nada
+  }
+}
+
+package "model.cartelera" {
+  class Pelicula <<Entity>> <<Contexto>> {
+    -estadoRevision: EstadoRevision
+    +ponerEnCartelera()
+    +exigirProgramable()
+    +seMuestraAlPublico(): boolean
+    +dejarPendiente() / confirmar() / descartar()
+  }
+  abstract class EstadoRevision <<enum>> <<State>> {
+    ~{abstract} exigirPublicable(titulo)
+    ~{abstract} exigirProgramable(titulo)
+    ~{abstract} seMuestraAlPublico(): boolean
+  }
+  class PENDIENTE <<constante>> {
+    publicar y programar: "revisala antes"
+  }
+  class CONFIRMADA <<constante>> {
+    deja todo; la ve el publico
+  }
+  class DESCARTADA <<constante>> {
+    publicar y programar: "esta descartada"
+  }
+}
+
+Reserva o-right-> EstadoReserva : estado = estado.pagar()
+RESERVADA -up-|> EstadoReserva
+PAGADA -up-|> EstadoReserva
+Cerradas -up-|> EstadoReserva
+EstadoReserva ..> EstadoReserva : lo no sobrescrito rechaza:\n"La reserva esta <etiqueta>: ..."
+
+Pelicula o-right-> EstadoRevision : le delega la pregunta
+PENDIENTE -up-|> EstadoRevision
+CONFIRMADA -up-|> EstadoRevision
+DESCARTADA -up-|> EstadoRevision
+
+legend bottom
+  |= Estado |= Por defecto |= Un estado nuevo |
+  | EstadoReserva | la base rechaza con DatoInvalido | hereda los rechazos y sobrescribe lo que permite |
+  | EstadoRevision | metodos abstractos | no compila hasta decir que hace en cada operacion |
+endlegend
+
+@enduml

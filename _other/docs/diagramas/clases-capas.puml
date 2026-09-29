@@ -9,18 +9,21 @@ hide members
 
 package controller {
   ' Un subpaquete por subdominio con el controlador y su Vistas* juntos, mas
-  ' catalogos/ y http/ (Parseo, Fechas, Creado, ManejadorErrores, ConfiguracionOpenApi).
+  ' catalogos/ y http/ (Parseo, Fechas, Creado, ManejadorErrores, ErroresController,
+  ' ConfiguracionOpenApi).
   ' Ya no hay rutas/: cada controlador es publico y Spring lo descubre solo.
   ' Una familia de rutas por controlador: el bloqueo de butacas, la Puerta, los
-  ' arqueos y el buzon de importadas tienen el suyo en vez de colgar de
-  ' ReservaController, PagoController, CandyController o PeliculaController.
+  ' arqueos, las ventas del candy y el buzon de importadas tienen el suyo en vez
+  ' de colgar de ReservaController, PagoController, ProductoController o
+  ' PeliculaController.
 
-  class "AccesoController, BloqueoController, CajaController\nCandyController, CatalogoController, ClienteController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProgramacionController, PromocionController, ReservaController\nRevisionController, SalaController, SesionController" as Controllers
-  class "VistasCartelera, VistasSalas, VistasVentas\nVistasUsuarios, VistasPromociones, VistasCandy\nVistasInformes" as Vistas
+  class "AccesoController, BloqueoController, CajaController\nCatalogoController, ClienteController, CompraCandyController\nFuncionController, GrillaController, ImportacionController\nInformeController, PagoController, PeliculaController\nProductoController, ProgramacionController, PromocionController\nReservaController, RevisionController, SalaController\nSesionController" as Controllers
+  class "VistasCartelera, VistasSalas, VistasReservas\nVistasPagos, VistasUsuarios, VistasPromociones\nVistasCandy, VistasInformes, VistasProgramaciones" as Vistas
   class Parseo
   class Fechas
   class Creado
   class ManejadorErrores
+  class "ErroresController\n/error en castellano" as ErroresController
 }
 
 ' Los DTO: un tipo por forma de JSON, sin comportamiento. Los subpaquetes son los
@@ -51,20 +54,26 @@ package service {
   class GestorInformes
   class GestorCaja
   class PlanificadorGrilla
-  class CalculadoraPrecio
   class Ocupacion
   interface PoliticaPromociones
-  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, Bordero, InformeFuncion, PropuestaGrilla\nDeclaracionJurada, PeriodoDeclarado" as DatosDeServicio
+  class "DatosPelicula, CriteriosReserva, CriteriosGrilla\nArqueo, ArqueoCandy, Bordero, InformeFuncion\nPropuestaGrilla, DeclaracionJurada, PeriodoDeclarado" as DatosDeServicio
+
+  ' Observer: los gestores publican el hecho y no saben quien lo escucha. Los
+  ' comprobantes salen despues del commit: un cobro deshecho no deja recibo.
+  class "ReservaCreada, PagoRegistrado\nCompraCandyRegistrada\n(eventos)" as Eventos
+  class "ComprobantesDeVentas\n@TransactionalEventListener" as ComprobantesDeVentas
+  class "ComprobantesDeCandy\n@TransactionalEventListener" as ComprobantesDeCandy
 }
 
-' Los adaptadores de salida. Cada uno es una interfaz que declara service/ y una
-' implementacion que Spring resuelve por perfil o por component scan, la misma
-' forma que repository/: un puerto hacia el mundo, no una regla. Estan juntos
+' Los adaptadores de salida. Cada uno es una interfaz en la raiz de su puerto y una
+' implementacion en un subpaquete, que elige un @Bean de Adaptadores: la misma
+' forma que repository/, un puerto hacia el mundo, no una regla. Estan juntos
 ' bajo infrastructure/ para que el nivel de arriba del paquete sean las capas.
 package infrastructure {
 
   package seguridad {
     class "ConfiguracionSeguridad\nSpring Security: rutas por rol, Basic, bcrypt" as ConfiguracionSeguridad
+    class "PasswordBcrypt\nDecorator del encoder" as PasswordBcrypt
     class PasswordSha256
   }
 
@@ -108,7 +117,7 @@ package infrastructure {
 
 package model {
   package cartelera as dom_cartelera {
-    class "Pelicula, Importacion @Entity\nGenero, Clasificacion, EstadoRevision" as DomCartelera
+    class "Pelicula, Importacion @Entity\nCatalogoPelicula\nGenero, Clasificacion\nEstadoRevision (State)" as DomCartelera
   }
   package salas as dom_salas {
     class "Sala, Asiento @Entity\nTipoSala, TipoAsiento, EstadoAsiento" as DomSalas
@@ -120,20 +129,27 @@ package model {
     class "Programacion @Entity" as DomProgramaciones
   }
   package ventas as dom_ventas {
-    class "Reserva, Entrada, Pago, BloqueoButaca @Entity\nEstadoReserva, MedioPago, TipoTarifa" as DomVentas
+    class "Reserva, Entrada, Pago, BloqueoButaca @Entity\nEstadoReserva (State), MedioPago, TipoTarifa\nCodigoDeAcceso, SesionDeCompra" as DomVentas
   }
   package candy as dom_candy {
     class "Producto, CompraCandy, ItemCompra @Entity\nItemCombo, TipoProducto" as DomCandy
   }
   package promociones as dom_promociones {
-    class "Promocion (abstract @Entity)\nPorcentaje, MontoFijo, NxM\nCondicionesPromocion, TipoPromocion" as DomPromociones
+    class "Promocion (abstract @Entity)\nPorcentaje, MontoFijo, NxM\nTipoPromocion (Factory Method)\nCondicionesPromocion, ParametrosPromocion" as DomPromociones
   }
   package usuarios as dom_usuarios {
-    class "Usuario, Cliente, Empleado @Entity\nRol" as DomUsuarios
+    class "Usuario, Cliente, Empleado @Entity\nRol, Email, Contrasena" as DomUsuarios
+  }
+  package rechazos as dom_rechazos {
+    class "Rechazo (sellada)\nDatoInvalido 400, RecursoNoEncontrado 404\nConflictoDeNegocio 409, ButacaOcupada 409" as DomRechazos
+  }
+  package "tiempo, validacion" as dom_transversal {
+    class "Periodo, FranjaHoraria\nRegla y sus guardas fluidas\n+ <subdominio>/validacion/Validador*" as DomTransversal
   }
 }
 
 package repository {
+  interface "Repositorio<T>\nexigir(id, que): 404 si no esta" as Repositorio <<la heredan las 13 de id numerico>>
   interface PeliculaRepository
   interface SalaRepository
   interface AsientoRepository
@@ -150,13 +166,6 @@ package repository {
   interface ImportacionRepository
   class DineroConverter
 
-  note bottom of PeliculaRepository
-    14 interfaces JpaRepository, en un
-    subpaquete por subdominio como model/:
-    sin implementacion propia y sin
-    subcarpeta por tecnologia. Spring
-    Data genera la unica que existe.
-  end note
 }
 
 class Aplicacion
@@ -194,7 +203,6 @@ GestorProgramaciones -right-> GestorFunciones
 GestorProgramaciones -down-> ProgramacionRepository
 GestorClientes -down-> ClienteRepository
 GestorReservas -down-> ReservaRepository
-GestorReservas -down-> GeneradorTicket
 
 ' Que butacas estan tomadas es una pregunta sobre la funcion, no sobre una
 ' reserva: por eso Ocupacion es una clase y no un metodo de GestorReservas.
@@ -211,15 +219,25 @@ GestorPagos -down-> PagoRepository
 GestorCandy -right-> GestorProductos
 GestorProductos -down-> ProductoRepository
 GestorCandy -down-> CompraCandyRepository
-GestorCandy -down-> GeneradorTicketCandy
 GestorEmpleados -down-> EmpleadoRepository
-GestorReservas ..> CalculadoraPrecio
 ConfiguracionSeguridad ..> EmpleadoRepository
-ConfiguracionSeguridad ..> PasswordSha256
+ConfiguracionSeguridad ..> PasswordBcrypt
+PasswordBcrypt ..> PasswordSha256
 GeneradoresTxt ..up|> comprobantes
+PeliculaRepository -up-|> Repositorio
+
+' Observer: publicar no es depender del que escucha. Los gestores ya no
+' conocen a ningun generador; los comprobantes los emite quien escucha.
+GestorReservas ..> Eventos : publica
+GestorPagos ..> Eventos : publica
+GestorCandy ..> Eventos : publica
+ComprobantesDeVentas ..> Eventos : escucha
+ComprobantesDeCandy ..> Eventos : escucha
+ComprobantesDeVentas -down-> GeneradorTicket
+ComprobantesDeVentas -down-> GeneradorRecibo
+ComprobantesDeCandy -down-> GeneradorTicketCandy
 
 GestorPagos -down-> PasarelaPagos
-GestorPagos -down-> GeneradorRecibo
 PasarelaEmulada ..up|> PasarelaPagos
 
 GestorInformes -down-> PagoRepository
@@ -236,26 +254,13 @@ service ..> infrastructure
 
 legend bottom
   |= Capa |= De que se ocupa |
-  | controller | Como se habla con la aplicacion: HTTP. 18 @RestController, una familia de rutas cada uno, |
-  |  | traducen a JSON, las siete Vistas* arman los DTO de la respuesta y Parseo lee los parametros. Cada Vistas* vive |
-  |  | en el subpaquete de su controlador. Ninguna regla vive aca: Spring los descubre por component scan. |
-  | dto | La forma del JSON, en objetos sin comportamiento: un tipo por mensaje que entra o sale. |
-  | Aplicacion | Solo @SpringBootApplication + main(). Cada @Service, @Repository |
-  |  | y @RestController se conecta solo. Que implementacion de infrastructure/ se usa lo decide |
-  |  | un perfil de Spring, no una linea de codigo. |
-  | service | Las reglas que necesitan la base, el reloj u otros objetos. Cada gestor pide los repositorios |
-  |  | que necesita para validarlas; lo que un objeto valida con sus propios datos queda en la entidad. |
-  | model | Que es un cine. Cada entidad @Entity con sus enums, agrupadas por sub-dominio. Valida sus |
-  |  | datos al nacer y al cambiar, y crea lo que contiene: Sala sus butacas, Producto |
-  |  | sus ItemCombo, CompraCandy sus ItemCompra. No depende de ninguna otra capa. Las jerarquias |
-  |  | reales son Promocion y Usuario. |
-  | repository | 14 interfaces JpaRepository, por subdominio como model/. Spring Data genera la implementacion. |
-  | infrastructure | Los puertos hacia afuera, con la misma forma que repository/: la interfaz la |
-  |  | declara el que la necesita. **pasarelas**: quien autoriza un pago electronico. |
-  |  | **comprobantes**: el ticket que se entrega; no es de persistencia, se imprime y no se |
-  |  | consulta. **importador**: de donde sale la cartelera. **reloj**: la hora, reemplazable en tests. |
-  |  | **seguridad**: quien entra y con que rol (Spring Security, bcrypt). La butaca mientras se elige |
-  |  | ya no es un puerto: es una tabla mas. |
+  | controller | HTTP: 19 @RestController, una familia de rutas cada uno, y nueve Vistas*. Ninguna regla vive aca |
+  | dto | La forma del JSON. Objetos sin comportamiento |
+  | service | Las reglas que necesitan la base, el reloj u otros objetos. Los comprobantes, despues del commit |
+  | model | Que es un cine: entidades, Value Objects, Validador* y Rechazo. No depende de ninguna otra capa |
+  | repository | 14 interfaces JpaRepository; 13 heredan exigir() de Repositorio<T>. Spring Data las implementa |
+  | infrastructure | Los puertos hacia afuera: comprobantes, pasarelas, importador, reloj, seguridad |
+  | Aplicacion | @SpringBootApplication + main(). La implementacion de cada puerto la elige Adaptadores |
 endlegend
 
 @enduml

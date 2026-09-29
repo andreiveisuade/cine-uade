@@ -13,15 +13,12 @@ hide empty members
 ' del otro. Fabricacion pura es exactamente ese tercer lugar.
 
 package "service.ventas" {
-  class Ocupacion {
+  class Ocupacion <<unica definicion de ocupado, R4>> {
+    +funcionEnVenta(funcionId): Funcion
     +asientosOcupados(funcionId, sesion): Set<Integer>
     {static} +libresEntre(asientos, ocupados): List<Asiento>
     +bloquear(funcionId, codigos, sesion): Bloqueo
     +liberar(funcionId, sesion)
-  }
-  class CalculadoraPrecio {
-    +precioDe(Funcion, Sala, Asiento,\nTipoTarifa): Dinero
-    +precioBaseEnSala(Funcion, Sala): Dinero
   }
 }
 
@@ -29,14 +26,18 @@ package "service.funciones" {
   class GestorFunciones {
     +agendaDe(salaId, desde, hasta): AgendaDeSala
   }
-  class AgendaDeSala {
+  class AgendaDeSala <<unica definicion de R3>> {
+    +chocaCon(inicio, fin): Optional<Funcion>
     +chocaEn(inicio, fin): boolean
   }
 }
 
 package "service.programaciones" {
   class PlanificadorGrilla
-  class PuntajeConfiable {
+  class ElencoGrilla <<cuenta sobre una lista, sin base>> {
+    {static} ~elegir(confirmadas, cuantas): List<Pelicula>
+  }
+  class PuntajeConfiable <<promedio bayesiano, sin base>> {
     ~PuntajeConfiable(catalogo: List<Pelicula>)
     ~de(Pelicula): double
   }
@@ -44,68 +45,8 @@ package "service.programaciones" {
 
 GestorFunciones -right-> AgendaDeSala : agendaDe()\nconstruye y devuelve
 PlanificadorGrilla -up-> AgendaDeSala : chocaEn(), una vez\npor sala por corrida
+PlanificadorGrilla -down-> ElencoGrilla : elegir(), una vez\npor corrida
 PlanificadorGrilla -right-> PuntajeConfiable : una por corrida,\nde() por pelicula
-
-note right of Ocupacion
-  Que butacas estan tomadas es un hecho sobre
-  la FUNCION, no sobre la reserva ni sobre la
-  sala: una reserva vigente las toma, un bloqueo
-  de quien esta eligiendo tambien. No cabia en
-  Reserva -no sabe de otras reservas- ni en Sala
-  -no sabe de horarios-, y ponerla en GestorReservas
-  la hubiera dejado escondida ahi cuando la API
-  necesita la misma pregunta para
-  dibujar el mapa antes de que exista ninguna
-  reserva. Es la unica definicion de "ocupado"
-  del sistema.
-end note
-
-note right of CalculadoraPrecio
-  El precio de lista de una butaca: funcion x
-  multiplicador de sala x multiplicador de
-  butaca x multiplicador de tarifa. No es un
-  metodo de Funcion, Sala ni Asiento porque
-  necesita a los tres juntos, y ponerlo en
-  cualquiera de ellos le daria a esa entidad
-  una responsabilidad sobre las otras dos. Los
-  descuentos por promocion no pasan por aca: un
-  2x1 no se puede expresar como factor de una
-  butaca sola, por eso esa cuenta vive en otro
-  lado (ver solid-ocp.puml).
-end note
-
-note bottom of AgendaDeSala
-  Existe por costo, no por modelo. La regla de
-  R3 -que dos funciones de una sala no se pisen-
-  ya la resuelve GestorFunciones.superpuestaEn()
-  para una consulta suelta, pero el planificador
-  prueba cientos de horarios por corrida y repetir
-  esas lecturas contra MySQL en cada intento
-  llevaba una propuesta de una semana a mas de
-  veinte segundos. AgendaDeSala no reescribe la
-  regla: guarda los tramos que GestorFunciones ya
-  calculo y solo compara numeros. Si R3 cambia,
-  cambia en un solo lugar.
-end note
-
-note bottom of PuntajeConfiable
-  El puntaje de una pelicula corregido por sus
-  votos: un promedio bayesiano contra el
-  catalogo, para que un 9 con tres votos no le
-  gane a un 8 con miles. No cabia en Pelicula
-  -no sabe de las otras peliculas- y en el
-  planificador era un promedio suelto que se
-  pasaba entre cuatro metodos. Es cuenta pura,
-  sin base ni reloj: se prueba con una lista.
-end note
-
-note as N1
-  Las cuatro son fabricacion pura por el mismo
-  motivo: existen para que otra clase -una
-  entidad o un gestor- no cargue con una
-  responsabilidad que no es la suya, sin que
-  esa responsabilidad deje de tener un lugar
-  donde vivir bien cohesionada.
-end note
+ElencoGrilla -right-> PuntajeConfiable
 
 @enduml

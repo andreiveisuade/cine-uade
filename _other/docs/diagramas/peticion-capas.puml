@@ -14,7 +14,7 @@ end box
 
 box "contenedor backend\nredes: web + datos" #F2F0ED
   participant "ReservaController\ncontroller/ventas/" as CTRL
-  participant "VistasVentas\ncontroller/ventas/" as VIS
+  participant "VistasReservas\ncontroller/ventas/" as VIS
   participant "GestorReservas\nservice/ventas/" as GEST
   participant "ReservaRepository\nrepository/ventas/" as REPO
 end box
@@ -23,23 +23,19 @@ box "contenedor mysql\nred: datos" #F2F0ED
   database "MySQL\n:3306" as DB
 end box
 
-N -> NGINX : POST /api/reservas\nlocalhost:8080
-note right of N
-  El unico puerto publicado
-  al host es este.
-end note
+N -> NGINX : POST /api/reservas\nlocalhost:8080 (unico puerto publicado)
 
-NGINX -> CTRL : proxy_pass\nbackend:8080
-note right of NGINX
-  Mismo origen: no hace
-  falta CORS.
-end note
+NGINX -> CTRL : proxy_pass backend:8080\n(mismo origen: sin CORS)
 
 CTRL -> CTRL : PedidoReservaDTO\n(Jackson deserializa)
 CTRL -> GEST : reservar(funcionId, nombre,\nemail, butacas, sesion)
 activate GEST
 
 GEST -> GEST : coordina R19 y R4; Funcion,\nAsiento y Reserva validan lo suyo
+alt una entidad o el gestor rechazan
+  GEST --> CTRL : Rechazo (model/rechazos/)
+  CTRL --> NGINX : ManejadorErrores: DatoInvalido 400,\nRecursoNoEncontrado 404, ConflictoDeNegocio\ny ButacaOcupada 409, {error} con el texto intacto
+else
 GEST -> REPO : saveAndFlush(reserva)
 REPO -> DB : INSERT reserva + entrada
 DB --> REPO : id
@@ -50,15 +46,8 @@ deactivate GEST
 CTRL -> VIS : reserva(Reserva)
 VIS --> CTRL : ReservaVistaDTO
 
-CTRL --> NGINX : 201 + JSON
-NGINX --> N : 201 + JSON
-
-note over CTRL, REPO
-  Si el gestor tira IllegalArgumentException,
-  ManejadorErrores (@RestControllerAdvice) la
-  traduce a 400 con el mensaje intacto:
-  ese texto se le muestra al usuario.
-  RecursoNoEncontrado -> 404 · ButacaOcupada -> 409
-end note
+CTRL --> NGINX : 201 + Location + JSON
+end
+NGINX --> N : la respuesta, tal cual
 
 @enduml

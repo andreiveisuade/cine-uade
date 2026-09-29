@@ -9,18 +9,18 @@ hide members
 
 package controller {
   package http {
-    class "Parseo, Fechas, Creado\nManejadorErrores, ConfiguracionOpenApi" as Http
+    class "Parseo, Fechas, Creado\nManejadorErrores, ErroresController\nConfiguracionOpenApi" as Http
   }
-  class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n18 @RestController (una familia de rutas cada uno, sin fachada)\ny en el mismo subpaquete su Vistas* (ensamblador de DTO)" as Controllers
+  class "candy, cartelera, catalogos, funciones, informes\nprogramaciones, promociones, salas, usuarios, ventas\n\n19 @RestController (una familia de rutas cada uno, sin fachada)\ny en el mismo subpaquete su Vistas* (ensamblador de DTO)" as Controllers
 }
 
-package dto {
+package dto <<mismos subdominios que las demas capas>> {
   class "candy, cartelera, catalogos, comun, funciones\ninformes, programaciones, promociones\nsalas, usuarios, ventas" as Dtos
 }
 
 package service {
   package candy as srv_candy {
-    class "GestorCandy\nGestorProductos" as SrvCandy
+    class "GestorCandy, GestorProductos\nComprobantesDeCandy, CompraCandyRegistrada" as SrvCandy
   }
   package cartelera as srv_cartelera {
     class "GestorCartelera, GestorRevisionCartelera\nGestorImportaciones, DatosPelicula" as SrvCartelera
@@ -29,10 +29,10 @@ package service {
     class "GestorFunciones\nAgendaDeSala" as SrvFunciones
   }
   package informes as srv_informes {
-    class "GestorInformes, GestorCaja\nArqueo, Bordero, InformeFuncion\nDeclaracionJurada, PeriodoDeclarado" as SrvInformes
+    class "GestorInformes, GestorCaja\nArqueo, ArqueoCandy, Bordero, InformeFuncion\nDeclaracionJurada, PeriodoDeclarado" as SrvInformes
   }
   package programaciones as srv_programaciones {
-    class "GestorProgramaciones, PlanificadorGrilla\nPuntajeConfiable, PlanProgramacion\nCriteriosGrilla, PropuestaGrilla" as SrvProgramaciones
+    class "GestorProgramaciones, PlanificadorGrilla\nElencoGrilla, IndicadoresGrilla, PuntajeConfiable\nPlanProgramacion, CriteriosGrilla, PropuestaGrilla" as SrvProgramaciones
   }
   package promociones as srv_promociones {
     class "GestorPromociones\nPoliticaPromociones" as SrvPromociones
@@ -44,16 +44,16 @@ package service {
     class "GestorClientes\nGestorEmpleados" as SrvUsuarios
   }
   package ventas as srv_ventas {
-    class "GestorReservas, GestorPagos, GestorAcceso\nConsultasReservas, Ocupacion\nCalculadoraPrecio, CriteriosReserva" as SrvVentas
+    class "GestorReservas, GestorPagos, GestorAcceso\nConsultasReservas, Ocupacion, CriteriosReserva\nComprobantesDeVentas, ReservaCreada, PagoRegistrado" as SrvVentas
   }
 }
 
-package model {
-  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios, dinero" as DomSubpaquetes
+package model <<no depende de ninguna otra capa>> {
+  class "cartelera, salas, funciones, programaciones\nventas, candy, promociones, usuarios, dinero\n+ rechazos, validacion, tiempo\n(cada subdominio con su validacion/Validador*)" as DomSubpaquetes
 }
 
 package repository {
-  class "14 interfaces JpaRepository por subdominio\n(sin implementacion propia)\n+ dinero/DineroConverter" as Repos
+  class "Repositorio<T>: exigir(id) o 404, en un solo lugar\n14 interfaces JpaRepository por subdominio\n(sin implementacion propia; 13 heredan Repositorio)\n+ dinero/DineroConverter" as Repos
 }
 
 package infrastructure {
@@ -69,21 +69,6 @@ service ..> repository
 service ..> infrastructure
 repository ..> model
 infrastructure ..> model
-
-note bottom of model
-  No depende de NADA externo: ni de
-  controller, ni de service, ni de
-  repository, ni de una libreria de
-  terceros salvo java.time. Es la unica
-  capa que se podria llevar a otro
-  proyecto tal cual.
-end note
-
-note top of Dtos
-  Todas las capas usan la misma lista de
-  subdominios: sabiendo el subdominio se
-  sabe el paquete en cualquiera de ellas.
-end note
 
 Aplicacion .. Controllers
 

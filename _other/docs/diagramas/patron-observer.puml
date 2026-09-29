@@ -1,0 +1,81 @@
+@startuml patron-observer
+title Observer: la venta avisa, los comprobantes salen despues del commit
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Los gestores escribian el ticket o el recibo adentro de su transaccion. Si el
+' commit fallaba despues (el @Version de Reserva salta recien al confirmar),
+' quedaba en la carpeta un recibo de un cobro que no existio, y cada gestor
+' dependia de su generador. Ahora el gestor publica un evento con solo el id y
+' Spring hace de lista de suscriptores: encuentra los @TransactionalEventListener
+' por el tipo del parametro y los corre recien cuando la transaccion confirma.
+
+package "service (sujetos)" as sujetos {
+  class GestorReservas
+  class GestorPagos
+  class GestorCandy
+}
+
+class "ApplicationEventPublisher" as Spring <<Spring>> {
+  +publishEvent(evento)
+}
+
+package "service (eventos)" as eventos {
+  class ReservaCreada <<record>> {
+    reservaId
+  }
+  class PagoRegistrado <<record>> {
+    pagoId
+  }
+  class CompraCandyRegistrada <<record>> {
+    compraId
+  }
+}
+
+package "service (observadores)" as observadores {
+  class ComprobantesDeVentas <<AFTER_COMMIT>> <<REQUIRES_NEW, solo lectura>> {
+    +emitirTicket(ReservaCreada)
+    +emitirRecibo(PagoRegistrado)
+  }
+  class ComprobantesDeCandy <<AFTER_COMMIT>> <<REQUIRES_NEW, solo lectura>> {
+    +emitirTicket(CompraCandyRegistrada)
+  }
+}
+
+package "infrastructure.comprobantes (puertos)" as puertos {
+  interface GeneradorTicket {
+    +emitir(reserva)
+  }
+  interface GeneradorRecibo {
+    +emitir(pago, reserva)
+  }
+  interface GeneradorTicketCandy {
+    +emitir(compra, cliente)
+  }
+}
+
+GestorReservas ..> Spring : publica
+GestorPagos ..> Spring : publica
+GestorCandy ..> Spring : publica
+Spring ..> ReservaCreada
+Spring ..> PagoRegistrado
+Spring ..> CompraCandyRegistrada
+
+ComprobantesDeVentas ..> ReservaCreada : escucha
+ComprobantesDeVentas ..> PagoRegistrado : escucha
+ComprobantesDeCandy ..> CompraCandyRegistrada : escucha
+
+ComprobantesDeVentas --> GeneradorTicket
+ComprobantesDeVentas --> GeneradorRecibo : {solo si pago.llevaRecibo()}
+ComprobantesDeCandy --> GeneradorTicketCandy
+
+legend bottom
+  |= Si... |= Pasa |
+  | la transaccion se deshace | Spring descarta el evento: sin commit no hay comprobante |
+  | el archivo falla despues del commit | la venta queda; el error va al log para reimprimirlo |
+  | se suma otro aviso | otro @TransactionalEventListener: el gestor no cambia |
+endlegend
+
+@enduml

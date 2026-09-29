@@ -7,12 +7,14 @@ skinparam ranksep 34
 
 abstract class Promocion <<@Entity>> {
   nombre
-  vigencia
+  vigencia : Periodo
   diasSemana
-  horario
+  franja : FranjaHoraria
   mediosPago
   --
-  {abstract} calcularDescuento(entradas)
+  aplicaA(inicioFuncion, medio)
+  {abstract} getParametros()
+  {abstract} calcularDescuento(entradas de tarifa general)
 }
 
 class PromocionPorcentaje {
@@ -34,15 +36,17 @@ class PromocionNxM {
   entradas mas baratas
 }
 
+enum TipoPromocion <<Factory Method>> {
+  PORCENTAJE
+  MONTO_FIJO
+  NXM
+  --
+  {abstract} crear(nombre, parametros, condiciones, hoy)
+}
+
 Promocion <|-- PromocionPorcentaje
 Promocion <|-- PromocionMontoFijo
 Promocion <|-- PromocionNxM
-
-note bottom of Promocion
-  Recibe las entradas, no la reserva: R16
-  hecho firma. Las de tarifa reducida no
-  se le pasan, asi que no pueden entrar
-  al descuento por descuido.
-end note
+TipoPromocion ..> Promocion : cada constante\ncrea su subclase
 
 @enduml

@@ -7,12 +7,14 @@ hide footbox
 actor Cliente
 participant "ReservaController" as Ctrl
 participant "GestorReservas" as Gestor
-participant "GestorClientes" as Clientes
 participant "Ocupacion" as Ocupacion
-participant "Asiento" as Asiento <<Entity>>
-participant "CalculadoraPrecio" as Precio
+participant "GestorClientes" as Clientes
+participant "Funcion" as Funcion <<Entity>>
+participant "Entrada" as Entrada <<Entity>>
 participant "Reserva" as Reserva <<Entity>>
 participant "ReservaRepository" as Repo <<interface>>
+participant "Spring\n(eventos)" as Eventos
+participant "ComprobantesDeVentas" as Comprobantes
 participant "GeneradorTicket" as Ticket <<interface>>
 
 Cliente -> Ctrl : POST /api/reservas\n{funcionId, nombre, email,\nbutacas: codigo -> tarifa, sesion}
@@ -20,15 +22,24 @@ activate Ctrl
 Ctrl -> Gestor : reservar(funcionId, nombre,\nemail, butacas, sesion)
 activate Gestor
 
-Gestor -> Clientes : identificar(nombre, email)
-activate Clientes
-Clientes --> Gestor : cliente (lo da de alta si no existia)
-deactivate Clientes
-
-alt R19: funcion.yaEmpezo(ahora)
-  Gestor --> Ctrl : IllegalArgumentException
+' La funcion va antes que el cliente: si no existe o ya empezo, eso anula lo
+' demas, y un email de empleado no puede taparlo.
+Gestor -> Ocupacion : funcionEnVenta(funcionId)
+activate Ocupacion
+Ocupacion -> Funcion : yaEmpezo(ahora)
+alt R19: la funcion ya empezo
+  Ocupacion --> Gestor : DatoInvalido
+  Gestor --> Ctrl : DatoInvalido
   Ctrl --> Cliente : 400 {error}
 else
+  Ocupacion --> Gestor : funcion
+  deactivate Ocupacion
+
+  Gestor -> Clientes : identificar(nombre, email)
+  activate Clientes
+  Clientes --> Gestor : cliente (lo da de alta si no existia)
+  deactivate Clientes
+
   Gestor -> Ocupacion : asientosOcupados(funcionId, sesion)
   activate Ocupacion
   Ocupacion -> Repo : findByFuncion_Id(funcionId)
@@ -37,35 +48,44 @@ else
   deactivate Ocupacion
 
   loop por cada butaca pedida
-    Gestor -> Asiento : exigirConCodigo(deLaSala, codigo)
-    activate Asiento
-    Asiento --> Gestor : la butaca, si es de esta sala
-    deactivate Asiento
-    Gestor -> Asiento : estaFueraDeServicio() (R9)
+    Gestor -> Gestor : Asiento.exigirConCodigo(deLaSala, codigo)
+    Gestor -> Funcion : precioDe(asiento, sala)
+    Funcion --> Gestor : base x sala x butaca
+    create Entrada
+    Gestor -> Entrada : new Entrada(asiento, tarifa, precio)
+    Entrada -> Entrada : exige la butaca en servicio (R9)\ny le aplica su tarifa: precio congelado
     Gestor -> Gestor : no esta entre los tomados (R4)
-    Gestor -> Precio : precioDe(funcion, sala,\nasiento, tarifa)
-    Precio --> Gestor : precio congelado en la Entrada
   end
 
   create Reserva
   Gestor -> Reserva : new Reserva(funcion, cliente,\nentradas, ahora)
-  Reserva -> Reserva : exige al menos una entrada\ny genera el codigo de acceso
+  Reserva -> Reserva : de 1 a 10 butacas sin repetir,\nnace RESERVADA y con su CodigoDeAcceso
 
-  alt alguna butaca no se puede vender\no no se pidio ninguna
-    Gestor --> Ctrl : IllegalArgumentException
-    Ctrl --> Cliente : 400 {error}
+  alt una butaca no existe, esta fuera de servicio (R9)\no ya es de otro (R4); ninguna, mas de 10 o repetida
+    Gestor --> Ctrl : DatoInvalido,\no ButacaOcupada si es R4
+    Ctrl --> Cliente : 400 {error}, o 409 si es R4
   else
     Gestor -> Repo : saveAndFlush(reserva)
     activate Repo
     alt UNIQUE (funcion_id, asiento_id) violado
       Repo --> Gestor : DataIntegrityViolationException
-      Gestor --> Ctrl : ButacaOcupadaException
+      Gestor --> Ctrl : ButacaOcupada
       Ctrl --> Cliente : 409 {error}
     else
       Repo --> Gestor : reserva con id
       deactivate Repo
       Gestor -> Ocupacion : liberar(funcionId, sesion)
-      Gestor -> Ticket : emitir(reserva, funcion,\npelicula, sala, cliente)
+      Gestor -> Eventos : publishEvent(ReservaCreada(id))\nlo retiene hasta el commit;\nsi se deshace, lo descarta
+
+      == commit de la transaccion de GestorReservas ==
+
+      Eventos -> Comprobantes : emitirTicket(ReservaCreada)\n@TransactionalEventListener (AFTER_COMMIT)
+      activate Comprobantes
+      Comprobantes -> Repo : exigir(reservaId)\nREQUIRES_NEW, solo lectura
+      Comprobantes -> Ticket : emitir(reserva)\n(si falla: al log, la venta queda)
+      Ticket -> Ticket : escribe\ntickets/ticket-N.txt
+      deactivate Comprobantes
+
       Gestor --> Ctrl : reserva
       Ctrl --> Cliente : 201 ReservaVistaDTO
     end

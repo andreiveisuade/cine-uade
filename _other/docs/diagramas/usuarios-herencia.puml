@@ -29,10 +29,4 @@ Usuario <|-- Cliente
 Usuario <|-- Empleado
 Usuario --> Rol : discriminador
 
-note right of Empleado
-  El corte es tener contrasena,
-  no el cargo. Rol distingue
-  adentro de Empleado.
-end note
-
 @enduml

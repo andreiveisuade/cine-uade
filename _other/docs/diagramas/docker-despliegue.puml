@@ -19,12 +19,14 @@ node "Docker host\ndocker-compose.yml (cine-docker)" {
   node "cine-backend\neclipse-temurin:21-jre-alpine" as backend
 
   frame "red **datos**" {
-    database "cine-mysql\nmysql:8.4" as mysql
+    database "cine-mysql\nmysql:8.4\n(initdb con el volumen vacio:\n01-schema.sql, 02-admin.sql;\nguarda bloqueo_butaca)" as mysql
     node "cine-adminer\nadminer:5" as adminer
   }
 
   artifact "mysql_data\n(volumen nombrado)" as vol
 }
+
+artifact ".env (no versionado)\nMYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME\nPUERTO_WEB, PUERTO_ADMINER, TZ\nTMDB_TOKEN, TMDB_REGION" as env
 
 actor "Desarrollador" as dev
 cloud "TMDB\napi.themoviedb.org" as tmdb
@@ -43,53 +45,19 @@ backend --> mysql : DB_HOST=mysql:3306
 adminer --> mysql : ADMINER_DEFAULT_SERVER
 mysql --> vol : monta en\n/var/lib/mysql
 
-note right of mysql
-  docker-entrypoint-initdb.d
-  (corre solo con el volumen vacio):
-  01-schema.sql <- cine-backend/src/main/resources
-  02-admin.sql  <- cine-docker/seed/
-  Tambien guarda los bloqueos de butaca
-  mientras se elige (bloqueo_butaca).
-end note
-
-note bottom of backend
-  Sin ports propio: solo se llega
-  desde adentro de Docker. Por eso
-  tampoco hace falta CORS.
-end note
-
-note right of tmdb
-  Unica llamada saliente del sistema,
-  y solo cuando el encargado aprieta
-  el boton en Swing: no corre nada por su
-  cuenta. Lo que trae entra al buzon
-  por GestorRevisionCartelera, con
-  las reglas de GestorCartelera.
-end note
-
-note as envNote
-  .env (no versionado, copiado de .env.example)
-  MYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME
-  PUERTO_WEB (8080), PUERTO_ADMINER (8081), TZ
-  TMDB_TOKEN, TMDB_REGION (los usa el backend)
-end note
-envNote ..> mysql
-envNote ..> backend
-
 legend bottom
   |= Elemento |= Detalle |
-  | cine-docker | Carpeta que orquesta. Los ` build:` de compose apuntan a las otras dos carpetas |
-  |  | del monorepo; no tiene codigo de la app propio, solo docker-compose.yml, .env y el seed. |
-  | red **web** | frontend <-> backend. |
-  | cine-swing | App de escritorio del encargado y del acomodador. Entra por el mismo nginx que la web: |
-  |  | un cliente HTTP mas, sin puerto propio ni ruta a la base. |
-  | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base. |
-  | backend | Unico contenedor en las dos redes: es el puente entre datos y web. |
-  | TMDB | La cartelera real, a pedido del encargado desde Swing. Es un adaptador dentro del backend |
-  |  | (infrastructure/importador/): no hay contenedor aparte. |
-  | Puertos al host | Solo nginx (8080) y adminer, y este ultimo solo en loopback (127.0.0.1:8081). |
-  |  | mysql y backend no publican nada: se hablan por la red interna de Docker. |
-  | Orden de arranque | healthcheck de mysql -> backend espera "service_healthy" -> frontend espera al backend. |
+  | Puertos al host | Solo nginx (8080) y adminer (127.0.0.1:8081). mysql y backend no publican nada |
+  | red **web** | frontend <-> backend |
+  | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base |
+  | backend | Unico contenedor en las dos redes: es el puente. Sin puerto propio, sin CORS |
+  | cine-swing | Un cliente HTTP mas: entra por el mismo nginx que la web |
+  | TMDB | Adaptador dentro del backend (infrastructure/importador/), a pedido del encargado |
+  | cine-docker | Solo orquesta: compose, .env y el seed. Sin codigo de la app |
+  | Orden de arranque | mysql healthy -> backend healthy -> frontend |
 endlegend
+
+env ..> mysql
+env ..> backend
 
 @enduml

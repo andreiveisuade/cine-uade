@@ -26,23 +26,17 @@ TM --> GI : candidatas
 deactivate TM
 
 loop una por vez, en orden
-  GI -> GI : R1: ya esta ese titulo?
+  GI -> GI : R1: ya esta ese titulo?\nsi esta, salteada
   GI -> GR : importar(datos)
-  GR -> GR : alta por GestorCartelera:\nPelicula valida R2, R7, R10
+  GR -> DB : alta por GestorCartelera:\nPelicula valida R2, R7, R10
   GR -> GR : pelicula.dejarPendiente()\n(PENDIENTE, fuera de cartelera)
-  GR -> DB : save(pelicula)
+  opt la candidata falla (un Rechazo o un error de la base)
+    GI -> GI : cuenta fallida y sigue con la proxima;\nel error de base va al log
+  end
 end
 
 GI --> NG : contadores de la corrida
 deactivate GI
 NG --> E : 201 + resumen
-
-note over GR, DB
-  Cae en el buzon "Por revisar", no en
-  cartelera. GestorFunciones rechaza
-  programar una pelicula sin confirmar.
-  Lo descartado no se borra: si no, la
-  corrida siguiente lo traeria otra vez.
-end note
 
 @enduml

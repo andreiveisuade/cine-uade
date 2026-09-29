@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (entidad o gestor, API y pantalla), con 628 tests en el backend y 55 en Swing.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (entidad o gestor, API y pantalla), con 1149 tests en el backend y 60 en Swing.</p>
       </div>
     </section>
 
@@ -483,13 +483,13 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="reglas">
       <h2>Reglas de negocio</h2>
-      <p>Lo que depende de un solo objeto lo valida la entidad (R2 en <code>Pelicula</code> y <code>Sala</code>, R7 y R10 en <code>Pelicula</code>, R8 en <code>Funcion</code>, R14 en <code>Producto</code>); lo que necesita la base o el reloj, los gestores de <code>service/</code> (R1, R3, R4, R12, R20). Todas con test.</p>
+      <p>Lo que depende de un solo objeto lo valida la entidad, por medio de su <code>Validador*</code> (R2 en <code>Pelicula</code> y <code>Sala</code>, R7 y R10 en <code>Pelicula</code>, R8 en <code>Funcion</code>, R14 en <code>Producto</code>); las transiciones de una reserva las decide su estado (R5, R13, R17, R18 en <code>EstadoReserva</code>). Lo que mira el reloj también lo decide la entidad, con la hora que le pasa el gestor (R19 y R20 en <code>Funcion</code>, R17 en <code>Reserva</code>); lo que necesita la base, los gestores de <code>service/</code> (R1, R3, R4, R12, R15). Todas con test.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>Regla</th></tr></thead>
           <tbody>
             <tr><td>R1</td><td>No hay dos películas con el mismo título</td></tr>
-            <tr><td>R2</td><td>Duración de película y butacas de cada fila mayores a cero</td></tr>
+            <tr><td>R2</td><td>Duración de película de 1 a 600 minutos, y de 1 a 40 butacas en cada fila de la sala</td></tr>
             <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza</td></tr>
             <tr><td>R4</td><td>No se reserva una butaca ya tomada <strong>en esa función</strong></td></tr>
             <tr><td>R5</td><td>Solo se cobra una reserva RESERVADA, y una sola vez</td></tr>
@@ -499,15 +499,47 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td></tr>
             <tr><td>R10</td><td>Toda película tiene clasificación por edad</td></tr>
             <tr><td>R11</td><td>Los medios electrónicos exigen código de autorización</td></tr>
-            <tr><td>R12</td><td>No se elimina película con funciones o grilla, sala con funciones, ni función con reservas</td></tr>
+            <tr><td>R12</td><td>No se elimina película con funciones o grilla, sala con funciones o grilla, ni función con reservas</td></tr>
             <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar</td></tr>
             <tr><td>R14</td><td>Un combo cuesta menos que sus componentes sueltos</td></tr>
             <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento (empate: menor id)</td></tr>
             <tr><td>R16</td><td>Las tarifas reducidas no participan del descuento</td></tr>
             <tr><td>R17</td><td>No se cobra una reserva vencida</td></tr>
-            <tr><td>R18</td><td>Solo ingresa una reserva pagada, y una sola vez</td></tr>
+            <tr><td>R18</td><td>Solo ingresa una reserva pagada, una sola vez y el día de la función</td></tr>
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Topes de los datos</h3>
+      <p>
+        Además de R1..R20, cada dato que se carga a mano tiene un rango. Casi todos cierran un <code>500</code> o un
+        abuso que ya había pasado: un número que desbordaba una cuenta, un texto que no entraba en su columna, un
+        pedido que hacía trabajar al servidor sin fin. Todos son <code>400</code> y el texto es el que ve el usuario.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dato (quién lo valida)</th><th>Tope</th><th>Mensaje</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Duración (<code>ValidadorPelicula</code>)</td><td>1 a 600 min</td><td>«La duración tiene que estar entre 1 y 600 minutos»</td><td>2147483647 desbordaba el margen con que R3 busca choques y la apagaba en todas las salas</td></tr>
+            <tr><td>Limpieza (<code>ValidadorSala</code>)</td><td>0 a 120 min</td><td>«La limpieza no puede durar más de 120 minutos»</td><td>El mismo desborde, por el lado de la sala</td></tr>
+            <tr><td>Filas de la sala (<code>ValidadorSala</code>)</td><td>hasta 26 filas de hasta 40 butacas</td><td>«Una fila tiene que tener como máximo 40 butacas»</td><td>Cada fila es una letra; <code>[100000]</code> creaba cien mil butacas</td></tr>
+            <tr><td>Butacas por compra (<code>ValidadorReserva</code>)</td><td>1 a 10, al reservar y al bloquear</td><td>«Una compra tiene que tener como máximo 10 butacas»</td><td>Sin tope un pedido retenía la sala entera durante el pago</td></tr>
+            <tr><td>Cantidad de candy (<code>ValidadorCantidad</code>)</td><td>1 a 20 por renglón, en la venta y en el combo</td><td>«La cantidad de &lt;producto&gt; tiene que ser como máximo 20»</td><td>Un 2000 por un 20 se cobraba igual</td></tr>
+            <tr><td>Rango de una programación (<code>ValidadorProgramacion</code>)</td><td>hasta 366 días</td><td>«El rango no puede cubrir más de 366 días»</td><td>De 2026 a 9999 eran 2,9 millones de funciones en memoria</td></tr>
+            <tr><td>Horizonte (<code>ValidadorFuncion</code>)</td><td>dentro del próximo año</td><td>«La función tiene que empezar dentro del próximo año»; en la programación y la grilla, «… tiene que terminar dentro del próximo año»</td><td>2062 por 2026 es un error de tipeo, y la función quedaría donde nadie la mira</td></tr>
+            <tr><td>Hora de una función (<code>ValidadorFuncion</code>)</td><td>minuto exacto</td><td>«La hora de la función tiene que ir sin segundos»</td><td>Las 20:30:46 no se anuncian en ninguna cartelera</td></tr>
+            <tr><td>Grilla automática (<code>CriteriosGrilla</code>)</td><td>desde hoy, 1 a 31 días, 1 a 20 películas</td><td>«La grilla no puede empezar en el pasado»</td><td>Antes daba 201 con cero funciones; la propuesta se arma entera en memoria</td></tr>
+            <tr><td>Ingreso por la Puerta (<code>Reserva</code>, R18)</td><td>solo el día de la función</td><td>«La función es el dd/MM: se entra solo ese día»</td><td>Con la entrada de mañana, o la de ayer que nadie usó, no pasa nadie</td></tr>
+            <tr><td>Candy para una reserva (<code>GestorCandy</code>)</td><td>pagada y del mismo cliente</td><td>«La reserva N no está pagada: cobrala antes de agregarle candy»; «La reserva N es de otro cliente: revisá la reserva o el cliente»</td><td>Se retira con la entrada; y antes el cliente del pedido se descartaba en silencio</td></tr>
+            <tr><td>Pago en efectivo (<code>MedioPago</code>, R11)</td><td>sin código de autorización</td><td>«El pago en efectivo no lleva código de autorización»</td><td>El comprobante mostraría una autorización que nadie dio</td></tr>
+            <tr><td>Porcentaje (<code>ValidadorPromocion</code>)</td><td>1 a 99, con 2 decimales</td><td>«El porcentaje tiene que estar entre 1 y 99»</td><td>99,999 se guardaba como 100 en <code>DECIMAL(5,2)</code> y las entradas salían gratis</td></tr>
+            <tr><td>NxM (<code>ValidadorPromocion</code>)</td><td>paga al menos 1, lleva hasta 10</td><td>«Un NxM tiene que cobrar al menos una entrada»</td><td>Un 1x0 regalaba la entrada; llevar más de 10 no entra en una compra</td></tr>
+            <tr><td>Vigencia (<code>ValidadorPromocion</code>)</td><td>que termine hoy o después, y que algún día elegido caiga adentro</td><td>«La vigencia ya terminó: el fin tiene que ser hoy o después»</td><td>Una promoción que no va a correr nunca no se guarda</td></tr>
+            <tr><td>Precios y montos (<code>Dinero.importe</code>)</td><td>mayor a cero, hasta $ 1.000.000, con 2 decimales</td><td>«El precio tiene que tener como máximo 2 decimales»; «El precio no puede superar $ 1000000.00»</td><td>Redondear en silencio cobraba otro precio; pasado el tope, <code>DECIMAL(10,2)</code> daba 500</td></tr>
+            <tr><td>Contraseña (<code>Contrasena</code>)</td><td>6 caracteres a 72 bytes UTF-8</td><td>«La contraseña tiene que tener al menos 6 caracteres»</td><td>bcrypt no acepta más de 72 bytes y su excepción salía como 500</td></tr>
+            <tr><td>Email (<code>Email</code>)</td><td>forma <code>usuario@dominio.algo</code>, hasta 100</td><td>«El email tiene que tener la forma usuario@dominio.com»</td><td>El <code>@Email</code> de Bean Validation aceptaba <code>a@b</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -545,7 +577,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy</td><td>—</td></tr>
             <tr><td>CU-14</td><td>Admin</td><td>Armar un combo</td><td>R14</td></tr>
             <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td></tr>
-            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una compra web (se retira con el número de reserva)</td><td>R11</td></tr>
+            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una reserva ya pagada, en el mostrador con el número de reserva</td><td>R11</td></tr>
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy</td><td>—</td></tr>
             <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td></tr>
             <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código</td><td>R18</td></tr>
@@ -561,7 +593,7 @@ body.lightbox-locked { overflow: hidden; }
           <thead><tr><th>CU</th><th>Cuando</th><th>El sistema</th></tr></thead>
           <tbody>
             <tr><td>CU-03</td><td>El inicio es anterior al momento actual, o es ahora mismo</td><td>Rechaza con 400 «La función no puede empezar en el pasado» y no guarda nada</td></tr>
-            <tr><td>CU-03b</td><td>La grilla (o el planificador) tiene pases que ya pasaron, por ejemplo hoy a una hora vencida</td><td>Los saltea: no aparecen en la previsualización ni se crean, y no cuentan como choques. Si un rango cerrado ya pasó entero, rechaza la grilla porque no generaría funciones</td></tr>
+            <tr><td>CU-03b</td><td>La grilla (o el planificador) tiene pases que ya pasaron, por ejemplo hoy a una hora vencida</td><td>Los saltea: no aparecen en la previsualización ni se crean, y no cuentan como choques. Si un rango cerrado ya pasó entero, rechaza con 400 «Todos los horarios del rango ya pasaron: la grilla no generaría funciones»</td></tr>
           </tbody>
         </table>
       </div>
@@ -580,12 +612,12 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Capa</th><th>Responsabilidad</th><th>No hace</th></tr></thead>
           <tbody>
-            <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. Un subpaquete por subdominio con su <code>*Controller</code> y su <code>Vistas*</code> (arma los DTO), más <code>catalogos/</code> y <code>http/</code> (parseo, errores, OpenAPI)</td><td>Reglas, base</td></tr>
+            <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. Un subpaquete por subdominio con sus <code>*Controller</code> y sus <code>Vistas*</code> (arman los DTO), más <code>catalogos/</code> y <code>http/</code> (parseo, errores, <code>/error</code>, política de respuestas, OpenAPI)</td><td>Reglas, base, repositorios</td></tr>
             <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>); los compartidos en <code>catalogos/</code> y <code>comun/</code></td><td>Comportamiento</td></tr>
-            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio: coordina y aplica las reglas que piden la base o el reloj</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
-            <tr><td><code>model/</code></td><td>Entidades, enums y <code>Dinero</code>; cada entidad valida sus propios datos</td><td>Guardarse o mostrarse</td></tr>
-            <tr><td><code>repository/</code></td><td>14 <code>JpaRepository</code> por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
-            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, reloj, seguridad) y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
+            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio: busca lo que la entidad no puede ver sola (la base, las otras filas) y le pasa la hora; los observadores de comprobantes</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
+            <tr><td><code>model/</code></td><td>Entidades, enums y Value Objects. Por subdominio, la entidad con su <code>validacion/Validador*</code>; transversales, <code>dinero/</code>, <code>tiempo/</code> (<code>Periodo</code>, <code>FranjaHoraria</code>), <code>validacion/</code> (las guardas <code>Regla</code>) y <code>rechazos/</code></td><td>Guardarse o mostrarse</td></tr>
+            <tr><td><code>repository/</code></td><td><code>Repositorio</code> (la base con <code>exigir</code>), 14 repositorios por subdominio y <code>dinero/DineroConverter</code></td><td>Validar reglas</td></tr>
+            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, reloj): la raíz de cada uno tiene solo la interfaz, y el adaptador va en su subcarpeta. Más <code>seguridad/</code> y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
           </tbody>
         </table>
       </div>
@@ -595,10 +627,16 @@ body.lightbox-locked { overflow: hidden; }
         cualquiera de ellas (<code>controller/ventas/</code>, <code>dto/ventas/</code>, <code>service/ventas/</code>,
         <code>model/ventas/</code>, <code>repository/ventas/</code>). Los transversales van aparte y solo donde hacen
         falta: <code>catalogos/</code> (controller y dto), <code>dinero/</code> (model y repository), <code>comun/</code>
-        (dto) y <code>http/</code> (controller).
+        (dto), <code>http/</code> (controller) y, solo en model, <code>tiempo/</code>, <code>validacion/</code> y
+        <code>rechazos/</code>.
+      </p>
+      <p>
         <code>ArquitecturaTest</code> lee los <code>import</code> y falla si una capa nombra a otra que no tiene
-        debajo, o si <code>service/</code> o <code>controller/</code> usan <code>jakarta.persistence</code>,
-        <code>java.sql</code> o JDBC.
+        debajo (su tabla <code>PERMITIDO</code>: <code>controller/</code> no ve <code>repository/</code>), si
+        <code>service/</code> o <code>controller/</code> usan <code>jakarta.persistence</code>, <code>java.sql</code>
+        o JDBC, si alguien fuera de <code>Adaptadores</code> nombra una implementación concreta, si la raíz de un
+        puerto tiene algo más que su contrato, si alguien tira <code>new IllegalArgumentException(</code> en vez de
+        un <a href="#rechazos">rechazo</a>, o si un controller contesta <code>ResponseEntity&lt;Object&gt;</code>.
       </p>
 
       <figure class="diagram">
@@ -633,70 +671,77 @@ body.lightbox-locked { overflow: hidden; }
           <thead><tr><th>Clase</th><th>Responsabilidad</th></tr></thead>
           <tbody>
             <tr><td colspan="2" style="font-weight:600"><code>service/</code></td></tr>
-            <tr><td><code>GestorCartelera</code></td><td>ABM de películas y cartelera (R1, R12); los datos los valida <code>Pelicula</code></td></tr>
+            <tr><td><code>GestorCartelera</code></td><td>ABM de películas y cartelera (R1, R12); los datos los valida <code>Pelicula</code>. Una pendiente o descartada no existe para quien no es del personal: 404</td></tr>
             <tr><td><code>GestorRevisionCartelera</code></td><td>Buzón de importadas: alta, confirmar, descartar</td></tr>
-            <tr><td><code>GestorImportaciones</code></td><td>Corre el importador de TMDB y guarda el historial</td></tr>
+            <tr><td><code>GestorImportaciones</code></td><td>Corre el importador de TMDB y guarda el historial; una candidata que no se pudo guardar cuenta como fallida y la corrida sigue</td></tr>
             <tr><td><code>GestorSalas</code></td><td>ABM de salas y fuera de servicio (R9, R12); las butacas las genera <code>Sala</code></td></tr>
-            <tr><td><code>GestorFunciones</code></td><td>Funciones sueltas: alta y baja (R3, R12, R20); R8 lo valida <code>Funcion</code></td></tr>
-            <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una sola vez</td></tr>
+            <tr><td><code>GestorFunciones</code></td><td>Funciones sueltas: alta y baja (R3, R12); R8 y R20 los decide <code>Funcion</code> con la hora que le pasa</td></tr>
+            <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una sola vez; única definición de R3, limpieza incluida</td></tr>
             <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, dar de baja; saltea el pasado (R20)</td></tr>
-            <tr><td><code>PlanificadorGrilla</code></td><td>Propone elenco y pases de la semana, desde ahora (R20)</td></tr>
+            <tr><td><code>PlanificadorGrilla</code></td><td>Reparte los pases de la semana entre el elenco sin pisar R3 ni R20, y mide el tiempo libre</td></tr>
+            <tr><td><code>ElencoGrilla</code> / <code>IndicadoresGrilla</code></td><td>Qué películas entran: la mejor y después la que más aporta / cuánto llena, qué tan buena y qué tan variada es la propuesta. Cuentas sobre listas, sin base</td></tr>
             <tr><td><code>PuntajeConfiable</code></td><td>Puntaje de cada película corregido por sus votos (promedio bayesiano contra el catálogo); cuenta pura, sin Spring, base ni reloj</td></tr>
-            <tr><td><code>GestorPromociones</code></td><td>ABM de promociones; elige la mejor (R15, R16)</td></tr>
+            <tr><td><code>GestorPromociones</code></td><td>Un solo alta para los tres tipos (el tipo crea su subclase) y la mejor al cobrar (R15, R16)</td></tr>
             <tr><td><code>PoliticaPromociones</code></td><td>Interfaz de un método que usa el cobro</td></tr>
-            <tr><td><code>GestorReservas</code></td><td>Reservar y cancelar (R4, R6, R9, R13, R19)</td></tr>
-            <tr><td><code>GestorAcceso</code></td><td>Valida el código en la puerta (R18)</td></tr>
+            <tr><td><code>GestorReservas</code></td><td>Reservar y cancelar (R4, R6, R9, R13, R19); publica <code>ReservaCreada</code></td></tr>
+            <tr><td><code>GestorAcceso</code></td><td>Busca la reserva por su código y le pide el ingreso (R18)</td></tr>
             <tr><td><code>ConsultasReservas</code></td><td>Búsquedas de reservas, solo lectura</td></tr>
-            <tr><td><code>GestorPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19)</td></tr>
-            <tr><td><code>Ocupacion</code></td><td>Butacas tomadas en una función; expira vencidas</td></tr>
-            <tr><td><code>CalculadoraPrecio</code></td><td>Precio de lista de cada entrada</td></tr>
-            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta de clientes por email / alta de empleados y rehash de su clave</td></tr>
+            <tr><td><code>GestorPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19); publica <code>PagoRegistrado</code></td></tr>
+            <tr><td><code>Ocupacion</code></td><td>Butacas tomadas en una función y bloqueos mientras se elige; expira vencidas</td></tr>
+            <tr><td><code>ComprobantesDeVentas</code> / <code>ComprobantesDeCandy</code></td><td>Ticket y recibo / ticket de candy, después del commit (<a href="#observer">Observer</a>)</td></tr>
+            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta e identificación de clientes por email / empleados para la sesión y el rehash de su clave</td></tr>
             <tr><td><code>GestorProductos</code></td><td>Carta del candy y combos; chequea el nombre libre y los combos que traen un suelto editado. R14 lo valida <code>Producto</code></td></tr>
-            <tr><td><code>GestorCandy</code></td><td>Ventas del candy y su ticket; la venta la valida <code>CompraCandy</code></td></tr>
+            <tr><td><code>GestorCandy</code></td><td>Ventas del candy, de mostrador o para una reserva pagada; la venta la valida <code>CompraCandy</code> y publica <code>CompraCandyRegistrada</code></td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó y recaudación por función, declaración jurada del período</td></tr>
             <tr><td><code>PropiedadesImportador</code></td><td><code>cine.importador</code> de <code>application.yml</code>: cuánto dura una corrida y la espera entre dos</td></tr>
-            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code>, <code>PeriodoDeclarado</code>. <code>CriteriosGrilla</code> y <code>PeriodoDeclarado</code> son Value Object: se validan al construirse</td></tr>
-            <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
+            <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>ArqueoCandy</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code>, <code>PeriodoDeclarado</code>. <code>CriteriosGrilla</code> y <code>PeriodoDeclarado</code> son Value Object: se validan al construirse</td></tr>
+            <tr><td>Eventos: <code>ReservaCreada</code>, <code>PagoRegistrado</code>, <code>CompraCandyRegistrada</code></td><td>El aviso de que algo se vendió, con solo el id: quien escucha relee después del commit</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
-            <tr><td>18 <code>*Controller</code>, en <code>controller/&lt;subdominio&gt;/</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>): si una ruta cuelga de otro recurso pero cambia por otro motivo, va aparte (<code>BloqueoController</code>, <code>AccesoController</code>, <code>CajaController</code>, <code>RevisionController</code>)</td></tr>
-            <tr><td><code>http/</code>: <code>Parseo</code>, <code>Fechas</code></td><td>Convierten parámetros de texto a tipos</td></tr>
-            <tr><td><code>http/Creado</code></td><td>El <code>201</code> con <code>Location</code> de las altas</td></tr>
+            <tr><td>19 <code>*Controller</code>, en <code>controller/&lt;subdominio&gt;/</code></td><td>Una familia de rutas cada uno (tabla en <a href="#api">API</a>): si una ruta cuelga de otro recurso pero cambia por otro motivo, va aparte (<code>BloqueoController</code>, <code>AccesoController</code>, <code>CajaController</code>, <code>RevisionController</code>, y las ventas del candy en <code>CompraCandyController</code>, separadas de la carta en <code>ProductoController</code>)</td></tr>
+            <tr><td><code>http/</code>: <code>Parseo</code>, <code>Fechas</code></td><td>Convierten parámetros de texto a tipos; lo que no convierte es un <code>DatoInvalido</code></td></tr>
+            <tr><td><code>http/Creado</code></td><td>El <code>201</code> con <code>Location</code> de las altas; en su cabecera, la <a href="#respuestas">política de respuestas</a> de toda la API</td></tr>
             <tr><td><code>http/ManejadorErrores</code></td><td>Excepciones → código HTTP y <code>{"error"}</code></td></tr>
+            <tr><td><code>http/ErroresController</code></td><td><code>/error</code>: lo que no llega a ningún controller (el firewall de Spring Security, un filtro), también como <code>{"error"}</code> en castellano</td></tr>
             <tr><td><code>http/ConfiguracionOpenApi</code></td><td>Errores comunes en Swagger</td></tr>
-            <tr><td>Junto a su controlador: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasVentas</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code>, <code>VistasInformes</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores</td></tr>
+            <tr><td>Junto a sus controladores: <code>VistasCartelera</code>, <code>VistasSalas</code>, <code>VistasProgramaciones</code>, <code>VistasReservas</code>, <code>VistasPagos</code>, <code>VistasPromociones</code>, <code>VistasCandy</code>, <code>VistasUsuarios</code>, <code>VistasInformes</code></td><td>Arman los <code>*VistaDTO</code> consultando gestores. <code>VistasReservas</code> (reserva, bloqueo) y <code>VistasPagos</code> (pago, checkout, pagos del arqueo) eran una sola <code>VistasVentas</code>: se partieron por forma de DTO, porque la caja y el checkout usan los pagos y no las reservas</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
             <tr><td>66 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen; <code>ErrorVistaDTO</code> y <code>PedidoActivacionDTO</code> en <code>comun/</code></td></tr>
-            <tr><td>14 <code>*Repository</code></td><td><code>JpaRepository</code> por entidad, en el subdominio de su entidad; Spring Data genera la implementación</td></tr>
+            <tr><td><code>Repositorio&lt;T&gt;</code></td><td>Base <code>@NoRepositoryBean</code> con <code>exigir(id, "la película")</code>: busca por id o da 404 (<a href="#repositorio">detalle</a>)</td></tr>
+            <tr><td>14 <code>*Repository</code></td><td>Uno por entidad, en el subdominio de su entidad; 13 heredan de <code>Repositorio</code> y <code>BloqueoButacaRepository</code> de <code>JpaRepository</code>, porque su clave es compuesta. Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ columna <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación</td></tr>
-            <tr><td><code>PropiedadesComprobantes</code>, <code>PropiedadesTmdb</code></td><td>Las secciones <code>cine.comprobantes</code> y <code>cine.tmdb</code> de <code>application.yml</code>, tipadas</td></tr>
+            <tr><td><code>PropiedadesComprobantes</code>, <code>PropiedadesTmdb</code></td><td>Las secciones <code>cine.comprobantes</code> y <code>cine.tmdb</code> de <code>application.yml</code>, tipadas; cada una en la subcarpeta de su adaptador (<code>comprobantes/txt/</code>, <code>importador/tmdb/</code>)</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización</td></tr>
             <tr><td><code>Adaptadores.Tareas</code></td><td><code>@EnableScheduling</code> fuera de los tests: la limpieza de bloqueos vencidos</td></tr>
-            <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
+            <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code>. Los piden los observadores, no los gestores</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
-            <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt y el SHA-256 heredado</td></tr>
-            <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas del puerto (500 / aviso del importador)</td></tr>
+            <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordBcrypt</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt (envuelto en un <a href="#decorator">Decorator</a>) y el SHA-256 heredado</td></tr>
+            <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas del puerto (al log: la venta queda / aviso del importador)</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>model/</code></td></tr>
-            <tr><td><code>Pelicula</code></td><td>Catálogo y géneros; valida R2, R7, R10, el puntaje, el año y el largo de cada <code>VARCHAR</code>. Cada dato cambia por su método (<code>cambiarPuntaje</code>, <code>cambiarAnio</code>…) y la revisión son transiciones (<code>dejarPendiente</code>, <code>confirmar</code>, <code>descartar</code>)</td></tr>
-            <tr><td><code>Importacion</code></td><td>Una corrida del importador; sabe si sigue en curso, si quedó colgada y si terminó hace poco</td></tr>
-            <tr><td><code>Sala</code> / <code>Asiento</code></td><td>Tipo y limpieza; crea sus butacas (<code>generarAsientos</code>) / butaca con tipo y estado (<code>marcarFueraDeServicio</code>, <code>reponer</code>)</td></tr>
-            <tr><td><code>Funcion</code></td><td>Película en sala a una hora; valida versión, formato, precio, fecha y R8 al nacer, y sabe si empezó</td></tr>
-            <tr><td><code>Programacion</code></td><td>La grilla que genera funciones; valida fecha, rango, hora y días, y se activa o desactiva</td></tr>
-            <tr><td><code>Reserva</code> / <code>Entrada</code></td><td>Compra con estado y código, que no nace sin entradas / butaca con tarifa y precio</td></tr>
-            <tr><td><code>Pago</code></td><td>Comprobante del cobro con descuento</td></tr>
-            <tr><td><code>Promocion</code> + <code>PromocionPorcentaje</code>, <code>PromocionMontoFijo</code>, <code>PromocionNxM</code></td><td>Cuándo aplica / cuánto descuenta; cada una rechaza al construirse lo que la haría inválida, y se da de baja con <code>desactivar</code></td></tr>
-            <tr><td><code>CondicionesPromocion</code></td><td>Vigencia, días, horario y medios, en un solo valor para los constructores</td></tr>
-            <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el empleado tiene clave y un rol que no puede ser <code>CLIENTE</code></td></tr>
+            <tr><td><code>Pelicula</code></td><td>Título, duración, géneros y clasificación, validados por <code>ValidadorPelicula</code> (R2, R7, R10) en el alta y la edición (<code>actualizar</code>). La revisión son transiciones (<code>dejarPendiente</code>, <code>confirmar</code>, <code>descartar</code>), y si se publica, se programa o se muestra lo decide <code>EstadoRevision</code> (<a href="#state">State</a>)</td></tr>
+            <tr><td><code>CatalogoPelicula</code></td><td>Director, sinopsis, año, idioma, póster, puntaje y votos: Value Object embebido en la fila de la película. Cambiar un dato es armar otro con <code>conCambios</code>, que valida todo junto</td></tr>
+            <tr><td><code>Importacion</code></td><td>Una corrida del importador; valida sus páginas y sabe si sigue en curso, si quedó colgada y si terminó hace poco</td></tr>
+            <tr><td><code>Sala</code> / <code>Asiento</code></td><td>Tipo y limpieza, validados por <code>ValidadorSala</code>; crea sus butacas (<code>generarAsientos</code>) / butaca con tipo y estado (<code>marcarFueraDeServicio</code>, <code>reponer</code>, <code>exigirEnServicio</code>)</td></tr>
+            <tr><td><code>Funcion</code></td><td>Película en sala a una hora; valida idioma, proyección, precio, hora y R8 al nacer. Decide R19 y R20 (<code>yaPaso</code>, <code>yaEmpezo</code>, <code>exigirProgramableA</code>) y su precio (<code>precioEn</code>, <code>precioDe</code>)</td></tr>
+            <tr><td><code>Programacion</code></td><td>La grilla que genera funciones; su período, hora y días los valida <code>ValidadorProgramacion</code>, el formato lo mismo que a una función. Se activa o desactiva</td></tr>
+            <tr><td><code>Reserva</code> / <code>Entrada</code></td><td>Compra de 1 a 10 butacas con su código; no pregunta en qué estado está, se lo delega a <code>EstadoReserva</code> / butaca con tarifa y precio congelado, que aplica su tarifa</td></tr>
+            <tr><td><code>Pago</code></td><td>Comprobante del cobro con descuento; la autorización la decide <code>MedioPago</code> (R11)</td></tr>
+            <tr><td><code>Promocion</code> + <code>PromocionPorcentaje</code>, <code>PromocionMontoFijo</code>, <code>PromocionNxM</code></td><td>Cuándo aplica / cuánto descuenta y qué parámetros tiene; cada una rechaza al construirse lo que la haría inválida. Las crea <code>TipoPromocion.crear</code> (<a href="#promociones-factory">Factory Method</a>) y se dan de baja con <code>desactivar</code></td></tr>
+            <tr><td><code>CondicionesPromocion</code> / <code>ParametrosPromocion</code></td><td>Vigencia, días, horario y medios / porcentaje, monto, lleva y paga, tal como llegan: Parameter Object para los constructores</td></tr>
+            <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el email pasa por <code>Email</code>, el nombre por <code>ValidadorUsuario</code>, y el empleado tiene clave y un rol que no puede ser <code>CLIENTE</code></td></tr>
             <tr><td><code>Producto</code> + <code>ItemCombo</code></td><td>Artículo o combo con sus componentes; <code>Producto.armarCombo</code> crea los <code>ItemCombo</code> y valida R14</td></tr>
             <tr><td><code>CompraCandy</code> / <code>ItemCompra</code></td><td>Venta cobrada que crea sus renglones y exige producto, medio y R11 / renglón con precio congelado</td></tr>
-            <tr><td><code>Dinero</code></td><td>Plata en centavos</td></tr>
-            <tr><td>Enums</td><td><code>Genero</code>, <code>Clasificacion</code>, <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>, <code>MedioPago</code>, <code>EstadoReserva</code>, <code>Version</code>, <code>Rol</code>…</td></tr>
+            <tr><td><code>Dinero</code></td><td>Plata en centavos; <code>importe(pesos, que)</code> valida lo que llega del pedido</td></tr>
+            <tr><td><code>Periodo</code>, <code>FranjaHoraria</code>, <code>Email</code>, <code>Contrasena</code>, <code>CodigoDeAcceso</code>, <code>SesionDeCompra</code></td><td><a href="#value-objects">Value Objects</a>: se validan y normalizan al construirse</td></tr>
+            <tr><td><code>validacion/Regla</code> y <code>&lt;subdominio&gt;/validacion/Validador*</code></td><td>Las guardas fluidas / qué dato no puede entrar a cada entidad (<a href="#validacion">criterio</a>)</td></tr>
+            <tr><td><code>rechazos/</code></td><td><code>Rechazo</code> sellada: <code>DatoInvalido</code> (400), <code>RecursoNoEncontrado</code> (404), <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> (409) (<a href="#rechazos">detalle</a>)</td></tr>
+            <tr><td>Enums</td><td><code>Genero</code>, <code>Clasificacion</code>, <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>, <code>MedioPago</code>, <code>EstadoReserva</code>, <code>EstadoRevision</code>, <code>TipoPromocion</code>, <code>Version</code>, <code>Rol</code>…</td></tr>
           </tbody>
         </table>
       </div>
@@ -712,15 +757,17 @@ body.lightbox-locked { overflow: hidden; }
           <thead><tr><th>Anotación</th><th>Qué significa</th><th>Dónde</th></tr></thead>
           <tbody>
             <tr><td><code>@SpringBootApplication</code></td><td>Arranque: escaneo de componentes, autoconfiguración, <code>application.yml</code></td><td><code>Aplicacion</code></td></tr>
-            <tr><td><code>@Service</code></td><td>Bean de negocio</td><td>Los 20 de <code>service/</code></td></tr>
-            <tr><td><code>@RestController</code></td><td>Bean que atiende HTTP y responde JSON</td><td>Los 18 <code>*Controller</code></td></tr>
+            <tr><td><code>@Service</code></td><td>Bean de negocio</td><td>Los 21 de <code>service/</code>: gestores, <code>Ocupacion</code>, <code>ConsultasReservas</code>, <code>PlanificadorGrilla</code> y los dos observadores de comprobantes</td></tr>
+            <tr><td><code>@RestController</code></td><td>Bean que atiende HTTP y responde JSON</td><td>Los 19 <code>*Controller</code> y <code>ErroresController</code></td></tr>
             <tr><td><code>@Component</code></td><td>Bean genérico</td><td>Los <code>Vistas*</code></td></tr>
             <tr><td><code>@Configuration</code> + <code>@Bean</code></td><td>Métodos que fabrican beans cuando hay que elegir</td><td><code>Adaptadores</code></td></tr>
             <tr><td><code>@EnableWebSecurity</code></td><td>Activa Spring Security; un <code>SecurityFilterChain</code> define rutas y roles</td><td><code>ConfiguracionSeguridad</code></td></tr>
             <tr><td><code>@Profile("!test")</code></td><td>Bean solo fuera de los tests</td><td>Reloj, TMDB, las tareas programadas</td></tr>
             <tr><td><code>@Scheduled</code></td><td>Método que Spring corre solo cada tanto (requiere <code>@EnableScheduling</code>)</td><td><code>Ocupacion.borrarBloqueosVencidos</code>, cada 5 min</td></tr>
             <tr><td><code>@ConfigurationProperties("cine.x")</code> + <code>@ConfigurationPropertiesScan</code></td><td>Una sección de <code>application.yml</code> convertida a un <code>record</code> tipado (<code>"5m"</code> → <code>Duration</code>) y registrada como bean. Cada clave se escribe una vez, no repetida en cada <code>@Value</code></td><td>Los cuatro <code>Propiedades*</code>, al lado de quien los usa: <code>Adaptadores</code>, <code>GestorImportaciones</code>, <code>VistasInformes</code> (el exhibidor)</td></tr>
-            <tr><td><code>@Transactional</code></td><td>Transacción por método: commit al salir, rollback ante excepción (vía proxy). <code>readOnly = true</code> en las lecturas: sin dirty checking ni flush</td><td>Gestores que escriben. Sin ella a propósito: <code>GestorImportaciones</code> y <code>extenderActivas</code>, que cuentan lo que falla y siguen</td></tr>
+            <tr><td><code>@Transactional</code></td><td>Transacción por método: commit al salir, rollback ante excepción (vía proxy). <code>readOnly = true</code> en las lecturas: sin dirty checking ni flush</td><td>Gestores que escriben. Sin ella a propósito: <code>GestorImportaciones</code> y <code>extenderActivas</code>, que cuentan lo que falla y siguen. <code>REQUIRES_NEW</code> (una transacción propia) en los dos pasos del bloqueo y en los observadores de comprobantes</td></tr>
+            <tr><td><code>@TransactionalEventListener</code></td><td>Método que Spring llama cuando se publica un evento de su tipo, pero recién cuando la transacción que lo publicó confirma (<code>AFTER_COMMIT</code>); si se deshace, no lo llama</td><td><code>ComprobantesDeVentas</code>, <code>ComprobantesDeCandy</code> (<a href="#observer">Observer</a>)</td></tr>
+            <tr><td><code>@NoRepositoryBean</code></td><td>Interfaz de repositorio que Spring Data no instancia: sirve solo para heredarla</td><td><code>Repositorio</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -734,7 +781,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@PathVariable</code></td><td>Parámetro de la ruta; si no convierte → 404</td><td><code>@PathVariable int id</code></td></tr>
             <tr><td><code>@RequestParam</code></td><td>Parámetro de la query; <code>required = false</code> es filtro opcional</td><td><code>?genero=ACCION</code></td></tr>
             <tr><td><code>@RequestBody</code></td><td>Jackson convierte el JSON al DTO</td><td><code>@RequestBody PedidoPeliculaDTO p</code></td></tr>
-            <tr><td><code>@Valid</code> + <code>@NotNull</code> <code>@NotBlank</code> <code>@NotEmpty</code> <code>@Positive</code> <code>@Email</code></td><td>Bean Validation: formato y presencia en el <code>Pedido*DTO</code>, antes del gestor → 400</td><td><code>@Valid @RequestBody</code></td></tr>
+            <tr><td><code>@Valid</code> + <code>@NotNull</code> <code>@NotBlank</code> <code>@NotEmpty</code></td><td>Bean Validation: solo presencia en el <code>Pedido*DTO</code>, antes del gestor → 400, con el mismo texto que da el modelo. Los rangos y formatos (<code>@Positive</code>, <code>@Email</code>) salieron: los valida el modelo, que también ve lo que no entra por HTTP</td><td><code>@Valid @RequestBody</code></td></tr>
             <tr><td><code>@ResponseStatus</code></td><td>Código si termina bien: 201 en altas, 204 en borrados. Las altas devuelven además <code>ResponseEntity.created(uri)</code>, que agrega el <code>Location</code></td><td>18 métodos</td></tr>
             <tr><td><code>@RestControllerAdvice</code> + <code>@ExceptionHandler</code></td><td>Traducen excepciones a HTTP</td><td><code>ManejadorErrores</code></td></tr>
             <tr><td><code>@JsonInclude(NON_NULL)</code></td><td>Omite campos <code>null</code></td><td><code>*VistaDTO</code></td></tr>
@@ -761,7 +808,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@OneToMany(cascade = ALL, orphanRemoval)</code></td><td>Hijas que se guardan y borran con la madre</td><td><code>Reserva.entradas</code>, <code>CompraCandy.items</code></td></tr>
             <tr><td><code>@ElementCollection</code></td><td>Lista de valores en tabla auxiliar</td><td><code>Pelicula.generos</code> → <code>pelicula_genero</code></td></tr>
             <tr><td><code>@Inheritance(SINGLE_TABLE)</code></td><td>Jerarquía en una tabla con discriminador</td><td><code>Promocion</code>, <code>Usuario</code></td></tr>
-            <tr><td><code>@Embeddable</code></td><td>Campos guardados en la tabla del dueño</td><td><code>ItemCombo</code></td></tr>
+            <tr><td><code>@Embeddable</code> + <code>@Embedded</code></td><td>Value Object sin tabla ni id: sus campos se guardan en la fila del dueño. <code>@AttributeOverride</code> lo mapea sobre columnas con otro nombre</td><td><code>CatalogoPelicula</code> (en <code>pelicula</code>), <code>Periodo</code> (vigencia de <code>Promocion</code>, rango de <code>Programacion</code>), <code>FranjaHoraria</code>, <code>ItemCombo</code></td></tr>
             <tr><td><code>@Converter(autoApply = true)</code></td><td>Tipo propio ↔ columna</td><td><code>DineroConverter</code></td></tr>
             <tr><td><code>@Query</code></td><td>JPQL a mano cuando el nombre del método no alcanza</td><td><code>PagoRepository.findEntre</code>, <code>PeliculaRepository.findEnCartelera</code></td></tr>
           </tbody>
@@ -769,7 +816,7 @@ body.lightbox-locked { overflow: hidden; }
       </div>
 
       <h3>Lombok</h3>
-      <p>Escribe código al compilar: el <code>.class</code> tiene el método aunque el <code>.java</code> no. Sin <code>@Setter</code> ni <code>@Data</code> a propósito: lo que se puede cambiar tiene un método con nombre del negocio que valida el valor nuevo (<code>Pelicula.cambiarAnio</code>, <code>Producto.sacarDeLaVenta</code>, <code>Promocion.desactivar</code>) y el resto pasa por el constructor. Queda un solo setter, <code>Programacion.setGeneradaHasta</code>, que escribe el gestor al extender la grilla. <code>@Data</code> generaría un <code>equals</code> y un <code>toString</code> que recorren las relaciones LAZY.</p>
+      <p>Escribe código al compilar: el <code>.class</code> tiene el método aunque el <code>.java</code> no. Sin <code>@Setter</code> ni <code>@Data</code> a propósito: lo que se puede cambiar tiene un método con nombre del negocio que valida el valor nuevo (<code>Pelicula.actualizar</code>, <code>Producto.sacarDeLaVenta</code>, <code>Promocion.desactivar</code>, <code>Programacion.marcarGeneradaHasta</code>) y el resto pasa por el constructor. No queda ningún setter en el backend: el catálogo de una película ni siquiera se edita campo por campo, se reemplaza entero por otro <code>CatalogoPelicula</code> ya validado (<code>cambiarCatalogo</code>). <code>@Data</code> generaría un <code>equals</code> y un <code>toString</code> que recorren las relaciones LAZY.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Anotación</th><th>Qué genera</th><th>Dónde</th></tr></thead>
@@ -788,9 +835,12 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Elemento</th><th>Qué es</th></tr></thead>
           <tbody>
-            <tr><td><code>interface X extends JpaRepository&lt;E, Integer&gt;</code></td><td>Repositorio sin implementación: trae <code>findAll</code>, <code>save</code>, <code>delete</code> y deriva consultas del nombre</td></tr>
-            <tr><td><code>record</code></td><td>Clase inmutable con constructor, getters y <code>equals</code> generados</td></tr>
-            <tr><td><code>Optional&lt;T&gt;</code></td><td>«Puede no haber»: obliga a decidir (<code>.orElseThrow</code>) en vez de un <code>null</code></td></tr>
+            <tr><td><code>interface X extends Repositorio&lt;E&gt;</code></td><td>Repositorio sin implementación: de <code>JpaRepository</code> trae <code>findAll</code>, <code>save</code>, <code>delete</code> y deriva consultas del nombre; de <code>Repositorio</code>, el <code>exigir</code></td></tr>
+            <tr><td><code>default</code> en una interfaz</td><td>Método con cuerpo que heredan todos los que la implementan: <code>Repositorio.exigir</code>, <code>ReservaRepository.exigirPorCodigo</code></td></tr>
+            <tr><td><code>record</code></td><td>Clase inmutable con constructor, getters y <code>equals</code> generados. El constructor compacto (<code>public Email { … }</code>) valida y normaliza antes de asignar: así se arman los Value Objects</td></tr>
+            <tr><td><code>sealed … permits</code></td><td>Jerarquía cerrada: solo las clases nombradas pueden heredar. <code>Rechazo permits DatoInvalido, RecursoNoEncontrado, ConflictoDeNegocio, ButacaOcupada</code></td></tr>
+            <tr><td>Enum con cuerpo por constante</td><td>Cada constante sobrescribe métodos del enum: <code>RESERVADA { EstadoReserva pagar() { return PAGADA; } }</code>. Es la forma de <code>EstadoReserva</code>, <code>EstadoRevision</code> y <code>TipoPromocion</code></td></tr>
+            <tr><td><code>Optional&lt;T&gt;</code></td><td>«Puede no haber»: obliga a decidir (<code>.orElseThrow</code>, o <code>exigir</code> que lo hace con el 404) en vez de un <code>null</code></td></tr>
             <tr><td>Inyección por constructor</td><td>Dependencias en campos <code>final</code>; el constructor lo genera <code>@RequiredArgsConstructor</code>, y con uno solo no hace falta <code>@Autowired</code></td></tr>
           </tbody>
         </table>
@@ -799,7 +849,7 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="api">
       <h2>API HTTP</h2>
-      <p>71 endpoints REST bajo <code>/api</code>, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
+      <p>71 endpoints REST bajo <code>/api</code> en 19 controladores, JSON de ida y vuelta. Contrato completo en <code>cine-frontend/API.md</code> y en <a href="#swagger">Swagger</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Controlador</th><th>Rutas</th><th>Qué cubre</th></tr></thead>
@@ -815,7 +865,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>AccesoController</code></td><td><code>/api/acceso</code></td><td>Puerta</td></tr>
             <tr><td><code>PagoController</code></td><td><code>/api/reservas/{id}/pago</code>, <code>/checkout</code>, <code>/api/checkouts</code></td><td>Cobro y checkout</td></tr>
             <tr><td><code>PromocionController</code></td><td><code>/api/promociones</code></td><td>ABM y vigencia</td></tr>
-            <tr><td><code>CandyController</code></td><td><code>/api/candy/productos</code>, <code>/combos</code>, <code>/compras</code></td><td>Carta, combos, disponibilidad, ventas</td></tr>
+            <tr><td><code>ProductoController</code></td><td><code>/api/candy/productos</code>, <code>/api/candy/combos</code></td><td>Carta, combos, disponibilidad</td></tr>
+            <tr><td><code>CompraCandyController</code></td><td><code>/api/candy/compras</code></td><td>Ventas del candy, de mostrador o para una reserva</td></tr>
             <tr><td><code>CajaController</code></td><td><code>/api/arqueo</code>, <code>/api/candy/arqueo</code></td><td>Arqueo del día, boletería y candy</td></tr>
             <tr><td><code>InformeController</code></td><td><code>/api/funciones/{id}/bordero</code>, <code>/informe</code>, <code>/api/declaracion-jurada</code></td><td>Borderó, recaudación y declaración jurada</td></tr>
             <tr><td><code>ImportacionController</code></td><td><code>/api/importaciones</code></td><td>Importador</td></tr>
@@ -827,28 +878,69 @@ body.lightbox-locked { overflow: hidden; }
 
       <h3>Convenciones</h3>
       <ul>
-        <li>Enums por nombre de constante (<code>MAS_16</code>); fechas ISO sin zona (<code>2026-08-13T20:30:00</code>).</li>
+        <li>Enums por nombre de constante (<code>MAS_16</code>), en el cuerpo como texto y leídos sin distinguir mayúsculas (la tarifa de cada butaca también); fechas ISO sin zona (<code>2026-08-13T20:30:00</code>).</li>
         <li>El precio lo calcula el backend; el monto del pago no viaja en el request.</li>
         <li>Filtros por query, resueltos en el gestor: <code>GET /api/reservas?estado=RESERVADA&amp;q=perez</code>.</li>
-        <li>Un alta responde <code>201</code> con <code>Location</code> al recurso creado. Cambiar un estado es <code>PATCH</code> sobre el recurso, no una acción aparte: dar de baja o reactivar una promoción o una grilla (<code>{"activa": false|true}</code>), sacar o reponer un producto (<code>PATCH /api/candy/productos/{id}</code> con <code>{"disponible"}</code>) y marcar o reponer una butaca (<code>PATCH /api/salas/{salaId}/asientos/{codigo}</code> con <code>{"estado"}</code>). Las rutas son sustantivos: <code>/previsualizacion</code>, <code>/confirmacion</code>, <code>/cancelacion</code>.</li>
+        <li>Cambiar un estado es <code>PATCH</code> sobre el recurso, no una acción aparte: dar de baja o reactivar una promoción o una grilla (<code>{"activa": false|true}</code>), sacar o reponer un producto (<code>PATCH /api/candy/productos/{id}</code> con <code>{"disponible"}</code>) y marcar o reponer una butaca (<code>PATCH /api/salas/{salaId}/asientos/{codigo}</code> con <code>{"estado"}</code>). Las rutas son sustantivos: <code>/previsualizacion</code>, <code>/confirmacion</code>, <code>/cancelacion</code>.</li>
       </ul>
 
-      <h3>Errores</h3>
-      <p>Siempre <code>{"error": "…"}</code>; el mensaje de un rechazo llega intacto al usuario.</p>
+      <h3 id="respuestas">Política de respuestas</h3>
+      <p>
+        Escrita una vez, en la cabecera de <code>controller/http/Creado</code>, y la cumple cada endpoint. Antes cada
+        uno decidía: un mismo endpoint podía contestar el DTO o el literal <code>null</code>.
+      </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Caso</th><th>HTTP</th></tr></thead>
+          <thead><tr><th>Operación</th><th>Status</th><th>Cuerpo</th></tr></thead>
           <tbody>
-            <tr><td>Dato inválido (Bean Validation, JSON mal formado o con un tipo equivocado —el mensaje nombra el campo—, parámetro de la query faltante o mal escrito) o regla R1..R20 (<code>IllegalArgumentException</code>)</td><td>400</td></tr>
-            <tr><td>Sin credenciales o credenciales inválidas</td><td>401</td></tr>
-            <tr><td>Rol insuficiente</td><td>403</td></tr>
-            <tr><td>Recurso inexistente (<code>RecursoNoEncontrado</code>) o id no numérico en la ruta</td><td>404</td></tr>
-            <tr><td>Butaca tomada (<code>ButacaOcupadaException</code>), nombre, email o título duplicado (<code>ConflictoDeNegocio</code>) o reserva que otro pedido cambió a la vez (<code>@Version</code>)</td><td>409</td></tr>
-            <tr><td>Método no aceptado en esa ruta / cuerpo que no es JSON</td><td>405 / 415</td></tr>
-            <tr><td>Falla del servidor (detalle al log por SLF4J)</td><td>500</td></tr>
+            <tr><td>Leer</td><td>200</td><td>El <code>*VistaDTO</code>, o la lista; un filtro sin resultados es <code>[]</code>. <code>GET /api/clientes?email=</code> contesta siempre una lista: con el cliente o vacía</td></tr>
+            <tr><td>Alta</td><td>201 + <code>Location</code></td><td>El recurso creado. Sin <code>Location</code>, porque lo creado no tiene <code>GET</code> por id: el checkout, la grilla automática, la importación y la venta de candy</td></tr>
+            <tr><td>Acción o cambio de estado</td><td>200</td><td>El recurso como quedó</td></tr>
+            <tr><td>Borrar</td><td>204</td><td>Vacío</td></tr>
+            <tr><td>Rechazo</td><td>400 / 404 / 409</td><td><code>{"error"}</code> con el texto del rechazo tal cual</td></tr>
+            <tr><td>Inesperado</td><td>500</td><td><code>{"error"}</code> genérico; el detalle, al log</td></tr>
           </tbody>
         </table>
       </div>
+      <p>
+        Lo que no existe es un 404 y no un 200 vacío: <code>GET /api/reservas/{id}/pago</code> de una reserva sin
+        cobrar contesta «La reserva N todavía no tiene un pago», que se distingue de «No existe la reserva N».
+        <code>ArquitecturaTest</code> prohíbe <code>ResponseEntity&lt;Object&gt;</code>, que era lo que dejaba
+        mezclar las dos formas.
+      </p>
+
+      <h3>Errores</h3>
+      <p>
+        Siempre <code>{"error": "…"}</code> con <code>Content-Type: application/json</code>, también cuando el
+        error no lo arma el backend; el mensaje de un rechazo llega intacto al usuario. Un gestor o una entidad
+        rechazan con una clase de la <a href="#rechazos">jerarquía de rechazos</a>, y el status sale del tipo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Caso</th><th>HTTP</th><th>Lo contesta</th></tr></thead>
+          <tbody>
+            <tr><td>Un dato que falta o no cumple una regla (R1..R20, los <a href="#reglas">topes</a>): <code>DatoInvalido</code></td><td>400</td><td><code>ManejadorErrores</code></td></tr>
+            <tr><td>Pedido mal armado: falta un campo (Bean Validation, el primero en el orden del DTO); JSON ilegible; un tipo equivocado, «El campo X tiene un valor inválido: v» (también <code>1.9</code> o <code>1.0</code> en un entero y un número en un enum); un número que desborda, que nombra el campo; una raíz que no es objeto, «El cuerpo del pedido tiene que ser un objeto JSON»; un parámetro de la query faltante o mal escrito; una fecha fuera de los años 1000 a 9999</td><td>400</td><td><code>ManejadorErrores</code>, <code>Parseo</code></td></tr>
+            <tr><td>Sin credenciales, o credenciales inválidas («Email o contraseña incorrectos», también para un empleado sin clave en la base)</td><td>401</td><td><code>ConfiguracionSeguridad</code></td></tr>
+            <tr><td>Rol insuficiente</td><td>403</td><td><code>ConfiguracionSeguridad</code></td></tr>
+            <tr><td>Id o código que no corresponde a nada, en la ruta o en el cuerpo (<code>RecursoNoEncontrado</code>); ruta inexistente o id no numérico en la ruta, «No existe la ruta …»</td><td>404</td><td><code>ManejadorErrores</code></td></tr>
+            <tr><td>Método no aceptado en esa ruta / <code>Accept</code> que no admite JSON / cuerpo que no es JSON</td><td>405 / 406 / 415</td><td><code>ManejadorErrores</code></td></tr>
+            <tr><td>Nombre, email o título repetido (<code>ConflictoDeNegocio</code>); butaca tomada (<code>ButacaOcupada</code>); reserva que otro pedido cambió a la vez (<code>@Version</code>); dos altas que pasan el mismo chequeo y chocan en un <code>UNIQUE</code></td><td>409</td><td><code>ManejadorErrores</code></td></tr>
+            <tr><td>Cuerpo de más de 1 MB</td><td>413</td><td>nginx</td></tr>
+            <tr><td>Falla de la base, una <code>IllegalArgumentException</code> suelta (la tira una librería, con texto técnico) o cualquier excepción no prevista: «Ocurrió un error inesperado en el servidor», detalle al log por SLF4J</td><td>500</td><td><code>ManejadorErrores</code></td></tr>
+            <tr><td>Backend caído / que no contesta a tiempo</td><td>502 / 504</td><td>nginx</td></tr>
+            <tr><td>Lo que no llega a ningún controller: una ruta que rechaza el firewall de Spring Security (con <code>;</code>, <code>//</code> o <code>%2e</code>), una excepción de un filtro</td><td>su status</td><td><code>ErroresController</code> (<code>/error</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Lo que Spring rechaza sin un handler propio conserva su status, pero no su texto, que viene en inglés o
+        vacío: sale en castellano según el código («No existe lo que se pidió» para un 404, «El pedido no es
+        válido» para otro 4xx). <code>ErroresController</code> usa los mismos textos para lo que llega a
+        <code>/error</code>, donde el de Boot contestaba <code>"error": "Bad Request"</code> y Swing y la web
+        mostraban eso. nginx también contesta en JSON lo suyo (413, 502, 504): sin eso los clientes caían en un
+        mensaje genérico por código.
+      </p>
 
       <h3 id="swagger">Swagger</h3>
       <p>
@@ -882,6 +974,12 @@ body.lightbox-locked { overflow: hidden; }
         7 pantallas. Ninguna regla vive en el front: lo único que anticipa, pedir el carnet de las tarifas
         reducidas, es un aviso y el backend vuelve a validar.
       </p>
+      <p>
+        HTML5, CSS3 y JavaScript: Vite compila los componentes React (JSX) a un <code>index.html</code> HTML5
+        (<code>&lt;!doctype html&gt;</code>) con su JavaScript, que es lo que sirve nginx. El CSS3 es la hoja de Mantine,
+        importada en <code>src/Base.jsx</code>, con un tema propio (<code>createTheme</code>, modo claro y oscuro) y
+        estilos puntuales en línea en los componentes, como el mapa de butacas. No hay hojas <code>.css</code> propias.
+      </p>
     </section>
 
     <section class="doc-section" id="swing">
@@ -905,10 +1003,11 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Paquete</th><th>Qué hay</th></tr></thead>
           <tbody>
-            <tr><td><code>api/</code></td><td><code>ApiHttp</code>: una operación por endpoint, Basic en cada pedido y el <code>{"error"}</code> del backend en una <code>ErrorApi</code>. Un 401 vuelve al login. Un record por forma de JSON en <code>dto/</code></td></tr>
+            <tr><td><code>api/</code></td><td><code>ClienteHttp</code> es el transporte: Basic en cada pedido, JSON, el <code>{"error"}</code> del backend en una <code>ErrorApi</code> y un 401 que vuelve al login. Encima, una <code>Api&lt;Subdominio&gt;</code> por subdominio del backend (<code>ApiSesion</code>, <code>ApiClientes</code>, <code>ApiCatalogos</code>, <code>ApiCartelera</code>, <code>ApiSalas</code>, <code>ApiFunciones</code>, <code>ApiProgramaciones</code>, <code>ApiVentas</code>, <code>ApiPromociones</code>, <code>ApiCandy</code>, <code>ApiInformes</code>) que solo sabe de rutas, y <code>Apis</code> que las junta. Un record por forma de JSON en <code>api/dto/&lt;subdominio&gt;/</code>, espejando el backend</td></tr>
             <tr><td><code>informes/</code></td><td>El borderó en <code>.txt</code>, la declaración jurada en <code>.csv</code> y el ticket de candy, escritos en la PC. Sin Swing y con tests</td></tr>
-            <tr><td><code>comun/</code></td><td><code>Tarea</code> (pedidos fuera del EDT), <code>Validacion</code> y <code>Campos</code> (formularios), <code>Fechas</code> (JCalendar y el cruce <code>Date</code>/<code>java.time</code>), <code>Colores</code>, <code>Tabla</code>, <code>MapaButacas</code>, <code>SelectorDias</code></td></tr>
-            <tr><td><code>pantallas/</code></td><td>Login, la ventana con el menú (sus entradas son el enum <code>Destino</code>) y una clase por pantalla</td></tr>
+            <tr><td><code>comun/</code></td><td><code>Tarea</code> (pedidos fuera del EDT), <code>Validacion</code> (revisa el formulario), <code>Lecturas</code> (lee el formato de lo tipeado, sin Swing), <code>Marcas</code> (el borde rojo del campo con error), <code>Campos</code> (qué se deja tipear), <code>Mensajes</code>, <code>Formulario</code>, <code>BarraFiltros</code>, <code>Opciones</code>, <code>Fechas</code> (JCalendar y el cruce <code>Date</code>/<code>java.time</code>), <code>Formato</code>, <code>Colores</code>, <code>Tabla</code>, <code>MapaButacas</code>, <code>SelectorDias</code></td></tr>
+            <tr><td><code>pantallas/</code></td><td>En la raíz, lo común: <code>Seccion</code> (una parte de pantalla con los atajos para pedir y avisar), <code>Pantalla</code>, <code>PantallaListado&lt;T&gt;</code> (Template Method: cada listado dice cómo pedir y qué contar, no cuándo), <code>Navegacion</code> y el enum <code>Destino</code> (las entradas del menú). Las pantallas, sus formularios y paneles, en <code>pantallas/&lt;subdominio&gt;/</code></td></tr>
+            <tr><td>Raíz</td><td><code>Principal</code> (alterna login y panel), <code>VentanaPrincipal</code> (menú según el rol) y <code>Pantallas</code>, que arma cada pantalla con solo las <code>Api</code> que usa: es la única clase que las tiene todas (Creador)</td></tr>
           </tbody>
         </table>
       </div>
@@ -920,8 +1019,8 @@ body.lightbox-locked { overflow: hidden; }
         <code>requiereAcreditacion</code> de <code>/api/tarifas</code>, qué medio va por checkout, de
         <code>requiereAutorizacion</code> de <code>/api/medios-pago</code>, qué tipos de producto se dan de alta
         sueltos, de <code>esCombo</code> de <code>/api/tipos-producto</code>, y qué campos pide cada promoción, de
-        <code>campos</code> de <code>/api/tipos-promocion</code> (la misma lista con la que el gestor dice cuál
-        falta). Cobrar y cancelar se habilitan con <code>cobrable</code> y <code>cancelable</code> de la reserva, que
+        <code>campos</code> de <code>/api/tipos-promocion</code> (los que usa <code>TipoPromocion.crear</code> para
+        armar su subclase). Cobrar y cancelar se habilitan con <code>cobrable</code> y <code>cancelable</code> de la reserva, que
         <code>Reserva</code> calcula con el mismo método que usan <code>GestorPagos</code> y <code>cancelar()</code>:
         el botón y el rechazo no pueden diferir.
       </p>
@@ -947,9 +1046,11 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         El mecanismo es uno solo, <code>comun/Validacion</code>, y lo usan todos los formularios: películas, salas,
         funciones, grilla, planificador, promociones, candy (carta, combos, edición y venta), cobro, importador,
-        Puerta, declaración jurada y el login. Un precio negativo o cero pasa el cliente a propósito: es un número
-        bien escrito, y si vale lo decide el backend (la entidad que lo recibe: <code>Funcion</code>, <code>Producto</code>…). Duplicar esa regla en Swing daría dos lugares que se pueden
-        contradecir.
+        Puerta, declaración jurada y el login. Se apoya en dos piezas: <code>Lecturas</code> lee el formato sin
+        tocar Swing (por eso se prueba sola) y <code>Marcas</code> pone y saca el borde rojo. Un precio negativo o
+        cero pasa el cliente a propósito: es un número bien escrito, y si vale lo decide el backend
+        (<code>Dinero.importe</code> al convertir el pedido). Duplicar esa regla en Swing daría dos lugares que se
+        pueden contradecir.
       </p>
       <ul>
         <li><strong>FlatLaf oscuro</strong> por defecto (<code>-Dcine.tema=claro</code> para el claro). Los colores que no salen del tema tienen su par claro y oscuro en <code>Colores</code>.</li>
@@ -975,8 +1076,9 @@ body.lightbox-locked { overflow: hidden; }
       </div>
       <p>
         Un error del servidor que no trae el <code>{"error": "…"}</code> del backend (el HTML de un nginx con el
-        backend reiniciando, un cuerpo vacío) nunca se muestra crudo: <code>ApiHttp</code> lo manda a la consola y
-        en pantalla queda un mensaje según el código, como «El servidor no está disponible en este momento».
+        backend reiniciando, un cuerpo vacío) nunca se muestra crudo: <code>ClienteHttp</code> lo manda a la consola y
+        en pantalla queda un mensaje según el código, como «El servidor no está disponible en este momento». El
+        nginx del proyecto ya contesta en JSON sus 413, 502 y 504, así que esos llegan con su texto.
       </p>
       <h4>Decisión: cada mensaje en su lugar</h4>
       <ul>
@@ -1049,7 +1151,11 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Modelo de dominio</h2>
       <p>
         Entidades <code>@Entity</code> sin interfaz; solo <code>Promocion</code> y <code>Usuario</code> son
-        jerarquía. Las asociaciones centrales son <code>@ManyToOne</code> LAZY; las demás, un id.
+        jerarquía. Las asociaciones centrales son <code>@ManyToOne</code> LAZY; las demás, un id. Lo que es un
+        valor y no una cosa con identidad va como Value Object: <code>CatalogoPelicula</code>, <code>Periodo</code>
+        y <code>FranjaHoraria</code> se embeben en la fila de su dueño (<code>@Embeddable</code>), y
+        <code>Email</code>, <code>CodigoDeAcceso</code>, <code>SesionDeCompra</code> y <code>Dinero</code> se guardan
+        como su valor.
       </p>
 
       <figure class="diagram">
@@ -1085,9 +1191,9 @@ body.lightbox-locked { overflow: hidden; }
 
       <h3>Otras decisiones</h3>
       <ul>
-        <li><code>{asiento.sala = reserva.funcion.sala}</code> lo garantiza <code>GestorReservas</code>; la base no puede.</li>
+        <li><code>{asiento.sala = reserva.funcion.sala}</code> lo garantiza <code>GestorReservas</code>, que busca cada butaca entre las de la sala de la función; la base no puede.</li>
         <li>Los enums son atributos, no clases asociadas; <code>generos [1..*]</code> se dibuja por R7.</li>
-        <li>Reserva y compra son el mismo registro: nace <code>RESERVADA</code> y pasa a <code>PAGADA</code>.</li>
+        <li>Reserva y compra son el mismo registro: nace <code>RESERVADA</code> y pasa a <code>PAGADA</code>. Qué transición vale en cada estado lo decide <code>EstadoReserva</code> (<a href="#state">State</a>).</li>
         <li><code>Clasificacion</code> guarda la edad mínima, para comparar números.</li>
       </ul>
     </section>
@@ -1095,10 +1201,11 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="salas">
       <h2>Salas y butacas</h2>
       <ul>
-        <li>La distribución (<code>[8,10,12,12,14]</code>) solo se usa al crear: <code>Sala.generarAsientos</code> la valida (al menos una fila, hasta 26, ninguna vacía) y crea los <code>Asiento</code>; la capacidad se cuenta desde ellos.</li>
-        <li>«Ocupado» es por función (R4); «fuera de servicio» es del asiento y vale para todas (R9).</li>
-        <li><code>Sala.minutosLimpieza</code>: para R3 una función ocupa duración + limpieza, y el mensaje distingue ambos choques.</li>
+        <li>La distribución (<code>[8,10,12,12,14]</code>) solo se usa al crear: <code>Sala.generarAsientos</code> la valida con <code>ValidadorSala</code> (al menos una fila, hasta 26, ninguna vacía, hasta 40 butacas por fila; cada butaca especial en una sola lista y dentro de la distribución) y crea los <code>Asiento</code>; la capacidad se cuenta desde ellos.</li>
+        <li>«Ocupado» es por función (R4); «fuera de servicio» es del asiento y vale para todas (R9). <code>Asiento.exigirEnServicio</code> lo rechaza con el mismo texto al vender y al bloquear.</li>
+        <li><code>Sala.minutosLimpieza</code>, de 0 a 120: para R3 una función ocupa duración + limpieza, y el mensaje distingue ambos choques.</li>
         <li>Precio <code>base × TipoSala × TipoAsiento</code>; el recargo premium va solo en <code>TipoAsiento</code>. Si la sala proyecta 3D lo dice <code>TipoSala</code>; el formato de la función es su <code>Proyeccion</code> (<code>Version</code> es el idioma), y R8 lo valida <code>Funcion</code> al construirse.</li>
+        <li>Nombre repetido: <code>GestorSalas</code> lo busca sin contar a la sala misma, así renombrarla a sí misma (o solo cambiarle un acento, que la collation de MySQL ignora) no es un 409 falso. Una sala que está en una grilla no se borra, aunque la grilla todavía no haya generado funciones (R12).</li>
       </ul>
     </section>
 
@@ -1109,9 +1216,10 @@ body.lightbox-locked { overflow: hidden; }
         <figcaption>La jerarquía de usuarios y el enum que discrimina adentro</figcaption>
       </figure>
       <ul>
-        <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code></strong> en una tabla <code>usuario</code> con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. <code>Rol</code> distingue administrador y acomodador. El discriminador es una fórmula sobre <code>rol</code>, así que un <code>Empleado</code> con rol <code>CLIENTE</code> se releería como <code>Cliente</code>: su constructor lo rechaza, y <code>Usuario</code> valida nombre y email para las dos clases.</li>
+        <li><strong><code>Usuario</code> → <code>Cliente</code> / <code>Empleado</code></strong> en una tabla <code>usuario</code> con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. <code>Rol</code> distingue administrador y acomodador. El discriminador es una fórmula sobre <code>rol</code>, así que un <code>Empleado</code> con rol <code>CLIENTE</code> se releería como <code>Cliente</code>: <code>ValidadorEmpleado</code> lo rechaza, y <code>Usuario</code> valida nombre (<code>ValidadorUsuario</code>) y email para las dos clases.</li>
+        <li><strong>El email es un Value Object:</strong> <code>Email</code> lo recorta, lo pasa a minúsculas y exige la forma <code>usuario@dominio.algo</code>. Normalizado es como se guarda, y por eso como se busca (clientes, reservas por email, login): antes «BETO@x.com» era otro cliente. Para buscar, <code>Email.paraBuscar</code> no rechaza: lo que no es un email no encuentra a nadie. En una base ya creada, <code>migracion-email-minusculas.sql</code> normaliza los que había.</li>
         <li><strong>El cliente no tiene login: el <a href="#acceso">código de la reserva</a> es su credencial.</strong> Ticket, cancelación y «Mis reservas» van por <code>/api/reservas/codigo/{codigo}</code>; por <code>{id}</code>, que es secuencial, solo el encargado.</li>
-        <li><strong>Contraseñas:</strong> bcrypt, guardado como <code>{bcrypt}$2a$…</code>. Un hash sin prefijo es el SHA-256 sin salt de antes (el del seed): se sigue aceptando y el primer login correcto lo reescribe en bcrypt, porque es el único momento en que se tiene la clave en claro. El login no distingue email inexistente de clave errónea.</li>
+        <li><strong>Contraseñas:</strong> bcrypt, guardado como <code>{bcrypt}$2a$…</code>. La del alta pasa antes por <code>Contrasena</code>: no en blanco, al menos 6 caracteres y hasta 72 bytes en UTF-8, que es lo que bcrypt usa. Un hash sin prefijo es el SHA-256 sin salt de antes (el del seed): se sigue aceptando y el primer login correcto lo reescribe en bcrypt, porque es el único momento en que se tiene la clave en claro. Una clave vieja de más de 72 bytes no entra en bcrypt: <code>PasswordBcrypt</code> (<a href="#decorator">Decorator</a>) la deja en SHA-256 y el empleado entra igual, donde antes el login daba 500. El login no distingue email inexistente de clave errónea, ni de un empleado sin hash en la base: los tres son «Email o contraseña incorrectos».</li>
       </ul>
 
       <h3 id="seguridad">Quién puede llamar a qué</h3>
@@ -1120,7 +1228,7 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
-            <tr><td>Público</td><td>Cartelera, catálogos, reservar, bloqueos, alta de cliente, la propia reserva <em>por código</em>, carta del candy, Swagger</td></tr>
+            <tr><td>Público</td><td>Cartelera, catálogos, reservar, bloqueos, alta de cliente, la propia reserva <em>por código</em>, carta del candy, Swagger. El detalle de una película pendiente o descartada da 404 a quien no es administrador: lo que el buzón no aprobó no existe para el público</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login (<code>POST /api/sesion</code>) y <code>POST /api/acceso</code></td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la puerta</td></tr>
           </tbody>
@@ -1130,7 +1238,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>HTTP Basic sin sesión:</strong> <code>Authorization</code> en cada pedido, sin cookie; por eso CSRF está apagado.</li>
         <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más. El filtro Basic valida email y clave y <code>SesionController</code> solo devuelve el empleado ya autenticado; antes el gestor comparaba la clave por su cuenta y había dos caminos que podían no coincidir.</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
-        <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
+        <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo, y como <code>application/json</code> con <code>{"error"}</code>, igual que los demás errores.</li>
       </ul>
     </section>
 
@@ -1143,15 +1251,18 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Grilla cerrada</strong> se genera entera; <strong>abierta</strong> (<code>hasta = null</code>), a 14 días.</li>
         <li><strong>Sin cron:</strong> <code>GestorCartelera</code> llama a <code>extenderActivas</code> antes de listar; es idempotente por <code>generadaHasta</code>.</li>
         <li>El patrón no se edita: se da de baja y se crea otra.</li>
-        <li><strong>R20, saltear y no fallar:</strong> un pase que ya pasó no se lista ni se crea, ni en la previsualización ni al extender. La función suelta sí se rechaza, porque ahí el encargado eligió la hora. El criterio es uno solo, <code>GestorFunciones.yaPaso</code>, con el corte de R19: la función que empieza ahora ya empezó y no se podría vender. Las funciones que quedaron en el pasado no se tocan: son historial (R12).</li>
+        <li><strong>R20, saltear y no fallar:</strong> un pase que ya pasó no se lista ni se crea, ni en la previsualización ni al extender. La función suelta sí se rechaza, porque ahí el encargado eligió la hora. El criterio vive en un solo lugar, <code>Funcion.yaPaso(inicio, ahora)</code>, estático para preguntar por un horario antes de que la función exista, y con el corte de R19: la función que empieza ahora ya empezó y no se podría vender. La suelta lo exige con <code>Funcion.exigirProgramableA(ahora)</code> y la grilla cerrada con <code>Programacion.exigirGenerableA(ahora)</code>; la hora la pasa el gestor, porque la entidad no sabe qué hora es. Las funciones que quedaron en el pasado no se tocan: son historial (R12).</li>
+        <li><strong>Topes:</strong> un rango cerrado cubre hasta 366 días y termina dentro del próximo año, la hora va sin segundos y los días no traen <code>null</code>. Sin tope, de 2026 a 9999 eran 2,9 millones de funciones generadas en una transacción, y la previsualización las armaba todas en memoria.</li>
       </ul>
       <p>
         <code>POST /api/programaciones/previsualizacion</code> informa qué fechas chocan y contra qué función, sin
-        escribir; <code>POST /api/programaciones</code> hace la misma cuenta y guarda. Ambos usan
-        <code>planificar(..., persistir)</code>, así la previsualización predice el alta. Fecha, rango, hora y días
-        los valida <code>Programacion</code> al construirse; formato, precio y R8, <code>Funcion.validarProgramable</code>,
-        antes de generar la primera función y con el mismo mensaje que el alta de una suelta; R3 lo decide
-        <code>GestorFunciones</code>.
+        escribir; <code>POST /api/programaciones</code> hace la misma cuenta y guarda. Los dos parten del mismo
+        plan (<code>planDe</code>, que no escribe nada) y el alta lo recorre (<code>generar</code>), así la
+        previsualización predice el alta. El orden de los rechazos es el del alta de una suelta: primero los 404
+        de película y sala y la película sin confirmar, después período, hora y días (<code>ValidadorProgramacion</code>)
+        y formato, precio y R8 (<code>ValidadorFuncion</code>, las mismas reglas y textos que una función), y al
+        final lo que mira el reloj. R3 lo decide <code>GestorFunciones</code>, que vuelve a mirarlo antes de guardar
+        cada función.
       </p>
       <h3 id="agenda">La agenda</h3>
       <p>Calendario por sala o por día; cada bloque mide su duración y debajo va la limpieza: R3 se ve.</p>
@@ -1159,13 +1270,14 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="planificador">
       <h2>El planificador</h2>
-      <p><code>PlanificadorGrilla</code> propone la semana equilibrando puntaje, diversidad de géneros y ocupación de sala; cada criterio solo falla (monotemática, cualquier cosa, siempre la más corta). El pedido llega como <code>CriteriosGrilla</code>, que completa los defaults (<code>completando</code>) y se valida al construirse, y el puntaje lo calcula <code>PuntajeConfiable</code>.</p>
+      <p><code>PlanificadorGrilla</code> propone la semana equilibrando puntaje, diversidad de géneros y ocupación de sala; cada criterio solo falla (monotemática, cualquier cosa, siempre la más corta). El pedido llega como <code>CriteriosGrilla</code>, que completa los defaults (<code>completando</code>) y se valida al construirse: empieza hoy o después, cubre de 1 a 31 días, elige de 1 a 20 películas y termina dentro del próximo año; un idioma o una proyección <code>""</code> toman el default. El trabajo está repartido en tres clases: <code>ElencoGrilla.elegir</code> decide qué películas entran, el planificador reparte los pases y mide el tiempo libre, e <code>IndicadoresGrilla.de</code> calcula ocupación, puntaje promedio y géneros cubiertos sobre la propuesta ya armada. Antes todo era una clase de 234 líneas; separar las dos cuentas puras, que no miran la base ni el reloj, dejó al planificador con solo lo que sí los necesita. El puntaje lo calcula <code>PuntajeConfiable</code>.</p>
       <pre><code>valor(p)  = puntaje(p) + 2,0 × √(géneros de p no cubiertos)
 puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></pre>
       <ul>
         <li><strong>Elenco:</strong> goloso, explicable elección por elección. El bono inclina, no decide.</li>
         <li><strong>Votos:</strong> seis votos no valen como miles; cero votos con puntaje es carga manual y vale tal cual.</li>
-        <li><strong>Reparto:</strong> cada sala día por día, el pase a la película con más deuda (<code>asignados / puntaje</code>), sin pasar el cierre ni pisar lo programado. Determinista.</li>
+        <li><strong>Reparto:</strong> cada sala día por día, el pase a la película con más deuda (<code>asignados / puntaje</code>), sin pasar el cierre ni pisar lo programado. Determinista. Un cierre 00:00 es el final del día: entra el pase que termina justo a la medianoche.</li>
+        <li><strong>Solo salas que pueden (R8):</strong> una grilla en 3D reparte y mide solo entre las salas que lo proyectan, o rechaza con «No hay salas que puedan proyectar en 3D». Antes proponía pases en salas 2D y aplicar la propuesta fallaba en el primero.</li>
         <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que todavía no pasó. Los minutos disponibles, y con ellos la ocupación, se miden sobre esa misma ventana: lo que ya pasó del día no cuenta, ni las funciones que empezaron antes.</li>
       </ul>
     </section>
@@ -1181,16 +1293,17 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         <table>
           <thead><tr><th>Operación</th><th>Qué valida</th></tr></thead>
           <tbody>
-            <tr><td><code>GestorReservas.reservar</code></td><td>R19; cliente existente o alta por email; cada butaca existe en esa sala (<code>Asiento.exigirConCodigo</code>), no fuera de servicio (R9) ni tomada (R4); sin butacas no hay reserva (lo rechaza el constructor de <code>Reserva</code>). El <code>UNIQUE</code> cierra la carrera (409)</td></tr>
-            <tr><td><code>GestorReservas.cancelar</code></td><td>R13 y R6, que decide <code>Reserva.cancelar()</code>: <code>CANCELADA</code> y butacas libres</td></tr>
+            <tr><td><code>GestorReservas.reservar</code></td><td>Primero la función: que exista y no haya empezado (R19), porque eso anula todo lo demás; un email de empleado con una función inexistente da el 404 de la función. Después el cliente, existente o alta por email; cada butaca existe en esa sala (<code>Asiento.exigirConCodigo</code>), no está fuera de servicio (R9, lo exige <code>Entrada</code>) ni tomada (R4, <code>ButacaOcupada</code>, 409). De 1 a 10 butacas sin repetir (<code>ValidadorReserva</code>, que llama el constructor de <code>Reserva</code>). El <code>UNIQUE</code> cierra la carrera (409)</td></tr>
+            <tr><td><code>GestorReservas.cancelar</code></td><td>R13 y R6, que decide <code>Reserva.cancelar()</code> con su estado: <code>CANCELADA</code> y butacas libres</td></tr>
             <tr><td><code>GestorPagos.cobrar</code></td><td>R5, R11, R17, R19</td></tr>
-            <tr><td><code>GestorAcceso.registrarIngreso</code></td><td>R18</td></tr>
+            <tr><td><code>GestorAcceso.registrarIngreso</code></td><td>R18: pagada, una sola vez y el día de la función</td></tr>
           </tbody>
         </table>
       </div>
       <p>
-        <code>reservar()</code> se lee en el orden del negocio y delega en <code>CalculadoraPrecio</code>,
-        <code>Ocupacion</code> y <code>GestorClientes</code>; las búsquedas están en <code>ConsultasReservas</code>.
+        <code>reservar()</code> se lee en el orden del negocio y delega en <code>Ocupacion</code> y
+        <code>GestorClientes</code>; las búsquedas están en <code>ConsultasReservas</code>. El precio no lo calcula
+        el gestor: se lo pide al modelo (<code>Funcion.precioDe(asiento, sala)</code>, ver <a href="#precios">precios</a>).
       </p>
 
       <h3>Ocupacion</h3>
@@ -1207,7 +1320,12 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       </p>
 
       <h3>El ticket</h3>
-      <p><code>GeneradorTicket</code> escribe <code>tickets/ticket-&lt;id&gt;.txt</code>:</p>
+      <p>
+        <code>GestorReservas</code> no escribe el ticket: publica <code>ReservaCreada</code>, y después del commit
+        <code>ComprobantesDeVentas</code> relee la reserva y le pide a <code>GeneradorTicket</code> el archivo
+        <code>tickets/ticket-&lt;id&gt;.txt</code> (<a href="#observer">Observer</a>). Si el archivo falla, la reserva
+        queda y el error va al log:
+      </p>
       <pre><code>============================================
                  CINE UADE
                  TICKET #1
@@ -1241,7 +1359,10 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         </table>
       </div>
       <p>
-        <code>reservar</code> suelta los bloqueos de la sesión. El bloqueo es comodidad: la garantía contra la
+        Bloquear aplica las mismas reglas que vender: la butaca tiene que ser de la sala, estar en servicio (antes se
+        apartaba una fuera de servicio que después no se podía comprar) y el pedido no pasa de 10 butacas. La sesión es
+        un Value Object, <code>SesionDeCompra</code>: obligatoria, recortada y de hasta 64 caracteres, el largo de su
+        columna. <code>reservar</code> suelta los bloqueos de la sesión. El bloqueo es comodidad: la garantía contra la
         doble venta sigue siendo el <code>UNIQUE</code> de <code>entrada</code> (ver <a href="#base-de-datos">doble venta</a>).
         Pero tiene que ser correcto bajo concurrencia: dos sesiones no pueden tener la misma butaca a la vez.
       </p>
@@ -1277,7 +1398,8 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <ul>
         <li><code>Pago</code> guarda subtotal, descuento, promoción, monto, medio y autorización; el arqueo consulta pagos.</li>
         <li><strong>El monto no se recibe:</strong> <code>cobrar(reservaId, medio, codigo)</code> lo calcula.</li>
-        <li><code>MedioPago.requiereAutorizacion()</code> decide R11 y quién lleva recibo de caja (solo efectivo).</li>
+        <li><code>MedioPago</code> decide R11 en los dos sentidos (<code>autorizacion(codigo)</code>): un medio electrónico exige el código y el efectivo lo rechaza, «El pago en efectivo no lleva código de autorización». También decide quién lleva recibo de caja (solo efectivo) y quién no va por checkout: «El pago con efectivo no va por checkout: se cobra en la caja del cine».</li>
+        <li><strong>El recibo sale después del commit:</strong> <code>GestorPagos</code> publica <code>PagoRegistrado</code> y lo emite <code>ComprobantesDeVentas</code> (<a href="#observer">Observer</a>).</li>
         <li>El código lo emite <code>PasarelaPagos</code> (emulada); una real sería otro <code>@Bean</code>.</li>
         <li>Cobro directo y checkout terminan en el mismo <code>cobrar</code>.</li>
       </ul>
@@ -1286,13 +1408,21 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
 
 POST /api/checkouts/MP-1234567890/confirmacion
  → el Pago, con codigoAutorizacion "MP-AUT-40219841"</code></pre>
-      <p>Dos pedidos porque el cliente paga fuera del cine. Todo se valida antes de abrir el checkout: no hay devoluciones.</p>
+      <p>Dos pedidos porque el cliente paga fuera del cine. Todo se valida antes de abrir el checkout y otra vez antes de autorizar la confirmación: autorizar es cobrarle al cliente, y no hay devoluciones. <code>GET /api/reservas/{id}/pago</code> de una reserva sin cobrar es 404, «La reserva N todavía no tiene un pago».</p>
     </section>
 
     <section class="doc-section" id="precios">
       <h2>Precios y promociones</h2>
       <pre><code>Entrada.precio = Funcion.precio × TipoSala × TipoAsiento × TipoTarifa
 cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</code></pre>
+      <p>
+        El precio lo responde el modelo, por Experto: cada parte la aplica quien la conoce. <code>Funcion.precioEn(sala)</code>
+        es base × sala (el «desde» de la cartelera), <code>Funcion.precioDe(asiento, sala)</code> le suma la butaca (lo que
+        muestra el mapa) y <code>Entrada</code>, al nacer, le aplica su tarifa. Cada tipo tiene su <code>aplicarA(Dinero)</code>,
+        así el cálculo no tiene un <code>switch</code>. Antes lo hacía una clase aparte, <code>CalculadoraPrecio</code>, que
+        tenía que conocer los tres enums y la función: era una Fabricación pura que no hacía falta, porque los datos ya
+        estaban en el modelo.
+      </p>
       <ul>
         <li><strong>La tarifa es por persona</strong> y vive en <code>Entrada</code>; el acomodador ve qué carnet pedir.</li>
         <li><strong>El descuento vive en <code>Pago</code>:</strong> el 2x1 es sobre el conjunto, R15 compara montos, y depende del medio de pago.</li>
@@ -1305,21 +1435,36 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </figure>
       <p>
         <code>Promocion</code> decide cuándo aplica (<code>CondicionesPromocion</code>: vigencia, días, horario,
-        medios) y cada subclase implementa <code>calcularDescuento()</code>. Recibe solo las entradas de tarifa
-        general: R16 hecho firma.
+        medios; la vigencia es un <code>Periodo</code> y el horario una <code>FranjaHoraria</code>) y cada subclase
+        implementa <code>calcularDescuento()</code>. Recibe solo las entradas cuya tarifa participa
+        (<code>TipoTarifa.participaDePromociones</code>): R16 lo dice la tarifa, y una tarifa nueva no toca el gestor.
+      </p>
+      <p id="promociones-factory">
+        <strong>Factory Method y polimorfismo.</strong> El tipo se preguntaba en tres lugares: un <code>switch</code> en
+        <code>PromocionController</code> que elegía uno de tres <code>crear*</code> del gestor, una cadena de
+        <code>instanceof</code> en <code>VistasPromociones</code> para saber qué campos mandar, y un
+        <code>exigirCampos(Object...)</code> posicional en <code>TipoPromocion</code> que dependía de que el gestor
+        pasara los valores en el mismo orden. Sumar un tipo era tocar los tres, y olvidarse de uno compilaba igual.
+        Ahora cada constante de <code>TipoPromocion</code> implementa <code>crear(nombre, parametros, condiciones, hoy)</code>
+        y devuelve su subclase: <code>NXM.crear(…)</code> hace <code>new PromocionNxM(nombre, lleva, paga, …)</code>. Es la
+        mitad del polimorfismo; la otra está en <code>Promocion</code>, cuyas subclases contestan
+        <code>calcularDescuento()</code> y <code>getParametros()</code>, que describe sus parámetros en un
+        <code>ParametrosPromocion</code> con <code>null</code> en lo ajeno, así la vista los manda sin preguntar de
+        qué clase es. Hay un solo <code>GestorPromociones.crear</code> y el controller dice «sin switch». Un tipo nuevo
+        es una constante y una subclase, y como <code>crear</code> y <code>getParametros</code> son abstractos, el
+        compilador no deja olvidarse de ninguno.
       </p>
       <p>
-        Cada clase valida lo suyo al construirse, por Experto en información: <code>Promocion</code> el nombre
-        y que la vigencia empiece antes de terminar, <code>PromocionPorcentaje</code> que esté entre 1 y 99,
-        <code>PromocionMontoFijo</code> que el monto sea mayor a cero y <code>PromocionNxM</code> que se lleve
-        más de lo que se paga. No existe una promoción inválida en memoria, venga de donde venga.
-        <code>GestorPromociones</code> se queda con lo que la entidad no puede ver sola: que falte el valor
-        propio del tipo (llega en <code>null</code> desde el pedido) y que el nombre ya esté usado.
-        Lo mismo <code>Sala</code>: el constructor y <code>editar</code> rechazan un nombre vacío, la falta de tipo
-        y una limpieza negativa, <code>generarAsientos</code> una distribución inválida, y <code>GestorSalas</code>
-        solo chequea lo que pide la base (nombre repetido, funciones programadas antes de cambiar el tipo). Con el
-        mismo criterio validan <code>Pelicula</code>, <code>Funcion</code>, <code>Programacion</code>,
-        <code>Producto</code>, <code>CompraCandy</code> y <code>Reserva</code> (ver <a href="#grasp">GRASP</a>).
+        Cada clase valida lo suyo al construirse, por Experto en información, con <code>ValidadorPromocion</code>:
+        <code>Promocion</code> lo común (nombre, vigencia que no esté vencida y en la que caiga algún día elegido,
+        franja que empiece antes de terminar), y después cada subclase lo propio: <code>PromocionPorcentaje</code>
+        de 1 a 99 con dos decimales, <code>PromocionMontoFijo</code> un importe válido y <code>PromocionNxM</code> que
+        cobre al menos una, lleve más de lo que paga y no más de 10. Lo común sale primero a propósito. Que falte el
+        valor propio del tipo también lo dice la subclase («Falta el porcentaje»). No existe una promoción inválida en
+        memoria, venga de donde venga, y <code>GestorPromociones</code> se queda solo con el nombre repetido, que
+        necesita la base. Con el mismo criterio validan <code>Sala</code>, <code>Pelicula</code>, <code>Funcion</code>,
+        <code>Programacion</code>, <code>Producto</code>, <code>CompraCandy</code> y <code>Reserva</code> (ver
+        <a href="#validacion">validación</a>).
       </p>
     </section>
 
@@ -1332,13 +1477,22 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <code>compareTo</code>). Es decimal solo en los bordes: los DTO y la columna <code>DECIMAL</code>
         (<code>DineroConverter</code>).
       </p>
+      <p>
+        Lo que se carga a mano entra por <code>Dinero.importe(pesos, "precio")</code>, que valida al convertir, como
+        cualquier Value Object: que venga, que sea mayor a cero, con dos decimales como mucho (redondear en silencio
+        cobraría otro precio) y hasta <code>IMPORTE_MAXIMO</code>, $ 1.000.000, que deja lugar para lo que se multiplica
+        encima sin pasarse del <code>DECIMAL(10,2)</code>. El controller lo convierte antes de llamar al gestor, así el
+        precio de una función, una grilla, un producto y el monto de una promoción dicen el mismo texto; por eso salió
+        el <code>@Positive</code> de los DTO.
+      </p>
     </section>
 
     <section class="doc-section" id="acceso">
       <h2>Control de acceso</h2>
       <ul>
         <li><strong>Un código por reserva:</strong> el grupo entra junto.</li>
-        <li><strong>No es el id:</strong> aleatorio, 8 caracteres, sin <code>O I 0 1</code>. Se busca normalizado (<code>Reserva.normalizarCodigo</code>: sin espacios y en mayúsculas), porque se tipea a mano cuando el escáner no lee.</li>
+        <li><strong>No es el id:</strong> aleatorio, 8 caracteres, sin <code>O I 0 1</code>. Es un Value Object, <code>CodigoDeAcceso</code>, que lo genera y lo normaliza (sin espacios y en mayúsculas), porque se tipea a mano cuando el escáner no lee. No valida la forma a propósito: un código mal tipeado no encuentra reserva (404) y no le cuenta a nadie cómo es uno válido.</li>
+        <li><strong>Solo el día de la función:</strong> «La función es el dd/MM: se entra solo ese día». Con la entrada de mañana, o la de ayer que nadie usó, el acomodador no deja pasar a nadie.</li>
         <li><strong>El ingreso es un timestamp</strong> (<code>ingresadaEn</code>), no un estado: el cobro es otro eje.</li>
         <li>El <code>ACOMODADOR</code> solo llama a <code>POST /api/acceso</code>.</li>
       </ul>
@@ -1353,8 +1507,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>Un combo es un <code>Producto</code> <code>COMBO</code></strong> con sus <code>ItemCombo</code>: permite validar R14 e imprimir el ahorro. Nace solo por <code>Producto.armarCombo</code>, que crea sus <code>ItemCombo</code> (al menos dos, ninguno combo) y rechaza el combo que no sale menos que sus componentes; el constructor de <code>Producto</code> no acepta el tipo <code>COMBO</code>.</li>
         <li><strong>R14 del otro lado:</strong> abaratar un suelto puede dejar sin convenir a un combo que lo trae. <code>GestorProductos</code> busca esos combos en la base y cada uno se revisa con <code>exigirQueSigaConviniendo</code>.</li>
-        <li><strong><code>CompraCandy</code> nace cobrada:</strong> lleva el medio, sin <code>Pago</code> ni estados. Crea sus <code>ItemCompra</code> y exige al menos un producto, el medio y, si es electrónico, el código de autorización (R11); cada renglón exige cantidad y producto disponible.</li>
-        <li><code>GestorProductos</code> mantiene la carta y <code>GestorCandy</code> vende: buscan en la base y dejan validar a <code>Producto</code> y <code>CompraCandy</code>.</li>
+        <li><strong><code>CompraCandy</code> nace cobrada:</strong> lleva el medio, sin <code>Pago</code> ni estados. Crea sus <code>ItemCompra</code> y exige al menos un producto y el medio; la autorización la decide <code>MedioPago</code> igual que en boletería (R11). Cada renglón exige de 1 a 20 unidades y producto disponible (<code>ValidadorCantidad</code>, la misma regla que la cantidad de un componente de combo).</li>
+        <li><strong>Para una reserva, pagada:</strong> el candy se retira con la entrada, y una reserva sin cobrar, cancelada o vencida no la tiene: «La reserva N no está pagada: cobrala antes de agregarle candy». Si el pedido nombra un cliente, tiene que ser el de la reserva; antes se lo descartaba en silencio.</li>
+        <li><strong>El ticket sale después del commit:</strong> <code>GestorCandy</code> publica <code>CompraCandyRegistrada</code> y lo emite <code>ComprobantesDeCandy</code> (<a href="#observer">Observer</a>).</li>
+        <li><code>GestorProductos</code> mantiene la carta y <code>GestorCandy</code> vende: buscan en la base y dejan validar a <code>Producto</code> y <code>CompraCandy</code>. En la API también van separados, <code>ProductoController</code> y <code>CompraCandyController</code>: editar la carta y vender cambian por motivos distintos.</li>
         <li>Los productos no se borran: salen de la venta y vuelven (<code>sacarDeLaVenta</code>, <code>volverALaVenta</code>, por <code>PATCH /api/candy/productos/{id}</code>); nombre y precio quedan congelados en <code>ItemCompra</code>.</li>
       </ul>
     </section>
@@ -1396,13 +1552,15 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
     <section class="doc-section" id="persistencia">
       <h2>Persistencia</h2>
       <p>
-        14 interfaces <code>*Repository extends JpaRepository</code>, sin implementación propia. Los gestores
-        no saben si atrás hay MySQL o H2. Consultas derivadas del nombre; <code>@Query</code> donde no alcanza.
+        14 interfaces <code>*Repository</code>, sin implementación propia: 13 extienden <code>Repositorio</code>
+        (y con él <code>JpaRepository</code>) y <code>BloqueoButacaRepository</code> extiende <code>JpaRepository</code>
+        directo, porque su clave es compuesta. Los gestores no saben si atrás hay MySQL o H2. Consultas derivadas del
+        nombre; <code>@Query</code> donde no alcanza.
       </p>
       <h3>El costo de las consultas</h3>
       <ul>
         <li><strong>N+1:</strong> el planificador releía la sala por cada horario: 15.702 consultas y 21 s. <code>AgendaDeSala</code> la lee una vez: 230 consultas, 0,6 s.</li>
-        <li><strong>Listados de reservas y arqueo:</strong> <code>VistasVentas</code> cargaba todas las funciones, salas, películas y clientes del cine en cada listado, y el arqueo leía reserva, función, película y cliente por pago. Ahora <code>ConsultasReservas#conDetalle</code> trae las reservas con función, película, sala y cliente en un <code>join fetch</code>, los pagos van en otra consulta y las butacas una vez por sala. Con 4 y 16 reservas, <code>GET /api/reservas</code> pasó de 20 y 56 consultas a 7 y 7, y <code>GET /api/arqueo</code> de 19 y 67 a 6 y 6. <code>VistasVentasTest</code> las cuenta con las estadísticas de Hibernate y falla si crecen con las ventas.</li>
+        <li><strong>Listados de reservas y arqueo:</strong> <code>VistasVentas</code> (hoy partida en <code>VistasReservas</code> y <code>VistasPagos</code>) cargaba todas las funciones, salas, películas y clientes del cine en cada listado, y el arqueo leía reserva, función, película y cliente por pago. Ahora <code>ConsultasReservas#conDetalle</code> trae las reservas con función, película, sala y cliente en un <code>join fetch</code>, los pagos van en otra consulta y las butacas una vez por sala. Con 4 y 16 reservas, <code>GET /api/reservas</code> pasó de 20 y 56 consultas a 7 y 7, y <code>GET /api/arqueo</code> de 19 y 67 a 6 y 6. <code>VistasVentasTest</code> las cuenta con las estadísticas de Hibernate y falla si crecen con las ventas.</li>
         <li><strong>Listados de funciones:</strong> <code>VistasCartelera</code> leía la sala y sus butacas por cada función, y la película también en <code>/api/funciones</code>. Ahora las películas van en un <code>findAllById</code> y la sala y sus butacas una vez por sala. Con 2 y 8 funciones de una película en dos salas, <code>GET /api/peliculas/{id}/funciones</code> pasó de 6 y 18 consultas a 6 y 6; con 4 y 16 funciones, <code>GET /api/funciones</code> de 13 y 49 a 7 y 7. <code>VistasCarteleraTest</code> las cuenta.</li>
         <li><strong>R3 por rango:</strong> la superposición traía la historia entera de la sala en cada alta. Ahora trae solo las funciones que pueden chocar (desde el inicio menos la película más larga y la limpieza), y una grilla lee su <code>AgendaDeSala</code> una vez para todos sus horarios en vez de una por horario.</li>
         <li><code>open-in-view: false</code>: nada de consultas mientras se serializa el JSON.</li>
@@ -1442,7 +1600,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <p>
         Dos clientes simultáneos pueden leer los dos que A1 está libre. Lo cierra la base:
         <code>UNIQUE (funcion_id, asiento_id)</code>; <code>saveAndFlush</code> levanta
-        <code>DataIntegrityViolationException</code> y el gestor la traduce a <code>ButacaOcupadaException</code> (409).
+        <code>DataIntegrityViolationException</code> y el gestor la traduce a <code>ButacaOcupada</code> (409).
       </p>
       <ul>
         <li><strong>Liberar con <code>funcion_id = NULL</code>:</strong> MySQL no aplica el único a filas con NULL, así la reventa no choca y queda el historial.</li>
@@ -1466,11 +1624,12 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         MySQL corre <code>schema.sql</code> solo con el volumen vacío; sobre una base existente se aplican a mano
         los <code>migracion-*.sql</code> que falten, en este orden: <code>programaciones</code>, <code>grilla-abierta</code>,
         <code>limpieza</code>, <code>staging</code>, <code>puntaje</code>, <code>votos</code>, <code>importaciones</code>,
-        <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code> y <code>ahorro-congelado</code>. La suite entera corre sobre H2 creada con ese mismo <code>schema.sql</code>
+        <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code>, <code>ahorro-congelado</code> y <code>email-minusculas</code>. La suite entera corre sobre H2 creada con ese mismo <code>schema.sql</code>
         (<code>ddl-auto: validate</code>), así que los <code>UNIQUE</code>, los <code>NOT NULL</code> y el largo de cada
         <code>VARCHAR</code> se prueban igual que en MySQL; <code>MapeoContraSchemaTest</code> lo verifica en una base aparte.
-        Los textos que tipea el usuario se validan contra el largo de su columna en el gestor o la entidad:
-        pasarse es un <code>400</code> que dice el máximo, no un <code>500</code> de la base. Adminer (<code>localhost:8081</code>) entra con servidor <code>mysql</code>.
+        Los textos que tipea el usuario se validan contra el largo de su columna en la entidad
+        (<code>Regla.texto(…).hasta(100, "El título")</code>): pasarse es un <code>400</code> que dice el máximo, no un
+        <code>500</code> de la base. Adminer (<code>localhost:8081</code>) entra con servidor <code>mysql</code>.
       </p>
       <pre><code>docker exec -i cine-mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" appsinteractivas \
   &lt; cine-backend/src/main/resources/migracion-bloqueos.sql</code></pre>
@@ -1483,9 +1642,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         y una respuesta suele juntar varias (la función con sala, película, precios y butacas tomadas).
       </p>
       <ul>
-        <li><code>Pedido*DTO</code> (entra): presencia y formato con Bean Validation; 400 con el primer campo inválido. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios: lo que viaja lo valida <code>Pelicula</code> igual que en el alta (<code>actualizar</code> y los <code>cambiar*</code>), y <code>GestorCartelera</code> solo el título repetido. Entidades y gestores validan igual, porque también los llaman el importador y los tests.</li>
+        <li><code>Pedido*DTO</code> (entra): solo presencia con Bean Validation (<code>@NotNull</code>, <code>@NotBlank</code>, <code>@NotEmpty</code>), con el mismo «Falta …» que da el modelo; 400 con el primer campo que falta, en el orden del record. Los campos son tipos objeto (<code>Integer</code>, no <code>int</code>): un ausente llega en <code>null</code> y no como un 0 que pase por dato. Los enums viajan como texto y los convierte <code>Parseo</code>. El alta de película valida <code>PedidoPeliculaDTO</code>; la edición parcial usa <code>PedidoEdicionPeliculaDTO</code>, sin campos obligatorios: lo que viaja lo valida <code>Pelicula</code> igual que en el alta (<code>actualizar</code>, y <code>CatalogoPelicula.conCambios</code> para el catálogo), y <code>GestorCartelera</code> solo el título repetido. Las reglas de valor no van en el DTO: las valida el modelo, que también ve lo que llega del importador y de los tests (ver <a href="#validacion">validación</a>).</li>
         <li><code>*VistaDTO</code> (sale): opcionales con <code>@JsonInclude(NON_NULL)</code>.</li>
-        <li>Los arman los <code>Vistas*</code> (Assembler) cuando hace falta consultar gestores. <code>CatalogoController</code>, <code>ProgramacionController</code>, <code>GrillaController</code> e <code>ImportacionController</code>, que traducen un resultado que ya tienen, los arman con un método privado. El DTO no tiene lógica.</li>
+        <li>Los arman los <code>Vistas*</code> (Assembler) cuando hace falta consultar gestores. Solo <code>CatalogoController</code>, que traduce enums que ya tiene, los arma en línea; grillas, planes y propuestas los arma <code>VistasProgramaciones</code> y las importaciones <code>VistasCartelera</code>. El DTO no tiene lógica.</li>
       </ul>
     </section>
 
@@ -1495,11 +1654,11 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Principio</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorAcceso</code> valida la puerta, <code>ConsultasReservas</code> busca; <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea, <code>GestorInformes</code> corta por función. Un controller por familia de rutas: bloqueo, puerta, arqueo y buzón tienen el suyo (<code>BloqueoController</code>, <code>AccesoController</code>, <code>CajaController</code>, <code>RevisionController</code>) aunque sus rutas cuelguen de otro recurso. <code>PuntajeConfiable</code> sacó de <code>PlanificadorGrilla</code> la cuenta del puntaje</td></tr>
-            <tr><td><strong>O</strong> · Abierto/cerrado</td><td><code>Promocion.calcularDescuento()</code>: un tipo nuevo es una subclase, el cobro no cambia</td></tr>
+            <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorAcceso</code> valida la puerta, <code>ConsultasReservas</code> busca; <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea, <code>GestorInformes</code> corta por función. Un controller por familia de rutas: bloqueo, puerta, arqueo y buzón tienen el suyo (<code>BloqueoController</code>, <code>AccesoController</code>, <code>CajaController</code>, <code>RevisionController</code>) aunque sus rutas cuelguen de otro recurso, y la carta y las ventas del candy van en <code>ProductoController</code> y <code>CompraCandyController</code>. <code>PuntajeConfiable</code>, <code>ElencoGrilla</code> e <code>IndicadoresGrilla</code> sacaron de <code>PlanificadorGrilla</code> las cuentas que no miran la base; <code>VistasVentas</code> se partió en <code>VistasReservas</code> y <code>VistasPagos</code>; los comprobantes salieron de los gestores a sus observadores; y la validación de cada entidad, a su <code>Validador*</code></td></tr>
+            <tr><td><strong>O</strong> · Abierto/cerrado</td><td>Un tipo de promoción nuevo es una constante de <code>TipoPromocion</code> y una subclase de <code>Promocion</code>: ni el cobro, ni el controller, ni la vista cambian. Un estado nuevo de reserva es una constante de <code>EstadoReserva</code>; una tarifa nueva dice ella si participa de las promociones</td></tr>
             <tr><td><strong>L</strong> · Liskov</td><td><code>TmdbHttp</code> y el <code>CatalogoDePrueba</code> de los tests cumplen el mismo <code>CatalogoExterno</code></td></tr>
             <tr><td><strong>I</strong> · Segregación</td><td><code>GestorPagos</code> depende de <code>PoliticaPromociones</code> (un método), no del ABM</td></tr>
-            <tr><td><strong>D</strong> · Inversión</td><td>Los gestores dependen de <code>*Repository</code>, <code>PasarelaPagos</code>, <code>GeneradorTicket</code>, <code>Reloj</code>; <code>Adaptadores</code> elige</td></tr>
+            <tr><td><strong>D</strong> · Inversión</td><td>Los gestores dependen de <code>*Repository</code>, <code>PasarelaPagos</code>, <code>Reloj</code>, y los observadores de <code>GeneradorTicket</code> y <code>GeneradorRecibo</code>; <code>Adaptadores</code> elige, y <code>ArquitecturaTest</code> falla si otro nombra una implementación</td></tr>
           </tbody>
         </table>
       </div>
@@ -1517,14 +1676,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <figcaption>DIP: <code>Adaptadores</code> es el único lugar que elige una implementación concreta</figcaption>
       </figure>
 
-      <div class="callout">
-        <p>
-          <strong>Deuda:</strong> crear una promoción todavía pasa por un <code>switch</code> en
-          <code>PromocionController</code> y un <code>instanceof</code> en <code>VistasPromociones</code>. Son tres
-          tipos y el cálculo, que es lo que más varía, ya está protegido. Las demás dependencias entre gestores
-          no tienen interfaz: una sola implementación y nada que ocultar.
-        </p>
-      </div>
+      <p>
+        Las dependencias entre gestores no tienen interfaz: una sola implementación y nada que ocultar. La única es
+        <code>PoliticaPromociones</code>, porque separa a quien cobra del ABM de promociones.
+      </p>
     </section>
 
     <section class="doc-section" id="grasp">
@@ -1533,11 +1688,11 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>. Cada entidad valida sus propios datos y el gestor se queda con lo que necesita la base o el reloj: <code>Pelicula.actualizar</code> exige R2, R7 y R10 en el alta y en la edición; <code>Funcion.validarProgramable</code>, formato, precio y R8; <code>Importacion.quedoColgada</code> decide si una corrida se abandonó. Lo mismo <code>Programacion</code>, <code>Producto</code>, <code>CompraCandy</code>, <code>Sala</code>, <code>Promocion</code> y <code>Empleado</code>. <code>Reserva.impedimentoParaCobrar()</code> y <code>esCancelable()</code> deciden R5, R13, R17 y R19 para el gestor y para la vista. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
+            <tr><td><strong>Experto</strong></td><td><code>Reserva.getTotal()</code>, <code>Funcion.yaEmpezo()</code>, <code>Promocion.calcularDescuento()</code>. Cada entidad valida sus propios datos y el gestor se queda con lo que necesita la base o el reloj: <code>Pelicula.actualizar</code> exige R2, R7 y R10 en el alta y en la edición; <code>Funcion</code>, formato, precio y R8 al nacer, y R19 y R20 con <code>yaPaso</code>; su precio lo responde ella (<code>precioEn</code>, <code>precioDe</code>); <code>Importacion.quedoColgada</code> decide si una corrida se abandonó. Lo mismo <code>Programacion</code>, <code>Producto</code>, <code>CompraCandy</code>, <code>Sala</code>, <code>Promocion</code> y <code>Empleado</code>. <code>Reserva.impedimentoParaCobrar()</code> y <code>esCancelable()</code> deciden R5, R13, R17 y R19 para el gestor y para la vista, preguntándole a su <code>EstadoReserva</code>. <code>Reserva</code> no sabe si sus butacas están libres: depende de otras reservas</td></tr>
             <tr><td><strong>Creador</strong></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Producto.armarCombo</code> → <code>ItemCombo</code>, <code>CompraCandy</code> → <code>ItemCompra</code>. Los constructores de <code>ItemCombo</code> e <code>ItemCompra</code> son de paquete: fuera de <code>model/candy/</code> nadie los arma</td></tr>
-            <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>CalculadoraPrecio</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code></td></tr>
+            <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>ElencoGrilla</code>, los <code>Validador*</code> y los observadores de comprobantes. <code>CalculadoraPrecio</code> ya no existe: el precio lo tenían los datos del modelo, así que lo responde el modelo</td></tr>
             <tr><td><strong>Controlador</strong></td><td>Los <code>@Service</code> (<code>Gestor*</code>, <code>Ocupacion</code>, <code>PlanificadorGrilla</code>) reciben cada operación del sistema; los <code>*Controller</code>, uno por familia de rutas, solo traducen HTTP. Por eso los tests llaman a los gestores sin HTTP</td></tr>
-            <tr><td><strong>Polimorfismo</strong></td><td><code>multiplicadorPrecio</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code></td></tr>
+            <tr><td><strong>Polimorfismo</strong></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; las subclases de <code>Promocion</code> (<code>calcularDescuento</code>, <code>getParametros</code>) y las constantes de <code>TipoPromocion</code> (<code>crear</code>), <code>EstadoReserva</code> y <code>EstadoRevision</code></td></tr>
             <tr><td><strong>Variaciones protegidas</strong></td><td><code>*Repository</code>, <code>PasarelaPagos</code>, <code>Generador*</code>, <code>PoliticaPromociones</code></td></tr>
             <tr><td><strong>Bajo acoplamiento / alta cohesión</strong></td><td>Constructor con lo justo; un subpaquete por subdominio</td></tr>
           </tbody>
@@ -1552,10 +1707,134 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h3>Patrones de diseño</h3>
       <ul>
         <li><strong>MVC en capas:</strong> <code>model/</code>, front + <code>*VistaDTO</code>, <code>controller/</code>.</li>
-        <li><strong>Repository:</strong> los <code>*Repository</code>. <strong>DTO + Assembler:</strong> <code>dto/</code> y <code>Vistas*</code>.</li>
-        <li><strong>Strategy:</strong> las subclases de <code>Promocion</code>.</li>
-        <li><strong>Adapter</strong> (puertos): <code>PasarelaPagos</code>, <code>CatalogoExterno</code>, <code>GeneradorTicket</code>, <code>Reloj</code>.</li>
+        <li><strong>Repository:</strong> los <code>*Repository</code>, sobre una <a href="#repositorio">base común</a>. <strong>DTO + Assembler:</strong> <code>dto/</code> y <code>Vistas*</code>.</li>
+        <li><strong>Strategy:</strong> las subclases de <code>Promocion</code>; <code>PasarelaPagos</code> y <code>Reloj</code>, que se eligen por <code>@Bean</code>.</li>
+        <li><strong>State:</strong> <code>EstadoReserva</code> y <code>EstadoRevision</code> (<a href="#state">abajo</a>). <strong>Observer:</strong> los comprobantes (<a href="#observer">abajo</a>).</li>
+        <li><strong>Factory Method:</strong> <code>TipoPromocion.crear</code> (<a href="#promociones-factory">en promociones</a>). <strong>Decorator:</strong> <code>PasswordBcrypt</code> (<a href="#decorator">abajo</a>).</li>
+        <li><strong>Adapter</strong> (puertos): <code>TmdbHttp</code> + <code>MapeoTmdb</code> para <code>CatalogoExterno</code>, <code>MercadoPagoEmulado</code> para <code>PasarelaPagos</code>, los <code>*Txt</code> para los <code>Generador*</code>; <code>DineroConverter</code> entre <code>Dinero</code> y la columna.</li>
+        <li><strong>Facade:</strong> cada gestor es la entrada única a su subdominio para controllers, importador y tests.</li>
+        <li><strong>Value Object</strong>, <strong>Parameter Object</strong> (<code>CondicionesPromocion</code>, <code>ParametrosPromocion</code>) y <strong>Fluent Interface</strong> (<code>Regla</code>).</li>
+        <li><strong>Template Method:</strong> en Swing, <code>PantallaListado&lt;T&gt;</code> fija cuándo se pide y se filtra, y cada listado dice cómo pedir y qué contar.</li>
         <li><strong>Singleton:</strong> cada bean de Spring es una instancia única. <strong>Proxy:</strong> <code>@Transactional</code>. <strong>Front Controller:</strong> <code>DispatcherServlet</code>.</li>
+      </ul>
+      <p>
+        Cada patrón está explicado en el javadoc de la clase que lo implementa: qué es, qué problema resolvía acá y
+        cómo se lee. Los que siguen son los que cambiaron cómo está escrito el modelo.
+      </p>
+
+      <h3 id="state">State: el estado decide qué se puede hacer</h3>
+      <p>
+        <code>Reserva</code> preguntaba <code>estado == RESERVADA</code> o <code>estado != PAGADA</code> en cada operación,
+        y qué se puede hacer en cada estado estaba repartido en cinco métodos: sumar un estado era revisarlos todos.
+        Ahora <code>EstadoReserva</code> es un enum con cuerpo por constante, y cada constante sobrescribe solo lo que
+        ella permite: <code>RESERVADA</code> se puede pagar, cancelar o expirar; <code>PAGADA</code> deja ingresar. Lo que
+        una constante no sobrescribe cae en el método del enum, que rechaza con «La reserva está &lt;etiqueta&gt;: &lt;lo
+        que no se puede&gt;». Una transición devuelve el estado siguiente y la reserva lo asigna
+        (<code>estado = estado.pagar()</code>); las preguntas (<code>esperaPago</code>, <code>ocupaButacas</code>,
+        <code>estaPagada</code>) también las contesta el estado. Nadie compara estados fuera del enum.
+      </p>
+      <p>
+        <code>EstadoRevision</code> hace lo mismo con el buzón del importador: si una película se publica, se programa
+        o se le muestra al público. <code>Pelicula.ponerEnCartelera</code> comparaba contra <code>CONFIRMADA</code> y
+        <code>GestorFunciones</code> contra <code>DESCARTADA</code> y <code>CONFIRMADA</code>, cada uno con sus textos.
+        Ahora la película le delega la pregunta a su estado, y como los métodos son abstractos, un estado nuevo no
+        compila hasta decir qué hace en cada operación. Es un enum y no una jerarquía de clases porque los estados no
+        tienen datos propios, y JPA sigue guardando el nombre de la constante sin ningún mapeo extra.
+      </p>
+
+      <h3 id="observer">Observer: los comprobantes, después del commit</h3>
+      <p>
+        Los gestores escribían el ticket o el recibo adentro de su transacción. Si el commit fallaba después (el
+        <code>@Version</code> de <code>Reserva</code> salta recién al confirmar, cuando otro pedido la canceló o la venció),
+        quedaba en la carpeta un recibo de un cobro que no existió. Y si el archivo fallaba, el cliente recibía un
+        500 y se deshacía una venta que estaba bien.
+      </p>
+      <p>
+        Ahora el gestor (el sujeto) publica un evento con el <code>ApplicationEventPublisher</code> de Spring
+        (<code>ReservaCreada</code>, <code>PagoRegistrado</code>, <code>CompraCandyRegistrada</code>, con solo el id) y no
+        sabe quién escucha. <code>ComprobantesDeVentas</code> y <code>ComprobantesDeCandy</code> (los observadores)
+        tienen métodos <code>@TransactionalEventListener</code>: Spring los encuentra por el tipo del parámetro y los
+        llama recién cuando la transacción del gestor confirma (<code>AFTER_COMMIT</code>); si se deshace, no los llama.
+        Para entonces la sesión de la venta ya no navega relaciones LAZY, así que cada uno relee por id en una
+        transacción propia de solo lectura (<code>REQUIRES_NEW</code>). Si el archivo falla, la venta ya existe: queda
+        en el log para reimprimirlo. De paso, los gestores dejaron de depender de los generadores.
+      </p>
+
+      <h3 id="decorator">Decorator: bcrypt con un límite</h3>
+      <p>
+        bcrypt usa solo los primeros 72 bytes de la clave, y <code>BCrypt.hashpw</code> tira una excepción con más.
+        Una clave así solo puede estar guardada en el SHA-256 viejo (el alta pasa por <code>Contrasena</code>, que no la
+        deja entrar), pero al primer login correcto Spring la re-hashea, y ese re-hash explotaba dentro del filtro: el
+        login era un 500. <code>PasswordBcrypt</code> implementa <code>PasswordEncoder</code> y envuelve al encoder de
+        Spring: <code>matches</code> y <code>upgradeEncoding</code> los delega tal cual, y <code>encode</code> solo pasa a
+        bcrypt lo que entra en 72 bytes; lo demás sale en SHA-256, el mismo hash que ya estaba. El empleado entra y no
+        se migra nada. Se lee como cualquier decorador: misma interfaz que lo decorado, y agrega una condición antes de
+        delegar.
+      </p>
+
+      <h3 id="value-objects">Value Objects</h3>
+      <p>
+        Un concepto con regla propia es un tipo, que se valida y se normaliza al construirse; después ya no hace falta
+        volver a mirarlo. <code>Dinero</code> (centavos, e <code>importe</code> para lo que llega del pedido),
+        <code>Periodo</code> (días de desde a hasta, que no se arma al revés), <code>FranjaHoraria</code> (horas de un
+        mismo día: una que cruza la medianoche no incluiría ninguna hora), <code>CatalogoPelicula</code> (se reemplaza
+        entero con <code>conCambios</code>, así la película nunca queda con un catálogo a medio validar),
+        <code>Email</code> (recortado, en minúsculas y con forma), <code>Contrasena</code> (6 caracteres a 72 bytes;
+        su <code>toString</code> no la muestra), <code>CodigoDeAcceso</code> (genera y normaliza) y
+        <code>SesionDeCompra</code> (obligatoria y del largo de su columna). Antes esas reglas estaban repetidas donde
+        se usaba el dato: la vigencia de una promoción y el rango de una grilla validaban el orden cada uno con su
+        código. <code>Periodo</code>, <code>FranjaHoraria</code> y <code>CatalogoPelicula</code> son
+        <code>@Embeddable</code>: agruparlos no movió ninguna columna del schema.
+      </p>
+
+      <h3 id="rechazos">La jerarquía de rechazos</h3>
+      <p>
+        Lo que el sistema rechaza con un texto para el usuario es un <code>Rechazo</code>, en <code>model/rechazos/</code>:
+        una clase abstracta y sellada (<code>sealed … permits</code>) con cuatro hijas, una por status.
+        <code>DatoInvalido</code> es 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> (un
+        duplicado) y <code>ButacaOcupada</code> 409. <code>ManejadorErrores</code> tiene un handler por tipo y el texto
+        sale intacto. Antes se rechazaba con <code>IllegalArgumentException</code>, y eso tenía dos problemas: una
+        librería también la tira, con un texto técnico en inglés que llegaba al usuario; y Spring Data traduce la
+        <code>IllegalArgumentException</code> que sale de un repositorio a otra excepción, así que el 404 de
+        <code>exigir</code> terminaba en 500. Por eso <code>Rechazo</code> extiende <code>RuntimeException</code>, una
+        <code>IllegalArgumentException</code> suelta ahora es 500 genérico con el detalle al log, y
+        <code>ArquitecturaTest</code> falla si alguien escribe <code>new IllegalArgumentException(</code>. Que sea sellada
+        cierra la lista: un tipo nuevo se declara acá, y <code>ManejadorErroresTest</code> falla hasta que tenga su status.
+      </p>
+
+      <h3 id="repositorio">Una base para los repositorios</h3>
+      <p>
+        «Buscar por id o 404» estaba escrito 28 veces como <code>findById(id).orElseThrow(…)</code>, más 8 métodos
+        privados (<code>buscarOFallar</code>, <code>buscarFuncion</code>…) que hacían lo mismo, cada uno con su texto.
+        <code>repository/Repositorio&lt;T&gt;</code> es una interfaz que extiende <code>JpaRepository&lt;T, Integer&gt;</code> y
+        agrega un método <code>default</code>, <code>exigir(id, "la película")</code>, que busca o tira
+        <code>RecursoNoEncontrado</code> con «No existe la película 7». Los 13 repositorios con id numérico la extienden
+        en vez de <code>JpaRepository</code> y lo heredan: se recicla heredando una interfaz, sin clase base ni
+        implementación. <code>@NoRepositoryBean</code> le dice a Spring Data que no cree un bean para la base genérica,
+        que no corresponde a ninguna entidad.
+      </p>
+
+      <h3 id="validacion">Dónde se valida cada cosa</h3>
+      <ul>
+        <li><strong>Presencia en el DTO.</strong> Bean Validation mira solo que el dato venga, con el mismo «Falta …» que
+          el modelo. Un rango en el DTO (<code>@Positive</code>) no lo ve el importador ni un test, y sería una segunda
+          copia de la regla.</li>
+        <li><strong>Las reglas en el modelo.</strong> Lo que depende de un solo objeto lo exige el objeto al construirse
+          o cambiar (Experto); el gestor se queda con lo que necesita la base o la hora, que le pasa a la entidad.</li>
+        <li><strong>Entidades puras.</strong> La entidad tiene su estado, su ciclo de vida y métodos con intención. Qué
+          dato no puede entrar vive al lado, en <code>model/&lt;subdominio&gt;/validacion/Validador&lt;Entidad&gt;</code>
+          (<code>ValidadorPelicula</code>, <code>ValidadorSala</code>, <code>ValidadorReserva</code>…), que llama la
+          entidad y nunca el gestor: la regla sigue siendo de la entidad aunque se lea en otra clase. Cada guarda
+          devuelve el dato limpio, así se valida todo antes de asignar nada y una edición rechazada no deja la entidad
+          a medio cambiar.</li>
+        <li><strong>Guardas fluidas, sin cadenas de if.</strong> <code>Regla</code> encadena las comprobaciones de un dato
+          y termina en el valor ya validado: <code>Regla.texto(titulo).obligatorio("Falta el título").recortado().hasta(100, "El título").valor()</code>.
+          Hay guardas de texto, número (con <code>entre</code> y <code>conDecimales</code>; <code>NaN</code> e infinito no
+          pasan), lista y objeto. Cada una recibe el mensaje de quien la usa, así cada entidad conserva sus textos.</li>
+        <li><strong>Los clientes, solo formato.</strong> Swing y la web miran que el pedido esté bien armado; ninguna
+          regla (ver <a href="#swing">Swing</a>).</li>
+        <li><strong>La base cierra.</strong> <code>UNIQUE</code>, <code>NOT NULL</code> y el largo de cada columna, probados
+          contra el <code>schema.sql</code> real.</li>
       </ul>
     </section>
 
@@ -1571,8 +1850,8 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>¿Por qué dividieron el proyecto en estas capas?</td><td>Para que cada cambio toque un solo lugar: HTTP, reglas, datos e integraciones están separados. <code>ArquitecturaTest</code> lo hace cumplir.</td></tr>
             <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> coordina y aplica las reglas que piden la base o el reloj, <code>model/</code> son las entidades, que validan sus propios datos, <code>repository/</code> persiste, <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
             <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Las reglas quedarían atadas a HTTP: el importador, que da de alta por <code>GestorRevisionCartelera</code>, y los tests de gestor tendrían que duplicarlas.</td></tr>
-            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>Lo que depende de un solo objeto, en la entidad, por Experto: que un NxM lleve más de lo que paga, R8 en <code>Funcion</code>, R14 en <code>Producto</code>. Lo que necesita la base o el reloj, en el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>, R20 en <code>GestorFunciones</code>). Los dos son el único paso común a API, importador y seed.</td></tr>
-            <tr><td>¿Dónde se valida?</td><td>En cuatro lugares, cada uno con lo suyo. El cliente mira formato y obligatoriedad para no mandar un pedido mal armado: <code>comun/Validacion</code> en Swing, <code>required</code> en la web; ninguna regla. El backend valida el DTO con <code>@Valid</code> (presencia y formato, 400), las entidades sus invariantes al construirse o cambiar, por Experto (<code>Pelicula</code>, <code>Sala</code>, <code>Funcion</code>, <code>Programacion</code>, <code>Reserva</code>, <code>Producto</code>, <code>CompraCandy</code>, <code>Promocion</code>, <code>Empleado</code>, <code>Usuario</code>), y los gestores las reglas que necesitan la base o el reloj (R1, R3, R4, R12, R20). Los criterios del planificador son un Value Object, <code>CriteriosGrilla</code>, que se valida en su constructor compacto: el planificador nunca ve unos imposibles. La base cierra con <code>UNIQUE</code>, <code>NOT NULL</code> y el largo de cada columna; la suite corre contra el <code>schema.sql</code> real, así que esas restricciones también están probadas.</td></tr>
+            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>Lo que depende de un solo objeto, en la entidad, por Experto: que un NxM lleve más de lo que paga, R8 en <code>Funcion</code>, R14 en <code>Producto</code>, R20 en <code>Funcion</code> con la hora que le pasa el gestor. Lo que necesita la base, en el gestor de su subdominio (R4 en <code>GestorReservas</code>, R15 en <code>GestorPromociones</code>, R3 en <code>GestorFunciones</code>). Los dos son el único paso común a API, importador y seed.</td></tr>
+            <tr><td>¿Dónde se valida?</td><td>En cuatro lugares, cada uno con lo suyo. El cliente mira formato y obligatoriedad para no mandar un pedido mal armado: <code>comun/Validacion</code> en Swing, <code>required</code> en la web; ninguna regla. El backend valida en el DTO solo la presencia (<code>@Valid</code>, 400), y todas las reglas en el modelo: cada entidad llama a su <code>Validador*</code> al construirse o cambiar, con las guardas de <code>Regla</code>, y los Value Objects (<code>Dinero</code>, <code>Periodo</code>, <code>Email</code>, <code>CriteriosGrilla</code>…) se validan en su constructor. Los gestores, lo que necesita la base (R1, R3, R4, R12). La base cierra con <code>UNIQUE</code>, <code>NOT NULL</code> y el largo de cada columna; la suite corre contra el <code>schema.sql</code> real, así que esas restricciones también están probadas. Detalle en <a href="#validacion">dónde se valida cada cosa</a>.</td></tr>
             <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code> (<code>spring.datasource.url</code>, credenciales; Hibernate deduce el dialecto), el driver en <code>pom.xml</code>, <code>schema.sql</code> y el único SQL nativo, el <code>INSERT IGNORE</code> de <code>BloqueoButacaRepository</code>. El resto de repositorios y los gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2.</td></tr>
           </tbody>
         </table>
@@ -1583,7 +1862,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 20 <code>@Entity</code>, enums y <code>Dinero</code>, con su lógica propia (<code>Reserva.getTotal()</code>). La View son los dos clientes, la web React y el panel Swing, que reciben <code>*VistaDTO</code> como JSON.</td></tr>
+            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: las 20 <code>@Entity</code>, enums con comportamiento (<code>EstadoReserva</code>, <code>TipoPromocion</code>) y Value Objects (<code>Dinero</code>, <code>Periodo</code>, <code>Email</code>…), con su lógica propia (<code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>) y la validación de sus datos (<code>Validador*</code>). La View son los dos clientes, la web React y el panel Swing, que reciben <code>*VistaDTO</code> como JSON.</td></tr>
             <tr><td>¿Cuál es la responsabilidad del Controller?</td><td>Recibir el pedido, validar el DTO (<code>@Valid</code>), llamar al gestor y devolver el DTO con su código: <code>POST /api/reservas</code> → <code>GestorReservas.reservar</code> → 201.</td></tr>
             <tr><td>¿Qué diferencia hay entre Controller y Service?</td><td>El controller sabe de HTTP y no decide; el service decide reglas y transacción (<code>@Transactional</code>) y no sabe de HTTP.</td></tr>
             <tr><td>¿Por qué la View no debería acceder directamente a la base de datos?</td><td>Se saltearía reglas y seguridad y quedaría atada al esquema. Ninguno de los dos clientes la toca: la web y el panel Swing pasan por la API, donde las reglas están en las entidades y los gestores y Spring Security valida el rol antes del controlador. En Docker el frontend (red <code>web</code>) ni siquiera tiene ruta a MySQL (red <code>datos</code>): el backend es el único que llega, y Swing entra por el mismo nginx.</td></tr>
@@ -1596,7 +1875,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué problema resuelve DAO?</td><td>Separa cómo se guarda de qué se decide: el gestor pide <code>reservaRepository.findById(id)</code> sin SQL ni conexiones.</td></tr>
+            <tr><td>¿Qué problema resuelve DAO?</td><td>Separa cómo se guarda de qué se decide: el gestor pide <code>reservaRepository.exigir(id, "la reserva")</code> sin SQL ni conexiones.</td></tr>
             <tr><td>¿Qué responsabilidad tiene?</td><td>Leer y escribir una entidad: CRUD de <code>JpaRepository</code>, consultas por nombre (<code>existsBySala_Id</code>) y <code>@Query</code> (<code>PagoRepository.findEntre</code>). No valida reglas.</td></tr>
             <tr><td>¿Qué ocurriría si elimináramos esta capa?</td><td>Los gestores usarían <code>EntityManager</code> o JDBC: SQL mezclado con reglas y sin tests sobre H2. <code>ArquitecturaTest</code> lo prohíbe.</td></tr>
             <tr><td>¿DAO y ORM son lo mismo?</td><td>No. DAO es un patrón (interfaz de acceso a datos: los <code>*Repository</code>); ORM es la herramienta que traduce objetos a tablas (Hibernate, por debajo).</td></tr>
@@ -1625,7 +1904,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td>¿Por qué esta tabla tiene esa clave primaria?</td><td><code>id AUTO_INCREMENT</code> donde hay identidad; PK compuesta en tablas de valores (<code>pelicula_genero (pelicula_id, genero)</code>, <code>combo_item</code>) y donde el par es lo único (<code>bloqueo_butaca (funcion_id, asiento_id)</code>). Lo único de negocio va con <code>UNIQUE</code> (<code>reserva.codigo</code>, <code>usuario.email</code>).</td></tr>
             <tr><td>¿Qué relación existe entre estas tablas?</td><td>Por FK: <code>funcion</code> → <code>pelicula</code>, <code>sala</code>; <code>reserva</code> → <code>funcion</code>, <code>usuario</code>; <code>entrada</code> → <code>reserva</code>, <code>asiento</code>; <code>pago</code> → <code>reserva</code> (único: 0..1).</td></tr>
-            <tr><td>¿Qué sucede cuando eliminás este registro?</td><td>Una sala sin funciones se lleva sus <code>asiento</code> (<code>ON DELETE CASCADE</code>); una película, sus <code>pelicula_genero</code>. Una sala con funciones no se borra: <code>GestorSalas</code> lo rechaza por R12 antes que la FK.</td></tr>
+            <tr><td>¿Qué sucede cuando eliminás este registro?</td><td>Una sala sin funciones se lleva sus <code>asiento</code> (<code>ON DELETE CASCADE</code>); una película, sus <code>pelicula_genero</code>. Una reserva se lleva sus <code>entrada</code>, una grilla sus días, una promoción sus días y medios, una compra de candy sus renglones. Una sala con funciones o en una grilla no se borra: <code>GestorSalas</code> lo rechaza por R12 antes que la FK (la grilla sin funciones generadas antes chocaba con la FK y daba 500).</td></tr>
             <tr><td>¿Dónde se está realizando realmente la persistencia?</td><td>En Hibernate, al commit de la transacción del gestor: flush y SQL a MySQL por JDBC (HikariCP). <code>reservar</code> usa <code>saveAndFlush</code> para detectar la butaca duplicada en el momento.</td></tr>
           </tbody>
         </table>
@@ -1638,9 +1917,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td>¿Qué diferencia hay entre GET y POST?</td><td>GET consulta sin efectos y sin cuerpo (<code>GET /api/cartelera</code>); POST crea o ejecuta una acción con cuerpo JSON (<code>POST /api/reservas</code>).</td></tr>
             <tr><td>¿Por qué utilizaron este endpoint?</td><td>Rutas por recurso y acciones como subrecurso (<code>/api/reservas/{id}/pago</code>, <code>/cancelacion</code>). Lo del cliente va por <code>/codigo/{codigo}</code> porque el id es adivinable.</td></tr>
-            <tr><td>¿Qué significa un HTTP 404?</td><td>El recurso no existe: <code>GET /api/peliculas/999</code> o un id no numérico. Sale como <code>{"error"}</code>.</td></tr>
+            <tr><td>¿Qué significa un HTTP 404?</td><td>Que lo pedido no existe: <code>GET /api/peliculas/999</code> da «No existe la película 999» (<code>RecursoNoEncontrado</code>, que tira <code>Repositorio.exigir</code>), una ruta inexistente o un id no numérico dan «No existe la ruta …». También lo que existe pero no tiene el recurso: el pago de una reserva sin cobrar, o una película pendiente para quien no es administrador. Sale como <code>{"error"}</code>; ver <a href="#respuestas">política de respuestas</a>.</td></tr>
             <tr><td>¿Qué información viaja en el request?</td><td>Verbo, ruta (<code>/api/funciones/7</code>), query (<code>?genero=ACCION</code>), cabeceras (<code>Content-Type</code>, <code>Authorization: Basic</code> en el panel) y el <code>Pedido*DTO</code>. Nunca el precio ni el monto.</td></tr>
-            <tr><td>¿Qué devuelve el servidor?</td><td>Un código y JSON: el <code>*VistaDTO</code> o <code>{"error"}</code>. 400 dato inválido o regla, 401/403 seguridad, 404 inexistente, 409 butaca tomada o duplicado, 500 falla.</td></tr>
+            <tr><td>¿Qué devuelve el servidor?</td><td>Un código y JSON, según la <a href="#respuestas">política de respuestas</a>: 200 con el <code>*VistaDTO</code> o la lista, 201 con <code>Location</code> en un alta, 204 al borrar, o <code>{"error"}</code>: 400 dato inválido o regla, 401/403 seguridad, 404 inexistente, 409 butaca tomada o duplicado, 500 falla.</td></tr>
             <tr><td>¿Qué formato de archivo usamos y por qué no otro?</td><td>JSON: el front lo lee nativo, Jackson lo genera sin configurar en el backend y lo lee en Swing, y es más liviano que XML. Los comprobantes son <code>.txt</code> porque se imprimen. Los archivos del INCAA los genera Swing en la PC del encargado a partir del JSON, no el servidor: el borderó en <code>.txt</code> y la declaración jurada en CSV, con <code>;</code> y BOM para que Excel en español la abra con tildes y columnas bien, y registros etiquetados (<code>EXHIBIDOR</code>, <code>FUNCION</code>, <code>PELICULA</code>, <code>TOTAL</code>, <code>DECLARACION</code>) porque mezcla filas de distinta forma en un solo archivo.</td></tr>
           </tbody>
         </table>
@@ -1651,10 +1930,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué patrón están utilizando?</td><td>MVC en capas, Repository, DTO + Assembler, Strategy (<code>Promocion</code>), Adapter (<code>infrastructure/</code>), Singleton (beans), Proxy (<code>@Transactional</code>). <code>ComprobanteTxt</code> comparte formato, no es Template Method.</td></tr>
-            <tr><td>¿Por qué eligieron ese patrón?</td><td>Cada uno aísla lo que cambia: Strategy el descuento, Adapter el proveedor externo, Repository la base, DTO el contrato.</td></tr>
-            <tr><td>¿Qué problema solucionaría?</td><td>Sin Strategy, un <code>switch</code> en el cobro; sin Adapter, cambiar la pasarela tocaría gestores; sin DTO, renombrar un atributo rompería el front.</td></tr>
-            <tr><td>¿Podrían haberlo hecho de otra manera?</td><td>Sí: JDBC a mano, entidades serializadas, un <code>switch</code> de promociones. Ver <a href="#decisiones">decisiones</a>.</td></tr>
+            <tr><td>¿Qué patrón están utilizando?</td><td>MVC en capas, Repository, DTO + Assembler, Strategy (<code>Promocion</code>, <code>PasarelaPagos</code>), State (<code>EstadoReserva</code>, <code>EstadoRevision</code>), Observer (comprobantes), Factory Method (<code>TipoPromocion</code>), Decorator (<code>PasswordBcrypt</code>), Adapter (<code>infrastructure/</code>), Value Object, Singleton (beans), Proxy (<code>@Transactional</code>). <code>ComprobanteTxt</code> comparte formato, no es Template Method; en Swing sí lo es <code>PantallaListado</code>.</td></tr>
+            <tr><td>¿Por qué eligieron ese patrón?</td><td>Cada uno aísla lo que cambia: Strategy el descuento, State lo que permite cada estado, Factory Method qué subclase nace de cada tipo, Observer el comprobante respecto de la venta, Adapter el proveedor externo, Repository la base, DTO el contrato.</td></tr>
+            <tr><td>¿Qué problema solucionaría?</td><td>Sin Strategy, un <code>switch</code> en el cobro; sin State, <code>if (estado == …)</code> repartidos en cada operación de la reserva; sin Factory Method, el <code>switch</code> del controller y los <code>instanceof</code> de la vista que había; sin Observer, recibos de cobros que no se confirmaron; sin Adapter, cambiar la pasarela tocaría gestores; sin DTO, renombrar un atributo rompería el front.</td></tr>
+            <tr><td>¿Podrían haberlo hecho de otra manera?</td><td>Sí: JDBC a mano, entidades serializadas, un <code>switch</code> de promociones (así estaba hasta hace poco). Ver <a href="#decisiones">decisiones</a>.</td></tr>
             <tr><td>¿Qué ventaja aporta esta decisión?</td><td>Cambios locales y testeables: una promo es una clase, una pasarela real otro <code>@Bean</code>, y los tests reemplazan TMDB y reloj por dobles.</td></tr>
           </tbody>
         </table>
@@ -1731,6 +2010,19 @@ docker compose up -d --build
         El backend espera a MySQL <code>service_healthy</code>: sin base no hay nada que servir.
       </p>
 
+      <h3 id="traslado">Llevar el servidor a otro equipo</h3>
+      <p>
+        Nada tiene la dirección del servidor escrita adentro. La web le habla a <code>/api</code> con rutas relativas
+        (<code>BASE = "/api"</code> en <code>api-http.js</code>) y nginx las reenvía al backend por la red interna de
+        Docker (<code>proxy_pass http://backend:8080</code>), así que se sirve igual desde cualquier host. El backend lee
+        la base de variables (<code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_NAME</code>, <code>DB_USER</code>,
+        <code>DB_PASSWORD</code> en <code>application.yml</code>), que <code>docker-compose.yml</code> completa desde el
+        <code>.env</code>; el puerto publicado también sale de ahí (<code>PUERTO_WEB</code>, 8080 si no se dice). El panel
+        Swing apunta a otro servidor con <code>-Dcine.api.url=http://otro:8080</code> o la variable
+        <code>CINE_API_URL</code>; sin ninguna, a <code>http://localhost:8080</code>. Mudar el sistema es copiar el
+        repositorio y el <code>.env</code>, <code>docker compose up</code>, y abrir el panel con la dirección nueva.
+      </p>
+
       <h3>Sin Docker</h3>
       <pre><code>cd cine-backend
 mvn test                      # contra H2
@@ -1765,7 +2057,9 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
         <li><strong>Buzón de revisión</strong> (<code>estadoRevision</code>): el catálogo lo decide el cine. Lo descartado no se borra, para que no vuelva.</li>
         <li><strong><code>MapeoTmdb</code> traduce todo</strong> (19 géneros → 9, certificación → enum; sin certificación, <code>MAS_13</code>). Adentro TMDB no existe.</li>
         <li><strong>Idempotente</strong> por R1: correrlo dos veces no duplica. Da de alta por <code>GestorRevisionCartelera</code>, con las mismas reglas que lo manual.</li>
-        <li>Cada corrida queda en <code>importacion</code>; una sola a la vez y un minuto entre corridas.</li>
+        <li>Cada corrida queda en <code>importacion</code>; una sola a la vez, un minuto entre corridas y de 1 a 3 páginas, que valida <code>Importacion</code> al armarse.</li>
+        <li>Una candidata que no se puede guardar por un error de base cuenta como fallida («✗ Título: No se pudo guardar: el motivo quedó en el log del servidor») y la corrida sigue; antes quedaba <code>EN_CURSO</code> y trababa al importador.</li>
+        <li>Lo que trae espera en el buzón: si se publica o se programa lo decide su <code>EstadoRevision</code> (<a href="#state">State</a>).</li>
       </ul>
     </section>
 
@@ -1802,16 +2096,16 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
         <table>
           <thead><tr><th>Nivel</th><th>Qué prueba</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td>Las entidades con <code>new</code> (<code>PeliculaTest</code>, <code>SalaTest</code>, <code>FuncionTest</code>, <code>ProgramacionTest</code>, <code>ProductoTest</code>, <code>CompraCandyTest</code>, <code>PromocionTest</code>…), <code>CriteriosGrillaTest</code>, <code>PuntajeConfiableTest</code>, <code>ArquitecturaTest</code>, <code>DineroTest</code>, <code>ParseoTest</code>, TMDB</td></tr>
-            <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
-            <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09 y CP-19</td></tr>
+            <tr><td>Unitaria</td><td>Una clase, sin Spring</td><td>Las entidades con <code>new</code> (<code>PeliculaTest</code>, <code>SalaTest</code>, <code>FuncionTest</code>, <code>ProgramacionTest</code>, <code>ReservaTest</code>, <code>ProductoTest</code>, <code>CompraCandyTest</code>, <code>PromocionTest</code>…), los estados (<code>EstadoReservaTest</code>), los Value Objects (<code>DineroTest</code>, <code>PeriodoTest</code>, <code>FranjaHorariaTest</code>, <code>CatalogoPeliculaTest</code>, <code>EmailTest</code>, <code>ContrasenaTest</code>, <code>CodigoDeAccesoTest</code>, <code>SesionDeCompraTest</code>), <code>ReglaTest</code>, <code>CriteriosGrillaTest</code>, <code>PuntajeConfiableTest</code>, <code>PasswordBcryptTest</code>, <code>ArquitecturaTest</code>, <code>ParseoTest</code>, <code>ErroresControllerTest</code>, TMDB</td></tr>
+            <tr><td>Integración</td><td>Reglas con Spring y H2</td><td><code>Gestor*Test</code>, <code>OcupacionTest</code>, <code>ComprobantesDeVentasTest</code> y <code>ComprobantesDeCandyTest</code> (sin commit no hay comprobante), <code>RepositorioTest</code>, <code>Vistas*Test</code> sobre <code>PruebaDeIntegracion</code>; <code>MapeoContraSchemaTest</code></td></tr>
+            <tr><td>Sistema</td><td>La API por HTTP</td><td><code>*ControllerTest</code>, <code>ManejadorErroresTest</code>, <code>SeguridadTest</code>, <code>ContratoOpenApiTest</code> sobre <code>PruebaDeApi</code>; CP-01 a CP-09 y CP-19</td></tr>
             <tr><td>Aceptación</td><td>El caso de uso</td><td>CP-10 a CP-18, en el navegador y en el panel Swing</td></tr>
           </tbody>
         </table>
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
+mvn clean test       # 1149 tests, ninguno salteado (cine-swing: 60, contra un servidor HTTP falso)</code></pre>
       <p>
         Corren contra H2 creada con el <code>schema.sql</code> real (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos
@@ -1824,6 +2118,11 @@ mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
       </p>
 
       <h3>La API, sin navegador</h3>
+      <p>
+        <code>_other/demo/cine-uade.postman_collection.json</code> recorre la API con Postman: GET, POST, PUT, PATCH y
+        DELETE, con fechas relativas al día en que se corre (para no chocar con R20 ni con el horizonte de un año), y
+        casos que tienen que fallar con 400, 404 y 409. Los de la tabla son los que se muestran en la defensa.
+      </p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Caso</th><th>Qué se hace</th><th>Esperado</th></tr></thead>
@@ -1886,7 +2185,7 @@ mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code> (R11 en el candy)</td><td>CP-13</td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td><td>—</td></tr>
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td><td>CP-05, CP-13</td></tr>
-            <tr><td>R17, R18</td><td><code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
+            <tr><td>R5, R13, R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code> (también el día de la función), <code>GestorReservasTest</code></td><td>CP-06, CP-07, CP-16, CP-17</td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td><td>—</td></tr>
             <tr><td>Bloqueo</td><td><code>OcupacionTest</code></td><td>CP-18</td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td><td>CP-15</td></tr>
@@ -1894,6 +2193,8 @@ mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
             <tr><td>Datos de la grilla (CU-03b)</td><td><code>ProgramacionTest</code>, <code>GestorProgramacionesTest</code></td><td>CP-09</td></tr>
             <tr><td>Buzón de revisión</td><td><code>PeliculaTest</code>, <code>GestorImportacionesTest</code>, <code>RevisionControllerTest</code></td><td>—</td></tr>
             <tr><td>Planificador, capas, esquema</td><td><code>PlanificadorGrillaTest</code>, <code>CriteriosGrillaTest</code>, <code>PuntajeConfiableTest</code>, <code>ArquitecturaTest</code>, <code>MapeoContraSchemaTest</code></td><td>—</td></tr>
+            <tr><td>Comprobantes después del commit</td><td><code>ComprobantesDeVentasTest</code>, <code>ComprobantesDeCandyTest</code></td><td>—</td></tr>
+            <tr><td>Topes y errores</td><td>Los <code>*Test</code> de cada entidad y Value Object, <code>PrecioDeLosPedidosTest</code>, <code>ManejadorErroresTest</code>, <code>ErroresControllerTest</code></td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -1910,7 +2211,6 @@ mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
             <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>Con miles de filas en el arqueo</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Lo cubre <code>ClienteRepository</code></td></tr>
             <tr><td>bcrypt en cada pedido (Basic sin sesión)</td><td>Con mucho tráfico del panel</td></tr>
-            <tr><td>Alta de promociones con <code>switch</code></td><td>Con muchos tipos</td></tr>
           </tbody>
         </table>
       </div>
@@ -1984,6 +2284,20 @@ mvn clean test       # 628 tests, ninguno salteado (cine-swing: 55)</code></pre>
             <tr><td>Borderó aparte del arqueo</td><td>Filtrar el arqueo</td><td>Cortes distintos</td></tr>
             <tr><td><code>Dinero</code> en centavos</td><td><code>double</code></td><td>Cuentas exactas</td></tr>
 
+            <tr><td>Rechazos propios (<code>Rechazo</code> sellada)</td><td><code>IllegalArgumentException</code></td><td>Un status por tipo; el texto de una librería no llega al usuario, y el 404 de un repositorio no se vuelve 500 (<a href="#rechazos">detalle</a>)</td></tr>
+            <tr><td>Validador por entidad con guardas fluidas</td><td><code>if</code> encadenados en la entidad o el gestor</td><td>La entidad queda con su estado y sus transiciones; la regla se lee como una frase y cada una devuelve el dato limpio</td></tr>
+            <tr><td>Presencia en el DTO, valor en el modelo</td><td><code>@Positive</code>, <code>@Email</code> en el DTO</td><td>Una sola copia de cada regla, que ven también el importador y los tests</td></tr>
+            <tr><td><code>Repositorio</code> base con <code>exigir</code></td><td><code>orElseThrow</code> en cada gestor</td><td>28 copias y 8 buscadores privados menos, con el mismo texto de 404</td></tr>
+            <tr><td>Topes en cada dato</td><td>Aceptar lo que entre en el tipo</td><td>Cerraron desbordes, columnas pasadas y pedidos que tumbaban el servidor (<a href="#reglas">tabla</a>)</td></tr>
+
+            <tr><td colspan="3" style="font-weight:600">Patrones</td></tr>
+            <tr><td>Estados como State</td><td><code>if (estado == …)</code></td><td>Lo que permite cada estado se lee junto; uno nuevo no compila hasta decidir cada operación</td></tr>
+            <tr><td><code>TipoPromocion.crear</code> (Factory Method)</td><td><code>switch</code> en el controller e <code>instanceof</code> en la vista</td><td>Un tipo nuevo es una constante y una subclase</td></tr>
+            <tr><td>Comprobantes después del commit (Observer)</td><td>Escribirlos adentro de la transacción</td><td>Ningún recibo de un cobro que no se confirmó, y un archivo que falla no deshace la venta</td></tr>
+            <tr><td>Precio en el modelo</td><td><code>CalculadoraPrecio</code></td><td>Cada tipo aplica su parte: Experto, una clase menos</td></tr>
+
+            <tr><td colspan="3" style="font-weight:600">Clientes</td></tr>
+            <tr><td>Venta en la web, encargado y Puerta en Swing</td><td>Una sola aplicación web</td><td>El cliente compra desde cualquier navegador sin instalar nada; el encargado trabaja en la PC de la boletería, donde además se generan los archivos del INCAA. Los dos son clientes HTTP de la misma API (front → HTTP → controller → gestor y modelo → repositorio → MySQL): ninguno toca la base, las reglas están una sola vez en el backend y el rol lo valida Spring Security</td></tr>
             <tr><td colspan="3" style="font-weight:600">Panel del encargado</td></tr>
             <tr><td>Cada mensaje en su lugar (<a href="#swing-mensajes">detalle</a>)</td><td>Todo en <code>showMessageDialog</code></td><td>Error de campo en línea, modal solo para errores globales y confirmaciones, éxito sin bloquear</td></tr>
           </tbody>
