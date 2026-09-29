@@ -181,7 +181,7 @@ token: tras el `200`, quien llama guarda `email:contraseña` y lo manda en cada 
 | `POST /api/salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. Limpieza opcional, 15 por defecto, no negativa |
 | `PUT /api/salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Butacas no editables; sin limpieza conserva la anterior; tipo fijo si tiene funciones (`400`) |
 | `DELETE /api/salas/{id}` | `400` si tiene funciones |
-| `PUT /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
+| `PATCH /api/salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /api/funciones?peliculaId=&salaId=&desde=&hasta=` | Con `pelicula` y `sala` embebidas, por `inicio`. Filtros opcionales; `desde` y `hasta` son días (`AAAA-MM-DD`) y `hasta` incluye todo ese día |
 | `POST /api/funciones` | R3 superposición, R8 3D en sala que no soporta, R20 `400` «La función no puede empezar en el pasado» si `inicio` no es posterior al momento actual (ahora mismo ya cuenta como pasado, igual que en R19) |
 | `DELETE /api/funciones/{id}` | `400` si tiene reservas, aun canceladas (R12: son historial) |
@@ -241,7 +241,7 @@ Borderó e informe cortan por **función** (INCAA), no por día; la declaración
 
 ## Programaciones (CU-03b)
 
-Genera funciones reales. `POST /api/programaciones/previsualizar` (no escribe) y `POST /api/programaciones`, mismo contrato:
+Genera funciones reales. `POST /api/programaciones/previsualizacion` (no escribe) y `POST /api/programaciones`, mismo contrato:
 
 ```json
 { "peliculaId": 1, "salaId": 1, "desde": "2026-09-07", "hasta": "2026-09-13",
@@ -316,7 +316,7 @@ confirmadas (ninguna: `400`); no pisa funciones existentes ni propone pases que 
 | `POST /api/candy/productos` | `{nombre, tipo, precio}` |
 | `POST /api/candy/combos` | `{nombre, precio, componentes: {productoId: cantidad}}` |
 | `PUT /api/candy/productos/{id}` | `{nombre, precio}`; tipo fijo. R14: `400` si un combo afectado deja de ser más barato que sus componentes |
-| `PUT /api/candy/productos/{id}/disponibilidad` | `{disponible}`. Sin `DELETE`: vive en compras viejas |
+| `PATCH /api/candy/productos/{id}` | `{disponible}`. Sin `DELETE`: vive en compras viejas |
 | `POST /api/candy/compras` | La venta |
 | `GET /api/candy/compras?fecha=&clienteId=` | Con `clienteId` gana el cliente; si no, el día |
 | `GET /api/candy/arqueo?fecha=` | `{fecha, total, compras}`, caja aparte de boletería |

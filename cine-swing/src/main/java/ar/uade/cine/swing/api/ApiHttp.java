@@ -187,7 +187,7 @@ public final class ApiHttp {
     }
 
     public Asiento cambiarEstadoAsiento(int salaId, String codigo, String estado) {
-        return pedir("PUT", "/salas/" + salaId + "/asientos/" + segmento(codigo.trim().toUpperCase()),
+        return pedir("PATCH", "/salas/" + salaId + "/asientos/" + segmento(codigo.trim().toUpperCase()),
                 Map.of("estado", nulo(estado)), tipo(Asiento.class));
     }
 
@@ -228,7 +228,7 @@ public final class ApiHttp {
     }
 
     public Plan previsualizarProgramacion(PedidoProgramacion programacion) {
-        return pedir("POST", "/programaciones/previsualizar", programacion, tipo(Plan.class));
+        return pedir("POST", "/programaciones/previsualizacion", programacion, tipo(Plan.class));
     }
 
     public Plan crearProgramacion(PedidoProgramacion programacion) {
@@ -314,7 +314,7 @@ public final class ApiHttp {
     }
 
     public Producto cambiarDisponibilidadCandy(int id, boolean disponible) {
-        return pedir("PUT", "/candy/productos/" + id + "/disponibilidad", Map.of("disponible", disponible),
+        return pedir("PATCH", "/candy/productos/" + id, Map.of("disponible", disponible),
                 tipo(Producto.class));
     }
 

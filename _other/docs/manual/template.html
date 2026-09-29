@@ -1136,7 +1136,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>R20, saltear y no fallar:</strong> un pase que ya pasó no se lista ni se crea, ni en la previsualización ni al extender. La función suelta sí se rechaza, porque ahí el encargado eligió la hora. El criterio es uno solo, <code>GestorFunciones.yaPaso</code>, con el corte de R19: la función que empieza ahora ya empezó y no se podría vender. Las funciones que quedaron en el pasado no se tocan: son historial (R12).</li>
       </ul>
       <p>
-        <code>POST /api/programaciones/previsualizar</code> informa qué fechas chocan y contra qué función, sin
+        <code>POST /api/programaciones/previsualizacion</code> informa qué fechas chocan y contra qué función, sin
         escribir; <code>POST /api/programaciones</code> hace la misma cuenta y guarda. Ambos usan
         <code>planificar(..., persistir)</code>, así la previsualización predice el alta. R3 y R8 los decide
         <code>GestorFunciones</code>.

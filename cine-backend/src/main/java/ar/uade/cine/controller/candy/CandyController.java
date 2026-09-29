@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -88,7 +89,7 @@ public class CandyController {
     }
 
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
-    @PutMapping("/api/candy/productos/{id}/disponibilidad")
+    @PatchMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
                                                   @Valid @RequestBody PedidoDisponibilidadDTO pedido) {
         buscar(id);

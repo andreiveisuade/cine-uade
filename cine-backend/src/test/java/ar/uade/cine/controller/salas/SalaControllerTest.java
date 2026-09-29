@@ -119,9 +119,9 @@ class SalaControllerTest extends PruebaDeApi {
     @Test
     void unaButacaFueraDeServicioSeRepone() {
         String ruta = "/api/salas/" + sala + "/asientos/A1";
-        assertEquals("FUERA_DE_SERVICIO", estadoDe(put(ruta, "{\"estado\":\"FUERA_DE_SERVICIO\"}"), "A1"));
+        assertEquals("FUERA_DE_SERVICIO", estadoDe(patch(ruta, "{\"estado\":\"FUERA_DE_SERVICIO\"}"), "A1"));
 
-        assertEquals("HABILITADO", estadoDe(put(ruta, "{\"estado\":\"HABILITADO\"}"), "A1"));
+        assertEquals("HABILITADO", estadoDe(patch(ruta, "{\"estado\":\"HABILITADO\"}"), "A1"));
         assertEquals("HABILITADO", estadoDe(get("/api/salas/" + sala), "A1"));
     }
 

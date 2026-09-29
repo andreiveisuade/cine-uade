@@ -71,7 +71,7 @@ public class ProgramacionController {
     }
 
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
-    @PostMapping("/api/programaciones/previsualizar")
+    @PostMapping("/api/programaciones/previsualizacion")
     public PlanVistaDTO previsualizar(@Valid @RequestBody PedidoProgramacionDTO pedido) {
         return plan(aplicar(pedido, false));
     }

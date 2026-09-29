@@ -75,11 +75,11 @@ class CandyControllerTest extends PruebaDeApi {
 
     @Test
     void unProductoSacadoDeLaCartaSeRepone() {
-        String ruta = "/api/candy/productos/" + pochoclos + "/disponibilidad";
-        assertEquals(200, put(ruta, "{\"disponible\":false}").estado());
+        String ruta = "/api/candy/productos/" + pochoclos;
+        assertEquals(200, patch(ruta, "{\"disponible\":false}").estado());
         assertEquals(false, enLaCarta(pochoclos));
 
-        Respuesta respuesta = put(ruta, "{\"disponible\":true}");
+        Respuesta respuesta = patch(ruta, "{\"disponible\":true}");
 
         assertEquals(200, respuesta.estado());
         assertEquals(true, respuesta.json().get("disponible").asBoolean());
