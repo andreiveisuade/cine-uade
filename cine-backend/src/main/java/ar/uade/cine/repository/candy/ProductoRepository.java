@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.candy.Producto;
 
+// Persistencia de la carta del candy; Repository de Spring Data, con los combos que traen un suelto (R14).
 public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
     List<Producto> findByDisponibleTrue();

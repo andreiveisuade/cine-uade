@@ -3,6 +3,7 @@ package ar.uade.cine.model.candy;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -20,6 +21,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
+// Venta del candy que nace cobrada; Creador de sus ItemCompra, exige medio de pago y R11, y suma el total.
 @Entity
 @Table(name = "compra_candy")
 @Getter
@@ -49,14 +51,22 @@ public class CompraCandy {
     protected CompraCandy() {
     }
 
+    // Creador: la compra contiene sus renglones, así que los crea ella y cada ItemCompra valida
+    // lo suyo. GestorCandy solo busca los productos y pone la fecha.
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
-                       String codigoAutorizacion, List<ItemCompra> items) {
+                       String codigoAutorizacion, Map<Producto, Integer> cantidades) {
+        if (cantidades == null || cantidades.isEmpty()) {
+            throw new IllegalArgumentException("Hay que elegir al menos un producto");
+        }
+        if (medio == null) {
+            throw new IllegalArgumentException("Falta el medio de pago");
+        }
         this.clienteId = clienteId;
         this.reservaId = reservaId;
         this.fecha = fecha;
         this.medio = medio;
-        this.codigoAutorizacion = codigoAutorizacion;
-        this.items.addAll(items);
+        this.codigoAutorizacion = medio.autorizacion(codigoAutorizacion);
+        cantidades.forEach((producto, cantidad) -> items.add(new ItemCompra(producto, cantidad)));
     }
 
     public List<ItemCompra> getItems() {

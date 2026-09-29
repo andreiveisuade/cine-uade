@@ -8,6 +8,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Componente de un combo con su cantidad; Experto: exige cantidad positiva y que no sea otro combo.
 @Embeddable
 @Getter
 @Accessors(fluent = true)
@@ -24,7 +25,16 @@ public class ItemCombo {
     protected ItemCombo() {
     }
 
-    public ItemCombo(Producto producto, int cantidad) {
+    // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido:
+    // un null es tan inválido como un cero, y sin chequearlo el unboxing daría un 500.
+    ItemCombo(Producto producto, Integer cantidad) {
+        if (cantidad == null || cantidad <= 0) {
+            throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
+                    + " en el combo debe ser mayor a cero");
+        }
+        if (producto.esCombo()) {
+            throw new IllegalArgumentException("Un combo no puede contener otro combo: " + producto.getNombre());
+        }
         this.producto = producto;
         this.cantidad = cantidad;
     }

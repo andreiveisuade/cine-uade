@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.candy.CompraCandy;
 
+// Persistencia de las ventas del candy; Repository de Spring Data, con el corte por día del arqueo.
 public interface CompraCandyRepository extends JpaRepository<CompraCandy, Integer> {
 
     List<CompraCandy> findByClienteId(int clienteId);

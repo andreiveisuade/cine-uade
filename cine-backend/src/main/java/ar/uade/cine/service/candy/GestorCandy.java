@@ -1,7 +1,6 @@
 package ar.uade.cine.service.candy;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -11,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.candy.ItemCompra;
-import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -22,6 +19,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Venta del candy en mostrador o para una reserva; Controlador: busca, CompraCandy valida y sale el ticket.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -50,32 +48,8 @@ public class GestorCandy {
                                MedioPago medio, String codigoAutorizacion) {
         Cliente cliente = clienteId == null ? null : clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
-        if (cantidades == null || cantidades.isEmpty()) {
-            throw new IllegalArgumentException("Hay que elegir al menos un producto");
-        }
-        if (medio == null) {
-            throw new IllegalArgumentException("Falta el medio de pago");
-        }
-        String autorizacion = medio.autorizacion(codigoAutorizacion);
-
-        List<ItemCompra> items = new ArrayList<>();
-        for (Map.Entry<Integer, Integer> pedido : cantidades.entrySet()) {
-            Producto producto = productos.buscarOFallar(pedido.getKey());
-            Integer cantidad = pedido.getValue();
-            if (cantidad == null) {
-                throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
-            }
-            if (cantidad <= 0) {
-                throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
-                        + " debe ser mayor a cero");
-            }
-            if (!producto.estaDisponible()) {
-                throw new IllegalArgumentException(producto.getNombre() + " no está disponible");
-            }
-            items.add(new ItemCompra(producto, cantidad, producto.getPrecio()));
-        }
-
-        CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, autorizacion, items);
+        CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
+                productos.buscarOFallar(cantidades));
         compraCandyRepository.save(compra);
         generadorTicket.emitir(compra, cliente, compra.getAhorro());
         return compra;
