@@ -3,6 +3,7 @@ package ar.uade.cine.service.cartelera;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -65,6 +67,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     private SalaRepository salaRepository;
     @Autowired
     private DataSource dataSource;
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private Sala sala;
 
@@ -159,7 +163,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
         assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
         assertDoesNotThrow(() -> gestor.editar(dune.getId(), conAnio(0)));
-        assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getAnio());
+        assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getCatalogo().anio());
     }
 
     private static DatosPelicula conAnio(int anio) {
@@ -179,8 +183,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 null, 2021, "Inglés", null, null, null, null));
 
         Pelicula leida = gestor.buscar(pelicula.getId()).orElseThrow();
-        assertEquals("Denis Villeneuve", leida.getDirector());
-        assertEquals(2021, leida.getAnio());
+        assertEquals("Denis Villeneuve", leida.getCatalogo().director());
+        assertEquals(2021, leida.getCatalogo().anio());
     }
 
     @Test
@@ -273,29 +277,42 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     void editarSoloPisaLoQueVieneEnElPedido() {
         Pelicula dune = gestor.agregar(new DatosPelicula("Dune", 155,
                 List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13, "Denis Villeneuve",
-                "Arrakis", 2021, "Inglés", "dune.jpg", true, 8.1, 1200));
+                "Arrakis", 2021, "Inglés", "https://dune.jpg", true, 8.1, 1200));
 
         gestor.editar(dune.getId(), new DatosPelicula(null, null, null, null,
                 null, "Otra sinopsis", null, null, null, null, null, null));
 
         Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
-        assertEquals("Otra sinopsis", leida.getSinopsis());
+        assertEquals("Otra sinopsis", leida.getCatalogo().sinopsis());
         assertEquals("Dune", leida.getTitulo());
         assertEquals(155, leida.getDuracionMinutos());
-        assertEquals("Denis Villeneuve", leida.getDirector());
-        assertEquals(2021, leida.getAnio());
+        assertEquals("Denis Villeneuve", leida.getCatalogo().director());
+        assertEquals(2021, leida.getCatalogo().anio());
         assertEquals(List.of(Genero.CIENCIA_FICCION), leida.getGeneros());
         assertEquals(Clasificacion.MAS_13, leida.getClasificacion());
+    }
+
+    // La columna admite NULL y una fila cargada por SQL puede tenerlo: editar otro dato no tiene que explotar.
+    @Test
+    void editarUnaPeliculaConLaSinopsisEnNullDejaElNull() {
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        jdbc.update("UPDATE pelicula SET sinopsis = NULL WHERE id = ?", dune.getId());
+
+        Pelicula editada = gestor.editar(dune.getId(), new DatosPelicula(null, null, null, null,
+                "Denis Villeneuve", null, null, null, null, null, null, null));
+
+        assertEquals("Denis Villeneuve", editada.getCatalogo().director());
+        assertNull(editada.getCatalogo().sinopsis());
     }
 
     @Test
     void elAltaCompletaGuardaElCatalogoDeUnaSolaVez() {
         Pelicula matrix = gestor.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION),
-                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "matrix.jpg", false, 8.7, 4300));
+                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "https://matrix.jpg", false, 8.7, 4300));
 
         Pelicula leida = gestor.buscar(matrix.getId()).orElseThrow();
-        assertEquals("Wachowski", leida.getDirector());
-        assertEquals(1999, leida.getAnio());
+        assertEquals("Wachowski", leida.getCatalogo().director());
+        assertEquals(1999, leida.getCatalogo().anio());
         assertFalse(leida.estaEnCartelera());
         assertTrue(gestor.listarEnCartelera(null).isEmpty());
     }
@@ -434,7 +451,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("La película Dune no está confirmada: revisala antes de publicarla", error.getMessage());
         Pelicula leida = gestor.buscar(importada.getId()).orElseThrow();
         assertFalse(leida.estaEnCartelera());
-        assertEquals("", leida.getDirector(), "el rechazo deshace también el resto del pedido");
+        assertEquals("", leida.getCatalogo().director(), "el rechazo deshace también el resto del pedido");
     }
 
     @Test

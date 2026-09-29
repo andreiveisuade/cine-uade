@@ -111,6 +111,18 @@ class MapeoTmdbTest {
         assertEquals(anio, MapeoTmdb.anioDe(fecha));
     }
 
+    // Sin redondear, la película rechazaría casi todo lo que trae TMDB por tener más de un decimal.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            tres decimales hacia abajo, 7.234, 7.2
+            tres decimales hacia arriba, 7.251, 7.3
+            ya con uno,                 8.2,   8.2
+            sin votos,                  0,     0
+            """)
+    void elPuntajeLlegaConUnSoloDecimal(String caso, double promedio, double puntaje) {
+        assertEquals(puntaje, MapeoTmdb.puntajeDe(promedio));
+    }
+
     @Test
     void laPeliculaCompletaLlegaConLosNombresNuestros() {
         JsonNode resumen = json("""

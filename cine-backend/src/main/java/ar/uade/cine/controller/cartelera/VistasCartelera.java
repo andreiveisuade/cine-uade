@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import ar.uade.cine.model.cartelera.CatalogoPelicula;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
@@ -43,11 +44,12 @@ public class VistasCartelera {
     private final VistasSalas vistasSalas;
 
     public PeliculaVistaDTO pelicula(Pelicula p) {
+        CatalogoPelicula catalogo = p.getCatalogo();
         return new PeliculaVistaDTO(p.getId(), p.getTitulo(), p.getDuracionMinutos(),
                 p.getGeneros().stream().map(Enum::name).toList(),
-                p.getClasificacion().name(), p.getPosterUrl(), p.getDirector(), p.getAnio(),
-                p.getIdiomaOriginal(), p.getSinopsis(), p.estaEnCartelera(),
-                p.getEstadoRevision().name(), p.getPuntaje(), p.getVotos());
+                p.getClasificacion().name(), catalogo.posterUrl(), catalogo.director(), catalogo.anio(),
+                catalogo.idiomaOriginal(), catalogo.sinopsis(), p.estaEnCartelera(),
+                p.getEstadoRevision().name(), catalogo.puntaje(), catalogo.votos());
     }
 
     public ImportacionVistaDTO importacion(Importacion i) {

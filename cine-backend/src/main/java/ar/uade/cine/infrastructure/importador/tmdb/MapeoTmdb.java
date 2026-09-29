@@ -76,7 +76,7 @@ final class MapeoTmdb {
                 idiomaDe(detalle.path("original_language").asText("")),
                 urlPoster(resumen.path("poster_path").asText(null)),
                 false,
-                detalle.path("vote_average").asDouble(0),
+                puntajeDe(detalle.path("vote_average").asDouble(0)),
                 detalle.path("vote_count").asInt(0));
     }
 
@@ -130,6 +130,11 @@ final class MapeoTmdb {
 
     static String idiomaDe(String codigo) {
         return IDIOMAS.getOrDefault(codigo, codigo);
+    }
+
+    // TMDB lo manda con tres decimales (7.234) y la película acepta uno, el de la columna DECIMAL(3,1).
+    static double puntajeDe(double promedio) {
+        return Math.round(promedio * 10) / 10.0;
     }
 
     static String urlPoster(String posterPath) {

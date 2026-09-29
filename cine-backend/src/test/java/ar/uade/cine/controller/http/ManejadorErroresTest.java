@@ -408,7 +408,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("La duración tiene que estar entre 1 y 600 minutos",
                 put(ruta, "{\"duracionMinutos\":0}").error());
         assertEquals("El puntaje tiene que estar entre 0 y 10", put(ruta, "{\"puntaje\":11}").error());
-        assertEquals("Los votos no pueden ser negativos", put(ruta, "{\"votos\":-1}").error());
+        assertEquals("Los votos tienen que estar entre 0 y 100.000.000", put(ruta, "{\"votos\":-1}").error());
         assertEquals("El año tiene que estar entre 1895 y 2031", put(ruta, "{\"anio\":-3}").error());
         assertEquals(400, put(ruta, "{\"generos\":[]}").estado());
         assertEquals("Dune", get(ruta).json().get("titulo").asText(), "nada de lo rechazado se guardó");

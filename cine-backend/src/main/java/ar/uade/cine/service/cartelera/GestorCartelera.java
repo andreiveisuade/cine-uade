@@ -73,29 +73,11 @@ public class GestorCartelera {
         }
     }
 
-    // Solo lo que vino en el pedido: en una edición, null es "no lo mandé".
+    // Solo lo que vino en el pedido: en una edición, null es "no lo mandé" y el catálogo deja lo que había.
     private void aplicarCatalogo(Pelicula pelicula, DatosPelicula datos) {
-        if (datos.puntaje() != null) {
-            pelicula.cambiarPuntaje(datos.puntaje());
-        }
-        if (datos.votos() != null) {
-            pelicula.cambiarVotos(datos.votos());
-        }
-        if (datos.director() != null) {
-            pelicula.cambiarDirector(datos.director());
-        }
-        if (datos.sinopsis() != null) {
-            pelicula.cambiarSinopsis(datos.sinopsis());
-        }
-        if (datos.anio() != null) {
-            pelicula.cambiarAnio(datos.anio(), reloj.hoy());
-        }
-        if (datos.idiomaOriginal() != null) {
-            pelicula.cambiarIdiomaOriginal(datos.idiomaOriginal());
-        }
-        if (datos.posterUrl() != null) {
-            pelicula.cambiarPoster(datos.posterUrl());
-        }
+        pelicula.cambiarCatalogo(pelicula.getCatalogo().conCambios(datos.director(), datos.sinopsis(),
+                datos.anio(), datos.idiomaOriginal(), datos.posterUrl(), datos.puntaje(), datos.votos(),
+                reloj.hoy()));
         if (Boolean.TRUE.equals(datos.enCartelera())) {
             pelicula.ponerEnCartelera();
         } else if (Boolean.FALSE.equals(datos.enCartelera())) {

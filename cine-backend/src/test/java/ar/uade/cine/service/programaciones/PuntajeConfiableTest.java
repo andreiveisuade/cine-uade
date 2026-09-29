@@ -2,6 +2,7 @@ package ar.uade.cine.service.programaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,8 @@ class PuntajeConfiableTest {
 
     private static Pelicula pelicula(double puntaje, int votos) {
         Pelicula pelicula = new Pelicula("Una", 100, List.of(Genero.DRAMA), Clasificacion.ATP);
-        pelicula.cambiarPuntaje(puntaje);
-        pelicula.cambiarVotos(votos);
+        pelicula.cambiarCatalogo(pelicula.getCatalogo()
+                .conCambios(null, null, null, null, null, puntaje, votos, LocalDate.of(2026, 8, 13)));
         return pelicula;
     }
 

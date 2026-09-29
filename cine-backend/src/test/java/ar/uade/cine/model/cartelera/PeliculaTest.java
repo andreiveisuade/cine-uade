@@ -116,49 +116,16 @@ class PeliculaTest {
     }
 
     @Test
-    void elPuntajeVaDeCeroADiezYLosVotosNoSonNegativos() {
+    void cambiarElCatalogoLoReemplazaEntero() {
         Pelicula dune = dune();
+        CatalogoPelicula nuevo = dune.getCatalogo()
+                .conCambios("Denis Villeneuve", null, 2021, null, null, 8.1, 1200, HOY);
 
-        rechaza("El puntaje tiene que estar entre 0 y 10", () -> dune.cambiarPuntaje(-0.1));
-        rechaza("El puntaje tiene que estar entre 0 y 10", () -> dune.cambiarPuntaje(10.1));
-        rechaza("Los votos no pueden ser negativos", () -> dune.cambiarVotos(-1));
-        dune.cambiarPuntaje(10);
-        dune.cambiarVotos(0);
+        dune.cambiarCatalogo(nuevo);
 
-        assertEquals(10, dune.getPuntaje());
-        assertEquals(0, dune.getVotos());
-    }
-
-    @Test
-    void losTextosDelCatalogoNoPasanElLargoDeSuColumnaYSiRechazaNoLosToca() {
-        Pelicula dune = dune();
-
-        rechaza("El director no puede tener más de 100 caracteres",
-                () -> dune.cambiarDirector("x".repeat(101)));
-        rechaza("El idioma original no puede tener más de 40 caracteres",
-                () -> dune.cambiarIdiomaOriginal("x".repeat(41)));
-        rechaza("La URL del póster no puede tener más de 255 caracteres",
-                () -> dune.cambiarPoster("x".repeat(256)));
-
-        assertEquals("", dune.getDirector());
-        assertEquals("", dune.getIdiomaOriginal());
-        assertEquals("", dune.getPosterUrl());
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {-3, 1894, 2032})
-    void elAnioVaDelPrimerCineACincoAniosPorDelante(int anio) {
-        rechaza("El año tiene que estar entre 1895 y 2031", () -> dune().cambiarAnio(anio, HOY));
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {0, 1895, 2031})
-    void ceroEsSinDatoYLosBordesValen(int anio) {
-        Pelicula dune = dune();
-
-        dune.cambiarAnio(anio, HOY);
-
-        assertEquals(anio, dune.getAnio());
+        assertEquals(nuevo, dune.getCatalogo());
+        assertEquals(8.1, dune.getPuntaje());
+        assertEquals(1200, dune.getVotos());
     }
 
     @Test

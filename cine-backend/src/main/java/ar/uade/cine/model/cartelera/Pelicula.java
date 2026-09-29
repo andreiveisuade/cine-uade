@@ -1,12 +1,12 @@
 package ar.uade.cine.model.cartelera;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,10 +26,6 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 @Getter
 public class Pelicula {
 
-    // La primera proyección pública, y un margen para las que se anuncian con años de anticipación.
-    private static final int PRIMER_ANIO = 1895;
-    private static final int ANIOS_POR_DELANTE = 5;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -48,24 +44,11 @@ public class Pelicula {
     @Enumerated(EnumType.STRING)
     private List<Genero> generos = new ArrayList<>();
 
-    private String director = "";
-
-    private String sinopsis = "";
-
-    private int anio;
-
-    private String idiomaOriginal = "";
-
-    private String posterUrl = "";
+    @Embedded
+    private CatalogoPelicula catalogo = new CatalogoPelicula();
 
     @Getter(AccessLevel.NONE)
     private boolean enCartelera = true;
-
-    // Sin decirle DECIMAL(3,1), Hibernate espera FLOAT y `validate` corta el arranque.
-    @Column(columnDefinition = "DECIMAL(3,1)")
-    private double puntaje;
-
-    private int votos;
 
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
@@ -97,47 +80,18 @@ public class Pelicula {
         this.generos.addAll(generosValidos);
     }
 
-    public void cambiarPuntaje(double puntaje) {
-        if (puntaje < 0 || puntaje > 10) {
-            throw new DatoInvalido("El puntaje tiene que estar entre 0 y 10");
-        }
-        this.puntaje = puntaje;
+    // El catálogo es inmutable: se reemplaza entero por otro armado con conCambios, que ya viene validado.
+    public void cambiarCatalogo(CatalogoPelicula catalogo) {
+        this.catalogo = catalogo;
     }
 
-    public void cambiarVotos(int votos) {
-        if (votos < 0) {
-            throw new DatoInvalido("Los votos no pueden ser negativos");
-        }
-        this.votos = votos;
+    // El planificador de la grilla ordena por estos dos: se los pide a la película, no a su catálogo.
+    public double getPuntaje() {
+        return catalogo.puntaje();
     }
 
-    public void cambiarDirector(String director) {
-        exigirLargo(director, 100, "El director");
-        this.director = director;
-    }
-
-    public void cambiarSinopsis(String sinopsis) {
-        this.sinopsis = sinopsis;
-    }
-
-    // 0 es "sin dato", como lo deja el importador cuando TMDB no trae fecha de estreno. El día
-    // de hoy lo pasa el gestor, que es el que tiene el reloj.
-    public void cambiarAnio(int anio, LocalDate hoy) {
-        int maximo = hoy.getYear() + ANIOS_POR_DELANTE;
-        if (anio != 0 && (anio < PRIMER_ANIO || anio > maximo)) {
-            throw new DatoInvalido("El año tiene que estar entre " + PRIMER_ANIO + " y " + maximo);
-        }
-        this.anio = anio;
-    }
-
-    public void cambiarIdiomaOriginal(String idiomaOriginal) {
-        exigirLargo(idiomaOriginal, 40, "El idioma original");
-        this.idiomaOriginal = idiomaOriginal;
-    }
-
-    public void cambiarPoster(String posterUrl) {
-        exigirLargo(posterUrl, 255, "La URL del póster");
-        this.posterUrl = posterUrl;
+    public int getVotos() {
+        return catalogo.votos();
     }
 
     public boolean estaEnCartelera() {
@@ -178,13 +132,6 @@ public class Pelicula {
     public void descartar() {
         estadoRevision = EstadoRevision.DESCARTADA;
         enCartelera = false;
-    }
-
-    // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
-    private static void exigirLargo(String texto, int maximo, String que) {
-        if (texto.length() > maximo) {
-            throw new DatoInvalido(que + " no puede tener más de " + maximo + " caracteres");
-        }
     }
 
     @Override
