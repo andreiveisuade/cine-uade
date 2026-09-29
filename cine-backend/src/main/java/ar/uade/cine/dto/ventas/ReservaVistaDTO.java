@@ -9,7 +9,7 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 
-// Una reserva como la ven el cliente y el panel; la arma VistasVentas y trae los flags cobrable y cancelable.
+// Una reserva como la ven el cliente y el panel; la arma VistasReservas y trae los flags cobrable y cancelable.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ReservaVistaDTO(int id, int funcionId, int clienteId, String estado, String creadaEn,
                               String codigo, String ingresadaEn,

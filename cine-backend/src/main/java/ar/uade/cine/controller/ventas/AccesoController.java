@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AccesoController {
 
     private final GestorAcceso acceso;
-    private final VistasVentas vistas;
+    private final VistasReservas vistas;
 
     // Por código y no por id: el código es la única credencial del cliente y el id se adivina.
     @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")

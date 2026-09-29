@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PagoController {
 
     private final GestorPagos pagos;
-    private final VistasVentas vistas;
+    private final VistasPagos vistas;
 
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")

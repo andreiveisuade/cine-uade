@@ -79,7 +79,10 @@ class VistasVentasTest extends PruebaDeIntegracion {
     private Ocupacion ocupacion;
 
     @Autowired
-    private VistasVentas vistas;
+    private VistasReservas vistas;
+
+    @Autowired
+    private VistasPagos vistasPagos;
 
     @Autowired
     private ReservaController reservaController;
@@ -183,7 +186,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         Reserva reserva = reservar("A1");
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        PagoVistaDTO vista = vistas.pago(pago);
+        PagoVistaDTO vista = vistasPagos.pago(pago);
 
         assertNull(vista.pelicula());
         assertNull(vista.cliente());
@@ -195,7 +198,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         Reserva reserva = reservar("A1", "A2");
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        PagoVistaDTO vista = vistas.pagosDeArqueo(List.of(pago)).get(0);
+        PagoVistaDTO vista = vistasPagos.pagosDeArqueo(List.of(pago)).get(0);
 
         assertEquals("Matrix", vista.pelicula().titulo());
         assertEquals("Andrei", vista.cliente().nombre());

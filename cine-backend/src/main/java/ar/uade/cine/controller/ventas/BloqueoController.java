@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class BloqueoController {
 
     private final Ocupacion ocupacion;
-    private final VistasVentas vistas;
+    private final VistasReservas vistas;
 
     @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
     @PostMapping("/api/funciones/{id}/bloqueos")

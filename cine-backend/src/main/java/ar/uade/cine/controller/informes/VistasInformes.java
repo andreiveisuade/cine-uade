@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import ar.uade.cine.controller.candy.VistasCandy;
 import ar.uade.cine.controller.http.Fechas;
-import ar.uade.cine.controller.ventas.VistasVentas;
+import ar.uade.cine.controller.ventas.VistasPagos;
 import ar.uade.cine.dto.informes.ArqueoCandyVistaDTO;
 import ar.uade.cine.dto.informes.ArqueoVistaDTO;
 import ar.uade.cine.dto.informes.BorderoVistaDTO;
@@ -27,7 +27,7 @@ import ar.uade.cine.service.informes.Bordero;
 import ar.uade.cine.service.informes.DeclaracionJurada;
 import ar.uade.cine.service.informes.InformeFuncion;
 
-// Arma los JSON de borderó, arqueos y declaración jurada; Assembler que reusa VistasVentas y VistasCandy.
+// Arma los JSON de borderó, arqueos y declaración jurada; Assembler que reusa VistasPagos y VistasCandy.
 // El exhibidor sale de la configuración y no de un gestor: es el encabezado del documento, no una cifra.
 // El CSV que se sube al INCAA lo arma el cliente de escritorio con este JSON.
 @Component
@@ -35,7 +35,7 @@ import ar.uade.cine.service.informes.InformeFuncion;
 public class VistasInformes {
 
     private final PropiedadesIncaa incaa;
-    private final VistasVentas vistasVentas;
+    private final VistasPagos vistasPagos;
     private final VistasCandy vistasCandy;
 
     public BorderoVistaDTO bordero(Bordero bordero) {
@@ -53,7 +53,7 @@ public class VistasInformes {
 
     public ArqueoVistaDTO arqueo(Arqueo arqueo) {
         return new ArqueoVistaDTO(arqueo.fecha().toString(), arqueo.total().aPesos(),
-                arqueo.entradas(), porMedio(arqueo), vistasVentas.pagosDeArqueo(arqueo.pagos()));
+                arqueo.entradas(), porMedio(arqueo), vistasPagos.pagosDeArqueo(arqueo.pagos()));
     }
 
     public ArqueoCandyVistaDTO arqueoCandy(ArqueoCandy arqueo) {

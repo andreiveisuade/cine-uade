@@ -41,7 +41,7 @@ public class ReservaController {
 
     private final GestorReservas reservas;
     private final ConsultasReservas consultas;
-    private final VistasVentas vistas;
+    private final VistasReservas vistas;
 
     @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
     @GetMapping("/api/reservas")
