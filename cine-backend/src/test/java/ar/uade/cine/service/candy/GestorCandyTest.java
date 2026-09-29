@@ -210,6 +210,27 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0)));
     }
 
+    // Nombre y precio van antes que el nombre repetido en las tres: el alta ya era así, y la edición y el
+    // combo contestaban 409 por el nombre a un pedido que igual no iba a pasar.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            alta con precio negativo,    alta
+            edición con precio negativo, edición
+            combo con precio negativo,   combo
+            """)
+    void unPrecioInvalidoSeRechazaAntesQueElNombreRepetido(String caso, String operacion) {
+        Dinero negativo = Dinero.de(-5);
+        DatoInvalido error = assertThrows(DatoInvalido.class, () -> {
+            switch (operacion) {
+                case "alta" -> carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, negativo);
+                case "edición" -> carta.editar(gaseosa, "Pochoclos grandes", negativo);
+                default -> carta.armarCombo("Pochoclos grandes", negativo, pochoclosYGaseosa());
+            }
+        });
+
+        assertEquals("El precio tiene que ser mayor a cero", error.getMessage());
+    }
+
     @Test
     void unComboNoSeDaDeAltaComoProductoSuelto() {
         assertThrows(Rechazo.class,

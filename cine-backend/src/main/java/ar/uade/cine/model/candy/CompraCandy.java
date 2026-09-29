@@ -56,18 +56,23 @@ public class CompraCandy {
     // lo suyo. GestorCandy solo busca los productos y pone la fecha. Todo se valida antes de asignar.
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                        String codigoAutorizacion, Map<Producto, Integer> cantidades) {
-        ValidadorCompraCandy.exigirProductos(cantidades);
-        MedioPago medioValido = ValidadorCompraCandy.medio(medio);
-        String autorizacion = medioValido.autorizacion(codigoAutorizacion);
+        String autorizacion = validarPedido(cantidades, medio, codigoAutorizacion);
         List<ItemCompra> renglones = cantidades.entrySet().stream()
                 .map(renglon -> new ItemCompra(renglon.getKey(), renglon.getValue()))
                 .toList();
         this.clienteId = clienteId;
         this.reservaId = reservaId;
         this.fecha = fecha;
-        this.medio = medioValido;
+        this.medio = medio;
         this.codigoAutorizacion = autorizacion;
         this.items.addAll(renglones);
+    }
+
+    // Lo que se valida sin buscar los productos: GestorCandy lo llama antes de ir a la base, así un pedido
+    // vacío o un medio mal cargado no quedan tapados por el 404 de un producto. Devuelve el código limpio.
+    public static String validarPedido(Map<?, Integer> cantidades, MedioPago medio, String codigoAutorizacion) {
+        ValidadorCompraCandy.exigirProductos(cantidades);
+        return ValidadorCompraCandy.medio(medio).autorizacion(codigoAutorizacion);
     }
 
     public List<ItemCompra> getItems() {

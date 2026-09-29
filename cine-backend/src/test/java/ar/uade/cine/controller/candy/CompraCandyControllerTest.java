@@ -54,6 +54,17 @@ class CompraCandyControllerTest extends PruebaDeApi {
         assertEquals("Falta la cantidad de Pochoclos grandes", respuesta.error());
     }
 
+    // El medio se valida antes de buscar los productos: un código en efectivo es un error de carga y se
+    // rechaza aunque además falte un producto, como antes de mover la venta al Observer.
+    @Test
+    void elEfectivoConCodigoSeRechazaAntesDeBuscarLosProductos() {
+        Respuesta respuesta = post("/api/candy/compras",
+                "{\"cantidades\":{\"99\":1},\"medio\":\"EFECTIVO\",\"codigoAutorizacion\":\"AUT-1\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El pago en efectivo no lleva código de autorización", respuesta.error());
+    }
+
     // Antes el controller descartaba el clienteId cuando venía la reserva, y la compra quedaba a nombre
     // del dueño de la reserva sin avisar.
     @Test

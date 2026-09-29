@@ -15,7 +15,7 @@ public final class ValidadorCompraCandy {
     private ValidadorCompraCandy() {
     }
 
-    public static void exigirProductos(Map<Producto, Integer> cantidades) {
+    public static void exigirProductos(Map<?, Integer> cantidades) {
         Regla.lista(cantidades == null ? null : cantidades.keySet())
                 .noVacia("Hay que elegir al menos un producto");
     }

@@ -30,10 +30,10 @@ public class GestorProductos {
         return productoRepository.save(producto);
     }
 
-    // El nombre repetido va antes de buscar los componentes: si el combo ya existe, no hace falta ir
-    // a buscar lo que trae.
+    // Como el alta, nombre y precio se validan antes de buscar el repetido. El nombre repetido va antes de
+    // buscar los componentes: si el combo ya existe, no hace falta ir a buscar lo que trae.
     public Producto armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
-        exigirNombreLibre(nombre);
+        exigirNombreLibre(Producto.validarNombreYPrecio(nombre, precio));
         return productoRepository.save(Producto.armarCombo(nombre, precio, obtener(componentes)));
     }
 
@@ -78,10 +78,11 @@ public class GestorProductos {
     // la base, y cada uno dice si sigue conviniendo.
     public Producto editar(int productoId, String nombre, Dinero precio) {
         Producto producto = obtener(productoId);
-        // Antes de editar: con el producto ya modificado, la consulta haría flush y chocaría con el
-        // UNIQUE del nombre. Excluyéndose por id, renombrarse a sí mismo nunca es repetido.
-        if (nombre != null
-                && productoRepository.existsByNombreIgnoreCaseAndIdNot(nombre.trim(), productoId)) {
+        // Validado sin editar, como en el alta: un dato inválido se rechaza antes que el nombre repetido. Con
+        // el producto ya modificado, la consulta haría flush y chocaría con el UNIQUE del nombre.
+        // Excluyéndose por id, renombrarse a sí mismo nunca es repetido.
+        String nombreValido = Producto.validarNombreYPrecio(nombre, precio);
+        if (productoRepository.existsByNombreIgnoreCaseAndIdNot(nombreValido, productoId)) {
             throw nombreRepetido();
         }
         producto.editar(nombre, precio);
@@ -89,9 +90,9 @@ public class GestorProductos {
         return producto;
     }
 
-    // Como lo compara la base: sin mayúsculas ni espacios alrededor.
-    private void exigirNombreLibre(String nombre) {
-        if (nombre != null && productoRepository.existsByNombreIgnoreCase(nombre.trim())) {
+    // Como lo compara la base: sin mayúsculas. Los espacios alrededor ya los sacó el validador.
+    private void exigirNombreLibre(String nombreValido) {
+        if (productoRepository.existsByNombreIgnoreCase(nombreValido)) {
             throw nombreRepetido();
         }
     }

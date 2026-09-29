@@ -75,6 +75,15 @@ public class Producto {
         return combo;
     }
 
+    // Nombre y precio sin tocar ningún producto: GestorProductos los valida antes de buscar el nombre
+    // repetido, y uno ya modificado haría flush contra el UNIQUE en esa consulta. Devuelve el nombre recortado,
+    // el mismo valor que se guarda y que la base compara.
+    public static String validarNombreYPrecio(String nombre, Dinero precio) {
+        String nombreValido = ValidadorProducto.nombre(nombre);
+        ValidadorProducto.precio(precio);
+        return nombreValido;
+    }
+
     public boolean estaDisponible() {
         return disponible;
     }

@@ -60,6 +60,9 @@ public class GestorCandy {
         if (clienteId != null) {
             clienteRepository.exigir(clienteId, "el cliente");
         }
+        // El pedido y el medio antes de buscar los productos: efectivo con código es un error de carga que
+        // se rechaza aunque además falte un producto.
+        CompraCandy.validarPedido(cantidades, medio, codigoAutorizacion);
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
                 productos.obtener(cantidades));
         compraCandyRepository.save(compra);
