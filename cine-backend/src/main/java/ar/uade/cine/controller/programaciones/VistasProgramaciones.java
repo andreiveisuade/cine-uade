@@ -59,7 +59,7 @@ public class VistasProgramaciones {
     // Sin funciones, el DTO las omite del JSON: el listado no las trae, solo el detalle.
     private ProgramacionVistaDTO armar(Programacion p, List<FuncionGeneradaVistaDTO> funciones) {
         return new ProgramacionVistaDTO(p.getId(), p.getPeliculaId(), p.getSalaId(),
-                p.getDesde().toString(), texto(p.getHasta()), texto(p.getGeneradaHasta()),
+                p.getPeriodo().desde().toString(), texto(p.getPeriodo().hasta()), texto(p.getGeneradaHasta()),
                 p.getHoraInicio().toString(),
                 p.getDiasSemana().stream().map(Enum::name).toList(),
                 p.getVersion().name(), p.getProyeccion().name(), p.getPrecio().aPesos(), p.estaActiva(),

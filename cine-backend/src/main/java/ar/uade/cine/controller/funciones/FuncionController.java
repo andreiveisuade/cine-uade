@@ -24,7 +24,6 @@ import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -57,9 +56,7 @@ public class FuncionController {
     @GetMapping("/api/funciones/{id}")
     public FuncionVistaDTO detalle(@PathVariable int id,
                                    @RequestParam(required = false) String sesion) {
-        Funcion funcion = funciones.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
-        return vistas.funcionConButacas(funcion, sesion);
+        return vistas.funcionConButacas(funciones.obtener(id), sesion);
     }
 
     @Operation(summary = "Programar una función")

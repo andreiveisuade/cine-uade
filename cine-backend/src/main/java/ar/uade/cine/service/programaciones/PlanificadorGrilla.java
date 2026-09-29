@@ -30,8 +30,9 @@ import ar.uade.cine.service.programaciones.PropuestaGrilla.IndicadoresGrilla;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
-// Grilla automática de varios días; elige elenco, reparte pases y los mide, con R3 y R20 de GestorFunciones.
+// Grilla automática de varios días; elige elenco, reparte pases y los mide, con R3 de GestorFunciones y R20.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class PlanificadorGrilla {
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
+    private final Reloj reloj;
 
     @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
@@ -149,7 +151,7 @@ public class PlanificadorGrilla {
     private LocalDateTime primerIntento(LocalDate fecha, CriteriosGrilla criterios) {
         LocalDateTime momento = fecha.atTime(criterios.apertura());
         LocalDateTime limite = criterios.cierreDe(fecha);
-        while (momento.isBefore(limite) && funciones.yaPaso(momento)) {
+        while (momento.isBefore(limite) && Funcion.yaPaso(momento, reloj.ahora())) {
             momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
         }
         return momento;

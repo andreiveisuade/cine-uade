@@ -17,16 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Alta, baja y extensión de grillas; genera cada función por GestorFunciones para no reescribir R3 ni R20.
 @Service
@@ -39,7 +36,6 @@ public class GestorProgramaciones {
 
     private final ProgramacionRepository programacionRepository;
     private final FuncionRepository funcionRepository;
-    private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
     private final Reloj reloj;
@@ -47,15 +43,14 @@ public class GestorProgramaciones {
     @Transactional(readOnly = true)
     public PlanProgramacion previsualizar(DatosGrilla datos) {
         Programacion grilla = armar(datos);
-        return planDe(grilla, peliculaDe(grilla), grilla.topePara(reloj.hoy()));
+        return planDe(grilla, grilla.getPelicula(), grilla.topePara(reloj.hoy()));
     }
 
     // Recalcula R3: desde la previsualización otro pudo programar en la sala.
     public PlanProgramacion crear(DatosGrilla datos) {
         Programacion grilla = armar(datos);
-        Pelicula pelicula = peliculaDe(grilla);
         programacionRepository.save(grilla);
-        return generar(grilla, pelicula, grilla.topePara(reloj.hoy()));
+        return generar(grilla, grilla.getPelicula(), grilla.topePara(reloj.hoy()));
     }
 
     // Fuera de transacción para que el catch valga: en una compartida, la primera grilla
@@ -68,7 +63,10 @@ public class GestorProgramaciones {
                 continue;
             }
             try {
-                int nuevas = generar(grilla, peliculaDe(grilla), grilla.topePara(hoy)).programables().size();
+                // La película se vuelve a pedir, y no por grilla.getPelicula(): fuera de la transacción ese
+                // proxy no se puede leer, y desde el alta la pudieron descartar.
+                Pelicula pelicula = funciones.peliculaProgramable(grilla.getPeliculaId());
+                int nuevas = generar(grilla, pelicula, grilla.topePara(hoy)).programables().size();
                 // Sin transacción la grilla está detached: el dirty checking no ve el avance.
                 programacionRepository.save(grilla);
                 generadas += nuevas;
@@ -85,10 +83,11 @@ public class GestorProgramaciones {
 
     // No escribe nada: es lo que muestra la previsualización y lo que después recorre el alta.
     private PlanProgramacion planDe(Programacion grilla, Pelicula pelicula, LocalDate tope) {
+        LocalDateTime ahora = reloj.ahora();
         List<LocalDateTime> pendientes = grilla.horariosSinGenerar(tope).stream()
                 // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
                 // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
-                .filter(inicio -> !funciones.yaPaso(inicio))
+                .filter(inicio -> !Funcion.yaPaso(inicio, ahora))
                 .toList();
         // Una sola lectura de la sala para todo el rango, y no una por horario. Las funciones
         // que esta misma grilla va creando no están en la agenda: caen una por día, así que
@@ -124,40 +123,27 @@ public class GestorProgramaciones {
         return plan;
     }
 
-    private Pelicula peliculaDe(Programacion grilla) {
-        return funciones.validarProgramable(grilla.getPeliculaId(), grilla.getSalaId(),
-                grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio());
-    }
-
+    // Primero lo que se busca, con su 404, como en el alta de una función suelta: la película confirmada y
+    // la sala, que la programación necesita para R8. Después la programación valida sus datos, y al
+    // final lo que depende del reloj.
     private Programacion armar(DatosGrilla datos) {
-        // Referencias sin ir a la base: que existan lo valida validarProgramable, con su 404.
-        Programacion grilla = new Programacion(peliculaRepository.getReferenceById(datos.peliculaId()),
-                salaRepository.getReferenceById(datos.salaId()), datos.desde(), datos.hasta(),
+        Programacion grilla = new Programacion(funciones.peliculaProgramable(datos.peliculaId()),
+                salaRepository.exigir(datos.salaId(), "la sala"), datos.desde(), datos.hasta(),
                 datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
-        LocalDate hasta = grilla.getHasta();
-        // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
-        if (hasta != null && grilla.horarios(hasta).stream().allMatch(funciones::yaPaso)) {
-            throw new DatoInvalido(
-                    "Todos los horarios del rango ya pasaron: la grilla no generaría funciones");
-        }
+        grilla.exigirGenerableA(reloj.ahora());
         return grilla;
     }
 
     public Programacion desactivar(int id) {
-        Programacion grilla = buscarOFallar(id);
+        Programacion grilla = programacionRepository.exigir(id, "la programación");
         grilla.desactivar();
         return grilla;
     }
 
     public Programacion activar(int id) {
-        Programacion grilla = buscarOFallar(id);
+        Programacion grilla = programacionRepository.exigir(id, "la programación");
         grilla.activar();
         return grilla;
-    }
-
-    private Programacion buscarOFallar(int id) {
-        return programacionRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
     }
 
     @Transactional(readOnly = true)
@@ -166,8 +152,8 @@ public class GestorProgramaciones {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Programacion> buscar(int id) {
-        return programacionRepository.findById(id);
+    public Programacion obtener(int id) {
+        return programacionRepository.exigir(id, "la programación");
     }
 
     @Transactional(readOnly = true)

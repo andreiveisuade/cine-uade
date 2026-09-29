@@ -167,7 +167,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         programaciones.desactivar(id);
 
-        assertFalse(programaciones.buscar(id).orElseThrow().estaActiva());
+        assertFalse(programaciones.obtener(id).estaActiva());
         assertEquals(7, funciones.listar().size());
         assertEquals(7, programaciones.funcionesDe(id).size());
     }
@@ -179,7 +179,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         programaciones.desactivar(id);
         programaciones.activar(id);
 
-        assertTrue(programaciones.buscar(id).orElseThrow().estaActiva());
+        assertTrue(programaciones.obtener(id).estaActiva());
     }
 
     @Test
@@ -203,6 +203,17 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+    }
+
+    // Primero lo que se busca, como en el alta de una función suelta: la programación necesita la sala
+    // para R8, así que el 404 sale antes que sus propios datos.
+    @Test
+    void unaPeliculaQueNoExisteSaleAntesQueUnRangoAlReves() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> programaciones.previsualizar(new DatosGrilla(99, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        assertEquals("No existe la película 99", error.getMessage());
     }
 
     @Test
@@ -256,7 +267,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
         assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
-        assertEquals(reloj.hoy().plusDays(3 + 14), programaciones.buscar(id).orElseThrow().getGeneradaHasta(),
+        assertEquals(reloj.hoy().plusDays(3 + 14), programaciones.obtener(id).getGeneradaHasta(),
                 "sin transacción, el avance se guarda aparte de las funciones");
     }
 

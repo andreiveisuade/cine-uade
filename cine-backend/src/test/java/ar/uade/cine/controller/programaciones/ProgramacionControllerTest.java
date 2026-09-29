@@ -10,6 +10,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeApi;
@@ -50,6 +52,24 @@ class ProgramacionControllerTest extends PruebaDeApi {
         assertEquals(200, respuesta.estado());
         assertFalse(respuesta.json().get("activa").asBoolean());
         assertFalse(get("/api/programaciones/" + id).json().get("activa").asBoolean());
+    }
+
+    // La programación necesita la sala para R8: primero se buscan la película y la sala, como en el alta
+    // de una función suelta, y después se validan sus datos.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            película inexistente y rango al revés, 99, 2026-09-13, 2026-09-07, 5000, 404, No existe la película 99
+            # De 2026 a 9999 eran 2,9 millones de funciones en una transacción, y la previsualización se caía.
+            un rango de más de un año,             1,  2026-09-07, 9999-12-31, 5000, 400, El rango no puede cubrir más de 366 días
+            """)
+    void unaPrevisualizacionInvalidaSeRechazaConSuMensaje(String caso, int pelicula, String desde, String hasta,
+            String precio, int estado, String mensaje) {
+        Respuesta respuesta = post("/api/programaciones/previsualizacion", "{\"peliculaId\":" + pelicula
+                + ",\"salaId\":1,\"desde\":\"" + desde + "\",\"hasta\":\"" + hasta + "\",\"horaInicio\":\"20:30\","
+                + "\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":" + precio + "}");
+
+        assertEquals(estado, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
     }
 
     @Test

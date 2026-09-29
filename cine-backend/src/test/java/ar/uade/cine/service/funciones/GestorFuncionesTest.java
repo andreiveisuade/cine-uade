@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +30,7 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.cartelera.DatosPelicula;
@@ -44,8 +43,6 @@ import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
-
-import jakarta.persistence.EntityManagerFactory;
 
 class GestorFuncionesTest extends PruebaDeIntegracion {
 
@@ -61,8 +58,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private GestorReservas reservas;
     @Autowired
     private GestorClientes clientes;
-    @Autowired
-    private EntityManagerFactory emf;
 
     @BeforeEach
     void prepararCartelera() {
@@ -103,21 +98,16 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    // extenderActivas corre sin transacción y pregunta una vez por horario: si cada pregunta abriera
-    // una, una grilla abierta haría decenas de commits sin haber leído nada.
+    // El horizonte se mide en días: el mismo día del año que viene entra a cualquier hora, el siguiente no.
     @Test
-    void preguntarSiUnHorarioYaPasoNoAbreUnaTransaccion() {
-        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
-        estadisticas.setStatisticsEnabled(true);
-        try {
-            estadisticas.clear();
+    void noSeProgramaUnaFuncionAMasDeUnAnio() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 15, 20, 0),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-            funciones.yaPaso(reloj.ahora().plusDays(1));
-
-            assertEquals(0, estadisticas.getTransactionCount());
-        } finally {
-            estadisticas.setStatisticsEnabled(false);
-        }
+        assertEquals("La función tiene que empezar dentro del próximo año", error.getMessage());
+        assertDoesNotThrow(() -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 14, 23, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
     // R20 mira el alta, no el historial (R12): la que ya pasó sigue ahí.
@@ -298,7 +288,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {
-        return new Funcion(null, null, LocalDateTime.of(2026, 8, 20, 20, 0),
+        return new Funcion(null, new Sala("Sala 1", TipoSala.DOS_D, 15), LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 

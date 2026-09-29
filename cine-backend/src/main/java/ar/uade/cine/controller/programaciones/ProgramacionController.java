@@ -29,7 +29,6 @@ import ar.uade.cine.dto.programaciones.PlanVistaDTO;
 import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -62,9 +61,7 @@ public class ProgramacionController {
     @Operation(summary = "Una grilla con las funciones que generó")
     @GetMapping("/api/programaciones/{id}")
     public ProgramacionVistaDTO detalle(@PathVariable int id) {
-        Programacion grilla = programaciones.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
-        return vistas.programacionConFunciones(grilla, programaciones.funcionesDe(id));
+        return vistas.programacionConFunciones(programaciones.obtener(id), programaciones.funcionesDe(id));
     }
 
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")

@@ -10,7 +10,6 @@ import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -49,11 +48,9 @@ public class GestorFunciones {
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, Version version,
                              Proyeccion proyeccion, Dinero precio, Integer programacionId) {
         Pelicula pelicula = peliculaConfirmada(peliculaId);
-        Sala sala = sala(salaId);
+        Sala sala = salaRepository.exigir(salaId, "la sala");
         Funcion funcion = new Funcion(pelicula, sala, inicio, version, proyeccion, precio, programacionId);
-        if (yaPaso(inicio)) {
-            throw new DatoInvalido("La función no puede empezar en el pasado");
-        }
+        funcion.exigirProgramableA(reloj.ahora());
 
         // R3
         LocalDateTime fin = funcion.getFin(pelicula.getDuracionMinutos());
@@ -65,14 +62,11 @@ public class GestorFunciones {
         return funcion;
     }
 
-    // Lo que una programación necesita antes de generar su primera función: lo mismo que el
-    // alta de una suelta, menos la fecha, que la pone cada día de la grilla.
+    // La película que una programación va a repetir, con la misma exigencia que el alta de una suelta.
+    // El formato lo valida la programación misma, con las reglas de la función.
     @Transactional(readOnly = true)
-    public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
-                                       Proyeccion proyeccion, Dinero precio) {
-        Pelicula pelicula = peliculaConfirmada(peliculaId);
-        Funcion.validarProgramable(sala(salaId), version, proyeccion, precio);
-        return pelicula;
+    public Pelicula peliculaProgramable(int peliculaId) {
+        return peliculaConfirmada(peliculaId);
     }
 
     // State: la película le pasa la pregunta a su estado de revisión, que rechaza con su texto.
@@ -80,22 +74,6 @@ public class GestorFunciones {
         Pelicula pelicula = peliculaRepository.exigir(peliculaId, "la película");
         pelicula.exigirProgramable();
         return pelicula;
-    }
-
-    private Sala sala(int salaId) {
-        return salaRepository.findById(salaId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + salaId));
-    }
-
-    // R20, con el mismo corte que R19 (Funcion.yaEmpezo): la que empieza ahora ya empezó, y
-    // nacería sin poder venderse. Pública para que programaciones y grilla salteen con el
-    // mismo criterio que el alta rechaza, en vez de repetir la comparación.
-    // SUPPORTS porque la llaman desde afuera, y pasar por el proxy le aplicaría el @Transactional de
-    // la clase: desde extenderActivas, que corre sin transacción, abriría y commitearía una por
-    // horario para comparar dos fechas. Así se suma a la del que llama, si hay, y si no, a ninguna.
-    @Transactional(propagation = Propagation.SUPPORTS)
-    public boolean yaPaso(LocalDateTime inicio) {
-        return !inicio.isAfter(reloj.ahora());
     }
 
     @Transactional(readOnly = true)
@@ -161,14 +139,17 @@ public class GestorFunciones {
         return funcionRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Funcion obtener(int id) {
+        return funcionRepository.exigir(id, "la función");
+    }
+
     public void eliminar(int id) {
-        if (!funcionRepository.existsById(id)) {
-            throw new RecursoNoEncontrado("No existe la función " + id);
-        }
+        Funcion funcion = funcionRepository.exigir(id, "la función");
         if (reservaRepository.existsByFuncion_Id(id)) {
             throw new DatoInvalido(
                     "La función " + id + " tiene reservas: no se puede eliminar");
         }
-        funcionRepository.deleteById(id);
+        funcionRepository.delete(funcion);
     }
 }

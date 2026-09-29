@@ -12,13 +12,18 @@ import java.util.Set;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
+import ar.uade.cine.model.programaciones.validacion.ValidadorProgramacion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.tiempo.Periodo;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -31,7 +36,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Película repetida en una sala a una hora por un rango; Experto: valida su rango y sabe qué falta generar.
+// Película repetida en una sala a una hora por un período; Experto: nace válida y sabe qué falta generar.
 @Entity
 @Getter
 public class Programacion {
@@ -50,9 +55,9 @@ public class Programacion {
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
-    private LocalDate desde;
-
-    private LocalDate hasta;
+    // Sus dos columnas se llaman como los campos del record: desde y hasta.
+    @Embedded
+    private Periodo periodo;
 
     private LocalTime horaInicio;
 
@@ -80,40 +85,46 @@ public class Programacion {
     protected Programacion() {
     }
 
-    // La película, la sala, el formato y el precio los valida el gestor, después de estos y con el
-    // 404 primero: acá llegan como referencias sin cargar, y leerlas iría a la base.
+    // La película y la sala llegan ya buscadas y con su 404, como en el alta de una función suelta:
+    // hacen falta para R8. Se valida todo antes de asignar nada.
     public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
                         Proyeccion proyeccion, Dinero precio) {
-        if (desde == null) {
-            throw new DatoInvalido("Falta la fecha de inicio");
-        }
-        if (hasta != null && hasta.isBefore(desde)) {
-            throw new DatoInvalido("El rango tiene que empezar antes de terminar");
-        }
-        if (horaInicio == null) {
-            throw new DatoInvalido("Falta la hora de la función");
-        }
+        Periodo validado = ValidadorProgramacion.periodo(desde, hasta);
+        ValidadorProgramacion.hora(horaInicio);
+        Set<DayOfWeek> dias = ValidadorProgramacion.dias(diasSemana, validado);
+        ValidadorFuncion.formato(sala, version, proyeccion, precio);
         this.pelicula = pelicula;
         this.sala = sala;
-        this.desde = desde;
-        this.hasta = hasta;
+        this.periodo = validado;
         this.horaInicio = horaInicio;
-        this.diasSemana = diasSemana == null || diasSemana.isEmpty()
-                ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana);
+        this.diasSemana = dias;
         this.version = version;
         this.proyeccion = proyeccion;
         this.precio = precio;
-        if (hasta != null && horarios(hasta).isEmpty()) {
-            throw new DatoInvalido(
-                    "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
+    }
+
+    // R20 y el horizonte miran el reloj, así que los exige el alta, con la hora que le pasa el gestor.
+    // Solo en una cerrada: una abierta genera de a catorce días, siempre por delante.
+    public void exigirGenerableA(LocalDateTime ahora) {
+        LocalDate hasta = periodo.hasta();
+        if (hasta == null) {
+            return;
         }
+        // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
+        if (horarios(hasta).stream().allMatch(inicio -> Funcion.yaPaso(inicio, ahora))) {
+            throw new DatoInvalido(
+                    "Todos los horarios del rango ya pasaron: la grilla no generaría funciones");
+        }
+        ValidadorFuncion.dentroDelHorizonte(hasta, ahora.toLocalDate(),
+                "El rango tiene que terminar dentro del próximo año");
     }
 
     public List<LocalDateTime> horarios(LocalDate tope) {
+        LocalDate hasta = periodo.hasta();
         LocalDate fin = hasta == null || tope.isBefore(hasta) ? tope : hasta;
         List<LocalDateTime> momentos = new ArrayList<>();
-        for (LocalDate dia = desde; !dia.isAfter(fin); dia = dia.plusDays(1)) {
+        for (LocalDate dia = periodo.desde(); !dia.isAfter(fin); dia = dia.plusDays(1)) {
             if (diasSemana.isEmpty() || diasSemana.contains(dia.getDayOfWeek())) {
                 momentos.add(LocalDateTime.of(dia, horaInicio));
             }
@@ -122,7 +133,7 @@ public class Programacion {
     }
 
     public LocalDate topePara(LocalDate hoy) {
-        return hasta != null ? hasta : hoy.plusDays(HORIZONTE_DIAS);
+        return periodo.hasta() != null ? periodo.hasta() : hoy.plusDays(HORIZONTE_DIAS);
     }
 
     public boolean estaAlDia(LocalDate hoy) {
@@ -169,8 +180,9 @@ public class Programacion {
 
     @Override
     public String toString() {
+        LocalDate hasta = periodo.hasta();
         return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + horaInicio
-                + " del " + desde + (hasta == null ? " en adelante" : " al " + hasta)
+                + " del " + periodo.desde() + (hasta == null ? " en adelante" : " al " + hasta)
                 + " - generada hasta " + (generadaHasta == null ? "nunca" : generadaHasta);
     }
 }

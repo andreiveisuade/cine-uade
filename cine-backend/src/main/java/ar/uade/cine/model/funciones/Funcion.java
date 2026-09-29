@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
@@ -19,7 +20,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Pase de una película en una sala a una hora; Experto: valida formato, R8 y precio al nacer, y decide R19.
+// Pase de una película en una sala a una hora; Experto: nace con formato, R8 y precio válidos, y decide R19.
 @Entity
 @Getter
 public class Funcion {
@@ -63,10 +64,8 @@ public class Funcion {
     // funciones de la sala. Una función que quedó en el pasado sigue siendo válida (R12).
     public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio, Integer programacionId) {
-        validarProgramable(sala, version, proyeccion, precio);
-        if (inicio == null) {
-            throw new DatoInvalido("Falta la fecha y hora de la función");
-        }
+        ValidadorFuncion.formato(sala, version, proyeccion, precio);
+        ValidadorFuncion.inicio(inicio);
         this.pelicula = pelicula;
         this.sala = sala;
         this.inicio = inicio;
@@ -76,21 +75,25 @@ public class Funcion {
         this.programacionId = programacionId;
     }
 
-    // Pública porque una programación genera funciones con estos mismos datos: tiene que
-    // rechazarlos antes de generar la primera, y con el mismo mensaje que el alta de una suelta.
-    public static void validarProgramable(Sala sala, Version version, Proyeccion proyeccion, Dinero precio) {
-        // La API le dice idioma a lo que acá es la versión: el mensaje usa la palabra del formulario.
-        if (version == null) {
-            throw new DatoInvalido("Falta el idioma");
+    // R19 y R20 con un solo corte: la que empieza en este instante ya empezó, y nacería sin poder
+    // venderse. Estática para preguntar por un horario antes de que la función exista, como hacen la
+    // programación y la grilla al saltear lo que ya pasó.
+    public static boolean yaPaso(LocalDateTime inicio, LocalDateTime ahora) {
+        return !inicio.isAfter(ahora);
+    }
+
+    public boolean yaEmpezo(LocalDateTime ahora) {
+        return yaPaso(inicio, ahora);
+    }
+
+    // R20 y el horizonte miran el reloj, así que no son invariantes: los exige el alta, con la hora que
+    // le pasa el gestor.
+    public void exigirProgramableA(LocalDateTime ahora) {
+        if (yaEmpezo(ahora)) {
+            throw new DatoInvalido("La función no puede empezar en el pasado");
         }
-        if (proyeccion == null) {
-            throw new DatoInvalido("Falta la proyección");
-        }
-        // R8
-        if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
-            throw new DatoInvalido("La sala " + sala.getNombre() + " no puede proyectar en 3D");
-        }
-        Dinero.importeValido(precio, "precio");
+        ValidadorFuncion.dentroDelHorizonte(inicio.toLocalDate(), ahora.toLocalDate(),
+                "La función tiene que empezar dentro del próximo año");
     }
 
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
@@ -106,10 +109,6 @@ public class Funcion {
     public String toString() {
         return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + inicio
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
-    }
-
-    public boolean yaEmpezo(LocalDateTime ahora) {
-        return !inicio.isAfter(ahora);
     }
 
     public LocalDateTime getFin(int duracionMinutos) {

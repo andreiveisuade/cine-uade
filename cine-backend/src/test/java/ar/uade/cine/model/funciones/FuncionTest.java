@@ -37,6 +37,7 @@ class FuncionTest {
             precio cero,                  SUBTITULADA, DOS_D,  DOS_D, 0,    El precio tiene que ser mayor a cero
             precio de cien millones,      SUBTITULADA, DOS_D,  DOS_D, 100000000, El precio no puede superar $ 1000000.00
             sin idioma y sin precio,      ,            DOS_D,  DOS_D, 0,    Falta el idioma
+            R8 y precio cero gana R8,     SUBTITULADA, TRES_D, DOS_D, 0,    La sala Sala 1 no puede proyectar en 3D
             """)
     void unaFuncionSinFormatoSinPrecioOEn3DSinSoporteNoSeConstruye(String caso, Version version,
             Proyeccion proyeccion, TipoSala tipo, double precio, String mensaje) {
@@ -45,12 +46,45 @@ class FuncionTest {
         rechaza(mensaje, () -> new Funcion(MATRIX, sala, LAS_20, version, proyeccion, Dinero.de(precio)));
     }
 
-    @Test
-    void sinFechaYHoraNoSeConstruye() {
+    // Las 20:30:46 no se anuncian en ninguna cartelera.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin fecha y hora, ,                              Falta la fecha y hora de la función
+            con segundos,     2026-08-20T20:30:46,           La hora de la función tiene que ir sin segundos
+            con nanos,        2026-08-20T20:30:00.000000001, La hora de la función tiene que ir sin segundos
+            """)
+    void unaFuncionSinFechaYHoraOFueraDelMinutoExactoNoSeConstruye(String caso, LocalDateTime inicio,
+            String mensaje) {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
-        rechaza("Falta la fecha y hora de la función",
-                () -> new Funcion(MATRIX, sala, null, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        rechaza(mensaje,
+                () -> new Funcion(MATRIX, sala, inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+    }
+
+    // R20 con el corte de R19: la que empieza en este instante ya empezó. El horizonte se mide en días:
+    // una función del 20/08/2026 entra si hoy es el 20/08/2025, a cualquier hora, y no si es el 19.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            en el minuto en que empieza, 2026-08-20T20:00, La función no puede empezar en el pasado
+            ya empezada,                 2026-08-20T20:01, La función no puede empezar en el pasado
+            a un año y un día,           2025-08-19T23:59, La función tiene que empezar dentro del próximo año
+            """)
+    void elAltaRechazaLaQueYaEmpezoYLaQueEstaAMasDeUnAnio(String caso, LocalDateTime ahora, String mensaje) {
+        rechaza(mensaje, () -> deLas20().exigirProgramableA(ahora));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            un minuto antes de empezar,     2026-08-20T19:59
+            el mismo día del año anterior,  2025-08-20T00:00
+            """)
+    void elAltaAceptaLaQueNoEmpezoDentroDelAnio(String caso, LocalDateTime ahora) {
+        assertDoesNotThrow(() -> deLas20().exigirProgramableA(ahora));
+    }
+
+    private static Funcion deLas20() {
+        return new Funcion(MATRIX, new Sala("Sala 1", TipoSala.DOS_D, 15), LAS_20,
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 
     // R20 es del alta, no de la función: la que quedó en el pasado es historial (R12).
