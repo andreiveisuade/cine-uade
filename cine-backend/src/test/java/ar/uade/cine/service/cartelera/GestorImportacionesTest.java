@@ -17,6 +17,7 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
@@ -46,6 +47,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     private GestorRevisionCartelera revision;
     @Autowired
     private EntityManagerFactory emf;
+    @Autowired
+    private PropiedadesImportador propiedades;
 
     // El bean y no un new: sin el proxy transaccional no se ven los errores de límite de transacción.
     @Autowired
@@ -135,6 +138,34 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertTrue(importacion.getDetalle().contains("✗ Corto de festival"),
                 "el motivo tiene que quedar en el detalle: " + importacion.getDetalle());
         assertEquals(1, peliculaRepository.findAll().size(), "la buena entró igual");
+    }
+
+    // Un error de la base no es un Rechazo: cortaba la corrida y la dejaba EN_CURSO, con el importador trabado.
+    @Test
+    void unaFallaDeLaBaseEnUnaCandidataCuentaComoFallidaYLaCorridaTermina() {
+        // Solo importar, que es lo único que usa el gestor: las demás candidatas van al bean de verdad.
+        GestorRevisionCartelera conLaBaseRota = new GestorRevisionCartelera(null, null, null) {
+            @Override
+            public Pelicula importar(DatosPelicula datos) {
+                if (datos.titulo().equals("Rota")) {
+                    throw new DataIntegrityViolationException("Duplicate entry 'Rota' for key 'titulo'");
+                }
+                return revision.importar(datos);
+            }
+        };
+        GestorImportaciones conFalla = new GestorImportaciones(importacionRepository, catalogo, cartelera,
+                conLaBaseRota, propiedades, reloj);
+        catalogo.queTraiga("Rota", "Duna");
+
+        Importacion importacion = conFalla.ejecutar(1);
+
+        assertEquals(EstadoImportacion.TERMINADA, importacion.getEstado());
+        assertEquals(1, importacion.getNuevas());
+        assertEquals(1, importacion.getFallidas());
+        int duna = peliculaRepository.findAll().get(0).getId();
+        assertEquals("✗ Rota: No se pudo guardar: el motivo quedó en el log del servidor\n+ [" + duna + "] Duna",
+                importacion.getDetalle());
+        assertEquals(EstadoImportacion.TERMINADA, gestor.ejecutar(1).getEstado(), "el importador no quedó trabado");
     }
 
     @Test

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,7 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 // rollback-only y se perdería la corrida entera, incluso el registro.
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GestorImportaciones {
 
     private static final int HISTORIAL = 20;
@@ -65,10 +67,11 @@ public class GestorImportaciones {
                 detalle.append("+ [").append(creada.getId()).append("] ")
                         .append(creada.getTitulo()).append('\n');
                 nuevas++;
-            } catch (Rechazo e) {
-                // Solo un rechazo del alta cuenta como fallida: su texto es para el detalle de la corrida.
+            } catch (RuntimeException e) {
+                // Cualquier falla y no solo un Rechazo: un error de la base cortaba la corrida y la dejaba
+                // EN_CURSO, con el importador bloqueado hasta que caducara. Una candidata no frena a las demás.
                 detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
-                        .append(e.getMessage()).append('\n');
+                        .append(motivoDe(candidata, e)).append('\n');
                 fallidas++;
             }
         }
@@ -88,6 +91,15 @@ public class GestorImportaciones {
 
     private static String clave(String titulo) {
         return titulo == null ? "" : titulo.strip().toLowerCase();
+    }
+
+    // El texto de un Rechazo es para el encargado; el de cualquier otra falla es técnico y va al log.
+    private static String motivoDe(DatosPelicula candidata, RuntimeException e) {
+        if (e instanceof Rechazo) {
+            return e.getMessage();
+        }
+        log.warn("El importador no pudo guardar «{}»", nombreDe(candidata), e);
+        return "No se pudo guardar: el motivo quedó en el log del servidor";
     }
 
     private static String nombreDe(DatosPelicula candidata) {
