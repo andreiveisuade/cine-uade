@@ -1,6 +1,7 @@
 package ar.uade.cine.model.promociones;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.Getter;
 
@@ -16,6 +17,14 @@ public enum TipoPromocion {
 
     NXM("lleva", "paga");
 
+    // El catálogo publica el nombre del campo en el JSON; el mensaje dice qué es, con la forma "Falta el X".
+    // El del monto es el mismo texto que da PromocionMontoFijo si le llega sin monto.
+    private static final Map<String, String> QUE_ES = Map.of(
+            "porcentaje", "el porcentaje",
+            "monto", "el monto del descuento",
+            "lleva", "cuántas entradas lleva",
+            "paga", "cuántas entradas paga");
+
     private final List<String> campos;
 
     TipoPromocion(String... campos) {
@@ -26,7 +35,7 @@ public enum TipoPromocion {
     public void exigirCampos(Object... valores) {
         for (int i = 0; i < campos.size(); i++) {
             if (valores[i] == null) {
-                throw new IllegalArgumentException("Falta " + campos.get(i) + " para ese tipo de promoción");
+                throw new IllegalArgumentException("Falta " + QUE_ES.get(campos.get(i)));
             }
         }
     }

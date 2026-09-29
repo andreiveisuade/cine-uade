@@ -53,7 +53,7 @@ public class GestorPromociones implements PoliticaPromociones {
     private Promocion guardar(Promocion promocion) {
         String nombre = promocion.getNombre();
         if (promocionRepository.existsByNombreIgnoreCase(nombre)) {
-            throw new ConflictoDeNegocio("Ya hay una promoción llamada " + nombre);
+            throw new ConflictoDeNegocio("Ya existe una promoción con ese nombre");
         }
         promocionRepository.save(promocion);
         return promocion;

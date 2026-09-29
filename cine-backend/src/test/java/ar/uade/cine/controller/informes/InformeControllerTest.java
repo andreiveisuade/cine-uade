@@ -223,7 +223,7 @@ class InformeControllerTest extends PruebaDeApi {
         Respuesta respuesta = get("/api/declaracion-jurada?desde=2026-08-26&hasta=2026-08-20");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("La fecha desde no puede ser posterior a la fecha hasta", respuesta.error());
+        assertEquals("El período tiene que empezar antes de terminar", respuesta.error());
     }
 
     @Test

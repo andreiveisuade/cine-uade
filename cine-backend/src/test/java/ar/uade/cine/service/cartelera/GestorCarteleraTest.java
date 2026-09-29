@@ -120,6 +120,16 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 () -> gestor.agregar("Sin duración", 0, List.of(Genero.DRAMA), Clasificacion.ATP));
     }
 
+    // El mismo texto que el pedido HTTP: una duración que no vino falta, no es "cero".
+    @Test
+    void unaAltaSinDuracionDiceQueFalta() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> gestor.agregar(
+                new DatosPelicula("Dune", null, List.of(Genero.DRAMA), Clasificacion.ATP,
+                        null, null, null, null, null, null, null, null)));
+
+        assertEquals("Falta la duración", error.getMessage());
+    }
+
     @Test
     void rechazaPeliculaSinGenero() {
         assertThrows(IllegalArgumentException.class,
@@ -308,7 +318,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         ConflictoDeNegocio titulo = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(
                 dune.getId(), new DatosPelicula("Matrix", 150, null, null, null, null, null, null, null, null, 15.0, null)));
 
-        assertEquals("La duración debe ser mayor a cero", datos.getMessage());
+        assertEquals("La duración tiene que ser mayor a cero", datos.getMessage());
         assertEquals("Ya existe una película con ese título", titulo.getMessage());
         Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
         assertEquals("Dune", leida.getTitulo());

@@ -55,7 +55,8 @@ public class ItemCompra {
             throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
         }
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad de " + producto.getNombre() + " debe ser mayor a cero");
+            throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
+                    + " tiene que ser mayor a cero");
         }
         if (!producto.estaDisponible()) {
             throw new IllegalArgumentException(producto.getNombre() + " no está disponible");

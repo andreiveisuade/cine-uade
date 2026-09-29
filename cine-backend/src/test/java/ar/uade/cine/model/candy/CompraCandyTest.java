@@ -51,7 +51,7 @@ class CompraCandyTest {
         gaseosa.sacarDeLaVenta();
 
         rechaza("Falta la cantidad de Pochoclos", () -> comprar(MedioPago.EFECTIVO, "", sinCantidad));
-        rechaza("La cantidad de Pochoclos debe ser mayor a cero",
+        rechaza("La cantidad de Pochoclos tiene que ser mayor a cero",
                 () -> comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, 0)));
         rechaza("Gaseosa no está disponible", () -> comprar(MedioPago.EFECTIVO, "", Map.of(gaseosa, 1)));
     }

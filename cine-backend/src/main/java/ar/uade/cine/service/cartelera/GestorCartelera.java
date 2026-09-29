@@ -39,8 +39,7 @@ public class GestorCartelera {
     // Los datos los valida la película; acá queda el título repetido, que necesita la base.
     // Construirla primero rechaza un dato inválido antes que un título repetido.
     public Pelicula agregar(DatosPelicula datos) {
-        int duracion = datos.duracionMinutos() == null ? 0 : datos.duracionMinutos();
-        Pelicula pelicula = new Pelicula(datos.titulo(), duracion, datos.generos(),
+        Pelicula pelicula = new Pelicula(datos.titulo(), datos.duracionMinutos(), datos.generos(),
                 datos.clasificacion());
         exigirTituloLibre(pelicula);
         aplicarCatalogo(pelicula, datos);

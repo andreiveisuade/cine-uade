@@ -86,9 +86,10 @@ class ProductoTest {
         sinCantidad.put(pochoclos, null);
         sinCantidad.put(gaseosa, 1);
 
-        rechaza("La cantidad de Pochoclos en el combo debe ser mayor a cero",
+        // Los mismos textos que un renglón de la venta: la cantidad es la misma cosa en los dos.
+        rechaza("La cantidad de Pochoclos tiene que ser mayor a cero",
                 () -> Producto.armarCombo("Combo", Dinero.de(3000), Map.of(pochoclos, 0, gaseosa, 1)));
-        rechaza("La cantidad de Pochoclos en el combo debe ser mayor a cero",
+        rechaza("Falta la cantidad de Pochoclos",
                 () -> Producto.armarCombo("Combo", Dinero.de(3000), sinCantidad));
         rechaza("Un combo no puede contener otro combo: Combo pareja",
                 () -> Producto.armarCombo("Combo doble", Dinero.de(6000), Map.of(comboPareja(), 1, gaseosa, 1)));

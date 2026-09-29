@@ -70,7 +70,7 @@ public class Pelicula {
     protected Pelicula() {
     }
 
-    public Pelicula(String titulo, int duracionMinutos, List<Genero> generos,
+    public Pelicula(String titulo, Integer duracionMinutos, List<Genero> generos,
                     Clasificacion clasificacion) {
         actualizar(titulo, duracionMinutos, generos, clasificacion);
     }
@@ -81,11 +81,15 @@ public class Pelicula {
 
     // El alta pasa por acá: alta y edición validan lo mismo, y todo antes de tocar un campo.
     // Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia.
-    public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
+    // La duración llega como Integer porque en el alta viene del pedido: la que no vino falta, no es cero.
+    public void actualizar(String titulo, Integer duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
         String tituloLimpio = tituloValido(titulo);
+        if (duracionMinutos == null) {
+            throw new IllegalArgumentException("Falta la duración");
+        }
         if (duracionMinutos <= 0) {
-            throw new IllegalArgumentException("La duración debe ser mayor a cero");
+            throw new IllegalArgumentException("La duración tiene que ser mayor a cero");
         }
         if (generos == null || generos.isEmpty()) {
             throw new IllegalArgumentException("La película necesita al menos un género");
@@ -104,7 +108,7 @@ public class Pelicula {
 
     public void cambiarPuntaje(double puntaje) {
         if (puntaje < 0 || puntaje > 10) {
-            throw new IllegalArgumentException("El puntaje va de 0 a 10");
+            throw new IllegalArgumentException("El puntaje tiene que estar entre 0 y 10");
         }
         this.puntaje = puntaje;
     }

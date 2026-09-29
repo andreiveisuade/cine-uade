@@ -322,7 +322,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 26), LocalDate.of(2026, 8, 20)));
 
-        assertEquals("La fecha desde no puede ser posterior a la fecha hasta", error.getMessage());
+        assertEquals("El período tiene que empezar antes de terminar", error.getMessage());
     }
 
     @Test

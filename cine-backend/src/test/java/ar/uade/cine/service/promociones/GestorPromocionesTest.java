@@ -217,6 +217,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class, () -> promociones.crearMontoFijo("30 off",
                 Dinero.de(500), new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
-        assertEquals("Ya hay una promoción llamada 30 off", error.getMessage());
+        assertEquals("Ya existe una promoción con ese nombre", error.getMessage());
     }
 }

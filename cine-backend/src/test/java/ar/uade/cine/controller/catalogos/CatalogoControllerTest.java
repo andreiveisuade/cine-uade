@@ -42,6 +42,6 @@ class CatalogoControllerTest extends PruebaDeApi {
                 + "\"vigenciaDesde\":\"2026-08-01\",\"vigenciaHasta\":\"2026-12-31\"}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Falta paga para ese tipo de promoción", respuesta.error());
+        assertEquals("Falta cuántas entradas paga", respuesta.error());
     }
 }

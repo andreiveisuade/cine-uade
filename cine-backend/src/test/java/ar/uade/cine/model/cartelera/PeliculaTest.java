@@ -34,8 +34,8 @@ class PeliculaTest {
     @CsvSource(textBlock = """
             sin título,           ,     155, DRAMA, ATP, El título no puede estar vacío
             título en blanco,     '  ', 155, DRAMA, ATP, El título no puede estar vacío
-            duración cero,        Dune, 0,   DRAMA, ATP, La duración debe ser mayor a cero
-            duración negativa,    Dune, -5,  DRAMA, ATP, La duración debe ser mayor a cero
+            duración cero,        Dune, 0,   DRAMA, ATP, La duración tiene que ser mayor a cero
+            duración negativa,    Dune, -5,  DRAMA, ATP, La duración tiene que ser mayor a cero
             sin género,           Dune, 155, ,      ATP, La película necesita al menos un género
             sin clasificación,    Dune, 155, DRAMA, ,    Falta la clasificación por edad
             todo mal: gana el título, '', 0, ,      ,    El título no puede estar vacío
@@ -71,7 +71,7 @@ class PeliculaTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             título vacío,      '',    120, DRAMA, ATP, El título no puede estar vacío
-            duración cero,     Otra,  0,   DRAMA, ATP, La duración debe ser mayor a cero
+            duración cero,     Otra,  0,   DRAMA, ATP, La duración tiene que ser mayor a cero
             sin género,        Otra,  120, ,      ATP, La película necesita al menos un género
             sin clasificación, Otra,  120, DRAMA, ,    Falta la clasificación por edad
             """)
@@ -99,8 +99,8 @@ class PeliculaTest {
     void elPuntajeVaDeCeroADiezYLosVotosNoSonNegativos() {
         Pelicula dune = dune();
 
-        rechaza("El puntaje va de 0 a 10", () -> dune.cambiarPuntaje(-0.1));
-        rechaza("El puntaje va de 0 a 10", () -> dune.cambiarPuntaje(10.1));
+        rechaza("El puntaje tiene que estar entre 0 y 10", () -> dune.cambiarPuntaje(-0.1));
+        rechaza("El puntaje tiene que estar entre 0 y 10", () -> dune.cambiarPuntaje(10.1));
         rechaza("Los votos no pueden ser negativos", () -> dune.cambiarVotos(-1));
         dune.cambiarPuntaje(10);
         dune.cambiarVotos(0);

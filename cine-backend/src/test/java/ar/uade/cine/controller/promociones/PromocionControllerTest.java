@@ -64,10 +64,11 @@ class PromocionControllerTest extends PruebaDeApi {
 
         Respuesta sinPaga = post("/api/promociones", "{\"nombre\":\"2x1\",\"tipo\":\"NXM\",\"lleva\":2" + vigencia);
         assertEquals(400, sinPaga.estado());
-        assertEquals("Falta paga para ese tipo de promoción", sinPaga.error());
+        assertEquals("Falta cuántas entradas paga", sinPaga.error());
 
+        // El mismo texto que la entidad, que también rechaza un monto que no llegó.
         Respuesta sinMonto = post("/api/promociones", "{\"nombre\":\"Banco\",\"tipo\":\"MONTO_FIJO\"" + vigencia);
-        assertEquals("Falta monto para ese tipo de promoción", sinMonto.error());
+        assertEquals("Falta el monto del descuento", sinMonto.error());
 
         Respuesta dosPorDos = post("/api/promociones",
                 "{\"nombre\":\"2x2\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":2" + vigencia);

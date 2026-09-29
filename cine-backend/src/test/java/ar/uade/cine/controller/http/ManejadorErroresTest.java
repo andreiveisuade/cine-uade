@@ -119,7 +119,7 @@ class ManejadorErroresTest extends PruebaDeApi {
     void elAltaDePeliculaSinDuracionEs400ConElMensajeDelGestorYLaEdicionParcialNoLaPide() {
         Respuesta alta = post("/api/peliculas", "{\"titulo\":\"Dune\",\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}");
         assertEquals(400, alta.estado());
-        assertEquals("La duración debe ser mayor a cero", alta.error());
+        assertEquals("Falta la duración", alta.error());
 
         int id = post("/api/peliculas", "{\"titulo\":\"Dune\",\"duracionMinutos\":155,"
                 + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\"}").json().get("id").asInt();
@@ -289,8 +289,8 @@ class ManejadorErroresTest extends PruebaDeApi {
         String ruta = "/api/peliculas/" + id;
 
         assertEquals("El título no puede estar vacío", put(ruta, "{\"titulo\":\"  \"}").error());
-        assertEquals("La duración debe ser mayor a cero", put(ruta, "{\"duracionMinutos\":0}").error());
-        assertEquals("El puntaje va de 0 a 10", put(ruta, "{\"puntaje\":11}").error());
+        assertEquals("La duración tiene que ser mayor a cero", put(ruta, "{\"duracionMinutos\":0}").error());
+        assertEquals("El puntaje tiene que estar entre 0 y 10", put(ruta, "{\"puntaje\":11}").error());
         assertEquals("Los votos no pueden ser negativos", put(ruta, "{\"votos\":-1}").error());
         assertEquals("El año tiene que estar entre 1895 y 2031", put(ruta, "{\"anio\":-3}").error());
         assertEquals(400, put(ruta, "{\"generos\":[]}").estado());

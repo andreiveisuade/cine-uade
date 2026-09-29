@@ -25,12 +25,15 @@ public class ItemCombo {
     protected ItemCombo() {
     }
 
-    // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido:
-    // un null es tan inválido como un cero, y sin chequearlo el unboxing daría un 500.
+    // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido: sin
+    // chequear el null, el unboxing daría un 500. Los textos son los de ItemCompra: es la misma cantidad.
     ItemCombo(Producto producto, Integer cantidad) {
-        if (cantidad == null || cantidad <= 0) {
+        if (cantidad == null) {
+            throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
+        }
+        if (cantidad <= 0) {
             throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
-                    + " en el combo debe ser mayor a cero");
+                    + " tiene que ser mayor a cero");
         }
         if (producto.esCombo()) {
             throw new IllegalArgumentException("Un combo no puede contener otro combo: " + producto.getNombre());

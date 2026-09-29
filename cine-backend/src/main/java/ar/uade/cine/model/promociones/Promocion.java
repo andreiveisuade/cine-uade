@@ -77,7 +77,14 @@ public abstract class Promocion {
         this.nombre = nombreValido(nombre);
         LocalDate desde = condiciones.desde();
         LocalDate hasta = condiciones.hasta();
-        if (desde == null || hasta == null || hasta.isBefore(desde)) {
+        // Los mismos textos que el pedido: una punta que no vino falta, no está al revés.
+        if (desde == null) {
+            throw new IllegalArgumentException("Falta el inicio de la vigencia");
+        }
+        if (hasta == null) {
+            throw new IllegalArgumentException("Falta el fin de la vigencia");
+        }
+        if (hasta.isBefore(desde)) {
             throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
         }
         LocalTime horaDesde = condiciones.horaDesde();
@@ -155,7 +162,7 @@ public abstract class Promocion {
     // Recortado acá y no en el gestor: así el nombre repetido se busca con el mismo valor que se guarda.
     private static String nombreValido(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("La promoción necesita un nombre");
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
         String limpio = nombre.trim();
         if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {

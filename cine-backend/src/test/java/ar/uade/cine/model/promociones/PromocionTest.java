@@ -57,11 +57,14 @@ class PromocionTest {
     @Test
     void loComunLoValidaPromocionParaLasTresClases() {
         CondicionesPromocion alReves = new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of());
+        CondicionesPromocion sinInicio = new CondicionesPromocion(null, HASTA, Set.of(), null, null, Set.of());
         CondicionesPromocion sinFin = new CondicionesPromocion(DESDE, null, Set.of(), null, null, Set.of());
 
         rechaza("La vigencia tiene que empezar antes de terminar", () -> new PromocionPorcentaje("rara", 10, alReves));
-        rechaza("La vigencia tiene que empezar antes de terminar", () -> new PromocionNxM("2x1", 2, 1, sinFin));
-        rechaza("La promoción necesita un nombre", () -> new PromocionMontoFijo(" ", Dinero.de(500), AGOSTO));
+        // Los mismos textos que el pedido: lo que falta se dice que falta, no que está al revés.
+        rechaza("Falta el inicio de la vigencia", () -> new PromocionNxM("2x1", 2, 1, sinInicio));
+        rechaza("Falta el fin de la vigencia", () -> new PromocionNxM("2x1", 2, 1, sinFin));
+        rechaza("El nombre no puede estar vacío", () -> new PromocionMontoFijo(" ", Dinero.de(500), AGOSTO));
     }
 
     // aplicaA pide desde ≤ hora ≤ hasta: guardada, una franja así no correría nunca.

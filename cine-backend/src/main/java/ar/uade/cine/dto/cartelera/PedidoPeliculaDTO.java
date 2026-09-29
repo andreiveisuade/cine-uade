@@ -11,8 +11,8 @@ import jakarta.validation.constraints.Positive;
 // Mismos textos que GestorCartelera: el alta que no pasa por HTTP los sigue viendo desde ahí.
 public record PedidoPeliculaDTO(
         @NotBlank(message = "El título no puede estar vacío") String titulo,
-        @NotNull(message = "La duración debe ser mayor a cero")
-        @Positive(message = "La duración debe ser mayor a cero") Integer duracionMinutos,
+        @NotNull(message = "Falta la duración")
+        @Positive(message = "La duración tiene que ser mayor a cero") Integer duracionMinutos,
         @NotEmpty(message = "La película necesita al menos un género") List<String> generos,
         @NotBlank(message = "Falta la clasificación por edad") String clasificacion,
         String director, String sinopsis, Integer anio,

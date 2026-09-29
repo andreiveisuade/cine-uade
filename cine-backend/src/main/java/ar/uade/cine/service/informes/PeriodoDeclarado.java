@@ -20,7 +20,7 @@ public record PeriodoDeclarado(LocalDate desde, LocalDate hasta) {
                     "Hay que indicar desde y hasta, o ninguna de las dos para la última semana cinematográfica");
         }
         if (desde.isAfter(hasta)) {
-            throw new IllegalArgumentException("La fecha desde no puede ser posterior a la fecha hasta");
+            throw new IllegalArgumentException("El período tiene que empezar antes de terminar");
         }
         if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS) {
             throw new IllegalArgumentException("El período no puede superar los " + MAXIMO_DIAS + " días");
