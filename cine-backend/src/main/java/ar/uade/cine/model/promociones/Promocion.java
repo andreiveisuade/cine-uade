@@ -140,8 +140,12 @@ public abstract class Promocion {
         return activa;
     }
 
-    public void setActiva(boolean activa) {
-        this.activa = activa;
+    public void activar() {
+        this.activa = true;
+    }
+
+    public void desactivar() {
+        this.activa = false;
     }
 
     @Override

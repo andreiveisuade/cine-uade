@@ -1,5 +1,9 @@
 package ar.uade.cine.model.salas;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -13,6 +17,9 @@ import lombok.Getter;
 public class Sala {
 
     public static final int LIMPIEZA_POR_DEFECTO = 15;
+
+    // Cada fila se nombra con una letra: ver Asiento.codigoDe.
+    private static final int MAX_FILAS = 26;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,6 +59,28 @@ public class Sala {
         this.nombre = nombre;
         this.tipo = tipo;
         this.minutosLimpieza = minutosLimpieza;
+    }
+
+    // Creadora de sus butacas porque las contiene, y por eso dueña de la distribución. Solo en el
+    // alta: editar no las toca. Un especial que no cae en la distribución se ignora.
+    public List<Asiento> generarAsientos(List<Integer> butacasPorFila, Map<String, TipoAsiento> especiales) {
+        if (butacasPorFila == null || butacasPorFila.isEmpty()) {
+            throw new IllegalArgumentException("La sala necesita al menos una fila");
+        }
+        if (butacasPorFila.size() > MAX_FILAS) {
+            throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
+        }
+        if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
+            throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
+        }
+        List<Asiento> asientos = new ArrayList<>();
+        for (int fila = 1; fila <= butacasPorFila.size(); fila++) {
+            for (int numero = 1; numero <= butacasPorFila.get(fila - 1); numero++) {
+                TipoAsiento tipo = especiales.getOrDefault(Asiento.codigoDe(fila, numero), TipoAsiento.ESTANDAR);
+                asientos.add(new Asiento(this, fila, numero, tipo));
+            }
+        }
+        return asientos;
     }
 
     @Override

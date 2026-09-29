@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.EstadoAsiento;
 import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.EstadoReserva;
@@ -64,7 +63,7 @@ public class Ocupacion {
 
     public static List<Asiento> libresEntre(List<Asiento> asientos, Set<Integer> ocupados) {
         return asientos.stream()
-                .filter(a -> a.getEstado() != EstadoAsiento.FUERA_DE_SERVICIO)
+                .filter(a -> !a.estaFueraDeServicio())
                 .filter(a -> !ocupados.contains(a.getId()))
                 .toList();
     }
@@ -85,9 +84,7 @@ public class Ocupacion {
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
 
         List<Asiento> pedidos = codigos == null ? List.of() : codigos.stream()
-                .map(codigo -> Asiento.conCodigo(deLaSala, exigirCodigo(codigo))
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala")))
+                .map(codigo -> Asiento.exigirConCodigo(deLaSala, codigo))
                 .toList();
 
         LocalDateTime ahora = reloj.ahora();
@@ -108,13 +105,6 @@ public class Ocupacion {
             bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
         }
         return new Bloqueo(conseguidas, rechazadas);
-    }
-
-    static String exigirCodigo(String codigo) {
-        if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("Falta el código de una butaca");
-        }
-        return codigo;
     }
 
     public void liberar(int funcionId, String sesion) {

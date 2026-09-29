@@ -17,7 +17,6 @@ import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.EstadoAsiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Entrada;
@@ -60,12 +59,10 @@ public class GestorReservas {
         }
         Cliente cliente = clientes.buscar(clienteId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
-        if (butacas == null || butacas.isEmpty()) {
-            throw new IllegalArgumentException("Hay que elegir al menos una butaca");
-        }
         Sala sala = funcion.getSala();
 
-        List<Entrada> entradas = armarEntradas(funcion, sala, butacas, sesion);
+        // Un pedido sin butacas es uno vacío: la reserva sin entradas la rechaza Reserva.
+        List<Entrada> entradas = armarEntradas(funcion, sala, butacas == null ? Map.of() : butacas, sesion);
         Reserva reserva = guardarCompitiendoPorLasButacas(
                 new Reserva(funcion, cliente, entradas, reloj.ahora()));
         if (sesion != null) {
@@ -95,10 +92,8 @@ public class GestorReservas {
 
     private static Asiento butacaVendible(List<Asiento> deLaSala, String codigo, Set<Integer> ocupados) {
         // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
-        Asiento asiento = Asiento.conCodigo(deLaSala, Ocupacion.exigirCodigo(codigo))
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "La butaca " + Asiento.normalizarCodigo(codigo) + " no existe en esa sala"));
-        if (asiento.getEstado() == EstadoAsiento.FUERA_DE_SERVICIO) {
+        Asiento asiento = Asiento.exigirConCodigo(deLaSala, codigo);
+        if (asiento.estaFueraDeServicio()) {
             throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
         }
         if (ocupados.contains(asiento.getId())) {

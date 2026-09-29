@@ -75,6 +75,9 @@ public class Reserva {
     }
 
     public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
+        if (entradas.isEmpty()) {
+            throw new IllegalArgumentException("Hay que elegir al menos una butaca");
+        }
         this.funcion = funcion;
         this.cliente = cliente;
         this.creadaEn = creadaEn;
@@ -92,6 +95,11 @@ public class Reserva {
             codigo.append(ALFABETO_CODIGO.charAt(AZAR.nextInt(ALFABETO_CODIGO.length())));
         }
         return codigo.toString();
+    }
+
+    // Se tipea a mano cuando el escáner no lee: se busca como se generó, sin espacios y en mayúsculas.
+    public static String normalizarCodigo(String codigo) {
+        return codigo.trim().toUpperCase();
     }
 
     public int getFuncionId() {

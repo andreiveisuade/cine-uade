@@ -1,7 +1,13 @@
 package ar.uade.cine.model.salas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -52,5 +58,32 @@ class SalaTest {
         assertEquals("Sala VIP", sala.getNombre());
         assertEquals(TipoSala.TRES_D, sala.getTipo());
         assertEquals(20, sala.getMinutosLimpieza());
+    }
+
+    @Test
+    void unaDistribucionSinFilasConDemasiadasOConUnaFilaVaciaNoGeneraButacas() {
+        Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
+
+        rechaza("La sala necesita al menos una fila", () -> sala.generarAsientos(null, Map.of()));
+        rechaza("La sala necesita al menos una fila", () -> sala.generarAsientos(List.of(), Map.of()));
+        rechaza("Máximo 26 filas: se identifican con una letra",
+                () -> sala.generarAsientos(Collections.nCopies(27, 1), Map.of()));
+        rechaza("Cada fila debe tener al menos una butaca", () -> sala.generarAsientos(List.of(3, 0), Map.of()));
+        rechaza("Cada fila debe tener al menos una butaca",
+                () -> sala.generarAsientos(Arrays.asList(3, null), Map.of()));
+    }
+
+    @Test
+    void generaSusButacasFilaPorFilaConLasEspecialesMarcadas() {
+        Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
+
+        List<Asiento> asientos = sala.generarAsientos(List.of(2, 3),
+                Map.of("B3", TipoAsiento.VIP, "Z9", TipoAsiento.VIP));
+
+        assertEquals(List.of("A1", "A2", "B1", "B2", "B3"), asientos.stream().map(Asiento::getCodigo).toList());
+        assertEquals(List.of(TipoAsiento.ESTANDAR, TipoAsiento.ESTANDAR, TipoAsiento.ESTANDAR,
+                TipoAsiento.ESTANDAR, TipoAsiento.VIP), asientos.stream().map(Asiento::getTipo).toList());
+        asientos.forEach(asiento -> assertSame(sala, asiento.getSala()));
+        assertEquals("Z1", sala.generarAsientos(Collections.nCopies(26, 1), Map.of()).get(25).getCodigo());
     }
 }

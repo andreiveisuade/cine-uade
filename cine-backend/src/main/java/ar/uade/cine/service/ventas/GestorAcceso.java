@@ -24,7 +24,7 @@ public class GestorAcceso {
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException("Falta el código de acceso");
         }
-        Reserva reserva = reservaRepository.findByCodigo(codigo.trim().toUpperCase())
+        Reserva reserva = reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo))
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
         reservaRepository.save(reserva);

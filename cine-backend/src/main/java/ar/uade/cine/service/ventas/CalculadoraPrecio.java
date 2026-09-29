@@ -12,8 +12,7 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 public class CalculadoraPrecio {
 
     public Dinero precioDe(Funcion funcion, Sala sala, Asiento asiento, TipoTarifa tarifa) {
-        return funcion.getPrecio()
-                .por(sala.getTipo().getMultiplicadorPrecio())
+        return precioBaseEnSala(funcion, sala)
                 .por(asiento.getTipo().getMultiplicadorPrecio())
                 .por(tarifa.getMultiplicadorPrecio());
     }

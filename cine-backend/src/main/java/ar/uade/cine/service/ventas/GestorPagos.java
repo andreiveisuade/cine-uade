@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
-import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -38,12 +37,9 @@ public class GestorPagos {
 
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = buscarReserva(reservaId);
-        Funcion funcion = validarQueSePuedaCobrar(reserva, medio);
+        validarQueSePuedaCobrar(reserva, medio);
         String autorizacion = medio.autorizacion(codigoAutorizacion);
-
-        // Recién acá se conoce el medio, y de él dependen las promociones.
-        PoliticaPromociones.Descuento descuento =
-                promociones.calcularPara(reserva.getEntradas(), funcion.getInicio(), medio);
+        PoliticaPromociones.Descuento descuento = descuentoPara(reserva, medio);
 
         Pago pago = new Pago(reservaId, reserva.getTotal(),
                 descuento.promocionId(), descuento.monto(),
@@ -66,15 +62,13 @@ public class GestorPagos {
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
-        Funcion funcion = validarQueSePuedaCobrar(reserva, medio);
+        validarQueSePuedaCobrar(reserva, medio);
         if (!medio.requiereAutorizacion()) {
             throw new IllegalArgumentException("El pago con " + medio
                     + " se cobra en la caja del cine, no por checkout");
         }
 
-        PoliticaPromociones.Descuento descuento =
-                promociones.calcularPara(reserva.getEntradas(), funcion.getInicio(), medio);
-        Dinero monto = reserva.getTotal().menos(descuento.monto());
+        Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());
 
         PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto);
         log.info("checkout {} · reserva {} · {} · a pagar {}",
@@ -98,7 +92,7 @@ public class GestorPagos {
 
     // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista);
     // acá queda lo que viene del pedido y lo que necesita la base.
-    private Funcion validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
+    private void validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
         reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
             throw new IllegalArgumentException(motivo);
@@ -109,7 +103,11 @@ public class GestorPagos {
         if (pagoRepository.existsByReservaId(reserva.getId())) {
             throw new IllegalArgumentException("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
-        return reserva.getFuncion();
+    }
+
+    // Recién al cobrar se conoce el medio, y de él dependen las promociones.
+    private PoliticaPromociones.Descuento descuentoPara(Reserva reserva, MedioPago medio) {
+        return promociones.calcularPara(reserva.getEntradas(), reserva.getFuncion().getInicio(), medio);
     }
 
     private void emitirRecibo(Pago pago, Reserva reserva) {

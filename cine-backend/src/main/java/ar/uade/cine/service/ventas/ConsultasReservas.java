@@ -27,7 +27,7 @@ public class ConsultasReservas {
 
     public Optional<Reserva> buscarPorCodigo(String codigo) {
         return codigo == null ? Optional.empty()
-                : reservaRepository.findByCodigo(codigo.trim().toUpperCase());
+                : reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo));
     }
 
     // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay
@@ -50,21 +50,22 @@ public class ConsultasReservas {
         LocalDateTime hasta = desde == null ? null : desde.plusDays(1);
         String texto = criterios.textoNormalizado();
         return reservaRepository.buscar(criterios.estado(), desde, hasta).stream()
-                .filter(r -> coincideElTexto(r, texto, r.getCliente(), r.getFuncion().getPelicula()))
+                .filter(r -> coincideElTexto(r, texto))
                 .toList();
     }
 
-    private static boolean coincideElTexto(Reserva reserva, String texto, Cliente cliente,
-                                           Pelicula pelicula) {
+    private static boolean coincideElTexto(Reserva reserva, String texto) {
         if (texto.isEmpty() || contiene(reserva.getCodigo(), texto)) {
             return true;
         }
         if (reserva.getEntradas().stream().anyMatch(e -> contiene(e.codigoAsiento(), texto))) {
             return true;
         }
+        Cliente cliente = reserva.getCliente();
         if (cliente != null && (contiene(cliente.getNombre(), texto) || contiene(cliente.getEmail(), texto))) {
             return true;
         }
+        Pelicula pelicula = reserva.getFuncion().getPelicula();
         return pelicula != null && contiene(pelicula.getTitulo(), texto);
     }
 

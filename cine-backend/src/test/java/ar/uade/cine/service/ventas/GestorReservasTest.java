@@ -132,6 +132,17 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void sinButacasNoHayReserva() {
+        IllegalArgumentException vacio = assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, 1, Map.of(), null));
+        IllegalArgumentException sinCampo = assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, 1, null, null));
+
+        assertEquals("Hay que elegir al menos una butaca", vacio.getMessage());
+        assertEquals("Hay que elegir al menos una butaca", sinCampo.getMessage());
+    }
+
+    @Test
     void laMismaButacaDosVecesEsUnaSolaEntrada() {
         assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1"), null).getCantidadEntradas());
     }

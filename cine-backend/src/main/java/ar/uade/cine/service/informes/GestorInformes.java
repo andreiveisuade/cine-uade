@@ -46,8 +46,7 @@ public class GestorInformes {
     }
 
     private Bordero borderoDe(Funcion funcion, List<Reserva> reservas) {
-        return bordero(funcion, funcion.getPelicula().getTitulo(), funcion.getSala().getNombre(), reservas,
-                pagosPorReserva(reservas));
+        return bordero(funcion, reservas, pagosPorReserva(reservas));
     }
 
     // Por fecha de la función y no del cobro: el INCAA declara espectadores de lo exhibido en la semana.
@@ -65,8 +64,7 @@ public class GestorInformes {
         for (List<Reserva> reservas : porFuncion.values()) {
             Funcion funcion = reservas.get(0).getFuncion();
             Pelicula pelicula = funcion.getPelicula();
-            Bordero bordero = bordero(funcion, pelicula.getTitulo(), funcion.getSala().getNombre(),
-                    reservas, pagos);
+            Bordero bordero = bordero(funcion, reservas, pagos);
             filas.add(new DeclaracionJurada.FilaFuncion(pelicula.getId(), bordero, funcion.getVersion(),
                     funcion.getProyeccion(), pelicula.getClasificacion()));
         }
@@ -74,8 +72,7 @@ public class GestorInformes {
     }
 
     // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
-    private Bordero bordero(Funcion funcion, String pelicula, String sala, List<Reserva> reservas,
-                            Map<Integer, Pago> pagosPorReserva) {
+    private Bordero bordero(Funcion funcion, List<Reserva> reservas, Map<Integer, Pago> pagosPorReserva) {
         Map<TipoTarifa, Bordero.TotalPorTarifa> porTarifa = new EnumMap<>(TipoTarifa.class);
         int espectadores = 0;
         Dinero bruta = Dinero.CERO;
@@ -99,8 +96,8 @@ public class GestorInformes {
             neta = neta.mas(pago.getMonto());
         }
 
-        return new Bordero(funcion.getId(), pelicula, sala, funcion.getInicio(),
-                reloj.ahora(), espectadores,
+        return new Bordero(funcion.getId(), funcion.getPelicula().getTitulo(), funcion.getSala().getNombre(),
+                funcion.getInicio(), reloj.ahora(), espectadores,
                 bruta, descuentos, neta, porTarifa);
     }
 

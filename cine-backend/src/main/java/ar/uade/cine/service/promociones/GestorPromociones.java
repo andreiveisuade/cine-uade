@@ -89,13 +89,13 @@ public class GestorPromociones implements PoliticaPromociones {
 
     public void desactivar(int id) {
         Promocion promocion = buscarOFallar(id);
-        promocion.setActiva(false);
+        promocion.desactivar();
         promocionRepository.save(promocion);
     }
 
     public void activar(int id) {
         Promocion promocion = buscarOFallar(id);
-        promocion.setActiva(true);
+        promocion.activar();
         promocionRepository.save(promocion);
     }
 

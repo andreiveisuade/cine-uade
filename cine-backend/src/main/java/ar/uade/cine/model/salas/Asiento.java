@@ -57,8 +57,17 @@ public class Asiento {
         return sala.getId();
     }
 
-    public void setEstado(EstadoAsiento estado) {
-        this.estado = estado;
+    public void marcarFueraDeServicio() {
+        this.estado = EstadoAsiento.FUERA_DE_SERVICIO;
+    }
+
+    public void reponer() {
+        this.estado = EstadoAsiento.HABILITADO;
+    }
+
+    // R9: es del asiento y no de la función, así que no se vende en ninguna.
+    public boolean estaFueraDeServicio() {
+        return estado == EstadoAsiento.FUERA_DE_SERVICIO;
     }
 
     public String getCodigo() {
@@ -74,6 +83,16 @@ public class Asiento {
         return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();
     }
 
+    // La butaca de un pedido (venta o bloqueo): el código puede faltar, y el mensaje es el mismo
+    // en los dos caminos porque sale de acá.
+    public static Asiento exigirConCodigo(List<Asiento> deLaSala, String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new IllegalArgumentException("Falta el código de una butaca");
+        }
+        return conCodigo(deLaSala, codigo).orElseThrow(() -> new IllegalArgumentException(
+                "La butaca " + normalizarCodigo(codigo) + " no existe en esa sala"));
+    }
+
     public static String normalizarCodigo(String codigo) {
         return codigo == null ? "" : codigo.trim().toUpperCase();
     }
@@ -81,7 +100,7 @@ public class Asiento {
     @Override
     public String toString() {
         String extra = tipo == TipoAsiento.ESTANDAR ? "" : " (" + tipo + ")";
-        if (estado == EstadoAsiento.FUERA_DE_SERVICIO) {
+        if (estaFueraDeServicio()) {
             extra += " FUERA DE SERVICIO";
         }
         return getCodigo() + extra;
