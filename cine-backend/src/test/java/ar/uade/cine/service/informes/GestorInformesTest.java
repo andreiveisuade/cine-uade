@@ -28,6 +28,8 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.ParametrosPromocion;
+import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -136,7 +138,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void elBorderoSeparaElBrutoDelDescuentoYDelNeto() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
@@ -260,7 +262,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void cadaFilaDeLaDeclaracionEsElBorderoDeSuFuncion() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();

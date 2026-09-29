@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -30,14 +30,13 @@ import ar.uade.cine.dto.comun.PedidoActivacionDTO;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.GestorPromociones;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/promociones: arma las condiciones y elige el alta por tipo; las reglas, en GestorPromociones.
+// Rutas de /api/promociones: traduce el pedido a tipo, parámetros y condiciones; las reglas, en el modelo.
 @Tag(name = "Promociones", description = "Los descuentos que el cine carga desde el panel")
 @RestController
 @RequiredArgsConstructor
@@ -55,7 +54,7 @@ public class PromocionController {
     @Operation(summary = "El detalle de una promoción")
     @GetMapping("/api/promociones/{id}")
     public PromocionVistaDTO detalle(@PathVariable int id) {
-        return vistas.promocion(buscar(id));
+        return vistas.promocion(promociones.obtener(id));
     }
 
     @Operation(summary = "Cargar una promoción")
@@ -71,13 +70,11 @@ public class PromocionController {
         LocalTime horaHasta = Parseo.horaOpcional(pedido.horaHasta(), "la hora de fin");
         CondicionesPromocion condiciones = new CondicionesPromocion(desde, hasta, dias,
                 horaDesde, horaHasta, medios);
+        ParametrosPromocion parametros = new ParametrosPromocion(pedido.porcentaje(), pedido.monto(),
+                pedido.lleva(), pedido.paga());
 
-        Promocion promocion = switch (tipoDe(pedido.tipo())) {
-            case PORCENTAJE -> promociones.crearPorcentaje(pedido.nombre(), pedido.porcentaje(), condiciones);
-            case MONTO_FIJO -> promociones.crearMontoFijo(pedido.nombre(),
-                    pedido.monto() == null ? null : Dinero.de(pedido.monto()), condiciones);
-            case NXM -> promociones.crearNxM(pedido.nombre(), pedido.lleva(), pedido.paga(), condiciones);
-        };
+        // Sin switch: el tipo crea su subclase (Factory Method en TipoPromocion).
+        Promocion promocion = promociones.crear(tipoDe(pedido.tipo()), pedido.nombre(), parametros, condiciones);
         return Creado.en("/api/promociones/" + promocion.getId(), vistas.promocion(promocion));
     }
 
@@ -89,16 +86,13 @@ public class PromocionController {
         return vistas.promocion(promocion);
     }
 
+    // Que venga lo exige el pedido; acá, que sea uno de los tres. El mensaje nombra las etiquetas y no las
+    // constantes, a diferencia de Parseo.constante.
     private static TipoPromocion tipoDe(String tipo) {
         try {
-            return TipoPromocion.valueOf(tipo == null ? "" : tipo.trim().toUpperCase());
+            return TipoPromocion.valueOf(tipo.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new DatoInvalido("El tipo de promoción tiene que ser porcentaje, monto fijo o NxM");
         }
-    }
-
-    private Promocion buscar(int id) {
-        return promociones.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la promoción " + id));
     }
 }

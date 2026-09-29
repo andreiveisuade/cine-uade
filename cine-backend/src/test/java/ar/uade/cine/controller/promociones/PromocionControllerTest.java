@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.PruebaDeApi;
 
@@ -87,6 +89,26 @@ class PromocionControllerTest extends PruebaDeApi {
         assertEquals("En un NxM hay que llevar más de lo que se paga", dosPorDos.error());
     }
 
+    // Lo que valida el pedido (nombre y tipo) y lo que valida el modelo al crear la subclase llegan igual.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            sin nombre            | "tipo":"PORCENTAJE","porcentaje":20                        | Falta el nombre
+            sin tipo              | "nombre":"Martes","porcentaje":20                          | Falta el tipo de promoción
+            tipo en blanco        | "nombre":"Martes","tipo":" ","porcentaje":20                | Falta el tipo de promoción
+            sin porcentaje        | "nombre":"Martes","tipo":"PORCENTAJE","monto":500          | Falta el porcentaje
+            casi cien por ciento  | "nombre":"Martes","tipo":"PORCENTAJE","porcentaje":99.999  | El porcentaje tiene que estar entre 1 y 99
+            monto con 3 decimales | "nombre":"Banco","tipo":"MONTO_FIJO","monto":10.555        | El monto del descuento tiene que tener como máximo 2 decimales
+            uno por cero          | "nombre":"1x0","tipo":"NXM","lleva":1,"paga":0             | Un NxM tiene que cobrar al menos una entrada
+            once por diez         | "nombre":"11x10","tipo":"NXM","lleva":11,"paga":10         | Un NxM tiene que llevar como máximo 10 entradas, el tope de butacas por compra
+            """)
+    void unaPromocionInvalidaEs400ConSuMensaje(String caso, String campos, String mensaje) {
+        Respuesta respuesta = post("/api/promociones",
+                "{" + campos + ",\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
     // Una hora vacía es una hora que no vino, como en el resto de la API: antes decía «Falta la hora de inicio».
     @Test
     void lasHorasVaciasDejanLaFranjaAbierta() {
@@ -97,6 +119,14 @@ class PromocionControllerTest extends PruebaDeApi {
         assertEquals(201, respuesta.estado());
         assertNull(respuesta.json().get("horaDesde"));
         assertNull(respuesta.json().get("horaHasta"));
+    }
+
+    @Test
+    void unaPromocionQueNoExisteEs404() {
+        Respuesta respuesta = get("/api/promociones/99");
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la promoción 99", respuesta.error());
     }
 
     // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.

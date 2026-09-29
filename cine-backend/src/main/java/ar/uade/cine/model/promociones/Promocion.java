@@ -3,19 +3,22 @@ package ar.uade.cine.model.promociones;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.promociones.validacion.ValidadorPromocion;
+import ar.uade.cine.model.tiempo.FranjaHoraria;
+import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,15 +32,18 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Promoción sobre entradas; Polimorfismo: cada subclase calcula su descuento, esta decide si aplica.
+// Promoción sobre entradas; Polimorfismo: cada subclase calcula su descuento y dice sus parámetros.
+// Esta decide si aplica (vigencia, días, franja y medio). Cada subclase la crea su TipoPromocion
+// (Factory Method) y los datos los valida ValidadorPromocion, que llaman el constructor de acá y el
+// de cada subclase.
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo")
 @Getter
 public abstract class Promocion {
 
-    // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
-    private static final int LARGO_MAXIMO_DEL_NOMBRE = 60;
+    // Sin franja es todo el día: con las dos horas en null, Hibernate deja el campo en null.
+    private static final FranjaHoraria TODO_EL_DIA = new FranjaHoraria(null, null);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,9 +52,11 @@ public abstract class Promocion {
     @Column(unique = true)
     private String nombre;
 
-    private LocalDate vigenciaDesde;
-
-    private LocalDate vigenciaHasta;
+    // Value Objects sobre las columnas de siempre: el schema no se mueve.
+    @Embedded
+    @AttributeOverride(name = "desde", column = @Column(name = "vigencia_desde"))
+    @AttributeOverride(name = "hasta", column = @Column(name = "vigencia_hasta"))
+    private Periodo vigencia;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "promocion_dia", joinColumns = @JoinColumn(name = "promocion_id"))
@@ -56,9 +64,10 @@ public abstract class Promocion {
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> diasSemana = EnumSet.noneOf(DayOfWeek.class);
 
-    private LocalTime horaDesde;
-
-    private LocalTime horaHasta;
+    @Embedded
+    @AttributeOverride(name = "desde", column = @Column(name = "hora_desde"))
+    @AttributeOverride(name = "hasta", column = @Column(name = "hora_hasta"))
+    private FranjaHoraria franja;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "promocion_medio", joinColumns = @JoinColumn(name = "promocion_id"))
@@ -72,42 +81,27 @@ public abstract class Promocion {
     protected Promocion() {
     }
 
-    // Lo común a las tres clases se valida acá y lo propio de cada una en su constructor:
-    // así no se puede armar una promoción inválida, venga del gestor o de un test.
-    protected Promocion(String nombre, CondicionesPromocion condiciones) {
-        this.nombre = nombreValido(nombre);
-        LocalDate desde = condiciones.desde();
-        LocalDate hasta = condiciones.hasta();
-        // Los mismos textos que el pedido: una punta que no vino falta, no está al revés.
-        if (desde == null) {
-            throw new DatoInvalido("Falta el inicio de la vigencia");
-        }
-        if (hasta == null) {
-            throw new DatoInvalido("Falta el fin de la vigencia");
-        }
-        if (hasta.isBefore(desde)) {
-            throw new DatoInvalido("La vigencia tiene que empezar antes de terminar");
-        }
-        LocalTime horaDesde = condiciones.horaDesde();
-        LocalTime horaHasta = condiciones.horaHasta();
-        // aplicaA pide desde ≤ hora ≤ hasta, así que una franja que cruza la medianoche no correría
-        // nunca: se rechaza en vez de guardarla muerta. Con una sola punta, la otra queda abierta.
-        if (horaDesde != null && horaHasta != null && !horaHasta.isAfter(horaDesde)) {
-            throw new DatoInvalido("La franja horaria tiene que empezar antes de terminar");
-        }
-        this.vigenciaDesde = desde;
-        this.vigenciaHasta = hasta;
-        Set<DayOfWeek> dias = condiciones.dias();
-        this.diasSemana = dias == null || dias.isEmpty()
-                ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(dias);
-        this.horaDesde = horaDesde;
-        this.horaHasta = horaHasta;
-        Set<MedioPago> medios = condiciones.mediosPago();
-        this.mediosPago = medios == null || medios.isEmpty()
-                ? EnumSet.noneOf(MedioPago.class) : EnumSet.copyOf(medios);
+    // Lo común a las tres clases se valida acá y lo propio de cada una en su constructor: así no se
+    // puede armar una promoción inválida, venga del gestor o de un test. Por eso lo común sale primero.
+    // La franja que cruza la medianoche la rechaza FranjaHoraria: aplicaA no la correría nunca.
+    protected Promocion(String nombre, CondicionesPromocion condiciones, LocalDate hoy) {
+        String nombreValido = ValidadorPromocion.nombre(nombre);
+        Periodo vigenciaValida = ValidadorPromocion.vigencia(condiciones.desde(), condiciones.hasta());
+        FranjaHoraria franjaValida = new FranjaHoraria(condiciones.horaDesde(), condiciones.horaHasta());
+        Set<DayOfWeek> dias = copia(condiciones.dias(), DayOfWeek.class);
+        ValidadorPromocion.exigirQueAlgunaVezAplique(vigenciaValida, dias, hoy);
+        this.nombre = nombreValido;
+        this.vigencia = vigenciaValida;
+        this.franja = franjaValida;
+        this.diasSemana = dias;
+        this.mediosPago = copia(condiciones.mediosPago(), MedioPago.class);
     }
 
     public abstract TipoPromocion getTipo();
+
+    // Polimorfismo: cada subclase describe sus propios parámetros y deja en null los ajenos. Reemplaza la
+    // cadena de instanceof con la que la vista averiguaba qué clase tenía enfrente.
+    public abstract ParametrosPromocion getParametros();
 
     public abstract Dinero calcularDescuento(List<Entrada> entradas);
 
@@ -116,20 +110,14 @@ public abstract class Promocion {
             return false;
         }
         LocalDate dia = inicioFuncion.toLocalDate();
-        if (dia.isBefore(vigenciaDesde) || dia.isAfter(vigenciaHasta)) {
-            return false;
-        }
-        if (!diasSemana.isEmpty() && !diasSemana.contains(dia.getDayOfWeek())) {
-            return false;
-        }
-        if (!mediosPago.isEmpty() && !mediosPago.contains(medio)) {
-            return false;
-        }
-        LocalTime hora = inicioFuncion.toLocalTime();
-        if (horaDesde != null && hora.isBefore(horaDesde)) {
-            return false;
-        }
-        return horaHasta == null || !hora.isAfter(horaHasta);
+        return vigencia.incluye(dia)
+                && (diasSemana.isEmpty() || diasSemana.contains(dia.getDayOfWeek()))
+                && (mediosPago.isEmpty() || mediosPago.contains(medio))
+                && getFranja().incluye(inicioFuncion.toLocalTime());
+    }
+
+    public FranjaHoraria getFranja() {
+        return franja == null ? TODO_EL_DIA : franja;
     }
 
     protected static Dinero topear(Dinero descuento, List<Entrada> entradas) {
@@ -141,11 +129,11 @@ public abstract class Promocion {
     }
 
     public Set<DayOfWeek> getDiasSemana() {
-        return diasSemana.isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana);
+        return copia(diasSemana, DayOfWeek.class);
     }
 
     public Set<MedioPago> getMediosPago() {
-        return mediosPago.isEmpty() ? EnumSet.noneOf(MedioPago.class) : EnumSet.copyOf(mediosPago);
+        return copia(mediosPago, MedioPago.class);
     }
 
     public boolean estaActiva() {
@@ -160,16 +148,9 @@ public abstract class Promocion {
         this.activa = false;
     }
 
-    // Recortado acá y no en el gestor: así el nombre repetido se busca con el mismo valor que se guarda.
-    private static String nombreValido(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new DatoInvalido("El nombre no puede estar vacío");
-        }
-        String limpio = nombre.trim();
-        if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
-            throw new DatoInvalido("El nombre no puede tener más de 60 caracteres");
-        }
-        return limpio;
+    // Vacío o sin venir es «todos»: EnumSet.copyOf no acepta una colección vacía.
+    private static <E extends Enum<E>> Set<E> copia(Set<E> valores, Class<E> tipo) {
+        return valores == null || valores.isEmpty() ? EnumSet.noneOf(tipo) : EnumSet.copyOf(valores);
     }
 
     @Override

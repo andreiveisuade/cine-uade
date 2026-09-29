@@ -1,8 +1,9 @@
 package ar.uade.cine.model.promociones;
 
+import java.time.LocalDate;
 import java.util.List;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.promociones.validacion.ValidadorPromocion;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Column;
@@ -23,17 +24,21 @@ public class PromocionPorcentaje extends Promocion {
     protected PromocionPorcentaje() {
     }
 
-    public PromocionPorcentaje(String nombre, double porcentaje, CondicionesPromocion condiciones) {
-        super(nombre, condiciones);
-        if (porcentaje <= 0 || porcentaje >= 100) {
-            throw new DatoInvalido("El porcentaje tiene que estar entre 1 y 99");
-        }
-        this.porcentaje = porcentaje;
+    // Solo la crea TipoPromocion.PORCENTAJE (Factory Method) o un test. Double porque viene del pedido:
+    // que falte lo dice el modelo.
+    public PromocionPorcentaje(String nombre, Double porcentaje, CondicionesPromocion condiciones, LocalDate hoy) {
+        super(nombre, condiciones, hoy);
+        this.porcentaje = ValidadorPromocion.porcentaje(porcentaje);
     }
 
     @Override
     public TipoPromocion getTipo() {
         return TipoPromocion.PORCENTAJE;
+    }
+
+    @Override
+    public ParametrosPromocion getParametros() {
+        return ParametrosPromocion.dePorcentaje(porcentaje);
     }
 
     @Override

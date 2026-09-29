@@ -9,17 +9,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.Promocion;
-import ar.uade.cine.model.promociones.PromocionMontoFijo;
-import ar.uade.cine.model.promociones.PromocionNxM;
-import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.repository.promociones.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Alta, activación y mejor promoción al cobrar (R15, R16); implementa PoliticaPromociones.
@@ -29,34 +27,19 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 public class GestorPromociones implements PoliticaPromociones {
 
     private final PromocionRepository promocionRepository;
+    private final Reloj reloj;
 
-    // Los valores llegan en objeto desde el pedido: que falte el propio del tipo lo dice el gestor,
-    // porque la entidad los recibe primitivos y no tiene cómo enterarse. El resto de las reglas
-    // (rango, NxM, vigencia, nombre) las valida cada clase de Promocion al construirse.
-    public Promocion crearPorcentaje(String nombre, Double porcentaje, CondicionesPromocion condiciones) {
-        TipoPromocion.PORCENTAJE.exigirCampos(porcentaje);
-        return guardar(new PromocionPorcentaje(nombre, porcentaje, condiciones));
-    }
-
-    public Promocion crearMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
-        TipoPromocion.MONTO_FIJO.exigirCampos(monto);
-        return guardar(new PromocionMontoFijo(nombre, monto, condiciones));
-    }
-
-    public Promocion crearNxM(String nombre, Integer lleva, Integer paga, CondicionesPromocion condiciones) {
-        TipoPromocion.NXM.exigirCampos(lleva, paga);
-        return guardar(new PromocionNxM(nombre, lleva, paga, condiciones));
-    }
-
-    // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio.
-    // La entidad ya lo recortó, así que se busca lo mismo que se va a guardar.
-    private Promocion guardar(Promocion promocion) {
-        String nombre = promocion.getNombre();
-        if (promocionRepository.existsByNombreIgnoreCase(nombre)) {
+    // Un solo alta para los tres tipos: el tipo crea su subclase (Factory Method en TipoPromocion) y la
+    // subclase valida lo suyo. Hoy sale del reloj: una promoción ya vencida no se carga.
+    // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio. La
+    // entidad ya lo recortó, así que se busca lo mismo que se va a guardar.
+    public Promocion crear(TipoPromocion tipo, String nombre, ParametrosPromocion parametros,
+                           CondicionesPromocion condiciones) {
+        Promocion promocion = tipo.crear(nombre, parametros, condiciones, reloj.hoy());
+        if (promocionRepository.existsByNombreIgnoreCase(promocion.getNombre())) {
             throw new ConflictoDeNegocio("Ya existe una promoción con ese nombre");
         }
-        promocionRepository.save(promocion);
-        return promocion;
+        return promocionRepository.save(promocion);
     }
 
     // R16: solo participan las tarifas que lo dicen (TipoTarifa#participaDePromociones).
@@ -90,13 +73,13 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     public Promocion desactivar(int id) {
-        Promocion promocion = buscarOFallar(id);
+        Promocion promocion = obtener(id);
         promocion.desactivar();
         return promocion;
     }
 
     public Promocion activar(int id) {
-        Promocion promocion = buscarOFallar(id);
+        Promocion promocion = obtener(id);
         promocion.activar();
         return promocion;
     }
@@ -107,12 +90,7 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Promocion> buscar(int id) {
-        return promocionRepository.findById(id);
-    }
-
-    private Promocion buscarOFallar(int id) {
-        return promocionRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la promoción " + id));
+    public Promocion obtener(int id) {
+        return promocionRepository.exigir(id, "la promoción");
     }
 }

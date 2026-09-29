@@ -1,9 +1,10 @@
 package ar.uade.cine.model.promociones;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.promociones.validacion.ValidadorPromocion;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
@@ -22,12 +23,12 @@ public class PromocionNxM extends Promocion {
     protected PromocionNxM() {
     }
 
-    public PromocionNxM(String nombre, int lleva, int paga, CondicionesPromocion condiciones) {
-        super(nombre, condiciones);
-        // Un 2x2 no descuenta y un 2x3 cobraría de más.
-        if (lleva <= paga || paga <= 0) {
-            throw new DatoInvalido("En un NxM hay que llevar más de lo que se paga");
-        }
+    // Solo la crea TipoPromocion.NXM (Factory Method) o un test. Integer porque vienen del pedido: que
+    // falte uno lo dice el modelo, en vez de un 500 por el unboxing.
+    public PromocionNxM(String nombre, Integer lleva, Integer paga, CondicionesPromocion condiciones,
+                        LocalDate hoy) {
+        super(nombre, condiciones, hoy);
+        ValidadorPromocion.exigirNxM(lleva, paga);
         this.lleva = lleva;
         this.paga = paga;
     }
@@ -35,6 +36,11 @@ public class PromocionNxM extends Promocion {
     @Override
     public TipoPromocion getTipo() {
         return TipoPromocion.NXM;
+    }
+
+    @Override
+    public ParametrosPromocion getParametros() {
+        return ParametrosPromocion.deNxM(lleva, paga);
     }
 
     @Override

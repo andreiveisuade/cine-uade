@@ -47,6 +47,8 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.Arqueo;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.ParametrosPromocion;
+import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -182,7 +184,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
-        Promocion promo = promociones.crearNxM("2x1", 2, 1,
+        Promocion promo = promociones.crear(TipoPromocion.NXM, "2x1", ParametrosPromocion.deNxM(2, 1),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
 
@@ -207,7 +209,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elDescuentoBancarioSoloEntraSiSePagaConEseMedio() {
-        promociones.crearMontoFijo("Banco", Dinero.de(1000),
+        promociones.crear(TipoPromocion.MONTO_FIJO, "Banco", ParametrosPromocion.deMonto(1000.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of(MedioPago.CREDITO)));
 
@@ -220,7 +222,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
@@ -261,7 +263,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elRepartoPorMedioCuentaElMontoConDescuento() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
@@ -295,7 +297,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elReciboMuestraElDescuentoQueSeAplicoAlCobrar() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
@@ -322,7 +324,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void elMontoDelCheckoutYaTraeElDescuentoAplicado() {
-        promociones.crearPorcentaje("50 off", 50.0,
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
                 Set.of(), null, null, Set.of()));
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
