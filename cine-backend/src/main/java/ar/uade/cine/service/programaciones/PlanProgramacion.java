@@ -5,6 +5,7 @@ import java.util.List;
 
 import ar.uade.cine.model.programaciones.Programacion;
 
+// Lo que genera una programación, horario por horario, y lo que saltea por R3; record de resultado.
 public record PlanProgramacion(Programacion programacion, List<FuncionPlanificada> funciones) {
 
     public record FuncionPlanificada(LocalDateTime inicio, boolean choca, String motivo) {

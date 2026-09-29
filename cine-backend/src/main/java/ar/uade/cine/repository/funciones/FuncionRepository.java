@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.funciones.Funcion;
 
+// Persistencia de funciones; Repository de Spring Data, con los filtros opcionales resueltos en la base.
 public interface FuncionRepository extends JpaRepository<Funcion, Integer> {
 
     List<Funcion> findByPelicula_IdOrderByInicioAsc(int peliculaId);

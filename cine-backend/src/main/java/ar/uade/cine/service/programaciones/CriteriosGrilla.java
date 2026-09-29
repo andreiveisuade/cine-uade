@@ -7,6 +7,7 @@ import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Pedido de grilla automática del encargado; Value Object: completa los defaults y se valida al nacer.
 // Se valida al construirse: el planificador nunca ve unos criterios imposibles, y se queda solo
 // con lo que necesita la base (que haya salas).
 public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, LocalTime cierre,

@@ -30,6 +30,7 @@ import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
 
+// Grilla automática de varios días; elige elenco, reparte pases y los mide, con R3 y R20 de GestorFunciones.
 @Service
 @Transactional
 @RequiredArgsConstructor

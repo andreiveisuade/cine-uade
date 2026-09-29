@@ -4,8 +4,9 @@ import java.util.List;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 
-// Promedio bayesiano contra un catálogo: un puntaje con pocos votos se acerca al promedio en vez
-// de valer solo. Aparte del planificador porque es cuenta pura, sin base ni reloj.
+// Puntaje de una película corregido por sus votos; Fabricación pura: promedio bayesiano contra el catálogo.
+// Con pocos votos se acerca al promedio en vez de valer solo. Aparte del planificador porque es cuenta
+// pura, sin base ni reloj.
 final class PuntajeConfiable {
 
     // Votos desde los cuales el puntaje vale solo; con menos, pesa el promedio del catálogo.

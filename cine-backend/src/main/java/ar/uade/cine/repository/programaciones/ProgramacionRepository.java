@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.programaciones.Programacion;
 
+// Persistencia de programaciones; Repository de Spring Data, con los filtros opcionales resueltos en la base.
 public interface ProgramacionRepository extends JpaRepository<Programacion, Integer> {
 
     List<Programacion> findByActivaTrue();

@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+// Pase de una película en una sala a una hora; Experto: valida formato, R8 y precio al nacer, y decide R19.
 @Entity
 @Getter
 public class Funcion {

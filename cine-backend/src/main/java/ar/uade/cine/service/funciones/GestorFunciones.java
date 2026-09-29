@@ -26,6 +26,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Alta, baja y consulta de funciones; @Service que aplica lo que la función no ve sola: R3, R12 y R20.
 @Service
 @Transactional
 @RequiredArgsConstructor

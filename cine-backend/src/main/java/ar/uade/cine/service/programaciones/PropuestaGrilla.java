@@ -7,6 +7,7 @@ import java.util.Map;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 
+// Elenco, pases e indicadores de una grilla automática; record de resultado, el mismo al proponer y aplicar.
 public record PropuestaGrilla(List<Pelicula> elenco, List<PaseSugerido> pases,
                               IndicadoresGrilla indicadores) {
 

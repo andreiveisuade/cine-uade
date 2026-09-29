@@ -27,6 +27,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Alta, baja y extensión de grillas; genera cada función por GestorFunciones para no reescribir R3 ni R20.
 @Service
 @Transactional
 @RequiredArgsConstructor

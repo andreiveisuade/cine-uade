@@ -30,6 +30,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+// Película repetida en una sala a una hora por un rango de días; Experto: valida su rango y genera horarios.
 @Entity
 @Getter
 public class Programacion {
