@@ -56,8 +56,15 @@ public class Funcion {
         this(pelicula, sala, inicio, version, proyeccion, precio, null);
     }
 
+    // Que la película esté confirmada, que no empiece en el pasado (R20) y que no pise a otra (R3)
+    // no son invariantes de la función sino del alta: dependen del buzón, del reloj y de las otras
+    // funciones de la sala. Una función que quedó en el pasado sigue siendo válida (R12).
     public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio, Integer programacionId) {
+        validarProgramable(sala, version, proyeccion, precio);
+        if (inicio == null) {
+            throw new IllegalArgumentException("Falta la fecha y hora de la función");
+        }
         this.pelicula = pelicula;
         this.sala = sala;
         this.inicio = inicio;
@@ -65,6 +72,21 @@ public class Funcion {
         this.proyeccion = proyeccion;
         this.precio = precio;
         this.programacionId = programacionId;
+    }
+
+    // Pública porque una programación genera funciones con estos mismos datos: tiene que
+    // rechazarlos antes de generar la primera, y con el mismo mensaje que el alta de una suelta.
+    public static void validarProgramable(Sala sala, Version version, Proyeccion proyeccion, Dinero precio) {
+        if (version == null || proyeccion == null) {
+            throw new IllegalArgumentException("Falta la versión o el formato de proyección");
+        }
+        // R8
+        if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
+            throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
+        }
+        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
+            throw new IllegalArgumentException("El precio debe ser mayor a cero");
+        }
     }
 
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.

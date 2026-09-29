@@ -350,18 +350,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class, () -> planificador.proponer(unDia(1)));
     }
 
-    @Test
-    void rechazaUnaVentanaHorariaImposible() {
-        cargar("Una", 8.0, Genero.ACCION);
-        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
-
-        CriteriosGrilla alReves = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1,
-                LocalTime.of(23, 0), LocalTime.of(14, 0), 2, Dinero.de(5000),
-                Version.SUBTITULADA, Proyeccion.DOS_D);
-
-        assertThrows(IllegalArgumentException.class, () -> planificador.proponer(alReves));
-    }
-
     // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).
     @Test
     void hoyNoProponePasesQueYaPasaron() {

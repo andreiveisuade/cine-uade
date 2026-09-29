@@ -139,25 +139,11 @@ public class GestorProgramaciones {
     }
 
     private Programacion armar(DatosGrilla datos) {
-        LocalDate desde = datos.desde();
-        LocalDate hasta = datos.hasta();
-        if (desde == null) {
-            throw new IllegalArgumentException("Falta la fecha de inicio");
-        }
-        if (hasta != null && hasta.isBefore(desde)) {
-            throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
-        }
-        if (datos.horaInicio() == null) {
-            throw new IllegalArgumentException("Falta la hora de la función");
-        }
         // Referencias sin ir a la base: que existan lo valida validarProgramable, con su 404.
         Programacion grilla = new Programacion(peliculaRepository.getReferenceById(datos.peliculaId()),
-                salaRepository.getReferenceById(datos.salaId()), desde, hasta,
+                salaRepository.getReferenceById(datos.salaId()), datos.desde(), datos.hasta(),
                 datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
-        if (hasta != null && grilla.horarios(hasta).isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
-        }
+        LocalDate hasta = grilla.getHasta();
         // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
         if (hasta != null && grilla.horarios(hasta).stream().allMatch(funciones::yaPaso)) {
             throw new IllegalArgumentException(
@@ -167,18 +153,20 @@ public class GestorProgramaciones {
     }
 
     public void desactivar(int id) {
-        cambiarEstado(id, false);
+        Programacion grilla = buscarOFallar(id);
+        grilla.desactivar();
+        programacionRepository.save(grilla);
     }
 
     public void activar(int id) {
-        cambiarEstado(id, true);
+        Programacion grilla = buscarOFallar(id);
+        grilla.activar();
+        programacionRepository.save(grilla);
     }
 
-    private void cambiarEstado(int id, boolean activa) {
-        Programacion grilla = programacionRepository.findById(id)
+    private Programacion buscarOFallar(int id) {
+        return programacionRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
-        grilla.setActiva(activa);
-        programacionRepository.save(grilla);
     }
 
     @Transactional(readOnly = true)

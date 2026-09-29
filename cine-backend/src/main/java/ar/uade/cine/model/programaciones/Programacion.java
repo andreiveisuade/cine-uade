@@ -76,9 +76,20 @@ public class Programacion {
     protected Programacion() {
     }
 
+    // La película, la sala, el formato y el precio los valida el gestor, después de estos y con el
+    // 404 primero: acá llegan como referencias sin cargar, y leerlas iría a la base.
     public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
                         Proyeccion proyeccion, Dinero precio) {
+        if (desde == null) {
+            throw new IllegalArgumentException("Falta la fecha de inicio");
+        }
+        if (hasta != null && hasta.isBefore(desde)) {
+            throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
+        }
+        if (horaInicio == null) {
+            throw new IllegalArgumentException("Falta la hora de la función");
+        }
         this.pelicula = pelicula;
         this.sala = sala;
         this.desde = desde;
@@ -89,6 +100,10 @@ public class Programacion {
         this.version = version;
         this.proyeccion = proyeccion;
         this.precio = precio;
+        if (hasta != null && horarios(hasta).isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
+        }
     }
 
     public List<LocalDateTime> horarios(LocalDate tope) {
@@ -124,8 +139,12 @@ public class Programacion {
         return activa;
     }
 
-    public void setActiva(boolean activa) {
-        this.activa = activa;
+    public void activar() {
+        this.activa = true;
+    }
+
+    public void desactivar() {
+        this.activa = false;
     }
 
     @Override

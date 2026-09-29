@@ -46,31 +46,34 @@ public class GestorFunciones {
 
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, Version version,
                              Proyeccion proyeccion, Dinero precio, Integer programacionId) {
-        Pelicula pelicula = validarProgramable(peliculaId, salaId, version, proyeccion, precio);
-        if (inicio == null) {
-            throw new IllegalArgumentException("Falta la fecha y hora de la función");
-        }
+        Pelicula pelicula = peliculaConfirmada(peliculaId);
+        Sala sala = sala(salaId);
+        Funcion funcion = new Funcion(pelicula, sala, inicio, version, proyeccion, precio, programacionId);
         if (yaPaso(inicio)) {
             throw new IllegalArgumentException("La función no puede empezar en el pasado");
         }
 
         // R3
-        LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
+        LocalDateTime fin = funcion.getFin(pelicula.getDuracionMinutos());
         Optional<Funcion> choque = superpuestaEn(salaId, inicio, fin);
         if (choque.isPresent()) {
-            throw new IllegalArgumentException(
-                    motivoDeLaSuperposicion(choque.get(), salaId, inicio));
+            throw new IllegalArgumentException(motivoDeLaSuperposicion(choque.get(), sala, inicio));
         }
-        // Ya validada arriba: la referencia sale de la sesión, sin otra consulta.
-        Funcion funcion = new Funcion(pelicula, salaRepository.getReferenceById(salaId), inicio,
-                version, proyeccion, precio, programacionId);
         funcionRepository.save(funcion);
         return funcion;
     }
 
+    // Lo que una programación necesita antes de generar su primera función: lo mismo que el
+    // alta de una suelta, menos la fecha, que la pone cada día de la grilla.
     @Transactional(readOnly = true)
     public Pelicula validarProgramable(int peliculaId, int salaId, Version version,
                                        Proyeccion proyeccion, Dinero precio) {
+        Pelicula pelicula = peliculaConfirmada(peliculaId);
+        Funcion.validarProgramable(sala(salaId), version, proyeccion, precio);
+        return pelicula;
+    }
+
+    private Pelicula peliculaConfirmada(int peliculaId) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + peliculaId));
         // Si no, programar saltearía el buzón de revisión.
@@ -78,18 +81,12 @@ public class GestorFunciones {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");
         }
-        Sala sala = salaRepository.findById(salaId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + salaId));
-        if (version == null || proyeccion == null) {
-            throw new IllegalArgumentException("Falta la versión o el formato de proyección");
-        }
-        if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
-            throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
-        }
-        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El precio debe ser mayor a cero");
-        }
         return pelicula;
+    }
+
+    private Sala sala(int salaId) {
+        return salaRepository.findById(salaId)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + salaId));
     }
 
     // R20, con el mismo corte que R19 (Funcion.yaEmpezo): la que empieza ahora ya empezó, y
@@ -104,13 +101,13 @@ public class GestorFunciones {
         return agendaDe(salaId, inicio, fin).chocaCon(inicio, fin);
     }
 
-    private String motivoDeLaSuperposicion(Funcion choque, int salaId, LocalDateTime inicio) {
+    private String motivoDeLaSuperposicion(Funcion choque, Sala sala, LocalDateTime inicio) {
         int duracion = peliculaRepository.findById(choque.getPeliculaId())
                 .map(Pelicula::getDuracionMinutos)
                 .orElse(0);
         LocalDateTime finReal = choque.getFin(duracion);
         if (!inicio.isBefore(finReal)) {
-            int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);
+            int limpieza = sala.getMinutosLimpieza();
             return "La sala necesita " + limpieza + " minutos de limpieza: la función anterior"
                     + " termina " + finReal.format(MOMENTO) + " y hasta "
                     + finReal.plusMinutes(limpieza).format(MOMENTO) + " no se puede empezar";
