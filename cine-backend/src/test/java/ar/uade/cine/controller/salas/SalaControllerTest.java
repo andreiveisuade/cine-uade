@@ -122,6 +122,37 @@ class SalaControllerTest extends PruebaDeApi {
         assertEquals("Ya existe una sala con ese nombre", respuesta.error());
     }
 
+    // Como en el alta: primero los datos, después el nombre repetido. Antes daba 409.
+    @Test
+    void editarConUnNombreRepetidoYUnaLimpiezaNegativaDiceLoDeLaLimpieza() {
+        Respuesta respuesta = put("/api/salas/" + sala,
+                "{\"nombre\":\"Sala 2\",\"tipo\":\"DOS_D\",\"minutosLimpieza\":-5}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Los minutos de limpieza no pueden ser negativos", respuesta.error());
+    }
+
+    // El repetido se busca sin la sala misma. En MySQL además cuenta que la collation ignora los acentos:
+    // renombrar "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
+    @Test
+    void renombrarUnaSalaASuPropioNombreConOtrasMayusculasNoEsRepetido() {
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"SALA 1\",\"tipo\":\"DOS_D\"}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals("SALA 1", respuesta.json().get("nombre").asText());
+    }
+
+    // Antes ganaba la última lista, en silencio.
+    @Test
+    void unaButacaEnDosListasDeEspecialesEs400YNoCreaLaSala() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5],"
+                + "\"codigosVip\":[\"A1\"],\"codigosPareja\":[\" a1\"]}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La butaca A1 está en más de una lista de especiales: dejala en una sola", respuesta.error());
+        assertEquals(2, get("/api/salas").json().size());
+    }
+
     @Test
     void unTipoQueNoExisteEs400() {
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"OCHO_D\"}");

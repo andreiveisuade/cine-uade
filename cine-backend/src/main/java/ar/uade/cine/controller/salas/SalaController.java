@@ -1,6 +1,6 @@
 package ar.uade.cine.controller.salas;
 
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +28,6 @@ import ar.uade.cine.dto.salas.PedidoEstadoDTO;
 import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -53,7 +52,7 @@ public class SalaController {
     @Operation(summary = "Una sala con todas sus butacas")
     @GetMapping("/api/salas/{id}")
     public SalaVistaDTO detalle(@PathVariable int id) {
-        return vistas.salaConButacas(buscar(id));
+        return vistas.salaConButacas(salas.obtener(id));
     }
 
     @Operation(summary = "Dar de alta una sala y generarle las butacas")
@@ -95,24 +94,14 @@ public class SalaController {
                 : salas.reponer(salaId, codigo));
     }
 
-    private Sala buscar(int id) {
-        return salas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
-    }
-
-    // Los códigos van como los tipeó el encargado: normalizarlos es cosa de Sala.generarAsientos.
-    // LinkedHashMap: una butaca que viene en dos listas queda con un tipo predecible, no con el del hash.
-    private static Map<String, TipoAsiento> especiales(PedidoSalaDTO pedido) {
-        Map<String, TipoAsiento> especiales = new LinkedHashMap<>();
-        marcar(especiales, pedido.codigosVip(), TipoAsiento.VIP);
-        marcar(especiales, pedido.codigosPareja(), TipoAsiento.PAREJA);
-        marcar(especiales, pedido.codigosAccesibles(), TipoAsiento.ACCESIBLE);
+    // Las tres listas tal como vinieron, cada una con su tipo: normalizar los códigos y rechazar el que
+    // está en dos es cosa de Sala.generarAsientos. EnumMap porque acepta una lista que no vino (null) y
+    // recorre siempre en el orden de TipoAsiento.
+    private static Map<TipoAsiento, List<String>> especiales(PedidoSalaDTO pedido) {
+        Map<TipoAsiento, List<String>> especiales = new EnumMap<>(TipoAsiento.class);
+        especiales.put(TipoAsiento.VIP, pedido.codigosVip());
+        especiales.put(TipoAsiento.PAREJA, pedido.codigosPareja());
+        especiales.put(TipoAsiento.ACCESIBLE, pedido.codigosAccesibles());
         return especiales;
-    }
-
-    private static void marcar(Map<String, TipoAsiento> especiales, List<String> codigos,
-                               TipoAsiento tipo) {
-        if (codigos != null) {
-            codigos.forEach(codigo -> especiales.put(codigo, tipo));
-        }
     }
 }

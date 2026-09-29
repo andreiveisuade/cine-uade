@@ -8,4 +8,7 @@ import ar.uade.cine.repository.Repositorio;
 public interface SalaRepository extends Repositorio<Sala> {
 
     boolean existsByNombreIgnoreCase(String nombre);
+
+    // Al renombrar: la sala misma no cuenta como repetida.
+    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, int id);
 }

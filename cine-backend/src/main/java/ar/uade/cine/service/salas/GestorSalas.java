@@ -1,8 +1,10 @@
 package ar.uade.cine.service.salas;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,17 +34,23 @@ public class GestorSalas {
     private final ProgramacionRepository programacionRepository;
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
-        return agregar(nombre, tipo, butacasPorFila, Map.of());
+        return agregar(nombre, tipo, butacasPorFila, Map.of(), Sala.LIMPIEZA_POR_DEFECTO);
     }
 
+    // Una butaca especial por código, para cargar una sala a mano: así no hay dos listas que la repitan.
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales) {
-        return agregar(nombre, tipo, butacasPorFila, especiales, Sala.LIMPIEZA_POR_DEFECTO);
+        Map<TipoAsiento, List<String>> porTipo = especiales.entrySet().stream()
+                .collect(Collectors.groupingBy(Map.Entry::getValue,
+                        () -> new EnumMap<>(TipoAsiento.class),
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())));
+        return agregar(nombre, tipo, butacasPorFila, porTipo, Sala.LIMPIEZA_POR_DEFECTO);
     }
 
-    // Sin limpieza, la de siempre: el alta no la exige, a diferencia del nombre, el tipo y las filas.
+    // Las especiales llegan por tipo, como las listas del pedido. Sin limpieza, la de siempre: el alta
+    // no la exige, a diferencia del nombre, el tipo y las filas.
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
-                        Map<String, TipoAsiento> especiales, Integer minutosLimpieza) {
+                        Map<TipoAsiento, List<String>> especiales, Integer minutosLimpieza) {
         int limpieza = minutosLimpieza == null ? Sala.LIMPIEZA_POR_DEFECTO : minutosLimpieza;
         // Los datos de la sala y sus filas se rechazan antes de consultar el nombre repetido.
         Sala sala = new Sala(nombre, tipo, limpieza);
@@ -56,35 +64,35 @@ public class GestorSalas {
         return sala;
     }
 
+    // Primero los datos (400), como en el alta, y después lo que mira la base. Si algo rechaza, la
+    // transacción deshace la edición. El nombre repetido se busca sin la sala misma: la consulta hace
+    // flush de la edición, y además la collation de MySQL ignora los acentos, así que renombrar
+    // "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
     // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
-        Sala sala = buscarOFallar(id);
-        int limpieza = minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza;
-        String nuevoNombre = Sala.normalizarNombre(nombre);
-        // Los chequeos contra la base van antes de editar: con la sala ya modificada, la consulta
-        // del nombre repetido haría flush y se encontraría a sí misma.
-        if (!sala.getNombre().equalsIgnoreCase(nuevoNombre)
-                && salaRepository.existsByNombreIgnoreCase(nuevoNombre)) {
+        Sala sala = salaRepository.exigir(id, "la sala");
+        TipoSala tipoAnterior = sala.getTipo();
+        sala.editar(nombre, tipo, minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza);
+        if (salaRepository.existsByNombreIgnoreCaseAndIdNot(sala.getNombre(), id)) {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
-        if (tipo != null && tipo != sala.getTipo() && funcionRepository.existsBySala_Id(id)) {
+        if (tipo != tipoAnterior && funcionRepository.existsBySala_Id(id)) {
             throw new DatoInvalido(
                     "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
         }
-        sala.editar(nombre, tipo, limpieza);
         return sala;
     }
 
     // Devuelve la sala y no la butaca: es lo que muestra quien la marcó, y asiento.getSala() es
     // LAZY, así que fuera de la transacción no se podría leer.
     public Sala marcarFueraDeServicio(int salaId, String codigo) {
-        Sala sala = buscarOFallar(salaId);
+        Sala sala = salaRepository.exigir(salaId, "la sala");
         butaca(sala, codigo).marcarFueraDeServicio();
         return sala;
     }
 
     public Sala reponer(int salaId, String codigo) {
-        Sala sala = buscarOFallar(salaId);
+        Sala sala = salaRepository.exigir(salaId, "la sala");
         butaca(sala, codigo).reponer();
         return sala;
     }
@@ -94,11 +102,6 @@ public class GestorSalas {
     private Asiento butaca(Sala sala, String codigo) {
         return Asiento.conCodigo(asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(sala.getId()), codigo)
                 .orElseThrow(() -> new RecursoNoEncontrado(Asiento.inexistente(codigo)));
-    }
-
-    private Sala buscarOFallar(int id) {
-        return salaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
     }
 
     @Transactional(readOnly = true)
@@ -116,10 +119,13 @@ public class GestorSalas {
         return salaRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Sala obtener(int id) {
+        return salaRepository.exigir(id, "la sala");
+    }
+
     public void eliminar(int id) {
-        if (!salaRepository.existsById(id)) {
-            throw new RecursoNoEncontrado("No existe la sala " + id);
-        }
+        Sala sala = salaRepository.exigir(id, "la sala");
         if (funcionRepository.existsBySala_Id(id)) {
             throw new DatoInvalido(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
@@ -130,6 +136,6 @@ public class GestorSalas {
             throw new DatoInvalido(
                     "La sala " + id + " está programada en una grilla: no se puede eliminar");
         }
-        salaRepository.deleteById(id);
+        salaRepository.delete(sala);
     }
 }
