@@ -6,6 +6,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -113,5 +114,17 @@ public class Funcion {
 
     public LocalDateTime getFin(int duracionMinutos) {
         return inicio.plusMinutes(duracionMinutos);
+    }
+
+    // Experto en el precio: la función tiene el base, y cada tipo (sala, butaca, tarifa) aplica su parte.
+    // Base × tipo de sala es el «desde» de la cartelera. Recibe la sala aunque es la suya porque this.sala
+    // es LAZY: las vistas corren fuera de la transacción y la leen por su cuenta.
+    public Dinero precioEn(Sala sala) {
+        return sala.getTipo().aplicarA(precio);
+    }
+
+    // Base × sala × butaca: lo que muestra el mapa, con la tarifa general. La entrada le aplica la suya.
+    public Dinero precioDe(Asiento asiento, Sala sala) {
+        return asiento.getTipo().aplicarA(precioEn(sala));
     }
 }

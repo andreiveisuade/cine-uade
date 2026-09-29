@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.controller.informes.CajaController;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.ConsultasReservas;
@@ -53,9 +52,6 @@ import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.EntityManagerFactory;
 
 class VistasVentasTest extends PruebaDeIntegracion {
-
-    @Autowired
-    private CalculadoraPrecio calculadoraPrecio;
 
     @Autowired
     private GestorCartelera cartelera;

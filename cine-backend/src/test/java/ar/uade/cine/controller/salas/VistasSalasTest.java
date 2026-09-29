@@ -28,7 +28,6 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
@@ -41,8 +40,6 @@ class VistasSalasTest extends PruebaDeIntegracion {
     private GestorSalas salas;
     @Autowired
     private GestorFunciones funciones;
-    @Autowired
-    private CalculadoraPrecio calculadora;
     @Autowired
     private VistasSalas vistas;
     @Autowired
@@ -122,8 +119,8 @@ class VistasSalasTest extends PruebaDeIntegracion {
 
         double mostrado = vistas.asiento(a1, funcion, sala, Set.of()).precio();
 
-        assertEquals(calculadora.precioDe(funcion, sala, a1, TipoTarifa.GENERAL).aPesos(), mostrado);
-        assertTrue(mostrado > calculadora.precioDe(funcion, sala, a1, TipoTarifa.JUBILADO).aPesos(),
+        assertEquals(TipoTarifa.GENERAL.aplicarA(funcion.precioDe(a1, sala)).aPesos(), mostrado);
+        assertTrue(mostrado > TipoTarifa.JUBILADO.aplicarA(funcion.precioDe(a1, sala)).aPesos(),
                 "estaría anunciando un precio que no es el que se cobra por defecto");
     }
 

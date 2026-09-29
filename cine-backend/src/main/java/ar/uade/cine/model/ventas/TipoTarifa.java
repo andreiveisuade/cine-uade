@@ -3,6 +3,8 @@ package ar.uade.cine.model.ventas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+import ar.uade.cine.model.dinero.Dinero;
+
 // Tarifa de una entrada; cada constante trae su multiplicador, si pide acreditación y si entra en promos.
 @Getter
 public enum TipoTarifa {
@@ -24,5 +26,10 @@ public enum TipoTarifa {
         this.multiplicadorPrecio = multiplicadorPrecio;
         this.requiereAcreditacion = requiereAcreditacion;
         this.participaDePromociones = participaDePromociones;
+    }
+
+    // La última parte del precio de una entrada: la reducción de la tarifa sobre el precio de la butaca.
+    public Dinero aplicarA(Dinero precio) {
+        return precio.por(multiplicadorPrecio);
     }
 }

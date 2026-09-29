@@ -3,6 +3,8 @@ package ar.uade.cine.model.salas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+import ar.uade.cine.model.dinero.Dinero;
+
 // Formato de sala; cada constante trae su multiplicador de precio y si proyecta 3D (R8).
 @Getter
 public enum TipoSala {
@@ -19,5 +21,10 @@ public enum TipoSala {
     TipoSala(double multiplicadorPrecio, boolean soportaTresD) {
         this.multiplicadorPrecio = multiplicadorPrecio;
         this.soportaTresD = soportaTresD;
+    }
+
+    // Su parte del precio de una entrada: el recargo del formato sobre el precio base de la función.
+    public Dinero aplicarA(Dinero precio) {
+        return precio.por(multiplicadorPrecio);
     }
 }

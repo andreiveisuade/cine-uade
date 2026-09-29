@@ -11,19 +11,16 @@ import org.springframework.stereotype.Component;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
-import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
 
-// Arma los JSON de salas y butacas; el precio de cada butaca lo pide a CalculadoraPrecio (Assembler).
+// Arma los JSON de salas y butacas; el precio de cada butaca se lo pide a la función (Assembler).
 @Component
 @RequiredArgsConstructor
 public class VistasSalas {
 
     private final GestorSalas salas;
-    private final CalculadoraPrecio calculadora;
 
     public SalaVistaDTO sala(Sala s) {
         return sala(s, salas.asientosDe(s.getId()));
@@ -61,6 +58,6 @@ public class VistasSalas {
         return new AsientoVistaDTO(a.getId(), a.getSalaId(), a.getFila(), a.getNumero(), a.getCodigo(),
                 a.getTipo().name(), a.getEstado().name(),
                 ocupados.contains(a.getId()),
-                calculadora.precioDe(funcion, sala, a, TipoTarifa.GENERAL).aPesos());
+                funcion.precioDe(a, sala).aPesos());
     }
 }

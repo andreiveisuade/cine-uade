@@ -53,10 +53,12 @@ public class Entrada {
     protected Entrada() {
     }
 
-    public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precio) {
+    // El precio queda fijo al vender: si después cambia el de la función, lo vendido no cambia. Llega el de
+    // la butaca con tarifa general (Funcion#precioDe) y la entrada le aplica la suya: la conoce ella.
+    public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precioDeLaButaca) {
         this.asiento = asiento;
         this.tarifa = tarifa;
-        this.precio = precio;
+        this.precio = tarifa.aplicarA(precioDeLaButaca);
     }
 
     public int asientoId() {

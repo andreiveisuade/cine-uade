@@ -20,7 +20,6 @@ import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.Ocupacion;
@@ -40,7 +39,6 @@ public class VistasCartelera {
     private final GestorCartelera cartelera;
     private final GestorSalas salas;
     private final Ocupacion ocupacion;
-    private final CalculadoraPrecio calculadora;
     private final VistasSalas vistasSalas;
 
     public PeliculaVistaDTO pelicula(Pelicula p) {
@@ -117,7 +115,7 @@ public class VistasCartelera {
                                   List<AsientoVistaDTO> butacas, Integer libres) {
         return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
                 Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
-                f.getPrecio().aPesos(), calculadora.precioBaseEnSala(f, sala).aPesos(),
+                f.getPrecio().aPesos(), f.precioEn(sala).aPesos(),
                 vistasSalas.sala(sala, asientos), pelicula, butacas, libres);
     }
 

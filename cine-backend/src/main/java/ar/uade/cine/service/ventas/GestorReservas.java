@@ -42,7 +42,6 @@ public class GestorReservas {
     private final AsientoRepository asientoRepository;
     private final GestorClientes clientes;
     private final GeneradorTicket generadorTicket;
-    private final CalculadoraPrecio calculadoraPrecio;
     private final Ocupacion ocupacion;
     private final Reloj reloj;
 
@@ -87,8 +86,7 @@ public class GestorReservas {
         for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
             TipoTarifa tarifa = pedido.getValue() == null ? TipoTarifa.GENERAL : pedido.getValue();
             Asiento asiento = butacaVendible(deLaSala, pedido.getKey(), ocupados);
-            entradas.add(new Entrada(asiento, tarifa,
-                    calculadoraPrecio.precioDe(funcion, sala, asiento, tarifa)));
+            entradas.add(new Entrada(asiento, tarifa, funcion.precioDe(asiento, sala)));
         }
         return entradas;
     }
