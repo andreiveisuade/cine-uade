@@ -98,7 +98,7 @@ public class GestorReservas {
             throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
         }
         if (ocupados.contains(asiento.getId())) {
-            throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " ya está ocupada");
+            throw new ButacaOcupadaException("La butaca " + asiento.getCodigo() + " ya está ocupada");
         }
         return asiento;
     }

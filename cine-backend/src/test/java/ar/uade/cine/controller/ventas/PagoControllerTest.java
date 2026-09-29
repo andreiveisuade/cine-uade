@@ -181,6 +181,22 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals(400, post(ruta + "/cancelacion", "").estado());
     }
 
+    // La web vuelve al mapa recargado solo ante un 409: con un 400 el cliente quedaba trabado.
+    @Test
+    void reservarUnaButacaYaVendidaEs409YUnaFueraDeServicio400() {
+        salas.marcarFueraDeServicio(1, "B1");
+
+        Respuesta vendida = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
+                + "\"butacas\":{\"A1\":\"GENERAL\"}}");
+        Respuesta fueraDeServicio = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
+                + "\"email\":\"ana@mail.com\",\"butacas\":{\"B1\":\"GENERAL\"}}");
+
+        assertEquals(409, vendida.estado());
+        assertEquals("La butaca A1 ya está ocupada", vendida.error());
+        assertEquals(400, fueraDeServicio.estado());
+        assertEquals("La butaca B1 está fuera de servicio", fueraDeServicio.error());
+    }
+
     @Test
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.

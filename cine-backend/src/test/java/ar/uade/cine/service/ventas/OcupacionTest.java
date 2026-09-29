@@ -278,7 +278,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     void otroNoPuedeReservarLoQueAlguienEstaEligiendo() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        ButacaOcupadaException error = assertThrows(ButacaOcupadaException.class,
                 () -> reservas.reservar(1, 1, generales("A1"), BETO));
 
         assertEquals("La butaca A1 ya está ocupada", error.getMessage());

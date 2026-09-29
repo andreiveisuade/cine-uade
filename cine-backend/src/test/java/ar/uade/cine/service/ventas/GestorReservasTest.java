@@ -108,10 +108,15 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(asientosLibres(1, null).stream().anyMatch(a -> a.getCodigo().equals("A3")));
     }
 
+    // 409 y no 400, como la carrera perdida en el flush: la web vuelve al mapa solo ante un 409.
     @Test
     void rechazaButacaYaOcupada() {
         reservas.reservar(1, 1, generales("B3"), null);
-        assertThrows(IllegalArgumentException.class, () -> reservas.reservar(1, 1, generales("B3"), null));
+
+        ButacaOcupadaException error = assertThrows(ButacaOcupadaException.class,
+                () -> reservas.reservar(1, 1, generales("B3"), null));
+
+        assertEquals("La butaca B3 ya está ocupada", error.getMessage());
     }
 
     @Test
