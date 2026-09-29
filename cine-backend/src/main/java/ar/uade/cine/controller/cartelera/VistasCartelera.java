@@ -9,10 +9,13 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.dto.cartelera.EstadoImportadorVistaDTO;
+import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
@@ -21,10 +24,11 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.controller.http.Fechas;
+import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.controller.salas.VistasSalas;
 
-// Arma los JSON de películas y funciones con sala, precio y butacas; Assembler que reusan varios controllers.
+// Arma los JSON de películas, funciones con sala, precio y butacas, e importaciones; Assembler compartido.
 // Un listado de N funciones cuesta un número fijo de consultas por sala y no por fila: las
 // películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
 // sentencias.
@@ -44,6 +48,16 @@ public class VistasCartelera {
                 p.getClasificacion().name(), p.getPosterUrl(), p.getDirector(), p.getAnio(),
                 p.getIdiomaOriginal(), p.getSinopsis(), p.estaEnCartelera(),
                 p.getEstadoRevision().name(), p.getPuntaje(), p.getVotos());
+    }
+
+    public ImportacionVistaDTO importacion(Importacion i) {
+        return new ImportacionVistaDTO(i.getId(), i.getEstado().name(), i.getPaginas(),
+                Fechas.texto(i.getPedidaEn()), Fechas.texto(i.getTerminoEn()), i.getNuevas(),
+                i.getSalteadas(), i.getFallidas(), i.getDetalle());
+    }
+
+    public EstadoImportadorVistaDTO estado(CatalogoExterno.Estado estado) {
+        return new EstadoImportadorVistaDTO(estado.disponible(), estado.detalle());
     }
 
     // Con la sala y sus butacas ya leídas: un listado las lee una vez por sala y no por fila.
