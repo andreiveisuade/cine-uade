@@ -9,7 +9,7 @@ import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
-import ar.uade.cine.swing.comun.SelectorDias;
+import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JCalendar;
@@ -22,13 +22,8 @@ import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
 /**
  * La programación como la ve quien la arma: cada bloque ocupa el alto de lo que dura, así se ve si dos funciones se
@@ -39,7 +34,7 @@ public final class PantallaAgenda extends Pantalla {
 
     private final ApiFunciones apiFunciones;
     private final ApiSalas apiSalas;
-    private final JComboBox<Opcion<Boolean>> modo = new JComboBox<>();
+    private final JComboBox<Opcion<ModoAgenda>> modo = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> sala = new JComboBox<>();
     private final JLabel etiquetaSala = new JLabel("Sala");
     private final JLabel conteo = new JLabel(" ");
@@ -61,8 +56,7 @@ public final class PantallaAgenda extends Pantalla {
         this.apiSalas = apiSalas;
         this.grilla = new GrillaAgenda(navegacion);
 
-        modo.addItem(new Opcion<>(true, "Semana (una sala)"));
-        modo.addItem(new Opcion<>(false, "Día (todas las salas)"));
+        Campos.llenar(modo, Opcion.de(List.of(ModoAgenda.values()), ModoAgenda::texto));
         JButton anterior = new JButton("←");
         JButton hoy = new JButton("Hoy");
         JButton siguiente = new JButton("→");
@@ -78,8 +72,8 @@ public final class PantallaAgenda extends Pantalla {
 
         modo.addActionListener(e -> pintar());
         sala.addActionListener(e -> pintar());
-        anterior.addActionListener(e -> mover(-diasDelModo()));
-        siguiente.addActionListener(e -> mover(diasDelModo()));
+        anterior.addActionListener(e -> mover(-modo().dias()));
+        siguiente.addActionListener(e -> mover(modo().dias()));
         hoy.addActionListener(e -> ir(LocalDate.now()));
         calendario.addPropertyChangeListener("calendar", e -> {
             if (sincronizando) return;
@@ -114,20 +108,16 @@ public final class PantallaAgenda extends Pantalla {
 
         cargar(apiSalas::obtenerSalas, lista -> {
             salas = lista;
-            sala.removeAllItems();
-            salas.forEach(s -> sala.addItem(new Opcion<>(s.id(), s.nombre() + " — " + etiqueta(s.tipo()))));
+            Campos.llenar(sala, Opciones.salasConTipo(salas));
             sincronizando = false;
             pintar();
         });
     }
 
-    private boolean porSemana() {
-        Boolean elegido = Campos.elegido(modo);
-        return elegido == null || elegido;
-    }
-
-    private int diasDelModo() {
-        return porSemana() ? 7 : 1;
+    // Sin nada elegido todavía, la semana: es con lo que arranca la pantalla.
+    private ModoAgenda modo() {
+        ModoAgenda elegido = Campos.elegido(modo);
+        return elegido == null ? ModoAgenda.SEMANA : elegido;
     }
 
     private void mover(int dias) {
@@ -145,40 +135,21 @@ public final class PantallaAgenda extends Pantalla {
     // Pide solo el rango que se ve, con los filtros de la API: una semana de una sala, o un día de todas.
     private void pintar() {
         if (sincronizando) return;
-        boolean semana = porSemana();
-        etiquetaSala.setVisible(semana);
-        sala.setVisible(semana);
+        ModoAgenda elegido = modo();
+        etiquetaSala.setVisible(elegido.eligeSala());
+        sala.setVisible(elegido.eligeSala());
         Integer salaId = Campos.elegido(sala);
         Sala elegida = salas.stream().filter(s -> salaId != null && s.id() == salaId).findFirst()
                 .orElse(salas.isEmpty() ? null : salas.get(0));
 
-        LocalDate primerDia = desde;
-        List<ColumnaAgenda> columnas = new ArrayList<>();
-        if (!semana) {
-            for (Sala s : salas) {
-                columnas.add(new ColumnaAgenda(s.nombre(), etiqueta(s.tipo()),
-                        f -> f.sala().id() == s.id() && dia(f).equals(primerDia), f -> etiqueta(f.proyeccion())));
-            }
-        } else if (elegida != null) {
-            for (int i = 0; i < 7; i++) {
-                LocalDate fecha = primerDia.plusDays(i);
-                columnas.add(new ColumnaAgenda(SelectorDias.abreviatura(fecha.getDayOfWeek()),
-                        String.valueOf(fecha.getDayOfMonth()),
-                        f -> dia(f).equals(fecha),
-                        f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma()).toLowerCase()));
-            }
-        }
+        List<ColumnaAgenda> columnas = elegido.columnas(desde, salas, elegida);
         int pedida = ++vista;
         if (columnas.isEmpty()) {
             dibujar(columnas, List.of(), "");
             return;
         }
-
-        Map<String, String> filtros = new LinkedHashMap<>();
-        filtros.put("desde", primerDia.toString());
-        filtros.put("hasta", (semana ? primerDia.plusDays(6) : primerDia).toString());
-        if (semana) filtros.put("salaId", String.valueOf(elegida.id()));
-        String donde = semana ? " en " + elegida.nombre() : "";
+        Map<String, String> filtros = elegido.filtros(desde, elegida);
+        String donde = elegido.donde(elegida);
         cargar(() -> apiFunciones.obtenerFunciones(filtros), funciones -> {
             if (pedida == vista) dibujar(columnas, funciones, donde);
         });
@@ -199,9 +170,4 @@ public final class PantallaAgenda extends Pantalla {
         lienzo.revalidate();
         lienzo.repaint();
     }
-
-    private static LocalDate dia(Funcion f) {
-        return LocalDateTime.parse(f.inicio()).toLocalDate();
-    }
-
 }

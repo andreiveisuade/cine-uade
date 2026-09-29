@@ -7,6 +7,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -51,6 +52,15 @@ public final class Componentes {
         scroll.setBorder(null);
         scroll.setPreferredSize(new Dimension(ANCHO_LATERAL, 0));
         return scroll;
+    }
+
+    /** Texto largo que solo se lee, cortado por palabras: un informe, un ticket, un detalle. */
+    public static JTextArea areaDeLectura(int filas, int columnas) {
+        JTextArea area = new JTextArea(filas, columnas);
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        return area;
     }
 
     public static JLabel subtitulo(String texto) {

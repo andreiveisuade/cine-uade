@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// Revisa formato y obligatoriedad de un formulario antes de mandarlo, y muestra en línea el rechazo del backend.
+// Revisa formato y obligatoriedad de un formulario antes de mandarlo; el rechazo del backend, en línea.
 /**
  * Revisa el <b>formato y la obligatoriedad</b> de un formulario antes de mandarlo, y nada más. Un campo obligatorio
  * vacío, "abc" en un precio o una "x" en "8,x,12" no son reglas del cine: son un pedido mal armado, y mandarlo igual

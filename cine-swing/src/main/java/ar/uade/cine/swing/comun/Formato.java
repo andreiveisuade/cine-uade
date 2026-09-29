@@ -31,6 +31,16 @@ public final class Formato {
         return horas > 0 ? horas + "h " + resto + "m" : resto + "m";
     }
 
+    /** Un decimal, con coma: "8,5". Para puntajes y promedios, no para plata. */
+    public static String conDecimal(double numero) {
+        return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
+    }
+
+    /** 0.79 → "79%". */
+    public static String porcentaje(double fraccion) {
+        return Math.round(fraccion * 100) + "%";
+    }
+
     public static String hora(String iso) {
         if (iso == null) return "—";
         return LocalDateTime.parse(iso).format(HORA);

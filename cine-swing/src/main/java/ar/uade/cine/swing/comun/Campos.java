@@ -10,6 +10,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 import javax.swing.text.JTextComponent;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -86,6 +87,19 @@ public final class Campos {
     public static <T> T elegido(JComboBox<Opcion<T>> combo) {
         Object item = combo.getSelectedItem();
         return item == null ? null : ((Opcion<T>) item).valor();
+    }
+
+    /** Reemplaza las opciones del combo. */
+    public static <T> void llenar(JComboBox<Opcion<T>> combo, List<Opcion<T>> opciones) {
+        combo.removeAllItems();
+        opciones.forEach(combo::addItem);
+    }
+
+    /** Para un filtro: primero la opción sin valor ({@code todas}, "Todas" o "Todos"), que no filtra. */
+    public static <T> void llenarConTodas(JComboBox<Opcion<T>> combo, String todas, List<Opcion<T>> opciones) {
+        combo.removeAllItems();
+        combo.addItem(new Opcion<>(null, todas));
+        opciones.forEach(combo::addItem);
     }
 
     /** Elige la opción con ese valor, si está; si no, deja la que había. */

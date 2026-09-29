@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-// Lee el formato de lo que se tipeó (números, listas, horas, emails) sin Swing; Validacion lo usa y marca los campos.
+// Lee el formato de lo tipeado (números, listas, horas, emails) sin Swing; Validacion lo usa y marca.
 /**
  * Un obligatorio vacío, "abc" en un precio o una "x" en "8,x,12" no son reglas del cine: son un pedido mal armado. Lo
  * que sí es regla (precio mayor a cero, rangos, R1 a R20) no se mira acá, lo decide el backend. Separado de
