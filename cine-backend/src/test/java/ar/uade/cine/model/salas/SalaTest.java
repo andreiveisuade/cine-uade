@@ -96,12 +96,30 @@ class SalaTest {
                 () -> sala.generarAsientos(Arrays.asList(3, null), Map.of()));
     }
 
+    // Sin tope, [100000] creaba cien mil butacas.
+    @Test
+    void unaFilaTieneComoMaximoCuarentaButacas() {
+        Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
+
+        rechaza("Una fila tiene que tener como máximo 40 butacas",
+                () -> sala.generarAsientos(List.of(3, 41), Map.of()));
+        assertEquals(40, sala.generarAsientos(List.of(40), Map.of()).size());
+    }
+
+    // Antes se ignoraba: la sala quedaba sin la butaca especial que pidió el encargado, sin aviso.
+    @Test
+    void unaEspecialQueNoCaeEnLaDistribucionSeRechaza() {
+        Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
+
+        rechaza("La butaca Z99 no existe en la sala", () -> sala.generarAsientos(List.of(2, 3),
+                Map.of("B3", TipoAsiento.VIP, " z99", TipoAsiento.VIP)));
+    }
+
     @Test
     void generaSusButacasFilaPorFilaConLasEspecialesMarcadas() {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
-        List<Asiento> asientos = sala.generarAsientos(List.of(2, 3),
-                Map.of("B3", TipoAsiento.VIP, "Z9", TipoAsiento.VIP));
+        List<Asiento> asientos = sala.generarAsientos(List.of(2, 3), Map.of("B3", TipoAsiento.VIP));
 
         assertEquals(List.of("A1", "A2", "B1", "B2", "B3"), asientos.stream().map(Asiento::getCodigo).toList());
         assertEquals(List.of(TipoAsiento.ESTANDAR, TipoAsiento.ESTANDAR, TipoAsiento.ESTANDAR,

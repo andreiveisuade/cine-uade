@@ -179,6 +179,19 @@ class SalaControllerTest extends PruebaDeApi {
     }
 
     @Test
+    void unaFilaDeMasDeCuarentaButacasOUnaEspecialQueNoExisteEs400YNoCreaLaSala() {
+        Respuesta ancha = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[41]}");
+        Respuesta especial = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5],"
+                + "\"codigosVip\":[\"Z99\"]}");
+
+        assertEquals(400, ancha.estado());
+        assertEquals("Una fila tiene que tener como máximo 40 butacas", ancha.error());
+        assertEquals(400, especial.estado());
+        assertEquals("La butaca Z99 no existe en la sala", especial.error());
+        assertEquals(2, get("/api/salas").json().size());
+    }
+
+    @Test
     void unaButacaFueraDeServicioSeRepone() {
         String ruta = "/api/salas/" + sala + "/asientos/A1";
         assertEquals("FUERA_DE_SERVICIO", estadoDe(patch(ruta, "{\"estado\":\"FUERA_DE_SERVICIO\"}"), "A1"));

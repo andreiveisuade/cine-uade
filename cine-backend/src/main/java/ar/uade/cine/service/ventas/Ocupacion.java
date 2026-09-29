@@ -39,6 +39,9 @@ public class Ocupacion {
     // El largo de la columna bloqueo_butaca.sesion. El front manda un UUID, que mide 36.
     private static final int LARGO_SESION = 64;
 
+    // R19 dice lo mismo en el mapa y en la venta: GestorReservas usa este texto.
+    static final String FUNCION_EMPEZADA = "La función ya empezó: no se pueden reservar butacas";
+
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
     private final AsientoRepository asientoRepository;
@@ -80,7 +83,13 @@ public class Ocupacion {
             throw new IllegalArgumentException(
                     "La sesión no puede tener más de " + LARGO_SESION + " caracteres");
         }
-        List<Asiento> deLaSala = asientosDeLaSala(funcionId);
+        Funcion funcion = buscarFuncion(funcionId);
+        LocalDateTime ahora = reloj.ahora();
+        // R19: una función empezada ya no se vende, así que tampoco se le apartan butacas.
+        if (funcion.yaEmpezo(ahora)) {
+            throw new IllegalArgumentException(FUNCION_EMPEZADA);
+        }
+        List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
 
         // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
@@ -89,7 +98,6 @@ public class Ocupacion {
                 .distinct()
                 .toList();
 
-        LocalDateTime ahora = reloj.ahora();
         List<String> conseguidas = pedidos.stream()
                 .filter(a -> !ocupados.contains(a.getId()))
                 .filter(a -> tomar(funcionId, a.getId(), sesion, ahora))
@@ -129,10 +137,9 @@ public class Ocupacion {
                 || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
     }
 
-    private List<Asiento> asientosDeLaSala(int funcionId) {
-        Funcion funcion = funcionRepository.findById(funcionId)
+    private Funcion buscarFuncion(int funcionId) {
+        return funcionRepository.findById(funcionId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
-        return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
     }
 
     // R17 sin scheduler: expira quien consulta. Escribe porque el UNIQUE no sabe de vencimientos.

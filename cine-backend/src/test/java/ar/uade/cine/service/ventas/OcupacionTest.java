@@ -148,6 +148,18 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals("La butaca Z9 no existe en la sala", alReservar.getMessage());
     }
 
+    // R19, con el mismo texto que la venta: antes se bloqueaban butacas de una función empezada.
+    @Test
+    void noSeBloqueaUnaButacaDeUnaFuncionQueYaEmpezo() {
+        reloj.mover(LocalDateTime.of(2026, 12, 20, 20, 5));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> ocupacion.bloquear(1, List.of("A1"), ANA));
+
+        assertEquals("La función ya empezó: no se pueden reservar butacas", error.getMessage());
+        assertEquals(0, bloqueos.count());
+    }
+
     @Test
     void elBloqueoVencidoDevuelveLaButacaALaVenta() {
         ocupacion.bloquear(1, List.of("A1"), ANA);

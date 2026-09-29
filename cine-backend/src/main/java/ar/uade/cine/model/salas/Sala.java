@@ -25,6 +25,9 @@ public class Sala {
     // Cada fila se nombra con una letra: ver Asiento.codigoDe.
     private static final int MAX_FILAS = 26;
 
+    // Sin tope, [100000] creaba cien mil butacas en una fila. Cuarenta alcanza para la sala más ancha.
+    private static final int MAX_BUTACAS_POR_FILA = 40;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -77,7 +80,8 @@ public class Sala {
     }
 
     // Creadora de sus butacas porque las contiene, y por eso dueña de la distribución. Solo en el
-    // alta: editar no las toca. Un especial que no cae en la distribución se ignora.
+    // alta: editar no las toca. Un especial que no cae en la distribución es un código mal
+    // tipeado: ignorarlo dejaba la sala sin la butaca que pidió el encargado, sin avisarle.
     public List<Asiento> generarAsientos(List<Integer> butacasPorFila, Map<String, TipoAsiento> especiales) {
         if (butacasPorFila == null || butacasPorFila.isEmpty()) {
             throw new IllegalArgumentException("La sala necesita al menos una fila");
@@ -88,13 +92,20 @@ public class Sala {
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
             throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
         }
-        Map<String, TipoAsiento> porCodigo = porCodigoNormalizado(especiales);
+        if (butacasPorFila.stream().anyMatch(b -> b > MAX_BUTACAS_POR_FILA)) {
+            throw new IllegalArgumentException(
+                    "Una fila tiene que tener como máximo " + MAX_BUTACAS_POR_FILA + " butacas");
+        }
+        Map<String, TipoAsiento> sinUbicar = porCodigoNormalizado(especiales);
         List<Asiento> asientos = new ArrayList<>();
         for (int fila = 1; fila <= butacasPorFila.size(); fila++) {
             for (int numero = 1; numero <= butacasPorFila.get(fila - 1); numero++) {
-                TipoAsiento tipo = porCodigo.getOrDefault(Asiento.codigoDe(fila, numero), TipoAsiento.ESTANDAR);
-                asientos.add(new Asiento(this, fila, numero, tipo));
+                TipoAsiento tipo = sinUbicar.remove(Asiento.codigoDe(fila, numero));
+                asientos.add(new Asiento(this, fila, numero, tipo == null ? TipoAsiento.ESTANDAR : tipo));
             }
+        }
+        if (!sinUbicar.isEmpty()) {
+            throw new IllegalArgumentException(Asiento.inexistente(sinUbicar.keySet().iterator().next()));
         }
         return asientos;
     }

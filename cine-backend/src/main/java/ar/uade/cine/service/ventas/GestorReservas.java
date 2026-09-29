@@ -56,7 +56,7 @@ public class GestorReservas {
         Funcion funcion = buscarFuncion(funcionId);
         // R19: una función que ya arrancó no se vende; va primero porque anula las demás.
         if (funcion.yaEmpezo(reloj.ahora())) {
-            throw new IllegalArgumentException("La función ya empezó: no se pueden reservar butacas");
+            throw new IllegalArgumentException(Ocupacion.FUNCION_EMPEZADA);
         }
         Cliente cliente = clientes.buscar(clienteId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
