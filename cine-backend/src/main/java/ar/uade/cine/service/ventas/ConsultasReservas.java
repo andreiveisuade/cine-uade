@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Email;
+import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
@@ -28,8 +29,7 @@ public class ConsultasReservas {
     }
 
     public Optional<Reserva> buscarPorCodigo(String codigo) {
-        return codigo == null ? Optional.empty()
-                : reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo));
+        return reservaRepository.findByCodigo(new CodigoDeAcceso(codigo).valor());
     }
 
     // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay

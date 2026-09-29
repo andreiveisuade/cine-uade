@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
@@ -26,7 +27,7 @@ public class GestorAcceso {
         if (codigo == null || codigo.isBlank()) {
             throw new DatoInvalido("Falta el código de acceso");
         }
-        Reserva reserva = reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo))
+        Reserva reserva = reservaRepository.findByCodigo(new CodigoDeAcceso(codigo).valor())
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
         // Sin el código: es la única credencial del cliente, y con el id alcanza para rastrearlo.

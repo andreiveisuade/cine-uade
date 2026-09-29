@@ -1,6 +1,5 @@
 package ar.uade.cine.model.ventas;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -30,16 +29,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 // Reserva de butacas sin repetir (R5, R6, R13, R17-R19); Experto en sus transiciones, @Version por carreras.
+// Contexto del patrón State: no pregunta en qué estado está. Cada operación le pide la transición a
+// EstadoReserva (`estado = estado.pagar()`), que rechaza si no corresponde, y las preguntas (¿espera el
+// pago?, ¿ocupa butacas?) también las contesta el estado.
 @Entity
 @Getter
 public class Reserva {
 
     public static final int MINUTOS_PARA_PAGAR = 30;
-
-    // Sin O, I, 0 ni 1: el código se tipea a mano cuando el escáner no lee.
-    private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int LARGO_CODIGO = 8;
-    private static final SecureRandom AZAR = new SecureRandom();
 
     // Como la lee el acomodador en la puerta: el toString de LocalDateTime traía segundos y nanos.
     private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
@@ -90,7 +87,7 @@ public class Reserva {
         this.funcion = funcion;
         this.cliente = cliente;
         this.creadaEn = creadaEn;
-        this.codigo = generarCodigo();
+        this.codigo = CodigoDeAcceso.generar().valor();
         this.estado = EstadoReserva.RESERVADA;
         entradas.forEach(entrada -> {
             entrada.ocupar(funcion.getId());
@@ -108,19 +105,6 @@ public class Reserva {
                         "La butaca " + entrada.codigoAsiento() + " está repetida en el pedido");
             }
         }
-    }
-
-    private static String generarCodigo() {
-        StringBuilder codigo = new StringBuilder(LARGO_CODIGO);
-        for (int i = 0; i < LARGO_CODIGO; i++) {
-            codigo.append(ALFABETO_CODIGO.charAt(AZAR.nextInt(ALFABETO_CODIGO.length())));
-        }
-        return codigo.toString();
-    }
-
-    // Se tipea a mano cuando el escáner no lee: se busca como se generó, sin espacios y en mayúsculas.
-    public static String normalizarCodigo(String codigo) {
-        return codigo.trim().toUpperCase();
     }
 
     public int getFuncionId() {
@@ -144,16 +128,15 @@ public class Reserva {
     }
 
     public void pagar() {
-        exigirEsperandoPago("no se puede cobrar");
-        estado = EstadoReserva.PAGADA;
+        estado = estado.pagar();
     }
 
-    // Por qué no se puede cobrar ahora, o vacío si se puede: R5 (solo una RESERVADA), R17 (la
+    // Por qué no se puede cobrar ahora, o vacío si se puede: R5 (solo una que espera el pago), R17 (la
     // vencida ya soltó sus butacas) y R19 (función empezada). Lo usan GestorPagos para rechazar y
     // la vista para habilitar el cobro, así que el botón y el rechazo no pueden diferir.
     public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
-        if (estado != EstadoReserva.RESERVADA) {
-            return Optional.of("La reserva está " + estado.etiqueta() + ": no se puede cobrar");
+        if (!estado.esperaPago()) {
+            return Optional.of(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR));
         }
         if (estaVencida(ahora)) {
             return Optional.of("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
@@ -174,52 +157,43 @@ public class Reserva {
 
     // R13: se cancela solo lo que todavía no se cobró. Es la misma condición que cancelar().
     public boolean esCancelable() {
-        return estado == EstadoReserva.RESERVADA;
+        return estado.esperaPago();
+    }
+
+    public boolean estaPagada() {
+        return estado.estaPagada();
     }
 
     public void cancelar() {
-        if (!esCancelable()) {
-            throw new DatoInvalido("La reserva está " + estado.etiqueta()
-                    + ": solo se puede cancelar una reserva sin cobrar");
-        }
-        pasarA(EstadoReserva.CANCELADA);
+        soltarButacasAl(estado.cancelar());
     }
 
     public void expirar() {
-        exigirEsperandoPago("no puede expirar");
-        pasarA(EstadoReserva.EXPIRADA);
+        soltarButacasAl(estado.expirar());
     }
 
     public void registrarIngreso(LocalDateTime cuando) {
-        if (estado != EstadoReserva.PAGADA) {
-            throw new DatoInvalido("La reserva está " + estado.etiqueta()
-                    + ": solo se ingresa con una reserva pagada");
-        }
+        EstadoReserva siguiente = estado.ingresar();
         if (ingresadaEn != null) {
             throw new DatoInvalido("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
+        estado = siguiente;
         ingresadaEn = cuando;
     }
 
-    private void exigirEsperandoPago(String queNoSePuede) {
-        if (estado != EstadoReserva.RESERVADA) {
-            throw new DatoInvalido("La reserva está " + estado.etiqueta() + ": " + queNoSePuede);
-        }
-    }
-
-    private void pasarA(EstadoReserva nuevo) {
+    // R6: cancelada o vencida, sus butacas vuelven a la venta.
+    private void soltarButacasAl(EstadoReserva nuevo) {
         estado = nuevo;
         entradas.forEach(Entrada::liberar);
     }
 
     public boolean estaVigente() {
-        return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.PAGADA;
+        return estado.ocupaButacas();
     }
 
     // Si debería expirar: el estado lo escribe la primera operación que se cruza con ella.
     public boolean estaVencida(LocalDateTime ahora) {
-        return estado == EstadoReserva.RESERVADA
-                && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
+        return estado.esperaPago() && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
     }
 
     @Override
