@@ -84,23 +84,20 @@ public class GestorReservas {
 
         List<Entrada> entradas = new ArrayList<>();
         for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
-            TipoTarifa tarifa = pedido.getValue() == null ? TipoTarifa.GENERAL : pedido.getValue();
-            Asiento asiento = butacaVendible(deLaSala, pedido.getKey(), ocupados);
-            entradas.add(new Entrada(asiento, tarifa, funcion.precioDe(asiento, sala)));
+            // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
+            Asiento asiento = Asiento.exigirConCodigo(deLaSala, pedido.getKey());
+            // La entrada valida su butaca (R9) y resuelve la tarifa; que esté libre depende de las otras reservas.
+            Entrada entrada = new Entrada(asiento, pedido.getValue(), funcion.precioDe(asiento, sala));
+            exigirLibre(asiento, ocupados);
+            entradas.add(entrada);
         }
         return entradas;
     }
 
-    private static Asiento butacaVendible(List<Asiento> deLaSala, String codigo, Set<Integer> ocupados) {
-        // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
-        Asiento asiento = Asiento.exigirConCodigo(deLaSala, codigo);
-        if (asiento.estaFueraDeServicio()) {
-            throw new DatoInvalido("La butaca " + asiento.getCodigo() + " está fuera de servicio");
-        }
+    private static void exigirLibre(Asiento asiento, Set<Integer> ocupados) {
         if (ocupados.contains(asiento.getId())) {
             throw new ButacaOcupada("La butaca " + asiento.getCodigo() + " ya está ocupada");
         }
-        return asiento;
     }
 
     public Reserva cancelar(int reservaId) {

@@ -73,6 +73,13 @@ public class Asiento {
         return estado == EstadoAsiento.FUERA_DE_SERVICIO;
     }
 
+    // R9 al vender y al bloquear, con el mismo texto en los dos caminos porque sale de acá.
+    public void exigirEnServicio() {
+        if (estaFueraDeServicio()) {
+            throw new DatoInvalido("La butaca " + getCodigo() + " está fuera de servicio");
+        }
+    }
+
     public String getCodigo() {
         return codigoDe(fila, numero);
     }

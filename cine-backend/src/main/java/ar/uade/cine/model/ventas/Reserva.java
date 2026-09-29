@@ -3,15 +3,15 @@ package ar.uade.cine.model.ventas;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.validacion.ValidadorReserva;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -80,10 +80,7 @@ public class Reserva {
     }
 
     public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
-        if (entradas.isEmpty()) {
-            throw new DatoInvalido("Hay que elegir al menos una butaca");
-        }
-        exigirSinRepetidas(entradas);
+        ValidadorReserva.validar(funcion, cliente, entradas, creadaEn);
         this.funcion = funcion;
         this.cliente = cliente;
         this.creadaEn = creadaEn;
@@ -95,16 +92,9 @@ public class Reserva {
         });
     }
 
-    // "a1" y "A1" son dos claves del pedido y la misma butaca. Sin esto las dos entradas
-    // chocaban contra el UNIQUE y el cliente leía un 409 de butaca tomada por otro.
-    private static void exigirSinRepetidas(List<Entrada> entradas) {
-        Set<Integer> asientos = new HashSet<>();
-        for (Entrada entrada : entradas) {
-            if (!asientos.add(entrada.asientoId())) {
-                throw new DatoInvalido(
-                        "La butaca " + entrada.codigoAsiento() + " está repetida en el pedido");
-            }
-        }
+    // El tope de butacas por compra. Estático porque el bloqueo lo aplica antes de que la reserva exista.
+    public static void validarTopeDeButacas(Collection<?> butacas) {
+        ValidadorReserva.validarTope(butacas);
     }
 
     public int getFuncionId() {

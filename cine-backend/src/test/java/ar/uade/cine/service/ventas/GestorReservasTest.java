@@ -152,6 +152,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals("Hay que elegir al menos una butaca", sinCampo.getMessage());
     }
 
+    // Once butacas libres de una sala grande: el tope es de la compra, no de la sala.
+    @Test
+    void unaCompraNoLlevaMasDeDiezButacas() {
+        salas.agregar("Sala grande", TipoSala.DOS_D, List.of(12));
+        funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        Map<String, TipoTarifa> once = generales("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11");
+
+        Rechazo error = assertThrows(Rechazo.class, () -> reservas.reservar(2, 1, once, null));
+
+        assertEquals("Una compra tiene que tener como máximo 10 butacas", error.getMessage());
+        once.remove("A11");
+        assertEquals(10, reservas.reservar(2, 1, once, null).getCantidadEntradas());
+    }
+
     @Test
     void laMismaButacaDosVecesEsUnaSolaEntrada() {
         assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1"), null).getCantidadEntradas());

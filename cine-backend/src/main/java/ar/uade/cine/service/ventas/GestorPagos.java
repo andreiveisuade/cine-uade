@@ -39,19 +39,18 @@ public class GestorPagos {
 
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = buscarReserva(reservaId);
-        validarQueSePuedaCobrar(reserva, medio);
+        validarQueSePuedaCobrar(reserva);
         return registrarPago(reserva, medio, codigoAutorizacion);
     }
 
     // Sin save() de la reserva: la trajo esta transacción y el cambio de estado sale en el
     // commit, donde también se chequea su @Version.
     private Pago registrarPago(Reserva reserva, MedioPago medio, String codigoAutorizacion) {
-        String autorizacion = medio.autorizacion(codigoAutorizacion);
         PoliticaPromociones.Descuento descuento = descuentoPara(reserva, medio);
 
         Pago pago = new Pago(reserva.getId(), reserva.getTotal(),
                 descuento.promocionId(), descuento.monto(),
-                medio, reloj.ahora(), autorizacion);
+                medio, reloj.ahora(), codigoAutorizacion);
         pagoRepository.save(pago);
 
         reserva.pagar();
@@ -69,11 +68,8 @@ public class GestorPagos {
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
-        validarQueSePuedaCobrar(reserva, medio);
-        if (!medio.requiereAutorizacion()) {
-            throw new DatoInvalido("El pago con " + medio.etiqueta()
-                    + " no va por checkout: se cobra en la caja del cine");
-        }
+        validarQueSePuedaCobrar(reserva);
+        medio.exigirCheckout();
 
         Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());
 
@@ -90,7 +86,7 @@ public class GestorPagos {
         PasarelaPagos.Checkout checkout = pasarela.buscar(checkoutId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));
         Reserva reserva = buscarReserva(checkout.reservaId());
-        validarQueSePuedaCobrar(reserva, checkout.medio());
+        validarQueSePuedaCobrar(reserva);
 
         return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
     }
@@ -100,16 +96,13 @@ public class GestorPagos {
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
     }
 
-    // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista);
-    // acá queda lo que viene del pedido y lo que necesita la base.
-    private void validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
+    // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista), y lo
+    // del medio y la autorización, Pago al nacer. Acá queda lo que necesita la base.
+    private void validarQueSePuedaCobrar(Reserva reserva) {
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
         reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
             throw new DatoInvalido(motivo);
         });
-        if (medio == null) {
-            throw new DatoInvalido("Falta el medio de pago");
-        }
         if (pagoRepository.existsByReservaId(reserva.getId())) {
             throw new DatoInvalido("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }

@@ -1,7 +1,10 @@
 package ar.uade.cine.model.ventas;
 
+import java.util.Objects;
+
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.ventas.validacion.ValidadorEntrada;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,10 +58,13 @@ public class Entrada {
 
     // El precio queda fijo al vender: si después cambia el de la función, lo vendido no cambia. Llega el de
     // la butaca con tarifa general (Funcion#precioDe) y la entrada le aplica la suya: la conoce ella.
+    // Una butaca pedida sin tarifa va a la general: es el default del modelo, no de quien arma el pedido.
     public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precioDeLaButaca) {
+        ValidadorEntrada.validar(asiento);
+        TipoTarifa vendida = Objects.requireNonNullElse(tarifa, TipoTarifa.GENERAL);
         this.asiento = asiento;
-        this.tarifa = tarifa;
-        this.precio = tarifa.aplicarA(precioDeLaButaca);
+        this.tarifa = vendida;
+        this.precio = vendida.aplicarA(precioDeLaButaca);
     }
 
     public int asientoId() {

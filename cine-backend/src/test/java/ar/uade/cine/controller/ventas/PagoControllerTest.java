@@ -86,6 +86,17 @@ class PagoControllerTest extends PruebaDeApi {
                 respuesta.error());
     }
 
+    // Un código en un cobro en efectivo es un error de carga: el recibo mostraría una autorización que no hubo.
+    @Test
+    void elEfectivoConCodigoDeAutorizacionEs400() {
+        Respuesta respuesta = post("/api/reservas/" + reserva.getId() + "/pago",
+                "{\"medio\":\"EFECTIVO\",\"codigoAutorizacion\":\"AUT-1\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El pago en efectivo no lleva código de autorización", respuesta.error());
+        assertEquals(404, get("/api/reservas/" + reserva.getId() + "/pago").estado(), "no se cobró");
+    }
+
     @Test
     void sinMedioEs400ConElMismoMensajeQueElGestor() {
         Respuesta respuesta =

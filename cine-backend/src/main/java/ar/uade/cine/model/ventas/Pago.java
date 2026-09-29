@@ -3,6 +3,7 @@ package ar.uade.cine.model.ventas;
 import java.time.LocalDateTime;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.ventas.validacion.ValidadorPago;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,8 +44,11 @@ public class Pago {
     protected Pago() {
     }
 
+    // La autorización se arma acá y no en el gestor: es parte de lo que el pago tiene que cumplir (R11).
     public Pago(int reservaId, Dinero subtotal, Integer promocionId, Dinero descuento,
                 MedioPago medio, LocalDateTime fecha, String codigoAutorizacion) {
+        ValidadorPago.validar(subtotal, descuento, medio);
+        String autorizacion = medio.autorizacion(codigoAutorizacion);
         this.reservaId = reservaId;
         this.subtotal = subtotal;
         this.promocionId = promocionId;
@@ -52,6 +56,6 @@ public class Pago {
         this.monto = subtotal.menos(descuento);
         this.medio = medio;
         this.fecha = fecha;
-        this.codigoAutorizacion = codigoAutorizacion;
+        this.codigoAutorizacion = autorizacion;
     }
 }

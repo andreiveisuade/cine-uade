@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
@@ -23,10 +22,8 @@ public class GestorAcceso {
     private final ReservaRepository reservaRepository;
     private final Reloj reloj;
 
+    // Un código que falta lo rechaza PedidoAccesoDTO; sin HTTP, uno vacío no encuentra reserva (404).
     public Reserva registrarIngreso(String codigo) {
-        if (codigo == null || codigo.isBlank()) {
-            throw new DatoInvalido("Falta el código de acceso");
-        }
         Reserva reserva = reservaRepository.findByCodigo(new CodigoDeAcceso(codigo).valor())
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
