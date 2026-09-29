@@ -7,7 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.usuarios.Contrasena;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
@@ -27,13 +27,12 @@ public class GestorEmpleados {
 
     // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
     // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.
-    // La clave en claro solo la ve el gestor; nombre, email y rol los valida Empleado. Se busca
-    // también entre los clientes: comparten el UNIQUE del email y EmpleadoRepository no los ve.
+    // La clave en claro solo la ve el gestor, que la valida como Contrasena antes del hash; nombre,
+    // email y rol los valida Empleado. Se busca también entre los clientes: comparten el UNIQUE del
+    // email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
-        if (password == null || password.length() < 6) {
-            throw new DatoInvalido("La contraseña tiene que tener al menos 6 caracteres");
-        }
-        Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
+        Contrasena clave = new Contrasena(password);
+        Empleado empleado = new Empleado(nombre, email, claves.encode(clave.valor()), rol);
         if (empleadoRepository.existsByEmail(empleado.getEmail())
                 || clienteRepository.existsByEmail(empleado.getEmail())) {
             throw new ConflictoDeNegocio("Ya existe un usuario con ese email");

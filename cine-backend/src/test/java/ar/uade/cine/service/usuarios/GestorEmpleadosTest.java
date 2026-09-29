@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
@@ -50,6 +51,15 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     void rechazaContrasenaCorta() {
         assertEquals("La contraseña tiene que tener al menos 6 caracteres", assertThrows(Rechazo.class,
                 () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR)).getMessage());
+    }
+
+    // Daba 500: BCrypt.hashpw tira una IllegalArgumentException en inglés con más de 72 bytes.
+    @Test
+    void unaContrasenaQueBcryptNoAdmiteSeRechazaAntesDelHash() {
+        assertEquals("La contraseña tiene que tener como máximo 72 caracteres, o menos si lleva tildes o eñes",
+                assertThrows(DatoInvalido.class, () -> empleados.registrar("Otro", "otro@cine.com",
+                        "x".repeat(73), Rol.ADMINISTRADOR)).getMessage());
+        assertTrue(empleados.buscarPorEmail("otro@cine.com").isEmpty());
     }
 
     @Test
