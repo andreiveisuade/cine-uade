@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
@@ -7,6 +7,9 @@ import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
+import ar.uade.cine.swing.pantallas.Destino;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -23,13 +26,13 @@ import static ar.uade.cine.swing.comun.Formato.duracion;
 import static ar.uade.cine.swing.comun.Formato.escapar;
 
 /** El buzón de lo que trajo el importador: hasta que se confirma, no se programa ni lo ve el cliente. */
-final class PantallaPendientes extends Pantalla {
+public final class PantallaPendientes extends Pantalla {
 
     private final ApiCartelera apiCartelera;
     private final Navegacion navegacion;
     private final JPanel tarjetas = new JPanel(new GridLayout(0, 2, 12, 12));
 
-    PantallaPendientes(ApiCartelera apiCartelera, Navegacion navegacion) {
+    public PantallaPendientes(ApiCartelera apiCartelera, Navegacion navegacion) {
         super("Por revisar", "Lo que trajo el importador de TMDB y todavía nadie miró. Hasta que las confirmes no "
                 + "se pueden programar ni las ve el cliente. Lo que descartes queda descartado: el importador no lo "
                 + "vuelve a proponer.");

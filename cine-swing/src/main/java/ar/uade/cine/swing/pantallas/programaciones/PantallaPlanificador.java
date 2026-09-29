@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.programaciones;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiProgramaciones;
@@ -17,6 +17,7 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BorderFactory;
@@ -58,7 +59,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
  * Planificador de la semana: el backend elige el elenco y reparte los pases; acá solo se piden y se muestran.
  * Determinista: lo que muestra Previsualizar es exactamente lo que crea Aplicar.
  */
-final class PantallaPlanificador extends Pantalla {
+public final class PantallaPlanificador extends Pantalla {
 
     private record Idiomas(List<String> idiomas, List<String> proyecciones) {
     }
@@ -84,7 +85,7 @@ final class PantallaPlanificador extends Pantalla {
     // Cada cambio de criterio sube la versión: una respuesta de criterios viejos se descarta al llegar.
     private int version;
 
-    PantallaPlanificador(ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones) {
+    public PantallaPlanificador(ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones) {
         super("Planificador de la semana", "Elige el elenco con un criterio que mira <b>puntaje y géneros a la "
                 + "vez</b> y reparte los pases entre las salas de forma proporcional al puntaje: la mejor de la semana "
                 + "se lleva cuatro o cinco funciones diarias y la última, una. No pisa funciones ya cargadas.");

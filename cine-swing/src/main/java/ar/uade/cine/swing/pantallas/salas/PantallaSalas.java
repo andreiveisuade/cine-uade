@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.salas;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiSalas;
@@ -13,6 +13,8 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
-final class PantallaSalas extends Pantalla {
+public final class PantallaSalas extends Pantalla {
 
     private record Datos(List<Sala> salas, List<TipoSala> tipos) {
     }
@@ -53,7 +55,7 @@ final class PantallaSalas extends Pantalla {
     private final JTextField limpieza = Campos.soloEntero(new JTextField("15"));
     private final JLabel error = Componentes.texto(" ");
 
-    PantallaSalas(ApiCatalogos apiCatalogos, ApiSalas apiSalas, Navegacion navegacion) {
+    public PantallaSalas(ApiCatalogos apiCatalogos, ApiSalas apiSalas, Navegacion navegacion) {
         super("Salas", "Doble clic en una sala abre su mapa, para marcar butacas fuera de servicio.");
         this.apiCatalogos = apiCatalogos;
         this.apiSalas = apiSalas;

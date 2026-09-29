@@ -1,6 +1,6 @@
 package ar.uade.cine.swing.pantallas;
 
-// Cómo una pantalla lleva a otra; las crea quien tiene todas las Api, así cada pantalla recibe solo las suyas.
+// Cómo una pantalla lleva a otra; las crea quien tiene todas las Api, y cada una recibe solo las suyas.
 public interface Navegacion {
 
     /** Va a una entrada del menú, y la marca. */

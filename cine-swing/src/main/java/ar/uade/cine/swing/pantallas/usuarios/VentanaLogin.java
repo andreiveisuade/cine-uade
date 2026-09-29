@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.usuarios;
 
 import ar.uade.cine.swing.api.ApiSesion;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;

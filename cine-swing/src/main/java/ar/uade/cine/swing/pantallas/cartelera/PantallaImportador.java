@@ -1,10 +1,9 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
 import ar.uade.cine.swing.api.dto.cartelera.Importacion;
-import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
@@ -14,6 +13,9 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Destino;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -32,7 +34,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 /** Trae de TMDB lo que está en cartelera en Argentina. Nada se publica: todo cae en Por revisar. */
-final class PantallaImportador extends Pantalla {
+public final class PantallaImportador extends Pantalla {
 
     private record Datos(List<Importacion> corridas, EstadoImportador estado) {
     }
@@ -52,7 +54,7 @@ final class PantallaImportador extends Pantalla {
     // Casi nunca se mira, pero es lo único que dice por qué una película no entró.
     private final JTextArea detalle = new JTextArea();
 
-    PantallaImportador(ApiCartelera apiCartelera, Navegacion navegacion) {
+    public PantallaImportador(ApiCartelera apiCartelera, Navegacion navegacion) {
         super("Importador", "Trae de TMDB las películas que están hoy en cartelera en Argentina. Nada se "
                 + "publica: todo cae en Por revisar y espera que alguien lo confirme.");
         this.apiCartelera = apiCartelera;

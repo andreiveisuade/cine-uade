@@ -166,6 +166,22 @@ public final class Componentes {
         return conBorde(panel);
     }
 
+    /** Un importe en un renglón: el texto a la izquierda y el valor a la derecha; {@code fuerte}, para el total. */
+    public static JPanel renglon(String texto, String valor, boolean fuerte) {
+        JPanel fila = new JPanel(new BorderLayout());
+        JLabel izquierda = new JLabel(texto);
+        JLabel derecha = new JLabel(valor);
+        if (fuerte) {
+            izquierda.setFont(izquierda.getFont().deriveFont(Font.BOLD, 16f));
+            derecha.setFont(derecha.getFont().deriveFont(Font.BOLD, 16f));
+        }
+        fila.add(izquierda, BorderLayout.WEST);
+        fila.add(derecha, BorderLayout.EAST);
+        fila.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
+        return fila;
+    }
+
     /** Formulario de dos columnas, etiqueta y campo, con las etiquetas alineadas para que se lea de un vistazo. */
     public static final class Formulario extends JPanel {
 

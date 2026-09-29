@@ -3,8 +3,7 @@ package ar.uade.cine.swing;
 import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
-import ar.uade.cine.swing.pantallas.VentanaLogin;
-import ar.uade.cine.swing.pantallas.VentanaPrincipal;
+import ar.uade.cine.swing.pantallas.usuarios.VentanaLogin;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 

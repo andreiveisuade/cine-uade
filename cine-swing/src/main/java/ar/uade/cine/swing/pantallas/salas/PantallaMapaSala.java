@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.salas;
 
 import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.salas.Asiento;
@@ -8,6 +8,9 @@ import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.MapaButacas.Estilo;
 import ar.uade.cine.swing.comun.MapaButacas;
+import ar.uade.cine.swing.pantallas.Destino;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -22,14 +25,14 @@ import java.awt.Graphics;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
 /** Mapa de la sala para marcar y reponer butacas (R9): acá no hay ocupación, es el estado físico del asiento. */
-final class PantallaMapaSala extends Pantalla {
+public final class PantallaMapaSala extends Pantalla {
 
     private final ApiSalas apiSalas;
     private final int salaId;
     private final JLabel resumen = new JLabel(" ");
     private final JPanel mapa = new JPanel(new BorderLayout());
 
-    PantallaMapaSala(ApiSalas apiSalas, Navegacion navegacion, int salaId) {
+    public PantallaMapaSala(ApiSalas apiSalas, Navegacion navegacion, int salaId) {
         super("Butacas", "Clic en una butaca para marcarla fuera de servicio o reponerla. Una butaca rota no se "
                 + "vende en ninguna función.");
         this.apiSalas = apiSalas;

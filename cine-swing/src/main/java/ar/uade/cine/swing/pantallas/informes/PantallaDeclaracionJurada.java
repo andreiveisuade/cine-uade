@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.informes;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiInformes;
@@ -18,6 +18,7 @@ import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.informes.DeclaracionJuradaCsv;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -43,7 +44,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
  * La declaración jurada semanal al INCAA. Los números los da el backend; el archivo lo escribe esta PC con
  * {@link DeclaracionJuradaCsv}. Sin fechas, el backend devuelve la última semana cinematográfica (jueves a miércoles).
  */
-final class PantallaDeclaracionJurada extends Pantalla {
+public final class PantallaDeclaracionJurada extends Pantalla {
 
     private record Datos(DeclaracionJurada declaracion, List<String> tarifas) {
     }
@@ -78,7 +79,7 @@ final class PantallaDeclaracionJurada extends Pantalla {
             Columna.<PeliculaDeclarada>numero("Neta", p -> precio(p.recaudacionNeta())));
     private Datos actual;
 
-    PantallaDeclaracionJurada(ApiCatalogos apiCatalogos, ApiInformes apiInformes) {
+    public PantallaDeclaracionJurada(ApiCatalogos apiCatalogos, ApiInformes apiInformes) {
         super("Declaración jurada", "Lo cobrado en la semana cinematográfica, de jueves a miércoles, por función "
                 + "y por película. Sin fechas se muestra la última semana cerrada.");
         this.apiCatalogos = apiCatalogos;

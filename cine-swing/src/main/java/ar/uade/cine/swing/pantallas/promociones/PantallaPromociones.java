@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.promociones;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiPromociones;
@@ -7,7 +7,6 @@ import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
@@ -17,6 +16,7 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -42,7 +42,7 @@ import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /** Alta y baja de promociones (CU-17). No se borran: una que ya se usó explica por qué se cobró ese monto. */
-final class PantallaPromociones extends Pantalla {
+public final class PantallaPromociones extends Pantalla {
 
     private record Datos(List<Promocion> promociones, List<MedioPago> medios) {
     }
@@ -86,7 +86,7 @@ final class PantallaPromociones extends Pantalla {
     private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
     private final JLabel error = Componentes.texto(" ");
 
-    PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones) {
+    public PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones) {
         super("Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
         this.apiCatalogos = apiCatalogos;
         this.apiPromociones = apiPromociones;

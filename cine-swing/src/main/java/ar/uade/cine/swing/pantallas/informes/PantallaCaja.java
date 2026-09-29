@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.informes;
 
 import ar.uade.cine.swing.api.ApiInformes;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
@@ -11,6 +11,7 @@ import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.TablaCompras;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BorderFactory;
@@ -28,7 +29,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /** El arqueo del día. Boletería y candy se cuentan por separado: el candy de mostrador no tiene función ni reserva. */
-final class PantallaCaja extends Pantalla {
+public final class PantallaCaja extends Pantalla {
 
     private record Datos(Arqueo arqueo, ArqueoCandy candy) {
     }
@@ -49,7 +50,7 @@ final class PantallaCaja extends Pantalla {
             Columna.<Pago>numero("Monto", p -> precio(p.monto())));
     private final Tabla<CompraCandy> candy = TablaCompras.crear();
 
-    PantallaCaja(ApiInformes apiInformes) {
+    public PantallaCaja(ApiInformes apiInformes) {
         super("Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
         this.apiInformes = apiInformes;
 

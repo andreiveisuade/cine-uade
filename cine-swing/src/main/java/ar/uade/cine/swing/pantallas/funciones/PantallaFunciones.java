@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.funciones;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ApiCatalogos;
@@ -17,6 +17,8 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -43,7 +45,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
  * Listado con filtros y alta de funciones. No anticipa R3 ni R8 antes de mandar: el
  * backend las valida igual y su mensaje llega tal cual, así la regla vive en un solo lugar.
  */
-final class PantallaFunciones extends Pantalla {
+public final class PantallaFunciones extends Pantalla {
 
     private record Catalogos(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas,
                              List<String> proyecciones) {
@@ -79,7 +81,7 @@ final class PantallaFunciones extends Pantalla {
     // Mientras se llenan los combos no hay que disparar búsquedas.
     private boolean llenando;
 
-    PantallaFunciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiFunciones apiFunciones,
+    public PantallaFunciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiFunciones apiFunciones,
                       ApiSalas apiSalas, Navegacion navegacion) {
         super("Funciones", "Es la lista más larga del panel: una semana de seis salas pasa de cien funciones. "
                 + "Doble clic en una función abre su borderó e informe.");

@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.ventas;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiVentas;
@@ -11,6 +11,7 @@ import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -28,7 +29,7 @@ import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 /** Control de acceso (CU-18). Lo único que ve el acomodador. */
-final class PantallaPuerta extends Pantalla {
+public final class PantallaPuerta extends Pantalla {
 
     private record Validada(Reserva reserva, Set<String> seAcreditan) {
     }
@@ -41,7 +42,7 @@ final class PantallaPuerta extends Pantalla {
     // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
     private volatile Set<String> seAcreditan;
 
-    PantallaPuerta(ApiCatalogos apiCatalogos, ApiVentas apiVentas) {
+    public PantallaPuerta(ApiCatalogos apiCatalogos, ApiVentas apiVentas) {
         super("Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
         this.apiCatalogos = apiCatalogos;
         this.apiVentas = apiVentas;

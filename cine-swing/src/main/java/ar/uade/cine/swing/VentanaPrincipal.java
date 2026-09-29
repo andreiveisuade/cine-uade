@@ -1,10 +1,29 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing;
 
 import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
+import ar.uade.cine.swing.pantallas.Destino;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.candy.PantallaCandy;
+import ar.uade.cine.swing.pantallas.cartelera.PantallaImportador;
+import ar.uade.cine.swing.pantallas.cartelera.PantallaPeliculas;
+import ar.uade.cine.swing.pantallas.cartelera.PantallaPendientes;
+import ar.uade.cine.swing.pantallas.funciones.PantallaAgenda;
+import ar.uade.cine.swing.pantallas.funciones.PantallaFunciones;
+import ar.uade.cine.swing.pantallas.informes.PantallaCaja;
+import ar.uade.cine.swing.pantallas.informes.PantallaDeclaracionJurada;
+import ar.uade.cine.swing.pantallas.informes.PantallaInformeFuncion;
+import ar.uade.cine.swing.pantallas.programaciones.PantallaPlanificador;
+import ar.uade.cine.swing.pantallas.programaciones.PantallaProgramaciones;
+import ar.uade.cine.swing.pantallas.promociones.PantallaPromociones;
+import ar.uade.cine.swing.pantallas.salas.PantallaMapaSala;
+import ar.uade.cine.swing.pantallas.salas.PantallaSalas;
+import ar.uade.cine.swing.pantallas.ventas.PantallaCobro;
+import ar.uade.cine.swing.pantallas.ventas.PantallaPuerta;
+import ar.uade.cine.swing.pantallas.ventas.PantallaReservas;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -127,7 +146,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     @Override
     public void abrirInforme(int funcionId) {
-        mostrar(new PantallaFuncion(apis.catalogos(), apis.funciones(), apis.informes(), this, funcionId));
+        mostrar(new PantallaInformeFuncion(apis.catalogos(), apis.funciones(), apis.informes(), this, funcionId));
     }
 
     @Override

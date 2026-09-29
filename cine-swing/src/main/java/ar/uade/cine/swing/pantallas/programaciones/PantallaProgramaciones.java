@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.programaciones;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ApiCatalogos;
@@ -20,6 +20,7 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -50,7 +51,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
  * Grillas (CU-03b): una programación genera las funciones de un rango de una vez. Confirmar se habilita solo con una
  * previsualización de estos mismos datos: tocar cualquier campo la invalida, así nunca se confirma algo distinto de lo que se vio.
  */
-final class PantallaProgramaciones extends Pantalla {
+public final class PantallaProgramaciones extends Pantalla {
 
     private record Catalogos(List<Pelicula> peliculas, List<Sala> salas,
                              List<String> idiomas, List<String> proyecciones) {
@@ -95,7 +96,7 @@ final class PantallaProgramaciones extends Pantalla {
     // Cuántas grillas hay sin filtro: se cuenta al entrar y tras crear o dar de baja, no en cada filtro.
     private int total;
 
-    PantallaProgramaciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones,
+    public PantallaProgramaciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones,
                            ApiSalas apiSalas) {
         super("Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
                 + "con algo ya programado en esa sala se saltean, y el informe dice cuáles.");

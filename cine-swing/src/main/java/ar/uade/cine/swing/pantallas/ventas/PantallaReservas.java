@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.ventas;
 
 import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
@@ -10,6 +10,8 @@ import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
+import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
@@ -30,7 +32,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 /** El listado del encargado: se busca, se cobra y se cancela. Cobrar abre su propia pantalla. */
-final class PantallaReservas extends Pantalla {
+public final class PantallaReservas extends Pantalla {
 
     // En el orden en que le importan a quien atiende: primero lo que hay que cobrar hoy.
     private static final List<String> ESTADOS = List.of("RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA");
@@ -57,7 +59,7 @@ final class PantallaReservas extends Pantalla {
     // Todas, sin filtro: arman el resumen de arriba. Se piden al entrar y tras cancelar, no en cada tecla.
     private List<Reserva> todas = List.of();
 
-    PantallaReservas(ApiVentas apiVentas, Navegacion navegacion) {
+    public PantallaReservas(ApiVentas apiVentas, Navegacion navegacion) {
         super("Reservas", null);
         this.apiVentas = apiVentas;
         this.navegacion = navegacion;

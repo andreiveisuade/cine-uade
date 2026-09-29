@@ -1,4 +1,4 @@
-package ar.uade.cine.swing.pantallas;
+package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ApiCatalogos;
@@ -13,6 +13,7 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.Pantalla;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -36,7 +37,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
 
 /** Catálogo completo, incluso lo que no está en cartelera; alta, edición, publicación y baja. */
-final class PantallaPeliculas extends Pantalla {
+public final class PantallaPeliculas extends Pantalla {
 
     private record Catalogos(List<String> generos, List<Clasificacion> clasificaciones) {
     }
@@ -79,7 +80,7 @@ final class PantallaPeliculas extends Pantalla {
     private boolean llenando;
     private final Timer espera = Campos.alDejarDeTipear(buscar, this::buscar);
 
-    PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos) {
+    public PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos) {
         super("Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
                 + "despublicarla la baja aunque las tenga.");
         this.apiCartelera = apiCartelera;
