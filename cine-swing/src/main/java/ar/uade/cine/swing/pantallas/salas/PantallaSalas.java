@@ -6,7 +6,6 @@ import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
@@ -52,9 +51,11 @@ public final class PantallaSalas extends Pantalla {
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final JTextField distribucion = Campos.soloListaDeEnteros(new JTextField());
-    // Vacío dice cómo se escribe; con filas, las cuenta. El formato no se adivina por el nombre del campo.
-    private static final String FORMATO_FILAS = "Las butacas de cada fila, separadas por coma: 10, 10, 12";
-    private final JLabel resumenDistribucion = new JLabel(FORMATO_FILAS);
+    // Vacío dice cómo se escribe; con filas, las cuenta. A la vista y no en un tooltip: el formato no se
+    // adivina por el nombre del campo, y un tooltip solo aparece si se pasa el mouse (y tapa el campo).
+    private static final String FORMATO_FILAS =
+            "Una cantidad por fila, separadas por coma; la primera fila es la A. Ej: 8, 10, 12";
+    private final JLabel resumenDistribucion = Componentes.nota(FORMATO_FILAS);
     private final JTextField vip = new JTextField();
     private final JTextField pareja = new JTextField();
     private final JTextField accesibles = new JTextField();
@@ -87,11 +88,9 @@ public final class PantallaSalas extends Pantalla {
     private JScrollPane formulario() {
         Font mono = new Font(Font.MONOSPACED, Font.PLAIN, 13);
         for (JTextField campo : List.of(distribucion, vip, pareja, accesibles)) campo.setFont(mono);
-        distribucion.setToolTipText("Una fila por número, separadas por coma. La primera es la A. Ej: 8,10,12,12,14");
         vip.setToolTipText("Ej: I1,I2,J1");
         pareja.setToolTipText("Ej: A1,A2");
         accesibles.setToolTipText("Ej: A1,A8");
-        resumenDistribucion.setForeground(Colores.secundario());
         Campos.alCambiar(distribucion, this::resumir);
         JButton crear = new JButton("Crear sala");
         crear.addActionListener(e -> crear());
@@ -119,11 +118,13 @@ public final class PantallaSalas extends Pantalla {
     private void resumir() {
         List<Integer> filas = Lecturas.leerEnteros(distribucion.getText(), "", false).valor();
         if (filas == null || filas.isEmpty()) {
-            resumenDistribucion.setText(FORMATO_FILAS);
+            resumenDistribucion.setText("<html>" + FORMATO_FILAS + "</html>");
             return;
         }
-        resumenDistribucion.setText(filas.size() + " filas (A–" + (char) ('A' + filas.size() - 1) + "), "
-                + filas.stream().mapToInt(Integer::intValue).sum() + " butacas");
+        int cantidad = filas.size();
+        String rango = cantidad == 1 ? "A" : "A a " + (char) ('A' + cantidad - 1);
+        resumenDistribucion.setText("<html>" + cantidad + (cantidad == 1 ? " fila (" : " filas (") + rango + "), "
+                + filas.stream().mapToInt(Integer::intValue).sum() + " butacas</html>");
     }
 
     private void recargar() {
