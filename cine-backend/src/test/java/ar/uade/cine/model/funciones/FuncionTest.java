@@ -33,7 +33,8 @@ class FuncionTest {
             sin versión,                  ,            DOS_D,  DOS_D, 5000, Falta la versión o el formato de proyección
             sin formato,                  SUBTITULADA, ,       DOS_D, 5000, Falta la versión o el formato de proyección
             R8: 3D en una sala 2D,        SUBTITULADA, TRES_D, DOS_D, 5000, La sala Sala 1 no puede proyectar en 3D
-            precio cero,                  SUBTITULADA, DOS_D,  DOS_D, 0,    El precio debe ser mayor a cero
+            precio cero,                  SUBTITULADA, DOS_D,  DOS_D, 0,    El precio tiene que ser mayor a cero
+            precio de cien millones,      SUBTITULADA, DOS_D,  DOS_D, 100000000, El precio no puede superar $ 1000000.00
             sin versión y sin precio,     ,            DOS_D,  DOS_D, 0,    Falta la versión o el formato de proyección
             """)
     void unaFuncionSinFormatoSinPrecioOEn3DSinSoporteNoSeConstruye(String caso, Version version,

@@ -3,9 +3,12 @@ package ar.uade.cine.model.dinero;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import ar.uade.cine.model.salas.TipoAsiento;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.TipoTarifa;
 
 class DineroTest {
 
@@ -122,6 +129,47 @@ class DineroTest {
                 """)
         void sinBajarDeCeroRecortaLoNegativo(String caso, double pesos, double esperado) {
             assertEquals(Dinero.de(esperado), Dinero.de(pesos).sinBajarDeCero());
+        }
+    }
+
+    @Nested
+    @DisplayName("Lo que se carga a mano como precio o monto")
+    class ImporteCargado {
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                sin precio,          ,           Falta el precio
+                en cero,             0,          El precio tiene que ser mayor a cero
+                negativo,            -1,         El precio tiene que ser mayor a cero
+                un centavo de más,   1000000.01, El precio no puede superar $ 1000000.00
+                cien millones,       100000000,  El precio no puede superar $ 1000000.00
+                """)
+        void rechazaLoQueNoSePuedeCobrarNiGuardar(String caso, Double pesos, String mensaje) {
+            Dinero importe = pesos == null ? null : Dinero.de(pesos);
+
+            assertEquals(mensaje, assertThrows(IllegalArgumentException.class,
+                    () -> Dinero.importeValido(importe, "precio")).getMessage());
+        }
+
+        @Test
+        void elTopeMismoSeAcepta() {
+            assertEquals(Dinero.IMPORTE_MAXIMO, Dinero.importeValido(Dinero.IMPORTE_MAXIMO, "precio"));
+        }
+
+        // Las columnas de plata son DECIMAL(10,2): la entrada más cara, con el recargo más alto de sala,
+        // butaca y tarifa sobre el precio tope, también tiene que entrar, o MySQL la rechaza con un 500.
+        @Test
+        void elTopeDejaLugarParaLosMultiplicadoresDeLaEntrada() {
+            double sala = maximo(Arrays.stream(TipoSala.values()).mapToDouble(TipoSala::getMultiplicadorPrecio));
+            double butaca = maximo(Arrays.stream(TipoAsiento.values()).mapToDouble(TipoAsiento::getMultiplicadorPrecio));
+            double tarifa = maximo(Arrays.stream(TipoTarifa.values()).mapToDouble(TipoTarifa::getMultiplicadorPrecio));
+            Dinero columnaLlena = Dinero.de(99_999_999.99);
+
+            assertFalse(Dinero.IMPORTE_MAXIMO.por(sala).por(butaca).por(tarifa).esMayorQue(columnaLlena));
+        }
+
+        private static double maximo(DoubleStream multiplicadores) {
+            return multiplicadores.max().orElseThrow();
         }
     }
 

@@ -46,9 +46,12 @@ class PromocionTest {
     }
 
     @Test
-    void unMontoFijoSinMontoNoSeConstruye() {
-        rechaza("El monto del descuento debe ser mayor a cero", () -> new PromocionMontoFijo("cero", Dinero.CERO, AGOSTO));
-        rechaza("El monto del descuento debe ser mayor a cero", () -> new PromocionMontoFijo("nulo", null, AGOSTO));
+    void unMontoFijoSinMontoOFueraDeTopeNoSeConstruye() {
+        rechaza("El monto del descuento tiene que ser mayor a cero",
+                () -> new PromocionMontoFijo("cero", Dinero.CERO, AGOSTO));
+        rechaza("Falta el monto del descuento", () -> new PromocionMontoFijo("nulo", null, AGOSTO));
+        rechaza("El monto del descuento no puede superar $ 1000000.00",
+                () -> new PromocionMontoFijo("enorme", Dinero.de(100_000_000), AGOSTO));
     }
 
     @Test

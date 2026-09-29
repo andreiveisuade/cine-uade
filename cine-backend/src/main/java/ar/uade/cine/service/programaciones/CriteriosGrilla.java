@@ -31,9 +31,7 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
         if (cuantasPeliculas <= 0) {
             throw new IllegalArgumentException("Hay que programar al menos una película");
         }
-        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El precio debe ser mayor a cero");
-        }
+        Dinero.importeValido(precio, "precio");
         if (!desde.atTime(apertura).isBefore(cierreDe(desde, cierre))) {
             throw new IllegalArgumentException("El cine tiene que cerrar después de abrir");
         }

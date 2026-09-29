@@ -85,9 +85,7 @@ public class Funcion {
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
             throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
-        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El precio debe ser mayor a cero");
-        }
+        Dinero.importeValido(precio, "precio");
     }
 
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.

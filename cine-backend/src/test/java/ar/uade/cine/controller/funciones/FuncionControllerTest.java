@@ -52,6 +52,18 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals("2026-08-14T20:30:00", respuesta.json().get("inicio").asText());
     }
 
+    // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
+    @Test
+    void unPrecioDeCienMillonesEs400() {
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":1,\"salaId\":1,"
+                + "\"inicio\":\"2026-08-14T20:30:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\","
+                + "\"precio\":100000000}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El precio no puede superar $ 1000000.00", respuesta.error());
+        assertEquals(0, get("/api/funciones").json().size());
+    }
+
     @Test
     void borrarUnaFuncionQueNoExisteEs404ConSuMensaje() {
         Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/funciones/99", null, EMAIL_ADMIN, CLAVE_ADMIN);

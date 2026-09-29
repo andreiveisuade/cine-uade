@@ -74,4 +74,14 @@ class PromocionControllerTest extends PruebaDeApi {
         assertEquals(400, dosPorDos.estado());
         assertEquals("En un NxM hay que llevar más de lo que se paga", dosPorDos.error());
     }
+
+    // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
+    @Test
+    void unMontoDeCienMillonesEs400() {
+        Respuesta respuesta = post("/api/promociones", "{\"nombre\":\"Banco\",\"tipo\":\"MONTO_FIJO\","
+                + "\"monto\":100000000,\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El monto del descuento no puede superar $ 1000000.00", respuesta.error());
+    }
 }

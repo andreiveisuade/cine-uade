@@ -22,7 +22,8 @@ class CriteriosGrillaTest {
             cero días,                         2026-09-01, 0,  14:00, 23:00, 8, 5000, La grilla tiene que cubrir al menos un día
             más de un mes,                     2026-09-01, 32, 14:00, 23:00, 8, 5000, La grilla no puede cubrir más de 31 días
             sin películas,                     2026-09-01, 7,  14:00, 23:00, 0, 5000, Hay que programar al menos una película
-            precio cero,                       2026-09-01, 7,  14:00, 23:00, 8, 0,    El precio debe ser mayor a cero
+            precio cero,                       2026-09-01, 7,  14:00, 23:00, 8, 0,    El precio tiene que ser mayor a cero
+            precio de cien millones,           2026-09-01, 7,  14:00, 23:00, 8, 100000000, El precio no puede superar $ 1000000.00
             cierra antes de abrir,             2026-09-01, 7,  23:00, 14:00, 8, 5000, El cine tiene que cerrar después de abrir
             sin días ni precio gana el primero, 2026-09-01, 0,  14:00, 23:00, 8, 0,    La grilla tiene que cubrir al menos un día
             """)

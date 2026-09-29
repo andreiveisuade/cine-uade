@@ -21,10 +21,7 @@ public class PromocionMontoFijo extends Promocion {
 
     public PromocionMontoFijo(String nombre, Dinero monto, CondicionesPromocion condiciones) {
         super(nombre, condiciones);
-        if (monto == null || !monto.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El monto del descuento debe ser mayor a cero");
-        }
-        this.monto = monto;
+        this.monto = Dinero.importeValido(monto, "monto del descuento");
     }
 
     @Override

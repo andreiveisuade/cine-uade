@@ -37,8 +37,9 @@ class ProductoTest {
             sin nombre,        ,     BEBIDA, 100, El nombre no puede estar vacío
             nombre en blanco,  '  ', BEBIDA, 100, El nombre no puede estar vacío
             sin tipo,          Agua, ,       100, Falta el tipo de producto
-            sin precio,        Agua, BEBIDA,    , El precio debe ser mayor a cero
-            precio en cero,    Agua, BEBIDA,   0, El precio debe ser mayor a cero
+            sin precio,        Agua, BEBIDA,    , Falta el precio
+            precio en cero,    Agua, BEBIDA,   0, El precio tiene que ser mayor a cero
+            cien millones,     Agua, BEBIDA, 100000000, El precio no puede superar $ 1000000.00
             combo sin nombre,  ,     COMBO,  100, 'Un combo se arma con armarCombo, para que declare qué trae'
             """)
     void unSueltoInvalidoNoSeConstruye(String caso, String nombre, TipoProducto tipo, Double precio,
@@ -75,7 +76,7 @@ class ProductoTest {
                 () -> Producto.armarCombo("Combo vacío", Dinero.de(3000), null));
         rechaza("El nombre no puede estar vacío",
                 () -> Producto.armarCombo(" ", Dinero.de(3000), Map.of(pochoclos, 1)));
-        rechaza("El precio debe ser mayor a cero",
+        rechaza("El precio tiene que ser mayor a cero",
                 () -> Producto.armarCombo("Combo gratis", Dinero.CERO, Map.of(pochoclos, 1)));
     }
 
@@ -103,8 +104,9 @@ class ProductoTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             nombre vacío,   '',        4500, El nombre no puede estar vacío
-            sin precio,     Pochoclos,     , El precio debe ser mayor a cero
-            precio en cero, Pochoclos,    0, El precio debe ser mayor a cero
+            sin precio,     Pochoclos,     , Falta el precio
+            precio en cero, Pochoclos,    0, El precio tiene que ser mayor a cero
+            cien millones,  Pochoclos, 100000000, El precio no puede superar $ 1000000.00
             """)
     void editarPideLoMismoQueElAltaYNoTocaNadaSiRechaza(String caso, String nombre, Double precio,
             String mensaje) {

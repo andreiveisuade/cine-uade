@@ -53,7 +53,26 @@ class ProductoControllerTest extends PruebaDeApi {
         Respuesta respuesta = put("/api/candy/productos/" + pochoclos, "{\"nombre\":\"Pochoclos\",\"precio\":0}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("El precio debe ser mayor a cero", respuesta.error());
+        assertEquals("El precio tiene que ser mayor a cero", respuesta.error());
+    }
+
+    // Bean Validation y el producto dicen lo mismo: el texto no depende de por dónde entró el pedido.
+    @Test
+    void sinPrecioDiceQueFalta() {
+        Respuesta respuesta = put("/api/candy/productos/" + pochoclos, "{\"nombre\":\"Pochoclos\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta el precio", respuesta.error());
+    }
+
+    // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
+    @Test
+    void unPrecioDeCienMillonesEs400() {
+        Respuesta respuesta = post("/api/candy/productos",
+                "{\"nombre\":\"Agua\",\"tipo\":\"BEBIDA\",\"precio\":100000000}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El precio no puede superar $ 1000000.00", respuesta.error());
     }
 
     @Test

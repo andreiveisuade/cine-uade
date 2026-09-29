@@ -6,5 +6,5 @@ import jakarta.validation.constraints.Positive;
 
 // Lo que entra al editar un producto o combo (PUT /api/candy/productos/{id}); exige nombre y precio > 0.
 public record PedidoEdicionProductoDTO(@NotBlank(message = "El nombre no puede estar vacío") String nombre,
-                                       @NotNull(message = "El precio debe ser mayor a cero") @Positive(message = "El precio debe ser mayor a cero") Double precio) {
+                                       @NotNull(message = "Falta el precio") @Positive(message = "El precio tiene que ser mayor a cero") Double precio) {
 }

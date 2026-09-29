@@ -152,10 +152,7 @@ public class Producto {
     }
 
     private static Dinero precioValido(Dinero precio) {
-        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El precio debe ser mayor a cero");
-        }
-        return precio;
+        return Dinero.importeValido(precio, "precio");
     }
 
     @Override

@@ -15,5 +15,5 @@ public record PedidoProgramacionDTO(@NotNull(message = "Falta la película") Int
                                     List<String> diasSemana,
                                     @NotBlank(message = "Falta el idioma") String idioma,
                                     @NotBlank(message = "Falta la proyección") String proyeccion,
-                                    @NotNull(message = "El precio debe ser mayor a cero") @Positive(message = "El precio debe ser mayor a cero") Double precio) {
+                                    @NotNull(message = "Falta el precio") @Positive(message = "El precio tiene que ser mayor a cero") Double precio) {
 }
