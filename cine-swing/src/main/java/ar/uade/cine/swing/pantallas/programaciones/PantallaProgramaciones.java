@@ -14,6 +14,7 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -193,7 +194,7 @@ public final class PantallaProgramaciones extends Pantalla {
         botones.add(previsualizar);
         botones.add(confirmar);
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Nueva grilla"))
                 .obligatorio("Película", pelicula)
                 .obligatorio("Sala", sala)

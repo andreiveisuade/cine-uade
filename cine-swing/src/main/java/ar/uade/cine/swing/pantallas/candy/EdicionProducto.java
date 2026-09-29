@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -28,7 +29,7 @@ final class EdicionProducto {
     private final JTextField nombre;
     private final JTextField precio;
     private final JLabel error = Componentes.texto(" ");
-    private final Componentes.Formulario formulario;
+    private final Formulario formulario;
 
     EdicionProducto(Component origen, ApiCandy apiCandy, Producto producto, Runnable alGuardar) {
         this.origen = origen;
@@ -38,7 +39,7 @@ final class EdicionProducto {
         nombre = new JTextField(producto.nombre(), 20);
         precio = Campos.soloDecimal(new JTextField(producto.precio() % 1 == 0
                 ? String.valueOf((long) producto.precio()) : String.valueOf(producto.precio())));
-        formulario = new Componentes.Formulario()
+        formulario = new Formulario()
                 .obligatorio("Nombre", nombre)
                 .obligatorio("Precio", precio);
         if (producto.esCombo()) {

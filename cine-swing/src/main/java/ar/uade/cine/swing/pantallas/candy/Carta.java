@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -105,14 +106,14 @@ final class Carta extends Seccion {
 
         // El de combo abajo y estirado: así el costado llega al fondo como en las demás pantallas.
         JPanel columna = new JPanel(new BorderLayout(0, 8));
-        columna.add(Componentes.conBorde(new Componentes.Formulario()
+        columna.add(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Nuevo producto"))
                 .obligatorio("Nombre", nombreProducto)
                 .obligatorio("Tipo", tipoProducto)
                 .obligatorio("Precio", precioProducto)
                 .ancho(agregar)
                 .ancho(errorProducto)), BorderLayout.NORTH);
-        columna.add(Componentes.conBorde(new Componentes.Formulario()
+        columna.add(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Armar combo"))
                 .ancho(Componentes.nota("Al menos dos productos. El combo tiene que salir menos que sus "
                         + "componentes sueltos (R14): si no, no habría motivo para ofrecerlo."))

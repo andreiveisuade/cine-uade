@@ -8,6 +8,8 @@ import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
+import ar.uade.cine.swing.comun.Lecturas;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -90,7 +92,7 @@ public final class PantallaSalas extends Pantalla {
         JButton crear = new JButton("Crear sala");
         crear.addActionListener(e -> crear());
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Nueva sala"))
                 .obligatorio("Nombre", nombre)
                 .obligatorio("Tipo", tipo)
@@ -110,7 +112,7 @@ public final class PantallaSalas extends Pantalla {
 
     // Cuenta filas y butacas mientras se tipea: es aritmética sobre lo tipeado, no una regla.
     private void resumir() {
-        List<Integer> filas = Validacion.leerEnteros(distribucion.getText(), "", false).valor();
+        List<Integer> filas = Lecturas.leerEnteros(distribucion.getText(), "", false).valor();
         if (filas == null || filas.isEmpty()) {
             resumenDistribucion.setText(" ");
             return;

@@ -12,6 +12,7 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -151,7 +152,7 @@ public final class PantallaFunciones extends Pantalla {
         JButton programar = new JButton("Programar");
         programar.addActionListener(e -> programar());
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Programar función"))
                 .obligatorio("Película", pelicula)
                 .obligatorio("Sala", sala)

@@ -12,6 +12,7 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -113,7 +114,7 @@ public final class PantallaPlanificador extends Pantalla {
         botones.add(previsualizar);
         botones.add(aplicar);
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Criterios"))
                 .campo("Desde", desde)
                 .campo("Días", dias)

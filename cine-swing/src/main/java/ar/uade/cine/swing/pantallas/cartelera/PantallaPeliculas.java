@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -179,7 +180,7 @@ public final class PantallaPeliculas extends Pantalla {
         botones.add(guardar);
         botones.add(cancelar);
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(tituloFormulario)
                 .obligatorio("Título", titulo)
                 .obligatorio("Duración (min)", duracionMinutos)

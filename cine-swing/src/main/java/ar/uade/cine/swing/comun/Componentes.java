@@ -7,21 +7,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.plaf.basic.BasicHTML;
-import javax.swing.text.View;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridBagLayoutInfo;
-import java.awt.Insets;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 // Piezas de pantalla que se repiten, para que cada pantalla arme lo suyo y todas se vean igual.
 public final class Componentes {
@@ -82,50 +72,6 @@ public final class Componentes {
         return new TextoQueSalta("<html>" + html + "</html>");
     }
 
-    /**
-     * Un JLabel con HTML no corta línea solo: informa el ancho de todo el texto en un renglón. Este mide la altura
-     * que necesita al ancho que el layout le dio, y pide re-layout cuando ese ancho cambia.
-     */
-    private static final class TextoQueSalta extends JLabel {
-
-        private static final int ANCHO_INICIAL = 420;
-        private int anchoMedido = -1;
-
-        TextoQueSalta(String html) {
-            super(html);
-            setVerticalAlignment(TOP);
-            addComponentListener(new ComponentAdapter() {
-                @Override
-                public void componentResized(ComponentEvent e) {
-                    if (getWidth() != anchoMedido) SwingUtilities.invokeLater(TextoQueSalta.this::revalidate);
-                }
-            });
-        }
-
-        @Override
-        public Dimension getPreferredSize() {
-            Dimension natural = super.getPreferredSize();
-            View vista = (View) getClientProperty(BasicHTML.propertyKey);
-            int ancho = getWidth() > 0 ? getWidth() : ANCHO_INICIAL;
-            if (vista == null || natural.width <= ancho) return natural;
-            anchoMedido = ancho;
-            Insets bordes = getInsets();
-            vista.setSize(ancho - bordes.left - bordes.right, 0);
-            int alto = (int) Math.ceil(vista.getPreferredSpan(View.Y_AXIS)) + bordes.top + bordes.bottom;
-            return new Dimension(ancho, alto);
-        }
-
-        @Override
-        public Dimension getMinimumSize() {
-            return new Dimension(0, getPreferredSize().height);
-        }
-
-        @Override
-        public Dimension getMaximumSize() {
-            return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
-        }
-    }
-
     public static Color gris() {
         return Colores.secundario();
     }
@@ -180,72 +126,5 @@ public final class Componentes {
         fila.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
         fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
         return fila;
-    }
-
-    /** Formulario de dos columnas, etiqueta y campo, con las etiquetas alineadas para que se lea de un vistazo. */
-    public static final class Formulario extends JPanel {
-
-        private int fila;
-
-        public Formulario() {
-            super(new AchicaLosCampos());
-        }
-
-        public Formulario campo(String etiqueta, JComponent campo) {
-            GridBagConstraints izquierda = new GridBagConstraints();
-            izquierda.gridx = 0;
-            izquierda.gridy = fila;
-            izquierda.anchor = GridBagConstraints.NORTHWEST;
-            izquierda.insets = new Insets(4, 0, 4, 8);
-            add(new JLabel(etiqueta), izquierda);
-            GridBagConstraints derecha = new GridBagConstraints();
-            derecha.gridx = 1;
-            derecha.gridy = fila++;
-            derecha.weightx = 1;
-            derecha.fill = GridBagConstraints.HORIZONTAL;
-            derecha.insets = new Insets(4, 0, 4, 0);
-            add(campo, derecha);
-            return this;
-        }
-
-        /** Un campo que hay que completar: el asterisco lo avisa antes de que el envío lo rechace. */
-        public Formulario obligatorio(String etiqueta, JComponent campo) {
-            return campo(etiqueta + " *", campo);
-        }
-
-        public Formulario ancho(JComponent componente) {
-            GridBagConstraints todo = new GridBagConstraints();
-            todo.gridx = 0;
-            todo.gridy = fila++;
-            todo.gridwidth = 2;
-            todo.weightx = 1;
-            todo.fill = GridBagConstraints.HORIZONTAL;
-            todo.insets = new Insets(4, 0, 4, 0);
-            add(componente, todo);
-            return this;
-        }
-
-        /**
-         * Cuando el formulario no entra a lo ancho, GridBagLayout pasa <i>todos</i> los componentes a su tamaño
-         * mínimo: las etiquetas se amontonan y los campos quedan de dos letras. Midiendo siempre con el preferido,
-         * la diferencia la absorbe la columna con peso, que es la de los campos: un título largo al editar se ve
-         * cortado adentro de su campo en vez de empujar el formulario fuera de la vista.
-         */
-        private static final class AchicaLosCampos extends GridBagLayout {
-
-            @Override
-            protected GridBagLayoutInfo getLayoutInfo(Container padre, int medida) {
-                return super.getLayoutInfo(padre, PREFERREDSIZE);
-            }
-        }
-
-        /** Empuja todo hacia arriba: sin esto GridBagLayout centra el formulario en vertical. */
-        public Formulario cerrar() {
-            GridBagConstraints relleno = new GridBagConstraints();
-            relleno.gridy = fila++;
-            relleno.weighty = 1;
-            add(Box.createGlue(), relleno);
-            return this;
-        }
     }
 }

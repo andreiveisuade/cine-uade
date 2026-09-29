@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiSesion;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -40,7 +41,7 @@ public final class VentanaLogin extends JFrame {
         mensaje.setForeground(Colores.error());
         if (aviso != null) mensaje.setText(aviso);
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(titulo)
                 .ancho(Componentes.nota("Panel del encargado. Servidor: " + servidor))
                 .obligatorio("Email", email)

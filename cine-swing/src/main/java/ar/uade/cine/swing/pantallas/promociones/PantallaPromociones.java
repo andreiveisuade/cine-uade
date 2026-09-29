@@ -10,6 +10,7 @@ import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -163,7 +164,7 @@ public final class PantallaPromociones extends Pantalla {
         JButton crear = new JButton("Crear promoción");
         crear.addActionListener(e -> crear());
 
-        Componentes.Formulario formulario = new Componentes.Formulario()
+        Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Nueva promoción"))
                 .obligatorio("Nombre", nombre)
                 .obligatorio("Tipo", tipo)
@@ -189,7 +190,7 @@ public final class PantallaPromociones extends Pantalla {
     private void armarTipos(List<TipoPromocion> tipos) {
         for (TipoPromocion t : tipos) {
             Map<String, JTextField> cajas = new LinkedHashMap<>();
-            Componentes.Formulario tarjeta = new Componentes.Formulario();
+            Formulario tarjeta = new Formulario();
             for (String campo : t.campos()) {
                 CampoBeneficio c = CAMPOS.get(campo);
                 if (c == null) continue;

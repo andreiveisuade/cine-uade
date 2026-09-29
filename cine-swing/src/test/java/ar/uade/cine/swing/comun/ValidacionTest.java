@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ErrorApi;
-import ar.uade.cine.swing.comun.Validacion.Lectura;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.JCheckBox;
@@ -17,87 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Solo formato y obligatoriedad: que un precio negativo o cero pase acá es a propósito, porque esa regla es del
- * backend. Los campos se crean sin ventana, así corre headless.
+ * Qué se marca, qué se muestra y adónde va cada rechazo. Los campos se crean sin ventana, así corre headless.
  */
 class ValidacionTest {
-
-    @Test
-    void unObligatorioVacioOEnBlancoFalta() {
-        assertEquals("Falta completar «Título».", Validacion.leerTexto("   ", "Título", true).error());
-        assertTrue(Validacion.leerTexto("", "Dirección", false).valida());
-        assertNull(Validacion.leerTexto("", "Dirección", false).valor());
-        assertEquals("Matrix", Validacion.leerTexto("  Matrix ", "Título", true).valor());
-    }
-
-    @Test
-    void unNumeroMalTipeadoNoViajaComoVacio() {
-        Lectura<Double> precio = Validacion.leerDecimal("abc", "Precio", true);
-
-        assertFalse(precio.valida());
-        assertEquals("«Precio»: «abc» no es un número.", precio.error());
-    }
-
-    @Test
-    void elDecimalAceptaComaYPunto() {
-        assertEquals(2500.5, Validacion.leerDecimal("2500,5", "Precio", true).valor());
-        assertEquals(2500.5, Validacion.leerDecimal("2500.5", "Precio", true).valor());
-        assertFalse(Validacion.leerDecimal("25,00,1", "Precio", true).valida());
-    }
-
-    @Test
-    void lasReglasDeNegocioNoSeAnticipan() {
-        // Cero o negativo es un número bien escrito: si vale lo dice el gestor del backend.
-        assertEquals(0.0, Validacion.leerDecimal("0", "Precio", true).valor());
-        assertEquals(-5, Validacion.leerEntero("-5", "Minutos de limpieza", false).valor());
-    }
-
-    @Test
-    void unEnteroConDecimalesOEnormeSeRechaza() {
-        assertFalse(Validacion.leerEntero("7.5", "Días", false).valida());
-        assertFalse(Validacion.leerEntero("99999999999", "Días", false).valida());
-        assertNull(Validacion.leerEntero(" ", "Días", false).valor());
-    }
-
-    @Test
-    void enUnaListaUnElementoInvalidoRechazaTodoYSeNombra() {
-        Lectura<List<Integer>> filas = Validacion.leerEnteros("8,x,12", "Butacas por fila", true);
-
-        assertFalse(filas.valida());
-        assertEquals("«Butacas por fila»: «x» no es un número entero.", filas.error());
-    }
-
-    @Test
-    void unaListaBienEscritaSeLeeEntera() {
-        assertEquals(List.of(8, 10, 12), Validacion.leerEnteros(" 8, 10 ,12", "Butacas por fila", true).valor());
-        assertEquals("«Butacas por fila»: hay un valor vacío entre comas.",
-                Validacion.leerEnteros("8,,12", "Butacas por fila", true).error());
-        assertEquals("Falta completar «Butacas por fila».",
-                Validacion.leerEnteros("", "Butacas por fila", true).error());
-    }
-
-    @Test
-    void losCodigosDeButacaSeNormalizanYSeRechazaLoQueNoLoEs() {
-        assertEquals(List.of("A1", "B12"), Validacion.leerCodigos("a1, B12", "Butacas VIP").valor());
-        assertEquals(List.of(), Validacion.leerCodigos("", "Butacas VIP").valor());
-        assertEquals("«Butacas VIP»: «1A» no es un código de butaca (fila y número, como A1).",
-                Validacion.leerCodigos("A1,1A", "Butacas VIP").error());
-    }
-
-    @Test
-    void laHoraVaEnHHmm() {
-        assertEquals("09:05", Validacion.leerHora("9:05", "Desde hora", false).valor());
-        assertEquals("21:30", Validacion.leerHora("21:30", "Desde hora", false).valor());
-        assertFalse(Validacion.leerHora("25:00", "Desde hora", false).valida());
-        assertNull(Validacion.leerHora("", "Desde hora", false).valor());
-    }
-
-    @Test
-    void elEmailTieneQueParecerUnEmail() {
-        assertTrue(Validacion.leerEmail("ana@mail.com", "Cliente", false).valida());
-        assertFalse(Validacion.leerEmail("ana", "Cliente", false).valida());
-        assertTrue(Validacion.leerEmail("", "Cliente", false).valida());
-    }
 
     @Test
     void conErroresNoSeMandaYSeMarcanLosCampos() {
@@ -112,9 +33,9 @@ class ValidacionTest {
         v.texto(director, "Dirección", false);
 
         assertFalse(v.ok());
-        assertTrue(Validacion.marcado(titulo));
-        assertTrue(Validacion.marcado(precio));
-        assertFalse(Validacion.marcado(director));
+        assertTrue(Marcas.marcado(titulo));
+        assertTrue(Marcas.marcado(precio));
+        assertFalse(Marcas.marcado(director));
         assertEquals(List.of("Falta completar «Título».", "«Precio»: «abc» no es un número."), v.errores());
         assertTrue(mensaje.getText().contains("Falta completar «Título»."));
     }
@@ -128,7 +49,7 @@ class ValidacionTest {
 
         titulo.setText("Matrix");
 
-        assertFalse(Validacion.marcado(titulo));
+        assertFalse(Marcas.marcado(titulo));
     }
 
     @Test
@@ -154,8 +75,8 @@ class ValidacionTest {
         v.exigir(false, generos, "Géneros");
 
         assertFalse(v.ok());
-        assertTrue(Validacion.marcado(sala));
-        assertTrue(Validacion.marcado(generos));
+        assertTrue(Marcas.marcado(sala));
+        assertTrue(Marcas.marcado(generos));
     }
 
     @Test
@@ -171,8 +92,8 @@ class ValidacionTest {
         v.mostrarError(new ErrorApi(400, "El precio debe ser mayor a cero"));
 
         assertTrue(mensaje.getText().contains("El precio debe ser mayor a cero"));
-        assertTrue(Validacion.marcado(precio));
-        assertFalse(Validacion.marcado(nombre));
+        assertTrue(Marcas.marcado(precio));
+        assertFalse(Marcas.marcado(nombre));
     }
 
     @Test
@@ -184,7 +105,7 @@ class ValidacionTest {
 
         v.mostrarError(new ErrorApi(400, "Ya hay una sala con esa distribución de butacas"));
 
-        assertFalse(Validacion.marcado(nombre));
+        assertFalse(Marcas.marcado(nombre));
     }
 
     @Test
@@ -202,8 +123,8 @@ class ValidacionTest {
         v.mostrarError(repetido);
 
         assertTrue(mensaje.getText().contains("Ya existe una película con ese título"));
-        assertTrue(Validacion.marcado(titulo));
-        assertFalse(Validacion.marcado(duracion));
+        assertTrue(Marcas.marcado(titulo));
+        assertFalse(Marcas.marcado(duracion));
     }
 
     // Lo que no es del formulario va al diálogo, que headless no se puede abrir: se prueba la decisión.
@@ -219,23 +140,5 @@ class ValidacionTest {
                 new ErrorApi(409, "La reserva cambió mientras se procesaba: volvé a intentarlo")));
         assertFalse(v.esDelFormulario(new ErrorApi(500, "Falló el servidor")));
         assertTrue(v.esDelFormulario(new ErrorApi(400, "No se puede cobrar una reserva cancelada")));
-    }
-
-    @Test
-    void losFiltrosNoDejanTipearLoQueNoEsNumero() {
-        JTextField entero = Campos.soloEntero(new JTextField());
-        JTextField decimal = Campos.soloDecimal(new JTextField());
-        JTextField lista = Campos.soloListaDeEnteros(new JTextField());
-
-        entero.setText("12a");
-        decimal.setText("2500,5");
-        lista.setText("8, 10,12");
-
-        assertEquals("", entero.getText());
-        assertEquals("2500,5", decimal.getText());
-        assertEquals("8, 10,12", lista.getText());
-
-        lista.setText("8,x");
-        assertEquals("8, 10,12", lista.getText());
     }
 }
