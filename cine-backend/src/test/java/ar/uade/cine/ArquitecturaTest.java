@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -29,8 +30,13 @@ class ArquitecturaTest {
             "repository", Set.of("model", "repository"),
             "infrastructure", Set.of("model", "repository", "infrastructure", "service"),
             "service", Set.of("model", "repository", "infrastructure", "service"),
-            "controller", Set.of("model", "dto", "repository", "infrastructure", "service",
-                    "controller"));
+            "controller", Set.of("model", "dto", "infrastructure", "service", "controller"));
+
+    // Los adaptadores concretos: el resto depende del puerto y Adaptadores elige cuál va.
+    private static final List<String> IMPLEMENTACIONES = List.of(
+            "infrastructure.comprobantes.txt",
+            "infrastructure.importador.tmdb",
+            "infrastructure.pasarelas.emulada");
 
     @Nested
     @DisplayName("Las flechas entre capas van todas para el mismo lado")
@@ -44,6 +50,7 @@ class ArquitecturaTest {
                 dto,            'dto/ no tiene lógica: no importa service/ ni repository/'
                 # 'service' porque importador/ devuelve DatosPelicula y seguridad/ re-hashea claves por GestorEmpleados.
                 infrastructure, 'infrastructure/ es adaptador de salida, no llama a la entrada'
+                controller,     'controller/ no toca la base: habla con los gestores'
                 """)
         void cadaCapaImportaSoloLasQueTieneDebajo(String capa, String regla) {
             assertSinViolaciones(violacionesDeCapa(capa));
@@ -73,6 +80,40 @@ class ArquitecturaTest {
             }
             assertSinViolaciones(violaciones);
         }
+
+        @Test
+        @DisplayName("fuera de infrastructure/ nadie nombra una implementación concreta, solo su puerto")
+        void fueraDeInfrastructureSoloSeVenLosPuertos() {
+            assertSinViolaciones(importsDeImplementaciones(
+                    archivo -> !capaDe(archivo).equals("infrastructure")));
+        }
+
+        @Test
+        @DisplayName("dentro de infrastructure/ solo Adaptadores nombra una implementación concreta")
+        void soloAdaptadoresEligeLaImplementacion() {
+            Path adaptadores = RAIZ.resolve("infrastructure/Adaptadores.java");
+            assertSinViolaciones(importsDeImplementaciones(
+                    archivo -> capaDe(archivo).equals("infrastructure") && !archivo.equals(adaptadores)));
+        }
+    }
+
+    // Su propio paquete sí la nombra: ComprobanteTxt es la base de los tres Generador*Txt.
+    private static List<String> importsDeImplementaciones(Predicate<Path> revisar) {
+        List<String> violaciones = new ArrayList<>();
+        for (Path archivo : fuentes()) {
+            if (!revisar.test(archivo)) {
+                continue;
+            }
+            for (String importado : importsInternos(archivo)) {
+                for (String implementacion : IMPLEMENTACIONES) {
+                    boolean propia = archivo.startsWith(RAIZ.resolve(implementacion.replace('.', '/')));
+                    if (importado.startsWith(implementacion + ".") && !propia) {
+                        violaciones.add(RAIZ.relativize(archivo) + " importa " + importado);
+                    }
+                }
+            }
+        }
+        return violaciones;
     }
 
     private static List<String> violacionesDeCapa(String capa) {
