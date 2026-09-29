@@ -1,5 +1,6 @@
 package ar.uade.cine.model.cartelera;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -153,32 +154,49 @@ class PeliculaTest {
         assertFalse(dune.estaEnCartelera());
     }
 
-    @Test
-    void soloLaConfirmadaEstaConfirmada() {
-        Pelicula dune = dune();
-        assertTrue(dune.estaConfirmada());
+    // Cada estado de revisión decide con su propio texto (State): la descartada no pide que la revisen.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            pendiente,  PENDIENTE,  La película Dune no está confirmada: revisala antes de publicarla
+            descartada, DESCARTADA, La película Dune está descartada: no se puede publicar
+            """)
+    void unaPendienteOUnaDescartadaNoSePublica(String caso, EstadoRevision estado, String mensaje) {
+        Pelicula dune = en(estado);
 
-        dune.dejarPendiente();
-        assertFalse(dune.estaConfirmada());
+        rechaza(mensaje, dune::ponerEnCartelera);
 
-        dune.descartar();
-        assertFalse(dune.estaConfirmada());
+        assertFalse(dune.estaEnCartelera());
     }
 
-    // El botón Publicar no puede saltear el buzón: publicar es cosa de confirmar.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            pendiente,  PENDIENTE,  La película Dune todavía no está confirmada: revisala antes de programarla
+            descartada, DESCARTADA, La película Dune está descartada: no se puede programar
+            """)
+    void unaPendienteOUnaDescartadaNoSeProgramaYCadaUnaDiceSuMotivo(String caso, EstadoRevision estado,
+            String mensaje) {
+        rechaza(mensaje, en(estado)::exigirProgramable);
+    }
+
     @Test
-    void unaPendienteOUnaDescartadaNoSePublica() {
-        Pelicula pendiente = dune();
-        pendiente.dejarPendiente();
-        Pelicula descartada = dune();
-        descartada.descartar();
+    void unaConfirmadaSePublicaYSeProgramaSinRechazos() {
+        Pelicula dune = dune();
+        dune.sacarDeCartelera();
 
-        rechaza("La película Dune no está confirmada: revisala antes de publicarla",
-                pendiente::ponerEnCartelera);
-        rechaza("La película Dune no está confirmada: revisala antes de publicarla",
-                descartada::ponerEnCartelera);
+        assertDoesNotThrow(dune::exigirProgramable);
+        dune.ponerEnCartelera();
 
-        assertFalse(pendiente.estaEnCartelera());
-        assertFalse(descartada.estaEnCartelera());
+        assertTrue(dune.estaEnCartelera());
+    }
+
+    // Por las transiciones de la película, que es la que cambia de estado.
+    private static Pelicula en(EstadoRevision estado) {
+        Pelicula dune = dune();
+        switch (estado) {
+            case PENDIENTE -> dune.dejarPendiente();
+            case DESCARTADA -> dune.descartar();
+            case CONFIRMADA -> dune.confirmar();
+        }
+        return dune;
     }
 }

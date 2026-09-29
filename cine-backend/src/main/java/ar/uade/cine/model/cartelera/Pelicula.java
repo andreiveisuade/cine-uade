@@ -19,9 +19,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 import ar.uade.cine.model.cartelera.validacion.ValidadorPelicula;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Película del catálogo (R2, R7, R10); Experto: valida sus datos y decide su estado de revisión.
+// Película del catálogo (R2, R7, R10); Experto de su ciclo de revisión, validada por ValidadorPelicula.
 @Entity
 @Getter
 public class Pelicula {
@@ -98,18 +97,16 @@ public class Pelicula {
         return enCartelera;
     }
 
-    public boolean estaConfirmada() {
-        return estadoRevision == EstadoRevision.CONFIRMADA;
+    // Es solo un veto: en cartelera está la que además tiene funciones por delante.
+    // State: si se puede publicar lo decide su estado de revisión (ver EstadoRevision).
+    public void ponerEnCartelera() {
+        estadoRevision.exigirPublicable(titulo);
+        enCartelera = true;
     }
 
-    // Es solo un veto: en cartelera está la que además tiene funciones por delante. Una pendiente
-    // o descartada no se publica: si no, el botón Publicar saltearía el buzón de revisión.
-    public void ponerEnCartelera() {
-        if (!estaConfirmada()) {
-            throw new DatoInvalido("La película " + titulo
-                    + " no está confirmada: revisala antes de publicarla");
-        }
-        enCartelera = true;
+    // State: si se puede programar lo decide su estado de revisión (ver EstadoRevision).
+    public void exigirProgramable() {
+        estadoRevision.exigirProgramable(titulo);
     }
 
     public void sacarDeCartelera() {
