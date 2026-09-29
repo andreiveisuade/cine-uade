@@ -363,7 +363,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     void sinSalasNoHayGrillaPosible() {
         cargar("Una", 8.0, Genero.ACCION);
 
-        assertThrows(IllegalArgumentException.class, () -> planificador.proponer(unDia(1)));
+        assertEquals("No hay salas cargadas para programar",
+                assertThrows(IllegalArgumentException.class, () -> planificador.proponer(unDia(1))).getMessage());
     }
 
     // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).

@@ -47,7 +47,8 @@ public class PlanificadorGrilla {
 
     @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
-        if (salaRepository.count() == 0) {
+        List<Sala> salas = salaRepository.findAll();
+        if (salas.isEmpty()) {
             throw new IllegalArgumentException("No hay salas cargadas para programar");
         }
         List<Pelicula> elenco = elegirElenco(criterios.cuantasPeliculas());
@@ -55,8 +56,8 @@ public class PlanificadorGrilla {
             throw new IllegalArgumentException(
                     "No hay películas confirmadas para armar la grilla: revisá el buzón de importadas");
         }
-        List<PaseSugerido> pases = repartir(elenco, criterios, new PuntajeConfiable(elenco));
-        return new PropuestaGrilla(elenco, pases, medir(elenco, pases, criterios));
+        List<PaseSugerido> pases = repartir(elenco, salas, criterios, new PuntajeConfiable(elenco));
+        return new PropuestaGrilla(elenco, pases, medir(elenco, pases, salas, criterios));
     }
 
     // Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada.
@@ -103,9 +104,8 @@ public class PlanificadorGrilla {
         return puntaje + BONO_GENERO_NUEVO * Math.sqrt(nuevos);
     }
 
-    private List<PaseSugerido> repartir(List<Pelicula> elenco, CriteriosGrilla criterios,
+    private List<PaseSugerido> repartir(List<Pelicula> elenco, List<Sala> salas, CriteriosGrilla criterios,
                                         PuntajeConfiable puntajes) {
-        List<Sala> salas = salaRepository.findAll();
         List<PaseSugerido> pases = new ArrayList<>();
         Map<Integer, Integer> asignados = new HashMap<>();
         elenco.forEach(p -> asignados.put(p.getId(), 0));
@@ -168,14 +168,14 @@ public class PlanificadorGrilla {
         return Math.max(puntajes.de(pelicula), 0.1);
     }
 
-    private int minutosLibres(CriteriosGrilla criterios) {
+    private int minutosLibres(List<Sala> salas, CriteriosGrilla criterios) {
         long minutosPorSala = 0;
         for (int dia = 0; dia < criterios.dias(); dia++) {
             LocalDate fecha = criterios.desde().plusDays(dia);
             minutosPorSala += Math.max(Duration.between(primerIntento(fecha, criterios),
                     criterios.cierreDe(fecha)).toMinutes(), 0);
         }
-        int ventana = (int) (minutosPorSala * salaRepository.count());
+        int ventana = (int) (minutosPorSala * salas.size());
 
         LocalDate hasta = criterios.desde().plusDays(criterios.dias() - 1L);
         List<Funcion> programadas = funciones.buscar(null, null, criterios.desde(), hasta).stream()
@@ -194,10 +194,10 @@ public class PlanificadorGrilla {
         return Math.max(ventana - ocupados, 0);
     }
 
-    private IndicadoresGrilla medir(List<Pelicula> elenco, List<PaseSugerido> pases,
+    private IndicadoresGrilla medir(List<Pelicula> elenco, List<PaseSugerido> pases, List<Sala> salas,
                                     CriteriosGrilla criterios) {
         int programados = pases.stream().mapToInt(PaseSugerido::duracionMinutos).sum();
-        int disponibles = minutosLibres(criterios);
+        int disponibles = minutosLibres(salas, criterios);
 
         Map<Integer, Pelicula> porId = new HashMap<>();
         elenco.forEach(p -> porId.put(p.getId(), p));
