@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -111,8 +114,41 @@ class TmdbHttpTest {
         TmdbHttp sinToken = new TmdbHttp(null, "AR", direccion());
 
         assertFalse(sinToken.consultar().disponible());
-        assertTrue(assertThrows(ImportadorError.class, () -> sinToken.enCartelera(1))
-                .getMessage().startsWith("Falta el token de TMDB"));
+        assertEquals("Falta el token de TMDB: sacalo gratis en themoviedb.org/settings/api y cargalo en "
+                + "TMDB_TOKEN, en el .env del compose",
+                assertThrows(ImportadorError.class, () -> sinToken.enCartelera(1)).getMessage());
+    }
+
+    // El texto queda en el detalle de la corrida y Swing lo muestra: sin red, el de Java era "null".
+    @Test
+    void sinConexionLoDiceEnEspanolYNoConElTextoDeJava() throws IOException {
+        int puertoSinNadie;
+        try (ServerSocket libre = new ServerSocket(0)) {
+            puertoSinNadie = libre.getLocalPort();
+        }
+
+        ImportadorError error = assertThrows(ImportadorError.class,
+                () -> new TmdbHttp("un-token", "AR", "http://localhost:" + puertoSinNadie).enCartelera(1));
+
+        assertEquals("No se pudo llegar a TMDB: revisá la conexión a internet", error.getMessage());
+    }
+
+    @Test
+    void unErrorDeTmdbNoMuestraLaRutaQueSePidio() {
+        levantar(intercambio -> responder(intercambio, 503, "{}"));
+
+        ImportadorError error = assertThrows(ImportadorError.class, () -> catalogo().enCartelera(1));
+
+        assertEquals("TMDB respondió con un error: probá de nuevo en un rato", error.getMessage());
+    }
+
+    @Test
+    void unaFallaInesperadaAlCompletarNoMuestraLaClaseDeJava() {
+        List<Future<DatosPelicula>> pedidos = List.of(CompletableFuture.failedFuture(new IllegalStateException()));
+
+        ImportadorError error = assertThrows(ImportadorError.class, () -> TmdbHttp.esperar(pedidos));
+
+        assertEquals("El importador falló por un error inesperado: probá de nuevo en un rato", error.getMessage());
     }
 
     @Test

@@ -75,7 +75,7 @@ class ImportacionControllerTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/importaciones", "{\"paginas\":4}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Las páginas a importar van de 1 a 3", respuesta.error());
+        assertEquals("Las páginas a importar tienen que estar entre 1 y 3", respuesta.error());
         assertEquals(0, catalogo.consultas());
     }
 

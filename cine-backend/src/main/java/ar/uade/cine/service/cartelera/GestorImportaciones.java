@@ -127,8 +127,8 @@ public class GestorImportaciones {
         LocalDateTime ahora = reloj.ahora();
         for (Importacion importacion : ultimas) {
             if (importacion.quedoColgada(propiedades.corridaMaxima(), ahora)) {
-                importacion.fallar("La corrida no terminó a tiempo. Puede haber cargado "
-                        + "algunas películas igual: mirá el buzón.", ahora);
+                importacion.fallar("La corrida no terminó a tiempo: puede haber cargado "
+                        + "algunas películas igual, mirá el buzón", ahora);
                 importacionRepository.save(importacion);
             }
         }
@@ -145,7 +145,7 @@ public class GestorImportaciones {
         }
         if (paginas < 1 || paginas > PAGINAS_MAXIMAS) {
             throw new IllegalArgumentException(
-                    "Las páginas a importar van de 1 a " + PAGINAS_MAXIMAS);
+                    "Las páginas a importar tienen que estar entre 1 y " + PAGINAS_MAXIMAS);
         }
         return paginas;
     }

@@ -55,8 +55,8 @@ public class TmdbHttp implements CatalogoExterno {
     public List<DatosPelicula> enCartelera(int paginas) {
         if (sinToken()) {
             throw new ImportadorError(
-                    "Falta el token de TMDB. Se saca gratis en themoviedb.org/settings/api "
-                    + "y se carga en TMDB_TOKEN, en el .env del compose.");
+                    "Falta el token de TMDB: sacalo gratis en themoviedb.org/settings/api "
+                    + "y cargalo en TMDB_TOKEN, en el .env del compose");
         }
         List<JsonNode> resumenes = buscarEnCartelera(paginas);
 
@@ -105,6 +105,8 @@ public class TmdbHttp implements CatalogoExterno {
         return MapeoTmdb.aPelicula(resumen, detalle, estrenos);
     }
 
+    // Lo que dice cada ImportadorError queda en el detalle de la corrida y lo lee el encargado: texto fijo
+    // en español. El de Java ("null" sin red, la ruta pedida) va al log, con la causa.
     private JsonNode pedir(String ruta, String... parametros) {
         HttpRequest pedido = HttpRequest.newBuilder(URI.create(base + ruta + consulta(parametros)))
                 .header("Authorization", "Bearer " + token)
@@ -119,12 +121,13 @@ public class TmdbHttp implements CatalogoExterno {
                 throw new ImportadorError("TMDB rechazó el token: revisá TMDB_TOKEN");
             }
             if (respuesta.statusCode() != 200) {
-                throw new ImportadorError("TMDB devolvió " + respuesta.statusCode()
-                        + " en " + ruta);
+                log.warn("TMDB devolvió {} en {}", respuesta.statusCode(), ruta);
+                throw new ImportadorError("TMDB respondió con un error: probá de nuevo en un rato");
             }
             return JSON.readTree(respuesta.body());
         } catch (IOException e) {
-            throw new ImportadorError("No se pudo llegar a TMDB: " + e.getMessage(), e);
+            log.warn("No se pudo llegar a TMDB en {}", ruta, e);
+            throw new ImportadorError("No se pudo llegar a TMDB: revisá la conexión a internet", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ImportadorError("Se interrumpió la consulta a TMDB", e);
@@ -150,7 +153,7 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    private static List<DatosPelicula> esperar(List<Future<DatosPelicula>> pedidos) {
+    static List<DatosPelicula> esperar(List<Future<DatosPelicula>> pedidos) {
         List<DatosPelicula> peliculas = new ArrayList<>();
         for (Future<DatosPelicula> pedido : pedidos) {
             try {
@@ -159,7 +162,9 @@ public class TmdbHttp implements CatalogoExterno {
                 if (e.getCause() instanceof ImportadorError error) {
                     throw error;
                 }
-                throw new ImportadorError("El importador se rompió: " + e.getCause(), e);
+                log.warn("El importador se rompió completando una película", e.getCause());
+                throw new ImportadorError(
+                        "El importador falló por un error inesperado: probá de nuevo en un rato", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ImportadorError("Se interrumpió la importación", e);

@@ -157,7 +157,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         IllegalArgumentException error =
                 assertThrows(IllegalArgumentException.class, () -> gestor.ejecutar(4));
 
-        assertEquals("Las páginas a importar van de 1 a 3", error.getMessage());
+        assertEquals("Las páginas a importar tienen que estar entre 1 y 3", error.getMessage());
         assertEquals(0, catalogo.consultas());
         assertTrue(gestor.listar().isEmpty(), "no tendría que haber quedado registro");
     }
@@ -218,8 +218,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         Importacion caducada = gestor.listar().get(0);
 
         assertEquals(EstadoImportacion.FALLIDA, caducada.getEstado());
-        assertEquals("La corrida no terminó a tiempo. Puede haber cargado algunas películas "
-                + "igual: mirá el buzón.", caducada.getDetalle());
+        assertEquals("La corrida no terminó a tiempo: puede haber cargado algunas películas igual, "
+                + "mirá el buzón", caducada.getDetalle());
         assertEquals(EstadoImportacion.TERMINADA, gestor.ejecutar(1).getEstado());
     }
 
