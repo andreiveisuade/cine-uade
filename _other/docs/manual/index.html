@@ -2235,6 +2235,7 @@ mvn clean test       # 1149 tests, ninguno salteado (cine-swing: 60, contra un s
             <tr><td><code>@Version</code> en el resto de las entidades</td><td>Solo <code>Reserva</code> tiene transiciones que compiten; lo demás lo edita un encargado y la venta de butacas la cierra la base</td></tr>
             <tr><td><code>@ElementCollection</code> como <code>Set</code> en vez de <code>List</code></td><td><code>Pelicula.generos</code> y <code>Producto.componentes</code> son <code>List</code>: al cambiar se borran y reinsertan, y con dos o tres elementos eso no pesa. Los días ya son <code>Set</code></td></tr>
             <tr><td>Zona horaria</td><td>Un cine, una zona y sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code> sin zona, como las fechas del contrato</td></tr>
+            <tr><td>Todos los errores de un pedido juntos (patrón Notification)</td><td>El backend corta en el primer dato inválido (<code>Regla</code> rechaza con una excepción) y el cliente valida antes solo forma y obligatoriedad, así que quien carga una sala con dos errores los ve de a uno. Juntarlos pide que las guardas acumulen en vez de rechazar, una respuesta <code>{error, errores: [{campo, mensaje}]}</code> y que Swing y la web marquen cada campo: toca los 15 validadores, <code>ManejadorErrores</code>, el contrato y los dos clientes. A cambio de eso, los formularios dicen el formato de cada campo y marcan el que el mensaje nombra. Es la mejora siguiente si los formularios crecen</td></tr>
           </tbody>
         </table>
       </div>
