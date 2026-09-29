@@ -92,8 +92,7 @@ public class GestorPagos {
     }
 
     private Reserva buscarReserva(int reservaId) {
-        return reservaRepository.findById(reservaId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
+        return reservaRepository.exigir(reservaId, "la reserva");
     }
 
     // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista), y lo

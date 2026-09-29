@@ -79,7 +79,7 @@ class AplicacionTest extends PruebaDeIntegracion {
 
         assertEquals(Dinero.de(5000.0), pago.getMonto());
         assertEquals(EstadoReserva.PAGADA,
-                consultas.buscar(reserva.getId()).orElseThrow().getEstado());
+                consultas.obtener(reserva.getId()).getEstado());
         assertEquals(Dinero.de(5000.0), caja.arqueoDe(pago.getFecha().toLocalDate()).total());
     }
 

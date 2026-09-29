@@ -230,6 +230,21 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("Ese email es de un empleado del cine: usá otro para comprar", respuesta.error());
     }
 
+    // La función va primero: que no exista o que ya empezó anula la compra, sea quien sea el que compra.
+    @Test
+    void conElEmailDeUnEmpleadoLoPrimeroQueSeMiraEsLaFuncion() {
+        String deUnEmpleado = ",\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\",\"butacas\":{\"B1\":\"GENERAL\"}}";
+
+        Respuesta inexistente = post("/api/reservas", "{\"funcionId\":99" + deUnEmpleado);
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 20, 5));
+        Respuesta empezada = post("/api/reservas", "{\"funcionId\":1" + deUnEmpleado);
+
+        assertEquals(404, inexistente.estado());
+        assertEquals("No existe la función 99", inexistente.error());
+        assertEquals(400, empezada.estado());
+        assertEquals("La función ya empezó: no se pueden reservar butacas", empezada.error());
+    }
+
     // Reservar no pasa por el DTO del alta de clientes: «a@» se aceptaba.
     @Test
     void reservarConUnEmailSinDominioEs400() {

@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.Repositorio;
@@ -16,6 +18,13 @@ import ar.uade.cine.repository.Repositorio;
 public interface ReservaRepository extends Repositorio<Reserva> {
 
     Optional<Reserva> findByCodigo(String codigo);
+
+    // El exigir() de Repositorio por código de acceso: la web y la puerta dicen lo mismo. El texto no
+    // repite el código, que es la credencial del cliente.
+    default Reserva exigirPorCodigo(CodigoDeAcceso codigo) {
+        return findByCodigo(codigo.valor())
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
+    }
 
     List<Reserva> findByFuncion_Id(int funcionId);
 

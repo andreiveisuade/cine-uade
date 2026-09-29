@@ -169,8 +169,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         Reserva reserva = reservar("A1");
         pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
 
-        ReservaVistaDTO vista = vistas.reserva(consultas
-                .buscar(reserva.getId()).orElseThrow());
+        ReservaVistaDTO vista = vistas.reserva(consultas.obtener(reserva.getId()));
 
         assertEquals("PAGADA", vista.estado());
         assertEquals("CREDITO", vista.pago().medio());

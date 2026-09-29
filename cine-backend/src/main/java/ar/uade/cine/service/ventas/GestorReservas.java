@@ -17,7 +17,6 @@ import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.usuarios.Cliente;
@@ -25,10 +24,9 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.salas.AsientoRepository;
-import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Vende y cancela butacas de una función (R4, R6, R9, R13, R19); coordina y cada entidad valida lo suyo.
 @Service
@@ -38,47 +36,45 @@ import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 public class GestorReservas {
 
     private final ReservaRepository reservaRepository;
-    private final FuncionRepository funcionRepository;
     private final AsientoRepository asientoRepository;
+    private final ClienteRepository clienteRepository;
     private final GestorClientes clientes;
     private final GeneradorTicket generadorTicket;
     private final Ocupacion ocupacion;
     private final Reloj reloj;
 
-    // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado.
+    // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado. La función va
+    // antes que el cliente: si no existe o ya empezó (R19), eso anula lo demás, y un email de empleado no
+    // puede taparlo.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
                             String sesion) {
-        Cliente cliente = clientes.identificar(nombre, email);
-        return reservar(funcionId, cliente.getId(), butacas, sesion);
+        Funcion funcion = ocupacion.funcionEnVenta(funcionId);
+        return vender(funcion, clientes.identificar(nombre, email), butacas, sesion);
     }
 
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas,
                             String sesion) {
-        Funcion funcion = buscarFuncion(funcionId);
-        // R19: una función que ya arrancó no se vende; va primero porque anula las demás.
-        if (funcion.yaEmpezo(reloj.ahora())) {
-            throw new DatoInvalido(Ocupacion.FUNCION_EMPEZADA);
-        }
-        Cliente cliente = clientes.buscar(clienteId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
-        Sala sala = funcion.getSala();
+        Funcion funcion = ocupacion.funcionEnVenta(funcionId);
+        return vender(funcion, clienteRepository.exigir(clienteId, "el cliente"), butacas, sesion);
+    }
 
+    private Reserva vender(Funcion funcion, Cliente cliente, Map<String, TipoTarifa> butacas, String sesion) {
         // Un pedido sin butacas es uno vacío: la reserva sin entradas la rechaza Reserva.
-        List<Entrada> entradas = armarEntradas(funcion, sala, butacas == null ? Map.of() : butacas, sesion);
+        List<Entrada> entradas = armarEntradas(funcion, butacas == null ? Map.of() : butacas, sesion);
         Reserva reserva = guardarCompitiendoPorLasButacas(
                 new Reserva(funcion, cliente, entradas, reloj.ahora()));
         if (sesion != null) {
-            ocupacion.liberar(funcionId, sesion);
+            ocupacion.liberar(funcion.getId(), sesion);
         }
-        log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
+        log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcion.getId(),
                 detalleDe(entradas), reserva.getTotal());
 
         generadorTicket.emitir(reserva);
         return reserva;
     }
 
-    private List<Entrada> armarEntradas(Funcion funcion, Sala sala, Map<String, TipoTarifa> butacas,
-                                        String sesion) {
+    private List<Entrada> armarEntradas(Funcion funcion, Map<String, TipoTarifa> butacas, String sesion) {
+        Sala sala = funcion.getSala();
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
         Set<Integer> ocupados = ocupacion.asientosOcupados(funcion.getId(), sesion);
 
@@ -101,7 +97,7 @@ public class GestorReservas {
     }
 
     public Reserva cancelar(int reservaId) {
-        Reserva reserva = buscarOFallar(reservaId);
+        Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
         reserva.cancelar();
         log.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
@@ -122,15 +118,5 @@ public class GestorReservas {
             throw new ButacaOcupada(
                     "Alguien tomó una de esas butacas mientras confirmabas la reserva", e);
         }
-    }
-
-    private Funcion buscarFuncion(int funcionId) {
-        return funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
-    }
-
-    private Reserva buscarOFallar(int id) {
-        return reservaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
     }
 }

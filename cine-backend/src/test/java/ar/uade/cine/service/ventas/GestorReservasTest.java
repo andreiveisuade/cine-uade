@@ -353,7 +353,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
         assertEquals(10, asientosLibres(1, null).size(), "las butacas vuelven a la venta");
-        assertEquals(EstadoReserva.EXPIRADA, consultas.buscar(reserva.getId()).orElseThrow().getEstado());
+        assertEquals(EstadoReserva.EXPIRADA, consultas.obtener(reserva.getId()).getEstado());
     }
 
     @Test

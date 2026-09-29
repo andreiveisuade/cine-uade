@@ -36,8 +36,8 @@ public class Ocupacion {
 
     public static final Duration MIENTRAS_ELIGE = Duration.ofMinutes(3);
 
-    // R19 dice lo mismo en el mapa y en la venta: GestorReservas usa este texto.
-    static final String FUNCION_EMPEZADA = "La función ya empezó: no se pueden reservar butacas";
+    // R19 dice lo mismo al bloquear y al vender: los dos pasan por funcionEnVenta.
+    private static final String FUNCION_EMPEZADA = "La función ya empezó: no se pueden reservar butacas";
 
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
@@ -118,7 +118,8 @@ public class Ocupacion {
                 || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
     }
 
-    // R19: una función que ya arrancó no se vende, así que tampoco se le apartan butacas.
+    // R19: una función que ya arrancó no se vende, así que tampoco se le apartan butacas. Va antes que
+    // cualquier otra regla de la venta porque las anula a todas.
     public Funcion funcionEnVenta(int funcionId) {
         Funcion funcion = funcionRepository.exigir(funcionId, "la función");
         if (funcion.yaEmpezo(reloj.ahora())) {

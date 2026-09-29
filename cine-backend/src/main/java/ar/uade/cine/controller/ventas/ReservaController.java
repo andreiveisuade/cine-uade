@@ -22,7 +22,6 @@ import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -59,13 +58,13 @@ public class ReservaController {
     @Operation(summary = "El detalle de una reserva (encargado)")
     @GetMapping("/api/reservas/{id}")
     public ReservaVistaDTO detalle(@PathVariable int id) {
-        return vistas.reserva(buscar(id));
+        return vistas.reserva(consultas.obtener(id));
     }
 
     @Operation(summary = "El ticket del cliente, por su código de acceso")
     @GetMapping("/api/reservas/codigo/{codigo}")
     public ReservaVistaDTO detallePorCodigo(@PathVariable String codigo) {
-        return vistas.reserva(buscarPorCodigo(codigo));
+        return vistas.reserva(consultas.obtenerPorCodigo(codigo));
     }
 
     @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
@@ -88,16 +87,6 @@ public class ReservaController {
     @Operation(summary = "El cliente cancela su reserva con el código de acceso")
     @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
     public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo) {
-        return vistas.reserva(reservas.cancelar(buscarPorCodigo(codigo).getId()));
-    }
-
-    private Reserva buscarPorCodigo(String codigo) {
-        return consultas.buscarPorCodigo(codigo)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
-    }
-
-    private Reserva buscar(int id) {
-        return consultas.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
+        return vistas.reserva(reservas.cancelar(consultas.obtenerPorCodigo(codigo).getId()));
     }
 }

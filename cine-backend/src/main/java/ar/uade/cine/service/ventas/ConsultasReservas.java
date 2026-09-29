@@ -3,7 +3,6 @@ package ar.uade.cine.service.ventas;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,12 +23,12 @@ public class ConsultasReservas {
 
     private final ReservaRepository reservaRepository;
 
-    public Optional<Reserva> buscar(int id) {
-        return reservaRepository.findById(id);
+    public Reserva obtener(int id) {
+        return reservaRepository.exigir(id, "la reserva");
     }
 
-    public Optional<Reserva> buscarPorCodigo(String codigo) {
-        return reservaRepository.findByCodigo(new CodigoDeAcceso(codigo).valor());
+    public Reserva obtenerPorCodigo(String codigo) {
+        return reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
     }
 
     // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay
