@@ -88,6 +88,14 @@ class ContratoOpenApiTest extends PruebaDeApi {
                 .forEach(ruta -> assertThat(respuestas(rutas, ruta, "post").has("409")).as(ruta).isTrue());
     }
 
+    // El email de un empleado al reservar es un 400: el 409 de la reserva es solo la butaca ganada por otro.
+    @Test
+    @DisplayName("el 409 de reservar habla solo de la butaca tomada")
+    void elConflictoDeReservarEsSoloLaButaca() {
+        assertThat(operacion("/api/reservas", "post").get("responses").get("409").get("description").asText())
+                .isEqualTo("Otra compra tomó una de las butacas");
+    }
+
     @Test
     @DisplayName("sin variable de ruta no hay 404, y sin filtros una lectura no tiene 400")
     void erroresSegunLaForma() {

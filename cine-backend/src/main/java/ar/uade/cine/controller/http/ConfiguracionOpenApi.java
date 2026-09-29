@@ -43,8 +43,8 @@ public class ConfiguracionOpenApi {
 
     // Con qué puede chocar un pedido (409): cada conflicto sabe sus rutas y cómo se describe.
     private enum Conflicto {
-        BUTACA_TOMADA("Otra compra tomó una de las butacas, o el email es de un empleado del cine",
-                "POST /api/reservas"),
+        // Solo la butaca: el email de un empleado es un dato inválido del formulario, un 400.
+        BUTACA_TOMADA("Otra compra tomó una de las butacas", "POST /api/reservas"),
         // También la carrera que pasa la validación del gestor y choca con el UNIQUE de la base.
         NOMBRE_USADO("Ya existe otro con ese nombre, email o título, u otro pedido lo grabó al mismo tiempo",
                 "POST /api/peliculas", "PUT /api/peliculas/{id}",
