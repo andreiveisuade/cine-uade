@@ -1,21 +1,15 @@
-# La configuración de la aplicación. Lo que antes se leía con System.getenv() repartido
-# entre OrigenMySQL, TmdbHttp y ServidorApi ahora está todo acá, y
-# los adaptadores lo reciben ya resuelto.
+# La configuración de la aplicación: la base, el puerto, la documentación de la API y lo
+# propio del cine. Las variables de entorno se resuelven acá y cada adaptador recibe el
+# valor listo.
 #
-# Las variables de entorno siguen siendo las mismas que pasa el docker-compose
-# (DB_HOST, TMDB_TOKEN...): la sintaxis ${VAR:default} le da a cada una el
-# valor de la máquina de desarrollo cuando no está definida, así que fuera de Docker
-# arranca sin configurar nada.
+# Son las que pasa el docker-compose (DB_HOST, TMDB_TOKEN...): ${VAR:default} le da a
+# cada una el valor de la máquina de desarrollo cuando no está definida, así que fuera
+# de Docker arranca sin configurar nada. No hay perfil activo: corre contra MySQL, y los
+# tests activan `test`, que con application-test.yml cambia la base por H2.
 
 spring:
   application:
     name: cine
-
-  # El perfil decide dónde se guarda cada cosa: es lo que antes elegía a mano el
-  # constructor de Aplicacion. `mysql` es como corre en producción; los tests activan
-  # `memoria` y levantan el mismo sistema sin base de datos.
-  profiles:
-    active: mysql
 
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:appsinteractivas}
