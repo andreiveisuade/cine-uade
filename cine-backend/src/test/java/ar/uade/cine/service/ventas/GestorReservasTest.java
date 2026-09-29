@@ -45,6 +45,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
@@ -79,6 +80,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
     private FuncionRepository funcionRepository;
     @Autowired
     private AsientoRepository asientoRepository;
+    @Autowired
+    private ClienteRepository clienteRepository;
     @Autowired
     private JdbcTemplate jdbc;
 
@@ -480,7 +483,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void noSeCobraUnaReservaCuyaFuncionYaEmpezo() {
         Funcion empezada = funcionQueYaEmpezo();
         Asiento butaca = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(1).get(0);
-        Reserva reserva = reservaRepository.save(new Reserva(empezada, clientes.buscar(1).orElseThrow(),
+        Reserva reserva = reservaRepository.save(new Reserva(empezada, clienteRepository.exigir(1, "el cliente"),
                 List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));

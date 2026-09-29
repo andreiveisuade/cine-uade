@@ -56,11 +56,6 @@ public class GestorClientes {
         return clienteRepository.findAll();
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Cliente> buscar(int id) {
-        return clienteRepository.findById(id);
-    }
-
     // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guarda Email.
     @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
