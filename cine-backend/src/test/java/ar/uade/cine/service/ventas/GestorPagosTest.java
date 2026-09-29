@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -37,7 +38,6 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -75,7 +75,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     @Autowired
     private PoliticaPromociones politica;
     @Autowired
-    private GeneradorRecibo generadorRecibo;
+    private ApplicationEventPublisher eventos;
     @Autowired
     private GestorCartelera cartelera;
     @Autowired
@@ -386,7 +386,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void noSeAutorizaEnLaPasarelaElCheckoutDeUnaReservaQueYaNoSePuedeCobrar() {
         PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
-                pasarela, generadorRecibo, reloj);
+                pasarela, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
         reservas.cancelar(reserva.getId());

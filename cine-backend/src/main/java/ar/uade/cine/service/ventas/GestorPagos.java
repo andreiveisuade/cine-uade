@@ -7,10 +7,10 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
@@ -34,7 +34,7 @@ public class GestorPagos {
     private final ReservaRepository reservaRepository;
     private final PoliticaPromociones promociones;
     private final PasarelaPagos pasarela;
-    private final GeneradorRecibo generadorRecibo;
+    private final ApplicationEventPublisher eventos;
     private final Reloj reloj;
 
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
@@ -54,7 +54,8 @@ public class GestorPagos {
         pagoRepository.save(pago);
 
         reserva.pagar();
-        emitirRecibo(pago, reserva);
+        // Observer: el recibo lo emite ComprobantesDeVentas cuando esta transacción confirma.
+        eventos.publishEvent(new PagoRegistrado(pago.getId()));
         log.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
                 reserva.getId(), medio, reserva.getTotal(),
                 !descuento.monto().esCero()
@@ -110,12 +111,6 @@ public class GestorPagos {
     // Recién al cobrar se conoce el medio, y de él dependen las promociones.
     private PoliticaPromociones.Descuento descuentoPara(Reserva reserva, MedioPago medio) {
         return promociones.calcularPara(reserva.getEntradas(), reserva.getFuncion().getInicio(), medio);
-    }
-
-    private void emitirRecibo(Pago pago, Reserva reserva) {
-        if (!pago.getMedio().requiereAutorizacion()) {
-            generadorRecibo.emitir(pago, reserva);
-        }
     }
 
     // Vacío si la reserva todavía no se cobró; si ni siquiera existe, RecursoNoEncontrado.

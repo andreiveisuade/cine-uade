@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
@@ -39,7 +39,7 @@ public class GestorReservas {
     private final AsientoRepository asientoRepository;
     private final ClienteRepository clienteRepository;
     private final GestorClientes clientes;
-    private final GeneradorTicket generadorTicket;
+    private final ApplicationEventPublisher eventos;
     private final Ocupacion ocupacion;
     private final Reloj reloj;
 
@@ -69,7 +69,8 @@ public class GestorReservas {
         log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcion.getId(),
                 detalleDe(entradas), reserva.getTotal());
 
-        generadorTicket.emitir(reserva);
+        // Observer: el ticket lo emite ComprobantesDeVentas cuando esta transacción confirma.
+        eventos.publishEvent(new ReservaCreada(reserva.getId()));
         return reserva;
     }
 

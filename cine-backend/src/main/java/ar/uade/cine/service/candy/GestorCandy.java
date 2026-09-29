@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.infrastructure.comprobantes.GeneradorTicketCandy;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -28,7 +28,7 @@ public class GestorCandy {
     private final CompraCandyRepository compraCandyRepository;
     private final ClienteRepository clienteRepository;
     private final ReservaRepository reservaRepository;
-    private final GeneradorTicketCandy generadorTicket;
+    private final ApplicationEventPublisher eventos;
     private final GestorProductos productos;
     private final Reloj reloj;
 
@@ -61,7 +61,8 @@ public class GestorCandy {
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
                 productos.obtener(cantidades));
         compraCandyRepository.save(compra);
-        generadorTicket.emitir(compra, cliente);
+        // Observer: el ticket lo emite ComprobantesDeCandy cuando esta transacción confirma.
+        eventos.publishEvent(new CompraCandyRegistrada(compra.getId()));
         return compra;
     }
 

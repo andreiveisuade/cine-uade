@@ -58,4 +58,9 @@ public class Pago {
         this.fecha = fecha;
         this.codigoAutorizacion = autorizacion;
     }
+
+    // El recibo de caja es del efectivo: un cobro electrónico ya tiene el comprobante de la pasarela.
+    public boolean llevaRecibo() {
+        return medio.seCobraEnCaja();
+    }
 }
