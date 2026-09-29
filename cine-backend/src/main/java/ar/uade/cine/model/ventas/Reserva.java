@@ -22,8 +22,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Reserva {
 
     public static final int MINUTOS_PARA_PAGAR = 30;
@@ -65,6 +68,7 @@ public class Reserva {
     // encuentra la fila que leyó y falla, y ManejadorErrores lo contesta como 409.
     // Solo acá: es la única entidad con transiciones de estado que compiten entre sí.
     @Version
+    @Getter(AccessLevel.NONE)
     private int version;
 
     protected Reserva() {
@@ -90,28 +94,12 @@ public class Reserva {
         return codigo.toString();
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Funcion getFuncion() {
-        return funcion;
-    }
-
-    public Cliente getCliente() {
-        return cliente;
-    }
-
     public int getFuncionId() {
         return funcion.getId();
     }
 
     public int getClienteId() {
         return cliente.getId();
-    }
-
-    public LocalDateTime getCreadaEn() {
-        return creadaEn;
     }
 
     public List<Entrada> getEntradas() {
@@ -124,10 +112,6 @@ public class Reserva {
 
     public Dinero getTotal() {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
-    }
-
-    public EstadoReserva getEstado() {
-        return estado;
     }
 
     public void pagar() {
@@ -203,14 +187,6 @@ public class Reserva {
     public boolean estaVencida(LocalDateTime ahora) {
         return estado == EstadoReserva.RESERVADA
                 && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public LocalDateTime getIngresadaEn() {
-        return ingresadaEn;
     }
 
     @Override

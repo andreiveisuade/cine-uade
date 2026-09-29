@@ -6,8 +6,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Sala {
 
     public static final int LIMPIEZA_POR_DEFECTO = 15;
@@ -28,22 +30,6 @@ public class Sala {
 
     public Sala(String nombre, TipoSala tipo, int minutosLimpieza) {
         editar(nombre, tipo, minutosLimpieza);
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public TipoSala getTipo() {
-        return tipo;
-    }
-
-    public int getMinutosLimpieza() {
-        return minutosLimpieza;
     }
 
     // No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes.

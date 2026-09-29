@@ -1,5 +1,8 @@
 package ar.uade.cine.model.cartelera;
 
+import lombok.Getter;
+
+@Getter
 public enum Clasificacion {
 
     ATP(0),
@@ -11,10 +14,6 @@ public enum Clasificacion {
 
     Clasificacion(int edadMinima) {
         this.edadMinima = edadMinima;
-    }
-
-    public int getEdadMinima() {
-        return edadMinima;
     }
 
     public String getEtiqueta() {

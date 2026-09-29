@@ -14,6 +14,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 @Entity
 @Table(uniqueConstraints = {
@@ -25,6 +27,7 @@ public class Entrada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Getter
     private int id;
 
     // EAGER a propósito, como las colecciones: el código de la butaca lo leen las vistas,
@@ -38,8 +41,12 @@ public class Entrada {
     private Integer funcionId;
 
     @Enumerated(EnumType.STRING)
+    @Getter
+    @Accessors(fluent = true)
     private TipoTarifa tarifa;
 
+    @Getter
+    @Accessors(fluent = true)
     private Dinero precio;
 
     protected Entrada() {
@@ -51,24 +58,12 @@ public class Entrada {
         this.precio = precio;
     }
 
-    public int getId() {
-        return id;
-    }
-
     public int asientoId() {
         return asiento.getId();
     }
 
     public String codigoAsiento() {
         return asiento.getCodigo();
-    }
-
-    public TipoTarifa tarifa() {
-        return tarifa;
-    }
-
-    public Dinero precio() {
-        return precio;
     }
 
     void ocupar(int funcionId) {

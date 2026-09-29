@@ -1,9 +1,14 @@
 package ar.uade.cine.swing.pantallas;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 /**
  * Las entradas del menú. Enum y no el título como texto: un "Ir a Salas" que apunta a un destino renombrado no
  * compila, en vez de no hacer nada sin avisar.
  */
+@Getter
+@Accessors(fluent = true)
 public enum Destino {
 
     PELICULAS("Películas"),
@@ -25,9 +30,5 @@ public enum Destino {
 
     Destino(String titulo) {
         this.titulo = titulo;
-    }
-
-    public String titulo() {
-        return titulo;
     }
 }

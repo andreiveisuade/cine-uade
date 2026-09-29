@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpMethod;
@@ -37,9 +36,8 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 @RestControllerAdvice
+@Slf4j
 public class ManejadorErrores {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ManejadorErrores.class);
 
     // El mensaje sale intacto: es el texto que ve el usuario.
     @ExceptionHandler(IllegalArgumentException.class)
@@ -136,13 +134,13 @@ public class ManejadorErrores {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorVistaDTO> falloDePersistencia(DataAccessException e) {
-        LOG.error("Falló el acceso a los datos", e);
+        log.error("Falló el acceso a los datos", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo acceder a los datos");
     }
 
     @ExceptionHandler(ComprobanteException.class)
     public ResponseEntity<ErrorVistaDTO> falloDeComprobante(ComprobanteException e) {
-        LOG.error("Falló la emisión de un comprobante", e);
+        log.error("Falló la emisión de un comprobante", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir el comprobante");
     }
 
@@ -153,7 +151,7 @@ public class ManejadorErrores {
             return ResponseEntity.status(deSpring.getStatusCode())
                     .body(new ErrorVistaDTO(deSpring.getBody().getDetail()));
         }
-        LOG.error("Error no previsto", e);
+        log.error("Error no previsto", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado en el servidor");
     }
 

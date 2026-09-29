@@ -9,8 +9,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Importacion {
 
     @Id
@@ -57,41 +59,5 @@ public class Importacion {
         this.estado = EstadoImportacion.FALLIDA;
         this.detalle = motivo;
         this.terminoEn = cuando;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public int getPaginas() {
-        return paginas;
-    }
-
-    public LocalDateTime getPedidaEn() {
-        return pedidaEn;
-    }
-
-    public LocalDateTime getTerminoEn() {
-        return terminoEn;
-    }
-
-    public EstadoImportacion getEstado() {
-        return estado;
-    }
-
-    public int getNuevas() {
-        return nuevas;
-    }
-
-    public int getSalteadas() {
-        return salteadas;
-    }
-
-    public int getFallidas() {
-        return fallidas;
-    }
-
-    public String getDetalle() {
-        return detalle;
     }
 }

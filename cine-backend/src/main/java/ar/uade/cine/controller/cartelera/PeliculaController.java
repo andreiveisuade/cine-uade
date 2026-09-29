@@ -2,6 +2,7 @@ package ar.uade.cine.controller.cartelera;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,20 +37,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController
+@RequiredArgsConstructor
 public class PeliculaController {
 
     private final GestorCartelera cartelera;
     private final GestorRevisionCartelera revision;
     private final GestorFunciones funciones;
     private final VistasCartelera vistas;
-
-    public PeliculaController(GestorCartelera cartelera, GestorRevisionCartelera revision,
-                                GestorFunciones funciones, VistasCartelera vistas) {
-        this.cartelera = cartelera;
-        this.revision = revision;
-        this.funciones = funciones;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "La cartelera pública: solo lo que está en exhibición")
     @GetMapping("/api/cartelera")

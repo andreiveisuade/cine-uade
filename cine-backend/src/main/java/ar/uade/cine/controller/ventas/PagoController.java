@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -39,20 +40,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController
+@RequiredArgsConstructor
 public class PagoController {
 
     private final GestorPagos pagos;
     private final ConsultasReservas reservas;
     private final GestorCaja caja;
     private final VistasVentas vistas;
-
-    public PagoController(GestorPagos pagos, ConsultasReservas reservas, GestorCaja caja,
-                            VistasVentas vistas) {
-        this.pagos = pagos;
-        this.reservas = reservas;
-        this.caja = caja;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")

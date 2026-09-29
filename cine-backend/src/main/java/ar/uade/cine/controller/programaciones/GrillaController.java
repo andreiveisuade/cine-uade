@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,15 +36,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
+@RequiredArgsConstructor
 public class GrillaController {
 
     private final PlanificadorGrilla planificador;
     private final Reloj reloj;
-
-    public GrillaController(PlanificadorGrilla planificador, Reloj reloj) {
-        this.planificador = planificador;
-        this.reloj = reloj;
-    }
 
     @Operation(summary = "Proponer una semana entera de funciones, sin escribir nada")
     @PostMapping("/api/grilla/propuesta")

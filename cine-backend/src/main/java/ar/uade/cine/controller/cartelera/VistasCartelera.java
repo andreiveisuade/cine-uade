@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -27,6 +28,7 @@ import ar.uade.cine.controller.salas.VistasSalas;
 // películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
 // sentencias.
 @Component
+@RequiredArgsConstructor
 public class VistasCartelera {
 
     private final GestorCartelera cartelera;
@@ -34,15 +36,6 @@ public class VistasCartelera {
     private final Ocupacion ocupacion;
     private final CalculadoraPrecio calculadora;
     private final VistasSalas vistasSalas;
-
-    public VistasCartelera(GestorCartelera cartelera, GestorSalas salas, Ocupacion ocupacion,
-                           CalculadoraPrecio calculadora, VistasSalas vistasSalas) {
-        this.cartelera = cartelera;
-        this.salas = salas;
-        this.ocupacion = ocupacion;
-        this.calculadora = calculadora;
-        this.vistasSalas = vistasSalas;
-    }
 
     public PeliculaVistaDTO pelicula(Pelicula p) {
         return new PeliculaVistaDTO(p.getId(), p.getTitulo(), p.getDuracionMinutos(),

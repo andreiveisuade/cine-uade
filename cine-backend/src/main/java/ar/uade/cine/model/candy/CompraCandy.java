@@ -18,9 +18,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 @Entity
 @Table(name = "compra_candy")
+@Getter
 public class CompraCandy {
 
     @Id
@@ -55,30 +57,6 @@ public class CompraCandy {
         this.medio = medio;
         this.codigoAutorizacion = codigoAutorizacion;
         this.items.addAll(items);
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public Integer getClienteId() {
-        return clienteId;
-    }
-
-    public Integer getReservaId() {
-        return reservaId;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public MedioPago getMedio() {
-        return medio;
-    }
-
-    public String getCodigoAutorizacion() {
-        return codigoAutorizacion;
     }
 
     public List<ItemCompra> getItems() {

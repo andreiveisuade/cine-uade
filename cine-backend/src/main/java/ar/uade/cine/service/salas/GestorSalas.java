@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorSalas {
 
     private static final int MAX_FILAS = 26;
@@ -28,12 +30,6 @@ public class GestorSalas {
     private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
     private final FuncionRepository funcionRepository;
-
-    public GestorSalas(SalaRepository salaRepository, AsientoRepository asientoRepository, FuncionRepository funcionRepository) {
-        this.salaRepository = salaRepository;
-        this.asientoRepository = asientoRepository;
-        this.funcionRepository = funcionRepository;
-    }
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
         return agregar(nombre, tipo, butacasPorFila, Map.of());

@@ -27,8 +27,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Programacion {
 
     @Id
@@ -64,8 +67,10 @@ public class Programacion {
 
     private Dinero precio;
 
+    @Getter(AccessLevel.NONE)
     private boolean activa = true;
 
+    // Se guarda y no se deriva de la última función: si esa se borra o mueve, se regenerarían fechas.
     private LocalDate generadaHasta;
 
     protected Programacion() {
@@ -97,25 +102,8 @@ public class Programacion {
         return momentos;
     }
 
-    // Se guarda y no se deriva de la última función: si esa se borra o mueve, se regenerarían fechas.
-    public LocalDate getGeneradaHasta() {
-        return generadaHasta;
-    }
-
     public void setGeneradaHasta(LocalDate generadaHasta) {
         this.generadaHasta = generadaHasta;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public Pelicula getPelicula() {
-        return pelicula;
-    }
-
-    public Sala getSala() {
-        return sala;
     }
 
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
@@ -127,33 +115,9 @@ public class Programacion {
         return sala.getId();
     }
 
-    public LocalDate getDesde() {
-        return desde;
-    }
-
-    public LocalDate getHasta() {
-        return hasta;
-    }
-
-    public LocalTime getHoraInicio() {
-        return horaInicio;
-    }
-
     public Set<DayOfWeek> getDiasSemana() {
         return Collections.unmodifiableSet(
                 diasSemana.isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana));
-    }
-
-    public Version getVersion() {
-        return version;
-    }
-
-    public Proyeccion getProyeccion() {
-        return proyeccion;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
     }
 
     public boolean estaActiva() {

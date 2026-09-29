@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.informes;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,18 +20,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Informes", description = "El borderó del INCAA, la declaración jurada del período y la recaudación por función")
 @RestController
+@RequiredArgsConstructor
 public class InformeController {
 
     private final GestorInformes informes;
     private final GestorFunciones funciones;
     private final VistasInformes vistas;
-
-    public InformeController(GestorInformes informes, GestorFunciones funciones,
-                             VistasInformes vistas) {
-        this.informes = informes;
-        this.funciones = funciones;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "El borderó de una función")
     @GetMapping("/api/funciones/{id}/bordero")

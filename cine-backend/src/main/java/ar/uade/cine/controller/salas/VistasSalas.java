@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.model.funciones.Funcion;
@@ -17,15 +18,11 @@ import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
 
 @Component
+@RequiredArgsConstructor
 public class VistasSalas {
 
     private final GestorSalas salas;
     private final CalculadoraPrecio calculadora;
-
-    public VistasSalas(GestorSalas salas, CalculadoraPrecio calculadora) {
-        this.salas = salas;
-        this.calculadora = calculadora;
-    }
 
     public SalaVistaDTO sala(Sala s) {
         return sala(s, salas.asientosDe(s.getId()));

@@ -1,5 +1,9 @@
 package ar.uade.cine.model.ventas;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+@Getter
 public enum TipoTarifa {
 
     GENERAL(1.0, false),
@@ -8,18 +12,11 @@ public enum TipoTarifa {
     ESTUDIANTE(0.7, true);
 
     private final double multiplicadorPrecio;
+    @Accessors(fluent = true)
     private final boolean requiereAcreditacion;
 
     TipoTarifa(double multiplicadorPrecio, boolean requiereAcreditacion) {
         this.multiplicadorPrecio = multiplicadorPrecio;
         this.requiereAcreditacion = requiereAcreditacion;
-    }
-
-    public double getMultiplicadorPrecio() {
-        return multiplicadorPrecio;
-    }
-
-    public boolean requiereAcreditacion() {
-        return requiereAcreditacion;
     }
 }

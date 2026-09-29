@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
@@ -13,7 +16,11 @@ public class CatalogoDePrueba implements CatalogoExterno {
     private List<DatosPelicula> candidatas = List.of();
     private String motivoDeFalla;
     private Estado estado = new Estado(true, "Listo para traer cartelera");
+    @Getter
+    @Accessors(fluent = true)
     private int consultas;
+    @Getter
+    @Accessors(fluent = true)
     private int paginasPedidas;
 
     @Override
@@ -63,13 +70,5 @@ public class CatalogoDePrueba implements CatalogoExterno {
         estado = new Estado(true, "Listo para traer cartelera");
         consultas = 0;
         paginasPedidas = 0;
-    }
-
-    public int consultas() {
-        return consultas;
-    }
-
-    public int paginasPedidas() {
-        return paginasPedidas;
     }
 }

@@ -9,8 +9,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,9 +31,9 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 // Única definición de butaca ocupada (R4): la usan el mapa y la venta.
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class Ocupacion {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Ocupacion.class);
 
     public static final Duration MIENTRAS_ELIGE = Duration.ofMinutes(3);
 
@@ -45,15 +45,6 @@ public class Ocupacion {
     private final AsientoRepository asientoRepository;
     private final BloqueoButacaRepository bloqueos;
     private final Reloj reloj;
-
-    public Ocupacion(ReservaRepository reservaRepository, FuncionRepository funcionRepository, AsientoRepository asientoRepository,
-                     BloqueoButacaRepository bloqueos, Reloj reloj) {
-        this.reservaRepository = reservaRepository;
-        this.funcionRepository = funcionRepository;
-        this.asientoRepository = asientoRepository;
-        this.bloqueos = bloqueos;
-        this.reloj = reloj;
-    }
 
     public Set<Integer> asientosOcupados(int funcionId, String sesion) {
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
@@ -159,7 +150,7 @@ public class Ocupacion {
             if (reserva.estaVencida(ahora)) {
                 reserva.expirar();
                 reservaRepository.save(reserva);
-                LOG.info("reserva {} EXPIRADA · creada {} · {} butacas vuelven a la venta",
+                log.info("reserva {} EXPIRADA · creada {} · {} butacas vuelven a la venta",
                         reserva.getId(), reserva.getCreadaEn(), reserva.getCantidadEntradas());
             }
         }

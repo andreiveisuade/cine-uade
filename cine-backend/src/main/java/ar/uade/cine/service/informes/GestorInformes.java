@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class GestorInformes {
 
     private static final Bordero.TotalPorTarifa SIN_ENTRADAS =
@@ -38,16 +40,6 @@ public class GestorInformes {
     private final PagoRepository pagoRepository;
     private final CompraCandyRepository compraCandyRepository;
     private final Reloj reloj;
-
-    public GestorInformes(FuncionRepository funcionRepository, ReservaRepository reservaRepository,
-                          PagoRepository pagoRepository, CompraCandyRepository compraCandyRepository,
-                          Reloj reloj) {
-        this.funcionRepository = funcionRepository;
-        this.reservaRepository = reservaRepository;
-        this.pagoRepository = pagoRepository;
-        this.compraCandyRepository = compraCandyRepository;
-        this.reloj = reloj;
-    }
 
     public Bordero borderoDe(int funcionId) {
         return borderoDe(buscarFuncion(funcionId), reservaRepository.findByFuncion_Id(funcionId));

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorFunciones {
 
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("HH:mm");
@@ -36,15 +38,6 @@ public class GestorFunciones {
     private final SalaRepository salaRepository;
     private final ReservaRepository reservaRepository;
     private final Reloj reloj;
-
-    public GestorFunciones(FuncionRepository funcionRepository, PeliculaRepository peliculaRepository, SalaRepository salaRepository,
-                           ReservaRepository reservaRepository, Reloj reloj) {
-        this.funcionRepository = funcionRepository;
-        this.peliculaRepository = peliculaRepository;
-        this.salaRepository = salaRepository;
-        this.reservaRepository = reservaRepository;
-        this.reloj = reloj;
-    }
 
     public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
                              Version version, Proyeccion proyeccion, Dinero precio) {

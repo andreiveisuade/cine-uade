@@ -3,9 +3,11 @@ package ar.uade.cine.model.usuarios;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.Getter;
 
 @Entity
 @DiscriminatorValue("EMPLEADO")
+@Getter
 public class Empleado extends Usuario {
 
     @Column(name = "password_hash", length = 100)
@@ -22,10 +24,6 @@ public class Empleado extends Usuario {
             throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
         }
         this.passwordHash = passwordHash;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
     }
 
     public void reemplazarPasswordHash(String passwordHash) {

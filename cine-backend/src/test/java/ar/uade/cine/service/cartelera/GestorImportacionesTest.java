@@ -182,7 +182,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     @Test
     void dosCorridasSeguidasSeRechazanSiHayEsperaConfigurada() {
         GestorImportaciones conEspera = new GestorImportaciones(importacionRepository, catalogo,
-                cartelera, revision, Duration.ofMinutes(5), Duration.ofMinutes(1), reloj);
+                cartelera, revision,
+                new PropiedadesImportador(Duration.ofMinutes(5), Duration.ofMinutes(1)), reloj);
         conEspera.ejecutar(1);
 
         IllegalArgumentException error =

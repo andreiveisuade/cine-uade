@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,15 +36,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Salas", description = "Las salas del cine y el estado de cada butaca")
 @RestController
+@RequiredArgsConstructor
 public class SalaController {
 
     private final GestorSalas salas;
     private final VistasSalas vistas;
-
-    public SalaController(GestorSalas salas, VistasSalas vistas) {
-        this.salas = salas;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "Las salas del cine")
     @GetMapping("/api/salas")

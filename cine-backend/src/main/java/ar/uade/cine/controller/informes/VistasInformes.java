@@ -3,7 +3,6 @@ package ar.uade.cine.controller.informes;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.controller.http.Fechas;
@@ -25,10 +24,8 @@ public class VistasInformes {
 
     private final ExhibidorVistaDTO exhibidor;
 
-    public VistasInformes(@Value("${cine.incaa.razon-social}") String razonSocial,
-                          @Value("${cine.incaa.cuit}") String cuit,
-                          @Value("${cine.incaa.numero-exhibidor}") String numeroExhibidor) {
-        this.exhibidor = new ExhibidorVistaDTO(razonSocial, cuit, numeroExhibidor);
+    public VistasInformes(PropiedadesIncaa incaa) {
+        this.exhibidor = new ExhibidorVistaDTO(incaa.razonSocial(), incaa.cuit(), incaa.numeroExhibidor());
     }
 
     public BorderoVistaDTO bordero(Bordero bordero) {

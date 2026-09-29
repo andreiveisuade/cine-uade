@@ -10,8 +10,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Pago {
 
     @Id
@@ -50,41 +52,5 @@ public class Pago {
         this.medio = medio;
         this.fecha = fecha;
         this.codigoAutorizacion = codigoAutorizacion;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public int getReservaId() {
-        return reservaId;
-    }
-
-    public Dinero getSubtotal() {
-        return subtotal;
-    }
-
-    public Integer getPromocionId() {
-        return promocionId;
-    }
-
-    public Dinero getDescuento() {
-        return descuento;
-    }
-
-    public Dinero getMonto() {
-        return monto;
-    }
-
-    public MedioPago getMedio() {
-        return medio;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public String getCodigoAutorizacion() {
-        return codigoAutorizacion;
     }
 }

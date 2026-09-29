@@ -15,8 +15,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Producto {
 
     @Id
@@ -31,6 +34,7 @@ public class Producto {
 
     private Dinero precio;
 
+    @Getter(AccessLevel.NONE)
     private boolean disponible;
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -45,22 +49,6 @@ public class Producto {
         this.tipo = tipo;
         this.precio = precio;
         this.disponible = true;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public TipoProducto getTipo() {
-        return tipo;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
     }
 
     public boolean estaDisponible() {

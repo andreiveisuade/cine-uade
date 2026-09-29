@@ -6,9 +6,11 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.Getter;
 
 @Entity
 @DiscriminatorValue("MONTO_FIJO")
+@Getter
 public class PromocionMontoFijo extends Promocion {
 
     private Dinero monto;
@@ -22,10 +24,6 @@ public class PromocionMontoFijo extends Promocion {
             throw new IllegalArgumentException("El monto del descuento debe ser mayor a cero");
         }
         this.monto = monto;
-    }
-
-    public Dinero getMonto() {
-        return monto;
     }
 
     @Override

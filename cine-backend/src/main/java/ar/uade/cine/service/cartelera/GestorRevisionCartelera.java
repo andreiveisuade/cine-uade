@@ -2,6 +2,7 @@ package ar.uade.cine.service.cartelera;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,18 +14,12 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorRevisionCartelera {
 
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorCartelera catalogo;
-
-    public GestorRevisionCartelera(PeliculaRepository peliculaRepository, FuncionRepository funcionRepository,
-                                   GestorCartelera catalogo) {
-        this.peliculaRepository = peliculaRepository;
-        this.funcionRepository = funcionRepository;
-        this.catalogo = catalogo;
-    }
 
     public Pelicula importar(DatosPelicula datos) {
         Pelicula pelicula = catalogo.agregar(datos);

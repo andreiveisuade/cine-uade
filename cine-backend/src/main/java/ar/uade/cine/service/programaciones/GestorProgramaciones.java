@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,9 +29,9 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class GestorProgramaciones {
-
-    private static final Logger LOG = LoggerFactory.getLogger(GestorProgramaciones.class);
 
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
@@ -43,17 +43,6 @@ public class GestorProgramaciones {
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
     private final Reloj reloj;
-
-    public GestorProgramaciones(ProgramacionRepository programacionRepository, FuncionRepository funcionRepository,
-                                PeliculaRepository peliculaRepository, SalaRepository salaRepository,
-                                GestorFunciones funciones, Reloj reloj) {
-        this.programacionRepository = programacionRepository;
-        this.funcionRepository = funcionRepository;
-        this.peliculaRepository = peliculaRepository;
-        this.salaRepository = salaRepository;
-        this.funciones = funciones;
-        this.reloj = reloj;
-    }
 
     @Transactional(readOnly = true)
     public PlanProgramacion previsualizar(DatosGrilla datos) {
@@ -83,11 +72,11 @@ public class GestorProgramaciones {
                         .programables().size();
                 generadas += nuevas;
                 if (nuevas > 0) {
-                    LOG.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
+                    log.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
                             grilla.getId(), nuevas, grilla.getGeneradaHasta());
                 }
             } catch (RuntimeException e) {
-                LOG.warn("grilla {} no se pudo extender: {}", grilla.getId(), e.getMessage());
+                log.warn("grilla {} no se pudo extender: {}", grilla.getId(), e.getMessage());
             }
         }
         return generadas;

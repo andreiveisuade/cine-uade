@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,15 +38,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Promociones", description = "Los descuentos que el cine carga desde el panel")
 @RestController
+@RequiredArgsConstructor
 public class PromocionController {
 
     private final GestorPromociones promociones;
     private final VistasPromociones vistas;
-
-    public PromocionController(GestorPromociones promociones, VistasPromociones vistas) {
-        this.promociones = promociones;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "Las promociones cargadas")
     @GetMapping("/api/promociones")

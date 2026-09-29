@@ -2,6 +2,7 @@ package ar.uade.cine.controller.ventas;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +37,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
+@RequiredArgsConstructor
 public class ReservaController {
 
     private final GestorReservas reservas;
@@ -44,16 +46,6 @@ public class ReservaController {
     private final GestorClientes clientes;
     private final Ocupacion ocupacion;
     private final VistasVentas vistas;
-
-    public ReservaController(GestorReservas reservas, GestorAcceso acceso, ConsultasReservas consultas,
-                             GestorClientes clientes, Ocupacion ocupacion, VistasVentas vistas) {
-        this.reservas = reservas;
-        this.acceso = acceso;
-        this.consultas = consultas;
-        this.clientes = clientes;
-        this.ocupacion = ocupacion;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
     @GetMapping("/api/reservas")

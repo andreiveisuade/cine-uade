@@ -2,6 +2,7 @@ package ar.uade.cine.service.usuarios;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,15 +14,11 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorEmpleados {
 
     private final EmpleadoRepository empleadoRepository;
     private final PasswordEncoder claves;
-
-    public GestorEmpleados(EmpleadoRepository empleadoRepository, PasswordEncoder claves) {
-        this.empleadoRepository = empleadoRepository;
-        this.claves = claves;
-    }
 
     // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
     // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.

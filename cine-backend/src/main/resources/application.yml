@@ -72,8 +72,8 @@ springdoc:
     # que es lo que se viene a buscar.
     default-models-expand-depth: -1
 
-# Lo propio del cine, con el mismo prefijo para todo: lo leen las clases
-# @ConfigurationProperties de api/ e infraestructura/.
+# Lo propio del cine, con el mismo prefijo para todo. Cada sección la lee un record
+# @ConfigurationProperties (Propiedades*) al lado de la clase que la usa.
 cine:
   comprobantes:
     # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.

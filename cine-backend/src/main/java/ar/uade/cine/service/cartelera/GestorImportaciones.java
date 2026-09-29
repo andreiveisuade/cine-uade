@@ -1,12 +1,11 @@
 package ar.uade.cine.service.cartelera;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +20,7 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 // Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción
 // rollback-only y se perdería la corrida entera, incluso el registro.
 @Service
+@RequiredArgsConstructor
 public class GestorImportaciones {
 
     private static final int HISTORIAL = 20;
@@ -31,23 +31,8 @@ public class GestorImportaciones {
     private final CatalogoExterno catalogo;
     private final GestorCartelera cartelera;
     private final GestorRevisionCartelera revision;
-    private final Duration corridaMaxima;
-    private final Duration esperaEntreCorridas;
+    private final PropiedadesImportador propiedades;
     private final Reloj reloj;
-
-    public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
-                               GestorCartelera cartelera, GestorRevisionCartelera revision,
-                               @Value("${cine.importador.corrida-maxima}") Duration corridaMaxima,
-                               @Value("${cine.importador.espera-entre-corridas}") Duration esperaEntreCorridas,
-                               Reloj reloj) {
-        this.importacionRepository = importacionRepository;
-        this.catalogo = catalogo;
-        this.cartelera = cartelera;
-        this.revision = revision;
-        this.corridaMaxima = corridaMaxima;
-        this.esperaEntreCorridas = esperaEntreCorridas;
-        this.reloj = reloj;
-    }
 
     public Importacion ejecutar(Integer paginas) {
         Importacion importacion = reservarTurno(validarPaginas(paginas));
@@ -131,9 +116,9 @@ public class GestorImportaciones {
 
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
         LocalDateTime desde = ultima.getTerminoEn();
-        if (desde != null && desde.plus(esperaEntreCorridas).isAfter(reloj.ahora())) {
+        if (desde != null && desde.plus(propiedades.esperaEntreCorridas()).isAfter(reloj.ahora())) {
             throw new IllegalArgumentException("El importador corrió recién: esperá "
-                    + esperaEntreCorridas.toSeconds() + " segundos antes de volver a pedirlo");
+                    + propiedades.esperaEntreCorridas().toSeconds() + " segundos antes de volver a pedirlo");
         }
     }
 
@@ -153,7 +138,7 @@ public class GestorImportaciones {
 
     private boolean quedoColgada(Importacion importacion, LocalDateTime ahora) {
         return importacion.getEstado() == EstadoImportacion.EN_CURSO
-                && importacion.getPedidaEn().plus(corridaMaxima).isBefore(ahora);
+                && importacion.getPedidaEn().plus(propiedades.corridaMaxima()).isBefore(ahora);
     }
 
     public CatalogoExterno.Estado estadoDelImportador() {

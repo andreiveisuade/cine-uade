@@ -3,6 +3,7 @@ package ar.uade.cine.controller.candy;
 import java.time.LocalDate;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,20 +42,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
+@RequiredArgsConstructor
 public class CandyController {
 
     private final GestorCandy candy;
     private final GestorProductos carta;
     private final GestorCaja caja;
     private final VistasCandy vistas;
-
-    public CandyController(GestorCandy candy, GestorProductos carta, GestorCaja caja,
-                            VistasCandy vistas) {
-        this.candy = candy;
-        this.carta = carta;
-        this.caja = caja;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "La carta del candy")
     @GetMapping("/api/candy/productos")

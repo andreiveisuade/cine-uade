@@ -3,6 +3,8 @@ package ar.uade.cine.model.ventas;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -43,6 +45,8 @@ public class BloqueoButaca {
     private Asiento asiento;
 
     @Column(nullable = false, length = 64)
+    @Getter
+    @Accessors(fluent = true)
     private String sesion;
 
     @Column(nullable = false)
@@ -54,9 +58,5 @@ public class BloqueoButaca {
     // No inicializa el proxy: el id ya viene en la fila.
     public int asientoId() {
         return asiento.getId();
-    }
-
-    public String sesion() {
-        return sesion;
     }
 }

@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +25,9 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class GestorPagos {
-
-    private static final Logger LOG = LoggerFactory.getLogger(GestorPagos.class);
 
     private final PagoRepository pagoRepository;
     private final ReservaRepository reservaRepository;
@@ -35,17 +35,6 @@ public class GestorPagos {
     private final PasarelaPagos pasarela;
     private final GeneradorRecibo generadorRecibo;
     private final Reloj reloj;
-
-    public GestorPagos(PagoRepository pagoRepository, ReservaRepository reservaRepository,
-                       PoliticaPromociones promociones, PasarelaPagos pasarela,
-                       GeneradorRecibo generadorRecibo, Reloj reloj) {
-        this.pagoRepository = pagoRepository;
-        this.reservaRepository = reservaRepository;
-        this.promociones = promociones;
-        this.pasarela = pasarela;
-        this.generadorRecibo = generadorRecibo;
-        this.reloj = reloj;
-    }
 
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = buscarReserva(reservaId);
@@ -64,7 +53,7 @@ public class GestorPagos {
         reserva.pagar();
         reservaRepository.save(reserva);
         emitirRecibo(pago, reserva);
-        LOG.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
+        log.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
                 reservaId, medio, reserva.getTotal(),
                 !descuento.monto().esCero()
                         ? " · promo " + descuento.promocionId() + " -" + descuento.monto()
@@ -88,7 +77,7 @@ public class GestorPagos {
         Dinero monto = reserva.getTotal().menos(descuento.monto());
 
         PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto);
-        LOG.info("checkout {} · reserva {} · {} · a pagar {}",
+        log.info("checkout {} · reserva {} · {} · a pagar {}",
                 checkout.id(), reservaId, medio, monto);
         return checkout;
     }

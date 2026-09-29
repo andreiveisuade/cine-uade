@@ -15,8 +15,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Funcion {
 
     @Id
@@ -32,6 +35,7 @@ public class Funcion {
     private Sala sala;
 
     @Column(name = "programacion_id")
+    @Getter(AccessLevel.NONE)
     private Integer programacionId;
 
     private LocalDateTime inicio;
@@ -63,18 +67,6 @@ public class Funcion {
         this.programacionId = programacionId;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Pelicula getPelicula() {
-        return pelicula;
-    }
-
-    public Sala getSala() {
-        return sala;
-    }
-
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
         return pelicula.getId();
@@ -82,22 +74,6 @@ public class Funcion {
 
     public int getSalaId() {
         return sala.getId();
-    }
-
-    public LocalDateTime getInicio() {
-        return inicio;
-    }
-
-    public Version getVersion() {
-        return version;
-    }
-
-    public Proyeccion getProyeccion() {
-        return proyeccion;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
     }
 
     @Override

@@ -1,5 +1,10 @@
 package ar.uade.cine.model.ventas;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+@Getter
+@Accessors(fluent = true)
 public enum MedioPago {
 
     EFECTIVO(false),
@@ -12,10 +17,6 @@ public enum MedioPago {
 
     MedioPago(boolean requiereAutorizacion) {
         this.requiereAutorizacion = requiereAutorizacion;
-    }
-
-    public boolean requiereAutorizacion() {
-        return requiereAutorizacion;
     }
 
     public String autorizacion(String codigo) {

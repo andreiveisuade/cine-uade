@@ -2,8 +2,11 @@ package ar.uade.cine.model.promociones;
 
 import java.util.List;
 
+import lombok.Getter;
+
 // Además de nombre y condiciones, cada tipo pide sus propios campos del pedido. Es la única
 // lista: la publica el catálogo y con ella GestorPromociones dice cuál falta.
+@Getter
 public enum TipoPromocion {
 
     PORCENTAJE("porcentaje"),
@@ -16,10 +19,6 @@ public enum TipoPromocion {
 
     TipoPromocion(String... campos) {
         this.campos = List.of(campos);
-    }
-
-    public List<String> getCampos() {
-        return campos;
     }
 
     // Los valores en el orden de getCampos(): el primero que falte se nombra en el mensaje.

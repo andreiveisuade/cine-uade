@@ -7,9 +7,11 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.Getter;
 
 @Entity
 @DiscriminatorValue("NXM")
+@Getter
 public class PromocionNxM extends Promocion {
 
     private int lleva;
@@ -26,14 +28,6 @@ public class PromocionNxM extends Promocion {
         }
         this.lleva = lleva;
         this.paga = paga;
-    }
-
-    public int getLleva() {
-        return lleva;
-    }
-
-    public int getPaga() {
-        return paga;
     }
 
     @Override

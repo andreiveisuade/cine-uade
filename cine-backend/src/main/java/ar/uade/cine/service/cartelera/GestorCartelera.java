@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorCartelera {
 
     // La primera proyección pública, y un margen para las que se anuncian con años de anticipación.
@@ -30,14 +32,6 @@ public class GestorCartelera {
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
     private final Reloj reloj;
-
-    public GestorCartelera(PeliculaRepository peliculaRepository, FuncionRepository funcionRepository,
-                           GestorProgramaciones programaciones, Reloj reloj) {
-        this.peliculaRepository = peliculaRepository;
-        this.funcionRepository = funcionRepository;
-        this.programaciones = programaciones;
-        this.reloj = reloj;
-    }
 
     public Pelicula agregar(String titulo, int duracionMinutos, List<Genero> generos,
                             Clasificacion clasificacion) {

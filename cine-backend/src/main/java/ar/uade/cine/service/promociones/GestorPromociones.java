@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +25,10 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorPromociones implements PoliticaPromociones {
 
     private final PromocionRepository promocionRepository;
-
-    public GestorPromociones(PromocionRepository promocionRepository) {
-        this.promocionRepository = promocionRepository;
-    }
 
     // Los valores llegan en objeto desde el pedido: que falte el propio del tipo lo dice el gestor,
     // porque la entidad los recibe primitivos y no tiene cómo enterarse. El resto de las reglas

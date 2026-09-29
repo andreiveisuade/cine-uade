@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.usuarios;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,15 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Sesión", description = "El login del panel")
 @RestController
+@RequiredArgsConstructor
 public class SesionController {
 
     private final GestorEmpleados empleados;
     private final VistasUsuarios vistas;
-
-    public SesionController(GestorEmpleados empleados, VistasUsuarios vistas) {
-        this.empleados = empleados;
-        this.vistas = vistas;
-    }
 
     // Las credenciales las verifica el filtro Basic, igual que en cualquier otra ruta: si el
     // login las comparara por su cuenta, habría dos caminos que pueden no coincidir. El cuerpo

@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -31,9 +31,9 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class GestorReservas {
-
-    private static final Logger LOG = LoggerFactory.getLogger(GestorReservas.class);
 
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
@@ -43,20 +43,6 @@ public class GestorReservas {
     private final CalculadoraPrecio calculadoraPrecio;
     private final Ocupacion ocupacion;
     private final Reloj reloj;
-
-    public GestorReservas(ReservaRepository reservaRepository, FuncionRepository funcionRepository,
-                          AsientoRepository asientoRepository, GestorClientes clientes,
-                          GeneradorTicket generadorTicket, CalculadoraPrecio calculadoraPrecio,
-                          Ocupacion ocupacion, Reloj reloj) {
-        this.reservaRepository = reservaRepository;
-        this.funcionRepository = funcionRepository;
-        this.asientoRepository = asientoRepository;
-        this.clientes = clientes;
-        this.generadorTicket = generadorTicket;
-        this.calculadoraPrecio = calculadoraPrecio;
-        this.ocupacion = ocupacion;
-        this.reloj = reloj;
-    }
 
     // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
@@ -85,7 +71,7 @@ public class GestorReservas {
         if (sesion != null) {
             ocupacion.liberar(funcionId, sesion);
         }
-        LOG.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
+        log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
                 detalleDe(entradas), reserva.getTotal());
 
         emitirTicket(reserva, funcion, sala, cliente);
@@ -129,7 +115,7 @@ public class GestorReservas {
         Reserva reserva = buscarOFallar(reservaId);
         reserva.cancelar();
         reservaRepository.save(reserva);
-        LOG.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
+        log.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
     }
 

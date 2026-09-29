@@ -14,8 +14,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Pelicula {
 
     @Id
@@ -46,6 +49,7 @@ public class Pelicula {
 
     private String posterUrl = "";
 
+    @Getter(AccessLevel.NONE)
     private boolean enCartelera = true;
 
     // Sin decirle DECIMAL(3,1), Hibernate espera FLOAT y `validate` corta el arranque.
@@ -68,22 +72,6 @@ public class Pelicula {
         this.generos.addAll(generos);
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public int getDuracionMinutos() {
-        return duracionMinutos;
-    }
-
-    public Clasificacion getClasificacion() {
-        return clasificacion;
-    }
-
     public List<Genero> getGeneros() {
         return new ArrayList<>(generos);
     }
@@ -104,40 +92,20 @@ public class Pelicula {
         generos.forEach(this::agregarGenero);
     }
 
-    public String getDirector() {
-        return director;
-    }
-
     public void setDirector(String director) {
         this.director = director;
-    }
-
-    public String getSinopsis() {
-        return sinopsis;
     }
 
     public void setSinopsis(String sinopsis) {
         this.sinopsis = sinopsis;
     }
 
-    public int getAnio() {
-        return anio;
-    }
-
     public void setAnio(int anio) {
         this.anio = anio;
     }
 
-    public String getIdiomaOriginal() {
-        return idiomaOriginal;
-    }
-
     public void setIdiomaOriginal(String idiomaOriginal) {
         this.idiomaOriginal = idiomaOriginal;
-    }
-
-    public String getPosterUrl() {
-        return posterUrl;
     }
 
     public void setPosterUrl(String posterUrl) {
@@ -152,24 +120,12 @@ public class Pelicula {
         this.enCartelera = enCartelera;
     }
 
-    public double getPuntaje() {
-        return puntaje;
-    }
-
     public void setPuntaje(double puntaje) {
         this.puntaje = puntaje;
     }
 
-    public int getVotos() {
-        return votos;
-    }
-
     public void setVotos(int votos) {
         this.votos = votos;
-    }
-
-    public EstadoRevision getEstadoRevision() {
-        return estadoRevision;
     }
 
     public void setEstadoRevision(EstadoRevision estadoRevision) {

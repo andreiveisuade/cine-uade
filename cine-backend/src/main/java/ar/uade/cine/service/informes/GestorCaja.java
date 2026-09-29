@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +21,12 @@ import ar.uade.cine.model.dinero.Dinero;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class GestorCaja {
 
     private final PagoRepository pagoRepository;
     private final ReservaRepository reservaRepository;
     private final CompraCandyRepository compraCandyRepository;
-
-    public GestorCaja(PagoRepository pagoRepository, ReservaRepository reservaRepository, CompraCandyRepository compraCandyRepository) {
-        this.pagoRepository = pagoRepository;
-        this.reservaRepository = reservaRepository;
-        this.compraCandyRepository = compraCandyRepository;
-    }
 
     public Arqueo arqueoDe(LocalDate fecha) {
         List<Pago> delDia = pagoRepository.findByDia(fecha);

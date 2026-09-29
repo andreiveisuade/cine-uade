@@ -3,6 +3,7 @@ package ar.uade.cine.service.usuarios;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,13 +13,10 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorClientes {
 
     private final ClienteRepository clienteRepository;
-
-    public GestorClientes(ClienteRepository clienteRepository) {
-        this.clienteRepository = clienteRepository;
-    }
 
     // Nombre y email los valida Usuario. Se construye antes de buscar el email repetido para que
     // un dato inválido se rechace primero, como cuando la validación estaba acá.

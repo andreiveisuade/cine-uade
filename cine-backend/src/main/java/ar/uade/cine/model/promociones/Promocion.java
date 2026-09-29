@@ -25,10 +25,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo")
+@Getter
 public abstract class Promocion {
 
     @Id
@@ -58,6 +61,7 @@ public abstract class Promocion {
     @Enumerated(EnumType.STRING)
     private Set<MedioPago> mediosPago = EnumSet.noneOf(MedioPago.class);
 
+    @Getter(AccessLevel.NONE)
     private boolean activa = true;
 
     protected Promocion() {
@@ -124,32 +128,8 @@ public abstract class Promocion {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public LocalDate getVigenciaDesde() {
-        return vigenciaDesde;
-    }
-
-    public LocalDate getVigenciaHasta() {
-        return vigenciaHasta;
-    }
-
     public Set<DayOfWeek> getDiasSemana() {
         return diasSemana.isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana);
-    }
-
-    public LocalTime getHoraDesde() {
-        return horaDesde;
-    }
-
-    public LocalTime getHoraHasta() {
-        return horaHasta;
     }
 
     public Set<MedioPago> getMediosPago() {

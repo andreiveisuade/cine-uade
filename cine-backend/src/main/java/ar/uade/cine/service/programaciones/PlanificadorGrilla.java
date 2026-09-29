@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ import ar.uade.cine.model.dinero.Dinero;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PlanificadorGrilla {
 
     // Crece con la raíz porque TMDB etiqueta de más.
@@ -48,12 +50,6 @@ public class PlanificadorGrilla {
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
-
-    public PlanificadorGrilla(PeliculaRepository peliculaRepository, SalaRepository salaRepository, GestorFunciones funciones) {
-        this.peliculaRepository = peliculaRepository;
-        this.salaRepository = salaRepository;
-        this.funciones = funciones;
-    }
 
     @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {

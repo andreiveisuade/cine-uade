@@ -1,5 +1,8 @@
 package ar.uade.cine.model.salas;
 
+import lombok.Getter;
+
+@Getter
 public enum TipoAsiento {
 
     ESTANDAR(1.0),
@@ -11,9 +14,5 @@ public enum TipoAsiento {
 
     TipoAsiento(double multiplicadorPrecio) {
         this.multiplicadorPrecio = multiplicadorPrecio;
-    }
-
-    public double getMultiplicadorPrecio() {
-        return multiplicadorPrecio;
     }
 }

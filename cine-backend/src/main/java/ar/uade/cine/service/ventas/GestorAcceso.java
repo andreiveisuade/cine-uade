@@ -1,7 +1,7 @@
 package ar.uade.cine.service.ventas;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,17 +13,12 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class GestorAcceso {
-
-    private static final Logger LOG = LoggerFactory.getLogger(GestorAcceso.class);
 
     private final ReservaRepository reservaRepository;
     private final Reloj reloj;
-
-    public GestorAcceso(ReservaRepository reservaRepository, Reloj reloj) {
-        this.reservaRepository = reservaRepository;
-        this.reloj = reloj;
-    }
 
     public Reserva registrarIngreso(String codigo) {
         if (codigo == null || codigo.isBlank()) {
@@ -33,7 +28,7 @@ public class GestorAcceso {
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
         reservaRepository.save(reserva);
-        LOG.info("ingreso reserva {} · codigo {} · {} personas",
+        log.info("ingreso reserva {} · codigo {} · {} personas",
                 reserva.getId(), reserva.getCodigo(), reserva.getCantidadEntradas());
         return reserva;
     }

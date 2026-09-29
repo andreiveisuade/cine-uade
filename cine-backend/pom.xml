@@ -88,6 +88,16 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
+    <!-- Lombok: escribe al compilar los getters de las entidades, el constructor de los
+         beans y el logger. Solo en compilación: optional para que no llegue a quien
+         dependa de este proyecto, y excluido del war en el plugin de abajo. Los setters
+         siguen a mano a propósito: cada uno es una decisión sobre qué se puede cambiar. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Driver JDBC de MySQL. En runtime: nadie lo importa, lo carga el DataSource. -->
     <dependency>
       <groupId>com.mysql</groupId>
@@ -126,6 +136,30 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- Lombok declarado como annotation processor: el javac de Java 21 todavía los
+           descubre solo en el classpath, pero avisa que dejará de hacerlo, y desde el 23
+           ya no lo hace. La versión la pone el parent. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
       </plugin>
     </plugins>
   </build>

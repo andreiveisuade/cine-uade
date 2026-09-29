@@ -1,5 +1,6 @@
 package ar.uade.cine.model.usuarios;
 
+import lombok.Getter;
 import org.hibernate.annotations.DiscriminatorFormula;
 
 import jakarta.persistence.Column;
@@ -18,6 +19,7 @@ import jakarta.persistence.Table;
 @Table(name = "usuario")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorFormula("case when rol = 'CLIENTE' then 'CLIENTE' else 'EMPLEADO' end")
+@Getter
 public abstract class Usuario {
 
     @Id
@@ -53,21 +55,5 @@ public abstract class Usuario {
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Rol getRol() {
-        return rol;
     }
 }

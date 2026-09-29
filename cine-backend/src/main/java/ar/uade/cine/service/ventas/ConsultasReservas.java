@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,13 +16,10 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class ConsultasReservas {
 
     private final ReservaRepository reservaRepository;
-
-    public ConsultasReservas(ReservaRepository reservaRepository) {
-        this.reservaRepository = reservaRepository;
-    }
 
     public Optional<Reserva> buscar(int id) {
         return reservaRepository.findById(id);

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorCandy {
 
     private final CompraCandyRepository compraCandyRepository;
@@ -31,16 +33,6 @@ public class GestorCandy {
     private final GeneradorTicketCandy generadorTicket;
     private final GestorProductos productos;
     private final Reloj reloj;
-
-    public GestorCandy(CompraCandyRepository compraCandyRepository, ClienteRepository clienteRepository, ReservaRepository reservaRepository,
-                       GeneradorTicketCandy generadorTicket, GestorProductos productos, Reloj reloj) {
-        this.compraCandyRepository = compraCandyRepository;
-        this.clienteRepository = clienteRepository;
-        this.reservaRepository = reservaRepository;
-        this.generadorTicket = generadorTicket;
-        this.productos = productos;
-        this.reloj = reloj;
-    }
 
     public CompraCandy vender(Integer clienteId, Map<Integer, Integer> cantidades,
                               MedioPago medio, String codigoAutorizacion) {

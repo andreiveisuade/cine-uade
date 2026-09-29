@@ -14,6 +14,9 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 /**
  * Una JTable sobre una lista de records: cada columna dice cómo sacar su texto de la fila. Evita repetir en cada
  * pantalla un AbstractTableModel con su switch por índice de columna.
@@ -47,6 +50,8 @@ public final class Tabla<T> {
     private final List<Columna<T>> columnas;
     private final List<T> filas = new ArrayList<>();
     private final Modelo modelo = new Modelo();
+    @Getter
+    @Accessors(fluent = true)
     private final JTable tabla;
 
     @SafeVarargs
@@ -84,10 +89,6 @@ public final class Tabla<T> {
                 if (e.getClickCount() == 2) seleccionada().ifPresent(accion);
             }
         });
-    }
-
-    public JTable tabla() {
-        return tabla;
     }
 
     public JScrollPane conScroll() {

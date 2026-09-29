@@ -7,9 +7,11 @@ import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.Getter;
 
 @Entity
 @DiscriminatorValue("PORCENTAJE")
+@Getter
 public class PromocionPorcentaje extends Promocion {
 
     // Sin columnDefinition, Hibernate espera FLOAT y `validate` corta el arranque.
@@ -25,10 +27,6 @@ public class PromocionPorcentaje extends Promocion {
             throw new IllegalArgumentException("El porcentaje tiene que estar entre 1 y 99");
         }
         this.porcentaje = porcentaje;
-    }
-
-    public double getPorcentaje() {
-        return porcentaje;
     }
 
     @Override

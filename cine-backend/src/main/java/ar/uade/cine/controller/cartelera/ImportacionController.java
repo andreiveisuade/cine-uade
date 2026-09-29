@@ -2,6 +2,7 @@ package ar.uade.cine.controller.cartelera;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,13 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 // Contesta al terminar la corrida (10-15 s): nginx tiene un timeout más largo para esta ruta.
 @Tag(name = "Importación", description = "La cartelera que baja de TMDB")
 @RestController
+@RequiredArgsConstructor
 public class ImportacionController {
 
     private final GestorImportaciones importaciones;
-
-    public ImportacionController(GestorImportaciones importaciones) {
-        this.importaciones = importaciones;
-    }
 
     @Operation(summary = "Si el importador tiene token y TMDB responde")
     @GetMapping("/api/importaciones/estado")

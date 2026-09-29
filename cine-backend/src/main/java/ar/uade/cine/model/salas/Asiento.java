@@ -3,6 +3,7 @@ package ar.uade.cine.model.salas;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.Getter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -17,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
+@Getter
 public class Asiento {
 
     @Id
@@ -50,33 +52,9 @@ public class Asiento {
         this.estado = EstadoAsiento.HABILITADO;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public Sala getSala() {
-        return sala;
-    }
-
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getSalaId() {
         return sala.getId();
-    }
-
-    public int getFila() {
-        return fila;
-    }
-
-    public int getNumero() {
-        return numero;
-    }
-
-    public TipoAsiento getTipo() {
-        return tipo;
-    }
-
-    public EstadoAsiento getEstado() {
-        return estado;
     }
 
     public void setEstado(EstadoAsiento estado) {

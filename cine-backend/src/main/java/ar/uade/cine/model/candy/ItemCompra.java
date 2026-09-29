@@ -10,15 +10,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 // Nombre, precio y ahorro se congelan al vender para que el ticket no cambie: si después se
 // edita el combo, la compra vieja sigue diciendo lo que se cobró y lo que se ahorró.
 @Entity
 @Table(name = "item_compra")
+@Getter
+@Accessors(fluent = true)
 public class ItemCompra {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Getter(AccessLevel.NONE)
     private int id;
 
     // EAGER a propósito, como las colecciones: el id del producto lo leen las vistas, ya
@@ -35,6 +41,7 @@ public class ItemCompra {
     private Dinero precioUnitario;
 
     @Column(name = "ahorro_unitario")
+    @Getter(AccessLevel.NONE)
     private Dinero ahorroUnitario;
 
     protected ItemCompra() {
@@ -46,22 +53,6 @@ public class ItemCompra {
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
         this.ahorroUnitario = producto.getAhorro();
-    }
-
-    public Producto producto() {
-        return producto;
-    }
-
-    public String nombre() {
-        return nombre;
-    }
-
-    public int cantidad() {
-        return cantidad;
-    }
-
-    public Dinero precioUnitario() {
-        return precioUnitario;
     }
 
     public Dinero getSubtotal() {

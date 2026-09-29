@@ -5,8 +5,12 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 @Embeddable
+@Getter
+@Accessors(fluent = true)
 public class ItemCombo {
 
     // EAGER a propósito, como las colecciones: el nombre del componente lo leen las vistas,
@@ -25,20 +29,12 @@ public class ItemCombo {
         this.cantidad = cantidad;
     }
 
-    public Producto producto() {
-        return producto;
-    }
-
     public String nombre() {
         return producto.getNombre();
     }
 
     public Dinero precioSuelto() {
         return producto.getPrecio().por(cantidad);
-    }
-
-    public int cantidad() {
-        return cantidad;
     }
 
     @Override

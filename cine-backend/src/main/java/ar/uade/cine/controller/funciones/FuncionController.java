@@ -2,6 +2,7 @@ package ar.uade.cine.controller.funciones;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,15 +33,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
+@RequiredArgsConstructor
 public class FuncionController {
 
     private final GestorFunciones funciones;
     private final VistasCartelera vistas;
-
-    public FuncionController(GestorFunciones funciones, VistasCartelera vistas) {
-        this.funciones = funciones;
-        this.vistas = vistas;
-    }
 
     @Operation(summary = "Buscar funciones por película, sala y rango de fechas")
     @GetMapping("/api/funciones")

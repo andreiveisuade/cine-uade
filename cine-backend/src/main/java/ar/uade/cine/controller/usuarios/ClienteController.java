@@ -2,6 +2,7 @@ package ar.uade.cine.controller.usuarios;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,15 +27,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Clientes", description = "El alta y la búsqueda de quien compra")
 @RestController
+@RequiredArgsConstructor
 public class ClienteController {
 
     private final GestorClientes clientes;
     private final VistasUsuarios vistas;
-
-    public ClienteController(GestorClientes clientes, VistasUsuarios vistas) {
-        this.clientes = clientes;
-        this.vistas = vistas;
-    }
 
     // Literal null y no 200 sin cuerpo: el res.json() del front reventaría.
     @Operation(summary = "Buscar un cliente por email. Si no está, devuelve null")

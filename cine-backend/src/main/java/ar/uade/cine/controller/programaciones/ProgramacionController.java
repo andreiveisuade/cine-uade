@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,13 +43,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
+@RequiredArgsConstructor
 public class ProgramacionController {
 
     private final GestorProgramaciones programaciones;
-
-    public ProgramacionController(GestorProgramaciones programaciones) {
-        this.programaciones = programaciones;
-    }
 
     @Operation(summary = "Las grillas cargadas, activas y dadas de baja")
     @GetMapping("/api/programaciones")
