@@ -72,6 +72,7 @@ public class PeliculaController {
     @Operation(summary = "Las funciones programadas de una película")
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
+        // Se busca antes solo acá: sin ella el listado saldría vacío, y vacío no es 404.
         buscar(id);
         return vistas.funciones(funciones.listarPorPelicula(id));
     }
@@ -86,8 +87,6 @@ public class PeliculaController {
     @Operation(summary = "Editar una película")
     @PutMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO editar(@PathVariable int id, @RequestBody PedidoEdicionPeliculaDTO pedido) {
-        // Se busca antes para responder 404 y no el 400 del gestor.
-        buscar(id);
         return vistas.pelicula(cartelera.editar(id, datosDe(pedido)));
     }
 
@@ -95,7 +94,6 @@ public class PeliculaController {
     @DeleteMapping("/api/peliculas/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
-        buscar(id);
         cartelera.eliminar(id);
     }
 
