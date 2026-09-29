@@ -8,6 +8,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
 
@@ -23,17 +25,23 @@ class PromocionTest {
         assertEquals(mensaje, assertThrows(IllegalArgumentException.class, construir).getMessage());
     }
 
-    @Test
-    void unNxMQueNoDescuentaNoSeConstruye() {
-        rechaza("En un NxM hay que llevar más de lo que se paga", () -> new PromocionNxM("2x2", 2, 2, AGOSTO));
-        rechaza("En un NxM hay que llevar más de lo que se paga", () -> new PromocionNxM("2x3", 2, 3, AGOSTO));
-        rechaza("En un NxM hay que llevar más de lo que se paga", () -> new PromocionNxM("1x0", 1, 0, AGOSTO));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            lleva lo mismo que paga,    2x2, 2, 2
+            lleva menos de lo que paga, 2x3, 2, 3
+            no paga nada,               1x0, 1, 0
+            """)
+    void unNxMQueNoDescuentaNoSeConstruye(String caso, String nombre, int lleva, int paga) {
+        rechaza("En un NxM hay que llevar más de lo que se paga", () -> new PromocionNxM(nombre, lleva, paga, AGOSTO));
     }
 
-    @Test
-    void unPorcentajeFueraDeRangoNoSeConstruye() {
-        rechaza("El porcentaje tiene que estar entre 1 y 99", () -> new PromocionPorcentaje("gratis", 100, AGOSTO));
-        rechaza("El porcentaje tiene que estar entre 1 y 99", () -> new PromocionPorcentaje("nada", 0, AGOSTO));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            el cien por ciento, gratis, 100
+            el cero por ciento, nada,   0
+            """)
+    void unPorcentajeFueraDeRangoNoSeConstruye(String caso, String nombre, int porcentaje) {
+        rechaza("El porcentaje tiene que estar entre 1 y 99", () -> new PromocionPorcentaje(nombre, porcentaje, AGOSTO));
     }
 
     @Test

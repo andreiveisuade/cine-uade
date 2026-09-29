@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -277,22 +279,23 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("El Resplandor", 146, List.of(Genero.TERROR), Clasificacion.MAS_18);
     }
 
-    @Test
-    void buscarSinCriteriosDevuelveTodo() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin criterios devuelve todo,                                     ,          ,                ,     3
+            un título vacío no filtra,                                       '',        ,                ,     3
+            el título es parcial,                                            matrix,    ,                ,     2
+            el título no distingue mayúsculas,                               MATRIX,    ,                ,     2
+            por una palabra del título,                                      reloaded,  ,                ,     1
+            por un pedazo del medio del título,                              esplandor, ,                ,     1
+            los criterios se combinan,                                       matrix,    CIENCIA_FICCION, true, 1
+            ninguna Matrix es de terror: combinar tiene que poder dar vacío, matrix,    TERROR,          ,     0
+            sin coincidencias devuelve vacío y no falla,                     titanic,   ,                ,     0
+            """)
+    void buscarFiltraPorTituloGeneroYEstado(String caso, String titulo, Genero genero, Boolean publicada,
+            int esperadas) {
         cargarCatalogo();
 
-        assertEquals(3, gestor.buscar(null, null, null).size());
-        assertEquals(3, gestor.buscar("", null, null).size());
-    }
-
-    @Test
-    void buscarPorTituloEsParcialYNoDistingueMayusculas() {
-        cargarCatalogo();
-
-        assertEquals(2, gestor.buscar("matrix", null, null).size());
-        assertEquals(2, gestor.buscar("MATRIX", null, null).size());
-        assertEquals(1, gestor.buscar("reloaded", null, null).size());
-        assertEquals(1, gestor.buscar("esplandor", null, null).size());
+        assertEquals(esperadas, gestor.buscar(titulo, genero, publicada).size(), caso);
     }
 
     @Test
@@ -308,22 +311,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(2, gestor.buscar(null, null, true).size());
         assertEquals(1, gestor.buscar(null, null, false).size());
         assertEquals(3, gestor.buscar(null, null, null).size(), "null es todas, no ninguna");
-    }
-
-    @Test
-    void losCriteriosSeCombinan() {
-        cargarCatalogo();
-
-        assertEquals(1, gestor.buscar("matrix", Genero.CIENCIA_FICCION, true).size());
-        assertTrue(gestor.buscar("matrix", Genero.TERROR, null).isEmpty(),
-                "ninguna Matrix es de terror: combinar tiene que poder dar vacío");
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
-        cargarCatalogo();
-
-        assertTrue(gestor.buscar("titanic", null, null).isEmpty());
     }
 
     private DatosPelicula deTmdb(String titulo) {

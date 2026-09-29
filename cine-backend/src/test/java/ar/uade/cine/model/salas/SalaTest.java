@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class SalaTest {
 
@@ -12,21 +14,29 @@ class SalaTest {
         assertEquals(mensaje, assertThrows(IllegalArgumentException.class, accion).getMessage());
     }
 
-    @Test
-    void unaSalaSinNombreSinTipoOConLimpiezaNegativaNoSeConstruye() {
-        rechaza("El nombre no puede estar vacío", () -> new Sala(null, TipoSala.DOS_D, 15));
-        rechaza("El nombre no puede estar vacío", () -> new Sala("  ", TipoSala.DOS_D, 15));
-        rechaza("Falta el tipo de sala", () -> new Sala("Sala 1", null, 15));
-        rechaza("Los minutos de limpieza no pueden ser negativos", () -> new Sala("Sala 1", TipoSala.DOS_D, -1));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin nombre,        ,       DOS_D, 15, El nombre no puede estar vacío
+            nombre en blanco,  '  ',   DOS_D, 15, El nombre no puede estar vacío
+            sin tipo,          Sala 1, ,      15, Falta el tipo de sala
+            limpieza negativa, Sala 1, DOS_D, -1, Los minutos de limpieza no pueden ser negativos
+            """)
+    void unaSalaSinNombreSinTipoOConLimpiezaNegativaNoSeConstruye(String caso, String nombre, TipoSala tipo,
+            int limpieza, String mensaje) {
+        rechaza(mensaje, () -> new Sala(nombre, tipo, limpieza));
     }
 
-    @Test
-    void editarPideLoMismoQueElAltaYNoTocaNadaSiRechaza() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            nombre vacío,      '',     TRES_D, 10, El nombre no puede estar vacío
+            sin tipo,          Sala 2, ,       10, Falta el tipo de sala
+            limpieza negativa, Sala 2, TRES_D, -5, Los minutos de limpieza no pueden ser negativos
+            """)
+    void editarPideLoMismoQueElAltaYNoTocaNadaSiRechaza(String caso, String nombre, TipoSala tipo,
+            int limpieza, String mensaje) {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
-        rechaza("El nombre no puede estar vacío", () -> sala.editar("", TipoSala.TRES_D, 10));
-        rechaza("Falta el tipo de sala", () -> sala.editar("Sala 2", null, 10));
-        rechaza("Los minutos de limpieza no pueden ser negativos", () -> sala.editar("Sala 2", TipoSala.TRES_D, -5));
+        rechaza(mensaje, () -> sala.editar(nombre, tipo, limpieza));
 
         assertEquals("Sala 1", sala.getNombre());
         assertEquals(TipoSala.DOS_D, sala.getTipo());

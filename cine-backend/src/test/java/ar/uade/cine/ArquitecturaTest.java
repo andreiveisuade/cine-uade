@@ -15,6 +15,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class ArquitecturaTest {
 
@@ -34,35 +36,17 @@ class ArquitecturaTest {
     @DisplayName("Las flechas entre capas van todas para el mismo lado")
     class Dependencias {
 
-        @Test
-        @DisplayName("model/ no importa ninguna otra capa")
-        void elModeloNoDependeDeNada() {
-            assertSinViolaciones(violacionesDeCapa("model"));
-        }
-
-        @Test
-        @DisplayName("repository/ conoce el modelo que guarda, y nada más")
-        void laPersistenciaSoloConoceElDominio() {
-            assertSinViolaciones(violacionesDeCapa("repository"));
-        }
-
-        @Test
-        @DisplayName("service/ no importa controller/ ni dto/: las reglas no saben que existe HTTP")
-        void elServicioNoDependeDeLaEntrada() {
-            assertSinViolaciones(violacionesDeCapa("service"));
-        }
-
-        @Test
-        @DisplayName("dto/ no tiene lógica: no importa service/ ni repository/")
-        void losDtoNoDependenDeLosGestores() {
-            assertSinViolaciones(violacionesDeCapa("dto"));
-        }
-
-        @Test
-        @DisplayName("infrastructure/ es adaptador de salida, no llama a la entrada")
-        void laInfraestructuraNoDependeDeLaApi() {
-            // 'service' porque importador/ devuelve DatosPelicula y seguridad/ re-hashea claves por GestorEmpleados.
-            assertSinViolaciones(violacionesDeCapa("infrastructure"));
+        @ParameterizedTest(name = "{1}")
+        @CsvSource(textBlock = """
+                model,          'model/ no importa ninguna otra capa'
+                repository,     'repository/ conoce el modelo que guarda, y nada más'
+                service,        'service/ no importa controller/ ni dto/: las reglas no saben que existe HTTP'
+                dto,            'dto/ no tiene lógica: no importa service/ ni repository/'
+                # 'service' porque importador/ devuelve DatosPelicula y seguridad/ re-hashea claves por GestorEmpleados.
+                infrastructure, 'infrastructure/ es adaptador de salida, no llama a la entrada'
+                """)
+        void cadaCapaImportaSoloLasQueTieneDebajo(String capa, String regla) {
+            assertSinViolaciones(violacionesDeCapa(capa));
         }
     }
 

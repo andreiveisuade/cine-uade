@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 class EmpleadoTest {
 
@@ -13,12 +17,12 @@ class EmpleadoTest {
     }
 
     // La fórmula del discriminador lo releería como Cliente: no puede existir.
-    @Test
-    void unEmpleadoConRolClienteNoSeConstruye() {
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(names = "CLIENTE")
+    @NullSource
+    void unEmpleadoConRolClienteNoSeConstruye(Rol rol) {
         rechaza("El rol tiene que ser ADMINISTRADOR o ACOMODADOR",
-                () -> new Empleado("Ana", "ana@cine.com", "{bcrypt}x", Rol.CLIENTE));
-        rechaza("El rol tiene que ser ADMINISTRADOR o ACOMODADOR",
-                () -> new Empleado("Ana", "ana@cine.com", "{bcrypt}x", null));
+                () -> new Empleado("Ana", "ana@cine.com", "{bcrypt}x", rol));
     }
 
     @Test
@@ -27,9 +31,12 @@ class EmpleadoTest {
         rechaza("El email no es válido", () -> new Cliente("Ana", "ana.cine.com"));
     }
 
-    @Test
-    void losDosRolesDeEmpleadoSeConstruyen() {
-        assertEquals(Rol.ADMINISTRADOR, new Empleado("Encargado", "e@cine.com", "{bcrypt}x", Rol.ADMINISTRADOR).getRol());
-        assertEquals(Rol.ACOMODADOR, new Empleado("Portero", "p@cine.com", "{bcrypt}x", Rol.ACOMODADOR).getRol());
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            ADMINISTRADOR, Encargado, e@cine.com
+            ACOMODADOR,    Portero,   p@cine.com
+            """)
+    void losDosRolesDeEmpleadoSeConstruyen(Rol rol, String nombre, String email) {
+        assertEquals(rol, new Empleado(nombre, email, "{bcrypt}x", rol).getRol());
     }
 }

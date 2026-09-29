@@ -11,6 +11,9 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class DineroTest {
 
@@ -69,11 +72,14 @@ class DineroTest {
             assertEquals(Dinero.de(5000), Dinero.de(15000).menos(Dinero.de(10000)));
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                un recargo,    5000, 1.3, 6500
+                un descuento,  5000, 0.5, 2500
+                """)
         @DisplayName("por() es el multiplicador de sala, de butaca y de tarifa")
-        void multiplicaPorUnFactorSinUnidad() {
-            assertEquals(Dinero.de(6500), Dinero.de(5000).por(1.3));
-            assertEquals(Dinero.de(2500), Dinero.de(5000).por(0.5));
+        void multiplicaPorUnFactorSinUnidad(String caso, double pesos, double factor, double esperado) {
+            assertEquals(Dinero.de(esperado), Dinero.de(pesos).por(factor));
         }
 
         @Test
@@ -109,10 +115,13 @@ class DineroTest {
             assertEquals(Dinero.de(500), Dinero.de(500).acotadoA(Dinero.de(1500)));
         }
 
-        @Test
-        void sinBajarDeCeroRecortaLoNegativo() {
-            assertEquals(Dinero.CERO, Dinero.de(-80).sinBajarDeCero());
-            assertEquals(Dinero.de(80), Dinero.de(80).sinBajarDeCero());
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                lo negativo queda en cero, -80, 0
+                lo positivo no cambia,      80, 80
+                """)
+        void sinBajarDeCeroRecortaLoNegativo(String caso, double pesos, double esperado) {
+            assertEquals(Dinero.de(esperado), Dinero.de(pesos).sinBajarDeCero());
         }
     }
 
@@ -120,11 +129,14 @@ class DineroTest {
     @DisplayName("Comparar, que es lo que R15 necesita para elegir la promoción que más descuenta")
     class Comparaciones {
 
-        @Test
-        void ordenaPorImporte() {
-            assertTrue(Dinero.de(3000).esMayorQue(Dinero.de(2000)));
-            assertFalse(Dinero.de(2000).esMayorQue(Dinero.de(3000)));
-            assertFalse(Dinero.de(2000).esMayorQue(Dinero.de(2000)));
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                el mayor es mayor,       3000, 2000, true
+                el menor no es mayor,    2000, 3000, false
+                un igual no es mayor,    2000, 2000, false
+                """)
+        void ordenaPorImporte(String caso, double uno, double otro, boolean esMayor) {
+            assertEquals(esMayor, Dinero.de(uno).esMayorQue(Dinero.de(otro)));
         }
 
         @Test
@@ -153,21 +165,23 @@ class DineroTest {
             assertEquals(1234.56, Dinero.de(1234.56).aPesos(), 0.0);
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @ValueSource(doubles = {0, 0.01, 1234.56, 99999.99})
         @DisplayName("entrar y salir no cambia el importe")
-        void elViajeDeIdaYVueltaEsFiel() {
-            for (double pesos : new double[] {0, 0.01, 1234.56, 99999.99}) {
-                assertEquals(pesos, Dinero.de(pesos).aPesos(), 0.0);
-            }
+        void elViajeDeIdaYVueltaEsFiel(double pesos) {
+            assertEquals(pesos, Dinero.de(pesos).aPesos(), 0.0);
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                pesos enteros,  15000,   15000.00
+                con centavos,   1234.56, 1234.56
+                solo centavos,  0.05,    0.05
+                negativo,       -0.05,   -0.05
+                """)
         @DisplayName("se escribe con dos decimales, como el comprobante")
-        void seImprimeConDosDecimales() {
-            assertEquals("15000.00", Dinero.de(15000).toString());
-            assertEquals("1234.56", Dinero.de(1234.56).toString());
-            assertEquals("0.05", Dinero.de(0.05).toString());
-            assertEquals("-0.05", Dinero.de(-0.05).toString());
+        void seImprimeConDosDecimales(String caso, double pesos, String impreso) {
+            assertEquals(impreso, Dinero.de(pesos).toString());
         }
     }
 }

@@ -9,12 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -101,57 +104,34 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    @Test
-    void buscarSinCriteriosDevuelveTodo() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin criterios devuelve todo,                                     ,   ,  ,           ,           3
+            las dos de Interstellar,                                         1,  ,  ,           ,           2
+            las dos de la sala 1,                                            ,   1, ,           ,           2
+            película y sala combinadas,                                      1,  1, ,           ,           1
+            el rango incluye los dos extremos,                               ,   ,  2026-08-20, 2026-08-22, 3
+            un solo día: desde y hasta iguales,                              ,   ,  2026-08-22, 2026-08-22, 1
+            solo desde: de ahí en adelante,                                  ,   ,  2026-08-21, ,           1
+            solo hasta: todo lo anterior,                                    ,   ,  ,           2026-08-21, 2
+            un rango sin funciones da vacío,                                 ,   ,  2027-01-01, 2027-12-31, 0
+            'una película que no existe no es un error, es cero resultados', 99, ,  ,           ,           0
+            """)
+    void buscarFiltraPorPeliculaSalaYRangoDeFechas(String caso, Integer pelicula, Integer sala,
+            LocalDate desde, LocalDate hasta, int esperadas) {
         cargarMasFunciones();
 
-        assertEquals(3, funciones.buscar(null, null, null, null).size());
+        assertEquals(esperadas, funciones.buscar(pelicula, sala, desde, hasta).size(), caso);
     }
 
-    @Test
-    void buscarPorPeliculaYPorSala() {
-        cargarMasFunciones();
-
-        assertEquals(2, funciones.buscar(1, null, null, null).size(), "las dos de Interstellar");
-        assertEquals(2, funciones.buscar(null, 1, null, null).size(), "las dos de la sala 1");
-        assertEquals(1, funciones.buscar(1, 1, null, null).size());
-    }
-
-    @Test
-    void elRangoDeFechasIncluyeLosDosExtremos() {
-        cargarMasFunciones();
-
-        assertEquals(3, funciones.buscar(null, null,
-                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 22)).size());
-        assertEquals(1, funciones.buscar(null, null,
-                LocalDate.of(2026, 8, 22), LocalDate.of(2026, 8, 22)).size(),
-                "un solo día: desde y hasta iguales");
-    }
-
-    @Test
-    void elRangoSeAbreDeUnLadoODelOtro() {
-        cargarMasFunciones();
-
-        assertEquals(1, funciones.buscar(null, null, LocalDate.of(2026, 8, 21), null).size(),
-                "solo desde: de ahí en adelante");
-        assertEquals(2, funciones.buscar(null, null, null, LocalDate.of(2026, 8, 21)).size(),
-                "solo hasta: todo lo anterior");
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
-        cargarMasFunciones();
-
-        assertTrue(funciones.buscar(null, null,
-                LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31)).isEmpty());
-        assertTrue(funciones.buscar(99, null, null, null).isEmpty(),
-                "una película que no existe no es un error, es cero resultados");
-    }
-
-    @Test
-    void rechazaFuncionQueEmpiezaMientrasCorreOtra() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            empieza mientras corre otra,                    21:00
+            pegada al final de la anterior por la limpieza, 22:00
+            """)
+    void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio) {
         assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 21, 0),
+                () -> funciones.programar(1, 1, LocalDate.of(2026, 8, 20).atTime(inicio),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
         assertEquals(1, funciones.listar().size());
     }
@@ -167,14 +147,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
-    }
-
-    @Test
-    void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
-        assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 0),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
-        assertEquals(1, funciones.listar().size());
     }
 
     @Test

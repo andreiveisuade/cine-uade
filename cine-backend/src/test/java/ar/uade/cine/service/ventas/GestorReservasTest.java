@@ -18,6 +18,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -407,52 +409,38 @@ class GestorReservasTest extends PruebaDeIntegracion {
         reservas.cancelar(reservas.reservar(1, 1, generales("A3"), null).getId());
     }
 
-    @Test
-    void buscarSinCriteriosDevuelveTodo() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin criterios devuelve todo,                 ,          ,           ,                     3
+            reservadas,                                  RESERVADA, ,           ,                     2
+            canceladas,                                  CANCELADA, ,           ,                     1
+            el día de dos funciones,                     ,          2026-08-20, ,                     2
+            el día de una función,                       ,          2026-08-21, ,                     1
+            un día sin funciones,                        ,          2026-08-22, ,                     0
+            por nombre del cliente,                      ,          ,           andrei,               2
+            por email,                                   ,          ,           sofia@ejemplo,        1
+            por título de la película,                   ,          ,           padrino,              1
+            por código de butaca,                        ,          ,           B1,                   1
+            el texto no distingue mayúsculas,            ,          ,           ANDREI,               2
+            coincide en el medio,                        ,          ,           ndre,                 2
+            reservadas de andrei,                        RESERVADA, ,           andrei,               1
+            canceladas de andrei,                        CANCELADA, ,           andrei,               1
+            un texto vacío no filtra,                    ,          ,           '',                   3
+            solo espacios es lo mismo que vacío,         ,          ,           '   ',                3
+            sin coincidencias devuelve vacío y no falla, ,          ,           nadie con ese nombre, 0
+            """)
+    void buscarFiltraPorEstadoDiaYTexto(String caso, EstadoReserva estado, LocalDate dia, String texto,
+            int esperadas) {
         cargarReservas();
 
-        assertEquals(3, consultas.buscar(new CriteriosReserva(null, null, null)).size());
+        assertEquals(esperadas, consultas.buscar(new CriteriosReserva(estado, dia, texto)).size(), caso);
+    }
+
+    @Test
+    void buscarConNullEsSinFiltros() {
+        cargarReservas();
+
         assertEquals(3, consultas.buscar(null).size(), "null no puede romper: es 'sin filtros'");
-    }
-
-    @Test
-    void filtraPorEstado() {
-        cargarReservas();
-
-        assertEquals(2, consultas.buscar(
-                new CriteriosReserva(EstadoReserva.RESERVADA, null, null)).size());
-        assertEquals(1, consultas.buscar(
-                new CriteriosReserva(EstadoReserva.CANCELADA, null, null)).size());
-    }
-
-    @Test
-    void filtraPorElDiaDeLaFuncion() {
-        cargarReservas();
-
-        assertEquals(2, consultas.buscar(
-                new CriteriosReserva(null, LocalDate.of(2026, 8, 20), null)).size());
-        assertEquals(1, consultas.buscar(
-                new CriteriosReserva(null, LocalDate.of(2026, 8, 21), null)).size());
-        assertTrue(consultas.buscar(
-                new CriteriosReserva(null, LocalDate.of(2026, 8, 22), null)).isEmpty());
-    }
-
-    @Test
-    void elTextoBuscaPorClienteEmailPeliculaYButaca() {
-        cargarReservas();
-
-        assertEquals(2, buscarTexto("andrei").size(), "por nombre del cliente");
-        assertEquals(1, buscarTexto("sofia@ejemplo").size(), "por email");
-        assertEquals(1, buscarTexto("padrino").size(), "por título de la película");
-        assertEquals(1, buscarTexto("B1").size(), "por código de butaca");
-    }
-
-    @Test
-    void elTextoNoDistingueMayusculasYEsParcial() {
-        cargarReservas();
-
-        assertEquals(2, buscarTexto("ANDREI").size());
-        assertEquals(2, buscarTexto("ndre").size(), "coincide en el medio");
     }
 
     @Test
@@ -462,31 +450,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(1, buscarTexto(codigo).size());
         assertEquals(1, buscarTexto(codigo.toLowerCase()).size());
-    }
-
-    @Test
-    void losCriteriosSeCombinan() {
-        cargarReservas();
-
-        assertEquals(1, consultas.buscar(
-                new CriteriosReserva(EstadoReserva.RESERVADA, null, "andrei")).size());
-        assertEquals(1, consultas.buscar(
-                new CriteriosReserva(EstadoReserva.CANCELADA, null, "andrei")).size());
-    }
-
-    @Test
-    void unTextoEnBlancoNoFiltra() {
-        cargarReservas();
-
-        assertEquals(3, buscarTexto("").size());
-        assertEquals(3, buscarTexto("   ").size(), "solo espacios es lo mismo que vacío");
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
-        cargarReservas();
-
-        assertTrue(buscarTexto("nadie con ese nombre").isEmpty());
     }
 
     private List<Reserva> buscarTexto(String texto) {

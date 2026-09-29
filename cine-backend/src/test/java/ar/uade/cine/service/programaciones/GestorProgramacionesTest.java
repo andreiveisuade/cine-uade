@@ -15,6 +15,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -347,37 +349,22 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         programaciones.desactivar(enSala2.programacion().getId());
     }
 
-    @Test
-    void buscarSinCriteriosDevuelveTodasIncluidasLasDeBaja() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            null es todas: incluidas las de baja, ,   ,  ,      2
+            las activas,                          ,   ,  true,  1
+            las dadas de baja,                    ,   ,  false, 1
+            las de la sala 1,                     ,   1, ,      1
+            las de la sala 2,                     ,   2, ,      1
+            la sala 2 no tiene activas,           ,   2, true,  0
+            la de la sala 2 está dada de baja,    ,   2, false, 1
+            sin coincidencias devuelve vacío,     99, ,  ,      0
+            """)
+    void buscarFiltraPorPeliculaSalaYEstado(String caso, Integer pelicula, Integer sala, Boolean activa,
+            int esperadas) {
         cargarGrillas();
 
-        assertEquals(2, programaciones.buscar(null, null, null).size());
-    }
-
-    @Test
-    void filtraLasActivasYLasDadasDeBaja() {
-        cargarGrillas();
-
-        assertEquals(1, programaciones.buscar(null, null, true).size());
-        assertEquals(1, programaciones.buscar(null, null, false).size());
-        assertEquals(2, programaciones.buscar(null, null, null).size(), "null es todas");
-    }
-
-    @Test
-    void filtraPorSalaYCombinaConElEstado() {
-        cargarGrillas();
-
-        assertEquals(1, programaciones.buscar(null, 1, null).size());
-        assertEquals(1, programaciones.buscar(null, 2, null).size());
-        assertTrue(programaciones.buscar(null, 2, true).isEmpty());
-        assertEquals(1, programaciones.buscar(null, 2, false).size());
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacio() {
-        cargarGrillas();
-
-        assertTrue(programaciones.buscar(99, null, null).isEmpty());
+        assertEquals(esperadas, programaciones.buscar(pelicula, sala, activa).size(), caso);
     }
 
     private PlanProgramacion crearAbierta() {

@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeApi;
@@ -51,29 +53,18 @@ class GrillaControllerTest extends PruebaDeApi {
                 "previsualizar no escribe: el contador queda en cero");
     }
 
-    @Test
-    void sinPrecioAvisaQueFaltaYNoQueEsInvalido() {
-        Respuesta respuesta = post("/api/grilla/propuesta", "{}");
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin precio avisa que falta y no que es inválido,      '{}',                        Falta el precio de las funciones
+            # La propuesta se arma en memoria pase por pase: un pedido de años no puede llegar al planificador.
+            una grilla de más de un mes es 400,                   '{"precio":5000,"dias":32}', La grilla no puede cubrir más de 31 días
+            con precio en cero el mensaje es el del planificador, '{"precio":0}',              El precio debe ser mayor a cero
+            """)
+    void unaPropuestaInvalidaEs400ConSuMensaje(String caso, String cuerpo, String mensaje) {
+        Respuesta respuesta = post("/api/grilla/propuesta", cuerpo);
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Falta el precio de las funciones", respuesta.json().get("error").asText());
-    }
-
-    // La propuesta se arma en memoria pase por pase: un pedido de años no puede llegar al planificador.
-    @Test
-    void unaGrillaDeMasDeUnMesEs400() {
-        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000,\"dias\":32}");
-
-        assertEquals(400, respuesta.estado());
-        assertEquals("La grilla no puede cubrir más de 31 días", respuesta.json().get("error").asText());
-    }
-
-    @Test
-    void conPrecioEnCeroElMensajeEsElDelPlanificador() {
-        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":0}");
-
-        assertEquals(400, respuesta.estado());
-        assertEquals("El precio debe ser mayor a cero", respuesta.json().get("error").asText());
+        assertEquals(mensaje, respuesta.json().get("error").asText());
     }
 
     @Test

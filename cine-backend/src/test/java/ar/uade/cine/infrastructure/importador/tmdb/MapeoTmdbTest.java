@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -44,35 +46,41 @@ class MapeoTmdbTest {
         assertEquals(List.of(Genero.DRAMA), MapeoTmdb.generosDe(json("{}")));
     }
 
-    @Test
-    void sinCertificacionArgentinaElDefaultEsElRestrictivo() {
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe(null));
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe(""));
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("no la publicaron"));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin certificación argentina,  ,                 MAS_13
+            certificación vacía,          '',               MAS_13
+            una que no se entiende,       no la publicaron, MAS_13
+            con el signo,                 +13,              MAS_13
+            solo el número,               13,               MAS_13
+            con el prefijo sam,           sam13,            MAS_13
+            con espacios y en minúsculas, ' atp ',          ATP
+            la letra C,                   C,                MAS_18
+            """)
+    void laCertificacionSeLeeEnSusVariasFormasYSinEllaEsLaRestrictiva(String caso, String certificacion,
+            Clasificacion esperada) {
+        assertEquals(esperada, MapeoTmdb.clasificacionDe(certificacion));
     }
 
-    @Test
-    void lasTresFormasDeLaMismaCertificacion() {
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("+13"));
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("13"));
-        assertEquals(Clasificacion.MAS_13, MapeoTmdb.clasificacionDe("sam13"));
-        assertEquals(Clasificacion.ATP, MapeoTmdb.clasificacionDe(" atp "));
-        assertEquals(Clasificacion.MAS_18, MapeoTmdb.clasificacionDe("C"));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            inglés,                            en, Inglés
+            coreano,                           ko, Coreano
+            fuera de la tabla queda el código, sv, sv
+            """)
+    void elIdiomaSeTraduceYSiNoEstaEnLaTablaQuedaElCodigo(String caso, String codigo, String idioma) {
+        assertEquals(idioma, MapeoTmdb.idiomaDe(codigo));
     }
 
-    @Test
-    void elIdiomaSeTraduceYSiNoEstaEnLaTablaQuedaElCodigo() {
-        assertEquals("Inglés", MapeoTmdb.idiomaDe("en"));
-        assertEquals("Coreano", MapeoTmdb.idiomaDe("ko"));
-        assertEquals("sv", MapeoTmdb.idiomaDe("sv"));
-    }
-
-    @Test
-    void elAnioSaleDeLaFechaDeEstrenoYCeroSiNoSeEntiende() {
-        assertEquals(2026, MapeoTmdb.anioDe("2026-08-15"));
-        assertEquals(0, MapeoTmdb.anioDe(null));
-        assertEquals(0, MapeoTmdb.anioDe(""));
-        assertEquals(0, MapeoTmdb.anioDe("proximamente"));
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            de la fecha de estreno,       2026-08-15,   2026
+            sin fecha,                    ,             0
+            fecha vacía,                  '',           0
+            una fecha que no se entiende, proximamente, 0
+            """)
+    void elAnioSaleDeLaFechaDeEstrenoYCeroSiNoSeEntiende(String caso, String fecha, int anio) {
+        assertEquals(anio, MapeoTmdb.anioDe(fecha));
     }
 
     @Test
