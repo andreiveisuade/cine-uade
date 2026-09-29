@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeApi;
@@ -232,6 +234,26 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("La butaca A1 ya está ocupada", vendida.error());
         assertEquals(400, fueraDeServicio.estado());
         assertEquals("La butaca B1 está fuera de servicio", fueraDeServicio.error());
+    }
+
+    // Regresión: el tope y las repetidas se miraban después de la ocupación y salía 409, con el que la web
+    // recarga el mapa como si otro hubiera ganado la butaca. Es un pedido que no pasa nunca: 400, como el bloqueo.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            once con una ocupada | "A1":"GENERAL","A2":"GENERAL","A3":"GENERAL","A4":"GENERAL","A5":"GENERAL","A6":"GENERAL","B1":"GENERAL","B2":"GENERAL","B3":"GENERAL","B4":"GENERAL","B5":"GENERAL" | Una compra tiene que tener como máximo 10 butacas
+            la ocupada repetida  | "A1":"GENERAL","a1":"GENERAL"                                                                                                                            | La butaca A1 está repetida en el pedido
+            """)
+    void elPedidoSeValidaAntesDeMirarLaOcupacion(String caso, String butacas, String mensaje) {
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(6, 6));
+        Funcion funcion = funciones.programar(1, 2,
+                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        reservas.reservar(funcion.getId(), reserva.getClienteId(), Map.of("A1", TipoTarifa.GENERAL), null);
+
+        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":" + funcion.getId()
+                + ",\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"butacas\":{" + butacas + "}}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
     }
 
     // Regresión: salía 409 y la web vaciaba la selección como si otro hubiera ganado la butaca.

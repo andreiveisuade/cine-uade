@@ -60,9 +60,12 @@ public class GestorReservas {
 
     private Reserva vender(Funcion funcion, Cliente cliente, Map<String, TipoTarifa> butacas, String sesion) {
         // Un pedido sin butacas es uno vacío: la reserva sin entradas la rechaza Reserva.
-        List<Entrada> entradas = armarEntradas(funcion, butacas == null ? Map.of() : butacas, sesion);
-        Reserva reserva = guardarCompitiendoPorLasButacas(
-                new Reserva(funcion, cliente, entradas, reloj.ahora()));
+        List<Entrada> entradas = armarEntradas(funcion, butacas == null ? Map.of() : butacas);
+        // La reserva valida el pedido entero (tope, repetidas) antes de mirar la ocupación, como el bloqueo:
+        // once butacas con una tomada eran un 409 y la web recargaba el mapa por un pedido que nunca iba a pasar.
+        Reserva nueva = new Reserva(funcion, cliente, entradas, reloj.ahora());
+        exigirLibres(entradas, ocupacion.asientosOcupados(funcion.getId(), sesion));
+        Reserva reserva = guardarCompitiendoPorLasButacas(nueva);
         if (sesion != null) {
             ocupacion.liberar(funcion.getId(), sesion);
         }
@@ -74,26 +77,25 @@ public class GestorReservas {
         return reserva;
     }
 
-    private List<Entrada> armarEntradas(Funcion funcion, Map<String, TipoTarifa> butacas, String sesion) {
+    private List<Entrada> armarEntradas(Funcion funcion, Map<String, TipoTarifa> butacas) {
         Sala sala = funcion.getSala();
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
-        Set<Integer> ocupados = ocupacion.asientosOcupados(funcion.getId(), sesion);
 
         List<Entrada> entradas = new ArrayList<>();
         for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
             // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
             Asiento asiento = Asiento.exigirConCodigo(deLaSala, pedido.getKey());
             // La entrada valida su butaca (R9) y resuelve la tarifa; que esté libre depende de las otras reservas.
-            Entrada entrada = new Entrada(asiento, pedido.getValue(), funcion.precioDe(asiento, sala));
-            exigirLibre(asiento, ocupados);
-            entradas.add(entrada);
+            entradas.add(new Entrada(asiento, pedido.getValue(), funcion.precioDe(asiento, sala)));
         }
         return entradas;
     }
 
-    private static void exigirLibre(Asiento asiento, Set<Integer> ocupados) {
-        if (ocupados.contains(asiento.getId())) {
-            throw new ButacaOcupada("La butaca " + asiento.getCodigo() + " ya está ocupada");
+    private static void exigirLibres(List<Entrada> entradas, Set<Integer> ocupados) {
+        for (Entrada entrada : entradas) {
+            if (ocupados.contains(entrada.asientoId())) {
+                throw new ButacaOcupada("La butaca " + entrada.codigoAsiento() + " ya está ocupada");
+            }
         }
     }
 
