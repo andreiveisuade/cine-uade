@@ -9,6 +9,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -193,6 +195,23 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.json()).hasSize(1);
         assertThat(respuesta.json().get(0).has("codigo")).isFalse();
         assertThat(get("/api/reservas").json().get(0).has("codigo")).isTrue();
+    }
+
+    // El firewall rechaza antes de cualquier controller y el pedido termina en /error: sin
+    // ErroresController, el JSON de Boot decía "Bad Request", en inglés, y eso mostraba Swing.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            punto y coma en la ruta, /api/peliculas/1;x=1
+            doble barra,             /api//cartelera
+            punto codificado,        /api/salas/%2e%2e/1
+            """)
+    @DisplayName("lo que rechaza el firewall es 400 con {error} en castellano")
+    void elRechazoDelFirewallSaleComoLosDeLaApi(String caso, String ruta) {
+        Respuesta respuesta = pedirComo(HttpMethod.GET, ruta, null, null, null);
+
+        assertThat(respuesta.estado()).isEqualTo(400);
+        assertThat(respuesta.cabeceras().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(respuesta.error()).isEqualTo("El pedido no es válido");
     }
 
     private Reserva unaReserva() {

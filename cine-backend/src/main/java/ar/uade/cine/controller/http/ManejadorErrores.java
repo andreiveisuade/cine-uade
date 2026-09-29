@@ -243,7 +243,8 @@ public class ManejadorErrores {
     }
 
     // Por status y no por excepción: Spring tiene muchas, y en el uso normal de la API no llega ninguna.
-    private static String textoDe(HttpStatusCode estado) {
+    // ErroresController usa los mismos para lo que llega a /error sin pasar por acá.
+    static String textoDe(HttpStatusCode estado) {
         return switch (estado.value()) {
             case 404 -> "No existe lo que se pidió";
             case 503 -> "El servidor no está disponible: volvé a intentarlo en un rato";
@@ -253,7 +254,7 @@ public class ManejadorErrores {
 
     // Content-Type fijo: así Spring no negocia contra el Accept. Con Accept: application/xml no
     // podía escribir el DTO y el error salía como un 500 vacío; con text/html, la página Whitelabel.
-    private static ResponseEntity<ErrorVistaDTO> responder(HttpStatusCode estado, String mensaje) {
+    static ResponseEntity<ErrorVistaDTO> responder(HttpStatusCode estado, String mensaje) {
         return ResponseEntity.status(estado)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorVistaDTO(mensaje));
