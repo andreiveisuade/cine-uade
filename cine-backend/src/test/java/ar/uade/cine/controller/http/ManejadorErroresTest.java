@@ -425,6 +425,33 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("Falta el código de acceso", enBlanco.error());
     }
 
+    // La puerta de entrada: lo que llega mal armado sale con un status y un texto que nombran qué
+    // corregir, nunca con un 500 ni con lo que Jackson hizo con el valor en silencio.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            cuerpo que no es JSON,           POST, /api/salas,                             text/plain,       nombre=Sala 1,                    415, El cuerpo del pedido tiene que ser JSON
+            array en la raíz,                POST, /api/salas,                             application/json, '[1,2]',                          400, El cuerpo del pedido tiene que ser un objeto JSON
+            número en la raíz,               POST, /api/salas,                             application/json, 3,                                400, El cuerpo del pedido tiene que ser un objeto JSON
+            cuerpo de solo espacios,         POST, /api/salas,                             application/json, '   ',                            400, El cuerpo del pedido tiene que ser un objeto JSON
+            decimal en un id,                POST, /api/funciones,                         application/json, '{"peliculaId":1.9,"salaId":1}',  400, 'El campo peliculaId tiene un valor inválido: 1.9'
+            decimal en una cantidad,         POST, /api/candy/compras,                     application/json, '{"cantidades":{"3":1.5}}',       400, 'El campo cantidades.3 tiene un valor inválido: 1.5'
+            tarifa escrita como número,      POST, /api/reservas,                          application/json, '{"funcionId":1,"butacas":{"A1":1}}', 400, 'El campo butacas.A1 tiene un valor inválido: 1'
+            id que desborda en la ruta,      GET,  /api/funciones/99999999999,             ,                 ,                                 404, No existe la ruta /api/funciones/99999999999
+            id que desborda en la query,     GET,  /api/funciones?peliculaId=99999999999,  ,                 ,                                 400, El id de la película tiene que estar entre -2147483648 y 2147483647
+            id que desborda en el cuerpo,    POST, /api/reservas,                          application/json, '{"funcionId":99999999999}',      400, 'El campo funcionId tiene un valor inválido: 99999999999'
+            año de nueve cifras en la query, GET,  /api/arqueo?fecha=%2B999999999-12-31,   ,                 ,                                 400, La fecha tiene que estar entre los años 1000 y 9999
+            año de nueve cifras en la grilla, POST, /api/grilla/propuesta,                 application/json, '{"desde":"+999999999-12-31","precio":5000}', 400, La fecha de inicio tiene que estar entre los años 1000 y 9999
+            año de nueve cifras al programar, POST, /api/funciones,                        application/json, '{"peliculaId":1,"salaId":1,"inicio":"+999999999-12-31T23:00","idioma":"DOBLADA","proyeccion":"DOS_D","precio":5000}', 400, La fecha y hora de la función tiene que estar entre los años 1000 y 9999
+            """)
+    void loQueLlegaMalArmadoNombraQueCorregir(String caso, String metodo, String ruta, String tipo, String cuerpo,
+                                               int estado, String error) {
+        Respuesta respuesta = pedirConTipo(metodo, ruta, tipo, cuerpo);
+
+        assertEquals(estado, respuesta.estado());
+        assertEquals(MediaType.APPLICATION_JSON, respuesta.cabeceras().getContentType());
+        assertEquals(error, respuesta.error());
+    }
+
     // Una fecha que pasó Parseo y desborda en la aritmética de un gestor la provocó el pedido: 400, no 500.
     @Test
     void unaFechaQueDesbordaEnUnGestorEs400() {
@@ -432,6 +459,17 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.getStatusCode().value());
         assertEquals("Una de las fechas del pedido no es válida", respuesta.getBody().error());
+    }
+
+    private Respuesta pedirConTipo(String metodo, String ruta, String tipo, String cuerpo) {
+        HttpHeaders cabeceras = new HttpHeaders();
+        cabeceras.setBasicAuth(EMAIL_ADMIN, CLAVE_ADMIN);
+        if (tipo != null) {
+            cabeceras.setContentType(MediaType.parseMediaType(tipo));
+        }
+        ResponseEntity<String> respuesta = cliente.exchange(URI.create(ruta), HttpMethod.valueOf(metodo),
+                new HttpEntity<>(cuerpo, cabeceras), String.class);
+        return new Respuesta(respuesta.getStatusCode().value(), respuesta.getBody(), respuesta.getHeaders());
     }
 
     private Respuesta pedirAceptando(String ruta, String formato) {

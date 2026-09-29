@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.fasterxml.jackson.core.exc.InputCoercionException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
@@ -52,6 +56,8 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ManejadorErrores {
 
     private static final String ERROR_INESPERADO = "Ocurrió un error inesperado en el servidor";
+
+    private static final Pattern FUERA_DE_RANGO = Pattern.compile("^Numeric value \\((.+?)\\) out of range");
 
     // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
 
@@ -144,20 +150,38 @@ public class ManejadorErrores {
 
     // Un JSON bien formado con un tipo equivocado ("precio": "abc") no es "JSON inválido": el
     // mensaje nombra el campo, que es lo que el usuario puede corregir. Sin causa es que no vino
-    // cuerpo: Spring lo lee como null y lo rechaza él, sin pasar por Jackson.
+    // cuerpo: Spring lo lee como null y lo rechaza él, sin pasar por Jackson. Sin camino, lo que
+    // no encaja es la raíz: un array, un número o un texto son JSON válido, pero no un pedido.
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorVistaDTO> cuerpoIlegible(HttpMessageNotReadableException e) {
         if (e.getCause() == null) {
             return responder(HttpStatus.BAD_REQUEST, "Falta el cuerpo del pedido");
         }
-        if (e.getCause() instanceof MismatchedInputException tipo && !tipo.getPath().isEmpty()) {
-            String campo = tipo.getPath().stream()
+        if (e.getCause() instanceof JsonMappingException mapeo && !mapeo.getPath().isEmpty()) {
+            String campo = mapeo.getPath().stream()
                     .map(r -> r.getFieldName() != null ? r.getFieldName() : String.valueOf(r.getIndex()))
                     .collect(Collectors.joining("."));
-            String valor = tipo instanceof InvalidFormatException formato ? ": " + formato.getValue() : "";
-            return responder(HttpStatus.BAD_REQUEST, "El campo " + campo + " tiene un valor inválido" + valor);
+            return responder(HttpStatus.BAD_REQUEST,
+                    "El campo " + campo + " tiene un valor inválido" + valorDe(mapeo));
+        }
+        if (e.getCause() instanceof MismatchedInputException) {
+            return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido tiene que ser un objeto JSON");
         }
         return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido no es un JSON válido");
+    }
+
+    // Un número que no entra en un int ({"funcionId": 99999999999}) lo rechaza el parser, que ya
+    // cerró cuando llega acá: el valor sobrevive solo en su mensaje. Si Jackson lo cambiara, el
+    // texto pierde el valor pero sigue nombrando el campo.
+    private static String valorDe(JsonMappingException e) {
+        if (e instanceof InvalidFormatException formato) {
+            return ": " + formato.getValue();
+        }
+        if (e.getCause() instanceof InputCoercionException desborde) {
+            Matcher valor = FUERA_DE_RANGO.matcher(desborde.getOriginalMessage());
+            return valor.find() ? ": " + valor.group(1) : "";
+        }
+        return "";
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
