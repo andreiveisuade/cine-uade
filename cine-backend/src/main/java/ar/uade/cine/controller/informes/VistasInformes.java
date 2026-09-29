@@ -20,8 +20,8 @@ import ar.uade.cine.dto.informes.FuncionDeclaradaVistaDTO;
 import ar.uade.cine.dto.informes.InformeFuncionVistaDTO;
 import ar.uade.cine.dto.informes.PeliculaDeclaradaVistaDTO;
 import ar.uade.cine.dto.informes.TotalDeclaradoVistaDTO;
-import ar.uade.cine.dto.informes.TotalMedioDTO;
-import ar.uade.cine.dto.informes.TotalTarifaDTO;
+import ar.uade.cine.dto.informes.TotalMedioVistaDTO;
+import ar.uade.cine.dto.informes.TotalTarifaVistaDTO;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -98,17 +98,17 @@ public class VistasInformes {
     }
 
     // TreeMap: el front lista las tarifas en el orden en que llegan.
-    private static Map<String, TotalTarifaDTO> porTarifa(Bordero bordero) {
-        Map<String, TotalTarifaDTO> porTarifa = new TreeMap<>();
+    private static Map<String, TotalTarifaVistaDTO> porTarifa(Bordero bordero) {
+        Map<String, TotalTarifaVistaDTO> porTarifa = new TreeMap<>();
         bordero.porTarifa().forEach((tarifa, total) ->
-                porTarifa.put(tarifa.name(), new TotalTarifaDTO(total.cantidad(), total.total().aPesos())));
+                porTarifa.put(tarifa.name(), new TotalTarifaVistaDTO(total.cantidad(), total.total().aPesos())));
         return porTarifa;
     }
 
-    private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {
-        Map<String, TotalMedioDTO> porMedio = new TreeMap<>();
+    private static Map<String, TotalMedioVistaDTO> porMedio(Arqueo arqueo) {
+        Map<String, TotalMedioVistaDTO> porMedio = new TreeMap<>();
         arqueo.porMedio().forEach((medio, acumulado) ->
-                porMedio.put(medio.name(), new TotalMedioDTO(acumulado.cantidad(), acumulado.total().aPesos())));
+                porMedio.put(medio.name(), new TotalMedioVistaDTO(acumulado.cantidad(), acumulado.total().aPesos())));
         return porMedio;
     }
 
