@@ -352,6 +352,30 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 "una película que nadie confirmó no puede estar ofreciéndose al cliente");
     }
 
+    // El alta la construye publicada y confirmada; recién después el importador la deja pendiente.
+    @Test
+    void unaImportadaQueVieneMarcadaParaPublicarIgualQuedaPendiente() {
+        Pelicula pelicula = revision.importar(new DatosPelicula("Dune", 155, List.of(Genero.ACCION),
+                Clasificacion.ATP, null, null, null, null, null, true, null, null));
+
+        assertEquals(EstadoRevision.PENDIENTE, pelicula.getEstadoRevision());
+        assertFalse(pelicula.estaEnCartelera());
+    }
+
+    @Test
+    void publicarUnaPendienteSeRechazaYNoGuardaNada() {
+        Pelicula importada = revision.importar(deTmdb("Dune"));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> gestor.editar(importada.getId(), new DatosPelicula(null, null, null, null,
+                        "Denis Villeneuve", null, null, null, null, true, null, null)));
+
+        assertEquals("La película Dune no está confirmada: revisala antes de publicarla", error.getMessage());
+        Pelicula leida = gestor.buscar(importada.getId()).orElseThrow();
+        assertFalse(leida.estaEnCartelera());
+        assertEquals("", leida.getDirector(), "el rechazo deshace también el resto del pedido");
+    }
+
     @Test
     void elBuzonSoloTraeLasPendientes() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);

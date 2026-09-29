@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -78,7 +77,7 @@ public class GestorFunciones {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + peliculaId));
         // Si no, programar saltearía el buzón de revisión.
-        if (pelicula.getEstadoRevision() != EstadoRevision.CONFIRMADA) {
+        if (!pelicula.estaConfirmada()) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");
         }

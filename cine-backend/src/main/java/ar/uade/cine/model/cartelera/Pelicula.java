@@ -152,8 +152,17 @@ public class Pelicula {
         return enCartelera;
     }
 
-    // Es solo un veto: en cartelera está la que además tiene funciones por delante.
+    public boolean estaConfirmada() {
+        return estadoRevision == EstadoRevision.CONFIRMADA;
+    }
+
+    // Es solo un veto: en cartelera está la que además tiene funciones por delante. Una pendiente
+    // o descartada no se publica: si no, el botón Publicar saltearía el buzón de revisión.
     public void ponerEnCartelera() {
+        if (!estaConfirmada()) {
+            throw new IllegalArgumentException("La película " + titulo
+                    + " no está confirmada: revisala antes de publicarla");
+        }
         enCartelera = true;
     }
 

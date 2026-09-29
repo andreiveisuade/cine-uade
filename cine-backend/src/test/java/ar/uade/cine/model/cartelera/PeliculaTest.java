@@ -148,4 +148,33 @@ class PeliculaTest {
         assertEquals(EstadoRevision.DESCARTADA, dune.getEstadoRevision());
         assertFalse(dune.estaEnCartelera());
     }
+
+    @Test
+    void soloLaConfirmadaEstaConfirmada() {
+        Pelicula dune = dune();
+        assertTrue(dune.estaConfirmada());
+
+        dune.dejarPendiente();
+        assertFalse(dune.estaConfirmada());
+
+        dune.descartar();
+        assertFalse(dune.estaConfirmada());
+    }
+
+    // El botón Publicar no puede saltear el buzón: publicar es cosa de confirmar.
+    @Test
+    void unaPendienteOUnaDescartadaNoSePublica() {
+        Pelicula pendiente = dune();
+        pendiente.dejarPendiente();
+        Pelicula descartada = dune();
+        descartada.descartar();
+
+        rechaza("La película Dune no está confirmada: revisala antes de publicarla",
+                pendiente::ponerEnCartelera);
+        rechaza("La película Dune no está confirmada: revisala antes de publicarla",
+                descartada::ponerEnCartelera);
+
+        assertFalse(pendiente.estaEnCartelera());
+        assertFalse(descartada.estaEnCartelera());
+    }
 }
