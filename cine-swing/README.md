@@ -13,7 +13,7 @@ Con el sistema levantado (`cine-docker`, `docker compose up -d --build`):
 ```bash
 mvn exec:java                                   # sin empaquetar
 mvn package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
-mvn clean test                                  # 55 tests, contra un servidor HTTP falso, sin backend
+mvn clean test                                  # 58 tests, contra un servidor HTTP falso, sin backend
 ```
 
 Por defecto apunta a `http://localhost:8080` (nginx del docker, que reenvía `/api`). Otro
@@ -29,12 +29,19 @@ elija el encargado: el backend solo da los números.
 
 ## Cómo está armado
 
+Los subdominios son los del backend (`cartelera`, `salas`, `funciones`, `programaciones`, `ventas`,
+`candy`, `promociones`, `informes`, `usuarios`): sabiendo el subdominio se sabe el paquete, en
+`api/dto/` y en `pantallas/`.
+
 | Paquete | Qué hay |
 |---|---|
-| `api/` | `ApiHttp`, el equivalente de `api-http.js`: una operación por endpoint de `cine-frontend/API.md`. `ErrorApi` lleva el mensaje del backend. `dto/`, un record por forma de JSON |
+| raíz | `Principal` (arranque y el ida y vuelta entre login y panel) y `VentanaPrincipal` (el marco con el menú, que crea cada pantalla con solo las `Api` que usa) |
+| `api/` | `ClienteHttp`, la mitad de `api-http.js` que no depende de ninguna ruta: Basic, JSON, sesión vencida y el mensaje de error. Una `Api<Subdominio>` por subdominio con las operaciones de `cine-frontend/API.md` (`ApiCartelera`, `ApiSalas`, `ApiVentas`…), todas sobre el mismo cliente y juntas en el record `Apis`. `ErrorApi` lleva el mensaje del backend |
+| `api/dto/<subdominio>/` | Un record por forma de JSON, espejando `dto/` del backend |
 | `informes/` | Lo que se escribe en la PC: el borderó en `.txt` (mismo formato que generaba el backend), la declaración jurada en `.csv` y el ticket de candy. Sin Swing, con tests |
-| `comun/` | `Tarea` (pedidos fuera del EDT), `Validacion` y `Campos` (formularios), `Fechas` (el único cruce `Date` ↔ `java.time`), `Tabla`, `Etiquetas`, `Formato`, `SelectorDias` y piezas de pantalla |
-| `pantallas/` | Login, la ventana con el menú (sus entradas son el enum `Destino`) y una clase por pantalla |
+| `comun/` | `Tarea` (pedidos fuera del EDT), `Validacion` (marca y muestra errores) con `Lecturas` (el formato, sin Swing) y `Marcas` (el borde rojo), `Campos`, `Formulario`, `BarraFiltros`, `Opciones`, `Fechas` (el único cruce `Date` ↔ `java.time`), `Tabla`, `Pila`, `Etiquetas`, `Formato`, `Mensajes` y piezas de pantalla |
+| `pantallas/` | Lo común: `Seccion` (pedir y avisar), `Pantalla` (una `Seccion` con margen y encabezado), `PantallaListado` (los listados con filtros y conteo), `Navegacion` y el enum `Destino` |
+| `pantallas/<subdominio>/` | Una clase por pantalla y, al lado, sus paneles y formularios package-private (`FormularioPelicula`, `PanelCobro`, `GrillaAgenda`…). El login está en `usuarios/` y la Puerta del acomodador en `ventas/` |
 
 ## Formularios: qué valida el cliente
 
@@ -68,6 +75,6 @@ Todo pasa por `comun/Mensajes`; cambiar la política toca ese archivo.
 | Éxito | Barra de estado en verde, que se borra sola (`Mensajes.exito`). Sin diálogo |
 
 Si el servidor contesta un error sin el `{"error": "…"}` del backend (el HTML de un nginx con el
-backend reiniciando, un cuerpo vacío), `ApiHttp` no lo muestra: lo escribe en la consola y en
+backend reiniciando, un cuerpo vacío), `ClienteHttp` no lo muestra: lo escribe en la consola y en
 pantalla queda un mensaje según el código. El porqué de la política está en el manual, en
 «Panel del encargado (Swing)».
