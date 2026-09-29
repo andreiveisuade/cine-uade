@@ -14,7 +14,7 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
-// Cliente o empleado de la tabla usuario; Experto: valida nombre, email y sus largos al construirse.
+// Cliente o empleado de la tabla usuario; Experto: valida nombre y email y los guarda sin espacios de más.
 // Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
@@ -22,6 +22,8 @@ import jakarta.persistence.Table;
 @DiscriminatorFormula("case when rol = 'CLIENTE' then 'CLIENTE' else 'EMPLEADO' end")
 @Getter
 public abstract class Usuario {
+
+    private static final int LARGO_MAXIMO = 100;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,15 +48,20 @@ public abstract class Usuario {
         if (email == null || !email.contains("@")) {
             throw new IllegalArgumentException("El email no es válido");
         }
-        // Los VARCHAR(100) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
-        if (nombre.length() > 100) {
-            throw new IllegalArgumentException("El nombre no puede tener más de 100 caracteres");
-        }
-        if (email.length() > 100) {
-            throw new IllegalArgumentException("El email no puede tener más de 100 caracteres");
-        }
-        this.nombre = nombre;
-        this.email = email;
+        this.nombre = recortado(nombre, "nombre");
+        this.email = recortado(email, "email");
         this.rol = rol;
+    }
+
+    // Se guarda y se mide sin los espacios de más: con ellos, " ana@mail.com" sería otro email y
+    // el chequeo del repetido no lo vería.
+    private static String recortado(String texto, String campo) {
+        String limpio = texto.trim();
+        // Los VARCHAR(100) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
+        if (limpio.length() > LARGO_MAXIMO) {
+            throw new IllegalArgumentException(
+                    "El " + campo + " no puede tener más de " + LARGO_MAXIMO + " caracteres");
+        }
+        return limpio;
     }
 }

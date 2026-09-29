@@ -10,4 +10,6 @@ import ar.uade.cine.model.usuarios.Empleado;
 public interface EmpleadoRepository extends JpaRepository<Empleado, Integer> {
 
     Optional<Empleado> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }

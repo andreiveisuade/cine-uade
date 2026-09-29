@@ -31,6 +31,17 @@ class EmpleadoTest {
         rechaza("El email no es válido", () -> new Cliente("Ana", "ana.cine.com"));
     }
 
+    @Test
+    void nombreYEmailSeGuardanSinEspaciosDeMasYSeMidenYaRecortados() {
+        Cliente cliente = new Cliente("  Ana ", " ana@cine.com  ");
+        Empleado empleado = new Empleado(" " + "x".repeat(100) + " ", " e@cine.com ", "{bcrypt}x", Rol.ADMINISTRADOR);
+
+        assertEquals("Ana", cliente.getNombre());
+        assertEquals("ana@cine.com", cliente.getEmail());
+        assertEquals("x".repeat(100), empleado.getNombre());
+        assertEquals("e@cine.com", empleado.getEmail());
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             ADMINISTRADOR, Encargado, e@cine.com

@@ -9,11 +9,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 class GestorClientesTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorClientes gestor;
+
+    @Autowired
+    private GestorEmpleados empleados;
 
     @Test
     void identificarDaDeAltaAlQueCompraPorPrimeraVez() {
@@ -54,5 +59,32 @@ class GestorClientesTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class,
                 () -> gestor.registrar("Otro", "andrei@uade.edu.ar"));
+    }
+
+    @Test
+    void elEmailRepetidoSeComparaSinLosEspaciosDeMas() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertThrows(ConflictoDeNegocio.class, () -> gestor.registrar("Otro", "  andrei@uade.edu.ar "));
+    }
+
+    // Daba 500: ClienteRepository no ve a los empleados y el INSERT chocaba con el UNIQUE del email.
+    @Test
+    void elEmailDeUnEmpleadoNoSeRegistraNiSeIdentificaComoCliente() {
+        empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
+
+        assertEquals("Ese email es de un empleado del cine", assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.registrar("Ana", "encargado@cine.com")).getMessage());
+        assertEquals("Ese email es de un empleado del cine", assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
+    }
+
+    @Test
+    void buscarPorEmailIgnoraLosEspaciosYSinEmailNoEncuentraANadie() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertTrue(gestor.buscarPorEmail("  andrei@uade.edu.ar ").isPresent());
+        assertTrue(gestor.buscarPorEmail(null).isEmpty());
+        assertTrue(gestor.buscarPorEmail("  ").isEmpty());
     }
 }

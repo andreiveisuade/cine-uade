@@ -29,7 +29,7 @@ public class GestorEmpleados {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
         Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
-        if (empleadoRepository.findByEmail(email).isPresent()) {
+        if (empleadoRepository.existsByEmail(empleado.getEmail())) {
             throw new ConflictoDeNegocio("Ya hay un empleado con ese email");
         }
         empleadoRepository.save(empleado);

@@ -1,7 +1,5 @@
 package ar.uade.cine.controller.usuarios;
 
-import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import ar.uade.cine.controller.http.Creado;
-import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.usuarios.PedidoClienteDTO;
 import ar.uade.cine.service.usuarios.GestorClientes;
@@ -38,10 +35,9 @@ public class ClienteController {
     @Operation(summary = "Buscar un cliente por email. Si no está, devuelve null")
     @GetMapping(value = "/api/clientes", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> buscarPorEmail(@RequestParam(required = false) String email) {
-        Optional<Cliente> cliente = email == null || email.isBlank()
-                ? Optional.empty()
-                : clientes.buscarPorEmail(email.trim());
-        return ResponseEntity.ok(cliente.map(c -> (Object) vistas.cliente(c)).orElse("null"));
+        return ResponseEntity.ok(clientes.buscarPorEmail(email)
+                .map(c -> (Object) vistas.cliente(c))
+                .orElse("null"));
     }
 
     @Operation(summary = "Registrar un cliente")
