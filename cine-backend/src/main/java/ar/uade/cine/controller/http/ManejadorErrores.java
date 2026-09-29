@@ -1,6 +1,7 @@
 package ar.uade.cine.controller.http;
 
 import java.lang.reflect.RecordComponent;
+import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -122,6 +123,15 @@ public class ManejadorErrores {
         log.warn("Un pedido chocó con una restricción de la base: {}", e.getMostSpecificCause().getMessage());
         return responder(HttpStatus.CONFLICT,
                 "Otro pedido cambió estos datos al mismo tiempo: recargá y volvé a intentarlo");
+    }
+
+    // Red para una fecha que pasó Parseo y desborda en la aritmética de un gestor: sin esto es un 500,
+    // y lo que la provocó es el pedido. Parseo ya corta los años fuera de 1000..9999; si igual llega
+    // una, el detalle va al log para encontrar qué fecha se escapó.
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<ErrorVistaDTO> fechaFueraDeRango(DateTimeException e) {
+        log.warn("Una fecha del pedido desbordó: {}", e.getMessage());
+        return responder(HttpStatus.BAD_REQUEST, "Una de las fechas del pedido no es válida");
     }
 
     // Solo las variables de ruta llegan tipadas (int id): la query viaja como String y la lee Parseo.

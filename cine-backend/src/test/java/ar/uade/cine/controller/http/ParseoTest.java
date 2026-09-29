@@ -11,6 +11,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.funciones.Version;
@@ -132,6 +134,26 @@ class ParseoTest {
                 () -> Parseo.dia(null, "la fecha")).getMessage().contains("Falta"));
         assertTrue(assertThrows(Rechazo.class,
                 () -> Parseo.dia("ayer", "la fecha")).getMessage().contains("válida"));
+    }
+
+    // LocalDate acepta +999999999 y la aritmética posterior desborda: el rango es el de DATE en MySQL.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            año de nueve cifras,     +999999999-12-31,    La fecha tiene que estar entre los años 1000 y 9999
+            año negativo,            -0001-01-01,         La fecha tiene que estar entre los años 1000 y 9999
+            año de tres cifras,      0999-12-31,          La fecha tiene que estar entre los años 1000 y 9999
+            año de cinco cifras,     +10000-01-01,        La fecha tiene que estar entre los años 1000 y 9999
+            """)
+    void unDiaFueraDelRangoDeLaBaseSeRechaza(String caso, String valor, String error) {
+        assertEquals(error, mensaje(() -> Parseo.dia(valor, "la fecha")));
+    }
+
+    @Test
+    void unMomentoFueraDelRangoDeLaBaseSeRechazaYLosBordesEntran() {
+        assertEquals("La fecha y hora de la función tiene que estar entre los años 1000 y 9999",
+                mensaje(() -> Parseo.momento("+999999999-12-31T23:00", "la fecha y hora de la función")));
+        assertEquals(LocalDate.of(1000, 1, 1), Parseo.dia("1000-01-01", "la fecha"));
+        assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59), Parseo.momento("9999-12-31T23:59", "el inicio"));
     }
 
     private static String mensaje(Executable accion) {

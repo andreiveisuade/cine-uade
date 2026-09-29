@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
+import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -422,6 +423,15 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("Falta el código de acceso", sinCampo.error());
         assertEquals(400, enBlanco.estado());
         assertEquals("Falta el código de acceso", enBlanco.error());
+    }
+
+    // Una fecha que pasó Parseo y desborda en la aritmética de un gestor la provocó el pedido: 400, no 500.
+    @Test
+    void unaFechaQueDesbordaEnUnGestorEs400() {
+        var respuesta = new ManejadorErrores().fechaFueraDeRango(new DateTimeException("Invalid value for Year"));
+
+        assertEquals(400, respuesta.getStatusCode().value());
+        assertEquals("Una de las fechas del pedido no es válida", respuesta.getBody().error());
     }
 
     private Respuesta pedirAceptando(String ruta, String formato) {

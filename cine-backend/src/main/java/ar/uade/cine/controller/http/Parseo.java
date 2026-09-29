@@ -13,6 +13,9 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 // queEs nombra el dato con su artículo («la fecha de inicio»): el mensaje lo usa para concordar.
 public final class Parseo {
 
+    private static final int PRIMER_ANIO = 1000;
+    private static final int ULTIMO_ANIO = 9999;
+
     private Parseo() {
     }
 
@@ -34,7 +37,9 @@ public final class Parseo {
     }
 
     public static LocalDateTime momento(String valor, String queEs) {
-        return tiempo(valor, queEs, LocalDateTime::parse, "AAAA-MM-DDTHH:MM");
+        LocalDateTime momento = tiempo(valor, queEs, LocalDateTime::parse, "AAAA-MM-DDTHH:MM");
+        exigirAnio(momento.getYear(), queEs);
+        return momento;
     }
 
     public static LocalTime hora(String valor, String queEs) {
@@ -42,7 +47,9 @@ public final class Parseo {
     }
 
     public static LocalDate dia(String valor, String queEs) {
-        return tiempo(valor, queEs, LocalDate::parse, "AAAA-MM-DD");
+        LocalDate dia = tiempo(valor, queEs, LocalDate::parse, "AAAA-MM-DD");
+        exigirAnio(dia.getYear(), queEs);
+        return dia;
     }
 
     public static LocalDate diaOpcional(String valor, String queEs) {
@@ -88,6 +95,16 @@ public final class Parseo {
         } catch (DateTimeParseException e) {
             String valida = queEs.startsWith("la ") ? "válida" : "válido";
             throw new DatoInvalido(conMayuscula(queEs) + " no es " + valida + ": usá " + formato);
+        }
+    }
+
+    // LocalDate acepta hasta el año +999999999, y con uno así la aritmética de fechas de los gestores
+    // tira DateTimeException. El límite es el de DATE y DATETIME en MySQL: técnico, como el largo de
+    // un VARCHAR, y por eso se controla acá y no en una regla del cine.
+    private static void exigirAnio(int anio, String queEs) {
+        if (anio < PRIMER_ANIO || anio > ULTIMO_ANIO) {
+            throw new DatoInvalido(conMayuscula(queEs) + " tiene que estar entre los años "
+                    + PRIMER_ANIO + " y " + ULTIMO_ANIO);
         }
     }
 
