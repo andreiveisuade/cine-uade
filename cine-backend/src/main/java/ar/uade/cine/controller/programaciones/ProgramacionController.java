@@ -86,7 +86,10 @@ public class ProgramacionController {
         return vistas.programacion(grilla);
     }
 
+    // El precio primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos y que
+    // la búsqueda de la película y la sala.
     private DatosGrilla datos(PedidoProgramacionDTO pedido) {
+        Dinero precio = Dinero.importe(pedido.precio(), "precio");
         int peliculaId = pedido.peliculaId();
         int salaId = pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
@@ -96,7 +99,6 @@ public class ProgramacionController {
                 Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
         Version version = Parseo.constante(Version.class, pedido.idioma(), "el idioma");
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
-        Dinero precio = Dinero.de(pedido.precio());
 
         return new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version, proyeccion, precio);
     }

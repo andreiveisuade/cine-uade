@@ -81,6 +81,26 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(0, get("/api/funciones").json().size());
     }
 
+    // El precio se valida al convertirlo, antes que el resto del pedido y que la búsqueda de la película,
+    // como cuando lo rechazaba el DTO.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            precio cero,                        1,  2026-08-14T20:30:00, 0,     El precio tiene que ser mayor a cero
+            precio cero y película inexistente, 99, 2026-08-14T20:30:00, 0,     El precio tiene que ser mayor a cero
+            precio negativo y fecha inválida,   1,  mañana,              -1,    El precio tiene que ser mayor a cero
+            precio con tres decimales,          1,  2026-08-14T20:30:00, 1.005, El precio tiene que tener como máximo 2 decimales
+            # Las 20:30:46 no se anuncian en ninguna cartelera.
+            inicio con segundos,                1,  2026-08-14T20:30:46, 4500,  La hora de la función tiene que ir sin segundos
+            """)
+    void unPedidoConUnPrecioOUnInicioQueNoSirvenEs400(String caso, int pelicula, String inicio, String precio,
+            String mensaje) {
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":" + pelicula + ",\"salaId\":1,\"inicio\":\""
+                + inicio + "\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":" + precio + "}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
     // Como en la declaración jurada: antes devolvía una lista vacía, que no se distinguía de un período
     // sin funciones.
     @Test

@@ -4,7 +4,6 @@ import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 // Lo que entra al crear o previsualizar una programación (POST /api/programaciones); sin hasta queda abierta.
 public record PedidoProgramacionDTO(@NotNull(message = "Falta la película") Integer peliculaId,
@@ -15,5 +14,5 @@ public record PedidoProgramacionDTO(@NotNull(message = "Falta la película") Int
                                     List<String> diasSemana,
                                     @NotBlank(message = "Falta el idioma") String idioma,
                                     @NotBlank(message = "Falta la proyección") String proyeccion,
-                                    @NotNull(message = "Falta el precio") @Positive(message = "El precio tiene que ser mayor a cero") Double precio) {
+                                    @NotNull(message = "Falta el precio") Double precio) {
 }

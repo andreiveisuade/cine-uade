@@ -23,8 +23,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 
-// Los seis pedidos con precio dicen lo mismo que Dinero.importeValido, que es lo que ve el alta sin HTTP:
-// el texto de un problema no depende de por dónde entró el pedido.
+// Los seis pedidos con precio solo exigen que venga: el valor lo valida Dinero.importe cuando el controller
+// lo convierte, antes de cualquier búsqueda. La regla vive en un solo lugar y no también en un @Positive.
 class PrecioDeLosPedidosTest {
 
     private static final Validator VALIDADOR = Validation.buildDefaultValidatorFactory().getValidator();
@@ -35,7 +35,10 @@ class PrecioDeLosPedidosTest {
                         "DOS_D", precio)),
                 pedido("programación", precio -> new PedidoProgramacionDTO(1, 1, "2026-09-01", null, "20:00",
                         List.of(), "SUBTITULADA", "DOS_D", precio)),
-                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)));
+                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)),
+                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio)),
+                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of())),
+                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio)));
     }
 
     private static Arguments pedido(String nombre, Function<Double, Object> conPrecio) {
@@ -44,35 +47,14 @@ class PrecioDeLosPedidosTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("pedidos")
-    void sinPrecioDiceQueFalta(String nombre, Function<Double, Object> conPrecio) {
+    void sinPrecioDiceQueFaltaYConPrecioEnCeroLoDejaParaDinero(String nombre, Function<Double, Object> conPrecio) {
         assertEquals(Set.of("Falta el precio"), errores(conPrecio.apply(null)));
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("pedidos")
-    void conPrecioEnCeroDiceQueTieneQueSerMayor(String nombre, Function<Double, Object> conPrecio) {
-        assertEquals(Set.of("El precio tiene que ser mayor a cero"), errores(conPrecio.apply(0.0)));
+        assertEquals(Set.of(), errores(conPrecio.apply(0.0)));
     }
 
     private static Set<String> errores(Object pedido) {
         return VALIDADOR.validate(pedido).stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toSet());
-    }
-
-    // Los del candy solo exigen que el precio venga: el valor lo valida Dinero.importe al convertirlo en el
-    // controller, con los mismos textos (ProductoControllerTest los prueba por HTTP).
-    static Stream<Arguments> pedidosDelCandy() {
-        return Stream.of(
-                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio)),
-                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of())),
-                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio)));
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("pedidosDelCandy")
-    void enElCandyElPedidoSoloExigeQueElPrecioVenga(String nombre, Function<Double, Object> conPrecio) {
-        assertEquals(Set.of("Falta el precio"), errores(conPrecio.apply(null)));
-        assertEquals(Set.of(), errores(conPrecio.apply(0.0)));
     }
 }

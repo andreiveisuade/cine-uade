@@ -66,11 +66,14 @@ public class FuncionController {
     @PostMapping("/api/funciones")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<FuncionVistaDTO> programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
+        // El precio primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos
+        // y que la búsqueda de la película y la sala.
+        Dinero precio = Dinero.importe(pedido.precio(), "precio");
         Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(),
                 Parseo.momento(pedido.inicio(), "la fecha y hora de la función"),
                 Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
                 Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
-                Dinero.de(pedido.precio()));
+                precio);
         return Creado.en("/api/funciones/" + funcion.getId(), vistas.funcionConPelicula(funcion));
     }
 

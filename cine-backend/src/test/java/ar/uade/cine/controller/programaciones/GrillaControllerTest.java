@@ -61,7 +61,8 @@ class GrillaControllerTest extends PruebaDeApi {
             con precio en cero el mensaje es el de las funciones, '{"precio":0}',              El precio tiene que ser mayor a cero
             # DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
             un precio de cien millones es 400,                    '{"precio":100000000}',      El precio no puede superar $ 1000000.00
-            # El precio se valida con el pedido, como en funciones y programaciones: antes que cualquier formato.
+            # El controller convierte el precio antes que los otros campos, como cuando lo rechazaba el DTO:
+            # el mismo orden que en funciones y programaciones.
             un precio negativo gana contra una hora inválida,     '{"precio":-1,"apertura":"25:00"}', El precio tiene que ser mayor a cero
             # hoy es el 14/08/2026: una grilla desde ayer daba 201 sin crear ninguna función (R20).
             una grilla que empieza en el pasado es 400,           '{"precio":5000,"desde":"2026-08-13"}', La grilla no puede empezar en el pasado
