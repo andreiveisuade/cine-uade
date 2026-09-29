@@ -66,7 +66,7 @@ public class ManejadorErrores {
         return responder(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    // El pedido es válido pero choca con algo que ya existe: corregirlo no alcanza, hay que cambiar el otro.
+    // El pedido es válido, pero choca con algo que ya existe: un nombre, un email o un título repetido.
     @ExceptionHandler(ConflictoDeNegocio.class)
     public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
