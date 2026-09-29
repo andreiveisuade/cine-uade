@@ -1,4 +1,4 @@
-package ar.uade.cine.infrastructure.comprobantes;
+package ar.uade.cine.infrastructure.comprobantes.txt;
 
 import java.nio.file.Path;
 

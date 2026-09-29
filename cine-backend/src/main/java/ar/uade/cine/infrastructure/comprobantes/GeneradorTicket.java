@@ -2,7 +2,7 @@ package ar.uade.cine.infrastructure.comprobantes;
 
 import ar.uade.cine.model.ventas.Reserva;
 
-// Puerto del ticket de una reserva; GestorReservas no conoce el formato (Variaciones protegidas).
+// Puerto: el ticket de una reserva; GestorReservas no conoce el formato (Variaciones protegidas).
 public interface GeneradorTicket {
 
     // Todo sale de la reserva: función, película, sala y cliente son relaciones LAZY que se

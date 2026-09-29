@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -98,6 +99,30 @@ class ArquitecturaTest {
             Path adaptadores = RAIZ.resolve("infrastructure/Adaptadores.java");
             assertSinViolaciones(importsDeImplementaciones(
                     archivo -> capaDe(archivo).equals("infrastructure") && !archivo.equals(adaptadores)));
+        }
+
+        // Lo que configura o implementa un adaptador va en la subcarpeta de ese adaptador
+        // (comprobantes/txt, importador/tmdb). seguridad/ no es un puerto: configura Spring Security.
+        @ParameterizedTest(name = "infrastructure/{0}/")
+        @ValueSource(strings = {"comprobantes", "importador", "pasarelas", "reloj"})
+        @DisplayName("la raíz de cada puerto tiene solo su contrato: la interfaz y su excepción")
+        void laRaizDeCadaPuertoTieneSoloSuContrato(String puerto) {
+            List<String> ajenos;
+            try (Stream<Path> archivos = Files.list(RAIZ.resolve("infrastructure").resolve(puerto))) {
+                ajenos = archivos.filter(archivo -> archivo.toString().endsWith(".java"))
+                        .filter(archivo -> !esContrato(archivo))
+                        .map(archivo -> RAIZ.relativize(archivo).toString())
+                        .toList();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            assertTrue(ajenos.isEmpty(), () -> "No son parte del contrato del puerto: movelos a la subcarpeta "
+                    + "de su adaptador:\n  " + String.join("\n  ", ajenos));
+        }
+
+        private static boolean esContrato(Path archivo) {
+            String fuente = String.join("\n", lineasDe(archivo));
+            return fuente.contains("public interface ") || fuente.contains(" extends RuntimeException");
         }
     }
 
