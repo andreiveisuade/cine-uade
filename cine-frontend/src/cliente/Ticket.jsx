@@ -14,31 +14,31 @@ const renglon = (etiquetaTexto, valor) => ` ${etiquetaTexto.padEnd(13)}: ${valor
 
 const centrar = (texto) => " ".repeat(Math.max(Math.floor((LINEA.length - texto.length) / 2), 0)) + texto;
 
-/** Mismo contenido y formato que tickets/ticket-<id>.txt del backend. */
+/** Mismo contenido que tickets/ticket-<id>.txt del backend, con las constantes traducidas a su etiqueta. */
 function armarTicket(reserva) {
   return [
     LINEA,
     centrar("CINE UADE"),
     centrar("TICKET #" + reserva.id),
     LINEA,
-    renglon("Pelicula", reserva.pelicula.titulo),
-    renglon("Sala", `${reserva.sala.nombre} (${reserva.sala.tipo})`),
-    renglon("Funcion", fechaHora(reserva.funcion.inicio)),
-    renglon("Formato", `${reserva.funcion.proyeccion} ${reserva.funcion.idioma}`),
+    renglon("Película", reserva.pelicula.titulo),
+    renglon("Sala", `${reserva.sala.nombre} (${etiqueta(reserva.sala.tipo)})`),
+    renglon("Función", fechaHora(reserva.funcion.inicio)),
+    renglon("Formato", `${etiqueta(reserva.funcion.proyeccion)} ${etiqueta(reserva.funcion.idioma).toLowerCase()}`),
     renglon("Cliente", reserva.cliente.nombre),
     LINEA,
     ...reserva.entradas.map((e) => renglon(
       "Butaca " + e.codigo,
-      precioExacto(e.precio) + (e.tarifa && e.tarifa !== "GENERAL" ? "  " + e.tarifa : ""))),
+      precioExacto(e.precio) + (e.tarifa && e.tarifa !== "GENERAL" ? "  " + etiqueta(e.tarifa) : ""))),
     LINEA,
     renglon("Entradas", String(reserva.entradas.length)),
     renglon("Total", precioExacto(reserva.total)),
-    renglon("Estado", reserva.estado),
+    renglon("Estado", etiqueta(reserva.estado)),
     LINEA,
-    centrar("CODIGO DE ACCESO"),
+    centrar("CÓDIGO DE ACCESO"),
     centrar(reserva.codigo || ""),
     LINEA,
-    centrar("Presentar en boleteria"),
+    centrar("Presentar en boletería"),
     LINEA,
   ].join("\n");
 }

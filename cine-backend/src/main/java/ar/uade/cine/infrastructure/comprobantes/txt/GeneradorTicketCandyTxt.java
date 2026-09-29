@@ -39,9 +39,9 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
         if (ahorro.esMayorQue(Dinero.CERO)) {
             lineas.add(campo("Ahorraste", "$ " + ahorro + " con los combos"));
         }
-        lineas.add(campo("Pago", compra.getMedio().name()));
+        lineas.add(campo("Pago", etiqueta(compra.getMedio())));
         if (!compra.getCodigoAutorizacion().isBlank()) {
-            lineas.add(campo("Autorizacion", compra.getCodigoAutorizacion()));
+            lineas.add(campo("Autorización", compra.getCodigoAutorizacion()));
         }
         lineas.addAll(List.of(
                 linea(),

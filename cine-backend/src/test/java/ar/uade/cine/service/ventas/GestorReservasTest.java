@@ -276,6 +276,9 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(contenido.contains("Butaca B4"), "el ticket no lista la butaca B4");
         assertTrue(contenido.contains("Butaca B5"), "el ticket no lista la butaca B5");
         assertTrue(contenido.contains("10000"), "el total deberia ser 2 x 5000");
+        assertTrue(contenido.contains("Estado       : Reservada"), "el estado va con su etiqueta");
+        assertFalse(contenido.matches("(?s).*\\b(DOS_D|TRES_D|DOBLADA|SUBTITULADA|RESERVADA)\\b.*"),
+                "el ticket no muestra nombres de constantes");
     }
 
     @Test

@@ -27,17 +27,17 @@ public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicke
                 centrar("CINE UADE"),
                 centrar("TICKET #" + reserva.getId()),
                 linea(),
-                campo("Pelicula", funcion.getPelicula().getTitulo()),
-                campo("Sala", sala.getNombre() + " (" + sala.getTipo() + ")"),
-                campo("Funcion", fecha(funcion.getInicio())),
-                campo("Formato", funcion.getProyeccion() + " " + funcion.getVersion()),
+                campo("Película", funcion.getPelicula().getTitulo()),
+                campo("Sala", sala.getNombre() + " (" + etiqueta(sala.getTipo()) + ")"),
+                campo("Función", fecha(funcion.getInicio())),
+                campo("Formato", etiqueta(funcion.getProyeccion()) + " " + etiqueta(funcion.getVersion())),
                 campo("Cliente", reserva.getCliente().getNombre()),
                 campo("Emitido", fecha(reserva.getCreadaEn())),
                 linea()));
 
         for (Entrada entrada : reserva.getEntradas()) {
             String butaca = "Butaca " + entrada.codigoAsiento();
-            String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + entrada.tarifa();
+            String tarifa = entrada.tarifa() == TipoTarifa.GENERAL ? "" : " " + etiqueta(entrada.tarifa());
             lineas.add(String.format(" %-13s: $ %s%s", butaca, entrada.precio(), tarifa));
         }
 
@@ -45,9 +45,9 @@ public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicke
                 linea(),
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
                 campo("Total", "$ " + reserva.getTotal()),
-                campo("Estado", reserva.getEstado().name()),
+                campo("Estado", etiqueta(reserva.getEstado())),
                 linea(),
-                centrar("Presentar en boleteria"),
+                centrar("Presentar en boletería"),
                 linea()));
 
         escribir("ticket-" + reserva.getId() + ".txt", lineas,

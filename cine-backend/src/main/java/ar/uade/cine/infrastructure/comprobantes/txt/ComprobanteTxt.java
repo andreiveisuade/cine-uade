@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
@@ -15,6 +16,15 @@ abstract class ComprobanteTxt {
     private static final DateTimeFormatter FORMATO_FECHA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String LINEA = "=".repeat(44);
+    // El comprobante lo lee una persona: nunca el nombre de la constante. Es el mismo diccionario que
+    // etiquetas.js en la web y Formato en Swing, del lado de quien presenta, no en el modelo.
+    private static final Map<String, String> ETIQUETAS = Map.ofEntries(
+            Map.entry("DOS_D", "2D"), Map.entry("TRES_D", "3D"), Map.entry("IMAX", "IMAX"),
+            Map.entry("CUATRO_D", "4D"), Map.entry("DOBLADA", "doblada"), Map.entry("SUBTITULADA", "subtitulada"),
+            Map.entry("RESERVADA", "Reservada"), Map.entry("PAGADA", "Pagada"), Map.entry("CANCELADA", "Cancelada"),
+            Map.entry("EXPIRADA", "Vencida"), Map.entry("MENOR", "Menor"), Map.entry("JUBILADO", "Jubilado"),
+            Map.entry("ESTUDIANTE", "Estudiante"), Map.entry("EFECTIVO", "Efectivo"), Map.entry("DEBITO", "Débito"),
+            Map.entry("CREDITO", "Crédito"), Map.entry("QR", "QR"), Map.entry("TRANSFERENCIA", "Transferencia"));
 
     private final Path directorio;
 
@@ -41,6 +51,10 @@ abstract class ComprobanteTxt {
 
     protected static String campo(String etiqueta, String valor) {
         return String.format(" %-13s: %s", etiqueta, valor);
+    }
+
+    protected static String etiqueta(Enum<?> valor) {
+        return ETIQUETAS.getOrDefault(valor.name(), valor.name());
     }
 
     protected static String centrar(String texto) {

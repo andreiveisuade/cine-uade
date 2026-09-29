@@ -35,7 +35,7 @@ public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecib
 
         lineas.addAll(List.of(
                 campo("Total", "$ " + pago.getMonto()),
-                campo("Pago", pago.getMedio().name()),
+                campo("Pago", etiqueta(pago.getMedio())),
                 linea(),
                 centrar("Comprobante de pago en efectivo"),
                 centrar("Conservar hasta el ingreso a la sala"),
