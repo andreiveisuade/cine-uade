@@ -47,6 +47,14 @@
     {
       "key": "funcionId",
       "value": ""
+    },
+    {
+      "key": "diaFuncion",
+      "value": ""
+    },
+    {
+      "key": "diaSiguiente",
+      "value": ""
     }
   ],
   "item": [
@@ -975,14 +983,14 @@
           }
         },
         {
-          "name": "Butaca inexistente (400)",
+          "name": "Butaca inexistente (404)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"responde 400\", function () { pm.response.to.have.status(400); });"
+                  "pm.test(\"responde 404\", function () { pm.response.to.have.status(404); });"
                 ]
               }
             }
@@ -1088,7 +1096,7 @@
             "description": "Guarda el id en {{funcionId}}.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"2030-03-10T20:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"DOS_D\",\n  \"precio\": 5000\n}",
+              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"{{diaFuncion}}T20:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"DOS_D\",\n  \"precio\": 5000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1159,7 +1167,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"2030-03-10T21:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"DOS_D\",\n  \"precio\": 5000\n}",
+              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"{{diaFuncion}}T21:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"DOS_D\",\n  \"precio\": 5000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1201,7 +1209,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"2030-03-11T20:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"TRES_D\",\n  \"precio\": 5000\n}",
+              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"salaId\": {{salaId}},\n  \"inicio\": \"{{diaSiguiente}}T20:00:00\",\n  \"idioma\": \"SUBTITULADA\",\n  \"proyeccion\": \"TRES_D\",\n  \"precio\": 5000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1477,6 +1485,20 @@
           }
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fechas relativas a hoy: el backend no programa una función a más de un año ni en el pasado (R20).",
+          "const dia = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };",
+          "pm.collectionVariables.set('diaFuncion', dia(30));",
+          "pm.collectionVariables.set('diaSiguiente', dia(31));"
+        ]
+      }
     }
   ]
 }
