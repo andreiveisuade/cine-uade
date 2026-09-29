@@ -22,10 +22,10 @@ public class GestorRevisionCartelera {
     private final FuncionRepository funcionRepository;
     private final GestorCartelera catalogo;
 
+    // El alta corre en esta misma transacción y la deja gestionada: dejarla pendiente no pide otro save.
     public Pelicula importar(DatosPelicula datos) {
         Pelicula pelicula = catalogo.agregar(datos);
         pelicula.dejarPendiente();
-        peliculaRepository.save(pelicula);
         return pelicula;
     }
 
@@ -37,7 +37,6 @@ public class GestorRevisionCartelera {
     public Pelicula confirmar(int id) {
         Pelicula pelicula = exigir(id);
         pelicula.confirmar();
-        peliculaRepository.save(pelicula);
         return pelicula;
     }
 
@@ -48,7 +47,6 @@ public class GestorRevisionCartelera {
                     "No se puede descartar una película que ya tiene funciones programadas");
         }
         pelicula.descartar();
-        peliculaRepository.save(pelicula);
         return pelicula;
     }
 

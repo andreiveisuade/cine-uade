@@ -62,8 +62,6 @@ public class GestorCartelera {
         // fila ya cambiada, pero se excluye a sí misma y el rechazo deshace la transacción.
         exigirTituloLibre(actual);
         aplicarCatalogo(actual, cambios);
-
-        peliculaRepository.save(actual);
         return actual;
     }
 
