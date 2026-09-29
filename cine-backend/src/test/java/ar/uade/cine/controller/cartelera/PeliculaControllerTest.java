@@ -93,6 +93,29 @@ class PeliculaControllerTest extends PruebaDeApi {
         }
     }
 
+    // Mismo criterio que el detalle: respondía 200 con [] y dejaba saber qué ids trajo el importador.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            pendiente sin sesión,            PENDIENTE,  ,                  ,                404
+            descartada sin sesión,           DESCARTADA, ,                  ,                404
+            confirmada sin sesión,           CONFIRMADA, ,                  ,                200
+            pendiente con el administrador,  PENDIENTE,  admin@prueba.test, clave-de-prueba, 200
+            descartada con el administrador, DESCARTADA, admin@prueba.test, clave-de-prueba, 200
+            """)
+    void lasFuncionesDeLoQueNoPasoElBuzonSoloLasVeElAdministrador(String caso, EstadoRevision estado,
+            String email, String clave, int esperado) {
+        int id = importadaEn(estado);
+
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/peliculas/" + id + "/funciones", null, email, clave);
+
+        assertEquals(esperado, respuesta.estado());
+        if (esperado == 404) {
+            assertEquals("No existe la película " + id, respuesta.error());
+        } else {
+            assertEquals(0, respuesta.json().size());
+        }
+    }
+
     private int importadaEn(EstadoRevision estado) {
         int id = revision.importar(DatosPelicula.deAlta("Dune", 155, List.of(Genero.ACCION), Clasificacion.ATP))
                 .getId();
