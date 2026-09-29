@@ -30,7 +30,7 @@ public class GestorEmpleados {
     // también entre los clientes: comparten el UNIQUE del email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
         if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
+            throw new IllegalArgumentException("La contraseña tiene que tener al menos 6 caracteres");
         }
         Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
         if (empleadoRepository.existsByEmail(empleado.getEmail())

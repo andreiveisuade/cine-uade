@@ -173,9 +173,12 @@ class SalaControllerTest extends PruebaDeApi {
     @Test
     void unaFilaSinButacasEs400() {
         Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5,0]}");
+        Respuesta sinFilas = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[]}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Cada fila debe tener al menos una butaca", respuesta.error());
+        assertEquals("Cada fila tiene que tener al menos una butaca", respuesta.error());
+        assertEquals(400, sinFilas.estado());
+        assertEquals("La sala tiene que tener al menos una fila", sinFilas.error());
     }
 
     @Test

@@ -218,6 +218,14 @@ class PagoControllerTest extends PruebaDeApi {
     }
 
     @Test
+    void bloquearSinSesionEs400ConElMismoMensajeQueElGestor() {
+        Respuesta respuesta = post("/api/funciones/1/bloqueos", "{\"butacas\":[\"A3\"]}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta la sesión para bloquear butacas", respuesta.error());
+    }
+
+    @Test
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.
         reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 50));

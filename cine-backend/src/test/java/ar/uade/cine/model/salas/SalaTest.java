@@ -87,12 +87,12 @@ class SalaTest {
     void unaDistribucionSinFilasConDemasiadasOConUnaFilaVaciaNoGeneraButacas() {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
-        rechaza("La sala necesita al menos una fila", () -> sala.generarAsientos(null, Map.of()));
-        rechaza("La sala necesita al menos una fila", () -> sala.generarAsientos(List.of(), Map.of()));
-        rechaza("Máximo 26 filas: se identifican con una letra",
+        rechaza("La sala tiene que tener al menos una fila", () -> sala.generarAsientos(null, Map.of()));
+        rechaza("La sala tiene que tener al menos una fila", () -> sala.generarAsientos(List.of(), Map.of()));
+        rechaza("La sala tiene que tener como máximo 26 filas: se identifican con una letra",
                 () -> sala.generarAsientos(Collections.nCopies(27, 1), Map.of()));
-        rechaza("Cada fila debe tener al menos una butaca", () -> sala.generarAsientos(List.of(3, 0), Map.of()));
-        rechaza("Cada fila debe tener al menos una butaca",
+        rechaza("Cada fila tiene que tener al menos una butaca", () -> sala.generarAsientos(List.of(3, 0), Map.of()));
+        rechaza("Cada fila tiene que tener al menos una butaca",
                 () -> sala.generarAsientos(Arrays.asList(3, null), Map.of()));
     }
 

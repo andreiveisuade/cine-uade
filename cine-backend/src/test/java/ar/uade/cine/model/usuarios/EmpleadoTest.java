@@ -22,7 +22,7 @@ class EmpleadoTest {
     @EnumSource(names = "CLIENTE")
     @NullSource
     void unEmpleadoConRolClienteNoSeConstruye(Rol rol) {
-        rechaza("El rol tiene que ser ADMINISTRADOR o ACOMODADOR",
+        rechaza("El rol tiene que ser encargado o acomodador",
                 () -> new Empleado("Ana", "ana@cine.com", "{bcrypt}x", rol));
     }
 

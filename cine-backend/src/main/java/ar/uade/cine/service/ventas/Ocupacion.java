@@ -77,7 +77,7 @@ public class Ocupacion {
 
     public Bloqueo bloquear(int funcionId, Collection<String> codigos, String sesion) {
         if (sesion == null || sesion.isBlank()) {
-            throw new IllegalArgumentException("Hace falta una sesión para bloquear butacas");
+            throw new IllegalArgumentException("Falta la sesión para bloquear butacas");
         }
         if (sesion.length() > LARGO_SESION) {
             throw new IllegalArgumentException(

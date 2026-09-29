@@ -22,7 +22,7 @@ public class Empleado extends Usuario {
     public Empleado(String nombre, String email, String passwordHash, Rol rol) {
         super(nombre, email, rol);
         if (rol == null || !rol.esEmpleado()) {
-            throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
+            throw new IllegalArgumentException("El rol tiene que ser encargado o acomodador");
         }
         this.passwordHash = passwordHash;
     }

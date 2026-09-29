@@ -232,6 +232,14 @@ class OcupacionTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void sinSesionNoSeBloquea() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> ocupacion.bloquear(1, List.of("A1"), " "));
+
+        assertEquals("Falta la sesión para bloquear butacas", error.getMessage());
+    }
+
+    @Test
     void unaSesionMasLargaQueLaColumnaSeRechazaConMensaje() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> ocupacion.bloquear(1, List.of("A1"), "x".repeat(65)));

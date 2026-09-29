@@ -84,13 +84,14 @@ public class Sala {
     // tipeado: ignorarlo dejaba la sala sin la butaca que pidió el encargado, sin avisarle.
     public List<Asiento> generarAsientos(List<Integer> butacasPorFila, Map<String, TipoAsiento> especiales) {
         if (butacasPorFila == null || butacasPorFila.isEmpty()) {
-            throw new IllegalArgumentException("La sala necesita al menos una fila");
+            throw new IllegalArgumentException("La sala tiene que tener al menos una fila");
         }
         if (butacasPorFila.size() > MAX_FILAS) {
-            throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
+            throw new IllegalArgumentException(
+                    "La sala tiene que tener como máximo " + MAX_FILAS + " filas: se identifican con una letra");
         }
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
-            throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
+            throw new IllegalArgumentException("Cada fila tiene que tener al menos una butaca");
         }
         if (butacasPorFila.stream().anyMatch(b -> b > MAX_BUTACAS_POR_FILA)) {
             throw new IllegalArgumentException(

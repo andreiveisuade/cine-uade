@@ -47,8 +47,8 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaContrasenaCorta() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR));
+        assertEquals("La contraseña tiene que tener al menos 6 caracteres", assertThrows(IllegalArgumentException.class,
+                () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR)).getMessage());
     }
 
     @Test
