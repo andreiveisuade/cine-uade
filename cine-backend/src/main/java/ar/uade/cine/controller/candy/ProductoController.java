@@ -17,19 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
-import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.candy.PedidoComboDTO;
 import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;
 import ar.uade.cine.dto.candy.PedidoEdicionProductoDTO;
 import ar.uade.cine.dto.candy.PedidoProductoDTO;
-import ar.uade.cine.dto.candy.PedidoVentaDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
-import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
@@ -38,14 +33,13 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/candy (carta, combos, compras): traduce HTTP a GestorProductos y GestorCandy; no decide nada.
-// El arqueo del candy comparte el tag pero es de informes/CajaController: lee la caja, no vende.
+// Rutas de la carta del candy (productos y combos): traduce HTTP a GestorProductos; no decide nada.
+// Las ventas van en CompraCandyController y el arqueo en CajaController: mismo tag, otra responsabilidad.
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
 @RequiredArgsConstructor
-public class CandyController {
+public class ProductoController {
 
-    private final GestorCandy candy;
     private final GestorProductos carta;
     private final VistasCandy vistas;
 
@@ -60,7 +54,8 @@ public class CandyController {
     @Operation(summary = "El detalle de un producto")
     @GetMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO producto(@PathVariable int id) {
-        return vistas.producto(buscar(id));
+        return vistas.producto(carta.buscar(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id)));
     }
 
     @Operation(summary = "Dar de alta un producto")
@@ -84,7 +79,6 @@ public class CandyController {
     @Operation(summary = "Editar nombre y precio de un producto o combo")
     @PutMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionProductoDTO pedido) {
-        buscar(id);
         return vistas.producto(carta.editar(id, pedido.nombre(), Dinero.de(pedido.precio())));
     }
 
@@ -92,40 +86,11 @@ public class CandyController {
     @PatchMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO cambiarDisponibilidad(@PathVariable int id,
                                                   @Valid @RequestBody PedidoDisponibilidadDTO pedido) {
-        buscar(id);
-        carta.cambiarDisponibilidad(id, pedido.disponible());
-        return vistas.producto(buscar(id));
-    }
-
-    @Operation(summary = "Vender candy en el mostrador: nace cobrado")
-    @PostMapping("/api/candy/compras")
-    @ResponseStatus(HttpStatus.CREATED)
-    public CompraCandyVistaDTO vender(@Valid @RequestBody PedidoVentaDTO pedido) {
-        MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
-
-        CompraCandy compra = pedido.reservaId() == null
-                ? candy.vender(pedido.clienteId(), pedido.cantidades(), medio, pedido.codigoAutorizacion())
-                : candy.venderParaReserva(pedido.reservaId(), pedido.cantidades(), medio,
-                        pedido.codigoAutorizacion());
-
-        return vistas.compra(compra);
-    }
-
-    @Operation(summary = "Las compras de candy de un día, o las de un cliente")
-    @GetMapping("/api/candy/compras")
-    public List<CompraCandyVistaDTO> compras(@RequestParam(required = false) String fecha,
-                                             @RequestParam(required = false) String clienteId) {
-        List<CompraCandy> compras = clienteId != null && !clienteId.isBlank()
-                ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el cliente"))
-                : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
-        return compras.stream().map(vistas::compra).toList();
+        Producto producto = pedido.disponible() ? carta.volverALaVenta(id) : carta.sacarDeLaVenta(id);
+        return vistas.producto(producto);
     }
 
     private ResponseEntity<ProductoVistaDTO> creado(Producto producto) {
         return Creado.en("/api/candy/productos/" + producto.getId(), vistas.producto(producto));
-    }
-
-    private Producto buscar(int id) {
-        return carta.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe el producto " + id));
     }
 }

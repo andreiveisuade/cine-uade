@@ -18,7 +18,7 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
     }
 
     @Override
-    public void emitir(CompraCandy compra, Cliente cliente, Dinero ahorro) {
+    public void emitir(CompraCandy compra, Cliente cliente) {
         List<String> lineas = new ArrayList<>(List.of(
                 linea(),
                 centrar("CINE UADE - CANDY"),
@@ -35,6 +35,7 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
 
         lineas.add(linea());
         lineas.add(campo("Total", "$ " + compra.getTotal()));
+        Dinero ahorro = compra.getAhorro();
         if (ahorro.esMayorQue(Dinero.CERO)) {
             lineas.add(campo("Ahorraste", "$ " + ahorro + " con los combos"));
         }

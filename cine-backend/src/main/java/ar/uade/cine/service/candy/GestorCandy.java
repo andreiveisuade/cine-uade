@@ -51,7 +51,7 @@ public class GestorCandy {
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
                 productos.buscarOFallar(cantidades));
         compraCandyRepository.save(compra);
-        generadorTicket.emitir(compra, cliente, compra.getAhorro());
+        generadorTicket.emitir(compra, cliente);
         return compra;
     }
 

@@ -143,7 +143,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void noSeVendeUnProductoQueSeSacoDeLaCarta() {
-        carta.cambiarDisponibilidad(gaseosa, false);
+        carta.sacarDeLaVenta(gaseosa);
 
         assertThrows(IllegalArgumentException.class,
                 () -> candy.vender(1, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));

@@ -13,7 +13,7 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.candy.GestorProductos;
 
-class CandyControllerTest extends PruebaDeApi {
+class ProductoControllerTest extends PruebaDeApi {
 
     @Autowired
     private GestorProductos carta;
@@ -44,6 +44,8 @@ class CandyControllerTest extends PruebaDeApi {
         Respuesta respuesta = put("/api/candy/productos/99", "{\"nombre\":\"X\",\"precio\":100}");
 
         assertEquals(404, respuesta.estado());
+        assertEquals("No existe el producto 99", respuesta.error());
+        assertEquals(404, patch("/api/candy/productos/99", "{\"disponible\":false}").estado());
     }
 
     @Test
@@ -93,14 +95,5 @@ class CandyControllerTest extends PruebaDeApi {
             }
         }
         return false;
-    }
-
-    @Test
-    void unaVentaConUnaCantidadEnNullEs400YNo500() {
-        Respuesta respuesta = post("/api/candy/compras",
-                "{\"cantidades\":{\"" + pochoclos + "\":null},\"medio\":\"EFECTIVO\"}");
-
-        assertEquals(400, respuesta.estado());
-        assertEquals("Falta la cantidad de Pochoclos grandes", respuesta.error());
     }
 }

@@ -54,14 +54,16 @@ public class GestorProductos {
         return productoRepository.findById(id);
     }
 
-    public void cambiarDisponibilidad(int productoId, boolean disponible) {
+    public Producto sacarDeLaVenta(int productoId) {
         Producto producto = buscarOFallar(productoId);
-        if (disponible) {
-            producto.volverALaVenta();
-        } else {
-            producto.sacarDeLaVenta();
-        }
-        productoRepository.save(producto);
+        producto.sacarDeLaVenta();
+        return producto;
+    }
+
+    public Producto volverALaVenta(int productoId) {
+        Producto producto = buscarOFallar(productoId);
+        producto.volverALaVenta();
+        return producto;
     }
 
     // El combo editado se revisa a sí mismo (R14); los combos que traen al suelto editado los busca
@@ -75,7 +77,7 @@ public class GestorProductos {
         }
         producto.editar(nombre, precio);
         productoRepository.findCombosQueTraen(productoId).forEach(Producto::exigirQueSigaConviniendo);
-        return productoRepository.save(producto);
+        return producto;
     }
 
     @Transactional(readOnly = true)
