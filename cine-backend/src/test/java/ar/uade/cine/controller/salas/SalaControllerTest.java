@@ -3,7 +3,9 @@ package ar.uade.cine.controller.salas;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,10 +15,13 @@ import org.springframework.http.HttpMethod;
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -33,6 +38,9 @@ class SalaControllerTest extends PruebaDeApi {
 
     @Autowired
     private GestorFunciones funciones;
+
+    @Autowired
+    private ProgramacionRepository programaciones;
 
     private int sala;
 
@@ -132,6 +140,23 @@ class SalaControllerTest extends PruebaDeApi {
         assertEquals("La sala " + sala + " tiene funciones programadas: no se le puede cambiar el tipo",
                 respuesta.error());
         assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
+    }
+
+    // Daba 500: sin funciones generadas pasaba el chequeo y chocaba con la FK programacion → sala.
+    @Test
+    void unaSalaEnUnaGrillaNoSeBorraAunqueNoTengaFunciones() {
+        Pelicula pelicula = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        programaciones.save(new Programacion(pelicula, salas.buscar(sala).orElseThrow(),
+                reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/salas/" + sala, null,
+                EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La sala " + sala + " está programada en una grilla: no se puede eliminar",
+                respuesta.error());
+        assertEquals(200, get("/api/salas/" + sala).estado());
     }
 
     @Test

@@ -14,6 +14,7 @@ import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.service.ConflictoDeNegocio;
@@ -27,6 +28,7 @@ public class GestorSalas {
     private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
     private final FuncionRepository funcionRepository;
+    private final ProgramacionRepository programacionRepository;
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
         return agregar(nombre, tipo, butacasPorFila, Map.of());
@@ -122,6 +124,12 @@ public class GestorSalas {
         if (funcionRepository.existsBySala_Id(id)) {
             throw new IllegalArgumentException(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
+        }
+        // Una grilla sin funciones generadas también la nombra, y chocaba con la FK en un 500.
+        // Las grillas no se borran, solo se dan de baja: la sala queda.
+        if (programacionRepository.existsBySala_Id(id)) {
+            throw new IllegalArgumentException(
+                    "La sala " + id + " está programada en una grilla: no se puede eliminar");
         }
         salaRepository.deleteById(id);
     }

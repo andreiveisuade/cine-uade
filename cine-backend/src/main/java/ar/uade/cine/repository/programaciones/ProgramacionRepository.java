@@ -13,6 +13,8 @@ public interface ProgramacionRepository extends JpaRepository<Programacion, Inte
 
     List<Programacion> findByActivaTrue();
 
+    boolean existsBySala_Id(int salaId);
+
     @Query("""
             select p from Programacion p
             where (:peliculaId is null or p.pelicula.id = :peliculaId)
