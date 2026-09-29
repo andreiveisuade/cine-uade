@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
@@ -57,7 +56,10 @@ public class GestorCandy {
 
     private CompraCandy vender(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
                                MedioPago medio, String codigoAutorizacion) {
-        Cliente cliente = clienteId == null ? null : clienteRepository.exigir(clienteId, "el cliente");
+        // Solo para el 404: el cliente de la compra viaja por id, y el ticket lo busca el listener.
+        if (clienteId != null) {
+            clienteRepository.exigir(clienteId, "el cliente");
+        }
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
                 productos.obtener(cantidades));
         compraCandyRepository.save(compra);

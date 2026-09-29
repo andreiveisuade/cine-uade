@@ -215,7 +215,7 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("GENERAL", entradas.get(1).get("tarifa").asText(), "sin tarifa es general");
         assertEquals("GENERAL", entradas.get(2).get("tarifa").asText(), "en blanco también");
         assertEquals(400, inexistente.estado());
-        assertEquals("Valor inválido para la tarifa de la butaca B4: VIP", inexistente.error());
+        assertEquals("La tarifa de la butaca B4 no es válida: VIP", inexistente.error());
     }
 
     // La web vuelve al mapa recargado solo ante un 409: con un 400 el cliente quedaba trabado.

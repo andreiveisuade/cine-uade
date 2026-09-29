@@ -8,6 +8,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.validacion.Regla;
+import ar.uade.cine.model.ventas.validacion.ValidadorReserva;
 
 // Los datos de una promoción: nombre, vigencia que alguna vez aplica y el beneficio de cada tipo.
 // Lo llaman Promocion para lo común y cada subclase para lo suyo; la entidad se queda con cuándo corre y
@@ -18,7 +19,7 @@ public final class ValidadorPromocion {
     private static final int LARGO_MAXIMO_DEL_NOMBRE = 60;
 
     // El tope de butacas por compra: un NxM que pide llevar más no se completa nunca en una sola compra.
-    private static final int LLEVA_MAXIMO = 10;
+    private static final int LLEVA_MAXIMO = ValidadorReserva.MAXIMO_BUTACAS;
 
     private ValidadorPromocion() {
     }

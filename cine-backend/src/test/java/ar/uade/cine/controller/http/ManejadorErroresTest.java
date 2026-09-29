@@ -436,7 +436,7 @@ class ManejadorErroresTest extends PruebaDeApi {
             cuerpo de solo espacios,         POST, /api/salas,                             application/json, '   ',                            400, El cuerpo del pedido tiene que ser un objeto JSON
             decimal en un id,                POST, /api/funciones,                         application/json, '{"peliculaId":1.9,"salaId":1}',  400, 'El campo peliculaId tiene un valor inválido: 1.9'
             decimal en una cantidad,         POST, /api/candy/compras,                     application/json, '{"cantidades":{"3":1.5}}',       400, 'El campo cantidades.3 tiene un valor inválido: 1.5'
-            tarifa escrita como número,      POST, /api/reservas,                          application/json, '{"funcionId":1,"butacas":{"A1":1}}', 400, 'El campo butacas.A1 tiene un valor inválido: 1'
+            tarifa escrita como número,      POST, /api/reservas,                          application/json, '{"funcionId":1,"butacas":{"A1":1}}', 400, 'La tarifa de la butaca A1 no es válida: 1'
             id que desborda en la ruta,      GET,  /api/funciones/99999999999,             ,                 ,                                 404, No existe la ruta /api/funciones/99999999999
             id que desborda en la query,     GET,  /api/funciones?peliculaId=99999999999,  ,                 ,                                 400, El id de la película tiene que estar entre -2147483648 y 2147483647
             id que desborda en el cuerpo,    POST, /api/reservas,                          application/json, '{"funcionId":99999999999}',      400, 'El campo funcionId tiene un valor inválido: 99999999999'

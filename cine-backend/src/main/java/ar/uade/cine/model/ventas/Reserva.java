@@ -143,10 +143,6 @@ public class Reserva {
         return impedimentoParaCobrar(ahora).isEmpty();
     }
 
-    public boolean estaPagada() {
-        return estado == EstadoReserva.PAGADA;
-    }
-
     // R13: se cancela solo lo que todavía no se cobró. Es la misma condición que cancelar().
     public boolean esCancelable() {
         return estado.esperaPago();
