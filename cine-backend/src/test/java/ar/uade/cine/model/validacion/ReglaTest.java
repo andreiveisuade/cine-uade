@@ -33,8 +33,8 @@ class ReglaTest {
         @NullSource
         @ValueSource(strings = {"", "   "})
         void obligatorioRechazaElNullYElBlanco(String valor) {
-            rechaza("El título no puede estar vacío",
-                    () -> Regla.texto(valor).obligatorio("El título no puede estar vacío"));
+            rechaza("Falta el título",
+                    () -> Regla.texto(valor).obligatorio("Falta el título"));
         }
 
         @Test
@@ -54,7 +54,7 @@ class ReglaTest {
 
         @Test
         void todoEncadenadoDevuelveElTextoLimpio() {
-            String titulo = Regla.texto(" Dune ").obligatorio("El título no puede estar vacío")
+            String titulo = Regla.texto(" Dune ").obligatorio("Falta el título")
                     .recortado().hasta(100, "El título").valor();
 
             assertEquals("Dune", titulo);
