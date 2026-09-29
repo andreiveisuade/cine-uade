@@ -7,8 +7,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.infrastructure.seguridad.PasswordSha256;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
@@ -19,6 +21,9 @@ class SesionControllerTest extends PruebaDeApi {
 
     @Autowired
     private GestorEmpleados empleados;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeEach
     void unAcomodador() {
@@ -63,6 +68,22 @@ class SesionControllerTest extends PruebaDeApi {
                 .isEqualTo(200);
         assertThat(hashDe(EMAIL_ADMIN)).startsWith("{bcrypt}");
         assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, CLAVE_ADMIN).estado())
+                .isEqualTo(200);
+    }
+
+    // bcrypt no admite más de 72 bytes: re-hashearla tiraba adentro del filtro y el login era un 500.
+    @Test
+    @DisplayName("con el hash viejo y una clave de más de 72 bytes entra igual, y el hash queda como estaba")
+    void elHashViejoDeUnaClaveQueNoEntraEnBcryptNoSeMigra() {
+        String larga = "clave-de-mas-de-72-bytes-".repeat(4);
+        String sha256 = new PasswordSha256().encode(larga);
+        jdbc.update("INSERT INTO usuario (nombre, email, rol, password_hash) VALUES (?, ?, ?, ?)",
+                "Encargada", "larga@cine.test", "ADMINISTRADOR", sha256);
+
+        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, "larga@cine.test", larga).estado())
+                .isEqualTo(200);
+        assertThat(hashDe("larga@cine.test")).isEqualTo(sha256);
+        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, "larga@cine.test", larga).estado())
                 .isEqualTo(200);
     }
 

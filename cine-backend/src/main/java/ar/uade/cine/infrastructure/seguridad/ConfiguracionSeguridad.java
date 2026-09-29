@@ -3,6 +3,7 @@ package ar.uade.cine.infrastructure.seguridad;
 import java.io.IOException;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -38,6 +39,7 @@ import jakarta.servlet.http.HttpServletResponse;
 // Qué rol puede llamar cada ruta y cómo se autentica (Basic contra empleado, bcrypt); SecurityFilterChain.
 // HTTP Basic sin sesión: sin cookie no hay CSRF, por eso está apagado. Lo no enumerado pide ADMINISTRADOR.
 // Los 401/403 salen sin WWW-Authenticate, que abriría el cuadro de login del navegador.
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
@@ -140,15 +142,21 @@ public class ConfiguracionSeguridad {
         DelegatingPasswordEncoder claves = new DelegatingPasswordEncoder("bcrypt",
                 Map.of("bcrypt", new BCryptPasswordEncoder()));
         claves.setDefaultPasswordEncoderForMatches(new PasswordSha256());
-        return claves;
+        return new PasswordBcrypt(claves);
     }
 
     // Spring Security lo llama después de un login correcto cuyo hash no es bcrypt: es el único
     // momento en que se tiene la clave en claro. Sin esto los SHA-256 no migrarían nunca, porque
-    // no hay pantalla para cambiar la contraseña.
+    // no hay pantalla para cambiar la contraseña. Si el hash nuevo es el mismo, la clave no entra
+    // en bcrypt (ver PasswordBcrypt): no hay nada que guardar, y queda en el log para saber quién.
     @Bean
     public UserDetailsPasswordService rehashearAlEntrar(GestorEmpleados empleados) {
         return (usuario, hashNuevo) -> {
+            if (hashNuevo.equals(usuario.getPassword())) {
+                log.warn("{} no pasa a bcrypt: su clave tiene más de 72 bytes y el hash sigue en SHA-256",
+                        usuario.getUsername());
+                return usuario;
+            }
             empleados.reemplazarHash(usuario.getUsername(), hashNuevo);
             return User.withUserDetails(usuario).password(hashNuevo).build();
         };
