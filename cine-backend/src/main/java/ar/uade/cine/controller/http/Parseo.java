@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -22,10 +23,11 @@ public final class Parseo {
     public static <T extends Enum<T>> T constante(Class<T> tipo, String valor, String queEs) {
         exigir(valor, queEs);
         try {
-            return Enum.valueOf(tipo, valor.trim().toUpperCase());
+            // Locale.ROOT: con el de la JVM en turco, "i" pasaría a "İ" y ninguna constante coincidiría.
+            return Enum.valueOf(tipo, valor.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             // La de Enum.valueOf trae un texto técnico: se traduce a uno que nombra el dato.
-            throw new DatoInvalido("Valor inválido para " + queEs + ": " + valor);
+            throw new DatoInvalido(noEsValido(queEs) + ": " + valor);
         }
     }
 
@@ -64,9 +66,15 @@ public final class Parseo {
         if (vacio(valor)) {
             return null;
         }
+        String limpio = valor.trim();
         try {
-            return Integer.valueOf(valor.trim());
+            return Integer.valueOf(limpio);
         } catch (NumberFormatException e) {
+            // 99999999999 es un número: lo que no cumple es que entre en un int.
+            if (limpio.matches("[+-]?\\d+")) {
+                throw new DatoInvalido(conMayuscula(queEs) + " tiene que estar entre "
+                        + Integer.MIN_VALUE + " y " + Integer.MAX_VALUE);
+            }
             throw new DatoInvalido(conMayuscula(queEs) + " tiene que ser un número");
         }
     }
@@ -80,7 +88,7 @@ public final class Parseo {
         if (vacio(valor)) {
             return null;
         }
-        String limpio = valor.trim().toLowerCase();
+        String limpio = valor.trim().toLowerCase(Locale.ROOT);
         if (limpio.equals("true") || limpio.equals("false")) {
             return Boolean.valueOf(limpio);
         }
@@ -93,8 +101,7 @@ public final class Parseo {
         try {
             return parser.apply(valor.trim());
         } catch (DateTimeParseException e) {
-            String valida = queEs.startsWith("la ") ? "válida" : "válido";
-            throw new DatoInvalido(conMayuscula(queEs) + " no es " + valida + ": usá " + formato);
+            throw new DatoInvalido(noEsValido(queEs) + ": usá " + formato);
         }
     }
 
@@ -106,6 +113,11 @@ public final class Parseo {
             throw new DatoInvalido(conMayuscula(queEs) + " tiene que estar entre los años "
                     + PRIMER_ANIO + " y " + ULTIMO_ANIO);
         }
+    }
+
+    // El adjetivo concuerda con el dato: «la proyección no es válida», «el idioma no es válido».
+    private static String noEsValido(String queEs) {
+        return conMayuscula(queEs) + " no es " + (queEs.startsWith("la ") ? "válida" : "válido");
     }
 
     private static void exigir(String valor, String queEs) {

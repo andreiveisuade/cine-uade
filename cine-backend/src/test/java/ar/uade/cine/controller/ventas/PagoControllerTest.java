@@ -100,7 +100,7 @@ class PagoControllerTest extends PruebaDeApi {
         Respuesta respuesta = checkout("CRIPTO");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Valor inválido para el medio de pago: CRIPTO", respuesta.error());
+        assertEquals("El medio de pago no es válido: CRIPTO", respuesta.error());
     }
 
     @Test

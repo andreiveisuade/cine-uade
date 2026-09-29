@@ -65,7 +65,7 @@ class PromocionControllerTest extends PruebaDeApi {
                 + "\"diasSemana\":[\"JUEVESITO\"]}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Valor inválido para el día de la semana: JUEVESITO", respuesta.error());
+        assertEquals("El día de la semana no es válido: JUEVESITO", respuesta.error());
     }
 
     @Test

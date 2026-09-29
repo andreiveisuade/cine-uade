@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -15,6 +16,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -39,7 +41,7 @@ class ParseoTest {
         Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
-        assertTrue(e.getMessage().contains("el medio de pago"), "el mensaje no dice qué campo falló");
+        assertTrue(e.getMessage().contains("medio de pago"), "el mensaje no dice qué campo falló");
         assertTrue(e.getMessage().contains("BITCOIN"), "el mensaje no dice qué valor llegó");
     }
 
@@ -48,7 +50,7 @@ class ParseoTest {
         Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
-        assertTrue(e.getMessage().contains("Valor inválido"), "no es el mensaje de esta capa");
+        assertTrue(e.getMessage().contains("no es válido"), "no es el mensaje de esta capa");
         assertTrue(!e.getMessage().contains("ar.uade.cine"), "se filtró el paquete al usuario");
         assertTrue(!e.getMessage().contains("No enum constant"), "se filtró el mensaje de Java");
     }
@@ -117,8 +119,10 @@ class ParseoTest {
 
     @Test
     void unaConstanteQueNoExisteDiceQueValorLlego() {
-        assertEquals("Valor inválido para el idioma: KLINGON",
+        assertEquals("El idioma no es válido: KLINGON",
                 mensaje(() -> Parseo.constante(Version.class, "KLINGON", "el idioma")));
+        assertEquals("La proyección no es válida: IMAX",
+                mensaje(() -> Parseo.constante(Proyeccion.class, "IMAX", "la proyección")));
         assertEquals("Falta el idioma", mensaje(() -> Parseo.constante(Version.class, " ", "el idioma")));
     }
 
@@ -154,6 +158,31 @@ class ParseoTest {
                 mensaje(() -> Parseo.momento("+999999999-12-31T23:00", "la fecha y hora de la función")));
         assertEquals(LocalDate.of(1000, 1, 1), Parseo.dia("1000-01-01", "la fecha"));
         assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59), Parseo.momento("9999-12-31T23:59", "el inicio"));
+    }
+
+    // 99999999999 es un número: decirle que tiene que serlo no le sirve a nadie.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            desborda por arriba, 99999999999,  El id de la película tiene que estar entre -2147483648 y 2147483647
+            desborda por abajo,  -99999999999, El id de la película tiene que estar entre -2147483648 y 2147483647
+            no es un número,     12a,          El id de la película tiene que ser un número
+            decimal,             1.5,          El id de la película tiene que ser un número
+            """)
+    void unIdQueNoEntraEnUnIntDiceElRango(String caso, String valor, String error) {
+        assertEquals(error, mensaje(() -> Parseo.numeroOpcional(valor, "el id de la película")));
+    }
+
+    // Con el Locale de la JVM en turco, "accion".toUpperCase() da "ACCİON" y no coincide con la constante.
+    @Test
+    void lasConstantesYLosBooleanosNoDependenDelIdiomaDeLaJvm() {
+        Locale antes = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr"));
+        try {
+            assertEquals(Genero.ACCION, Parseo.constante(Genero.class, "accion", "el género"));
+            assertEquals(Boolean.TRUE, Parseo.booleanOpcional("TRUE", "el filtro activa"));
+        } finally {
+            Locale.setDefault(antes);
+        }
     }
 
     private static String mensaje(Executable accion) {

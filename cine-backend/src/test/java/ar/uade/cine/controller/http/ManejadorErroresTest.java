@@ -392,7 +392,7 @@ class ManejadorErroresTest extends PruebaDeApi {
                 + "\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":5000}");
 
         assertEquals(400, promocion.estado());
-        assertEquals("Valor inválido para el día de la semana: JUEVESITO", promocion.error());
+        assertEquals("El día de la semana no es válido: JUEVESITO", promocion.error());
         assertEquals(400, programacion.estado());
         assertEquals(promocion.error(), programacion.error());
     }
