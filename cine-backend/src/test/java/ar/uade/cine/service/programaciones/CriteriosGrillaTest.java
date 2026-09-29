@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -33,10 +33,15 @@ class CriteriosGrillaTest {
                         Version.SUBTITULADA, Proyeccion.DOS_D)).getMessage());
     }
 
-    @Test
-    void cerrarALaMedianocheEsCerrarAlFinalDelDia() {
-        CriteriosGrilla semana = CriteriosGrilla.deUnaSemana(LocalDate.of(2026, 9, 1), 8, Dinero.de(5000));
+    @ParameterizedTest(name = "cerrar a las {0} el 03/09 es cerrar el {1}")
+    @CsvSource(textBlock = """
+            00:00, 2026-09-04T00:00
+            23:00, 2026-09-03T23:00
+            """)
+    void cerrarALaMedianocheEsCerrarAlEmpezarElDiaSiguiente(LocalTime cierre, LocalDateTime esperado) {
+        CriteriosGrilla semana = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 7, LocalTime.of(14, 0), cierre,
+                8, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
 
-        assertEquals(LocalTime.of(23, 59), semana.cierreEfectivo());
+        assertEquals(esperado, semana.cierreDe(LocalDate.of(2026, 9, 3)));
     }
 }

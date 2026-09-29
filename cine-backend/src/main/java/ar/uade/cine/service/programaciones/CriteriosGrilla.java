@@ -1,6 +1,7 @@
 package ar.uade.cine.service.programaciones;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -33,7 +34,7 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
         if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
             throw new IllegalArgumentException("El precio debe ser mayor a cero");
         }
-        if (!apertura.isBefore(efectivo(cierre))) {
+        if (!desde.atTime(apertura).isBefore(cierreDe(desde, cierre))) {
             throw new IllegalArgumentException("El cine tiene que cerrar después de abrir");
         }
     }
@@ -57,12 +58,14 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
                 proyeccion == null ? Proyeccion.DOS_D : proyeccion);
     }
 
-    public LocalTime cierreEfectivo() {
-        return efectivo(cierre);
+    public LocalDateTime cierreDe(LocalDate fecha) {
+        return cierreDe(fecha, cierre);
     }
 
-    // Un cierre 00:00 es el final del día, no su principio.
-    private static LocalTime efectivo(LocalTime cierre) {
-        return cierre.equals(LocalTime.MIDNIGHT) ? LocalTime.of(23, 59) : cierre;
+    // Un cierre 00:00 es el final del día, no su principio: el instante en que empieza el siguiente,
+    // así entra el pase que termina justo a la medianoche. Estática porque el constructor compacto
+    // la usa antes de que los campos tengan valor.
+    private static LocalDateTime cierreDe(LocalDate fecha, LocalTime cierre) {
+        return cierre.equals(LocalTime.MIDNIGHT) ? fecha.plusDays(1).atStartOfDay() : fecha.atTime(cierre);
     }
 }

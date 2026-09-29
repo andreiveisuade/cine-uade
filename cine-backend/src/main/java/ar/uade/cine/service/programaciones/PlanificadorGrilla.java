@@ -119,7 +119,7 @@ public class PlanificadorGrilla {
             LocalDate fecha = criterios.desde().plusDays(dia);
             for (Sala sala : salas) {
                 LocalDateTime momento = primerIntento(fecha, criterios);
-                LocalDateTime limite = fecha.atTime(criterios.cierreEfectivo());
+                LocalDateTime limite = criterios.cierreDe(fecha);
 
                 while (momento.isBefore(limite)) {
                     Pelicula elegida = conMasDeuda(elenco, asignados, puntajes);
@@ -147,7 +147,7 @@ public class PlanificadorGrilla {
     // para que la ocupación se mida contra lo que el reparto puede usar de verdad.
     private LocalDateTime primerIntento(LocalDate fecha, CriteriosGrilla criterios) {
         LocalDateTime momento = fecha.atTime(criterios.apertura());
-        LocalDateTime limite = fecha.atTime(criterios.cierreEfectivo());
+        LocalDateTime limite = criterios.cierreDe(fecha);
         while (momento.isBefore(limite) && funciones.yaPaso(momento)) {
             momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
         }
@@ -173,7 +173,7 @@ public class PlanificadorGrilla {
         for (int dia = 0; dia < criterios.dias(); dia++) {
             LocalDate fecha = criterios.desde().plusDays(dia);
             minutosPorSala += Math.max(Duration.between(primerIntento(fecha, criterios),
-                    fecha.atTime(criterios.cierreEfectivo())).toMinutes(), 0);
+                    criterios.cierreDe(fecha)).toMinutes(), 0);
         }
         int ventana = (int) (minutosPorSala * salaRepository.count());
 
@@ -181,7 +181,7 @@ public class PlanificadorGrilla {
         List<Funcion> programadas = funciones.buscar(null, null, criterios.desde(), hasta).stream()
                 // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
                 .filter(f -> !f.getInicio().isBefore(primerIntento(f.getInicio().toLocalDate(), criterios)))
-                .filter(f -> f.getInicio().toLocalTime().isBefore(criterios.cierreEfectivo()))
+                .filter(f -> f.getInicio().isBefore(criterios.cierreDe(f.getInicio().toLocalDate())))
                 .toList();
         Map<Integer, Integer> duraciones = peliculaRepository
                 .findAllById(programadas.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()

@@ -221,6 +221,22 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
+    // Cerrar a las 00:00 es cerrar al empezar el día siguiente: la de dos horas de las 22:00 entra justa.
+    @Test
+    void conCierreALaMedianocheEntraElPaseQueTerminaJustoALaMedianoche() {
+        cargar("Dos horas", 8.0, 120, Genero.DRAMA);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        CriteriosGrilla deNoche = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(22, 0),
+                LocalTime.MIDNIGHT, 1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+
+        PropuestaGrilla propuesta = planificador.proponer(deNoche);
+
+        assertEquals(List.of(LocalDateTime.of(2026, 9, 1, 22, 0)),
+                propuesta.pases().stream().map(PaseSugerido::inicio).toList());
+        assertEquals(120, propuesta.indicadores().minutosDisponibles(), "de 22:00 a 00:00 hay dos horas");
+        assertEquals(1.0, propuesta.indicadores().ocupacion());
+    }
+
     @Test
     void respetaLaLimpiezaEntreDosPasesDeLaMismaSala() {
         cargar("Una", 8.0, Genero.ACCION);
