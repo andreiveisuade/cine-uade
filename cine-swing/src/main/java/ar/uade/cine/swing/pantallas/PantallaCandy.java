@@ -288,7 +288,8 @@ final class PantallaCandy extends Pantalla {
                         avisar("Producto actualizado");
                         recargar();
                     }, e -> {
-                        if (e.esDelFormulario()) editar(p, formulario, nombre, valor, error, e);
+                        // Por la Validacion y no por el código: un nombre repetido (409) también se corrige acá.
+                        if (v.esDelFormulario(e)) editar(p, formulario, nombre, valor, error, e);
                         else Mensajes.error(this, e);
                     });
                     return;

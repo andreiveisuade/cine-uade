@@ -188,6 +188,40 @@ class ValidacionTest {
     }
 
     @Test
+    void unNombreRepetidoEsDelFormularioAunqueSea409() {
+        JLabel mensaje = new JLabel();
+        JTextField titulo = new JTextField("Matrix");
+        JTextField duracion = new JTextField("136");
+        Validacion v = new Validacion(mensaje);
+        v.texto(titulo, "Título *", true);
+        v.entero(duracion, "Duración", true);
+        v.ok();
+        ErrorApi repetido = new ErrorApi(409, "Ya existe una película con ese título");
+
+        assertTrue(v.esDelFormulario(repetido));
+        v.mostrarError(repetido);
+
+        assertTrue(mensaje.getText().contains("Ya existe una película con ese título"));
+        assertTrue(Validacion.marcado(titulo));
+        assertFalse(Validacion.marcado(duracion));
+    }
+
+    // Lo que no es del formulario va al diálogo, que headless no se puede abrir: se prueba la decisión.
+    @Test
+    void un409QueNoNombraNingunCampoEsGlobal() {
+        JComboBox<Opcion<String>> medio = new JComboBox<>();
+        medio.addItem(new Opcion<>("EFECTIVO", "Efectivo"));
+        Validacion v = new Validacion(new JLabel());
+        v.elegido(medio, "Medio de pago");
+        v.ok();
+
+        assertFalse(v.esDelFormulario(
+                new ErrorApi(409, "La reserva cambió mientras se procesaba: volvé a intentarlo")));
+        assertFalse(v.esDelFormulario(new ErrorApi(500, "Falló el servidor")));
+        assertTrue(v.esDelFormulario(new ErrorApi(400, "No se puede cobrar una reserva cancelada")));
+    }
+
+    @Test
     void losFiltrosNoDejanTipearLoQueNoEsNumero() {
         JTextField entero = Campos.soloEntero(new JTextField());
         JTextField decimal = Campos.soloDecimal(new JTextField());

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -270,24 +271,36 @@ public final class Validacion {
 
     /**
      * El rechazo del backend, tal cual llegó. Si nombra uno de los campos leídos, se marca: "El precio debe ser mayor
-     * a cero" marca el precio. Es solo una ayuda para encontrarlo; el texto es el del backend. Solo un rechazo de lo
-     * que se mandó es del formulario: sin conexión, un 500 o un 409 no se arreglan tocando un campo y van al diálogo de
-     * errores globales.
+     * a cero" marca el precio. Es solo una ayuda para encontrarlo; el texto es el del backend. Lo que no es del
+     * formulario (ver {@link #esDelFormulario}) va al diálogo de errores globales.
      */
     public void mostrarError(ErrorApi error) {
         if (error.esSesionVencida()) return;
-        if (!error.esDelFormulario()) {
+        if (!esDelFormulario(error)) {
             Mensajes.error(mensaje, error);
             return;
         }
         mostrar(List.of(error.getMessage()));
-        String texto = error.getMessage().toLowerCase(Locale.ROOT);
-        nombrados.stream()
+        campoNombrado(error.getMessage()).ifPresent(Validacion::marcar);
+    }
+
+    /**
+     * Si el rechazo se corrige tocando este formulario. Un 400 o un 404 siempre: es lo que se mandó. Un 409 solo si
+     * nombra uno de sus campos: "Ya existe una sala con ese nombre" se arregla cambiando el nombre, pero que otro
+     * pedido haya cambiado la reserva en el medio no lo arregla ningún campo. Sin conexión o un 500, nunca.
+     */
+    public boolean esDelFormulario(ErrorApi error) {
+        return error.esDelFormulario() || (error.esConflicto() && campoNombrado(error.getMessage()).isPresent());
+    }
+
+    private Optional<JComponent> campoNombrado(String rechazo) {
+        String texto = rechazo.toLowerCase(Locale.ROOT);
+        return nombrados.stream()
                 .filter(n -> !n.palabra().isEmpty()
                         && Pattern.compile("\\b" + Pattern.quote(n.palabra()) + "\\b",
                         Pattern.UNICODE_CHARACTER_CLASS).matcher(texto).find())
-                .findFirst()
-                .ifPresent(n -> marcar(n.campo()));
+                .map(Nombrado::campo)
+                .findFirst();
     }
 
     private void mostrar(List<String> textos) {
