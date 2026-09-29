@@ -65,7 +65,7 @@ export function Confirmar() {
       navegar(`/ticket/${reserva.codigo}`, { state: { reserva } });
     } catch (e) {
       setEnviando(false);
-      // 409: alguien tomó la butaca en el medio; vuelve al mapa recargado.
+      // 409: otra compra ganó una butaca en el medio (vendida o bloqueada); vuelve al mapa recargado.
       if (e.status === 409) {
         setSeleccion({ funcionId: funcion.id, butacas: {} });
         avisar(e.message, "error");

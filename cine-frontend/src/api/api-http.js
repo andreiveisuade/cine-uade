@@ -22,18 +22,29 @@ async function pedir(ruta, opciones = {}) {
     try {
       datos = JSON.parse(texto);
     } catch {
-      if (!respuesta.ok) throw new Error(texto);
-      throw new Error("El servidor devolvió una respuesta que no se pudo leer");
+      // Un error sin JSON lo resuelve mensajeDeError; un 2xx que no se puede leer no tiene con qué seguir.
+      if (respuesta.ok) throw new Error("El servidor devolvió una respuesta que no se pudo leer");
     }
   }
 
   if (!respuesta.ok) {
-    const error = new Error(datos?.error || `Error ${respuesta.status} del servidor`);
-    // 409 es una carrera por la butaca, distinto del 400.
+    const error = new Error(mensajeDeError(respuesta.status, datos, texto));
+    // La pantalla decide por el código, no por el texto. Al reservar, el 409 es solo la butaca que ganó otra
+    // compra (vendida o bloqueada por otra sesión): el resto de lo que se rechaza, como el email de un empleado, es 400.
     error.status = respuesta.status;
     throw error;
   }
   return datos;
+}
+
+// El {"error"} del backend va tal cual. Otra cosa (el HTML de nginx con el backend reiniciando, texto, cuerpo vacío)
+// no se muestra: va a la consola para depurar y en pantalla queda un mensaje según el código, como en Swing.
+function mensajeDeError(status, datos, texto) {
+  if (datos?.error) return datos.error;
+  if (texto) console.error(`Respuesta ${status} sin mensaje de error en JSON:`, texto);
+  if (status >= 502 && status <= 504) return "El servidor no está disponible: probá de nuevo en un momento";
+  if (status >= 500) return "Algo salió mal en el servidor: probá de nuevo en un momento";
+  return `El servidor respondió con un error (código ${status})`;
 }
 
 const get = (ruta) => pedir(ruta);
