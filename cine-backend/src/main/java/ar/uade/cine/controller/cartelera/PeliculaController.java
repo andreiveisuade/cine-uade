@@ -27,7 +27,7 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 

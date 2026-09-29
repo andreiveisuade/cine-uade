@@ -43,7 +43,7 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
 import ar.uade.cine.service.cartelera.DatosPelicula;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.controller.funciones.FuncionController;

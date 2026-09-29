@@ -22,7 +22,7 @@ import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 

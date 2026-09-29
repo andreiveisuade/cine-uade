@@ -14,6 +14,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -85,13 +86,13 @@ public class Programacion {
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
                         Proyeccion proyeccion, Dinero precio) {
         if (desde == null) {
-            throw new IllegalArgumentException("Falta la fecha de inicio");
+            throw new DatoInvalido("Falta la fecha de inicio");
         }
         if (hasta != null && hasta.isBefore(desde)) {
-            throw new IllegalArgumentException("El rango tiene que empezar antes de terminar");
+            throw new DatoInvalido("El rango tiene que empezar antes de terminar");
         }
         if (horaInicio == null) {
-            throw new IllegalArgumentException("Falta la hora de la función");
+            throw new DatoInvalido("Falta la hora de la función");
         }
         this.pelicula = pelicula;
         this.sala = sala;
@@ -104,7 +105,7 @@ public class Programacion {
         this.proyeccion = proyeccion;
         this.precio = precio;
         if (hasta != null && horarios(hasta).isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Ningún día del rango cae en los días elegidos: la grilla no generaría funciones");
         }
     }

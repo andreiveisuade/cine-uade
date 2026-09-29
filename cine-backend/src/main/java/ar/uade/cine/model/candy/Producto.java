@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Column;
@@ -55,11 +56,11 @@ public class Producto {
     // Solo sueltos: un combo nace en armarCombo, que no lo deja existir sin declarar qué trae.
     public Producto(String nombre, TipoProducto tipo, Dinero precio) {
         if (tipo != null && tipo.esCombo()) {
-            throw new IllegalArgumentException("Un combo se da de alta como combo: con sus componentes");
+            throw new DatoInvalido("Un combo se da de alta como combo: con sus componentes");
         }
         this.nombre = nombreValido(nombre);
         if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de producto");
+            throw new DatoInvalido("Falta el tipo de producto");
         }
         this.tipo = tipo;
         this.precio = precioValido(precio);
@@ -72,11 +73,11 @@ public class Producto {
         combo.tipo = TipoProducto.COMBO;
         combo.precio = precioValido(precio);
         if (componentes == null || componentes.size() < 2) {
-            throw new IllegalArgumentException("Un combo tiene que juntar al menos dos productos distintos");
+            throw new DatoInvalido("Un combo tiene que juntar al menos dos productos distintos");
         }
         componentes.forEach((producto, cantidad) -> combo.componentes.add(new ItemCombo(producto, cantidad)));
         if (!combo.saleMenosQueSuelto(precio)) {
-            throw new IllegalArgumentException("El combo tiene que salir menos que sus componentes sueltos ($ "
+            throw new DatoInvalido("El combo tiene que salir menos que sus componentes sueltos ($ "
                     + combo.getPrecioSuelto() + ")");
         }
         return combo;
@@ -100,7 +101,7 @@ public class Producto {
         String nuevoNombre = nombreValido(nombre);
         Dinero nuevoPrecio = precioValido(precio);
         if (esCombo() && !saleMenosQueSuelto(nuevoPrecio)) {
-            throw new IllegalArgumentException(dejariaDeConvenir(nuevoNombre));
+            throw new DatoInvalido(dejariaDeConvenir(nuevoNombre));
         }
         this.nombre = nuevoNombre;
         this.precio = nuevoPrecio;
@@ -110,7 +111,7 @@ public class Producto {
     // combo no se entera solo de que cambió el precio de su componente; se lo pregunta el gestor.
     public void exigirQueSigaConviniendo() {
         if (esCombo() && !saleMenosQueSuelto(precio)) {
-            throw new IllegalArgumentException(dejariaDeConvenir(nombre));
+            throw new DatoInvalido(dejariaDeConvenir(nombre));
         }
     }
 
@@ -142,11 +143,11 @@ public class Producto {
 
     private static String nombreValido(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new DatoInvalido("El nombre no puede estar vacío");
         }
         String limpio = nombre.trim();
         if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
-            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
+            throw new DatoInvalido("El nombre no puede tener más de 60 caracteres");
         }
         return limpio;
     }

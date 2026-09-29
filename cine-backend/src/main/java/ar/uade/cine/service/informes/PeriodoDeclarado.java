@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Qué días cubre una declaración jurada; Value Object que se valida al construirse.
 // Separado de la acumulación (DeclaracionJurada#de) para que las reglas del período —el default, que
 // desde no pase a hasta, el tope— estén en un solo lugar.
@@ -16,14 +18,14 @@ public record PeriodoDeclarado(LocalDate desde, LocalDate hasta) {
 
     public PeriodoDeclarado {
         if (desde == null || hasta == null) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Hay que indicar desde y hasta, o ninguna de las dos para la última semana cinematográfica");
         }
         if (desde.isAfter(hasta)) {
-            throw new IllegalArgumentException("El período tiene que empezar antes de terminar");
+            throw new DatoInvalido("El período tiene que empezar antes de terminar");
         }
         if (ChronoUnit.DAYS.between(desde, hasta) + 1 > MAXIMO_DIAS) {
-            throw new IllegalArgumentException("El período no puede superar los " + MAXIMO_DIAS + " días");
+            throw new DatoInvalido("El período no puede superar los " + MAXIMO_DIAS + " días");
         }
     }
 

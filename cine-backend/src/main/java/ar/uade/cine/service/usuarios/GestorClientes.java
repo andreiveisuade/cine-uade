@@ -7,11 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Registro e identificación de clientes por email; Usuario valida los datos y el gestor el email ocupado.
 @Service
@@ -42,7 +43,7 @@ public class GestorClientes {
         return buscarPorEmail(email).orElseGet(() -> {
             Cliente nuevo = new Cliente(nombre, email);
             if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
-                throw new IllegalArgumentException(
+                throw new DatoInvalido(
                         "Ese email es de un empleado del cine: usá otro para comprar");
             }
             clienteRepository.save(nuevo);

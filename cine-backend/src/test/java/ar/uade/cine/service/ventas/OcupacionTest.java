@@ -28,6 +28,7 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -301,7 +302,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     void otroNoPuedeReservarLoQueAlguienEstaEligiendo() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        ButacaOcupadaException error = assertThrows(ButacaOcupadaException.class,
+        ButacaOcupada error = assertThrows(ButacaOcupada.class,
                 () -> reservas.reservar(1, 1, generales("A1"), BETO));
 
         assertEquals("La butaca A1 ya está ocupada", error.getMessage());

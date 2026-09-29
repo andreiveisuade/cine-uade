@@ -7,12 +7,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Empleados para la sesión y el re-hash a bcrypt al entrar; el alta existe solo para los tests.
 @Service
@@ -30,7 +31,7 @@ public class GestorEmpleados {
     // también entre los clientes: comparten el UNIQUE del email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
         if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("La contraseña tiene que tener al menos 6 caracteres");
+            throw new DatoInvalido("La contraseña tiene que tener al menos 6 caracteres");
         }
         Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
         if (empleadoRepository.existsByEmail(empleado.getEmail())

@@ -17,7 +17,7 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Venta del candy en mostrador o para una reserva; Controlador: busca, CompraCandy valida y sale el ticket.
 @Service

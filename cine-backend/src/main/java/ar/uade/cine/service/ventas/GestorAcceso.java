@@ -7,9 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Ingreso a la sala por código de acceso (R18); coordina y la reserva decide si puede entrar.
 @Service
@@ -23,7 +24,7 @@ public class GestorAcceso {
 
     public Reserva registrarIngreso(String codigo) {
         if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("Falta el código de acceso");
+            throw new DatoInvalido("Falta el código de acceso");
         }
         Reserva reserva = reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo))
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));

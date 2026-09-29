@@ -24,12 +24,13 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.comun.PedidoActivacionDTO;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.GestorPromociones;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -91,7 +92,7 @@ public class PromocionController {
         try {
             return TipoPromocion.valueOf(tipo == null ? "" : tipo.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("El tipo tiene que ser PORCENTAJE, MONTO_FIJO o NXM");
+            throw new DatoInvalido("El tipo tiene que ser PORCENTAJE, MONTO_FIJO o NXM");
         }
     }
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -56,10 +57,10 @@ public class CompraCandy {
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                        String codigoAutorizacion, Map<Producto, Integer> cantidades) {
         if (cantidades == null || cantidades.isEmpty()) {
-            throw new IllegalArgumentException("Hay que elegir al menos un producto");
+            throw new DatoInvalido("Hay que elegir al menos un producto");
         }
         if (medio == null) {
-            throw new IllegalArgumentException("Falta el medio de pago");
+            throw new DatoInvalido("Falta el medio de pago");
         }
         this.clienteId = clienteId;
         this.reservaId = reservaId;

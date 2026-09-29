@@ -1,12 +1,18 @@
 package ar.uade.cine.controller.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -17,10 +23,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
@@ -53,6 +66,61 @@ class ManejadorErroresTest extends PruebaDeApi {
                 clientes.save(new Cliente("Ana", "ana@mail.com"));
                 clientes.save(new Cliente("Otra Ana", "ana@mail.com"));
             }
+        }
+
+        static final String RUTA_RECHAZOS = "/api/prueba/rechazo/";
+
+        // Cada tipo de rechazo, y una IllegalArgumentException suelta como la que tiraría una librería.
+        @RestController
+        static class Rechazos {
+
+            @PostMapping(RUTA_RECHAZOS + "{tipo}")
+            public void rechazar(@PathVariable String tipo) {
+                throw switch (tipo) {
+                    case "dato" -> new DatoInvalido("Falta el nombre");
+                    case "inexistente" -> new RecursoNoEncontrado("No existe la sala 7");
+                    case "conflicto" -> new ConflictoDeNegocio("Ya existe una sala con ese nombre");
+                    case "butaca" -> new ButacaOcupada("La butaca B4 ya está ocupada");
+                    default -> new IllegalArgumentException("Illegal base64 character 2d");
+                };
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{0} → {1}")
+    @CsvSource(textBlock = """
+            dato,        400, Falta el nombre
+            inexistente, 404, No existe la sala 7
+            conflicto,   409, Ya existe una sala con ese nombre
+            butaca,      409, La butaca B4 ya está ocupada
+            """)
+    void cadaRechazoSaleConSuStatusYSuTextoIntacto(String tipo, int estado, String mensaje) {
+        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA_RECHAZOS + tipo, null);
+
+        assertEquals(estado, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
+    // Lo tiró una librería o un bug: su texto es técnico y no es para el usuario.
+    @Test
+    void unaIllegalArgumentExceptionQueNoEsRechazoEs500Generico() {
+        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA_RECHAZOS + "de-libreria", null);
+
+        assertEquals(500, respuesta.estado());
+        assertEquals("Ocurrió un error inesperado en el servidor", respuesta.error());
+    }
+
+    // Rechazo es sellada: un tipo nuevo sin handler caería en el de IllegalArgumentException, un 500.
+    @Test
+    void cadaTipoDeRechazoTieneSuHandler() {
+        Set<Class<?>> atendidos = Arrays.stream(ManejadorErrores.class.getDeclaredMethods())
+                .map(metodo -> metodo.getAnnotation(ExceptionHandler.class))
+                .filter(Objects::nonNull)
+                .flatMap(handler -> Arrays.stream(handler.value()))
+                .collect(Collectors.toSet());
+
+        for (Class<?> rechazo : Rechazo.class.getPermittedSubclasses()) {
+            assertTrue(atendidos.contains(rechazo), "ManejadorErrores no atiende " + rechazo.getSimpleName());
         }
     }
 

@@ -26,7 +26,7 @@ import ar.uade.cine.dto.candy.PedidoEdicionProductoDTO;
 import ar.uade.cine.dto.candy.PedidoProductoDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
 import ar.uade.cine.service.candy.GestorProductos;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 

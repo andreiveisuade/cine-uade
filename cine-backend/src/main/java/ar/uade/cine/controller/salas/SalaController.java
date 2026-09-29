@@ -28,7 +28,7 @@ import ar.uade.cine.dto.salas.PedidoEstadoDTO;
 import ar.uade.cine.dto.salas.PedidoSalaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 

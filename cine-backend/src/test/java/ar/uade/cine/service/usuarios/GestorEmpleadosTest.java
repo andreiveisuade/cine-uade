@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 class GestorEmpleadosTest extends PruebaDeIntegracion {
 

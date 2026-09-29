@@ -34,24 +34,57 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import ar.uade.cine.dto.comun.ErrorVistaDTO;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
-import ar.uade.cine.service.ventas.ButacaOcupadaException;
-import ar.uade.cine.service.ConflictoDeNegocio;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 // Traduce cada excepción a status HTTP y JSON {error}; @RestControllerAdvice: ningún controller atrapa.
 // Dentro de este advice Spring elige el handler de la excepción más cercana en la jerarquía
 // (ExceptionDepthComparator), no el primero declarado: el orden de los métodos no cambia nada.
+// Por eso un Rechazo cae en el handler de su tipo y nunca en el de IllegalArgumentException.
 @RestControllerAdvice
 @Slf4j
 public class ManejadorErrores {
 
-    // El mensaje sale intacto: es el texto que ve el usuario.
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorVistaDTO> datoInvalido(IllegalArgumentException e) {
+    private static final String ERROR_INESPERADO = "Ocurrió un error inesperado en el servidor";
+
+    // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
+
+    // El pedido, tal como vino, no se puede aceptar: falta un dato o no cumple una regla.
+    @ExceptionHandler(DatoInvalido.class)
+    public ResponseEntity<ErrorVistaDTO> datoInvalido(DatoInvalido e) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage());
     }
+
+    // El id o el código, de la ruta o del cuerpo, no corresponde a nada.
+    @ExceptionHandler(RecursoNoEncontrado.class)
+    public ResponseEntity<ErrorVistaDTO> noEncontrado(RecursoNoEncontrado e) {
+        return responder(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    // El pedido es válido pero choca con algo que ya existe: corregirlo no alcanza, hay que cambiar el otro.
+    @ExceptionHandler(ConflictoDeNegocio.class)
+    public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
+        return responder(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // Otro ganó la butaca (R4): la web vuelve al mapa recargado solo ante un 409.
+    @ExceptionHandler(ButacaOcupada.class)
+    public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupada e) {
+        return responder(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // La que no es Rechazo la tiró una librería o un bug: su texto es técnico y no es para el usuario.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorVistaDTO> argumentoNoPrevisto(IllegalArgumentException e) {
+        log.error("Una IllegalArgumentException que no es un Rechazo", e);
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
+    }
+
+    // Lo que Spring rechaza antes de llegar al controller.
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorVistaDTO> pedidoIncompleto(MethodArgumentNotValidException e) {
@@ -68,21 +101,6 @@ public class ManejadorErrores {
                 .min(Comparator.comparingInt((FieldError error) -> campos.indexOf(error.getField())))
                 .map(FieldError::getDefaultMessage)
                 .orElse("El pedido no es válido");
-    }
-
-    @ExceptionHandler(RecursoNoEncontrado.class)
-    public ResponseEntity<ErrorVistaDTO> noEncontrado(RecursoNoEncontrado e) {
-        return responder(HttpStatus.NOT_FOUND, e.getMessage());
-    }
-
-    @ExceptionHandler(ConflictoDeNegocio.class)
-    public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
-        return responder(HttpStatus.CONFLICT, e.getMessage());
-    }
-
-    @ExceptionHandler(ButacaOcupadaException.class)
-    public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupadaException e) {
-        return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
     // Dos operaciones sobre la misma reserva a la vez (cobrar y cancelar): la segunda escribe
@@ -180,7 +198,7 @@ public class ManejadorErrores {
             return responder(deSpring.getStatusCode(), deSpring.getBody().getDetail());
         }
         log.error("Error no previsto", e);
-        return responder(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado en el servidor");
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
     }
 
     // Content-Type fijo: así Spring no negocia contra el Accept. Con Accept: application/xml no

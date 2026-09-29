@@ -13,12 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Catálogo de películas (R1, R12); coordina: la película valida sus datos, el gestor lo que pide la base.
 @Service
@@ -144,11 +145,11 @@ public class GestorCartelera {
     public void eliminar(int id) {
         Pelicula pelicula = exigir(id);
         if (funcionRepository.existsByPelicula_Id(id)) {
-            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+            throw new DatoInvalido("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
         }
         if (!programaciones.buscar(id, null, null).isEmpty()) {
-            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+            throw new DatoInvalido("La película " + pelicula.getTitulo()
                     + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
         peliculaRepository.deleteById(id);

@@ -24,7 +24,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.service.promociones.PoliticaPromociones.Descuento;
 
 class GestorPromocionesTest extends PruebaDeIntegracion {

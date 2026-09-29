@@ -2,6 +2,8 @@ package ar.uade.cine.model.dinero;
 
 import java.util.Collection;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Importe en pesos; Value Object inmutable con aritmética de precios y totales, y tope de lo que se carga.
 // Centavos enteros y no double, que no representa 0,10 exacto.
 public record Dinero(long centavos) implements Comparable<Dinero> {
@@ -27,13 +29,13 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
     // mismo problema dice el mismo texto en todas. «que» es el nombre del importe, masculino: "precio".
     public static Dinero importeValido(Dinero importe, String que) {
         if (importe == null) {
-            throw new IllegalArgumentException("Falta el " + que);
+            throw new DatoInvalido("Falta el " + que);
         }
         if (!importe.esMayorQue(CERO)) {
-            throw new IllegalArgumentException("El " + que + " tiene que ser mayor a cero");
+            throw new DatoInvalido("El " + que + " tiene que ser mayor a cero");
         }
         if (importe.esMayorQue(IMPORTE_MAXIMO)) {
-            throw new IllegalArgumentException("El " + que + " no puede superar $ " + IMPORTE_MAXIMO);
+            throw new DatoInvalido("El " + que + " no puede superar $ " + IMPORTE_MAXIMO);
         }
         return importe;
     }

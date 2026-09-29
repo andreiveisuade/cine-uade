@@ -13,8 +13,8 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.repository.candy.ProductoRepository;
-import ar.uade.cine.service.RecursoNoEncontrado;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Carta del candy y sus combos; Controlador: acá lo que pide la base, nombre libre y combos afectados.
 // Nombre, precio, qué puede traer un combo y R14 los valida Producto al construirse o editarse.

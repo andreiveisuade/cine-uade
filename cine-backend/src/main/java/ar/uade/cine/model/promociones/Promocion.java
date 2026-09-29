@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import jakarta.persistence.CollectionTable;
@@ -79,20 +80,20 @@ public abstract class Promocion {
         LocalDate hasta = condiciones.hasta();
         // Los mismos textos que el pedido: una punta que no vino falta, no está al revés.
         if (desde == null) {
-            throw new IllegalArgumentException("Falta el inicio de la vigencia");
+            throw new DatoInvalido("Falta el inicio de la vigencia");
         }
         if (hasta == null) {
-            throw new IllegalArgumentException("Falta el fin de la vigencia");
+            throw new DatoInvalido("Falta el fin de la vigencia");
         }
         if (hasta.isBefore(desde)) {
-            throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
+            throw new DatoInvalido("La vigencia tiene que empezar antes de terminar");
         }
         LocalTime horaDesde = condiciones.horaDesde();
         LocalTime horaHasta = condiciones.horaHasta();
         // aplicaA pide desde ≤ hora ≤ hasta, así que una franja que cruza la medianoche no correría
         // nunca: se rechaza en vez de guardarla muerta. Con una sola punta, la otra queda abierta.
         if (horaDesde != null && horaHasta != null && !horaHasta.isAfter(horaDesde)) {
-            throw new IllegalArgumentException("La franja horaria tiene que empezar antes de terminar");
+            throw new DatoInvalido("La franja horaria tiene que empezar antes de terminar");
         }
         this.vigenciaDesde = desde;
         this.vigenciaHasta = hasta;
@@ -162,11 +163,11 @@ public abstract class Promocion {
     // Recortado acá y no en el gestor: así el nombre repetido se busca con el mismo valor que se guarda.
     private static String nombreValido(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new DatoInvalido("El nombre no puede estar vacío");
         }
         String limpio = nombre.trim();
         if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
-            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
+            throw new DatoInvalido("El nombre no puede tener más de 60 caracteres");
         }
         return limpio;
     }

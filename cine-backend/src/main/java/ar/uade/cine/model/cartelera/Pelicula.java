@@ -18,6 +18,8 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Película del catálogo (R2, R7, R10); Experto: valida sus datos y decide su estado de revisión.
 @Entity
 @Getter
@@ -86,16 +88,16 @@ public class Pelicula {
                            Clasificacion clasificacion) {
         String tituloLimpio = tituloValido(titulo);
         if (duracionMinutos == null) {
-            throw new IllegalArgumentException("Falta la duración");
+            throw new DatoInvalido("Falta la duración");
         }
         if (duracionMinutos <= 0) {
-            throw new IllegalArgumentException("La duración tiene que ser mayor a cero");
+            throw new DatoInvalido("La duración tiene que ser mayor a cero");
         }
         if (generos == null || generos.isEmpty()) {
-            throw new IllegalArgumentException("La película necesita al menos un género");
+            throw new DatoInvalido("La película necesita al menos un género");
         }
         if (clasificacion == null) {
-            throw new IllegalArgumentException("Falta la clasificación por edad");
+            throw new DatoInvalido("Falta la clasificación por edad");
         }
         // Sin repetidos: la clave de pelicula_genero es (pelicula_id, genero).
         List<Genero> sinRepetir = generos.stream().distinct().toList();
@@ -108,14 +110,14 @@ public class Pelicula {
 
     public void cambiarPuntaje(double puntaje) {
         if (puntaje < 0 || puntaje > 10) {
-            throw new IllegalArgumentException("El puntaje tiene que estar entre 0 y 10");
+            throw new DatoInvalido("El puntaje tiene que estar entre 0 y 10");
         }
         this.puntaje = puntaje;
     }
 
     public void cambiarVotos(int votos) {
         if (votos < 0) {
-            throw new IllegalArgumentException("Los votos no pueden ser negativos");
+            throw new DatoInvalido("Los votos no pueden ser negativos");
         }
         this.votos = votos;
     }
@@ -134,7 +136,7 @@ public class Pelicula {
     public void cambiarAnio(int anio, LocalDate hoy) {
         int maximo = hoy.getYear() + ANIOS_POR_DELANTE;
         if (anio != 0 && (anio < PRIMER_ANIO || anio > maximo)) {
-            throw new IllegalArgumentException("El año tiene que estar entre " + PRIMER_ANIO + " y " + maximo);
+            throw new DatoInvalido("El año tiene que estar entre " + PRIMER_ANIO + " y " + maximo);
         }
         this.anio = anio;
     }
@@ -161,7 +163,7 @@ public class Pelicula {
     // o descartada no se publica: si no, el botón Publicar saltearía el buzón de revisión.
     public void ponerEnCartelera() {
         if (!estaConfirmada()) {
-            throw new IllegalArgumentException("La película " + titulo
+            throw new DatoInvalido("La película " + titulo
                     + " no está confirmada: revisala antes de publicarla");
         }
         enCartelera = true;
@@ -192,7 +194,7 @@ public class Pelicula {
     // Recortado: " Matrix" pasaría el chequeo de título repetido de R1 como si fuera otra película.
     private static String tituloValido(String titulo) {
         if (titulo == null || titulo.isBlank()) {
-            throw new IllegalArgumentException("El título no puede estar vacío");
+            throw new DatoInvalido("El título no puede estar vacío");
         }
         String limpio = titulo.strip();
         exigirLargo(limpio, 100, "El título");
@@ -202,7 +204,7 @@ public class Pelicula {
     // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
     private static void exigirLargo(String texto, int maximo, String que) {
         if (texto.length() > maximo) {
-            throw new IllegalArgumentException(que + " no puede tener más de " + maximo + " caracteres");
+            throw new DatoInvalido(que + " no puede tener más de " + maximo + " caracteres");
         }
     }
 

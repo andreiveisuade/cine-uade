@@ -25,7 +25,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.controller.salas.VistasSalas;
 
 // Arma los JSON de películas, funciones con sala, precio y butacas, e importaciones; Assembler compartido.

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -83,7 +84,7 @@ public class Reserva {
 
     public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
         if (entradas.isEmpty()) {
-            throw new IllegalArgumentException("Hay que elegir al menos una butaca");
+            throw new DatoInvalido("Hay que elegir al menos una butaca");
         }
         exigirSinRepetidas(entradas);
         this.funcion = funcion;
@@ -103,7 +104,7 @@ public class Reserva {
         Set<Integer> asientos = new HashSet<>();
         for (Entrada entrada : entradas) {
             if (!asientos.add(entrada.asientoId())) {
-                throw new IllegalArgumentException(
+                throw new DatoInvalido(
                         "La butaca " + entrada.codigoAsiento() + " está repetida en el pedido");
             }
         }
@@ -174,7 +175,7 @@ public class Reserva {
 
     public void cancelar() {
         if (!esCancelable()) {
-            throw new IllegalArgumentException("La reserva está " + estado.etiqueta()
+            throw new DatoInvalido("La reserva está " + estado.etiqueta()
                     + ": solo se puede cancelar una reserva sin cobrar");
         }
         pasarA(EstadoReserva.CANCELADA);
@@ -187,18 +188,18 @@ public class Reserva {
 
     public void registrarIngreso(LocalDateTime cuando) {
         if (estado != EstadoReserva.PAGADA) {
-            throw new IllegalArgumentException("La reserva está " + estado.etiqueta()
+            throw new DatoInvalido("La reserva está " + estado.etiqueta()
                     + ": solo se ingresa con una reserva pagada");
         }
         if (ingresadaEn != null) {
-            throw new IllegalArgumentException("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
+            throw new DatoInvalido("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
         ingresadaEn = cuando;
     }
 
     private void exigirEsperandoPago(String queNoSePuede) {
         if (estado != EstadoReserva.RESERVADA) {
-            throw new IllegalArgumentException("La reserva está " + estado.etiqueta() + ": " + queNoSePuede);
+            throw new DatoInvalido("La reserva está " + estado.etiqueta() + ": " + queNoSePuede);
         }
     }
 

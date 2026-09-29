@@ -17,6 +17,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Butaca de una sala; Experto en su código (A5) y en su estado, que vale para toda función (R9).
 @Entity
 @Getter
@@ -88,10 +90,10 @@ public class Asiento {
     // en los dos caminos porque sale de acá.
     public static Asiento exigirConCodigo(List<Asiento> deLaSala, String codigo) {
         if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("Falta el código de una butaca");
+            throw new DatoInvalido("Falta el código de una butaca");
         }
         return conCodigo(deLaSala, codigo)
-                .orElseThrow(() -> new IllegalArgumentException(inexistente(codigo)));
+                .orElseThrow(() -> new DatoInvalido(inexistente(codigo)));
     }
 
     // El mismo texto llegue la butaca en la ruta (404), en una venta, un bloqueo o el alta de la

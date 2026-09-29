@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
@@ -26,7 +27,7 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Única definición de butaca ocupada (R4), la del mapa y la venta; reservas vigentes más bloqueos ajenos.
 @Service
@@ -77,17 +78,17 @@ public class Ocupacion {
 
     public Bloqueo bloquear(int funcionId, Collection<String> codigos, String sesion) {
         if (sesion == null || sesion.isBlank()) {
-            throw new IllegalArgumentException("Falta la sesión para bloquear butacas");
+            throw new DatoInvalido("Falta la sesión para bloquear butacas");
         }
         if (sesion.length() > LARGO_SESION) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "La sesión no puede tener más de " + LARGO_SESION + " caracteres");
         }
         Funcion funcion = buscarFuncion(funcionId);
         LocalDateTime ahora = reloj.ahora();
         // R19: una función empezada ya no se vende, así que tampoco se le apartan butacas.
         if (funcion.yaEmpezo(ahora)) {
-            throw new IllegalArgumentException(FUNCION_EMPEZADA);
+            throw new DatoInvalido(FUNCION_EMPEZADA);
         }
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);

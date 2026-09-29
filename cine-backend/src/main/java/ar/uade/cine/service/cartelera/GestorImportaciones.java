@@ -13,6 +13,8 @@ import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
@@ -65,7 +67,8 @@ public class GestorImportaciones {
                 detalle.append("+ [").append(creada.getId()).append("] ")
                         .append(creada.getTitulo()).append('\n');
                 nuevas++;
-            } catch (IllegalArgumentException e) {
+            } catch (Rechazo e) {
+                // Solo un rechazo del alta cuenta como fallida: su texto es para el detalle de la corrida.
                 detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
                         .append(e.getMessage()).append('\n');
                 fallidas++;
@@ -109,14 +112,14 @@ public class GestorImportaciones {
 
     private static void exigirQueNoHayaOtraEnCurso(Importacion ultima) {
         if (ultima.estaEnCurso()) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Ya hay una importación en curso: esperá a que termine");
         }
     }
 
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
         if (ultima.terminoHaceMenosDe(propiedades.esperaEntreCorridas(), reloj.ahora())) {
-            throw new IllegalArgumentException("El importador corrió recién: esperá "
+            throw new DatoInvalido("El importador corrió recién: esperá "
                     + propiedades.esperaEntreCorridas().toSeconds() + " segundos antes de volver a pedirlo");
         }
     }
@@ -144,7 +147,7 @@ public class GestorImportaciones {
             return 1;
         }
         if (paginas < 1 || paginas > PAGINAS_MAXIMAS) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Las páginas a importar tienen que estar entre 1 y " + PAGINAS_MAXIMAS);
         }
         return paginas;

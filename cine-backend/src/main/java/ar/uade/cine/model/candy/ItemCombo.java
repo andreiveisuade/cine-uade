@@ -1,6 +1,7 @@
 package ar.uade.cine.model.candy;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -29,14 +30,14 @@ public class ItemCombo {
     // chequear el null, el unboxing daría un 500. Los textos son los de ItemCompra: es la misma cantidad.
     ItemCombo(Producto producto, Integer cantidad) {
         if (cantidad == null) {
-            throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
+            throw new DatoInvalido("Falta la cantidad de " + producto.getNombre());
         }
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
+            throw new DatoInvalido("La cantidad de " + producto.getNombre()
                     + " tiene que ser mayor a cero");
         }
         if (producto.esCombo()) {
-            throw new IllegalArgumentException("Un combo no puede contener otro combo: " + producto.getNombre());
+            throw new DatoInvalido("Un combo no puede contener otro combo: " + producto.getNombre());
         }
         this.producto = producto;
         this.cantidad = cantidad;

@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.usuarios.Cliente;
@@ -26,7 +28,7 @@ import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Vende y cancela butacas de una función (R4, R6, R9, R13, R19); coordina y cada entidad valida lo suyo.
 @Service
@@ -56,7 +58,7 @@ public class GestorReservas {
         Funcion funcion = buscarFuncion(funcionId);
         // R19: una función que ya arrancó no se vende; va primero porque anula las demás.
         if (funcion.yaEmpezo(reloj.ahora())) {
-            throw new IllegalArgumentException(Ocupacion.FUNCION_EMPEZADA);
+            throw new DatoInvalido(Ocupacion.FUNCION_EMPEZADA);
         }
         Cliente cliente = clientes.buscar(clienteId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el cliente " + clienteId));
@@ -95,10 +97,10 @@ public class GestorReservas {
         // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
         Asiento asiento = Asiento.exigirConCodigo(deLaSala, codigo);
         if (asiento.estaFueraDeServicio()) {
-            throw new IllegalArgumentException("La butaca " + asiento.getCodigo() + " está fuera de servicio");
+            throw new DatoInvalido("La butaca " + asiento.getCodigo() + " está fuera de servicio");
         }
         if (ocupados.contains(asiento.getId())) {
-            throw new ButacaOcupadaException("La butaca " + asiento.getCodigo() + " ya está ocupada");
+            throw new ButacaOcupada("La butaca " + asiento.getCodigo() + " ya está ocupada");
         }
         return asiento;
     }
@@ -122,7 +124,7 @@ public class GestorReservas {
         try {
             return reservaRepository.saveAndFlush(reserva);
         } catch (DataIntegrityViolationException e) {
-            throw new ButacaOcupadaException(
+            throw new ButacaOcupada(
                     "Alguien tomó una de esas butacas mientras confirmabas la reserva", e);
         }
     }

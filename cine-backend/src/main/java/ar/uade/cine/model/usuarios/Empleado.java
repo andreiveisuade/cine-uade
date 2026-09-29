@@ -5,6 +5,8 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Encargado o acomodador, entra con contraseña hasheada; Experto: rechaza un rol que no sea de empleado.
 @Entity
 @DiscriminatorValue("EMPLEADO")
@@ -22,7 +24,7 @@ public class Empleado extends Usuario {
     public Empleado(String nombre, String email, String passwordHash, Rol rol) {
         super(nombre, email, rol);
         if (rol == null || !rol.esEmpleado()) {
-            throw new IllegalArgumentException("El rol tiene que ser encargado o acomodador");
+            throw new DatoInvalido("El rol tiene que ser encargado o acomodador");
         }
         this.passwordHash = passwordHash;
     }

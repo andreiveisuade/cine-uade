@@ -29,7 +29,7 @@ import ar.uade.cine.dto.programaciones.PlanVistaDTO;
 import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 

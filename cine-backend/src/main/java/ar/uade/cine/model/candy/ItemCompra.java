@@ -1,6 +1,7 @@
 package ar.uade.cine.model.candy;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -52,14 +53,14 @@ public class ItemCompra {
     // tiene su propio mensaje en vez de un 500 por el unboxing.
     ItemCompra(Producto producto, Integer cantidad) {
         if (cantidad == null) {
-            throw new IllegalArgumentException("Falta la cantidad de " + producto.getNombre());
+            throw new DatoInvalido("Falta la cantidad de " + producto.getNombre());
         }
         if (cantidad <= 0) {
-            throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
+            throw new DatoInvalido("La cantidad de " + producto.getNombre()
                     + " tiene que ser mayor a cero");
         }
         if (!producto.estaDisponible()) {
-            throw new IllegalArgumentException(producto.getNombre() + " no está disponible");
+            throw new DatoInvalido(producto.getNombre() + " no está disponible");
         }
         this.producto = producto;
         this.nombre = producto.getNombre();

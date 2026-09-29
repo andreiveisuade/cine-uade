@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Pedido de grilla automática del encargado; Value Object: completa los defaults y se valida al nacer.
 // Se valida al construirse: el planificador nunca ve unos criterios imposibles, y se queda solo
@@ -20,20 +21,20 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
 
     public CriteriosGrilla {
         if (desde == null) {
-            throw new IllegalArgumentException("Falta la fecha de inicio de la grilla");
+            throw new DatoInvalido("Falta la fecha de inicio de la grilla");
         }
         if (dias <= 0) {
-            throw new IllegalArgumentException("La grilla tiene que cubrir al menos un día");
+            throw new DatoInvalido("La grilla tiene que cubrir al menos un día");
         }
         if (dias > MAXIMO_DIAS) {
-            throw new IllegalArgumentException("La grilla no puede cubrir más de " + MAXIMO_DIAS + " días");
+            throw new DatoInvalido("La grilla no puede cubrir más de " + MAXIMO_DIAS + " días");
         }
         if (cuantasPeliculas <= 0) {
-            throw new IllegalArgumentException("Hay que programar al menos una película");
+            throw new DatoInvalido("Hay que programar al menos una película");
         }
         Dinero.importeValido(precio, "precio");
         if (!desde.atTime(apertura).isBefore(cierreDe(desde, cierre))) {
-            throw new IllegalArgumentException("El cine tiene que cerrar después de abrir");
+            throw new DatoInvalido("El cine tiene que cerrar después de abrir");
         }
     }
 

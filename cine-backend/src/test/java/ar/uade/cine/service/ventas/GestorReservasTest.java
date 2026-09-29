@@ -27,6 +27,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
@@ -113,7 +114,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void rechazaButacaYaOcupada() {
         reservas.reservar(1, 1, generales("B3"), null);
 
-        ButacaOcupadaException error = assertThrows(ButacaOcupadaException.class,
+        ButacaOcupada error = assertThrows(ButacaOcupada.class,
                 () -> reservas.reservar(1, 1, generales("B3"), null));
 
         assertEquals("La butaca B3 ya está ocupada", error.getMessage());

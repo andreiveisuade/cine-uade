@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
@@ -25,7 +26,7 @@ import ar.uade.cine.service.programaciones.PlanProgramacion.FuncionPlanificada;
 import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Alta, baja y extensión de grillas; genera cada función por GestorFunciones para no reescribir R3 ni R20.
 @Service
@@ -136,7 +137,7 @@ public class GestorProgramaciones {
         LocalDate hasta = grilla.getHasta();
         // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
         if (hasta != null && grilla.horarios(hasta).stream().allMatch(funciones::yaPaso)) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Todos los horarios del rango ya pasaron: la grilla no generaría funciones");
         }
         return grilla;

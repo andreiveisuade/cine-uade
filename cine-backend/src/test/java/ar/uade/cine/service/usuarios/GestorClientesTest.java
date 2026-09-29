@@ -11,7 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 
 class GestorClientesTest extends PruebaDeIntegracion {
 
@@ -84,7 +85,7 @@ class GestorClientesTest extends PruebaDeIntegracion {
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
 
         assertEquals("Ese email es de un empleado del cine: usá otro para comprar",
-                assertThrowsExactly(IllegalArgumentException.class,
+                assertThrowsExactly(DatoInvalido.class,
                         () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
     }
 

@@ -3,6 +3,7 @@ package ar.uade.cine.model.promociones;
 import java.util.Comparator;
 import java.util.List;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.DiscriminatorValue;
@@ -25,7 +26,7 @@ public class PromocionNxM extends Promocion {
         super(nombre, condiciones);
         // Un 2x2 no descuenta y un 2x3 cobraría de más.
         if (lleva <= paga || paga <= 0) {
-            throw new IllegalArgumentException("En un NxM hay que llevar más de lo que se paga");
+            throw new DatoInvalido("En un NxM hay que llevar más de lo que se paga");
         }
         this.lleva = lleva;
         this.paga = paga;

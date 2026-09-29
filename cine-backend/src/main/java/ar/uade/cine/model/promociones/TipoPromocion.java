@@ -5,6 +5,8 @@ import java.util.Map;
 
 import lombok.Getter;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Los tres tipos de promoción; Experto en los campos propios que exige cada uno al crearla.
 // Además de nombre y condiciones, cada tipo pide sus propios campos del pedido. Es la única
 // lista: la publica el catálogo y con ella GestorPromociones dice cuál falta.
@@ -35,7 +37,7 @@ public enum TipoPromocion {
     public void exigirCampos(Object... valores) {
         for (int i = 0; i < campos.size(); i++) {
             if (valores[i] == null) {
-                throw new IllegalArgumentException("Falta " + QUE_ES.get(campos.get(i)));
+                throw new DatoInvalido("Falta " + QUE_ES.get(campos.get(i)));
             }
         }
     }

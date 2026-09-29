@@ -21,7 +21,7 @@ import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Borderó e informe por función y declaración jurada del INCAA; lee con consultas batch y los records suman.
 @Service

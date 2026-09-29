@@ -19,8 +19,8 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.repository.promociones.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.service.RecursoNoEncontrado;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Alta, activación y mejor promoción al cobrar (R15, R16); implementa PoliticaPromociones.
 @Service

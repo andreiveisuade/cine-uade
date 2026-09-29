@@ -22,6 +22,7 @@ import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
@@ -49,11 +50,11 @@ public class PlanificadorGrilla {
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
         List<Sala> salas = salaRepository.findAll();
         if (salas.isEmpty()) {
-            throw new IllegalArgumentException("No hay salas cargadas para programar");
+            throw new DatoInvalido("No hay salas cargadas para programar");
         }
         List<Pelicula> elenco = elegirElenco(criterios.cuantasPeliculas());
         if (elenco.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "No hay películas confirmadas para armar la grilla: revisá el buzón de importadas");
         }
         List<PaseSugerido> pases = repartir(elenco, salas, criterios, new PuntajeConfiable(elenco));

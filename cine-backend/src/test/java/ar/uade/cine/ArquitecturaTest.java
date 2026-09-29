@@ -19,6 +19,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+
 class ArquitecturaTest {
 
     private static final Path RAIZ = Path.of("src/main/java/ar/uade/cine");
@@ -94,6 +98,39 @@ class ArquitecturaTest {
             Path adaptadores = RAIZ.resolve("infrastructure/Adaptadores.java");
             assertSinViolaciones(importsDeImplementaciones(
                     archivo -> capaDe(archivo).equals("infrastructure") && !archivo.equals(adaptadores)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Los rechazos son explícitos")
+    class Rechazos {
+
+        // ManejadorErrores contesta una IllegalArgumentException suelta con 500: la puede tirar una
+        // librería con un texto técnico. Lo que el usuario tiene que leer va por un Rechazo.
+        @Test
+        @DisplayName("nadie tira una IllegalArgumentException suelta, sino un Rechazo de model/rechazos")
+        void nadieTiraUnaIllegalArgumentExceptionSuelta() {
+            List<String> violaciones = new ArrayList<>();
+            for (Path archivo : fuentes()) {
+                List<String> lineas = lineasDe(archivo);
+                for (int i = 0; i < lineas.size(); i++) {
+                    String linea = lineas.get(i).strip();
+                    if (!linea.startsWith("//") && linea.contains("new IllegalArgumentException(")) {
+                        violaciones.add(RAIZ.relativize(archivo) + ":" + (i + 1));
+                    }
+                }
+            }
+            assertTrue(violaciones.isEmpty(), () -> "Tiran new IllegalArgumentException(…), que sale como 500: "
+                    + "usá DatoInvalido (400), RecursoNoEncontrado (404) o ConflictoDeNegocio (409) "
+                    + "de model/rechazos en:\n  " + String.join("\n  ", violaciones));
+        }
+    }
+
+    private static List<String> lineasDe(Path archivo) {
+        try {
+            return Files.readAllLines(archivo);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

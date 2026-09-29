@@ -18,6 +18,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
@@ -25,7 +26,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Alta, baja y consulta de funciones; @Service que aplica lo que la función no ve sola: R3, R12 y R20.
 @Service
@@ -52,14 +53,14 @@ public class GestorFunciones {
         Sala sala = sala(salaId);
         Funcion funcion = new Funcion(pelicula, sala, inicio, version, proyeccion, precio, programacionId);
         if (yaPaso(inicio)) {
-            throw new IllegalArgumentException("La función no puede empezar en el pasado");
+            throw new DatoInvalido("La función no puede empezar en el pasado");
         }
 
         // R3
         LocalDateTime fin = funcion.getFin(pelicula.getDuracionMinutos());
         Optional<Funcion> choque = superpuestaEn(salaId, inicio, fin);
         if (choque.isPresent()) {
-            throw new IllegalArgumentException(motivoDeLaSuperposicion(choque.get(), sala, inicio));
+            throw new DatoInvalido(motivoDeLaSuperposicion(choque.get(), sala, inicio));
         }
         funcionRepository.save(funcion);
         return funcion;
@@ -81,11 +82,11 @@ public class GestorFunciones {
         // Si no, programar saltearía el buzón de revisión. La descartada ya no está en el buzón: pedirle
         // que la revise mandaría a buscarla donde no está.
         if (pelicula.getEstadoRevision() == EstadoRevision.DESCARTADA) {
-            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+            throw new DatoInvalido("La película " + pelicula.getTitulo()
                     + " está descartada: no se puede programar");
         }
         if (!pelicula.estaConfirmada()) {
-            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+            throw new DatoInvalido("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");
         }
         return pelicula;
@@ -175,7 +176,7 @@ public class GestorFunciones {
             throw new RecursoNoEncontrado("No existe la función " + id);
         }
         if (reservaRepository.existsByFuncion_Id(id)) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "La función " + id + " tiene reservas: no se puede eliminar");
         }
         funcionRepository.deleteById(id);

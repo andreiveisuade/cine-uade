@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -64,7 +65,7 @@ public class Funcion {
                    Proyeccion proyeccion, Dinero precio, Integer programacionId) {
         validarProgramable(sala, version, proyeccion, precio);
         if (inicio == null) {
-            throw new IllegalArgumentException("Falta la fecha y hora de la función");
+            throw new DatoInvalido("Falta la fecha y hora de la función");
         }
         this.pelicula = pelicula;
         this.sala = sala;
@@ -80,14 +81,14 @@ public class Funcion {
     public static void validarProgramable(Sala sala, Version version, Proyeccion proyeccion, Dinero precio) {
         // La API le dice idioma a lo que acá es la versión: el mensaje usa la palabra del formulario.
         if (version == null) {
-            throw new IllegalArgumentException("Falta el idioma");
+            throw new DatoInvalido("Falta el idioma");
         }
         if (proyeccion == null) {
-            throw new IllegalArgumentException("Falta la proyección");
+            throw new DatoInvalido("Falta la proyección");
         }
         // R8
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {
-            throw new IllegalArgumentException("La sala " + sala.getNombre() + " no puede proyectar en 3D");
+            throw new DatoInvalido("La sala " + sala.getNombre() + " no puede proyectar en 3D");
         }
         Dinero.importeValido(precio, "precio");
     }

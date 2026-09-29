@@ -45,7 +45,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
-import ar.uade.cine.service.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 

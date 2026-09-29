@@ -7,7 +7,9 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
 
-// Pasa los textos del pedido a enums, fechas y números; lo inválido sale como IllegalArgumentException (400).
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
+// Pasa los textos del pedido a enums, fechas y números; lo inválido sale como DatoInvalido (400).
 // queEs nombra el dato con su artículo («la fecha de inicio»): el mensaje lo usa para concordar.
 public final class Parseo {
 
@@ -19,7 +21,8 @@ public final class Parseo {
         try {
             return Enum.valueOf(tipo, valor.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Valor inválido para " + queEs + ": " + valor);
+            // La de Enum.valueOf trae un texto técnico: se traduce a uno que nombra el dato.
+            throw new DatoInvalido("Valor inválido para " + queEs + ": " + valor);
         }
     }
 
@@ -57,7 +60,7 @@ public final class Parseo {
         try {
             return Integer.valueOf(valor.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(conMayuscula(queEs) + " tiene que ser un número");
+            throw new DatoInvalido(conMayuscula(queEs) + " tiene que ser un número");
         }
     }
 
@@ -74,7 +77,7 @@ public final class Parseo {
         if (limpio.equals("true") || limpio.equals("false")) {
             return Boolean.valueOf(limpio);
         }
-        throw new IllegalArgumentException(conMayuscula(queEs) + " tiene que ser true o false");
+        throw new DatoInvalido(conMayuscula(queEs) + " tiene que ser true o false");
     }
 
     // El formato va en el mensaje: «no es válida» solo, sin decir cómo escribirla, no le sirve a nadie.
@@ -84,13 +87,13 @@ public final class Parseo {
             return parser.apply(valor.trim());
         } catch (DateTimeParseException e) {
             String valida = queEs.startsWith("la ") ? "válida" : "válido";
-            throw new IllegalArgumentException(conMayuscula(queEs) + " no es " + valida + ": usá " + formato);
+            throw new DatoInvalido(conMayuscula(queEs) + " no es " + valida + ": usá " + formato);
         }
     }
 
     private static void exigir(String valor, String queEs) {
         if (vacio(valor)) {
-            throw new IllegalArgumentException("Falta " + queEs);
+            throw new DatoInvalido("Falta " + queEs);
         }
     }
 

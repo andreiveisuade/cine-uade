@@ -27,7 +27,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.Ocupacion;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.controller.cartelera.VistasCartelera;
 import ar.uade.cine.controller.salas.VistasSalas;
 import ar.uade.cine.controller.usuarios.VistasUsuarios;

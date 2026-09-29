@@ -2,6 +2,7 @@ package ar.uade.cine.model.promociones;
 
 import java.util.List;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Column;
@@ -25,7 +26,7 @@ public class PromocionPorcentaje extends Promocion {
     public PromocionPorcentaje(String nombre, double porcentaje, CondicionesPromocion condiciones) {
         super(nombre, condiciones);
         if (porcentaje <= 0 || porcentaje >= 100) {
-            throw new IllegalArgumentException("El porcentaje tiene que estar entre 1 y 99");
+            throw new DatoInvalido("El porcentaje tiene que estar entre 1 y 99");
         }
         this.porcentaje = porcentaje;
     }

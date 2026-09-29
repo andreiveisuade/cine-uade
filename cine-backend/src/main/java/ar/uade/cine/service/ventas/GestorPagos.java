@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -20,7 +21,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.service.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Cobra reservas en caja o por checkout (R5, R11, R15, R17, R19); coordina reserva, promociones y pasarela.
 @Service
@@ -70,7 +71,7 @@ public class GestorPagos {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva, medio);
         if (!medio.requiereAutorizacion()) {
-            throw new IllegalArgumentException("El pago con " + medio.etiqueta()
+            throw new DatoInvalido("El pago con " + medio.etiqueta()
                     + " no va por checkout: se cobra en la caja del cine");
         }
 
@@ -104,13 +105,13 @@ public class GestorPagos {
     private void validarQueSePuedaCobrar(Reserva reserva, MedioPago medio) {
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
         reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
-            throw new IllegalArgumentException(motivo);
+            throw new DatoInvalido(motivo);
         });
         if (medio == null) {
-            throw new IllegalArgumentException("Falta el medio de pago");
+            throw new DatoInvalido("Falta el medio de pago");
         }
         if (pagoRepository.existsByReservaId(reserva.getId())) {
-            throw new IllegalArgumentException("La reserva " + reserva.getId() + " ya tiene un pago registrado");
+            throw new DatoInvalido("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
     }
 

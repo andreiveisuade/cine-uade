@@ -13,6 +13,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Sala de proyección (R2); Experto en sus datos y Creador de sus butacas, que genera solo en el alta.
 @Entity
 @Getter
@@ -52,10 +54,10 @@ public class Sala {
     public void editar(String nombre, TipoSala tipo, int minutosLimpieza) {
         String nuevoNombre = nombreValido(nombre);
         if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de sala");
+            throw new DatoInvalido("Falta el tipo de sala");
         }
         if (minutosLimpieza < 0) {
-            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
+            throw new DatoInvalido("Los minutos de limpieza no pueden ser negativos");
         }
         this.nombre = nuevoNombre;
         this.tipo = tipo;
@@ -69,12 +71,12 @@ public class Sala {
 
     private static String nombreValido(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new DatoInvalido("El nombre no puede estar vacío");
         }
         String limpio = normalizarNombre(nombre);
         // El VARCHAR(50) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
         if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
-            throw new IllegalArgumentException("El nombre no puede tener más de 50 caracteres");
+            throw new DatoInvalido("El nombre no puede tener más de 50 caracteres");
         }
         return limpio;
     }
@@ -84,17 +86,17 @@ public class Sala {
     // tipeado: ignorarlo dejaba la sala sin la butaca que pidió el encargado, sin avisarle.
     public List<Asiento> generarAsientos(List<Integer> butacasPorFila, Map<String, TipoAsiento> especiales) {
         if (butacasPorFila == null || butacasPorFila.isEmpty()) {
-            throw new IllegalArgumentException("La sala tiene que tener al menos una fila");
+            throw new DatoInvalido("La sala tiene que tener al menos una fila");
         }
         if (butacasPorFila.size() > MAX_FILAS) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "La sala tiene que tener como máximo " + MAX_FILAS + " filas: se identifican con una letra");
         }
         if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
-            throw new IllegalArgumentException("Cada fila tiene que tener al menos una butaca");
+            throw new DatoInvalido("Cada fila tiene que tener al menos una butaca");
         }
         if (butacasPorFila.stream().anyMatch(b -> b > MAX_BUTACAS_POR_FILA)) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "Una fila tiene que tener como máximo " + MAX_BUTACAS_POR_FILA + " butacas");
         }
         Map<String, TipoAsiento> sinUbicar = porCodigoNormalizado(especiales);
@@ -106,7 +108,7 @@ public class Sala {
             }
         }
         if (!sinUbicar.isEmpty()) {
-            throw new IllegalArgumentException(Asiento.inexistente(sinUbicar.keySet().iterator().next()));
+            throw new DatoInvalido(Asiento.inexistente(sinUbicar.keySet().iterator().next()));
         }
         return asientos;
     }

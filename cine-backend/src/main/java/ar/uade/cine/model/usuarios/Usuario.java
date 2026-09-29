@@ -17,6 +17,8 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
 // Cliente o empleado de la tabla usuario; Experto: valida nombre y email, y guarda el email en minúsculas.
 // Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
@@ -50,14 +52,14 @@ public abstract class Usuario {
 
     protected Usuario(String nombre, String email, Rol rol) {
         if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+            throw new DatoInvalido("El nombre no puede estar vacío");
         }
         String emailNormalizado = normalizarEmail(email);
         if (emailNormalizado.isEmpty()) {
-            throw new IllegalArgumentException("Falta el email");
+            throw new DatoInvalido("Falta el email");
         }
         if (!FORMA_DEL_EMAIL.matcher(emailNormalizado).matches()) {
-            throw new IllegalArgumentException("El email tiene que tener la forma usuario@dominio.com");
+            throw new DatoInvalido("El email tiene que tener la forma usuario@dominio.com");
         }
         this.nombre = recortado(nombre, "nombre");
         this.email = recortado(emailNormalizado, "email");
@@ -76,7 +78,7 @@ public abstract class Usuario {
         String limpio = texto.trim();
         // Los VARCHAR(100) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
         if (limpio.length() > LARGO_MAXIMO) {
-            throw new IllegalArgumentException(
+            throw new DatoInvalido(
                     "El " + campo + " no puede tener más de " + LARGO_MAXIMO + " caracteres");
         }
         return limpio;
