@@ -19,6 +19,16 @@ class PromocionControllerTest extends PruebaDeApi {
         assertEquals("El inicio de la vigencia no es válido: usá AAAA-MM-DD", respuesta.error());
     }
 
+    // Con la etiqueta de cada tipo y no con el nombre de la constante.
+    @Test
+    void unTipoQueNoExisteEs400YNombraLosQueHay() {
+        Respuesta respuesta = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"REGALO\","
+                + "\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El tipo de promoción tiene que ser porcentaje, monto fijo o NxM", respuesta.error());
+    }
+
     @Test
     void sinVigenciaEs400() {
         Respuesta respuesta = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20}");

@@ -92,7 +92,7 @@ public class PromocionController {
         try {
             return TipoPromocion.valueOf(tipo == null ? "" : tipo.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new DatoInvalido("El tipo tiene que ser PORCENTAJE, MONTO_FIJO o NXM");
+            throw new DatoInvalido("El tipo de promoción tiene que ser porcentaje, monto fijo o NxM");
         }
     }
 
