@@ -10,6 +10,7 @@ import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -92,6 +93,10 @@ public class GestorFunciones {
     // R20, con el mismo corte que R19 (Funcion.yaEmpezo): la que empieza ahora ya empezó, y
     // nacería sin poder venderse. Pública para que programaciones y grilla salteen con el
     // mismo criterio que el alta rechaza, en vez de repetir la comparación.
+    // SUPPORTS porque la llaman desde afuera, y pasar por el proxy le aplicaría el @Transactional de
+    // la clase: desde extenderActivas, que corre sin transacción, abriría y commitearía una por
+    // horario para comparar dos fechas. Así se suma a la del que llama, si hay, y si no, a ninguna.
+    @Transactional(propagation = Propagation.SUPPORTS)
     public boolean yaPaso(LocalDateTime inicio) {
         return !inicio.isAfter(reloj.ahora());
     }

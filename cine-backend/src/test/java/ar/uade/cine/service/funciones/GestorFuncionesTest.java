@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,6 +44,8 @@ import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
+import jakarta.persistence.EntityManagerFactory;
+
 class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -56,6 +60,8 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private GestorReservas reservas;
     @Autowired
     private GestorClientes clientes;
+    @Autowired
+    private EntityManagerFactory emf;
 
     @BeforeEach
     void prepararCartelera() {
@@ -94,6 +100,23 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         assertDoesNotThrow(() -> funciones.programar(1, 1, reloj.ahora().plusMinutes(1),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+    }
+
+    // extenderActivas corre sin transacción y pregunta una vez por horario: si cada pregunta abriera
+    // una, una grilla abierta haría decenas de commits sin haber leído nada.
+    @Test
+    void preguntarSiUnHorarioYaPasoNoAbreUnaTransaccion() {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+
+            funciones.yaPaso(reloj.ahora().plusDays(1));
+
+            assertEquals(0, estadisticas.getTransactionCount());
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
     }
 
     // R20 mira el alta, no el historial (R12): la que ya pasó sigue ahí.

@@ -96,11 +96,11 @@ public class GestorProgramaciones {
                                         LocalDate tope) {
         LocalDate yaProcesado = grilla.getGeneradaHasta();
         List<LocalDateTime> pendientes = grilla.horarios(tope).stream()
+                // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
+                .filter(inicio -> yaProcesado == null || inicio.toLocalDate().isAfter(yaProcesado))
                 // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
                 // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
                 .filter(inicio -> !funciones.yaPaso(inicio))
-                // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
-                .filter(inicio -> yaProcesado == null || inicio.toLocalDate().isAfter(yaProcesado))
                 .toList();
         // Una sola lectura de la sala para todo el rango, y no una por horario. Las funciones
         // que esta misma grilla va creando no están en la agenda: caen una por día, así que
