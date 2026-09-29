@@ -66,6 +66,7 @@ public class GestorCartelera {
         return actual;
     }
 
+    // El título de la película y no el del pedido: ya viene recortado, así los espacios no burlan R1.
     // Una sin guardar tiene id 0, que ninguna guardada tiene: en el alta no excluye a nadie.
     private void exigirTituloLibre(Pelicula pelicula) {
         if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(pelicula.getTitulo(), pelicula.getId())) {

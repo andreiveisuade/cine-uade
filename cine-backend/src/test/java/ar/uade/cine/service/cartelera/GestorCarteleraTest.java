@@ -86,6 +86,22 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 () -> gestor.agregar("matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP));
     }
 
+    // R1: con espacios en los bordes seguiría siendo la misma película.
+    @Test
+    void elTituloRepetidoNoSeBurlaConEspacios() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        ConflictoDeNegocio alta = assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.agregar("  matrix ", 136, List.of(Genero.ACCION), Clasificacion.ATP));
+        ConflictoDeNegocio edicion = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula(" Matrix", null, null, null, null, null, null, null, null, null, null, null)));
+
+        assertEquals("Ya existe una película con ese título", alta.getMessage());
+        assertEquals("Ya existe una película con ese título", edicion.getMessage());
+        assertEquals(2, gestor.listar().size());
+    }
+
     @Test
     void rechazaDuracionInvalida() {
         assertThrows(IllegalArgumentException.class,

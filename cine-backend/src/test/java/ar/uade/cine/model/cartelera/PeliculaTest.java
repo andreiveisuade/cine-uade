@@ -51,6 +51,23 @@ class PeliculaTest {
                 155, List.of(Genero.DRAMA), Clasificacion.ATP));
     }
 
+    @Test
+    void elTituloSeGuardaSinLosEspaciosDeLosBordes() {
+        Pelicula dune = new Pelicula("  Dune  ", 155, List.of(Genero.DRAMA), Clasificacion.ATP);
+        assertEquals("Dune", dune.getTitulo());
+
+        dune.actualizar(" Dune: Parte Dos ", 166, List.of(Genero.DRAMA), Clasificacion.ATP);
+        assertEquals("Dune: Parte Dos", dune.getTitulo());
+    }
+
+    @Test
+    void elLargoDelTituloSeMideSinLosEspaciosDeLosBordes() {
+        Pelicula pelicula = new Pelicula(" " + "x".repeat(100) + " ", 155, List.of(Genero.DRAMA),
+                Clasificacion.ATP);
+
+        assertEquals(100, pelicula.getTitulo().length());
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             título vacío,      '',    120, DRAMA, ATP, El título no puede estar vacío

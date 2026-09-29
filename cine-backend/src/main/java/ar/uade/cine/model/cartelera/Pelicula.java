@@ -83,10 +83,7 @@ public class Pelicula {
     // Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia.
     public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
-        if (titulo == null || titulo.isBlank()) {
-            throw new IllegalArgumentException("El título no puede estar vacío");
-        }
-        exigirLargo(titulo, 100, "El título");
+        String tituloLimpio = tituloValido(titulo);
         if (duracionMinutos <= 0) {
             throw new IllegalArgumentException("La duración debe ser mayor a cero");
         }
@@ -98,7 +95,7 @@ public class Pelicula {
         }
         // Sin repetidos: la clave de pelicula_genero es (pelicula_id, genero).
         List<Genero> sinRepetir = generos.stream().distinct().toList();
-        this.titulo = titulo;
+        this.titulo = tituloLimpio;
         this.duracionMinutos = duracionMinutos;
         this.clasificacion = clasificacion;
         this.generos.clear();
@@ -186,6 +183,16 @@ public class Pelicula {
     public void descartar() {
         estadoRevision = EstadoRevision.DESCARTADA;
         enCartelera = false;
+    }
+
+    // Recortado: " Matrix" pasaría el chequeo de título repetido de R1 como si fuera otra película.
+    private static String tituloValido(String titulo) {
+        if (titulo == null || titulo.isBlank()) {
+            throw new IllegalArgumentException("El título no puede estar vacío");
+        }
+        String limpio = titulo.strip();
+        exigirLargo(limpio, 100, "El título");
+        return limpio;
     }
 
     // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
