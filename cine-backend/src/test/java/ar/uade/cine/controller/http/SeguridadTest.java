@@ -2,6 +2,7 @@ package ar.uade.cine.controller.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -12,8 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -221,5 +226,68 @@ class SeguridadTest extends PruebaDeApi {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
         return reservas.reservar(funcion.getId(), "Andrei", "andrei@uade.edu.ar",
                 Map.of("A1", TipoTarifa.GENERAL), null);
+    }
+
+    // Un header que no se puede leer no es un 500 ni abre el cuadro del navegador: 401 con {error}.
+    // Basic roto dice lo mismo que una clave equivocada; otro esquema es como no mandar nada.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            base64 roto,               Basic !!!,                          Email o contraseña incorrectos
+            sin los dos puntos,        Basic YWRtaW5AcHJ1ZWJhLnRlc3Q=,     Email o contraseña incorrectos
+            Basic vacío,               Basic,                              Email o contraseña incorrectos
+            email y clave vacíos,      Basic Og==,                         Email o contraseña incorrectos
+            otro esquema,              Bearer x,                           Hace falta iniciar sesión para esta operación
+            """)
+    @DisplayName("un header Authorization mal formado es 401 en JSON")
+    void unHeaderMalFormadoEs401EnJson(String caso, String autorizacion, String mensaje) {
+        Respuesta respuesta = conAutorizacion(autorizacion);
+
+        assertThat(respuesta.estado()).isEqualTo(401);
+        assertThat(respuesta.cabeceras().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(respuesta.error()).isEqualTo(mensaje);
+        assertThat(respuesta.cabeceras().containsKey("WWW-Authenticate")).isFalse();
+    }
+
+    @Test
+    @DisplayName("el login no distingue los espacios alrededor del email")
+    void elLoginIgnoraLosEspaciosAlrededorDelEmail() {
+        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "  " + EMAIL_ADMIN + " ", CLAVE_ADMIN);
+
+        assertThat(respuesta.estado()).isEqualTo(200);
+        assertThat(respuesta.json().get("email").asText()).isEqualTo(EMAIL_ADMIN);
+    }
+
+    // El admin tiene el hash SHA-256 viejo y el acomodador uno bcrypt: los dos caminos de verificación.
+    @Test
+    @DisplayName("una contraseña vacía es 401, con hash viejo o con bcrypt")
+    void unaContrasenaVaciaEs401() {
+        Respuesta admin = pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, "");
+        Respuesta acomodador = pedirComo(HttpMethod.POST, "/api/sesion", null, "puerta@cine.test", "");
+
+        assertThat(admin.estado()).isEqualTo(401);
+        assertThat(admin.error()).isEqualTo("Email o contraseña incorrectos");
+        assertThat(acomodador.estado()).isEqualTo(401);
+        assertThat(acomodador.error()).isEqualTo("Email o contraseña incorrectos");
+    }
+
+    // bcrypt no admite más de 72 bytes: la comparación tiene que decir que no, sin tirar.
+    @Test
+    @DisplayName("una contraseña de más de 72 bytes contra un hash bcrypt es 401, no 500")
+    void unaContrasenaDeMasDe72BytesEs401() {
+        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "puerta@cine.test", "x".repeat(100));
+
+        assertThat(respuesta.estado()).isEqualTo(401);
+        assertThat(respuesta.error()).isEqualTo("Email o contraseña incorrectos");
+    }
+
+    @Autowired
+    private TestRestTemplate http;
+
+    private Respuesta conAutorizacion(String autorizacion) {
+        HttpHeaders cabeceras = new HttpHeaders();
+        cabeceras.set(HttpHeaders.AUTHORIZATION, autorizacion);
+        ResponseEntity<String> respuesta = http.exchange(URI.create("/api/sesion"), HttpMethod.POST,
+                new HttpEntity<>(null, cabeceras), String.class);
+        return new Respuesta(respuesta.getStatusCode().value(), respuesta.getBody(), respuesta.getHeaders());
     }
 }
