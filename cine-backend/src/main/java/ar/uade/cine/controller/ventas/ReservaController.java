@@ -19,7 +19,6 @@ import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
-import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorReservas;
@@ -39,7 +38,6 @@ public class ReservaController {
 
     private final GestorReservas reservas;
     private final ConsultasReservas consultas;
-    private final GestorClientes clientes;
     private final VistasVentas vistas;
 
     @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
@@ -50,9 +48,7 @@ public class ReservaController {
                                         @RequestParam(required = false) String q) {
         if (email != null && !email.isBlank()) {
             // Sin código: la ruta es pública y el email no prueba ser el dueño.
-            return vistas.reservasSinCodigo(clientes.buscarPorEmail(email.trim())
-                    .map(c -> consultas.listarPorCliente(c.getId()))
-                    .orElse(List.of()));
+            return vistas.reservasSinCodigo(consultas.listarPorEmail(email));
         }
         // vistas.reservas() y no un map de vistas.reserva(): evita tres consultas por fila.
         return vistas.reservas(consultas.buscar(new CriteriosReserva(
@@ -86,17 +82,13 @@ public class ReservaController {
     @Operation(summary = "Cancelar una reserva y liberar sus butacas (encargado)")
     @PostMapping("/api/reservas/{id}/cancelacion")
     public ReservaVistaDTO cancelar(@PathVariable int id) {
-        buscar(id);
-        reservas.cancelar(id);
-        return vistas.reserva(buscar(id));
+        return vistas.reserva(reservas.cancelar(id));
     }
 
     @Operation(summary = "El cliente cancela su reserva con el código de acceso")
     @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
     public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo) {
-        int id = buscarPorCodigo(codigo).getId();
-        reservas.cancelar(id);
-        return vistas.reserva(buscar(id));
+        return vistas.reserva(reservas.cancelar(buscarPorCodigo(codigo).getId()));
     }
 
     private Reserva buscarPorCodigo(String codigo) {

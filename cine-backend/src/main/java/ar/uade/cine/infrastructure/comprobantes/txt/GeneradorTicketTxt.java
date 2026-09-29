@@ -5,10 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ar.uade.cine.infrastructure.comprobantes.GeneradorTicket;
-import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Sala;
-import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -21,17 +19,19 @@ public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicke
     }
 
     @Override
-    public void emitir(Reserva reserva, Funcion funcion, Pelicula pelicula, Sala sala, Cliente cliente) {
+    public void emitir(Reserva reserva) {
+        Funcion funcion = reserva.getFuncion();
+        Sala sala = funcion.getSala();
         List<String> lineas = new ArrayList<>(List.of(
                 linea(),
                 centrar("CINE UADE"),
                 centrar("TICKET #" + reserva.getId()),
                 linea(),
-                campo("Pelicula", pelicula.getTitulo()),
+                campo("Pelicula", funcion.getPelicula().getTitulo()),
                 campo("Sala", sala.getNombre() + " (" + sala.getTipo() + ")"),
                 campo("Funcion", fecha(funcion.getInicio())),
                 campo("Formato", funcion.getProyeccion() + " " + funcion.getVersion()),
-                campo("Cliente", cliente.getNombre()),
+                campo("Cliente", reserva.getCliente().getNombre()),
                 campo("Emitido", fecha(reserva.getCreadaEn())),
                 linea()));
 

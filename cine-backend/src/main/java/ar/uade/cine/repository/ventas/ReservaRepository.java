@@ -21,7 +21,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Integer> {
 
     List<Reserva> findAllByOrderByIdDesc();
 
-    List<Reserva> findByCliente_IdOrderByIdDesc(int clienteId);
+    List<Reserva> findByCliente_EmailOrderByIdDesc(String email);
 
     boolean existsByFuncion_Id(int funcionId);
 

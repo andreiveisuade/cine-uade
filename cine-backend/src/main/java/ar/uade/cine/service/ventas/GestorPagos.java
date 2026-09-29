@@ -39,19 +39,24 @@ public class GestorPagos {
     public Pago cobrar(int reservaId, MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva, medio);
+        return registrarPago(reserva, medio, codigoAutorizacion);
+    }
+
+    // Sin save() de la reserva: la trajo esta transacción y el cambio de estado sale en el
+    // commit, donde también se chequea su @Version.
+    private Pago registrarPago(Reserva reserva, MedioPago medio, String codigoAutorizacion) {
         String autorizacion = medio.autorizacion(codigoAutorizacion);
         PoliticaPromociones.Descuento descuento = descuentoPara(reserva, medio);
 
-        Pago pago = new Pago(reservaId, reserva.getTotal(),
+        Pago pago = new Pago(reserva.getId(), reserva.getTotal(),
                 descuento.promocionId(), descuento.monto(),
                 medio, reloj.ahora(), autorizacion);
         pagoRepository.save(pago);
 
         reserva.pagar();
-        reservaRepository.save(reserva);
         emitirRecibo(pago, reserva);
         log.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
-                reservaId, medio, reserva.getTotal(),
+                reserva.getId(), medio, reserva.getTotal(),
                 !descuento.monto().esCero()
                         ? " · promo " + descuento.promocionId() + " -" + descuento.monto()
                         : " · sin promo",
@@ -78,12 +83,15 @@ public class GestorPagos {
     }
 
     // La reserva sale del checkout y no de quien confirma. El descuento se recalcula: pudo cambiar una promoción.
+    // Se valida antes de autorizar: autorizar es cobrarle al cliente, y si la reserva ya no se
+    // puede cobrar esa plata no tiene cómo volver (R13).
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = pasarela.buscar(checkoutId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));
+        Reserva reserva = buscarReserva(checkout.reservaId());
+        validarQueSePuedaCobrar(reserva, checkout.medio());
 
-        String codigoAutorizacion = pasarela.autorizar(checkout);
-        return cobrar(checkout.reservaId(), checkout.medio(), codigoAutorizacion);
+        return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
     }
 
     private Reserva buscarReserva(int reservaId) {
@@ -117,8 +125,10 @@ public class GestorPagos {
         }
     }
 
+    // Vacío si la reserva todavía no se cobró; si ni siquiera existe, RecursoNoEncontrado.
     @Transactional(readOnly = true)
     public Optional<Pago> buscarPorReserva(int reservaId) {
+        buscarReserva(reservaId);
         return pagoRepository.findByReservaId(reservaId);
     }
 

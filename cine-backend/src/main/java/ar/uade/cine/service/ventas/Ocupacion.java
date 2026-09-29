@@ -83,8 +83,10 @@ public class Ocupacion {
         List<Asiento> deLaSala = asientosDeLaSala(funcionId);
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
 
+        // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
         List<Asiento> pedidos = codigos == null ? List.of() : codigos.stream()
                 .map(codigo -> Asiento.exigirConCodigo(deLaSala, codigo))
+                .distinct()
                 .toList();
 
         LocalDateTime ahora = reloj.ahora();

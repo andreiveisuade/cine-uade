@@ -28,9 +28,8 @@ public class GestorAcceso {
         Reserva reserva = reservaRepository.findByCodigo(Reserva.normalizarCodigo(codigo))
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
         reserva.registrarIngreso(reloj.ahora());
-        reservaRepository.save(reserva);
-        log.info("ingreso reserva {} · codigo {} · {} personas",
-                reserva.getId(), reserva.getCodigo(), reserva.getCantidadEntradas());
+        // Sin el código: es la única credencial del cliente, y con el id alcanza para rastrearlo.
+        log.info("ingreso reserva {} · {} personas", reserva.getId(), reserva.getCantidadEntradas());
         return reserva;
     }
 }

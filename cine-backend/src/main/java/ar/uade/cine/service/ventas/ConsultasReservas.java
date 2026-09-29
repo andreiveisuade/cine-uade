@@ -37,8 +37,10 @@ public class ConsultasReservas {
         return ids.isEmpty() ? List.of() : reservaRepository.findConDetalle(ids);
     }
 
-    public List<Reserva> listarPorCliente(int clienteId) {
-        return reservaRepository.findByCliente_IdOrderByIdDesc(clienteId);
+    // Las de un cliente, la más nueva primero, en una consulta. Sin email no hay a quién buscar.
+    public List<Reserva> listarPorEmail(String email) {
+        return email == null || email.isBlank() ? List.of()
+                : reservaRepository.findByCliente_EmailOrderByIdDesc(email.trim());
     }
 
     // La más nueva primero, ordenada en la base. Estado y día también en la base; el texto en

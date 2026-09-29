@@ -23,6 +23,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import ar.uade.cine.PruebaDeIntegracion;
 
+import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -35,6 +36,7 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.infrastructure.comprobantes.GeneradorRecibo;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -45,6 +47,7 @@ import ar.uade.cine.service.informes.Arqueo;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
+import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.informes.GestorCaja;
@@ -64,6 +67,12 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private GestorPromociones promociones;
     @Autowired
     private ReservaRepository reservaRepository;
+    @Autowired
+    private PagoRepository pagoRepository;
+    @Autowired
+    private PoliticaPromociones politica;
+    @Autowired
+    private GeneradorRecibo generadorRecibo;
     @Autowired
     private GestorCartelera cartelera;
     @Autowired
@@ -363,6 +372,36 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class, () -> pagos.confirmarCheckout(checkout.id()));
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
+    }
+
+    // Autorizar es cobrarle al cliente y no hay devolución (R13): la reserva que dejó de ser
+    // cobrable se rechaza antes de llegar a la pasarela, igual que al abrir el checkout.
+    // El checkout se abre directo en la pasarela: se abrió cuando todavía se podía cobrar.
+    @Test
+    void noSeAutorizaEnLaPasarelaElCheckoutDeUnaReservaQueYaNoSePuedeCobrar() {
+        PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, generadorRecibo, reloj);
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
+        reservas.cancelar(reserva.getId());
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> conEsaPasarela.confirmarCheckout(checkout));
+
+        assertEquals("La reserva está CANCELADA, no se puede cobrar", error.getMessage());
+        assertEquals(0, pasarela.autorizaciones);
+    }
+
+    private static class PasarelaQueCuenta extends MercadoPagoEmulado {
+
+        private int autorizaciones;
+
+        @Override
+        public String autorizar(Checkout checkout) {
+            autorizaciones++;
+            return super.autorizar(checkout);
+        }
     }
 
     private static Map<String, TipoTarifa> generales(String... codigos) {

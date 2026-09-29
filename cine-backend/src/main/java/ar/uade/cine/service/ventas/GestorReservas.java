@@ -72,7 +72,7 @@ public class GestorReservas {
         log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcionId,
                 detalleDe(entradas), reserva.getTotal());
 
-        emitirTicket(reserva, funcion, sala, cliente);
+        generadorTicket.emitir(reserva);
         return reserva;
     }
 
@@ -103,16 +103,12 @@ public class GestorReservas {
         return asiento;
     }
 
-    private void emitirTicket(Reserva reserva, Funcion funcion, Sala sala, Cliente cliente) {
-        generadorTicket.emitir(reserva, funcion, funcion.getPelicula(), sala, cliente);
-    }
-
-    public void cancelar(int reservaId) {
+    public Reserva cancelar(int reservaId) {
         Reserva reserva = buscarOFallar(reservaId);
         reserva.cancelar();
-        reservaRepository.save(reserva);
         log.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
+        return reserva;
     }
 
     private static String detalleDe(List<Entrada> entradas) {

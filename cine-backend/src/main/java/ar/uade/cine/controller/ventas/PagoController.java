@@ -21,9 +21,7 @@ import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
-import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
-import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -38,14 +36,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PagoController {
 
     private final GestorPagos pagos;
-    private final ConsultasReservas reservas;
     private final VistasVentas vistas;
 
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
     @PostMapping("/api/reservas/{id}/pago")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PagoVistaDTO> cobrar(@PathVariable int id, @Valid @RequestBody PedidoPagoDTO pedido) {
-        exigirReserva(id);
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         return Creado.en("/api/reservas/" + id + "/pago",
                 vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion())));
@@ -54,7 +50,6 @@ public class PagoController {
     @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
     @GetMapping(value = "/api/reservas/{id}/pago", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> pagoDe(@PathVariable int id) {
-        exigirReserva(id);
         Optional<Pago> pago = pagos.buscarPorReserva(id);
         return ResponseEntity.ok(pago.map(p -> (Object) vistas.pago(p)).orElse("null"));
     }
@@ -64,7 +59,6 @@ public class PagoController {
     @ResponseStatus(HttpStatus.CREATED)
     public CheckoutVistaDTO abrirCheckout(@PathVariable int id,
                                           @Valid @RequestBody PedidoCheckoutDTO pedido) {
-        exigirReserva(id);
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         return vistas.checkout(pagos.iniciarCheckout(id, medio));
     }
@@ -75,9 +69,5 @@ public class PagoController {
     public ResponseEntity<PagoVistaDTO> confirmarCheckout(@PathVariable String id) {
         PagoVistaDTO pago = vistas.pago(pagos.confirmarCheckout(id));
         return Creado.en("/api/reservas/" + pago.reservaId() + "/pago", pago);
-    }
-
-    private void exigirReserva(int id) {
-        reservas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
     }
 }

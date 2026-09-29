@@ -110,6 +110,15 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals(List.of("A1"), bloqueo.rechazadas());
     }
 
+    // "a1" y "A1" son la misma butaca: vuelve una sola vez, no ["A1", "A1"].
+    @Test
+    void laMismaButacaEscritaDeDosManerasSeBloqueaUnaSolaVez() {
+        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(1, List.of("a1", "A1"), ANA);
+
+        assertEquals(List.of("A1"), bloqueo.conseguidas());
+        assertEquals(List.of(), bloqueo.rechazadas());
+    }
+
     @Test
     void noSeBloqueaUnaButacaYaVendida() {
         reservas.reservar(1, 1, generales("A1"), null);

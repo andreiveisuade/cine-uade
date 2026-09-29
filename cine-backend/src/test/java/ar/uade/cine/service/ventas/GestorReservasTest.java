@@ -18,9 +18,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -145,6 +148,16 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void laMismaButacaDosVecesEsUnaSolaEntrada() {
         assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1"), null).getCantidadEntradas());
+    }
+
+    // "a1" y "A1" son dos claves del pedido y una sola butaca: antes llegaban dos entradas al
+    // UNIQUE y salía el 409 de "alguien tomó una de esas butacas", que no era lo que pasaba.
+    @Test
+    void laMismaButacaEscritaDeDosManerasSeRechazaComoRepetida() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> reservas.reservar(1, 1, generales("a1", "A1"), null));
+
+        assertEquals("La butaca A1 está repetida en el pedido", error.getMessage());
     }
 
     @Test
@@ -373,6 +386,19 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertThrows(IllegalArgumentException.class, () -> acceso.registrarIngreso("XXXXXXXX"));
     }
 
+    // El código es la única credencial del cliente: con leer el log no se tiene que poder entrar.
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void elIngresoNoDejaElCodigoDeAccesoEnElLog(CapturedOutput log) {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        acceso.registrarIngreso(reserva.getCodigo());
+
+        assertTrue(log.getOut().contains("ingreso reserva " + reserva.getId()), "el ingreso se sigue logueando");
+        assertFalse(log.getAll().contains(reserva.getCodigo()));
+    }
+
 
     // Por el repositorio: el gestor no deja programar en el pasado.
     private Funcion funcionQueYaEmpezo() {
@@ -461,6 +487,18 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(1, buscarTexto(codigo).size());
         assertEquals(1, buscarTexto(codigo.toLowerCase()).size());
+    }
+
+    @Test
+    void lasDeUnEmailVanDeLaMasNuevaALaMasVieja() {
+        cargarReservas();
+
+        List<Reserva> deAndrei = consultas.listarPorEmail("  andrei@uade.edu.ar ");
+
+        assertEquals(List.of(3, 1), deAndrei.stream().map(Reserva::getId).toList());
+        assertTrue(consultas.listarPorEmail(null).isEmpty());
+        assertTrue(consultas.listarPorEmail("   ").isEmpty());
+        assertTrue(consultas.listarPorEmail("nadie@uade.edu.ar").isEmpty());
     }
 
     private List<Reserva> buscarTexto(String texto) {

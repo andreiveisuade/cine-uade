@@ -3,8 +3,10 @@ package ar.uade.cine.model.ventas;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
@@ -25,7 +27,7 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Reserva de butacas (R5, R6, R13, R17-R19); Experto en sus transiciones, con @Version contra carreras.
+// Reserva de butacas sin repetir (R5, R6, R13, R17-R19); Experto en sus transiciones, @Version por carreras.
 @Entity
 @Getter
 public class Reserva {
@@ -79,6 +81,7 @@ public class Reserva {
         if (entradas.isEmpty()) {
             throw new IllegalArgumentException("Hay que elegir al menos una butaca");
         }
+        exigirSinRepetidas(entradas);
         this.funcion = funcion;
         this.cliente = cliente;
         this.creadaEn = creadaEn;
@@ -88,6 +91,18 @@ public class Reserva {
             entrada.ocupar(funcion.getId());
             this.entradas.add(entrada);
         });
+    }
+
+    // "a1" y "A1" son dos claves del pedido y la misma butaca. Sin esto las dos entradas
+    // chocaban contra el UNIQUE y el cliente leía un 409 de butaca tomada por otro.
+    private static void exigirSinRepetidas(List<Entrada> entradas) {
+        Set<Integer> asientos = new HashSet<>();
+        for (Entrada entrada : entradas) {
+            if (!asientos.add(entrada.asientoId())) {
+                throw new IllegalArgumentException(
+                        "La butaca " + entrada.codigoAsiento() + " está repetida en el pedido");
+            }
+        }
     }
 
     private static String generarCodigo() {

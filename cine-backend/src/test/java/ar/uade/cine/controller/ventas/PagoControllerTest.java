@@ -112,6 +112,17 @@ class PagoControllerTest extends PruebaDeApi {
     }
 
     @Test
+    void elPagoDeUnaReservaSinCobrarEsNullYElDeUnaQueNoExisteEs404() {
+        Respuesta sinCobrar = get("/api/reservas/" + reserva.getId() + "/pago");
+        Respuesta inexistente = get("/api/reservas/99/pago");
+
+        assertEquals(200, sinCobrar.estado());
+        assertEquals("null", sinCobrar.cuerpo());
+        assertEquals(404, inexistente.estado());
+        assertEquals("No existe la reserva 99", inexistente.error());
+    }
+
+    @Test
     void confirmarElCheckoutCobraYDevuelveElPagoAutorizado() {
         String id = checkout("QR").json().get("id").asText();
 
