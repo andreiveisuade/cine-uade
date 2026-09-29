@@ -44,6 +44,10 @@ public final class Parseo {
         return vacio(valor) ? null : dia(valor, queEs);
     }
 
+    public static LocalTime horaOpcional(String valor, String queEs) {
+        return vacio(valor) ? null : hora(valor, queEs);
+    }
+
     public static Integer numeroOpcional(String valor, String queEs) {
         if (vacio(valor)) {
             return null;

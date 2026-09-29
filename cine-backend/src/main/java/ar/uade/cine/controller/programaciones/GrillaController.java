@@ -55,28 +55,18 @@ public class GrillaController {
         return propuesta(planificador.aplicar(criterios(pedido)), true);
     }
 
-    // El precio no tiene default: es una decisión comercial del cine.
+    // El precio no tiene default: es una decisión comercial del cine. Acá solo se lee el pedido;
+    // lo que falte lo completa CriteriosGrilla, salvo el día de hoy, que sale del reloj.
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
-        LocalDate desde = pedido.desde() == null || pedido.desde().isBlank()
-                ? reloj.hoy()
-                : Parseo.dia(pedido.desde(), "la fecha de inicio");
-        CriteriosGrilla base = CriteriosGrilla.deUnaSemana(desde,
-                pedido.cuantasPeliculas() == null ? 8 : pedido.cuantasPeliculas(),
-                Dinero.de(pedido.precio()));
-
-        return new CriteriosGrilla(desde,
-                pedido.dias() == null ? base.dias() : pedido.dias(),
-                hora(pedido.apertura(), base.apertura(), "la hora de apertura"),
-                hora(pedido.cierre(), base.cierre(), "la hora de cierre"),
-                base.cuantasPeliculas(), base.precio(),
-                pedido.idioma() == null
-                        ? base.version() : Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
-                pedido.proyeccion() == null
-                        ? base.proyeccion() : Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"));
-    }
-
-    private static LocalTime hora(String valor, LocalTime porDefecto, String queEs) {
-        return valor == null || valor.isBlank() ? porDefecto : Parseo.hora(valor, queEs);
+        LocalDate desde = Parseo.diaOpcional(pedido.desde(), "la fecha de inicio");
+        LocalTime apertura = Parseo.horaOpcional(pedido.apertura(), "la hora de apertura");
+        LocalTime cierre = Parseo.horaOpcional(pedido.cierre(), "la hora de cierre");
+        Version version = pedido.idioma() == null
+                ? null : Parseo.constante(Version.class, pedido.idioma(), "el idioma");
+        Proyeccion proyeccion = pedido.proyeccion() == null
+                ? null : Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
+        return CriteriosGrilla.completando(desde == null ? reloj.hoy() : desde, pedido.dias(), apertura,
+                cierre, pedido.cuantasPeliculas(), Dinero.de(pedido.precio()), version, proyeccion);
     }
 
     private static PropuestaGrillaDTO propuesta(PropuestaGrilla propuesta, boolean creadas) {

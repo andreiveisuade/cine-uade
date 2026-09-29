@@ -38,8 +38,22 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
     }
 
     public static CriteriosGrilla deUnaSemana(LocalDate desde, int cuantasPeliculas, Dinero precio) {
-        return new CriteriosGrilla(desde, 7, LocalTime.of(14, 0), LocalTime.of(0, 0),
-                cuantasPeliculas, precio, Version.SUBTITULADA, Proyeccion.DOS_D);
+        return completando(desde, null, null, null, cuantasPeliculas, precio, null, null);
+    }
+
+    // Lo que el pedido no trae es una semana de 14 a 0 con 8 películas subtituladas en 2D. Se
+    // completa y se valida en una sola construcción: el primer error es el del pedido, no el de un default.
+    public static CriteriosGrilla completando(LocalDate desde, Integer dias, LocalTime apertura,
+                                              LocalTime cierre, Integer cuantasPeliculas, Dinero precio,
+                                              Version version, Proyeccion proyeccion) {
+        return new CriteriosGrilla(desde,
+                dias == null ? 7 : dias,
+                apertura == null ? LocalTime.of(14, 0) : apertura,
+                cierre == null ? LocalTime.MIDNIGHT : cierre,
+                cuantasPeliculas == null ? 8 : cuantasPeliculas,
+                precio,
+                version == null ? Version.SUBTITULADA : version,
+                proyeccion == null ? Proyeccion.DOS_D : proyeccion);
     }
 
     public LocalTime cierreEfectivo() {
