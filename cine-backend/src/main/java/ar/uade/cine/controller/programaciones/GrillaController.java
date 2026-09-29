@@ -42,6 +42,7 @@ public class GrillaController {
         return vistas.propuesta(planificador.proponer(criterios(pedido)), 0);
     }
 
+    // Alta sin Location: crea muchas funciones y no un recurso; cada función tiene su propio GET.
     @Operation(summary = "Aplicar la propuesta: crea todas las funciones")
     @PostMapping("/api/grilla")
     @ResponseStatus(HttpStatus.CREATED)

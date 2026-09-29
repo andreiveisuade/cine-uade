@@ -33,6 +33,7 @@ public class CompraCandyController {
     private final GestorCandy candy;
     private final VistasCandy vistas;
 
+    // Alta sin Location: una compra no tiene GET por id, se la ve en el listado del día o del cliente.
     @Operation(summary = "Vender candy en el mostrador: nace cobrado")
     @PostMapping("/api/candy/compras")
     @ResponseStatus(HttpStatus.CREATED)

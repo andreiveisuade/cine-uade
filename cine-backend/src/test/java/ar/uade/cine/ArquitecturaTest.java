@@ -110,20 +110,44 @@ class ArquitecturaTest {
         @Test
         @DisplayName("nadie tira una IllegalArgumentException suelta, sino un Rechazo de model/rechazos")
         void nadieTiraUnaIllegalArgumentExceptionSuelta() {
-            List<String> violaciones = new ArrayList<>();
-            for (Path archivo : fuentes()) {
-                List<String> lineas = lineasDe(archivo);
-                for (int i = 0; i < lineas.size(); i++) {
-                    String linea = lineas.get(i).strip();
-                    if (!linea.startsWith("//") && linea.contains("new IllegalArgumentException(")) {
-                        violaciones.add(RAIZ.relativize(archivo) + ":" + (i + 1));
-                    }
-                }
-            }
+            List<String> violaciones = lineasQueDicen("new IllegalArgumentException(", archivo -> true);
             assertTrue(violaciones.isEmpty(), () -> "Tiran new IllegalArgumentException(…), que sale como 500: "
                     + "usá DatoInvalido (400), RecursoNoEncontrado (404) o ConflictoDeNegocio (409) "
                     + "de model/rechazos en:\n  " + String.join("\n  ", violaciones));
         }
+    }
+
+    @Nested
+    @DisplayName("Cada endpoint contesta una sola forma")
+    class Respuestas {
+
+        // Con ResponseEntity<Object> un mismo endpoint contestaba el DTO o el literal null, según el caso.
+        @Test
+        @DisplayName("ningún controller contesta ResponseEntity<Object>")
+        void ningunControllerContestaObject() {
+            List<String> violaciones = lineasQueDicen("ResponseEntity<Object>",
+                    archivo -> capaDe(archivo).equals("controller"));
+            assertTrue(violaciones.isEmpty(), () -> "Contestan ResponseEntity<Object>: usá el DTO, una lista "
+                    + "para un filtro o un rechazo para lo que no está, en:\n  " + String.join("\n  ", violaciones));
+        }
+    }
+
+    // Archivo y número de línea, sin contar comentarios.
+    private static List<String> lineasQueDicen(String texto, Predicate<Path> revisar) {
+        List<String> encontradas = new ArrayList<>();
+        for (Path archivo : fuentes()) {
+            if (!revisar.test(archivo)) {
+                continue;
+            }
+            List<String> lineas = lineasDe(archivo);
+            for (int i = 0; i < lineas.size(); i++) {
+                String linea = lineas.get(i).strip();
+                if (!linea.startsWith("//") && linea.contains(texto)) {
+                    encontradas.add(RAIZ.relativize(archivo) + ":" + (i + 1));
+                }
+            }
+        }
+        return encontradas;
     }
 
     private static List<String> lineasDe(Path archivo) {

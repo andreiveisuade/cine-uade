@@ -40,6 +40,7 @@ public class ImportacionController {
         return importaciones.listar().stream().map(vistas::importacion).toList();
     }
 
+    // Alta sin Location: una corrida no tiene GET por id, queda en el historial de GET /api/importaciones.
     @Operation(summary = "Traer cartelera de TMDB. Tarda: contesta cuando terminó")
     @PostMapping("/api/importaciones")
     @ResponseStatus(HttpStatus.CREATED)

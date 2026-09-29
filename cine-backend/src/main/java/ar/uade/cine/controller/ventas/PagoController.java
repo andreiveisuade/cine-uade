@@ -1,10 +1,7 @@
 package ar.uade.cine.controller.ventas;
 
-import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
@@ -47,13 +44,16 @@ public class PagoController {
                 vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion())));
     }
 
-    @Operation(summary = "El pago de una reserva, o null si todavía no se cobró")
-    @GetMapping(value = "/api/reservas/{id}/pago", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> pagoDe(@PathVariable int id) {
-        Optional<Pago> pago = pagos.buscarPorReserva(id);
-        return ResponseEntity.ok(pago.map(p -> (Object) vistas.pago(p)).orElse("null"));
+    // Una reserva sin cobrar no tiene el recurso: 404, y el texto distingue eso de una reserva que no existe.
+    @Operation(summary = "El pago de una reserva; 404 si todavía no se cobró")
+    @GetMapping("/api/reservas/{id}/pago")
+    public PagoVistaDTO pagoDe(@PathVariable int id) {
+        return vistas.pago(pagos.buscarPorReserva(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("La reserva " + id + " todavía no tiene un pago")));
     }
 
+    // Alta sin Location: el checkout vive en la pasarela y no tiene GET por id. Lo que queda es el
+    // pago, y ese lo apunta la confirmación.
     @Operation(summary = "Abrir el checkout electrónico: devuelve el QR y el link de pago")
     @PostMapping("/api/reservas/{id}/checkout")
     @ResponseStatus(HttpStatus.CREATED)

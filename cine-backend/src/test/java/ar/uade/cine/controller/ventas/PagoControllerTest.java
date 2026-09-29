@@ -111,15 +111,27 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("No existe la reserva 99", respuesta.error());
     }
 
+    // Los dos son 404, pero el texto dice cuál de las dos cosas falta.
     @Test
-    void elPagoDeUnaReservaSinCobrarEsNullYElDeUnaQueNoExisteEs404() {
+    void elPagoDeUnaReservaSinCobrarEs404YElDeUnaQueNoExisteTambien() {
         Respuesta sinCobrar = get("/api/reservas/" + reserva.getId() + "/pago");
         Respuesta inexistente = get("/api/reservas/99/pago");
 
-        assertEquals(200, sinCobrar.estado());
-        assertEquals("null", sinCobrar.cuerpo());
+        assertEquals(404, sinCobrar.estado());
+        assertEquals("La reserva " + reserva.getId() + " todavía no tiene un pago", sinCobrar.error());
         assertEquals(404, inexistente.estado());
         assertEquals("No existe la reserva 99", inexistente.error());
+    }
+
+    @Test
+    void elPagoDeUnaReservaCobradaEsElQueDevolvioElCobro() {
+        String ruta = "/api/reservas/" + reserva.getId() + "/pago";
+        Respuesta cobro = post(ruta, "{\"medio\":\"EFECTIVO\"}");
+
+        Respuesta pago = get(ruta);
+
+        assertEquals(200, pago.estado());
+        assertEquals(cobro.json(), pago.json());
     }
 
     @Test

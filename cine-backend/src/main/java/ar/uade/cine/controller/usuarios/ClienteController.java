@@ -1,8 +1,9 @@
 package ar.uade.cine.controller.usuarios;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,13 +32,12 @@ public class ClienteController {
     private final GestorClientes clientes;
     private final VistasUsuarios vistas;
 
-    // Literal null y no 200 sin cuerpo: el res.json() del front reventaría.
-    @Operation(summary = "Buscar un cliente por email. Si no está, devuelve null")
-    @GetMapping(value = "/api/clientes", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> buscarPorEmail(@RequestParam(required = false) String email) {
-        return ResponseEntity.ok(clientes.buscarPorEmail(email)
-                .map(c -> (Object) vistas.cliente(c))
-                .orElse("null"));
+    // Un filtro sobre la colección, así que contesta una lista: con el cliente o vacía. Sin email,
+    // vacía también: no se listan todos los clientes, el email es la clave.
+    @Operation(summary = "Buscar un cliente por email: una lista con él, o vacía si no está")
+    @GetMapping("/api/clientes")
+    public List<ClienteVistaDTO> buscarPorEmail(@RequestParam(required = false) String email) {
+        return clientes.buscarPorEmail(email).map(vistas::cliente).stream().toList();
     }
 
     @Operation(summary = "Registrar un cliente")
