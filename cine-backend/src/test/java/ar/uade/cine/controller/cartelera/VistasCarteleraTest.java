@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.service.ventas.GestorReservas;
@@ -215,13 +216,14 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(5, 5));
         programar(matrix, 2);
-        long deLaPeliculaConDos = consultasDe(() -> peliculaController.funcionesDe(matrix));
+        MockHttpServletRequest sinSesion = new MockHttpServletRequest();
+        long deLaPeliculaConDos = consultasDe(() -> peliculaController.funcionesDe(matrix, sinSesion));
         long todasConDos = consultasDe(() -> funcionController.buscar(null, null, null, null));
 
         programar(matrix, 6);
         assertEquals(16, funcionController.buscar(null, null, null, null).size());
 
-        assertEquals(deLaPeliculaConDos, consultasDe(() -> peliculaController.funcionesDe(matrix)),
+        assertEquals(deLaPeliculaConDos, consultasDe(() -> peliculaController.funcionesDe(matrix, sinSesion)),
                 "GET /api/peliculas/{id}/funciones");
         assertEquals(todasConDos, consultasDe(() -> funcionController.buscar(null, null, null, null)),
                 "GET /api/funciones");

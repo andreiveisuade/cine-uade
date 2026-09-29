@@ -280,7 +280,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Path recibo = TICKETS.resolve("recibo-" + pago.getId() + ".txt");
 
         assertTrue(Files.exists(recibo));
-        assertTrue(leer(recibo).contains("EFECTIVO"));
+        assertTrue(leer(recibo).contains("Efectivo"));
     }
 
     @Test
