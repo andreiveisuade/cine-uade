@@ -3,6 +3,7 @@ package ar.uade.cine.model.dinero;
 import java.util.Collection;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.validacion.Regla;
 
 // Importe en pesos; Value Object inmutable con aritmética de precios y totales, y tope de lo que se carga.
 // Centavos enteros y no double, que no representa 0,10 exacto.
@@ -23,6 +24,16 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
 
     public static Dinero deCentavos(long centavos) {
         return new Dinero(centavos);
+    }
+
+    // El importe tal como llega del pedido, en pesos. Se valida al convertirlo, como cualquier Value Object:
+    // así el controller lo rechaza antes de que el gestor busque nada, y la regla sigue viviendo acá y no
+    // en un @Positive del DTO. Más de dos decimales se rechaza: redondearlo en silencio cobraría otro precio.
+    public static Dinero importe(Double pesos, String que) {
+        Regla.numero(pesos).obligatorio("Falta el " + que)
+                .mayorQueCero("El " + que + " tiene que ser mayor a cero")
+                .conDecimales(2, "El " + que + " tiene que tener como máximo 2 decimales");
+        return importeValido(de(pesos), que);
     }
 
     // Un precio o monto que se carga a mano. Un solo lugar para producto, función, grilla y promoción: el

@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -108,6 +111,32 @@ class ReglaTest {
                     () -> Regla.numero(0.0).mayorQueCero("El precio tiene que ser mayor a cero"));
         }
 
+        // Jackson convierte "NaN" e "Infinity" en un Double: ninguna guarda de número los deja pasar.
+        @ParameterizedTest
+        @ValueSource(doubles = {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY})
+        void niNaNNiInfinitoPasanPorNingunaGuarda(double raro) {
+            rechaza("m", () -> Regla.numero(raro).mayorQueCero("m"));
+            rechaza("m", () -> Regla.numero(raro).noNegativo("m"));
+            rechaza("m", () -> Regla.numero(raro).entre(0.0, 10.0, "m"));
+            rechaza("m", () -> Regla.numero(raro).conDecimales(2, "m"));
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                sin decimales,  12,      true
+                dos,            99.99,   true
+                cero al final,  10.50,   true
+                tres,           99.999,  false
+                """)
+        void conDecimalesCuentaLosQueTieneElNumero(String caso, double valor, boolean pasa) {
+            Runnable guarda = () -> Regla.numero(valor).conDecimales(2, "Como máximo 2 decimales");
+            if (pasa) {
+                guarda.run();
+            } else {
+                rechaza("Como máximo 2 decimales", guarda);
+            }
+        }
+
         @Test
         void todoEncadenadoDevuelveElNumero() {
             int duracion = Regla.numero(155).obligatorio("Falta la duración")
@@ -133,6 +162,30 @@ class ReglaTest {
             assertEquals(hoy, Regla.objeto(hoy).obligatorio("Falta la fecha de inicio").valor());
             rechaza("Falta la fecha de inicio",
                     () -> Regla.objeto((LocalDate) null).obligatorio("Falta la fecha de inicio"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Una lista")
+    class Lista {
+
+        @ParameterizedTest
+        @NullSource
+        void noVaciaRechazaElNullYLaVacia(List<String> nula) {
+            rechaza("Falta elegir una butaca", () -> Regla.lista(nula).noVacia("Falta elegir una butaca"));
+            rechaza("Falta elegir una butaca", () -> Regla.lista(List.of()).noVacia("Falta elegir una butaca"));
+        }
+
+        @Test
+        void sinNulosRechazaUnElementoNullAunqueLaListaSeaInmutable() {
+            rechaza("Hay un género vacío", () -> Regla.lista(Arrays.asList("DRAMA", null)).sinNulos("Hay un género vacío"));
+            assertEquals(List.of("DRAMA"), Regla.lista(List.of("DRAMA")).sinNulos("Hay un género vacío").valor());
+        }
+
+        @Test
+        void hastaIncluyeElTope() {
+            assertEquals(2, Regla.lista(List.of("A1", "A2")).hasta(2, "Hasta 2").valor().size());
+            rechaza("Hasta 2", () -> Regla.lista(List.of("A1", "A2", "A3")).hasta(2, "Hasta 2"));
         }
     }
 }

@@ -152,6 +152,24 @@ class DineroTest {
                     () -> Dinero.importeValido(importe, "precio")).getMessage());
         }
 
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                sin precio,           ,          Falta el precio
+                en cero,              0,         El precio tiene que ser mayor a cero
+                NaN del JSON,         NaN,       El precio tiene que ser mayor a cero
+                infinito del JSON,    Infinity,  El precio tiene que ser mayor a cero
+                tres decimales,       10.555,    El precio tiene que tener como máximo 2 decimales
+                pasado el tope,       1000000.5, El precio no puede superar $ 1000000.00
+                """)
+        void elImporteDelPedidoSeValidaAlConvertirlo(String caso, Double pesos, String mensaje) {
+            assertEquals(mensaje, assertThrows(Rechazo.class, () -> Dinero.importe(pesos, "precio")).getMessage());
+        }
+
+        @Test
+        void elImporteDelPedidoConDosDecimalesPasaExacto() {
+            assertEquals(Dinero.deCentavos(1055), Dinero.importe(10.55, "precio"));
+        }
+
         @Test
         void elTopeMismoSeAcepta() {
             assertEquals(Dinero.IMPORTE_MAXIMO, Dinero.importeValido(Dinero.IMPORTE_MAXIMO, "precio"));
