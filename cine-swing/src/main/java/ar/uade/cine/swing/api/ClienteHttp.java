@@ -169,9 +169,9 @@ public final class ClienteHttp {
     }
 
     /**
-     * El {@code {"error": "..."}} del backend va tal cual. Cualquier otra cosa (el HTML de un nginx con el backend
-     * reiniciando, texto, cuerpo vacío) no se muestra: va a la consola para depurar y en pantalla queda un mensaje
-     * según el código.
+     * El {@code {"error": "..."}} del backend (y del nginx del proyecto, que también contesta en JSON) va tal
+     * cual. Cualquier otra cosa (texto, un cuerpo vacío, el HTML de otro proxy) no se muestra: va a la consola
+     * para depurar y en pantalla queda un mensaje según el código.
      */
     private String mensajeDeError(int estado, byte[] cuerpo) {
         String texto = new String(cuerpo, StandardCharsets.UTF_8).strip();

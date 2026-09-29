@@ -89,9 +89,9 @@ class ValidacionTest {
         v.decimal(precio, "Precio base", true);
         assertTrue(v.ok());
 
-        v.mostrarError(new ErrorApi(400, "El precio debe ser mayor a cero"));
+        v.mostrarError(new ErrorApi(400, "El precio tiene que ser mayor a cero"));
 
-        assertTrue(mensaje.getText().contains("El precio debe ser mayor a cero"));
+        assertTrue(mensaje.getText().contains("El precio tiene que ser mayor a cero"));
         assertTrue(Marcas.marcado(precio));
         assertFalse(Marcas.marcado(nombre));
     }

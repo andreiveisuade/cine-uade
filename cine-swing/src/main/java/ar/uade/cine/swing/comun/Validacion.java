@@ -113,7 +113,7 @@ public final class Validacion {
         return lectura.valor();
     }
 
-    // "Precio base *" → "precio": es la palabra que usan los mensajes del backend ("El precio debe ser mayor a cero").
+    // "Precio base *" → "precio": es la palabra que usan los mensajes del backend ("El precio tiene que ser mayor a cero").
     private static String primeraPalabra(String nombre) {
         String limpio = nombre.replace("*", "").trim().toLowerCase(Locale.ROOT);
         int espacio = limpio.indexOf(' ');
