@@ -35,11 +35,23 @@ public class ConfiguracionOpenApi {
 
     private static final AntPathMatcher RUTAS = new AntPathMatcher();
 
+    // El 404 de las rutas con variables sale solo; estas lo dan por un id o un código del cuerpo.
+    private static final Set<String> CON_IDS_EN_EL_CUERPO = Set.of(
+            "POST /api/funciones", "POST /api/reservas",
+            "POST /api/programaciones", "POST /api/programaciones/previsualizacion",
+            "POST /api/candy/compras", "POST /api/candy/combos", "POST /api/acceso");
+
     private static final Set<String> CON_NOMBRE_UNICO = Set.of(
             "POST /api/peliculas", "PUT /api/peliculas/{id}",
             "POST /api/salas", "PUT /api/salas/{id}",
             "POST /api/clientes", "POST /api/promociones",
             "POST /api/candy/productos", "POST /api/candy/combos", "PUT /api/candy/productos/{id}");
+
+    // Escriben una Reserva, que tiene @Version: de dos pedidos a la vez sobre la misma, pierde el segundo.
+    private static final Set<String> CAMBIAN_UNA_RESERVA = Set.of(
+            "POST /api/reservas/{id}/pago", "POST /api/reservas/{id}/cancelacion",
+            "POST /api/reservas/codigo/{codigo}/cancelacion", "POST /api/checkouts/{id}/confirmacion",
+            "POST /api/acceso");
 
     @Bean
     public OpenAPI apiDelCine() {
@@ -81,6 +93,7 @@ public class ConfiguracionOpenApi {
 
     private static void documentar(String ruta, PathItem.HttpMethod metodo, Operation operacion) {
         ApiResponses respuestas = operacion.getResponses();
+        String cual = metodo + " " + ruta;
         boolean escribe = metodo != PathItem.HttpMethod.GET;
         boolean conParametros = operacion.getParameters() != null && operacion.getParameters().stream()
                 .anyMatch(parametro -> "query".equals(parametro.getIn()));
@@ -88,13 +101,20 @@ public class ConfiguracionOpenApi {
         if (escribe || conParametros) {
             respuestas.addApiResponse("400", respuestaDeError("El pedido no es válido, o una regla de negocio lo rechazó"));
         }
-        if (ruta.contains("{")) {
-            respuestas.addApiResponse("404", respuestaDeError("No existe lo que se pidió"));
+        if (ruta.contains("{") || CON_IDS_EN_EL_CUERPO.contains(cual)) {
+            respuestas.addApiResponse("404", respuestaDeError("No existe lo que se pidió, en la ruta o en el cuerpo"));
         }
-        if (metodo == PathItem.HttpMethod.POST && ruta.equals("/api/reservas")) {
-            respuestas.addApiResponse("409", respuestaDeError("La butaca ya estaba vendida: se perdió la carrera contra otra compra"));
-        } else if (CON_NOMBRE_UNICO.contains(metodo + " " + ruta)) {
-            respuestas.addApiResponse("409", respuestaDeError("Ya existe otro con ese nombre, email o título"));
+        // Cada 409 dice con qué choca el pedido; los de nombre único también cubren la carrera que
+        // pasa la validación del gestor y choca con el UNIQUE de la base.
+        if (cual.equals("POST /api/reservas")) {
+            respuestas.addApiResponse("409", respuestaDeError(
+                    "Otra compra tomó una de las butacas, o el email es de un empleado del cine"));
+        } else if (CON_NOMBRE_UNICO.contains(cual)) {
+            respuestas.addApiResponse("409", respuestaDeError(
+                    "Ya existe otro con ese nombre, email o título, u otro pedido lo grabó al mismo tiempo"));
+        } else if (CAMBIAN_UNA_RESERVA.contains(cual)) {
+            respuestas.addApiResponse("409", respuestaDeError(
+                    "Otro pedido cambió la reserva al mismo tiempo: hay que volver a intentarlo"));
         }
         respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos o la emisión de un comprobante"));
 

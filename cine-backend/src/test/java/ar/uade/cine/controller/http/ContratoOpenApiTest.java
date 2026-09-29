@@ -74,12 +74,18 @@ class ContratoOpenApiTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("el 409 queda donde se compite por una butaca o hay un nombre único")
-    void conflictoSoloAlReservarOConNombreUnico() {
-        assertThat(operacion("/api/generos", "get").get("responses").has("409")).isFalse();
-        assertThat(operacion("/api/funciones", "post").get("responses").has("409")).isFalse();
-        assertThat(operacion("/api/reservas", "post").get("responses").has("409")).isTrue();
-        assertThat(operacion("/api/salas", "post").get("responses").has("409")).isTrue();
+    @DisplayName("el 409 queda donde se compite por una butaca, un nombre único o una reserva")
+    void conflictoDondeDosPedidosPuedenChocar() {
+        JsonNode rutas = get("/v3/api-docs").json().get("paths");
+
+        assertThat(respuestas(rutas, "/api/generos", "get").has("409")).isFalse();
+        assertThat(respuestas(rutas, "/api/funciones", "post").has("409")).isFalse();
+        assertThat(respuestas(rutas, "/api/reservas", "post").has("409")).isTrue();
+        assertThat(respuestas(rutas, "/api/salas", "post").has("409")).isTrue();
+        // @Version de Reserva: cobrar, cancelar, confirmar un checkout y entrar compiten por la misma fila.
+        List.of("/api/reservas/{id}/pago", "/api/reservas/{id}/cancelacion",
+                        "/api/reservas/codigo/{codigo}/cancelacion", "/api/checkouts/{id}/confirmacion", "/api/acceso")
+                .forEach(ruta -> assertThat(respuestas(rutas, ruta, "post").has("409")).as(ruta).isTrue());
     }
 
     @Test
@@ -91,8 +97,23 @@ class ContratoOpenApiTest extends PruebaDeApi {
         assertThat(operacion("/api/peliculas/{id}", "get").get("responses").has("404")).isTrue();
     }
 
+    @Test
+    @DisplayName("un alta con ids o códigos en el cuerpo documenta el 404 aunque su ruta no tenga variables")
+    void noEncontradoPorLoQueViajaEnElCuerpo() {
+        JsonNode rutas = get("/v3/api-docs").json().get("paths");
+
+        List.of("/api/funciones", "/api/reservas", "/api/programaciones", "/api/programaciones/previsualizacion",
+                        "/api/candy/compras", "/api/candy/combos", "/api/acceso")
+                .forEach(ruta -> assertThat(respuestas(rutas, ruta, "post").has("404")).as(ruta).isTrue());
+        assertThat(respuestas(rutas, "/api/salas", "post").has("404")).isFalse();
+    }
+
     private JsonNode operacion(String ruta, String metodo) {
         return get("/v3/api-docs").json().get("paths").get(ruta).get(metodo);
+    }
+
+    private static JsonNode respuestas(JsonNode rutas, String ruta, String metodo) {
+        return rutas.get(ruta).get(metodo).get("responses");
     }
 
     private static List<String> referencias(JsonNode nodo) {
