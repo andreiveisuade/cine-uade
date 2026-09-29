@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import ar.uade.cine.model.rechazos.Rechazo;
 
@@ -29,8 +30,44 @@ class EmpleadoTest {
 
     @Test
     void nombreYEmailLosValidaUsuarioParaLasDosClases() {
-        rechaza("El nombre no puede estar vacío", () -> new Empleado(" ", "ana@cine.com", "{bcrypt}x", Rol.ACOMODADOR));
+        rechaza("Falta el nombre", () -> new Empleado(" ", "ana@cine.com", "{bcrypt}x", Rol.ACOMODADOR));
         rechaza("El email tiene que tener la forma usuario@dominio.com", () -> new Cliente("Ana", "ana.cine.com"));
+    }
+
+    @ParameterizedTest(name = "nombre [{0}]")
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void sinNombreFaltaElNombre(String nombre) {
+        rechaza("Falta el nombre", () -> new Cliente(nombre, "ana@cine.com"));
+    }
+
+    // El VARCHAR(100) de la columna: pasado, el INSERT fallaba con un 500.
+    @Test
+    void unNombreDeMasDeCienCaracteresSeRechaza() {
+        rechaza("El nombre no puede tener más de 100 caracteres", () -> new Cliente("x".repeat(101), "ana@cine.com"));
+    }
+
+    // Con varios datos mal sale uno solo, y siempre el mismo: nombre, email, rol, contraseña.
+    @Test
+    void conVariosDatosMalSaleElPrimeroEnOrden() {
+        rechaza("Falta el nombre", () -> new Empleado(" ", "sin-arroba", null, Rol.CLIENTE));
+        rechaza("El email tiene que tener la forma usuario@dominio.com",
+                () -> new Empleado("Ana", "sin-arroba", null, Rol.CLIENTE));
+        rechaza("El rol tiene que ser encargado o acomodador",
+                () -> new Empleado("Ana", "ana@cine.com", null, Rol.CLIENTE));
+        rechaza("Falta la contraseña", () -> new Empleado("Ana", "ana@cine.com", null, Rol.ACOMODADOR));
+    }
+
+    // Con NULL en la base, el login no tiene con qué comparar la clave.
+    @ParameterizedTest(name = "hash [{0}]")
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void unEmpleadoNoSeQuedaSinContrasena(String hash) {
+        Empleado empleado = new Empleado("Ana", "ana@cine.com", "{bcrypt}x", Rol.ACOMODADOR);
+
+        rechaza("Falta la contraseña", () -> new Empleado("Ana", "ana@cine.com", hash, Rol.ACOMODADOR));
+        rechaza("Falta la contraseña", () -> empleado.reemplazarPasswordHash(hash));
+        assertEquals("{bcrypt}x", empleado.getPasswordHash());
     }
 
     // API.md promete emails sin distinguir mayúsculas: «BETO@x.com» y «beto@x.com» eran dos clientes.

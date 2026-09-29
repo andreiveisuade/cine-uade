@@ -211,7 +211,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/clientes", "{}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("El nombre no puede estar vacío", respuesta.error());
+        assertEquals("Falta el nombre", respuesta.error());
     }
 
     @Test

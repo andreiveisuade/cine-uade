@@ -14,9 +14,9 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.usuarios.validacion.ValidadorUsuario;
 
-// Cliente o empleado de la tabla usuario; Experto: valida el nombre, y el email lo normaliza y valida Email.
+// Cliente o empleado de la tabla usuario; el nombre lo valida ValidadorUsuario, y el email, Email.
 // Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
@@ -24,8 +24,6 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 @DiscriminatorFormula("case when rol = 'CLIENTE' then 'CLIENTE' else 'EMPLEADO' end")
 @Getter
 public abstract class Usuario {
-
-    private static final int LARGO_MAXIMO = 100;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,22 +43,8 @@ public abstract class Usuario {
     }
 
     protected Usuario(String nombre, String email, Rol rol) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new DatoInvalido("El nombre no puede estar vacío");
-        }
+        this.nombre = ValidadorUsuario.nombre(nombre);
         this.email = new Email(email).valor();
-        this.nombre = recortado(nombre, "nombre");
         this.rol = rol;
-    }
-
-    // Se guarda y se mide sin los espacios de más.
-    private static String recortado(String texto, String campo) {
-        String limpio = texto.trim();
-        // Los VARCHAR(100) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
-        if (limpio.length() > LARGO_MAXIMO) {
-            throw new DatoInvalido(
-                    "El " + campo + " no puede tener más de " + LARGO_MAXIMO + " caracteres");
-        }
-        return limpio;
     }
 }

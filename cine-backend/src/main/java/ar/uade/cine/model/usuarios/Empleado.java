@@ -5,9 +5,9 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.usuarios.validacion.ValidadorEmpleado;
 
-// Encargado o acomodador, entra con contraseña hasheada; Experto: rechaza un rol que no sea de empleado.
+// Encargado o acomodador, entra con contraseña hasheada; sus datos propios los valida ValidadorEmpleado.
 @Entity
 @DiscriminatorValue("EMPLEADO")
 @Getter
@@ -19,18 +19,14 @@ public class Empleado extends Usuario {
     protected Empleado() {
     }
 
-    // Un Empleado CLIENTE se guardaría con contraseña y, por la fórmula del discriminador en
-    // Usuario, se releería como Cliente: la jerarquía dejaría de valer. Por eso lo corta acá.
     public Empleado(String nombre, String email, String passwordHash, Rol rol) {
         super(nombre, email, rol);
-        if (rol == null || !rol.esEmpleado()) {
-            throw new DatoInvalido("El rol tiene que ser encargado o acomodador");
-        }
-        this.passwordHash = passwordHash;
+        ValidadorEmpleado.rol(rol);
+        this.passwordHash = ValidadorEmpleado.passwordHash(passwordHash);
     }
 
     public void reemplazarPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+        this.passwordHash = ValidadorEmpleado.passwordHash(passwordHash);
     }
 
     @Override
