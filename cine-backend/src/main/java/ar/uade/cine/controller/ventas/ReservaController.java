@@ -1,6 +1,8 @@
 package ar.uade.cine.controller.ventas;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,8 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.service.ventas.ConsultasReservas;
@@ -73,9 +77,20 @@ public class ReservaController {
     public ResponseEntity<ReservaVistaDTO> reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
         Reserva reserva = reservas.reservar(pedido.funcionId(),
                 pedido.nombre(), pedido.email(),
-                pedido.butacas(),
+                tarifas(pedido.butacas()),
                 pedido.sesion());
         return Creado.en("/api/reservas/" + reserva.getId(), vistas.reserva(reserva));
+    }
+
+    // En el orden del pedido. Una tarifa que falta queda en null: la entrada la vende como general.
+    private static Map<String, TipoTarifa> tarifas(Map<String, String> butacas) {
+        if (butacas == null) {
+            return null;
+        }
+        Map<String, TipoTarifa> tarifas = new LinkedHashMap<>();
+        butacas.forEach((codigo, tarifa) -> tarifas.put(codigo, Parseo.constanteOpcional(TipoTarifa.class,
+                tarifa, "la tarifa de la butaca " + Asiento.normalizarCodigo(codigo))));
+        return tarifas;
     }
 
     @Operation(summary = "Cancelar una reserva y liberar sus butacas (encargado)")

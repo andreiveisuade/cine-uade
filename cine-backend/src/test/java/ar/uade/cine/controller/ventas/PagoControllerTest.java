@@ -204,6 +204,23 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals(400, post(ruta + "/cancelacion", "").estado());
     }
 
+    // Como los demás enums: en minúsculas se entiende, y una que no existe dice de qué butaca es.
+    @Test
+    void laTarifaDeCadaButacaSeEscribeComoLosDemasEnums() {
+        Respuesta enMinusculas = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
+                + "\"email\":\"ana@mail.com\",\"butacas\":{\"B1\":\" jubilado \",\"B2\":null,\"B3\":\"\"}}");
+        Respuesta inexistente = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
+                + "\"email\":\"ana@mail.com\",\"butacas\":{\"b4\":\"VIP\"}}");
+
+        assertEquals(201, enMinusculas.estado());
+        var entradas = enMinusculas.json().get("entradas");
+        assertEquals("JUBILADO", entradas.get(0).get("tarifa").asText());
+        assertEquals("GENERAL", entradas.get(1).get("tarifa").asText(), "sin tarifa es general");
+        assertEquals("GENERAL", entradas.get(2).get("tarifa").asText(), "en blanco también");
+        assertEquals(400, inexistente.estado());
+        assertEquals("Valor inválido para la tarifa de la butaca B4: VIP", inexistente.error());
+    }
+
     // La web vuelve al mapa recargado solo ante un 409: con un 400 el cliente quedaba trabado.
     @Test
     void reservarUnaButacaYaVendidaEs409YUnaFueraDeServicio400() {

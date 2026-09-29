@@ -345,13 +345,13 @@ class ManejadorErroresTest extends PruebaDeApi {
     @Test
     void unTipoEquivocadoEnElCuerpoEs400YNombraElCampo() {
         Respuesta precio = post("/api/candy/productos", "{\"nombre\":\"Agua\",\"tipo\":\"BEBIDA\",\"precio\":\"abc\"}");
-        Respuesta tarifa = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
-                + "\"butacas\":{\"A1\":\"VIP\"}}");
+        Respuesta funcion = post("/api/reservas", "{\"funcionId\":\"uno\",\"nombre\":\"Ana\","
+                + "\"email\":\"ana@mail.com\",\"butacas\":{\"A1\":\"GENERAL\"}}");
 
         assertEquals(400, precio.estado());
         assertEquals("El campo precio tiene un valor inválido: abc", precio.error());
-        assertEquals(400, tarifa.estado());
-        assertEquals("El campo butacas.A1 tiene un valor inválido: VIP", tarifa.error());
+        assertEquals(400, funcion.estado());
+        assertEquals("El campo funcionId tiene un valor inválido: uno", funcion.error());
     }
 
     @Test
