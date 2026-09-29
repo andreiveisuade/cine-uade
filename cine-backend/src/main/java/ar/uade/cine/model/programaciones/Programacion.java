@@ -30,10 +30,12 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Película repetida en una sala a una hora por un rango de días; Experto: valida su rango y genera horarios.
+// Película repetida en una sala a una hora por un rango; Experto: valida su rango y sabe qué falta generar.
 @Entity
 @Getter
 public class Programacion {
+
+    private static final int HORIZONTE_DIAS = 14;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -118,8 +120,24 @@ public class Programacion {
         return momentos;
     }
 
-    public void setGeneradaHasta(LocalDate generadaHasta) {
-        this.generadaHasta = generadaHasta;
+    public LocalDate topePara(LocalDate hoy) {
+        return hasta != null ? hasta : hoy.plusDays(HORIZONTE_DIAS);
+    }
+
+    public boolean estaAlDia(LocalDate hoy) {
+        return generadaHasta != null && !generadaHasta.isBefore(topePara(hoy));
+    }
+
+    // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
+    public List<LocalDateTime> horariosSinGenerar(LocalDate tope) {
+        return horarios(tope).stream()
+                .filter(inicio -> generadaHasta == null || inicio.toLocalDate().isAfter(generadaHasta))
+                .toList();
+    }
+
+    // El tope y no la última generada: las que chocaron también quedan procesadas.
+    public void marcarGeneradaHasta(LocalDate tope) {
+        this.generadaHasta = tope;
     }
 
     // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.

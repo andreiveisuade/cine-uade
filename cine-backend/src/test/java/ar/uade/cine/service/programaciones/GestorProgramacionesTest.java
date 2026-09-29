@@ -248,13 +248,15 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void alPasarLosDiasExtiendeLasQueFaltan() {
-        crearAbierta();
+        int id = crearAbierta().programacion().getId();
         int despuesDelAlta = funcionRepository.findAll().size();
 
         int generadas = programaciones.extenderActivas(reloj.hoy().plusDays(3));
 
         assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
         assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
+        assertEquals(reloj.hoy().plusDays(3 + 14), programaciones.buscar(id).orElseThrow().getGeneradaHasta(),
+                "sin transacción, el avance se guarda aparte de las funciones");
     }
 
     @Test

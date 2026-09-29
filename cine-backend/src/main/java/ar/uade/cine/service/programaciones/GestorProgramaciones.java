@@ -36,8 +36,6 @@ public class GestorProgramaciones {
 
     private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
-    private static final int HORIZONTE_DIAS = 14;
-
     private final ProgramacionRepository programacionRepository;
     private final FuncionRepository funcionRepository;
     private final PeliculaRepository peliculaRepository;
@@ -48,7 +46,7 @@ public class GestorProgramaciones {
     @Transactional(readOnly = true)
     public PlanProgramacion previsualizar(DatosGrilla datos) {
         Programacion grilla = armar(datos);
-        return planificar(grilla, peliculaDe(grilla), false, topeDe(grilla, reloj.hoy()));
+        return planDe(grilla, peliculaDe(grilla), grilla.topePara(reloj.hoy()));
     }
 
     // Recalcula R3: desde la previsualización otro pudo programar en la sala.
@@ -56,7 +54,7 @@ public class GestorProgramaciones {
         Programacion grilla = armar(datos);
         Pelicula pelicula = peliculaDe(grilla);
         programacionRepository.save(grilla);
-        return planificar(grilla, pelicula, true, topeDe(grilla, reloj.hoy()));
+        return generar(grilla, pelicula, grilla.topePara(reloj.hoy()));
     }
 
     // Fuera de transacción para que el catch valga: en una compartida, la primera grilla
@@ -65,12 +63,13 @@ public class GestorProgramaciones {
     public int extenderActivas(LocalDate hoy) {
         int generadas = 0;
         for (Programacion grilla : programacionRepository.findByActivaTrue()) {
-            if (estaAlDia(grilla, hoy)) {
+            if (grilla.estaAlDia(hoy)) {
                 continue;
             }
             try {
-                int nuevas = planificar(grilla, peliculaDe(grilla), true, topeDe(grilla, hoy))
-                        .programables().size();
+                int nuevas = generar(grilla, peliculaDe(grilla), grilla.topePara(hoy)).programables().size();
+                // Sin transacción la grilla está detached: el dirty checking no ve el avance.
+                programacionRepository.save(grilla);
                 generadas += nuevas;
                 if (nuevas > 0) {
                     log.info("grilla {} extendida · {} funciones nuevas · generada hasta {}",
@@ -83,21 +82,9 @@ public class GestorProgramaciones {
         return generadas;
     }
 
-    private boolean estaAlDia(Programacion grilla, LocalDate hoy) {
-        LocalDate hecho = grilla.getGeneradaHasta();
-        return hecho != null && !hecho.isBefore(topeDe(grilla, hoy));
-    }
-
-    private LocalDate topeDe(Programacion grilla, LocalDate hoy) {
-        return grilla.getHasta() != null ? grilla.getHasta() : hoy.plusDays(HORIZONTE_DIAS);
-    }
-
-    private PlanProgramacion planificar(Programacion grilla, Pelicula pelicula, boolean persistir,
-                                        LocalDate tope) {
-        LocalDate yaProcesado = grilla.getGeneradaHasta();
-        List<LocalDateTime> pendientes = grilla.horarios(tope).stream()
-                // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
-                .filter(inicio -> yaProcesado == null || inicio.toLocalDate().isAfter(yaProcesado))
+    // No escribe nada: es lo que muestra la previsualización y lo que después recorre el alta.
+    private PlanProgramacion planDe(Programacion grilla, Pelicula pelicula, LocalDate tope) {
+        List<LocalDateTime> pendientes = grilla.horariosSinGenerar(tope).stream()
                 // R20: lo que ya pasó no se programa ni se lista, así la previsualización muestra
                 // exactamente lo que el alta va a crear. No es un choque: no va a salteadas.
                 .filter(inicio -> !funciones.yaPaso(inicio))
@@ -119,19 +106,21 @@ public class GestorProgramaciones {
                         + choque.get().getInicio().format(MOMENTO)));
                 continue;
             }
-            if (persistir) {
-                funciones.programar(grilla.getPeliculaId(), grilla.getSalaId(), inicio,
-                        grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio(),
-                        grilla.getId());
-            }
             plan.add(new FuncionPlanificada(inicio, false, null));
         }
-        if (persistir) {
-            // El tope y no la última generada: las que chocaron también quedan procesadas.
-            grilla.setGeneradaHasta(tope);
-            programacionRepository.save(grilla);
-        }
         return new PlanProgramacion(grilla, plan);
+    }
+
+    // Crea lo que el plan dejó programable, en su orden. programar() revisa R3 y R20 otra vez antes de
+    // guardar cada una, y la primera que rechace corta la generación sin marcar la grilla como avanzada.
+    private PlanProgramacion generar(Programacion grilla, Pelicula pelicula, LocalDate tope) {
+        PlanProgramacion plan = planDe(grilla, pelicula, tope);
+        for (FuncionPlanificada funcion : plan.programables()) {
+            funciones.programar(grilla.getPeliculaId(), grilla.getSalaId(), funcion.inicio(),
+                    grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio(), grilla.getId());
+        }
+        grilla.marcarGeneradaHasta(tope);
+        return plan;
     }
 
     private Pelicula peliculaDe(Programacion grilla) {
@@ -153,16 +142,16 @@ public class GestorProgramaciones {
         return grilla;
     }
 
-    public void desactivar(int id) {
+    public Programacion desactivar(int id) {
         Programacion grilla = buscarOFallar(id);
         grilla.desactivar();
-        programacionRepository.save(grilla);
+        return grilla;
     }
 
-    public void activar(int id) {
+    public Programacion activar(int id) {
         Programacion grilla = buscarOFallar(id);
         grilla.activar();
-        programacionRepository.save(grilla);
+        return grilla;
     }
 
     private Programacion buscarOFallar(int id) {

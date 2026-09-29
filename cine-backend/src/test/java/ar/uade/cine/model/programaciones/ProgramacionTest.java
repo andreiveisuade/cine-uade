@@ -1,7 +1,9 @@
 package ar.uade.cine.model.programaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -54,5 +56,30 @@ class ProgramacionTest {
         Programacion abierta = grilla(LocalDate.of(2026, 9, 8), null, LocalTime.of(20, 30), Set.of(DayOfWeek.MONDAY));
 
         assertEquals(List.of(LocalDate.of(2026, 9, 14).atTime(20, 30)), abierta.horarios(LocalDate.of(2026, 9, 20)));
+    }
+
+    @Test
+    void unaGrillaAbiertaLlegaHastaElHorizonteYUnaCerradaHastaSuFin() {
+        LocalDate hoy = LocalDate.of(2026, 9, 1);
+
+        assertEquals(LocalDate.of(2026, 9, 15), grilla(hoy, null, LocalTime.of(20, 30), Set.of()).topePara(hoy));
+        assertEquals(LocalDate.of(2027, 1, 1),
+                grilla(hoy, LocalDate.of(2027, 1, 1), LocalTime.of(20, 30), Set.of()).topePara(hoy));
+    }
+
+    // Lo que ya se procesó no vuelve a salir aunque haya chocado: se reintentaría siempre.
+    @Test
+    void loYaGeneradoNoVuelveASalirYAlLlegarAlTopeQuedaAlDia() {
+        LocalDate hoy = LocalDate.of(2026, 9, 1);
+        Programacion abierta = grilla(hoy, null, LocalTime.of(20, 30), Set.of());
+        assertFalse(abierta.estaAlDia(hoy), "nunca generó nada");
+
+        abierta.marcarGeneradaHasta(LocalDate.of(2026, 9, 3));
+
+        assertEquals(List.of(LocalDate.of(2026, 9, 4).atTime(20, 30)),
+                abierta.horariosSinGenerar(LocalDate.of(2026, 9, 4)));
+        assertFalse(abierta.estaAlDia(hoy));
+        abierta.marcarGeneradaHasta(abierta.topePara(hoy));
+        assertTrue(abierta.estaAlDia(hoy));
     }
 }
