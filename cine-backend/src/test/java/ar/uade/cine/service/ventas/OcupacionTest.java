@@ -162,6 +162,39 @@ class OcupacionTest extends PruebaDeIntegracion {
         assertEquals(0, bloqueos.count());
     }
 
+    // R9 con el mismo texto que la venta: antes se apartaba una butaca que después no se podía comprar.
+    @Test
+    void noSeBloqueaUnaButacaFueraDeServicio() {
+        salas.marcarFueraDeServicio(1, "A3");
+
+        Rechazo alBloquear = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, List.of("A2", "a3"), ANA));
+        Rechazo alReservar = assertThrows(Rechazo.class,
+                () -> reservas.reservar(1, 1, generales("A3"), null));
+
+        assertEquals("La butaca A3 está fuera de servicio", alBloquear.getMessage());
+        assertEquals(alReservar.getMessage(), alBloquear.getMessage());
+        assertEquals(0, bloqueos.count(), "tampoco apartó la que estaba bien");
+    }
+
+    // El mismo tope que la compra, contando butacas y no códigos: "a1" y "A1" son una.
+    @Test
+    void elBloqueoTieneElTopeDeUnaCompra() {
+        salas.agregar("Sala grande", TipoSala.DOS_D, List.of(12));
+        funciones.programar(1, 2, LocalDateTime.of(2026, 12, 21, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        List<String> diez = List.of("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10");
+
+        Rechazo once = assertThrows(Rechazo.class, () -> ocupacion.bloquear(2,
+                List.of("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11"), ANA));
+
+        assertEquals("Una compra tiene que tener como máximo 10 butacas", once.getMessage());
+        assertEquals(0, bloqueos.count());
+        List<String> diezConUnaRepetida = new ArrayList<>(diez);
+        diezConUnaRepetida.add("a1");
+        assertEquals(diez, ocupacion.bloquear(2, diezConUnaRepetida, ANA).conseguidas());
+    }
+
     @Test
     void elBloqueoVencidoDevuelveLaButacaALaVenta() {
         ocupacion.bloquear(1, List.of("A1"), ANA);

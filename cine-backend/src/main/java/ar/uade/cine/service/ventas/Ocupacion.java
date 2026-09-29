@@ -20,7 +20,6 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.SesionDeCompra;
 import ar.uade.cine.repository.salas.AsientoRepository;
@@ -28,7 +27,6 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Única definición de butaca ocupada (R4), la del mapa y la venta; reservas vigentes más bloqueos ajenos.
 @Service
@@ -77,20 +75,9 @@ public class Ocupacion {
 
     public Bloqueo bloquear(int funcionId, Collection<String> codigos, String textoSesion) {
         String sesion = new SesionDeCompra(textoSesion).valor();
-        Funcion funcion = buscarFuncion(funcionId);
-        LocalDateTime ahora = reloj.ahora();
-        // R19: una función empezada ya no se vende, así que tampoco se le apartan butacas.
-        if (funcion.yaEmpezo(ahora)) {
-            throw new DatoInvalido(FUNCION_EMPEZADA);
-        }
-        List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        List<Asiento> pedidos = butacasPedidas(funcionEnVenta(funcionId), codigos);
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
-
-        // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
-        List<Asiento> pedidos = codigos == null ? List.of() : codigos.stream()
-                .map(codigo -> Asiento.exigirConCodigo(deLaSala, codigo))
-                .distinct()
-                .toList();
+        LocalDateTime ahora = reloj.ahora();
 
         List<String> conseguidas = pedidos.stream()
                 .filter(a -> !ocupados.contains(a.getId()))
@@ -131,9 +118,27 @@ public class Ocupacion {
                 || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
     }
 
-    private Funcion buscarFuncion(int funcionId) {
-        return funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
+    // R19: una función que ya arrancó no se vende, así que tampoco se le apartan butacas.
+    public Funcion funcionEnVenta(int funcionId) {
+        Funcion funcion = funcionRepository.exigir(funcionId, "la función");
+        if (funcion.yaEmpezo(reloj.ahora())) {
+            throw new DatoInvalido(FUNCION_EMPEZADA);
+        }
+        return funcion;
+    }
+
+    // Las butacas del pedido, con las reglas de la venta: que sean de la sala, que estén en servicio (R9)
+    // y hasta el tope de una compra. Antes se apartaba una fuera de servicio que después no se podía comprar.
+    // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
+    private List<Asiento> butacasPedidas(Funcion funcion, Collection<String> codigos) {
+        List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        List<Asiento> pedidas = codigos == null ? List.of() : codigos.stream()
+                .map(codigo -> Asiento.exigirConCodigo(deLaSala, codigo))
+                .distinct()
+                .toList();
+        pedidas.forEach(Asiento::exigirEnServicio);
+        Reserva.validarTopeDeButacas(pedidas);
+        return pedidas;
     }
 
     // R17 sin scheduler: expira quien consulta. Escribe porque el UNIQUE no sabe de vencimientos.
