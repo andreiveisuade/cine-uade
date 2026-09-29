@@ -426,6 +426,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals("Esa entrada ya se usó el 20/08 19:42", dosVeces.getMessage());
     }
 
+    // Con la entrada del 20/08 no se pasa el 19 ni el 21, y el rechazo no la marca como usada.
+    @Test
+    void seIngresaSoloElDiaDeLaFuncion() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        reloj.mover(LocalDateTime.of(2026, 8, 19, 23, 59));
+        Rechazo antes = assertThrows(Rechazo.class, () -> acceso.registrarIngreso(reserva.getCodigo()));
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 0, 0));
+        acceso.registrarIngreso(reserva.getCodigo());
+
+        assertEquals("La función es el 20/08: se entra solo ese día", antes.getMessage());
+        assertNotNull(reservaRepository.findById(reserva.getId()).orElseThrow().getIngresadaEn());
+    }
+
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
         assertThrows(Rechazo.class, () -> acceso.registrarIngreso("XXXXXXXX"));
@@ -437,6 +452,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elIngresoNoDejaElCodigoDeAccesoEnElLog(CapturedOutput log) {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 30));
 
         acceso.registrarIngreso(reserva.getCodigo());
 

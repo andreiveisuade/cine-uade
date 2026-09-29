@@ -152,6 +152,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertNull(vistas.reserva(reserva).ingresadaEn());
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 30));
         Reserva ingresada = acceso.registrarIngreso(reserva.getCodigo());
 
         assertNotNull(vistas.reserva(ingresada).ingresadaEn());

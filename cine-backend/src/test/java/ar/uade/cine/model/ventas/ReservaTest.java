@@ -2,6 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,6 +92,41 @@ class ReservaTest {
         assertEquals(8, reserva.getCodigo().length());
         assertEquals(Dinero.de(10000), reserva.getTotal());
         assertTrue(reserva.estaVigente());
+    }
+
+    // La función es el 20/08 a las 20: el acomodador deja pasar ese día y no otro.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            a primera hora,          2026-08-20T00:00
+            antes de empezar,        2026-08-20T19:45
+            con la función empezada, 2026-08-20T20:15
+            """)
+    void elDiaDeLaFuncionSeEntra(String caso, LocalDateTime cuando) {
+        Reserva reserva = pagada();
+
+        reserva.registrarIngreso(cuando);
+
+        assertEquals(cuando, reserva.getIngresadaEn());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            la víspera,     2026-08-19T23:59
+            el día después, 2026-08-21T00:00
+            """)
+    void otroDiaNoSeEntraNiSeGastaLaEntrada(String caso, LocalDateTime cuando) {
+        Reserva reserva = pagada();
+
+        DatoInvalido error = assertThrows(DatoInvalido.class, () -> reserva.registrarIngreso(cuando));
+
+        assertEquals("La función es el 20/08: se entra solo ese día", error.getMessage());
+        assertNull(reserva.getIngresadaEn());
+    }
+
+    private static Reserva pagada() {
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, entradas("A1"), CREADA);
+        reserva.pagar();
+        return reserva;
     }
 
     private static List<Entrada> entradas(String... codigos) {

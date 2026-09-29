@@ -1,5 +1,6 @@
 package ar.uade.cine.model.ventas;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class Reserva {
 
     // Como la lee el acomodador en la puerta: el toString de LocalDateTime traía segundos y nanos.
     private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+    private static final DateTimeFormatter DIA = DateTimeFormatter.ofPattern("dd/MM");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -162,13 +164,24 @@ public class Reserva {
         soltarButacasAl(estado.expirar());
     }
 
+    // R18. El momento lo pone el gestor con su reloj: la reserva no sabe qué hora es.
     public void registrarIngreso(LocalDateTime cuando) {
         EstadoReserva siguiente = estado.ingresar();
         if (ingresadaEn != null) {
             throw new DatoInvalido("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
+        exigirElDiaDeLaFuncion(cuando);
         estado = siguiente;
         ingresadaEn = cuando;
+    }
+
+    // Por la Puerta se entra solo el día de la función: con la entrada de mañana, o la de ayer que nadie
+    // usó, el acomodador no tiene por qué dejar pasar a nadie.
+    private void exigirElDiaDeLaFuncion(LocalDateTime cuando) {
+        LocalDate dia = funcion.getInicio().toLocalDate();
+        if (!dia.equals(cuando.toLocalDate())) {
+            throw new DatoInvalido("La función es el " + dia.format(DIA) + ": se entra solo ese día");
+        }
     }
 
     // R6: cancelada o vencida, sus butacas vuelven a la venta.
