@@ -21,6 +21,10 @@ public interface PeliculaRepository extends JpaRepository<Pelicula, Integer> {
     @Query("select coalesce(max(p.duracionMinutos), 0) from Pelicula p")
     int duracionMaxima();
 
+    // Solo la columna: las películas enteras traerían también sus géneros.
+    @Query("select p.titulo from Pelicula p")
+    List<String> titulos();
+
     @Query("""
             select p from Pelicula p
             where p.enCartelera = true

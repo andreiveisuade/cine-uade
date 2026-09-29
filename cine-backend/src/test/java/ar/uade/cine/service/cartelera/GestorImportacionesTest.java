@@ -10,6 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.util.List;
 
+import jakarta.persistence.EntityManagerFactory;
+
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +43,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     private GestorCartelera cartelera;
     @Autowired
     private GestorRevisionCartelera revision;
+    @Autowired
+    private EntityManagerFactory emf;
 
     // El bean y no un new: sin el proxy transaccional no se ven los errores de límite de transacción.
     @Autowired
@@ -92,6 +98,17 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
 
         assertEquals(0, segunda.getNuevas());
         assertEquals(1, segunda.getSalteadas());
+    }
+
+    // Para comparar títulos alcanzan los títulos: las películas enteras traerían también sus géneros.
+    @Test
+    void paraSaberQueYaEstaNoCargaLasPeliculas() {
+        catalogo.queTraiga("Duna", "Vaiana");
+        gestor.ejecutar(1);
+
+        long cargadas = peliculasCargadasDurante(() -> gestor.ejecutar(1));
+
+        assertEquals(0, cargadas);
     }
 
     @Test
@@ -219,6 +236,18 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
 
         assertFalse(gestor.estadoDelImportador().disponible());
         assertEquals("Falta el token de TMDB", gestor.estadoDelImportador().detalle());
+    }
+
+    private long peliculasCargadasDurante(Runnable accion) {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+            accion.run();
+            return estadisticas.getEntityStatistics(Pelicula.class.getName()).getLoadCount();
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
     }
 
     private static DatosPelicula sinDuracion(String titulo) {

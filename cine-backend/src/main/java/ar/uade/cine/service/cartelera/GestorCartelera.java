@@ -121,6 +121,12 @@ public class GestorCartelera {
         return peliculaRepository.findAll();
     }
 
+    // Todos, descartadas incluidas: es contra lo que el importador compara lo que trae.
+    @Transactional(readOnly = true)
+    public List<String> titulos() {
+        return peliculaRepository.titulos();
+    }
+
     @Transactional(readOnly = true)
     public List<Pelicula> buscar(String titulo, Genero genero, Boolean publicada) {
         return peliculaRepository.buscar(titulo == null ? "" : titulo.trim().toLowerCase(),

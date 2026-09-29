@@ -79,8 +79,8 @@ public class GestorImportaciones {
     // Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado.
     private Set<String> titulosCargados() {
         Set<String> titulos = new HashSet<>();
-        for (Pelicula pelicula : cartelera.listar()) {
-            titulos.add(clave(pelicula.getTitulo()));
+        for (String titulo : cartelera.titulos()) {
+            titulos.add(clave(titulo));
         }
         return titulos;
     }
