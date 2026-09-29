@@ -37,6 +37,15 @@ class SesionControllerTest extends PruebaDeApi {
     }
 
     @Test
+    @DisplayName("el email del login no distingue mayúsculas, como en el resto de la API")
+    void elEmailDelLoginNoDistingueMayusculas() {
+        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "Admin@PRUEBA.test", CLAVE_ADMIN);
+
+        assertThat(respuesta.estado()).isEqualTo(200);
+        assertThat(respuesta.json().get("email").asText()).isEqualTo(EMAIL_ADMIN);
+    }
+
+    @Test
     @DisplayName("el acomodador también entra, con su rol")
     void loginDelAcomodador() {
         Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "puerta@cine.test", "clave-puerta");

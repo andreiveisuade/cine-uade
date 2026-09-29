@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
@@ -37,10 +38,11 @@ public class ConsultasReservas {
         return ids.isEmpty() ? List.of() : reservaRepository.findConDetalle(ids);
     }
 
-    // Las de un cliente, la más nueva primero, en una consulta. Sin email no hay a quién buscar.
+    // Las de un cliente, la más nueva primero, en una consulta. Sin email no hay a quién buscar;
+    // con espacios o mayúsculas, se busca como lo guardó Usuario.
     public List<Reserva> listarPorEmail(String email) {
-        return email == null || email.isBlank() ? List.of()
-                : reservaRepository.findByCliente_EmailOrderByIdDesc(email.trim());
+        String buscado = Usuario.normalizarEmail(email);
+        return buscado.isEmpty() ? List.of() : reservaRepository.findByCliente_EmailOrderByIdDesc(buscado);
     }
 
     // La más nueva primero, ordenada en la base. Estado y día también en la base; el texto en

@@ -1,5 +1,8 @@
 package ar.uade.cine.model.usuarios;
 
+import java.util.Locale;
+import java.util.regex.Pattern;
+
 import lombok.Getter;
 import org.hibernate.annotations.DiscriminatorFormula;
 
@@ -14,7 +17,7 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
-// Cliente o empleado de la tabla usuario; Experto: valida nombre y email y los guarda sin espacios de más.
+// Cliente o empleado de la tabla usuario; Experto: valida nombre y email, y guarda el email en minúsculas.
 // Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
@@ -24,6 +27,10 @@ import jakarta.persistence.Table;
 public abstract class Usuario {
 
     private static final int LARGO_MAXIMO = 100;
+
+    // usuario@dominio.algo, la misma regla que Swing. Es la única del backend: POST /api/reservas da
+    // de alta al cliente sin pasar por el DTO, y el @Email de Bean Validation aceptaba «a@b».
+    private static final Pattern FORMA_DEL_EMAIL = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,12 +52,22 @@ public abstract class Usuario {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre no puede estar vacío");
         }
-        if (email == null || !email.contains("@")) {
-            throw new IllegalArgumentException("El email no es válido");
+        String emailNormalizado = normalizarEmail(email);
+        if (emailNormalizado.isEmpty()) {
+            throw new IllegalArgumentException("Falta el email");
+        }
+        if (!FORMA_DEL_EMAIL.matcher(emailNormalizado).matches()) {
+            throw new IllegalArgumentException("El email tiene que tener la forma usuario@dominio.com");
         }
         this.nombre = recortado(nombre, "nombre");
-        this.email = recortado(email, "email");
+        this.email = recortado(emailNormalizado, "email");
         this.rol = rol;
+    }
+
+    // Como se guarda, y por eso como se busca (clientes, reservas por email, login): API.md promete
+    // emails sin distinguir mayúsculas, y comparando el texto exacto «BETO@x.com» era otro cliente.
+    public static String normalizarEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
     // Se guarda y se mide sin los espacios de más: con ellos, " ana@mail.com" sería otro email y

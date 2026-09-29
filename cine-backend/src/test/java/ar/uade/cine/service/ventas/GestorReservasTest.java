@@ -524,6 +524,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
         List<Reserva> deAndrei = consultas.listarPorEmail("  andrei@uade.edu.ar ");
 
         assertEquals(List.of(3, 1), deAndrei.stream().map(Reserva::getId).toList());
+        assertEquals(List.of(3, 1), consultas.listarPorEmail("Andrei@UADE.edu.ar").stream()
+                .map(Reserva::getId).toList(), "sin distinguir mayúsculas");
         assertTrue(consultas.listarPorEmail(null).isEmpty());
         assertTrue(consultas.listarPorEmail("   ").isEmpty());
         assertTrue(consultas.listarPorEmail("nadie@uade.edu.ar").isEmpty());

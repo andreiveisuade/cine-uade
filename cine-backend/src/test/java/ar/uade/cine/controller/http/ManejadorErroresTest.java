@@ -104,7 +104,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana-sin-arroba\"}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("El email no es válido", respuesta.error());
+        assertEquals("El email tiene que tener la forma usuario@dominio.com", respuesta.error());
     }
 
     @Test

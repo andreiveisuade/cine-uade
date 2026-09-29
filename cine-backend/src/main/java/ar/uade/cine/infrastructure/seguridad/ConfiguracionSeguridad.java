@@ -26,6 +26,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
@@ -116,9 +117,10 @@ public class ConfiguracionSeguridad {
                 && !pedido.getParameter("email").isBlank();
     }
 
+    // El email se busca como lo guardó Usuario: el login tampoco distingue mayúsculas ni espacios.
     @Bean
     public UserDetailsService empleadosComoUsuarios(EmpleadoRepository empleados) {
-        return email -> empleados.findByEmail(email)
+        return email -> empleados.findByEmail(Usuario.normalizarEmail(email))
                 .map(empleado -> User.withUsername(empleado.getEmail())
                         .password(empleado.getPasswordHash())
                         .roles(empleado.getRol().name())

@@ -207,6 +207,16 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("Ese email es de un empleado del cine: usá otro para comprar", respuesta.error());
     }
 
+    // Reservar no pasa por el DTO del alta de clientes: «a@» se aceptaba.
+    @Test
+    void reservarConUnEmailSinDominioEs400() {
+        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"a@\","
+                + "\"butacas\":{\"B1\":\"GENERAL\"}}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El email tiene que tener la forma usuario@dominio.com", respuesta.error());
+    }
+
     @Test
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.

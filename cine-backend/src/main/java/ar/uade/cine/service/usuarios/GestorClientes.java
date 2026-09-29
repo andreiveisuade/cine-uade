@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.ConflictoDeNegocio;
@@ -59,12 +60,10 @@ public class GestorClientes {
         return clienteRepository.findById(id);
     }
 
-    // Sin email no hay a quién buscar; con espacios de más, se busca como lo guardó Usuario.
+    // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guardó Usuario.
     @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        return clienteRepository.findByEmail(email.trim());
+        String buscado = Usuario.normalizarEmail(email);
+        return buscado.isEmpty() ? Optional.empty() : clienteRepository.findByEmail(buscado);
     }
 }

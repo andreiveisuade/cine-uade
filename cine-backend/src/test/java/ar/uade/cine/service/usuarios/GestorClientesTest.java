@@ -96,6 +96,26 @@ class GestorClientesTest extends PruebaDeIntegracion {
                 () -> gestor.registrar("Otro", "andrei@uade.edu.ar")).getMessage());
     }
 
+    // Antes eran dos clientes: se comparaba el email exacto.
+    @Test
+    void elEmailNoDistingueMayusculas() {
+        Cliente beto = gestor.registrar("Beto", "beto@x.com");
+
+        assertThrows(ConflictoDeNegocio.class, () -> gestor.registrar("Beto", "BETO@x.com"));
+        assertEquals(beto.getId(), gestor.identificar("Beto", " Beto@X.com ").getId());
+        assertEquals(beto.getId(), gestor.buscarPorEmail(" BETO@x.com ").orElseThrow().getId());
+        assertEquals(1, gestor.listar().size());
+    }
+
+    // POST /api/reservas no pasa por el DTO: la forma del email la tiene que exigir Usuario.
+    @Test
+    void identificarRechazaUnEmailSinDominio() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> gestor.identificar("Ana", "a@"));
+
+        assertEquals("El email tiene que tener la forma usuario@dominio.com", error.getMessage());
+    }
+
     @Test
     void buscarPorEmailIgnoraLosEspaciosYSinEmailNoEncuentraANadie() {
         gestor.registrar("Andrei", "andrei@uade.edu.ar");

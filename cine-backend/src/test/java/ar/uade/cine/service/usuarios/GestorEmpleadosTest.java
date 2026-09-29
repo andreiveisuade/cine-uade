@@ -66,6 +66,13 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
         assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Ana", " ANA@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());
+    }
+
+    @Test
+    void seEncuentraPorEmailSinDistinguirMayusculasNiEspacios() {
+        assertTrue(empleados.buscarPorEmail(" Encargado@CINE.com ").isPresent());
     }
 
     @Test
