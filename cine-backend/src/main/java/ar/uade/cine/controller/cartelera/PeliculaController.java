@@ -26,7 +26,6 @@ import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
@@ -35,13 +34,13 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// El buzón de revisión comparte el tag pero tiene su propio controller: RevisionController.
 @Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController
 @RequiredArgsConstructor
 public class PeliculaController {
 
     private final GestorCartelera cartelera;
-    private final GestorRevisionCartelera revision;
     private final GestorFunciones funciones;
     private final VistasCartelera vistas;
 
@@ -63,12 +62,6 @@ public class PeliculaController {
                 .stream().map(vistas::pelicula).toList();
     }
 
-    @Operation(summary = "El buzón: lo que trajo el importador y todavía nadie revisó")
-    @GetMapping("/api/peliculas/pendientes")
-    public List<PeliculaVistaDTO> pendientes() {
-        return revision.listarPendientes().stream().map(vistas::pelicula).toList();
-    }
-
     @Operation(summary = "El detalle de una película")
     @GetMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO detalle(@PathVariable int id) {
@@ -87,20 +80,6 @@ public class PeliculaController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PeliculaVistaDTO> agregar(@Valid @RequestBody PedidoPeliculaDTO pedido) {
         return creada(cartelera.agregar(datosDe(pedido)));
-    }
-
-    @Operation(summary = "Aceptar una película del buzón y publicarla")
-    @PostMapping("/api/peliculas/{id}/confirmacion")
-    public PeliculaVistaDTO confirmar(@PathVariable int id) {
-        buscar(id);
-        return vistas.pelicula(revision.confirmar(id));
-    }
-
-    @Operation(summary = "Descartar una película del buzón")
-    @PostMapping("/api/peliculas/{id}/descarte")
-    public PeliculaVistaDTO descartar(@PathVariable int id) {
-        buscar(id);
-        return vistas.pelicula(revision.descartar(id));
     }
 
     @Operation(summary = "Editar una película")

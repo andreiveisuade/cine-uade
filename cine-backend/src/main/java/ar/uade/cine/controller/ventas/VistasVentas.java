@@ -9,9 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import ar.uade.cine.controller.http.Fechas;
+import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
+import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
+import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
@@ -23,6 +26,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.controller.cartelera.VistasCartelera;
 import ar.uade.cine.controller.salas.VistasSalas;
@@ -131,5 +135,15 @@ public class VistasVentas {
         return new PagoVistaDTO(p.getId(), p.getReservaId(), p.getSubtotal().aPesos(), p.getPromocionId(),
                 p.getDescuento().aPesos(), p.getMonto().aPesos(), p.getMedio().name(),
                 Fechas.texto(p.getFecha()), p.getCodigoAutorizacion(), pelicula, cliente, entradas);
+    }
+
+    public CheckoutVistaDTO checkout(PasarelaPagos.Checkout c) {
+        return new CheckoutVistaDTO(c.id(), c.reservaId(), c.medio().name(), c.monto().aPesos(),
+                c.urlPago(), c.codigoQr());
+    }
+
+    public BloqueoVistaDTO bloqueo(String sesion, Ocupacion.Bloqueo bloqueo) {
+        return new BloqueoVistaDTO(sesion, bloqueo.conseguidas(), bloqueo.rechazadas(),
+                Ocupacion.MIENTRAS_ELIGE.toSeconds());
     }
 }

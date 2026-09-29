@@ -1,8 +1,6 @@
 package ar.uade.cine.controller.ventas;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,15 +17,10 @@ import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
-import ar.uade.cine.dto.informes.ArqueoVistaDTO;
 import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
-import ar.uade.cine.dto.informes.TotalMedioDTO;
-import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
-import ar.uade.cine.service.informes.Arqueo;
-import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -38,6 +30,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// El arqueo de boletería comparte el tag pero es de informes/CajaController: lee la caja, no cobra.
 @Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController
 @RequiredArgsConstructor
@@ -45,7 +38,6 @@ public class PagoController {
 
     private final GestorPagos pagos;
     private final ConsultasReservas reservas;
-    private final GestorCaja caja;
     private final VistasVentas vistas;
 
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
@@ -73,10 +65,7 @@ public class PagoController {
                                           @Valid @RequestBody PedidoCheckoutDTO pedido) {
         exigirReserva(id);
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
-
-        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(id, medio);
-        return new CheckoutVistaDTO(checkout.id(), checkout.reservaId(), checkout.medio().name(),
-                checkout.monto().aPesos(), checkout.urlPago(), checkout.codigoQr());
+        return vistas.checkout(pagos.iniciarCheckout(id, medio));
     }
 
     @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")
@@ -87,24 +76,7 @@ public class PagoController {
         return Creado.en("/api/reservas/" + pago.reservaId() + "/pago", pago);
     }
 
-    @Operation(summary = "El arqueo de boletería de un día")
-    @GetMapping("/api/arqueo")
-    public ArqueoVistaDTO arqueo(@RequestParam(required = false) String fecha) {
-        Arqueo arqueo = caja.arqueoDe(Parseo.dia(fecha, "la fecha"));
-        return new ArqueoVistaDTO(arqueo.fecha().toString(), arqueo.total().aPesos(),
-                arqueo.entradas(), porMedio(arqueo),
-                vistas.pagosDeArqueo(arqueo.pagos()));
-    }
-
     private void exigirReserva(int id) {
         reservas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + id));
-    }
-
-    private static Map<String, TotalMedioDTO> porMedio(Arqueo arqueo) {
-        Map<String, TotalMedioDTO> resumen = new TreeMap<>();
-        arqueo.porMedio().forEach((medio, acumulado) ->
-                resumen.put(medio.name(),
-                        new TotalMedioDTO(acumulado.cantidad(), acumulado.total().aPesos())));
-        return resumen;
     }
 }

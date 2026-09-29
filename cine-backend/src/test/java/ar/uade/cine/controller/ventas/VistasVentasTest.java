@@ -18,6 +18,7 @@ import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.controller.informes.CajaController;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
@@ -88,7 +89,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
     private ReservaController reservaController;
 
     @Autowired
-    private PagoController pagoController;
+    private CajaController cajaController;
 
     @Autowired
     private EntityManagerFactory emf;
@@ -213,7 +214,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         vender(2);
         long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null, null));
         long delClienteConDos = consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null));
-        long arqueoConDos = consultasDe(() -> pagoController.arqueo(reloj.ahora().toLocalDate().toString()));
+        long arqueoConDos = consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString()));
 
         vender(6);
         assertEquals(16, reservaController.listar(null, null, null, null).size());
@@ -224,7 +225,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
                 consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null)),
                 "GET /api/reservas?email=");
         assertEquals(arqueoConDos,
-                consultasDe(() -> pagoController.arqueo(reloj.ahora().toLocalDate().toString())),
+                consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString())),
                 "GET /api/arqueo");
     }
 

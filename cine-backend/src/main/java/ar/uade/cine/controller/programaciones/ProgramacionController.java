@@ -100,8 +100,7 @@ public class ProgramacionController {
         int peliculaId = pedido.peliculaId();
         int salaId = pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
-        LocalDate hasta = pedido.hasta() == null || pedido.hasta().isBlank()
-                ? null : Parseo.dia(pedido.hasta(), "la fecha de fin");
+        LocalDate hasta = Parseo.diaOpcional(pedido.hasta(), "la fecha de fin");
         var hora = Parseo.hora(pedido.horaInicio(), "la hora de la función");
         Set<DayOfWeek> dias = Set.copyOf(
                 Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "los días de la semana"));

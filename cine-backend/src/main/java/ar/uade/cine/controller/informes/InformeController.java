@@ -12,7 +12,6 @@ import ar.uade.cine.dto.informes.DeclaracionJuradaVistaDTO;
 import ar.uade.cine.dto.informes.InformeFuncionVistaDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.GestorInformes;
-import ar.uade.cine.service.informes.InformeFuncion;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,9 +37,7 @@ public class InformeController {
     @GetMapping("/api/funciones/{id}/informe")
     public InformeFuncionVistaDTO informe(@PathVariable int id) {
         exigirFuncion(id);
-        InformeFuncion informe = informes.informeDe(id);
-        return new InformeFuncionVistaDTO(vistas.bordero(informe.bordero()), informe.comprasCandy(),
-                informe.candy().aPesos(), informe.total().aPesos());
+        return vistas.informe(informes.informeDe(id));
     }
 
     @Operation(summary = "La declaración jurada de un período. Sin fechas, la última semana cinematográfica")

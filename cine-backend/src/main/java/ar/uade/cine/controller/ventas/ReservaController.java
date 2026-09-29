@@ -17,17 +17,12 @@ import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
-import ar.uade.cine.dto.ventas.PedidoAccesoDTO;
-import ar.uade.cine.dto.ventas.PedidoBloqueoDTO;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
-import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
@@ -35,16 +30,15 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// El tag lo comparten BloqueoController y AccesoController: bloquear y entrar son del mismo circuito.
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
 @RequiredArgsConstructor
 public class ReservaController {
 
     private final GestorReservas reservas;
-    private final GestorAcceso acceso;
     private final ConsultasReservas consultas;
     private final GestorClientes clientes;
-    private final Ocupacion ocupacion;
     private final VistasVentas vistas;
 
     @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
@@ -86,21 +80,6 @@ public class ReservaController {
                 pedido.butacas(),
                 pedido.sesion());
         return Creado.en("/api/reservas/" + reserva.getId(), vistas.reserva(reserva));
-    }
-
-    @Operation(summary = "Tomar butacas mientras el cliente elige. Vencen solas")
-    @PostMapping("/api/funciones/{id}/bloqueos")
-    public BloqueoVistaDTO bloquear(@PathVariable int id, @Valid @RequestBody PedidoBloqueoDTO pedido) {
-        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(id, pedido.butacas(), pedido.sesion());
-        return new BloqueoVistaDTO(pedido.sesion(), bloqueo.conseguidas(), bloqueo.rechazadas(),
-                Ocupacion.MIENTRAS_ELIGE.toSeconds());
-    }
-
-    // Por código y no por id: el código es la única credencial del cliente y el id se adivina.
-    @Operation(summary = "Validar el QR en la puerta y marcar la entrada como usada")
-    @PostMapping("/api/acceso")
-    public ReservaVistaDTO registrarIngreso(@Valid @RequestBody PedidoAccesoDTO pedido) {
-        return vistas.reserva(acceso.registrarIngreso(pedido.codigo()));
     }
 
     @Operation(summary = "Cancelar una reserva y liberar sus butacas (encargado)")

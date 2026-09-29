@@ -1,6 +1,5 @@
 package ar.uade.cine.controller.candy;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.dto.informes.ArqueoCandyVistaDTO;
 import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.candy.PedidoComboDTO;
 import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;
@@ -32,7 +30,6 @@ import ar.uade.cine.dto.candy.PedidoVentaDTO;
 import ar.uade.cine.dto.candy.ProductoVistaDTO;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
-import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
@@ -40,6 +37,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// El arqueo del candy comparte el tag pero es de informes/CajaController: lee la caja, no vende.
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
 @RequiredArgsConstructor
@@ -47,7 +45,6 @@ public class CandyController {
 
     private final GestorCandy candy;
     private final GestorProductos carta;
-    private final GestorCaja caja;
     private final VistasCandy vistas;
 
     @Operation(summary = "La carta del candy")
@@ -120,14 +117,6 @@ public class CandyController {
                 ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el cliente"))
                 : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
         return compras.stream().map(vistas::compra).toList();
-    }
-
-    @Operation(summary = "El arqueo del candy de un día")
-    @GetMapping("/api/candy/arqueo")
-    public ArqueoCandyVistaDTO arqueo(@RequestParam(required = false) String fecha) {
-        LocalDate dia = Parseo.dia(fecha, "la fecha");
-        return new ArqueoCandyVistaDTO(dia.toString(), caja.totalCandyDe(dia).aPesos(),
-                candy.listarComprasDelDia(dia).stream().map(vistas::compra).toList());
     }
 
     private ResponseEntity<ProductoVistaDTO> creado(Producto producto) {
