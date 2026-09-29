@@ -13,7 +13,7 @@ Con el sistema levantado (`cine-docker`, `docker compose up -d --build`):
 ```bash
 mvn exec:java                                   # sin empaquetar
 mvn package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
-mvn clean test                                  # 58 tests, contra un servidor HTTP falso, sin backend
+mvn clean test                                  # 60 tests, contra un servidor HTTP falso, sin backend
 ```
 
 Por defecto apunta a `http://localhost:8080` (nginx del docker, que reenvía `/api`). Otro
@@ -35,7 +35,7 @@ Los subdominios son los del backend (`cartelera`, `salas`, `funciones`, `program
 
 | Paquete | Qué hay |
 |---|---|
-| raíz | `Principal` (arranque y el ida y vuelta entre login y panel) y `VentanaPrincipal` (el marco con el menú, que crea cada pantalla con solo las `Api` que usa) |
+| raíz | `Principal` (arranque y el ida y vuelta entre login y panel), `VentanaPrincipal` (el marco con el menú) y `Pantallas`, que crea cada pantalla con solo las `Api` que usa. `PantallasTest` arma todas sin backend |
 | `api/` | `ClienteHttp`, la mitad de `api-http.js` que no depende de ninguna ruta: Basic, JSON, sesión vencida y el mensaje de error. Una `Api<Subdominio>` por subdominio con las operaciones de `cine-frontend/API.md` (`ApiCartelera`, `ApiSalas`, `ApiVentas`…), todas sobre el mismo cliente y juntas en el record `Apis`. `ErrorApi` lleva el mensaje del backend |
 | `api/dto/<subdominio>/` | Un record por forma de JSON, espejando `dto/` del backend |
 | `informes/` | Lo que se escribe en la PC: el borderó en `.txt` (mismo formato que generaba el backend), la declaración jurada en `.csv` y el ticket de candy. Sin Swing, con tests |
