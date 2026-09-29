@@ -37,7 +37,7 @@ async function pedir(ruta, opciones = {}) {
   return datos;
 }
 
-// El {"error"} del backend va tal cual. Otra cosa (el HTML de nginx con el backend reiniciando, texto, cuerpo vacío)
+// El {"error"} del backend (y de nginx, que también contesta en JSON) va tal cual. Otra cosa (texto, cuerpo vacío)
 // no se muestra: va a la consola para depurar y en pantalla queda un mensaje según el código, como en Swing.
 function mensajeDeError(status, datos, texto) {
   if (datos?.error) return datos.error;

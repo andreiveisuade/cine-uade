@@ -67,8 +67,8 @@ function CartaCandy({ productos, reservaId }) {
     <Paper withBorder p="md">
       <Text fw={600}>¿Pochoclos para la función?</Text>
       <Text size="sm" c="dimmed" mb="sm">
-        Comprá en el mostrador del candy antes de entrar. Si decís tu número de reserva (#{reservaId}), la compra
-        queda a tu nombre.
+        Comprá en el mostrador del candy antes de entrar. Con la reserva ya pagada, si decís su número (#{reservaId}),
+        la compra queda a tu nombre.
       </Text>
       <Stack gap={6}>
         {productos.map((p) => (

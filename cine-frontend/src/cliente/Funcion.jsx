@@ -52,7 +52,21 @@ export function Funcion() {
     // Se pinta antes del bloqueo para que se vea elegida en el acto.
     setSeleccion({ funcionId: funcion.id, butacas: nuevas });
 
-    const rechazadas = await sostenerSeleccion(funcion.id, nuevas).catch(() => []);
+    let rechazadas;
+    try {
+      rechazadas = await sostenerSeleccion(funcion.id, nuevas);
+    } catch (e) {
+      // Un 400 es una selección que el backend no aparta entera (pasa el tope de una compra, o una butaca salió
+      // de servicio): la butaca recién elegida se suelta y se dice por qué. Otro error no cambia nada: la doble
+      // venta la sigue impidiendo la base.
+      if (e.status !== 400) return;
+      if (!butacas[asiento.codigo]) {
+        setSeleccion((s) => ({ ...s, butacas: sinButacas(s.butacas, [asiento.codigo]) }));
+      }
+      avisar(e.message, "error");
+      carga.recargar();
+      return;
+    }
     if (rechazadas.length) {
       // Que se escape una butaca es que otro llegó primero: el mapa se vuelve a pedir.
       setSeleccion((s) => ({ ...s, butacas: sinButacas(s.butacas, rechazadas) }));
