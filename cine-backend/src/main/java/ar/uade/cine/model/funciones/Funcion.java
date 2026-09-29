@@ -78,8 +78,12 @@ public class Funcion {
     // Pública porque una programación genera funciones con estos mismos datos: tiene que
     // rechazarlos antes de generar la primera, y con el mismo mensaje que el alta de una suelta.
     public static void validarProgramable(Sala sala, Version version, Proyeccion proyeccion, Dinero precio) {
-        if (version == null || proyeccion == null) {
-            throw new IllegalArgumentException("Falta la versión o el formato de proyección");
+        // La API le dice idioma a lo que acá es la versión: el mensaje usa la palabra del formulario.
+        if (version == null) {
+            throw new IllegalArgumentException("Falta el idioma");
+        }
+        if (proyeccion == null) {
+            throw new IllegalArgumentException("Falta la proyección");
         }
         // R8
         if (proyeccion == Proyeccion.TRES_D && !sala.getTipo().soportaTresD()) {

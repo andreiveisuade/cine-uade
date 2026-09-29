@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
@@ -50,6 +52,21 @@ class FuncionControllerTest extends PruebaDeApi {
 
         assertEquals(201, respuesta.estado());
         assertEquals("2026-08-14T20:30:00", respuesta.json().get("inicio").asText());
+    }
+
+    // Un mensaje por dato, como en programaciones: "la versión o el formato" no decía cuál faltaba,
+    // y la API le dice idioma a lo que el dominio llama versión.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin idioma,     '"proyeccion":"DOS_D"',   Falta el idioma
+            sin proyección, '"idioma":"SUBTITULADA"', Falta la proyección
+            """)
+    void cadaDatoQueFaltaSeNombraSolo(String caso, String formato, String mensaje) {
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":1,\"salaId\":1,"
+                + "\"inicio\":\"2026-08-14T20:30:00\"," + formato + ",\"precio\":4500}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
     }
 
     // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.

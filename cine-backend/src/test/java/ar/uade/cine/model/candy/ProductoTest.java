@@ -40,7 +40,7 @@ class ProductoTest {
             sin precio,        Agua, BEBIDA,    , Falta el precio
             precio en cero,    Agua, BEBIDA,   0, El precio tiene que ser mayor a cero
             cien millones,     Agua, BEBIDA, 100000000, El precio no puede superar $ 1000000.00
-            combo sin nombre,  ,     COMBO,  100, 'Un combo se arma con armarCombo, para que declare qué trae'
+            combo sin nombre,  ,     COMBO,  100, 'Un combo se da de alta como combo: con sus componentes'
             """)
     void unSueltoInvalidoNoSeConstruye(String caso, String nombre, TipoProducto tipo, Double precio,
             String mensaje) {

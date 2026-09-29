@@ -233,7 +233,21 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertTrue(e.getMessage().contains("confirmada"), e.getMessage());
+        assertEquals("La película Dune todavía no está confirmada: revisala antes de programarla", e.getMessage());
+    }
+
+    // La descartada no está en el buzón: pedirle que la revise la mandaría a buscar algo que no va a encontrar.
+    @Test
+    void unaPeliculaDescartadaDiceQueEstaDescartadaYNoQueFaltaRevisarla() {
+        Pelicula importada = revision.importar(
+                DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
+        revision.descartar(importada.getId());
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
+                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+
+        assertEquals("La película Dune está descartada: no se puede programar", e.getMessage());
     }
 
     @Test

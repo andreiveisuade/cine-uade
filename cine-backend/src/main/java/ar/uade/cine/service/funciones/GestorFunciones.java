@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -77,7 +78,12 @@ public class GestorFunciones {
     private Pelicula peliculaConfirmada(int peliculaId) {
         Pelicula pelicula = peliculaRepository.findById(peliculaId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + peliculaId));
-        // Si no, programar saltearía el buzón de revisión.
+        // Si no, programar saltearía el buzón de revisión. La descartada ya no está en el buzón: pedirle
+        // que la revise mandaría a buscarla donde no está.
+        if (pelicula.getEstadoRevision() == EstadoRevision.DESCARTADA) {
+            throw new IllegalArgumentException("La película " + pelicula.getTitulo()
+                    + " está descartada: no se puede programar");
+        }
         if (!pelicula.estaConfirmada()) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " todavía no está confirmada: revisala antes de programarla");

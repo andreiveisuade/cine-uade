@@ -55,7 +55,7 @@ public class Producto {
     // Solo sueltos: un combo nace en armarCombo, que no lo deja existir sin declarar qué trae.
     public Producto(String nombre, TipoProducto tipo, Dinero precio) {
         if (tipo != null && tipo.esCombo()) {
-            throw new IllegalArgumentException("Un combo se arma con armarCombo, para que declare qué trae");
+            throw new IllegalArgumentException("Un combo se da de alta como combo: con sus componentes");
         }
         this.nombre = nombreValido(nombre);
         if (tipo == null) {
