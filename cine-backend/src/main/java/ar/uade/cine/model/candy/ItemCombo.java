@@ -1,7 +1,7 @@
 package ar.uade.cine.model.candy;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCombo;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -9,7 +9,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-// Componente de un combo con su cantidad; Experto: exige cantidad positiva y que no sea otro combo.
+// Componente de un combo con su cantidad; ValidadorCombo exige de 1 a 20 unidades y que no sea otro combo.
 @Embeddable
 @Getter
 @Accessors(fluent = true)
@@ -27,20 +27,10 @@ public class ItemCombo {
     }
 
     // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido: sin
-    // chequear el null, el unboxing daría un 500. Los textos son los de ItemCompra: es la misma cantidad.
+    // chequear el null, el unboxing daría un 500. La regla es la de ItemCompra: es la misma cantidad.
     ItemCombo(Producto producto, Integer cantidad) {
-        if (cantidad == null) {
-            throw new DatoInvalido("Falta la cantidad de " + producto.getNombre());
-        }
-        if (cantidad <= 0) {
-            throw new DatoInvalido("La cantidad de " + producto.getNombre()
-                    + " tiene que ser mayor a cero");
-        }
-        if (producto.esCombo()) {
-            throw new DatoInvalido("Un combo no puede contener otro combo: " + producto.getNombre());
-        }
+        this.cantidad = ValidadorCombo.componente(producto, cantidad);
         this.producto = producto;
-        this.cantidad = cantidad;
     }
 
     public String nombre() {

@@ -1,7 +1,7 @@
 package ar.uade.cine.model.candy;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCompraCandy;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,7 +15,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-// Renglón de una venta del candy; Experto: exige cantidad y stock, y congela nombre, precio y ahorro.
+// Renglón de una venta del candy; congela nombre, precio y ahorro. Cantidad y stock: ValidadorCompraCandy.
 // Nombre, precio y ahorro se congelan al vender para que el ticket no cambie: si después se
 // edita el combo, la compra vieja sigue diciendo lo que se cobró y lo que se ahorró.
 @Entity
@@ -52,19 +52,9 @@ public class ItemCompra {
     // Solo lo crea CompraCandy. La cantidad llega como Integer porque viene del pedido: un null
     // tiene su propio mensaje en vez de un 500 por el unboxing.
     ItemCompra(Producto producto, Integer cantidad) {
-        if (cantidad == null) {
-            throw new DatoInvalido("Falta la cantidad de " + producto.getNombre());
-        }
-        if (cantidad <= 0) {
-            throw new DatoInvalido("La cantidad de " + producto.getNombre()
-                    + " tiene que ser mayor a cero");
-        }
-        if (!producto.estaDisponible()) {
-            throw new DatoInvalido(producto.getNombre() + " no está disponible");
-        }
+        this.cantidad = ValidadorCompraCandy.renglon(producto, cantidad);
         this.producto = producto;
         this.nombre = producto.getNombre();
-        this.cantidad = cantidad;
         this.precioUnitario = producto.getPrecio();
         this.ahorroUnitario = producto.getAhorro();
     }

@@ -9,6 +9,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.Rechazo;
@@ -52,9 +54,24 @@ class CompraCandyTest {
         gaseosa.sacarDeLaVenta();
 
         rechaza("Falta la cantidad de Pochoclos", () -> comprar(MedioPago.EFECTIVO, "", sinCantidad));
-        rechaza("La cantidad de Pochoclos tiene que ser mayor a cero",
-                () -> comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, 0)));
         rechaza("Gaseosa no está disponible", () -> comprar(MedioPago.EFECTIVO, "", Map.of(gaseosa, 1)));
+    }
+
+    // Tope de Andrei: más de veinte de lo mismo en un renglón es un error de tipeo, no una venta de mostrador.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            en cero,       0,   La cantidad de Pochoclos tiene que ser mayor a cero
+            negativa,      -3,  La cantidad de Pochoclos tiene que ser mayor a cero
+            más de veinte, 21,  La cantidad de Pochoclos tiene que ser como máximo 20
+            un tipeo,      200, La cantidad de Pochoclos tiene que ser como máximo 20
+            """)
+    void laCantidadDeUnRenglonVaDeUnoAVeinte(String caso, int cantidad, String mensaje) {
+        rechaza(mensaje, () -> comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, cantidad)));
+    }
+
+    @Test
+    void veinteDeLoMismoTodaviaSeVenden() {
+        assertEquals(Dinero.de(80000), comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, 20)).getTotal());
     }
 
     @Test

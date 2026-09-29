@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCompraCandy;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,7 +22,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
-// Venta del candy que nace cobrada; Creador de sus ItemCompra, exige medio de pago y R11, y suma el total.
+// Venta del candy que nace cobrada; Creador de sus ItemCompra y suma el total. Valida ValidadorCompraCandy.
 @Entity
 @Table(name = "compra_candy")
 @Getter
@@ -53,21 +53,21 @@ public class CompraCandy {
     }
 
     // Creador: la compra contiene sus renglones, así que los crea ella y cada ItemCompra valida
-    // lo suyo. GestorCandy solo busca los productos y pone la fecha.
+    // lo suyo. GestorCandy solo busca los productos y pone la fecha. Todo se valida antes de asignar.
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                        String codigoAutorizacion, Map<Producto, Integer> cantidades) {
-        if (cantidades == null || cantidades.isEmpty()) {
-            throw new DatoInvalido("Hay que elegir al menos un producto");
-        }
-        if (medio == null) {
-            throw new DatoInvalido("Falta el medio de pago");
-        }
+        ValidadorCompraCandy.exigirProductos(cantidades);
+        MedioPago medioValido = ValidadorCompraCandy.medio(medio);
+        String autorizacion = medioValido.autorizacion(codigoAutorizacion);
+        List<ItemCompra> renglones = cantidades.entrySet().stream()
+                .map(renglon -> new ItemCompra(renglon.getKey(), renglon.getValue()))
+                .toList();
         this.clienteId = clienteId;
         this.reservaId = reservaId;
         this.fecha = fecha;
-        this.medio = medio;
-        this.codigoAutorizacion = medio.autorizacion(codigoAutorizacion);
-        cantidades.forEach((producto, cantidad) -> items.add(new ItemCompra(producto, cantidad)));
+        this.medio = medioValido;
+        this.codigoAutorizacion = autorizacion;
+        this.items.addAll(renglones);
     }
 
     public List<ItemCompra> getItems() {

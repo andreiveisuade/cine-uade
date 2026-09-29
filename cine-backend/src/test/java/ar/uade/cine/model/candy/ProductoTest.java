@@ -35,8 +35,8 @@ class ProductoTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            sin nombre,        ,     BEBIDA, 100, El nombre no puede estar vacío
-            nombre en blanco,  '  ', BEBIDA, 100, El nombre no puede estar vacío
+            sin nombre,        ,     BEBIDA, 100, Falta el nombre
+            nombre en blanco,  '  ', BEBIDA, 100, Falta el nombre
             sin tipo,          Agua, ,       100, Falta el tipo de producto
             sin precio,        Agua, BEBIDA,    , Falta el precio
             precio en cero,    Agua, BEBIDA,   0, El precio tiene que ser mayor a cero
@@ -75,7 +75,7 @@ class ProductoTest {
                 () -> Producto.armarCombo("Combo de uno", Dinero.de(3000), Map.of(pochoclos, 1)));
         rechaza("Un combo tiene que juntar al menos dos productos distintos",
                 () -> Producto.armarCombo("Combo vacío", Dinero.de(3000), null));
-        rechaza("El nombre no puede estar vacío",
+        rechaza("Falta el nombre",
                 () -> Producto.armarCombo(" ", Dinero.de(3000), Map.of(pochoclos, 1)));
         rechaza("El precio tiene que ser mayor a cero",
                 () -> Producto.armarCombo("Combo gratis", Dinero.CERO, Map.of(pochoclos, 1)));
@@ -87,13 +87,28 @@ class ProductoTest {
         sinCantidad.put(pochoclos, null);
         sinCantidad.put(gaseosa, 1);
 
-        // Los mismos textos que un renglón de la venta: la cantidad es la misma cosa en los dos.
-        rechaza("La cantidad de Pochoclos tiene que ser mayor a cero",
-                () -> Producto.armarCombo("Combo", Dinero.de(3000), Map.of(pochoclos, 0, gaseosa, 1)));
         rechaza("Falta la cantidad de Pochoclos",
                 () -> Producto.armarCombo("Combo", Dinero.de(3000), sinCantidad));
         rechaza("Un combo no puede contener otro combo: Combo pareja",
                 () -> Producto.armarCombo("Combo doble", Dinero.de(6000), Map.of(comboPareja(), 1, gaseosa, 1)));
+    }
+
+    // Los mismos textos que un renglón de la venta (CompraCandyTest): la cantidad es la misma cosa en los dos.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            en cero,      0,  La cantidad de Pochoclos tiene que ser mayor a cero
+            negativa,     -1, La cantidad de Pochoclos tiene que ser mayor a cero
+            más de veinte, 21, La cantidad de Pochoclos tiene que ser como máximo 20
+            """)
+    void laCantidadDeUnComponenteVaDeUnoAVeinte(String caso, int cantidad, String mensaje) {
+        rechaza(mensaje, () -> Producto.armarCombo("Combo", Dinero.de(3000), Map.of(pochoclos, cantidad, gaseosa, 1)));
+    }
+
+    @Test
+    void veinteDeUnComponenteTodaviaEsUnCombo() {
+        Producto combo = Producto.armarCombo("Combo gigante", Dinero.de(80000), Map.of(pochoclos, 20, gaseosa, 1));
+
+        assertEquals(20, combo.getComponentes().stream().mapToInt(ItemCombo::cantidad).max().orElseThrow());
     }
 
     @ParameterizedTest(name = "a $ {0}")
@@ -105,7 +120,7 @@ class ProductoTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            nombre vacío,   '',        4500, El nombre no puede estar vacío
+            nombre vacío,   '',        4500, Falta el nombre
             sin precio,     Pochoclos,     , Falta el precio
             precio en cero, Pochoclos,    0, El precio tiene que ser mayor a cero
             cien millones,  Pochoclos, 100000000, El precio no puede superar $ 1000000.00

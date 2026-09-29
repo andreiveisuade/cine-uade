@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCombo;
+import ar.uade.cine.model.candy.validacion.ValidadorProducto;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Column;
@@ -20,16 +21,13 @@ import jakarta.persistence.JoinColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Artículo o combo de la carta del candy; Experto: valida sus datos y R14, y Creador de sus ItemCombo.
-// Validar acá y no en el gestor impide armar uno inválido, venga del gestor o de un test.
-// GestorProductos se queda con lo que necesita la base: el nombre repetido, buscar los componentes
-// y los combos que traen un suelto.
+// Artículo o combo de la carta del candy; Experto en su disponibilidad y R14, y Creador de sus ItemCombo.
+// Los datos los validan ValidadorProducto y ValidadorCombo, que llama Producto al construirse o editarse:
+// así no se arma uno inválido, venga del gestor o de un test. GestorProductos se queda con lo que
+// necesita la base: el nombre repetido, buscar los componentes y los combos que traen un suelto.
 @Entity
 @Getter
 public class Producto {
-
-    // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
-    private static final int LARGO_MAXIMO_DEL_NOMBRE = 60;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,31 +53,25 @@ public class Producto {
 
     // Solo sueltos: un combo nace en armarCombo, que no lo deja existir sin declarar qué trae.
     public Producto(String nombre, TipoProducto tipo, Dinero precio) {
-        if (tipo != null && tipo.esCombo()) {
-            throw new DatoInvalido("Un combo se da de alta como combo: con sus componentes");
-        }
-        this.nombre = nombreValido(nombre);
-        if (tipo == null) {
-            throw new DatoInvalido("Falta el tipo de producto");
-        }
-        this.tipo = tipo;
-        this.precio = precioValido(precio);
+        ValidadorProducto.exigirQueNoSeaCombo(tipo);
+        String nombreValido = ValidadorProducto.nombre(nombre);
+        TipoProducto tipoValido = ValidadorProducto.tipo(tipo);
+        Dinero precioValido = ValidadorProducto.precio(precio);
+        this.nombre = nombreValido;
+        this.tipo = tipoValido;
+        this.precio = precioValido;
     }
 
-    // Creador: el combo contiene sus ItemCombo, así que los crea él; fuera del paquete nadie arma uno.
+    // Creador: el combo contiene sus ItemCombo, así que los crea él y cada uno valida su componente. R14
+    // va al final porque el precio suelto sale de los componentes ya armados.
     public static Producto armarCombo(String nombre, Dinero precio, Map<Producto, Integer> componentes) {
         Producto combo = new Producto();
-        combo.nombre = nombreValido(nombre);
+        combo.nombre = ValidadorProducto.nombre(nombre);
         combo.tipo = TipoProducto.COMBO;
-        combo.precio = precioValido(precio);
-        if (componentes == null || componentes.size() < 2) {
-            throw new DatoInvalido("Un combo tiene que juntar al menos dos productos distintos");
-        }
+        combo.precio = ValidadorProducto.precio(precio);
+        ValidadorCombo.exigirComponentes(componentes);
         componentes.forEach((producto, cantidad) -> combo.componentes.add(new ItemCombo(producto, cantidad)));
-        if (!combo.saleMenosQueSuelto(precio)) {
-            throw new DatoInvalido("El combo tiene que salir menos que sus componentes sueltos ($ "
-                    + combo.getPrecioSuelto() + ")");
-        }
+        ValidadorCombo.exigirQueConvenga(combo, combo.precio);
         return combo;
     }
 
@@ -96,13 +88,12 @@ public class Producto {
         disponible = true;
     }
 
-    // Los componentes no cambian: se fijan al armar el combo. Si rechaza, no toca nada.
+    // Los componentes no cambian: se fijan al armar el combo. Valida todo antes de asignar: si rechaza,
+    // no toca nada.
     public void editar(String nombre, Dinero precio) {
-        String nuevoNombre = nombreValido(nombre);
-        Dinero nuevoPrecio = precioValido(precio);
-        if (esCombo() && !saleMenosQueSuelto(nuevoPrecio)) {
-            throw new DatoInvalido(dejariaDeConvenir(nuevoNombre));
-        }
+        String nuevoNombre = ValidadorProducto.nombre(nombre);
+        Dinero nuevoPrecio = ValidadorProducto.precio(precio);
+        ValidadorProducto.exigirQueSigaConviniendo(this, nuevoNombre, nuevoPrecio);
         this.nombre = nuevoNombre;
         this.precio = nuevoPrecio;
     }
@@ -110,9 +101,7 @@ public class Producto {
     // R14 del otro lado: abaratar un suelto puede dejar sin convenir a un combo que lo trae. El
     // combo no se entera solo de que cambió el precio de su componente; se lo pregunta el gestor.
     public void exigirQueSigaConviniendo() {
-        if (esCombo() && !saleMenosQueSuelto(precio)) {
-            throw new DatoInvalido(dejariaDeConvenir(nombre));
-        }
+        ValidadorProducto.exigirQueSigaConviniendo(this, nombre, precio);
     }
 
     public List<ItemCombo> getComponentes() {
@@ -129,31 +118,6 @@ public class Producto {
 
     public Dinero getAhorro() {
         return esCombo() ? getPrecioSuelto().menos(precio) : Dinero.CERO;
-    }
-
-    // R14: un combo que no sale menos que sus componentes sueltos no tiene por qué comprarse.
-    private boolean saleMenosQueSuelto(Dinero precio) {
-        return getPrecioSuelto().esMayorQue(precio);
-    }
-
-    private String dejariaDeConvenir(String nombre) {
-        return "Con ese precio, el combo " + nombre + " dejaría de salir menos que sus componentes sueltos ($ "
-                + getPrecioSuelto() + ")";
-    }
-
-    private static String nombreValido(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new DatoInvalido("El nombre no puede estar vacío");
-        }
-        String limpio = nombre.trim();
-        if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
-            throw new DatoInvalido("El nombre no puede tener más de 60 caracteres");
-        }
-        return limpio;
-    }
-
-    private static Dinero precioValido(Dinero precio) {
-        return Dinero.importeValido(precio, "precio");
     }
 
     @Override
