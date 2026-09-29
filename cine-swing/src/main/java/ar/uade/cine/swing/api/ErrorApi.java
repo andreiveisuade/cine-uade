@@ -3,6 +3,7 @@ package ar.uade.cine.swing.api;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Un pedido que falló, con su código HTTP o por qué no llegó; de eso sale si va en línea o en un diálogo.
 // Unchecked para que las pantallas no tengan que declararla en cada lambda de SwingWorker.
 // `estado` 0 es que ni se llegó al servidor, -1 que falló algo de este lado (un archivo, un error de programa); si no,
 // el código HTTP. Swing nunca reserva ni bloquea butacas: un 409 acá es un nombre o un título repetido, que se corrige en

@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+// El marco del panel: cabecera, menú según el rol y la pantalla elegida, recreada para mostrar datos frescos.
 /**
  * El marco del panel: cabecera, menú lateral y la pantalla elegida. El acomodador solo ve Puerta; cada
  * vez que se elige una entrada la pantalla se crea de nuevo, que es lo que hace que muestre datos frescos.

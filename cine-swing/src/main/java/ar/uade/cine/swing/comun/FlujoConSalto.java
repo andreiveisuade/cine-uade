@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
 
+// Un FlowLayout que informa el alto de todas sus líneas: así una barra de filtros angosta no pierde nada.
 /**
  * FlowLayout que pide la altura de todas las líneas que arma. El de Swing reparte en varias líneas pero informa
  * la altura de una sola, así que en el norte de un BorderLayout una barra de filtros angosta pierde lo que no entra.

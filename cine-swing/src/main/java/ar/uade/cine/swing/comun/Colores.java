@@ -5,6 +5,7 @@ import com.formdev.flatlaf.FlatLaf;
 import javax.swing.UIManager;
 import java.awt.Color;
 
+// Los colores de estado y de tipo de butaca, cada uno con su par claro y oscuro; el resto sale del tema.
 /**
  * Los pocos colores que no salen del look and feel: estados (error, éxito, aviso) y los tipos de butaca. Cada uno
  * tiene su par claro y oscuro, porque un rojo que se lee sobre blanco se pierde sobre gris oscuro. El resto de la

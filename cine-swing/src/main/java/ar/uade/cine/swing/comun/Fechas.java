@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+// El puente entre JCalendar y java.time: en pantalla dd/MM/yyyy, al backend ISO como pide el contrato.
 /**
  * El único lugar donde se cruza {@link Date} (lo que usan JCalendar y los spinners) con {@code java.time}: en pantalla
  * la fecha se ve dd/MM/yyyy, y al backend le viaja ISO (2026-08-13) como pide el contrato.

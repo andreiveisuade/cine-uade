@@ -29,7 +29,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
-/** Control de acceso (CU-18). Lo único que ve el acomodador. */
+// Control de acceso (CU-18): valida el ticket y avisa qué entradas piden carnet; es lo que ve el acomodador.
 public final class PantallaPuerta extends Pantalla {
 
     private record Validada(Reserva reserva, Set<String> seAcreditan) {

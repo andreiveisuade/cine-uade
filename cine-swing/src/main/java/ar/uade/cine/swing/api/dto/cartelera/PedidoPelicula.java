@@ -2,6 +2,7 @@ package ar.uade.cine.swing.api.dto.cartelera;
 
 import java.util.List;
 
+// Lo que Swing manda al dar de alta, editar o publicar una película del catálogo.
 // Sirve para el alta y para la edición parcial: en el PUT, lo que va null no viaja y queda como estaba.
 public record PedidoPelicula(String titulo, Integer duracionMinutos, List<String> generos, String clasificacion,
                              String director, String sinopsis, Integer anio, String idiomaOriginal,

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+// Qué se deja tipear en un campo y cuándo reaccionar a lo tipeado; leer y validar el valor es de Validacion.
 /**
  * Lo que se hace con un campo mientras se lo usa: qué se deja tipear, qué opción está elegida y cuándo reaccionar a
  * lo tipeado. Leer el valor para mandarlo es de {@link Validacion}, que separa dos cosas: el formato y la

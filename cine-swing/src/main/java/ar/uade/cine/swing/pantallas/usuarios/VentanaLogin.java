@@ -21,6 +21,7 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.util.function.Consumer;
 
+// El login del encargado y del acomodador; una clave mala se avisa junto al formulario, no en un diálogo.
 public final class VentanaLogin extends JFrame {
 
     private final ApiSesion apiSesion;

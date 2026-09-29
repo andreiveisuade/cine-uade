@@ -2,7 +2,7 @@ package ar.uade.cine.swing.comun;
 
 import java.util.Map;
 
-// Copia de cine-frontend/src/api/etiquetas.js: el backend manda el nombre de la constante y cada cliente lo traduce.
+// Copia de etiquetas.js del front: el backend manda el nombre de la constante y cada cliente lo traduce.
 public final class Etiquetas {
 
     private static final Map<String, String> ETIQUETAS = Map.ofEntries(

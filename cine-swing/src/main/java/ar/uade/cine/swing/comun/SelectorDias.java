@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
+// Los días de la semana como casillas, iguales en grillas, promociones y agenda; ninguna marcada es todos.
 /**
  * Los siete días como casillas, y el único lugar que sabe cómo se nombran y abrevian: grillas, promociones y agenda
  * los muestran igual. Ninguna marcada no es "ningún día": el backend lo lee como todos.

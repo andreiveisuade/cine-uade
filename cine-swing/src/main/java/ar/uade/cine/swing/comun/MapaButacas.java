@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** La sala vista de frente, fila por fila, como MapaButacas.jsx. Quien la usa decide cómo se pinta cada butaca. */
+// La sala vista de frente, fila por fila, como MapaButacas.jsx; quien la usa decide cómo pinta cada butaca.
 public final class MapaButacas extends JPanel {
 
     // `punteada`: la butaca no se vende (fuera de servicio u ocupada), aunque siga siendo clicable.

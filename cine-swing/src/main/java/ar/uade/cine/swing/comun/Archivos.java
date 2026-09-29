@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-// Guarda en la PC del encargado lo que se entrega al INCAA: el backend da los números, el archivo sale de acá.
+// Guarda en la PC del encargado lo que va al INCAA: el backend da los números, el archivo sale de acá.
 public final class Archivos {
 
     private Archivos() {

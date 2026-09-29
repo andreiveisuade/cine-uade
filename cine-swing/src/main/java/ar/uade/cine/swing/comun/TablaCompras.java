@@ -9,7 +9,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-/** Las ventas de candy como las listan Caja y Candy: las dos pantallas muestran las mismas columnas. */
+// Las ventas de candy como las listan Caja y Candy: las dos pantallas muestran las mismas columnas.
 public final class TablaCompras {
 
     private TablaCompras() {

@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+// Las entradas del menú del panel; enum y no texto, para que un «Ir a» a un destino renombrado no compile.
 /**
  * Las entradas del menú. Enum y no el título como texto: un "Ir a Salas" que apunta a un destino renombrado no
  * compila, en vez de no hacer nada sin avisar.

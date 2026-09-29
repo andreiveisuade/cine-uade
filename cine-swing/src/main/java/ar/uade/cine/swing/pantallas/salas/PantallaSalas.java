@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
+// Las salas: listado, alta con su distribución de butacas y baja; doble clic abre el mapa de butacas.
 public final class PantallaSalas extends Pantalla {
 
     private record Datos(List<Sala> salas, List<TipoSala> tipos) {

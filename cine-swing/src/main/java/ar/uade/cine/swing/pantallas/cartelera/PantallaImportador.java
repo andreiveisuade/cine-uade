@@ -32,7 +32,7 @@ import java.util.List;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
-/** Trae de TMDB lo que está en cartelera en Argentina. Nada se publica: todo cae en Por revisar. */
+// Trae de TMDB lo que está en cartelera en Argentina; nada se publica, todo cae en Por revisar.
 public final class PantallaImportador extends Pantalla {
 
     private record Datos(List<Importacion> corridas, EstadoImportador estado) {

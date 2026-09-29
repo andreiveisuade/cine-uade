@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.Component;
 
+// Dónde va cada mensaje: error de campo en línea, global en diálogo, éxito en la barra; la política vive acá.
 /**
  * Dónde se muestra cada mensaje. Todo pasa por acá, así que cambiar la política toca este archivo:
  * <ul>

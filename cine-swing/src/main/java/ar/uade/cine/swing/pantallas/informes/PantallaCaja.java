@@ -28,7 +28,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-/** El arqueo del día. Boletería y candy se cuentan por separado: el candy de mostrador no tiene función ni reserva. */
+// El arqueo del día, boletería y candy por separado: el candy de mostrador no tiene función ni reserva.
 public final class PantallaCaja extends Pantalla {
 
     private record Datos(Arqueo arqueo, ArqueoCandy candy) {

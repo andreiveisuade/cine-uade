@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+// El borderó INCAA en texto, igual al que escribía el backend; se emite en la PC del encargado, sin Swing.
 /**
  * El borderó en texto para el INCAA, idéntico al que escribía el backend (GeneradorBorderoTxt y ComprobanteTxt):
  * se emite en la PC del encargado y no en el servidor, pero el archivo no cambia. Sin Swing, para probarlo solo.

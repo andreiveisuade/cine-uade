@@ -24,7 +24,7 @@ import java.awt.Graphics;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
-/** Mapa de la sala para marcar y reponer butacas (R9): acá no hay ocupación, es el estado físico del asiento. */
+// Mapa de una sala para marcar y reponer butacas (R9): no hay ocupación, es el estado físico del asiento.
 public final class PantallaMapaSala extends Pantalla {
 
     private final ApiSalas apiSalas;

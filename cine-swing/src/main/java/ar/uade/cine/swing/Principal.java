@@ -9,6 +9,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.SwingUtilities;
 
+// Arranca el panel de escritorio y lo alterna con el login: un 401 en cualquier pantalla vuelve al login.
 /**
  * Arranca el panel del encargado de escritorio. Lleva el ida y vuelta entre login y panel: un 401 en cualquier
  * pantalla cierra el panel y reabre el login: las credenciales viven solo en memoria, así que una sesión

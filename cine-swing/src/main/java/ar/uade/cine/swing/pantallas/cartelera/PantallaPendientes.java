@@ -25,7 +25,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.duracion;
 import static ar.uade.cine.swing.comun.Formato.escapar;
 
-/** El buzón de lo que trajo el importador: hasta que se confirma, no se programa ni lo ve el cliente. */
+// El buzón de lo que trajo el importador: hasta que se confirma, no se programa ni lo ve el cliente.
 public final class PantallaPendientes extends Pantalla {
 
     private final ApiCartelera apiCartelera;

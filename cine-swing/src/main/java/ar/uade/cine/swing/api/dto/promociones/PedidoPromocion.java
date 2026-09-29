@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
 
+// Lo que Swing manda al cargar una promoción; la vigencia es obligatoria y el beneficio depende del tipo.
 // Los campos de beneficio que no aplican al tipo viajan en null explícito, como pide el contrato.
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PedidoPromocion(String nombre, String tipo, Double porcentaje, Double monto, Integer lleva,

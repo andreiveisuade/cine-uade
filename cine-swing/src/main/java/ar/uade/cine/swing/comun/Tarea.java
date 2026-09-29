@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
+// Corre un pedido al backend fuera del EDT y vuelve con el resultado, para que la ventana no se congele.
 /**
  * Corre un pedido al backend fuera del EDT y vuelve al EDT con el resultado. Sin esto, un servidor lento congela la
  * ventana entera: Swing pinta y atiende clics en el mismo hilo.

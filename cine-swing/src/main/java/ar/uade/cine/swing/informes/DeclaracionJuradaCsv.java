@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+// El CSV de la declaración jurada semanal al INCAA; el backend da los números, esto es solo el archivo.
 /**
  * La declaración jurada semanal en CSV. Lo arma el cliente y no el backend: el backend da los números y esto es solo
  * su presentación en archivo. Registros etiquetados en la primera columna, cada bloque con su encabezado, y una

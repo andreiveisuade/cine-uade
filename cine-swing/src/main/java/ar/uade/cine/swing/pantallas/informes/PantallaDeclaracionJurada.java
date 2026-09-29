@@ -34,6 +34,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
+// La declaración jurada semanal al INCAA: los números los da el backend y el CSV se escribe en esta PC.
 /**
  * La declaración jurada semanal al INCAA. Los números los da el backend; el archivo lo escribe esta PC con
  * {@link DeclaracionJuradaCsv}. Sin fechas, el backend devuelve la última semana cinematográfica (jueves a miércoles).

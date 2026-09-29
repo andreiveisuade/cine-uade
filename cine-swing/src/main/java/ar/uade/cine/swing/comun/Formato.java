@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
-// Los mismos formatos que cine-frontend/src/api/formato.js, para que la web del cliente y el escritorio digan lo mismo.
+// Los mismos formatos que formato.js del front, para que la web del cliente y el escritorio digan lo mismo.
 public final class Formato {
 
     private static final String[] MESES = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct",

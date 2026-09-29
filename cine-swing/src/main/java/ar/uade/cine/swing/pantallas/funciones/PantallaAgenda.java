@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+// La agenda de funciones: cada bloque mide lo que dura, así se ve si dos se pisan (R3) y dónde entra otra.
 /**
  * La programación como la ve quien la arma: cada bloque ocupa el alto de lo que dura, así se ve si dos funciones se
  * pisan (R3) y dónde entra algo nuevo. Dos modos: una sala toda la semana, o todas las salas un día; en una sola
