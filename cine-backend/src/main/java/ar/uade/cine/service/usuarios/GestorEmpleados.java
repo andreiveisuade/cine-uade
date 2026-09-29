@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
@@ -48,6 +48,6 @@ public class GestorEmpleados {
 
     @Transactional(readOnly = true)
     public Optional<Empleado> buscarPorEmail(String email) {
-        return empleadoRepository.findByEmail(Usuario.normalizarEmail(email));
+        return Email.paraBuscar(email).map(Email::valor).flatMap(empleadoRepository::findByEmail);
     }
 }

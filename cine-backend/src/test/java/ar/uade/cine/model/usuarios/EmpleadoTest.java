@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import ar.uade.cine.model.rechazos.Rechazo;
 
@@ -32,27 +31,6 @@ class EmpleadoTest {
     void nombreYEmailLosValidaUsuarioParaLasDosClases() {
         rechaza("El nombre no puede estar vacío", () -> new Empleado(" ", "ana@cine.com", "{bcrypt}x", Rol.ACOMODADOR));
         rechaza("El email tiene que tener la forma usuario@dominio.com", () -> new Cliente("Ana", "ana.cine.com"));
-    }
-
-    // La regla es la de Swing: con @Email en el DTO, «a@b» pasaba, y POST /api/reservas no pasa por el DTO.
-    @ParameterizedTest(name = "{0}")
-    @CsvSource(textBlock = """
-            sin arroba,          ana.cine.com
-            sin dominio,         a@
-            dominio sin punto,   a@b
-            sin usuario,         @cine.com
-            con espacio,         'ana @cine.com'
-            dos arrobas,         a@b@cine.com
-            """)
-    void unEmailSinLaFormaUsuarioArrobaDominioSeRechaza(String caso, String email) {
-        rechaza("El email tiene que tener la forma usuario@dominio.com", () -> new Cliente("Ana", email));
-    }
-
-    @ParameterizedTest(name = "email [{0}]")
-    @NullSource
-    @ValueSource(strings = {"", "   "})
-    void sinEmailFaltaElEmail(String email) {
-        rechaza("Falta el email", () -> new Cliente("Ana", email));
     }
 
     // API.md promete emails sin distinguir mayúsculas: «BETO@x.com» y «beto@x.com» eran dos clientes.

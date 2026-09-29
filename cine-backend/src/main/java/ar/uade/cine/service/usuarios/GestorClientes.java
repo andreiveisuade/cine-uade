@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.model.usuarios.Usuario;
+import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
@@ -61,10 +61,9 @@ public class GestorClientes {
         return clienteRepository.findById(id);
     }
 
-    // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guardó Usuario.
+    // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guarda Email.
     @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
-        String buscado = Usuario.normalizarEmail(email);
-        return buscado.isEmpty() ? Optional.empty() : clienteRepository.findByEmail(buscado);
+        return Email.paraBuscar(email).map(Email::valor).flatMap(clienteRepository::findByEmail);
     }
 }
