@@ -1,6 +1,6 @@
 package ar.uade.cine.controller.salas;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,15 +64,13 @@ public class SalaController {
                 Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                 pedido.butacasPorFila(),
                 especiales(pedido),
-                pedido.minutosLimpieza() == null
-                        ? Sala.LIMPIEZA_POR_DEFECTO : pedido.minutosLimpieza());
+                pedido.minutosLimpieza());
         return Creado.en("/api/salas/" + sala.getId(), vistas.salaConButacas(sala));
     }
 
     @Operation(summary = "Editar nombre, tipo y limpieza de una sala. Las butacas no cambian")
     @PutMapping("/api/salas/{id}")
     public SalaVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionSalaDTO pedido) {
-        buscar(id);
         Sala sala = salas.editar(id, pedido.nombre(),
                 Parseo.constante(TipoSala.class, pedido.tipo(), "el tipo de sala"),
                 pedido.minutosLimpieza());
@@ -83,7 +81,6 @@ public class SalaController {
     @DeleteMapping("/api/salas/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
-        buscar(id);
         salas.eliminar(id);
     }
 
@@ -91,24 +88,21 @@ public class SalaController {
     @PatchMapping("/api/salas/{salaId}/asientos/{codigo}")
     public SalaVistaDTO cambiarEstado(@PathVariable int salaId, @PathVariable String codigo,
                                       @Valid @RequestBody PedidoEstadoDTO pedido) {
-        buscar(salaId);
-
         EstadoAsiento estado = Parseo.constante(EstadoAsiento.class, pedido.estado(),
                 "el estado de la butaca");
-        if (estado == EstadoAsiento.FUERA_DE_SERVICIO) {
-            salas.marcarFueraDeServicio(salaId, codigo);
-        } else {
-            salas.reponer(salaId, codigo);
-        }
-        return vistas.salaConButacas(buscar(salaId));
+        return vistas.salaConButacas(estado == EstadoAsiento.FUERA_DE_SERVICIO
+                ? salas.marcarFueraDeServicio(salaId, codigo)
+                : salas.reponer(salaId, codigo));
     }
 
     private Sala buscar(int id) {
         return salas.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la sala " + id));
     }
 
+    // Los códigos van como los tipeó el encargado: normalizarlos es cosa de Sala.generarAsientos.
+    // LinkedHashMap: una butaca que viene en dos listas queda con un tipo predecible, no con el del hash.
     private static Map<String, TipoAsiento> especiales(PedidoSalaDTO pedido) {
-        Map<String, TipoAsiento> especiales = new HashMap<>();
+        Map<String, TipoAsiento> especiales = new LinkedHashMap<>();
         marcar(especiales, pedido.codigosVip(), TipoAsiento.VIP);
         marcar(especiales, pedido.codigosPareja(), TipoAsiento.PAREJA);
         marcar(especiales, pedido.codigosAccesibles(), TipoAsiento.ACCESIBLE);
@@ -117,13 +111,8 @@ public class SalaController {
 
     private static void marcar(Map<String, TipoAsiento> especiales, List<String> codigos,
                                TipoAsiento tipo) {
-        if (codigos == null) {
-            return;
-        }
-        for (String codigo : codigos) {
-            if (codigo != null && !codigo.isBlank()) {
-                especiales.put(codigo.trim().toUpperCase(), tipo);
-            }
+        if (codigos != null) {
+            codigos.forEach(codigo -> especiales.put(codigo, tipo));
         }
     }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -19,6 +20,8 @@ import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 class SalaControllerTest extends PruebaDeApi {
 
@@ -63,10 +66,43 @@ class SalaControllerTest extends PruebaDeApi {
 
     @Test
     void unaSalaQueNoExisteEs404() {
-        Respuesta respuesta = put("/api/salas/99", "{\"nombre\":\"X\",\"tipo\":\"DOS_D\"}");
+        Respuesta edicion = put("/api/salas/99", "{\"nombre\":\"X\",\"tipo\":\"DOS_D\"}");
+        Respuesta baja = pedirComo(HttpMethod.DELETE, "/api/salas/99", null, EMAIL_ADMIN, CLAVE_ADMIN);
+        Respuesta butaca = patch("/api/salas/99/asientos/A1", "{\"estado\":\"HABILITADO\"}");
+
+        for (Respuesta respuesta : List.of(edicion, baja, butaca)) {
+            assertEquals(404, respuesta.estado());
+            assertEquals("No existe la sala 99", respuesta.error());
+        }
+    }
+
+    // La butaca viene en la ruta: es el recurso que no existe, igual que la sala.
+    @Test
+    void unaButacaQueNoExisteEnLaRutaEs404() {
+        Respuesta respuesta = patch("/api/salas/" + sala + "/asientos/z9", "{\"estado\":\"FUERA_DE_SERVICIO\"}");
 
         assertEquals(404, respuesta.estado());
-        assertEquals("No existe la sala 99", respuesta.error());
+        assertEquals("La butaca Z9 no existe en la sala " + sala, respuesta.error());
+    }
+
+    @Test
+    void unNombreQueSoloDifiereEnEspaciosEsRepetido() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"  sala 2 \",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("Ya existe una sala con ese nombre", respuesta.error());
+    }
+
+    @Test
+    void elAltaMarcaLasEspecialesComoLasTipeaElEncargadoYSinLimpiezaUsaLaDeSiempre() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[3],"
+                + "\"codigosVip\":[\" a1 \",\"\",null],\"codigosAccesibles\":[\"A3\"]}");
+
+        assertEquals(201, respuesta.estado());
+        assertEquals(15, respuesta.json().get("minutosLimpieza").asInt());
+        assertEquals("VIP", butaca(respuesta, "A1").get("tipo").asText());
+        assertEquals("ESTANDAR", butaca(respuesta, "A2").get("tipo").asText());
+        assertEquals("ACCESIBLE", butaca(respuesta, "A3").get("tipo").asText());
     }
 
     @Test
@@ -127,9 +163,13 @@ class SalaControllerTest extends PruebaDeApi {
 
     private static String estadoDe(Respuesta respuesta, String codigo) {
         assertEquals(200, respuesta.estado());
-        for (var asiento : respuesta.json().get("asientos")) {
+        return butaca(respuesta, codigo).get("estado").asText();
+    }
+
+    private static JsonNode butaca(Respuesta respuesta, String codigo) {
+        for (JsonNode asiento : respuesta.json().get("asientos")) {
             if (asiento.get("codigo").asText().equals(codigo)) {
-                return asiento.get("estado").asText();
+                return asiento;
             }
         }
         throw new AssertionError("La sala no tiene la butaca " + codigo);

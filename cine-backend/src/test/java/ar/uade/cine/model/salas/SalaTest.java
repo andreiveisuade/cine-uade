@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +59,28 @@ class SalaTest {
         assertEquals("Sala VIP", sala.getNombre());
         assertEquals(TipoSala.TRES_D, sala.getTipo());
         assertEquals(20, sala.getMinutosLimpieza());
+    }
+
+    @Test
+    void elNombreSeGuardaSinEspaciosDeMasEnElAltaYEnLaEdicionYSeMideYaRecortado() {
+        Sala sala = new Sala("  Sala 1 ", TipoSala.DOS_D, 15);
+        assertEquals("Sala 1", sala.getNombre());
+
+        sala.editar(" " + "x".repeat(50) + " ", TipoSala.DOS_D, 15);
+        assertEquals("x".repeat(50), sala.getNombre());
+    }
+
+    @Test
+    void lasEspecialesSeReconocenComoLasTipeaElEncargadoYLasVaciasSeSaltean() {
+        Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
+        Map<String, TipoAsiento> especiales = new HashMap<>();
+        especiales.put(" a2 ", TipoAsiento.VIP);
+        especiales.put("  ", TipoAsiento.PAREJA);
+        especiales.put(null, TipoAsiento.ACCESIBLE);
+
+        List<Asiento> asientos = sala.generarAsientos(List.of(2), especiales);
+
+        assertEquals(List.of(TipoAsiento.ESTANDAR, TipoAsiento.VIP), asientos.stream().map(Asiento::getTipo).toList());
     }
 
     @Test
