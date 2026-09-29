@@ -18,6 +18,7 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Catálogo de películas (R1, R12); coordina: la película valida sus datos, el gestor lo que pide la base.
@@ -125,6 +126,17 @@ public class GestorCartelera {
     @Transactional(readOnly = true)
     public Pelicula obtener(int id) {
         return peliculaRepository.exigir(id, "la película");
+    }
+
+    // Para quien no es del personal, lo que el buzón no aprobó no existe: el mismo 404 que un id que
+    // nunca existió, así no se ve qué trajo el importador ni qué se descartó.
+    @Transactional(readOnly = true)
+    public Pelicula obtenerPublica(int id) {
+        Pelicula pelicula = obtener(id);
+        if (!pelicula.seMuestraAlPublico()) {
+            throw new RecursoNoEncontrado("No existe la película " + id);
+        }
+        return pelicula;
     }
 
     // La grilla se chequea aparte: puede no haber generado funciones y el borrado daría 500 por la FK.

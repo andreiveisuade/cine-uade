@@ -27,7 +27,9 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.model.usuarios.Rol;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,10 +64,14 @@ public class PeliculaController {
                 .stream().map(vistas::pelicula).toList();
     }
 
-    @Operation(summary = "El detalle de una película")
+    // Pública, pero el panel también la usa: el administrador ve cualquiera, el resto solo las que pasaron
+    // el buzón. Quién pregunta lo resuelve el filtro Basic, como en /api/sesion; sin credenciales,
+    // isUserInRole da false.
+    @Operation(summary = "El detalle de una película; sin sesión de administrador, solo las confirmadas")
     @GetMapping("/api/peliculas/{id}")
-    public PeliculaVistaDTO detalle(@PathVariable int id) {
-        return vistas.pelicula(cartelera.obtener(id));
+    public PeliculaVistaDTO detalle(@PathVariable int id, HttpServletRequest pedido) {
+        return vistas.pelicula(pedido.isUserInRole(Rol.ADMINISTRADOR.name())
+                ? cartelera.obtener(id) : cartelera.obtenerPublica(id));
     }
 
     @Operation(summary = "Las funciones programadas de una película")

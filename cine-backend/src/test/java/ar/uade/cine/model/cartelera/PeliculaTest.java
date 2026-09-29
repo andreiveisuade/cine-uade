@@ -189,6 +189,16 @@ class PeliculaTest {
         assertTrue(dune.estaEnCartelera());
     }
 
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            confirmada, CONFIRMADA, true
+            pendiente,  PENDIENTE,  false
+            descartada, DESCARTADA, false
+            """)
+    void alPublicoSoloSeLeMuestraLaConfirmada(String caso, EstadoRevision estado, boolean seMuestra) {
+        assertEquals(seMuestra, en(estado).seMuestraAlPublico());
+    }
+
     // Por las transiciones de la película, que es la que cambia de estado.
     private static Pelicula en(EstadoRevision estado) {
         Pelicula dune = dune();

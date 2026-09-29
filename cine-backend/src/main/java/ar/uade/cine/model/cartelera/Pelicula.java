@@ -109,6 +109,11 @@ public class Pelicula {
         estadoRevision.exigirProgramable(titulo);
     }
 
+    // State: si la ve quien no es del personal lo decide su estado de revisión (ver EstadoRevision).
+    public boolean seMuestraAlPublico() {
+        return estadoRevision.seMuestraAlPublico();
+    }
+
     public void sacarDeCartelera() {
         enCartelera = false;
     }

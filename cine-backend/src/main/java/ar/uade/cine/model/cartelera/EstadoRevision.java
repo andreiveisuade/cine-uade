@@ -2,7 +2,7 @@ package ar.uade.cine.model.cartelera;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Revisión de una película importada; patrón State: cada estado decide si se puede publicar y programar.
+// Revisión de una película importada; patrón State: cada estado decide si se publica, se programa y se ve.
 //
 // Qué es: el patrón State pone el comportamiento que depende del estado adentro del estado mismo.
 // Pelicula no pregunta «¿estás confirmada? ¿estás descartada?»: le delega la decisión a su
@@ -18,8 +18,8 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 // Cómo se lee: cada constante tiene su cuerpo { ... } con su versión de los métodos abstractos.
 // CONFIRMADA deja hacer todo; PENDIENTE rechaza pidiendo que la revisen; DESCARTADA rechaza diciendo
 // que se descartó, porque ya no está en el buzón y pedirle al encargado que la revise lo mandaría a
-// buscarla donde no está. Las transiciones (dejarPendiente, confirmar, descartar) quedan en Pelicula,
-// que es la que cambia de estado.
+// buscarla donde no está. Solo la confirmada se le muestra al público. Las transiciones
+// (dejarPendiente, confirmar, descartar) quedan en Pelicula, que es la que cambia de estado.
 // Es un enum y no una jerarquía de clases porque los estados no tienen datos propios, y JPA guarda el
 // nombre de la constante en estado_revision como antes, sin ningún mapeo extra. Los métodos son de
 // paquete: afuera se le habla a la película (pelicula.exigirProgramable()), no a su estado.
@@ -38,6 +38,11 @@ public enum EstadoRevision {
             throw new DatoInvalido("La película " + titulo
                     + " todavía no está confirmada: revisala antes de programarla");
         }
+
+        @Override
+        boolean seMuestraAlPublico() {
+            return false;
+        }
     },
 
     // Lo que cargó el encargado, o lo que confirmó del buzón: cargarlo ya es haberlo decidido.
@@ -48,6 +53,11 @@ public enum EstadoRevision {
 
         @Override
         void exigirProgramable(String titulo) {
+        }
+
+        @Override
+        boolean seMuestraAlPublico() {
+            return true;
         }
     },
 
@@ -62,6 +72,11 @@ public enum EstadoRevision {
         void exigirProgramable(String titulo) {
             throw new DatoInvalido("La película " + titulo + " está descartada: no se puede programar");
         }
+
+        @Override
+        boolean seMuestraAlPublico() {
+            return false;
+        }
     };
 
     // Publicar es levantar el veto de enCartelera: sin esto, el botón Publicar saltearía el buzón.
@@ -69,4 +84,7 @@ public enum EstadoRevision {
 
     // Una función la ofrece al cliente: programar también saltearía el buzón.
     abstract void exigirProgramable(String titulo);
+
+    // Quien no es del personal no ve lo que el encargado todavía no aprobó, ni lo que descartó.
+    abstract boolean seMuestraAlPublico();
 }
