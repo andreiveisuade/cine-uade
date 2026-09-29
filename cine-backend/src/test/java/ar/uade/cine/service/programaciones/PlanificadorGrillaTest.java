@@ -360,6 +360,48 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertTrue(e.getMessage().contains("buzón"), e.getMessage());
     }
 
+    private static CriteriosGrilla unDiaEn3D() {
+        return new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(14, 0), LocalTime.of(23, 0), 1,
+                Dinero.de(5000), Version.SUBTITULADA, Proyeccion.TRES_D);
+    }
+
+    // R8: antes la propuesta ponía pases en la sala 2D, y aplicarla rechazaba el primero.
+    @Test
+    void unaGrillaEn3DReparteSoloEnLasSalasQueLoProyectan() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+        int imax = salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10)).getId();
+
+        PropuestaGrilla propuesta = planificador.aplicar(unDiaEn3D());
+
+        assertFalse(propuesta.pases().isEmpty());
+        assertTrue(propuesta.pases().stream().allMatch(pase -> pase.salaId() == imax));
+        assertEquals(propuesta.pases().size(), funciones.listar().size());
+    }
+
+    // Lo cargado en la sala 2D no ocupa la ventana de la 3D.
+    @Test
+    void unaGrillaEn3DMideSoloElTiempoDeSusSalas() {
+        Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
+        int dosD = salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10)).getId();
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+        int sinNada = planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles();
+
+        funciones.programar(pelicula.getId(), dosD, LocalDateTime.of(2026, 9, 1, 16, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+
+        assertEquals(sinNada, planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles());
+    }
+
+    @Test
+    void unaGrillaEn3DSinSalasQueLoProyectenSeRechaza() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+
+        assertEquals("No hay salas que puedan proyectar en 3D",
+                assertThrows(Rechazo.class, () -> planificador.proponer(unDiaEn3D())).getMessage());
+    }
+
     @Test
     void sinSalasNoHayGrillaPosible() {
         cargar("Una", 8.0, Genero.ACCION);

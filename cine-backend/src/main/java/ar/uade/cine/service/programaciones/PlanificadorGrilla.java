@@ -50,9 +50,17 @@ public class PlanificadorGrilla {
 
     @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
-        List<Sala> salas = salaRepository.findAll();
-        if (salas.isEmpty()) {
+        List<Sala> cargadas = salaRepository.findAll();
+        if (cargadas.isEmpty()) {
             throw new DatoInvalido("No hay salas cargadas para programar");
+        }
+        // R8: una grilla en 3D reparte solo entre las salas que lo proyectan. Antes la propuesta ponía
+        // pases en una sala 2D, y aplicarla rechazaba el primero.
+        List<Sala> salas = cargadas.stream()
+                .filter(sala -> criterios.proyeccion().sePuedeProyectarEn(sala.getTipo()))
+                .toList();
+        if (salas.isEmpty()) {
+            throw new DatoInvalido("No hay salas que puedan proyectar en 3D");
         }
         List<Pelicula> elenco = elegirElenco(criterios.cuantasPeliculas());
         if (elenco.isEmpty()) {
@@ -180,7 +188,10 @@ public class PlanificadorGrilla {
         }
         int ventana = (int) (minutosPorSala * salas.size());
 
+        // Solo lo cargado en las salas de la grilla: lo de una sala 2D no le quita tiempo a una en 3D.
+        Set<Integer> deLaGrilla = salas.stream().map(Sala::getId).collect(Collectors.toSet());
         List<Funcion> programadas = funciones.buscar(null, null, criterios.periodo()).stream()
+                .filter(f -> deLaGrilla.contains(f.getSalaId()))
                 // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
                 .filter(f -> !f.getInicio().isBefore(primerIntento(f.getInicio().toLocalDate(), criterios)))
                 .filter(f -> f.getInicio().isBefore(criterios.cierreDe(f.getInicio().toLocalDate())))
