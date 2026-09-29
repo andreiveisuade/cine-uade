@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+// Lo que entra al crear una película (POST /api/peliculas); exige título, duración, géneros y clasificación.
 // Mismos textos que GestorCartelera: el alta que no pasa por HTTP los sigue viendo desde ahí.
 public record PedidoPeliculaDTO(
         @NotBlank(message = "El título no puede estar vacío") String titulo,

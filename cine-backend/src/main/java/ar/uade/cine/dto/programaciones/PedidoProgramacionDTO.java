@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+// Lo que entra al crear o previsualizar una programación (POST /api/programaciones); sin hasta queda abierta.
 public record PedidoProgramacionDTO(@NotNull(message = "Falta la película") Integer peliculaId,
                                     @NotNull(message = "Falta la sala") Integer salaId,
                                     @NotBlank(message = "Falta la fecha de inicio") String desde,

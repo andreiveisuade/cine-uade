@@ -4,6 +4,7 @@ import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 
+// Lo que entra al cargar una promoción (POST /api/promociones); exige la vigencia, lo ajeno al tipo va null.
 public record PedidoPromocionDTO(String nombre, String tipo, Double porcentaje, Double monto,
                                  Integer lleva, Integer paga,
                                  @NotBlank(message = "Falta el inicio de la vigencia") String vigenciaDesde,

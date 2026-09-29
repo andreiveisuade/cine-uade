@@ -5,6 +5,7 @@ import java.util.Map;
 
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 
+// La caja de boletería de un día (GET /api/arqueo); la arma VistasInformes y cada pago dice qué y a quién.
 public record ArqueoVistaDTO(String fecha, double total, int entradas, Map<String, TotalMedioDTO> porMedio,
                           List<PagoVistaDTO> pagos) {
 }

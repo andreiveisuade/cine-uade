@@ -8,6 +8,7 @@ import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 
+// Una función de /api/funciones con su sala; la arma VistasCartelera y omite película y butacas si faltan.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FuncionVistaDTO(int id, int peliculaId, int salaId, String inicio, String idioma,
                            String proyeccion, double precio, double precioDesde, SalaVistaDTO sala,
