@@ -96,8 +96,9 @@ public class Asiento {
                 .orElseThrow(() -> new DatoInvalido(inexistente(codigo)));
     }
 
-    // El mismo texto llegue la butaca en la ruta (404), en una venta, un bloqueo o el alta de la
-    // sala (400). Sin nombrar la sala: quien pide ya sabe cuál es, y la lista puede no traerla.
+    // El mismo texto llegue la butaca en una venta, un bloqueo o el alta de la sala (400). Sin nombrar
+    // la sala: quien pide ya sabe cuál es, y la lista puede no traerla. En la ruta es un 404, y dice
+    // «No existe la butaca» como cualquier recurso que no está.
     public static String inexistente(String codigo) {
         return "La butaca " + normalizarCodigo(codigo) + " no existe en la sala";
     }

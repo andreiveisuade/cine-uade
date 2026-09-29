@@ -97,11 +97,13 @@ public class GestorSalas {
         return sala;
     }
 
-    // 404 y no 400: la butaca viene en la ruta, así que es el recurso que no existe. Las de una
-    // reserva vienen en el cuerpo y siguen siendo un pedido inválido (Asiento.exigirConCodigo).
+    // 404 y no 400: la butaca viene en la ruta, así que es el recurso que no existe, y lo dice como
+    // cualquier otro. Las de una reserva vienen en el cuerpo y siguen siendo un pedido inválido
+    // (Asiento.exigirConCodigo).
     private Asiento butaca(Sala sala, String codigo) {
         return Asiento.conCodigo(asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(sala.getId()), codigo)
-                .orElseThrow(() -> new RecursoNoEncontrado(Asiento.inexistente(codigo)));
+                .orElseThrow(() -> new RecursoNoEncontrado(
+                        "No existe la butaca " + Asiento.normalizarCodigo(codigo)));
     }
 
     @Transactional(readOnly = true)

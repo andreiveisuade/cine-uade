@@ -84,14 +84,13 @@ class SalaControllerTest extends PruebaDeApi {
         }
     }
 
-    // La butaca viene en la ruta: es el recurso que no existe, igual que la sala. El texto es el
-    // mismo que al vender o bloquear una butaca que no existe, donde es un 400.
+    // La butaca viene en la ruta: es el recurso que no existe, igual que la sala, y lo dice igual.
     @Test
     void unaButacaQueNoExisteEnLaRutaEs404() {
         Respuesta respuesta = patch("/api/salas/" + sala + "/asientos/z9", "{\"estado\":\"FUERA_DE_SERVICIO\"}");
 
         assertEquals(404, respuesta.estado());
-        assertEquals("La butaca Z9 no existe en la sala", respuesta.error());
+        assertEquals("No existe la butaca Z9", respuesta.error());
     }
 
     @Test
