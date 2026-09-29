@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.ConflictoDeNegocio;
 
@@ -19,18 +20,21 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 public class GestorEmpleados {
 
     private final EmpleadoRepository empleadoRepository;
+    private final ClienteRepository clienteRepository;
     private final PasswordEncoder claves;
 
     // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
     // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.
-    // La clave en claro solo la ve el gestor; nombre, email y rol los valida Empleado.
+    // La clave en claro solo la ve el gestor; nombre, email y rol los valida Empleado. Se busca
+    // también entre los clientes: comparten el UNIQUE del email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
         if (password == null || password.length() < 6) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
         Empleado empleado = new Empleado(nombre, email, claves.encode(password), rol);
-        if (empleadoRepository.existsByEmail(empleado.getEmail())) {
-            throw new ConflictoDeNegocio("Ya hay un empleado con ese email");
+        if (empleadoRepository.existsByEmail(empleado.getEmail())
+                || clienteRepository.existsByEmail(empleado.getEmail())) {
+            throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
         }
         empleadoRepository.save(empleado);
     }

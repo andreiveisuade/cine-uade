@@ -171,7 +171,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Otra\",\"email\":\"ana@mail.com\"}");
 
         assertEquals(409, respuesta.estado());
-        assertEquals("Ya hay un cliente registrado con ese email", respuesta.error());
+        assertEquals("Ya existe un usuario con ese email", respuesta.error());
     }
 
     @Test

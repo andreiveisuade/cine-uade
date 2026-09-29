@@ -23,21 +23,30 @@ public class GestorClientes {
 
     // Nombre y email los valida Usuario. Se construye antes de buscar el email repetido para que
     // un dato inválido se rechace primero, como cuando la validación estaba acá. Se busca también
-    // entre los empleados: comparten el UNIQUE del email y ClienteRepository no los ve.
+    // entre los empleados: comparten el UNIQUE del email y ClienteRepository no los ve. El texto
+    // es el mismo para los dos: no dice de quién es el email.
     public Cliente registrar(String nombre, String email) {
         Cliente cliente = new Cliente(nombre, email);
-        if (clienteRepository.existsByEmail(cliente.getEmail())) {
-            throw new ConflictoDeNegocio("Ya hay un cliente registrado con ese email");
-        }
-        if (empleadoRepository.existsByEmail(cliente.getEmail())) {
-            throw new ConflictoDeNegocio("Ese email es de un empleado del cine");
+        if (clienteRepository.existsByEmail(cliente.getEmail())
+                || empleadoRepository.existsByEmail(cliente.getEmail())) {
+            throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
         }
         clienteRepository.save(cliente);
         return cliente;
     }
 
+    // Al comprar, el email es un dato más del formulario: el de un empleado es un 400 y no el 409
+    // del alta, que la web toma como butaca perdida y le vacía la selección al cliente.
     public Cliente identificar(String nombre, String email) {
-        return buscarPorEmail(email).orElseGet(() -> registrar(nombre, email));
+        return buscarPorEmail(email).orElseGet(() -> {
+            Cliente nuevo = new Cliente(nombre, email);
+            if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
+                throw new IllegalArgumentException(
+                        "Ese email es de un empleado del cine: usá otro para comprar");
+            }
+            clienteRepository.save(nuevo);
+            return nuevo;
+        });
     }
 
     @Transactional(readOnly = true)

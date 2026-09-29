@@ -2,6 +2,7 @@ package ar.uade.cine.service.usuarios;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -70,13 +71,29 @@ class GestorClientesTest extends PruebaDeIntegracion {
 
     // Daba 500: ClienteRepository no ve a los empleados y el INSERT chocaba con el UNIQUE del email.
     @Test
-    void elEmailDeUnEmpleadoNoSeRegistraNiSeIdentificaComoCliente() {
+    void elEmailDeUnEmpleadoNoSeRegistraComoCliente() {
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
 
-        assertEquals("Ese email es de un empleado del cine", assertThrows(ConflictoDeNegocio.class,
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
                 () -> gestor.registrar("Ana", "encargado@cine.com")).getMessage());
-        assertEquals("Ese email es de un empleado del cine", assertThrows(ConflictoDeNegocio.class,
-                () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
+    }
+
+    // Al comprar, el email es un dato más del formulario: un 409 la web lo toma como butaca perdida.
+    @Test
+    void identificarConElEmailDeUnEmpleadoEsUnDatoInvalidoYNoUnConflicto() {
+        empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
+
+        assertEquals("Ese email es de un empleado del cine: usá otro para comprar",
+                assertThrowsExactly(IllegalArgumentException.class,
+                        () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
+    }
+
+    @Test
+    void elEmailRepetidoEs409ConElTextoDeLaGuia() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.registrar("Otro", "andrei@uade.edu.ar")).getMessage());
     }
 
     @Test

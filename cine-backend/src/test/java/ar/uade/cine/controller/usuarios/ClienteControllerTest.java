@@ -14,7 +14,7 @@ class ClienteControllerTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\"}");
 
         assertEquals(409, respuesta.estado());
-        assertEquals("Ese email es de un empleado del cine", respuesta.error());
+        assertEquals("Ya existe un usuario con ese email", respuesta.error());
     }
 
     @Test

@@ -197,6 +197,16 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("La butaca B1 está fuera de servicio", fueraDeServicio.error());
     }
 
+    // Regresión: salía 409 y la web vaciaba la selección como si otro hubiera ganado la butaca.
+    @Test
+    void reservarConElEmailDeUnEmpleadoEs400() {
+        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\""
+                + EMAIL_ADMIN + "\",\"butacas\":{\"B1\":\"GENERAL\"}}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Ese email es de un empleado del cine: usá otro para comprar", respuesta.error());
+    }
+
     @Test
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.

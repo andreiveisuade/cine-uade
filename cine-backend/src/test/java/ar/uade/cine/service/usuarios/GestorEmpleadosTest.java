@@ -13,11 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorEmpleados empleados;
+
+    @Autowired
+    private GestorClientes clientes;
 
     @BeforeEach
     void registrarUno() {
@@ -49,8 +53,19 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaEmailRepetido() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.registrar("Otro", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR));
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Otro", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR))
+                .getMessage());
+    }
+
+    // El simétrico del cliente con email de empleado: EmpleadoRepository no ve a los clientes y el
+    // INSERT chocaba con el UNIQUE del email.
+    @Test
+    void elEmailDeUnClienteNoSeRegistraComoEmpleado() {
+        clientes.registrar("Ana", "ana@mail.com");
+
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());
     }
 
     @Test
