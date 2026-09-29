@@ -193,7 +193,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(0, informe.comprasCandy());
         assertEquals(Dinero.de(0), informe.candy());
         assertEquals(Dinero.de(5000.0), informe.total());
-        assertEquals(Dinero.de(3000.0), caja.totalCandyDe(reloj.hoy()));
+        assertEquals(Dinero.de(3000.0), caja.arqueoCandyDe(reloj.hoy()).total());
     }
 
     @Test

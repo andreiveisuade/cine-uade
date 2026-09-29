@@ -2,7 +2,6 @@ package ar.uade.cine.service.informes;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,26 +14,20 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
-// Borderó e informe por función y declaración jurada del INCAA; solo lo cobrado, con consultas batch.
+// Borderó e informe por función y declaración jurada del INCAA; lee con consultas batch y los records suman.
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class GestorInformes {
-
-    private static final Bordero.TotalPorTarifa SIN_ENTRADAS =
-            new Bordero.TotalPorTarifa(0, Dinero.CERO);
 
     private final FuncionRepository funcionRepository;
     private final ReservaRepository reservaRepository;
@@ -47,7 +40,7 @@ public class GestorInformes {
     }
 
     private Bordero borderoDe(Funcion funcion, List<Reserva> reservas) {
-        return bordero(funcion, reservas, pagosPorReserva(reservas));
+        return Bordero.de(funcion, reloj.ahora(), reservas, pagosPorReserva(reservas));
     }
 
     // Por fecha de la función y no del cobro: el INCAA declara espectadores de lo exhibido en la semana.
@@ -65,41 +58,11 @@ public class GestorInformes {
         for (List<Reserva> reservas : porFuncion.values()) {
             Funcion funcion = reservas.get(0).getFuncion();
             Pelicula pelicula = funcion.getPelicula();
-            Bordero bordero = bordero(funcion, reservas, pagos);
+            Bordero bordero = Bordero.de(funcion, reloj.ahora(), reservas, pagos);
             filas.add(new DeclaracionJurada.FilaFuncion(pelicula.getId(), bordero, funcion.getVersion(),
                     funcion.getProyeccion(), pelicula.getClasificacion()));
         }
         return DeclaracionJurada.de(periodo, reloj.ahora(), filas);
-    }
-
-    // Se declara lo cobrado: una reserva sin pagar retiene butacas pero no vendió.
-    private Bordero bordero(Funcion funcion, List<Reserva> reservas, Map<Integer, Pago> pagosPorReserva) {
-        Map<TipoTarifa, Bordero.TotalPorTarifa> porTarifa = new EnumMap<>(TipoTarifa.class);
-        int espectadores = 0;
-        Dinero bruta = Dinero.CERO;
-        Dinero descuentos = Dinero.CERO;
-        Dinero neta = Dinero.CERO;
-
-        for (Reserva reserva : reservas) {
-            Pago pago = pagosPorReserva.get(reserva.getId());
-            if (pago == null) {
-                continue;
-            }
-            for (Entrada entrada : reserva.getEntradas()) {
-                Bordero.TotalPorTarifa acumulado = porTarifa.getOrDefault(entrada.tarifa(), SIN_ENTRADAS);
-                porTarifa.put(entrada.tarifa(), new Bordero.TotalPorTarifa(acumulado.cantidad() + 1,
-                        acumulado.total().mas(entrada.precio())));
-                espectadores++;
-            }
-            // Desglose a precio de lista; totales con el pago, único que sabe cuánto sacó la promo.
-            bruta = bruta.mas(pago.getSubtotal());
-            descuentos = descuentos.mas(pago.getDescuento());
-            neta = neta.mas(pago.getMonto());
-        }
-
-        return new Bordero(funcion.getId(), funcion.getPelicula().getTitulo(), funcion.getSala().getNombre(),
-                funcion.getInicio(), reloj.ahora(), espectadores,
-                bruta, descuentos, neta, porTarifa);
     }
 
     private Map<Integer, Pago> pagosPorReserva(List<Reserva> reservas) {
@@ -110,17 +73,13 @@ public class GestorInformes {
         return pagos;
     }
 
-    // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#totalCandyDe).
+    // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#arqueoCandyDe).
     public InformeFuncion informeDe(int funcionId) {
         Funcion funcion = buscarFuncion(funcionId);
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
-        Bordero bordero = borderoDe(funcion, reservas);
-
         List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(
                 reservas.stream().map(Reserva::getId).toList());
-        Dinero candy = Dinero.sumar(compras.stream().map(CompraCandy::getTotal).toList());
-
-        return new InformeFuncion(bordero, compras.size(), candy, bordero.recaudacionNeta().mas(candy));
+        return InformeFuncion.de(borderoDe(funcion, reservas), compras);
     }
 
     private Funcion buscarFuncion(int funcionId) {

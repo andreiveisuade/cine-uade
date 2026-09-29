@@ -1,25 +1,19 @@
 package ar.uade.cine.service.informes;
 
 import java.time.LocalDate;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.model.dinero.Dinero;
 
-// Corte de caja por día de cobro: pagos por medio y total de candy; solo lectura, sin recalcular precios.
+// Corte de caja por día de cobro, de boletería y de candy; lee y deja la suma a Arqueo y ArqueoCandy.
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -30,28 +24,12 @@ public class GestorCaja {
     private final CompraCandyRepository compraCandyRepository;
 
     public Arqueo arqueoDe(LocalDate fecha) {
-        List<Pago> delDia = pagoRepository.findByDia(fecha);
-        Map<Integer, Integer> entradasPorReserva = reservaRepository
-                .findAllById(delDia.stream().map(Pago::getReservaId).toList()).stream()
-                .collect(Collectors.toMap(Reserva::getId, Reserva::getCantidadEntradas));
-
-        Map<MedioPago, Arqueo.TotalPorMedio> porMedio = new EnumMap<>(MedioPago.class);
-        Dinero total = Dinero.CERO;
-        int entradas = 0;
-        for (Pago pago : delDia) {
-            Arqueo.TotalPorMedio acumulado = porMedio.getOrDefault(pago.getMedio(),
-                    new Arqueo.TotalPorMedio(0, Dinero.CERO));
-            porMedio.put(pago.getMedio(), new Arqueo.TotalPorMedio(acumulado.cantidad() + 1,
-                    acumulado.total().mas(pago.getMonto())));
-            total = total.mas(pago.getMonto());
-            entradas += entradasPorReserva.getOrDefault(pago.getReservaId(), 0);
-        }
-        return new Arqueo(fecha, total, entradas, porMedio, delDia);
+        List<Pago> pagos = pagoRepository.findByDia(fecha);
+        List<Reserva> reservas = reservaRepository.findAllById(pagos.stream().map(Pago::getReservaId).toList());
+        return Arqueo.de(fecha, pagos, reservas);
     }
 
-    public Dinero totalCandyDe(LocalDate fecha) {
-        return Dinero.sumar(compraCandyRepository.findByDia(fecha).stream()
-                .map(CompraCandy::getTotal).toList());
+    public ArqueoCandy arqueoCandyDe(LocalDate fecha) {
+        return ArqueoCandy.de(fecha, compraCandyRepository.findByDia(fecha));
     }
-
 }

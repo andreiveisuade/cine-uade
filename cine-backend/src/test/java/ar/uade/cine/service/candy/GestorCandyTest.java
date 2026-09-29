@@ -31,6 +31,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.informes.ArqueoCandy;
 import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.GestorReservas;
@@ -186,8 +187,10 @@ class GestorCandyTest extends PruebaDeIntegracion {
         candy.vender(1, pedido(pochoclos, 2), MedioPago.EFECTIVO, "");
         candy.vender(1, pedido(gaseosa, 1), MedioPago.QR, "QR-1");
 
-        assertEquals(2, candy.listarComprasDelDia(reloj.hoy()).size());
-        assertEquals(Dinero.de(10500.0), caja.totalCandyDe(reloj.hoy()));
+        ArqueoCandy arqueo = caja.arqueoCandyDe(reloj.hoy());
+
+        assertEquals(2, arqueo.compras().size());
+        assertEquals(Dinero.de(10500.0), arqueo.total());
     }
 
     @Test

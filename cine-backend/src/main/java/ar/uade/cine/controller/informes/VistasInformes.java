@@ -1,7 +1,5 @@
 package ar.uade.cine.controller.informes;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -22,10 +20,9 @@ import ar.uade.cine.dto.informes.PeliculaDeclaradaVistaDTO;
 import ar.uade.cine.dto.informes.TotalDeclaradoVistaDTO;
 import ar.uade.cine.dto.informes.TotalMedioVistaDTO;
 import ar.uade.cine.dto.informes.TotalTarifaVistaDTO;
-import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.informes.Arqueo;
+import ar.uade.cine.service.informes.ArqueoCandy;
 import ar.uade.cine.service.informes.Bordero;
 import ar.uade.cine.service.informes.DeclaracionJurada;
 import ar.uade.cine.service.informes.InformeFuncion;
@@ -59,9 +56,9 @@ public class VistasInformes {
                 arqueo.entradas(), porMedio(arqueo), vistasVentas.pagosDeArqueo(arqueo.pagos()));
     }
 
-    public ArqueoCandyVistaDTO arqueoCandy(LocalDate dia, Dinero total, List<CompraCandy> compras) {
-        return new ArqueoCandyVistaDTO(dia.toString(), total.aPesos(),
-                compras.stream().map(vistasCandy::compra).toList());
+    public ArqueoCandyVistaDTO arqueoCandy(ArqueoCandy arqueo) {
+        return new ArqueoCandyVistaDTO(arqueo.fecha().toString(), arqueo.total().aPesos(),
+                arqueo.compras().stream().map(vistasCandy::compra).toList());
     }
 
     public DeclaracionJuradaVistaDTO declaracionJurada(DeclaracionJurada declaracion) {
@@ -100,15 +97,15 @@ public class VistasInformes {
     // TreeMap: el front lista las tarifas en el orden en que llegan.
     private static Map<String, TotalTarifaVistaDTO> porTarifa(Bordero bordero) {
         Map<String, TotalTarifaVistaDTO> porTarifa = new TreeMap<>();
-        bordero.porTarifa().forEach((tarifa, total) ->
-                porTarifa.put(tarifa.name(), new TotalTarifaVistaDTO(total.cantidad(), total.total().aPesos())));
+        bordero.porTarifa().forEach((tarifa, total) -> porTarifa.put(tarifa.name(),
+                new TotalTarifaVistaDTO(total.cantidad(), total.total().aPesos())));
         return porTarifa;
     }
 
     private static Map<String, TotalMedioVistaDTO> porMedio(Arqueo arqueo) {
         Map<String, TotalMedioVistaDTO> porMedio = new TreeMap<>();
-        arqueo.porMedio().forEach((medio, acumulado) ->
-                porMedio.put(medio.name(), new TotalMedioVistaDTO(acumulado.cantidad(), acumulado.total().aPesos())));
+        arqueo.porMedio().forEach((medio, acumulado) -> porMedio.put(medio.name(),
+                new TotalMedioVistaDTO(acumulado.cantidad(), acumulado.total().aPesos())));
         return porMedio;
     }
 

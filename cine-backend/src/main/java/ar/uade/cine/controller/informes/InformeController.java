@@ -10,9 +10,7 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.dto.informes.BorderoVistaDTO;
 import ar.uade.cine.dto.informes.DeclaracionJuradaVistaDTO;
 import ar.uade.cine.dto.informes.InformeFuncionVistaDTO;
-import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.GestorInformes;
-import ar.uade.cine.service.RecursoNoEncontrado;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,20 +22,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class InformeController {
 
     private final GestorInformes informes;
-    private final GestorFunciones funciones;
     private final VistasInformes vistas;
 
     @Operation(summary = "El borderó de una función")
     @GetMapping("/api/funciones/{id}/bordero")
     public BorderoVistaDTO bordero(@PathVariable int id) {
-        exigirFuncion(id);
         return vistas.bordero(informes.borderoDe(id));
     }
 
     @Operation(summary = "La recaudación completa de una función: entradas y candy")
     @GetMapping("/api/funciones/{id}/informe")
     public InformeFuncionVistaDTO informe(@PathVariable int id) {
-        exigirFuncion(id);
         return vistas.informe(informes.informeDe(id));
     }
 
@@ -47,10 +42,5 @@ public class InformeController {
                                                        @RequestParam(required = false) String hasta) {
         return vistas.declaracionJurada(informes.declaracionJurada(
                 Parseo.diaOpcional(desde, "la fecha desde"), Parseo.diaOpcional(hasta, "la fecha hasta")));
-    }
-
-    // Se chequea acá para responder 404 y no el 400 del gestor.
-    private void exigirFuncion(int id) {
-        funciones.buscar(id).orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + id));
     }
 }
