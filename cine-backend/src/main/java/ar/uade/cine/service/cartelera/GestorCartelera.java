@@ -24,10 +24,6 @@ import ar.uade.cine.service.ConflictoDeNegocio;
 @RequiredArgsConstructor
 public class GestorCartelera {
 
-    // La primera proyección pública, y un margen para las que se anuncian con años de anticipación.
-    private static final int PRIMER_ANIO = 1895;
-    private static final int ANIOS_POR_DELANTE = 5;
-
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
@@ -38,21 +34,20 @@ public class GestorCartelera {
         return agregar(DatosPelicula.deAlta(titulo, duracionMinutos, generos, clasificacion));
     }
 
+    // Los datos los valida la película; acá queda el título repetido, que necesita la base.
+    // Construirla primero rechaza un dato inválido antes que un título repetido.
     public Pelicula agregar(DatosPelicula datos) {
         int duracion = datos.duracionMinutos() == null ? 0 : datos.duracionMinutos();
-        validar(datos.titulo(), duracion, datos.generos(), datos.clasificacion());
-        validarTituloLibre(datos.titulo(), 0);
-
         Pelicula pelicula = new Pelicula(datos.titulo(), duracion, datos.generos(),
                 datos.clasificacion());
+        exigirTituloLibre(pelicula);
         aplicarCatalogo(pelicula, datos);
         peliculaRepository.save(pelicula);
         return pelicula;
     }
 
     public Pelicula editar(int id, DatosPelicula cambios) {
-        Pelicula actual = peliculaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
+        Pelicula actual = exigir(id);
 
         String titulo = cambios.titulo() == null ? actual.getTitulo() : cambios.titulo();
         int duracion = cambios.duracionMinutos() == null
@@ -60,89 +55,50 @@ public class GestorCartelera {
         List<Genero> generos = cambios.generos() == null ? actual.getGeneros() : cambios.generos();
         Clasificacion clasificacion = cambios.clasificacion() == null
                 ? actual.getClasificacion() : cambios.clasificacion();
-        validar(titulo, duracion, generos, clasificacion);
-        validarTituloLibre(titulo, id);
-
         actual.actualizar(titulo, duracion, generos, clasificacion);
+        // Después de actualizar, por el mismo orden que el alta. La consulta hace flush de la
+        // fila ya cambiada, pero se excluye a sí misma y el rechazo deshace la transacción.
+        exigirTituloLibre(actual);
         aplicarCatalogo(actual, cambios);
 
         peliculaRepository.save(actual);
         return actual;
     }
 
-    private void validar(String titulo, int duracionMinutos, List<Genero> generos,
-                         Clasificacion clasificacion) {
-        if (titulo == null || titulo.isBlank()) {
-            throw new IllegalArgumentException("El título no puede estar vacío");
-        }
-        exigirLargo(titulo, 100, "El título");
-        if (duracionMinutos <= 0) {
-            throw new IllegalArgumentException("La duración debe ser mayor a cero");
-        }
-        if (generos == null || generos.isEmpty()) {
-            throw new IllegalArgumentException("La película necesita al menos un género");
-        }
-        if (clasificacion == null) {
-            throw new IllegalArgumentException("Falta la clasificación por edad");
-        }
-    }
-
-    // exceptoId 0 al dar de alta: ninguna película guardada tiene ese id.
-    private void validarTituloLibre(String titulo, int exceptoId) {
-        if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(titulo, exceptoId)) {
+    // Una sin guardar tiene id 0, que ninguna guardada tiene: en el alta no excluye a nadie.
+    private void exigirTituloLibre(Pelicula pelicula) {
+        if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(pelicula.getTitulo(), pelicula.getId())) {
             throw new ConflictoDeNegocio("Ya existe una película con ese título");
         }
     }
 
-    // 0 es "sin dato", como lo deja el importador cuando TMDB no trae fecha de estreno.
-    private void validarAnio(int anio) {
-        int maximo = reloj.hoy().getYear() + ANIOS_POR_DELANTE;
-        if (anio != 0 && (anio < PRIMER_ANIO || anio > maximo)) {
-            throw new IllegalArgumentException("El año tiene que estar entre " + PRIMER_ANIO + " y " + maximo);
-        }
-    }
-
-    // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
-    private static void exigirLargo(String texto, int maximo, String que) {
-        if (texto.length() > maximo) {
-            throw new IllegalArgumentException(que + " no puede tener más de " + maximo + " caracteres");
-        }
-    }
-
+    // Solo lo que vino en el pedido: en una edición, null es "no lo mandé".
     private void aplicarCatalogo(Pelicula pelicula, DatosPelicula datos) {
         if (datos.puntaje() != null) {
-            if (datos.puntaje() < 0 || datos.puntaje() > 10) {
-                throw new IllegalArgumentException("El puntaje va de 0 a 10");
-            }
-            pelicula.setPuntaje(datos.puntaje());
+            pelicula.cambiarPuntaje(datos.puntaje());
         }
         if (datos.votos() != null) {
-            if (datos.votos() < 0) {
-                throw new IllegalArgumentException("Los votos no pueden ser negativos");
-            }
-            pelicula.setVotos(datos.votos());
+            pelicula.cambiarVotos(datos.votos());
         }
         if (datos.director() != null) {
-            exigirLargo(datos.director(), 100, "El director");
-            pelicula.setDirector(datos.director());
+            pelicula.cambiarDirector(datos.director());
         }
         if (datos.sinopsis() != null) {
-            pelicula.setSinopsis(datos.sinopsis());
+            pelicula.cambiarSinopsis(datos.sinopsis());
         }
         if (datos.anio() != null) {
-            validarAnio(datos.anio());
-            pelicula.setAnio(datos.anio());
+            pelicula.cambiarAnio(datos.anio(), reloj.hoy());
         }
         if (datos.idiomaOriginal() != null) {
-            exigirLargo(datos.idiomaOriginal(), 40, "El idioma original");
-            pelicula.setIdiomaOriginal(datos.idiomaOriginal());
+            pelicula.cambiarIdiomaOriginal(datos.idiomaOriginal());
         }
         if (datos.posterUrl() != null) {
-            exigirLargo(datos.posterUrl(), 255, "La URL del póster");
-            pelicula.setPosterUrl(datos.posterUrl());
+            pelicula.cambiarPoster(datos.posterUrl());
         }
-        if (datos.enCartelera() != null) {
-            pelicula.setEnCartelera(datos.enCartelera());
+        if (Boolean.TRUE.equals(datos.enCartelera())) {
+            pelicula.ponerEnCartelera();
+        } else if (Boolean.FALSE.equals(datos.enCartelera())) {
+            pelicula.sacarDeCartelera();
         }
     }
 
@@ -177,8 +133,7 @@ public class GestorCartelera {
 
     // La grilla se chequea aparte: puede no haber generado funciones y el borrado daría 500 por la FK.
     public void eliminar(int id) {
-        Pelicula pelicula = peliculaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
+        Pelicula pelicula = exigir(id);
         if (funcionRepository.existsByPelicula_Id(id)) {
             throw new IllegalArgumentException("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
@@ -188,5 +143,10 @@ public class GestorCartelera {
                     + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
         peliculaRepository.deleteById(id);
+    }
+
+    private Pelicula exigir(int id) {
+        return peliculaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
     }
 }

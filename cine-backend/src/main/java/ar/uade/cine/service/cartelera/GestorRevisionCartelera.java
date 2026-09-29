@@ -23,8 +23,7 @@ public class GestorRevisionCartelera {
 
     public Pelicula importar(DatosPelicula datos) {
         Pelicula pelicula = catalogo.agregar(datos);
-        pelicula.setEstadoRevision(EstadoRevision.PENDIENTE);
-        pelicula.setEnCartelera(false);
+        pelicula.dejarPendiente();
         peliculaRepository.save(pelicula);
         return pelicula;
     }
@@ -36,8 +35,7 @@ public class GestorRevisionCartelera {
 
     public Pelicula confirmar(int id) {
         Pelicula pelicula = exigir(id);
-        pelicula.setEstadoRevision(EstadoRevision.CONFIRMADA);
-        pelicula.setEnCartelera(true);
+        pelicula.confirmar();
         peliculaRepository.save(pelicula);
         return pelicula;
     }
@@ -48,8 +46,7 @@ public class GestorRevisionCartelera {
             throw new IllegalArgumentException(
                     "No se puede descartar una película que ya tiene funciones programadas");
         }
-        pelicula.setEstadoRevision(EstadoRevision.DESCARTADA);
-        pelicula.setEnCartelera(false);
+        pelicula.descartar();
         peliculaRepository.save(pelicula);
         return pelicula;
     }

@@ -1,5 +1,6 @@
 package ar.uade.cine.model.cartelera;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -59,5 +60,17 @@ public class Importacion {
         this.estado = EstadoImportacion.FALLIDA;
         this.detalle = motivo;
         this.terminoEn = cuando;
+    }
+
+    public boolean estaEnCurso() {
+        return estado == EstadoImportacion.EN_CURSO;
+    }
+
+    public boolean quedoColgada(Duration plazo, LocalDateTime ahora) {
+        return estaEnCurso() && pedidaEn.plus(plazo).isBefore(ahora);
+    }
+
+    public boolean terminoHaceMenosDe(Duration espera, LocalDateTime ahora) {
+        return terminoEn != null && terminoEn.plus(espera).isAfter(ahora);
     }
 }

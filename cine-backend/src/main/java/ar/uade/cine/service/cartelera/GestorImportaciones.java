@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
-import ar.uade.cine.model.cartelera.EstadoImportacion;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
@@ -108,15 +107,14 @@ public class GestorImportaciones {
     }
 
     private static void exigirQueNoHayaOtraEnCurso(Importacion ultima) {
-        if (ultima.getEstado() == EstadoImportacion.EN_CURSO) {
+        if (ultima.estaEnCurso()) {
             throw new IllegalArgumentException(
                     "Ya hay una importación en curso: esperá a que termine");
         }
     }
 
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
-        LocalDateTime desde = ultima.getTerminoEn();
-        if (desde != null && desde.plus(propiedades.esperaEntreCorridas()).isAfter(reloj.ahora())) {
+        if (ultima.terminoHaceMenosDe(propiedades.esperaEntreCorridas(), reloj.ahora())) {
             throw new IllegalArgumentException("El importador corrió recién: esperá "
                     + propiedades.esperaEntreCorridas().toSeconds() + " segundos antes de volver a pedirlo");
         }
@@ -127,18 +125,13 @@ public class GestorImportaciones {
         List<Importacion> ultimas = importacionRepository.findAllByOrderByIdDesc(Limit.of(HISTORIAL));
         LocalDateTime ahora = reloj.ahora();
         for (Importacion importacion : ultimas) {
-            if (quedoColgada(importacion, ahora)) {
+            if (importacion.quedoColgada(propiedades.corridaMaxima(), ahora)) {
                 importacion.fallar("La corrida no terminó a tiempo. Puede haber cargado "
                         + "algunas películas igual: mirá el buzón.", ahora);
                 importacionRepository.save(importacion);
             }
         }
         return ultimas;
-    }
-
-    private boolean quedoColgada(Importacion importacion, LocalDateTime ahora) {
-        return importacion.getEstado() == EstadoImportacion.EN_CURSO
-                && importacion.getPedidaEn().plus(propiedades.corridaMaxima()).isBefore(ahora);
     }
 
     public CatalogoExterno.Estado estadoDelImportador() {

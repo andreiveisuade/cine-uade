@@ -35,6 +35,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.service.ConflictoDeNegocio;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
@@ -245,6 +246,23 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
+    }
+
+    @Test
+    void editarRechazaPrimeroLosDatosDespuesElTituloRepetidoYAlFinalElCatalogoSinTocarNada() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        IllegalArgumentException datos = assertThrows(IllegalArgumentException.class, () -> gestor.editar(
+                dune.getId(), new DatosPelicula("Matrix", 0, null, null, null, null, null, null, null, null, 15.0, null)));
+        ConflictoDeNegocio titulo = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(
+                dune.getId(), new DatosPelicula("Matrix", 150, null, null, null, null, null, null, null, null, 15.0, null)));
+
+        assertEquals("La duración debe ser mayor a cero", datos.getMessage());
+        assertEquals("Ya existe una película con ese título", titulo.getMessage());
+        Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
+        assertEquals("Dune", leida.getTitulo());
+        assertEquals(155, leida.getDuracionMinutos());
     }
 
     @Test
