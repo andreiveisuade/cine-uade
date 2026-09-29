@@ -27,7 +27,6 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
 
@@ -66,14 +65,14 @@ public class PeliculaController {
     @Operation(summary = "El detalle de una película")
     @GetMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO detalle(@PathVariable int id) {
-        return vistas.pelicula(buscar(id));
+        return vistas.pelicula(cartelera.obtener(id));
     }
 
     @Operation(summary = "Las funciones programadas de una película")
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id) {
         // Se busca antes solo acá: sin ella el listado saldría vacío, y vacío no es 404.
-        buscar(id);
+        cartelera.obtener(id);
         return vistas.funciones(funciones.listarPorPelicula(id));
     }
 
@@ -99,11 +98,6 @@ public class PeliculaController {
 
     private ResponseEntity<PeliculaVistaDTO> creada(Pelicula pelicula) {
         return Creado.en("/api/peliculas/" + pelicula.getId(), vistas.pelicula(pelicula));
-    }
-
-    private Pelicula buscar(int id) {
-        return cartelera.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
     }
 
     private static DatosPelicula datosDe(PedidoPeliculaDTO pedido) {

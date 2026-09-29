@@ -18,7 +18,6 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Catálogo de películas (R1, R12); coordina: la película valida sus datos, el gestor lo que pide la base.
@@ -49,7 +48,7 @@ public class GestorCartelera {
     }
 
     public Pelicula editar(int id, DatosPelicula cambios) {
-        Pelicula actual = exigir(id);
+        Pelicula actual = peliculaRepository.exigir(id, "la película");
 
         String titulo = cambios.titulo() == null ? actual.getTitulo() : cambios.titulo();
         int duracion = cambios.duracionMinutos() == null
@@ -123,9 +122,14 @@ public class GestorCartelera {
         return peliculaRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Pelicula obtener(int id) {
+        return peliculaRepository.exigir(id, "la película");
+    }
+
     // La grilla se chequea aparte: puede no haber generado funciones y el borrado daría 500 por la FK.
     public void eliminar(int id) {
-        Pelicula pelicula = exigir(id);
+        Pelicula pelicula = peliculaRepository.exigir(id, "la película");
         if (funcionRepository.existsByPelicula_Id(id)) {
             throw new DatoInvalido("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
@@ -135,10 +139,5 @@ public class GestorCartelera {
                     + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
         peliculaRepository.deleteById(id);
-    }
-
-    private Pelicula exigir(int id) {
-        return peliculaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
     }
 }

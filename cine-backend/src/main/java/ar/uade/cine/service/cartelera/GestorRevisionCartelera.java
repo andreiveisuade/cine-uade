@@ -11,7 +11,6 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Buzón de lo que trae el importador: confirmar o descartar; el alta pasa por GestorCartelera y sus reglas.
 @Service
@@ -36,23 +35,18 @@ public class GestorRevisionCartelera {
     }
 
     public Pelicula confirmar(int id) {
-        Pelicula pelicula = exigir(id);
+        Pelicula pelicula = peliculaRepository.exigir(id, "la película");
         pelicula.confirmar();
         return pelicula;
     }
 
     public Pelicula descartar(int id) {
-        Pelicula pelicula = exigir(id);
+        Pelicula pelicula = peliculaRepository.exigir(id, "la película");
         if (funcionRepository.existsByPelicula_Id(id)) {
             throw new DatoInvalido(
                     "No se puede descartar una película que ya tiene funciones programadas");
         }
         pelicula.descartar();
         return pelicula;
-    }
-
-    private Pelicula exigir(int id) {
-        return peliculaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la película " + id));
     }
 }
