@@ -464,7 +464,7 @@ body.lightbox-locked { overflow: hidden; }
         del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
       </p>
       <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 497 tests en el backend y 55 en Swing.</p>
+        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (gestor, API y pantalla), con 552 tests en el backend y 55 en Swing.</p>
       </div>
     </section>
 
@@ -614,7 +614,8 @@ body.lightbox-locked { overflow: hidden; }
 
       <h3>El armado lo hace Spring</h3>
       <p>
-        Todo recibe sus dependencias por constructor; nadie hace <code>new GestorReservas(...)</code>. Si falta
+        Todo recibe sus dependencias por constructor —el de cada bean lo escribe Lombok con
+        <code>@RequiredArgsConstructor</code>—; nadie hace <code>new GestorReservas(...)</code>. Si falta
         una, la app no levanta y el error dice cuál. Solo <code>infrastructure/Adaptadores</code> elige
         implementaciones; las de los repositorios las genera Spring Data.
       </p>
@@ -647,6 +648,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorProductos</code></td><td>Carta del candy y combos (R14)</td></tr>
             <tr><td><code>GestorCandy</code></td><td>Ventas del candy y su ticket</td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó y recaudación por función, declaración jurada del período</td></tr>
+            <tr><td><code>PropiedadesImportador</code></td><td><code>cine.importador</code> de <code>application.yml</code>: cuánto dura una corrida y la espera entre dos</td></tr>
             <tr><td>Records de entrada y resultado</td><td><code>DatosPelicula</code>, <code>DatosGrilla</code>, <code>CriteriosGrilla</code>, <code>CriteriosReserva</code>, <code>PlanProgramacion</code>, <code>PropuestaGrilla</code>, <code>Arqueo</code>, <code>Bordero</code>, <code>InformeFuncion</code>, <code>DeclaracionJurada</code>, <code>PeriodoDeclarado</code></td></tr>
             <tr><td><code>RecursoNoEncontrado</code>, <code>ConflictoDeNegocio</code>, <code>ButacaOcupadaException</code></td><td>Rechazos que salen como 404, 409 y 409</td></tr>
 
@@ -665,6 +667,7 @@ body.lightbox-locked { overflow: hidden; }
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación</td></tr>
+            <tr><td><code>PropiedadesComprobantes</code>, <code>PropiedadesTmdb</code></td><td>Las secciones <code>cine.comprobantes</code> y <code>cine.tmdb</code> de <code>application.yml</code>, tipadas</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización</td></tr>
             <tr><td><code>Adaptadores.Tareas</code></td><td><code>@EnableScheduling</code> fuera de los tests: la limpieza de bloqueos vencidos</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; formato común en <code>ComprobanteTxt</code></td></tr>
@@ -710,7 +713,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>@EnableWebSecurity</code></td><td>Activa Spring Security; un <code>SecurityFilterChain</code> define rutas y roles</td><td><code>ConfiguracionSeguridad</code></td></tr>
             <tr><td><code>@Profile("!test")</code></td><td>Bean solo fuera de los tests</td><td>Reloj, TMDB, las tareas programadas</td></tr>
             <tr><td><code>@Scheduled</code></td><td>Método que Spring corre solo cada tanto (requiere <code>@EnableScheduling</code>)</td><td><code>Ocupacion.borrarBloqueosVencidos</code>, cada 5 min</td></tr>
-            <tr><td><code>@Value("${...}")</code></td><td>Inyecta un valor de <code>application.yml</code></td><td><code>Adaptadores</code>, <code>GestorImportaciones</code>, <code>VistasInformes</code> (el exhibidor)</td></tr>
+            <tr><td><code>@ConfigurationProperties("cine.x")</code> + <code>@ConfigurationPropertiesScan</code></td><td>Una sección de <code>application.yml</code> convertida a un <code>record</code> tipado (<code>"5m"</code> → <code>Duration</code>) y registrada como bean. Cada clave se escribe una vez, no repetida en cada <code>@Value</code></td><td>Los cuatro <code>Propiedades*</code>, al lado de quien los usa: <code>Adaptadores</code>, <code>GestorImportaciones</code>, <code>VistasInformes</code> (el exhibidor)</td></tr>
             <tr><td><code>@Transactional</code></td><td>Transacción por método: commit al salir, rollback ante excepción (vía proxy). <code>readOnly = true</code> en las lecturas: sin dirty checking ni flush</td><td>Gestores que escriben. Sin ella a propósito: <code>GestorImportaciones</code> y <code>extenderActivas</code>, que cuentan lo que falla y siguen</td></tr>
           </tbody>
         </table>
@@ -759,6 +762,21 @@ body.lightbox-locked { overflow: hidden; }
         </table>
       </div>
 
+      <h3>Lombok</h3>
+      <p>Escribe código al compilar: el <code>.class</code> tiene el método aunque el <code>.java</code> no. Sin <code>@Setter</code> ni <code>@Data</code> a propósito: los setters siguen a mano porque cada uno es una decisión sobre qué se puede cambiar (el resto pasa por el constructor que valida), y <code>@Data</code> generaría un <code>equals</code> y un <code>toString</code> que recorren las relaciones LAZY.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Anotación</th><th>Qué genera</th><th>Dónde</th></tr></thead>
+          <tbody>
+            <tr><td><code>@Getter</code></td><td>Un getter por campo. Si el método ya está escrito a mano (porque calcula algo o copia una lista), no lo pisa</td><td>Entidades y enums con datos: <code>Pelicula</code>, <code>Reserva</code>, <code>TipoSala</code>…</td></tr>
+            <tr><td><code>@Getter(AccessLevel.NONE)</code></td><td>Ninguno para ese campo: no se expone, o se lee con otro nombre</td><td><code>Promocion.activa</code> → <code>estaActiva()</code>, <code>Reserva.version</code></td></tr>
+            <tr><td><code>@Accessors(fluent = true)</code></td><td>El getter se llama como el campo: <code>precio()</code>, no <code>getPrecio()</code></td><td><code>Entrada.tarifa()</code>, <code>MedioPago.requiereAutorizacion()</code>, <code>ItemCompra</code>; en Swing, <code>ErrorApi.estado()</code></td></tr>
+            <tr><td><code>@RequiredArgsConstructor</code></td><td>El constructor con los campos <code>final</code>, en el orden en que están declarados. Con uno solo, Spring lo usa sin <code>@Autowired</code></td><td>Los <code>@Service</code>, los <code>*Controller</code> y los <code>Vistas*</code> que solo asignan</td></tr>
+            <tr><td><code>@Slf4j</code></td><td>El campo <code>log</code> de SLF4J</td><td><code>GestorReservas</code>, <code>GestorPagos</code>, <code>ManejadorErrores</code>, <code>TmdbHttp</code>…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <h3>Otra sintaxis</h3>
       <div class="table-wrap">
         <table>
@@ -767,7 +785,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>interface X extends JpaRepository&lt;E, Integer&gt;</code></td><td>Repositorio sin implementación: trae <code>findAll</code>, <code>save</code>, <code>delete</code> y deriva consultas del nombre</td></tr>
             <tr><td><code>record</code></td><td>Clase inmutable con constructor, getters y <code>equals</code> generados</td></tr>
             <tr><td><code>Optional&lt;T&gt;</code></td><td>«Puede no haber»: obliga a decidir (<code>.orElseThrow</code>) en vez de un <code>null</code></td></tr>
-            <tr><td>Inyección por constructor</td><td>Dependencias en campos <code>final</code>; sin <code>@Autowired</code> con un solo constructor</td></tr>
+            <tr><td>Inyección por constructor</td><td>Dependencias en campos <code>final</code>; el constructor lo genera <code>@RequiredArgsConstructor</code>, y con uno solo no hace falta <code>@Autowired</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -1633,10 +1651,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
           <tbody>
-            <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, SLF4J</td></tr>
+            <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, SLF4J, Lombok</td></tr>
             <tr><td>Datos</td><td>MySQL 8.4 (también los bloqueos de butaca); H2 (tests)</td></tr>
             <tr><td>Frontend</td><td>React 19 + React Router + Mantine, compilado con Vite, servido por nginx</td></tr>
-            <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar y Jackson; <code>java.net.http</code> contra la API</td></tr>
+            <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar, Jackson y Lombok; <code>java.net.http</code> contra la API</td></tr>
             <tr><td>Despliegue</td><td>Docker Compose: 4 servicios en dos redes</td></tr>
             <tr><td>Externo</td><td>API de TMDB</td></tr>
           </tbody>
@@ -1654,6 +1672,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><code>spring-boot-starter-validation</code></td><td>compile</td><td>Bean Validation en los DTO</td></tr>
             <tr><td><code>spring-boot-starter-security</code></td><td>compile</td><td>Autenticación y roles</td></tr>
             <tr><td><code>springdoc-openapi-starter-webmvc-ui</code></td><td>compile</td><td>Swagger</td></tr>
+            <tr><td><code>lombok</code></td><td>compile, <code>optional</code></td><td>Getters, constructores y logger al compilar; excluido del war</td></tr>
             <tr><td><code>mysql-connector-j</code></td><td>runtime</td><td>Driver JDBC</td></tr>
             <tr><td><code>h2</code>, <code>spring-boot-starter-test</code></td><td>test</td><td>Base en memoria, JUnit 5, AssertJ, Mockito</td></tr>
           </tbody>
@@ -1776,11 +1795,16 @@ cd ../manual &amp;&amp; python3 build.py   # index.html se genera desde template
       </div>
 
       <pre><code>cd cine-backend
-mvn clean test       # 497 tests, ninguno salteado (cine-swing: 55)</code></pre>
+mvn clean test       # 552 tests, ninguno salteado (cine-swing: 55)</code></pre>
       <p>
         Corren contra H2 creada con el <code>schema.sql</code> real (perfil <code>test</code>), bloqueos de butaca incluidos; TMDB y el reloj son dobles de
         <code>ConfiguracionDePrueba</code>. El reloj arranca el 14/08/2026 y se mueve, así R19, R20 y los vencimientos
         no dependen de la fecha real.
+      </p>
+      <p>
+        Los casos de una misma forma van en un solo <code>@ParameterizedTest</code>: cada fila del <code>@CsvSource</code>
+        es un caso con nombre (las búsquedas con filtros, las capas de <code>ArquitecturaTest</code>, los bordes de
+        <code>Dinero</code>, las validaciones de los constructores). Una fila nueva es un caso nuevo, sin copiar un método.
       </p>
 
       <h3>La API, sin navegador</h3>
