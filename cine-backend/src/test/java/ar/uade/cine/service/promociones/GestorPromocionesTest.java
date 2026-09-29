@@ -24,6 +24,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.service.ConflictoDeNegocio;
 import ar.uade.cine.service.promociones.PoliticaPromociones.Descuento;
 
 class GestorPromocionesTest extends PruebaDeIntegracion {
@@ -208,5 +209,14 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
         assertThrows(IllegalArgumentException.class, () -> promociones.crearMontoFijo("30 off", Dinero.de(500),
                 new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
+    }
+
+    @Test
+    void unNombreQueSoloCambiaEnLosEspaciosTambienEstaRepetido() {
+        promociones.crearPorcentaje("30 off ", 30.0, new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of()));
+
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class, () -> promociones.crearMontoFijo("30 off",
+                Dinero.de(500), new CondicionesPromocion(DESDE, HASTA, Set.of(), null, null, Set.of())));
+        assertEquals("Ya hay una promoción llamada 30 off", error.getMessage());
     }
 }

@@ -50,9 +50,10 @@ public class GestorPromociones implements PoliticaPromociones {
     }
 
     // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio.
+    // La entidad ya lo recortó, así que se busca lo mismo que se va a guardar.
     private Promocion guardar(Promocion promocion) {
         String nombre = promocion.getNombre();
-        if (promocionRepository.existsByNombreIgnoreCase(nombre.trim())) {
+        if (promocionRepository.existsByNombreIgnoreCase(nombre)) {
             throw new ConflictoDeNegocio("Ya hay una promoción llamada " + nombre);
         }
         promocionRepository.save(promocion);

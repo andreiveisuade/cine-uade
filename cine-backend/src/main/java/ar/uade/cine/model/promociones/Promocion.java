@@ -35,6 +35,9 @@ import lombok.Getter;
 @Getter
 public abstract class Promocion {
 
+    // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
+    private static final int LARGO_MAXIMO_DEL_NOMBRE = 60;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -71,26 +74,26 @@ public abstract class Promocion {
     // Lo común a las tres clases se valida acá y lo propio de cada una en su constructor:
     // así no se puede armar una promoción inválida, venga del gestor o de un test.
     protected Promocion(String nombre, CondicionesPromocion condiciones) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("La promoción necesita un nombre");
-        }
-        // El VARCHAR(60) de la tabla: pasado, MySQL rechaza el INSERT con un 500.
-        if (nombre.length() > 60) {
-            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
-        }
+        this.nombre = nombreValido(nombre);
         LocalDate desde = condiciones.desde();
         LocalDate hasta = condiciones.hasta();
         if (desde == null || hasta == null || hasta.isBefore(desde)) {
             throw new IllegalArgumentException("La vigencia tiene que empezar antes de terminar");
         }
-        this.nombre = nombre;
+        LocalTime horaDesde = condiciones.horaDesde();
+        LocalTime horaHasta = condiciones.horaHasta();
+        // aplicaA pide desde ≤ hora ≤ hasta, así que una franja que cruza la medianoche no correría
+        // nunca: se rechaza en vez de guardarla muerta. Con una sola punta, la otra queda abierta.
+        if (horaDesde != null && horaHasta != null && !horaHasta.isAfter(horaDesde)) {
+            throw new IllegalArgumentException("La franja horaria tiene que empezar antes de terminar");
+        }
         this.vigenciaDesde = desde;
         this.vigenciaHasta = hasta;
         Set<DayOfWeek> dias = condiciones.dias();
         this.diasSemana = dias == null || dias.isEmpty()
                 ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(dias);
-        this.horaDesde = condiciones.horaDesde();
-        this.horaHasta = condiciones.horaHasta();
+        this.horaDesde = horaDesde;
+        this.horaHasta = horaHasta;
         Set<MedioPago> medios = condiciones.mediosPago();
         this.mediosPago = medios == null || medios.isEmpty()
                 ? EnumSet.noneOf(MedioPago.class) : EnumSet.copyOf(medios);
@@ -147,6 +150,18 @@ public abstract class Promocion {
 
     public void desactivar() {
         this.activa = false;
+    }
+
+    // Recortado acá y no en el gestor: así el nombre repetido se busca con el mismo valor que se guarda.
+    private static String nombreValido(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("La promoción necesita un nombre");
+        }
+        String limpio = nombre.trim();
+        if (limpio.length() > LARGO_MAXIMO_DEL_NOMBRE) {
+            throw new IllegalArgumentException("El nombre no puede tener más de 60 caracteres");
+        }
+        return limpio;
     }
 
     @Override

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,25 @@ class PromocionTest {
         rechaza("La vigencia tiene que empezar antes de terminar", () -> new PromocionPorcentaje("rara", 10, alReves));
         rechaza("La vigencia tiene que empezar antes de terminar", () -> new PromocionNxM("2x1", 2, 1, sinFin));
         rechaza("La promoción necesita un nombre", () -> new PromocionMontoFijo(" ", Dinero.de(500), AGOSTO));
+    }
+
+    // aplicaA pide desde ≤ hora ≤ hasta: guardada, una franja así no correría nunca.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            termina cuando empieza,   20:00, 20:00
+            termina a la medianoche,  20:00, 00:00
+            cruza la medianoche,      23:00, 01:00
+            """)
+    void unaFranjaQueNoEmpiezaAntesDeTerminarNoSeConstruye(String caso, LocalTime desde, LocalTime hasta) {
+        CondicionesPromocion franja = new CondicionesPromocion(DESDE, HASTA, Set.of(), desde, hasta, Set.of());
+
+        rechaza("La franja horaria tiene que empezar antes de terminar",
+                () -> new PromocionPorcentaje("Trasnoche", 20, franja));
+    }
+
+    @Test
+    void elNombreSeGuardaSinLosEspaciosDeAlrededor() {
+        assertEquals("Martes 30%", new PromocionPorcentaje("  Martes 30%  ", 30, AGOSTO).getNombre());
     }
 
     @Test
