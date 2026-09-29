@@ -39,6 +39,20 @@ class PeliculaControllerTest extends PruebaDeApi {
         assertEquals("No existe la película 99", borrada.error());
     }
 
+    // Lo que falta lo corta el pedido, con el mismo texto que daría la película.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            sin título       | {"duracionMinutos":155,"generos":["ACCION"],"clasificacion":"ATP"}             | Falta el título
+            título en blanco | {"titulo":" ","duracionMinutos":155,"generos":["ACCION"],"clasificacion":"ATP"} | Falta el título
+            sin géneros      | {"titulo":"Dune","duracionMinutos":155,"generos":[],"clasificacion":"ATP"}    | La película tiene que tener al menos un género
+            """)
+    void unAltaSinTituloOSinGenerosEs400ConElTextoDeLaPelicula(String caso, String cuerpo, String mensaje) {
+        Respuesta respuesta = post("/api/peliculas", cuerpo);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
     // El pedido solo mira que venga: el rango lo pone la película, así el alta y la edición dicen lo mismo.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
