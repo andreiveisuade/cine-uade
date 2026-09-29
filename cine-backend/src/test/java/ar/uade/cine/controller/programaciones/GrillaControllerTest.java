@@ -58,9 +58,11 @@ class GrillaControllerTest extends PruebaDeApi {
             sin precio avisa que falta y no que es inválido,      '{}',                        Falta el precio de las funciones
             # La propuesta se arma en memoria pase por pase: un pedido de años no puede llegar al planificador.
             una grilla de más de un mes es 400,                   '{"precio":5000,"dias":32}', La grilla no puede cubrir más de 31 días
-            con precio en cero el mensaje es el del planificador, '{"precio":0}',              El precio debe ser mayor a cero
+            con precio en cero el mensaje es el de las funciones, '{"precio":0}',              El precio debe ser mayor a cero
+            # El precio se valida con el pedido, como en funciones y programaciones: antes que cualquier formato.
+            un precio negativo gana contra una hora inválida,     '{"precio":-1,"apertura":"25:00"}', El precio debe ser mayor a cero
             # Primero se lee todo el pedido y después se validan los criterios: gana el error de formato.
-            con dos errores gana el de formato,                   '{"precio":0,"apertura":"25:00"}', la hora de apertura tiene que ser una hora válida
+            con dos errores gana el de formato,                   '{"precio":5000,"dias":0,"apertura":"25:00"}', la hora de apertura tiene que ser una hora válida
             """)
     void unaPropuestaInvalidaEs400ConSuMensaje(String caso, String cuerpo, String mensaje) {
         Respuesta respuesta = post("/api/grilla/propuesta", cuerpo);
