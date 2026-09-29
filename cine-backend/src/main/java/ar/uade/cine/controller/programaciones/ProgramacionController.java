@@ -18,22 +18,17 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
-import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.dto.comun.PedidoActivacionDTO;
-import ar.uade.cine.dto.programaciones.FuncionGeneradaVistaDTO;
-import ar.uade.cine.dto.programaciones.FuncionPlanificadaVistaDTO;
 import ar.uade.cine.dto.programaciones.PedidoProgramacionDTO;
 import ar.uade.cine.dto.programaciones.PlanVistaDTO;
 import ar.uade.cine.dto.programaciones.ProgramacionVistaDTO;
 import ar.uade.cine.service.programaciones.DatosGrilla;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.service.programaciones.PlanProgramacion;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
 import jakarta.validation.Valid;
@@ -41,13 +36,14 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/programaciones: previsualiza, crea y (des)activa grillas; delega en GestorProgramaciones.
+// Rutas de /api/programaciones: previsualiza, crea y (des)activa grillas; responde con VistasProgramaciones.
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
 @RequiredArgsConstructor
 public class ProgramacionController {
 
     private final GestorProgramaciones programaciones;
+    private final VistasProgramaciones vistas;
 
     @Operation(summary = "Las grillas cargadas, activas y dadas de baja")
     @GetMapping("/api/programaciones")
@@ -59,28 +55,29 @@ public class ProgramacionController {
                         Parseo.numeroOpcional(salaId, "la sala"),
                         Parseo.booleanOpcional(activa, "activa"))
                 .stream()
-                .map(p -> programacion(p, null))
+                .map(vistas::programacion)
                 .toList();
     }
 
     @Operation(summary = "Una grilla con las funciones que generó")
     @GetMapping("/api/programaciones/{id}")
     public ProgramacionVistaDTO detalle(@PathVariable int id) {
-        Programacion grilla = buscar(id);
-        return programacion(grilla, programaciones.funcionesDe(grilla.getId()));
+        Programacion grilla = programaciones.buscar(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
+        return vistas.programacionConFunciones(grilla, programaciones.funcionesDe(id));
     }
 
     @Operation(summary = "Ver qué funciones saldrían y cuáles chocan, sin escribir nada")
     @PostMapping("/api/programaciones/previsualizacion")
     public PlanVistaDTO previsualizar(@Valid @RequestBody PedidoProgramacionDTO pedido) {
-        return plan(aplicar(pedido, false));
+        return vistas.plan(programaciones.previsualizar(datos(pedido)));
     }
 
     @Operation(summary = "Crear la grilla y generar sus funciones")
     @PostMapping("/api/programaciones")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PlanVistaDTO> crear(@Valid @RequestBody PedidoProgramacionDTO pedido) {
-        PlanVistaDTO plan = plan(aplicar(pedido, true));
+        PlanVistaDTO plan = vistas.plan(programaciones.crear(datos(pedido)));
         return Creado.en("/api/programaciones/" + plan.programacion().id(), plan);
     }
 
@@ -88,16 +85,11 @@ public class ProgramacionController {
     @PatchMapping("/api/programaciones/{id}")
     public ProgramacionVistaDTO cambiarActivacion(@PathVariable int id,
                                                   @Valid @RequestBody PedidoActivacionDTO pedido) {
-        buscar(id);
-        if (pedido.activa()) {
-            programaciones.activar(id);
-        } else {
-            programaciones.desactivar(id);
-        }
-        return programacion(buscar(id), null);
+        Programacion grilla = pedido.activa() ? programaciones.activar(id) : programaciones.desactivar(id);
+        return vistas.programacion(grilla);
     }
 
-    private PlanProgramacion aplicar(PedidoProgramacionDTO pedido, boolean persistir) {
+    private DatosGrilla datos(PedidoProgramacionDTO pedido) {
         int peliculaId = pedido.peliculaId();
         int salaId = pedido.salaId();
         LocalDate desde = Parseo.dia(pedido.desde(), "la fecha de inicio");
@@ -109,38 +101,6 @@ public class ProgramacionController {
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
         Dinero precio = Dinero.de(pedido.precio());
 
-        DatosGrilla datos = new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version,
-                proyeccion, precio);
-        return persistir ? programaciones.crear(datos) : programaciones.previsualizar(datos);
-    }
-
-    private static PlanVistaDTO plan(PlanProgramacion plan) {
-        return new PlanVistaDTO(
-                programacion(plan.programacion(), null),
-                plan.funciones().stream()
-                        .map(f -> new FuncionPlanificadaVistaDTO(Fechas.texto(f.inicio()), f.choca(), f.motivo()))
-                        .toList(),
-                plan.programables().size(),
-                plan.salteadas().size());
-    }
-
-    private static ProgramacionVistaDTO programacion(Programacion p, List<Funcion> generadas) {
-        return new ProgramacionVistaDTO(p.getId(), p.getPeliculaId(), p.getSalaId(),
-                p.getDesde().toString(), texto(p.getHasta()), texto(p.getGeneradaHasta()),
-                p.getHoraInicio().toString(),
-                p.getDiasSemana().stream().map(Enum::name).toList(),
-                p.getVersion().name(), p.getProyeccion().name(), p.getPrecio().aPesos(), p.estaActiva(),
-                generadas == null ? null : generadas.stream()
-                        .map(f -> new FuncionGeneradaVistaDTO(f.getId(), Fechas.texto(f.getInicio())))
-                        .toList());
-    }
-
-    private static String texto(LocalDate fecha) {
-        return fecha == null ? null : fecha.toString();
-    }
-
-    private Programacion buscar(int id) {
-        return programaciones.buscar(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la programación " + id));
+        return new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version, proyeccion, precio);
     }
 }

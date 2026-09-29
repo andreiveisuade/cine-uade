@@ -23,4 +23,8 @@ public record PropuestaGrilla(List<Pelicula> elenco, List<PaseSugerido> pases,
             return minutosDisponibles == 0 ? 0 : (double) minutosProgramados / minutosDisponibles;
         }
     }
+
+    public int pasesDe(int peliculaId) {
+        return (int) pases.stream().filter(pase -> pase.peliculaId() == peliculaId).count();
+    }
 }
