@@ -38,7 +38,7 @@ class CompraCandyTest {
 
     @Test
     void unMedioElectronicoSinCodigoNoSeConstruyeYElCodigoSeGuardaLimpio() {
-        rechaza("El pago con CREDITO necesita código de autorización",
+        rechaza("Falta el código de autorización del pago con crédito",
                 () -> comprar(MedioPago.CREDITO, "  ", Map.of(pochoclos, 1)));
 
         assertEquals("AUT-77", comprar(MedioPago.DEBITO, " AUT-77 ", Map.of(pochoclos, 1)).getCodigoAutorizacion());
