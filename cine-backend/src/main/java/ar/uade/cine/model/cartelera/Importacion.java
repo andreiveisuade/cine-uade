@@ -12,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Getter;
 
+import ar.uade.cine.model.cartelera.validacion.ValidadorImportacion;
+
 // Registro de una corrida del importador de TMDB; Experto: sabe si terminó, falló o quedó colgada.
 @Entity
 @Getter
@@ -42,8 +44,9 @@ public class Importacion {
     protected Importacion() {
     }
 
-    public Importacion(int paginas, LocalDateTime pedidaEn) {
-        this.paginas = paginas;
+    // Sin páginas se trae una: «traeme cartelera» ya es un pedido completo.
+    public Importacion(Integer paginas, LocalDateTime pedidaEn) {
+        this.paginas = ValidadorImportacion.paginas(paginas == null ? 1 : paginas);
         this.pedidaEn = pedidaEn;
     }
 

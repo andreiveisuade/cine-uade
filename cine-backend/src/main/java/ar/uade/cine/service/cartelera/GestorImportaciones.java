@@ -27,8 +27,6 @@ public class GestorImportaciones {
 
     private static final int HISTORIAL = 20;
 
-    private static final int PAGINAS_MAXIMAS = 3;
-
     private final ImportacionRepository importacionRepository;
     private final CatalogoExterno catalogo;
     private final GestorCartelera cartelera;
@@ -37,7 +35,7 @@ public class GestorImportaciones {
     private final Reloj reloj;
 
     public Importacion ejecutar(Integer paginas) {
-        Importacion importacion = reservarTurno(validarPaginas(paginas));
+        Importacion importacion = reservarTurno(paginas);
         try {
             correr(importacion);
         } catch (ImportadorError e) {
@@ -98,14 +96,15 @@ public class GestorImportaciones {
     }
 
     // Sincronizado y aparte de la corrida para rechazar el segundo pedido sin hacerlo esperar.
-    // Alcanza con un candado porque hay un solo backend.
-    private synchronized Importacion reservarTurno(int paginas) {
+    // Alcanza con un candado porque hay un solo backend. La corrida se arma primero: unas páginas
+    // fuera de rango se rechazan antes de mirar el historial, y no dejan registro.
+    private synchronized Importacion reservarTurno(Integer paginas) {
+        Importacion importacion = new Importacion(paginas, reloj.ahora());
         List<Importacion> ultimas = listar();
         if (!ultimas.isEmpty()) {
             exigirQueNoHayaOtraEnCurso(ultimas.get(0));
             exigirQueHayaPasadoUnRato(ultimas.get(0));
         }
-        Importacion importacion = new Importacion(paginas, reloj.ahora());
         importacionRepository.save(importacion);
         return importacion;
     }
@@ -140,16 +139,5 @@ public class GestorImportaciones {
 
     public CatalogoExterno.Estado estadoDelImportador() {
         return catalogo.consultar();
-    }
-
-    private static int validarPaginas(Integer paginas) {
-        if (paginas == null) {
-            return 1;
-        }
-        if (paginas < 1 || paginas > PAGINAS_MAXIMAS) {
-            throw new DatoInvalido(
-                    "Las páginas a importar tienen que estar entre 1 y " + PAGINAS_MAXIMAS);
-        }
-        return paginas;
     }
 }
