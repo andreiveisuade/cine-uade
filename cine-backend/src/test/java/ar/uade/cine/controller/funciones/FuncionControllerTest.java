@@ -81,6 +81,16 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(0, get("/api/funciones").json().size());
     }
 
+    // Como en la declaración jurada: antes devolvía una lista vacía, que no se distinguía de un período
+    // sin funciones.
+    @Test
+    void buscarConUnDesdePosteriorAlHastaEs400() {
+        Respuesta respuesta = get("/api/funciones?desde=2026-08-20&hasta=2026-08-14");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El período tiene que empezar antes de terminar", respuesta.error());
+    }
+
     @Test
     void borrarUnaFuncionQueNoExisteEs404ConSuMensaje() {
         Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/funciones/99", null, EMAIL_ADMIN, CLAVE_ADMIN);

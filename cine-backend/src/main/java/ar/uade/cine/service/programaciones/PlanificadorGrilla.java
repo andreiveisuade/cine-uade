@@ -180,8 +180,7 @@ public class PlanificadorGrilla {
         }
         int ventana = (int) (minutosPorSala * salas.size());
 
-        LocalDate hasta = criterios.desde().plusDays(criterios.dias() - 1L);
-        List<Funcion> programadas = funciones.buscar(null, null, criterios.desde(), hasta).stream()
+        List<Funcion> programadas = funciones.buscar(null, null, criterios.periodo()).stream()
                 // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
                 .filter(f -> !f.getInicio().isBefore(primerIntento(f.getInicio().toLocalDate(), criterios)))
                 .filter(f -> f.getInicio().isBefore(criterios.cierreDe(f.getInicio().toLocalDate())))

@@ -32,6 +32,7 @@ import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
@@ -135,7 +136,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
             LocalDate desde, LocalDate hasta, int esperadas) {
         cargarMasFunciones();
 
-        assertEquals(esperadas, funciones.buscar(pelicula, sala, desde, hasta).size(), caso);
+        assertEquals(esperadas, funciones.buscar(pelicula, sala, new Periodo(desde, hasta)).size(), caso);
     }
 
     @ParameterizedTest(name = "{0}")

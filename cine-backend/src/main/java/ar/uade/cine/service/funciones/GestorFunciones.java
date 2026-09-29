@@ -1,6 +1,5 @@
 package ar.uade.cine.service.funciones;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -16,6 +15,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.repository.funciones.FuncionRepository;
@@ -122,11 +122,12 @@ public class GestorFunciones {
         return funcionRepository.findAll();
     }
 
+    // Una punta del período en null queda abierta; el período ya viene en orden, porque no se arma al revés.
     @Transactional(readOnly = true)
-    public List<Funcion> buscar(Integer peliculaId, Integer salaId, LocalDate desde, LocalDate hasta) {
+    public List<Funcion> buscar(Integer peliculaId, Integer salaId, Periodo periodo) {
         return funcionRepository.buscar(peliculaId, salaId,
-                desde == null ? null : desde.atStartOfDay(),
-                hasta == null ? null : hasta.plusDays(1).atStartOfDay());
+                periodo.desde() == null ? null : periodo.desde().atStartOfDay(),
+                periodo.hasta() == null ? null : periodo.hasta().plusDays(1).atStartOfDay());
     }
 
     @Transactional(readOnly = true)

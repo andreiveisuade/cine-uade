@@ -21,6 +21,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
 import ar.uade.cine.service.funciones.GestorFunciones;
@@ -45,11 +46,13 @@ public class FuncionController {
                                         @RequestParam(required = false) String salaId,
                                         @RequestParam(required = false) String desde,
                                         @RequestParam(required = false) String hasta) {
-        return vistas.funcionesConPelicula(funciones.buscar(
-                        Parseo.numeroOpcional(peliculaId, "el id de la película"),
-                        Parseo.numeroOpcional(salaId, "el id de la sala"),
-                        Parseo.diaOpcional(desde, "la fecha de inicio"),
-                        Parseo.diaOpcional(hasta, "la fecha de fin")));
+        Integer pelicula = Parseo.numeroOpcional(peliculaId, "el id de la película");
+        Integer sala = Parseo.numeroOpcional(salaId, "el id de la sala");
+        // Al revés es un 400, como en la declaración jurada: antes devolvía una lista vacía, que se
+        // confundía con un período sin funciones.
+        Periodo periodo = Periodo.de(Parseo.diaOpcional(desde, "la fecha de inicio"),
+                Parseo.diaOpcional(hasta, "la fecha de fin"), "El período");
+        return vistas.funcionesConPelicula(funciones.buscar(pelicula, sala, periodo));
     }
 
     @Operation(summary = "Una función con su mapa de butacas y el precio ya calculado de cada una")
