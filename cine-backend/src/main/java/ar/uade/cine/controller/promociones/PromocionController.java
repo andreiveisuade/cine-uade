@@ -83,13 +83,8 @@ public class PromocionController {
     @PatchMapping("/api/promociones/{id}")
     public PromocionVistaDTO cambiarActivacion(@PathVariable int id,
                                                @Valid @RequestBody PedidoActivacionDTO pedido) {
-        buscar(id);
-        if (pedido.activa()) {
-            promociones.activar(id);
-        } else {
-            promociones.desactivar(id);
-        }
-        return vistas.promocion(buscar(id));
+        Promocion promocion = pedido.activa() ? promociones.activar(id) : promociones.desactivar(id);
+        return vistas.promocion(promocion);
     }
 
     private static TipoPromocion tipoDe(String tipo) {

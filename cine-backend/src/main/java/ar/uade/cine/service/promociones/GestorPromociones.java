@@ -17,7 +17,6 @@ import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
-import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.promociones.PromocionRepository;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.RecursoNoEncontrado;
@@ -60,7 +59,8 @@ public class GestorPromociones implements PoliticaPromociones {
         return promocion;
     }
 
-    // R16: solo participan las entradas generales. Empate: gana la de menor id, para que el cobro sea determinístico.
+    // R16: solo participan las tarifas que lo dicen (TipoTarifa#participaDePromociones).
+    // Empate: gana la de menor id, para que el cobro sea determinístico.
     @Transactional(readOnly = true)
     @Override
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
@@ -76,7 +76,7 @@ public class GestorPromociones implements PoliticaPromociones {
     private Optional<Candidata> mejorDescuento(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                                MedioPago medio) {
         List<Entrada> alcanzadas = entradas.stream()
-                .filter(e -> e.tarifa() == TipoTarifa.GENERAL)
+                .filter(e -> e.tarifa().participaDePromociones())
                 .toList();
         if (alcanzadas.isEmpty()) {
             return Optional.empty();
@@ -89,16 +89,16 @@ public class GestorPromociones implements PoliticaPromociones {
                         .thenComparing(c -> c.promocion().getId(), Comparator.reverseOrder()));
     }
 
-    public void desactivar(int id) {
+    public Promocion desactivar(int id) {
         Promocion promocion = buscarOFallar(id);
         promocion.desactivar();
-        promocionRepository.save(promocion);
+        return promocion;
     }
 
-    public void activar(int id) {
+    public Promocion activar(int id) {
         Promocion promocion = buscarOFallar(id);
         promocion.activar();
-        promocionRepository.save(promocion);
+        return promocion;
     }
 
     @Transactional(readOnly = true)
