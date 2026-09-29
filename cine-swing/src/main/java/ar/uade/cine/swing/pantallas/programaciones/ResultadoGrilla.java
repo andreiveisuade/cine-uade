@@ -8,12 +8,10 @@ import ar.uade.cine.swing.comun.Componentes;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
-import java.awt.Font;
 
 // Lo que devolvió el planificador, a la derecha de los criterios: indicadores, elenco, géneros y la semana.
 final class ResultadoGrilla extends JScrollPane {
@@ -67,9 +65,7 @@ final class ResultadoGrilla extends JScrollPane {
 
     private static JComponent aviso(String titulo, String texto) {
         JPanel panel = new JPanel(new BorderLayout(0, 4));
-        JLabel arriba = new JLabel(titulo);
-        arriba.setFont(arriba.getFont().deriveFont(Font.BOLD, 15f));
-        panel.add(arriba, BorderLayout.NORTH);
+        panel.add(Componentes.subtitulo(titulo), BorderLayout.NORTH);
         panel.add(Componentes.nota(texto), BorderLayout.CENTER);
         return Componentes.conBorde(panel);
     }

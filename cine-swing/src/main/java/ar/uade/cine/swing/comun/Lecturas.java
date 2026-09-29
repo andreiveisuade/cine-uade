@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 // Lee el formato de lo tipeado (números, listas, horas, emails) sin Swing; Validacion lo usa y marca.
@@ -28,28 +29,25 @@ public final class Lecturas {
     }
 
     public static Lectura<String> leerTexto(String texto, String nombre, boolean obligatorio) {
-        String limpio = texto == null ? "" : texto.trim();
-        if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
-        return Lectura.de(limpio);
+        return leer(texto, nombre, obligatorio, Lectura::de);
     }
 
     public static Lectura<Integer> leerEntero(String texto, String nombre, boolean obligatorio) {
-        String limpio = texto == null ? "" : texto.trim();
-        if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
-        if (!ENTERO.matcher(limpio).matches()) return Lectura.falla(noEs(nombre, limpio, "un número entero"));
-        try {
-            return Lectura.de(Integer.valueOf(limpio));
-        } catch (NumberFormatException e) {
-            return Lectura.falla(noEs(nombre, limpio, "un número entero"));
-        }
+        return leer(texto, nombre, obligatorio, limpio -> {
+            if (!ENTERO.matcher(limpio).matches()) return Lectura.falla(noEs(nombre, limpio, "un número entero"));
+            try {
+                return Lectura.de(Integer.valueOf(limpio));
+            } catch (NumberFormatException e) {
+                return Lectura.falla(noEs(nombre, limpio, "un número entero"));
+            }
+        });
     }
 
     /** Acepta coma o punto decimal: el encargado tipea "2500,50" tanto como "2500.50". */
     public static Lectura<Double> leerDecimal(String texto, String nombre, boolean obligatorio) {
-        String limpio = texto == null ? "" : texto.trim();
-        if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
-        if (!DECIMAL.matcher(limpio).matches()) return Lectura.falla(noEs(nombre, limpio, "un número"));
-        return Lectura.de(Double.valueOf(limpio.replace(",", ".")));
+        return leer(texto, nombre, obligatorio, limpio -> DECIMAL.matcher(limpio).matches()
+                ? Lectura.de(Double.valueOf(limpio.replace(",", ".")))
+                : Lectura.falla(noEs(nombre, limpio, "un número")));
     }
 
     /** "8,10,12" → [8, 10, 12]. Un elemento que no es número rechaza la lista entera y se nombra. */
@@ -83,21 +81,29 @@ public final class Lecturas {
 
     /** HH:mm, como la pide la API. "9:05" también vale y viaja "09:05". */
     public static Lectura<String> leerHora(String texto, String nombre, boolean obligatorio) {
-        String limpio = texto == null ? "" : texto.trim();
-        if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
-        try {
-            String conCero = limpio.matches("\\d:\\d{2}") ? "0" + limpio : limpio;
-            return Lectura.de(LocalTime.parse(conCero, HORA).format(HORA));
-        } catch (DateTimeParseException e) {
-            return Lectura.falla(noEs(nombre, limpio, "una hora (HH:mm)"));
-        }
+        return leer(texto, nombre, obligatorio, limpio -> {
+            try {
+                String conCero = limpio.matches("\\d:\\d{2}") ? "0" + limpio : limpio;
+                return Lectura.de(LocalTime.parse(conCero, HORA).format(HORA));
+            } catch (DateTimeParseException e) {
+                return Lectura.falla(noEs(nombre, limpio, "una hora (HH:mm)"));
+            }
+        });
     }
 
     public static Lectura<String> leerEmail(String texto, String nombre, boolean obligatorio) {
+        return leer(texto, nombre, obligatorio, limpio -> EMAIL.matcher(limpio).matches()
+                ? Lectura.de(limpio)
+                : Lectura.falla(noEs(nombre, limpio, "un email")));
+    }
+
+    // Lo común a todas: vacío es un faltante si es obligatorio y null si no; lo tipeado, sin espacios, lo interpreta
+    // cada una.
+    private static <T> Lectura<T> leer(String texto, String nombre, boolean obligatorio,
+                                       Function<String, Lectura<T>> interpretar) {
         String limpio = texto == null ? "" : texto.trim();
         if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
-        if (!EMAIL.matcher(limpio).matches()) return Lectura.falla(noEs(nombre, limpio, "un email"));
-        return Lectura.de(limpio);
+        return interpretar.apply(limpio);
     }
 
     static String falta(String nombre) {

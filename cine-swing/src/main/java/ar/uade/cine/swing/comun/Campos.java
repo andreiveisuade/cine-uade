@@ -1,6 +1,10 @@
 package ar.uade.cine.swing.comun;
 
+import com.toedter.calendar.JDateChooser;
+
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JSpinner;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
@@ -130,6 +134,23 @@ public final class Campos {
                 accion.run();
             }
         });
+    }
+
+    /**
+     * Corre {@code accion} cuando cambia cualquiera de los campos, sea texto, combo, fecha, hora o días: para invalidar
+     * una previsualización que ya no corresponde a lo que dice el formulario.
+     */
+    public static void alCambiar(Runnable accion, JComponent... campos) {
+        for (JComponent campo : campos) {
+            switch (campo) {
+                case JTextComponent texto -> alCambiar(texto, accion);
+                case JComboBox<?> combo -> combo.addActionListener(e -> accion.run());
+                case JDateChooser fecha -> fecha.addPropertyChangeListener("date", e -> accion.run());
+                case JSpinner spinner -> spinner.addChangeListener(e -> accion.run());
+                case SelectorDias dias -> dias.alCambiar(accion);
+                default -> throw new IllegalArgumentException("No se sabe escuchar un " + campo.getClass());
+            }
+        }
     }
 
     /**

@@ -9,13 +9,14 @@ import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
+import ar.uade.cine.swing.comun.Opciones;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Seccion;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -35,8 +36,7 @@ final class PanelCobro extends Seccion {
     private final ApiVentas apiVentas;
     private final Navegacion navegacion;
     private final Reserva reserva;
-    private final List<MedioPago> medios;
-    private final JComboBox<Opcion<String>> medio = new JComboBox<>();
+    private final JComboBox<Opcion<MedioPago>> medio = new JComboBox<>();
     private final JLabel explicacion = Componentes.nota("");
     private final JButton enviar = new JButton();
     private final JLabel error = Componentes.texto(" ");
@@ -47,34 +47,32 @@ final class PanelCobro extends Seccion {
         this.apiVentas = apiVentas;
         this.navegacion = navegacion;
         this.reserva = reserva;
-        this.medios = medios;
-        medios.forEach(m -> medio.addItem(new Opcion<>(m.nombre(), etiqueta(m.nombre()))));
+        Campos.llenar(medio, Opciones.medios(medios));
 
         JLabel total = new JLabel(precio(reserva.total()));
         total.setFont(total.getFont().deriveFont(Font.BOLD, 22f));
 
-        JPanel contenido = new JPanel();
-        contenido.setLayout(new BoxLayout(contenido, BoxLayout.Y_AXIS));
-        contenido.add(Componentes.izquierda(Componentes.subtitulo("Cobro")));
-        contenido.add(Componentes.izquierda(new JLabel("Medio de pago *")));
+        Pila contenido = new Pila();
+        contenido.agregar(Componentes.subtitulo("Cobro"));
+        contenido.agregar(new JLabel("Medio de pago *"));
         medio.setMaximumSize(new Dimension(Integer.MAX_VALUE, medio.getPreferredSize().height));
-        contenido.add(Componentes.izquierda(medio));
-        contenido.add(Componentes.izquierda(new JLabel(" ")));
-        contenido.add(Componentes.izquierda(new JLabel("A cobrar")));
-        contenido.add(Componentes.izquierda(total));
-        contenido.add(Componentes.izquierda(Componentes.nota("Sale del total de las butacas: no se puede cobrar "
+        contenido.agregar(medio);
+        contenido.agregar(new JLabel(" "));
+        contenido.agregar(new JLabel("A cobrar"));
+        contenido.agregar(total);
+        contenido.agregar(Componentes.nota("Sale del total de las butacas: no se puede cobrar "
                 + "otro importe. Si hay una promoción vigente para este medio de pago, el descuento se aplica al "
-                + "cobrar.")));
-        contenido.add(Componentes.izquierda(new JLabel(" ")));
-        contenido.add(Componentes.izquierda(explicacion));
-        contenido.add(Componentes.izquierda(enviar));
-        contenido.add(Componentes.izquierda(error));
-        contenido.add(Componentes.izquierda(checkout));
+                + "cobrar."));
+        contenido.agregar(new JLabel(" "));
+        contenido.agregar(explicacion);
+        contenido.agregar(enviar);
+        contenido.agregar(error);
+        contenido.agregar(checkout);
         add(Componentes.conBorde(contenido), BorderLayout.NORTH);
 
         // Un checkout es de un medio y un monto concretos: cambiar el medio lo invalida.
         medio.addActionListener(e -> {
-            mostrarCheckout(null);
+            Componentes.reemplazar(checkout);
             refrescar();
         });
         enviar.addActionListener(e -> enviar());
@@ -83,8 +81,8 @@ final class PanelCobro extends Seccion {
 
     // R11: en un medio electrónico la autorización la devuelve el procesador, no se tipea.
     private boolean porCheckout() {
-        String elegido = Campos.elegido(medio);
-        return medios.stream().anyMatch(m -> m.nombre().equals(elegido) && m.requiereAutorizacion());
+        MedioPago elegido = Campos.elegido(medio);
+        return elegido != null && elegido.requiereAutorizacion();
     }
 
     private void refrescar() {
@@ -97,7 +95,7 @@ final class PanelCobro extends Seccion {
 
     private void enviar() {
         Validacion v = new Validacion(error);
-        String elegido = v.elegido(medio, "Medio de pago");
+        MedioPago elegido = v.elegido(medio, "Medio de pago");
         if (!v.ok()) return;
         Consumer<ErrorApi> fallo = e -> {
             enviar.setEnabled(true);
@@ -106,13 +104,13 @@ final class PanelCobro extends Seccion {
         if (!porCheckout()) {
             // Un cobro registrado no se deshace: se pregunta antes. Abrir el checkout, en cambio, no cobra.
             if (!confirmar("¿Registrar el cobro de la reserva #" + reserva.id() + " en "
-                    + etiqueta(elegido).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) return;
+                    + etiqueta(elegido.nombre()).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) return;
             enviar.setEnabled(false);
-            Tarea.ejecutar(this, () -> apiVentas.cobrar(reserva.id(), elegido, ""), this::cobrado, fallo);
+            Tarea.ejecutar(this, () -> apiVentas.cobrar(reserva.id(), elegido.nombre(), ""), this::cobrado, fallo);
         } else {
             // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
             enviar.setEnabled(false);
-            Tarea.ejecutar(this, () -> apiVentas.abrirCheckout(reserva.id(), elegido), c -> {
+            Tarea.ejecutar(this, () -> apiVentas.abrirCheckout(reserva.id(), elegido.nombre()), c -> {
                 enviar.setEnabled(true);
                 mostrarCheckout(c);
             }, fallo);
@@ -127,11 +125,7 @@ final class PanelCobro extends Seccion {
         navegacion.ir(Destino.CAJA);
     }
 
-    /** Sin checkout, el lugar queda vacío. */
     private void mostrarCheckout(Checkout abierto) {
-        checkout.removeAll();
-        if (abierto != null) checkout.add(new PanelCheckout(apiVentas, abierto, this::cobrado));
-        checkout.revalidate();
-        checkout.repaint();
+        Componentes.reemplazar(checkout, new PanelCheckout(apiVentas, abierto, this::cobrado));
     }
 }

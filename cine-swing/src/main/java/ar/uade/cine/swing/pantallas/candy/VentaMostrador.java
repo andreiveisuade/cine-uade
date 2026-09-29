@@ -10,14 +10,16 @@ import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
+import ar.uade.cine.swing.comun.Opciones;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.informes.TicketCandy;
 import ar.uade.cine.swing.pantallas.Seccion;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -36,6 +38,7 @@ import java.awt.Insets;
 import java.util.List;
 import java.util.Map;
 
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -50,16 +53,15 @@ final class VentaMostrador extends Seccion {
     private final ApiClientes apiClientes;
     private final JPanel filas = new AlAnchoDelVisor(new GridBagLayout(), false);
     private final Cantidades cantidades = new Cantidades();
-    private final JComboBox<Opcion<String>> medio = new JComboBox<>();
+    private final JComboBox<Opcion<MedioPago>> medio = new JComboBox<>();
     private final JTextField codigo = new JTextField();
     private final JLabel etiquetaCodigo = new JLabel("Código de autorización");
     private final JTextField email = new JTextField();
     private final JTextField reserva = Campos.soloEntero(new JTextField());
     private final JLabel error = Componentes.texto(" ");
     // Cuarenta columnas: lo justo para el renglón del ticket, que mide TicketCandy.
-    private final JTextArea ticket = new JTextArea(18, 40);
+    private final JTextArea ticket = Componentes.areaDeLectura(18, 40);
     private final JLabel tituloTicket = new JLabel(" ");
-    private List<MedioPago> medios = List.of();
 
     VentaMostrador(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes) {
         super(new BorderLayout(12, 8));
@@ -77,13 +79,12 @@ final class VentaMostrador extends Seccion {
         agregarCampo(datos, 2, new JLabel("Cliente (opcional)"), email);
         agregarCampo(datos, 3, new JLabel("Reserva (opcional)"), reserva);
 
-        JPanel pie = new JPanel();
-        pie.setLayout(new BoxLayout(pie, BoxLayout.Y_AXIS));
-        pie.add(Componentes.izquierda(datos));
-        pie.add(Componentes.izquierda(Componentes.nota("Con reserva, el cliente sale de ella y la venta suma al "
-                + "informe de esa función.")));
-        pie.add(Componentes.izquierda(cobrar));
-        pie.add(Componentes.izquierda(error));
+        Pila pie = new Pila();
+        pie.agregar(datos);
+        pie.agregar(Componentes.nota("Con reserva, el cliente sale de ella y la venta suma al "
+                + "informe de esa función."));
+        pie.agregar(cobrar);
+        pie.agregar(error);
 
         JPanel izquierda = new JPanel(new BorderLayout(0, 8));
         JScrollPane scroll = new JScrollPane(filas);
@@ -91,9 +92,6 @@ final class VentaMostrador extends Seccion {
         izquierda.add(pie, BorderLayout.SOUTH);
         add(izquierda, BorderLayout.CENTER);
 
-        ticket.setEditable(false);
-        ticket.setLineWrap(true);
-        ticket.setWrapStyleWord(true);
         ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         ticket.setText("El total lo calcula el backend con los precios de la carta: acá no se tipea.\n"
                 + "Al cobrar aparece el ticket.");
@@ -103,8 +101,7 @@ final class VentaMostrador extends Seccion {
         add(derecha, BorderLayout.EAST);
 
         cargar(() -> new Carga(apiCandy.obtenerProductosCandy(false), apiCatalogos.obtenerMediosPago()), carga -> {
-            medios = carga.medios();
-            medios.forEach(m -> medio.addItem(new Opcion<>(m.nombre(), etiqueta(m.nombre()))));
+            Campos.llenar(medio, Opciones.medios(carga.medios()));
             pintar(carga.productos());
             refrescarCodigo();
         });
@@ -141,7 +138,7 @@ final class VentaMostrador extends Seccion {
                 // Debajo del nombre y sin ancho propio: un combo largo se corta con "…" en vez de empujar el
                 // precio y la cantidad fuera de la vista.
                 JLabel trae = new JLabel(PantallaCandy.componentesDe(p));
-                trae.setForeground(Componentes.gris());
+                trae.setForeground(Colores.secundario());
                 trae.setToolTipText(PantallaCandy.componentesDe(p));
                 trae.setPreferredSize(new Dimension(0, trae.getPreferredSize().height));
                 producto.add(trae, BorderLayout.CENTER);
@@ -170,8 +167,8 @@ final class VentaMostrador extends Seccion {
     }
 
     private boolean requiereCodigo() {
-        String elegido = Campos.elegido(medio);
-        return medios.stream().anyMatch(m -> m.nombre().equals(elegido) && m.requiereAutorizacion());
+        MedioPago elegido = Campos.elegido(medio);
+        return elegido != null && elegido.requiereAutorizacion();
     }
 
     private void refrescarCodigo() {
@@ -182,7 +179,7 @@ final class VentaMostrador extends Seccion {
 
     private void cobrar() {
         Validacion v = new Validacion(error);
-        String medioElegido = v.elegido(medio, "Medio de pago");
+        MedioPago medioElegido = v.elegido(medio, "Medio de pago");
         String correo = v.email(email, "Cliente", false);
         Integer reservaId = v.entero(reserva, "Reserva", false);
         v.alMencionar("autorización", codigo);
@@ -192,8 +189,8 @@ final class VentaMostrador extends Seccion {
         String autorizacion = requiereCodigo() ? codigo.getText().trim() : "";
         // Sin nada elegido no se pregunta: el backend lo rechaza y el motivo aparece junto al formulario.
         int unidades = pedidas.values().stream().mapToInt(Integer::intValue).sum();
-        if (unidades > 0 && !confirmar("¿Cobrar " + unidades + (unidades == 1 ? " producto" : " productos")
-                + " en " + etiqueta(medioElegido).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) {
+        if (unidades > 0 && !confirmar("¿Cobrar " + cantidad(unidades, "producto", "productos")
+                + " en " + etiqueta(medioElegido.nombre()).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) {
             return;
         }
         Tarea.ejecutar(this, () -> {
@@ -204,7 +201,8 @@ final class VentaMostrador extends Seccion {
                 if (cliente == null) throw new ErrorApi(404, "No hay ningún cliente con el email " + correo);
                 clienteId = cliente.id();
             }
-            return apiCandy.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido, autorizacion));
+            return apiCandy.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido.nombre(),
+                    autorizacion));
         }, compra -> {
             avisar("Cobrado " + precio(compra.total()));
             tituloTicket.setText("Venta #" + compra.id());

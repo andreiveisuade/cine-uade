@@ -110,10 +110,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
         }));
         borrar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
             if (!confirmar("¿Borrar " + p.titulo() + "?", "Sí, borrar")) return;
-            accion(() -> {
-                apiCartelera.eliminarPelicula(p.id());
-                return null;
-            }, "Película borrada", this::recargar);
+            accion(() -> apiCartelera.eliminarPelicula(p.id()), "Película borrada", this::recargar);
         }));
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(editar);

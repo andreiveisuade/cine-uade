@@ -61,10 +61,7 @@ public final class PantallaMapaSala extends Pantalla {
         resumen.setText("<html><span style='font-size:16pt'><b>" + sala.nombre() + "</b></span><br>"
                 + etiqueta(sala.tipo()) + " · " + sala.filas() + " filas · " + sala.capacidadSala() + " butacas · "
                 + rotas + " fuera de servicio</html>");
-        mapa.removeAll();
-        mapa.add(new MapaButacas(sala.filas(), sala.asientos(), this::estilo, this::alternar));
-        mapa.revalidate();
-        mapa.repaint();
+        Componentes.reemplazar(mapa, new MapaButacas(sala.filas(), sala.asientos(), this::estilo, this::alternar));
     }
 
     private Estilo estilo(Asiento asiento) {
@@ -112,7 +109,7 @@ public final class PantallaMapaSala extends Pantalla {
                 return 13;
             }
         });
-        etiqueta.setForeground(Componentes.gris());
+        etiqueta.setForeground(Colores.secundario());
         return etiqueta;
     }
 }

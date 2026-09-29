@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 
 import java.util.List;
@@ -31,6 +32,11 @@ public final class Opciones {
     /** Para programar: el tipo dice si admite 3D. */
     public static List<Opcion<Integer>> salasConTipo(List<Sala> salas) {
         return salas.stream().map(s -> new Opcion<>(s.id(), s.nombre() + " — " + etiqueta(s.tipo()))).toList();
+    }
+
+    /** El medio entero y no su nombre: quien lo elige pregunta si pide autorización, sin buscarlo de nuevo. */
+    public static List<Opcion<MedioPago>> medios(List<MedioPago> medios) {
+        return medios.stream().map(m -> new Opcion<>(m, etiqueta(m.nombre()))).toList();
     }
 
     /** Constantes de un catálogo (idiomas, proyecciones, géneros) con la etiqueta que ve el encargado. */

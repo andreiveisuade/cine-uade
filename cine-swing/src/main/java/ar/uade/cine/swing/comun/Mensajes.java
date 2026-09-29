@@ -39,6 +39,11 @@ public final class Mensajes {
                 error.esSinConexion() ? "Sin conexión con el servidor" : "Error", JOptionPane.ERROR_MESSAGE);
     }
 
+    /** Un error de este lado y no del servidor: un archivo que no se pudo escribir, una importación que falló. */
+    public static void error(Component origen, String mensaje) {
+        error(origen, new ErrorApi(-1, mensaje));
+    }
+
     /** {@code si}: el botón que confirma, con el verbo de la acción ("Sí, borrar"). El otro es "Cancelar". */
     public static boolean confirmar(Component origen, String pregunta, String si) {
         return confirmar(origen, pregunta, si, "Cancelar");

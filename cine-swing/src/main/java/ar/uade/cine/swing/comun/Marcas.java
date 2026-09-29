@@ -6,8 +6,6 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
 import javax.swing.border.Border;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.awt.Component;
 
@@ -58,22 +56,7 @@ final class Marcas {
         if (campo.getClientProperty(ESCUCHA) != null) return;
         campo.putClientProperty(ESCUCHA, Boolean.TRUE);
         if (campo instanceof JTextComponent texto) {
-            texto.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    desmarcar(campo);
-                }
-
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    desmarcar(campo);
-                }
-
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    desmarcar(campo);
-                }
-            });
+            Campos.alCambiar(texto, () -> desmarcar(campo));
         } else if (campo instanceof JComboBox<?> combo) {
             combo.addActionListener(e -> desmarcar(campo));
         } else {

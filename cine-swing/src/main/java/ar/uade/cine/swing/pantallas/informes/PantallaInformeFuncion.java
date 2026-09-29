@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.ApiInformes;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.informes.InformeFuncion;
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
@@ -61,10 +62,7 @@ public final class PantallaInformeFuncion extends Pantalla {
                 + etiqueta(f.sala().tipo()) + ") · " + etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma())
                 + " · precio base " + precio(f.precio()) + " · " + (f.libres() == null ? "?" : f.libres())
                 + " de " + f.sala().capacidadSala() + " butacas libres</html>");
-        cuerpo.removeAll();
-        cuerpo.add(new PanelBordero(apiCatalogos, apiInformes, funcionId, datos.bordero()));
-        cuerpo.add(new PanelInforme(datos.informe()));
-        cuerpo.revalidate();
-        cuerpo.repaint();
+        Componentes.reemplazar(cuerpo, new PanelBordero(apiCatalogos, apiInformes, funcionId, datos.bordero()),
+                new PanelInforme(datos.informe()));
     }
 }

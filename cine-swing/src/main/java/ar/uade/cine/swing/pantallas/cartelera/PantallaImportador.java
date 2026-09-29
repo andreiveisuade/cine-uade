@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
-import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
 import ar.uade.cine.swing.api.dto.cartelera.Importacion;
 import ar.uade.cine.swing.comun.Colores;
@@ -9,6 +8,7 @@ import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -17,7 +17,6 @@ import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -76,12 +75,11 @@ public final class PantallaImportador extends Pantalla {
         controles.add(paginas);
         controles.add(traer);
         controles.add(porRevisar);
-        JPanel arriba = new JPanel();
-        arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
-        arriba.add(Componentes.izquierda(aviso));
-        arriba.add(Componentes.izquierda(controles));
-        arriba.add(Componentes.izquierda(error));
-        arriba.add(Componentes.izquierda(trayendo));
+        Pila arriba = new Pila();
+        arriba.agregar(aviso);
+        arriba.agregar(controles);
+        arriba.agregar(error);
+        arriba.agregar(trayendo);
 
         detalle.setEditable(false);
         detalle.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -132,7 +130,7 @@ public final class PantallaImportador extends Pantalla {
         Tarea.ejecutar(this, () -> apiCartelera.importarAhora(cuantas), corrida -> {
             terminar();
             if ("FALLIDA".equals(corrida.estado())) {
-                Mensajes.error(this, new ErrorApi(-1, resumen(corrida)));
+                Mensajes.error(this, resumen(corrida));
             } else {
                 avisar(resumen(corrida));
             }

@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
@@ -84,7 +85,7 @@ public final class PantallaAgenda extends Pantalla {
             }
         });
 
-        vacio.setForeground(Componentes.gris());
+        vacio.setForeground(Colores.secundario());
         JScrollPane scroll = new JScrollPane(lienzo);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         JPanel izquierda = new JPanel(new BorderLayout(0, 8));
@@ -94,7 +95,7 @@ public final class PantallaAgenda extends Pantalla {
                 + Math.round(GrillaAgenda.ALTO_MINIMO / GrillaAgenda.PX_POR_MINUTO) + " minutos se dibujan con un alto "
                 + "mínimo para que el título entre: es la única parte del gráfico que no está a escala. Lo rayado es "
                 + "la limpieza de la sala, que también ocupa.</div></html>");
-        nota.setForeground(Componentes.gris());
+        nota.setForeground(Colores.secundario());
         nota.setFont(nota.getFont().deriveFont(12f));
         nota.setVerticalAlignment(JLabel.TOP);
         izquierda.add(nota, BorderLayout.CENTER);
@@ -160,14 +161,7 @@ public final class PantallaAgenda extends Pantalla {
                 .toList();
         conteo.setText(visibles.size() + " funciones" + donde);
 
-        lienzo.removeAll();
-        if (visibles.isEmpty()) {
-            lienzo.add(vacio);
-        } else {
-            grilla.mostrar(columnas, visibles);
-            lienzo.add(grilla);
-        }
-        lienzo.revalidate();
-        lienzo.repaint();
+        if (!visibles.isEmpty()) grilla.mostrar(columnas, visibles);
+        Componentes.reemplazar(lienzo, visibles.isEmpty() ? vacio : grilla);
     }
 }

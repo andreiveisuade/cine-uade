@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.TablaCompras;
@@ -15,7 +16,6 @@ import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -65,11 +65,10 @@ public final class PantallaCaja extends Pantalla {
         siguiente.addActionListener(e -> mover(1));
         fecha.addPropertyChangeListener("date", e -> recargar());
 
-        JPanel resumen = new JPanel();
-        resumen.setLayout(new BoxLayout(resumen, BoxLayout.Y_AXIS));
-        resumen.add(Componentes.izquierda(barra));
-        resumen.add(Componentes.izquierda(cifras));
-        resumen.add(Componentes.izquierda(porMedio));
+        Pila resumen = new Pila();
+        resumen.agregar(barra);
+        resumen.agregar(cifras);
+        resumen.agregar(porMedio);
         porMedio.setBorder(BorderFactory.createEmptyBorder(6, 4, 6, 0));
 
         JPanel arriba = new JPanel(new BorderLayout(0, 4));
@@ -102,13 +101,11 @@ public final class PantallaCaja extends Pantalla {
 
     private void pintar(Datos datos) {
         Arqueo arqueo = datos.arqueo();
-        cifras.removeAll();
-        cifras.add(Componentes.cifra("Boletería", precio(arqueo.total()), null, null));
-        cifras.add(Componentes.cifra("Candy", precio(datos.candy().total()), null, null));
-        cifras.add(Componentes.cifra("Operaciones", String.valueOf(arqueo.pagos().size()), null, null));
-        cifras.add(Componentes.cifra("Entradas", String.valueOf(arqueo.entradas()), null, null));
-        cifras.revalidate();
-        cifras.repaint();
+        Componentes.reemplazar(cifras,
+                Componentes.cifra("Boletería", precio(arqueo.total()), null, null),
+                Componentes.cifra("Candy", precio(datos.candy().total()), null, null),
+                Componentes.cifra("Operaciones", String.valueOf(arqueo.pagos().size()), null, null),
+                Componentes.cifra("Entradas", String.valueOf(arqueo.entradas()), null, null));
         porMedio.setText(arqueo.porMedio().isEmpty() ? "No se cobró nada en boletería ese día."
                 : arqueo.porMedio().entrySet().stream()
                 .map(e -> etiqueta(e.getKey()) + " · " + e.getValue().cantidad() + "  " + precio(e.getValue().total()))

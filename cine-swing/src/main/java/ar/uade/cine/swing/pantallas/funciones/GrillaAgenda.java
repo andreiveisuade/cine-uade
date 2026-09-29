@@ -2,7 +2,6 @@ package ar.uade.cine.swing.pantallas.funciones;
 
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.comun.Colores;
-import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.pantallas.Navegacion;
 
 import javax.swing.BorderFactory;
@@ -13,8 +12,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -130,7 +129,7 @@ final class GrillaAgenda extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         int ancho = anchoColumna();
         Color borde = Colores.borde();
-        Color gris = Componentes.gris();
+        Color gris = Colores.secundario();
         Font base = getFont();
 
         g2.setColor(new Color(gris.getRed(), gris.getGreen(), gris.getBlue(), 30));

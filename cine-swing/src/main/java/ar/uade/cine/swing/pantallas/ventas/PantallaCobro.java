@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -15,7 +16,6 @@ import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -111,17 +111,16 @@ public final class PantallaCobro extends Pantalla {
         Set<String> seAcreditan = tarifas.stream().filter(Tarifa::requiereAcreditacion).map(Tarifa::nombre)
                 .collect(Collectors.toSet());
         JPanel panel = new JPanel(new BorderLayout(0, 8));
-        JPanel arriba = new JPanel();
-        arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
-        arriba.add(Componentes.izquierda(Componentes.subtitulo(
-                reserva.pelicula() == null ? "—" : reserva.pelicula().titulo())));
+        Pila arriba = new Pila();
+        arriba.agregar(Componentes.subtitulo(
+                reserva.pelicula() == null ? "—" : reserva.pelicula().titulo()));
         if (reserva.funcion() != null) {
-            arriba.add(Componentes.izquierda(Componentes.nota(dia(reserva.funcion().inicio()) + " "
+            arriba.agregar(Componentes.nota(dia(reserva.funcion().inicio()) + " "
                     + hora(reserva.funcion().inicio()) + " · " + reserva.sala().nombre() + " ("
-                    + etiqueta(reserva.sala().tipo()) + ")")));
+                    + etiqueta(reserva.sala().tipo()) + ")"));
         }
-        arriba.add(Componentes.izquierda(new JLabel(reserva.cliente() == null ? "—"
-                : reserva.cliente().nombre() + "  ·  " + reserva.cliente().email())));
+        arriba.agregar(new JLabel(reserva.cliente() == null ? "—"
+                : reserva.cliente().nombre() + "  ·  " + reserva.cliente().email()));
         panel.add(arriba, BorderLayout.NORTH);
 
         Tabla<Entrada> entradas = new Tabla<>(

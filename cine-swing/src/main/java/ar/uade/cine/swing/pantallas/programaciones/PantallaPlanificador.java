@@ -10,6 +10,7 @@ import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
+import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
@@ -28,7 +29,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.hora;
 
 /**
@@ -71,8 +71,8 @@ public final class PantallaPlanificador extends Pantalla {
         add(criterios(), BorderLayout.WEST);
         add(resultado, BorderLayout.CENTER);
         cargar(() -> new Idiomas(apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), c -> {
-            Opcion.de(c.idiomas(), v -> etiqueta(v)).forEach(idioma::addItem);
-            Opcion.de(c.proyecciones(), v -> etiqueta(v)).forEach(proyeccion::addItem);
+            Campos.llenar(idioma, Opciones.etiquetadas(c.idiomas()));
+            Campos.llenar(proyeccion, Opciones.etiquetadas(c.proyecciones()));
             version++;
         });
     }
@@ -107,15 +107,8 @@ public final class PantallaPlanificador extends Pantalla {
                         + "medio, lo respeta."))
                 .cerrar();
 
-        Runnable cambio = this::criteriosCambiados;
-        desde.addPropertyChangeListener("date", e -> cambio.run());
-        apertura.addChangeListener(e -> cambio.run());
-        cierre.addChangeListener(e -> cambio.run());
-        idioma.addActionListener(e -> cambio.run());
-        proyeccion.addActionListener(e -> cambio.run());
-        Campos.alCambiar(dias, cambio);
-        Campos.alCambiar(cuantasPeliculas, cambio);
-        Campos.alCambiar(precioBase, cambio);
+        Campos.alCambiar(this::criteriosCambiados, desde, apertura, cierre, idioma, proyeccion, dias,
+                cuantasPeliculas, precioBase);
 
         return Componentes.lateral(Componentes.conBorde(formulario));
     }

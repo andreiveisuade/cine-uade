@@ -3,16 +3,18 @@ package ar.uade.cine.swing.comun;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
 
 // Piezas de pantalla que se repiten, para que cada pantalla arme lo suyo y todas se vean igual.
 public final class Componentes {
@@ -54,6 +56,21 @@ public final class Componentes {
         return scroll;
     }
 
+    /** Botones del mismo ancho, uno al lado del otro, como Guardar y Cancelar al pie de un formulario. */
+    public static JPanel botones(JButton... botones) {
+        JPanel fila = new JPanel(new GridLayout(1, botones.length, 6, 0));
+        for (JButton boton : botones) fila.add(boton);
+        return fila;
+    }
+
+    /** Cambia lo que muestra un panel: saca todo, pone lo nuevo y lo vuelve a dibujar. */
+    public static void reemplazar(Container panel, Component... nuevos) {
+        panel.removeAll();
+        for (Component nuevo : nuevos) panel.add(nuevo);
+        panel.revalidate();
+        panel.repaint();
+    }
+
     /** Texto largo que solo se lee, cortado por palabras: un informe, un ticket, un detalle. */
     public static JTextArea areaDeLectura(int filas, int columnas) {
         JTextArea area = new JTextArea(filas, columnas);
@@ -72,7 +89,7 @@ public final class Componentes {
     /** Texto gris que explica. Corta línea al ancho que le toque, en vez de estirar la ventana o cortarse. */
     public static JLabel nota(String texto) {
         JLabel etiqueta = texto(texto);
-        etiqueta.setForeground(gris());
+        etiqueta.setForeground(Colores.secundario());
         etiqueta.setFont(etiqueta.getFont().deriveFont(12f));
         return etiqueta;
     }
@@ -80,10 +97,6 @@ public final class Componentes {
     /** HTML que corta línea al ancho que le toque, con el color y la letra de siempre. */
     public static JLabel texto(String html) {
         return new TextoQueSalta("<html>" + html + "</html>");
-    }
-
-    public static Color gris() {
-        return Colores.secundario();
     }
 
     public static JComponent izquierda(JComponent componente) {
@@ -107,7 +120,7 @@ public final class Componentes {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         JLabel arriba = new JLabel(titulo.toUpperCase());
-        arriba.setForeground(gris());
+        arriba.setForeground(Colores.secundario());
         arriba.setFont(arriba.getFont().deriveFont(11f));
         JLabel numero = new JLabel(valor);
         numero.setFont(numero.getFont().deriveFont(Font.BOLD, 22f));

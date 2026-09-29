@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
@@ -87,7 +88,7 @@ public final class PantallaSalas extends Pantalla {
         vip.setToolTipText("Ej: I1,I2,J1");
         pareja.setToolTipText("Ej: A1,A2");
         accesibles.setToolTipText("Ej: A1,A8");
-        resumenDistribucion.setForeground(Componentes.gris());
+        resumenDistribucion.setForeground(Colores.secundario());
         Campos.alCambiar(distribucion, this::resumir);
         JButton crear = new JButton("Crear sala");
         crear.addActionListener(e -> crear());
@@ -155,10 +156,7 @@ public final class PantallaSalas extends Pantalla {
 
     private void borrar(Sala sala) {
         if (!confirmar("¿Borrar " + sala.nombre() + "?", "Sí, borrar")) return;
-        accion(() -> {
-            apiSalas.eliminarSala(sala.id());
-            return null;
-        }, "Sala borrada", this::recargar);
+        accion(() -> apiSalas.eliminarSala(sala.id()), "Sala borrada", this::recargar);
     }
 
     private void abrirMapa(Sala sala) {

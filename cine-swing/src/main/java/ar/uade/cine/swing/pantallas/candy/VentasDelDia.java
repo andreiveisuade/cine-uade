@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.TablaCompras;
 import ar.uade.cine.swing.pantallas.Seccion;
@@ -45,7 +46,7 @@ final class VentasDelDia extends Seccion {
         Map<String, String> filtros = new LinkedHashMap<>();
         filtros.put("fecha", Fechas.iso(fecha));
         cargar(() -> apiCandy.obtenerComprasCandy(filtros), compras -> {
-            cantidad.setText(compras.size() + (compras.size() == 1 ? " venta" : " ventas"));
+            cantidad.setText(Formato.cantidad(compras.size(), "venta", "ventas"));
             tabla.mostrar(compras);
         });
     }

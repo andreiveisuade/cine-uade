@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
 import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
@@ -144,7 +145,7 @@ final class Carta extends Seccion {
         int fila = 0;
         for (Producto p : sueltos) {
             JLabel nombre = new JLabel(p.nombre() + "  · " + precio(p.precio()));
-            if (!p.disponible()) nombre.setForeground(Componentes.gris());
+            if (!p.disponible()) nombre.setForeground(Colores.secundario());
             JSpinner spinner = cantidadesCombo.nueva(p.id());
             GridBagConstraints izquierda = new GridBagConstraints();
             izquierda.gridy = fila;

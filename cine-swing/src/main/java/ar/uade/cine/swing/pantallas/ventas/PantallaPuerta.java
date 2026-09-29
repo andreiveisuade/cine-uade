@@ -24,6 +24,7 @@ import java.awt.Font;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
@@ -127,7 +128,7 @@ public final class PantallaPuerta extends Pantalla {
                     .append("</td></tr>");
         }
         int personas = reserva.entradas().size();
-        html.append("</table><p>").append(personas).append(personas == 1 ? " persona" : " personas")
+        html.append("</table><p>").append(cantidad(personas, "persona", "personas"))
                 .append(" · ingreso registrado ").append(fechaHora(reserva.ingresadaEn())).append("</p>");
         mostrar(Colores.exito(), "ADELANTE", html.toString());
     }

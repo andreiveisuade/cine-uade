@@ -119,10 +119,7 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
     private void borrar(Funcion funcion) {
         if (!confirmar("¿Borrar la función de " + funcion.pelicula().titulo() + " del " + dia(funcion.inicio())
                 + " " + hora(funcion.inicio()) + "?", "Sí, borrar")) return;
-        accion(() -> {
-            apiFunciones.eliminarFuncion(funcion.id());
-            return null;
-        }, "Función borrada", this::recargar);
+        accion(() -> apiFunciones.eliminarFuncion(funcion.id()), "Función borrada", this::recargar);
     }
 
     private void abrirInformes(Funcion funcion) {

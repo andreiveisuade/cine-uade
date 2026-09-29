@@ -2,6 +2,7 @@ package ar.uade.cine.swing;
 
 import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
@@ -78,7 +79,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         List<Grupo> menu = empleado.esAdministrador() ? MENU
                 : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
         JScrollPane lateral = new JScrollPane(menu(menu));
-        lateral.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Componentes.gris()));
+        lateral.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Colores.secundario()));
         lateral.setPreferredSize(new Dimension(180, 0));
         raiz.add(lateral, BorderLayout.WEST);
         raiz.add(contenido, BorderLayout.CENTER);
@@ -95,7 +96,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         JPanel cabecera = new JPanel();
         cabecera.setLayout(new BoxLayout(cabecera, BoxLayout.X_AXIS));
         cabecera.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, Componentes.gris()),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, Colores.secundario()),
                 BorderFactory.createEmptyBorder(10, 16, 10, 16)));
         JLabel marca = new JLabel("CINE UADE");
         marca.setFont(marca.getFont().deriveFont(Font.BOLD, 18f));
@@ -118,7 +119,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         for (Grupo g : grupos) {
             JLabel titulo = new JLabel(g.titulo().toUpperCase());
             titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 11f));
-            titulo.setForeground(Componentes.gris());
+            titulo.setForeground(Colores.secundario());
             titulo.setBorder(BorderFactory.createEmptyBorder(12, 6, 4, 0));
             menu.add(Componentes.izquierda(titulo));
             for (Destino destino : g.destinos()) {
@@ -160,10 +161,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     }
 
     private void mostrar(JComponent pantalla) {
-        contenido.removeAll();
-        contenido.add(pantalla);
-        contenido.revalidate();
-        contenido.repaint();
+        Componentes.reemplazar(contenido, pantalla);
     }
 
     // Sin default a propósito: un destino nuevo sin pantalla no compila.

@@ -21,14 +21,12 @@ import com.toedter.calendar.JDateChooser;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -64,9 +62,6 @@ final class FormularioProgramacion extends Seccion {
         previsualizar.addActionListener(e -> previsualizar());
         confirmar.addActionListener(e -> confirmar());
         confirmar.setEnabled(false);
-        JPanel botones = new JPanel(new GridLayout(1, 2, 6, 0));
-        botones.add(previsualizar);
-        botones.add(confirmar);
         JScrollPane scrollInforme = new JScrollPane(informe);
         scrollInforme.setPreferredSize(new Dimension(200, 180));
 
@@ -83,7 +78,7 @@ final class FormularioProgramacion extends Seccion {
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
                 .obligatorio("Precio base", precioBase)
-                .ancho(botones)
+                .ancho(Componentes.botones(previsualizar, confirmar))
                 .ancho(error)
                 .ancho(scrollInforme)
                 .ancho(Componentes.nota("Al confirmar, el servidor <b>vuelve a revisar</b> cada fecha: entre que "
@@ -92,16 +87,8 @@ final class FormularioProgramacion extends Seccion {
         add(Componentes.lateral(Componentes.conBorde(formulario)));
 
         pelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
-        Runnable invalidar = this::invalidar;
-        pelicula.addActionListener(e -> invalidar.run());
-        sala.addActionListener(e -> invalidar.run());
-        idioma.addActionListener(e -> invalidar.run());
-        proyeccion.addActionListener(e -> invalidar.run());
-        desde.addPropertyChangeListener("date", e -> invalidar.run());
-        hasta.addPropertyChangeListener("date", e -> invalidar.run());
-        horaInicio.addChangeListener(e -> invalidar.run());
-        dias.alCambiar(invalidar);
-        Campos.alCambiar(precioBase, invalidar);
+        Campos.alCambiar(this::invalidar, pelicula, sala, idioma, proyeccion, desde, hasta, horaInicio, dias,
+                precioBase);
     }
 
     void llenar(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas, List<String> proyecciones) {

@@ -59,9 +59,6 @@ final class FormularioPelicula extends Seccion {
         guardar.addActionListener(e -> guardar());
         cancelar.addActionListener(e -> limpiar());
         cancelar.setVisible(false);
-        JPanel botones = new JPanel(new GridLayout(1, 2, 6, 0));
-        botones.add(guardar);
-        botones.add(cancelar);
 
         add(Componentes.lateral(Componentes.conBorde(new Formulario()
                 .ancho(tituloFormulario)
@@ -76,7 +73,7 @@ final class FormularioPelicula extends Seccion {
                 .ancho(new JLabel("Géneros (al menos uno) *"))
                 .ancho(panelGeneros)
                 .ancho(publicada)
-                .ancho(botones)
+                .ancho(Componentes.botones(guardar, cancelar))
                 .ancho(error)
                 .cerrar())));
     }

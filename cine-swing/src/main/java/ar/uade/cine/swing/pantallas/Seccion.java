@@ -27,6 +27,14 @@ public abstract class Seccion extends JPanel {
         });
     }
 
+    /** Lo mismo para lo que no devuelve nada, como un borrado. */
+    protected void accion(Runnable trabajo, String mensaje, Runnable despues) {
+        accion(() -> {
+            trabajo.run();
+            return null;
+        }, mensaje, despues);
+    }
+
     /** Lo que salió bien, en la barra de estado: ver {@link Mensajes}. */
     protected void avisar(String mensaje) {
         Mensajes.exito(this, mensaje);

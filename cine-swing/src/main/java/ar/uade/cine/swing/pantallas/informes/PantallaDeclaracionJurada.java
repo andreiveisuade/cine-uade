@@ -2,17 +2,16 @@ package ar.uade.cine.swing.pantallas.informes;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiInformes;
-import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.informes.DeclaracionJurada;
 import ar.uade.cine.swing.api.dto.informes.FuncionDeclarada;
 import ar.uade.cine.swing.api.dto.informes.PeliculaDeclarada;
 import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.api.dto.informes.TotalDeclarado;
+import ar.uade.cine.swing.comun.Archivos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
-import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -22,15 +21,10 @@ import ar.uade.cine.swing.pantallas.Pantalla;
 import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -154,18 +148,9 @@ public final class PantallaDeclaracionJurada extends Pantalla {
     private void exportar() {
         Datos datos = actual;
         if (datos == null) return;
-        JFileChooser elegir = new JFileChooser();
-        elegir.setSelectedFile(new File(DeclaracionJuradaCsv.nombreArchivo(datos.declaracion())));
-        if (elegir.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
-        File destino = elegir.getSelectedFile();
-        try {
-            Files.writeString(destino.toPath(), DeclaracionJuradaCsv.escribir(datos.declaracion(), datos.tarifas()),
-                    StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            Mensajes.error(this, new ErrorApi(-1, "No se pudo guardar el archivo: " + e.getMessage()));
-            return;
-        }
-        avisar("Declaración jurada guardada en " + destino.getAbsolutePath());
+        Archivos.guardar(this, DeclaracionJuradaCsv.nombreArchivo(datos.declaracion()),
+                        DeclaracionJuradaCsv.escribir(datos.declaracion(), datos.tarifas()), "el archivo")
+                .ifPresent(destino -> avisar("Declaración jurada guardada en " + destino.toAbsolutePath()));
     }
 
     private static String porTarifa(Map<String, Total> porTarifa) {

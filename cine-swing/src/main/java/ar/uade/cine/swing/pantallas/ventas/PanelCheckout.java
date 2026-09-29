@@ -5,13 +5,12 @@ import ar.uade.cine.swing.api.dto.ventas.Checkout;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.pantallas.Seccion;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Font;
@@ -26,18 +25,17 @@ final class PanelCheckout extends Seccion {
 
     PanelCheckout(ApiVentas apiVentas, Checkout checkout, Consumer<Pago> alCobrar) {
         super(new BorderLayout());
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(Componentes.izquierda(Componentes.subtitulo("Checkout abierto · " + etiqueta(checkout.medio()))));
-        panel.add(Componentes.izquierda(Componentes.nota(checkout.id())));
-        panel.add(Componentes.izquierda(new JLabel("El cliente aprueba")));
+        Pila panel = new Pila();
+        panel.agregar(Componentes.subtitulo("Checkout abierto · " + etiqueta(checkout.medio())));
+        panel.agregar(Componentes.nota(checkout.id()));
+        panel.agregar(new JLabel("El cliente aprueba"));
         JLabel monto = new JLabel(precio(checkout.monto()));
         monto.setFont(monto.getFont().deriveFont(Font.BOLD, 22f));
-        panel.add(Componentes.izquierda(monto));
-        panel.add(Componentes.izquierda(new JLabel("Contenido del QR")));
-        panel.add(Componentes.izquierda(texto(checkout.codigoQr())));
-        panel.add(Componentes.izquierda(new JLabel("Link de pago")));
-        panel.add(Componentes.izquierda(texto(checkout.urlPago())));
+        panel.agregar(monto);
+        panel.agregar(new JLabel("Contenido del QR"));
+        panel.agregar(texto(checkout.codigoQr()));
+        panel.agregar(new JLabel("Link de pago"));
+        panel.agregar(texto(checkout.urlPago()));
         JButton confirmar = new JButton("El cliente pagó · confirmar");
         confirmar.addActionListener(e -> {
             if (!confirmar("¿El cliente aprobó el pago de " + precio(checkout.monto()) + "? Se registra "
@@ -49,10 +47,10 @@ final class PanelCheckout extends Seccion {
                 Mensajes.error(this, error);
             });
         });
-        panel.add(Componentes.izquierda(confirmar));
-        panel.add(Componentes.izquierda(Componentes.nota("El monto <b>ya tiene el descuento aplicado</b>: es el "
+        panel.agregar(confirmar);
+        panel.agregar(Componentes.nota("El monto <b>ya tiene el descuento aplicado</b>: es el "
                 + "importe que se aprueba. La pasarela es una emulación —el host no existe—, así que el aviso de "
-                + "«pagó» lo da esta pantalla; en una integración de verdad lo dispara el procesador.")));
+                + "«pagó» lo da esta pantalla; en una integración de verdad lo dispara el procesador."));
         add(Componentes.conBorde(panel));
     }
 
