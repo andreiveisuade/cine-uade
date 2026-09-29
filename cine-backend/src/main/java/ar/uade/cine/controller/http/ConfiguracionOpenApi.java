@@ -126,7 +126,7 @@ public class ConfiguracionOpenApi {
             respuestas.addApiResponse("404", respuestaDeError("No existe lo que se pidió, en la ruta o en el cuerpo"));
         }
         Conflicto.documentar(cual, respuestas);
-        respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos o la emisión de un comprobante"));
+        respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos"));
         accesoDe(ruta, metodo).documentar(operacion);
     }
 

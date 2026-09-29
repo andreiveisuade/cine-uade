@@ -38,7 +38,6 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
 import ar.uade.cine.dto.comun.ErrorVistaDTO;
-import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -220,12 +219,6 @@ public class ManejadorErrores {
     public ResponseEntity<ErrorVistaDTO> falloDePersistencia(DataAccessException e) {
         log.error("Falló el acceso a los datos", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo acceder a los datos");
-    }
-
-    @ExceptionHandler(ComprobanteException.class)
-    public ResponseEntity<ErrorVistaDTO> falloDeComprobante(ComprobanteException e) {
-        log.error("Falló la emisión de un comprobante", e);
-        return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir el comprobante");
     }
 
     // Sin esto Spring contesta con su propio formato y el front, que espera {error}, muestra vacío.
