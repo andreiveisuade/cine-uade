@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -280,8 +281,24 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.error()).isEqualTo("Email o contraseña incorrectos");
     }
 
+    // Con NULL en la columna, armar el usuario de Spring Security tiraba y el 401 decía otra cosa.
+    @Test
+    @DisplayName("un empleado sin hash en la base no entra, con el mismo 401 que una clave equivocada")
+    void unEmpleadoSinHashEnLaBaseEs401() {
+        jdbc.update("INSERT INTO usuario (nombre, email, rol, password_hash) VALUES (?, ?, ?, NULL)",
+                "Sin clave", "sinclave@cine.test", "ADMINISTRADOR");
+
+        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/sesion", null, "sinclave@cine.test", "cualquiera");
+
+        assertThat(respuesta.estado()).isEqualTo(401);
+        assertThat(respuesta.error()).isEqualTo("Email o contraseña incorrectos");
+    }
+
     @Autowired
     private TestRestTemplate http;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private Respuesta conAutorizacion(String autorizacion) {
         HttpHeaders cabeceras = new HttpHeaders();

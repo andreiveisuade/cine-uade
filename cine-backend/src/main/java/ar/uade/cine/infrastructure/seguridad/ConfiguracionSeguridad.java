@@ -118,9 +118,13 @@ public class ConfiguracionSeguridad {
     }
 
     // El email se busca como lo guarda Email: el login tampoco distingue mayúsculas ni espacios.
+    // Un empleado sin hash (una fila cargada a mano con NULL) no tiene con qué comparar la clave: cuenta
+    // como un email que no existe, así el 401 dice lo mismo que una clave equivocada. Armar el User con
+    // NULL tiraba, y el 401 decía «Hace falta iniciar sesión».
     @Bean
     public UserDetailsService empleadosComoUsuarios(EmpleadoRepository empleados) {
         return email -> Email.paraBuscar(email).map(Email::valor).flatMap(empleados::findByEmail)
+                .filter(empleado -> empleado.getPasswordHash() != null)
                 .map(empleado -> User.withUsername(empleado.getEmail())
                         .password(empleado.getPasswordHash())
                         .roles(empleado.getRol().name())
