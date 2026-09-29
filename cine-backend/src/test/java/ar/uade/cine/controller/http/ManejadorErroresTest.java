@@ -20,13 +20,17 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
@@ -43,15 +47,16 @@ class ManejadorErroresTest extends PruebaDeApi {
     @Autowired
     private TestRestTemplate cliente;
 
-    // Una carrera no se repite a pedido: esta ruta, que solo existe en este test, graba dos clientes con
-    // el mismo email por el repositorio, salteando al gestor, como dos altas simultáneas que pasaron su
-    // existsBy… La base rechaza la segunda con la excepción de verdad.
+    // Rutas que solo existen en este test: provocan lo que el uso normal de la API no provoca a pedido.
+    // Clases miembro de un @TestConfiguration: Spring las registra solas, sin @Bean.
     @TestConfiguration
-    static class RutaQueChocaConLaBase {
+    static class RutasDePrueba {
 
-        static final String RUTA = "/api/prueba/choque";
+        static final String RUTA_CHOQUE = "/api/prueba/choque";
 
-        // Clase miembro de un @TestConfiguration: Spring la registra sola, sin @Bean.
+        // Una carrera no se repite a pedido: graba dos clientes con el mismo email por el repositorio,
+        // salteando al gestor, como dos altas simultáneas que pasaron su existsBy… La base rechaza la
+        // segunda con la excepción de verdad.
         @RestController
         static class Choque {
 
@@ -61,7 +66,7 @@ class ManejadorErroresTest extends PruebaDeApi {
                 this.clientes = clientes;
             }
 
-            @PostMapping(RUTA)
+            @PostMapping(RUTA_CHOQUE)
             public void chocar() {
                 clientes.save(new Cliente("Ana", "ana@mail.com"));
                 clientes.save(new Cliente("Otra Ana", "ana@mail.com"));
@@ -85,6 +90,47 @@ class ManejadorErroresTest extends PruebaDeApi {
                 };
             }
         }
+
+        static final String RUTA_CABECERA = "/api/prueba/cabecera";
+
+        static final String RUTA_ESTADOS = "/api/prueba/estado/";
+
+        // Lo que Spring rechaza sin un handler propio: su detail viene en inglés.
+        @RestController
+        static class DeSpring {
+
+            @GetMapping(RUTA_CABECERA)
+            public void conCabecera(@RequestHeader("X-Prueba") String valor) {
+            }
+
+            @PostMapping(RUTA_ESTADOS + "{estado}")
+            public void conEstado(@PathVariable int estado) {
+                throw new ResponseStatusException(HttpStatusCode.valueOf(estado));
+            }
+        }
+    }
+
+    @Test
+    void unaCabeceraQueFaltaEs400EnCastellano() {
+        Respuesta respuesta = get(RutasDePrueba.RUTA_CABECERA);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El pedido no es válido", respuesta.error());
+    }
+
+    // El detail de Spring está en inglés: el status se conserva y el texto sale en castellano.
+    @ParameterizedTest(name = "{0} → {1}")
+    @CsvSource(textBlock = """
+            404, No existe lo que se pidió
+            418, El pedido no es válido
+            503, 'El servidor no está disponible: volvé a intentarlo en un rato'
+            501, Ocurrió un error inesperado en el servidor
+            """)
+    void loQueSpringRechazaSinHandlerPropioSaleEnCastellanoSegunElStatus(int estado, String mensaje) {
+        Respuesta respuesta = post(RutasDePrueba.RUTA_ESTADOS + estado, null);
+
+        assertEquals(estado, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
     }
 
     @ParameterizedTest(name = "{0} → {1}")
@@ -95,7 +141,7 @@ class ManejadorErroresTest extends PruebaDeApi {
             butaca,      409, La butaca B4 ya está ocupada
             """)
     void cadaRechazoSaleConSuStatusYSuTextoIntacto(String tipo, int estado, String mensaje) {
-        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA_RECHAZOS + tipo, null);
+        Respuesta respuesta = post(RutasDePrueba.RUTA_RECHAZOS + tipo, null);
 
         assertEquals(estado, respuesta.estado());
         assertEquals(mensaje, respuesta.error());
@@ -104,7 +150,7 @@ class ManejadorErroresTest extends PruebaDeApi {
     // Lo tiró una librería o un bug: su texto es técnico y no es para el usuario.
     @Test
     void unaIllegalArgumentExceptionQueNoEsRechazoEs500Generico() {
-        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA_RECHAZOS + "de-libreria", null);
+        Respuesta respuesta = post(RutasDePrueba.RUTA_RECHAZOS + "de-libreria", null);
 
         assertEquals(500, respuesta.estado());
         assertEquals("Ocurrió un error inesperado en el servidor", respuesta.error());
@@ -287,7 +333,7 @@ class ManejadorErroresTest extends PruebaDeApi {
     // Dos altas que pasan el mismo existsBy… y chocan en el UNIQUE: no es una base caída, es 409 y no 500.
     @Test
     void unAltaQueChocaConUnaRestriccionDeLaBaseEs409() {
-        Respuesta respuesta = post(RutaQueChocaConLaBase.RUTA, null);
+        Respuesta respuesta = post(RutasDePrueba.RUTA_CHOQUE, null);
 
         assertEquals(409, respuesta.estado());
         assertEquals("Otro pedido cambió estos datos al mismo tiempo: recargá y volvé a intentarlo",

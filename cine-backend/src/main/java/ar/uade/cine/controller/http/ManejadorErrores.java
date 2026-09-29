@@ -195,13 +195,26 @@ public class ManejadorErrores {
     }
 
     // Sin esto Spring contesta con su propio formato y el front, que espera {error}, muestra vacío.
+    // Lo que Spring rechaza sin un handler propio (un header que falta, por ejemplo) conserva su
+    // status, pero no su detail: viene en inglés, o vacío. El detail va al log.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorVistaDTO> errorInesperado(Exception e) {
         if (e instanceof ErrorResponse deSpring) {
-            return responder(deSpring.getStatusCode(), deSpring.getBody().getDetail());
+            log.warn("Spring rechazó el pedido con {}: {}", deSpring.getStatusCode().value(),
+                    deSpring.getBody().getDetail());
+            return responder(deSpring.getStatusCode(), textoDe(deSpring.getStatusCode()));
         }
         log.error("Error no previsto", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
+    }
+
+    // Por status y no por excepción: Spring tiene muchas, y en el uso normal de la API no llega ninguna.
+    private static String textoDe(HttpStatusCode estado) {
+        return switch (estado.value()) {
+            case 404 -> "No existe lo que se pidió";
+            case 503 -> "El servidor no está disponible: volvé a intentarlo en un rato";
+            default -> estado.is4xxClientError() ? "El pedido no es válido" : ERROR_INESPERADO;
+        };
     }
 
     // Content-Type fijo: así Spring no negocia contra el Accept. Con Accept: application/xml no
