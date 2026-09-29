@@ -2,6 +2,7 @@ package ar.uade.cine.controller.promociones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,18 @@ class PromocionControllerTest extends PruebaDeApi {
                 "{\"nombre\":\"2x2\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":2" + vigencia);
         assertEquals(400, dosPorDos.estado());
         assertEquals("En un NxM hay que llevar más de lo que se paga", dosPorDos.error());
+    }
+
+    // Una hora vacía es una hora que no vino, como en el resto de la API: antes decía «Falta la hora de inicio».
+    @Test
+    void lasHorasVaciasDejanLaFranjaAbierta() {
+        Respuesta respuesta = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":20,\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\","
+                + "\"horaDesde\":\"\",\"horaHasta\":\" \"}");
+
+        assertEquals(201, respuesta.estado());
+        assertNull(respuesta.json().get("horaDesde"));
+        assertNull(respuesta.json().get("horaHasta"));
     }
 
     // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.

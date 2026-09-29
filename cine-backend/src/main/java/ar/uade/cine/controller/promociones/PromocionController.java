@@ -66,8 +66,9 @@ public class PromocionController {
         LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
         Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
         Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
-        LocalTime horaDesde = pedido.horaDesde() == null ? null : Parseo.hora(pedido.horaDesde(), "la hora de inicio");
-        LocalTime horaHasta = pedido.horaHasta() == null ? null : Parseo.hora(pedido.horaHasta(), "la hora de fin");
+        // Una hora vacía es una hora que no vino, como en el resto de la API: la franja queda abierta.
+        LocalTime horaDesde = Parseo.horaOpcional(pedido.horaDesde(), "la hora de inicio");
+        LocalTime horaHasta = Parseo.horaOpcional(pedido.horaHasta(), "la hora de fin");
         CondicionesPromocion condiciones = new CondicionesPromocion(desde, hasta, dias,
                 horaDesde, horaHasta, medios);
 
