@@ -65,7 +65,11 @@ fi
 
 echo "Promociones"
 DESDE=$(date +%F)
+# Noventa días desde hoy y no una fecha fija: el backend no crea una promoción ya vencida. Se suma en
+# segundos porque `date -d @` es de GNU y busybox, y `date -r` el equivalente de macOS.
+FIN=$(( $(date +%s) + 90 * 86400 ))
+HASTA=$(date -d "@$FIN" +%F 2>/dev/null || date -r "$FIN" +%F)
 alta promociones "{\"nombre\":\"Miércoles 2x1\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":1,
-  \"vigenciaDesde\":\"$DESDE\",\"vigenciaHasta\":\"2026-12-31\",\"diasSemana\":[\"WEDNESDAY\"]}" "Miércoles 2x1"
+  \"vigenciaDesde\":\"$DESDE\",\"vigenciaHasta\":\"$HASTA\",\"diasSemana\":[\"WEDNESDAY\"]}" "Miércoles 2x1"
 
 echo "Listo. Las películas se importan desde el panel: Importador y después Por revisar."
