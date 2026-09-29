@@ -34,6 +34,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/salas y butacas fuera de servicio (R9): traduce HTTP a GestorSalas; responde con VistasSalas.
 @Tag(name = "Salas", description = "Las salas del cine y el estado de cada butaca")
 @RestController
 @RequiredArgsConstructor

@@ -17,6 +17,7 @@ import ar.uade.cine.service.RecursoNoEncontrado;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas del borderó, el informe por función y la declaración jurada del INCAA; delega en GestorInformes.
 @Tag(name = "Informes", description = "El borderó del INCAA, la declaración jurada del período y la recaudación por función")
 @RestController
 @RequiredArgsConstructor

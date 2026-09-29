@@ -31,6 +31,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/funciones: busca, programa y borra vía GestorFunciones; responde con VistasCartelera.
 @Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
 @RequiredArgsConstructor

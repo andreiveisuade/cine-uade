@@ -13,6 +13,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
+// Traduce el JSON de TMDB a DatosPelicula (géneros, clasificación, idioma); Fabricación pura, sin estado.
 final class MapeoTmdb {
 
     private static final Map<String, Genero> GENEROS = Map.ofEntries(

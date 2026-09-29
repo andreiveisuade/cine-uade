@@ -7,6 +7,7 @@ import java.util.HexFormat;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+// Valida claves contra el hash SHA-256 viejo; PasswordEncoder de respaldo mientras migran a bcrypt.
 // El formato viejo, SHA-256 sin salt ni prefijo: queda solo para reconocer los hashes que ya
 // tienen el seed y las bases creadas antes de bcrypt. Nada nuevo se guarda así.
 public class PasswordSha256 implements PasswordEncoder {

@@ -9,6 +9,7 @@ import java.util.List;
 
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
+// Base de los comprobantes .txt (44 columnas, campos, escritura a disco); los generadores la heredan.
 abstract class ComprobanteTxt {
 
     private static final DateTimeFormatter FORMATO_FECHA =

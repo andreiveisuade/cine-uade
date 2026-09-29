@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Ruta POST /api/funciones/{id}/bloqueos: toma butacas mientras el cliente elige; delega en Ocupacion.
 // Cuelga de /api/funciones pero es el primer paso de la compra: en Swagger va con las reservas.
 @Tag(name = "Reservas")
 @RestController

@@ -36,6 +36,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/promociones: arma las condiciones y elige el alta por tipo; las reglas, en GestorPromociones.
 @Tag(name = "Promociones", description = "Los descuentos que el cine carga desde el panel")
 @RestController
 @RequiredArgsConstructor

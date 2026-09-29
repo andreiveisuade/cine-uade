@@ -24,6 +24,7 @@ import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.service.RecursoNoEncontrado;
 import ar.uade.cine.controller.salas.VistasSalas;
 
+// Arma los JSON de películas y funciones con sala, precio y butacas; Assembler que reusan varios controllers.
 // Un listado de N funciones cuesta un número fijo de consultas por sala y no por fila: las
 // películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
 // sentencias.

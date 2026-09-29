@@ -2,7 +2,7 @@ package ar.uade.cine.controller.informes;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-// La sección cine.incaa de application.yml: el encabezado de la declaración jurada.
+// Datos del exhibidor para el encabezado de la declaración jurada; @ConfigurationProperties de cine.incaa.
 @ConfigurationProperties("cine.incaa")
 public record PropiedadesIncaa(String razonSocial, String cuit, String numeroExhibidor) {
 }

@@ -10,6 +10,7 @@ import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.usuarios.Cliente;
 
+// Ticket de candy en un .txt por compra, con lo ahorrado en combos; Adapter del puerto GeneradorTicketCandy.
 public class GeneradorTicketCandyTxt extends ComprobanteTxt implements GeneradorTicketCandy {
 
     public GeneradorTicketCandyTxt(Path directorio) {

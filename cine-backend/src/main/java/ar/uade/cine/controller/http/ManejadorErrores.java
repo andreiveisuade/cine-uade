@@ -35,6 +35,7 @@ import ar.uade.cine.service.ventas.ButacaOcupadaException;
 import ar.uade.cine.service.ConflictoDeNegocio;
 import ar.uade.cine.service.RecursoNoEncontrado;
 
+// Traduce cada excepción a status HTTP y JSON {error}; @RestControllerAdvice: ningún controller atrapa.
 @RestControllerAdvice
 @Slf4j
 public class ManejadorErrores {

@@ -30,6 +30,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/reservas (reservar, consultar, cancelar, también por código); delega en GestorReservas.
 // El tag lo comparten BloqueoController y AccesoController: bloquear y entrar son del mismo circuito.
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController

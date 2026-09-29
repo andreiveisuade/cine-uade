@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
+// Qué rol puede llamar cada ruta y cómo se autentica (Basic contra empleado, bcrypt); SecurityFilterChain.
 // HTTP Basic sin sesión: sin cookie no hay CSRF, por eso está apagado. Lo no enumerado pide ADMINISTRADOR.
 // Los 401/403 salen sin WWW-Authenticate, que abriría el cuadro de login del navegador.
 @Configuration

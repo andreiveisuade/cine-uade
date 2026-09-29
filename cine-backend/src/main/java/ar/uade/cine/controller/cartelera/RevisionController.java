@@ -14,6 +14,7 @@ import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas /api/peliculas/pendientes, /{id}/confirmacion y /{id}/descarte; delega en GestorRevisionCartelera.
 // El buzón de lo que trajo el importador: su propio gestor y su propio caso de uso, aunque las
 // rutas cuelguen de /api/peliculas. Sin chequeo previo de 404: GestorRevisionCartelera ya lo da.
 @Tag(name = "Películas")

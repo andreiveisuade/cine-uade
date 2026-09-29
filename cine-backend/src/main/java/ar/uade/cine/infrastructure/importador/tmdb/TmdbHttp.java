@@ -25,6 +25,7 @@ import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
+// Baja la cartelera de TMDB por HTTP con 4 hilos y pausa entre llamadas; Adapter del puerto CatalogoExterno.
 @Slf4j
 public class TmdbHttp implements CatalogoExterno {
 

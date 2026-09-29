@@ -7,6 +7,7 @@ import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
 
+// Arma los JSON de cliente y empleado, sin el hash de la contraseña; Assembler entre el modelo y los DTO.
 @Component
 public class VistasUsuarios {
 

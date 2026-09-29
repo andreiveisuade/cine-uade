@@ -37,6 +37,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/candy (carta, combos, compras): traduce HTTP a GestorProductos y GestorCandy; no decide nada.
 // El arqueo del candy comparte el tag pero es de informes/CajaController: lee la caja, no vende.
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController

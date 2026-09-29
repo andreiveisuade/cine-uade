@@ -17,6 +17,7 @@ import ar.uade.cine.dto.salas.SalaVistaDTO;
 import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.salas.GestorSalas;
 
+// Arma los JSON de salas y butacas; el precio de cada butaca lo pide a CalculadoraPrecio (Assembler).
 @Component
 @RequiredArgsConstructor
 public class VistasSalas {

@@ -12,6 +12,7 @@ import ar.uade.cine.model.candy.ItemCombo;
 import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.candy.Producto;
 
+// Arma los JSON de productos, combos y compras del candy; Assembler entre el modelo y los DTO.
 @Component
 public class VistasCandy {
 

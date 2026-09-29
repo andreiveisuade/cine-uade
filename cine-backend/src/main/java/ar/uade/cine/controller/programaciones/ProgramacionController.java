@@ -41,6 +41,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/programaciones: previsualiza, crea y (des)activa grillas; delega en GestorProgramaciones.
 @Tag(name = "Programaciones", description = "Las grillas que generan funciones en serie")
 @RestController
 @RequiredArgsConstructor

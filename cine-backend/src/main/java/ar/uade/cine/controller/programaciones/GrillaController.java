@@ -34,6 +34,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas /api/grilla/propuesta y /api/grilla: la semana automática de funciones; delega en PlanificadorGrilla.
 @Tag(name = "Grilla automática", description = "El armado de una semana entera de una sola vez")
 @RestController
 @RequiredArgsConstructor

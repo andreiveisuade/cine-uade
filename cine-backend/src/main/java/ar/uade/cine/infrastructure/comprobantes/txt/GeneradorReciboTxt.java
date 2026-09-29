@@ -9,6 +9,7 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 
+// Recibo de caja en un .txt por pago, con el descuento si hubo; Adapter del puerto GeneradorRecibo.
 public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecibo {
 
     public GeneradorReciboTxt(Path directorio) {

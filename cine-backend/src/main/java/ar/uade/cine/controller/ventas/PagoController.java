@@ -30,6 +30,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de pago y checkout de una reserva: traduce HTTP a GestorPagos; el monto no viaja en el pedido.
 // El arqueo de boletería comparte el tag pero es de informes/CajaController: lee la caja, no cobra.
 @Tag(name = "Cobros", description = "El cobro de una reserva y el arqueo de boletería")
 @RestController

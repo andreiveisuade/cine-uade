@@ -25,6 +25,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/clientes: alta y búsqueda por email vía GestorClientes; sin GET por id, el email es la clave.
 @Tag(name = "Clientes", description = "El alta y la búsqueda de quien compra")
 @RestController
 @RequiredArgsConstructor

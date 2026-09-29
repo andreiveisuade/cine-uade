@@ -8,6 +8,7 @@ import ar.uade.cine.model.promociones.PromocionNxM;
 import ar.uade.cine.model.promociones.PromocionPorcentaje;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 
+// Arma un único JSON para las tres subclases de Promocion, con null en lo que no aplica; Assembler.
 @Component
 public class VistasPromociones {
 

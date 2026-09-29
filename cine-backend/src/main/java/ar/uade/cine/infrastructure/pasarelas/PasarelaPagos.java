@@ -5,6 +5,7 @@ import java.util.Optional;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Puerto a la pasarela de pagos electrónicos (checkout y autorización); cambiarla no toca GestorPagos (DIP).
 public interface PasarelaPagos {
 
     Checkout crear(int reservaId, MedioPago medio, Dinero monto);

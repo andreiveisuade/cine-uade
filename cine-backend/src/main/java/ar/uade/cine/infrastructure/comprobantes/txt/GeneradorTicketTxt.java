@@ -13,6 +13,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
+// Ticket de la reserva en un .txt, con cada butaca y su tarifa; Adapter del puerto GeneradorTicket.
 public class GeneradorTicketTxt extends ComprobanteTxt implements GeneradorTicket {
 
     public GeneradorTicketTxt(Path directorio) {

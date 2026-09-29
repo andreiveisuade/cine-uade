@@ -25,6 +25,7 @@ import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de catálogos (/api/generos, /api/tarifas…); expone los enums del modelo y ningún cliente los copia.
 @Tag(name = "Catálogos", description = "Las listas de constantes que llenan los combos del panel")
 @RestController
 public class CatalogoController {

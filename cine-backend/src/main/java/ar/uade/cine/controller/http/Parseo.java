@@ -7,6 +7,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
 
+// Pasa los textos del pedido a enums, fechas y números; lo inválido sale como IllegalArgumentException (400).
 public final class Parseo {
 
     private Parseo() {

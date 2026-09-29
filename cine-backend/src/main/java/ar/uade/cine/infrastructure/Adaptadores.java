@@ -21,6 +21,7 @@ import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
+// Elige la implementación de cada puerto (comprobantes, pasarela, reloj, TMDB); solo acá se nombran (DIP).
 @Configuration
 public class Adaptadores {
 

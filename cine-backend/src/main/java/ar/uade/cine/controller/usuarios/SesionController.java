@@ -11,6 +11,7 @@ import ar.uade.cine.service.usuarios.GestorEmpleados;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Ruta POST /api/sesion (login): devuelve el empleado ya autenticado; la clave la valida Spring Security.
 @Tag(name = "Sesión", description = "El login del panel")
 @RestController
 @RequiredArgsConstructor

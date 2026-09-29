@@ -34,6 +34,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/cartelera y /api/peliculas: cartelera pública y ABM; traduce HTTP a GestorCartelera.
 // El buzón de revisión comparte el tag pero tiene su propio controller: RevisionController.
 @Tag(name = "Películas", description = "La cartelera pública y el ABM del catálogo")
 @RestController

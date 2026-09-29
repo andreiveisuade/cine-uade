@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 
+// Documentación OpenAPI (Swagger) de la API; lee las rutas públicas de ConfiguracionSeguridad, no las copia.
 @Configuration
 public class ConfiguracionOpenApi {
 

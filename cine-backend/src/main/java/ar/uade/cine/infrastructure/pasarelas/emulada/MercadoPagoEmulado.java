@@ -9,6 +9,7 @@ import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.model.dinero.Dinero;
 
+// Mercado Pago simulado en memoria: checkouts y códigos de autorización al azar; Adapter de PasarelaPagos.
 public class MercadoPagoEmulado implements PasarelaPagos {
 
     private static final String HOST = "https://checkout.emulado.local/mp/";

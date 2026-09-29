@@ -4,6 +4,7 @@ import java.util.List;
 
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
+// Puerto hacia la fuente de cartelera (hoy TMDB); el gestor no ve HTTP ni JSON (Variaciones protegidas).
 public interface CatalogoExterno {
 
     // Puede devolver películas inválidas: filtrarlas acá duplicaría R1 y R2.

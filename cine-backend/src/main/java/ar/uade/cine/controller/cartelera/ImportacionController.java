@@ -21,6 +21,7 @@ import ar.uade.cine.service.cartelera.GestorImportaciones;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+// Rutas de /api/importaciones: corre el importador de TMDB y su historial; delega en GestorImportaciones.
 // Contesta al terminar la corrida (10-15 s): nginx tiene un timeout más largo para esta ruta.
 @Tag(name = "Importación", description = "La cartelera que baja de TMDB")
 @RestController
