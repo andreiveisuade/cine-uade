@@ -15,8 +15,8 @@ import java.awt.Font;
 final class TicketVenta extends JPanel {
 
     private final JLabel titulo = new JLabel(" ");
-    // Cuarenta columnas: lo justo para el renglón del ticket, que mide TicketCandy.
-    private final JTextArea ticket = Componentes.areaDeLectura(18, 40);
+    // El renglón del ticket mide 40 (TicketCandy); dos más por el margen del área, así no aparece el scroll.
+    private final JTextArea ticket = Componentes.areaDeLectura(18, 42);
 
     TicketVenta() {
         super(new BorderLayout(0, 6));
