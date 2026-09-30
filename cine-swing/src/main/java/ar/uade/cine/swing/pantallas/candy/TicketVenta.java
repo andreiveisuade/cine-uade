@@ -21,6 +21,8 @@ final class TicketVenta extends JPanel {
     TicketVenta() {
         super(new BorderLayout(0, 6));
         ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        // Es texto con columnas fijas: cortar la línea partía el renglón de "=" en dos. Si no entra, scroll.
+        ticket.setLineWrap(false);
         ticket.setText("El total lo calcula el backend con los precios de la carta: acá no se tipea.\n"
                 + "Al cobrar aparece el ticket.");
         add(titulo, BorderLayout.NORTH);
