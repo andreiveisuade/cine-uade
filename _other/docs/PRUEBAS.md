@@ -17,9 +17,11 @@ Los niveles 3 a 5 escriben datos: se corren contra una base desechable, nunca co
 ## 1. Suite del backend
 
 ```bash
-cd cine-backend && mvn test          # 1149 casos, 0 fallas
+cd cine-backend && mvn clean test    # clean: que no corran clases viejas de target/
 mvn test -Dtest=GestorPagosTest      # una clase
 ```
+
+Sin Java ni Maven: `docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test`.
 
 Levanta el contexto de Spring contra H2 en modo MySQL, creado con el `schema.sql` real: los `UNIQUE`, los
 `NOT NULL` y los largos de columna son los mismos que en producción. No hace falta Docker.
@@ -48,7 +50,7 @@ No correr dos `mvn test` a la vez sobre el mismo `target/`.
 ## 2. Suite de Swing y build de la web
 
 ```bash
-cd cine-swing && mvn test            # 60 casos, contra un servidor HTTP falso, sin backend
+cd cine-swing && mvn clean test      # contra un servidor HTTP falso, sin backend
 cd cine-frontend && npm run build    # compila la web; un error de sintaxis o un import roto corta acá
 ```
 

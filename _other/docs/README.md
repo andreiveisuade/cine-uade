@@ -2,32 +2,20 @@
 
 | Carpeta | Qué hay |
 |---|---|
-| `manual/` | Manual navegable del proyecto (`index.html`): requerimientos, reglas R1..R20, casos de uso, arquitectura, diagramas, decisiones y pendientes. Es la fuente de verdad y parte del entregable |
-| `manual/capturas/` | Capturas que el manual embebe: `cpNN-*.jpg` de la web, `swing-*.jpg` del panel |
-| `PRUEBAS.md` | Los cinco niveles de prueba, cómo correr cada uno, la planilla de la recorrida visual y el resultado de la última corrida |
-| `diagramas/` | Fuentes PlantUML (`.puml`) y sus `.svg` renderizados |
+| `manual/` | El manual (`index.html`): requerimientos, reglas, casos de uso, arquitectura, decisiones y diagramas. Es la fuente de verdad |
+| `diagramas/` | Fuentes PlantUML (`.puml`) y sus `.svg` |
+| `evidencia/` | Capturas de la última recorrida visual |
+| `PRUEBAS.md` | Cómo se verifica el sistema y el resultado de la última corrida |
 
-## Ver el manual
-
-```bash
-open manual/index.html        # macOS; en Linux xdg-open, en Windows start
-```
-
-Es autocontenido: los SVG y las capturas van embebidos, no necesita servidor ni internet.
-
-## Regenerar
-
-Requiere [PlantUML](https://plantuml.com/) y Python 3, desde esta carpeta:
+El manual es autocontenido (`open manual/index.html`). **No se edita a mano**: se edita
+`manual/template.html` y se regenera, con PlantUML y Python 3:
 
 ```bash
 cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
 cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
 
-`index.html` **no se edita a mano**: se edita `manual/template.html` y se corre `build.py`, que
-reemplaza sus placeholders `{{SVG_*}}` e `{{IMG_*}}`. Un diagrama nuevo suma su placeholder al
-`svg_map` de `build.py`; una captura nueva, al `imagen_map`. Si falta un `.svg`, una captura o un
-placeholder en el template, `build.py` corta con el nombre de lo que falta y no escribe nada.
+Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `imagen_map`.
 
 ## Diagramas
 
