@@ -147,7 +147,7 @@ tiene lo que se espera ver; si algo no coincide, se anota con captura.
 | S6 | Funciones: una a más de un año | «La función tiene que empezar dentro del próximo año» |
 | S7 | Reservas: cobrar en efectivo | El cobro sale y la reserva pasa a pagada; el éxito va a la barra de estado |
 | S8 | Candy: vender para una reserva sin pagar | «La reserva N no está pagada: cobrala antes de agregarle candy» |
-| S9 | Promociones: porcentaje 99,999 | «El porcentaje tiene que tener como máximo 2 decimales» |
+| S9 | Promociones: porcentaje 99,999 y después 50,555 | «El porcentaje tiene que estar entre 1 y 99»; con 50,555, «El porcentaje tiene que tener como máximo 2 decimales» |
 | S10 | Caja del día | Boletería y candy, cada una con su total |
 | S11 | Salir e ingresar como `puerta@cine.uade.ar` | Solo la pantalla de Puerta |
 | S12 | Puerta con el código de una reserva de otro día | «La función es el dd/MM: se entra solo ese día» |
@@ -159,16 +159,16 @@ tiene lo que se espera ver; si algo no coincide, se anota con captura.
 
 ## Última corrida
 
-29/09/2026, rama `fix/verificacion-final`, base desechable `cine-prueba` levantada desde cero.
+29 y 30/09/2026, rama `fix/verificacion-final`, base desechable `cine-prueba` levantada desde cero.
 
 | Nivel | Resultado |
 |---|---|
-| 1. Backend | 1149 casos, 0 fallas |
+| 1. Backend | 1161 casos, 0 fallas |
 | 2. Swing y web | 60 casos, 0 fallas; la web compila |
 | 3. Postman | 41 pedidos, 41 aserciones |
 | 4. Humo | 21 de 21 |
-| 5. Web | W1 a W8 como se espera |
-| 5. Swing | Pendiente de computer use |
+| 5. Web | W1 a W8 como se espera (browser de cmux) |
+| 5. Swing | S1 a S12 como se espera, a mano; capturas en [`evidencia/`](evidencia/) |
 
 Lo que encontró esta corrida, y ya está arreglado:
 - La colección de Postman creaba funciones en 2030, fuera del horizonte de un año nuevo: la creación daba 400 y
@@ -176,3 +176,16 @@ Lo que encontró esta corrida, y ya está arreglado:
 - El ticket de la web y los `.txt` mostraban nombres de constantes (`DOS_D`, `SUBTITULADA`, `RESERVADA`).
 - `GET /api/peliculas/{id}/funciones` delataba las películas pendientes con un `[]` donde el detalle da 404.
 - Las 13 capturas del manual salían como texto base64, y tres diagramas dibujaban un aviso de PlantUML.
+- La auditoría del código: 11 butacas con una ocupada daban 409 en vez del 400 del tope, el orden de los errores
+  del candy no era el del alta, código muerto del Observer y mayúsculas sin `Locale.ROOT`.
+- Swing: el alta de sala no decía cómo se escriben las filas (el formato estaba solo en un tooltip), el resumen
+  decía «1 filas (A–A)», los errores locales terminaban con punto y el ticket de candy partía el renglón de `=`.
+
+Anotado para después, sin arreglar:
+- El alta de sala en Swing con un editor visual en vez de tipear listas (en los pendientes del manual).
+- Todos los errores de un pedido juntos (patrón Notification): documentado en el manual como decisión.
+- El formulario de promociones deja huecos donde van los campos de los otros tipos.
+- El subtítulo de Candy dice «sin reserva de por medio» y el formulario ofrece asociar una reserva.
+
+Una reserva sin pagar vence a los 30 minutos (R17), pero el estado cambia recién cuando alguien consulta la
+función o intenta cobrarla: una reserva vieja puede figurar RESERVADA y el cobro la rechaza por vencida.
