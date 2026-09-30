@@ -266,6 +266,8 @@ figure.diagram {
 }
 figure.diagram .diagram-click { cursor: zoom-in; }
 figure.diagram svg, figure.diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+/* Un diagrama muy alto se achica a la altura de la pantalla; el detalle se ve ampliado. */
+figure.diagram.compacto svg { max-height: 70vh; width: auto; }
 figure.diagram::after {
   content: "Click para ampliar";
   position: absolute;
@@ -562,7 +564,7 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Casos de uso</h2>
       <p>Actores: <strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta), con contraseña en el <a href="#swing">panel de escritorio</a>, y <strong>Cliente</strong>, sin contraseña, en la web.</p>
 
-      <figure class="diagram">
+      <figure class="diagram compacto">
         {{SVG_CASOS_USO}}
         <figcaption>Casos de uso del sistema</figcaption>
       </figure>
