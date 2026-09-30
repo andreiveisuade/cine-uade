@@ -1,0 +1,58 @@
+@startuml reglas-donde-viven
+title Donde se decide cada regla: en quien tiene el dato
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 36
+hide empty members
+hide circle
+
+' Experto: la regla va con el dato. Lo que depende de un solo objeto lo
+' exige el objeto al construirse o cambiar (via su Validador*); lo que mira
+' la hora tambien, pero la hora se la pasa el gestor, porque la entidad no
+' sabe que hora es; lo que necesita otras filas lo decide el gestor, que es
+' quien tiene los repositorios.
+
+class Reloj <<infrastructure/>>
+
+package "service/: lo que necesita otras filas" as srv {
+  class GestorCartelera <<R1, R12>>
+  class "GestorSalas, GestorFunciones" as Bajas <<R12>>
+  class AgendaDeSala <<R3>>
+  class Ocupacion <<R4>>
+  class GestorPromociones <<R15, R16>>
+}
+
+package "model/: con la hora que le pasa el gestor" as hora {
+  class Funcion <<R19, R20>>
+  class Reserva <<R6, R17, R19>>
+  class EstadoReserva <<State: R5, R13, R17, R18>>
+}
+
+package "model/: un solo objeto, con su Validador*" as datos {
+  class Pelicula <<R2, R7, R10>>
+  class Sala <<R2>>
+  class Asiento <<R9>>
+  class "Funcion " as FuncionDatos <<R8>>
+  class Producto <<R14>>
+  class MedioPago <<R11>>
+}
+
+database "schema.sql" as db {
+  class "UNIQUE (funcion_id, asiento_id)" as Unico <<R4, ultima defensa>>
+}
+
+Reloj <.left. srv : pide la hora
+srv ..> hora : le pasa ahora
+Reserva -right-> EstadoReserva : delega
+srv -[hidden]down-> datos
+datos -[hidden]right-> hora
+hora -[hidden]right-> db
+Pelicula -[hidden]right-> Sala
+Sala -[hidden]right-> Asiento
+Producto -[hidden]right-> MedioPago
+GestorCartelera -[hidden]right-> Bajas
+AgendaDeSala -[hidden]right-> Ocupacion
+Ocupacion -[hidden]right-> GestorPromociones
+@enduml

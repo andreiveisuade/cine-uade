@@ -1,0 +1,45 @@
+@startuml swing-pedido
+title Swing: un formulario, del clic al mensaje
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 200
+
+actor Encargado as U
+participant "Formulario\n(una Seccion)" as F
+participant "Validacion\ncomun/" as V
+participant "Tarea\n(SwingWorker)" as T
+participant "Api<Subdominio>\napi/" as A
+participant "ClienteHttp\napi/" as H
+participant "backend\n/api" as B
+participant "Mensajes\ncomun/" as M
+
+U -> F : Guardar
+F -> V : leer campos (formato, obligatorios)
+alt falta un campo o formato invalido
+  V --> U : campo marcado y motivo en linea;\nno se manda nada
+end
+F -> T : ejecutar(pedido)
+note right of T : fuera del EDT:\nla ventana no se congela
+T -> A : crearPelicula(pedido)
+A -> H : POST /api/peliculas
+H -> B : JSON + HTTP Basic
+B --> H : respuesta
+alt 2xx
+  H --> T : record del JSON
+  T -> F : alTerminar, de vuelta en el EDT
+  F -> M : avisar
+  M --> U : barra de estado
+else 4xx / 5xx / sin conexion
+  H --> T : ErrorApi con el texto del backend
+  T -> F : alFallar, en el EDT
+  F -> V : mostrarError
+  alt 400, 404 o 409 que nombra un campo
+    V --> U : en linea, campo marcado
+  else 403, 409 sin campo, 5xx, sin conexion
+    V -> M : error
+    M --> U : dialogo
+  end
+else 401 (sesion vencida)
+  H --> U : vuelve al login
+end
+@enduml

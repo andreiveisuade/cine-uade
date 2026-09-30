@@ -28,6 +28,18 @@ svg_map = {
     "{{SVG_GRASP_FABRICACION}}": DIAGRAMAS / "grasp-pure-fabrication.svg",
     "{{SVG_PATRON_STATE}}": DIAGRAMAS / "patron-state.svg",
     "{{SVG_PATRON_OBSERVER}}": DIAGRAMAS / "patron-observer.svg",
+    "{{SVG_API_ERRORES}}": DIAGRAMAS / "api-errores.svg",
+    "{{SVG_BASE_VENTA_ER}}": DIAGRAMAS / "base-venta-er.svg",
+    "{{SVG_CHECKOUT_PASARELA}}": DIAGRAMAS / "checkout-pasarela.svg",
+    "{{SVG_GRILLA_PLAN}}": DIAGRAMAS / "grilla-plan.svg",
+    "{{SVG_PRECIO_ENTRADA}}": DIAGRAMAS / "precio-entrada.svg",
+    "{{SVG_PRUEBAS_NIVELES}}": DIAGRAMAS / "pruebas-niveles.svg",
+    "{{SVG_RECHAZOS_JERARQUIA}}": DIAGRAMAS / "rechazos-jerarquia.svg",
+    "{{SVG_REGLAS_DONDE_VIVEN}}": DIAGRAMAS / "reglas-donde-viven.svg",
+    "{{SVG_SWING_PANTALLAS}}": DIAGRAMAS / "swing-pantallas.svg",
+    "{{SVG_SWING_PEDIDO}}": DIAGRAMAS / "swing-pedido.svg",
+    "{{SVG_TRASLADO_SERVIDOR}}": DIAGRAMAS / "traslado-servidor.svg",
+    "{{SVG_VALIDACION_CAPAS}}": DIAGRAMAS / "validacion-capas.svg",
 }
 
 

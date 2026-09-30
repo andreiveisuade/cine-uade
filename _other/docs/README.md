@@ -41,3 +41,15 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `solid-dip.puml` | SOLID, inversión de dependencias |
 | `grasp-pure-fabrication.puml` | GRASP, fabricación pura |
 | `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R20 |
+| `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
+| `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
+| `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
+| `base-venta-er.puml` | Tablas de la venta con sus PK, FK, `UNIQUE` y cascadas |
+| `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
+| `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |
+| `grilla-plan.puml` | La grilla: un plan para previsualizar, crear y extender |
+| `swing-pedido.puml` | Swing: un formulario, del clic al mensaje |
+| `swing-pantallas.puml` | Swing: herencia de las pantallas (Template Method) |
+| `traslado-servidor.puml` | Qué dice dónde está cada parte al mudar el servidor |
+| `pruebas-niveles.puml` | Qué levanta cada nivel de prueba del backend |

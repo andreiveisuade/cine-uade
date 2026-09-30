@@ -1,0 +1,38 @@
+@startuml api-errores
+title Un error, de donde salga, llega como {"error"} en castellano
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+
+participant "Cliente\n(web o Swing)" as C
+participant "nginx" as NG
+participant "Spring Security\nConfiguracionSeguridad" as SEC
+participant "controller/\n(Jackson, @Valid)" as CT
+participant "Gestor / entidad" as G
+participant "ManejadorErrores\n@RestControllerAdvice" as ME
+participant "ErroresController\n/error" as EC
+
+C -> NG : pedido
+alt cuerpo de mas de 1 MB / backend caido o lento
+  NG --> C : 413 / 502 / 504
+end
+NG -> SEC : pedido
+alt sin credenciales o invalidas / rol insuficiente
+  SEC --> C : 401 / 403
+else ruta que rechaza el firewall, excepcion de un filtro
+  SEC -> EC : forward
+  EC --> C : su status
+end
+SEC -> CT : pedido
+alt JSON ilegible, tipo equivocado, falta un campo
+  CT -> ME : excepcion de Spring
+  ME --> C : 400 (404 si es la ruta)
+end
+CT -> G : operacion
+G -> ME : Rechazo (model/rechazos/)
+ME --> C : DatoInvalido 400\nRecursoNoEncontrado 404\nConflictoDeNegocio, ButacaOcupada 409\ntexto intacto
+G -> ME : @Version o UNIQUE que choca
+ME --> C : 409
+G -> ME : falla de la base, excepcion no prevista
+ME --> C : 500 generico, detalle al log
+@enduml

@@ -1,0 +1,47 @@
+@startuml swing-pantallas
+title Swing: pantallas por herencia (Template Method en los listados)
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 34
+hide empty members
+
+class JPanel
+abstract class Seccion {
+  #cargar(trabajo, alTerminar)
+  #accion(trabajo, mensaje, despues)
+  #avisar(mensaje)
+  #confirmar(pregunta, si)
+}
+abstract class Pantalla {
+  titulo y descripcion
+}
+abstract class "PantallaListado<T>" as PL {
+  #recargar() {final}
+  #buscar() {final}
+  #obtener(filtros) {abstract}
+  #tabla() {abstract}
+  #sinFiltrar(todas) {abstract}
+}
+class PantallaPeliculas
+class FormularioPelicula
+class Pantallas {
+  arma cada pantalla con
+  solo las Api que usa
+}
+class Apis
+
+JPanel <|-- Seccion
+Seccion <|-- Pantalla
+Pantalla <|-- PL
+PL <|-- PantallaPeliculas : <<Pelicula>>
+Seccion <|-- FormularioPelicula
+PantallaPeliculas *-- FormularioPelicula
+Pantallas ..> PantallaPeliculas : crea (Creador)
+Pantallas --> Apis
+
+note bottom of PL
+  recargar decide cuando pedir y que contar;
+  cada listado dice solo como pedir y que mostrar
+end note
+@enduml

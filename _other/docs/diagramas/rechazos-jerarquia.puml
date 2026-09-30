@@ -1,0 +1,45 @@
+@startuml rechazos-jerarquia
+title Rechazos: una clase por status, y la lista cerrada
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+' Rechazo extiende RuntimeException y no IllegalArgumentException: una libreria
+' tambien tira esa, y Spring Data la traduce al salir de un repositorio, asi que
+' el 404 de exigir terminaba en 500. Sellada: un tipo nuevo se declara en permits
+' y ManejadorErroresTest falla hasta que tenga su status.
+
+class RuntimeException
+
+package "model.rechazos" {
+  abstract class Rechazo <<sealed>>
+  class DatoInvalido <<final>>
+  class RecursoNoEncontrado <<final>>
+  class ConflictoDeNegocio <<final>>
+  class ButacaOcupada <<final>>
+}
+
+package "controller.http" {
+  class ManejadorErrores <<RestControllerAdvice>> {
+    un @ExceptionHandler por tipo
+    el mensaje sale intacto: {"error": ...}
+    --
+    IllegalArgumentException suelta -> 500 generico, detalle al log
+  }
+}
+
+Rechazo -up-|> RuntimeException
+DatoInvalido -up-|> Rechazo : 400
+RecursoNoEncontrado -up-|> Rechazo : 404
+ConflictoDeNegocio -up-|> Rechazo : 409
+ButacaOcupada -up-|> Rechazo : 409
+
+ManejadorErrores .left.> Rechazo : traduce a status
+
+note bottom of RecursoNoEncontrado
+  Repositorio.exigir(7, "la pelicula")
+  -> "No existe la pelicula 7"
+end note
+
+@enduml

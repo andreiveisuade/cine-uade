@@ -1,0 +1,79 @@
+@startuml base-venta-er
+title Base de datos: el nucleo de la venta y sus restricciones
+
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+
+' Solo las tablas de la venta; el resto (generos, grillas, promociones, candy,
+' importaciones) cuelga de estas con el mismo criterio. Lo que ven aca: la doble
+' venta la cierra el UNIQUE de entrada, el bloqueo es la PK compuesta, y un pago
+' por reserva es el UNIQUE de pago.reserva_id.
+
+entity pelicula {
+  * id <<PK>>
+}
+entity sala {
+  * id <<PK>>
+}
+entity asiento {
+  * id <<PK>>
+  --
+  sala_id <<FK>> ON DELETE CASCADE
+  UNIQUE (sala_id, fila, numero)
+}
+entity usuario {
+  * id <<PK>>
+  --
+  email UNIQUE
+  rol
+}
+entity funcion {
+  * id <<PK>>
+  --
+  pelicula_id <<FK>>
+  sala_id <<FK>>
+  programacion_id <<FK>> NULL
+  inicio, precio
+}
+entity reserva {
+  * id <<PK>>
+  --
+  funcion_id <<FK>>
+  cliente_id <<FK>>
+  codigo UNIQUE
+  estado, version
+}
+entity entrada {
+  * id <<PK>>
+  --
+  reserva_id <<FK>> ON DELETE CASCADE
+  asiento_id <<FK>>
+  funcion_id <<FK>> NULL al liberar
+  **UNIQUE (funcion_id, asiento_id)**
+}
+entity bloqueo_butaca {
+  * **(funcion_id, asiento_id) <<PK>>**
+  --
+  sesion, vence_en
+}
+entity pago {
+  * id <<PK>>
+  --
+  reserva_id <<FK>> UNIQUE
+  promocion_id <<FK>> NULL
+}
+
+sala ||--o{ asiento
+pelicula ||--o{ funcion
+sala ||--o{ funcion
+funcion ||--o{ reserva
+usuario ||--o{ reserva
+reserva ||--|{ entrada
+asiento ||--o{ entrada
+funcion |o--o{ entrada
+reserva ||--o| pago
+funcion ||--o{ bloqueo_butaca
+asiento ||--o{ bloqueo_butaca
+
+@enduml

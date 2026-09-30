@@ -1,0 +1,42 @@
+@startuml grilla-plan
+title La grilla: un solo plan para previsualizar, dar de alta y extender
+
+skinparam activityFontSize 13
+skinparam maxMessageSize 220
+
+|Quien pide|
+split
+  :Previsualizacion;
+split again
+  :Alta de la grilla;
+split again
+  :GestorCartelera lista\n(extiende las activas, sin cron);
+end split
+
+|GestorProgramaciones|
+:planDe(grilla, tope)\nno escribe nada;
+note right
+  cerrada: hasta el fin del rango
+  abierta: hoy + 14 dias
+end note
+repeat :proximo horario sin generar;
+  if (Funcion.yaPaso(inicio, ahora)?) then (si, R20)
+    :saltear\n(no es un choque);
+  elseif (AgendaDeSala: choca con otra funcion? R3) then (si)
+    :marcar choque\ny contra que funcion;
+  else (no)
+    :programable;
+  endif
+repeat while (quedan horarios?)
+
+if (es la previsualizacion?) then (si)
+  :devolver el plan;
+  stop
+else (no)
+  |GestorFunciones|
+  :programar cada programable\n(vuelve a mirar R3 y R20);
+  |GestorProgramaciones|
+  :marcarGeneradaHasta(tope)\n(la proxima extension sigue desde aca);
+  stop
+endif
+@enduml

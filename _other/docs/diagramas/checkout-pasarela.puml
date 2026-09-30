@@ -1,0 +1,39 @@
+@startuml checkout-pasarela
+title Checkout: dos pedidos, porque el cliente paga fuera del cine
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+hide footbox
+
+actor Cliente
+participant "PagoController" as C
+participant "GestorPagos" as GP
+participant "Reserva" as R <<Entity>>
+participant "PasarelaPagos\n(emulada)" as PP <<interface>>
+
+Cliente -> C : POST /api/reservas/{id}/checkout\n{medio}
+C -> GP : iniciarCheckout(reservaId, medio)
+activate GP
+GP -> R : impedimentoParaCobrar(ahora)\nR5, R17, R19
+GP -> GP : el medio va por checkout?\nmonto = total - descuento
+GP -> PP : crear(reserva, medio, monto)
+GP --> Cliente : {id, monto, codigoQr}
+deactivate GP
+
+... el cliente paga en la app de la pasarela ...
+
+Cliente -> C : POST /api/checkouts/{id}/confirmacion
+C -> GP : confirmarCheckout(checkoutId)
+activate GP
+GP -> R : impedimentoParaCobrar(ahora)\n(otra vez: pudo vencer o cancelarse)
+note right of GP
+  se valida antes de autorizar:
+  autorizar es cobrarle al cliente
+  y no hay devoluciones
+end note
+GP -> PP : autorizar(checkout)
+PP --> GP : codigo de autorizacion (R11)
+GP -> GP : registrarPago: el mismo camino\nque el cobro directo en caja
+GP --> Cliente : el Pago
+deactivate GP
+@enduml
