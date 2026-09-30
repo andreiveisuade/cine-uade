@@ -11,6 +11,7 @@
     c[i].removeAttribute('class');
   }
   clone.removeAttribute('class'); clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  clone.querySelectorAll('desc').forEach(function(d){d.remove();});
   ['style','data-preset','data-quality-profile','aria-labelledby','role','lang'].forEach(function(a){clone.removeAttribute(a);});
   return new XMLSerializer().serializeToString(clone);
 })()
