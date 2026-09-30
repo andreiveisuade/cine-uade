@@ -453,23 +453,24 @@ body.lightbox-locked { overflow: hidden; }
 
   <main class="content">
 
-    <h1>Sistema de salas de cine</h1>
-    <p class="lede">Manual del TP de Aplicaciones Interactivas. Java 21 + Spring Boot 3.5 + Spring Data JPA + MySQL.</p>
+    <h1>Cine UADE</h1>
+    <p class="lede">
+      Trabajo Práctico Obligatorio de Aplicaciones Interactivas. UADE, 2.º cuatrimestre 2026. Docente: Juan
+      Ignacio López. Integrantes: Andrei Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia.
+    </p>
 
     <section class="doc-section" id="resumen">
       <h2>Resumen</h2>
       <p>
-        Gestión de un cine: películas y salas, funciones, reservas y pagos de entradas, y ventas del candy.
-        Backend Spring Boot sobre MySQL, frontend React servido por nginx para la venta al cliente, y el panel
-        del encargado como app de escritorio Swing. El backend levanta con <code>docker compose up</code>.
+        El cliente elige película, función y butacas desde la web y reserva sin registrarse: recibe un código,
+        paga en la boletería y entra con él. El encargado, desde una app de escritorio, trae la cartelera de
+        TMDB, programa las funciones, cobra, vende candy y cierra la caja; el acomodador valida las entradas en
+        la puerta. El sistema impide vender dos veces la misma butaca y calcula precios, tarifas y promociones.
       </p>
       <p>
-        Aplicaciones Interactivas, UADE, 2.º cuatrimestre 2026. Docente: Juan Ignacio López. Integrantes: Andrei
-        Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia.
+        Backend en Java 21 con Spring Boot sobre MySQL; web en React; panel de escritorio en Swing; todo
+        levantado con Docker Compose. 25 casos de uso y 20 reglas de negocio (R1 a R20).
       </p>
-      <div class="callout">
-        <p><strong>Estado:</strong> 25 casos de uso y 20 reglas de punta a punta (entidad o gestor, API y pantalla), con 1149 tests en el backend y 60 en Swing.</p>
-      </div>
     </section>
 
     <section class="doc-section" id="requerimientos">
