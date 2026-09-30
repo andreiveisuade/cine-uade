@@ -12,6 +12,7 @@ El manual es autocontenido (`open manual/index.html`). **No se edita a mano**: s
 
 ```bash
 cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
+archify/exportar.sh capas.archify.json    # tras tocar un .archify.json (skill archify + navegador de cmux)
 cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
 
@@ -22,12 +23,12 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | Archivo | Qué muestra |
 |---|---|
 | `clases-dominio.puml` | Entidades, value objects, enums y relaciones del negocio, agrupados por subdominio |
-| `clases-capas.puml` | Arquitectura en capas: controllers, DTO, gestores, repositorios y adaptadores de infraestructura |
+| `capas.archify.json` | Las seis capas y quién llama a quién (Archify) |
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |
 | `secuencia-candy.puml` | Comprar en el candy: del combo al ticket |
 | `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué carpeta construye a cada uno |
-| `capas.puml` | Capas y paquetes de Spring Boot + Spring Data JPA |
+| `reserva-clases.archify.json` | Las mismas capas con las clases de `POST /api/reservas` (Archify) |
 | `peticion-capas.puml` | Una petición de punta a punta: contenedores, puertos y capas |
 | `arranque-orden.puml` | Orden de arranque de `docker compose up -d --build` |
 | `butaca-carrera.puml` | Dos personas, la misma butaca: el bloqueo en MySQL y el UNIQUE de `entrada` |

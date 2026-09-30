@@ -9,7 +9,7 @@ CAPTURAS = MANUAL / "capturas"
 svg_map = {
     "{{SVG_CASOS_USO}}": DIAGRAMAS / "casos-de-uso.svg",
     "{{SVG_DOMINIO}}": DIAGRAMAS / "clases-dominio.svg",
-    "{{SVG_CAPAS}}": DIAGRAMAS / "clases-capas.svg",
+    "{{SVG_RESERVA_CLASES}}": DIAGRAMAS / "reserva-clases.svg",
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",
     "{{SVG_DOCKER}}": DIAGRAMAS / "docker-despliegue.svg",
@@ -87,7 +87,7 @@ shell = (MANUAL / "template.html").read_text(encoding="utf-8")
 
 faltantes = [str(p) for p in svg_map.values() if not p.exists()]
 if faltantes:
-    raise SystemExit("Faltan SVGs (corre plantuml -tsvg *.puml): " + ", ".join(faltantes))
+    raise SystemExit("Faltan SVGs (plantuml -tsvg *.puml, o archify/exportar.sh para los .archify.json): " + ", ".join(faltantes))
 
 for placeholder, svg_path in svg_map.items():
     if placeholder not in shell:

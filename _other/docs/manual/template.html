@@ -215,6 +215,9 @@ table {
   box-shadow: var(--shadow);
 }
 th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+td ul { margin: 0; padding-left: 18px; }
+td li + li { margin-top: 4px; }
+.capas td:first-child { width: 1%; white-space: nowrap; }
 th {
   font-size: 11.5px;
   text-transform: uppercase;
@@ -607,44 +610,62 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="capas">
       <h2>Arquitectura en capas</h2>
       <p>
-        Paquete <code>ar.uade.cine</code>: <code>Aplicacion</code> (solo arranca) y seis capas. Las dependencias van
-        hacia <code>model/</code>; <code>infrastructure/</code> es el borde con el exterior y convive con
-        <code>service/</code>, que usa sus puertos.
+        El backend (<code>ar.uade.cine</code>) son seis capas. Una capa usa a las de abajo y nunca a las de arriba.
+        La excepción es <code>infrastructure/</code>, el borde con el exterior: el gestor usa sus puertos y la
+        seguridad usa un gestor en el login.
       </p>
 
       <figure class="diagram">
         {{SVG_CAPAS_PAQUETES}}
-        <figcaption>Las capas y los subpaquetes de cada una</figcaption>
+        <figcaption>Las capas y quién llama a quién</figcaption>
       </figure>
 
       <div class="table-wrap">
-        <table>
-          <thead><tr><th>Capa</th><th>Responsabilidad</th><th>No hace</th></tr></thead>
+        <table class="capas">
+          <thead><tr><th>Capa</th><th>Responsabilidad</th></tr></thead>
           <tbody>
-            <tr><td><code>controller/</code></td><td>Traduce HTTP ↔ gestores. Por subdominio, sus <code>*Controller</code> y sus <code>Vistas*</code>, que arman los DTO; en <code>http/</code>, parseo, errores y política de respuestas</td><td>Reglas, base, repositorios</td></tr>
-            <tr><td><code>dto/</code></td><td>Forma del JSON que entra (<code>Pedido*DTO</code>) y sale (<code>*VistaDTO</code>)</td><td>Comportamiento</td></tr>
-            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por subdominio: trae lo que la entidad no ve sola (la base, otras filas) y le pasa la hora; transacciones</td><td>HTTP, <code>jakarta.persistence</code></td></tr>
-            <tr><td><code>model/</code></td><td>Entidades con su <code>Validador*</code>, enums y Value Objects; transversales <code>dinero/</code>, <code>tiempo/</code>, <code>validacion/</code> y <code>rechazos/</code></td><td>Guardarse o mostrarse</td></tr>
-            <tr><td><code>repository/</code></td><td>Interfaces Spring Data sobre la base común <code>Repositorio</code>, y <code>DineroConverter</code></td><td>Validar reglas</td></tr>
-            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, pasarela, TMDB, reloj): la interfaz en la raíz y el adaptador en su subcarpeta. Más <code>seguridad/</code> y <code>Adaptadores</code></td><td>Guardar datos del cine</td></tr>
+            <tr><td><code>controller/</code></td><td><ul>
+              <li>Recibe el pedido HTTP y lo pasa al gestor.</li>
+              <li>Convierte el JSON en DTO y el resultado en respuesta, con su status.</li>
+              <li>Traduce cada rechazo a un error HTTP (<code>ManejadorErrores</code>).</li>
+            </ul></td></tr>
+            <tr><td><code>dto/</code></td><td><ul>
+              <li>La forma del JSON: <code>Pedido*DTO</code> entra, <code>*VistaDTO</code> sale.</li>
+              <li>Solo datos, sin lógica.</li>
+            </ul></td></tr>
+            <tr><td><code>service/</code></td><td><ul>
+              <li>Un gestor por subdominio: coordina cada caso de uso.</li>
+              <li>Aplica las reglas que necesitan la base, otras filas o la hora.</li>
+              <li>Abre y cierra la transacción.</li>
+            </ul></td></tr>
+            <tr><td><code>model/</code></td><td><ul>
+              <li>Entidades, enums y Value Objects del cine.</li>
+              <li>Cada entidad valida sus datos con su <code>Validador*</code>.</li>
+              <li>No sabe de HTTP ni de la base.</li>
+            </ul></td></tr>
+            <tr><td><code>repository/</code></td><td><ul>
+              <li>Guarda y busca entidades.</li>
+              <li>Interfaces: Spring Data genera la implementación.</li>
+            </ul></td></tr>
+            <tr><td><code>infrastructure/</code></td><td><ul>
+              <li>Lo que sale del sistema: TMDB, pasarela de pago, comprobantes, reloj.</li>
+              <li>La interfaz (puerto) y su implementación; <code>Adaptadores</code> elige cuál va.</li>
+              <li>La seguridad: rutas por rol y contraseñas.</li>
+            </ul></td></tr>
           </tbody>
         </table>
       </div>
+
       <p>
-        Todas las capas usan los mismos subdominios (<code>candy/ cartelera/ funciones/ informes/ programaciones/
-        promociones/ salas/ usuarios/ ventas/</code>): sabiendo el subdominio se sabe el paquete en cualquier capa.
-      </p>
-      <p>
-        <code>ArquitecturaTest</code> lee los <code>import</code> y hace cumplir esto: falla si una capa nombra a una
-        que su tabla <code>PERMITIDO</code> no autoriza (<code>controller/</code> no ve <code>repository/</code>), si
-        <code>service/</code> o <code>controller/</code> tocan <code>jakarta.persistence</code> o JDBC, si alguien fuera
-        de <code>Adaptadores</code> nombra un adaptador concreto, o si se tira <code>new IllegalArgumentException(</code>
-        en vez de un <a href="#rechazos">rechazo</a>.
+        Cada capa se divide en los mismos subdominios (<code>candy</code>, <code>cartelera</code>, <code>ventas</code>…):
+        sabiendo el subdominio se sabe el paquete. <code>ArquitecturaTest</code> lee los <code>import</code> y falla si
+        una capa usa a una que no le corresponde.
       </p>
 
+      <h3>Una reserva, clase por clase</h3>
       <figure class="diagram">
-        {{SVG_CAPAS}}
-        <figcaption>Las mismas capas, clase por clase</figcaption>
+        {{SVG_RESERVA_CLASES}}
+        <figcaption>Las mismas capas con las clases de <code>POST /api/reservas</code></figcaption>
       </figure>
 
       <h3>Una petición de punta a punta</h3>
@@ -655,7 +676,7 @@ body.lightbox-locked { overflow: hidden; }
 
       <h3>El armado lo hace Spring</h3>
       <p>
-        Cada bean recibe sus dependencias por constructor y nadie hace <code>new GestorReservas(...)</code>. Si falta
+        Cada clase recibe sus dependencias por constructor y nadie hace <code>new GestorReservas(...)</code>. Si falta
         una, la app no levanta y el error dice cuál.
       </p>
     </section>
