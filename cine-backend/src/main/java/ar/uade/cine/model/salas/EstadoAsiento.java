@@ -1,10 +1,6 @@
 package ar.uade.cine.model.salas;
 
-/**
- * Estado físico de la butaca: si está en condiciones de venderse o rota. No dice si
- * está ocupada —eso depende de la función—, sino si el cine la puede ofrecer: una
- * butaca rota lo está para todas las funciones.
- */
+// Estado físico de una butaca (R9); es del asiento y no de la función, así que corta la venta en todas.
 public enum EstadoAsiento {
     HABILITADO,
     FUERA_DE_SERVICIO

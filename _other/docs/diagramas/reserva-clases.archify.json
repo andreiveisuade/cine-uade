@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "POST /api/reservas, clase por clase",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "viewBox": [
+      1200,
+      520
+    ]
+  },
+  "components": [
+    {
+      "id": "errores",
+      "type": "security",
+      "label": "ManejadorErrores",
+      "sublabel": "Rechazo → 400/404/409",
+      "pos": [
+        80,
+        60
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "backend",
+      "label": "ReservaController",
+      "sublabel": "PedidoReservaDTO",
+      "pos": [
+        380,
+        60
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "vistas",
+      "type": "backend",
+      "label": "VistasReservas",
+      "sublabel": "arma ReservaVistaDTO",
+      "pos": [
+        680,
+        60
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "gestor",
+      "type": "backend",
+      "label": "GestorReservas",
+      "sublabel": "@Transactional",
+      "pos": [
+        380,
+        230
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "comprobantes",
+      "type": "messagebus",
+      "label": "ComprobantesDeVentas",
+      "sublabel": "Observer",
+      "pos": [
+        680,
+        230
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "validador",
+      "type": "backend",
+      "label": "ValidadorReserva",
+      "sublabel": "tope, repetidas",
+      "pos": [
+        680,
+        400
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "reserva",
+      "type": "backend",
+      "label": "Reserva",
+      "sublabel": "@Entity + State",
+      "pos": [
+        380,
+        400
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "ticket",
+      "type": "cloud",
+      "label": "GeneradorTicket",
+      "sublabel": "ticket .txt",
+      "pos": [
+        980,
+        230
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "ReservaRepository",
+      "sublabel": "Spring Data",
+      "pos": [
+        80,
+        230
+      ],
+      "size": [
+        190,
+        60
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "UNIQUE (funcion, asiento)",
+      "pos": [
+        80,
+        400
+      ],
+      "size": [
+        190,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "controller/",
+      "wraps": [
+        "errores",
+        "controller",
+        "vistas"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "service/",
+      "wraps": [
+        "gestor",
+        "comprobantes"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "model/",
+      "wraps": [
+        "validador",
+        "reserva"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "infrastructure/",
+      "wraps": [
+        "ticket"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "repository/",
+      "wraps": [
+        "repo"
+      ],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "from": "controller",
+      "to": "gestor",
+      "label": "reservar(...)",
+      "variant": "emphasis",
+      "labelAt": [
+        530,
+        175
+      ]
+    },
+    {
+      "from": "controller",
+      "to": "vistas",
+      "label": "a DTO"
+    },
+    {
+      "from": "controller",
+      "to": "errores",
+      "label": "si rechaza",
+      "variant": "dashed"
+    },
+    {
+      "from": "gestor",
+      "to": "reserva",
+      "label": "new Reserva",
+      "variant": "emphasis",
+      "labelAt": [
+        525,
+        345
+      ]
+    },
+    {
+      "from": "reserva",
+      "to": "validador",
+      "label": "valida"
+    },
+    {
+      "from": "gestor",
+      "to": "comprobantes",
+      "label": "ReservaCreada",
+      "variant": "dashed"
+    },
+    {
+      "from": "comprobantes",
+      "to": "ticket",
+      "variant": "dashed"
+    },
+    {
+      "from": "gestor",
+      "to": "repo",
+      "label": "saveAndFlush",
+      "variant": "emphasis"
+    },
+    {
+      "from": "repo",
+      "to": "mysql",
+      "label": "INSERT",
+      "variant": "emphasis",
+      "labelAt": [
+        205,
+        345
+      ]
+    }
+  ]
+}

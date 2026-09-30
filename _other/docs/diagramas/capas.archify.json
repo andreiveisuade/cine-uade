@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura en capas del backend",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "viewBox": [
+      1040,
+      640
+    ]
+  },
+  "components": [
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Web (React)",
+      "sublabel": "venta al cliente",
+      "pos": [
+        300,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "swing",
+      "type": "frontend",
+      "label": "Panel (Swing)",
+      "sublabel": "encargado y Puerta",
+      "pos": [
+        560,
+        40
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "controller",
+      "type": "backend",
+      "label": "controller/",
+      "sublabel": "HTTP ↔ gestores",
+      "pos": [
+        430,
+        170
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "dto",
+      "type": "backend",
+      "label": "dto/",
+      "sublabel": "forma del JSON",
+      "pos": [
+        720,
+        170
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "service",
+      "type": "backend",
+      "label": "service/",
+      "sublabel": "gestores y transacciones",
+      "pos": [
+        430,
+        300
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "infra",
+      "type": "cloud",
+      "label": "infrastructure/",
+      "sublabel": "TMDB, pasarela, reloj",
+      "pos": [
+        720,
+        300
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "model",
+      "type": "backend",
+      "label": "model/",
+      "sublabel": "entidades y validadores",
+      "pos": [
+        140,
+        430
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "repository",
+      "type": "backend",
+      "label": "repository/",
+      "sublabel": "Spring Data",
+      "pos": [
+        430,
+        430
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "schema.sql",
+      "pos": [
+        430,
+        550
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "tmdb",
+      "type": "external",
+      "label": "TMDB",
+      "sublabel": "cartelera externa",
+      "pos": [
+        720,
+        550
+      ],
+      "size": [
+        170,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "cine-backend · Spring Boot",
+      "wraps": [
+        "controller",
+        "dto",
+        "service",
+        "infra",
+        "model",
+        "repository"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "from": "web",
+      "to": "controller",
+      "label": "HTTP + JSON",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "swing",
+      "to": "controller",
+      "label": "HTTP Basic",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "controller",
+      "to": "dto",
+      "variant": "dashed"
+    },
+    {
+      "from": "controller",
+      "to": "service",
+      "label": "llama",
+      "variant": "emphasis",
+      "labelAt": [
+        550,
+        265
+      ]
+    },
+    {
+      "from": "service",
+      "to": "infra",
+      "label": "puertos",
+      "variant": "dashed"
+    },
+    {
+      "from": "service",
+      "to": "model",
+      "label": "decide con"
+    },
+    {
+      "from": "service",
+      "to": "repository",
+      "label": "guarda y busca",
+      "variant": "emphasis",
+      "labelAt": [
+        570,
+        395
+      ]
+    },
+    {
+      "from": "repository",
+      "to": "mysql",
+      "label": "SQL (Hibernate)",
+      "variant": "emphasis",
+      "labelAt": [
+        575,
+        520
+      ]
+    },
+    {
+      "from": "infra",
+      "to": "tmdb",
+      "variant": "dashed",
+      "label": "HTTPS",
+      "labelAt": [
+        840,
+        525
+      ]
+    }
+  ]
+}

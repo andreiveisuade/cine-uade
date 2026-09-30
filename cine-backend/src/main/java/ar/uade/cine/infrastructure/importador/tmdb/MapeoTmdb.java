@@ -4,6 +4,7 @@ import static java.util.Map.entry;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -13,32 +14,11 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * Traduce el modelo de TMDB al nuestro.
- *
- * <p>Es el corazón del importador y vale la pena entender por qué existe: dos sistemas que
- * hablan del mismo dominio casi nunca lo modelan igual. TMDB tiene 19 géneros, nosotros 9;
- * ellos guardan el idioma como código ISO 639 (<code>en</code>), nosotros como texto
- * (<code>Inglés</code>); su certificación es un par (país, valor) y hay que buscar la
- * argentina entre todas, la nuestra es un enum de cuatro valores.
- *
- * <p>Traducir en un solo lugar es lo que evita que esas diferencias se filtren al resto del
- * sistema. De acá para adentro TMDB no existe.
- *
- * <p>Las tablas son contra los enums de {@code dominio} y no contra texto, que es la razón
- * de que esto sea Java y no el {@code mapeo.py} que era antes: renombrar una constante de
- * {@link Genero} o de {@link Clasificacion} ahora <strong>no compila</strong>. Cuando la
- * traducción vivía afuera, el mismo cambio pasaba todos los tests y rompía recién en la
- * corrida siguiente, contra el buzón.
- */
+// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, idioma, póster); Fabricación pura.
 final class MapeoTmdb {
 
-    /**
-     * Los 19 géneros de TMDB contra los 9 nuestros, por el nombre que TMDB devuelve en
-     * español. Los que no tienen equivalente caen en el más cercano, y eso es una pérdida de
-     * información asumida: preferimos un catálogo corto y cerrado —que hace imposible un alta
-     * con un género mal tipeado— a copiar el de ellos.
-     */
+    private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
+
     private static final Map<String, Genero> GENEROS = Map.ofEntries(
             entry("Acción", Genero.ACCION),
             entry("Aventura", Genero.ACCION),
@@ -61,11 +41,6 @@ final class MapeoTmdb {
             entry("Thriller", Genero.SUSPENSO),
             entry("Crimen", Genero.SUSPENSO));
 
-    /**
-     * Lo que publica el INCAA contra nuestro enum. TMDB devuelve el texto tal cual figura en
-     * la certificación argentina, y no siempre con la misma forma: hay títulos con
-     * <code>+13</code>, otros con <code>13</code> y otros con <code>SAM13</code>.
-     */
     private static final Map<String, Clasificacion> CLASIFICACIONES = Map.ofEntries(
             entry("ATP", Clasificacion.ATP),
             entry("+13", Clasificacion.MAS_13),
@@ -77,7 +52,6 @@ final class MapeoTmdb {
             entry("+18", Clasificacion.MAS_18),
             entry("18", Clasificacion.MAS_18),
             entry("SAM18", Clasificacion.MAS_18),
-            // Condicionada: es la más restrictiva que publica el INCAA.
             entry("C", Clasificacion.MAS_18));
 
     private static final Map<String, String> IDIOMAS = Map.ofEntries(
@@ -89,46 +63,26 @@ final class MapeoTmdb {
     private MapeoTmdb() {
     }
 
-    /**
-     * La película como la espera el alta, con los nombres nuestros.
-     *
-     * <p>Nace {@code enCartelera = false}: lo que baja de TMDB es una propuesta y el buzón la
-     * pone en pendiente igual, pero mandarla ya apagada evita que un cambio en el buzón la
-     * publique sin que nadie la mire.
-     *
-     * @param certificacion la argentina, o {@code null} si TMDB no la trae
-     */
-    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, String certificacion,
-                                   String urlPoster) {
+    // Las tres respuestas de TMDB por película: la del listado, el detalle y las fechas de estreno.
+    // Nace enCartelera = false: nada se publica sin que el encargado la mire.
+    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, JsonNode estrenos) {
         return new DatosPelicula(
                 textoDe(detalle, "title", textoDe(resumen, "title", "")),
                 detalle.path("runtime").asInt(0),
                 generosDe(detalle),
-                clasificacionDe(certificacion),
-                // Vendría de /credits: una llamada más por película, y el encargado lo
-                // completa a mano cuando confirma.
+                clasificacionDe(certificacionArgentina(estrenos)),
                 "",
                 textoDe(detalle, "overview", ""),
                 anioDe(detalle.path("release_date").asText(null)),
                 idiomaDe(detalle.path("original_language").asText("")),
-                urlPoster,
+                urlPoster(resumen.path("poster_path").asText(null)),
                 false,
-                // El puntaje de TMDB, que el cine usa para decidir qué programa. Viene 0..10
-                // con decimales; se manda tal cual y el gestor valida el rango.
-                detalle.path("vote_average").asDouble(0),
-                // Sobre cuántos votos se calculó ese puntaje. Sin esto, el 0,0 de una película
-                // recién estrenada es indistinguible del de una mala, y seis votos pesan igual
-                // que cinco mil.
+                puntajeDe(detalle.path("vote_average").asDouble(0)),
                 detalle.path("vote_count").asInt(0));
     }
 
-    /**
-     * Al menos uno, siempre: R7 lo exige y el alta lo rechazaría. Si TMDB no trae ninguno
-     * reconocible, DRAMA es el menos comprometido.
-     */
     static List<Genero> generosDe(JsonNode detalle) {
-        // TreeSet y no un Set cualquiera: sin orden estable, dos corridas de la misma película
-        // guardarían los mismos géneros en distinto orden y el diff del buzón sería ruido.
+        // TreeSet: orden estable entre corridas de la misma película.
         TreeSet<Genero> traducidos = new TreeSet<>();
         for (JsonNode genero : detalle.path("genres")) {
             Genero nuestro = GENEROS.get(genero.path("name").asText(""));
@@ -139,19 +93,31 @@ final class MapeoTmdb {
         return traducidos.isEmpty() ? List.of(Genero.DRAMA) : new ArrayList<>(traducidos);
     }
 
-    /**
-     * Sin certificación argentina no inventamos una permisiva: ATP dejaría entrar a un menor
-     * a cualquier cosa. MAS_13 es el default prudente, y el encargado lo corrige al confirmar.
-     */
+    // La primera no vacía de los estrenos en la Argentina; null si no hay, y la clasificación decide.
+    static String certificacionArgentina(JsonNode estrenos) {
+        for (JsonNode pais : estrenos.path("results")) {
+            if (!"AR".equals(pais.path("iso_3166_1").asText())) {
+                continue;
+            }
+            for (JsonNode estreno : pais.path("release_dates")) {
+                String certificacion = estreno.path("certification").asText("");
+                if (!certificacion.isBlank()) {
+                    return certificacion.strip();
+                }
+            }
+        }
+        return null;
+    }
+
+    // Sin certificación, MAS_13 y no ATP: el default prudente.
     static Clasificacion clasificacionDe(String certificacion) {
         if (certificacion == null || certificacion.isBlank()) {
             return Clasificacion.MAS_13;
         }
         return CLASIFICACIONES.getOrDefault(
-                certificacion.strip().toUpperCase(), Clasificacion.MAS_13);
+                certificacion.strip().toUpperCase(Locale.ROOT), Clasificacion.MAS_13);
     }
 
-    /** El año del estreno, que TMDB manda como fecha ISO. Cero si no vino o no se entiende. */
     static int anioDe(String fechaEstreno) {
         if (fechaEstreno == null || fechaEstreno.length() < 4) {
             return 0;
@@ -163,9 +129,17 @@ final class MapeoTmdb {
         }
     }
 
-    /** El código ISO 639 traducido. Si no está en la tabla se muestra el código igual. */
     static String idiomaDe(String codigo) {
         return IDIOMAS.getOrDefault(codigo, codigo);
+    }
+
+    // TMDB lo manda con tres decimales (7.234) y la película acepta uno, el de la columna DECIMAL(3,1).
+    static double puntajeDe(double promedio) {
+        return Math.round(promedio * 10) / 10.0;
+    }
+
+    static String urlPoster(String posterPath) {
+        return posterPath == null || posterPath.isBlank() ? "" : IMAGENES + posterPath;
     }
 
     private static String textoDe(JsonNode nodo, String campo, String siNoEsta) {

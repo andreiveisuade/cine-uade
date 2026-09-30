@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.programaciones;
 
-/** Una función ya materializada por una grilla. */
+// Una función que generó una programación, en el detalle de GET /api/programaciones/{id}.
 public record FuncionGeneradaVistaDTO(int id, String inicio) {
 }

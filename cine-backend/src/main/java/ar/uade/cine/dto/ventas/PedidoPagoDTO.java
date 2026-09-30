@@ -1,9 +1,9 @@
 package ar.uade.cine.dto.ventas;
 
-/**
- * No lleva monto a propósito: sale del total de la reserva, que a su vez es lo que se
- * congeló en cada entrada al reservar. Si el importe fuera un dato de entrada, se podría
- * cobrar $100 una reserva de $16.000.
- */
-public record PedidoPagoDTO(String medio, String codigoAutorizacion) {
+import jakarta.validation.constraints.NotBlank;
+
+// Lo que entra al cobrar una reserva (POST /api/reservas/{id}/pago); exige el medio, no el código (R11).
+// Sin monto a propósito: sale del total congelado en la reserva.
+public record PedidoPagoDTO(@NotBlank(message = "Falta el medio de pago") String medio,
+                            String codigoAutorizacion) {
 }

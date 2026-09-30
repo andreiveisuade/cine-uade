@@ -1,14 +1,12 @@
 package ar.uade.cine.model.salas;
 
-/**
- * Tecnología de proyección que tiene instalada la sala. El multiplicador es sobre el
- * precio base de la función: una butaca de IMAX cuesta más que una de 2D aunque den la
- * misma película.
- *
- * <p>Solo describe la tecnología, no la categoría comercial: lo premium de una butaca
- * lo dice {@link TipoAsiento}. Si estuviera en los dos lados el recargo se cobraría
- * dos veces.
- */
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+import ar.uade.cine.model.dinero.Dinero;
+
+// Formato de sala; cada constante trae su multiplicador de precio y si proyecta 3D (R8).
+@Getter
 public enum TipoSala {
 
     DOS_D(1.0, false),
@@ -17,6 +15,7 @@ public enum TipoSala {
     CUATRO_D(1.8, true);
 
     private final double multiplicadorPrecio;
+    @Accessors(fluent = true)
     private final boolean soportaTresD;
 
     TipoSala(double multiplicadorPrecio, boolean soportaTresD) {
@@ -24,12 +23,8 @@ public enum TipoSala {
         this.soportaTresD = soportaTresD;
     }
 
-    public double getMultiplicadorPrecio() {
-        return multiplicadorPrecio;
-    }
-
-    /** Una sala 2D no tiene el proyector para dar funciones en 3D. */
-    public boolean soportaTresD() {
-        return soportaTresD;
+    // Su parte del precio de una entrada: el recargo del formato sobre el precio base de la función.
+    public Dinero aplicarA(Dinero precio) {
+        return precio.por(multiplicadorPrecio);
     }
 }

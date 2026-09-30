@@ -45,6 +45,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 Ok "Docker corriendo"
 
+# El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
+# que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
+if ((Test-Path ..\.githooks) -and ((git -C .. config core.hooksPath) -ne '.githooks')) {
+  git -C .. config core.hooksPath .githooks 2>$null
+  if ($LASTEXITCODE -eq 0) { Ok "Hook anti-credenciales activado" }
+}
+
 # ------------------------------------------------------------------- 2. el .env
 Paso "2/5  Configuracion (.env)"
 
@@ -114,7 +121,7 @@ Paso "5/5  Datos de ejemplo"
 
 # Windows no trae shell POSIX ni curl garantizados, asi que el seed corre adentro de un
 # contenedor conectado a la red del compose. No depende de Git Bash.
-$cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM pelicula"' 2>$null
+$cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>$null
 $hayDatos = $false
 if ($cuenta) { $n = 0; if ([int]::TryParse(("$cuenta").Trim(), [ref]$n)) { $hayDatos = $n -gt 0 } }
 
@@ -127,7 +134,7 @@ if ($hayDatos) {
   } else {
     docker run --rm --network $red -v "${PWD}/seed:/seed:ro" -e API=http://frontend:8080/api `
       --entrypoint sh curlimages/curl:latest /seed/datos-de-ejemplo.sh *> $null
-    if ($LASTEXITCODE -eq 0) { Ok "4 peliculas, 6 salas y 8 funciones" }
+    if ($LASTEXITCODE -eq 0) { Ok "6 salas, la carta del candy y una promocion" }
     else { Aviso "Fallo el sembrado. Proba a mano: ./seed/datos-de-ejemplo.sh" }
   }
 }
@@ -141,8 +148,9 @@ Write-Host ""
 Write-Host "Listo" -ForegroundColor White
 Write-Host ""
 Write-Host "  Cliente     http://localhost:$puerto"
-Write-Host "  Panel       http://localhost:$puerto/admin.html   encargado@cine.uade.ar / cine2026"
-Write-Host "  Puerta      el mismo panel                        puerta@cine.uade.ar / cine2026"
+Write-Host "  Panel       cd ..\cine-swing; mvn exec:java   encargado@cine.uade.ar / cine2026"
+Write-Host "  Puerta      el mismo panel de escritorio       puerta@cine.uade.ar / cine2026"
+Write-Host "  Swagger     http://localhost:$puerto/swagger-ui.html"
 Write-Host "  Adminer     http://localhost:$adminer   servidor: mysql"
 Write-Host ""
 Write-Host "  Para bajarlo:  docker compose down"

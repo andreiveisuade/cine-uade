@@ -5,31 +5,29 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Function;
 
-/**
- * Lectura de lo que entra por HTTP: texto crudo a los tipos del dominio. Los mensajes
- * son los que va a leer el usuario, así que no dejan asomar nombres de clases de Java.
- *
- * <p>Ya no tiene el {@code id(Context)} que tenía con Javalin: un {@code @PathVariable int}
- * lo convierte Spring, y cuando el valor no es un número el que devuelve el 404 con el
- * mismo mensaje de siempre es {@link ManejadorErrores}. Lo que queda acá es lo que Spring
- * no puede saber: qué enum se esperaba, qué campo era y cómo se le explica al usuario que
- * mandó cualquier cosa.
- */
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
+// Pasa los textos del pedido a enums, fechas y números; lo inválido sale como DatoInvalido (400).
+// queEs nombra el dato con su artículo («la fecha de inicio»): el mensaje lo usa para concordar.
 public final class Parseo {
+
+    private static final int PRIMER_ANIO = 1000;
+    private static final int ULTIMO_ANIO = 9999;
 
     private Parseo() {
     }
 
-    /** Los enums viajan con el nombre de la constante, nunca con la etiqueta de mostrar. */
     public static <T extends Enum<T>> T constante(Class<T> tipo, String valor, String queEs) {
-        if (valor == null || valor.isBlank()) {
-            throw new IllegalArgumentException("Falta " + queEs);
-        }
+        exigir(valor, queEs);
         try {
-            return Enum.valueOf(tipo, valor.trim().toUpperCase());
+            // Locale.ROOT: con el de la JVM en turco, "i" pasaría a "İ" y ninguna constante coincidiría.
+            return Enum.valueOf(tipo, valor.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Valor inválido para " + queEs + ": " + valor);
+            // La de Enum.valueOf trae un texto técnico: se traduce a uno que nombra el dato.
+            throw new DatoInvalido(noEsValido(queEs) + ": " + valor);
         }
     }
 
@@ -41,58 +39,43 @@ public final class Parseo {
     }
 
     public static LocalDateTime momento(String valor, String queEs) {
-        if (valor == null || valor.isBlank()) {
-            throw new IllegalArgumentException("Falta " + queEs);
-        }
-        try {
-            return LocalDateTime.parse(valor.trim());
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser una fecha y hora válida");
-        }
+        LocalDateTime momento = tiempo(valor, queEs, LocalDateTime::parse, "AAAA-MM-DDTHH:MM");
+        exigirAnio(momento.getYear(), queEs);
+        return momento;
     }
 
     public static LocalTime hora(String valor, String queEs) {
-        if (valor == null || valor.isBlank()) {
-            throw new IllegalArgumentException("Falta " + queEs);
-        }
-        try {
-            return LocalTime.parse(valor.trim());
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser una hora válida");
-        }
+        return tiempo(valor, queEs, LocalTime::parse, "HH:MM");
     }
 
     public static LocalDate dia(String valor, String queEs) {
-        if (valor == null || valor.isBlank()) {
-            throw new IllegalArgumentException("Falta " + queEs);
-        }
-        try {
-            return LocalDate.parse(valor.trim());
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser una fecha válida");
-        }
+        LocalDate dia = tiempo(valor, queEs, LocalDate::parse, "AAAA-MM-DD");
+        exigirAnio(dia.getYear(), queEs);
+        return dia;
     }
 
-    /*
-     * Los tres de abajo son para query params de búsqueda, donde "no vino" y "no filtres
-     * por eso" son lo mismo. Por eso devuelven null en vez de fallar, al revés que los de
-     * arriba: un campo que falta en un alta es un error del que manda, pero un filtro que
-     * falta es lo normal.
-     */
-
-    /** Una fecha de filtro, o null si no vino. Si vino mal escrita sí falla. */
     public static LocalDate diaOpcional(String valor, String queEs) {
         return vacio(valor) ? null : dia(valor, queEs);
+    }
+
+    public static LocalTime horaOpcional(String valor, String queEs) {
+        return vacio(valor) ? null : hora(valor, queEs);
     }
 
     public static Integer numeroOpcional(String valor, String queEs) {
         if (vacio(valor)) {
             return null;
         }
+        String limpio = valor.trim();
         try {
-            return Integer.valueOf(valor.trim());
+            return Integer.valueOf(limpio);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(queEs + " tiene que ser un número");
+            // 99999999999 es un número: lo que no cumple es que entre en un int.
+            if (limpio.matches("[+-]?\\d+")) {
+                throw new DatoInvalido(conMayuscula(queEs) + " tiene que estar entre "
+                        + Integer.MIN_VALUE + " y " + Integer.MAX_VALUE);
+            }
+            throw new DatoInvalido(conMayuscula(queEs) + " tiene que ser un número");
         }
     }
 
@@ -100,23 +83,54 @@ public final class Parseo {
         return vacio(valor) ? null : constante(tipo, valor, queEs);
     }
 
-    /**
-     * Un filtro de sí/no con tres estados: true, false y "no filtres por esto". Por eso
-     * devuelve Boolean y no boolean — la diferencia entre "solo las despublicadas" y
-     * "todas" se perdería con un primitivo.
-     */
+    // Boolean: null es "no filtres por esto".
     public static Boolean booleanOpcional(String valor, String queEs) {
         if (vacio(valor)) {
             return null;
         }
-        String limpio = valor.trim().toLowerCase();
+        String limpio = valor.trim().toLowerCase(Locale.ROOT);
         if (limpio.equals("true") || limpio.equals("false")) {
             return Boolean.valueOf(limpio);
         }
-        throw new IllegalArgumentException(queEs + " tiene que ser true o false");
+        throw new DatoInvalido(conMayuscula(queEs) + " tiene que ser true o false");
+    }
+
+    // El formato va en el mensaje: «no es válida» solo, sin decir cómo escribirla, no le sirve a nadie.
+    private static <T> T tiempo(String valor, String queEs, Function<String, T> parser, String formato) {
+        exigir(valor, queEs);
+        try {
+            return parser.apply(valor.trim());
+        } catch (DateTimeParseException e) {
+            throw new DatoInvalido(noEsValido(queEs) + ": usá " + formato);
+        }
+    }
+
+    // LocalDate acepta hasta el año +999999999, y con uno así la aritmética de fechas de los gestores
+    // tira DateTimeException. El límite es el de DATE y DATETIME en MySQL: técnico, como el largo de
+    // un VARCHAR, y por eso se controla acá y no en una regla del cine.
+    private static void exigirAnio(int anio, String queEs) {
+        if (anio < PRIMER_ANIO || anio > ULTIMO_ANIO) {
+            throw new DatoInvalido(conMayuscula(queEs) + " tiene que estar entre los años "
+                    + PRIMER_ANIO + " y " + ULTIMO_ANIO);
+        }
+    }
+
+    // El adjetivo concuerda con el dato: «la proyección no es válida», «el idioma no es válido».
+    private static String noEsValido(String queEs) {
+        return conMayuscula(queEs) + " no es " + (queEs.startsWith("la ") ? "válida" : "válido");
+    }
+
+    private static void exigir(String valor, String queEs) {
+        if (vacio(valor)) {
+            throw new DatoInvalido("Falta " + queEs);
+        }
     }
 
     private static boolean vacio(String valor) {
         return valor == null || valor.isBlank();
+    }
+
+    private static String conMayuscula(String texto) {
+        return Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
 }

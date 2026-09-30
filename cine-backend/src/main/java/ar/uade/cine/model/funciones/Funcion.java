@@ -2,49 +2,44 @@ package ar.uade.cine.model.funciones;
 
 import java.time.LocalDateTime;
 
+import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Getter;
 
-/**
- * Una función programada: una película en una sala, a una fecha y hora, con su versión,
- * formato y precio base.
- *
- * <p>Referencia película y sala <strong>por id</strong> y no con un {@code @ManyToOne}:
- * quien necesite los datos completos se los pide al repositorio. No es una traducción
- * incompleta, es la misma decisión de siempre dicha en el mapeo. Listar las funciones de
- * una semana son cien filas, y con la referencia al objeto cada una arrastraría su película
- * y su sala aunque la pantalla solo pinte el horario. Las relaciones sí se mapean donde una
- * cosa no existe sin la otra —las entradas de una reserva, los géneros de una película—,
- * que es lo que distingue una parte de un vecino.
- */
+// Pase de una película en una sala a una hora; Experto: nace con formato, R8 y precio válidos, y decide R19.
 @Entity
+@Getter
 public class Funcion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "pelicula_id")
-    private int peliculaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pelicula_id", nullable = false)
+    private Pelicula pelicula;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    private Sala sala;
 
-    /**
-     * De qué grilla salió, o {@code null} si la cargó el administrador a mano. Es lo que
-     * materializa la asociación con {@link ar.uade.cine.model.programaciones.Programacion}.
-     *
-     * <p>Admite null y es {@code Integer} y no {@code int} porque la programación no
-     * reemplaza a CU-03: una función suelta —el preestreno del jueves, la función especial—
-     * sigue siendo válida y no pertenece a ninguna grilla.
-     */
     @Column(name = "programacion_id")
+    @Getter(AccessLevel.NONE)
     private Integer programacionId;
 
     private LocalDateTime inicio;
@@ -55,22 +50,25 @@ public class Funcion {
     @Enumerated(EnumType.STRING)
     private Proyeccion proyeccion;
 
-    /** Precio base: lo que cuesta una butaca estándar. Los recargos se calculan aparte. */
     private Dinero precio;
 
     protected Funcion() {
     }
 
-    /** La función suelta de CU-03: no salió de ninguna grilla. */
-    public Funcion(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio) {
-        this(peliculaId, salaId, inicio, version, proyeccion, precio, null);
+        this(pelicula, sala, inicio, version, proyeccion, precio, null);
     }
 
-    public Funcion(int peliculaId, int salaId, LocalDateTime inicio, Version version,
+    // Que la película esté confirmada, que no empiece en el pasado (R20) y que no pise a otra (R3)
+    // no son invariantes de la función sino del alta: dependen del buzón, del reloj y de las otras
+    // funciones de la sala. Una función que quedó en el pasado sigue siendo válida (R12).
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
                    Proyeccion proyeccion, Dinero precio, Integer programacionId) {
-        this.peliculaId = peliculaId;
-        this.salaId = salaId;
+        ValidadorFuncion.formato(sala, version, proyeccion, precio);
+        ValidadorFuncion.inicio(inicio);
+        this.pelicula = pelicula;
+        this.sala = sala;
         this.inicio = inicio;
         this.version = version;
         this.proyeccion = proyeccion;
@@ -78,77 +76,55 @@ public class Funcion {
         this.programacionId = programacionId;
     }
 
-    public int getId() {
-        return id;
+    // R19 y R20 con un solo corte: la que empieza en este instante ya empezó, y nacería sin poder
+    // venderse. Estática para preguntar por un horario antes de que la función exista, como hacen la
+    // programación y la grilla al saltear lo que ya pasó.
+    public static boolean yaPaso(LocalDateTime inicio, LocalDateTime ahora) {
+        return !inicio.isAfter(ahora);
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public boolean yaEmpezo(LocalDateTime ahora) {
+        return yaPaso(inicio, ahora);
     }
 
+    // R20 y el horizonte miran el reloj, así que no son invariantes: los exige el alta, con la hora que
+    // le pasa el gestor.
+    public void exigirProgramableA(LocalDateTime ahora) {
+        if (yaEmpezo(ahora)) {
+            throw new DatoInvalido("La función no puede empezar en el pasado");
+        }
+        ValidadorFuncion.dentroDelHorizonte(inicio.toLocalDate(), ahora.toLocalDate(),
+                "La función tiene que empezar dentro del próximo año");
+    }
+
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
-        return peliculaId;
+        return pelicula.getId();
     }
 
     public int getSalaId() {
-        return salaId;
-    }
-
-    public Integer getProgramacionId() {
-        return programacionId;
-    }
-
-    public LocalDateTime getInicio() {
-        return inicio;
-    }
-
-    /** Doblada o subtitulada: es de esta proyección, no de la película. */
-    public Version getVersion() {
-        return version;
-    }
-
-    public Proyeccion getProyeccion() {
-        return proyeccion;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
+        return sala.getId();
     }
 
     @Override
     public String toString() {
-        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + inicio
+        return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + inicio
                 + " - " + proyeccion + " " + version + " - desde $" + precio;
     }
 
-    // ---------- el paso del tiempo ----------
-
-    /**
-     * Si la función ya arrancó. Recibe el instante por parámetro y no lo pide al reloj, por
-     * lo mismo que {@code Reserva.estaVencida}: así se puede probar sin esperar.
-     *
-     * <p>Es lo único de este bloque que no necesita saber cuánto dura la película, y es
-     * también lo que sostiene R19: una vez que empezó, no se vende ni se cobra.
-     */
-    public boolean yaEmpezo(LocalDateTime ahora) {
-        return !inicio.isAfter(ahora);
-    }
-
-    /**
-     * Cuándo termina. La duración entra por parámetro porque la función no la conoce: vive
-     * en la película, y acá solo hay un {@code peliculaId}. Quien llama ya tuvo que resolver
-     * esa relación —es lo mismo que hace {@code GestorFunciones} para validar R3—, así que
-     * pedírsela es más honesto que guardar una copia del dato.
-     */
     public LocalDateTime getFin(int duracionMinutos) {
         return inicio.plusMinutes(duracionMinutos);
     }
 
-    public boolean estaEnCurso(LocalDateTime ahora, int duracionMinutos) {
-        return yaEmpezo(ahora) && !yaTermino(ahora, duracionMinutos);
+    // Experto en el precio: la función tiene el base, y cada tipo (sala, butaca, tarifa) aplica su parte.
+    // Base × tipo de sala es el «desde» de la cartelera. Recibe la sala aunque es la suya porque this.sala
+    // es LAZY: las vistas corren fuera de la transacción y la leen por su cuenta.
+    public Dinero precioEn(Sala sala) {
+        return sala.getTipo().aplicarA(precio);
     }
 
-    public boolean yaTermino(LocalDateTime ahora, int duracionMinutos) {
-        return getFin(duracionMinutos).isBefore(ahora);
+    // Base × sala × butaca: lo que muestra el mapa, con la tarifa general. La entrada le aplica la suya.
+    public Dinero precioDe(Asiento asiento, Sala sala) {
+        return asiento.getTipo().aplicarA(precioEn(sala));
     }
 }

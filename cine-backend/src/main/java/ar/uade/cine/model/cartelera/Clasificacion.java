@@ -1,9 +1,9 @@
 package ar.uade.cine.model.cartelera;
 
-/**
- * Clasificación por edad. Guarda la edad mínima para que la validación al vender —cuando
- * se implemente— no tenga que traducir la etiqueta a un número con un switch.
- */
+import lombok.Getter;
+
+// Clasificación por edad de una película (R10); cada constante sabe su edad mínima y arma su etiqueta.
+@Getter
 public enum Clasificacion {
 
     ATP(0),
@@ -17,15 +17,10 @@ public enum Clasificacion {
         this.edadMinima = edadMinima;
     }
 
-    public int getEdadMinima() {
-        return edadMinima;
-    }
-
     public String getEtiqueta() {
         return edadMinima == 0 ? "ATP" : "+" + edadMinima;
     }
 
-    /** Para mostrarla. Lo que se persiste es name(), que no cambia. */
     @Override
     public String toString() {
         return getEtiqueta();

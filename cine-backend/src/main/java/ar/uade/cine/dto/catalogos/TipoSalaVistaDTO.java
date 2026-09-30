@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.catalogos;
 
-/** Con {@code soportaTresD} el front puede avisar de R8 antes de mandar la función. */
+// Un tipo de sala de GET /api/tipos-sala, con su recargo sobre el precio y si admite 3D (R8).
 public record TipoSalaVistaDTO(String nombre, double multiplicador, boolean soportaTresD) {
 }

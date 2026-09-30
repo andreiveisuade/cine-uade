@@ -2,18 +2,9 @@ package ar.uade.cine.infrastructure.comprobantes;
 
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * Emite el comprobante de una compra del candy. Va aparte de GeneradorTicket y no como
- * un segundo método suyo: quien emite tickets de butacas no tiene por qué saber de
- * pochoclos, y al revés.
- */
+// Puerto: ticket de una compra de candy; ComprobantesDeCandy no conoce el formato (Variaciones protegidas).
 public interface GeneradorTicketCandy {
 
-    /**
-     * @param ahorro cuánto se ahorró el cliente por llevar combos en vez de los productos
-     *               sueltos. Lo calcula el gestor, que es quien conoce la lista de precios.
-     */
-    void emitir(CompraCandy compra, Cliente cliente, Dinero ahorro);
+    void emitir(CompraCandy compra, Cliente cliente);
 }

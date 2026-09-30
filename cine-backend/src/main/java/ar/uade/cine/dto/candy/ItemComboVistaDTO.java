@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.candy;
 
-/** Qué trae un combo: el producto que incluye y cuántas unidades. */
+// Un componente de un combo dentro de ProductoVistaDTO: qué producto trae y cuántas unidades.
 public record ItemComboVistaDTO(int productoId, String nombre, int cantidad) {
 }

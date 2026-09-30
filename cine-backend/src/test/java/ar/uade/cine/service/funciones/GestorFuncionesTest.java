@@ -6,41 +6,40 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
+import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.ventas.Ocupacion;
-import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.service.ventas.GestorReservas;
 
-/** R3: una sala no puede tener dos funciones superpuestas. R12: no se borra lo que está en uso. */
 class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -56,7 +55,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
 
-    /** Película de 120 minutos en la sala 1, con una función a las 20:00. */
     @BeforeEach
     void prepararCartelera() {
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
@@ -65,101 +63,105 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
     }
 
-    /**
-     * Segunda película y segunda sala, más funciones repartidas en tres días. Sin este
-     * escenario cualquier filtro devolvería todo y los tests pasarían sin probar nada.
-     */
     private void cargarMasFunciones() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
-        // Interstellar en la sala 2, el mismo día que la del setup.
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
-        // Matrix en la sala 1, dos días después.
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
                 Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 
+    // R20
     @Test
-    void buscarSinCriteriosDevuelveTodo() {
-        cargarMasFunciones();
+    void noSeProgramaUnaFuncionEnElPasado() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, reloj.ahora().minusMinutes(1),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertEquals(3, funciones.buscar(null, null, null, null).size());
+        assertEquals("La función no puede empezar en el pasado", error.getMessage());
+        assertEquals(1, funciones.listar().size(), "solo la del arranque");
     }
 
+    // R20 con el corte de R19: la que empieza en este instante ya empezó.
     @Test
-    void buscarPorPeliculaYPorSala() {
-        cargarMasFunciones();
+    void ahoraMismoYaCuentaComoPasadoYUnMinutoDespuesNo() {
+        assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, reloj.ahora(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertEquals(2, funciones.buscar(1, null, null, null).size(), "las dos de Interstellar");
-        assertEquals(2, funciones.buscar(null, 1, null, null).size(), "las dos de la sala 1");
-        // Cruzar los dos criterios deja una sola: es un Y, no un O.
-        assertEquals(1, funciones.buscar(1, 1, null, null).size());
+        assertDoesNotThrow(() -> funciones.programar(1, 1, reloj.ahora().plusMinutes(1),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /**
-     * El rango incluye los dos extremos. Quien filtra «del 20 al 22» espera ver el 22:
-     * un rango semiabierto acá sería una sorpresa, no una convención.
-     */
+    // El horizonte se mide en días: el mismo día del año que viene entra a cualquier hora, el siguiente no.
     @Test
-    void elRangoDeFechasIncluyeLosDosExtremos() {
-        cargarMasFunciones();
+    void noSeProgramaUnaFuncionAMasDeUnAnio() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 15, 20, 0),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertEquals(3, funciones.buscar(null, null,
-                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 22)).size());
-        assertEquals(1, funciones.buscar(null, null,
-                LocalDate.of(2026, 8, 22), LocalDate.of(2026, 8, 22)).size(),
-                "un solo día: desde y hasta iguales");
+        assertEquals("La función tiene que empezar dentro del próximo año", error.getMessage());
+        assertDoesNotThrow(() -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 14, 23, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
+    // R20 mira el alta, no el historial (R12): la que ya pasó sigue ahí.
     @Test
-    void elRangoSeAbreDeUnLadoODelOtro() {
-        cargarMasFunciones();
+    void unaFuncionQueQuedoEnElPasadoSigueListada() {
+        reloj.mover(LocalDateTime.of(2026, 8, 25, 10, 0));
 
-        assertEquals(1, funciones.buscar(null, null, LocalDate.of(2026, 8, 21), null).size(),
-                "solo desde: de ahí en adelante");
-        assertEquals(2, funciones.buscar(null, null, null, LocalDate.of(2026, 8, 21)).size(),
-                "solo hasta: todo lo anterior");
+        assertEquals(1, funciones.listar().size());
     }
 
-    @Test
-    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin criterios devuelve todo,                                     ,   ,  ,           ,           3
+            las dos de Interstellar,                                         1,  ,  ,           ,           2
+            las dos de la sala 1,                                            ,   1, ,           ,           2
+            película y sala combinadas,                                      1,  1, ,           ,           1
+            el rango incluye los dos extremos,                               ,   ,  2026-08-20, 2026-08-22, 3
+            un solo día: desde y hasta iguales,                              ,   ,  2026-08-22, 2026-08-22, 1
+            solo desde: de ahí en adelante,                                  ,   ,  2026-08-21, ,           1
+            solo hasta: todo lo anterior,                                    ,   ,  ,           2026-08-21, 2
+            un rango sin funciones da vacío,                                 ,   ,  2027-01-01, 2027-12-31, 0
+            'una película que no existe no es un error, es cero resultados', 99, ,  ,           ,           0
+            """)
+    void buscarFiltraPorPeliculaSalaYRangoDeFechas(String caso, Integer pelicula, Integer sala,
+            LocalDate desde, LocalDate hasta, int esperadas) {
         cargarMasFunciones();
 
-        assertTrue(funciones.buscar(null, null,
-                LocalDate.of(2027, 1, 1), LocalDate.of(2027, 12, 31)).isEmpty());
-        assertTrue(funciones.buscar(99, null, null, null).isEmpty(),
-                "una película que no existe no es un error, es cero resultados");
+        assertEquals(esperadas, funciones.buscar(pelicula, sala, new Periodo(desde, hasta)).size(), caso);
     }
 
-    @Test
-    void rechazaFuncionQueEmpiezaMientrasCorreOtra() {
-        assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 21, 0),
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            empieza mientras corre otra,                    21:00
+            pegada al final de la anterior por la limpieza, 22:00
+            """)
+    void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio) {
+        assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, LocalDate.of(2026, 8, 20).atTime(inicio),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
         assertEquals(1, funciones.listar().size());
     }
 
-    /**
-     * La función del setup termina 22:00 y la Sala 1 se limpia en 15 minutos, así que
-     * pegar una a las 22:00 ya no alcanza: la sala está ocupada limpiándose.
-     */
+    // R3 se busca por rango y no en toda la historia de la sala: el rango tiene que alcanzar a
+    // una función que empezó el día anterior y todavía se está proyectando.
     @Test
-    void rechazaFuncionPegadaAlFinalDeLaAnteriorPorLaLimpieza() {
-        assertThrows(IllegalArgumentException.class,
-                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 0),
+    void rechazaFuncionQueEmpiezaMientrasCorreUnaLargaDelDiaAnterior() {
+        cartelera.agregar("Satantango", 432, List.of(Genero.DRAMA), Clasificacion.MAS_16);
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 25, 22, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+
+        assertThrows(Rechazo.class,
+                () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
-        assertEquals(1, funciones.listar().size());
     }
 
-    /**
-     * El mensaje tiene que decir que el problema es la limpieza y hasta cuándo dura. Sin
-     * eso, el encargado ve "la sala está ocupada" a una hora en la que la cartelera no
-     * muestra nada y lo lee como un error del sistema.
-     */
     @Test
     void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 5),
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
@@ -175,7 +177,6 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(2, funciones.listar().size());
     }
 
-    /** Cero es válido: una sala que no necesita corte encadena funciones como antes. */
     @Test
     void sinLimpiezaLasFuncionesSePuedenEncadenar() {
         salas.agregar("Sala sin corte", TipoSala.DOS_D, List.of(10, 10), Map.of(), 0);
@@ -187,17 +188,12 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /**
-     * Una limpieza negativa adelantaría el permiso para la función siguiente y la dejaría
-     * empezar antes de que termine la anterior: es un dato mal cargado, no "sin limpieza".
-     */
     @Test
     void rechazaSalaConLimpiezaNegativa() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> salas.agregar("Sala rota", TipoSala.DOS_D, List.of(10, 10), Map.of(), -5));
     }
 
-    /** La limpieza es de la sala: la de al lado sigue libre a la misma hora. */
     @Test
     void laLimpiezaNoAfectaALasOtrasSalas() {
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(6, 8), Map.of(), 30);
@@ -215,20 +211,30 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                         Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500)));
     }
 
-    /**
-     * Sin esto el buzón de revisión no serviría de nada: bastaría con programar desde ahí
-     * para meter en la cartelera del cine algo que nunca nadie aprobó.
-     */
     @Test
     void noSePuedeProgramarUnaPeliculaPendienteDeRevision() {
         Pelicula importada = revision.importar(
                 DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertTrue(e.getMessage().contains("confirmada"), e.getMessage());
+        assertEquals("La película Dune todavía no está confirmada: revisala antes de programarla", e.getMessage());
+    }
+
+    // La descartada no está en el buzón: pedirle que la revise la mandaría a buscar algo que no va a encontrar.
+    @Test
+    void unaPeliculaDescartadaDiceQueEstaDescartadaYNoQueFaltaRevisarla() {
+        Pelicula importada = revision.importar(
+                DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
+        revision.descartar(importada.getId());
+
+        Rechazo e = assertThrows(Rechazo.class,
+                () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
+                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+
+        assertEquals("La película Dune está descartada: no se puede programar", e.getMessage());
     }
 
     @Test
@@ -244,18 +250,17 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPeliculaInexistente() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                         Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
-    /** R12: sin esto, borrar la función deja las reservas apuntando a la nada. */
     @Test
     void noSeBorraUnaFuncionConReservas() {
         clientes.registrar("Andrei", "andrei@uade.edu.ar");
-        reservas.reservar(1, 1, generales("A1"));
+        reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(IllegalArgumentException.class, () -> funciones.eliminar(1));
+        assertThrows(Rechazo.class, () -> funciones.eliminar(1));
         assertEquals(1, funciones.listar().size());
     }
 
@@ -265,11 +270,10 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(0, funciones.listar().size());
     }
 
-    /** R12: la sala y la película tampoco se borran si tienen funciones programadas. */
     @Test
     void noSeBorraLaSalaNiLaPeliculaConFuncionesProgramadas() {
-        assertThrows(IllegalArgumentException.class, () -> salas.eliminar(1));
-        assertThrows(IllegalArgumentException.class, () -> cartelera.eliminar(1));
+        assertThrows(Rechazo.class, () -> salas.eliminar(1));
+        assertThrows(Rechazo.class, () -> cartelera.eliminar(1));
 
         funciones.eliminar(1);
         assertDoesNotThrow(() -> cartelera.eliminar(1));
@@ -277,11 +281,10 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     }
 
 
-    /** Matrix dura 136 minutos: una función a las 20:00 termina 22:16. */
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {
-        return new Funcion(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+        return new Funcion(null, new Sala("Sala 1", TipoSala.DOS_D, 15), LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
     }
 
@@ -295,30 +298,10 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void estaEnCursoEntreElInicioYElFin() {
-        Funcion funcion = funcionDeLas20();
-
-        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 19, 59), DURACION));
-        assertTrue(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 21, 0), DURACION));
-        assertFalse(funcion.estaEnCurso(LocalDateTime.of(2026, 8, 20, 23, 0), DURACION),
-                "a las 23:00 ya termino: empezo 20:00 y dura 2h16");
-    }
-
-    @Test
     void elFinSaleDeLaDuracionDeLaPelicula() {
         assertEquals(LocalDateTime.of(2026, 8, 20, 22, 16), funcionDeLas20().getFin(DURACION));
     }
 
-    /** El borde: en el minuto exacto del final todavía no terminó. */
-    @Test
-    void enElMinutoDelFinTodaviaNoTermino() {
-        Funcion funcion = funcionDeLas20();
-
-        assertFalse(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 16), DURACION));
-        assertTrue(funcion.yaTermino(LocalDateTime.of(2026, 8, 20, 22, 17), DURACION));
-    }
-
-    /** Butacas todas con tarifa general, que es el caso base de casi todas las pruebas. */
     private static Map<String, TipoTarifa> generales(String... codigos) {
         Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
         for (String codigo : codigos) {

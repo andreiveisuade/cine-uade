@@ -1,0 +1,21 @@
+package ar.uade.cine.controller.usuarios;
+
+import org.springframework.stereotype.Component;
+
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Empleado;
+import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
+import ar.uade.cine.dto.usuarios.EmpleadoVistaDTO;
+
+// Arma los JSON de cliente y empleado, sin el hash de la contraseña; Assembler entre el modelo y los DTO.
+@Component
+public class VistasUsuarios {
+
+    public ClienteVistaDTO cliente(Cliente c) {
+        return new ClienteVistaDTO(c.getId(), c.getNombre(), c.getEmail());
+    }
+
+    public EmpleadoVistaDTO empleado(Empleado e) {
+        return new EmpleadoVistaDTO(e.getId(), e.getNombre(), e.getEmail(), e.getRol().name());
+    }
+}

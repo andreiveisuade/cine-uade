@@ -2,14 +2,17 @@ package ar.uade.cine.dto.programaciones;
 
 import java.util.List;
 
-/**
- * El mismo pedido para previsualizar y para dar de alta: son la misma operación, y
- * mandarlos con formas distintas invitaría a que dejaran de serlo.
- *
- * <p>{@code diasSemana} ausente o vacío significa todos los días del rango, no
- * ninguno — igual que en las promociones.
- */
-public record PedidoProgramacionDTO(Integer peliculaId, Integer salaId, String desde, String hasta,
-                                 String horaInicio, List<String> diasSemana, String idioma,
-                                 String proyeccion, Double precio) {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+// Lo que entra al crear o previsualizar una programación (POST /api/programaciones); sin hasta queda abierta.
+public record PedidoProgramacionDTO(@NotNull(message = "Falta la película") Integer peliculaId,
+                                    @NotNull(message = "Falta la sala") Integer salaId,
+                                    @NotBlank(message = "Falta la fecha de inicio") String desde,
+                                    String hasta,
+                                    @NotBlank(message = "Falta la hora de la función") String horaInicio,
+                                    List<String> diasSemana,
+                                    @NotBlank(message = "Falta el idioma") String idioma,
+                                    @NotBlank(message = "Falta la proyección") String proyeccion,
+                                    @NotNull(message = "Falta el precio") Double precio) {
 }

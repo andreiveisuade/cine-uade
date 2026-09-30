@@ -1,8 +1,12 @@
-# La base de los tests: H2 en memoria, creada por Hibernate desde las entidades al
-# arrancar el contexto y tirada al terminar. Reemplaza a las catorce implementaciones en
-# memoria de los DAO, con una diferencia que se paga sola: ahora los tests pasan por el
-# mapeo y por las consultas de verdad, así que un @Query roto o una relación mal anotada
-# se ven en `mvn test` y no recién contra MySQL.
+# La base de los tests: H2 en memoria, creada con el mismo schema.sql que corre MySQL al
+# desplegar. Los tests pasan por el mapeo, por las consultas de verdad y por las
+# restricciones de la base real: los UNIQUE, los NOT NULL y el largo de cada VARCHAR.
+# Con ddl-auto: create-drop la base salía de las entidades y era más laxa que MySQL, así
+# que un texto de más o una fila repetida pasaba la suite y fallaba desplegado.
+#
+# `validate` y no `none`: si una entidad y el schema dejan de coincidir, no levanta.
+# El INIT corre en cada conexión del pool; como el schema es todo CREATE TABLE IF NOT
+# EXISTS, repetirlo no cambia nada.
 #
 # MODE=MySQL le pide a H2 que se comporte como el motor de producción en lo que se puede
 # —tipos, comillas, funciones— para que la distancia entre lo que prueba la suite y lo que
@@ -10,13 +14,13 @@
 
 spring:
   datasource:
-    url: jdbc:h2:mem:cine;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:cine;MODE=MySQL;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM 'src/main/resources/schema.sql'
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -25,10 +29,6 @@ cine:
   comprobantes:
     # Adentro de target/: `mvn clean` se los lleva y no ensucian el repo.
     tickets: target/comprobantes/tickets
-    informes: target/comprobantes/informes
-  redis:
-    host: localhost
-    puerto: 6379
   importador:
     corrida-maxima: 5m
     # Sin espera: es una protección contra el doble clic y tiene su propio test; dejarla

@@ -5,239 +5,152 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.IntPredicate;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.EstadoAsiento;
+import ar.uade.cine.model.ventas.BloqueoButaca;
 import ar.uade.cine.model.ventas.Entrada;
-import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.ReservaRepository;
+import ar.uade.cine.model.ventas.SesionDeCompra;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Qué butacas están tomadas en una función y cuáles quedan.
- *
- * <p>Una butaca no está ocupada en sí misma: lo está <em>para una función</em>, si alguna
- * reserva vigente de esa función la tomó. Por eso esto no es asunto de la reserva ni de la
- * sala —el sujeto es la función— y vive en su propia clase en vez de adentro de
- * {@link GestorReservas}, que trata el ciclo de vida de una reserva.
- *
- * <p>Es la <strong>única</strong> definición de "ocupado" del sistema. El mapa de butacas
- * que dibuja la API se arma preguntándole acá, y {@link GestorReservas} valida contra lo
- * mismo al vender: si cada uno lo calculara por su cuenta, el mapa podría ofrecer una
- * butaca que la reserva después rechaza.
- *
- * <h2>Ocupada por dos motivos distintos, y las dos etapas son necesarias</h2>
- * <p>Una butaca puede estar tomada porque <strong>alguien la compró</strong> —hay una
- * reserva vigente con esa entrada— o porque <strong>alguien la está eligiendo</strong> —hay
- * un bloqueo a nombre de una sesión—. Son dos mecanismos con vencimiento, y no hacen lo
- * mismo:
- *
- * <table>
- *   <caption>Las dos ventanas</caption>
- *   <tr><th></th><th>Bloqueo</th><th>Reserva RESERVADA</th></tr>
- *   <tr><td>Etapa</td><td>eligiendo butacas</td><td>elegidas, falta pagar</td></tr>
- *   <tr><td>Dura</td><td>{@link #MIENTRAS_ELIGE}</td>
- *       <td>{@link Reserva#MINUTOS_PARA_PAGAR} minutos</td></tr>
- *   <tr><td>De quién es</td><td>de una sesión anónima</td><td>de un cliente con nombre y mail</td></tr>
- *   <tr><td>Deja rastro</td><td>ninguno: se borra solo</td><td>historial, ticket, código de acceso</td></tr>
- *   <tr><td>Al vencer</td><td>desaparece</td><td>pasa a EXPIRADA, que es un dato del negocio</td></tr>
- * </table>
- *
- * <p>Que el bloqueo reemplazara al estado RESERVADA sería un retroceso: las reservas
- * esperando pago dejarían de sobrevivir a un reinicio, y el cliente no podría ver en su
- * historial algo que todavía no pagó. Y al revés tampoco: no se puede crear una reserva
- * mientras alguien elige, porque una reserva necesita un cliente y el cliente recién se
- * identifica al confirmar.
- *
- * <p>Las dos ventanas nunca se solapan sobre la misma butaca: cuando la reserva nace,
- * {@link GestorReservas#reservar} suelta el bloqueo, porque a partir de ahí la butaca la
- * retiene la reserva.
- */
+// Única definición de butaca ocupada (R4), la del mapa y la venta; reservas vigentes más bloqueos ajenos.
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class Ocupacion {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Ocupacion.class);
-
-    /**
-     * Cuánto se le guarda una butaca a quien la está eligiendo. Es una regla de negocio y
-     * por eso vive acá y no en el adaptador: el medio donde se guarda el bloqueo no decide
-     * cuánto dura.
-     *
-     * <p>Corta a propósito, y mucho más corta que los treinta minutos para pagar: es el
-     * tiempo de tocar el mapa y escribir un nombre y un mail. Cada vez que la persona toca
-     * el mapa se renueva, así que tardar en decidir no cuesta la butaca; lo que la ventana
-     * acota es cuánto retiene una butaca alguien que cerró la pestaña y no va a volver.
-     */
     public static final Duration MIENTRAS_ELIGE = Duration.ofMinutes(3);
+
+    // R19 dice lo mismo al bloquear y al vender: los dos pasan por funcionEnVenta.
+    private static final String FUNCION_EMPEZADA = "La función ya empezó: no se pueden reservar butacas";
 
     private final ReservaRepository reservaRepository;
     private final FuncionRepository funcionRepository;
     private final AsientoRepository asientoRepository;
-    private final BloqueoButacas bloqueos;
+    private final BloqueoButacaRepository bloqueos;
+    private final Reloj reloj;
 
-    public Ocupacion(ReservaRepository reservaRepository, FuncionRepository funcionRepository, AsientoRepository asientoRepository,
-                     BloqueoButacas bloqueos) {
-        this.reservaRepository = reservaRepository;
-        this.funcionRepository = funcionRepository;
-        this.asientoRepository = asientoRepository;
-        this.bloqueos = bloqueos;
-    }
-
-    /**
-     * Ids de las butacas tomadas en esa función. Las reservas canceladas y las expiradas
-     * liberan las suyas (R6), y los bloqueos vencidos también.
-     */
-    public Set<Integer> asientosOcupados(int funcionId) {
-        return asientosOcupados(funcionId, null);
-    }
-
-    /**
-     * Lo mismo, pero sin contar las butacas que bloqueó esa sesión: las suyas no le están
-     * ocupadas a ella.
-     *
-     * <p>Es lo que hace que el mapa le muestre elegidas —y no tomadas— las butacas que
-     * acaba de clickear, y lo que evita que {@link GestorReservas#reservar} rechace una
-     * reserva por un bloqueo que puso el mismo que está comprando.
-     */
     public Set<Integer> asientosOcupados(int funcionId, String sesion) {
-        expirarVencidas(funcionId);
-        Set<Integer> ocupados = reservaRepository.findByFuncionId(funcionId).stream()
+        String propia = SesionDeCompra.comoSeGuarda(sesion);
+        List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
+        expirarVencidas(reservas);
+        Set<Integer> ocupados = reservas.stream()
                 .filter(Reserva::estaVigente)
                 .flatMap(r -> r.getEntradas().stream())
                 .map(Entrada::asientoId)
                 .collect(Collectors.toCollection(HashSet::new));
-        bloqueos.bloqueadas(funcionId).forEach((asientoId, duenio) -> {
-            if (!duenio.equals(sesion)) {
-                ocupados.add(asientoId);
+        for (BloqueoButaca bloqueo : bloqueos.vigentes(funcionId, reloj.ahora())) {
+            if (!bloqueo.sesion().equals(propia)) {
+                ocupados.add(bloqueo.asientoId());
             }
-        });
+        }
         return ocupados;
     }
 
-    /** Butacas de la sala que todavía nadie tomó para esa función. */
-    public List<Asiento> asientosLibres(int funcionId) {
-        return asientosLibres(funcionId, null);
-    }
-
-    public List<Asiento> asientosLibres(int funcionId, String sesion) {
-        Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
-        return asientosDeLaSala(funcionId).stream()
-                .filter(a -> a.getEstado() != EstadoAsiento.FUERA_DE_SERVICIO)
+    public static List<Asiento> libresEntre(List<Asiento> asientos, Set<Integer> ocupados) {
+        return asientos.stream()
+                .filter(a -> !a.estaFueraDeServicio())
                 .filter(a -> !ocupados.contains(a.getId()))
                 .toList();
     }
 
-    public int lugaresLibres(int funcionId) {
-        return asientosLibres(funcionId).size();
+    // Perder una butaca no es un error: vuelve en rechazadas, con el código ya normalizado. La sesión, como
+    // quedó guardada: es la que el cliente tiene que mandar al reservar.
+    public record Bloqueo(String sesion, List<String> conseguidas, List<String> rechazadas) {
     }
 
-    public int lugaresLibres(int funcionId, String sesion) {
-        return asientosLibres(funcionId, sesion).size();
-    }
-
-    /**
-     * Le guarda a esa sesión las butacas que está eligiendo, y le suelta las que dejó de
-     * elegir.
-     *
-     * <p>Recibe la selección entera y no una butaca suelta porque así la operación es
-     * idempotente: el navegador manda lo que tiene elegido cada vez que la persona toca el
-     * mapa, y eso alcanza para tomar lo nuevo, renovar lo que sigue eligiendo y devolver a
-     * la venta lo que deseleccionó. Con un "tomar" y un "soltar" separados, una pestaña
-     * cerrada en el medio dejaba butacas tomadas que nadie iba a soltar.
-     *
-     * <p>Que una butaca no se consiga no es un error: es que otro llegó primero. Por eso
-     * devuelve lo que consiguió en vez de fallar, y quien llama compara contra lo que pidió.
-     *
-     * @return los códigos que quedaron efectivamente a nombre de esa sesión
-     */
-    public List<String> bloquear(int funcionId, Collection<String> codigos, String sesion) {
-        if (sesion == null || sesion.isBlank()) {
-            throw new IllegalArgumentException("Hace falta una sesión para bloquear butacas");
-        }
-        List<Asiento> deLaSala = asientosDeLaSala(funcionId);
+    public Bloqueo bloquear(int funcionId, Collection<String> codigos, String textoSesion) {
+        String sesion = new SesionDeCompra(textoSesion).valor();
+        List<Asiento> pedidos = butacasPedidas(funcionEnVenta(funcionId), codigos);
         Set<Integer> ocupados = asientosOcupados(funcionId, sesion);
-
-        List<Asiento> pedidos = codigos == null ? List.of() : codigos.stream()
-                .map(codigo -> buscarEnLaSala(deLaSala, codigo))
-                .toList();
+        LocalDateTime ahora = reloj.ahora();
 
         List<String> conseguidas = pedidos.stream()
                 .filter(a -> !ocupados.contains(a.getId()))
-                .filter(a -> bloqueos.bloquear(funcionId, a.getId(), sesion, MIENTRAS_ELIGE))
+                .filter(a -> tomar(funcionId, a.getId(), sesion, ahora))
                 .map(Asiento::getCodigo)
+                .toList();
+        List<String> rechazadas = pedidos.stream()
+                .map(Asiento::getCodigo)
+                .filter(codigo -> !conseguidas.contains(codigo))
                 .toList();
 
         Set<Integer> sigueEligiendo = pedidos.stream().map(Asiento::getId).collect(Collectors.toSet());
-        soltarDeLaSesion(funcionId, sesion, asientoId -> !sigueEligiendo.contains(asientoId));
-        return conseguidas;
-    }
-
-    /** Suelta todo lo que esa sesión tenga bloqueado en esa función. */
-    public void liberar(int funcionId, String sesion) {
-        soltarDeLaSesion(funcionId, sesion, asientoId -> true);
-    }
-
-    private void soltarDeLaSesion(int funcionId, String sesion, IntPredicate corresponde) {
-        for (Map.Entry<Integer, String> bloqueada : bloqueos.bloqueadas(funcionId).entrySet()) {
-            if (bloqueada.getValue().equals(sesion) && corresponde.test(bloqueada.getKey())) {
-                bloqueos.liberar(funcionId, bloqueada.getKey(), sesion);
-            }
+        if (sigueEligiendo.isEmpty()) {
+            liberar(funcionId, sesion);
+        } else {
+            bloqueos.liberarMenos(funcionId, sesion, sigueEligiendo);
         }
+        return new Bloqueo(sesion, conseguidas, rechazadas);
     }
 
-    private List<Asiento> asientosDeLaSala(int funcionId) {
-        Funcion funcion = funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new IllegalArgumentException("No existe la función " + funcionId));
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+    public void liberar(int funcionId, String sesion) {
+        bloqueos.liberar(funcionId, SesionDeCompra.comoSeGuarda(sesion));
     }
 
-    /** Mismo mensaje que al reservar: para quien elige es la misma butaca inexistente. */
-    private static Asiento buscarEnLaSala(List<Asiento> deLaSala, String codigo) {
-        String buscado = codigo == null ? "" : codigo.trim().toUpperCase();
-        return deLaSala.stream()
-                .filter(a -> a.getCodigo().equals(buscado))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "La butaca " + buscado + " no existe en esa sala"));
+    // Solo higiene: una fila vencida ya no ocupa nada, porque vigentes() filtra por
+    // vencimiento y renovarOTomarVencida() la pisa. Sin esto la tabla crecería con cada
+    // mapa abandonado. En el perfil test no corre: ver Adaptadores.Tareas.
+    @Scheduled(fixedDelay = 5, initialDelay = 5, timeUnit = TimeUnit.MINUTES)
+    public void borrarBloqueosVencidos() {
+        bloqueos.borrarVencidos(reloj.ahora());
     }
 
-    /**
-     * Cierra las reservas de esa función que nadie pagó a tiempo, y con eso devuelve sus
-     * butacas a la venta.
-     *
-     * <p>No hay proceso de fondo ni scheduler: la limpieza la hace quien consulta, que es
-     * justo el momento en que importa. Y tiene que <strong>escribir</strong>, no solo
-     * derivar el estado al vuelo: el <code>UNIQUE (funcion_id, asiento_id)</code> de la
-     * base no sabe nada de vencimientos, así que si la fila de la entrada conserva su
-     * funcion_id, la butaca queda libre en la teoría y bloqueada en la práctica.
-     *
-     * <p>El bloqueo de quien elige no necesita nada de esto: vence solo en el medio donde
-     * vive, y no deja ninguna fila que después haya que corregir. Es la diferencia entre
-     * un dato del negocio que caducó y una retención temporal que se olvida.
-     */
-    private void expirarVencidas(int funcionId) {
-        LocalDateTime ahora = LocalDateTime.now();
-        for (Reserva reserva : reservaRepository.findByFuncionId(funcionId)) {
+    // Sin leer antes de escribir: entre un SELECT que dice "libre" y el INSERT cabe otra
+    // sesión. Por qué alcanzan estas dos sentencias, en BloqueoButacaRepository.
+    private boolean tomar(int funcionId, int asientoId, String sesion, LocalDateTime ahora) {
+        LocalDateTime vence = ahora.plus(MIENTRAS_ELIGE);
+        return bloqueos.renovarOTomarVencida(funcionId, asientoId, sesion, vence, ahora) > 0
+                || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
+    }
+
+    // R19: una función que ya arrancó no se vende, así que tampoco se le apartan butacas. Va antes que
+    // cualquier otra regla de la venta porque las anula a todas.
+    public Funcion funcionEnVenta(int funcionId) {
+        Funcion funcion = funcionRepository.exigir(funcionId, "la función");
+        if (funcion.yaEmpezo(reloj.ahora())) {
+            throw new DatoInvalido(FUNCION_EMPEZADA);
+        }
+        return funcion;
+    }
+
+    // Las butacas del pedido, con las reglas de la venta: que sean de la sala, que estén en servicio (R9)
+    // y hasta el tope de una compra. Antes se apartaba una fuera de servicio que después no se podía comprar.
+    // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
+    private List<Asiento> butacasPedidas(Funcion funcion, Collection<String> codigos) {
+        List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
+        List<Asiento> pedidas = codigos == null ? List.of() : codigos.stream()
+                .map(codigo -> Asiento.exigirConCodigo(deLaSala, codigo))
+                .distinct()
+                .toList();
+        pedidas.forEach(Asiento::exigirEnServicio);
+        Reserva.validarTopeDeButacas(pedidas);
+        return pedidas;
+    }
+
+    // R17 sin scheduler: expira quien consulta. Escribe porque el UNIQUE no sabe de vencimientos.
+    private void expirarVencidas(List<Reserva> reservas) {
+        LocalDateTime ahora = reloj.ahora();
+        for (Reserva reserva : reservas) {
             if (reserva.estaVencida(ahora)) {
-                reserva.setEstado(EstadoReserva.EXPIRADA);
+                reserva.expirar();
                 reservaRepository.save(reserva);
-                // La única línea del log que nadie pidió: pasa sola, sin que haya un
-                // usuario del otro lado. Sin registro, una butaca que se libera parece
-                // magia el día que un cliente reclama que la tenía reservada.
-                LOG.info("reserva {} EXPIRADA · creada {} · {} butacas vuelven a la venta",
+                log.info("reserva {} EXPIRADA · creada {} · {} butacas vuelven a la venta",
                         reserva.getId(), reserva.getCreadaEn(), reserva.getCantidadEntradas());
             }
         }

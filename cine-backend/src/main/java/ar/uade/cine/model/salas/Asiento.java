@@ -1,35 +1,39 @@
 package ar.uade.cine.model.salas;
 
-import jakarta.persistence.Column;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import lombok.Getter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
-/**
- * Butaca física de una sala. No sabe si está ocupada: eso depende de la función, porque la
- * misma butaca puede estar tomada a las 20:00 y libre a las 22:30. Sí sabe si está rota,
- * porque eso no cambia entre funciones.
- *
- * <p>A la sala la referencia por id y no con un {@code @ManyToOne}. Es a propósito y no una
- * traducción a medias: el dominio ya estaba escrito así —"referencia por id, el repositorio
- * trae el objeto completo cuando hace falta"— y mantenerlo deja cada entidad cargando con
- * sus propios datos y nada más. Con la referencia al objeto, listar las butacas de una sala
- * arrastraría la sala en cada fila, y quien solo quiere pintar el mapa no necesita nada de
- * eso. Las relaciones sí se mapean donde el objeto es parte del agregado —las entradas de
- * una reserva, los ítems de una compra—, que es donde una cosa no existe sin la otra.
- */
+import ar.uade.cine.model.rechazos.DatoInvalido;
+
+// Butaca de una sala; Experto en su código (A5) y en su estado, que vale para toda función (R9).
 @Entity
+@Getter
 public class Asiento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    // Igual que el ON DELETE CASCADE del schema: borrar la sala se lleva sus butacas.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Sala sala;
 
     private int fila;
 
@@ -44,56 +48,77 @@ public class Asiento {
     protected Asiento() {
     }
 
-    public Asiento(int salaId, int fila, int numero, TipoAsiento tipo) {
-        this.salaId = salaId;
+    public Asiento(Sala sala, int fila, int numero, TipoAsiento tipo) {
+        this.sala = sala;
         this.fila = fila;
         this.numero = numero;
         this.tipo = tipo;
         this.estado = EstadoAsiento.HABILITADO;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getSalaId() {
-        return salaId;
+        return sala.getId();
     }
 
-    /** 1 = fila A, 2 = fila B, y así. */
-    public int getFila() {
-        return fila;
+    public void marcarFueraDeServicio() {
+        this.estado = EstadoAsiento.FUERA_DE_SERVICIO;
     }
 
-    public int getNumero() {
-        return numero;
+    public void reponer() {
+        this.estado = EstadoAsiento.HABILITADO;
     }
 
-    public TipoAsiento getTipo() {
-        return tipo;
+    // R9: es del asiento y no de la función, así que no se vende en ninguna.
+    public boolean estaFueraDeServicio() {
+        return estado == EstadoAsiento.FUERA_DE_SERVICIO;
     }
 
-    public EstadoAsiento getEstado() {
-        return estado;
+    // R9 al vender y al bloquear, con el mismo texto en los dos caminos porque sale de acá.
+    public void exigirEnServicio() {
+        if (estaFueraDeServicio()) {
+            throw new DatoInvalido("La butaca " + getCodigo() + " está fuera de servicio");
+        }
     }
 
-    public void setEstado(EstadoAsiento estado) {
-        this.estado = estado;
-    }
-
-    /** Identificación legible: "B7". Se deriva de la fila y el número, no se guarda. */
     public String getCodigo() {
+        return codigoDe(fila, numero);
+    }
+
+    public static String codigoDe(int fila, int numero) {
         return (char) ('A' + fila - 1) + String.valueOf(numero);
+    }
+
+    public static Optional<Asiento> conCodigo(List<Asiento> asientos, String codigo) {
+        String buscado = normalizarCodigo(codigo);
+        return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();
+    }
+
+    // La butaca de un pedido (venta o bloqueo): el código puede faltar, y el mensaje es el mismo
+    // en los dos caminos porque sale de acá.
+    public static Asiento exigirConCodigo(List<Asiento> deLaSala, String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new DatoInvalido("Falta el código de una butaca");
+        }
+        return conCodigo(deLaSala, codigo)
+                .orElseThrow(() -> new DatoInvalido(inexistente(codigo)));
+    }
+
+    // El mismo texto llegue la butaca en una venta, un bloqueo o el alta de la sala (400). Sin nombrar
+    // la sala: quien pide ya sabe cuál es, y la lista puede no traerla. En la ruta es un 404, y dice
+    // «No existe la butaca» como cualquier recurso que no está.
+    public static String inexistente(String codigo) {
+        return "La butaca " + normalizarCodigo(codigo) + " no existe en la sala";
+    }
+
+    public static String normalizarCodigo(String codigo) {
+        return codigo == null ? "" : codigo.trim().toUpperCase(Locale.ROOT);
     }
 
     @Override
     public String toString() {
         String extra = tipo == TipoAsiento.ESTANDAR ? "" : " (" + tipo + ")";
-        if (estado == EstadoAsiento.FUERA_DE_SERVICIO) {
+        if (estaFueraDeServicio()) {
             extra += " FUERA DE SERVICIO";
         }
         return getCodigo() + extra;

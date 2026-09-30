@@ -1,12 +1,5 @@
 package ar.uade.cine.dto.cartelera;
 
-/**
- * Traer cartelera nueva de TMDB, ahora.
- *
- * <p>Un solo campo, y opcional: cuántas páginas traer, de veinte títulos cada una. Ausente
- * es una. Es {@code Integer} y no {@code int} como todos los pedidos: un cero mandado y un
- * campo que no vino tienen que poder distinguirse, y quien decide qué hacer con el ausente
- * es el gestor.
- */
+// El cuerpo opcional de POST /api/importaciones; sin paginas el gestor trae una, fuera de 1 a 3 rechaza.
 public record PedidoImportacionDTO(Integer paginas) {
 }

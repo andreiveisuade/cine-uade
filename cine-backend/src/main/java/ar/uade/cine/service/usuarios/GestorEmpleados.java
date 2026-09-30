@@ -1,63 +1,52 @@
 package ar.uade.cine.service.usuarios;
 
-import java.util.List;
+import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.usuarios.Empleado;
+import ar.uade.cine.model.usuarios.Contrasena;
+import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.repository.EmpleadoRepository;
-import ar.uade.cine.infrastructure.seguridad.Password;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
+import ar.uade.cine.repository.usuarios.EmpleadoRepository;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-/**
- * Alta e inicio de sesión de los empleados. El cliente no pasa por acá: compra
- * sin loguearse.
- */
+// Empleados para la sesión y el re-hash a bcrypt al entrar; el alta existe solo para los tests.
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorEmpleados {
 
     private final EmpleadoRepository empleadoRepository;
+    private final ClienteRepository clienteRepository;
+    private final PasswordEncoder claves;
 
-    public GestorEmpleados(EmpleadoRepository empleadoRepository) {
-        this.empleadoRepository = empleadoRepository;
-    }
-
+    // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
+    // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.
+    // La clave en claro solo la ve el gestor, que la valida como Contrasena antes del hash; nombre,
+    // email y rol los valida Empleado. Se busca también entre los clientes: comparten el UNIQUE del
+    // email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        Contrasena clave = new Contrasena(password);
+        Empleado empleado = new Empleado(nombre, email, claves.encode(clave.valor()), rol);
+        if (empleadoRepository.existsByEmail(empleado.getEmail())
+                || clienteRepository.existsByEmail(empleado.getEmail())) {
+            throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
         }
-        if (email == null || !email.contains("@")) {
-            throw new IllegalArgumentException("El email no es válido");
-        }
-        if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
-        }
-        // Un CLIENTE no tiene contraseña: darlo de alta acá lo convertiría en un usuario
-        // que puede iniciar sesión, que es justo lo que el modelo dice que no existe.
-        if (rol == null || !rol.esEmpleado()) {
-            throw new IllegalArgumentException("El rol tiene que ser ADMINISTRADOR o ACOMODADOR");
-        }
-        if (empleadoRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Ya hay un empleado con ese email");
-        }
-        empleadoRepository.save(new Empleado(nombre, email, Password.hashear(password), rol));
+        empleadoRepository.save(empleado);
     }
 
-    /**
-     * Devuelve el empleado si las credenciales son correctas. El mensaje de error
-     * es el mismo para email inexistente y contraseña equivocada: decir cuál de los dos
-     * falló le confirma a un atacante qué emails están registrados.
-     */
-    public Empleado iniciarSesion(String email, String password) {
-        return empleadoRepository.findByEmail(email)
-                .filter(admin -> Password.coincide(password, admin.getPasswordHash()))
-                .orElseThrow(() -> new IllegalArgumentException("Email o contraseña incorrectos"));
+    // El hash ya viene armado: lo pide el login, que es quien tiene la clave en claro.
+    public void reemplazarHash(String email, String hashNuevo) {
+        empleadoRepository.findByEmail(email).ifPresent(empleado -> empleado.reemplazarPasswordHash(hashNuevo));
     }
 
-    public List<Empleado> listar() {
-        return empleadoRepository.findAll();
+    @Transactional(readOnly = true)
+    public Optional<Empleado> buscarPorEmail(String email) {
+        return Email.paraBuscar(email).map(Email::valor).flatMap(empleadoRepository::findByEmail);
     }
 }

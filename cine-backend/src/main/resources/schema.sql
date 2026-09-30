@@ -63,12 +63,13 @@ CREATE TABLE IF NOT EXISTS asiento (
 -- password_hash solo lo usan los empleados: el cliente compra sin iniciar sesion,
 -- por eso admite NULL. El corte de la herencia no es el cargo sino tener contrasena,
 -- y por eso el acomodador no necesita ni una columna ni una tabla nueva: es un rol mas.
+-- 100 y no 64: un hash bcrypt con su prefijo ({bcrypt}$2a$10$...) mide 68.
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     rol VARCHAR(15) NOT NULL,
-    password_hash VARCHAR(64) NULL
+    password_hash VARCHAR(100) NULL
 );
 
 -- La grilla con la que un cine arma su cartelera: "Matrix en la Sala 1, todos los dias a
@@ -151,6 +152,10 @@ CREATE TABLE IF NOT EXISTS funcion (
 -- ingresada_en en NULL significa que todavia no entraron. Va como fecha y no como un
 -- estado mas porque el ingreso es otro eje: una reserva puede estar PAGADA y no usada,
 -- y mezclarlos obligaria a revisar las reglas que hoy miran estado (R5, R13).
+--
+-- version es el bloqueo optimista de JPA (@Version): cada UPDATE la incrementa y exige
+-- encontrar la que leyo. Es lo que impide que cobrar y cancelar la misma reserva a la
+-- vez terminen los dos bien.
 CREATE TABLE IF NOT EXISTS reserva (
     id INT PRIMARY KEY AUTO_INCREMENT,
     funcion_id INT NOT NULL,
@@ -159,6 +164,7 @@ CREATE TABLE IF NOT EXISTS reserva (
     creada_en DATETIME NOT NULL,
     codigo VARCHAR(32) NOT NULL UNIQUE,
     ingresada_en DATETIME NULL,
+    version INT NOT NULL DEFAULT 0,
     FOREIGN KEY (funcion_id) REFERENCES funcion(id),
     FOREIGN KEY (cliente_id) REFERENCES usuario(id)
 );
@@ -192,6 +198,31 @@ CREATE TABLE IF NOT EXISTS entrada (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id) ON DELETE CASCADE,
     FOREIGN KEY (asiento_id) REFERENCES asiento(id),
     FOREIGN KEY (funcion_id) REFERENCES funcion(id)
+);
+
+-- La butaca que alguien esta eligiendo en el mapa, apartada tres minutos para que no se
+-- la lleve el de al lado mientras completa sus datos. Es experiencia de usuario, no la
+-- garantia contra la doble venta: esa sigue siendo el UNIQUE de entrada.
+--
+-- La clave primaria (funcion_id, asiento_id) es lo que hace que dos sesiones no puedan
+-- tenerla a la vez: tomarla es un UPDATE condicional (la propia, o una vencida) y si no
+-- habia fila un INSERT IGNORE, y el segundo INSERT de la misma butaca no entra. Ninguno
+-- lee antes de escribir, asi que no hace falta un lock explicito.
+--
+-- Vencer no borra: una fila con vence_en pasado ya no ocupa nada, porque todas las
+-- consultas filtran por vence_en y la siguiente sesion la pisa. La borra una tarea de
+-- fondo cada cinco minutos, por higiene.
+--
+-- ON DELETE CASCADE porque una funcion sin reservas se puede borrar, y que alguien este
+-- mirando su mapa no es motivo para impedirlo.
+CREATE TABLE IF NOT EXISTS bloqueo_butaca (
+    funcion_id INT NOT NULL,
+    asiento_id INT NOT NULL,
+    sesion VARCHAR(64) NOT NULL,
+    vence_en DATETIME NOT NULL,
+    PRIMARY KEY (funcion_id, asiento_id),
+    FOREIGN KEY (funcion_id) REFERENCES funcion(id) ON DELETE CASCADE,
+    FOREIGN KEY (asiento_id) REFERENCES asiento(id) ON DELETE CASCADE
 );
 
 -- Las tres clases de promocion van a la misma tabla con tipo como discriminador, igual
@@ -282,8 +313,9 @@ CREATE TABLE IF NOT EXISTS producto (
 
 -- Que trae cada combo. Las dos claves apuntan a producto: el combo y lo que contiene
 -- son productos, y por eso un combo puede armarse con cualquiera de los otros.
--- Que el precio del combo sea menor a la suma de sus componentes lo valida GestorCandy:
--- es una comparacion entre filas distintas y la base no la puede expresar.
+-- Que el precio del combo sea menor a la suma de sus componentes (R14) lo valida Producto,
+-- y GestorProductos al cambiar el precio de un suelto: es una comparacion entre filas
+-- distintas y la base no la puede expresar.
 CREATE TABLE IF NOT EXISTS combo_item (
     combo_id INT NOT NULL,
     producto_id INT NOT NULL,
@@ -313,8 +345,9 @@ CREATE TABLE IF NOT EXISTS compra_candy (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id)
 );
 
--- El nombre y el precio quedan congelados en la linea, igual que en entrada: el ticket
--- emitido tiene que seguir diciendo lo que se cobro aunque despues cambie la carta.
+-- El nombre, el precio y el ahorro quedan congelados en la linea, igual que en entrada: el
+-- ticket emitido tiene que seguir diciendo lo que se cobro, y lo que se ahorro con el
+-- combo, aunque despues cambie la carta. ahorro_unitario es 0 en lo que no es combo.
 CREATE TABLE IF NOT EXISTS item_compra (
     id INT PRIMARY KEY AUTO_INCREMENT,
     compra_id INT NOT NULL,
@@ -322,6 +355,7 @@ CREATE TABLE IF NOT EXISTS item_compra (
     nombre VARCHAR(60) NOT NULL,
     cantidad INT NOT NULL,
     precio_unitario DECIMAL(10,2) NOT NULL,
+    ahorro_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
     UNIQUE (compra_id, producto_id),
     FOREIGN KEY (compra_id) REFERENCES compra_candy(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES producto(id)

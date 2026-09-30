@@ -9,15 +9,12 @@ import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 
-/**
- * {@code codigo} es el del QR y {@code ingresadaEn} cuándo se usó, en null si todavía
- * no entraron: son los dos datos que necesita el que valida en la puerta, y los que
- * va a leer la app del escáner.
- */
+// Una reserva como la ven el cliente y el panel; la arma VistasReservas, con los flags cobrable y cancelable.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ReservaVistaDTO(int id, int funcionId, int clienteId, String estado, String creadaEn,
-                           String codigo, String ingresadaEn,
-                           List<EntradaVistaDTO> entradas, int cantidadEntradas, double total,
-                           FuncionVistaDTO funcion, PeliculaVistaDTO pelicula, SalaVistaDTO sala,
-                           ClienteVistaDTO cliente, PagoVistaDTO pago) {
+                              String codigo, String ingresadaEn,
+                              List<EntradaVistaDTO> entradas, int cantidadEntradas, double total,
+                              boolean cobrable, boolean cancelable,
+                              FuncionVistaDTO funcion, PeliculaVistaDTO pelicula, SalaVistaDTO sala,
+                              ClienteVistaDTO cliente, PagoVistaDTO pago) {
 }

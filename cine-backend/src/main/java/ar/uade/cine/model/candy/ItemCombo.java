@@ -1,25 +1,23 @@
 package ar.uade.cine.model.candy;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCombo;
+import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
-/**
- * Un producto que viene adentro de un combo, con cuántas unidades trae. Es lo que convierte
- * al combo en una promoción de verdad y no en un producto con nombre bonito: sabiendo qué
- * contiene se puede comparar su precio contra el de comprarlo suelto.
- *
- * <p>Es {@code @Embeddable} y no una entidad porque no tiene identidad propia: la fila de
- * {@code combo_item} se identifica por el combo y el producto, que es exactamente su clave
- * primaria. Vive y muere con el combo que la contiene.
- *
- * <p>Al producto lo referencia por objeto y no por id porque el detalle del ticket necesita
- * su nombre, y ese dato vive del otro lado. Antes lo traía un JOIN escrito a mano.
- */
+// Componente de un combo con su cantidad; ValidadorCombo exige de 1 a 20 unidades y que no sea otro combo.
 @Embeddable
+@Getter
+@Accessors(fluent = true)
 public class ItemCombo {
 
-    @ManyToOne
+    // EAGER a propósito, como las colecciones: el nombre del componente lo leen las vistas,
+    // ya fuera de la transacción.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
@@ -28,22 +26,19 @@ public class ItemCombo {
     protected ItemCombo() {
     }
 
-    public ItemCombo(Producto producto, int cantidad) {
+    // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido: sin
+    // chequear el null, el unboxing daría un 500. La regla es la de ItemCompra: es la misma cantidad.
+    ItemCombo(Producto producto, Integer cantidad) {
+        this.cantidad = ValidadorCombo.componente(producto, cantidad);
         this.producto = producto;
-        this.cantidad = cantidad;
     }
 
-    public int productoId() {
-        return producto.getId();
-    }
-
-    /** Copiado del producto para armar el detalle del ticket sin otra consulta. */
     public String nombre() {
         return producto.getNombre();
     }
 
-    public int cantidad() {
-        return cantidad;
+    public Dinero precioSuelto() {
+        return producto.getPrecio().por(cantidad);
     }
 
     @Override

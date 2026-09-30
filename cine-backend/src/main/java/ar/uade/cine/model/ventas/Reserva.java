@@ -1,11 +1,18 @@
 package ar.uade.cine.model.ventas;
 
-import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.validacion.ValidadorReserva;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,74 +23,50 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
 
-/**
- * Butacas de una función a nombre de un cliente. Nace {@link EstadoReserva#RESERVADA} y
- * desde ahí solo avanza: a PAGADA cuando se cobra, o a CANCELADA cuando se libera sin
- * cobrar. No hay vuelta atrás entre esos dos estados finales.
- *
- * <p>Reservar y comprar son el mismo registro en distinto estado.
- *
- * <p>Es el agregado más claro del sistema y por eso sus entradas sí van mapeadas como
- * relación: una entrada no existe sin su reserva, se guarda con ella y se borra con ella.
- * {@code cascade} y {@code orphanRemoval} son lo que antes hacía a mano la transacción del
- * DAO, que insertaba la cabecera y el detalle o no insertaba ninguno.
- */
+// Reserva de butacas sin repetir (R5, R6, R13, R17-R19); Experto en sus transiciones, @Version por carreras.
+// Contexto del patrón State: no pregunta en qué estado está. Cada operación le pide la transición a
+// EstadoReserva (`estado = estado.pagar()`), que rechaza si no corresponde, y las preguntas (¿espera el
+// pago?, ¿ocupa butacas?) también las contesta el estado.
 @Entity
+@Getter
 public class Reserva {
 
-    /**
-     * Minutos que una reserva sin pagar retiene sus butacas. Es una regla de negocio, no un
-     * detalle de implementación: en un cine una reserva abandonada no puede dejar una función
-     * sin lugares que en realidad nadie compró.
-     */
     public static final int MINUTOS_PARA_PAGAR = 30;
 
-    /**
-     * Sin O, I, 0 ni 1: el código se lee de un ticket impreso y se tipea a mano cuando el
-     * escáner no lee, y ahí esos cuatro caracteres se confunden entre sí.
-     */
-    private static final String ALFABETO_CODIGO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int LARGO_CODIGO = 8;
-    private static final SecureRandom AZAR = new SecureRandom();
+    // Como la lee el acomodador en la puerta: el toString de LocalDateTime traía segundos y nanos.
+    private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
+    private static final DateTimeFormatter DIA = DateTimeFormatter.ofPattern("dd/MM");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "funcion_id")
-    private int funcionId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "funcion_id", nullable = false)
+    private Funcion funcion;
 
-    @Column(name = "cliente_id")
-    private int clienteId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cliente_id", nullable = false)
+    private Cliente cliente;
 
-    /** Cuándo se hizo. Sin esto no se puede ordenar el historial ni auditar una venta. */
     private LocalDateTime creadaEn;
 
-    /**
-     * Una entrada por butaca elegida. Se fijan al crear la reserva y no se tocan más: una
-     * butaca de menos o de más cambiaría el total de algo que ya se cobró.
-     *
-     * <p>EAGER porque no hay nada que se haga con una reserva sin sus butacas: el ticket, el
-     * total, el borderó y el mapa de la sala las piden todos.
-     */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "reserva_id", nullable = false)
     private List<Entrada> entradas = new ArrayList<>();
 
-    /**
-     * El código que va en el QR de la entrada. Como el cliente no inicia sesión, es la única
-     * credencial que existe en el sistema: por eso no puede ser el id, o con la reserva 5 en
-     * la mano se imprime la 6.
-     */
     @Column(unique = true)
     private String codigo;
 
     @Enumerated(EnumType.STRING)
     private EstadoReserva estado;
 
-    /** Cuándo entraron al cine, o {@code null} si todavía no lo hicieron. */
     private LocalDateTime ingresadaEn;
     @Column(name = "estado_sincronizacion")
     private String estadoSincronizacion;
@@ -91,129 +74,135 @@ public class Reserva {
     @Column(name = "motivo_rechazo")
     private String motivoRechazo;
 
+    // Cobrar, cancelar y expirar leen la reserva, miran su estado y lo escriben. Sin esto,
+    // cobrar y cancelar a la vez pasaban los dos el chequeo y ganaba el último en escribir:
+    // una reserva CANCELADA con su pago adentro. Con la versión, el segundo UPDATE no
+    // encuentra la fila que leyó y falla, y ManejadorErrores lo contesta como 409.
+    // Solo acá: es la única entidad con transiciones de estado que compiten entre sí.
+    @Version
+    @Getter(AccessLevel.NONE)
+    private int version;
+
     protected Reserva() {
     }
 
-    /** Reserva nueva: arranca RESERVADA, todavía no tiene id. */
-    public Reserva(int funcionId, int clienteId, List<Entrada> entradas, LocalDateTime creadaEn) {
-        this.funcionId = funcionId;
-        this.clienteId = clienteId;
+    public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
+        ValidadorReserva.validar(funcion, cliente, entradas, creadaEn);
+        this.funcion = funcion;
+        this.cliente = cliente;
         this.creadaEn = creadaEn;
-        this.codigo = generarCodigo();
+        this.codigo = CodigoDeAcceso.generar().valor();
         this.estado = EstadoReserva.RESERVADA;
         entradas.forEach(entrada -> {
-            entrada.ocupar(funcionId);
+            entrada.ocupar(funcion.getId());
             this.entradas.add(entrada);
         });
     }
 
-    /**
-     * Aleatorio y no correlativo: es la única credencial del cliente, que no inicia sesión.
-     * Con un id autoincremental, quien tiene la reserva 5 imprime la 6.
-     */
-    private static String generarCodigo() {
-        StringBuilder codigo = new StringBuilder(LARGO_CODIGO);
-        for (int i = 0; i < LARGO_CODIGO; i++) {
-            codigo.append(ALFABETO_CODIGO.charAt(AZAR.nextInt(ALFABETO_CODIGO.length())));
-        }
-        return codigo.toString();
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    // El tope de butacas por compra. Estático porque el bloqueo lo aplica antes de que la reserva exista.
+    public static void validarTopeDeButacas(Collection<?> butacas) {
+        ValidadorReserva.validarTope(butacas);
     }
 
     public int getFuncionId() {
-        return funcionId;
+        return funcion.getId();
     }
 
     public int getClienteId() {
-        return clienteId;
+        return cliente.getId();
     }
 
-    public LocalDateTime getCreadaEn() {
-        return creadaEn;
-    }
-
-    /** Copia defensiva: la lista de butacas de una reserva no se toca desde afuera. */
     public List<Entrada> getEntradas() {
         return new ArrayList<>(entradas);
     }
 
-    /** Derivada de las entradas: no se guarda por separado. */
     public int getCantidadEntradas() {
         return entradas.size();
     }
 
-    /**
-     * Suma de los precios de lista de las butacas. Es un <em>subtotal</em>: el total
-     * definitivo aparece recién al cobrar, cuando se sabe el medio de pago y con él qué
-     * promoción aplica.
-     */
     public Dinero getTotal() {
         return Dinero.sumar(entradas.stream().map(Entrada::precio).toList());
     }
 
-    public EstadoReserva getEstado() {
-        return estado;
+    public void pagar() {
+        estado = estado.pagar();
     }
 
-    /**
-     * Pasa de RESERVADA a PAGADA, CANCELADA o EXPIRADA. Cuando el estado nuevo deja de
-     * retener butacas, las libera en el mismo movimiento (R6): eso lo hacía el DAO con un
-     * UPDATE aparte, y era la clase de regla que no se puede confiar a que quien actualice
-     * se acuerde de correr también la otra sentencia.
-     */
-    public void setEstado(EstadoReserva estado) {
-        this.estado = estado;
-        if (!estaVigente()) {
-            entradas.forEach(Entrada::liberar);
+    // Por qué no se puede cobrar ahora, o vacío si se puede: R5 (solo una que espera el pago), R17 (la
+    // vencida ya soltó sus butacas) y R19 (función empezada). Lo usan GestorPagos para rechazar y
+    // la vista para habilitar el cobro, así que el botón y el rechazo no pueden diferir.
+    public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
+        if (!estado.esperaPago()) {
+            return Optional.of(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR));
+        }
+        if (estaVencida(ahora)) {
+            return Optional.of("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
+        }
+        if (funcion.yaEmpezo(ahora)) {
+            return Optional.of("La función ya empezó: no se puede cobrar la reserva " + id);
+        }
+        return Optional.empty();
+    }
+
+    public boolean esCobrable(LocalDateTime ahora) {
+        return impedimentoParaCobrar(ahora).isEmpty();
+    }
+
+    // R13: se cancela solo lo que todavía no se cobró. Es la misma condición que cancelar().
+    public boolean esCancelable() {
+        return estado.esperaPago();
+    }
+
+    public boolean estaPagada() {
+        return estado.estaPagada();
+    }
+
+    public void cancelar() {
+        soltarButacasAl(estado.cancelar());
+    }
+
+    public void expirar() {
+        soltarButacasAl(estado.expirar());
+    }
+
+    // R18. El momento lo pone el gestor con su reloj: la reserva no sabe qué hora es.
+    public void registrarIngreso(LocalDateTime cuando) {
+        EstadoReserva siguiente = estado.ingresar();
+        if (ingresadaEn != null) {
+            throw new DatoInvalido("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
+        }
+        exigirElDiaDeLaFuncion(cuando);
+        estado = siguiente;
+        ingresadaEn = cuando;
+    }
+
+    // Por la Puerta se entra solo el día de la función: con la entrada de mañana, o la de ayer que nadie
+    // usó, el acomodador no tiene por qué dejar pasar a nadie.
+    private void exigirElDiaDeLaFuncion(LocalDateTime cuando) {
+        LocalDate dia = funcion.getInicio().toLocalDate();
+        if (!dia.equals(cuando.toLocalDate())) {
+            throw new DatoInvalido("La función es el " + dia.format(DIA) + ": se entra solo ese día");
         }
     }
 
-    /**
-     * Si sigue reteniendo sus butacas. Lo son la que está esperando pago y la ya cobrada; no
-     * lo son la cancelada ni la expirada.
-     *
-     * <p>Existe para no repetir la doble negación {@code estado != CANCELADA} en cada
-     * consulta, que además se volvió incorrecta al aparecer EXPIRADA.
-     */
+    // R6: cancelada o vencida, sus butacas vuelven a la venta.
+    private void soltarButacasAl(EstadoReserva nuevo) {
+        estado = nuevo;
+        entradas.forEach(Entrada::liberar);
+    }
+
     public boolean estaVigente() {
-        return estado == EstadoReserva.RESERVADA || estado == EstadoReserva.PAGADA;
+        return estado.ocupaButacas();
     }
 
-    /**
-     * Si está esperando pago desde hace más de {@link #MINUTOS_PARA_PAGAR}. Recibe el
-     * instante por parámetro y no lo pide al reloj para que se pueda probar sin esperar
-     * media hora.
-     *
-     * <p>Vencida no es lo mismo que EXPIRADA: esto dice que <em>debería</em> expirar. El
-     * estado lo escribe la primera operación que se cruza con ella.
-     */
+    // Si debería expirar: el estado lo escribe la primera operación que se cruza con ella.
     public boolean estaVencida(LocalDateTime ahora) {
-        return estado == EstadoReserva.RESERVADA
-                && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public LocalDateTime getIngresadaEn() {
-        return ingresadaEn;
-    }
-
-    public void setIngresadaEn(LocalDateTime ingresadaEn) {
-        this.ingresadaEn = ingresadaEn;
+        return estado.esperaPago() && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
     }
 
     @Override
     public String toString() {
-        return "[" + id + "] función " + funcionId + " - cliente " + clienteId
+        return "[" + id + "] función " + getFuncionId() + " - cliente " + getClienteId()
                 + " - butacas " + entradas + " - " + estado;
     }
 

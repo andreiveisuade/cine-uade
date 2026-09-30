@@ -6,7 +6,7 @@ skinparam packageStyle rectangle
 hide empty members
 
 ' El caso testigo es ReservaRepository, pero la misma forma se repite en las
-' otras doce interfaces de repository/. Antes el DIP se sostenia con
+' otras trece interfaces de repository/. Antes el DIP se sostenia con
 ' disciplina: un solo lugar (Aplicacion) nombraba la implementacion concreta
 ' de cada DAO. Hoy la forma es mas fuerte: Spring Data genera la unica
 ' implementacion en tiempo de arranque, asi que no existe una clase que se
@@ -18,55 +18,26 @@ package "service.ventas" {
 }
 
 package repository {
-  interface ReservaRepository {
-    +save(Reserva): Reserva
-    +saveAndFlush(Reserva): Reserva
-    +findById(id): Optional<Reserva>
+  interface "Repositorio<T>" as Repositorio <<@NoRepositoryBean>> {
+    +save(T): T
+    +saveAndFlush(T): T
+    +findById(id): Optional<T>
+    +exigir(id, que): T
+  }
+  interface ReservaRepository <<la implementa Spring Data>> {
     +findByCodigo(codigo): Optional<Reserva>
-    +findAll(): List<Reserva>
-    +findByFuncionId(funcionId): List<Reserva>
-    +findByClienteIdOrderByCreadaEnDesc(clienteId): List<Reserva>
+    +exigirPorCodigo(CodigoDeAcceso): Reserva
+    +findByFuncion_Id(funcionId): List<Reserva>
+    +findByCliente_EmailOrderByIdDesc(email): List<Reserva>
   }
 }
 
-note right of ReservaRepository
-  No hay ninguna clase que implemente
-  esta interfaz en el codigo fuente.
-  Spring Data la genera al arrancar,
-  a partir de la firma de cada metodo.
-end note
+ReservaRepository -up-|> Repositorio
 
 class Aplicacion <<@SpringBootApplication>>
 
 GestorReservas -down-> ReservaRepository : depende de\nla interfaz
 
-note as N2
-  ArquitecturaTest verifica que
-  ningun service/ ni controller/
-  importe jakarta.persistence,
-  java.sql u org.springframework.jdbc.
-  Si alguien se saltea su repositorio,
-  el test lo detecta.
-end note
-N2 .. GestorReservas
-
-note right of Aplicacion
-  Solo levanta el contenedor de Spring
-  (@SpringBootApplication + main()).
-  Cada @Service, @Repository y
-  @RestController se conecta solo
-  por component scan.
-end note
-
 Aplicacion ..> GestorReservas : el contenedor lo\narma, no Aplicacion
-
-note as N1
-  La flecha de compilacion va en un
-  solo sentido, hacia la interfaz:
-  GestorReservas --> ReservaRepository.
-  No hay ninguna clase de bajo nivel
-  de la que dependa a su vez.
-end note
-N1 .. ReservaRepository
 
 @enduml

@@ -18,21 +18,18 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
+import ar.uade.cine.service.salas.GestorSalas;
 
-/**
- * El planificador optimiza tres cosas a la vez —puntaje, diversidad y ocupación— y cada
- * una se prueba por separado, porque el riesgo es justamente que una se coma a las otras.
- */
 class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -46,16 +43,18 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     @Autowired
     private PlanificadorGrilla planificador;
 
-    /** Una película de 100 minutos, con el puntaje y los géneros que pida el caso. */
     private Pelicula cargar(String titulo, double puntaje, Genero... generos) {
         return cargar(titulo, puntaje, 100, generos);
     }
 
     private Pelicula cargar(String titulo, double puntaje, int duracion, Genero... generos) {
-        Pelicula pelicula = cartelera.agregar(titulo, duracion, List.of(generos), Clasificacion.ATP);
-        pelicula.setPuntaje(puntaje);
-        cartelera.actualizar(pelicula);
-        return pelicula;
+        return cartelera.agregar(new DatosPelicula(titulo, duracion, List.of(generos), Clasificacion.ATP,
+                null, null, null, null, null, null, puntaje, null));
+    }
+
+    private void votar(Pelicula pelicula, int votos) {
+        cartelera.editar(pelicula.getId(), new DatosPelicula(null, null, null, null,
+                null, null, null, null, null, null, null, votos));
     }
 
     private CriteriosGrilla unDia(int cuantasPeliculas) {
@@ -77,11 +76,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /**
-     * El caso que justifica todo el algoritmo: la cuarta película de acción está mejor
-     * puntuada que la única comedia, y aun así entra la comedia. Sin el bono por género
-     * nuevo, la grilla de la semana sería acción todo el día.
-     */
     @Test
     void prefiereUnGeneroNuevoAntesQueLaCuartaDelMismoGenero() {
         cargar("Accion 1", 9.0, Genero.ACCION);
@@ -98,7 +92,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "la segunda tiene que ganarse el lugar contra lo que ya hay");
     }
 
-    /** Una diferencia de puntaje grande sí le gana al bono: el bono inclina, no decide. */
     @Test
     void unPuntajeMuchoMejorLeGanaAlBonoPorGeneroNuevo() {
         cargar("Accion 1", 9.5, Genero.ACCION);
@@ -112,13 +105,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /**
-     * El caso que aparece con datos de TMDB y no con películas de test: los géneros de ahí
-     * son generosos, y una película figura a la vez como acción, animación, ciencia ficción
-     * y comedia. Con un bono lineal esas cuatro etiquetas valían ocho puntos y le ganaban a
-     * la mejor del catálogo por estar mejor catalogada, no por ser mejor ni por aportar
-     * cuatro veces más variedad.
-     */
     @Test
     void muchosGenerosNoLeGananALaMejorPelicula() {
         cargar("La mejor", 9.2, Genero.DRAMA, Genero.SUSPENSO);
@@ -134,10 +120,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "y en la segunda vuelta sí pesa la variedad que agrega");
     }
 
-    /**
-     * El bono crece cada vez menos, pero sigue creciendo: entre dos películas de igual
-     * puntaje, la que aporta más géneros nuevos entra antes.
-     */
     @Test
     void aIgualPuntajeEntraLaQueAportaMasGeneros() {
         cargar("Ancla", 9.5, Genero.DRAMA);
@@ -151,22 +133,12 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertEquals("Aporta tres", propuesta.elenco().get(1).getTitulo());
     }
 
-    /**
-     * Seis votos no pesan como cinco mil, y el reparto de pases lo tiene que mostrar.
-     *
-     * <p>La afirmación no es que la respaldada gane —un 9,5 puede ser genuino y el sistema
-     * no tiene cómo saberlo—, sino que la <strong>ventaja se achica</strong>: sin corregir,
-     * la diferencia de puntaje es de 1,5 puntos y se traduce en muchos más pases; corregida,
-     * las dos quedan a la par, que es lo honesto cuando de una hay seis opiniones.
-     */
     @Test
     void unPuntajeAltoConPocosVotosPierdeSuVentaja() {
         Pelicula respaldada = cargar("Respaldada", 8.0, Genero.DRAMA);
-        respaldada.setVotos(5000);
-        cartelera.actualizar(respaldada);
+        votar(respaldada, 5000);
         Pelicula flojita = cargar("Con seis votos", 9.5, Genero.SUSPENSO);
-        flojita.setVotos(6);
-        cartelera.actualizar(flojita);
+        votar(flojita, 6);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
         PropuestaGrilla propuesta = planificador.proponer(unDia(2));
@@ -181,18 +153,12 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                         + deLaRespaldada + " contra " + deLaFlojita);
     }
 
-    /**
-     * El 0,0 de TMDB no es una nota mala sino una película que nadie vio todavía: siete de
-     * cada veinte de la cartelera argentina están así. Sin esto quedaban últimas siempre.
-     */
     @Test
     void laQueNadieVotoNoSeHundeAlFondo() {
         Pelicula votada = cargar("Votada", 7.0, Genero.DRAMA);
-        votada.setVotos(3000);
-        cartelera.actualizar(votada);
+        votar(votada, 3000);
         Pelicula mala = cargar("Mala de verdad", 3.0, Genero.TERROR);
-        mala.setVotos(2000);
-        cartelera.actualizar(mala);
+        votar(mala, 2000);
         cargar("Recien estrenada", 0.0, Genero.COMEDIA);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
@@ -203,11 +169,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "sin votos va al promedio, y el promedio le gana a una mala con respaldo: " + elenco);
     }
 
-    /**
-     * El puntaje que carga el encargado a mano no es un promedio flojo: es su criterio. Sin
-     * esta distinción, un catálogo entero sin votos quedaba con todas las películas valiendo
-     * lo mismo y el ranking desaparecía.
-     */
     @Test
     void elPuntajeCargadoAManoOrdenaAunqueNoHayaVotos() {
         cargar("Buena", 9.0, Genero.ACCION);
@@ -232,7 +193,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 propuesta.elenco().stream().map(Pelicula::getTitulo).toList());
     }
 
-    /** El reparto es proporcional al puntaje, no en partes iguales. */
     @Test
     void laMejorPuntuadaSeLlevaMasPases() {
         cargar("Muy buena", 9.0, Genero.ACCION);
@@ -247,7 +207,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "la mejor puntuada tiene que ir más veces: " + deLaBuena + " vs " + deLaFloja);
     }
 
-    /** Ningún pase puede terminar después del cierre, aunque empiece antes. */
     @Test
     void ningunPaseSePasaDelHorarioDeCierre() {
         cargar("Larga", 8.0, 180, Genero.DRAMA);
@@ -262,7 +221,22 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
-    /** Entre dos pases de la misma sala tiene que entrar la limpieza (R3). */
+    // Cerrar a las 00:00 es cerrar al empezar el día siguiente: la de dos horas de las 22:00 entra justa.
+    @Test
+    void conCierreALaMedianocheEntraElPaseQueTerminaJustoALaMedianoche() {
+        cargar("Dos horas", 8.0, 120, Genero.DRAMA);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        CriteriosGrilla deNoche = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(22, 0),
+                LocalTime.MIDNIGHT, 1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+
+        PropuestaGrilla propuesta = planificador.proponer(deNoche);
+
+        assertEquals(List.of(LocalDateTime.of(2026, 9, 1, 22, 0)),
+                propuesta.pases().stream().map(PaseSugerido::inicio).toList());
+        assertEquals(120, propuesta.indicadores().minutosDisponibles(), "de 22:00 a 00:00 hay dos horas");
+        assertEquals(1.0, propuesta.indicadores().ocupacion());
+    }
+
     @Test
     void respetaLaLimpiezaEntreDosPasesDeLaMismaSala() {
         cargar("Una", 8.0, Genero.ACCION);
@@ -281,10 +255,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         }
     }
 
-    /**
-     * No reescribe R3: si la sala ya tiene una función cargada a mano, la propuesta la
-     * respeta en vez de pisarla.
-     */
     @Test
     void noPisaLasFuncionesQueYaEstabanCargadas() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -308,7 +278,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         cargar("Comedia", 7.0, Genero.COMEDIA);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
-        PropuestaGrilla.IndicadoresGrilla indicadores = planificador.proponer(unDia(2)).indicadores();
+        IndicadoresGrilla indicadores = planificador.proponer(unDia(2)).indicadores();
 
         assertTrue(indicadores.ocupacion() > 0.5,
                 "nueve horas de sala con películas de 100 minutos deberían llenarse bastante");
@@ -319,12 +289,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertTrue(indicadores.pasesPorGenero().containsKey(Genero.COMEDIA));
     }
 
-    /**
-     * El caso que apareció con la base cargada: una semana que ya tiene funciones daba una
-     * ocupación baja —la propuesta apenas encontraba huecos— y se leía como que el cine
-     * estaba vacío, cuando era exactamente al revés. El tiempo que la propuesta podía usar
-     * es la ventana menos lo ya programado, no la ventana entera.
-     */
     @Test
     void elTiempoDisponibleDescuentaLoQueYaEstabaProgramado() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -340,7 +304,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
                 "los 100 minutos de la función ya cargada dejan de estar disponibles");
     }
 
-    /** Una función fuera de la ventana ocupa la sala, pero no le saca lugar a la grilla. */
     @Test
     void unaFuncionFueraDeLaVentanaNoDescuentaTiempo() {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
@@ -348,14 +311,12 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
         int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
 
-        // La ventana del test es de 14 a 23: esta función de la mañana queda afuera.
         funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 10, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
         assertEquals(sinNada, planificador.proponer(unDia(1)).indicadores().minutosDisponibles());
     }
 
-    /** La ocupación nunca puede pasar de 1: es lo que vuelve comparable el número. */
     @Test
     void laOcupacionNoSePasaDeUnoNiSeVaANegativo() {
         cargar("Una", 8.0, Genero.ACCION);
@@ -377,7 +338,6 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertFalse(propuesta.pases().isEmpty(), "la propuesta no puede estar vacía");
     }
 
-    /** Determinista: dos corridas con los mismos criterios dan lo mismo. */
     @Test
     void proponerDosVecesDaLaMismaGrilla() {
         cargar("Accion", 9.0, Genero.ACCION);
@@ -393,28 +353,95 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     void sinPeliculasConfirmadasAvisaQueRevisenElBuzon() {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> planificador.proponer(unDia(3)));
 
         assertTrue(e.getMessage().contains("buzón"), e.getMessage());
+    }
+
+    private static CriteriosGrilla unDiaEn3D() {
+        return new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(14, 0), LocalTime.of(23, 0), 1,
+                Dinero.de(5000), Version.SUBTITULADA, Proyeccion.TRES_D);
+    }
+
+    // R8: antes la propuesta ponía pases en la sala 2D, y aplicarla rechazaba el primero.
+    @Test
+    void unaGrillaEn3DReparteSoloEnLasSalasQueLoProyectan() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+        int imax = salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10)).getId();
+
+        PropuestaGrilla propuesta = planificador.aplicar(unDiaEn3D());
+
+        assertFalse(propuesta.pases().isEmpty());
+        assertTrue(propuesta.pases().stream().allMatch(pase -> pase.salaId() == imax));
+        assertEquals(propuesta.pases().size(), funciones.listar().size());
+    }
+
+    // Lo cargado en la sala 2D no ocupa la ventana de la 3D.
+    @Test
+    void unaGrillaEn3DMideSoloElTiempoDeSusSalas() {
+        Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
+        int dosD = salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10)).getId();
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+        int sinNada = planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles();
+
+        funciones.programar(pelicula.getId(), dosD, LocalDateTime.of(2026, 9, 1, 16, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+
+        assertEquals(sinNada, planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles());
+    }
+
+    @Test
+    void unaGrillaEn3DSinSalasQueLoProyectenSeRechaza() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+
+        assertEquals("No hay salas que puedan proyectar en 3D",
+                assertThrows(Rechazo.class, () -> planificador.proponer(unDiaEn3D())).getMessage());
     }
 
     @Test
     void sinSalasNoHayGrillaPosible() {
         cargar("Una", 8.0, Genero.ACCION);
 
-        assertThrows(IllegalArgumentException.class, () -> planificador.proponer(unDia(1)));
+        assertEquals("No hay salas cargadas para programar",
+                assertThrows(Rechazo.class, () -> planificador.proponer(unDia(1))).getMessage());
     }
 
+    // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).
     @Test
-    void rechazaUnaVentanaHorariaImposible() {
+    void hoyNoProponePasesQueYaPasaron() {
         cargar("Una", 8.0, Genero.ACCION);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        reloj.mover(reloj.hoy().atTime(15, 10));
+        CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 2, LocalTime.of(8, 0), LocalTime.of(23, 0),
+                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
 
-        CriteriosGrilla alReves = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1,
-                LocalTime.of(23, 0), LocalTime.of(14, 0), 2, Dinero.de(5000),
-                Version.SUBTITULADA, Proyeccion.DOS_D);
+        PropuestaGrilla propuesta = planificador.aplicar(hoy);
 
-        assertThrows(IllegalArgumentException.class, () -> planificador.proponer(alReves));
+        assertFalse(propuesta.pases().isEmpty());
+        assertEquals(reloj.hoy().atTime(15, 30), propuesta.pases().get(0).inicio());
+        assertTrue(propuesta.pases().stream().allMatch(p -> p.inicio().isAfter(reloj.ahora())));
+        assertEquals(propuesta.pases().size(), funciones.listar().size(), "aplicar no choca con R20");
+    }
+
+    // R20: a las 15:10 la ventana de hoy va de 15:30 a 23:00 (450 minutos). La de las 14:00 ya
+    // empezó y no la ocupa; la de las 20:00 sí descuenta sus 100.
+    @Test
+    void hoyLosMinutosDisponiblesSonSoloLosQueNoPasaron() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+        funciones.programar(1, 1, reloj.hoy().atTime(14, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        funciones.programar(1, 1, reloj.hoy().atTime(20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        reloj.mover(reloj.hoy().atTime(15, 10));
+        CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 1, LocalTime.of(14, 0), LocalTime.of(23, 0),
+                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+
+        IndicadoresGrilla indicadores = planificador.proponer(hoy).indicadores();
+
+        assertEquals(350, indicadores.minutosDisponibles());
+        assertEquals((double) indicadores.minutosProgramados() / 350, indicadores.ocupacion());
+        assertTrue(indicadores.ocupacion() <= 1.0, "no se programa más de lo que queda del día");
     }
 }

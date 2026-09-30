@@ -1,0 +1,128 @@
+package ar.uade.cine.controller.cartelera;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import ar.uade.cine.model.cartelera.CatalogoPelicula;
+import ar.uade.cine.model.cartelera.Importacion;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.dto.cartelera.EstadoImportadorVistaDTO;
+import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
+import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
+import ar.uade.cine.dto.funciones.FuncionVistaDTO;
+import ar.uade.cine.dto.salas.AsientoVistaDTO;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.ventas.Ocupacion;
+import ar.uade.cine.controller.http.Fechas;
+import ar.uade.cine.infrastructure.importador.CatalogoExterno;
+import ar.uade.cine.controller.salas.VistasSalas;
+
+// Arma los JSON de películas, funciones con sala, precio y butacas, e importaciones; Assembler compartido.
+// Un listado de N funciones cuesta un número fijo de consultas por sala y no por fila: las
+// películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
+// sentencias.
+@Component
+@RequiredArgsConstructor
+public class VistasCartelera {
+
+    private final GestorCartelera cartelera;
+    private final GestorSalas salas;
+    private final Ocupacion ocupacion;
+    private final VistasSalas vistasSalas;
+
+    public PeliculaVistaDTO pelicula(Pelicula p) {
+        CatalogoPelicula catalogo = p.getCatalogo();
+        return new PeliculaVistaDTO(p.getId(), p.getTitulo(), p.getDuracionMinutos(),
+                p.getGeneros().stream().map(Enum::name).toList(),
+                p.getClasificacion().name(), catalogo.posterUrl(), catalogo.director(), catalogo.anio(),
+                catalogo.idiomaOriginal(), catalogo.sinopsis(), p.estaEnCartelera(),
+                p.getEstadoRevision().name(), catalogo.puntaje(), catalogo.votos());
+    }
+
+    public ImportacionVistaDTO importacion(Importacion i) {
+        return new ImportacionVistaDTO(i.getId(), i.getEstado().name(), i.getPaginas(),
+                Fechas.texto(i.getPedidaEn()), Fechas.texto(i.getTerminoEn()), i.getNuevas(),
+                i.getSalteadas(), i.getFallidas(), i.getDetalle());
+    }
+
+    public EstadoImportadorVistaDTO estado(CatalogoExterno.Estado estado) {
+        return new EstadoImportadorVistaDTO(estado.disponible(), estado.detalle());
+    }
+
+    // Con la sala y sus butacas ya leídas: un listado las lee una vez por sala y no por fila.
+    public FuncionVistaDTO funcion(Funcion f, Sala sala, List<Asiento> asientos) {
+        return armar(f, sala, asientos, null, null, null);
+    }
+
+    public FuncionVistaDTO funcionConPelicula(Funcion f) {
+        return armar(f, peliculaDe(f), null, null);
+    }
+
+    public List<FuncionVistaDTO> funciones(List<Funcion> lista) {
+        return listar(lista, Map.of());
+    }
+
+    public List<FuncionVistaDTO> funcionesConPelicula(List<Funcion> lista) {
+        Map<Integer, PeliculaVistaDTO> peliculas = cartelera
+                .buscar(lista.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Pelicula::getId, this::pelicula));
+        return listar(lista, peliculas);
+    }
+
+    private List<FuncionVistaDTO> listar(List<Funcion> lista, Map<Integer, PeliculaVistaDTO> peliculas) {
+        Map<Integer, Sala> salasPorId = new HashMap<>();
+        Map<Integer, List<Asiento>> asientosPorSala = new HashMap<>();
+        return lista.stream()
+                .map(f -> armar(f, salasPorId.computeIfAbsent(f.getSalaId(), id -> salaDe(f)),
+                        asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe),
+                        peliculas.get(f.getPeliculaId()), null, null))
+                .toList();
+    }
+
+    public FuncionVistaDTO funcionConButacas(Funcion f) {
+        return funcionConButacas(f, null);
+    }
+
+    public FuncionVistaDTO funcionConButacas(Funcion f, String sesion) {
+        Sala sala = salaDe(f);
+        List<Asiento> asientos = salas.asientosDe(sala.getId());
+        Set<Integer> ocupados = ocupacion.asientosOcupados(f.getId(), sesion);
+        List<AsientoVistaDTO> butacas = asientos.stream()
+                .map(a -> vistasSalas.asiento(a, f, sala, ocupados))
+                .toList();
+        int libres = Ocupacion.libresEntre(asientos, ocupados).size();
+        return armar(f, sala, asientos, peliculaDe(f), butacas, libres);
+    }
+
+    private FuncionVistaDTO armar(Funcion f, PeliculaVistaDTO pelicula, List<AsientoVistaDTO> butacas,
+                                  Integer libres) {
+        Sala sala = salaDe(f);
+        return armar(f, sala, salas.asientosDe(sala.getId()), pelicula, butacas, libres);
+    }
+
+    private FuncionVistaDTO armar(Funcion f, Sala sala, List<Asiento> asientos, PeliculaVistaDTO pelicula,
+                                  List<AsientoVistaDTO> butacas, Integer libres) {
+        return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
+                Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
+                f.getPrecio().aPesos(), f.precioEn(sala).aPesos(),
+                vistasSalas.sala(sala, asientos), pelicula, butacas, libres);
+    }
+
+    private Sala salaDe(Funcion f) {
+        return salas.obtener(f.getSalaId());
+    }
+
+    private PeliculaVistaDTO peliculaDe(Funcion f) {
+        return cartelera.buscar(f.getPeliculaId()).map(this::pelicula).orElse(null);
+    }
+}

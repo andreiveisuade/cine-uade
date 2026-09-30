@@ -1,5 +1,9 @@
 package ar.uade.cine.dto.usuarios;
 
-/** El registro del cliente (CU-05), que también ocurre solo al reservar por primera vez. */
-public record PedidoClienteDTO(String nombre, String email) {
+import jakarta.validation.constraints.NotBlank;
+
+// Lo que entra al registrar un cliente (POST /api/clientes); exige nombre y email, que valida el modelo.
+// Sin @Email: aceptaba «a@b», y reservar da de alta sin pasar por acá. Queda una sola regla, la de Email.
+public record PedidoClienteDTO(@NotBlank(message = "Falta el nombre") String nombre,
+                               @NotBlank(message = "Falta el email") String email) {
 }

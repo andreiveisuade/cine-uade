@@ -1,95 +1,65 @@
 # cine-docker
 
-Orquestación: levanta backend y frontend desde las carpetas hermanas del monorepo.
+Levanta el sistema completo desde las carpetas hermanas. Cómo ponerlo a andar y qué hacer si algo falla:
+[`COMO-LEVANTARLO.md`](../_other/COMO-LEVANTARLO.md).
 
-Cómo ponerlo a andar: [`_other/COMO-LEVANTARLO.md`](../_other/COMO-LEVANTARLO.md).
+| Archivo | Qué es |
+|---|---|
+| `docker-compose.yml` | Los cuatro servicios, las dos redes y el volumen de la base |
+| `.env.example` | Las variables, comentadas. Se copia a `.env`, que no se versiona |
+| `setup.sh`, `setup.ps1` | Arman el `.env`, levantan, esperan a que esté sano y siembran. Repetibles |
+| `seed/02-admin.sql` | Los dos usuarios de demo, al crear la base |
+| `seed/datos-de-ejemplo.sh` | Seis salas, la carta del candy y una promoción, por la API y no por SQL, para que pasen por las reglas |
 
-```sh
-./setup.sh          # o .\setup.ps1 en Windows
-```
+## Servicios
 
-## Los servicios
+| Servicio | Imagen | Puerto en el host |
+|---|---|---|
+| frontend | nginx (construido desde `cine-frontend/`) | **8080** (`PUERTO_WEB`) |
+| backend | eclipse-temurin 21 (construido desde `cine-backend/`) | — |
+| mysql | mysql:8.4 | — |
+| adminer | adminer:5 | 8081 (`PUERTO_ADMINER`), solo en `127.0.0.1` |
 
-| Servicio | Imagen | Puerto en el host | Quién lo alcanza |
-|---|---|---|---|
-| frontend | nginx | **8080** | el navegador |
-| backend | temurin 21 | — | nginx, por `backend:8080` |
-| mysql | mysql:8.4 | — | backend y Adminer, por `mysql:3306` |
-| redis | redis:8 | — | solo el backend |
-| adminer | adminer:5 | 8081, solo en `127.0.0.1` | el navegador de esta máquina |
+Un solo puerto sale al host: nginx reenvía `/api` y Swagger al backend, así que todo sale del mismo origen y
+no hace falta CORS. Dos redes: **web** (frontend y backend) y **datos** (backend, adminer y mysql). El
+frontend no tiene ruta hasta la base. Arrancan en cadena: `mysql` sano → `backend` sano → `frontend`.
+Diagramas en el [manual](../_other/docs/manual/index.html#correr).
 
-**Un solo puerto sale al host.** El navegador nunca habla con el backend directo: nginx
-reenvía `/api` por la red interna, así que todo sale del mismo origen y no hace falta CORS.
+## Variables
 
-Dos redes separadas: **web** (frontend ↔ backend) y **datos** (backend y adminer ↔ mysql,
-backend ↔ redis). El frontend no tiene ruta hasta la base. El backend es el único en las dos.
+Todas en `.env`, explicadas en `.env.example`:
 
-Arrancan en cadena: `mysql` healthy → `backend` healthy → `frontend`.
+| Variable | Para qué |
+|---|---|
+| `MYSQL_ROOT_PASSWORD` | Solo para inicializar MySQL; la app nunca entra con root |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | La base y el usuario de la app |
+| `PUERTO_WEB`, `PUERTO_ADMINER` | Los puertos del host |
+| `TZ` | Zona horaria; en UTC la caja del día pierde las funciones de la noche |
+| `TMDB_TOKEN`, `TMDB_REGION` | El importador de cartelera; sin token el resto anda igual |
 
-Diagramas en el [manual](../_other/docs/manual/index.html#correr): topología y orden de arranque.
+Si falta una obligatoria, Compose no arranca y dice cuál. Cambiar una clave no alcanza a una base ya creada.
 
 ## La base
 
-MySQL corre `schema.sql` y `seed/02-admin.sql` **la primera vez**, con el volumen vacío.
-De ahí sale el administrador, que no tiene endpoint de alta.
-
-Sobre una base ya creada, aplicar el schema a mano:
-
-```sh
-docker compose exec -T mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas \
-  < ../cine-backend/src/main/resources/schema.sql
-```
-
-Empezar de cero: `docker compose down -v && docker compose up -d`.
-
-Para mirar los datos, Adminer en `localhost:8081` — servidor **`mysql`**, no `localhost`.
-O una consulta suelta:
+MySQL corre `schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
+aplicar a mano los `migracion-*.sql` que falten, en este orden: `programaciones`, `grilla-abierta`,
+`limpieza`, `staging`, `puntaje`, `votos`, `importaciones`, `bcrypt`, `bloqueos`, `version-reserva`,
+`ahorro-congelado` y `email-minusculas`.
 
 ```sh
-docker compose exec mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas
+docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
+  < ../cine-backend/src/main/resources/migracion-bloqueos.sql
 ```
 
-El seed de ejemplo (`seed/datos-de-ejemplo.sh`) entra **por la API y no por SQL**: los
-datos pasan por las mismas reglas que aplica el sistema.
+Las comillas simples hacen que las variables las resuelva el contenedor, no la terminal. Si falta una
+migración que cambia tablas, el backend no arranca (`ddl-auto: validate`) y el log dice qué no coincide.
 
-## Ajustes de tu máquina
-
-Compose lee `docker-compose.override.yml` solo, sin flags. No se versiona. El uso típico
-es publicar MySQL para un cliente de escritorio:
+Para mirar los datos, Adminer en `localhost:8081`, con servidor **`mysql`** (no `localhost`). Para Workbench o
+DBeaver, publicar el puerto en un `docker-compose.override.yml`, que Compose lee solo y no se versiona:
 
 ```yaml
 services:
   mysql:
     ports:
       - "127.0.0.1:3306:3306"
-```
-
-## Redis se puede apagar
-
-```sh
-docker compose stop redis      # el cine sigue vendiendo
-```
-
-Guarda los bloqueos de butaca de mientras alguien elige. Apagado, el mapa deja de mostrar
-como tomadas las que otro está eligiendo y esa butaca se pierde recién al confirmar.
-
-Lo que **no** cambia: una butaca no se vende dos veces. Eso lo garantiza el
-`UNIQUE (funcion_id, asiento_id)` de MySQL. Por eso el backend lo espera con
-`service_started` y no con `service_healthy` como a la base.
-
-Sin volumen y con `--save ""`: lo que guarda vence en tres minutos.
-
-## El importador
-
-Trae de TMDB lo que está hoy en cartelera en Argentina. **Lo dispara el encargado** desde
-el panel: sin un pedido no gasta una llamada. Es la única llamada saliente del sistema, y
-vive dentro del backend (`infrastructure/importador/`), sin contenedor aparte.
-
-Necesita `TMDB_TOKEN` en el `.env`. Sin token el sistema levanta igual y la pantalla avisa.
-
-Lo que baja **no entra al catálogo**: entra al buzón como pendiente, y pasa por las mismas
-reglas que el alta a mano hasta que el encargado lo confirma.
-
-```sh
-docker compose logs -f backend      # qué trajo la última corrida
 ```

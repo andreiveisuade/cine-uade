@@ -1,5 +1,6 @@
 package ar.uade.cine.model.cartelera;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -9,26 +10,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.Getter;
 
-/**
- * Una corrida del importador de cartelera: cuándo se pidió, cómo terminó y qué trajo.
- *
- * <p>Es una entidad y no un dato de infraestructura, y por eso se guarda. La pregunta que
- * responde —«¿cuándo fue la última vez que trajimos cartelera, y cuánto entró?»— es del
- * encargado un lunes a la mañana, no del que despliega: si viviera en memoria, un reinicio
- * del backend la borraría y la pantalla no tendría nada que mostrar.
- *
- * <p>No guarda <em>qué</em> películas entraron, solo cuántas. Las películas ya están
- * guardadas, con su {@link EstadoRevision}, y son las que se ven en el buzón: repetir acá
- * la lista sería tener dos fuentes de verdad para lo mismo y que un día no coincidan.
- * {@link #getDetalle()} es un texto para leer, no un dato para consultar.
- *
- * <p>Nace EN_CURSO: una importación existe porque alguien la pidió y ya se está haciendo.
- * El momento entra por parámetro en vez de tomarlo de {@code LocalDateTime.now()} acá
- * adentro, que es lo que deja probar la caducidad de una corrida colgada sin esperar cinco
- * minutos de reloj.
- */
+import ar.uade.cine.model.cartelera.validacion.ValidadorImportacion;
+
+// Registro de una corrida del importador de TMDB; Experto: sabe si terminó, falló o quedó colgada.
 @Entity
+@Getter
 public class Importacion {
 
     @Id
@@ -50,15 +38,15 @@ public class Importacion {
 
     private int fallidas;
 
-    /** El log de la corrida, o el motivo si falló: es texto para leer, no para consultar. */
     @Column(columnDefinition = "TEXT")
     private String detalle;
 
     protected Importacion() {
     }
 
-    public Importacion(int paginas, LocalDateTime pedidaEn) {
-        this.paginas = paginas;
+    // Sin páginas se trae una: «traeme cartelera» ya es un pedido completo.
+    public Importacion(Integer paginas, LocalDateTime pedidaEn) {
+        this.paginas = ValidadorImportacion.paginas(paginas == null ? 1 : paginas);
         this.pedidaEn = pedidaEn;
     }
 
@@ -78,44 +66,15 @@ public class Importacion {
         this.terminoEn = cuando;
     }
 
-    public int getId() {
-        return id;
+    public boolean estaEnCurso() {
+        return estado == EstadoImportacion.EN_CURSO;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public boolean quedoColgada(Duration plazo, LocalDateTime ahora) {
+        return estaEnCurso() && pedidaEn.plus(plazo).isBefore(ahora);
     }
 
-    public int getPaginas() {
-        return paginas;
-    }
-
-    public LocalDateTime getPedidaEn() {
-        return pedidaEn;
-    }
-
-    /** Null mientras la corrida sigue: es "todavía no terminó", no una fecha vacía. */
-    public LocalDateTime getTerminoEn() {
-        return terminoEn;
-    }
-
-    public EstadoImportacion getEstado() {
-        return estado;
-    }
-
-    public int getNuevas() {
-        return nuevas;
-    }
-
-    public int getSalteadas() {
-        return salteadas;
-    }
-
-    public int getFallidas() {
-        return fallidas;
-    }
-
-    public String getDetalle() {
-        return detalle;
+    public boolean terminoHaceMenosDe(Duration espera, LocalDateTime ahora) {
+        return terminoEn != null && terminoEn.plus(espera).isAfter(ahora);
     }
 }

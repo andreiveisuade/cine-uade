@@ -1,5 +1,5 @@
 package ar.uade.cine.dto.catalogos;
 
-/** La clasificación con su edad mínima, para que el front la muestre sin repetir la tabla. */
+// Una clasificación por edad de GET /api/clasificaciones, con la edad mínima que exige.
 public record ClasificacionVistaDTO(String nombre, int edadMinima) {
 }

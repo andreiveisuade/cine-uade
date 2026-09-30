@@ -2,13 +2,16 @@ package ar.uade.cine.dto.promociones;
 
 import java.util.List;
 
-/**
- * Un solo pedido para los tres tipos, con las columnas del beneficio en null salvo
- * la que corresponde: es la misma forma que tiene la tabla, y evita tres endpoints
- * que se diferencian en un campo.
- */
-public record PedidoPromocionDTO(String nombre, String tipo, Double porcentaje, Double monto,
-                              Integer lleva, Integer paga, String vigenciaDesde, String vigenciaHasta,
-                              List<String> diasSemana, String horaDesde, String horaHasta,
-                              List<String> mediosPago) {
+import jakarta.validation.constraints.NotBlank;
+
+// Lo que entra al cargar una promoción (POST /api/promociones); exige nombre, tipo y vigencia.
+// Lo ajeno al tipo va null y se ignora; lo propio lo exige la subclase que crea el tipo.
+public record PedidoPromocionDTO(@NotBlank(message = "Falta el nombre") String nombre,
+                                 @NotBlank(message = "Falta el tipo de promoción") String tipo,
+                                 Double porcentaje, Double monto,
+                                 Integer lleva, Integer paga,
+                                 @NotBlank(message = "Falta el inicio de la vigencia") String vigenciaDesde,
+                                 @NotBlank(message = "Falta el fin de la vigencia") String vigenciaHasta,
+                                 List<String> diasSemana, String horaDesde, String horaHasta,
+                                 List<String> mediosPago) {
 }

@@ -7,52 +7,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.ConfiguracionDePrueba;
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacas;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasRedis;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.ClienteRepository;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
-import ar.uade.cine.repository.ReservaRepository;
-import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
-/**
- * El bloqueo de butacas mientras alguien las está eligiendo: la etapa anterior a que
- * exista una reserva.
- *
- * <p>Lo que se prueba acá es que esa etapa entra en la <strong>misma</strong> definición de
- * "ocupado" que ya usaban el mapa y la venta —si quedara afuera, el mapa ofrecería una
- * butaca que la reserva después rechaza— y que sigue siendo una comodidad y no una
- * garantía: sin el medio donde vive el bloqueo, el sistema vende igual.
- *
- * <p>Corre sin Redis levantado, incluido el caso que justamente prueba que no hace falta.
- */
 class OcupacionTest extends PruebaDeIntegracion {
 
-    /** Dos sesiones distintas eligiendo la misma función, que es el conflicto a probar. */
     private static final String ANA = "sesion-de-ana";
     private static final String BETO = "sesion-de-beto";
 
@@ -61,9 +49,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     @Autowired
     private GestorReservas reservas;
     @Autowired
-    private BloqueoButacas bloqueos;
-    @Autowired
-    private ConfiguracionDePrueba.Reloj reloj;
+    private BloqueoButacaRepository bloqueos;
 
     @Autowired
     private GestorCartelera cartelera;
@@ -73,25 +59,9 @@ class OcupacionTest extends PruebaDeIntegracion {
     private GestorFunciones funciones;
     @Autowired
     private GestorClientes clientes;
-    @Autowired
-    private CalculadoraPrecio calculadoraPrecio;
-
-    @Autowired
-    private ReservaRepository reservaRepository;
-    @Autowired
-    private FuncionRepository funcionRepository;
-    @Autowired
-    private AsientoRepository asientoRepository;
-    @Autowired
-    private SalaRepository salaRepository;
-    @Autowired
-    private ClienteRepository clienteRepository;
-    @Autowired
-    private PeliculaRepository peliculaRepository;
 
     private LocalDateTime ahora;
 
-    /** Sala de 2 filas x 5 butacas (A1..A5, B1..B5), una función a $5000, un cliente. */
     @BeforeEach
     void prepararEscenario() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
@@ -104,7 +74,6 @@ class OcupacionTest extends PruebaDeIntegracion {
         reloj.mover(ahora);
     }
 
-    /** Mueve el reloj de los bloqueos, que es el único que este test necesita adelantar. */
     private void avanzar(Duration cuanto) {
         ahora = ahora.plus(cuanto);
         reloj.mover(ahora);
@@ -114,7 +83,7 @@ class OcupacionTest extends PruebaDeIntegracion {
     void laButacaQueAlguienEstaEligiendoDejaDeAparecerLibre() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(9, ocupacion.lugaresLibres(1));
+        assertEquals(9, asientosLibres(1, null).size());
         assertFalse(codigosLibres(null).contains("A1"));
     }
 
@@ -123,37 +92,107 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
         assertTrue(codigosLibres(ANA).contains("A1"), "las suyas no le están ocupadas a ella");
-        assertEquals(10, ocupacion.lugaresLibres(1, ANA));
+        assertEquals(10, asientosLibres(1, ANA).size());
         assertFalse(codigosLibres(BETO).contains("A1"), "pero al de al lado sí");
     }
 
     @Test
     void dosPersonasPorLaMismaButacaSeLaLlevaLaPrimera() {
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO));
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas());
     }
 
-    /** Perder una butaca no invalida el resto del pedido: se contesta lo que sí se consiguió. */
     @Test
     void loQueNoSeConsigueNoArrastraAlResto() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(List.of("A2", "A3"), ocupacion.bloquear(1, List.of("A1", "A2", "A3"), BETO));
+        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(1, List.of("A1", "A2", "A3"), BETO);
+
+        assertEquals(List.of("A2", "A3"), bloqueo.conseguidas());
+        assertEquals(List.of("A1"), bloqueo.rechazadas());
+    }
+
+    // "a1" y "A1" son la misma butaca: vuelve una sola vez, no ["A1", "A1"].
+    @Test
+    void laMismaButacaEscritaDeDosManerasSeBloqueaUnaSolaVez() {
+        Ocupacion.Bloqueo bloqueo = ocupacion.bloquear(1, List.of("a1", "A1"), ANA);
+
+        assertEquals(List.of("A1"), bloqueo.conseguidas());
+        assertEquals(List.of(), bloqueo.rechazadas());
     }
 
     @Test
     void noSeBloqueaUnaButacaYaVendida() {
-        reservas.reservar(1, 1, generales("A1"));
+        reservas.reservar(1, 1, generales("A1"), null);
 
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA));
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
+    }
+
+    @Test
+    void unaButacaSinCodigoFallaDiciendoQueFaltaYNoConUnCodigoVacio() {
+        Rechazo alBloquear = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, Arrays.asList("A1", null), ANA));
+        Rechazo alReservar = assertThrows(Rechazo.class,
+                () -> reservas.reservar(1, 1, generales(" "), null));
+
+        assertEquals("Falta el código de una butaca", alBloquear.getMessage());
+        assertEquals("Falta el código de una butaca", alReservar.getMessage());
     }
 
     @Test
     void laButacaInexistenteFallaConElMismoMensajeQueAlReservar() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        Rechazo alBloquear = assertThrows(Rechazo.class,
                 () -> ocupacion.bloquear(1, List.of("Z9"), ANA));
+        Rechazo alReservar = assertThrows(Rechazo.class,
+                () -> reservas.reservar(1, 1, generales("z9"), null));
 
-        assertEquals("La butaca Z9 no existe en esa sala", error.getMessage());
+        assertEquals("La butaca Z9 no existe en la sala", alBloquear.getMessage());
+        assertEquals("La butaca Z9 no existe en la sala", alReservar.getMessage());
+    }
+
+    // R19, con el mismo texto que la venta: antes se bloqueaban butacas de una función empezada.
+    @Test
+    void noSeBloqueaUnaButacaDeUnaFuncionQueYaEmpezo() {
+        reloj.mover(LocalDateTime.of(2026, 12, 20, 20, 5));
+
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, List.of("A1"), ANA));
+
+        assertEquals("La función ya empezó: no se pueden reservar butacas", error.getMessage());
+        assertEquals(0, bloqueos.count());
+    }
+
+    // R9 con el mismo texto que la venta: antes se apartaba una butaca que después no se podía comprar.
+    @Test
+    void noSeBloqueaUnaButacaFueraDeServicio() {
+        salas.marcarFueraDeServicio(1, "A3");
+
+        Rechazo alBloquear = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, List.of("A2", "a3"), ANA));
+        Rechazo alReservar = assertThrows(Rechazo.class,
+                () -> reservas.reservar(1, 1, generales("A3"), null));
+
+        assertEquals("La butaca A3 está fuera de servicio", alBloquear.getMessage());
+        assertEquals(alReservar.getMessage(), alBloquear.getMessage());
+        assertEquals(0, bloqueos.count(), "tampoco apartó la que estaba bien");
+    }
+
+    // El mismo tope que la compra, contando butacas y no códigos: "a1" y "A1" son una.
+    @Test
+    void elBloqueoTieneElTopeDeUnaCompra() {
+        salas.agregar("Sala grande", TipoSala.DOS_D, List.of(12));
+        funciones.programar(1, 2, LocalDateTime.of(2026, 12, 21, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        List<String> diez = List.of("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10");
+
+        Rechazo once = assertThrows(Rechazo.class, () -> ocupacion.bloquear(2,
+                List.of("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11"), ANA));
+
+        assertEquals("Una compra tiene que tener como máximo 10 butacas", once.getMessage());
+        assertEquals(0, bloqueos.count());
+        List<String> diezConUnaRepetida = new ArrayList<>(diez);
+        diezConUnaRepetida.add("a1");
+        assertEquals(diez, ocupacion.bloquear(2, diezConUnaRepetida, ANA).conseguidas());
     }
 
     @Test
@@ -163,7 +202,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         avanzar(Ocupacion.MIENTRAS_ELIGE.plusSeconds(1));
 
         assertTrue(codigosLibres(null).contains("A1"));
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), BETO),
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas(),
                 "y el que llega después se la puede llevar");
     }
 
@@ -171,11 +210,9 @@ class OcupacionTest extends PruebaDeIntegracion {
     void volverATocarElMapaRenuevaElBloqueo() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        // Dos minutos después toca el mapa de nuevo: no perdió la butaca por tardar.
         avanzar(Duration.ofMinutes(2));
-        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA));
+        assertEquals(List.of("A1"), ocupacion.bloquear(1, List.of("A1"), ANA).conseguidas());
 
-        // Cuatro minutos desde el primer bloqueo: sin la renovación ya habría vencido.
         avanzar(Duration.ofMinutes(2));
         assertFalse(codigosLibres(BETO).contains("A1"));
     }
@@ -185,17 +222,117 @@ class OcupacionTest extends PruebaDeIntegracion {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO));
+        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO).conseguidas());
     }
 
     @Test
     void soltarNoSirveParaSoltarLaDeOtro() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
-        int a1 = idDe("A1");
 
-        bloqueos.liberar(1, a1, BETO);
+        ocupacion.liberar(1, BETO);
 
         assertFalse(codigosLibres(BETO).contains("A1"));
+        ocupacion.liberar(1, ANA);
+        assertTrue(codigosLibres(BETO).contains("A1"), "la dueña sí la suelta");
+    }
+
+    @Test
+    void renovarLaPropiaNoDuplicaLaFila() {
+        ocupacion.bloquear(1, List.of("A1"), ANA);
+        ocupacion.bloquear(1, List.of("A1"), ANA);
+
+        assertEquals(1, bloqueos.count());
+    }
+
+    @Test
+    void laLimpiezaBorraSoloLosVencidos() {
+        ocupacion.bloquear(1, List.of("A1"), ANA);
+        avanzar(Duration.ofMinutes(2));
+        ocupacion.bloquear(1, List.of("A2"), BETO);
+        avanzar(Duration.ofMinutes(2));
+
+        ocupacion.borrarBloqueosVencidos();
+
+        assertEquals(1, bloqueos.count(), "el de Ana venció, el de Beto no");
+        assertFalse(codigosLibres(ANA).contains("A2"));
+    }
+
+    @Test
+    void borrarLaFuncionSeLlevaSusBloqueos() {
+        ocupacion.bloquear(1, List.of("A1"), ANA);
+
+        funciones.eliminar(1);
+
+        assertEquals(0, bloqueos.count());
+    }
+
+    @Test
+    void sinSesionNoSeBloquea() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, List.of("A1"), " "));
+
+        assertEquals("Falta la sesión para bloquear butacas", error.getMessage());
+    }
+
+    @Test
+    void unaSesionMasLargaQueLaColumnaSeRechazaConMensaje() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> ocupacion.bloquear(1, List.of("A1"), "x".repeat(65)));
+
+        assertEquals("La sesión no puede tener más de 64 caracteres", error.getMessage());
+    }
+
+    // La sesión se guarda recortada: con los espacios que traiga, sigue siendo la misma al volver al mapa.
+    @Test
+    void laSesionSeReconoceSinLosEspaciosDeLasPuntas() {
+        ocupacion.bloquear(1, List.of("A1"), "  " + ANA + " ");
+
+        assertTrue(codigosLibres(ANA).contains("A1"), "la bloqueó ella");
+        assertEquals(1, reservas.reservar(1, 1, generales("A1"), " " + ANA).getCantidadEntradas());
+        assertEquals(0, bloqueos.count(), "reservar soltó sus bloqueos");
+    }
+
+    @Test
+    void muchasSesionesALaVezPorLaMismaButacaSeLaLlevaUnaSola() throws Exception {
+        assertEquals(1, ganadoresDeUnaCarrera(), "una sola la consigue");
+        assertEquals(1, bloqueos.count());
+    }
+
+    // Otro camino: la fila existe y está vencida, así que compiten en el UPDATE y no en el INSERT.
+    @Test
+    void muchasSesionesALaVezPorUnaButacaVencidaSeLaLlevaUnaSola() throws Exception {
+        ocupacion.bloquear(1, List.of("A1"), "sesion-que-abandono");
+        avanzar(Ocupacion.MIENTRAS_ELIGE.plusSeconds(1));
+
+        assertEquals(1, ganadoresDeUnaCarrera(), "una sola la consigue");
+        assertEquals(1, bloqueos.count());
+    }
+
+    private int ganadoresDeUnaCarrera() throws Exception {
+        int competidores = 8;
+        ExecutorService hilos = Executors.newFixedThreadPool(competidores);
+        CountDownLatch largada = new CountDownLatch(1);
+        try {
+            List<Future<List<String>>> resultados = new ArrayList<>();
+            for (int i = 0; i < competidores; i++) {
+                String sesion = "sesion-" + i;
+                Callable<List<String>> intento = () -> {
+                    largada.await();
+                    return ocupacion.bloquear(1, List.of("A1"), sesion).conseguidas();
+                };
+                resultados.add(hilos.submit(intento));
+            }
+            largada.countDown();
+            int ganadores = 0;
+            for (Future<List<String>> resultado : resultados) {
+                if (resultado.get().equals(List.of("A1"))) {
+                    ganadores++;
+                }
+            }
+            return ganadores;
+        } finally {
+            hilos.shutdownNow();
+        }
     }
 
     @Test
@@ -209,63 +346,25 @@ class OcupacionTest extends PruebaDeIntegracion {
     void otroNoPuedeReservarLoQueAlguienEstaEligiendo() {
         ocupacion.bloquear(1, List.of("A1"), ANA);
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+        ButacaOcupada error = assertThrows(ButacaOcupada.class,
                 () -> reservas.reservar(1, 1, generales("A1"), BETO));
 
         assertEquals("La butaca A1 ya está ocupada", error.getMessage());
     }
 
-    /**
-     * Las dos ventanas no se solapan: confirmada la reserva, la butaca la retiene ella y
-     * el bloqueo sobra. Y lo que se miró sin comprar vuelve a la venta en el acto, sin
-     * esperar a que venza.
-     */
     @Test
     void confirmarLaReservaSueltaLosBloqueosDeEsaSesion() {
         ocupacion.bloquear(1, List.of("A1", "A2"), ANA);
         reservas.reservar(1, 1, generales("A1"), ANA);
 
-        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO),
+        assertEquals(List.of("A2"), ocupacion.bloquear(1, List.of("A2"), BETO).conseguidas(),
                 "la que no compró vuelve a la venta");
-        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO),
+        assertEquals(List.of(), ocupacion.bloquear(1, List.of("A1"), BETO).conseguidas(),
                 "la que compró sigue ocupada, ahora por la reserva");
     }
 
-    /**
-     * Redis caído no puede voltear la venta: el bloqueo es comodidad, y la garantía de que
-     * una butaca no se venda dos veces la sigue dando el UNIQUE de la base. El sistema
-     * vuelve a comportarse como antes de que el bloqueo existiera.
-     *
-     * <p>El puerto no tiene nada escuchando a propósito: es la forma de probar la caída sin
-     * tener que levantar Redis para después apagarlo.
-     */
-    @Test
-    void sinRedisSeSigueVendiendoComoAntes() {
-        Ocupacion sinRedis = new Ocupacion(reservaRepository, funcionRepository,
-                asientoRepository, new BloqueoButacasRedis("127.0.0.1", 63999));
-
-        GestorReservas ventaSinRedis = new GestorReservas(reservaRepository, funcionRepository,
-                salaRepository, asientoRepository, clienteRepository, peliculaRepository,
-                new GeneradorTicketTxt(java.nio.file.Path.of("target/comprobantes/tickets")),
-                calculadoraPrecio, sinRedis);
-
-        assertEquals(List.of("A1"), sinRedis.bloquear(1, List.of("A1"), ANA),
-                "nadie la tiene tomada, así que se la lleva");
-        assertEquals(10, sinRedis.lugaresLibres(1), "pero no queda anotada en ningún lado");
-        assertEquals(1, ventaSinRedis.reservar(1, 1, generales("A1"), ANA).getCantidadEntradas(),
-                "y la reserva sale igual");
-    }
-
     private List<String> codigosLibres(String sesion) {
-        return ocupacion.asientosLibres(1, sesion).stream().map(Asiento::getCodigo).toList();
-    }
-
-    private int idDe(String codigo) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(1).stream()
-                .filter(a -> a.getCodigo().equals(codigo))
-                .map(Asiento::getId)
-                .findFirst()
-                .orElseThrow();
+        return asientosLibres(1, sesion).stream().map(Asiento::getCodigo).toList();
     }
 
     private static Map<String, TipoTarifa> generales(String... codigos) {
@@ -274,5 +373,11 @@ class OcupacionTest extends PruebaDeIntegracion {
             butacas.put(codigo, TipoTarifa.GENERAL);
         }
         return butacas;
+    }
+
+    // Lo que ve el mapa de butacas (VistasCartelera#funcionConButacas): las de la sala menos las ocupadas.
+    private List<Asiento> asientosLibres(int funcionId, String sesion) {
+        int salaId = funciones.buscar(funcionId).orElseThrow().getSalaId();
+        return Ocupacion.libresEntre(salas.asientosDe(salaId), ocupacion.asientosOcupados(funcionId, sesion));
     }
 }

@@ -1,12 +1,14 @@
 package ar.uade.cine.model.candy;
 
-/**
- * Qué se vende en el candy. COMBO es distinto de los otros tres: no es una cosa que
- * exista en el mostrador, es un paquete de productos con precio promocional.
- */
+// Rubro de un producto de la carta; Experto en si es combo, que solo nace declarando qué trae.
 public enum TipoProducto {
     POCHOCLOS,
     BEBIDA,
     GOLOSINA,
-    COMBO
+    COMBO;
+
+    // El combo no se da de alta con un tipo: se arma declarando qué trae.
+    public boolean esCombo() {
+        return this == COMBO;
+    }
 }

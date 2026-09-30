@@ -1,0 +1,45 @@
+package ar.uade.cine.repository.cartelera;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import ar.uade.cine.model.cartelera.EstadoRevision;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.repository.Repositorio;
+
+// Persistencia de películas; Repository de Spring Data, con el título de R1 y los filtros en JPQL.
+public interface PeliculaRepository extends Repositorio<Pelicula> {
+
+    boolean existsByTituloIgnoreCaseAndIdNot(String titulo, int id);
+
+    List<Pelicula> findByEstadoRevision(EstadoRevision estado);
+
+    @Query("select coalesce(max(p.duracionMinutos), 0) from Pelicula p")
+    int duracionMaxima();
+
+    // Solo la columna: las películas enteras traerían también sus géneros.
+    @Query("select p.titulo from Pelicula p")
+    List<String> titulos();
+
+    @Query("""
+            select p from Pelicula p
+            where p.enCartelera = true
+              and (:genero is null or :genero member of p.generos)
+              and exists (select f from Funcion f where f.pelicula = p and f.inicio > :ahora)
+            order by p.id""")
+    List<Pelicula> findEnCartelera(@Param("ahora") LocalDateTime ahora, @Param("genero") Genero genero);
+
+    // locate y no like: el texto del usuario puede traer % o _.
+    @Query("""
+            select p from Pelicula p
+            where (:texto = '' or locate(:texto, lower(p.titulo)) > 0)
+              and (:genero is null or :genero member of p.generos)
+              and (:publicada is null or p.enCartelera = :publicada)
+            order by p.id""")
+    List<Pelicula> buscar(@Param("texto") String texto, @Param("genero") Genero genero,
+                          @Param("publicada") Boolean publicada);
+}

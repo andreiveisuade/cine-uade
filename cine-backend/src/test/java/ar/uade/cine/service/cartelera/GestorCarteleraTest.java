@@ -3,68 +3,88 @@ package ar.uade.cine.service.cartelera;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.LocalDate;
+
+import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariDataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.ProgramacionRepository;
-import ar.uade.cine.model.programaciones.Programacion;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.PeliculaRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
-import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
-import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 
-/**
- * Gracias a que GestorCartelera depende de la interfaz, se puede testear la lógica
- * con el DAO en memoria: los tests corren sin MySQL levantado.
- */
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
-    // El DAO de funciones queda accesible porque estar en cartelera se deriva de tener
-    // funciones por delante: sin poder programarlas, no se puede probar la cartelera.
     @Autowired
     private FuncionRepository funcionRepository;
     @Autowired
     private PeliculaRepository peliculaRepository;
-    // Sin grillas cargadas, extenderActivas no encuentra nada que hacer: acá el gestor de
-    // programaciones está para que la cartelera pueda pedírselo, no para que genere.
     @Autowired
     private GestorCartelera gestor;
     @Autowired
     private ProgramacionRepository programacionRepository;
 
-    /** El buzon del importador es otro gestor: mismo subdominio, otra responsabilidad. */
     @Autowired
     private GestorRevisionCartelera revision;
+    @Autowired
+    private SalaRepository salaRepository;
+    @Autowired
+    private DataSource dataSource;
+    @Autowired
+    private JdbcTemplate jdbc;
 
-    /** Una función de esa película dentro de una semana, que es lo que la pone en cartelera. */
+    private Sala sala;
+
     private void programarProxima(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().plusDays(7),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        programar(peliculaId, reloj.ahora().plusDays(7));
     }
 
     private void programarPasada(int peliculaId) {
-        funcionRepository.save(new Funcion(peliculaId, 1, LocalDateTime.now().minusDays(1),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        programar(peliculaId, reloj.ahora().minusDays(1));
+    }
+
+    // Por el repositorio: el gestor no deja programar una película sin confirmar.
+    private void programar(int peliculaId, LocalDateTime inicio) {
+        if (sala == null) {
+            sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
+        }
+        funcionRepository.save(new Funcion(peliculaRepository.findById(peliculaId).orElseThrow(), sala,
+                inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @Test
@@ -77,19 +97,45 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     void rechazaTituloRepetido() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP));
+    }
+
+    // R1: con espacios en los bordes seguiría siendo la misma película.
+    @Test
+    void elTituloRepetidoNoSeBurlaConEspacios() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        ConflictoDeNegocio alta = assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.agregar("  matrix ", 136, List.of(Genero.ACCION), Clasificacion.ATP));
+        ConflictoDeNegocio edicion = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula(" Matrix", null, null, null, null, null, null, null, null, null, null, null)));
+
+        assertEquals("Ya existe una película con ese título", alta.getMessage());
+        assertEquals("Ya existe una película con ese título", edicion.getMessage());
+        assertEquals(2, gestor.listar().size());
     }
 
     @Test
     void rechazaDuracionInvalida() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin duración", 0, List.of(Genero.DRAMA), Clasificacion.ATP));
+    }
+
+    // El mismo texto que el pedido HTTP: una duración que no vino falta, no es "cero".
+    @Test
+    void unaAltaSinDuracionDiceQueFalta() {
+        Rechazo error = assertThrows(Rechazo.class, () -> gestor.agregar(
+                new DatosPelicula("Dune", null, List.of(Genero.DRAMA), Clasificacion.ATP,
+                        null, null, null, null, null, null, null, null)));
+
+        assertEquals("Falta la duración", error.getMessage());
     }
 
     @Test
     void rechazaPeliculaSinGenero() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin género", 100, List.of(), Clasificacion.ATP));
     }
 
@@ -105,25 +151,40 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void elAnioVaDelCineAUnosAniosPorDelanteYCeroEsSinDato() {
+        DatosPelicula base = DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        Pelicula dune = gestor.agregar(base);
+
+        Rechazo negativo = assertThrows(Rechazo.class,
+                () -> gestor.editar(dune.getId(), conAnio(-3)));
+        assertEquals("El año tiene que estar entre 1895 y 2031", negativo.getMessage());
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
+        assertDoesNotThrow(() -> gestor.editar(dune.getId(), conAnio(0)));
+        assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getCatalogo().anio());
+    }
+
+    private static DatosPelicula conAnio(int anio) {
+        return new DatosPelicula(null, null, null, null, null, null, anio, null, null, null, null, null);
+    }
+
+    @Test
     void rechazaPeliculaSinClasificacion() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin clasificar", 100, List.of(Genero.DRAMA), null));
     }
 
     @Test
     void losDatosDeCatalogoSeCarganDespuesDelAlta() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        pelicula.setDirector("Denis Villeneuve");
-        pelicula.setAnio(2021);
-        pelicula.setIdiomaOriginal("Inglés");
-        gestor.actualizar(pelicula);
+        gestor.editar(pelicula.getId(), new DatosPelicula(null, null, null, null, "Denis Villeneuve",
+                null, 2021, "Inglés", null, null, null, null));
 
         Pelicula leida = gestor.buscar(pelicula.getId()).orElseThrow();
-        assertEquals("Denis Villeneuve", leida.getDirector());
-        assertEquals(2021, leida.getAnio());
+        assertEquals("Denis Villeneuve", leida.getCatalogo().director());
+        assertEquals(2021, leida.getCatalogo().anio());
     }
 
-    /** El flag sigue pudiendo bajar una película, aunque tenga funciones programadas. */
     @Test
     void laCarteleraExcluyeLasPeliculasDadasDeBaja() {
         Pelicula vieja = gestor.agregar("Titanic", 194, List.of(Genero.ROMANCE), Clasificacion.MAS_13);
@@ -131,24 +192,19 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarProxima(vieja.getId());
         programarProxima(actual.getId());
 
-        vieja.setEnCartelera(false);
-        gestor.actualizar(vieja);
+        sacarDeCartelera(vieja);
 
         assertEquals(2, gestor.listar().size());
-        assertEquals(1, gestor.listarEnCartelera().size());
-        assertEquals("Dune", gestor.listarEnCartelera().get(0).getTitulo());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
+        assertEquals("Dune", gestor.listarEnCartelera(null).get(0).getTitulo());
     }
 
-    /**
-     * Lo que antes había que declarar a mano: una película cargada pero sin funciones no
-     * está en cartelera, por más que el flag venga en true al darla de alta.
-     */
     @Test
     void unaPeliculaSinFuncionesNoEstaEnCartelera() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
         assertTrue(pelicula.estaEnCartelera(), "el flag arranca en true");
-        assertEquals(0, gestor.listarEnCartelera().size(), "pero sin funciones no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null).size(), "pero sin funciones no está en cartelera");
     }
 
     @Test
@@ -156,17 +212,16 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera().size());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
     }
 
-    /** El caso que el flag manual nunca resolvía: la última función ya pasó. */
     @Test
     void saleDeCarteleraSolaCuandoSusFuncionesQuedaronAtras() {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         programarPasada(pelicula.getId());
 
         assertTrue(pelicula.estaEnCartelera(), "nadie tocó el flag");
-        assertEquals(0, gestor.listarEnCartelera().size(), "y aun así ya no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null).size(), "y aun así ya no está en cartelera");
     }
 
     @Test
@@ -175,62 +230,89 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarPasada(pelicula.getId());
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera().size());
+        assertEquals(1, gestor.listarEnCartelera(null).size());
     }
 
-    /**
-     * R1 al editar. Hoy Pelicula no deja cambiar el título, pero quien reconstruya una
-     * película con un id existente —un adaptador HTTP, por ejemplo— sí podría duplicarlo.
-     */
+    // Si retuviera su conexión mientras extiende las grillas, pediría una segunda: con el pool
+    // entero pidiendo la cartelera a la vez, todos esperarían una que nadie suelta.
+    @Test
+    void laCarteleraPublicaSeArreglaConUnaSolaConexionLibre() throws Exception {
+        HikariDataSource pool = dataSource.unwrap(HikariDataSource.class);
+        List<Connection> tomadas = new ArrayList<>();
+        try (ExecutorService hilo = Executors.newSingleThreadExecutor()) {
+            try {
+                while (tomadas.size() < pool.getMaximumPoolSize() - 1) {
+                    tomadas.add(pool.getConnection());
+                }
+                Future<List<Pelicula>> cartelera = hilo.submit(() -> gestor.listarEnCartelera(null));
+
+                assertDoesNotThrow(() -> cartelera.get(5, TimeUnit.SECONDS));
+            } finally {
+                for (Connection conexion : tomadas) {
+                    conexion.close();
+                }
+            }
+        }
+    }
+
     @Test
     void noSePuedeEditarUnaPeliculaParaQueQuedeConElTituloDeOtra() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        dune.actualizar("Matrix", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        assertThrows(IllegalArgumentException.class, () -> gestor.actualizar(dune));
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
+                new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
     @Test
     void editarSinCambiarElTituloNoChocaConsigoMisma() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        dune.setDirector("Denis Villeneuve");
-
-        assertDoesNotThrow(() -> gestor.actualizar(dune));
+        assertDoesNotThrow(() -> gestor.editar(dune.getId(),
+                new DatosPelicula("Dune", null, null, null, "Denis Villeneuve", null, null, null, null, null, null, null)));
     }
 
-    /**
-     * La edición parcial vive en el gestor y no en cada interfaz: es lo que hace que
-     * editar por la web y editar por consola signifiquen lo mismo.
-     */
     @Test
     void editarSoloPisaLoQueVieneEnElPedido() {
         Pelicula dune = gestor.agregar(new DatosPelicula("Dune", 155,
                 List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13, "Denis Villeneuve",
-                "Arrakis", 2021, "Inglés", "dune.jpg", true, 8.1, 1200));
+                "Arrakis", 2021, "Inglés", "https://dune.jpg", true, 8.1, 1200));
 
-        gestor.editar(dune.getId(), DatosPelicula.deCatalogo(null, "Otra sinopsis", null, null, null));
+        gestor.editar(dune.getId(), new DatosPelicula(null, null, null, null,
+                null, "Otra sinopsis", null, null, null, null, null, null));
 
         Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
-        assertEquals("Otra sinopsis", leida.getSinopsis());
+        assertEquals("Otra sinopsis", leida.getCatalogo().sinopsis());
         assertEquals("Dune", leida.getTitulo());
         assertEquals(155, leida.getDuracionMinutos());
-        assertEquals("Denis Villeneuve", leida.getDirector());
-        assertEquals(2021, leida.getAnio());
+        assertEquals("Denis Villeneuve", leida.getCatalogo().director());
+        assertEquals(2021, leida.getCatalogo().anio());
         assertEquals(List.of(Genero.CIENCIA_FICCION), leida.getGeneros());
         assertEquals(Clasificacion.MAS_13, leida.getClasificacion());
+    }
+
+    // La columna admite NULL y una fila cargada por SQL puede tenerlo: editar otro dato no tiene que explotar.
+    @Test
+    void editarUnaPeliculaConLaSinopsisEnNullDejaElNull() {
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+        jdbc.update("UPDATE pelicula SET sinopsis = NULL WHERE id = ?", dune.getId());
+
+        Pelicula editada = gestor.editar(dune.getId(), new DatosPelicula(null, null, null, null,
+                "Denis Villeneuve", null, null, null, null, null, null, null));
+
+        assertEquals("Denis Villeneuve", editada.getCatalogo().director());
+        assertNull(editada.getCatalogo().sinopsis());
     }
 
     @Test
     void elAltaCompletaGuardaElCatalogoDeUnaSolaVez() {
         Pelicula matrix = gestor.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION),
-                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "matrix.jpg", false, 8.7, 4300));
+                Clasificacion.MAS_13, "Wachowski", "Un hacker", 1999, "Inglés", "https://matrix.jpg", false, 8.7, 4300));
 
         Pelicula leida = gestor.buscar(matrix.getId()).orElseThrow();
-        assertEquals("Wachowski", leida.getDirector());
-        assertEquals(1999, leida.getAnio());
+        assertEquals("Wachowski", leida.getCatalogo().director());
+        assertEquals(1999, leida.getCatalogo().anio());
         assertFalse(leida.estaEnCartelera());
-        assertTrue(gestor.listarEnCartelera().isEmpty());
+        assertTrue(gestor.listarEnCartelera(null).isEmpty());
     }
 
     @Test
@@ -238,25 +320,42 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("Matrix", null, null, null, null, null, null, null, null, null, null, null)));
     }
 
-    /** Una edición no es una puerta de atrás: valida con las mismas reglas que el alta. */
+    @Test
+    void editarRechazaPrimeroLosDatosDespuesElTituloRepetidoYAlFinalElCatalogoSinTocarNada() {
+        gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
+
+        Rechazo datos = assertThrows(Rechazo.class, () -> gestor.editar(
+                dune.getId(), new DatosPelicula("Matrix", 0, null, null, null, null, null, null, null, null, 15.0, null)));
+        ConflictoDeNegocio titulo = assertThrows(ConflictoDeNegocio.class, () -> gestor.editar(
+                dune.getId(), new DatosPelicula("Matrix", 150, null, null, null, null, null, null, null, null, 15.0, null)));
+
+        assertEquals("La duración tiene que estar entre 1 y 600 minutos", datos.getMessage());
+        assertEquals("Ya existe una película con ese título", titulo.getMessage());
+        Pelicula leida = gestor.buscar(dune.getId()).orElseThrow();
+        assertEquals("Dune", leida.getTitulo());
+        assertEquals(155, leida.getDuracionMinutos());
+    }
+
     @Test
     void editarNoDejaUnaPeliculaSinTituloNiConDuracionCero() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula("  ", null, null, null, null, null, null, null, null, null, null, null)));
-        assertThrows(IllegalArgumentException.class, () -> gestor.editar(dune.getId(),
+        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
                 new DatosPelicula(null, 0, null, null, null, null, null, null, null, null, null, null)));
     }
 
     @Test
     void editarUnaPeliculaInexistenteFalla() {
-        assertThrows(IllegalArgumentException.class,
-                () -> gestor.editar(99, DatosPelicula.deCatalogo("Alguien", null, null, null, null)));
+        assertThrows(Rechazo.class,
+                () -> gestor.editar(99, new DatosPelicula(null, null, null, null,
+                        "Alguien", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -264,37 +363,33 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
         gestor.agregar("Amelie", 122, List.of(Genero.ROMANCE), Clasificacion.ATP);
 
-        assertEquals(1, gestor.listarPorGenero(Genero.CIENCIA_FICCION).size());
-        assertEquals("Matrix", gestor.listarPorGenero(Genero.ACCION).get(0).getTitulo());
+        assertEquals(1, gestor.buscar(null, Genero.CIENCIA_FICCION, null).size());
+        assertEquals("Matrix", gestor.buscar(null, Genero.ACCION, null).get(0).getTitulo());
     }
 
-    /** Tres películas que se solapan en género y estado, para que ningún filtro sea trivial. */
     private void cargarCatalogo() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION, Genero.CIENCIA_FICCION), Clasificacion.ATP);
         gestor.agregar("Matrix Reloaded", 138, List.of(Genero.ACCION), Clasificacion.MAS_13);
         gestor.agregar("El Resplandor", 146, List.of(Genero.TERROR), Clasificacion.MAS_18);
     }
 
-    /** Sin criterios devuelve todo: es el estado inicial de la pantalla. */
-    @Test
-    void buscarSinCriteriosDevuelveTodo() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin criterios devuelve todo,                                     ,          ,                ,     3
+            un título vacío no filtra,                                       '',        ,                ,     3
+            el título es parcial,                                            matrix,    ,                ,     2
+            el título no distingue mayúsculas,                               MATRIX,    ,                ,     2
+            por una palabra del título,                                      reloaded,  ,                ,     1
+            por un pedazo del medio del título,                              esplandor, ,                ,     1
+            los criterios se combinan,                                       matrix,    CIENCIA_FICCION, true, 1
+            ninguna Matrix es de terror: combinar tiene que poder dar vacío, matrix,    TERROR,          ,     0
+            sin coincidencias devuelve vacío y no falla,                     titanic,   ,                ,     0
+            """)
+    void buscarFiltraPorTituloGeneroYEstado(String caso, String titulo, Genero genero, Boolean publicada,
+            int esperadas) {
         cargarCatalogo();
 
-        assertEquals(3, gestor.buscar(null, null, null).size());
-        // La cadena vacía es lo que manda un input sin tocar, y tiene que valer lo mismo.
-        assertEquals(3, gestor.buscar("", null, null).size());
-    }
-
-    /** Parcial y sin distinguir mayúsculas: nadie tipea el título exacto. */
-    @Test
-    void buscarPorTituloEsParcialYNoDistingueMayusculas() {
-        cargarCatalogo();
-
-        assertEquals(2, gestor.buscar("matrix", null, null).size());
-        assertEquals(2, gestor.buscar("MATRIX", null, null).size());
-        assertEquals(1, gestor.buscar("reloaded", null, null).size());
-        // También coincide en el medio del título, no solo al principio.
-        assertEquals(1, gestor.buscar("esplandor", null, null).size());
+        assertEquals(esperadas, gestor.buscar(titulo, genero, publicada).size(), caso);
     }
 
     @Test
@@ -305,29 +400,11 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(3, gestor.buscar(null, null, true).size(), "el alta las publica");
 
         Pelicula resplandor = gestor.buscar(3).orElseThrow();
-        resplandor.setEnCartelera(false);
-        gestor.actualizar(resplandor);
+        sacarDeCartelera(resplandor);
 
         assertEquals(2, gestor.buscar(null, null, true).size());
         assertEquals(1, gestor.buscar(null, null, false).size());
         assertEquals(3, gestor.buscar(null, null, null).size(), "null es todas, no ninguna");
-    }
-
-    /** Los criterios se acumulan: es un Y, no un O. */
-    @Test
-    void losCriteriosSeCombinan() {
-        cargarCatalogo();
-
-        assertEquals(1, gestor.buscar("matrix", Genero.CIENCIA_FICCION, true).size());
-        assertTrue(gestor.buscar("matrix", Genero.TERROR, null).isEmpty(),
-                "ninguna Matrix es de terror: combinar tiene que poder dar vacío");
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacioYNoFalla() {
-        cargarCatalogo();
-
-        assertTrue(gestor.buscar("titanic", null, null).isEmpty());
     }
 
     private DatosPelicula deTmdb(String titulo) {
@@ -351,6 +428,30 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 "una película que nadie confirmó no puede estar ofreciéndose al cliente");
     }
 
+    // El alta la construye publicada y confirmada; recién después el importador la deja pendiente.
+    @Test
+    void unaImportadaQueVieneMarcadaParaPublicarIgualQuedaPendiente() {
+        Pelicula pelicula = revision.importar(new DatosPelicula("Dune", 155, List.of(Genero.ACCION),
+                Clasificacion.ATP, null, null, null, null, null, true, null, null));
+
+        assertEquals(EstadoRevision.PENDIENTE, pelicula.getEstadoRevision());
+        assertFalse(pelicula.estaEnCartelera());
+    }
+
+    @Test
+    void publicarUnaPendienteSeRechazaYNoGuardaNada() {
+        Pelicula importada = revision.importar(deTmdb("Dune"));
+
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> gestor.editar(importada.getId(), new DatosPelicula(null, null, null, null,
+                        "Denis Villeneuve", null, null, null, null, true, null, null)));
+
+        assertEquals("La película Dune no está confirmada: revisala antes de publicarla", error.getMessage());
+        Pelicula leida = gestor.buscar(importada.getId()).orElseThrow();
+        assertFalse(leida.estaEnCartelera());
+        assertEquals("", leida.getCatalogo().director(), "el rechazo deshace también el resto del pedido");
+    }
+
     @Test
     void elBuzonSoloTraeLasPendientes() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -371,10 +472,6 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertTrue(revision.listarPendientes().isEmpty());
     }
 
-    /**
-     * Descartada no es borrada: tiene que quedar el registro de la decisión, o la próxima
-     * corrida del importador la traería de nuevo y habría que descartarla otra vez.
-     */
     @Test
     void descartarLaGuardaEnVezDeBorrarla() {
         Pelicula importada = revision.importar(deTmdb("Dune"));
@@ -392,7 +489,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         revision.confirmar(importada.getId());
         programarProxima(importada.getId());
 
-        assertThrows(IllegalArgumentException.class, () -> revision.descartar(importada.getId()));
+        assertThrows(Rechazo.class, () -> revision.descartar(importada.getId()));
     }
 
     @Test
@@ -411,27 +508,32 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("Matrix"), e.getMessage());
         assertEquals(1, gestor.listar().size());
     }
 
-    /** Sin funciones de por medio: la grilla sola ya alcanza para frenar el borrado. */
     @Test
     void noBorraLaProgramadaAunqueNoTengaFunciones() {
         Pelicula pelicula = gestor.agregar("La Odisea", 150, List.of(Genero.DRAMA),
                 Clasificacion.ATP);
-        programacionRepository.save(new Programacion(pelicula.getId(), 1,
-                LocalDate.now().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+        sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
+        programacionRepository.save(new Programacion(pelicula, sala,
+                reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
-        assertTrue(funcionRepository.findByPeliculaId(pelicula.getId()).isEmpty());
+        assertTrue(funcionRepository.findByPelicula_IdOrderByInicioAsc(pelicula.getId()).isEmpty());
         assertEquals(1, gestor.listar().size());
+    }
+
+    private void sacarDeCartelera(Pelicula pelicula) {
+        gestor.editar(pelicula.getId(), new DatosPelicula(null, null, null, null, null, null, null, null,
+                null, false, null, null));
     }
 }

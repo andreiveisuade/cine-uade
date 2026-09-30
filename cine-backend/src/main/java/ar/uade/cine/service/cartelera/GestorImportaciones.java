@@ -1,129 +1,53 @@
 package ar.uade.cine.service.cartelera;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
-import ar.uade.cine.model.cartelera.EstadoImportacion;
-import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
-import ar.uade.cine.repository.ImportacionRepository;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.repository.cartelera.ImportacionRepository;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 
-/**
- * Pedir cartelera nueva, ahora.
- *
- * <p>Hasta acá el importador corría solo cada seis horas y solo se lo podía adelantar desde
- * una terminal. Este gestor es la puerta para que el encargado lo pida desde el panel, que
- * es donde está parado cuando se da cuenta de que falta cartelera.
- *
- * <p><strong>No sabe qué es TMDB.</strong> Le pide candidatas a un {@link CatalogoExterno} y
- * las da de alta por {@link GestorRevisionCartelera}, o sea que entran al buzón pasando por
- * las mismas reglas que el alta a mano. De dónde salieron esas películas es problema del
- * adaptador; qué se hace con ellas, de este gestor.
- *
- * <p>La corrida vive acá y no del otro lado de la interfaz por una razón concreta: saltear lo
- * que ya está —comparando por título, que es lo que R1 hace único— es una regla del cine, no
- * una decisión del catálogo ajeno. Cuando el importador era un proceso Python aparte, esa
- * comparación estaba escrita por segunda vez allá, y las dos copias se podían separar sin que
- * nadie se enterara.
- *
- * <p>Es el vecino del buzón y no del catálogo por lo mismo que
- * {@link GestorRevisionCartelera} está separado de {@link GestorCartelera}: acá no se
- * administra qué películas hay, se administra de dónde vienen.
- */
-/*
- * Sin @Transactional a nivel de clase, a diferencia del resto de los gestores que escriben,
- * y no es un olvido: una corrida NO es una unidad atómica. Su razón de ser es justamente que
- * unas películas entren, otras se salteen y otras fallen, y que eso quede contado. Con una
- * transacción envolviendo todo, el `catch` que anota una película como fallida se encuentra
- * con que el alta ya marcó la transacción como rollback-only, y al terminar la corrida el
- * commit explota con UnexpectedRollbackException: no entra nada, ni siquiera el registro de
- * la corrida. Cada alta abre la suya —la de GestorRevisionCartelera— y falla sola.
- */
+// Corre el importador de TMDB y registra cada corrida; de a una por vez y con espera entre corridas.
+// Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción
+// rollback-only y se perdería la corrida entera, incluso el registro.
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class GestorImportaciones {
 
-    /** Cuántas corridas muestra la pantalla. El historial crece para siempre; la tabla no. */
     private static final int HISTORIAL = 20;
-
-    /** Una página de TMDB son veinte títulos. Más de tres es pedirle a un botón un trabajo
-     * de cron: tarda demasiado y trae cosas cada vez menos parecidas a la cartelera de hoy. */
-    private static final int PAGINAS_MAXIMAS = 3;
 
     private final ImportacionRepository importacionRepository;
     private final CatalogoExterno catalogo;
     private final GestorCartelera cartelera;
     private final GestorRevisionCartelera revision;
-    private final Duration corridaMaxima;
-    private final Duration esperaEntreCorridas;
+    private final PropiedadesImportador propiedades;
+    private final Reloj reloj;
 
-    /**
-     * Las dos duraciones salen de la configuración y no de constantes acá adentro para poder
-     * probarlas: esperar cinco minutos de reloj para ver que una corrida colgada caduca no es
-     * un test, es una siesta. El perfil de test las baja a cero y así puede usar este mismo
-     * bean, con su proxy transaccional puesto, en vez de armarse uno con {@code new}.
-     *
-     * @param corridaMaxima cuánto puede estar EN_CURSO antes de darla por perdida
-     * @param esperaEntreCorridas el mínimo entre dos corridas seguidas
-     */
-    public GestorImportaciones(ImportacionRepository importacionRepository, CatalogoExterno catalogo,
-                               GestorCartelera cartelera, GestorRevisionCartelera revision,
-                               @Value("${cine.importador.corrida-maxima}") Duration corridaMaxima,
-                               @Value("${cine.importador.espera-entre-corridas}") Duration esperaEntreCorridas) {
-        this.importacionRepository = importacionRepository;
-        this.catalogo = catalogo;
-        this.cartelera = cartelera;
-        this.revision = revision;
-        this.corridaMaxima = corridaMaxima;
-        this.esperaEntreCorridas = esperaEntreCorridas;
-    }
-
-    /**
-     * Corre una importación y vuelve cuando terminó.
-     *
-     * <p>Bloquea el hilo del pedido diez o quince segundos, que es lo que tardan las llamadas
-     * a TMDB. Es a propósito: el encargado está esperando la respuesta y devolverle un
-     * «después te aviso» obligaría a que el navegador pregunte cada dos segundos si ya
-     * terminó, o sea a inventar tráfico para simular una espera que ya existe.
-     *
-     * <p>Que el catálogo externo falle <strong>no</strong> hace fallar esto: la corrida queda
-     * registrada como FALLIDA con el motivo, que es un resultado y no un error del sistema.
-     * Lo único que tira es lo que el encargado puede corregir: pedir mal las páginas, o pedir
-     * una corrida cuando no corresponde.
-     *
-     * @param paginas cuántas páginas de TMDB traer, o {@code null} para una
-     */
     public Importacion ejecutar(Integer paginas) {
-        Importacion importacion = reservarTurno(validarPaginas(paginas));
+        Importacion importacion = reservarTurno(paginas);
         try {
             correr(importacion);
         } catch (ImportadorError e) {
-            importacion.fallar(e.getMessage(), LocalDateTime.now());
+            importacion.fallar(e.getMessage(), reloj.ahora());
         }
         importacionRepository.save(importacion);
         return importacion;
     }
 
-    /**
-     * La corrida: traer, saltear lo que ya está y mandar el resto al buzón.
-     *
-     * <p>Las altas van de a una y en orden, aunque las consultas a TMDB se hayan hecho en
-     * paralelo: son escrituras que pasan por R1 y dos hilos mandando el mismo título se
-     * pisarían contra el título único.
-     *
-     * <p>Una película que el alta rechaza no corta la corrida: queda anotada como fallida con
-     * el mensaje del gestor y se sigue con la siguiente. Una corrida que se cae a la mitad y
-     * deja medio trabajo hecho es peor que una que no corre.
-     */
     private void correr(Importacion importacion) {
         List<DatosPelicula> candidatas = catalogo.enCartelera(importacion.getPaginas());
         Set<String> yaEstan = titulosCargados();
@@ -133,9 +57,7 @@ public class GestorImportaciones {
         int fallidas = 0;
 
         for (DatosPelicula candidata : candidatas) {
-            // El mismo Set resuelve los dos casos: la película que ya está en el catálogo y la
-            // que TMDB trajo dos veces entre páginas. Sin lo segundo, el duplicado se mandaría
-            // igual y volvería rechazado por R1: contado como falla, cuando no lo es.
+            // También saltea lo que TMDB repite entre páginas; si no, R1 lo contaría como falla.
             String clave = clave(candidata.titulo());
             if (!clave.isEmpty() && !yaEstan.add(clave)) {
                 salteadas++;
@@ -146,133 +68,89 @@ public class GestorImportaciones {
                 detalle.append("+ [").append(creada.getId()).append("] ")
                         .append(creada.getTitulo()).append('\n');
                 nuevas++;
-            } catch (IllegalArgumentException e) {
-                // El alta la rechazó por una regla de negocio. No es un error del importador:
-                // es el sistema haciendo su trabajo, y queda registrado para poder mirarlo.
+            } catch (RuntimeException e) {
+                // Cualquier falla y no solo un Rechazo: un error de la base cortaba la corrida y la dejaba
+                // EN_CURSO, con el importador bloqueado hasta que caducara. Una candidata no frena a las demás.
                 detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
-                        .append(e.getMessage()).append('\n');
+                        .append(motivoDe(candidata, e)).append('\n');
                 fallidas++;
             }
         }
 
         importacion.terminar(nuevas, salteadas, fallidas,
-                detalle.isEmpty() ? null : detalle.toString().strip(), LocalDateTime.now());
+                detalle.isEmpty() ? null : detalle.toString().strip(), reloj.ahora());
     }
 
-    /**
-     * Los títulos que ya están, en minúscula y sin espacios de más.
-     *
-     * <p>Incluye a las descartadas a propósito: si no, la corrida siguiente volvería a
-     * proponer lo que el encargado ya rechazó y habría que descartarlo todas las veces.
-     * Descartar una vez alcanza.
-     */
+    // Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado.
     private Set<String> titulosCargados() {
         Set<String> titulos = new HashSet<>();
-        for (Pelicula pelicula : cartelera.listar()) {
-            titulos.add(clave(pelicula.getTitulo()));
+        for (String titulo : cartelera.titulos()) {
+            titulos.add(clave(titulo));
         }
         return titulos;
     }
 
     private static String clave(String titulo) {
-        return titulo == null ? "" : titulo.strip().toLowerCase();
+        return titulo == null ? "" : titulo.strip().toLowerCase(Locale.ROOT);
     }
 
-    /** Para el renglón del log: sin título, el alta la va a rechazar y hay que nombrarla igual. */
+    // El texto de un Rechazo es para el encargado; el de cualquier otra falla es técnico y va al log.
+    private static String motivoDe(DatosPelicula candidata, RuntimeException e) {
+        if (e instanceof Rechazo) {
+            return e.getMessage();
+        }
+        log.warn("El importador no pudo guardar «{}»", nombreDe(candidata), e);
+        return "No se pudo guardar: el motivo quedó en el log del servidor";
+    }
+
     private static String nombreDe(DatosPelicula candidata) {
         String titulo = candidata.titulo();
         return titulo == null || titulo.isBlank() ? "(sin título)" : titulo.strip();
     }
 
-    /**
-     * Deja anotado que esta corrida arrancó, si es que puede arrancar.
-     *
-     * <p>Está sincronizado y aparte del método de arriba por la misma razón: es lo único
-     * que dos pedidos simultáneos no pueden hacer a la vez. La corrida en sí queda afuera
-     * del candado porque dura quince segundos, y encerrarla haría que el segundo pedido
-     * esperara todo ese rato para recibir el rechazo que se merecía enseguida.
-     *
-     * <p>Alcanza con un candado porque hay un solo backend. Con dos haría falta que la
-     * exclusión la garantice la base, y MySQL no puede expresarla acá: sería un UNIQUE
-     * sobre "las filas EN_CURSO", que es un índice parcial y no existe.
-     */
-    private synchronized Importacion reservarTurno(int paginas) {
+    // Sincronizado y aparte de la corrida para rechazar el segundo pedido sin hacerlo esperar.
+    // Alcanza con un candado porque hay un solo backend. La corrida se arma primero: unas páginas
+    // fuera de rango se rechazan antes de mirar el historial, y no dejan registro.
+    private synchronized Importacion reservarTurno(Integer paginas) {
+        Importacion importacion = new Importacion(paginas, reloj.ahora());
         List<Importacion> ultimas = listar();
         if (!ultimas.isEmpty()) {
             exigirQueNoHayaOtraEnCurso(ultimas.get(0));
             exigirQueHayaPasadoUnRato(ultimas.get(0));
         }
-        Importacion importacion = new Importacion(paginas, LocalDateTime.now());
         importacionRepository.save(importacion);
         return importacion;
     }
 
     private static void exigirQueNoHayaOtraEnCurso(Importacion ultima) {
-        if (ultima.getEstado() == EstadoImportacion.EN_CURSO) {
-            throw new IllegalArgumentException(
+        if (ultima.estaEnCurso()) {
+            throw new DatoInvalido(
                     "Ya hay una importación en curso: esperá a que termine");
         }
     }
 
-    /**
-     * El botón está a un clic de distancia y cada corrida son sesenta llamadas a TMDB, que
-     * tiene cuota. Apretarlo dos veces seguidas no trae nada nuevo —la cartelera no cambió
-     * en veinte segundos— y sí gasta el doble.
-     */
     private void exigirQueHayaPasadoUnRato(Importacion ultima) {
-        LocalDateTime desde = ultima.getTerminoEn();
-        if (desde != null && desde.plus(esperaEntreCorridas).isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("El importador corrió recién: esperá "
-                    + esperaEntreCorridas.toSeconds() + " segundos antes de volver a pedirlo");
+        if (ultima.terminoHaceMenosDe(propiedades.esperaEntreCorridas(), reloj.ahora())) {
+            throw new DatoInvalido("El importador corrió recién: esperá "
+                    + propiedades.esperaEntreCorridas().toSeconds() + " segundos antes de volver a pedirlo");
         }
     }
 
-    /**
-     * Las últimas corridas, de la más nueva a la más vieja.
-     *
-     * <p>De paso da por perdidas las que quedaron EN_CURSO de más. Se hace acá, en la
-     * consulta, y no con un proceso de fondo: es el mismo criterio con el que
-     * {@link GestorCartelera#listarEnCartelera()} extiende las programaciones vencidas —el
-     * trabajo lo hace quien consulta—, y evita tener el único hilo de fondo del sistema
-     * para vigilar una fila que casi nunca existe.
-     *
-     * <p>Sin esto, un backend reiniciado a mitad de corrida dejaría una importación EN_CURSO
-     * para siempre, y con ella el sistema no aceptaría ninguna importación nueva nunca más.
-     */
+    // De paso caduca las EN_CURSO vencidas: si no, un reinicio a mitad de corrida bloquearía el importador.
     public List<Importacion> listar() {
         List<Importacion> ultimas = importacionRepository.findAllByOrderByIdDesc(Limit.of(HISTORIAL));
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = reloj.ahora();
         for (Importacion importacion : ultimas) {
-            if (quedoColgada(importacion, ahora)) {
-                importacion.fallar("La corrida no terminó a tiempo. Puede haber cargado "
-                        + "algunas películas igual: mirá el buzón.", ahora);
+            if (importacion.quedoColgada(propiedades.corridaMaxima(), ahora)) {
+                importacion.fallar("La corrida no terminó a tiempo: puede haber cargado "
+                        + "algunas películas igual, mirá el buzón", ahora);
                 importacionRepository.save(importacion);
             }
         }
         return ultimas;
     }
 
-    private boolean quedoColgada(Importacion importacion, LocalDateTime ahora) {
-        return importacion.getEstado() == EstadoImportacion.EN_CURSO
-                && importacion.getPedidaEn().plus(corridaMaxima).isBefore(ahora);
-    }
-
-    /**
-     * Si el catálogo externo está en condiciones de contestar. La pantalla lo pregunta al
-     * abrirse para poder avisar antes de que alguien apriete el botón y espere en vano.
-     */
     public CatalogoExterno.Estado estadoDelImportador() {
         return catalogo.consultar();
-    }
-
-    private static int validarPaginas(Integer paginas) {
-        if (paginas == null) {
-            return 1;
-        }
-        if (paginas < 1 || paginas > PAGINAS_MAXIMAS) {
-            throw new IllegalArgumentException(
-                    "Las páginas a importar van de 1 a " + PAGINAS_MAXIMAS);
-        }
-        return paginas;
     }
 }

@@ -1,0 +1,40 @@
+@startuml precio-entrada
+title El precio: cada parte la aplica quien la conoce
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+hide footbox
+
+participant "GestorReservas" as GR
+participant "Funcion" as F <<Entity>>
+participant "TipoSala /\nTipoAsiento" as TS <<enum>>
+participant "Entrada" as E <<Entity>>
+participant "TipoTarifa" as TT <<enum>>
+participant "GestorPagos" as GP
+participant "GestorPromociones" as PR
+participant "Promocion" as P <<Entity>>
+
+== Al reservar ==
+GR -> F : precioDe(asiento, sala)
+activate F
+F -> TS : sala.aplicarA(base)\n(precioEn: el "desde" de la cartelera)
+F -> TS : asiento.aplicarA(...)\n(lo que muestra el mapa)
+F --> GR : precio de la butaca
+deactivate F
+GR -> E : new Entrada(asiento, tarifa, precio)
+activate E
+E -> TT : aplicarA(precio)
+E --> GR : precio de la entrada (por persona)
+deactivate E
+
+== Al cobrar (recien ahi se sabe el medio) ==
+GP -> PR : calcularPara(entradas, inicio, medio)
+activate PR
+PR -> PR : R16: solo entradas cuya tarifa\nparticipaDePromociones
+loop cada promocion activa que aplicaA(inicio, medio)
+  PR -> P : calcularDescuento(entradas)
+end
+PR --> GP : R15: la de mayor descuento\n(empate: menor id), una sola
+deactivate PR
+GP -> GP : Pago = subtotal - descuento
+@enduml

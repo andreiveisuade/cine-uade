@@ -1,103 +1,44 @@
-# Cine UADE — frontend
+# cine-frontend
 
-Interfaz web del sistema de salas de cine de Aplicaciones Interactivas.
-HTML + JavaScript + Tailwind, sin framework ni build step.
+Venta web al cliente, sin login: cartelera, butacas, confirmación, ticket y mis reservas. React 19, React
+Router y Mantine, compilado con Vite y servido por nginx. El encargado usa [`cine-swing`](../cine-swing/README.md).
 
-Es una de las tres carpetas del monorepo:
+## Correrlo
 
-```
-cine-uade/
-├── cine-backend/    Java 21 + Spring Boot + Spring Data JPA + MySQL
-├── cine-frontend/   esta carpeta
-└── cine-docker/     el compose que levanta todo
-```
-
-## Cómo correrlo
-
-Con los contenedores, desde `cine-docker`:
+Con el sistema levantado ([`cine-docker`](../cine-docker/README.md)) y Node 20.19 o superior:
 
 ```sh
-docker compose up -d
-open http://localhost:8080
+npm install
+npm run dev        # localhost:5173, con recarga; Vite reenvía /api al 8080
+npm run build      # compila a dist/; es el único chequeo, no hay tests
 ```
 
-- `index.html` — cliente, sin login: cartelera, funciones, butacas, reserva y ticket.
-- `admin.html` — encargado, con login: películas, salas, funciones, grillas, el
-  planificador de la semana, reservas, cobro, informes por función y caja.
-
-Credenciales de prueba del encargado: `encargado@cine.uade.ar` / `cine2026`.
-
-Después de tocar el código hay que rebuildear la imagen. Con `--no-deps`, para que
-Compose no recree también MySQL y el backend:
-
-```sh
-docker compose up -d --build --no-deps frontend
-```
-
-## De dónde salen los datos
-
-Todo el acceso a datos pasa por `js/api.js`, que reexporta `js/api-http.js`: la
-implementación contra la API REST del backend.
-
-El contrato de los endpoints está en [API.md](API.md).
-
-Para desarrollar hace falta el backend levantado (`docker compose up` en
-`../cine-docker`): `python3 -m http.server` no alcanza, porque `/api` lo resuelve nginx
-como reverse proxy hacia el backend por la red interna, y por eso el front no conoce ni
-el host ni el puerto del backend, y no hace falta CORS.
+Tras tocar el front, para verlo en el 8080: `docker compose up -d --build --no-deps frontend` desde `cine-docker`.
 
 ## Estructura
 
 ```
-index.html        cliente
-admin.html        encargado
-Dockerfile        nginx unprivileged
-nginx.conf        estáticos + reverse proxy de /api
+nginx.conf        estáticos + proxy de /api y Swagger
 API.md            contrato con el backend
-js/
-  api.js          reexporta api-http.js
-  api-http.js     implementación contra la API REST
-  router.js       ruteo por hash (#/pelicula/3)
-  theme.js        toggle claro/oscuro, persistido en localStorage
-  butacas.js      dibujo del mapa de la sala, compartido por cliente y encargado
-  componentes.js  piezas de HTML reutilizables (campo, panel, tabla, botón...)
-  etiquetas.js    traducción de los enums del dominio a texto legible
-  formato.js      formateo de plata, fecha y hora
-  dom.js          escapado, avisos por pantalla y el resto del contacto con el DOM
-  cliente.js      mapa de rutas del cliente
-  admin.js        mapa de rutas del encargado + guardia por rol
-  cliente/        una vista por archivo: cartelera, pelicula, funcion, compra,
-                  confirmar, ticket, mis-reservas, registro
-  admin/          una vista por archivo: peliculas, salas, funciones, funcion,
-                  agenda, programaciones, planificador, promociones, reservas,
-                  caja, puerta, importador, pendientes, login, sesion
+src/
+  api/            api-http.js (único acceso a la API), etiquetas.js, formato.js
+  componentes/    useCargar, MapaButacas, Poster, Avisos…
+  cliente/        AppCliente.jsx (rutas) + una pantalla por archivo
 ```
 
-Cada vista es una funcion `async (contenedor, ...params)` registrada en el mapa de
-`cliente.js` / `admin.js`. Agregar una pantalla es agregar un archivo y una linea en ese
-mapa: los modulos no se conocen entre si.
+Una pantalla nueva es un componente en `cliente/` más su `<Route>` en `AppCliente.jsx`. Una operación nueva
+va en `api-http.js` y en `API.md`.
 
-## Dos cosas del dominio que el front respeta
+## Lo que el front respeta
 
-**Una butaca no está ocupada en sí misma**: lo está *en una función*, si alguna reserva
-no cancelada de esa función la tomó. *Fuera de servicio*, en cambio, le pertenece al
-asiento y vale para todas las funciones. Por eso el mapa recibe `ocupado` y `estado`
-como campos separados, y los pinta distinto.
+- El precio, el descuento y las reglas los resuelve el backend; su `{error}` se muestra tal cual.
+- Los enums viajan con el nombre de la constante y `etiquetas.js` los traduce.
+- Las butacas elegidas quedan bloqueadas 3 minutos y se renuevan cada minuto. `sessionStorage` guarda solo
+  el id de compra.
+- A una reserva se llega solo con el código de acceso: el email no prueba ser el dueño.
 
-**Una sala no es un rectángulo**: `butacasPorFila` dice cuántas butacas tiene cada fila,
-así que `[8,10,12,12,14]` es una sala en cuña. El mapa se dibuja fila por fila con esa
-lista, no con un ancho fijo.
+## nginx
 
-El precio de cada butaca sale de
-`precio base de la función × multiplicador de sala × multiplicador de butaca`, y lo
-calcula el backend: el front nunca lo recalcula, solo lo muestra.
-
-## Estado
-
-Cubre todos los casos de uso del manual **menos el candy** (CU-13 a CU-16): la API ya
-sirve la carta, los combos y las ventas, y ninguna pantalla las consume todavia. Es la
-unica deuda de este tipo que queda.
-
-Con pantalla y andando: el armado automatico de la grilla (`#/planificador`), la agenda
-(`#/agenda`), el bordero del INCAA y el informe por funcion (`#/funcion/{id}`), el cobro
-por checkout de la pasarela y la validacion de entradas en la puerta (`#/puerta`).
+Es el único puerto que sale del compose. Acepta cuerpos de hasta 1 MB y contesta sus propios 413, 502 y 504
+como `{"error": "…"}`, así los clientes los muestran igual que los del backend. `/api` corta a los 30 s;
+`/api/importaciones`, que espera a TMDB, a los 180 s.

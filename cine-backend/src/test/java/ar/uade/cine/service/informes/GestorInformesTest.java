@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -17,46 +15,34 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorBorderoTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorReciboTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
-import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
+import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.promociones.CondicionesPromocion;
+import ar.uade.cine.model.promociones.ParametrosPromocion;
+import ar.uade.cine.model.promociones.TipoPromocion;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
-import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
-import ar.uade.cine.infrastructure.bloqueos.BloqueoButacasMemoria;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
-import ar.uade.cine.service.programaciones.GestorProgramaciones;
+import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.promociones.GestorPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
-import ar.uade.cine.service.ventas.CalculadoraPrecio;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.ventas.Ocupacion;
-import ar.uade.cine.service.informes.GestorCaja;
-import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * El borderó del INCAA y el informe financiero de una función. Las dos preguntas se
- * responden con lo <strong>cobrado</strong>, y casi todos los casos de borde de acá son
- * plata que parece de la función y no lo es.
- */
 class GestorInformesTest extends PruebaDeIntegracion {
-
-    private static final Path DIRECTORIO_INFORMES = Path.of("target/comprobantes/informes");
 
     @Autowired
     private GestorReservas reservas;
@@ -81,7 +67,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorClientes clientes;
 
-    /** Dos funciones de Matrix en la misma sala 2D de 10 butacas, a $5000, y un cliente. */
     @BeforeEach
     void prepararEscenario() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -102,11 +87,10 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), bordero.funcion());
     }
 
-    /** Lo que se declara es lo que se cobró: una reserva sin pagar no vendió ninguna entrada. */
     @Test
     void elBorderoNoCuentaLasReservasSinPagar() {
-        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL));
+        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL), null);
         pagos.cobrar(cobrada.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -117,8 +101,8 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void elBorderoNoCuentaLasEntradasDeOtraFuncion() {
-        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        Reserva otraFuncion = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        Reserva otraFuncion = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
         pagos.cobrar(otraFuncion.getId(), MedioPago.EFECTIVO, "");
 
@@ -126,14 +110,13 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(1, informes.borderoDe(2).espectadores());
     }
 
-    /** El desglose por tarifa es lo que el organismo mira: qué se vendió a precio reducido. */
     @Test
     void elBorderoDesglosaCuantasEntradasSalieronACadaTarifa() {
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.GENERAL);
         pedido.put("A3", TipoTarifa.JUBILADO);
-        Reserva reserva = reservas.reservar(1, 1, pedido);
+        Reserva reserva = reservas.reservar(1, 1, pedido, null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -142,22 +125,16 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(2, bordero.porTarifa().get(TipoTarifa.GENERAL).cantidad());
         assertEquals(Dinero.de(10000.0), bordero.porTarifa().get(TipoTarifa.GENERAL).total());
         assertEquals(1, bordero.porTarifa().get(TipoTarifa.JUBILADO).cantidad());
-        // La jubilada sale la mitad, y por eso el promedio por espectador no alcanza para
-        // reconstruir este desglose.
         assertEquals(Dinero.de(2500.0), bordero.porTarifa().get(TipoTarifa.JUBILADO).total());
         assertEquals(Dinero.de(12500.0), bordero.recaudacionBruta());
     }
 
-    /**
-     * El bruto es a precio de lista y el neto lo que entró: la promoción es un descuento
-     * comercial del cine y no cambia el valor declarado de la localidad.
-     */
     @Test
     void elBorderoSeparaElBrutoDelDescuentoYDelNeto() {
-        promociones.crearPorcentaje("50 off", 50,
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of());
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Bordero bordero = informes.borderoDe(1);
@@ -167,7 +144,6 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(2500.0), bordero.recaudacionNeta());
     }
 
-    /** Una función que no vendió nada se declara igual: cero también es una declaración. */
     @Test
     void elBorderoDeUnaFuncionSinVentasDaEnCero() {
         Bordero bordero = informes.borderoDe(1);
@@ -180,47 +156,16 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void noHayBorderoDeUnaFuncionQueNoExiste() {
-        assertThrows(IllegalArgumentException.class, () -> informes.borderoDe(99));
-    }
-
-    @Test
-    void exportarEscribeElArchivoQueSeSubeAlIncaa() {
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-
-        informes.exportarBordero(1);
-
-        Path archivo = DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt");
-        assertTrue(Files.exists(archivo));
-        String texto = leer(archivo);
-        assertTrue(texto.contains("Matrix"));
-        assertTrue(texto.contains("Sala 1"));
-        assertTrue(texto.contains("GENERAL"));
-        assertTrue(texto.contains("5000.00"));
-    }
-
-    /** El borderó de una función es uno solo: el último emitido pisa al anterior. */
-    @Test
-    void volverAExportarActualizaElMismoArchivo() {
-        Reserva primera = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
-        pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
-        informes.exportarBordero(1);
-
-        Reserva segunda = reservas.reservar(1, 1, butacas("A2", TipoTarifa.GENERAL));
-        pagos.cobrar(segunda.getId(), MedioPago.EFECTIVO, "");
-        Bordero bordero = informes.exportarBordero(1);
-
-        assertEquals(2, bordero.espectadores());
-        assertTrue(leer(DIRECTORIO_INFORMES.resolve("bordero-funcion-1.txt")).contains("10000.00"));
+        assertThrows(Rechazo.class, () -> informes.borderoDe(99));
     }
 
     @Test
     void elInformeSumaLasEntradasYElCandyDeLaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-        candy.venderParaReserva(reserva.getId(), Map.of(pochoclos.getId(), 2),
+        candy.venderParaReserva(reserva.getId(), null, Map.of(pochoclos.getId(), 2),
                 MedioPago.EFECTIVO, "");
 
         InformeFuncion informe = informes.informeDe(1);
@@ -231,17 +176,11 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(11000.0), informe.total());
     }
 
-    /**
-     * La venta de mostrador no se atribuye a ninguna función: quien compra un balde puede
-     * estar yendo a cualquiera de las funciones de esa hora, o a ninguna. Esa plata se
-     * cuenta en el arqueo del día del candy, que acá se chequea justamente para dejar claro
-     * que no se pierde: queda afuera del informe, no del sistema.
-     */
     @Test
     void elCandyDeMostradorNoEntraEnElInformeDeNingunaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         candy.vender(null, Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, "");
 
@@ -250,27 +189,25 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(0, informe.comprasCandy());
         assertEquals(Dinero.de(0), informe.candy());
         assertEquals(Dinero.de(5000.0), informe.total());
-        assertEquals(Dinero.de(3000.0), caja.totalCandyDe(LocalDate.now()));
+        assertEquals(Dinero.de(3000.0), caja.arqueoCandyDe(reloj.hoy()).total());
     }
 
-    /** El candy de la función de al lado tampoco: se atribuye por la reserva, no por el día. */
     @Test
     void elCandyDeOtraFuncionNoEntraEnEsteInforme() {
         Producto pochoclos = productos.agregar("Pochoclos",
                 TipoProducto.POCHOCLOS, Dinero.de(3000));
-        Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(deLaOtra.getId(), MedioPago.EFECTIVO, "");
-        candy.venderParaReserva(deLaOtra.getId(), Map.of(pochoclos.getId(), 1),
+        candy.venderParaReserva(deLaOtra.getId(), null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 
         assertEquals(Dinero.de(0), informes.informeDe(1).candy());
         assertEquals(Dinero.de(3000.0), informes.informeDe(2).candy());
     }
 
-    /** Sin candy, el informe es el neto del borderó y no otro número. */
     @Test
     void unaFuncionSinCandyRecaudaLoMismoQueSuBordero() {
-        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL));
+        Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         InformeFuncion informe = informes.informeDe(1);
@@ -278,15 +215,127 @@ class GestorInformesTest extends PruebaDeIntegracion {
         assertEquals(informe.bordero().recaudacionNeta(), informe.total());
     }
 
-    private static Map<String, TipoTarifa> butacas(String codigo, TipoTarifa tarifa) {
-        return Map.of(codigo, tarifa);
+    @Test
+    void sinFechasLaDeclaracionEsLaSemanaCinematograficaAnteriorDeJuevesAMiercoles() {
+        reloj.mover(LocalDateTime.of(2026, 8, 28, 10, 0));
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(null, null);
+
+        assertEquals(LocalDate.of(2026, 8, 20), declaracion.desde());
+        assertEquals(LocalDate.of(2026, 8, 26), declaracion.hasta());
     }
 
-    private static String leer(Path archivo) {
-        try {
-            return Files.readString(archivo);
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("No se pudo leer " + archivo, e);
-        }
+    @Test
+    void unJuevesLaSemanaAnteriorEsLaQueTerminoAyer() {
+        reloj.mover(LocalDateTime.of(2026, 8, 27, 10, 0));
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(null, null);
+
+        assertEquals(LocalDate.of(2026, 8, 20), declaracion.desde());
+        assertEquals(LocalDate.of(2026, 8, 26), declaracion.hasta());
+    }
+
+    @Test
+    void laDeclaracionSoloTraeLasFuncionesDelPeriodoConEntradasCobradas() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 27, 20, 0),
+                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+        Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        Reserva fueraDelPeriodo = reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL), null);
+        pagos.cobrar(cobrada.getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(fueraDelPeriodo.getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertEquals(1, declaracion.funciones().size());
+        assertEquals(1, declaracion.funciones().get(0).bordero().funcionId());
+        assertEquals(1, declaracion.total().espectadores());
+    }
+
+    @Test
+    void cadaFilaDeLaDeclaracionEsElBorderoDeSuFuncion() {
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()));
+        Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
+        pedido.put("A1", TipoTarifa.GENERAL);
+        pedido.put("A2", TipoTarifa.JUBILADO);
+        Reserva reserva = reservas.reservar(1, 1, pedido, null);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada.FilaFuncion fila = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 20)).funciones().get(0);
+
+        assertEquals(informes.borderoDe(1), fila.bordero());
+        assertEquals(Version.DOBLADA, fila.version());
+        assertEquals(Proyeccion.DOS_D, fila.proyeccion());
+        assertEquals(Clasificacion.MAS_13, fila.clasificacion());
+    }
+
+    @Test
+    void laDeclaracionTotalizaPorPeliculaYEnGeneral() {
+        cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4000));
+        Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
+        pedido.put("A1", TipoTarifa.GENERAL);
+        pedido.put("A2", TipoTarifa.MENOR);
+        pagos.cobrar(reservas.reservar(1, 1, pedido, null).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null).getId(), MedioPago.EFECTIVO, "");
+        pagos.cobrar(reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL), null).getId(), MedioPago.EFECTIVO, "");
+
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertEquals(List.of("Dune", "Matrix"),
+                declaracion.peliculas().stream().map(DeclaracionJurada.TotalPelicula::titulo).toList());
+        DeclaracionJurada.Totales matrix = declaracion.peliculas().get(1).totales();
+        assertEquals(2, matrix.funciones());
+        assertEquals(3, matrix.espectadores());
+        assertEquals(2, matrix.entradas(TipoTarifa.GENERAL));
+        assertEquals(1, matrix.entradas(TipoTarifa.MENOR));
+        assertEquals(Dinero.de(13000.0), matrix.recaudacionNeta());
+        DeclaracionJurada.Totales total = declaracion.total();
+        assertEquals(3, total.funciones());
+        assertEquals(4, total.espectadores());
+        assertEquals(Dinero.de(17000.0), total.recaudacionBruta());
+    }
+
+    @Test
+    void unPeriodoSinVentasDaUnaDeclaracionEnCero() {
+        DeclaracionJurada declaracion = informes.declaracionJurada(
+                LocalDate.of(2026, 8, 20), LocalDate.of(2026, 8, 26));
+
+        assertTrue(declaracion.funciones().isEmpty());
+        assertTrue(declaracion.peliculas().isEmpty());
+        assertEquals(0, declaracion.total().espectadores());
+        assertEquals(Dinero.CERO, declaracion.total().recaudacionNeta());
+    }
+
+    @Test
+    void laDeclaracionRechazaUnPeriodoAlReves() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 26), LocalDate.of(2026, 8, 20)));
+
+        assertEquals("El período tiene que empezar antes de terminar", error.getMessage());
+    }
+
+    @Test
+    void laDeclaracionRechazaUnPeriodoDeMasDeUnMes() {
+        assertThrows(Rechazo.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)));
+        assertEquals(LocalDate.of(2026, 8, 31), informes.declaracionJurada(
+                LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)).hasta());
+    }
+
+    @Test
+    void laDeclaracionPideLasDosFechasONinguna() {
+        assertThrows(Rechazo.class,
+                () -> informes.declaracionJurada(LocalDate.of(2026, 8, 20), null));
+    }
+
+    private static Map<String, TipoTarifa> butacas(String codigo, TipoTarifa tarifa) {
+        return Map.of(codigo, tarifa);
     }
 }

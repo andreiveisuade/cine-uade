@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -24,18 +27,6 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-/**
- * El cliente de TMDB, contra un servidor de mentira que contesta lo que el test quiera.
- *
- * <p>Es la única pieza del circuito que los tests de ruta no ven: {@code ApiEnMemoria} usa un
- * {@code CatalogoDePrueba} y nunca sale por HTTP. Lo que se prueba acá es que las tres
- * llamadas se compongan bien y que un error de TMDB se convierta en un mensaje que se le
- * pueda mostrar al encargado.
- *
- * <p>Con {@code com.sun.net.httpserver} del JDK y no con un mock de {@code HttpClient}: así se
- * ejerce el pedido de verdad, códigos de estado incluidos. Puerto 0, que lo elige el sistema
- * operativo, por lo mismo que {@code ApiEnMemoria}.
- */
 class TmdbHttpTest {
 
     private HttpServer servidor;
@@ -72,12 +63,10 @@ class TmdbHttpTest {
         assertEquals("Duna", duna.titulo());
         assertEquals(166, duna.duracionMinutos());
         assertEquals(List.of(Genero.CIENCIA_FICCION), duna.generos());
-        // La argentina, no la primera que aparezca: PG-13 es de Estados Unidos.
         assertEquals(Clasificacion.MAS_13, duna.clasificacion());
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", duna.posterUrl());
     }
 
-    /** El idioma va en toda llamada: es lo que hace que los géneros vuelvan en castellano. */
     @Test
     void elIdiomaYLaRegionViajanEnLaConsulta() {
         StringBuilder recibido = new StringBuilder();
@@ -92,11 +81,6 @@ class TmdbHttpTest {
         assertTrue(recibido.toString().contains("region=AR"), recibido.toString());
     }
 
-    /**
-     * Si TMDB falla en una película puntual, la película sale igual y sin duración: el alta la
-     * va a rechazar y va a quedar nombrada en el detalle, en vez de desaparecer del reporte y
-     * dejar al encargado creyendo que TMDB trajo menos títulos de los que trajo.
-     */
     @Test
     void unErrorEnUnaPeliculaNoTiraLaCorrida() {
         levantar(intercambio -> {
@@ -115,7 +99,6 @@ class TmdbHttpTest {
         assertEquals(0, peliculas.get(0).duracionMinutos());
     }
 
-    /** Que el listado entero falle sí es una corrida fallida, y el mensaje se le muestra. */
     @Test
     void elTokenRechazadoSeDiceConLoQueHayQueHacer() {
         levantar(intercambio -> responder(intercambio, 401, "{}"));
@@ -131,8 +114,41 @@ class TmdbHttpTest {
         TmdbHttp sinToken = new TmdbHttp(null, "AR", direccion());
 
         assertFalse(sinToken.consultar().disponible());
-        assertTrue(assertThrows(ImportadorError.class, () -> sinToken.enCartelera(1))
-                .getMessage().startsWith("Falta el token de TMDB"));
+        assertEquals("Falta el token de TMDB: sacalo gratis en themoviedb.org/settings/api y cargalo en "
+                + "TMDB_TOKEN, en el .env del compose",
+                assertThrows(ImportadorError.class, () -> sinToken.enCartelera(1)).getMessage());
+    }
+
+    // El texto queda en el detalle de la corrida y Swing lo muestra: sin red, el de Java era "null".
+    @Test
+    void sinConexionLoDiceEnEspanolYNoConElTextoDeJava() throws IOException {
+        int puertoSinNadie;
+        try (ServerSocket libre = new ServerSocket(0)) {
+            puertoSinNadie = libre.getLocalPort();
+        }
+
+        ImportadorError error = assertThrows(ImportadorError.class,
+                () -> new TmdbHttp("un-token", "AR", "http://localhost:" + puertoSinNadie).enCartelera(1));
+
+        assertEquals("No se pudo llegar a TMDB: revisá la conexión a internet", error.getMessage());
+    }
+
+    @Test
+    void unErrorDeTmdbNoMuestraLaRutaQueSePidio() {
+        levantar(intercambio -> responder(intercambio, 503, "{}"));
+
+        ImportadorError error = assertThrows(ImportadorError.class, () -> catalogo().enCartelera(1));
+
+        assertEquals("TMDB respondió con un error: probá de nuevo en un rato", error.getMessage());
+    }
+
+    @Test
+    void unaFallaInesperadaAlCompletarNoMuestraLaClaseDeJava() {
+        List<Future<DatosPelicula>> pedidos = List.of(CompletableFuture.failedFuture(new IllegalStateException()));
+
+        ImportadorError error = assertThrows(ImportadorError.class, () -> TmdbHttp.esperar(pedidos));
+
+        assertEquals("El importador falló por un error inesperado: probá de nuevo en un rato", error.getMessage());
     }
 
     @Test

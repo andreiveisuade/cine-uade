@@ -1,0 +1,26 @@
+@startuml validacion-capas
+title Donde se valida cada cosa: cada capa con lo suyo, una sola copia de cada regla
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 230
+
+participant "Cliente\n(Swing / web)" as Cliente
+participant "Controller\n+ Pedido*DTO" as DTO
+participant "Gestor*" as Gestor
+participant "Entidad o\nValue Object" as Entidad
+participant "Validador<Entidad>\n(guardas de Regla)" as Validador
+database "MySQL" as DB
+
+Cliente -> Cliente : formato y obligatoriedad\n(ninguna regla)
+Cliente -> DTO : JSON
+DTO -> DTO : @Valid: solo presencia\n"Falta X" -> 400
+DTO -> Gestor : operacion
+Gestor -> Gestor : lo que pide la base\n(R3, R4, R12, repetidos) -> 400/409
+Gestor -> Entidad : new / metodo con intencion\n(con la hora del Reloj si la regla la mira)
+Entidad -> Validador : sus datos (Experto)
+Validador --> Entidad : dato limpio, o DatoInvalido (400)
+Entidad -> Entidad : asigna recien con todo validado
+Gestor -> DB : save
+DB -> DB : UNIQUE, NOT NULL, largo de columna\n(la red contra carreras)
+
+@enduml

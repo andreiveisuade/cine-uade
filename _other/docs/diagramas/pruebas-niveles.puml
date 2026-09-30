@@ -1,0 +1,38 @@
+@startuml pruebas-niveles
+title Pruebas del backend: que levanta cada nivel
+
+skinparam classAttributeIconSize 0
+skinparam nodesep 18
+skinparam ranksep 34
+hide empty members
+
+package "Unitarias (sin Spring)" {
+  class "PeliculaTest, DineroTest,\nEstadoReservaTest..." as Unitarias
+  class "Entidades, estados\ny Value Objects" as Modelo
+  Unitarias ..> Modelo : new
+}
+
+package "Integracion y sistema (perfil test)" {
+  abstract class PruebaDeIntegracion <<@SpringBootTest>> {
+    -- el sistema armado --
+  }
+  abstract class PruebaDeApi <<@SpringBootTest(RANDOM_PORT)>> {
+    -- la API en un puerto libre --
+  }
+  class "Gestor*Test\nVistas*Test" as Integracion
+  class "*ControllerTest\nSeguridadTest" as Sistema
+  PruebaDeIntegracion <|-- Integracion
+  PruebaDeApi <|-- Sistema
+
+  class "H2 modo MySQL\ncon el schema.sql real" as H2 <<base>>
+  class ConfiguracionDePrueba <<@Profile("test")>> {
+    RelojMovible : arranca 14/08/2026
+    CatalogoDePrueba : TMDB falso
+  }
+  PruebaDeIntegracion ..> H2
+  PruebaDeApi ..> H2
+  PruebaDeIntegracion ..> ConfiguracionDePrueba
+  PruebaDeApi ..> ConfiguracionDePrueba
+}
+
+@enduml

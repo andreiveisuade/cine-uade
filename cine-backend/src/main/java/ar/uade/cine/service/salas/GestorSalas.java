@@ -1,158 +1,137 @@
 package ar.uade.cine.service.salas;
 
-import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.EstadoAsiento;
-import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
-import ar.uade.cine.repository.AsientoRepository;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.SalaRepository;
+import ar.uade.cine.repository.salas.AsientoRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-/**
- * Reglas de negocio de salas y butacas. Depende de SalaRepository y AsientoRepository por interfaz,
- * y de FuncionRepository solo para R12 (no borrar una sala con funciones programadas).
- */
+// ABM de salas y sus butacas (R9, R12); la sala valida y crea sus butacas, el gestor consulta la base.
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorSalas {
-
-    private static final int MAX_FILAS = 26;
 
     private final SalaRepository salaRepository;
     private final AsientoRepository asientoRepository;
     private final FuncionRepository funcionRepository;
-
-    public GestorSalas(SalaRepository salaRepository, AsientoRepository asientoRepository, FuncionRepository funcionRepository) {
-        this.salaRepository = salaRepository;
-        this.asientoRepository = asientoRepository;
-        this.funcionRepository = funcionRepository;
-    }
+    private final ProgramacionRepository programacionRepository;
 
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila) {
-        return agregar(nombre, tipo, butacasPorFila, Map.of());
+        return agregar(nombre, tipo, butacasPorFila, Map.of(), Sala.LIMPIEZA_POR_DEFECTO);
     }
 
+    // Una butaca especial por código, para cargar una sala a mano: así no hay dos listas que la repitan.
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<String, TipoAsiento> especiales) {
-        return agregar(nombre, tipo, butacasPorFila, especiales, Sala.LIMPIEZA_POR_DEFECTO);
+        Map<TipoAsiento, List<String>> porTipo = especiales.entrySet().stream()
+                .collect(Collectors.groupingBy(Map.Entry::getValue,
+                        () -> new EnumMap<>(TipoAsiento.class),
+                        Collectors.mapping(Map.Entry::getKey, Collectors.toList())));
+        return agregar(nombre, tipo, butacasPorFila, porTipo, Sala.LIMPIEZA_POR_DEFECTO);
     }
 
-    /**
-     * Crea la sala y genera sus butacas. La distribución es cuántas butacas tiene cada
-     * fila de adelante hacia atrás: [8, 10, 12] es fila A con 8, B con 10 y C con 12.
-     * No se guarda en la sala, se usa una sola vez acá: a partir de este momento la sala
-     * se describe por los asientos que quedaron creados.
-     *
-     * <p>El mapa marca por código las butacas que no son estándar; el resto lo son.
-     *
-     * @param minutosLimpieza cuánto hay que esperar entre dos funciones de esta sala. Cero
-     *                        es válido y significa que se puede encadenar sin corte
-     */
+    // Las especiales llegan por tipo, como las listas del pedido. Sin limpieza, la de siempre: el alta
+    // no la exige, a diferencia del nombre, el tipo y las filas.
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
-                        Map<String, TipoAsiento> especiales, int minutosLimpieza) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
-        }
-        if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de sala");
-        }
-        if (butacasPorFila == null || butacasPorFila.isEmpty()) {
-            throw new IllegalArgumentException("La sala necesita al menos una fila");
-        }
-        if (butacasPorFila.size() > MAX_FILAS) {
-            throw new IllegalArgumentException("Máximo " + MAX_FILAS + " filas: se identifican con una letra");
-        }
-        // R2: butacas de cada fila mayores a cero.
-        if (butacasPorFila.stream().anyMatch(b -> b == null || b <= 0)) {
-            throw new IllegalArgumentException("Cada fila debe tener al menos una butaca");
-        }
-        // Negativo no es "sin limpieza", es un dato mal cargado: adelantaría el permiso
-        // para la función siguiente y la dejaría empezar antes de que termine la anterior.
-        if (minutosLimpieza < 0) {
-            throw new IllegalArgumentException("Los minutos de limpieza no pueden ser negativos");
-        }
-        boolean repetida = salaRepository.findAll().stream()
-                .anyMatch(s -> s.getNombre().equalsIgnoreCase(nombre));
-        if (repetida) {
-            throw new IllegalArgumentException("Ya existe una sala con ese nombre");
+                        Map<TipoAsiento, List<String>> especiales, Integer minutosLimpieza) {
+        int limpieza = minutosLimpieza == null ? Sala.LIMPIEZA_POR_DEFECTO : minutosLimpieza;
+        // Los datos de la sala y sus filas se rechazan antes de consultar el nombre repetido.
+        Sala sala = new Sala(nombre, tipo, limpieza);
+        List<Asiento> asientos = sala.generarAsientos(butacasPorFila, especiales);
+        if (salaRepository.existsByNombreIgnoreCase(sala.getNombre())) {
+            throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
 
-        Sala sala = new Sala(nombre, tipo, minutosLimpieza);
         salaRepository.save(sala);
-        asientoRepository.saveAll(generarAsientos(sala.getId(), butacasPorFila, especiales));
+        asientoRepository.saveAll(asientos);
         return sala;
     }
 
-    private List<Asiento> generarAsientos(int salaId, List<Integer> distribucion,
-                                          Map<String, TipoAsiento> especiales) {
-        List<Asiento> asientos = new ArrayList<>();
-        for (int fila = 1; fila <= distribucion.size(); fila++) {
-            for (int numero = 1; numero <= distribucion.get(fila - 1); numero++) {
-                String codigo = (char) ('A' + fila - 1) + String.valueOf(numero);
-                asientos.add(new Asiento(salaId, fila, numero,
-                        especiales.getOrDefault(codigo, TipoAsiento.ESTANDAR)));
-            }
+    // Primero los datos (400), como en el alta, y después lo que mira la base. Si algo rechaza, la
+    // transacción deshace la edición. El nombre repetido se busca sin la sala misma: la consulta hace
+    // flush de la edición, y además la collation de MySQL ignora los acentos, así que renombrar
+    // "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
+    // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
+    public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
+        Sala sala = salaRepository.exigir(id, "la sala");
+        TipoSala tipoAnterior = sala.getTipo();
+        sala.editar(nombre, tipo, minutosLimpieza == null ? sala.getMinutosLimpieza() : minutosLimpieza);
+        if (salaRepository.existsByNombreIgnoreCaseAndIdNot(sala.getNombre(), id)) {
+            throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
-        return asientos;
+        if (tipo != tipoAnterior && funcionRepository.existsBySala_Id(id)) {
+            throw new DatoInvalido(
+                    "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
+        }
+        return sala;
     }
 
-    /** Butacas que tiene la sala. Se cuentan: los asientos son la única fuente de verdad. */
-    public int capacidad(int salaId) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId).size();
+    // Devuelve la sala y no la butaca: es lo que muestra quien la marcó, y asiento.getSala() es
+    // LAZY, así que fuera de la transacción no se podría leer.
+    public Sala marcarFueraDeServicio(int salaId, String codigo) {
+        Sala sala = salaRepository.exigir(salaId, "la sala");
+        butaca(sala, codigo).marcarFueraDeServicio();
+        return sala;
     }
 
-    /** Una butaca rota deja de venderse en todas las funciones, presentes y futuras. */
-    public void marcarFueraDeServicio(int salaId, String codigo) {
-        cambiarEstado(salaId, codigo, EstadoAsiento.FUERA_DE_SERVICIO);
+    public Sala reponer(int salaId, String codigo) {
+        Sala sala = salaRepository.exigir(salaId, "la sala");
+        butaca(sala, codigo).reponer();
+        return sala;
     }
 
-    public void reponer(int salaId, String codigo) {
-        cambiarEstado(salaId, codigo, EstadoAsiento.HABILITADO);
+    // 404 y no 400: la butaca viene en la ruta, así que es el recurso que no existe, y lo dice como
+    // cualquier otro. Las de una reserva vienen en el cuerpo y siguen siendo un pedido inválido
+    // (Asiento.exigirConCodigo).
+    private Asiento butaca(Sala sala, String codigo) {
+        return Asiento.conCodigo(asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(sala.getId()), codigo)
+                .orElseThrow(() -> new RecursoNoEncontrado(
+                        "No existe la butaca " + Asiento.normalizarCodigo(codigo)));
     }
 
-    private void cambiarEstado(int salaId, String codigo, EstadoAsiento estado) {
-        String buscado = codigo == null ? "" : codigo.trim().toUpperCase();
-        Asiento asiento = asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId).stream()
-                .filter(a -> a.getCodigo().equals(buscado))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "La butaca " + buscado + " no existe en la sala " + salaId));
-        asiento.setEstado(estado);
-        asientoRepository.save(asiento);
-    }
-
+    @Transactional(readOnly = true)
     public List<Sala> listar() {
         return salaRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Asiento> asientosDe(int salaId) {
-        return asientoRepository.findBySalaIdOrderByFilaAscNumeroAsc(salaId);
+        return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(salaId);
     }
 
-    public Optional<Sala> buscar(int id) {
-        return salaRepository.findById(id);
+    @Transactional(readOnly = true)
+    public Sala obtener(int id) {
+        return salaRepository.exigir(id, "la sala");
     }
 
-    /** R12: borrar una sala con funciones programadas dejaría esas funciones sin sala. */
     public void eliminar(int id) {
-        if (salaRepository.findById(id).isEmpty()) {
-            throw new IllegalArgumentException("No existe la sala " + id);
-        }
-        if (!funcionRepository.findBySalaId(id).isEmpty()) {
-            throw new IllegalArgumentException(
+        Sala sala = salaRepository.exigir(id, "la sala");
+        if (funcionRepository.existsBySala_Id(id)) {
+            throw new DatoInvalido(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
         }
-        salaRepository.deleteById(id);
+        // Una grilla sin funciones generadas también la nombra, y chocaba con la FK en un 500.
+        // Las grillas no se borran, solo se dan de baja: la sala queda.
+        if (programacionRepository.existsBySala_Id(id)) {
+            throw new DatoInvalido(
+                    "La sala " + id + " está programada en una grilla: no se puede eliminar");
+        }
+        salaRepository.delete(sala);
     }
 }

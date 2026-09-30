@@ -2,11 +2,12 @@ package ar.uade.cine.dto.candy;
 
 import java.util.Map;
 
-/**
- * {@code cantidades} es id de producto a unidades. {@code clienteId} y {@code reservaId}
- * son los dos opcionales: sin ninguno es una venta de mostrador, y con reserva el
- * cliente sale de ella.
- */
-public record PedidoVentaDTO(Integer clienteId, Integer reservaId, Map<Integer, Integer> cantidades,
-                          String medio, String codigoAutorizacion) {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+
+// Lo que entra al vender candy (POST /api/candy/compras); exige ítems y medio, sin reservaId es mostrador.
+public record PedidoVentaDTO(Integer clienteId, Integer reservaId,
+                             @NotEmpty(message = "Hay que elegir al menos un producto") Map<Integer, Integer> cantidades,
+                             @NotBlank(message = "Falta el medio de pago") String medio,
+                             String codigoAutorizacion) {
 }

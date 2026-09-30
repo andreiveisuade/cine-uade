@@ -1,78 +1,97 @@
 @startuml secuencia-reserva
-title Reservar butacas: del menu al ticket
+title Reservar butacas: POST /api/reservas
 
 skinparam sequenceMessageAlign center
 hide footbox
 
 actor Cliente
-participant "ReservaController" as UI
-participant "Ocupacion" as Ocupacion
+participant "ReservaController" as Ctrl
 participant "GestorReservas" as Gestor
-participant "AsientoRepository" as Asientos <<interface>>
-participant "ReservaRepository" as DAO <<interface>>
-participant "CalculadoraPrecio" as Precio
+participant "Ocupacion" as Ocupacion
+participant "GestorClientes" as Clientes
+participant "Funcion" as Funcion <<Entity>>
+participant "Entrada" as Entrada <<Entity>>
+participant "Reserva" as Reserva <<Entity>>
+participant "ReservaRepository" as Repo <<interface>>
+participant "Spring\n(eventos)" as Eventos
+participant "ComprobantesDeVentas" as Comprobantes
 participant "GeneradorTicket" as Ticket <<interface>>
 
-Cliente -> UI : elige funcion y cliente
-activate UI
-
-UI -> Ocupacion : asientosLibres(funcionId)
-activate Ocupacion
-Ocupacion -> Asientos : listarPorSala(salaId)
-activate Asientos
-Asientos --> Ocupacion : butacas de la sala
-deactivate Asientos
-Ocupacion -> DAO : listarPorFuncion(funcionId)
-activate DAO
-DAO --> Ocupacion : reservas de esa funcion
-deactivate DAO
-Ocupacion -> Ocupacion : descarta las tomadas por reservas\nno canceladas y las fuera de servicio
-Ocupacion --> UI : butacas libres
-deactivate Ocupacion
-
-UI --> Cliente : dibuja el mapa de la sala
-Cliente -> UI : "A1,A2"
-
-UI -> Gestor : reservar(funcionId, clienteId,\ncodigos)
+Cliente -> Ctrl : POST /api/reservas\n{funcionId, nombre, email,\nbutacas: codigo -> tarifa, sesion}
+activate Ctrl
+Ctrl -> Gestor : reservar(funcionId, nombre,\nemail, butacas, sesion)
 activate Gestor
 
-alt alguna butaca no existe, no es de esa sala,\nesta ocupada o esta fuera de servicio
-  Gestor --> UI : IllegalArgumentException
-  UI --> Cliente : motivo del rechazo
-else todas disponibles
-  loop por cada butaca
-    Gestor -> Precio : precioDe(funcion, sala, asiento)
-    activate Precio
-    Precio --> Gestor : base x tipo de sala x tipo de\nbutaca, redondeado a 2 decimales
-    deactivate Precio
+' La funcion va antes que el cliente: si no existe o ya empezo, eso anula lo
+' demas, y un email de empleado no puede taparlo.
+Gestor -> Ocupacion : funcionEnVenta(funcionId)
+activate Ocupacion
+Ocupacion -> Funcion : yaEmpezo(ahora)
+alt R19: la funcion ya empezo
+  Ocupacion --> Gestor : DatoInvalido
+  Gestor --> Ctrl : DatoInvalido
+  Ctrl --> Cliente : 400 {error}
+else
+  Ocupacion --> Gestor : funcion
+  deactivate Ocupacion
+
+  Gestor -> Clientes : identificar(nombre, email)
+  activate Clientes
+  Clientes --> Gestor : cliente (lo da de alta si no existia)
+  deactivate Clientes
+
+  Gestor -> Ocupacion : asientosOcupados(funcionId, sesion)
+  activate Ocupacion
+  Ocupacion -> Repo : findByFuncion_Id(funcionId)
+  Ocupacion -> Ocupacion : vence las impagas (R17)\ny suma los bloqueos ajenos
+  Ocupacion --> Gestor : ids tomados
+  deactivate Ocupacion
+
+  loop por cada butaca pedida
+    Gestor -> Gestor : Asiento.exigirConCodigo(deLaSala, codigo)
+    Gestor -> Funcion : precioDe(asiento, sala)
+    Funcion --> Gestor : base x sala x butaca
+    create Entrada
+    Gestor -> Entrada : new Entrada(asiento, tarifa, precio)
+    Entrada -> Entrada : exige la butaca en servicio (R9)\ny le aplica su tarifa: precio congelado
+    Gestor -> Gestor : no esta entre los tomados (R4)
   end
 
-  note right of Gestor
-    El precio queda congelado en cada Entrada.
-    La reserva nace RESERVADA y con la fecha
-    en que se hizo.
-  end note
+  create Reserva
+  Gestor -> Reserva : new Reserva(funcion, cliente,\nentradas, ahora)
+  Reserva -> Reserva : de 1 a 10 butacas sin repetir,\nnace RESERVADA y con su CodigoDeAcceso
 
-  Gestor -> DAO : guardar(reserva)
-  activate DAO
-  DAO --> Gestor : reserva con id asignado
-  deactivate DAO
+  alt una butaca no existe, esta fuera de servicio (R9)\no ya es de otro (R4); ninguna, mas de 10 o repetida
+    Gestor --> Ctrl : DatoInvalido,\no ButacaOcupada si es R4
+    Ctrl --> Cliente : 400 {error}, o 409 si es R4
+  else
+    Gestor -> Repo : saveAndFlush(reserva)
+    activate Repo
+    alt UNIQUE (funcion_id, asiento_id) violado
+      Repo --> Gestor : DataIntegrityViolationException
+      Gestor --> Ctrl : ButacaOcupada
+      Ctrl --> Cliente : 409 {error}
+    else
+      Repo --> Gestor : reserva con id
+      deactivate Repo
+      Gestor -> Ocupacion : liberar(funcionId, sesion)
+      Gestor -> Eventos : publishEvent(ReservaCreada(id))\nlo retiene hasta el commit;\nsi se deshace, lo descarta
 
-  Gestor -> Ticket : emitir(reserva, funcion,\npelicula, sala, cliente)
-  activate Ticket
-  Ticket -> Ticket : escribe\ntickets/ticket-N.txt
-  deactivate Ticket
+      == commit de la transaccion de GestorReservas ==
 
-  Gestor --> UI : reserva
-  UI --> Cliente : "Reserva confirmada.\nTotal: $ X"
+      Eventos -> Comprobantes : emitirTicket(ReservaCreada)\n@TransactionalEventListener (AFTER_COMMIT)
+      activate Comprobantes
+      Comprobantes -> Repo : exigir(reservaId)\nREQUIRES_NEW, solo lectura
+      Comprobantes -> Ticket : emitir(reserva)\n(si falla: al log, la venta queda)
+      Ticket -> Ticket : escribe\ntickets/ticket-N.txt
+      deactivate Comprobantes
+
+      Gestor --> Ctrl : reserva
+      Ctrl --> Cliente : 201 ReservaVistaDTO
+    end
+  end
 end
 deactivate Gestor
-deactivate UI
-
-note over DAO, Ticket
-  El gestor habla con interfaces. Que Spring Data la guarde en
-  MySQL o en H2, y el ticket en un .txt o manana en un PDF,
-  no cambia esta secuencia.
-end note
+deactivate Ctrl
 
 @enduml

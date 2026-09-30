@@ -1,159 +1,103 @@
 package ar.uade.cine.service.candy;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.candy.CompraCandy;
-import ar.uade.cine.model.candy.ItemCombo;
-import ar.uade.cine.model.candy.ItemCompra;
-import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
-import ar.uade.cine.repository.ProductoRepository;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.repository.candy.ProductoRepository;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-/**
- * La carta del candy: qué se vende y a qué precio.
- *
- * <p>Está separada de {@link GestorCandy}, que registra las ventas, porque las dos cosas
- * cambian por motivos distintos: la carta se toca cuando el cine suma un producto o
- * arma una promoción, y la venta cuando cambia cómo se cobra o qué dice el ticket.
- * Cuando vivían juntas, un cambio de precios y un cambio de facturación tocaban el mismo
- * archivo sin tener nada que ver entre sí.
- *
- * <p>Es además la <strong>única</strong> fuente de precios del candy: la venta le pregunta
- * cuánto sale cada cosa en vez de aceptar el precio que le manden, igual que el pago de
- * una reserva toma el monto de la reserva y no de quien cobra.
- */
+// Carta del candy y sus combos; Controlador: acá lo que pide la base, nombre libre y combos afectados.
+// Nombre, precio, qué puede traer un combo y R14 los validan los validadores que llama Producto.
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class GestorProductos {
 
     private final ProductoRepository productoRepository;
 
-    public GestorProductos(ProductoRepository productoRepository) {
-        this.productoRepository = productoRepository;
-    }
-
+    // Se construye antes de buscar el nombre repetido para que un dato inválido se rechace primero.
     public Producto agregar(String nombre, TipoProducto tipo, Dinero precio) {
-        if (tipo == TipoProducto.COMBO) {
-            throw new IllegalArgumentException("Un combo se arma con armarCombo, para que declare qué trae");
-        }
-        validarAlta(nombre, tipo, precio);
-        Producto producto = new Producto(nombre.trim(), tipo, precio);
-        productoRepository.save(producto);
-        return producto;
+        Producto producto = new Producto(nombre, tipo, precio);
+        exigirNombreLibre(producto.getNombre());
+        return productoRepository.save(producto);
     }
 
-    /**
-     * Arma la promoción: pochoclos + gaseosa a un precio menor que comprarlos por separado.
-     *
-     * <p>R14 es lo que hace que un combo sea una promoción y no un producto con nombre
-     * bonito: si costara igual o más que sus componentes sueltos, no habría motivo para
-     * ofrecerlo. Por eso se valida contra la lista de precios en vez de confiar en quien
-     * lo carga.
-     *
-     * @param componentes id de producto a cantidad de unidades que trae el combo
-     */
+    // Como el alta, nombre y precio se validan antes de buscar el repetido. El nombre repetido va antes de
+    // buscar los componentes: si el combo ya existe, no hace falta ir a buscar lo que trae.
     public Producto armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
-        validarAlta(nombre, TipoProducto.COMBO, precio);
-        if (componentes == null || componentes.size() < 2) {
-            throw new IllegalArgumentException("Un combo tiene que juntar al menos dos productos distintos");
-        }
-
-        Producto combo = new Producto(nombre.trim(), TipoProducto.COMBO, precio);
-        Dinero suelto = Dinero.CERO;
-        for (Map.Entry<Integer, Integer> componente : componentes.entrySet()) {
-            Producto producto = buscarOFallar(componente.getKey());
-            int cantidad = componente.getValue();
-            if (cantidad <= 0) {
-                throw new IllegalArgumentException("La cantidad de " + producto.getNombre()
-                        + " en el combo debe ser mayor a cero");
-            }
-            if (producto.esCombo()) {
-                throw new IllegalArgumentException("Un combo no puede contener otro combo: " + producto.getNombre());
-            }
-            combo.agregarComponente(new ItemCombo(producto, cantidad));
-            suelto = suelto.mas(producto.getPrecio().por(cantidad));
-        }
-
-        if (!suelto.esMayorQue(precio)) {
-            throw new IllegalArgumentException(
-                    "El combo tiene que salir menos que sus componentes sueltos ($ " + suelto + ")");
-        }
-        productoRepository.save(combo);
-        return combo;
+        exigirNombreLibre(Producto.validarNombreYPrecio(nombre, precio));
+        return productoRepository.save(Producto.armarCombo(nombre, precio, obtener(componentes)));
     }
 
-    /**
-     * Cuánto se ahorró el cliente por llevar combos en lugar de los productos sueltos.
-     *
-     * <p>Vive con la carta y no con la venta porque el ahorro sale de comparar precios, y
-     * los precios los sabe la carta: la compra guarda lo que se cobró, no lo que habría
-     * costado de otra manera.
-     */
-    public Dinero ahorroDe(CompraCandy compra) {
-        Dinero ahorro = Dinero.CERO;
-        for (ItemCompra item : compra.getItems()) {
-            Producto producto = buscarOFallar(item.productoId());
-            if (producto.esCombo()) {
-                ahorro = ahorro.mas(precioSuelto(producto).menos(producto.getPrecio())
-                        .por(item.cantidad()));
-            }
-        }
-        return ahorro;
-    }
-
-    private Dinero precioSuelto(Producto combo) {
-        return Dinero.sumar(combo.getComponentes().stream()
-                .map(c -> buscarOFallar(c.productoId()).getPrecio().por(c.cantidad()))
-                .toList());
-    }
-
-    /** La carta que ve el cliente. */
+    @Transactional(readOnly = true)
     public List<Producto> listarDisponibles() {
         return productoRepository.findByDisponibleTrue();
     }
 
+    @Transactional(readOnly = true)
     public List<Producto> listar() {
         return productoRepository.findAll();
     }
 
-    public Optional<Producto> buscar(int id) {
-        return productoRepository.findById(id);
+    @Transactional(readOnly = true)
+    public Producto obtener(int id) {
+        return productoRepository.exigir(id, "el producto");
     }
 
-    /** Sacar de la carta o reponer. No se borra: hay compras viejas que lo referencian. */
-    public void cambiarDisponibilidad(int productoId, boolean disponible) {
-        Producto producto = buscarOFallar(productoId);
-        producto.setDisponible(disponible);
-        productoRepository.save(producto);
+    // Un pedido id → cantidad, con cada producto ya buscado y en el orden en que llegó.
+    @Transactional(readOnly = true)
+    public Map<Producto, Integer> obtener(Map<Integer, Integer> cantidades) {
+        Map<Producto, Integer> productos = new LinkedHashMap<>();
+        if (cantidades != null) {
+            cantidades.forEach((id, cantidad) -> productos.put(obtener(id), cantidad));
+        }
+        return productos;
     }
 
-    /** Lo que necesita la venta: el producto o el error, nunca un Optional vacío. */
-    public Producto buscarOFallar(int id) {
-        return productoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No existe el producto " + id));
+    public Producto sacarDeLaVenta(int productoId) {
+        Producto producto = obtener(productoId);
+        producto.sacarDeLaVenta();
+        return producto;
     }
 
-    private void validarAlta(String nombre, TipoProducto tipo, Dinero precio) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío");
+    public Producto volverALaVenta(int productoId) {
+        Producto producto = obtener(productoId);
+        producto.volverALaVenta();
+        return producto;
+    }
+
+    // El combo editado se revisa a sí mismo (R14); los combos que traen al suelto editado los busca
+    // la base, y cada uno dice si sigue conviniendo.
+    public Producto editar(int productoId, String nombre, Dinero precio) {
+        Producto producto = obtener(productoId);
+        // Validado sin editar, como en el alta: un dato inválido se rechaza antes que el nombre repetido. Con
+        // el producto ya modificado, la consulta haría flush y chocaría con el UNIQUE del nombre.
+        // Excluyéndose por id, renombrarse a sí mismo nunca es repetido.
+        String nombreValido = Producto.validarNombreYPrecio(nombre, precio);
+        if (productoRepository.existsByNombreIgnoreCaseAndIdNot(nombreValido, productoId)) {
+            throw nombreRepetido();
         }
-        if (tipo == null) {
-            throw new IllegalArgumentException("Falta el tipo de producto");
+        producto.editar(nombre, precio);
+        productoRepository.findCombosQueTraen(productoId).forEach(Producto::exigirQueSigaConviniendo);
+        return producto;
+    }
+
+    // Como lo compara la base: sin mayúsculas. Los espacios alrededor ya los sacó el validador.
+    private void exigirNombreLibre(String nombreValido) {
+        if (productoRepository.existsByNombreIgnoreCase(nombreValido)) {
+            throw nombreRepetido();
         }
-        if (precio == null || !precio.esMayorQue(Dinero.CERO)) {
-            throw new IllegalArgumentException("El precio debe ser mayor a cero");
-        }
-        boolean repetido = productoRepository.findAll().stream()
-                .anyMatch(p -> p.getNombre().equalsIgnoreCase(nombre.trim()));
-        if (repetido) {
-            throw new IllegalArgumentException("Ya existe un producto con ese nombre");
-        }
+    }
+
+    private static ConflictoDeNegocio nombreRepetido() {
+        return new ConflictoDeNegocio("Ya existe un producto con ese nombre");
     }
 }

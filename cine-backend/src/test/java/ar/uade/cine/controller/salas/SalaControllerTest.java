@@ -1,0 +1,249 @@
+package ar.uade.cine.controller.salas;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+
+import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.cartelera.Clasificacion;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.programaciones.Programacion;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+class SalaControllerTest extends PruebaDeApi {
+
+    @Autowired
+    private GestorSalas salas;
+
+    @Autowired
+    private GestorCartelera cartelera;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private ProgramacionRepository programaciones;
+
+    private int sala;
+
+    @BeforeEach
+    void unaSalaDeDosFilas() {
+        sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5)).getId();
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(5));
+    }
+
+    @Test
+    void editaNombreTipoYLimpiezaSinTocarLasButacas() {
+        Respuesta respuesta = put("/api/salas/" + sala,
+                "{\"nombre\":\"Sala Premium\",\"tipo\":\"IMAX\",\"minutosLimpieza\":25}");
+
+        assertEquals(200, respuesta.estado());
+        var json = respuesta.json();
+        assertEquals("Sala Premium", json.get("nombre").asText());
+        assertEquals("IMAX", json.get("tipo").asText());
+        assertEquals(25, json.get("minutosLimpieza").asInt());
+        assertEquals(10, json.get("capacidadSala").asInt());
+        assertEquals("Sala Premium", get("/api/salas/" + sala).json().get("nombre").asText());
+    }
+
+    @Test
+    void sinLimpiezaConservaLaQueTenia() {
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\"}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(15, respuesta.json().get("minutosLimpieza").asInt());
+    }
+
+    @Test
+    void unaSalaQueNoExisteEs404() {
+        Respuesta edicion = put("/api/salas/99", "{\"nombre\":\"X\",\"tipo\":\"DOS_D\"}");
+        Respuesta baja = pedirComo(HttpMethod.DELETE, "/api/salas/99", null, EMAIL_ADMIN, CLAVE_ADMIN);
+        Respuesta butaca = patch("/api/salas/99/asientos/A1", "{\"estado\":\"HABILITADO\"}");
+
+        for (Respuesta respuesta : List.of(edicion, baja, butaca)) {
+            assertEquals(404, respuesta.estado());
+            assertEquals("No existe la sala 99", respuesta.error());
+        }
+    }
+
+    // La butaca viene en la ruta: es el recurso que no existe, igual que la sala, y lo dice igual.
+    @Test
+    void unaButacaQueNoExisteEnLaRutaEs404() {
+        Respuesta respuesta = patch("/api/salas/" + sala + "/asientos/z9", "{\"estado\":\"FUERA_DE_SERVICIO\"}");
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la butaca Z9", respuesta.error());
+    }
+
+    @Test
+    void unNombreQueSoloDifiereEnEspaciosEsRepetido() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"  sala 2 \",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("Ya existe una sala con ese nombre", respuesta.error());
+    }
+
+    @Test
+    void elAltaMarcaLasEspecialesComoLasTipeaElEncargadoYSinLimpiezaUsaLaDeSiempre() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[3],"
+                + "\"codigosVip\":[\" a1 \",\"\",null],\"codigosAccesibles\":[\"A3\"]}");
+
+        assertEquals(201, respuesta.estado());
+        assertEquals(15, respuesta.json().get("minutosLimpieza").asInt());
+        assertEquals("VIP", butaca(respuesta, "A1").get("tipo").asText());
+        assertEquals("ESTANDAR", butaca(respuesta, "A2").get("tipo").asText());
+        assertEquals("ACCESIBLE", butaca(respuesta, "A3").get("tipo").asText());
+    }
+
+    @Test
+    void unNombreQueYaUsaOtraSalaEs409() {
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"sala 2\",\"tipo\":\"DOS_D\"}");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("Ya existe una sala con ese nombre", respuesta.error());
+    }
+
+    // Como en el alta: primero los datos, después el nombre repetido. Antes daba 409.
+    @Test
+    void editarConUnNombreRepetidoYUnaLimpiezaNegativaDiceLoDeLaLimpieza() {
+        Respuesta respuesta = put("/api/salas/" + sala,
+                "{\"nombre\":\"Sala 2\",\"tipo\":\"DOS_D\",\"minutosLimpieza\":-5}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Los minutos de limpieza no pueden ser negativos", respuesta.error());
+    }
+
+    // El repetido se busca sin la sala misma. En MySQL además cuenta que la collation ignora los acentos:
+    // renombrar "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
+    @Test
+    void renombrarUnaSalaASuPropioNombreConOtrasMayusculasNoEsRepetido() {
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"SALA 1\",\"tipo\":\"DOS_D\"}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals("SALA 1", respuesta.json().get("nombre").asText());
+    }
+
+    // Antes ganaba la última lista, en silencio.
+    @Test
+    void unaButacaEnDosListasDeEspecialesEs400YNoCreaLaSala() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5],"
+                + "\"codigosVip\":[\"A1\"],\"codigosPareja\":[\" a1\"]}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La butaca A1 está en más de una lista de especiales: dejala en una sola", respuesta.error());
+        assertEquals(2, get("/api/salas").json().size());
+    }
+
+    @Test
+    void unTipoQueNoExisteEs400() {
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"OCHO_D\"}");
+
+        assertEquals(400, respuesta.estado());
+    }
+
+    @Test
+    void conFuncionesProgramadasNoSeLeCambiaElTipo() {
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        funciones.programar(1, sala, LocalDateTime.of(2026, 8, 20, 20, 0),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"IMAX\"}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La sala " + sala + " tiene funciones programadas: no se le puede cambiar el tipo",
+                respuesta.error());
+        assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
+    }
+
+    // Daba 500: sin funciones generadas pasaba el chequeo y chocaba con la FK programacion → sala.
+    @Test
+    void unaSalaEnUnaGrillaNoSeBorraAunqueNoTengaFunciones() {
+        Pelicula pelicula = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        programaciones.save(new Programacion(pelicula, salas.obtener(sala),
+                reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/salas/" + sala, null,
+                EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La sala " + sala + " está programada en una grilla: no se puede eliminar",
+                respuesta.error());
+        assertEquals(200, get("/api/salas/" + sala).estado());
+    }
+
+    @Test
+    void elAltaDevuelveLaUbicacionDeLaSalaCreada() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
+
+        assertEquals(201, respuesta.estado());
+        String ubicacion = respuesta.cabeceras().getLocation().toString();
+        assertEquals("/api/salas/" + respuesta.json().get("id").asInt(), ubicacion);
+        assertEquals("Sala 3", get(ubicacion).json().get("nombre").asText());
+    }
+
+    @Test
+    void unaFilaSinButacasEs400() {
+        Respuesta respuesta = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5,0]}");
+        Respuesta sinFilas = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[]}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Cada fila tiene que tener al menos una butaca", respuesta.error());
+        assertEquals(400, sinFilas.estado());
+        assertEquals("La sala tiene que tener al menos una fila", sinFilas.error());
+    }
+
+    @Test
+    void unaFilaDeMasDeCuarentaButacasOUnaEspecialQueNoExisteEs400YNoCreaLaSala() {
+        Respuesta ancha = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[41]}");
+        Respuesta especial = post("/api/salas", "{\"nombre\":\"Sala 3\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[5],"
+                + "\"codigosVip\":[\"Z99\"]}");
+
+        assertEquals(400, ancha.estado());
+        assertEquals("Una fila tiene que tener como máximo 40 butacas", ancha.error());
+        assertEquals(400, especial.estado());
+        assertEquals("La butaca Z99 no existe en la sala", especial.error());
+        assertEquals(2, get("/api/salas").json().size());
+    }
+
+    @Test
+    void unaButacaFueraDeServicioSeRepone() {
+        String ruta = "/api/salas/" + sala + "/asientos/A1";
+        assertEquals("FUERA_DE_SERVICIO", estadoDe(patch(ruta, "{\"estado\":\"FUERA_DE_SERVICIO\"}"), "A1"));
+
+        assertEquals("HABILITADO", estadoDe(patch(ruta, "{\"estado\":\"HABILITADO\"}"), "A1"));
+        assertEquals("HABILITADO", estadoDe(get("/api/salas/" + sala), "A1"));
+    }
+
+    private static String estadoDe(Respuesta respuesta, String codigo) {
+        assertEquals(200, respuesta.estado());
+        return butaca(respuesta, codigo).get("estado").asText();
+    }
+
+    private static JsonNode butaca(Respuesta respuesta, String codigo) {
+        for (JsonNode asiento : respuesta.json().get("asientos")) {
+            if (asiento.get("codigo").asText().equals(codigo)) {
+                return asiento;
+            }
+        }
+        throw new AssertionError("La sala no tiene la butaca " + codigo);
+    }
+}

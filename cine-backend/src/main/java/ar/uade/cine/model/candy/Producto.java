@@ -2,7 +2,10 @@ package ar.uade.cine.model.candy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import ar.uade.cine.model.candy.validacion.ValidadorCombo;
+import ar.uade.cine.model.candy.validacion.ValidadorProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
@@ -15,16 +18,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import lombok.AccessLevel;
+import lombok.Getter;
 
-/**
- * Algo que se vende en el candy. Un combo es también un Producto —tiene precio y se vende
- * como una unidad— y no una entidad aparte: lo único que lo distingue es que además sabe qué
- * trae adentro.
- *
- * <p>Por eso las dos claves de {@code combo_item} apuntan a esta misma tabla: un combo se
- * puede armar con cualquier otro producto.
- */
+// Artículo o combo de la carta del candy; Experto en su disponibilidad y R14, y Creador de sus ItemCombo.
+// Los datos los validan ValidadorProducto y ValidadorCombo, que llama Producto al construirse o editarse:
+// así no se arma uno inválido, venga del gestor o de un test. GestorProductos se queda con lo que
+// necesita la base: el nombre repetido, buscar los componentes y los combos que traen un suelto.
 @Entity
+@Getter
 public class Producto {
 
     @Id
@@ -39,9 +41,9 @@ public class Producto {
 
     private Dinero precio;
 
-    private boolean disponible;
+    @Getter(AccessLevel.NONE)
+    private boolean disponible = true;
 
-    /** Qué trae el combo. Lista vacía en un producto suelto. */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "combo_item", joinColumns = @JoinColumn(name = "combo_id"))
     private List<ItemCombo> componentes = new ArrayList<>();
@@ -49,60 +51,82 @@ public class Producto {
     protected Producto() {
     }
 
+    // Solo sueltos: un combo nace en armarCombo, que no lo deja existir sin declarar qué trae.
     public Producto(String nombre, TipoProducto tipo, Dinero precio) {
-        this.nombre = nombre;
-        this.tipo = tipo;
-        this.precio = precio;
-        this.disponible = true;
+        ValidadorProducto.exigirQueNoSeaCombo(tipo);
+        String nombreValido = ValidadorProducto.nombre(nombre);
+        TipoProducto tipoValido = ValidadorProducto.tipo(tipo);
+        Dinero precioValido = ValidadorProducto.precio(precio);
+        this.nombre = nombreValido;
+        this.tipo = tipoValido;
+        this.precio = precioValido;
     }
 
-    public int getId() {
-        return id;
+    // Creador: el combo contiene sus ItemCombo, así que los crea él y cada uno valida su componente. R14
+    // va al final porque el precio suelto sale de los componentes ya armados.
+    public static Producto armarCombo(String nombre, Dinero precio, Map<Producto, Integer> componentes) {
+        Producto combo = new Producto();
+        combo.nombre = ValidadorProducto.nombre(nombre);
+        combo.tipo = TipoProducto.COMBO;
+        combo.precio = ValidadorProducto.precio(precio);
+        ValidadorCombo.exigirComponentes(componentes);
+        componentes.forEach((producto, cantidad) -> combo.componentes.add(new ItemCombo(producto, cantidad)));
+        ValidadorCombo.exigirQueConvenga(combo, combo.precio);
+        return combo;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    // Nombre y precio sin tocar ningún producto: GestorProductos los valida antes de buscar el nombre
+    // repetido, y uno ya modificado haría flush contra el UNIQUE en esa consulta. Devuelve el nombre recortado,
+    // el mismo valor que se guarda y que la base compara.
+    public static String validarNombreYPrecio(String nombre, Dinero precio) {
+        String nombreValido = ValidadorProducto.nombre(nombre);
+        ValidadorProducto.precio(precio);
+        return nombreValido;
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    public TipoProducto getTipo() {
-        return tipo;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
-    }
-
-    public void setPrecio(Dinero precio) {
-        this.precio = precio;
-    }
-
-    /**
-     * Si se sigue ofreciendo. Un producto no se borra: puede estar en compras viejas, y
-     * borrarlo dejaría esos tickets apuntando a la nada.
-     */
     public boolean estaDisponible() {
         return disponible;
     }
 
-    public void setDisponible(boolean disponible) {
-        this.disponible = disponible;
+    // Sin stock no se borra: vive en compras viejas. Sale de la venta y vuelve cuando hay.
+    public void sacarDeLaVenta() {
+        disponible = false;
     }
 
-    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
+    public void volverALaVenta() {
+        disponible = true;
+    }
+
+    // Los componentes no cambian: se fijan al armar el combo. Valida todo antes de asignar: si rechaza,
+    // no toca nada.
+    public void editar(String nombre, Dinero precio) {
+        String nuevoNombre = ValidadorProducto.nombre(nombre);
+        Dinero nuevoPrecio = ValidadorProducto.precio(precio);
+        ValidadorProducto.exigirQueSigaConviniendo(this, nuevoNombre, nuevoPrecio);
+        this.nombre = nuevoNombre;
+        this.precio = nuevoPrecio;
+    }
+
+    // R14 del otro lado: abaratar un suelto puede dejar sin convenir a un combo que lo trae. El
+    // combo no se entera solo de que cambió el precio de su componente; se lo pregunta el gestor.
+    public void exigirQueSigaConviniendo() {
+        ValidadorProducto.exigirQueSigaConviniendo(this, nombre, precio);
+    }
+
     public List<ItemCombo> getComponentes() {
         return new ArrayList<>(componentes);
     }
 
-    public void agregarComponente(ItemCombo componente) {
-        componentes.add(componente);
+    public boolean esCombo() {
+        return tipo.esCombo();
     }
 
-    public boolean esCombo() {
-        return tipo == TipoProducto.COMBO;
+    public Dinero getPrecioSuelto() {
+        return Dinero.sumar(componentes.stream().map(ItemCombo::precioSuelto).toList());
+    }
+
+    public Dinero getAhorro() {
+        return esCombo() ? getPrecioSuelto().menos(precio) : Dinero.CERO;
     }
 
     @Override

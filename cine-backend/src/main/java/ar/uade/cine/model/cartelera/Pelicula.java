@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,22 +15,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import lombok.AccessLevel;
+import lombok.Getter;
 
-/**
- * Una película del catálogo. Lo que la identifica en el negocio —título, duración,
- * géneros, clasificación— va separado de los datos de catálogo de más abajo (director,
- * sinopsis, año...), que se muestran pero no participan de ninguna regla.
- *
- * <p>Lo que identifica a la película va en el constructor; los datos de catálogo se cargan
- * después con setters. Un constructor de nueve parámetros sería imposible de leer y
- * facilísimo de invocar con los argumentos cambiados de orden.
- *
- * <p>Los géneros son una {@code @ElementCollection} y no una entidad: un género no tiene
- * identidad propia ni vida fuera de la película —es una constante del enum— y por eso la
- * tabla {@code pelicula_genero} guarda el nombre de la constante y nada más. Es la misma
- * decisión que ya estaba tomada en el schema, ahora dicha en el mapeo.
- */
+import ar.uade.cine.model.cartelera.validacion.ValidadorPelicula;
+
+// Película del catálogo (R2, R7, R10); Experto de su ciclo de revisión, validada por ValidadorPelicula.
 @Entity
+@Getter
 public class Pelicula {
 
     @Id
@@ -43,12 +36,6 @@ public class Pelicula {
     @Enumerated(EnumType.STRING)
     private Clasificacion clasificacion;
 
-    /**
-     * EAGER y no LAZY: no hay ninguna pantalla que muestre una película sin sus géneros
-     * —la cartelera los pinta como etiquetas y el planificador de la grilla los usa para
-     * repartir— así que diferirlos solo agregaría una consulta por película y el riesgo de
-     * tocarlos fuera de la sesión.
-     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "pelicula_genero",
             joinColumns = @JoinColumn(name = "pelicula_id"))
@@ -56,185 +43,97 @@ public class Pelicula {
     @Enumerated(EnumType.STRING)
     private List<Genero> generos = new ArrayList<>();
 
-    private String director = "";
+    @Embedded
+    private CatalogoPelicula catalogo = new CatalogoPelicula();
 
-    private String sinopsis = "";
-
-    private int anio;
-
-    private String idiomaOriginal = "";
-
-    private String posterUrl = "";
-
+    @Getter(AccessLevel.NONE)
     private boolean enCartelera = true;
 
-    // La columna es DECIMAL(3,1) y el campo un double: sin decírselo, Hibernate espera un
-    // FLOAT y `validate` corta el arranque.
-    @Column(columnDefinition = "DECIMAL(3,1)")
-    private double puntaje;
-
-    private int votos;
-
-    /**
-     * Confirmada por defecto: el alta normal es la del encargado, y cargarla a mano ya es
-     * haberla decidido. Sólo el importador la baja a PENDIENTE.
-     */
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
     protected Pelicula() {
     }
 
-    /** Película nueva: todavía no tiene id, lo asigna la base al guardarla. */
-    public Pelicula(String titulo, int duracionMinutos, List<Genero> generos,
+    public Pelicula(String titulo, Integer duracionMinutos, List<Genero> generos,
                     Clasificacion clasificacion) {
-        this.titulo = titulo;
-        this.duracionMinutos = duracionMinutos;
-        this.clasificacion = clasificacion;
-        this.generos.addAll(generos);
+        actualizar(titulo, duracionMinutos, generos, clasificacion);
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public int getDuracionMinutos() {
-        return duracionMinutos;
-    }
-
-    public Clasificacion getClasificacion() {
-        return clasificacion;
-    }
-
-    /** Copia defensiva: nadie modifica la lista interna desde afuera. */
     public List<Genero> getGeneros() {
         return new ArrayList<>(generos);
     }
 
-    public void agregarGenero(Genero genero) {
-        if (!generos.contains(genero)) {
-            generos.add(genero);
-        }
-    }
-
-    /**
-     * Cambia lo que identifica a la película: título, duración, géneros y clasificación.
-     *
-     * <p>Existe desde que la edición muta la entidad cargada en vez de armar otra con el
-     * mismo id. Eso último era lo que hacía falta cuando un DAO escribía el UPDATE a mano;
-     * con un contexto de persistencia de por medio son dos objetos peleando por la misma
-     * fila, y el que gana es el que Hibernate tiene adentro.
-     */
-    public void actualizar(String titulo, int duracionMinutos, List<Genero> generos,
+    // El alta pasa por acá: alta y edición validan lo mismo, y todo antes de tocar un campo.
+    // Muta la entidad cargada: otra con el mismo id pelearía por la fila en el contexto de persistencia.
+    public void actualizar(String titulo, Integer duracionMinutos, List<Genero> generos,
                            Clasificacion clasificacion) {
-        this.titulo = titulo;
-        this.duracionMinutos = duracionMinutos;
-        this.clasificacion = clasificacion;
+        String tituloValido = ValidadorPelicula.titulo(titulo);
+        int duracionValida = ValidadorPelicula.duracion(duracionMinutos);
+        List<Genero> generosValidos = ValidadorPelicula.generos(generos);
+        Clasificacion clasificacionValida = ValidadorPelicula.clasificacion(clasificacion);
+        this.titulo = tituloValido;
+        this.duracionMinutos = duracionValida;
+        this.clasificacion = clasificacionValida;
         this.generos.clear();
-        generos.forEach(this::agregarGenero);
+        this.generos.addAll(generosValidos);
     }
 
-    // --- datos de catálogo: para mostrar la película, sin reglas asociadas ---
-
-    public String getDirector() {
-        return director;
+    // El catálogo es inmutable: se reemplaza entero por otro armado con conCambios, que ya viene validado.
+    public void cambiarCatalogo(CatalogoPelicula catalogo) {
+        this.catalogo = catalogo;
     }
 
-    public void setDirector(String director) {
-        this.director = director;
+    // El planificador de la grilla ordena por estos dos: se los pide a la película, no a su catálogo.
+    public double getPuntaje() {
+        return catalogo.puntaje();
     }
 
-    public String getSinopsis() {
-        return sinopsis;
+    public int getVotos() {
+        return catalogo.votos();
     }
 
-    public void setSinopsis(String sinopsis) {
-        this.sinopsis = sinopsis;
-    }
-
-    public int getAnio() {
-        return anio;
-    }
-
-    public void setAnio(int anio) {
-        this.anio = anio;
-    }
-
-    /** Idioma hablado en la película, distinto de si la función va doblada o subtitulada. */
-    public String getIdiomaOriginal() {
-        return idiomaOriginal;
-    }
-
-    public void setIdiomaOriginal(String idiomaOriginal) {
-        this.idiomaOriginal = idiomaOriginal;
-    }
-
-    public String getPosterUrl() {
-        return posterUrl;
-    }
-
-    public void setPosterUrl(String posterUrl) {
-        this.posterUrl = posterUrl;
-    }
-
-    /** Una película cargada no necesariamente sigue en cartelera. */
     public boolean estaEnCartelera() {
         return enCartelera;
     }
 
-    public void setEnCartelera(boolean enCartelera) {
-        this.enCartelera = enCartelera;
+    // Es solo un veto: en cartelera está la que además tiene funciones por delante.
+    // State: si se puede publicar lo decide su estado de revisión (ver EstadoRevision).
+    public void ponerEnCartelera() {
+        estadoRevision.exigirPublicable(titulo);
+        enCartelera = true;
     }
 
-    /**
-     * Qué tan bien valorada está, de 0 a 10. Es el {@code vote_average} de TMDB para lo
-     * importado, y cero para lo que se carga a mano sin dato.
-     *
-     * <p>Existe para que el planificador de la grilla pueda ordenar: sin un número que
-     * compare dos películas, "programar las mejores" no se puede resolver.
-     */
-    public double getPuntaje() {
-        return puntaje;
+    // State: si se puede programar lo decide su estado de revisión (ver EstadoRevision).
+    public void exigirProgramable() {
+        estadoRevision.exigirProgramable(titulo);
     }
 
-    public void setPuntaje(double puntaje) {
-        this.puntaje = puntaje;
+    // State: si la ve quien no es del personal lo decide su estado de revisión (ver EstadoRevision).
+    public boolean seMuestraAlPublico() {
+        return estadoRevision.seMuestraAlPublico();
     }
 
-    /**
-     * Sobre cuántos votos se calculó el puntaje.
-     *
-     * <p>Es lo que dice cuánto vale ese puntaje, y sin esto no se puede leer. Un 8,0 sobre
-     * seis votos y un 8,0 sobre cinco mil son el mismo número y no la misma información; un
-     * 0,0 sobre cero votos no es una película mala, es una que todavía nadie vio.
-     */
-    public int getVotos() {
-        return votos;
+    public void sacarDeCartelera() {
+        enCartelera = false;
     }
 
-    public void setVotos(int votos) {
-        this.votos = votos;
+    // Lo que trae el importador espera en el buzón: nadie la miró, así que no se ofrece.
+    public void dejarPendiente() {
+        estadoRevision = EstadoRevision.PENDIENTE;
+        enCartelera = false;
     }
 
-    /**
-     * Si el encargado ya decidió qué hacer con ella. Las que carga él nacen
-     * {@link EstadoRevision#CONFIRMADA} —cargarla ya es haberla decidido— y las que trae el
-     * importador nacen {@link EstadoRevision#PENDIENTE}.
-     */
-    public EstadoRevision getEstadoRevision() {
-        return estadoRevision;
+    // Confirmar es publicarla: levanta el veto que le puso el importador.
+    public void confirmar() {
+        estadoRevision = EstadoRevision.CONFIRMADA;
+        enCartelera = true;
     }
 
-    public void setEstadoRevision(EstadoRevision estadoRevision) {
-        this.estadoRevision = estadoRevision;
+    // Se guarda en vez de borrarse para que el importador no la vuelva a proponer.
+    public void descartar() {
+        estadoRevision = EstadoRevision.DESCARTADA;
+        enCartelera = false;
     }
 
     @Override

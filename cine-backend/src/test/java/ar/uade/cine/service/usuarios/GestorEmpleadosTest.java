@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.usuarios.Empleado;
 import ar.uade.cine.model.usuarios.Rol;
 
@@ -19,64 +22,73 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     @Autowired
     private GestorEmpleados empleados;
 
+    @Autowired
+    private GestorClientes clientes;
+
     @BeforeEach
     void registrarUno() {
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
     }
 
     @Test
-    void iniciaSesionConLasCredencialesCorrectas() {
-        Empleado admin = empleados.iniciarSesion("encargado@cine.com", "secreta123");
+    void seEncuentraPorEmailConSuRol() {
+        Empleado admin = empleados.buscarPorEmail("encargado@cine.com").orElseThrow();
 
         assertEquals("Encargado", admin.getNombre());
         assertEquals(Rol.ADMINISTRADOR, admin.getRol());
+        assertTrue(empleados.buscarPorEmail("nadie@cine.com").isEmpty());
     }
 
     @Test
-    void rechazaLaContrasenaEquivocada() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.iniciarSesion("encargado@cine.com", "otracosa"));
-    }
+    void unEmpleadoNuevoQuedaEnBcrypt() {
+        Empleado admin = empleados.buscarPorEmail("encargado@cine.com").orElseThrow();
 
-    @Test
-    void rechazaUnEmailQueNoExiste() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.iniciarSesion("nadie@cine.com", "secreta123"));
-    }
-
-    @Test
-    void noGuardaLaContrasenaEnTextoPlano() {
-        Empleado admin = empleados.iniciarSesion("encargado@cine.com", "secreta123");
         assertNotEquals("secreta123", admin.getPasswordHash());
-        assertEquals(64, admin.getPasswordHash().length(), "SHA-256 en hexa son 64 caracteres");
+        assertTrue(admin.getPasswordHash().startsWith("{bcrypt}$2a$"), admin.getPasswordHash());
     }
 
     @Test
     void rechazaContrasenaCorta() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR));
+        assertEquals("La contraseña tiene que tener al menos 6 caracteres", assertThrows(Rechazo.class,
+                () -> empleados.registrar("Otro", "otro@cine.com", "123", Rol.ADMINISTRADOR)).getMessage());
+    }
+
+    // Daba 500: BCrypt.hashpw tira una IllegalArgumentException en inglés con más de 72 bytes.
+    @Test
+    void unaContrasenaQueBcryptNoAdmiteSeRechazaAntesDelHash() {
+        assertEquals("La contraseña tiene que tener como máximo 72 caracteres, o menos si lleva tildes o eñes",
+                assertThrows(DatoInvalido.class, () -> empleados.registrar("Otro", "otro@cine.com",
+                        "x".repeat(73), Rol.ADMINISTRADOR)).getMessage());
+        assertTrue(empleados.buscarPorEmail("otro@cine.com").isEmpty());
     }
 
     @Test
     void rechazaEmailRepetido() {
-        assertThrows(IllegalArgumentException.class,
-                () -> empleados.registrar("Otro", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR));
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Otro", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR))
+                .getMessage());
     }
 
-    /** El cliente no tiene contraseña: darlo de alta acá lo dejaría iniciar sesión. */
+    // El simétrico del cliente con email de empleado: EmpleadoRepository no ve a los clientes y el
+    // INSERT chocaba con el UNIQUE del email.
+    @Test
+    void elEmailDeUnClienteNoSeRegistraComoEmpleado() {
+        clientes.registrar("Ana", "ana@mail.com");
+
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> empleados.registrar("Ana", " ANA@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());
+    }
+
+    @Test
+    void seEncuentraPorEmailSinDistinguirMayusculasNiEspacios() {
+        assertTrue(empleados.buscarPorEmail(" Encargado@CINE.com ").isPresent());
+    }
+
     @Test
     void noSeRegistraUnClienteComoEmpleado() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.CLIENTE));
-    }
-
-    @Test
-    void elAcomodadorTambienIniciaSesionYConservaSuRol() {
-        empleados.registrar("Puerta", "puerta@cine.com", "secreta123", Rol.ACOMODADOR);
-
-        Empleado acomodador = empleados.iniciarSesion("puerta@cine.com", "secreta123");
-
-        assertEquals(Rol.ACOMODADOR, acomodador.getRol());
-        assertTrue(acomodador.getRol().esEmpleado());
     }
 }

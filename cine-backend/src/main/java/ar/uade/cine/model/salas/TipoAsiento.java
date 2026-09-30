@@ -1,9 +1,11 @@
 package ar.uade.cine.model.salas;
 
-/**
- * No todas las butacas de una sala son iguales: las accesibles van al final de fila,
- * las de pareja no tienen apoyabrazos en el medio y las VIP son más caras.
- */
+import lombok.Getter;
+
+import ar.uade.cine.model.dinero.Dinero;
+
+// Tipo de butaca; cada constante trae su multiplicador de precio, así el cálculo no necesita un switch.
+@Getter
 public enum TipoAsiento {
 
     ESTANDAR(1.0),
@@ -17,7 +19,8 @@ public enum TipoAsiento {
         this.multiplicadorPrecio = multiplicadorPrecio;
     }
 
-    public double getMultiplicadorPrecio() {
-        return multiplicadorPrecio;
+    // Su parte del precio de una entrada: el recargo de la butaca sobre el precio en la sala.
+    public Dinero aplicarA(Dinero precio) {
+        return precio.por(multiplicadorPrecio);
     }
 }

@@ -5,81 +5,95 @@ skinparam sequenceMessageAlign center
 hide footbox
 
 actor Cliente
-participant "CandyController" as UI
+participant "ProductoController\nCompraCandyController" as UI
 participant "GestorCandy" as Gestor
 participant "GestorProductos" as Carta
+participant "Producto" as Producto <<Entity>>
+participant "CompraCandy" as Compra <<Entity>>
 participant "ProductoRepository" as Productos <<interface>>
-participant "CompraCandyRepository" as DAO <<interface>>
+participant "CompraCandyRepository" as Repo <<interface>>
+participant "Spring\n(eventos)" as Eventos
+participant "ComprobantesDeCandy" as Comprobantes
 participant "GeneradorTicketCandy" as Ticket <<interface>>
 
-== Antes: el administrador arma la promocion ==
+== Antes: el administrador arma la promocion (ProductoController) ==
 
 UI -> Carta : armarCombo("Combo pareja", 5500,\n{pochoclos:1, gaseosa:1})
 activate Carta
-Carta -> Productos : buscarPorId por cada componente
+Carta -> Productos : existsByNombreIgnoreCase(nombre)
+Carta -> Productos : exigir(id, "el producto")\npor cada componente
 activate Productos
 Productos --> Carta : pochoclos $4000, gaseosa $2500
 deactivate Productos
 
-alt el combo cuesta igual o mas que sus componentes
-  Carta --> UI : IllegalArgumentException\n"tiene que salir menos que $ 6500"
+Carta -> Producto : armarCombo(nombre, 5500,\n{pochoclos:1, gaseosa:1})
+activate Producto
+Producto -> Producto : crea sus ItemCombo: al menos dos,\nde 1 a 20 cada uno, ninguno es combo
+
+alt R14: el combo cuesta igual o mas que sus componentes
+  Producto --> Carta : DatoInvalido\n"El combo tiene que salir menos que\nsus componentes sueltos ($ 6500)"
+  Carta --> UI : el mismo mensaje
 else 5500 < 6500
-  Carta -> Productos : guardar(combo con sus componentes)
+  Producto --> Carta : combo con sus componentes
+  deactivate Producto
+  Carta -> Productos : save(combo)
   Carta --> UI : combo
 end
 deactivate Carta
 
-== Despues: el cliente compra ==
+== Despues: el cliente compra (CompraCandyController) ==
 
 Cliente -> UI : elige productos y medio de pago
 activate UI
 UI -> Gestor : vender(clienteId, {combo:2},\nmedio, autorizacion)
 activate Gestor
 
+Gestor -> Carta : obtener({combo:2})
+activate Carta
+Carta -> Productos : exigir(id, "el producto")\npor cada producto
+activate Productos
+Productos --> Carta : combo $5500
+deactivate Productos
+Carta --> Gestor : {Producto combo: 2}
+deactivate Carta
+
+create Compra
+Gestor -> Compra : new CompraCandy(clienteId, sin reserva,\nahora, medio, autorizacion, {combo: 2})
+activate Compra
+Compra -> Compra : exige productos, medio y\nautorizacion (R11);\ncrea cada ItemCompra, que exige\ncantidad (1 a 20) y stock y congela\nnombre, precio y ahorro
+
 alt el producto no esta disponible, la cantidad\nno es valida o falta la autorizacion
-  Gestor --> UI : IllegalArgumentException
-  UI --> Cliente : motivo del rechazo
+  Compra --> Gestor : DatoInvalido
+  Gestor --> UI : el mismo mensaje
+  UI --> Cliente : 400 con el motivo del rechazo
 else todo en orden
-  Gestor -> Carta : buscarOFallar(productoId)
-  activate Carta
-  Carta -> Productos : buscarPorId(productoId)
-  activate Productos
-  Productos --> Carta : producto con su precio
-  deactivate Productos
-  Carta --> Gestor : producto con su precio
-  deactivate Carta
+  Compra --> Gestor : compra
+  deactivate Compra
 
-  note right of Gestor
-    El precio se lo pregunta a la carta, no lo
-    sabe ni lo recibe: la misma razon por la que
-    el pago de una reserva toma el monto de la
-    reserva. Cada ItemCompra lo congela.
-  end note
+  Gestor -> Repo : save(compra)
+  activate Repo
+  Repo --> Gestor : compra con id asignado
+  deactivate Repo
 
-  Gestor -> DAO : guardar(compra)
-  activate DAO
-  DAO --> Gestor : compra con id asignado
-  deactivate DAO
+  Gestor -> Eventos : publishEvent(CompraCandyRegistrada(id))\nlo retiene hasta el commit
 
-  Gestor -> Carta : ahorroDe(compra):\ncuanto costaria suelto - lo que se pago
-  activate Carta
-  Carta --> Gestor : $ 2000
-  deactivate Carta
-  Gestor -> Ticket : emitir(compra, cliente, ahorro)
+  == commit de la transaccion de GestorCandy ==
+
+  Eventos -> Comprobantes : emitirTicket(CompraCandyRegistrada)\n@TransactionalEventListener (AFTER_COMMIT)
+  activate Comprobantes
+  Comprobantes -> Repo : exigir(compraId)\nREQUIRES_NEW, solo lectura
+  Comprobantes -> Ticket : emitir(compra, cliente)\n(si falla: al log, la venta queda)
   activate Ticket
+  Ticket -> Compra : getAhorro()
+  Compra --> Ticket : $ 2000: la suma de lo que\ncada ItemCompra congelo al vender
   Ticket -> Ticket : escribe\ntickets/candy-N.txt
   deactivate Ticket
+  deactivate Comprobantes
 
   Gestor --> UI : compra
   UI --> Cliente : "Total: $ 11000.\nAhorro $ 2000 con los combos"
 end
 deactivate Gestor
 deactivate UI
-
-note over DAO, Ticket
-  No hay estados ni cobro posterior: en el mostrador se paga
-  en el acto, asi que la compra nace pagada y lleva encima
-  el medio. Reservar y cobrar despues es solo para las butacas.
-end note
 
 @enduml

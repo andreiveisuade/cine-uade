@@ -3,7 +3,6 @@ title Importador de cartelera: TMDB entra por las reglas del cine
 
 skinparam sequenceMessageAlign left
 skinparam maxMessageSize 200
-skinparam ParticipantPadding 12
 
 actor "Encargado" as E
 participant "nginx" as NG
@@ -13,7 +12,7 @@ participant "MapeoTmdb" as MAP
 participant "GestorRevisionCartelera" as GR
 database MySQL as DB
 
-E -> NG : POST /api/importaciones\n(boton en #/importador)
+E -> NG : POST /api/importaciones\n(boton Traer cartelera\ndel panel Swing)
 NG -> GI : proxy_read_timeout 180s
 activate GI
 
@@ -26,22 +25,17 @@ TM --> GI : candidatas
 deactivate TM
 
 loop una por vez, en orden
-  GI -> GI : R1: ya esta ese titulo?
-  GI -> GR : alta(datos)
-  GR -> GR : R2, R7, R10
-  GR -> DB : estadoRevision = PENDIENTE\n(fuera de cartelera)
+  GI -> GI : R1: ya esta ese titulo?\nsi esta, salteada
+  GI -> GR : importar(datos)
+  GR -> DB : alta por GestorCartelera:\nPelicula valida R2, R7, R10
+  GR -> GR : pelicula.dejarPendiente()\n(PENDIENTE, fuera de cartelera)
+  opt la candidata falla (un Rechazo o un error de la base)
+    GI -> GI : cuenta fallida y sigue con la proxima;\nel error de base va al log
+  end
 end
 
 GI --> NG : contadores de la corrida
 deactivate GI
-NG --> E : 200 + resumen
-
-note over GR, DB
-  Cae en el buzon "Por revisar", no en
-  cartelera. GestorFunciones rechaza
-  programar una pelicula sin confirmar.
-  Lo descartado no se borra: si no, la
-  corrida siguiente lo traeria otra vez.
-end note
+NG --> E : 201 + resumen
 
 @enduml

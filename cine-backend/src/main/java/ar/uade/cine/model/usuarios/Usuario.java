@@ -1,5 +1,6 @@
 package ar.uade.cine.model.usuarios;
 
+import lombok.Getter;
 import org.hibernate.annotations.DiscriminatorFormula;
 
 import jakarta.persistence.Column;
@@ -13,23 +14,15 @@ import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
-/**
- * Base de las personas que el sistema conoce. Los subtipos no se diferencian solo por una
- * etiqueta: el administrador tiene credenciales y el cliente no, porque el cliente compra
- * sin registrarse con contraseña.
- *
- * <p>Las dos van a la misma tabla —{@code SINGLE_TABLE}, que es lo que ya hacía el schema—
- * y el discriminador es la columna {@code rol}. Tiene una vuelta: {@code rol} lleva tres
- * valores y las clases son dos, porque ADMINISTRADOR y ACOMODADOR son los dos empleados. Un
- * {@code @DiscriminatorValue} solo sabe comparar contra un valor, así que el discriminador
- * se calcula con una fórmula que agrupa a los dos. La alternativa era sumarle a la tabla una
- * columna que dijera lo mismo que rol pero más gruesa, y eso es un dato duplicado que un día
- * no coincide.
- */
+import ar.uade.cine.model.usuarios.validacion.ValidadorUsuario;
+
+// Cliente o empleado de la tabla usuario; el nombre lo valida ValidadorUsuario, y el email, Email.
+// Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorFormula("case when rol = 'CLIENTE' then 'CLIENTE' else 'EMPLEADO' end")
+@Getter
 public abstract class Usuario {
 
     @Id
@@ -38,14 +31,10 @@ public abstract class Usuario {
 
     private String nombre;
 
+    // El texto que ya normalizó Email: es con lo que se busca, también desde las reservas del cliente.
     @Column(unique = true)
     private String email;
 
-    /**
-     * Se mapea como una columna común y no como el discriminador de JPA porque es las dos
-     * cosas a la vez: distingue la clase y además es un dato que el negocio lee —el front
-     * muestra si el que entró es administrador o acomodador.
-     */
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
     private Rol rol;
@@ -54,29 +43,8 @@ public abstract class Usuario {
     }
 
     protected Usuario(String nombre, String email, Rol rol) {
-        this.nombre = nombre;
-        this.email = email;
+        this.nombre = ValidadorUsuario.nombre(nombre);
+        this.email = new Email(email).valor();
         this.rol = rol;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    /** Qué puede hacer, y a la vez de qué clase es la fila. */
-    public Rol getRol() {
-        return rol;
     }
 }

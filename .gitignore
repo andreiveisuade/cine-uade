@@ -1,1 +1,22 @@
 .DS_Store
+
+# Ningún .env en ninguna carpeta, con el nombre que sea.
+.env
+.env.*
+!.env.example
+
+# Lo que genera cada IDE: cada uno usa el suyo y no forma parte del proyecto.
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Skills y config local de asistentes de código, instalados por cada uno.
+.agents/
+.claude/
+skills-lock.json
+
+# Lo que compila Maven en el cliente de escritorio.
+cine-swing/target/

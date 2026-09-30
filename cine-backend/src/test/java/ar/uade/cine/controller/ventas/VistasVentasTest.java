@@ -1,0 +1,271 @@
+package ar.uade.cine.controller.ventas;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.controller.informes.CajaController;
+import ar.uade.cine.service.ventas.Ocupacion;
+import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.ConsultasReservas;
+import ar.uade.cine.service.ventas.GestorAcceso;
+import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.cartelera.GestorCartelera;
+import ar.uade.cine.model.cartelera.Clasificacion;
+import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.MedioPago;
+import ar.uade.cine.model.ventas.Pago;
+import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.dto.ventas.EntradaVistaDTO;
+import ar.uade.cine.dto.ventas.PagoVistaDTO;
+import ar.uade.cine.dto.ventas.ReservaVistaDTO;
+import ar.uade.cine.model.dinero.Dinero;
+
+import jakarta.persistence.EntityManagerFactory;
+
+class VistasVentasTest extends PruebaDeIntegracion {
+
+    @Autowired
+    private GestorCartelera cartelera;
+
+    @Autowired
+    private GestorClientes clientes;
+
+    @Autowired
+    private GestorFunciones funciones;
+
+    @Autowired
+    private GestorPagos pagos;
+
+    @Autowired
+    private GestorReservas reservas;
+    @Autowired
+    private GestorAcceso acceso;
+    @Autowired
+    private ConsultasReservas consultas;
+
+    @Autowired
+    private GestorSalas salas;
+
+    @Autowired
+    private Ocupacion ocupacion;
+
+    @Autowired
+    private VistasReservas vistas;
+
+    @Autowired
+    private VistasPagos vistasPagos;
+
+    @Autowired
+    private ReservaController reservaController;
+
+    @Autowired
+    private CajaController cajaController;
+
+    @Autowired
+    private EntityManagerFactory emf;
+
+    private Cliente cliente;
+
+    @BeforeEach
+    void prepararEscenario() {
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
+        Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        funciones.programar(1, sala.getId(),
+                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+    }
+
+    @Test
+    void laReservaTraeTodoLoQueImprimeElTicket() {
+        ReservaVistaDTO vista = vistas.reserva(reservar("A1", "A2"));
+
+        assertEquals("Matrix", vista.pelicula().titulo());
+        assertEquals("Sala 1", vista.sala().nombre());
+        assertEquals("2026-08-20T20:00:00", vista.funcion().inicio());
+        assertEquals("Andrei", vista.cliente().nombre());
+        assertEquals(2, vista.cantidadEntradas());
+        assertEquals(10000.0, vista.total());
+        assertEquals("RESERVADA", vista.estado());
+    }
+
+    @Test
+    void elClienteViajaSinDatosDeMas() {
+        ReservaVistaDTO vista = vistas.reserva(reservar("A1"));
+
+        assertEquals(cliente.getId(), vista.cliente().id());
+        assertEquals("andrei@uade.edu.ar", vista.cliente().email());
+    }
+
+    @Test
+    void cadaEntradaDiceConQueTarifaSeVendio() {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        butacas.put("A1", TipoTarifa.GENERAL);
+        butacas.put("A2", TipoTarifa.JUBILADO);
+
+        ReservaVistaDTO vista = vistas.reserva(reservas
+                .reservar(1, cliente.getId(), butacas, null));
+
+        assertEquals("GENERAL", entrada(vista, "A1").tarifa());
+        assertEquals("JUBILADO", entrada(vista, "A2").tarifa());
+        assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
+    }
+
+    @Test
+    void laReservaViajaConElCodigoDelQr() {
+        Reserva reserva = reservar("A1");
+
+        ReservaVistaDTO vista = vistas.reserva(reserva);
+
+        assertEquals(reserva.getCodigo(), vista.codigo());
+        assertTrue(!vista.codigo().equals(String.valueOf(vista.id())));
+    }
+
+    @Test
+    void ingresadaEnEstaEnNullHastaQueAlguienEntra() {
+        Reserva reserva = reservar("A1");
+        assertNull(vistas.reserva(reserva).ingresadaEn());
+
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 30));
+        Reserva ingresada = acceso.registrarIngreso(reserva.getCodigo());
+
+        assertNotNull(vistas.reserva(ingresada).ingresadaEn());
+        assertEquals(19, vistas.reserva(ingresada).ingresadaEn().length(),
+                "tiene que usar el mismo formato que el resto de las fechas");
+    }
+
+    @Test
+    void sinCobrarLaReservaViajaSinPago() {
+        assertNull(vistas.reserva(reservar("A1")).pago());
+    }
+
+    @Test
+    void cobradaLaReservaTraeSuPagoYCambiaDeEstado() {
+        Reserva reserva = reservar("A1");
+        pagos.cobrar(reserva.getId(), MedioPago.CREDITO, "AUTH-123");
+
+        ReservaVistaDTO vista = vistas.reserva(consultas.obtener(reserva.getId()));
+
+        assertEquals("PAGADA", vista.estado());
+        assertEquals("CREDITO", vista.pago().medio());
+        assertEquals("AUTH-123", vista.pago().codigoAutorizacion());
+        assertEquals(5000.0, vista.pago().monto());
+    }
+
+    @Test
+    void elPagoEmbebidoNoRepiteLoQueYaTraeLaReserva() {
+        Reserva reserva = reservar("A1");
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        PagoVistaDTO vista = vistasPagos.pago(pago);
+
+        assertNull(vista.pelicula());
+        assertNull(vista.cliente());
+        assertNull(vista.entradas());
+    }
+
+    @Test
+    void elPagoDelArqueoSiTraeQueSeVendioYAQuien() {
+        Reserva reserva = reservar("A1", "A2");
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        PagoVistaDTO vista = vistasPagos.pagosDeArqueo(List.of(pago)).get(0);
+
+        assertEquals("Matrix", vista.pelicula().titulo());
+        assertEquals("Andrei", vista.cliente().nombre());
+        assertEquals(2, vista.entradas());
+        assertEquals(10000.0, vista.monto());
+    }
+
+    // Cada venta suma una película, una función y un cliente distintos: si el listado
+    // leyera alguno de ellos por fila, las consultas crecerían con las ventas.
+    @Test
+    void losListadosCuestanLasMismasConsultasConDosVentasQueConOcho() {
+        vender(2);
+        long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null, null));
+        long delClienteConDos = consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null));
+        long arqueoConDos = consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString()));
+
+        vender(6);
+        assertEquals(16, reservaController.listar(null, null, null, null).size());
+
+        assertEquals(reservasConDos, consultasDe(() -> reservaController.listar(null, null, null, null)),
+                "GET /api/reservas");
+        assertEquals(delClienteConDos,
+                consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null)),
+                "GET /api/reservas?email=");
+        assertEquals(arqueoConDos,
+                consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString())),
+                "GET /api/arqueo");
+    }
+
+    private int vendidas;
+
+    private void vender(int cuantas) {
+        Sala sala = salas.listar().get(0);
+        for (int i = 0; i < cuantas; i++) {
+            vendidas++;
+            int pelicula = cartelera.agregar("Película " + vendidas, 90, List.of(Genero.DRAMA),
+                    Clasificacion.ATP).getId();
+            int funcion = funciones.programar(pelicula, sala.getId(),
+                    LocalDateTime.of(2026, 9, 1, 10, 0).plusHours(3L * vendidas),
+                    Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)).getId();
+            Cliente otro = clientes.identificar("Cliente " + vendidas, "cliente" + vendidas + "@uade.edu.ar");
+            for (int clienteId : List.of(cliente.getId(), otro.getId())) {
+                Reserva reserva = reservas.reservar(funcion, clienteId,
+                        Map.of(clienteId == cliente.getId() ? "A1" : "A2", TipoTarifa.GENERAL), null);
+                pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+            }
+        }
+    }
+
+    private long consultasDe(Runnable listado) {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+            listado.run();
+            return estadisticas.getPrepareStatementCount();
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
+    }
+
+    private Reserva reservar(String... codigos) {
+        Map<String, TipoTarifa> butacas = new LinkedHashMap<>();
+        for (String codigo : codigos) {
+            butacas.put(codigo, TipoTarifa.GENERAL);
+        }
+        return reservas.reservar(1, cliente.getId(), butacas, null);
+    }
+
+    private static EntradaVistaDTO entrada(ReservaVistaDTO vista, String codigo) {
+        return vista.entradas().stream()
+                .filter(e -> e.codigo().equals(codigo))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("La reserva no tiene la butaca " + codigo));
+    }
+}

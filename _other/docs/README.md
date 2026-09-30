@@ -2,36 +2,55 @@
 
 | Carpeta | Qué hay |
 |---|---|
-| `manual/` | Manual navegable del proyecto (`index.html`). Requerimientos, casos de uso, diagramas, decisiones y pendientes. Es la fuente de verdad. |
-| `diagramas/` | Fuentes PlantUML (`.puml`) y sus `.svg` renderizados |
+| `manual/` | El manual (`index.html`): requerimientos, reglas, casos de uso, arquitectura, decisiones y diagramas. Es la fuente de verdad |
+| `diagramas/` | Fuentes PlantUML (`.puml`) y sus `.svg` |
+| `evidencia/` | Capturas de la última recorrida visual |
+| `PRUEBAS.md` | Cómo se verifica el sistema y el resultado de la última corrida |
 
-## Ver el manual
-
-```bash
-open manual/index.html
-```
-
-Es autocontenido: los SVG van embebidos, no necesita servidor ni internet.
-
-## Regenerar
+El manual es autocontenido (`open manual/index.html`). **No se edita a mano**: se edita
+`manual/template.html` y se regenera, con PlantUML y Python 3:
 
 ```bash
 cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
-cd ../manual && python3 build.py               # inyecta los SVG en el HTML
+archify/exportar.sh capas.archify.json    # tras tocar un .archify.json (skill archify + navegador de cmux)
+cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
 
-`index.html` **no se edita a mano**: se genera desde `manual/template.html`, que tiene los placeholders
-`{{SVG_CASOS_USO}}`, `{{SVG_DOMINIO}}`, `{{SVG_CAPAS}}`, `{{SVG_SECUENCIA}}`, `{{SVG_SECUENCIA_CANDY}}` y
-`{{SVG_DOCKER}}`. Para cambiar texto o diseño del manual, editar el template y volver a correr `build.py`.
-Si agregás un diagrama nuevo, sumá su placeholder al `svg_map` de `build.py`.
+Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `imagen_map`.
 
 ## Diagramas
 
 | Archivo | Qué muestra |
 |---|---|
-| `clases-dominio.puml` | Entidades, enums y relaciones del negocio, agrupadas por sub-dominio |
-| `clases-capas.puml` | Arquitectura en capas: gestores, repositorios y adaptadores de infraestructura |
+| `clases-dominio.puml` | Entidades, value objects, enums y relaciones del negocio, agrupados por subdominio |
+| `capas.archify.json` | Las seis capas y quién llama a quién (Archify) |
 | `casos-de-uso.puml` | Actores y casos de uso |
-| `secuencia-reserva.puml` | Flujo de reservar butacas hasta emitir el ticket |
-| `secuencia-candy.puml` | Armado del combo promocional y venta en el candy |
-| `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué repo construye a cada uno |
+| `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |
+| `secuencia-candy.puml` | Comprar en el candy: del combo al ticket |
+| `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué carpeta construye a cada uno |
+| `reserva-clases.archify.json` | Las mismas capas con las clases de `POST /api/reservas` (Archify) |
+| `peticion-capas.puml` | Una petición de punta a punta: contenedores, puertos y capas |
+| `arranque-orden.puml` | Orden de arranque de `docker compose up -d --build` |
+| `butaca-carrera.puml` | Dos personas, la misma butaca: el bloqueo en MySQL y el UNIQUE de `entrada` |
+| `importador-flujo.puml` | Importador de cartelera: TMDB entra por las reglas del cine |
+| `promociones-herencia.puml` | Promociones: una jerarquía, no un switch |
+| `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
+| `patron-state.puml` | State: el estado decide qué se puede hacer, no un if en su dueño |
+| `patron-observer.puml` | Observer: la venta avisa y los comprobantes salen después del commit |
+| `solid-ocp.puml` | SOLID, abierto-cerrado: un beneficio nuevo es una clase |
+| `solid-isp.puml` | SOLID, segregación de interfaces: cobrar no necesita el ABM de promociones |
+| `solid-dip.puml` | SOLID, inversión de dependencias |
+| `grasp-pure-fabrication.puml` | GRASP, fabricación pura |
+| `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R20 |
+| `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
+| `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
+| `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
+| `base-venta-er.puml` | Tablas de la venta con sus PK, FK, `UNIQUE` y cascadas |
+| `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
+| `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |
+| `grilla-plan.puml` | La grilla: un plan para previsualizar, crear y extender |
+| `swing-pedido.puml` | Swing: un formulario, del clic al mensaje |
+| `swing-pantallas.puml` | Swing: herencia de las pantallas (Template Method) |
+| `traslado-servidor.puml` | Qué dice dónde está cada parte al mudar el servidor |
+| `pruebas-niveles.puml` | Qué levanta cada nivel de prueba del backend |

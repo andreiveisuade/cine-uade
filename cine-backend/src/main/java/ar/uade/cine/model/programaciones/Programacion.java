@@ -5,16 +5,25 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
+import ar.uade.cine.model.programaciones.validacion.ValidadorProgramacion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.tiempo.Periodo;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -23,64 +32,41 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Getter;
 
-/**
- * La grilla con la que un cine define su cartelera: "Matrix en la Sala 1, todos los días
- * a las 20:30, del 1 al 15 de septiembre". Una sola alta en vez de quince.
- *
- * <p><strong>Genera funciones de verdad, no las calcula al vuelo.</strong> Es la decisión
- * que define la entidad. Una función tiene cosas propias que la grilla no sabe ni puede
- * saber: sus reservas, si se canceló, si se movió de sala porque el proyector se rompió.
- * Derivarlas de la grilla en cada consulta obligaría a modelar cada una de esas excepciones
- * como una excepción <em>a la grilla</em>, y a la tercera el modelo sería la grilla más una
- * lista de parches. Materializarlas deja a la función siendo lo que ya era.
- *
- * <p>Lleva encima todo lo que necesita una {@code Funcion} para nacer —película, sala,
- * versión, proyección, precio— más el patrón temporal que las multiplica: rango de fechas,
- * hora y días de la semana. Las referencias van por id, como en todo el dominio.
- */
+// Película repetida en una sala a una hora por un período; Experto: nace válida y sabe qué falta generar.
 @Entity
+@Getter
 public class Programacion {
+
+    private static final int HORIZONTE_DIAS = 14;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "pelicula_id")
-    private int peliculaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "pelicula_id", nullable = false)
+    private Pelicula pelicula;
 
-    @Column(name = "sala_id")
-    private int salaId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sala_id", nullable = false)
+    private Sala sala;
 
-    // ---------- el patrón temporal ----------
-
-    private LocalDate desde;
-
-    /**
-     * Cuándo termina, o {@code null} si la grilla es <strong>abierta</strong>: corre hasta
-     * que alguien la dé de baja. Es lo normal en un cine —la función de las 20:30 no tiene
-     * fecha de vencimiento— y es lo que le da sentido a {@link #estaActiva()}: sin grillas
-     * abiertas, dar de baja no evita nada, porque no quedaba nada por generar.
-     */
-    private LocalDate hasta;
+    // Sus dos columnas se llaman como los campos del record: desde y hasta.
+    @Embedded
+    private Periodo periodo;
 
     private LocalTime horaInicio;
 
-    /**
-     * Vacío significa todos los días, no ninguno. Mismo criterio que
-     * {@code Promocion.getDiasSemana()}: una grilla sin filas de días corre toda la semana.
-     *
-     * <p>EAGER porque sin los días la grilla no se puede leer: cualquier cosa que se haga
-     * con ella —listarla, generar funciones— pregunta qué días corre.
-     */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "programacion_dia",
             joinColumns = @JoinColumn(name = "programacion_id"))
     @Column(name = "dia")
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> diasSemana = EnumSet.noneOf(DayOfWeek.class);
-
-    // ---------- lo que se copia a cada función ----------
 
     @Enumerated(EnumType.STRING)
     private Version version;
@@ -90,41 +76,55 @@ public class Programacion {
 
     private Dinero precio;
 
+    @Getter(AccessLevel.NONE)
     private boolean activa = true;
 
+    // Se guarda y no se deriva de la última función: si esa se borra o mueve, se regenerarían fechas.
     private LocalDate generadaHasta;
 
     protected Programacion() {
     }
 
-    public Programacion(int peliculaId, int salaId, LocalDate desde, LocalDate hasta,
+    // La película y la sala llegan ya buscadas y con su 404, como en el alta de una función suelta:
+    // hacen falta para R8. Se valida todo antes de asignar nada.
+    public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
                         Proyeccion proyeccion, Dinero precio) {
-        this.peliculaId = peliculaId;
-        this.salaId = salaId;
-        this.desde = desde;
-        this.hasta = hasta;
+        Periodo validado = ValidadorProgramacion.periodo(desde, hasta);
+        ValidadorProgramacion.hora(horaInicio);
+        Set<DayOfWeek> dias = ValidadorProgramacion.dias(diasSemana, validado);
+        ValidadorFuncion.formato(sala, version, proyeccion, precio);
+        this.pelicula = pelicula;
+        this.sala = sala;
+        this.periodo = validado;
         this.horaInicio = horaInicio;
-        this.diasSemana = diasSemana == null || diasSemana.isEmpty()
-                ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana);
+        this.diasSemana = dias;
         this.version = version;
         this.proyeccion = proyeccion;
         this.precio = precio;
     }
 
-    /**
-     * Recorre el rango día por día y se queda con los que la grilla habilita. Vive acá y no
-     * en el gestor porque no consulta nada ni decide nada del negocio: es cómo se lee el
-     * patrón temporal que la propia programación guarda.
-     *
-     * <p>El final es el más cercano entre el {@code hasta} de la grilla y el tope que pide
-     * quien llama. Una grilla abierta no tiene el primero, así que manda el tope; una
-     * cerrada no se pasa del suyo ni aunque el tope sea posterior.
-     */
+    // R20 y el horizonte miran el reloj, así que los exige el alta, con la hora que le pasa el gestor.
+    // Solo en una cerrada: una abierta genera de a catorce días, siempre por delante.
+    public void exigirGenerableA(LocalDateTime ahora) {
+        LocalDate hasta = periodo.hasta();
+        if (hasta == null) {
+            return;
+        }
+        // R20: un rango cerrado que ya pasó entero se daría de alta vacío, sin nada que extender.
+        if (horarios(hasta).stream().allMatch(inicio -> Funcion.yaPaso(inicio, ahora))) {
+            throw new DatoInvalido(
+                    "Todos los horarios del rango ya pasaron: la grilla no generaría funciones");
+        }
+        ValidadorFuncion.dentroDelHorizonte(hasta, ahora.toLocalDate(),
+                "El rango tiene que terminar dentro del próximo año");
+    }
+
     public List<LocalDateTime> horarios(LocalDate tope) {
+        LocalDate hasta = periodo.hasta();
         LocalDate fin = hasta == null || tope.isBefore(hasta) ? tope : hasta;
         List<LocalDateTime> momentos = new ArrayList<>();
-        for (LocalDate dia = desde; !dia.isAfter(fin); dia = dia.plusDays(1)) {
+        for (LocalDate dia = periodo.desde(); !dia.isAfter(fin); dia = dia.plusDays(1)) {
             if (diasSemana.isEmpty() || diasSemana.contains(dia.getDayOfWeek())) {
                 momentos.add(LocalDateTime.of(dia, horaInicio));
             }
@@ -132,83 +132,57 @@ public class Programacion {
         return momentos;
     }
 
-    /**
-     * Hasta qué fecha ya se materializaron las funciones, o {@code null} si todavía ninguna.
-     *
-     * <p>Es lo único de la grilla que no describe la intención sino lo que efectivamente
-     * pasó, y se guarda en vez de derivarse a propósito: mirar la última función generada no
-     * sirve, porque una función se puede cancelar o mover de sala y entonces la cuenta daría
-     * de menos y se volverían a generar las mismas fechas.
-     */
-    public LocalDate getGeneradaHasta() {
-        return generadaHasta;
+    public LocalDate topePara(LocalDate hoy) {
+        return periodo.hasta() != null ? periodo.hasta() : hoy.plusDays(HORIZONTE_DIAS);
     }
 
-    public void setGeneradaHasta(LocalDate generadaHasta) {
-        this.generadaHasta = generadaHasta;
+    public boolean estaAlDia(LocalDate hoy) {
+        return generadaHasta != null && !generadaHasta.isBefore(topePara(hoy));
     }
 
-    public int getId() {
-        return id;
+    // Por fecha procesada y no por función existente: una que chocó se reintentaría siempre.
+    public List<LocalDateTime> horariosSinGenerar(LocalDate tope) {
+        return horarios(tope).stream()
+                .filter(inicio -> generadaHasta == null || inicio.toLocalDate().isAfter(generadaHasta))
+                .toList();
     }
 
-    public void setId(int id) {
-        this.id = id;
+    // El tope y no la última generada: las que chocaron también quedan procesadas.
+    public void marcarGeneradaHasta(LocalDate tope) {
+        this.generadaHasta = tope;
     }
 
+    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
-        return peliculaId;
+        return pelicula.getId();
     }
 
     public int getSalaId() {
-        return salaId;
-    }
-
-    public LocalDate getDesde() {
-        return desde;
-    }
-
-    public LocalDate getHasta() {
-        return hasta;
-    }
-
-    public LocalTime getHoraInicio() {
-        return horaInicio;
+        return sala.getId();
     }
 
     public Set<DayOfWeek> getDiasSemana() {
-        return diasSemana;
+        return Collections.unmodifiableSet(
+                diasSemana.isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(diasSemana));
     }
 
-    public Version getVersion() {
-        return version;
-    }
-
-    public Proyeccion getProyeccion() {
-        return proyeccion;
-    }
-
-    public Dinero getPrecio() {
-        return precio;
-    }
-
-    /**
-     * Una grilla dada de baja no genera funciones nuevas; las ya generadas siguen vivas. Es
-     * lo mismo que {@code promocion.activa} y {@code producto.disponible}: en este sistema
-     * nada que haya producido ventas se borra.
-     */
     public boolean estaActiva() {
         return activa;
     }
 
-    public void setActiva(boolean activa) {
-        this.activa = activa;
+    public void activar() {
+        this.activa = true;
+    }
+
+    public void desactivar() {
+        this.activa = false;
     }
 
     @Override
     public String toString() {
-        return "[" + id + "] película " + peliculaId + " en sala " + salaId + " - " + horaInicio
-                + " del " + desde + (hasta == null ? " en adelante" : " al " + hasta)
+        LocalDate hasta = periodo.hasta();
+        return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + horaInicio
+                + " del " + periodo.desde() + (hasta == null ? " en adelante" : " al " + hasta)
                 + " - generada hasta " + (generadaHasta == null ? "nunca" : generadaHasta);
     }
 }

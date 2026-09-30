@@ -8,18 +8,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.TipoTarifa;
 
-/**
- * Lo que entra por HTTP es texto y nadie garantiza que sea el que esperamos. Estas
- * pruebas fijan las dos mitades del contrato: qué se acepta y, sobre todo, qué dice el
- * mensaje cuando se rechaza —porque ese texto lo lee el usuario, no un programador—.
- */
 class ParseoTest {
 
     @Test
@@ -28,7 +30,6 @@ class ParseoTest {
         assertEquals(TipoTarifa.JUBILADO, Parseo.constante(TipoTarifa.class, "JUBILADO", "la tarifa"));
     }
 
-    /** El front manda lo que el usuario eligió; los espacios y las minúsculas no son un error. */
     @Test
     void toleraMinusculasYEspaciosAlrededor() {
         assertEquals(MedioPago.EFECTIVO, Parseo.constante(MedioPago.class, "  efectivo ", "el medio"));
@@ -37,33 +38,28 @@ class ParseoTest {
 
     @Test
     void unValorQueNoExisteEsUnError() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
-        assertTrue(e.getMessage().contains("el medio de pago"), "el mensaje no dice qué campo falló");
+        assertTrue(e.getMessage().contains("medio de pago"), "el mensaje no dice qué campo falló");
         assertTrue(e.getMessage().contains("BITCOIN"), "el mensaje no dice qué valor llegó");
     }
 
-    /**
-     * El mensaje es para el usuario: no puede filtrar nombres de clases de Java. El
-     * IllegalArgumentException de Enum.valueOf dice "No enum constant ar.uade.cine..." y
-     * eso es exactamente lo que esta capa está para tapar.
-     */
     @Test
     void elMensajeNoDejaAsomarNombresDeClases() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+        Rechazo e = assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "BITCOIN", "el medio de pago"));
 
-        assertTrue(e.getMessage().contains("Valor inválido"), "no es el mensaje de esta capa");
+        assertTrue(e.getMessage().contains("no es válido"), "no es el mensaje de esta capa");
         assertTrue(!e.getMessage().contains("ar.uade.cine"), "se filtró el paquete al usuario");
         assertTrue(!e.getMessage().contains("No enum constant"), "se filtró el mensaje de Java");
     }
 
     @Test
     void faltarElValorTambienEsUnError() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, null, "el medio"));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constante(MedioPago.class, "   ", "el medio"));
     }
 
@@ -73,10 +69,6 @@ class ParseoTest {
                 Parseo.constantes(Genero.class, List.of("ACCION", "DRAMA"), "el género"));
     }
 
-    /**
-     * Una lista ausente no es una lista con errores: la película sin géneros la rechaza
-     * el gestor con su propio mensaje, que es donde vive esa regla.
-     */
     @Test
     void unaListaAusenteQuedaVacia() {
         assertEquals(List.of(), Parseo.constantes(Genero.class, null, "el género"));
@@ -84,7 +76,7 @@ class ParseoTest {
 
     @Test
     void unaListaConUnValorInvalidoFallaEntera() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> Parseo.constantes(Genero.class, List.of("ACCION", "MUSICAL_INVENTADO"), "el género"));
     }
 
@@ -100,26 +92,100 @@ class ParseoTest {
         assertEquals(LocalTime.of(20, 30), Parseo.hora("20:30", "la hora"));
     }
 
+    // El mensaje llega tal cual al usuario: arranca en mayúscula y dice cómo escribirlo bien.
     @Test
-    void unaFechaMalEscritaLoDiceEnCastellano() {
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Parseo.momento("20/08/2026", "el inicio de la función"));
+    void unaFechaOUnaHoraMalEscritaDiceElFormatoQueEspera() {
+        assertEquals("La fecha y hora de la función no es válida: usá AAAA-MM-DDTHH:MM",
+                mensaje(() -> Parseo.momento("20/08/2026", "la fecha y hora de la función")));
+        assertEquals("La fecha de inicio no es válida: usá AAAA-MM-DD",
+                mensaje(() -> Parseo.dia("ayer", "la fecha de inicio")));
+        assertEquals("La hora de apertura no es válida: usá HH:MM",
+                mensaje(() -> Parseo.hora("25:00", "la hora de apertura")));
+    }
 
-        assertTrue(e.getMessage().contains("el inicio de la función"));
-        assertTrue(!e.getMessage().contains("DateTimeParseException"), "se filtró la excepción de Java");
+    @Test
+    void elAdjetivoConcuerdaConElDatoQueFallo() {
+        assertEquals("El inicio de la vigencia no es válido: usá AAAA-MM-DD",
+                mensaje(() -> Parseo.dia("2026-13-45", "el inicio de la vigencia")));
+    }
+
+    @Test
+    void unNumeroOUnFiltroMalEscritoArrancaEnMayuscula() {
+        assertEquals("El id del cliente tiene que ser un número",
+                mensaje(() -> Parseo.numeroOpcional("abc", "el id del cliente")));
+        assertEquals("El filtro publicada tiene que ser true o false",
+                mensaje(() -> Parseo.booleanOpcional("quizas", "el filtro publicada")));
+    }
+
+    @Test
+    void unaConstanteQueNoExisteDiceQueValorLlego() {
+        assertEquals("El idioma no es válido: KLINGON",
+                mensaje(() -> Parseo.constante(Version.class, "KLINGON", "el idioma")));
+        assertEquals("La proyección no es válida: IMAX",
+                mensaje(() -> Parseo.constante(Proyeccion.class, "IMAX", "la proyección")));
+        assertEquals("Falta el idioma", mensaje(() -> Parseo.constante(Version.class, " ", "el idioma")));
     }
 
     @Test
     void unDiaQueNoExisteEnElCalendarioSeRechaza() {
-        assertThrows(IllegalArgumentException.class, () -> Parseo.dia("2026-02-30", "la fecha"));
-        assertThrows(IllegalArgumentException.class, () -> Parseo.hora("25:00", "la hora"));
+        assertThrows(Rechazo.class, () -> Parseo.dia("2026-02-30", "la fecha"));
+        assertThrows(Rechazo.class, () -> Parseo.hora("25:00", "la hora"));
     }
 
     @Test
     void faltarLaFechaEsUnErrorDistintoAQueEsteMalEscrita() {
-        assertTrue(assertThrows(IllegalArgumentException.class,
+        assertTrue(assertThrows(Rechazo.class,
                 () -> Parseo.dia(null, "la fecha")).getMessage().contains("Falta"));
-        assertTrue(assertThrows(IllegalArgumentException.class,
+        assertTrue(assertThrows(Rechazo.class,
                 () -> Parseo.dia("ayer", "la fecha")).getMessage().contains("válida"));
+    }
+
+    // LocalDate acepta +999999999 y la aritmética posterior desborda: el rango es el de DATE en MySQL.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            año de nueve cifras,     +999999999-12-31,    La fecha tiene que estar entre los años 1000 y 9999
+            año negativo,            -0001-01-01,         La fecha tiene que estar entre los años 1000 y 9999
+            año de tres cifras,      0999-12-31,          La fecha tiene que estar entre los años 1000 y 9999
+            año de cinco cifras,     +10000-01-01,        La fecha tiene que estar entre los años 1000 y 9999
+            """)
+    void unDiaFueraDelRangoDeLaBaseSeRechaza(String caso, String valor, String error) {
+        assertEquals(error, mensaje(() -> Parseo.dia(valor, "la fecha")));
+    }
+
+    @Test
+    void unMomentoFueraDelRangoDeLaBaseSeRechazaYLosBordesEntran() {
+        assertEquals("La fecha y hora de la función tiene que estar entre los años 1000 y 9999",
+                mensaje(() -> Parseo.momento("+999999999-12-31T23:00", "la fecha y hora de la función")));
+        assertEquals(LocalDate.of(1000, 1, 1), Parseo.dia("1000-01-01", "la fecha"));
+        assertEquals(LocalDateTime.of(9999, 12, 31, 23, 59), Parseo.momento("9999-12-31T23:59", "el inicio"));
+    }
+
+    // 99999999999 es un número: decirle que tiene que serlo no le sirve a nadie.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            desborda por arriba, 99999999999,  El id de la película tiene que estar entre -2147483648 y 2147483647
+            desborda por abajo,  -99999999999, El id de la película tiene que estar entre -2147483648 y 2147483647
+            no es un número,     12a,          El id de la película tiene que ser un número
+            decimal,             1.5,          El id de la película tiene que ser un número
+            """)
+    void unIdQueNoEntraEnUnIntDiceElRango(String caso, String valor, String error) {
+        assertEquals(error, mensaje(() -> Parseo.numeroOpcional(valor, "el id de la película")));
+    }
+
+    // Con el Locale de la JVM en turco, "accion".toUpperCase() da "ACCİON" y no coincide con la constante.
+    @Test
+    void lasConstantesYLosBooleanosNoDependenDelIdiomaDeLaJvm() {
+        Locale antes = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr"));
+        try {
+            assertEquals(Genero.ACCION, Parseo.constante(Genero.class, "accion", "el género"));
+            assertEquals(Boolean.TRUE, Parseo.booleanOpcional("TRUE", "el filtro activa"));
+        } finally {
+            Locale.setDefault(antes);
+        }
+    }
+
+    private static String mensaje(Executable accion) {
+        return assertThrows(Rechazo.class, accion).getMessage();
     }
 }

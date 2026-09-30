@@ -1,0 +1,81 @@
+package ar.uade.cine.swing.comun;
+
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Locale;
+
+// Los mismos formatos que formato.js del front, para que la web del cliente y el escritorio digan lo mismo.
+public final class Formato {
+
+    private static final String[] MESES = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct",
+            "nov", "dic"};
+    private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    private Formato() {
+    }
+
+    public static String precio(double monto) {
+        NumberFormat numero = NumberFormat.getIntegerInstance(Fechas.ARGENTINA);
+        return "$ " + numero.format(Math.round(monto));
+    }
+
+    public static String duracion(int minutos) {
+        int horas = minutos / 60;
+        int resto = minutos % 60;
+        return horas > 0 ? horas + "h " + resto + "m" : resto + "m";
+    }
+
+    /** "1 venta", "3 ventas". */
+    public static String cantidad(int n, String singular, String plural) {
+        return n + " " + (n == 1 ? singular : plural);
+    }
+
+    /** Un decimal, con coma: "8,5". Para puntajes y promedios, no para plata. */
+    public static String conDecimal(double numero) {
+        return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
+    }
+
+    /** 0.79 → "79%". */
+    public static String porcentaje(double fraccion) {
+        return Math.round(fraccion * 100) + "%";
+    }
+
+    public static String hora(String iso) {
+        if (iso == null) return "—";
+        return LocalDateTime.parse(iso).format(HORA);
+    }
+
+    /** Una hora sin fecha, como la manda el backend para grillas y promos ("20:30:00" o "20:30"). */
+    public static String horaDelDia(String iso) {
+        if (iso == null) return "—";
+        return LocalTime.parse(iso).format(HORA);
+    }
+
+    public static String fechaHora(String iso) {
+        if (iso == null) return "—";
+        return LocalDateTime.parse(iso).format(FECHA_HORA);
+    }
+
+    public static String dia(String iso) {
+        return dia(LocalDateTime.parse(iso).toLocalDate());
+    }
+
+    public static String dia(LocalDate fecha) {
+        long diferencia = ChronoUnit.DAYS.between(LocalDate.now(), fecha);
+        if (diferencia == 0) return "Hoy";
+        if (diferencia == 1) return "Mañana";
+        return Etiquetas.etiqueta(fecha.getDayOfWeek().name()).toLowerCase(Fechas.ARGENTINA) + " "
+                + fecha.getDayOfMonth() + " " + MESES[fecha.getMonthValue() - 1];
+    }
+
+    /** Para meter texto del backend en el HTML de un JLabel: un título con "<" o "&" rompería el renglón. */
+    public static String escapar(String texto) {
+        if (texto == null) return "";
+        return texto.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+}

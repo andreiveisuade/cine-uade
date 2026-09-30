@@ -2,23 +2,26 @@ package ar.uade.cine.service.usuarios;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Rol;
 
-/**
- * El cliente compra sin registrarse: se identifica con su email y, si es la primera vez,
- * se lo da de alta en el momento. Esa regla es del gestor, así que reservar por consola y
- * reservar por la web tienen que resolverla igual.
- */
 class GestorClientesTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorClientes gestor;
+
+    @Autowired
+    private GestorEmpleados empleados;
 
     @Test
     void identificarDaDeAltaAlQueCompraPorPrimeraVez() {
@@ -29,7 +32,6 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals("andrei@uade.edu.ar", cliente.getEmail());
     }
 
-    /** La segunda compra tiene que caer sobre el mismo cliente, no crear otro. */
     @Test
     void identificarDosVecesDevuelveElMismoCliente() {
         Cliente primera = gestor.identificar("Andrei", "andrei@uade.edu.ar");
@@ -39,11 +41,6 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /**
-     * El email que se busca y el que se guarda tienen que ser el mismo. Sin normalizar,
-     * la compra con un espacio de más daría de alta un cliente repetido y le partiría el
-     * historial en dos.
-     */
     @Test
     void identificarIgnoraLosEspaciosDeMasEnElEmail() {
         Cliente primera = gestor.identificar("Andrei", "andrei@uade.edu.ar");
@@ -53,18 +50,80 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listar().size());
     }
 
-    /** Identificar no relaja las validaciones del alta: el alta sigue siendo un alta. */
     @Test
     void identificarRechazaUnEmailInvalido() {
-        assertThrows(IllegalArgumentException.class, () -> gestor.identificar("Andrei", "sin-arroba"));
-        assertThrows(IllegalArgumentException.class, () -> gestor.identificar("", "nuevo@uade.edu.ar"));
+        assertThrows(Rechazo.class, () -> gestor.identificar("Andrei", "sin-arroba"));
+        assertThrows(Rechazo.class, () -> gestor.identificar("", "nuevo@uade.edu.ar"));
     }
 
     @Test
     void noSeRegistraDosVecesElMismoEmail() {
         gestor.registrar("Andrei", "andrei@uade.edu.ar");
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(Rechazo.class,
                 () -> gestor.registrar("Otro", "andrei@uade.edu.ar"));
+    }
+
+    @Test
+    void elEmailRepetidoSeComparaSinLosEspaciosDeMas() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertThrows(ConflictoDeNegocio.class, () -> gestor.registrar("Otro", "  andrei@uade.edu.ar "));
+    }
+
+    // Daba 500: ClienteRepository no ve a los empleados y el INSERT chocaba con el UNIQUE del email.
+    @Test
+    void elEmailDeUnEmpleadoNoSeRegistraComoCliente() {
+        empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
+
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.registrar("Ana", "encargado@cine.com")).getMessage());
+    }
+
+    // Al comprar, el email es un dato más del formulario: un 409 la web lo toma como butaca perdida.
+    @Test
+    void identificarConElEmailDeUnEmpleadoEsUnDatoInvalidoYNoUnConflicto() {
+        empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
+
+        assertEquals("Ese email es de un empleado del cine: usá otro para comprar",
+                assertThrowsExactly(DatoInvalido.class,
+                        () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
+    }
+
+    @Test
+    void elEmailRepetidoEs409ConElTextoDeLaGuia() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+                () -> gestor.registrar("Otro", "andrei@uade.edu.ar")).getMessage());
+    }
+
+    // Antes eran dos clientes: se comparaba el email exacto.
+    @Test
+    void elEmailNoDistingueMayusculas() {
+        Cliente beto = gestor.registrar("Beto", "beto@x.com");
+
+        assertThrows(ConflictoDeNegocio.class, () -> gestor.registrar("Beto", "BETO@x.com"));
+        assertEquals(beto.getId(), gestor.identificar("Beto", " Beto@X.com ").getId());
+        assertEquals(beto.getId(), gestor.buscarPorEmail(" BETO@x.com ").orElseThrow().getId());
+        assertEquals(1, gestor.listar().size());
+    }
+
+    // POST /api/reservas no pasa por el DTO: la forma del email la tiene que exigir Usuario.
+    @Test
+    void identificarRechazaUnEmailSinDominio() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> gestor.identificar("Ana", "a@"));
+
+        assertEquals("El email tiene que tener la forma usuario@dominio.com", error.getMessage());
+    }
+
+    @Test
+    void buscarPorEmailIgnoraLosEspaciosYSinEmailNoEncuentraANadie() {
+        gestor.registrar("Andrei", "andrei@uade.edu.ar");
+
+        assertTrue(gestor.buscarPorEmail("  andrei@uade.edu.ar ").isPresent());
+        assertTrue(gestor.buscarPorEmail(null).isEmpty());
+        assertTrue(gestor.buscarPorEmail("  ").isEmpty());
     }
 }

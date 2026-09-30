@@ -3,22 +3,26 @@ package ar.uade.cine.model.dinero;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-/**
- * Lo que {@link Dinero} promete en su javadoc, escrito de manera que no pueda mentir.
- *
- * <p>Cada caso de la primera sección es un cálculo que con {@code double} daba mal. No son
- * ejemplos inventados: salen de los comentarios que había en {@code CalculadoraPrecio} y
- * en el arqueo, donde el problema estaba descrito en prosa y sin nada que lo verificara.
- */
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.TipoAsiento;
+import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.TipoTarifa;
+
 class DineroTest {
 
     @Nested
@@ -28,7 +32,6 @@ class DineroTest {
         @Test
         @DisplayName("5250.50 x 1.3 daba 6825.650000000001 en double")
         void elCasoDeLaCalculadoraDePrecios() {
-            // Lo que pasaba antes, y que obligó a redondear después de cada cuenta.
             assertNotEquals(6825.65, 5250.50 * 1.3);
 
             assertEquals(Dinero.de(6825.65), Dinero.de(5250.50).por(1.3));
@@ -52,7 +55,6 @@ class DineroTest {
         @Test
         @DisplayName("trescientos cobros con centavos suman exacto: es el arqueo del día")
         void elArqueoDeUnDiaCompletoNoDeriva() {
-            // 300 cobros de $1234,56. Con double, el total se despega de a poco; acá no.
             List<Dinero> cobros = IntStream.range(0, 300)
                     .mapToObj(i -> Dinero.de(1234.56))
                     .toList();
@@ -78,12 +80,14 @@ class DineroTest {
             assertEquals(Dinero.de(5000), Dinero.de(15000).menos(Dinero.de(10000)));
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                un recargo,    5000, 1.3, 6500
+                un descuento,  5000, 0.5, 2500
+                """)
         @DisplayName("por() es el multiplicador de sala, de butaca y de tarifa")
-        void multiplicaPorUnFactorSinUnidad() {
-            assertEquals(Dinero.de(6500), Dinero.de(5000).por(1.3));
-            // Un jubilado paga la mitad.
-            assertEquals(Dinero.de(2500), Dinero.de(5000).por(0.5));
+        void multiplicaPorUnFactorSinUnidad(String caso, double pesos, double factor, double esperado) {
+            assertEquals(Dinero.de(esperado), Dinero.de(pesos).por(factor));
         }
 
         @Test
@@ -119,10 +123,72 @@ class DineroTest {
             assertEquals(Dinero.de(500), Dinero.de(500).acotadoA(Dinero.de(1500)));
         }
 
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                lo negativo queda en cero, -80, 0
+                lo positivo no cambia,      80, 80
+                """)
+        void sinBajarDeCeroRecortaLoNegativo(String caso, double pesos, double esperado) {
+            assertEquals(Dinero.de(esperado), Dinero.de(pesos).sinBajarDeCero());
+        }
+    }
+
+    @Nested
+    @DisplayName("Lo que se carga a mano como precio o monto")
+    class ImporteCargado {
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                sin precio,          ,           Falta el precio
+                en cero,             0,          El precio tiene que ser mayor a cero
+                negativo,            -1,         El precio tiene que ser mayor a cero
+                un centavo de más,   1000000.01, El precio no puede superar $ 1000000.00
+                cien millones,       100000000,  El precio no puede superar $ 1000000.00
+                """)
+        void rechazaLoQueNoSePuedeCobrarNiGuardar(String caso, Double pesos, String mensaje) {
+            Dinero importe = pesos == null ? null : Dinero.de(pesos);
+
+            assertEquals(mensaje, assertThrows(Rechazo.class,
+                    () -> Dinero.importeValido(importe, "precio")).getMessage());
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                sin precio,           ,          Falta el precio
+                en cero,              0,         El precio tiene que ser mayor a cero
+                NaN del JSON,         NaN,       El precio tiene que ser mayor a cero
+                infinito del JSON,    Infinity,  El precio tiene que ser mayor a cero
+                tres decimales,       10.555,    El precio tiene que tener como máximo 2 decimales
+                pasado el tope,       1000000.5, El precio no puede superar $ 1000000.00
+                """)
+        void elImporteDelPedidoSeValidaAlConvertirlo(String caso, Double pesos, String mensaje) {
+            assertEquals(mensaje, assertThrows(Rechazo.class, () -> Dinero.importe(pesos, "precio")).getMessage());
+        }
+
         @Test
-        void sinBajarDeCeroRecortaLoNegativo() {
-            assertEquals(Dinero.CERO, Dinero.de(-80).sinBajarDeCero());
-            assertEquals(Dinero.de(80), Dinero.de(80).sinBajarDeCero());
+        void elImporteDelPedidoConDosDecimalesPasaExacto() {
+            assertEquals(Dinero.deCentavos(1055), Dinero.importe(10.55, "precio"));
+        }
+
+        @Test
+        void elTopeMismoSeAcepta() {
+            assertEquals(Dinero.IMPORTE_MAXIMO, Dinero.importeValido(Dinero.IMPORTE_MAXIMO, "precio"));
+        }
+
+        // Las columnas de plata son DECIMAL(10,2): la entrada más cara, con el recargo más alto de sala,
+        // butaca y tarifa sobre el precio tope, también tiene que entrar, o MySQL la rechaza con un 500.
+        @Test
+        void elTopeDejaLugarParaLosMultiplicadoresDeLaEntrada() {
+            double sala = maximo(Arrays.stream(TipoSala.values()).mapToDouble(TipoSala::getMultiplicadorPrecio));
+            double butaca = maximo(Arrays.stream(TipoAsiento.values()).mapToDouble(TipoAsiento::getMultiplicadorPrecio));
+            double tarifa = maximo(Arrays.stream(TipoTarifa.values()).mapToDouble(TipoTarifa::getMultiplicadorPrecio));
+            Dinero columnaLlena = Dinero.de(99_999_999.99);
+
+            assertFalse(Dinero.IMPORTE_MAXIMO.por(sala).por(butaca).por(tarifa).esMayorQue(columnaLlena));
+        }
+
+        private static double maximo(DoubleStream multiplicadores) {
+            return multiplicadores.max().orElseThrow();
         }
     }
 
@@ -130,11 +196,14 @@ class DineroTest {
     @DisplayName("Comparar, que es lo que R15 necesita para elegir la promoción que más descuenta")
     class Comparaciones {
 
-        @Test
-        void ordenaPorImporte() {
-            assertTrue(Dinero.de(3000).esMayorQue(Dinero.de(2000)));
-            assertFalse(Dinero.de(2000).esMayorQue(Dinero.de(3000)));
-            assertFalse(Dinero.de(2000).esMayorQue(Dinero.de(2000)));
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                el mayor es mayor,       3000, 2000, true
+                el menor no es mayor,    2000, 3000, false
+                un igual no es mayor,    2000, 2000, false
+                """)
+        void ordenaPorImporte(String caso, double uno, double otro, boolean esMayor) {
+            assertEquals(esMayor, Dinero.de(uno).esMayorQue(Dinero.de(otro)));
         }
 
         @Test
@@ -163,21 +232,23 @@ class DineroTest {
             assertEquals(1234.56, Dinero.de(1234.56).aPesos(), 0.0);
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @ValueSource(doubles = {0, 0.01, 1234.56, 99999.99})
         @DisplayName("entrar y salir no cambia el importe")
-        void elViajeDeIdaYVueltaEsFiel() {
-            for (double pesos : new double[] {0, 0.01, 1234.56, 99999.99}) {
-                assertEquals(pesos, Dinero.de(pesos).aPesos(), 0.0);
-            }
+        void elViajeDeIdaYVueltaEsFiel(double pesos) {
+            assertEquals(pesos, Dinero.de(pesos).aPesos(), 0.0);
         }
 
-        @Test
+        @ParameterizedTest(name = "{0}")
+        @CsvSource(textBlock = """
+                pesos enteros,  15000,   15000.00
+                con centavos,   1234.56, 1234.56
+                solo centavos,  0.05,    0.05
+                negativo,       -0.05,   -0.05
+                """)
         @DisplayName("se escribe con dos decimales, como el comprobante")
-        void seImprimeConDosDecimales() {
-            assertEquals("15000.00", Dinero.de(15000).toString());
-            assertEquals("1234.56", Dinero.de(1234.56).toString());
-            assertEquals("0.05", Dinero.de(0.05).toString());
-            assertEquals("-0.05", Dinero.de(-0.05).toString());
+        void seImprimeConDosDecimales(String caso, double pesos, String impreso) {
+            assertEquals(impreso, Dinero.de(pesos).toString());
         }
     }
 }

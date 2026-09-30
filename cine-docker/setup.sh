@@ -31,6 +31,12 @@ docker info >/dev/null 2>&1 || fatal "Docker está instalado pero no corriendo. 
 docker compose version >/dev/null 2>&1 || fatal "Falta 'docker compose'. Actualizá Docker Desktop."
 ok "Docker corriendo"
 
+# El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
+# que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
+if [ -d ../.githooks ] && [ "$(git -C .. config core.hooksPath 2>/dev/null)" != ".githooks" ]; then
+  git -C .. config core.hooksPath .githooks 2>/dev/null && ok "Hook anti-credenciales activado"
+fi
+
 # ------------------------------------------------------------------- 2. el .env
 paso "2/5  Configuración (.env)"
 
@@ -100,10 +106,10 @@ ok "mysql y backend sanos"
 # ------------------------------------------------------------------- 5. datos
 paso "5/5  Datos de ejemplo"
 
-if [ "$(docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM pelicula"' 2>/dev/null || echo 0)" -gt 0 ]; then
+if [ "$(docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>/dev/null || echo 0)" -gt 0 ]; then
   ok "Ya hay datos cargados, no siembro de nuevo"
 else
-  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 && ok "4 películas, 6 salas y 8 funciones" \
+  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 && ok "6 salas, la carta del candy y una promoción" \
     || aviso "Falló el sembrado. Probá a mano: ./seed/datos-de-ejemplo.sh"
 fi
 
@@ -114,8 +120,9 @@ cat <<FIN
 $(printf '\033[1mListo\033[0m')
 
   Cliente     http://localhost:${puerto:-8080}
-  Panel       http://localhost:${puerto:-8080}/admin.html   encargado@cine.uade.ar / cine2026
-  Puerta      el mismo panel                        puerta@cine.uade.ar / cine2026
+  Panel       cd ../cine-swing && mvn exec:java   encargado@cine.uade.ar / cine2026
+  Puerta      el mismo panel de escritorio        puerta@cine.uade.ar / cine2026
+  Swagger     http://localhost:${puerto:-8080}/swagger-ui.html
   Adminer     http://localhost:$(grep '^PUERTO_ADMINER=' .env | cut -d= -f2- || echo 8081)   servidor: mysql
 
   Para bajarlo:  docker compose down

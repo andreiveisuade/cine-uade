@@ -9,11 +9,12 @@ CAPTURAS = MANUAL / "capturas"
 svg_map = {
     "{{SVG_CASOS_USO}}": DIAGRAMAS / "casos-de-uso.svg",
     "{{SVG_DOMINIO}}": DIAGRAMAS / "clases-dominio.svg",
-    "{{SVG_CAPAS}}": DIAGRAMAS / "clases-capas.svg",
+    "{{SVG_RESERVA_CLASES}}": DIAGRAMAS / "reserva-clases.svg",
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",
     "{{SVG_DOCKER}}": DIAGRAMAS / "docker-despliegue.svg",
     "{{SVG_ARRANQUE}}": DIAGRAMAS / "arranque-orden.svg",
+    "{{SVG_TERMINAL}}": DIAGRAMAS / "terminal-desktop.svg",
     "{{SVG_IMPORTADOR}}": DIAGRAMAS / "importador-flujo.svg",
     "{{SVG_PETICION}}": DIAGRAMAS / "peticion-capas.svg",
     "{{SVG_USUARIOS}}": DIAGRAMAS / "usuarios-herencia.svg",
@@ -25,6 +26,20 @@ svg_map = {
     "{{SVG_SOLID_ISP}}": DIAGRAMAS / "solid-isp.svg",
     "{{SVG_SOLID_OCP}}": DIAGRAMAS / "solid-ocp.svg",
     "{{SVG_GRASP_FABRICACION}}": DIAGRAMAS / "grasp-pure-fabrication.svg",
+    "{{SVG_PATRON_STATE}}": DIAGRAMAS / "patron-state.svg",
+    "{{SVG_PATRON_OBSERVER}}": DIAGRAMAS / "patron-observer.svg",
+    "{{SVG_API_ERRORES}}": DIAGRAMAS / "api-errores.svg",
+    "{{SVG_BASE_VENTA_ER}}": DIAGRAMAS / "base-venta-er.svg",
+    "{{SVG_CHECKOUT_PASARELA}}": DIAGRAMAS / "checkout-pasarela.svg",
+    "{{SVG_GRILLA_PLAN}}": DIAGRAMAS / "grilla-plan.svg",
+    "{{SVG_PRECIO_ENTRADA}}": DIAGRAMAS / "precio-entrada.svg",
+    "{{SVG_PRUEBAS_NIVELES}}": DIAGRAMAS / "pruebas-niveles.svg",
+    "{{SVG_RECHAZOS_JERARQUIA}}": DIAGRAMAS / "rechazos-jerarquia.svg",
+    "{{SVG_REGLAS_DONDE_VIVEN}}": DIAGRAMAS / "reglas-donde-viven.svg",
+    "{{SVG_SWING_PANTALLAS}}": DIAGRAMAS / "swing-pantallas.svg",
+    "{{SVG_SWING_PEDIDO}}": DIAGRAMAS / "swing-pedido.svg",
+    "{{SVG_TRASLADO_SERVIDOR}}": DIAGRAMAS / "traslado-servidor.svg",
+    "{{SVG_VALIDACION_CAPAS}}": DIAGRAMAS / "validacion-capas.svg",
 }
 
 
@@ -34,10 +49,18 @@ svg_map = {
 imagen_map = {
     "{{IMG_MAPA}}": CAPTURAS / "cp10-mapa.jpg",
     "{{IMG_TICKET}}": CAPTURAS / "cp10-ticket.jpg",
-    "{{IMG_GRILLA}}": CAPTURAS / "cp09-grilla.jpg",
-    "{{IMG_BLOQUEO}}": CAPTURAS / "cp19-bloqueo.jpg",
-    "{{IMG_PUERTA_OK}}": CAPTURAS / "cp16-puerta-adelante.jpg",
-    "{{IMG_PUERTA_RECHAZO}}": CAPTURAS / "cp16-puerta-rechazo.jpg",
+    "{{IMG_BLOQUEO}}": CAPTURAS / "cp18-bloqueo.jpg",
+    # El panel del encargado en Swing, en el tema oscuro por defecto.
+    "{{IMG_SWING_PELICULAS}}": CAPTURAS / "swing-peliculas.jpg",
+    "{{IMG_SWING_IMPORTADOR}}": CAPTURAS / "swing-importador.jpg",
+    "{{IMG_SWING_BUTACAS}}": CAPTURAS / "swing-butacas.jpg",
+    "{{IMG_SWING_GRILLA}}": CAPTURAS / "swing-grilla.jpg",
+    "{{IMG_SWING_PLANIFICADOR}}": CAPTURAS / "swing-planificador.jpg",
+    "{{IMG_SWING_AGENDA}}": CAPTURAS / "swing-agenda.jpg",
+    "{{IMG_SWING_COBRO}}": CAPTURAS / "swing-cobro.jpg",
+    "{{IMG_SWING_BORDERO}}": CAPTURAS / "swing-bordero.jpg",
+    "{{IMG_SWING_CAJA}}": CAPTURAS / "swing-caja.jpg",
+    "{{IMG_SWING_PUERTA}}": CAPTURAS / "swing-puerta.jpg",
 }
 
 
@@ -64,7 +87,7 @@ shell = (MANUAL / "template.html").read_text(encoding="utf-8")
 
 faltantes = [str(p) for p in svg_map.values() if not p.exists()]
 if faltantes:
-    raise SystemExit("Faltan SVGs (corre plantuml -tsvg *.puml): " + ", ".join(faltantes))
+    raise SystemExit("Faltan SVGs (plantuml -tsvg *.puml, o archify/exportar.sh para los .archify.json): " + ", ".join(faltantes))
 
 for placeholder, svg_path in svg_map.items():
     if placeholder not in shell:

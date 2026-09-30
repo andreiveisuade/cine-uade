@@ -1,39 +1,35 @@
 package ar.uade.cine.model.ventas;
 
-/**
- * Quién compra la entrada. Es el tercer eje del precio: los otros dos son la tecnología
- * de la sala y el tipo de butaca, que dicen <em>dónde</em> se ve la película; este dice
- * <em>quién</em> la ve.
- *
- * <p>Va en la {@link Entrada} y no en la reserva porque es por persona: en una reserva de
- * cuatro butacas puede haber dos generales, un menor y un jubilado.
- *
- * <p>Como el cliente no inicia sesión, el sistema no tiene fecha de nacimiento ni forma de
- * comprobar que alguien es jubilado: la tarifa se <strong>declara</strong> al comprar y se
- * <strong>acredita en la puerta</strong>, igual que en un cine real. Por eso cada tarifa
- * sabe si hay que pedir un carnet, y quien valida la entrada lo ve en pantalla.
- */
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+import ar.uade.cine.model.dinero.Dinero;
+
+// Tarifa de una entrada; cada constante trae su multiplicador, si pide acreditación y si entra en promos.
+@Getter
 public enum TipoTarifa {
 
-    GENERAL(1.0, false),
-    MENOR(0.6, true),
-    JUBILADO(0.5, true),
-    ESTUDIANTE(0.7, true);
+    GENERAL(1.0, false, true),
+    MENOR(0.6, true, false),
+    JUBILADO(0.5, true, false),
+    ESTUDIANTE(0.7, true, false);
 
     private final double multiplicadorPrecio;
+    @Accessors(fluent = true)
     private final boolean requiereAcreditacion;
+    // R16: una tarifa reducida ya es un descuento y no se le suma una promoción. Una tarifa nueva
+    // dice acá si participa, sin tocar a GestorPromociones.
+    @Accessors(fluent = true)
+    private final boolean participaDePromociones;
 
-    TipoTarifa(double multiplicadorPrecio, boolean requiereAcreditacion) {
+    TipoTarifa(double multiplicadorPrecio, boolean requiereAcreditacion, boolean participaDePromociones) {
         this.multiplicadorPrecio = multiplicadorPrecio;
         this.requiereAcreditacion = requiereAcreditacion;
+        this.participaDePromociones = participaDePromociones;
     }
 
-    public double getMultiplicadorPrecio() {
-        return multiplicadorPrecio;
-    }
-
-    /** Si en la puerta hay que pedir un carnet que respalde lo que se declaró al comprar. */
-    public boolean requiereAcreditacion() {
-        return requiereAcreditacion;
+    // La última parte del precio de una entrada: la reducción de la tarifa sobre el precio de la butaca.
+    public Dinero aplicarA(Dinero precio) {
+        return precio.por(multiplicadorPrecio);
     }
 }

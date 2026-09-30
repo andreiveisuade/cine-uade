@@ -1,5 +1,5 @@
 # Multi-stage: el JDK y el código fuente quedan en la etapa de build y no viajan a la
-# imagen final, que solo necesita un JRE y el jar.
+# imagen final, que solo necesita un JRE y el WAR.
 
 # ---------- build ----------
 FROM maven:3.9-eclipse-temurin-21 AS build
@@ -12,7 +12,7 @@ RUN mvn -B -q dependency:go-offline
 
 COPY src ./src
 # Los tests corren en la máquina de desarrollo con `mvn test`; acá solo se arma el
-# artefacto. El plugin de Spring Boot deja las dependencias adentro del jar ejecutable.
+# artefacto. El plugin de Spring Boot deja las dependencias adentro del WAR ejecutable.
 RUN mvn -B -q package -DskipTests
 
 # ---------- runtime ----------
@@ -23,7 +23,7 @@ FROM eclipse-temurin:21-jre-alpine
 RUN addgroup -S cine && adduser -S -G cine cine
 
 WORKDIR /app
-COPY --from=build /build/target/cine-api.jar ./cine-api.jar
+COPY --from=build /build/target/cine-api.war ./cine-api.war
 
 # GeneradorTicketTxt escribe en tickets/ relativo al working dir, así que el directorio
 # tiene que existir y ser del usuario que corre el proceso.
@@ -35,4 +35,4 @@ USER cine
 # puerto al host es nginx, que hace de reverse proxy.
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/cine-api.jar"]
+ENTRYPOINT ["java", "-jar", "/app/cine-api.war"]

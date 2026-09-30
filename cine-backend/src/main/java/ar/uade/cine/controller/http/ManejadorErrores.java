@@ -1,106 +1,255 @@
 package ar.uade.cine.controller.http;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.lang.reflect.RecordComponent;
+import java.time.DateTimeException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import ar.uade.cine.dto.ErrorVistaDTO;
-import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
-import ar.uade.cine.service.ventas.ButacaOcupadaException;
+import com.fasterxml.jackson.core.exc.InputCoercionException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 
-/**
- * La traducción de los errores del negocio a códigos HTTP, en un solo lugar.
- *
- * <p>Ninguna regla vive acá. Cuando un gestor rechaza algo lo hace con
- * IllegalArgumentException, y esta clase la convierte en un 400 con el mensaje
- * <strong>intacto</strong>, porque es el texto que el front le muestra al usuario. Que salga
- * sin tocar es parte del contrato con el frontend, y hay tests que lo comparan entero
- * justamente para que nadie lo reescriba de paso.
- *
- * <p>{@code @RestControllerAdvice} es lo que reemplazó al {@code registrarErrores} que tenía
- * el servidor Javalin: en vez de colgar manejadores de una instancia al armarla, se declaran
- * como métodos y valen para todos los controladores a la vez, incluidos los que todavía no
- * existen. Es la misma idea que había atrás de tener un solo lugar donde se armaba la API:
- * un controlador nuevo no puede quedarse sin la traducción de errores.
- */
+import ar.uade.cine.dto.comun.ErrorVistaDTO;
+import ar.uade.cine.model.rechazos.ButacaOcupada;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
+import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+// Traduce cada excepción a status HTTP y JSON {error}; @RestControllerAdvice: ningún controller atrapa.
+// Dentro de este advice Spring elige el handler de la excepción más cercana en la jerarquía
+// (ExceptionDepthComparator), no el primero declarado: el orden de los métodos no cambia nada.
+// Un Rechazo cae en el handler de su tipo; la IllegalArgumentException, que ya no es su base, en el suyo.
+// La política de respuestas de toda la API, éxitos incluidos, está en la cabecera de Creado.
 @RestControllerAdvice
+@Slf4j
 public class ManejadorErrores {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ManejadorErrores.class);
+    private static final String ERROR_INESPERADO = "Ocurrió un error inesperado en el servidor";
 
-    /** Lo que rechaza un gestor: dato inválido o regla de negocio incumplida. */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorVistaDTO> datoInvalido(IllegalArgumentException e) {
+    private static final Pattern FUERA_DE_RANGO = Pattern.compile("^Numeric value \\((.+?)\\) out of range");
+
+    // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
+
+    // El pedido, tal como vino, no se puede aceptar: falta un dato o no cumple una regla.
+    @ExceptionHandler(DatoInvalido.class)
+    public ResponseEntity<ErrorVistaDTO> datoInvalido(DatoInvalido e) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
-    @ExceptionHandler(NoEncontrado.class)
-    public ResponseEntity<ErrorVistaDTO> noEncontrado(NoEncontrado e) {
+    // El id o el código, de la ruta o del cuerpo, no corresponde a nada.
+    @ExceptionHandler(RecursoNoEncontrado.class)
+    public ResponseEntity<ErrorVistaDTO> noEncontrado(RecursoNoEncontrado e) {
         return responder(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    /**
-     * Perder una carrera por la última butaca no es una falla: es el resultado legítimo de
-     * que otro haya confirmado primero. Por eso 409 y no 500, y el mensaje se muestra tal
-     * cual —el front vuelve a pedir el mapa y repinta.
-     */
-    @ExceptionHandler(ButacaOcupadaException.class)
-    public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupadaException e) {
+    // El pedido es válido, pero choca con algo que ya existe: un nombre, un email o un título repetido.
+    @ExceptionHandler(ConflictoDeNegocio.class)
+    public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    /**
-     * Un id que no es un número. Spring lo levanta al convertir el {@code @PathVariable}, y
-     * se responde 404 y no 400 porque es lo mismo que pedir un recurso que no existe: la
-     * URL no apunta a nada. Es el mismo mensaje que daba el {@code Parseo.id} de Javalin.
-     */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e) {
-        return responder(HttpStatus.NOT_FOUND, "El identificador " + e.getValue() + " no es válido");
+    // Otro ganó la butaca (R4): la web vuelve al mapa recargado solo ante un 409.
+    @ExceptionHandler(ButacaOcupada.class)
+    public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupada e) {
+        return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    /** Un cuerpo que no es JSON, o que se cortó a la mitad. */
+    // La que no es Rechazo la tiró una librería o un bug: su texto es técnico y no es para el usuario.
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorVistaDTO> argumentoNoPrevisto(IllegalArgumentException e) {
+        log.error("Una IllegalArgumentException que no es un Rechazo", e);
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
+    }
+
+    // Lo que Spring rechaza antes de llegar al controller.
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorVistaDTO> pedidoIncompleto(MethodArgumentNotValidException e) {
+        return responder(HttpStatus.BAD_REQUEST, primerError(e));
+    }
+
+    // Por orden de declaración en el DTO: el validador no garantiza ninguno y el mensaje cambiaría entre corridas.
+    private static String primerError(MethodArgumentNotValidException e) {
+        Class<?> dto = e.getParameter().getParameterType();
+        List<String> campos = dto.isRecord()
+                ? Arrays.stream(dto.getRecordComponents()).map(RecordComponent::getName).toList()
+                : List.of();
+        return e.getBindingResult().getFieldErrors().stream()
+                .min(Comparator.comparingInt((FieldError error) -> campos.indexOf(error.getField())))
+                .map(FieldError::getDefaultMessage)
+                .orElse("El pedido no es válido");
+    }
+
+    // Dos operaciones sobre la misma reserva a la vez (cobrar y cancelar): la segunda escribe
+    // sobre una versión vieja. Spring ya traduce la OptimisticLockException de JPA a esta, y
+    // controller/ no puede nombrar jakarta.persistence (ArquitecturaTest). Aunque es subclase de
+    // DataAccessException no cae en su 500: gana este handler por ser el más cercano.
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorVistaDTO> conflictoDeVersion(OptimisticLockingFailureException e) {
+        return responder(HttpStatus.CONFLICT, "La reserva cambió mientras se procesaba: volvé a intentarlo");
+    }
+
+    // Lo que queda después de las validaciones de los gestores son carreras: dos altas que pasan
+    // el mismo existsBy… y la segunda choca con el UNIQUE, o dos cobros con UNIQUE(pago.reserva_id).
+    // La base no falló, así que no es el 500 de DataAccessException. La causa, al log: nombra la
+    // restricción, y eso no es para el usuario.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorVistaDTO> conflictoDeIntegridad(DataIntegrityViolationException e) {
+        log.warn("Un pedido chocó con una restricción de la base: {}", e.getMostSpecificCause().getMessage());
+        return responder(HttpStatus.CONFLICT,
+                "Otro pedido cambió estos datos al mismo tiempo: recargá y volvé a intentarlo");
+    }
+
+    // Red para una fecha que pasó Parseo y desborda en la aritmética de un gestor: sin esto es un 500,
+    // y lo que la provocó es el pedido. Parseo ya corta los años fuera de 1000..9999; si igual llega
+    // una, el detalle va al log para encontrar qué fecha se escapó.
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<ErrorVistaDTO> fechaFueraDeRango(DateTimeException e) {
+        log.warn("Una fecha del pedido desbordó: {}", e.getMessage());
+        return responder(HttpStatus.BAD_REQUEST, "Una de las fechas del pedido no es válida");
+    }
+
+    // Solo las variables de ruta llegan tipadas (int id): la query viaja como String y la lee Parseo.
+    // /api/funciones/abc no nombra ninguna función: para el usuario es lo mismo que una ruta que no existe.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e,
+                                                               HttpServletRequest pedido) {
+        return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
+    }
+
+    // Un JSON bien formado con un tipo equivocado ("precio": "abc") no es "JSON inválido": el
+    // mensaje nombra el campo, que es lo que el usuario puede corregir. Sin causa es que no vino
+    // cuerpo: Spring lo lee como null y lo rechaza él, sin pasar por Jackson. Sin camino, lo que
+    // no encaja es la raíz: un array, un número o un texto son JSON válido, pero no un pedido.
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorVistaDTO> cuerpoIlegible(HttpMessageNotReadableException e) {
+        if (e.getCause() == null) {
+            return responder(HttpStatus.BAD_REQUEST, "Falta el cuerpo del pedido");
+        }
+        if (e.getCause() instanceof JsonMappingException mapeo && !mapeo.getPath().isEmpty()) {
+            String campo = mapeo.getPath().stream()
+                    .map(r -> r.getFieldName() != null ? r.getFieldName() : String.valueOf(r.getIndex()))
+                    .collect(Collectors.joining("."));
+            return responder(HttpStatus.BAD_REQUEST,
+                    "El campo " + campo + " tiene un valor inválido" + valorDe(mapeo));
+        }
+        if (e.getCause() instanceof MismatchedInputException) {
+            return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido tiene que ser un objeto JSON");
+        }
         return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido no es un JSON válido");
     }
 
-    /** Una URL que no atiende ningún controlador. */
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorVistaDTO> rutaInexistente(NoResourceFoundException e) {
-        return responder(HttpStatus.NOT_FOUND, "No existe la ruta /" + e.getResourcePath());
+    // Un número que no entra en un int ({"funcionId": 99999999999}) lo rechaza el parser, que ya
+    // cerró cuando llega acá: el valor sobrevive solo en su mensaje. Si Jackson lo cambiara, el
+    // texto pierde el valor pero sigue nombrando el campo.
+    private static String valorDe(JsonMappingException e) {
+        if (e instanceof InvalidFormatException formato) {
+            return ": " + formato.getValue();
+        }
+        if (e.getCause() instanceof InputCoercionException desborde) {
+            Matcher valor = FUERA_DE_RANGO.matcher(desborde.getOriginalMessage());
+            return valor.find() ? ": " + valor.group(1) : "";
+        }
+        return "";
     }
 
-    /**
-     * La base caída o una consulta rota no son culpa de quien llama, y el detalle interno no
-     * le sirve: va al log del servidor, no a la respuesta.
-     *
-     * <p>{@link DataAccessException} es la jerarquía de Spring, y es lo que reemplazó a la
-     * {@code PersistenciaException} propia: Spring Data traduce a ella lo que levantan
-     * Hibernate y el driver, así que un mismo manejador cubre el timeout de conexión, la
-     * consulta rota y la restricción violada sin que esta capa sepa qué motor hay abajo.
-     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorVistaDTO> parametroFaltante(MissingServletRequestParameterException e) {
+        return responder(HttpStatus.BAD_REQUEST, "Falta el parámetro " + e.getParameterName());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorVistaDTO> metodoNoPermitido(HttpRequestMethodNotSupportedException e) {
+        Set<HttpMethod> aceptados = e.getSupportedHttpMethods();
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .allow(aceptados == null ? new HttpMethod[0] : aceptados.toArray(HttpMethod[]::new))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorVistaDTO("La ruta no acepta " + e.getMethod()));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorVistaDTO> formatoNoSoportado(HttpMediaTypeNotSupportedException e) {
+        return responder(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "El cuerpo del pedido tiene que ser JSON");
+    }
+
+    // Un Accept que no admite JSON (application/xml): la respuesta de todos modos sale en JSON.
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ErrorVistaDTO> formatoNoAceptable(HttpMediaTypeNotAcceptableException e) {
+        return responder(HttpStatus.NOT_ACCEPTABLE, "Esta API responde solo JSON");
+    }
+
+    // La URI tal como llegó: getResourcePath() viene sin la barra final, y "/api/salas/" decía
+    // que no existe /api/salas, que sí existe.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorVistaDTO> rutaInexistente(NoResourceFoundException e, HttpServletRequest pedido) {
+        return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
+    }
+
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorVistaDTO> falloDePersistencia(DataAccessException e) {
-        LOG.error("Falló el acceso a los datos", e);
+        log.error("Falló el acceso a los datos", e);
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo acceder a los datos");
     }
 
-    /** Un comprobante que no se pudo escribir a disco. Mismo criterio: el detalle al log. */
-    @ExceptionHandler(ComprobanteException.class)
-    public ResponseEntity<ErrorVistaDTO> falloDeComprobante(ComprobanteException e) {
-        LOG.error("Falló la emisión de un comprobante", e);
-        return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir el comprobante");
+    // Sin esto Spring contesta con su propio formato y el front, que espera {error}, muestra vacío.
+    // Lo que Spring rechaza sin un handler propio (un header que falta, por ejemplo) conserva su
+    // status, pero no su detail: viene en inglés, o vacío. El detail va al log.
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorVistaDTO> errorInesperado(Exception e) {
+        if (e instanceof ErrorResponse deSpring) {
+            log.warn("Spring rechazó el pedido con {}: {}", deSpring.getStatusCode().value(),
+                    deSpring.getBody().getDetail());
+            return responder(deSpring.getStatusCode(), textoDe(deSpring.getStatusCode()));
+        }
+        log.error("Error no previsto", e);
+        return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
     }
 
-    private static ResponseEntity<ErrorVistaDTO> responder(HttpStatus estado, String mensaje) {
-        return ResponseEntity.status(estado).body(new ErrorVistaDTO(mensaje));
+    // Por status y no por excepción: Spring tiene muchas, y en el uso normal de la API no llega ninguna.
+    // ErroresController usa los mismos para lo que llega a /error sin pasar por acá.
+    static String textoDe(HttpStatusCode estado) {
+        return switch (estado.value()) {
+            case 404 -> "No existe lo que se pidió";
+            case 503 -> "El servidor no está disponible: volvé a intentarlo en un rato";
+            default -> estado.is4xxClientError() ? "El pedido no es válido" : ERROR_INESPERADO;
+        };
+    }
+
+    // Content-Type fijo: así Spring no negocia contra el Accept. Con Accept: application/xml no
+    // podía escribir el DTO y el error salía como un 500 vacío; con text/html, la página Whitelabel.
+    static ResponseEntity<ErrorVistaDTO> responder(HttpStatusCode estado, String mensaje) {
+        return ResponseEntity.status(estado)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorVistaDTO(mensaje));
     }
 }

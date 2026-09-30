@@ -1,9 +1,6 @@
 package ar.uade.cine.model.cartelera;
 
-/**
- * Catálogo cerrado de géneros. Al ser enum, la base solo puede tener valores válidos.
- * Agregar uno nuevo es sumar una constante acá.
- */
+// Géneros de película (R7: al menos uno); viajan por la API y se guardan con el nombre de la constante.
 public enum Genero {
     ACCION,
     COMEDIA,

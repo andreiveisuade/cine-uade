@@ -2,11 +2,9 @@ package ar.uade.cine.service.programaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,26 +14,25 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
-import ar.uade.cine.repository.FuncionRepository;
-import ar.uade.cine.repository.ProgramacionRepository;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
-import ar.uade.cine.model.dinero.Dinero;
 
-/**
- * La grilla que materializa funciones: que genere las del rango, que respete los días
- * elegidos, que previsualizar no escriba y que el alta saltee lo que choca contra R3.
- */
 class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     private static final LocalDate LUNES = LocalDate.of(2026, 9, 7);
@@ -55,7 +52,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Autowired
     private GestorSalas salas;
 
-    /** Matrix (136') en la Sala 1, que es 2D, y una Sala 2 que sí proyecta en 3D. */
     @BeforeEach
     void prepararCartelera() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
@@ -63,7 +59,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2", TipoSala.TRES_D, List.of(5, 5));
     }
 
-    /** El caso del enunciado: una semana entera, una función por día. */
     @Test
     void generaUnaFuncionPorCadaDiaDelRango() {
         PlanProgramacion plan = crearSemana(Set.of());
@@ -75,7 +70,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(LocalDateTime.of(2026, 9, 13, 20, 30), plan.funciones().get(6).inicio());
     }
 
-    /** Sin días elegidos corre toda la semana; con días, solo esos. */
     @Test
     void respetaLosDiasDeLaSemanaElegidos() {
         PlanProgramacion plan = crearSemana(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
@@ -85,23 +79,23 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(LocalDateTime.of(2026, 9, 13, 20, 30), plan.funciones().get(1).inicio());
     }
 
-    /** Cada función generada sabe de qué grilla salió: es la asociación materializada. */
     @Test
     void lasFuncionesGeneradasApuntanASuProgramacion() {
         PlanProgramacion plan = crearSemana(Set.of());
         int id = plan.programacion().getId();
 
         assertEquals(7, programaciones.funcionesDe(id).size());
-        assertTrue(funciones.listar().stream().allMatch(f -> f.getProgramacionId() == id));
+        assertEquals(funciones.listar().size(), programaciones.funcionesDe(id).size(),
+                "todas las funciones que generó están colgadas de ella");
     }
 
-    /** Una función cargada a mano no pertenece a ninguna grilla. */
     @Test
     void laFuncionSueltaNoTieneProgramacion() {
+        int id = crearSemana(Set.of()).programacion().getId();
         Funcion suelta = funciones.programar(1, 1, LocalDateTime.of(2026, 10, 1, 20, 30),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
 
-        assertNull(suelta.getProgramacionId());
+        assertTrue(programaciones.funcionesDe(id).stream().noneMatch(f -> f.getId() == suelta.getId()));
     }
 
     @Test
@@ -110,14 +104,10 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         assertEquals(7, plan.funciones().size());
         assertTrue(funciones.listar().isEmpty(), "previsualizar no puede guardar funciones");
-        assertTrue(programaciones.listar().isEmpty(), "ni la grilla");
+        assertTrue(programaciones.buscar(null, null, null).isEmpty(), "ni la grilla");
         assertEquals(0, plan.programacion().getId(), "la grilla previsualizada no tiene id");
     }
 
-    /**
-     * R3: el miércoles la sala ya está ocupada, así que esa fecha se marca y las otras
-     * seis siguen. Rechazar la grilla entera por una fecha la haría inusable.
-     */
     @Test
     void marcaLasFechasQueChocanYGeneraElResto() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
@@ -130,11 +120,9 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertTrue(plan.salteadas().get(0).motivo().contains("09/09 21:00"),
                 "el informe tiene que decir contra qué choca");
         assertEquals(6, plan.programables().size());
-        // Las seis de la grilla más la que ya estaba cargada.
         assertEquals(7, funciones.listar().size());
     }
 
-    /** La previsualización predice exactamente lo que hace el alta: es su único trabajo. */
     @Test
     void laPrevisualizacionCoincideConLoQueTerminaGenerando() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
@@ -148,10 +136,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(previo.salteadas().size(), alta.salteadas().size());
     }
 
-    /**
-     * Lo que justifica revalidar al aplicar: entre la previsualización y el confirmar,
-     * otro programó algo en esa sala. El alta no puede confiar en el informe viejo.
-     */
     @Test
     void elAltaRevalidaYNoConfiaEnLaPrevisualizacion() {
         PlanProgramacion previo = previsualizarSemana();
@@ -165,7 +149,6 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(6, alta.programables().size());
     }
 
-    /** Dos grillas iguales: la segunda no puede duplicar ni una función. */
     @Test
     void laSegundaGrillaIgualNoGeneraNada() {
         crearSemana(Set.of());
@@ -174,21 +157,16 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(7, repetida.salteadas().size());
         assertTrue(repetida.programables().isEmpty());
         assertEquals(7, funciones.listar().size());
-        // La grilla igual se guarda: es una decisión del cine, y el informe dice qué pasó.
-        assertEquals(2, programaciones.listar().size());
+        assertEquals(2, programaciones.buscar(null, null, null).size());
     }
 
-    /**
-     * Dar de baja la grilla no toca las funciones ya generadas: pueden tener entradas
-     * vendidas. Lo que evita es que se generen nuevas.
-     */
     @Test
     void laBajaNoTocaLasFuncionesYaGeneradas() {
         int id = crearSemana(Set.of()).programacion().getId();
 
         programaciones.desactivar(id);
 
-        assertFalse(programaciones.buscar(id).orElseThrow().estaActiva());
+        assertFalse(programaciones.obtener(id).estaActiva());
         assertEquals(7, funciones.listar().size());
         assertEquals(7, programaciones.funcionesDe(id).size());
     }
@@ -200,104 +178,98 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         programaciones.desactivar(id);
         programaciones.activar(id);
 
-        assertTrue(programaciones.buscar(id).orElseThrow().estaActiva());
+        assertTrue(programaciones.obtener(id).estaActiva());
     }
 
     @Test
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
-        assertThrows(IllegalArgumentException.class, () -> programaciones.desactivar(99));
+        assertThrows(Rechazo.class, () -> programaciones.desactivar(99));
     }
 
-    /**
-     * R8 vale para la grilla entera: si la sala no proyecta en 3D, no hay ninguna fecha
-     * del rango en la que sí. Tiene que fallar ya en la previsualización, o el
-     * administrador vería siete funciones perfectas y recién explotaría al confirmar.
-     */
     @Test
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.previsualizar(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
-        assertTrue(programaciones.listar().isEmpty(), "la grilla inválida no se guarda");
+        assertThrows(Rechazo.class,
+                () -> programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
+        assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
+        assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
     }
 
     @Test
     void rechazaUnRangoQueTerminaAntesDeEmpezar() {
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+    }
+
+    // Primero lo que se busca, como en el alta de una función suelta: la programación necesita la sala
+    // para R8, así que el 404 sale antes que sus propios datos.
+    @Test
+    void unaPeliculaQueNoExisteSaleAntesQueUnRangoAlReves() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> programaciones.previsualizar(new DatosGrilla(99, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        assertEquals("No existe la película 99", error.getMessage());
     }
 
     @Test
     void rechazaPrecioCeroYPeliculaInexistente() {
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0)));
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0))));
+        assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
-    /** Una grilla de solo lunes sobre un rango de martes a jueves no generaría nada. */
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
-        assertThrows(IllegalArgumentException.class,
-                () -> programaciones.crear(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
-                        LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
+                        LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
-    /**
-     * Sin {@code hasta}, el alta no puede generar "todo el rango": el rango no termina.
-     * Genera hasta el horizonte y ahí se detiene.
-     */
     @Test
     void unaGrillaAbiertaGeneraSoloHastaElHorizonte() {
         PlanProgramacion plan = crearAbierta();
 
-        // 14 días de horizonte contados desde hoy, más el de hoy mismo si entra en el rango.
         assertFalse(plan.funciones().isEmpty(), "una grilla abierta tiene que generar algo");
         LocalDate ultima = plan.funciones().get(plan.funciones().size() - 1).inicio().toLocalDate();
-        assertFalse(ultima.isAfter(LocalDate.now().plusDays(14)),
+        assertFalse(ultima.isAfter(reloj.hoy().plusDays(14)),
                 "no puede generar más allá del horizonte");
     }
 
-    /** Una grilla cerrada no se recorta: el administrador ya dijo hasta cuándo. */
     @Test
     void unaGrillaCerradaGeneraTodoSuRangoAunqueSeaLejano() {
-        // El rango de LUNES a DOMINGO cae bastante más allá de dos semanas desde hoy.
         assertEquals(7, crearSemana(Set.of()).funciones().size());
     }
 
-    /** Llamar a extender mil veces en el mismo día tiene que hacer trabajo una sola vez. */
     @Test
     void extenderEsIdempotente() {
         crearAbierta();
         int despuesDelAlta = funcionRepository.findAll().size();
 
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now()));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy()));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy()));
         assertEquals(despuesDelAlta, funcionRepository.findAll().size());
     }
 
-    /** El día que el horizonte se corre, aparecen las funciones nuevas y solo esas. */
     @Test
     void alPasarLosDiasExtiendeLasQueFaltan() {
-        crearAbierta();
+        int id = crearAbierta().programacion().getId();
         int despuesDelAlta = funcionRepository.findAll().size();
 
-        int generadas = programaciones.extenderActivas(LocalDate.now().plusDays(3));
+        int generadas = programaciones.extenderActivas(reloj.hoy().plusDays(3));
 
         assertEquals(3, generadas, "tres días más de horizonte son tres funciones más");
         assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
+        assertEquals(reloj.hoy().plusDays(3 + 14), programaciones.obtener(id).getGeneradaHasta(),
+                "sin transacción, el avance se guarda aparte de las funciones");
     }
 
-    /**
-     * Acá {@code activa} deja de ser decorativo. Antes, con toda grilla cerrada y generada
-     * de una vez, dar de baja no evitaba ninguna función: ya estaban todas.
-     */
     @Test
     void unaGrillaDadaDeBajaNoExtiende() {
         PlanProgramacion plan = crearAbierta();
@@ -305,24 +277,22 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
         programaciones.desactivar(plan.programacion().getId());
 
-        assertEquals(0, programaciones.extenderActivas(LocalDate.now().plusDays(30)));
+        assertEquals(0, programaciones.extenderActivas(reloj.hoy().plusDays(30)));
         assertEquals(despuesDelAlta, funcionRepository.findAll().size(),
                 "las que ya generó siguen; nuevas no aparecen");
     }
 
-    /** Reactivarla la pone al día de una vez: no perdió las fechas que no generó. */
     @Test
     void reactivarlaVuelveAExtender() {
         PlanProgramacion plan = crearAbierta();
         programaciones.desactivar(plan.programacion().getId());
-        programaciones.extenderActivas(LocalDate.now().plusDays(10));
+        programaciones.extenderActivas(reloj.hoy().plusDays(10));
 
         programaciones.activar(plan.programacion().getId());
 
-        assertEquals(10, programaciones.extenderActivas(LocalDate.now().plusDays(10)));
+        assertEquals(10, programaciones.extenderActivas(reloj.hoy().plusDays(10)));
     }
 
-    /** Una grilla cerrada ya generada no vuelve a generar por más que pase el tiempo. */
     @Test
     void unaGrillaCerradaNoSePasaDeSuHasta() {
         crearSemana(Set.of());
@@ -332,69 +302,96 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals(delAlta, funcionRepository.findAll().size());
     }
 
-    /**
-     * Dos grillas de la misma película en salas distintas, una de ellas dada de baja.
-     * La de baja importa: es la que el filtro tiene que poder separar.
-     */
+    // R20: el 14/08 a las 10:00 un pase de las 9:00 ya pasó; el de mañana no.
+    @Test
+    void unaGrillaQueArrancaHoyConLaHoraYaPasadaSalteaEseDia() {
+        PlanProgramacion plan = programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), reloj.hoy().plusDays(2),
+                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        assertEquals(List.of(LocalDateTime.of(2026, 8, 15, 9, 0), LocalDateTime.of(2026, 8, 16, 9, 0)),
+                plan.funciones().stream().map(f -> f.inicio()).toList());
+        assertTrue(plan.salteadas().isEmpty(), "lo que ya pasó no es un choque");
+        assertEquals(2, funcionRepository.findAll().size());
+    }
+
+    // R20
+    @Test
+    void laPrevisualizacionTampocoMuestraLoQueYaPaso() {
+        DatosGrilla datos = new DatosGrilla(1, 1, reloj.hoy().minusDays(3), reloj.hoy().plusDays(2),
+                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+
+        PlanProgramacion previo = programaciones.previsualizar(datos);
+        PlanProgramacion alta = programaciones.crear(datos);
+
+        assertEquals(2, previo.funciones().size());
+        assertEquals(previo.funciones().stream().map(f -> f.inicio()).toList(),
+                alta.funciones().stream().map(f -> f.inicio()).toList());
+    }
+
+    // R20: un rango cerrado que ya pasó entero no deja nada que crear.
+    @Test
+    void rechazaUnRangoQueYaPasoEntero() {
+        Rechazo error = assertThrows(Rechazo.class,
+                () -> programaciones.crear(new DatosGrilla(1, 1, reloj.hoy().minusDays(5), reloj.hoy(),
+                        LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        assertEquals("Todos los horarios del rango ya pasaron: la grilla no generaría funciones",
+                error.getMessage());
+        assertTrue(programaciones.buscar(null, null, null).isEmpty());
+    }
+
+    // R20: una grilla abierta vieja, al extenderse con el reloj adelantado, no rellena días pasados.
+    @Test
+    void extenderNoGeneraFuncionesEnElPasado() {
+        crearAbierta();
+        reloj.mover(reloj.ahora().plusDays(30));
+
+        int generadas = programaciones.extenderActivas(reloj.hoy());
+
+        assertEquals(15, generadas, "de hoy a las 20:30 hasta el horizonte, sin los 15 días del medio");
+        assertTrue(funcionRepository.findAll().stream()
+                        .noneMatch(f -> f.getInicio().toLocalDate().isAfter(LocalDate.of(2026, 8, 28))
+                                && f.getInicio().isBefore(reloj.ahora())),
+                "entre la última del alta y ahora no se rellenó nada");
+    }
+
     private void cargarGrillas() {
         crearSemana(Set.of());
-        PlanProgramacion enSala2 = programaciones.crear(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
-                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
+                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         programaciones.desactivar(enSala2.programacion().getId());
     }
 
-    @Test
-    void buscarSinCriteriosDevuelveTodasIncluidasLasDeBaja() {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            null es todas: incluidas las de baja, ,   ,  ,      2
+            las activas,                          ,   ,  true,  1
+            las dadas de baja,                    ,   ,  false, 1
+            las de la sala 1,                     ,   1, ,      1
+            las de la sala 2,                     ,   2, ,      1
+            la sala 2 no tiene activas,           ,   2, true,  0
+            la de la sala 2 está dada de baja,    ,   2, false, 1
+            sin coincidencias devuelve vacío,     99, ,  ,      0
+            """)
+    void buscarFiltraPorPeliculaSalaYEstado(String caso, Integer pelicula, Integer sala, Boolean activa,
+            int esperadas) {
         cargarGrillas();
 
-        assertEquals(2, programaciones.buscar(null, null, null).size());
+        assertEquals(esperadas, programaciones.buscar(pelicula, sala, activa).size(), caso);
     }
 
-    /**
-     * Es la pregunta que más se hace en esta pantalla: cuáles están generando funciones.
-     * Las dadas de baja no se borran nunca —siguen explicando las que ya crearon— así que
-     * la lista solo crece y sin este filtro se vuelve ilegible.
-     */
-    @Test
-    void filtraLasActivasYLasDadasDeBaja() {
-        cargarGrillas();
-
-        assertEquals(1, programaciones.buscar(null, null, true).size());
-        assertEquals(1, programaciones.buscar(null, null, false).size());
-        assertEquals(2, programaciones.buscar(null, null, null).size(), "null es todas");
-    }
-
-    @Test
-    void filtraPorSalaYCombinaConElEstado() {
-        cargarGrillas();
-
-        assertEquals(1, programaciones.buscar(null, 1, null).size());
-        assertEquals(1, programaciones.buscar(null, 2, null).size());
-        // La de la sala 2 es justamente la que está de baja.
-        assertTrue(programaciones.buscar(null, 2, true).isEmpty());
-        assertEquals(1, programaciones.buscar(null, 2, false).size());
-    }
-
-    @Test
-    void buscarSinCoincidenciasDevuelveVacio() {
-        cargarGrillas();
-
-        assertTrue(programaciones.buscar(99, null, null).isEmpty());
-    }
-
-    /** Matrix en la Sala 1 a las 20:30, desde hoy, hasta que alguien la dé de baja. */
     private PlanProgramacion crearAbierta() {
-        return programaciones.crear(1, 1, LocalDate.now(), null, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private PlanProgramacion crearSemana(Set<DayOfWeek> dias) {
-        return programaciones.crear(1, 1, LUNES, DOMINGO, LAS_2030, dias,
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, dias,
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private PlanProgramacion previsualizarSemana() {
-        return programaciones.previsualizar(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        return programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
+                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 }
