@@ -122,7 +122,7 @@ final class PanelCobro extends Seccion {
                 ? "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()) + " · "
                 + precio(pago.descuento()) + " de descuento"
                 : "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()));
-        navegacion.ir(Destino.CAJA);
+        navegacion.ir(Destino.COBRAR);
     }
 
     private void mostrarCheckout(Checkout abierto) {

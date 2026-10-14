@@ -51,8 +51,8 @@ public final class PantallaCobro extends Pantalla {
         this.apiVentas = apiVentas;
         this.navegacion = navegacion;
 
-        JButton volver = new JButton("← Reservas");
-        volver.addActionListener(e -> navegacion.ir(Destino.RESERVAS));
+        JButton volver = new JButton("← Cobrar");
+        volver.addActionListener(e -> navegacion.ir(Destino.COBRAR));
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         JPanel fila = new JPanel(new BorderLayout());
         fila.add(volver, BorderLayout.WEST);

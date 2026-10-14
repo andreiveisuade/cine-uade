@@ -23,6 +23,10 @@ public final class ApiVentas {
         return http.get("/reservas/" + id, Reserva.class);
     }
 
+    public Reserva obtenerReservaPorCodigo(String codigo) {
+        return http.get("/reservas/codigo/" + Parametros.segmento(codigo), Reserva.class);
+    }
+
     public Reserva cancelarReserva(int id) {
         return http.post("/reservas/" + id + "/cancelacion", null, Reserva.class);
     }

@@ -20,6 +20,7 @@ public enum Destino {
     GRILLA("Grilla"),
     PLANIFICADOR("Planificador"),
     AGENDA("Agenda"),
+    COBRAR("Cobrar"),
     RESERVAS("Reservas"),
     PROMOCIONES("Promociones"),
     CANDY("Candy"),

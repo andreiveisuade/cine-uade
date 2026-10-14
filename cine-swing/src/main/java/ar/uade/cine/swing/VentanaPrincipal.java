@@ -42,8 +42,8 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
             new Grupo("Cartelera", List.of(Destino.PELICULAS, Destino.POR_REVISAR, Destino.IMPORTADOR)),
             new Grupo("Programación", List.of(Destino.SALAS, Destino.FUNCIONES, Destino.GRILLA, Destino.PLANIFICADOR,
                     Destino.AGENDA)),
-            new Grupo("Ventas", List.of(Destino.RESERVAS, Destino.PROMOCIONES, Destino.CANDY, Destino.CAJA,
-                    Destino.DECLARACION_JURADA)),
+            new Grupo("Ventas", List.of(Destino.COBRAR, Destino.RESERVAS, Destino.PROMOCIONES, Destino.CANDY,
+                    Destino.CAJA, Destino.DECLARACION_JURADA)),
             new Grupo("Acceso", List.of(Destino.PUERTA)));
 
     private final Pantallas pantallas;

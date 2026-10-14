@@ -159,4 +159,17 @@ class ApisTest {
         assertFalse(reservas.get(1).cobrable());
         assertFalse(reservas.get(1).cancelable());
     }
+
+    // La caja busca por lo que trae el cliente en el ticket, como la puerta.
+    @Test
+    void laReservaSeBuscaPorElCodigoDelTicket() {
+        servidor.responder("GET /api/reservas/codigo/K7MX2QPA", 200, """
+                {"id":7,"estado":"RESERVADA","codigo":"K7MX2QPA","entradas":[],"total":9000,"cobrable":true}
+                """);
+
+        Reserva reserva = new ApiVentas(http).obtenerReservaPorCodigo("K7MX2QPA");
+
+        assertEquals(7, reserva.id());
+        assertTrue(reserva.cobrable());
+    }
 }

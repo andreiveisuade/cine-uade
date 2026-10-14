@@ -9,7 +9,7 @@ public interface Navegacion {
     /** El borderó y el informe de una función. No está en el menú: se llega desde Funciones o desde la Agenda. */
     void abrirInforme(int funcionId);
 
-    /** El cobro de una reserva, desde Reservas. */
+    /** El cobro de una reserva, desde Cobrar o desde Reservas. */
     void abrirCobro(int reservaId);
 
     /** El mapa de una sala, para marcar butacas fuera de servicio, desde Salas. */
