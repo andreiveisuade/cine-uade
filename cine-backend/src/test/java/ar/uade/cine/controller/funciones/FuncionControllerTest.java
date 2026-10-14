@@ -2,6 +2,7 @@ package ar.uade.cine.controller.funciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +110,36 @@ class FuncionControllerTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals("El período tiene que empezar antes de terminar", respuesta.error());
+    }
+
+    // Los filtros de FuncionRepository.buscar: cada uno se suma solo si viene, `hasta` incluye todo el día y
+    // el orden es por inicio.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin filtros,          '',                                 2026-08-14T20:30:00 2026-08-15T18:00:00 2026-08-16T22:00:00
+            por película,         ?peliculaId=2,                      2026-08-15T18:00:00
+            por sala,             ?salaId=2,                          2026-08-16T22:00:00
+            desde,                ?desde=2026-08-15,                  2026-08-15T18:00:00 2026-08-16T22:00:00
+            hasta el día entero,  ?hasta=2026-08-15,                  2026-08-14T20:30:00 2026-08-15T18:00:00
+            película y período,   ?peliculaId=1&desde=2026-08-15,     2026-08-16T22:00:00
+            """)
+    void buscarCombinaLosFiltrosQueVienen(String caso, String query, String inicios) {
+        cartelera.agregar("Dune", 150, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
+        programar("2026-08-16T22:00:00", 1, 2);
+        programar("2026-08-14T20:30:00", 1, 1);
+        programar("2026-08-15T18:00:00", 2, 1);
+
+        List<String> encontradas = new ArrayList<>();
+        get("/api/funciones" + query).json().forEach(f -> encontradas.add(f.get("inicio").asText()));
+
+        assertEquals(List.of(inicios.split(" ")), encontradas);
+    }
+
+    private void programar(String inicio, int peliculaId, int salaId) {
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":" + peliculaId + ",\"salaId\":" + salaId
+                + ",\"inicio\":\"" + inicio + "\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\",\"precio\":4500}");
+        assertEquals(201, respuesta.estado());
     }
 
     @Test
