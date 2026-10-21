@@ -1,6 +1,6 @@
 # cine-frontend
 
-Venta web al cliente, sin login: cartelera, butacas, confirmación, ticket y mis reservas. React 19, React
+Venta web al cliente, con cuenta opcional: cartelera, butacas, confirmación, ticket y mis reservas. React 19, React
 Router y Mantine, compilado con Vite y servido por nginx. El encargado usa [`cine-swing`](../cine-swing/README.md).
 
 ## Correrlo
