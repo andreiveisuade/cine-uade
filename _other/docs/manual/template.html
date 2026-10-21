@@ -476,7 +476,7 @@ body.lightbox-locked { overflow: hidden; }
       </p>
       <p>
         Backend en Java 21 con Spring Boot sobre MySQL; web en React; panel de escritorio en Swing; todo
-        levantado con Docker Compose. 25 casos de uso y 21 reglas de negocio (R1 a R21).
+        levantado con Docker Compose. 27 casos de uso y 21 reglas de negocio (R1 a R21).
       </p>
     </section>
 
@@ -486,7 +486,7 @@ body.lightbox-locked { overflow: hidden; }
         <li>Películas (título, duración, géneros, clasificación) y salas con su mapa de butacas.</li>
         <li>Funciones sueltas o por grilla; reservar butacas concretas, cobrarlas o cancelarlas.</li>
         <li>Tarifa por persona (general, menor, jubilado, estudiante) y promociones administrables.</li>
-        <li>Pago contra una pasarela emulada; código de acceso validado en la puerta.</li>
+        <li>Pago online por Mercado Pago Checkout Pro (sandbox; sin token, una pasarela emulada); código de acceso validado en la puerta.</li>
         <li>Reservas impagas que vencen; butacas bloqueadas mientras alguien elige.</li>
         <li>Candy con productos y combos; arqueo diario, borderó e informe por función.</li>
         <li>Persistencia en MySQL, con la lógica independiente de ella.</li>
@@ -565,7 +565,7 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="casos-de-uso">
       <h2>Casos de uso</h2>
-      <p>Actores: <strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta), con contraseña en el <a href="#swing">panel de escritorio</a>, y <strong>Cliente</strong>, sin contraseña, en la web.</p>
+      <p>Actores: <strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta), con contraseña en el <a href="#swing">panel de escritorio</a>; <strong>Cliente</strong>, en la web, con cuenta opcional (email y clave, sesión por cookie) o solo con el código de su reserva; y la <strong>tarea de conciliación</strong>, que cobra lo que Mercado Pago aprobó.</p>
 
       <figure class="diagram compacto">
         {{SVG_CASOS_USO}}
@@ -584,11 +584,13 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td></tr>
+            <tr><td>CU-05b</td><td>Cliente</td><td>Ingresar con su cuenta y salir</td><td>R21</td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R9, R19</td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
-            <tr><td>CU-07b</td><td>Cliente</td><td>Pagar por <a href="#pasarela">checkout</a> con QR</td><td>R5, R11, R17, R19</td></tr>
-            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva</td><td>R6, R13</td></tr>
-            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas</td><td>—</td></tr>
+            <tr><td>CU-07b</td><td>Cliente</td><td>Pagar online por <a href="#pasarela">checkout</a> (débito, crédito, QR o transferencia), con sesión</td><td>R5, R11, R17, R19, R21</td></tr>
+            <tr><td>CU-07c</td><td>Conciliación</td><td>Cobrar lo que Mercado Pago aprobó aunque el comprador no vuelva (<a href="#conciliacion">detalle</a>)</td><td>R5, R17</td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva, con sesión</td><td>R6, R13, R21</td></tr>
+            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas (con sesión) o un ticket por su código</td><td>R21</td></tr>
             <tr><td>CU-10</td><td>Admin, Acomodador</td><td>Iniciar sesión en el panel de escritorio</td><td>—</td></tr>
             <tr><td>CU-11</td><td>Admin</td><td>Marcar o reponer una butaca fuera de servicio</td><td>R9</td></tr>
             <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día</td><td>—</td></tr>
@@ -719,6 +721,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>GestorAcceso</code></td><td>Busca la reserva por código y le pide el ingreso (R18)</td></tr>
             <tr><td><code>ConsultasReservas</code></td><td>Búsquedas de reservas, solo lectura</td></tr>
             <tr><td><code>GestorPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19); publica <code>PagoRegistrado</code></td></tr>
+            <tr><td><code>ConciliacionPagos</code></td><td>Tarea programada que cobra lo que la pasarela aprobó sin que el comprador vuelva</td></tr>
             <tr><td><code>Ocupacion</code></td><td>Butacas tomadas en una función y bloqueos mientras se elige; expira los vencidos</td></tr>
             <tr><td><code>ComprobantesDeVentas</code> / <code>ComprobantesDeCandy</code></td><td>Emiten los comprobantes después del commit (<a href="#observer">Observer</a>)</td></tr>
             <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta e identificación de clientes / empleados para la sesión y el rehash de su clave</td></tr>
@@ -744,7 +747,7 @@ body.lightbox-locked { overflow: hidden; }
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación; <code>Adaptadores.Tareas</code> prende las tareas programadas fuera de los tests</td></tr>
-            <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización</td></tr>
+            <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoHttp</code> / <code>MercadoPagoEmulado</code></td><td>Checkout y código de autorización: Mercado Pago con <code>MP_ACCESS_TOKEN</code>, la emulada sin él</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; los piden los observadores, no los gestores</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
@@ -968,7 +971,7 @@ body.lightbox-locked { overflow: hidden; }
       </div>
       <h3>Pantallas</h3>
       <ul>
-        <li><strong>Home (<code>#/</code>):</strong> hero con tres destacadas y botón a la cartelera, y debajo la cartelera. <code>#/cartelera/:genero</code> filtra.</li>
+        <li><strong>Home (<code>#/</code>):</strong> hero con un carrusel de hasta ocho destacadas y botón a la cartelera, y debajo la cartelera. <code>#/cartelera/:genero</code> filtra.</li>
         <li><strong><code>#/nosotros</code>:</strong> integrantes y descripción del cine.</li>
         <li><strong><code>#/registro</code> e <code>#/ingresar</code>:</strong> alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o el nombre, Mis reservas y Salir.</li>
         <li><strong><code>#/mis-reservas</code>:</strong> con sesión, sus reservas con Cancelar y Pagar online; sin sesión, la búsqueda por código.</li>
@@ -2138,7 +2141,7 @@ docker compose up -d --build
             <tr><td>CP-09</td><td>Grilla: previsualizar, aplicar, baja</td><td>Previsualizar no escribe (R3)</td></tr>
             <tr><td>CP-10</td><td>Comprar dos butacas, cambiar una tarifa</td><td>Precio al instante; ticket con código</td></tr>
             <tr><td>CP-11</td><td>Volver a la función</td><td>Butacas en gris (R4)</td></tr>
-            <tr><td>CP-12</td><td>«Mis reservas» con un código inexistente</td><td>Aviso, no error</td></tr>
+            <tr><td>CP-12</td><td>«Mis reservas» sin sesión con un código inexistente; con sesión, las reservas propias</td><td>Va al ticket y muestra el error del backend (404), sin romper; con sesión, solo las suyas (R21)</td></tr>
             <tr><td>CP-13</td><td>Promo del 30% y cobrar</td><td>Descuento informado; la caja lo suma</td></tr>
             <tr><td>CP-14</td><td>Dar de baja la promoción</td><td>Gris con «Reactivar»</td></tr>
             <tr><td>CP-15</td><td>Acomodador entra al panel Swing</td><td>Solo ve Puerta; otra ruta da 403</td></tr>
@@ -2181,6 +2184,7 @@ docker compose up -d --build
             <tr><td>Bloqueo</td><td><code>OcupacionTest</code></td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td></tr>
             <tr><td>CU-03b, CU-07b, CU-19, CU-20</td><td><code>ProgramacionTest</code>, <code>GestorPagosTest</code>, <code>GestorInformesTest</code></td></tr>
+            <tr><td>CU-07c</td><td><code>ConciliacionPagosTest</code></td></tr>
             <tr><td>Buzón de revisión</td><td><code>GestorImportacionesTest</code>, <code>RevisionControllerTest</code></td></tr>
             <tr><td>Comprobantes después del commit</td><td><code>ComprobantesDeVentasTest</code>, <code>ComprobantesDeCandyTest</code></td></tr>
           </tbody>
@@ -2191,7 +2195,7 @@ docker compose up -d --build
     <section class="doc-section" id="estado">
       <h2>Estado y pendientes</h2>
       <p>
-        <strong>Hecho:</strong> los 25 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
+        <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
         R1 a R21, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
@@ -2268,7 +2272,7 @@ docker compose up -d --build
             <tr><td>Butacas numeradas</td><td>Cupo</td><td>Elegir asiento, marcar rotas</td></tr>
             <tr><td><code>Genero</code>, <code>TipoTarifa</code> enum</td><td>Entidad con ABM</td><td>Catálogos cerrados</td></tr>
             <tr><td><code>Empleado</code> con <code>Rol</code></td><td>Clase por cargo</td><td>La herencia corta por la contraseña</td></tr>
-            <tr><td>Sin login de cliente</td><td>Cuenta</td><td>El código es la credencial</td></tr>
+            <tr><td>Cuenta de cliente opcional</td><td>Login obligatorio</td><td>Sin cuenta se reserva con el código como credencial; con cuenta se ve, cancela y paga online (R21)</td></tr>
             <tr><td>Grilla que materializa funciones</td><td>Derivarlas</td><td>Cada función tiene vida propia</td></tr>
             <tr><td>Buzón para lo importado</td><td>Alta directa</td><td>El catálogo lo decide el cine</td></tr>
 
@@ -2279,7 +2283,7 @@ docker compose up -d --build
             <tr><td>Expiración perezosa</td><td>Scheduler</td><td>El <code>UNIQUE</code> obliga a escribir</td></tr>
             <tr><td>Bloqueo en una tabla de MySQL</td><td>Redis</td><td>El otro comprador se entera; una fuente de verdad y un contenedor menos</td></tr>
             <tr><td><code>UPDATE</code> condicional + <code>INSERT IGNORE</code></td><td><code>@Lock(PESSIMISTIC_WRITE)</code></td><td><code>FOR UPDATE</code> no cubre la fila que no existe; la PK ya serializa</td></tr>
-            <tr><td>Pasarela emulada</td><td>Código tipeado</td><td>R11 pide un código que el cine no inventa</td></tr>
+            <tr><td>Mercado Pago Checkout Pro (sandbox), emulada sin token</td><td>Código tipeado</td><td>R11 pide un código que el cine no inventa; la emulada deja correr todo sin credenciales</td></tr>
             <tr><td>Código por reserva, ingreso timestamp</td><td>Por butaca, estado</td><td>El grupo entra junto</td></tr>
             <tr><td>Combo con componentes</td><td>Precio propio</td><td>Permite R14</td></tr>
             <tr><td>Candy cobra en el acto</td><td>Reusar <code>Pago</code></td><td>Sin FK polimórfica</td></tr>
