@@ -62,7 +62,7 @@ public class Importacion {
         return estado.estaEnCurso();
     }
 
-    // La vista y el historial leen los datos sueltos, como antes del resumen.
+    // La vista y el historial leen los datos sueltos
     public int getNuevas() {
         return resumen.nuevas();
     }

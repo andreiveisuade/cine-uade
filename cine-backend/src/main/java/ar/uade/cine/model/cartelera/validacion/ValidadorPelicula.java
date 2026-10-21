@@ -7,12 +7,10 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.validacion.Regla;
 
 // Valida título, duración, géneros y clasificación de una película; guardas de Regla que llama Pelicula.
-// Cada método devuelve el dato listo para guardar (recortado, sin repetidos): Pelicula llama a los
-// cuatro antes de asignar nada, así una edición rechazada no deja la película a medio cambiar.
+// Cada método devuelve el dato listo (recortado, sin repetidos); Pelicula valida todo antes de asignar.
 public final class ValidadorPelicula {
 
-    // Ninguna película de cartelera dura diez horas. Sin tope, 2147483647 desbordaba el margen con el que
-    // GestorFunciones busca superposiciones y apagaba R3 en todas las salas.
+    // Sin tope, 2147483647 desbordaba el margen con el que GestorFunciones busca superposiciones y apagaba R3.
     private static final int DURACION_MAXIMA = 600;
 
     private ValidadorPelicula() {
@@ -30,8 +28,7 @@ public final class ValidadorPelicula {
                 .valor();
     }
 
-    // Sin repetidos: la clave de pelicula_genero es (pelicula_id, genero). Se juntan en vez de rechazarse:
-    // mandar dos veces el mismo género dice lo mismo que mandarlo una.
+    // Sin repetidos: la clave de pelicula_genero es (pelicula_id, genero); se juntan en vez de rechazarse.
     public static List<Genero> generos(List<Genero> generos) {
         return Regla.lista(generos).noVacia("La película tiene que tener al menos un género")
                 .sinNulos("Falta el género").valor().stream().distinct().toList();

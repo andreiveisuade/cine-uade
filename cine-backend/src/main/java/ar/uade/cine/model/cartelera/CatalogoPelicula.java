@@ -12,12 +12,8 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.validacion.Regla;
 
 // Lo que se muestra de una película (director, sinopsis, año, póster, puntaje); Value Object inmutable.
-// @Embeddable sobre las mismas columnas de la tabla pelicula: agruparlos no cambia el schema. Se valida
-// entero al armarse, y cambiar un dato es armar otro con conCambios: la película nunca queda con un
-// catálogo a medio validar.
-// Clase y no record, a diferencia de Periodo: Hibernate arma un record con su constructor canónico, y el
-// tope del año depende del día de hoy, que al leer de la base no hay. Además una fila vieja que no cumpla
-// una regla nueva (una sinopsis anterior al tope) no puede impedir leer la cartelera.
+// @Embeddable sobre las columnas de pelicula; cambiar un dato es armar otro con conCambios, ya validado.
+// Clase y no record: el tope del año depende de hoy y una fila vieja no debe impedir leer la cartelera.
 @Embeddable
 @Getter
 @Accessors(fluent = true)
@@ -52,8 +48,7 @@ public class CatalogoPelicula {
     protected CatalogoPelicula() {
     }
 
-    // Las guardas van en el orden de siempre (el puntaje antes que el año): con varios datos mal, el primer
-    // error que ve el usuario no cambió al juntarlos acá. El día de hoy lo pasa quien tiene el reloj.
+    // Guardas en el orden de siempre (puntaje antes que año) para no cambiar el primer error. El día lo pasa quien tiene el reloj.
     private CatalogoPelicula(String director, String sinopsis, int anio, String idiomaOriginal,
                              String posterUrl, double puntaje, int votos, LocalDate hoy) {
         this.puntaje = Regla.numero(puntaje).entre(0.0, 10.0, "El puntaje tiene que estar entre 0 y 10")
@@ -90,8 +85,7 @@ public class CatalogoPelicula {
         return anio;
     }
 
-    // Vacío es "sin póster". Cualquier otra cosa termina en el src de un <img> de la web: una ruta suelta no
-    // carga, y un esquema como javascript: no tiene nada que hacer ahí.
+    // Vacío es "sin póster". Lo demás termina en un <img src>: una ruta suelta no carga y javascript: no va.
     private static String posterValido(String url) {
         Regla.texto(url).hasta(255, "La URL del póster");
         if (!url.isEmpty() && !url.startsWith("http://") && !url.startsWith("https://")) {
