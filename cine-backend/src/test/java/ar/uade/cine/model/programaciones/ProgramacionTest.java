@@ -90,9 +90,7 @@ class ProgramacionTest {
                         new FormatoDeFuncion(version, proyeccion, Dinero.de(precio)))).getMessage());
     }
 
-    // R20 y el horizonte miran el reloj: los pide el alta. El 14/08/2026 a las 10:00, un rango cerrado
-    // que ya pasó entero no generaría nada, y uno que termina a más de un año generaría funciones que el
-    // alta de cada una rechaza.
+    // R20 y el horizonte miran el reloj (14/08/2026 10:00): un rango ya pasado no generaría nada, uno a más de un año se rechaza.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             ya pasó entero,              2026-08-10, 2026-08-14, 09:00, Todos los horarios del rango ya pasaron: la grilla no generaría funciones
