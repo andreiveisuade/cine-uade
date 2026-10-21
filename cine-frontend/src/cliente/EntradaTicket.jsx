@@ -2,11 +2,11 @@ import { createElement } from "react";
 import { Badge, Box, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
-import { etiqueta } from "../api/etiquetas.js";
-import { dia, fechaHora, hora, precio } from "../api/formato.js";
-import { iconoTarifa } from "../api/iconos.js";
-import { Entrada } from "../componentes/Entrada.jsx";
-import { Poster } from "../componentes/Poster.jsx";
+import { etiqueta } from "@/api/etiquetas.js";
+import { dia, fechaHora, hora, precio } from "@/api/formato.js";
+import { iconoTarifa } from "@/api/iconos.js";
+import { Entrada } from "@/componentes/Entrada.jsx";
+import { Poster } from "@/componentes/Poster.jsx";
 
 // Qué le decimos al comprador según el estado que manda el backend; el front no decide vencimientos.
 const AVISO_POR_ESTADO = {

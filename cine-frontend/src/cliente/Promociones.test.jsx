@@ -2,11 +2,11 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import confetti from "canvas-confetti";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
 import { Promociones } from "./Promociones.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 
 const promo = (cambios) => ({

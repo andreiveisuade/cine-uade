@@ -1,5 +1,5 @@
 import { useLocation } from "react-router";
-import { ErrorCaja } from "./Estado.jsx";
+import { ErrorCaja } from "@/componentes/Estado.jsx";
 
 export function NoExiste() {
   const { pathname } = useLocation();

@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useEffectEvent, useState } from "react";
 import { NativeSelect, Text } from "@mantine/core";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { dia, hora } from "../api/formato.js";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { dia, hora } from "@/api/formato.js";
 
 // Código de butaca → tarifa, porque la tarifa es por persona.
 // En memoria y no en el navegador: recargar la pierde, igual que vence el bloqueo del backend.

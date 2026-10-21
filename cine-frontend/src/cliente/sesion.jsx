@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import * as api from "../api/api-http.js";
+import * as api from "@/api/api-http.js";
 
 // Quién está con sesión: undefined mientras se pregunta, null si nadie. La sesión es la cookie del backend;
 // acá solo queda el usuario para mostrar, y al recargar se le vuelve a preguntar al backend.

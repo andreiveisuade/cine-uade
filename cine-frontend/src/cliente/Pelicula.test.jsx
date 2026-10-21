@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
 import { Pelicula } from "./Pelicula.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 
 const pelicula = (cambios) => ({
   id: 7, titulo: "Dune", duracionMinutos: 155, generos: ["CIENCIA_FICCION"], clasificacion: "ATP",

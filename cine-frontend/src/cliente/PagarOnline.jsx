@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button, Group, NativeSelect, Paper, Stack, Text } from "@mantine/core";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { precio } from "../api/formato.js";
-import { ErrorCaja } from "../componentes/Estado.jsx";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { precio } from "@/api/formato.js";
+import { ErrorCaja } from "@/componentes/Estado.jsx";
 
 // Elegir el medio, abrir el checkout y recién ahí ir a la pasarela: el monto con la promo del medio lo calcula
 // el backend, y se muestra antes de salir del sitio.

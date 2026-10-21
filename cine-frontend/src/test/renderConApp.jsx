@@ -2,11 +2,11 @@ import { MantineProvider } from "@mantine/core";
 import { domMax, LazyMotion, MotionConfig } from "motion/react";
 import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { Avisos } from "../componentes/Avisos.jsx";
-import { CompraEnCurso } from "../cliente/compra.jsx";
-import { SesionDelCliente } from "../cliente/sesion.jsx";
+import { Avisos } from "@/componentes/Avisos.jsx";
+import { CompraEnCurso } from "@/cliente/compra.jsx";
+import { SesionDelCliente } from "@/cliente/sesion.jsx";
 
-// Los mismos providers que Base y AppCliente, sin animaciones: Motion salta a su estado final y los tests no esperan.
+// Los mismos providers que Proveedores y AppCliente, sin animaciones: Motion salta a su estado final y los tests no esperan.
 // `ruta` es el patrón de la pantalla (para useParams) y `en` la URL de entrada.
 export function renderConApp(ui, { ruta = "/", en = "/", ...opciones } = {}) {
   return render(

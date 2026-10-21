@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge, Box, Collapse, Group, SimpleGrid, Stack, Text, UnstyledButton } from "@mantine/core";
 import { Foto } from "./Foto.jsx";
-import { etiqueta } from "../api/etiquetas.js";
+import { etiqueta } from "@/api/etiquetas.js";
 
 export const DIAS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 

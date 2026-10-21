@@ -1,17 +1,17 @@
 import { Box, Button, Grid, Group, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { m } from "motion/react";
 import { Link, useParams } from "react-router";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { dia, duracion, hora, porDia, precio } from "../api/formato.js";
-import { Banda } from "../componentes/Banda.jsx";
-import { Chip, ChipClasificacion } from "../componentes/Chips.jsx";
-import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
-import { Poster } from "../componentes/Poster.jsx";
-import { Trailer } from "../componentes/Trailer.jsx";
-import { useCargar } from "../componentes/useCargar.js";
-import { useTitulo } from "../componentes/useTitulo.js";
-import { Volver } from "../componentes/Volver.jsx";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { dia, duracion, hora, porDia, precio } from "@/api/formato.js";
+import { Banda } from "@/componentes/Banda.jsx";
+import { Chip, ChipClasificacion } from "@/componentes/Chips.jsx";
+import { EsperaOError, Vacio } from "@/componentes/Estado.jsx";
+import { Poster } from "@/componentes/Poster.jsx";
+import { Trailer } from "@/componentes/Trailer.jsx";
+import { useCargar } from "@/componentes/useCargar.js";
+import { useTitulo } from "@/componentes/useTitulo.js";
+import { Volver } from "@/componentes/Volver.jsx";
 
 function PeliculaEsqueleto() {
   return (

@@ -1,6 +1,6 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Foto } from "./Foto.jsx";
-import { precio } from "../api/formato.js";
+import { precio } from "@/api/formato.js";
 import { MontoAnimado } from "./MontoAnimado.jsx";
 
 // El ahorro y el precio mandan; lo que trae el combo va en una línea.

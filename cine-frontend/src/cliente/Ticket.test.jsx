@@ -1,11 +1,11 @@
 import { act, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import confetti from "canvas-confetti";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
 import { Ticket } from "./Ticket.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 vi.mock("canvas-confetti", () => ({ default: Object.assign(vi.fn(), { reset: vi.fn() }) }));
 
 const reserva = (estado, cobrable = false) => ({

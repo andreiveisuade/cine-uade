@@ -3,16 +3,16 @@ import { Box, Button, Group, Skeleton, Stack } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { AnimatePresence, m } from "motion/react";
 import { Link, useParams } from "react-router";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { Encabezado } from "../componentes/Encabezado.jsx";
-import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
-import { Grilla } from "../componentes/Grilla.jsx";
-import { Seccion } from "../componentes/Seccion.jsx";
-import { TarjetaPelicula } from "../componentes/TarjetaPelicula.jsx";
-import { urlTrailer } from "../componentes/Trailer.jsx";
-import { useCargar } from "../componentes/useCargar.js";
-import { useTitulo } from "../componentes/useTitulo.js";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { Encabezado } from "@/componentes/Encabezado.jsx";
+import { EsperaOError, Vacio } from "@/componentes/Estado.jsx";
+import { Grilla } from "@/componentes/Grilla.jsx";
+import { Seccion } from "@/componentes/Seccion.jsx";
+import { TarjetaPelicula } from "@/componentes/TarjetaPelicula.jsx";
+import { urlTrailer } from "@/componentes/Trailer.jsx";
+import { useCargar } from "@/componentes/useCargar.js";
+import { useTitulo } from "@/componentes/useTitulo.js";
 import { Portada } from "./Portada.jsx";
 
 // Con mouse, quedarse sobre una tarjeta muestra el trailer muteado arriba del póster; en touch no hay hover.

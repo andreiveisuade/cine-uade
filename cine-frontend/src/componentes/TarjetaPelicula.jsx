@@ -1,7 +1,7 @@
 import { Box, Group, Text } from "@mantine/core";
 import { Link } from "react-router";
-import { etiqueta } from "../api/etiquetas.js";
-import { duracion } from "../api/formato.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { duracion } from "@/api/formato.js";
 import { ChipClasificacion } from "./Chips.jsx";
 import { Poster } from "./Poster.jsx";
 

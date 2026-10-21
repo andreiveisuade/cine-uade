@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Alert, Anchor, Button, Grid, Paper, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { precio } from "../api/formato.js";
-import { useAvisar } from "../componentes/Avisos.jsx";
-import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
-import { useCargar } from "../componentes/useCargar.js";
-import { useTitulo } from "../componentes/useTitulo.js";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { precio } from "@/api/formato.js";
+import { useAvisar } from "@/componentes/Avisos.jsx";
+import { ErrorCaja, EsperaOError } from "@/componentes/Estado.jsx";
+import { useCargar } from "@/componentes/useCargar.js";
+import { useTitulo } from "@/componentes/useTitulo.js";
 import { useSesion } from "./sesion.jsx";
-import { Encabezado } from "../componentes/Encabezado.jsx";
+import { Encabezado } from "@/componentes/Encabezado.jsx";
 import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
          SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
          useRenovarBloqueo } from "./compra.jsx";

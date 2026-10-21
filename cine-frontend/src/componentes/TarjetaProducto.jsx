@@ -1,6 +1,6 @@
 import { AspectRatio, Card, Text } from "@mantine/core";
-import { etiqueta } from "../api/etiquetas.js";
-import { precio } from "../api/formato.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { precio } from "@/api/formato.js";
 
 export function TarjetaProducto({ producto, ratio = 1 }) {
   return (

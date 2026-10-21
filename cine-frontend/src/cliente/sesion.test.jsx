@@ -1,12 +1,12 @@
 import { renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
-import { AppCliente } from "./AppCliente.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
+import { AppCliente } from "@/app/AppCliente.jsx";
 import { SesionDelCliente, useSesion } from "./sesion.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 
 const ANA = { nombre: "Ana", rol: "CLIENTE" };
 

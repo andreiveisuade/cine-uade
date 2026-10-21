@@ -4,9 +4,9 @@ import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
 import { Button, Group, Stack, Text, Title } from "@mantine/core";
 import { useReducedMotion } from "motion/react";
-import { TarjetaCombo } from "../componentes/TarjetaCombo.jsx";
-import { TarjetaProducto } from "../componentes/TarjetaProducto.jsx";
-import { TarjetaPromo } from "../componentes/TarjetaPromo.jsx";
+import { TarjetaCombo } from "@/componentes/TarjetaCombo.jsx";
+import { TarjetaProducto } from "@/componentes/TarjetaProducto.jsx";
+import { TarjetaPromo } from "@/componentes/TarjetaPromo.jsx";
 
 // Lo que se puede sumar a la función, en el orden en que conviene: combos, sueltos con foto, promos de entradas.
 function slides(productos, promos) {

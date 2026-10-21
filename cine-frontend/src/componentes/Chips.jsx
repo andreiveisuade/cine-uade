@@ -1,5 +1,5 @@
 import { Badge } from "@mantine/core";
-import { COLOR_CLASIFICACION, etiqueta } from "../api/etiquetas.js";
+import { COLOR_CLASIFICACION, etiqueta } from "@/api/etiquetas.js";
 
 export function Chip({ valor, color = "gray", variant = color === "gray" ? "default" : "light" }) {
   return (

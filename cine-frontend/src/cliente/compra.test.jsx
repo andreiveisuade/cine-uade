@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
+import * as api from "@/api/api-http.js";
 import { catalogoTarifas, CompraEnCurso, resumenCompra, useCompra, useRenovarBloqueo } from "./compra.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 
 const TARIFAS = [
   { nombre: "GENERAL", multiplicador: 1 },

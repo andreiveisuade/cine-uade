@@ -2,11 +2,11 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
 import { ErrorDePantalla } from "./ErrorDePantalla.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 
 function Rota() {
   throw new Error("se rompió el render");

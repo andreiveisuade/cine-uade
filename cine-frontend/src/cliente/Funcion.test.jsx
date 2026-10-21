@@ -1,11 +1,11 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../api/api-http.js";
-import { renderConApp } from "../test/renderConApp.jsx";
+import * as api from "@/api/api-http.js";
+import { renderConApp } from "@/test/renderConApp.jsx";
 import { Funcion } from "./Funcion.jsx";
 
-vi.mock("../api/api-http.js");
+vi.mock("@/api/api-http.js");
 
 const asiento = (codigo, extra = {}) =>
   ({ codigo, fila: 1, numero: Number(codigo.slice(1)), tipo: "ESTANDAR", precio: 1000, ocupado: false, estado: "ACTIVA", ...extra });

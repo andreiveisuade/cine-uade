@@ -1,15 +1,15 @@
 import { Button, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useNavigate, useParams } from "react-router";
-import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
-import { precio } from "../api/formato.js";
-import { useAvisar } from "../componentes/Avisos.jsx";
-import { EsperaOError } from "../componentes/Estado.jsx";
-import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/MapaButacas.jsx";
-import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
-import { useCargar } from "../componentes/useCargar.js";
-import { useTitulo } from "../componentes/useTitulo.js";
-import { Encabezado } from "../componentes/Encabezado.jsx";
+import * as api from "@/api/api-http.js";
+import { etiqueta } from "@/api/etiquetas.js";
+import { precio } from "@/api/formato.js";
+import { useAvisar } from "@/componentes/Avisos.jsx";
+import { EsperaOError } from "@/componentes/Estado.jsx";
+import { ESTILO, estiloTipo, MapaButacas, Referencia } from "@/componentes/MapaButacas.jsx";
+import { MontoAnimado } from "@/componentes/MontoAnimado.jsx";
+import { useCargar } from "@/componentes/useCargar.js";
+import { useTitulo } from "@/componentes/useTitulo.js";
+import { Encabezado } from "@/componentes/Encabezado.jsx";
 import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
          sostenerSeleccion, useCambiarTarifa, useCompra, useRenovarBloqueo } from "./compra.jsx";
 

@@ -1,9 +1,9 @@
 import { Anchor, Box, Group, Text } from "@mantine/core";
 import { Link } from "react-router";
-import * as api from "../api/api-http.js";
-import { Contenedor } from "../componentes/Contenedor.jsx";
-import { MediosDePago } from "../componentes/MediosDePago.jsx";
-import { useCargar } from "../componentes/useCargar.js";
+import * as api from "@/api/api-http.js";
+import { Contenedor } from "@/componentes/Contenedor.jsx";
+import { MediosDePago } from "@/componentes/MediosDePago.jsx";
+import { useCargar } from "@/componentes/useCargar.js";
 
 const ENLACES = [["/cartelera", "Cartelera"], ["/promociones", "Promos"], ["/mis-reservas", "Mis reservas"], ["/nosotros", "Nosotros"]];
 

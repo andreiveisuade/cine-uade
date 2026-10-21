@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -6,6 +7,8 @@ const SISTEMA = "http://localhost:8080";
 
 export default defineConfig({
   plugins: [react()],
+  // `@/` es `src/`: un import entre carpetas dice de dónde viene sin contar `../`.
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   build: {
     rolldownOptions: {
       output: {
