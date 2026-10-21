@@ -29,7 +29,6 @@ public class Asiento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    // Igual que el ON DELETE CASCADE del schema: borrar la sala se lleva sus butacas.
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sala_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -56,7 +55,6 @@ public class Asiento {
         this.estado = EstadoAsiento.HABILITADO;
     }
 
-    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getSalaId() {
         return sala.getId();
     }
@@ -74,7 +72,7 @@ public class Asiento {
         return estado == EstadoAsiento.FUERA_DE_SERVICIO;
     }
 
-    // R9 al vender y al bloquear, con el mismo texto en los dos caminos porque sale de acá.
+    // R9 al vender y al bloquear, con el mismo texto en los dos caminos.
     public void exigirEnServicio() {
         if (estaFueraDeServicio()) {
             throw new DatoInvalido("La butaca " + getCodigo() + " está fuera de servicio");
@@ -94,8 +92,7 @@ public class Asiento {
         return asientos.stream().filter(a -> a.getCodigo().equals(buscado)).findFirst();
     }
 
-    // La butaca de un pedido (venta o bloqueo): el código puede faltar, y el mensaje es el mismo
-    // en los dos caminos porque sale de acá.
+    // La butaca de un pedido (venta o bloqueo): el código puede faltar.
     public static Asiento exigirConCodigo(List<Asiento> deLaSala, String codigo) {
         if (codigo == null || codigo.isBlank()) {
             throw new DatoInvalido("Falta el código de una butaca");
@@ -104,9 +101,7 @@ public class Asiento {
                 .orElseThrow(() -> new DatoInvalido(inexistente(codigo)));
     }
 
-    // El mismo texto llegue la butaca en una venta, un bloqueo o el alta de la sala (400). Sin nombrar
-    // la sala: quien pide ya sabe cuál es, y la lista puede no traerla. En la ruta es un 404, y dice
-    // «No existe la butaca» como cualquier recurso que no está.
+    // Mismo texto en venta, bloqueo y alta de sala (400); en la ruta es un 404. No nombra la sala: quien pide ya la sabe.
     public static String inexistente(String codigo) {
         return "La butaca " + normalizarCodigo(codigo) + " no existe en la sala";
     }
