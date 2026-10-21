@@ -38,6 +38,9 @@ cine:
     token: ""
     region: AR
     base: https://api.themoviedb.org/3
+  mercadopago:
+    # Vacío aunque la máquina tenga MP_ACCESS_TOKEN: la suite usa la pasarela emulada.
+    token: ""
 
 logging:
   level:

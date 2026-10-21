@@ -37,7 +37,8 @@ class ArquitecturaTest {
     private static final List<String> IMPLEMENTACIONES = List.of(
             "infrastructure.comprobantes.txt",
             "infrastructure.importador.tmdb",
-            "infrastructure.pasarelas.emulada");
+            "infrastructure.pasarelas.emulada",
+            "infrastructure.pasarelas.mercadopago");
 
     @Nested
     @DisplayName("Las flechas entre capas van todas para el mismo lado")

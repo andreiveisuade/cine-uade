@@ -64,6 +64,10 @@ services:
       # token el sistema arranca igual y la pantalla del importador avisa que falta.
       TMDB_TOKEN: ${TMDB_TOKEN}
       TMDB_REGION: ${TMDB_REGION:-AR}
+      # Mercado Pago (Checkout Pro, credenciales de prueba). Vacío: la pasarela emulada.
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
+      # Adonde MP devuelve al comprador: el sitio como lo ve su navegador, no el nombre del contenedor.
+      CINE_URL_PUBLICA: ${CINE_URL_PUBLICA:-http://localhost:${PUERTO_WEB:-8080}}
     depends_on:
       mysql:
         # Que el contenedor de MySQL esté arriba no significa que la base acepte

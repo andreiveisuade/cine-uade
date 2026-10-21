@@ -19,6 +19,8 @@ import ar.uade.cine.infrastructure.importador.tmdb.PropiedadesTmdb;
 import ar.uade.cine.infrastructure.importador.tmdb.TmdbHttp;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
+import ar.uade.cine.infrastructure.pasarelas.mercadopago.MercadoPagoHttp;
+import ar.uade.cine.infrastructure.pasarelas.mercadopago.PropiedadesMercadoPago;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 // Elige la implementación de cada puerto (comprobantes, pasarela, reloj, TMDB); solo acá se nombran (DIP).
@@ -55,9 +57,13 @@ public class Adaptadores {
         return LocalDateTime::now;
     }
 
+    // Strategy: con token, el Checkout Pro de Mercado Pago (en modo prueba no cobra de verdad); sin él,
+    // la emulada. Mismo criterio que TMDB: no tener cuenta de MP no debe impedir vender.
     @Bean
-    public PasarelaPagos pasarelaPagos() {
-        return new MercadoPagoEmulado();
+    public PasarelaPagos pasarelaPagos(PropiedadesMercadoPago mercadoPago) {
+        return mercadoPago.configurado()
+                ? new MercadoPagoHttp(mercadoPago.token(), mercadoPago.base(), mercadoPago.sitio())
+                : new MercadoPagoEmulado();
     }
 
     // Sin token el bean se arma igual: no poder importar cartelera no debe impedir vender.
