@@ -106,8 +106,8 @@ public class Funcion {
         return formato.proyeccion();
     }
 
-    public Dinero getPrecio() {
-        return formato.precio();
+    public FormatoDeFuncion getFormato() {
+        return formato;
     }
 
     @Override

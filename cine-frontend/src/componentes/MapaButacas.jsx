@@ -1,7 +1,7 @@
 import { Box, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import { m } from "motion/react";
 
-export const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
+const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
 const COLOR_TIPO = { VIP: "yellow", PAREJA: "pink", ACCESIBLE: "blue", ESTANDAR: "gray" };
 

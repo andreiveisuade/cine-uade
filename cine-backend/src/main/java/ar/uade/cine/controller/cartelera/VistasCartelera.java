@@ -114,7 +114,7 @@ public class VistasCartelera {
                                   List<AsientoVistaDTO> butacas, Integer libres) {
         return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
                 Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
-                f.getPrecio().aPesos(), f.precioEn(sala).aPesos(),
+                f.getFormato().precio().aPesos(), f.precioEn(sala).aPesos(),
                 vistasSalas.sala(sala, asientos), pelicula, butacas, libres);
     }
 

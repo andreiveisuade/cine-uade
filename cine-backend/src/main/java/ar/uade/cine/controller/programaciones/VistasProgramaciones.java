@@ -62,8 +62,8 @@ public class VistasProgramaciones {
                 p.getPeriodo().desde().toString(), texto(p.getPeriodo().hasta()), texto(p.getGeneradaHasta()),
                 p.getHoraInicio().toString(),
                 p.getDiasSemana().stream().map(Enum::name).toList(),
-                p.getVersion().name(), p.getProyeccion().name(), p.getPrecio().aPesos(), p.estaActiva(),
-                funciones);
+                p.getFormato().version().name(), p.getFormato().proyeccion().name(),
+                p.getFormato().precio().aPesos(), p.estaActiva(), funciones);
     }
 
     private PeliculaElegidaVistaDTO elegida(Pelicula pelicula, int pases) {

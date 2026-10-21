@@ -43,9 +43,6 @@ public class VistasPagos {
         return lista.stream()
                 .map(p -> {
                     Reserva reserva = porId.get(p.getReservaId());
-                    if (reserva == null) {
-                        return pago(p);
-                    }
                     return dto(p, vistasCartelera.pelicula(reserva.getFuncion().getPelicula()),
                             vistasUsuarios.cliente(reserva.getCliente()), reserva.getCantidadEntradas());
                 })
