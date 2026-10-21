@@ -26,20 +26,23 @@ node "Docker host\ndocker-compose.yml (cine-docker)" {
   artifact "mysql_data\n(volumen nombrado)" as vol
 }
 
-artifact ".env (no versionado)\nMYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME\nPUERTO_WEB, PUERTO_ADMINER, TZ\nTMDB_TOKEN, TMDB_REGION" as env
+artifact ".env (no versionado)\nMYSQL_ROOT_PASSWORD, DB_USER, DB_PASSWORD, DB_NAME\nPUERTO_WEB, PUERTO_ADMINER, TZ\nTMDB_TOKEN, TMDB_REGION\nMP_ACCESS_TOKEN, CINE_URL_PUBLICA" as env
 
 actor "Desarrollador" as dev
 cloud "TMDB\napi.themoviedb.org" as tmdb
+cloud "Mercado Pago\nCheckout Pro\napi.mercadopago.com" as mp
 
 repoFrontend .down.> frontend : build context
 repoBackend .down.> backend : build context
 
-usuario --> frontend : "localhost:8080"
+usuario --> frontend : "localhost:8080\n(cookie de sesion JSESSIONID)"
 encargado --> swing
 swing --> frontend : "localhost:8080/api\n(HTTP Basic)"
 dev --> adminer : "127.0.0.1:8081"
 
 frontend --> backend : proxy_pass /api\n-> backend:8080
+backend --> mp : preferencia + consulta del pago\n(conciliacion cada 60s, sin webhook)
+usuario ..> mp : paga y vuelve\npor la back_url
 backend --> tmdb : GET now_playing?region=AR\n(TMDB_TOKEN, a pedido del encargado)
 backend --> mysql : DB_HOST=mysql:3306
 adminer --> mysql : ADMINER_DEFAULT_SERVER
@@ -53,6 +56,8 @@ legend bottom
   | backend | Unico contenedor en las dos redes: es el puente. Sin puerto propio, sin CORS |
   | cine-swing | Un cliente HTTP mas: entra por el mismo nginx que la web |
   | TMDB | Adaptador dentro del backend (infrastructure/importador/), a pedido del encargado |
+  | Mercado Pago | Adaptador MercadoPagoHttp (infrastructure/pasarelas/). Sin MP_ACCESS_TOKEN, la pasarela emulada |
+  | Sesion | Web: cookie JSESSIONID. Swing: HTTP Basic en cada pedido |
   | cine-docker | Solo orquesta: compose, .env y el seed. Sin codigo de la app |
   | Orden de arranque | mysql healthy -> backend healthy -> frontend |
 endlegend
