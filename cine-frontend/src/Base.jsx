@@ -1,5 +1,6 @@
 import "@mantine/core/styles.css";
 import { createTheme, localStorageColorSchemeManager, MantineProvider, v8CssVariablesResolver } from "@mantine/core";
+import { MotionConfig } from "motion/react";
 import { Avisos } from "./componentes/Avisos.jsx";
 
 const tema = createTheme({
@@ -16,7 +17,10 @@ const preferencia = localStorageColorSchemeManager({ key: "cine-tema" });
 export function Base({ children }) {
   return (
     <MantineProvider theme={tema} cssVariablesResolver={variables} colorSchemeManager={preferencia} defaultColorScheme="auto">
-      <Avisos>{children}</Avisos>
+      {/* Con «reducir movimiento» en el sistema, Motion salta las animaciones de transformación. */}
+      <MotionConfig reducedMotion="user">
+        <Avisos>{children}</Avisos>
+      </MotionConfig>
     </MantineProvider>
   );
 }
