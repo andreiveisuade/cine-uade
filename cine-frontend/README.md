@@ -10,7 +10,10 @@ Con el sistema levantado ([`cine-docker`](../cine-docker/README.md)) y Node 20.1
 ```sh
 npm install
 npm run dev        # localhost:5173, con recarga; Vite reenvía /api al 8080
-npm run build      # compila a dist/; es el único chequeo, no hay tests
+npm run build      # compila a dist/
+npm test           # Vitest + Testing Library (src/**/*.test.jsx), sin backend
+npm run lint       # ESLint con las reglas de hooks
+npm run coverage   # reporte en coverage/ (ignorado en git)
 ```
 
 Tras tocar el front, para verlo en el 8080: `docker compose up -d --build --no-deps frontend` desde `cine-docker`.

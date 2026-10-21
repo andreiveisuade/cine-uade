@@ -52,6 +52,8 @@ No correr dos `mvn test` a la vez sobre el mismo `target/`.
 ```bash
 cd cine-swing && mvn clean test      # contra un servidor HTTP falso, sin backend
 cd cine-frontend && npm run build    # compila la web; un error de sintaxis o un import roto corta acá
+cd cine-frontend && npm test           # 49 tests (Vitest + Testing Library), sin backend
+cd cine-frontend && npm run lint      # reglas de hooks
 ```
 
 `PantallasTest` arma cada pantalla del menú en modo headless contra un servidor que contesta 401 a todo, y

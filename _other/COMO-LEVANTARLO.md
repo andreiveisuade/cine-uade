@@ -84,6 +84,14 @@ El war también se puede copiar a `webapps/` de un Tomcat. La base se configura 
 `DB_NAME`, `DB_USER` y `DB_PASSWORD` (por defecto `localhost:3306/appsinteractivas`, `root` / `root`). Así se
 sirve solo la API; la web la sirve nginx, o `npm run dev`.
 
+## Tests del front
+
+```bash
+cd cine-frontend && npm test          # Vitest, sin backend
+cd cine-frontend && npm run lint      # reglas de hooks
+cd cine-frontend && npm run coverage  # reporte en coverage/
+```
+
 ## Si algo falla
 
 | Lo que ves | Qué hacer |

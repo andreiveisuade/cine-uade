@@ -25,6 +25,9 @@ no hace falta CORS. Dos redes: **web** (frontend y backend) y **datos** (backend
 frontend no tiene ruta hasta la base. Arrancan en cadena: `mysql` sano → `backend` sano → `frontend`.
 Diagramas en el [manual](../_other/docs/manual/index.html#correr).
 
+Los tests del front no necesitan el compose: `cd ../cine-frontend && npm test` (también `npm run lint` y
+`npm run coverage`).
+
 ## Variables
 
 Todas en `.env`, explicadas en `.env.example`:
