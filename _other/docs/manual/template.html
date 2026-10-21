@@ -729,13 +729,13 @@ docker compose up -d --build
             <tr><td><code>GestorFunciones</code></td><td>Alta y baja de funciones sueltas (R3, R12)</td></tr>
             <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una vez; única definición de R3</td></tr>
             <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, baja; saltea el pasado (R20)</td></tr>
-            <tr><td><code>PlanificadorGrilla</code>, <code>ElencoGrilla</code>, <code>IndicadoresGrilla</code>, <code>PuntajeConfiable</code></td><td><a href="#planificador">Planificador</a>: reparte pases / elige películas / mide la propuesta / puntaje bayesiano</td></tr>
+            <tr><td><code>PlanificadorGrilla</code>, <code>RepartoDePases</code>, <code>VentanaDelDia</code>, <code>ElencoGrilla</code>, <code>IndicadoresGrilla</code>, <code>PuntajeConfiable</code></td><td><a href="#planificador">Planificador</a>: orquesta / elige películas / mide la propuesta / puntaje bayesiano. <code>RepartoDePases</code> reparte los turnos y <code>VentanaDelDia</code> define la ventana horaria (<a href="#it-v8">V8</a>)</td></tr>
             <tr><td><code>GestorPromociones</code> / <code>PoliticaPromociones</code></td><td>Alta de los tres tipos y la mejor al cobrar (R15, R16) / interfaz de un método que usa el cobro</td></tr>
             <tr><td><code>GestorReservas</code></td><td>Reservar y cancelar (R4, R6, R9, R13, R19); publica <code>ReservaCreada</code></td></tr>
             <tr><td><code>GestorAcceso</code></td><td>Busca la reserva por código y le pide el ingreso (R18)</td></tr>
             <tr><td><code>ConsultasReservas</code></td><td>Búsquedas de reservas, solo lectura</td></tr>
             <tr><td><code>GestorPagos</code> / <code>ConciliacionPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19), publica <code>PagoRegistrado</code> / tarea que cobra lo que MP aprobó</td></tr>
-            <tr><td><code>Ocupacion</code></td><td>Butacas tomadas y bloqueos de una función; expira los vencidos</td></tr>
+            <tr><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>FuncionesEnVenta</code>, <code>ExpiracionDeReservas</code></td><td>R4 butacas tomadas / bloqueo efímero y su limpieza / R19 función en venta / R17 vencer reservas (<a href="#it-v6">V6</a>)</td></tr>
             <tr><td><code>ComprobantesDeVentas</code> / <code>ComprobantesDeCandy</code></td><td>Comprobantes después del commit (<a href="#observer">Observer</a>)</td></tr>
             <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta e identificación para la sesión y el rehash de la clave</td></tr>
             <tr><td><code>GestorProductos</code> / <code>GestorCandy</code></td><td>Carta y combos / ventas de mostrador o para una reserva pagada, publica <code>CompraCandyRegistrada</code></td></tr>
@@ -767,7 +767,7 @@ docker compose up -d --build
 
             <tr><td colspan="2" style="font-weight:600"><code>model/</code></td></tr>
             <tr><td><code>Pelicula</code> / <code>CatalogoPelicula</code></td><td>Título, duración, géneros, clasificación (R2, R7, R10); revisión en <code>EstadoRevision</code> / datos de catálogo embebidos (director, sinopsis, póster, puntaje…)</td></tr>
-            <tr><td><code>Importacion</code></td><td>Una corrida del importador; sabe si sigue en curso o quedó colgada</td></tr>
+            <tr><td><code>Importacion</code></td><td>Una corrida del importador; <code>EstadoImportacion</code> decide sus transiciones y <code>ResumenDeCorrida</code> guarda el resultado (<a href="#it-v7">V7</a>)</td></tr>
             <tr><td><code>Sala</code> / <code>Asiento</code></td><td>Crea sus butacas / tipo y estado (R9)</td></tr>
             <tr><td><code>Funcion</code></td><td>Película en sala a una hora; R8 al nacer, decide R19 y R20, calcula su precio</td></tr>
             <tr><td><code>Programacion</code></td><td>La grilla que genera funciones; se activa o desactiva</td></tr>
@@ -775,7 +775,7 @@ docker compose up -d --build
             <tr><td><code>Pago</code></td><td>Comprobante del cobro con descuento; autorización según <code>MedioPago</code> (R11)</td></tr>
             <tr><td><code>Promocion</code> + 3 subclases, <code>CondicionesPromocion</code>, <code>ParametrosPromocion</code></td><td>Cuándo aplica / cuánto descuenta; las crea <code>TipoPromocion.crear</code> (<a href="#promociones-factory">Factory Method</a>); Parameter Objects</td></tr>
             <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el empleado tiene un rol que no puede ser <code>CLIENTE</code></td></tr>
-            <tr><td><code>Producto</code> + <code>ItemCombo</code></td><td>Artículo o combo; <code>armarCombo</code> crea componentes y valida R14</td></tr>
+            <tr><td><code>Producto</code> (abstracto), <code>ProductoSuelto</code>, <code>Combo</code> + <code>ItemCombo</code></td><td>Composite: el artículo y el combo contestan precio suelto y ahorro; <code>Combo.armar</code> crea componentes y valida R14 (<a href="#it-v1">V1</a>)</td></tr>
             <tr><td><code>CompraCandy</code> / <code>ItemCompra</code></td><td>Venta cobrada que crea sus renglones (R11) / renglón con precio congelado</td></tr>
             <tr><td>Value Objects</td><td><a href="#value-objects">Lista</a>: se validan y normalizan al construirse</td></tr>
             <tr><td><code>validacion/Regla</code>, <code>Validador*</code>, <code>rechazos/</code></td><td>Guardas fluidas / qué no puede entrar a cada entidad (<a href="#validacion">criterio</a>) / <a href="#rechazos"><code>Rechazo</code></a></td></tr>
@@ -801,7 +801,7 @@ docker compose up -d --build
             <tr><td><code>@Configuration</code> + <code>@Bean</code></td><td>Fabrican beans al elegir implementación</td><td><code>Adaptadores</code></td></tr>
             <tr><td><code>@EnableWebSecurity</code></td><td>Spring Security; <code>SecurityFilterChain</code> con rutas y roles</td><td><code>ConfiguracionSeguridad</code></td></tr>
             <tr><td><code>@Profile("!test")</code></td><td>Bean que no existe en los tests</td><td>Reloj, TMDB, tareas programadas</td></tr>
-            <tr><td><code>@Scheduled</code></td><td>Corre periódico (con <code>@EnableScheduling</code>)</td><td><code>Ocupacion.borrarBloqueosVencidos</code> (5 min), <code>ConciliacionPagos</code> (60 s)</td></tr>
+            <tr><td><code>@Scheduled</code></td><td>Corre periódico (con <code>@EnableScheduling</code>)</td><td><code>BloqueoDeButacas.borrarVencidos</code> (5 min), <code>ConciliacionPagos</code> (60 s)</td></tr>
             <tr><td><code>@ConfigurationProperties</code></td><td>Sección de <code>application.yml</code> → <code>record</code> tipado</td><td>Los <code>Propiedades*</code></td></tr>
             <tr><td><code>@Transactional</code></td><td>Commit al salir, rollback ante excepción (proxy). <code>readOnly</code> sin flush; <code>REQUIRES_NEW</code>, transacción propia</td><td>Gestores que escriben</td></tr>
             <tr><td><code>@TransactionalEventListener</code></td><td>Evento solo si la transacción confirmó</td><td><code>ComprobantesDe*</code> (<a href="#observer">Observer</a>)</td></tr>
@@ -1379,7 +1379,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       </div>
 
       <h3>Ocupacion</h3>
-      <p>Única definición de «ocupado <em>en esta función</em>», para vender y para el mapa: reservas vigentes + <a href="#bloqueo">bloqueos</a> ajenos.</p>
+      <p>Única definición de «ocupado <em>en esta función</em>», para vender y para el mapa: reservas vigentes + <a href="#bloqueo">bloqueos</a> ajenos. El bloqueo (<code>BloqueoDeButacas</code>), la función en venta (R19) y el vencimiento (R17) son clases aparte (<a href="#it-v6">V6</a>).</p>
 
       <h3 id="vencimiento">Vencimiento</h3>
       <ul>
@@ -1419,7 +1419,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <ul>
         <li>Cada sentencia en su transacción (<code>REQUIRES_NEW</code>): el <code>UPDATE</code> sin fila deja un gap lock, y dos sesiones con ese lock que insertan terminan en deadlock.</li>
         <li><code>@Lock(PESSIMISTIC_WRITE)</code> no sirve: <code>FOR UPDATE</code> no bloquea una fila que no existe.</li>
-        <li><code>OcupacionTest</code>: 8 hilos por la misma butaca, gana exactamente uno.</li>
+        <li><code>BloqueoDeButacasTest</code>: 8 hilos por la misma butaca, gana exactamente uno.</li>
       </ul>
     </section>
 
@@ -1543,7 +1543,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <figcaption>De armar el combo a emitir el ticket</figcaption>
       </figure>
       <ul>
-        <li><strong>Un combo es un <code>Producto</code> con sus <code>ItemCombo</code></strong>, no un precio suelto: permite validar <a href="#reglas">R14</a> e imprimir el ahorro. Nace solo por <code>Producto.armarCombo</code> (Creador).</li>
+        <li><strong>Un combo es un <code>Producto</code> con sus <code>ItemCombo</code></strong>, no un precio suelto: permite validar <a href="#reglas">R14</a> e imprimir el ahorro. Nace solo por <code>Combo.armar</code> (Creador).</li>
         <li><strong>R14 del otro lado:</strong> abaratar un suelto puede dejar sin convenir a un combo que lo trae; <code>GestorProductos</code> revisa esos combos.</li>
         <li><strong><code>CompraCandy</code> nace cobrada:</strong> lleva el medio, sin <code>Pago</code> ni estados, así no hace falta una FK polimórfica. R11 lo decide <code>MedioPago</code>, igual que en boletería.</li>
         <li><strong>Para una reserva, pagada y del mismo cliente:</strong> el candy se retira con la entrada.</li>
@@ -1716,7 +1716,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td></tr>
             <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code></td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
-            <tr><td>Bloqueo</td><td><code>OcupacionTest</code></td></tr>
+            <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td></tr>
             <tr><td>CU-03b, CU-07b, CU-19, CU-20</td><td><code>ProgramacionTest</code>, <code>GestorPagosTest</code>, <code>GestorInformesTest</code></td></tr>
             <tr><td>CU-07c</td><td><code>ConciliacionPagosTest</code></td></tr>
@@ -1733,31 +1733,39 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Principio</th><th>Dónde</th><th>Por qué</th></tr></thead>
           <tbody>
-            <tr><td rowspan="3"><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea por día, <code>GestorInformes</code> corta por función; un controller por familia de rutas</td><td>Cada uno cambia por una razón distinta</td></tr>
-            <tr><td><code>Ocupacion</code></td><td>«Butaca ocupada» (R4) en un solo lugar: mapa, bloqueo y venta la usan</td></tr>
+            <tr><td rowspan="3"><strong>S</strong> · Responsabilidad única <a href="#d-srp">(diagrama)</a> · <a href="#it-v8">V8</a></td><td><code>GestorReservas</code> vende, <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea por día, <code>GestorInformes</code> corta por función; un controller por familia de rutas</td><td>Cada uno cambia por una razón distinta</td></tr>
+            <tr><td><code>Ocupacion</code> y sus tres hermanas</td><td>R4, bloqueo, R19 y R17 cada una en su clase; cada cliente depende de la que usa (<a href="#it-v6">V6</a>, <a href="#it-v8">V8</a>)</td></tr>
             <tr><td>Comprobantes en observadores; validación en <code>Validador*</code></td><td>Salieron de los gestores y las entidades</td></tr>
-            <tr><td rowspan="2"><strong>O</strong> · Abierto/cerrado</td><td><code>TipoPromocion</code> + subclase de <code>Promocion</code></td><td>Un tipo nuevo no cambia cobro, controller ni vista</td></tr>
+            <tr><td rowspan="2"><strong>O</strong> · Abierto/cerrado <a href="#d-ocp">(diagrama)</a></td><td><code>TipoPromocion</code> + subclase de <code>Promocion</code></td><td>Un tipo nuevo no cambia cobro, controller ni vista</td></tr>
             <tr><td><code>TipoAsiento</code></td><td>El multiplicador viaja con la constante: el precio no tiene <code>switch</code></td></tr>
-            <tr><td rowspan="2"><strong>L</strong> · Liskov</td><td><code>TmdbHttp</code> y <code>CatalogoDePrueba</code></td><td>Cumplen el mismo <code>CatalogoExterno</code></td></tr>
+            <tr><td rowspan="2"><strong>L</strong> · Liskov <a href="#d-lsp">(diagrama)</a></td><td><code>TmdbHttp</code> y <code>CatalogoDePrueba</code></td><td>Cumplen el mismo <code>CatalogoExterno</code></td></tr>
             <tr><td><code>Promocion</code> y sus tres subclases</td><td>Responden <code>getParametros()</code> y <code>calcularDescuento()</code> sin que nadie pregunte cuál es</td></tr>
-            <tr><td rowspan="2"><strong>I</strong> · Segregación</td><td><code>GestorPagos</code> → <code>PoliticaPromociones</code></td><td>Un método, no el ABM</td></tr>
+            <tr><td rowspan="2"><strong>I</strong> · Segregación <a href="#d-isp">(diagrama)</a></td><td><code>GestorPagos</code> → <code>PoliticaPromociones</code></td><td>Un método, no el ABM</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorTicketCandy</code></td><td>Tres puertos chicos; cada listener usa el suyo</td></tr>
-            <tr><td><strong>D</strong> · Inversión</td><td>Gestores → <code>*Repository</code>, <code>PasarelaPagos</code>, <code>Reloj</code>, <code>Generador*</code>, <code>PoliticaPromociones</code></td><td>Solo <code>Adaptadores</code> nombra implementaciones; <code>ArquitecturaTest</code> lo verifica</td></tr>
+            <tr><td><strong>D</strong> · Inversión <a href="#d-dip">(diagrama)</a></td><td>Gestores → <code>*Repository</code>, <code>PasarelaPagos</code>, <code>Reloj</code>, <code>Generador*</code>, <code>PoliticaPromociones</code></td><td>Solo <code>Adaptadores</code> nombra implementaciones; <code>ArquitecturaTest</code> lo verifica</td></tr>
           </tbody>
         </table>
       </div>
 
-      <figure class="diagram">
-        {{SVG_SOLID_OCP}}
-        <figcaption>OCP: cada promoción calcula lo suyo, sin <code>switch</code></figcaption>
+      <figure class="diagram" id="d-srp">
+        {{SVG_PATRON_SRP}}
+        <figcaption>SRP: <code>GestorReservas</code> delega validación, comprobantes y expiración en clases con una sola razón de cambio</figcaption>
       </figure>
-      <figure class="diagram">
-        {{SVG_SOLID_ISP}}
-        <figcaption>ISP: <code>GestorPagos</code> depende de un contrato de un método</figcaption>
+      <figure class="diagram" id="d-ocp">
+        {{SVG_PATRON_OCP}}
+        <figcaption>OCP: una promoción nueva es una subclase de <code>Promocion</code>, sin tocar un <code>switch</code></figcaption>
       </figure>
-      <figure class="diagram">
-        {{SVG_SOLID_DIP}}
-        <figcaption>DIP: solo <code>Adaptadores</code> elige una implementación concreta</figcaption>
+      <figure class="diagram" id="d-lsp">
+        {{SVG_PATRON_LSP}}
+        <figcaption>LSP: todas las subclases de <code>Promocion</code> respetan el contrato y son intercambiables</figcaption>
+      </figure>
+      <figure class="diagram" id="d-isp">
+        {{SVG_PATRON_ISP}}
+        <figcaption>ISP: <code>GestorPagos</code> depende de <code>PoliticaPromociones</code>, no del ABM completo</figcaption>
+      </figure>
+      <figure class="diagram" id="d-dip">
+        {{SVG_PATRON_DIP}}
+        <figcaption>DIP: <code>GestorPagos</code> depende de <code>PasarelaPagos</code>; <code>Adaptadores</code> elige la concreta</figcaption>
       </figure>
 
       <p>Entre gestores no hay interfaces: una sola implementación no oculta nada. Los puertos sí (<a href="#mapa-diseno">por qué</a>).</p>
@@ -1769,50 +1777,121 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
-            <tr><td><strong>Creador</strong></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Producto.armarCombo</code> → <code>ItemCombo</code>, <code>CompraCandy</code> → <code>ItemCompra</code> (constructores de paquete); <code>TipoPromocion</code> tiene los datos para crear su subclase</td></tr>
-            <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
-            <tr><td><strong>Controlador</strong></td><td><code>Gestor*</code> reciben cada operación; <code>*Controller</code> solo traduce HTTP. Los tests llaman a los gestores sin HTTP</td></tr>
-            <tr><td><strong>Polimorfismo</strong></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code>; constantes de <code>TipoPromocion</code>, <code>EstadoReserva</code>, <code>EstadoRevision</code></td></tr>
-            <tr><td><strong>Variaciones protegidas</strong></td><td><code>*Repository</code>, <code>PasarelaPagos</code> (sandbox o emulada), <code>Reloj</code> (real o movible), <code>Generador*</code>, <code>PoliticaPromociones</code></td></tr>
-            <tr><td><strong>Bajo acoplamiento / alta cohesión</strong></td><td>Constructor con lo justo; un subpaquete por subdominio; <code>ArquitecturaTest</code> rompe el build con un import prohibido</td></tr>
+            <tr><td><strong>Experto</strong> <a href="#d-experto">(diagrama)</a></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
+            <tr><td><strong>Creador</strong> <a href="#d-creador">(diagrama)</a> · <a href="#it-v9">V9</a></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Combo.armar</code> → <code>ItemCombo</code>, <code>Reserva</code> → <code>Entrada</code> (<a href="#it-v9">V9</a>), <code>CompraCandy</code> → <code>ItemCompra</code> (constructores de paquete); <code>TipoPromocion</code> tiene los datos para crear su subclase</td></tr>
+            <tr><td><strong>Fabricación pura</strong> <a href="#d-fabricacion-pura">(diagrama)</a> · <a href="#it-v8">V8</a></td><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>RepartoDePases</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
+            <tr><td><strong>Controlador</strong> <a href="#d-controlador">(diagrama)</a></td><td><code>Gestor*</code> reciben cada operación; <code>*Controller</code> solo traduce HTTP. Los tests llaman a los gestores sin HTTP</td></tr>
+            <tr><td><strong>Indirección</strong> <a href="#d-indireccion">(diagrama)</a></td><td><code>*Repository</code> entre el gestor y la base; <code>Api&lt;Subdominio&gt;</code> entre las pantallas Swing y HTTP; <code>Adaptadores</code> entre el gestor y la implementación</td></tr>
+            <tr><td><strong>Polimorfismo</strong> <a href="#d-polimorfismo">(diagrama)</a></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code>; constantes de <code>TipoPromocion</code>, <code>EstadoReserva</code>, <code>EstadoRevision</code></td></tr>
+            <tr><td><strong>Variaciones protegidas</strong> <a href="#d-variaciones-protegidas">(diagrama)</a></td><td><code>*Repository</code>, <code>PasarelaPagos</code> (sandbox o emulada), <code>Reloj</code> (real o movible), <code>Generador*</code>, <code>PoliticaPromociones</code></td></tr>
+            <tr><td><strong>Bajo acoplamiento / alta cohesión</strong> <a href="#d-bajo-acoplamiento">(diagrama)</a> · <a href="#it-v6">V6</a></td><td>Constructor con lo justo; un subpaquete por subdominio; <code>ArquitecturaTest</code> rompe el build con un import prohibido</td></tr>
           </tbody>
         </table>
       </div>
 
-      <figure class="diagram">
-        {{SVG_GRASP_FABRICACION}}
-        <figcaption>Clases que no son entidades y existen porque el modelo las pedía</figcaption>
+      <figure class="diagram" id="d-experto">
+        {{SVG_PATRON_EXPERTO}}
+        <figcaption>Experto: <code>Reserva</code> calcula el total porque conoce sus <code>Entrada</code>; <code>Funcion</code> sabe el precio</figcaption>
+      </figure>
+      <figure class="diagram" id="d-creador">
+        {{SVG_PATRON_CREADOR}}
+        <figcaption>Creador: <code>Sala</code> crea <code>Asiento</code> y <code>Combo</code> crea <code>ItemCombo</code> porque los contienen</figcaption>
+      </figure>
+      <figure class="diagram" id="d-controlador">
+        {{SVG_PATRON_CONTROLADOR}}
+        <figcaption>Controlador: el controller HTTP traduce y delega; el gestor orquesta el caso de uso</figcaption>
+      </figure>
+      <figure class="diagram" id="d-fabricacion-pura">
+        {{SVG_PATRON_FABRICACION_PURA}}
+        <figcaption>Fabricación pura: clases que no son del dominio y mantienen cohesivo al dominio</figcaption>
+      </figure>
+      <figure class="diagram" id="d-indireccion">
+        {{SVG_PATRON_INDIRECCION}}
+        <figcaption>Indirección: el repositorio media entre el gestor y la base</figcaption>
+      </figure>
+      <figure class="diagram" id="d-variaciones-protegidas">
+        {{SVG_PATRON_VARIACIONES_PROTEGIDAS}}
+        <figcaption>Variaciones protegidas: <code>PasarelaPagos</code>, <code>Reloj</code> y <code>CatalogoExterno</code> aíslan lo que varía</figcaption>
+      </figure>
+      <figure class="diagram" id="d-polimorfismo">
+        {{SVG_PATRON_POLIMORFISMO}}
+        <figcaption>Polimorfismo: <code>aplicarA</code> en los tipos de tarifa, asiento y sala, sin condicionales</figcaption>
+      </figure>
+      <figure class="diagram" id="d-bajo-acoplamiento">
+        {{SVG_PATRON_BAJO_ACOPLAMIENTO}}
+        <figcaption>Bajo acoplamiento: que <code>Reserva</code> cree la <code>Entrada</code> deja al gestor conociendo solo a <code>Reserva</code></figcaption>
       </figure>
 
       <h3>Patrones de diseño</h3>
-      <p>El javadoc de cada clase dice qué patrón implementa y qué resolvía.</p>
+      <p>Cada fila lleva a su diagrama, con las clases reales y el rol del patrón como estereotipo. Los marcados V1 a V12 entraron como <a href="#iteraciones">iteraciones</a>.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Patrón</th><th>Dónde y para qué</th></tr></thead>
+          <thead><tr><th>Patrón</th><th>Roles y dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>MVC en capas</strong></td><td><code>model/</code>, los clientes con los <code>*VistaDTO</code>, <code>controller/</code> (<a href="#capas">capas</a>)</td></tr>
+            <tr><td><strong>MVC en capas</strong> <a href="#d-mvc">(diagrama)</a></td><td>Vista: web y Swing con los <code>*VistaDTO</code>; Controller: <code>controller/</code>; Model: <code>model/</code> (<a href="#capas">capas</a>)</td></tr>
             <tr><td><strong>Repository</strong></td><td>Los <code>*Repository</code>, sobre una <a href="#repositorio">base común</a>: el gestor no ve SQL</td></tr>
             <tr><td><strong>DTO + Assembler</strong></td><td><code>dto/</code> y los <code>Vistas*</code>: el contrato no depende de las entidades (<a href="#dto">DTO</a>)</td></tr>
-            <tr><td><strong>Strategy</strong></td><td>Subclases de <code>Promocion</code>, sin <code>switch</code> en el cobro; <code>PasarelaPagos</code> y <code>Reloj</code>, elegidas en runtime por <code>@Bean</code> en <code>Adaptadores</code></td></tr>
-            <tr><td><strong>State</strong></td><td><code>EstadoReserva</code> y <code>EstadoRevision</code> (<a href="#state">abajo</a>)</td></tr>
-            <tr><td><strong>Observer</strong></td><td>Comprobantes después del commit (<a href="#observer">abajo</a>)</td></tr>
-            <tr><td><strong>Factory Method</strong></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
-            <tr><td><strong>Decorator</strong></td><td><code>PasswordBcrypt</code>, <code>SesionDeClientes</code> (<a href="#decorator">abajo</a>)</td></tr>
-            <tr><td><strong>Adapter</strong></td><td><code>TmdbHttp</code> → <code>CatalogoExterno</code>, <code>MercadoPagoEmulado</code> → <code>PasarelaPagos</code>, <code>DineroConverter</code> entre <code>Dinero</code> y la columna: cambiar el proveedor no toca gestores</td></tr>
-            <tr><td><strong>Facade</strong></td><td>Cada gestor, entrada única a su subdominio para controllers, importador y tests</td></tr>
-            <tr><td><strong>Template Method</strong></td><td><code>PantallaListado&lt;T&gt;</code> (Swing) fija cuándo se pide y filtra, cada listado cómo pedir; <code>ComprobanteTxt</code>, la base de los <code>.txt</code></td></tr>
-            <tr><td><strong>Value Object</strong>, <strong>Parameter Object</strong>, <strong>Fluent Interface</strong></td><td><a href="#value-objects">Abajo</a>; <code>CondicionesPromocion</code>, <code>FormatoDeFuncion</code>; <code>Regla</code> (<a href="#validacion">validación</a>)</td></tr>
+            <tr><td><strong>Composite</strong> <a href="#it-v1">V1</a></td><td>Component <code>Producto</code>, Leaf <code>ProductoSuelto</code>, Composite <code>Combo</code> (candy)</td></tr>
+            <tr><td><strong>Strategy</strong> <a href="#d-strategy-promociones">(promociones)</a> · <a href="#d-strategy-pasarela">(pasarela)</a> · <a href="#it-v2">V2</a></td><td>Promociones: Context <code>GestorPromociones.mejorDescuento</code>, Strategy <code>Promocion.calcularDescuento</code>, ConcreteStrategy las tres subclases (herencia y no composición: la estrategia tiene datos propios persistidos, <code>SINGLE_TABLE</code>). Pasarela: Context <code>GestorPagos</code>, Strategy <code>PasarelaPagos</code>, elegida por <code>Adaptadores</code>. Swing: Context <code>PanelCobro</code>, Strategy <code>FormaDeCobro</code></td></tr>
+            <tr><td><strong>State</strong> <a href="#state">(abajo)</a> · <a href="#d-state-revision">(revisión)</a> · <a href="#it-v7">V7</a></td><td><code>EstadoReserva</code>, <code>EstadoRevision</code> y <code>EstadoImportacion</code>: enums que deciden sus transiciones</td></tr>
+            <tr><td><strong>Observer</strong> <a href="#observer">(abajo)</a></td><td>Comprobantes después del commit: eventos de los gestores, escuchados por <code>ComprobantesDeVentas</code> y <code>ComprobantesDeCandy</code></td></tr>
+            <tr><td><strong>Factory Method</strong> <a href="#d-factory-method">(diagrama)</a></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
+            <tr><td><strong>Decorator</strong> <a href="#decorator">(abajo)</a></td><td><code>PasswordBcrypt</code>, <code>SesionDeClientes</code></td></tr>
+            <tr><td><strong>Adapter</strong> <a href="#d-adapter-tmdb">(TMDB)</a> · <a href="#d-adapter-pasarela">(Mercado Pago)</a> · <a href="#it-v10">V10</a></td><td>Adapter <code>TmdbHttp</code> (Target <code>CatalogoExterno</code>, Adaptee la API REST de TMDB); <code>MercadoPagoHttp</code> (Target <code>PasarelaPagos</code>); <code>CampoFecha</code> y <code>Calendario</code> sobre <code>JCalendar</code>; <code>DineroConverter</code> entre <code>Dinero</code> y la columna</td></tr>
+            <tr><td><strong>Facade</strong> <a href="#d-facade">(diagrama)</a></td><td><code>ClienteHttp</code> en Swing esconde <code>HttpClient</code>, Jackson y Basic; las <code>Api&lt;Subdominio&gt;</code> son fachadas más chicas. Los <code>Gestor*</code> son Controlador (GRASP), no Facade</td></tr>
+            <tr><td><strong>Template Method</strong> <a href="#d-template-method-listado">(listado)</a> · <a href="#it-v5">V5</a></td><td><code>PantallaListado&lt;T&gt;</code> (Swing) fija cuándo se pide y filtra; <code>ComprobanteTxt&lt;T&gt;.imprimir</code> fija el orden de los <code>.txt</code></td></tr>
+            <tr><td><strong>Null Object</strong> <a href="#it-v3">V3</a></td><td><code>AgendaDeSala.vacia()</code>; también <code>PoliticaPromociones.Descuento.ninguno()</code> y <code>Promocion.TODO_EL_DIA</code></td></tr>
+            <tr><td><strong>Chain of Responsibility</strong> <a href="#it-v4">V4</a></td><td><code>LecturaDelCuerpo</code> y sus cuatro eslabones en <code>ManejadorErrores</code></td></tr>
+            <tr><td><strong>Builder</strong> <a href="#it-v11">V11</a></td><td><code>DatosPeliculaBuilder</code>, solo para ese record de entrada</td></tr>
+            <tr><td><strong>Command</strong> <a href="#it-v12">V12</a></td><td><code>AccionDeFila</code>, <code>BotonesDeFila</code> (Invoker) y un comando por botón</td></tr>
+            <tr><td><strong>Value Object</strong>, <strong>Parameter Object</strong>, <strong>Fluent Interface</strong></td><td><a href="#value-objects">Abajo</a>; <code>CondicionesPromocion</code>, <code>FormatoDeFuncion</code>, <code>ResumenDeCorrida</code>; <code>Regla</code> (<a href="#validacion">validación</a>)</td></tr>
             <tr><td><strong>Excepción sellada</strong></td><td><code>Rechazo</code>: <code>ManejadorErrores</code> sabe que no hay un quinto tipo (<a href="#rechazos">abajo</a>)</td></tr>
             <tr><td><strong>Singleton</strong>, <strong>Proxy</strong>, <strong>Front Controller</strong></td><td>Los pone Spring: beans, <code>@Transactional</code>, <code>DispatcherServlet</code></td></tr>
           </tbody>
         </table>
       </div>
 
+      <figure class="diagram" id="d-mvc">
+        {{SVG_PATRON_MVC}}
+        <figcaption>MVC: las vistas web y Swing hablan con el controller mediante DTO, nunca con el modelo</figcaption>
+      </figure>
+      <figure class="diagram" id="d-strategy-promociones">
+        {{SVG_PATRON_STRATEGY_PROMOCIONES}}
+        <figcaption>Strategy: <code>GestorPromociones</code> elige el mejor descuento entre subclases con datos propios</figcaption>
+      </figure>
+      <figure class="diagram" id="d-strategy-pasarela">
+        {{SVG_PATRON_STRATEGY_PASARELA}}
+        <figcaption>Strategy: <code>GestorPagos</code> cobra por <code>PasarelaPagos</code>; <code>Adaptadores</code> elige la real o la emulada</figcaption>
+      </figure>
+      <figure class="diagram" id="d-factory-method">
+        {{SVG_PATRON_FACTORY_METHOD}}
+        <figcaption>Factory Method: cada constante de <code>TipoPromocion</code> decide qué subclase instancia</figcaption>
+      </figure>
+      <figure class="diagram" id="d-adapter-tmdb">
+        {{SVG_PATRON_ADAPTER_TMDB}}
+        <figcaption>Adapter: <code>TmdbHttp</code> adapta la API REST de TMDB a <code>CatalogoExterno</code></figcaption>
+      </figure>
+      <figure class="diagram" id="d-adapter-pasarela">
+        {{SVG_PATRON_ADAPTER_PASARELA}}
+        <figcaption>Adapter: <code>MercadoPagoHttp</code> adapta la API REST de Mercado Pago a <code>PasarelaPagos</code></figcaption>
+      </figure>
+      <figure class="diagram" id="d-facade">
+        {{SVG_PATRON_FACADE}}
+        <figcaption>Facade: <code>ClienteHttp</code> y las <code>Api</code> de cada subdominio ocultan HTTP y JSON</figcaption>
+      </figure>
+      <figure class="diagram" id="d-template-method-listado">
+        {{SVG_PATRON_TEMPLATE_METHOD_LISTADO}}
+        <figcaption>Template Method: <code>PantallaListado</code> fija el esqueleto de recarga; cada listado completa sus pasos</figcaption>
+      </figure>
+
       <h3 id="state">State: el estado decide qué se puede hacer</h3>
       <figure class="diagram">
         {{SVG_PATRON_STATE}}
         <figcaption>Cada estado decide sus transiciones; la reserva asigna el que le devuelven</figcaption>
+      </figure>
+      <figure class="diagram" id="d-state-revision">
+        {{SVG_PATRON_STATE_REVISION}}
+        <figcaption>State: <code>Pelicula</code> delega en su estado de revisión si se publica, programa y muestra</figcaption>
       </figure>
       <ul>
         <li><strong>Antes:</strong> <code>estado == RESERVADA</code> en cinco métodos de <code>Reserva</code>.</li>
@@ -1832,6 +1911,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </ul>
 
       <h3 id="decorator">Decorator</h3>
+      <figure class="diagram" id="d-decorator">
+        {{SVG_PATRON_DECORATOR}}
+        <figcaption>Decorator: <code>PasswordBcrypt</code> y <code>SesionDeClientes</code> envuelven componentes de Spring</figcaption>
+      </figure>
       <ul>
         <li><strong><code>PasswordBcrypt</code>:</strong> bcrypt no acepta más de 72 bytes; una clave así solo viene del SHA-256 viejo, y re-hashearla en el login daba 500. Envuelve al <code>PasswordEncoder</code> de Spring y delega todo, salvo que <code>encode</code> deja en SHA-256 lo que no entra.</li>
         <li><strong><code>SesionDeClientes</code>:</strong> envuelve el repositorio de contexto de Spring y guarda en sesión solo la identidad de un <code>CLIENTE</code> (<a href="#usuarios">usuarios</a>).</li>
@@ -1916,6 +1999,223 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
 
     <section class="doc-section" id="iteraciones">
       <h2>Iteraciones de patrones</h2>
+      <p>Cada patrón entró como una iteración V0 → Vn: el código de antes, el smell, el patrón y cómo quedó. Ninguna cambió el contrato HTTP ni el esquema. Los diagramas siguen el estilo de los apuntes de la cátedra: las clases reales con el rol del patrón como estereotipo.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>It.</th><th>Tema</th><th>Categoría</th><th>Smell → patrón</th><th>Clases nuevas</th></tr></thead><tbody>
+        <tr><td><a href="#it-v1">V1</a></td><td>Composite en los combos del candy</td><td>Estructural</td><td>Enum de tipo + <code>if esCombo()</code> → Composite</td><td><code>ProductoSuelto</code>, <code>Combo</code></td></tr>
+        <tr><td><a href="#it-v2">V2</a></td><td>Strategy en la forma de cobro (Swing)</td><td>Comportamiento</td><td><code>porCheckout()</code> repetido → Strategy</td><td><code>FormaDeCobro</code>, <code>CobroEnCaja</code>, <code>CobroPorCheckout</code>, <code>CajaDeCobro</code></td></tr>
+        <tr><td><a href="#it-v3">V3</a></td><td>Null Object en la agenda de la programación</td><td>Comportamiento</td><td><code>null</code> implícito → Null Object</td><td>— (método <code>AgendaDeSala.vacia()</code>)</td></tr>
+        <tr><td><a href="#it-v4">V4</a></td><td>Chain of Responsibility en el cuerpo ilegible</td><td>Comportamiento</td><td>Cadena de <code>instanceof</code> → eslabones</td><td><code>LecturaDelCuerpo</code>, <code>SinCuerpo</code>, <code>CampoConValorInvalido</code>, <code>RaizQueNoEsObjeto</code>, <code>JsonMalFormado</code></td></tr>
+        <tr><td><a href="#it-v5">V5</a></td><td>Template Method en los comprobantes .txt</td><td>Comportamiento</td><td>Esqueleto duplicado → método plantilla</td><td><code>EtiquetasTxt</code></td></tr>
+        <tr><td><a href="#it-v6">V6</a></td><td>Alta cohesión: partir <code>Ocupacion</code></td><td>GRASP / SOLID</td><td>Una clase, cuatro razones de cambio → una regla por clase</td><td><code>BloqueoDeButacas</code>, <code>ButacasBloqueadas</code>, <code>FuncionesEnVenta</code>, <code>ExpiracionDeReservas</code></td></tr>
+        <tr><td><a href="#it-v7">V7</a></td><td>State en <code>Importacion</code> y resumen de la corrida</td><td>Comportamiento</td><td>Transiciones sin escribir + 5 parámetros → State + Parameter Object</td><td><code>ResumenDeCorrida</code>, <code>Corrida</code></td></tr>
+        <tr><td><a href="#it-v8">V8</a></td><td>Partir <code>PlanificadorGrilla</code></td><td>SRP / Fabricación pura</td><td>Long Method + 3 razones de cambio → 3 clases</td><td><code>RepartoDePases</code>, <code>VentanaDelDia</code></td></tr>
+        <tr><td><a href="#it-v9">V9</a></td><td>Creador: la reserva crea sus entradas</td><td>GRASP</td><td>Un tercero arma las partes del todo → Creador</td><td><code>ButacaPedida</code></td></tr>
+        <tr><td><a href="#it-v10">V10</a></td><td>Adapter de JCalendar en Swing</td><td>Estructural</td><td>La lógica importa una librería → Adapter</td><td><code>CampoFecha</code>, <code>Calendario</code></td></tr>
+        <tr><td><a href="#it-v11">V11</a></td><td>Builder de <code>DatosPelicula</code></td><td>Creacional</td><td>Doce parámetros posicionales → Builder</td><td><code>DatosPeliculaBuilder</code></td></tr>
+        <tr><td><a href="#it-v12">V12</a></td><td>Command en las acciones de fila (Swing)</td><td>Comportamiento</td><td>Molde repetido 14 veces → Command</td><td><code>AccionDeFila</code>, <code>BotonesDeFila</code>, <code>Pregunta</code> y 8 comandos</td></tr>
+      </tbody></table></div>
+      <h3 id="it-v1">V1 · Composite en los combos del candy</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// Producto: una clase para hoja y grupo
+public boolean esCombo() { return tipo.esCombo(); }
+public Dinero getAhorro() { return esCombo() ? getPrecioSuelto().menos(precio) : Dinero.CERO; }
+// ValidadorProducto: R14 también pregunta el tipo
+if (producto.esCombo() &amp;&amp; !producto.getPrecioSuelto().esMayorQue(precio)) { ... }</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>OCP:</strong> el <code>if esCombo()</code> decide en tres lugares; un tipo nuevo los toca a todos. El suelto hereda <code>componentes</code> vacío (Refused Bequest).</li>
+        <li><strong>Patrón:</strong> <code>Producto</code> abstracto (Component), <code>ProductoSuelto</code> (Leaf), <code>Combo</code> (Composite) con <code>ItemCombo → Producto</code>. Cada uno contesta <code>getPrecioSuelto()</code> y <code>getAhorro()</code>; R14 vive en <code>Combo.validarEdicion</code>. <em>(<code>model/candy</code>)</em></li>
+        <li><strong>Mejora:</strong> Sin <code>esCombo()</code> en los cálculos; un producto nuevo es una subclase. Mismo schema (<code>SINGLE_TABLE</code> con discriminador por fórmula), mismo JSON. Combo dentro de combo sigue prohibido por regla de negocio, no por diseño.</li>
+        <li><strong>Lo protege:</strong> <code>ProductoTest</code> (nuevo caso parametrizado suelto/combo), <code>CompraCandyTest</code>, <code>MapeoContraSchemaTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_COMPOSITE}}
+        <figcaption>V1: Producto es el Component; el combo lo compone con ItemCombo</figcaption>
+      </figure>
+      <h3 id="it-v2">V2 · Strategy en la forma de cobro (Swing)</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// PanelCobro: la misma pregunta en refrescar() y enviar()
+boolean electronico = porCheckout();
+enviar.setText(electronico ? &quot;Abrir checkout&quot; : &quot;Registrar cobro&quot;);
+...
+if (!porCheckout()) { confirmar(...); apiVentas.cobrar(...); }
+else { apiVentas.abrirCheckout(...); }</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>Switch Statements / OCP:</strong> botón, explicación, confirmación y pedido dependen de la misma condición en dos métodos; una tercera forma (QR en mostrador) toca las tres ramas.</li>
+        <li><strong>Patrón:</strong> <code>PanelCobro</code> (Context) guarda una <code>FormaDeCobro</code> (Strategy); <code>FormaDeCobro.para(medio, api)</code> elige por <code>requiereAutorizacion</code> (R11). Las estrategias ven solo <code>CajaDeCobro</code> (ISP), así se prueban sin ventanas. <em>(<code>swing/pantallas/ventas</code>)</em></li>
+        <li><strong>Mejora:</strong> Agregar una forma de cobro es una clase. Textos, confirmación y orden idénticos.</li>
+        <li><strong>Lo protege:</strong> <code>FormaDeCobroTest</code> (nuevo, contra <code>ServidorFalso</code>).</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_STRATEGY_COBRO}}
+        <figcaption>V2: PanelCobro delega el cómo cobrar en la forma elegida por el medio</figcaption>
+      </figure>
+      <h3 id="it-v3">V3 · Null Object en la agenda de la programación</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>AgendaDeSala agenda = pendientes.isEmpty() ? null : funciones.agendaDe(...);
+for (LocalDateTime inicio : pendientes) {
+    Optional&lt;Funcion&gt; choque = agenda.chocaCon(inicio, fin);   // NPE salvo que el for no itere</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> El código es correcto solo porque el <code>for</code> no itera con <code>null</code>. El gestor además arma el texto del choque (Feature Envy / Experto).</li>
+        <li><strong>Patrón:</strong> <code>AgendaDeSala.vacia()</code> es el Null Object: cumple el contrato y nunca choca. <code>FuncionPlanificada</code> se describe sola (<code>programable</code>, <code>salteadaPor</code>) y <code>planDe</code> queda como un stream sin <code>null</code> ni <code>continue</code>. <em>(<code>service/funciones</code>)</em></li>
+        <li><strong>Mejora:</strong> Sin <code>null</code> ni <code>if</code> en el cliente; el motivo del choque tiene un solo dueño.</li>
+        <li><strong>Lo protege:</strong> <code>AgendaDeSalaTest</code> (nuevo), <code>GestorProgramacionesTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_NULL_OBJECT}}
+        <figcaption>V3: La agenda vacía responde que nunca choca, en vez de null</figcaption>
+      </figure>
+      <h3 id="it-v4">V4 · Chain of Responsibility en el cuerpo ilegible</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>public ResponseEntity&lt;ErrorVistaDTO&gt; cuerpoIlegible(HttpMessageNotReadableException e) {
+    if (e.getCause() == null) return responder(BAD_REQUEST, &quot;Falta el cuerpo del pedido&quot;);
+    if (e.getCause() instanceof JsonMappingException mapeo &amp;&amp; !mapeo.getPath().isEmpty()) { ... }
+    if (e.getCause() instanceof MismatchedInputException) { ... }
+    return responder(BAD_REQUEST, &quot;El cuerpo del pedido no es un JSON válido&quot;);</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>SRP:</strong> <code>ManejadorErrores</code> mezcla la política de status de la API con el detalle de Jackson. <strong>OCP:</strong> un caso nuevo es otro <code>if</code> en una cadena cuyo orden importa y no tiene nombre.</li>
+        <li><strong>Patrón:</strong> Cada caso es un eslabón (<code>LecturaDelCuerpo.mensaje</code> devuelve <code>Optional</code>); <code>ManejadorErrores</code> recorre una lista ordenada y el primero que contesta gana. <em>(<code>controller/http/cuerpo</code>)</em></li>
+        <li><strong>Mejora:</strong> <code>ManejadorErrores</code> queda con la tabla excepción → status; cada regla de Jackson se prueba sola y el orden está escrito en un solo lugar.</li>
+        <li><strong>Lo protege:</strong> <code>LecturaDelCuerpoTest</code> (nuevo), <code>ManejadorErroresTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_CHAIN_OF_RESPONSIBILITY}}
+        <figcaption>V4: El primer eslabón que reconoce el cuerpo ilegible contesta; el último siempre contesta</figcaption>
+      </figure>
+      <h3 id="it-v5">V5 · Template Method en los comprobantes .txt</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// GeneradorTicketTxt y GeneradorReciboTxt: el mismo esqueleto
+List&lt;String&gt; lineas = new ArrayList&lt;&gt;(List.of(linea(), centrar(&quot;CINE UADE&quot;), centrar(&quot;TICKET #&quot; + id), linea()));
+...
+lineas.addAll(List.of(linea(), centrar(&quot;Presentar en boletería&quot;), linea()));
+escribir(&quot;ticket-&quot; + id + &quot;.txt&quot;, lineas, &quot;el ticket de la reserva &quot; + id);</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>Código duplicado</strong> (encabezado, pie, escritura en tres generadores) y una base que hereda helpers, no un algoritmo. <strong>SRP</strong> en la base: formato, diccionario y E/S juntos.</li>
+        <li><strong>Patrón:</strong> <code>ComprobanteTxt&lt;T&gt;.imprimir</code> es <code>final</code>: encabezado → cuerpo → leyendas → disco. Los tres generadores llenan <code>titulo</code>, <code>cuerpo</code>, <code>leyendas</code>, <code>archivo</code> y <code>queEs</code>; <code>marca()</code> es el gancho (el candy firma «CINE UADE - CANDY»). <em>(<code>infrastructure/comprobantes/txt</code>)</em></li>
+        <li><strong>Mejora:</strong> Imposible un comprobante sin encabezado o pie. Salida byte a byte igual.</li>
+        <li><strong>Lo protege:</strong> <code>ComprobantesTxtTest</code> (golden, verde contra V0 antes de tocar nada), <code>ComprobanteTxtTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_TEMPLATE_METHOD}}
+        <figcaption>V5: imprimir() fija el orden; cada generador completa título, cuerpo y leyendas</figcaption>
+      </figure>
+      <h3 id="it-v6">V6 · Alta cohesión: partir <code>Ocupacion</code></h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// Ocupacion: 158 líneas, cinco colaboradores
+public Set&lt;Integer&gt; asientosOcupados(...)  { ... expirarVencidas(reservas); ... }   // R4 + R17
+public Bloqueo bloquear(...)               { ... }                                  // bloqueo
+@Scheduled(...) public void borrarBloqueosVencidos() { ... }                       // higiene
+public Funcion funcionEnVenta(int funcionId) { ... }                                // R19</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>SRP / Alta cohesión:</strong> cambia por R4, por la UX del bloqueo, por R19 o por R17. <strong>ISP:</strong> <code>BloqueoController</code> dependía de toda <code>Ocupacion</code> para usar <code>bloquear</code>.</li>
+        <li><strong>Patrón:</strong> Extract Class: cada clase nueva es una Fabricación pura con una regla. <code>Ocupacion</code> conserva R4 y sigue expirando al consultar (CQS roto a propósito, ahora vía <code>ExpiracionDeReservas</code>). <em>(<code>service/ventas</code>)</em></li>
+        <li><strong>Mejora:</strong> Clases de 25-50 líneas con la regla numerada en la cabecera; el <code>@Scheduled</code> queda junto a lo que limpia.</li>
+        <li><strong>Lo protege:</strong> <code>BloqueoDeButacasTest</code> (era <code>OcupacionTest</code>), <code>FuncionesEnVentaTest</code> (nuevo), <code>GestorReservasTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_ALTA_COHESION}}
+        <figcaption>V6: Cada clase tiene una regla; cada cliente depende solo de la que usa</figcaption>
+      </figure>
+      <h3 id="it-v7">V7 · State en <code>Importacion</code> y resumen de la corrida</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>public void terminar(int nuevas, int salteadas, int fallidas, String detalle, LocalDateTime cuando) {
+    this.estado = EstadoImportacion.TERMINADA;       // sin mirar el estado actual
+}
+public boolean estaEnCurso() { return estado == EstadoImportacion.EN_CURSO; }
+// GestorImportaciones: tres contadores y un StringBuilder para el detalle</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> Se rompe la convención «nadie compara <code>estado == X</code> fuera del enum»; <code>terminar</code> sobre una FALLIDA pasa. <strong>Long Parameter List / Feature Envy:</strong> el gestor arma el renglón del detalle.</li>
+        <li><strong>Patrón:</strong> <code>EstadoImportacion</code> (State, enum como <code>EstadoReserva</code>): EN_CURSO → TERMINADA | FALLIDA, el resto rechaza con <code>DatoInvalido</code>. <code>ResumenDeCorrida</code> (<code>@Embeddable</code> record) agrupa contadores y detalle; <code>Corrida</code> acumula y es dueña del formato. <em>(<code>model/cartelera, service/cartelera</code>)</em></li>
+        <li><strong>Mejora:</strong> Transiciones explícitas; <code>terminar(resumen, cuando)</code>; mismas columnas, sin migración.</li>
+        <li><strong>Lo protege:</strong> <code>ImportacionTest</code> (<code>unaCorridaCerradaNoCambiaMas</code>), <code>CorridaTest</code> (nuevo), <code>GestorImportacionesTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_STATE_IMPORTACION}}
+        <figcaption>V7: EstadoImportacion decide las transiciones; ResumenDeCorrida viaja como un dato</figcaption>
+      </figure>
+      <h3 id="it-v8">V8 · Partir <code>PlanificadorGrilla</code></h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// PlanificadorGrilla: 169 líneas
+private List&lt;PaseSugerido&gt; repartir(...) {
+    Map&lt;Integer, Integer&gt; asignados = new HashMap&lt;&gt;();
+    Map&lt;Integer, AgendaDeSala&gt; agendas = new HashMap&lt;&gt;();
+    for (int dia ...) { for (Sala sala : salas) { ... while (momento.isBefore(limite)) { ... } } }</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>SRP:</strong> cambia por el caso de uso, por el algoritmo de reparto o por la ventana horaria. <code>primerIntento</code> es un concepto (la ventana útil de un día) escondido como método privado.</li>
+        <li><strong>Patrón:</strong> <code>RepartoDePases</code> reparte con estado por corrida (uno por propuesta, no es bean); <code>VentanaDelDia</code> define apertura, R20 y cierre con el reloj leído una vez. <em>(<code>service/programaciones</code>)</em></li>
+        <li><strong>Mejora:</strong> El planificador baja a ~110 líneas de orquestación; el algoritmo se prueba sin base ni reloj. Mismo orden de pases.</li>
+        <li><strong>Lo protege:</strong> <code>RepartoDePasesTest</code>, <code>VentanaDelDiaTest</code> (nuevos, sin Spring), <code>PlanificadorGrillaTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_SRP_PLANIFICADOR}}
+        <figcaption>V8: El planificador orquesta; el reparto y la ventana horaria son clases propias</figcaption>
+      </figure>
+      <h3 id="it-v9">V9 · Creador: la reserva crea sus entradas</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// GestorReservas.armarEntradas
+for (Map.Entry&lt;String, TipoTarifa&gt; pedido : butacas.entrySet()) {
+    Asiento asiento = Asiento.exigirConCodigo(deLaSala, pedido.getKey());
+    entradas.add(new Entrada(asiento, pedido.getValue(), funcion.precioDe(asiento, sala)));
+}
+Reserva nueva = new Reserva(funcion, cliente, entradas, reloj.ahora());</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> La señal de Creador de los apuntes, literal: un service arma los objetos de otro y se los entrega. Además calcula el precio (<code>funcion.precioDe</code>), que la reserva puede pedirle a su función (Experto).</li>
+        <li><strong>Patrón:</strong> <code>Reserva</code> recibe <code>List&lt;ButacaPedida&gt;</code> (asiento + tarifa) y crea sus <code>Entrada</code> con el precio de su función. El gestor solo busca los asientos en la base. <code>ValidadorReserva.validarFuncion</code> conserva el orden de los mensajes. <em>(<code>model/ventas</code>)</em></li>
+        <li><strong>Mejora:</strong> Las cuatro composiciones del modelo se crean igual (<code>Sala</code> → <code>Asiento</code>, <code>Combo</code> → <code>ItemCombo</code>, <code>CompraCandy</code> → <code>ItemCompra</code>, <code>Reserva</code> → <code>Entrada</code>).</li>
+        <li><strong>Lo protege:</strong> <code>ReservaTest</code> (<code>creaSusEntradasConElPrecioDeSuFuncion</code>), <code>GestorReservasTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_CREADOR_RESERVA}}
+        <figcaption>V9: Reserva contiene sus entradas y conoce la función que les pone precio</figcaption>
+      </figure>
+      <h3 id="it-v10">V10 · Adapter de JCalendar en Swing</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// FormularioFuncion y siete pantallas más
+import com.toedter.calendar.JDateChooser;
+private final JDateChooser dia = Fechas.selector(LocalDate.now());
+... Fechas.leer(dia) ... Fechas.iso(dia) ... Fechas.poner(dia, fecha) ...</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>DIP:</strong> las pantallas conocen la librería y su tipo <code>Date</code>. Había medio Adapter (las funciones de <code>Fechas</code>), pero el cliente igual tenía al Adaptee en la mano.</li>
+        <li><strong>Patrón:</strong> <code>CampoFecha</code> (sobre <code>JDateChooser</code>) y <code>Calendario</code> (sobre <code>JCalendar</code>, para la agenda) exponen <code>valor()</code>, <code>poner(LocalDate)</code>, <code>iso()</code> y <code>alCambiar(Runnable)</code>. <code>Validacion</code> y <code>Campos</code> reciben <code>CampoFecha</code>. <em>(<code>swing/comun</code>)</em></li>
+        <li><strong>Mejora:</strong> Ninguna pantalla importa <code>com.toedter</code>; cambiar de librería toca dos clases. Pendiente: <code>BarraFiltros.fecha</code> todavía recibe <code>JDateChooser</code>.</li>
+        <li><strong>Lo protege:</strong> <code>CampoFechaTest</code>, <code>ArquitecturaTest</code> de Swing (ningún archivo de <code>pantallas/</code> importa <code>com.toedter</code>).</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_ADAPTER_FECHA}}
+        <figcaption>V10: Las pantallas hablan LocalDate; la librería de fechas queda adentro del Adapter</figcaption>
+      </figure>
+      <h3 id="it-v11">V11 · Builder de <code>DatosPelicula</code></h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>public record DatosPelicula(String titulo, Integer duracionMinutos, List&lt;Genero&gt; generos,
+        Clasificacion clasificacion, String director, String sinopsis, Integer anio,
+        String idiomaOriginal, String posterUrl, Boolean enCartelera, Double puntaje, Integer votos)
+// en los tests: new DatosPelicula(&quot;Matrix&quot;, 136, generos, MAS_13, null, null, null, null, null, null, null, null)</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>Long Parameter List:</strong> cuatro <code>String</code> y tres <code>Integer</code> seguidos; cruzar dos compila y guarda una sinopsis en el director. Los <code>null</code> no dicen qué dato son.</li>
+        <li><strong>Patrón:</strong> <code>DatosPelicula.con().titulo(..).duracion(..).armar()</code>. Solo para este record de entrada sin reglas: las entidades siguen sin Builder (el constructor valida todo antes de asignar). <em>(<code>service/cartelera</code>)</em></li>
+        <li><strong>Mejora:</strong> Imposible cruzar dos <code>String</code>; tests legibles. Usado por <code>PeliculaController</code> y <code>MapeoTmdb</code>.</li>
+        <li><strong>Lo protege:</strong> <code>DatosPeliculaBuilderTest</code> (nuevo), <code>GestorCarteleraTest</code>, <code>MapeoTmdbTest</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_BUILDER}}
+        <figcaption>V11: Cada dato se nombra en el punto de uso; lo no nombrado viaja null</figcaption>
+      </figure>
+      <h3 id="it-v12">V12 · Command en las acciones de fila (Swing)</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>borrar.addActionListener(e -&gt; tabla.seleccionada().ifPresent(p -&gt; {
+    if (!confirmar(&quot;¿Borrar &quot; + p.titulo() + &quot;?&quot;, &quot;Sí, borrar&quot;)) return;
+    accion(() -&gt; apiCartelera.eliminarPelicula(p.id()), &quot;Película borrada&quot;, this::recargar);
+}));   // el mismo molde en siete pantallas</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>Código duplicado</strong> (fila, confirmar, pedir, avisar, recargar). <strong>SRP:</strong> la pantalla mezcla armar la vista con el detalle de cada operación. La política «lo destructivo se confirma» dependía de que cada pantalla se acordara.</li>
+        <li><strong>Patrón:</strong> <code>AccionDeFila&lt;T&gt;</code> (Command): <code>texto</code>, <code>pregunta</code>, <code>ejecutar</code>, <code>hecho</code>. Un ConcreteCommand por botón, en su subdominio (records de ~30 líneas). <code>BotonesDeFila</code> (Invoker) toma la fila, confirma, pide fuera del EDT, avisa y recarga. <em>(<code>swing/pantallas/acciones</code>)</em></li>
+        <li><strong>Mejora:</strong> La confirmación la hace siempre el Invoker. «Editar», que abre un formulario y no pide al backend, queda fuera.</li>
+        <li><strong>Lo protege:</strong> <code>BotonesDeFilaTest</code> y un test por comando contra <code>ServidorFalso</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_COMMAND}}
+        <figcaption>V12: Cada operación del encargado es un comando; BotonesDeFila los dispara</figcaption>
+      </figure>
     </section>
 
     <section class="doc-section" id="decisiones">
