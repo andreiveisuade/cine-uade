@@ -5,26 +5,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
-// Base de los comprobantes .txt (44 columnas, campos, escritura a disco); los generadores la heredan.
-abstract class ComprobanteTxt {
+// Arma un comprobante .txt de 44 columnas y lo escribe a disco; cada Generador*Txt completa lo suyo.
+// Patrón Template Method: los tres generadores repetían encabezado, pie y escritura, y nada impedía que uno
+// se olvidara de la línea final. imprimir es el algoritmo, final; las subclases solo llenan los pasos abstractos.
+abstract class ComprobanteTxt<T> {
 
     private static final DateTimeFormatter FORMATO_FECHA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String LINEA = "=".repeat(44);
-    // El comprobante lo lee una persona: nunca el nombre de la constante. Es el mismo diccionario que
-    // etiquetas.js en la web y Formato en Swing, del lado de quien presenta, no en el modelo.
-    private static final Map<String, String> ETIQUETAS = Map.ofEntries(
-            Map.entry("DOS_D", "2D"), Map.entry("TRES_D", "3D"), Map.entry("IMAX", "IMAX"),
-            Map.entry("CUATRO_D", "4D"), Map.entry("DOBLADA", "doblada"), Map.entry("SUBTITULADA", "subtitulada"),
-            Map.entry("RESERVADA", "Reservada"), Map.entry("PAGADA", "Pagada"), Map.entry("CANCELADA", "Cancelada"),
-            Map.entry("EXPIRADA", "Vencida"), Map.entry("MENOR", "Menor"), Map.entry("JUBILADO", "Jubilado"),
-            Map.entry("ESTUDIANTE", "Estudiante"), Map.entry("EFECTIVO", "Efectivo"), Map.entry("DEBITO", "Débito"),
-            Map.entry("CREDITO", "Crédito"), Map.entry("QR", "QR"), Map.entry("TRANSFERENCIA", "Transferencia"));
 
     private final Path directorio;
 
@@ -32,7 +25,33 @@ abstract class ComprobanteTxt {
         this.directorio = directorio;
     }
 
-    protected final void escribir(String nombreArchivo, List<String> lineas, String queEs) {
+    // El método plantilla: encabezado, cuerpo, leyendas entre líneas y a disco, siempre en ese orden.
+    protected final void imprimir(T dato) {
+        List<String> lineas = new ArrayList<>(List.of(LINEA, centrar(marca()), centrar(titulo(dato)), LINEA));
+        lineas.addAll(cuerpo(dato));
+        lineas.add(LINEA);
+        leyendas().forEach(leyenda -> lineas.add(centrar(leyenda)));
+        lineas.add(LINEA);
+        escribir(archivo(dato), lineas, queEs(dato));
+    }
+
+    // Gancho con valor por defecto: solo el candy firma distinto.
+    protected String marca() {
+        return "CINE UADE";
+    }
+
+    protected abstract String titulo(T dato);
+
+    protected abstract List<String> cuerpo(T dato);
+
+    protected abstract List<String> leyendas();
+
+    protected abstract String archivo(T dato);
+
+    // Para el mensaje si el archivo no se puede escribir: "el ticket de la reserva 7".
+    protected abstract String queEs(T dato);
+
+    private void escribir(String nombreArchivo, List<String> lineas, String queEs) {
         try {
             Files.createDirectories(directorio);
             Files.write(directorio.resolve(nombreArchivo), lineas);
@@ -53,11 +72,7 @@ abstract class ComprobanteTxt {
         return String.format(" %-13s: %s", etiqueta, valor);
     }
 
-    protected static String etiqueta(Enum<?> valor) {
-        return ETIQUETAS.getOrDefault(valor.name(), valor.name());
-    }
-
-    protected static String centrar(String texto) {
+    private static String centrar(String texto) {
         int espacios = Math.max((LINEA.length() - texto.length()) / 2, 0);
         return " ".repeat(espacios) + texto;
     }

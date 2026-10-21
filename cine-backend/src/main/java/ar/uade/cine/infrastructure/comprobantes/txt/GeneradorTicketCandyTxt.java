@@ -10,8 +10,14 @@ import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.usuarios.Cliente;
 
-// Ticket de candy en un .txt por compra, con lo ahorrado en combos; Adapter del puerto GeneradorTicketCandy.
-public class GeneradorTicketCandyTxt extends ComprobanteTxt implements GeneradorTicketCandy {
+// Ticket de candy en un .txt por compra, con lo ahorrado en combos; implementa el puerto GeneradorTicketCandy.
+// Template Method: llena los pasos de ComprobanteTxt y cambia la marca del encabezado.
+public class GeneradorTicketCandyTxt extends ComprobanteTxt<GeneradorTicketCandyTxt.Venta>
+        implements GeneradorTicketCandy {
+
+    // El puerto recibe dos datos y la plantilla imprime uno: este record los junta.
+    record Venta(CompraCandy compra, Cliente cliente) {
+    }
 
     public GeneradorTicketCandyTxt(Path directorio) {
         super(directorio);
@@ -19,11 +25,24 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
 
     @Override
     public void emitir(CompraCandy compra, Cliente cliente) {
+        imprimir(new Venta(compra, cliente));
+    }
+
+    @Override
+    protected String marca() {
+        return "CINE UADE - CANDY";
+    }
+
+    @Override
+    protected String titulo(Venta venta) {
+        return "COMPRA #" + venta.compra().getId();
+    }
+
+    @Override
+    protected List<String> cuerpo(Venta venta) {
+        CompraCandy compra = venta.compra();
+        Cliente cliente = venta.cliente();
         List<String> lineas = new ArrayList<>(List.of(
-                linea(),
-                centrar("CINE UADE - CANDY"),
-                centrar("COMPRA #" + compra.getId()),
-                linea(),
                 campo("Cliente", cliente == null ? "Consumidor final" : cliente.getNombre()),
                 campo("Fecha", fecha(compra.getFecha())),
                 linea()));
@@ -39,17 +58,26 @@ public class GeneradorTicketCandyTxt extends ComprobanteTxt implements Generador
         if (ahorro.esMayorQue(Dinero.CERO)) {
             lineas.add(campo("Ahorraste", "$ " + ahorro + " con los combos"));
         }
-        lineas.add(campo("Pago", etiqueta(compra.getMedio())));
+        lineas.add(campo("Pago", EtiquetasTxt.de(compra.getMedio())));
         if (!compra.getCodigoAutorizacion().isBlank()) {
             lineas.add(campo("Autorización", compra.getCodigoAutorizacion()));
         }
-        lineas.addAll(List.of(
-                linea(),
-                centrar("Retirar en el candy"),
-                linea()));
+        return lineas;
+    }
 
-        escribir("candy-" + compra.getId() + ".txt", lineas,
-                "el ticket de la compra " + compra.getId());
+    @Override
+    protected List<String> leyendas() {
+        return List.of("Retirar en el candy");
+    }
+
+    @Override
+    protected String archivo(Venta venta) {
+        return "candy-" + venta.compra().getId() + ".txt";
+    }
+
+    @Override
+    protected String queEs(Venta venta) {
+        return "el ticket de la compra " + venta.compra().getId();
     }
 
     private static String recortar(String nombre) {

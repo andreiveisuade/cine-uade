@@ -9,8 +9,13 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 
-// Recibo de caja en un .txt por pago, con el descuento si hubo; Adapter del puerto GeneradorRecibo.
-public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecibo {
+// Recibo de caja en un .txt por pago, con el descuento si hubo; implementa el puerto GeneradorRecibo.
+// Template Method: llena los pasos de ComprobanteTxt.
+public class GeneradorReciboTxt extends ComprobanteTxt<GeneradorReciboTxt.Cobro> implements GeneradorRecibo {
+
+    // El puerto recibe dos datos y la plantilla imprime uno: este record los junta.
+    record Cobro(Pago pago, Reserva reserva) {
+    }
 
     public GeneradorReciboTxt(Path directorio) {
         super(directorio);
@@ -18,11 +23,19 @@ public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecib
 
     @Override
     public void emitir(Pago pago, Reserva reserva) {
+        imprimir(new Cobro(pago, reserva));
+    }
+
+    @Override
+    protected String titulo(Cobro cobro) {
+        return "RECIBO DE CAJA #" + cobro.pago().getId();
+    }
+
+    @Override
+    protected List<String> cuerpo(Cobro cobro) {
+        Pago pago = cobro.pago();
+        Reserva reserva = cobro.reserva();
         List<String> lineas = new ArrayList<>(List.of(
-                linea(),
-                centrar("CINE UADE"),
-                centrar("RECIBO DE CAJA #" + pago.getId()),
-                linea(),
                 campo("Reserva", "#" + reserva.getId() + " - " + reserva.getCodigo()),
                 campo("Entradas", String.valueOf(reserva.getCantidadEntradas())),
                 campo("Cobrado", fecha(pago.getFecha())),
@@ -35,12 +48,22 @@ public class GeneradorReciboTxt extends ComprobanteTxt implements GeneradorRecib
 
         lineas.addAll(List.of(
                 campo("Total", "$ " + pago.getMonto()),
-                campo("Pago", etiqueta(pago.getMedio())),
-                linea(),
-                centrar("Comprobante de pago en efectivo"),
-                centrar("Conservar hasta el ingreso a la sala"),
-                linea()));
+                campo("Pago", EtiquetasTxt.de(pago.getMedio()))));
+        return lineas;
+    }
 
-        escribir("recibo-" + pago.getId() + ".txt", lineas, "el recibo del pago " + pago.getId());
+    @Override
+    protected List<String> leyendas() {
+        return List.of("Comprobante de pago en efectivo", "Conservar hasta el ingreso a la sala");
+    }
+
+    @Override
+    protected String archivo(Cobro cobro) {
+        return "recibo-" + cobro.pago().getId() + ".txt";
+    }
+
+    @Override
+    protected String queEs(Cobro cobro) {
+        return "el recibo del pago " + cobro.pago().getId();
     }
 }
