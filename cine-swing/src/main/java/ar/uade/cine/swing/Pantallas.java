@@ -50,7 +50,7 @@ final class Pantallas {
             case AGENDA -> new PantallaAgenda(apis.funciones(), apis.salas(), navegacion);
             case RESERVAS -> new PantallaReservas(apis.ventas(), navegacion);
             case PROMOCIONES -> new PantallaPromociones(apis.catalogos(), apis.promociones(), apis.imagenes());
-            case CANDY -> new PantallaCandy(apis.candy(), apis.catalogos(), apis.clientes());
+            case CANDY -> new PantallaCandy(apis.candy(), apis.catalogos(), apis.clientes(), apis.imagenes());
             case CAJA -> new PantallaCaja(apis.informes());
             case DECLARACION_JURADA -> new PantallaDeclaracionJurada(apis.catalogos(), apis.informes());
             case PUERTA -> new PantallaPuerta(apis.catalogos(), apis.ventas());
