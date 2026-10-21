@@ -11,7 +11,6 @@ public final class ReglaDeTexto {
         this.valor = valor;
     }
 
-    // En blanco también falta: un campo con espacios no le dice nada a nadie.
     public ReglaDeTexto obligatorio(String mensaje) {
         if (valor == null || valor.isBlank()) {
             throw new DatoInvalido(mensaje);
@@ -19,12 +18,12 @@ public final class ReglaDeTexto {
         return this;
     }
 
-    // Sin los espacios de las puntas: con ellos, " Matrix" pasaría por otro título al buscar repetidos.
+    // Sin espacios de las puntas, " Matrix" pasaría por otro título al buscar repetidos.
     public ReglaDeTexto recortado() {
         return valor == null ? this : new ReglaDeTexto(valor.strip());
     }
 
-    // El largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT y el usuario vería un 500.
+    // Largo de la columna de schema.sql: pasado, MySQL rechaza el INSERT con un 500.
     // sujeto es qué es, con artículo y mayúscula («El título»): arranca el mensaje.
     public ReglaDeTexto hasta(int maximo, String sujeto) {
         if (valor != null && valor.length() > maximo) {

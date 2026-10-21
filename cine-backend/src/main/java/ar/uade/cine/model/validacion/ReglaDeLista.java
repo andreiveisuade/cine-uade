@@ -14,7 +14,6 @@ public final class ReglaDeLista<C extends Collection<?>> {
         this.valor = valor;
     }
 
-    // Una lista vacía también falta: una reserva sin butacas es un pedido vacío.
     public ReglaDeLista<C> noVacia(String mensaje) {
         if (valor == null || valor.isEmpty()) {
             throw new DatoInvalido(mensaje);
@@ -22,8 +21,7 @@ public final class ReglaDeLista<C extends Collection<?>> {
         return this;
     }
 
-    // `[null]` llega del JSON como una lista con un elemento: sin esto, el null explotaría más adelante.
-    // Por stream y no por contains(null): List.of(...) tira NullPointerException si se le pregunta por null.
+    // `[null]` llega del JSON como lista de un elemento; por stream porque List.of(...).contains(null) tira NPE.
     public ReglaDeLista<C> sinNulos(String mensaje) {
         if (valor != null && valor.stream().anyMatch(Objects::isNull)) {
             throw new DatoInvalido(mensaje);
@@ -31,8 +29,7 @@ public final class ReglaDeLista<C extends Collection<?>> {
         return this;
     }
 
-    // Lo que se pide de una vez: pasado el tope, el pedido es un error o un abuso, y además hace trabajar
-    // al servidor por cada elemento.
+    // Pasado el tope el pedido es un error o abuso, y hace trabajar al servidor por cada elemento.
     public ReglaDeLista<C> hasta(int maximo, String mensaje) {
         if (valor != null && valor.size() > maximo) {
             throw new DatoInvalido(mensaje);
