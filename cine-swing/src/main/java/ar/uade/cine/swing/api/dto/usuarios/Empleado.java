@@ -6,4 +6,9 @@ public record Empleado(int id, String nombre, String email, String rol) {
     public boolean esAdministrador() {
         return "ADMINISTRADOR".equals(rol);
     }
+
+    // POST /api/sesion también acepta clientes, que no tienen nada que hacer en el panel.
+    public boolean esEmpleado() {
+        return esAdministrador() || "ACOMODADOR".equals(rol);
+    }
 }
