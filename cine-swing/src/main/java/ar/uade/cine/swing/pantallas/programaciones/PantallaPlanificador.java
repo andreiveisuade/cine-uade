@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ApiProgramaciones;
 import ar.uade.cine.swing.api.dto.programaciones.IndicadoresGrilla;
 import ar.uade.cine.swing.api.dto.programaciones.PedidoGrilla;
 import ar.uade.cine.swing.api.dto.programaciones.PropuestaGrilla;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
@@ -14,7 +15,6 @@ import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -46,7 +46,7 @@ public final class PantallaPlanificador extends Pantalla {
 
     private final ApiCatalogos apiCatalogos;
     private final ApiProgramaciones apiProgramaciones;
-    private final JDateChooser desde = Fechas.selector(LocalDate.now());
+    private final CampoFecha desde = new CampoFecha(LocalDate.now());
     private final JTextField dias = Campos.soloEntero(new JTextField("7"));
     private final JSpinner apertura = Fechas.hora(LocalTime.of(14, 0));
     private final JSpinner cierre = Fechas.hora(LocalTime.MIDNIGHT);

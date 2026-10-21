@@ -5,15 +5,14 @@ import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.api.dto.informes.Arqueo;
 import ar.uade.cine.swing.api.dto.informes.ArqueoCandy;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Pila;
-import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.TablaCompras;
+import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.pantallas.Pantalla;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -35,7 +34,7 @@ public final class PantallaCaja extends Pantalla {
     }
 
     private final ApiInformes apiInformes;
-    private final JDateChooser fecha = Fechas.selector(LocalDate.now());
+    private final CampoFecha fecha = new CampoFecha(LocalDate.now());
     private final JPanel cifras = new JPanel(new FlujoConSalto());
     private final JLabel porMedio = new JLabel(" ");
     private final JLabel tituloCandy = Componentes.subtitulo("Candy");
@@ -63,7 +62,7 @@ public final class PantallaCaja extends Pantalla {
         barra.add(siguiente);
         anterior.addActionListener(e -> mover(-1));
         siguiente.addActionListener(e -> mover(1));
-        fecha.addPropertyChangeListener("date", e -> recargar());
+        fecha.alCambiar(this::recargar);
 
         Pila resumen = new Pila();
         resumen.agregar(barra);
@@ -89,13 +88,13 @@ public final class PantallaCaja extends Pantalla {
     }
 
     private void mover(int dias) {
-        LocalDate actual = Fechas.leer(fecha);
+        LocalDate actual = fecha.valor();
         // Cambiar la fecha dispara la recarga por el listener de "date".
-        Fechas.poner(fecha, (actual == null ? LocalDate.now() : actual).plusDays(dias));
+        fecha.poner((actual == null ? LocalDate.now() : actual).plusDays(dias));
     }
 
     private void recargar() {
-        String dia = Fechas.iso(fecha);
+        String dia = fecha.iso();
         cargar(() -> new Datos(apiInformes.obtenerArqueo(dia), apiInformes.obtenerArqueoCandy(dia)), this::pintar);
     }
 

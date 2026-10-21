@@ -15,9 +15,9 @@ import java.util.Map;
  * El backend de mentira en un puerto libre: cada test declara qué contesta cada ruta y después mira qué le pidieron.
  * Así se prueba el cliente con cada respuesta posible sin levantar el backend ni MySQL.
  */
-final class ServidorFalso {
+public final class ServidorFalso {
 
-    record Recibido(String metodo, String ruta, String autorizacion, String cuerpo) {
+    public record Recibido(String metodo, String ruta, String autorizacion, String cuerpo) {
     }
 
     private record Respuesta(int estado, String cuerpo) {
@@ -27,25 +27,25 @@ final class ServidorFalso {
     private final Map<String, Respuesta> respuestas = new LinkedHashMap<>();
     private final List<Recibido> recibidos = new ArrayList<>();
 
-    ServidorFalso() throws IOException {
+    public ServidorFalso() throws IOException {
         servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         servidor.createContext("/", this::atender);
         servidor.start();
     }
 
-    String url() {
+    public String url() {
         return "http://127.0.0.1:" + servidor.getAddress().getPort() + "/";
     }
 
-    void bajar() {
+    public void bajar() {
         servidor.stop(0);
     }
 
-    void responder(String metodoYRuta, int estado, String cuerpo) {
+    public void responder(String metodoYRuta, int estado, String cuerpo) {
         respuestas.put(metodoYRuta, new Respuesta(estado, cuerpo));
     }
 
-    Recibido ultimo() {
+    public Recibido ultimo() {
         synchronized (recibidos) {
             return recibidos.get(recibidos.size() - 1);
         }

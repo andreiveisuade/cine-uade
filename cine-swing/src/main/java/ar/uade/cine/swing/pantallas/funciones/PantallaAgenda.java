@@ -4,16 +4,15 @@ import ar.uade.cine.swing.api.ApiFunciones;
 import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
+import ar.uade.cine.swing.comun.Calendario;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
-import com.toedter.calendar.JCalendar;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -40,7 +39,7 @@ public final class PantallaAgenda extends Pantalla {
     private final JComboBox<Opcion<Integer>> sala = new JComboBox<>();
     private final JLabel etiquetaSala = new JLabel("Sala");
     private final JLabel conteo = new JLabel(" ");
-    private final JCalendar calendario = Fechas.calendario(LocalDate.now());
+    private final Calendario calendario = new Calendario(LocalDate.now());
     private final GrillaAgenda grilla;
     private final JLabel vacio = new JLabel("No hay funciones programadas en este rango.", JLabel.CENTER);
     private final JPanel lienzo = new JPanel(new BorderLayout());
@@ -77,9 +76,9 @@ public final class PantallaAgenda extends Pantalla {
         anterior.addActionListener(e -> mover(-modo().dias()));
         siguiente.addActionListener(e -> mover(modo().dias()));
         hoy.addActionListener(e -> ir(LocalDate.now()));
-        calendario.addPropertyChangeListener("calendar", e -> {
+        calendario.alCambiar(() -> {
             if (sincronizando) return;
-            LocalDate elegido = Fechas.leer(calendario);
+            LocalDate elegido = calendario.valor();
             if (elegido != null && !elegido.equals(desde)) {
                 desde = elegido;
                 pintar();
@@ -129,7 +128,7 @@ public final class PantallaAgenda extends Pantalla {
     private void ir(LocalDate fecha) {
         desde = fecha;
         sincronizando = true;
-        Fechas.poner(calendario, fecha);
+        calendario.poner(fecha);
         sincronizando = false;
         pintar();
     }

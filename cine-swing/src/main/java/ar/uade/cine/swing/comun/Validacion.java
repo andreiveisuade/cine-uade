@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ErrorApi;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -75,10 +74,13 @@ public final class Validacion {
         return anotar(campo, nombre, Lecturas.leerEmail(campo.getText(), nombre, obligatorio));
     }
 
-    /** La fecha en ISO, o null. Vacío en un campo obligatorio cuenta como faltante. */
-    public String fecha(JDateChooser selector, String nombre, boolean obligatorio) {
-        LocalDate fecha = Fechas.leer(selector);
-        JComponent campo = editor(selector);
+    /**
+     * La fecha en ISO, o null. Vacío en un campo obligatorio cuenta como faltante. Recibe el Adapter
+     * {@link CampoFecha}: Validacion no conoce JCalendar.
+     */
+    public String fecha(CampoFecha selector, String nombre, boolean obligatorio) {
+        LocalDate fecha = selector.valor();
+        JComponent campo = selector.editor();
         if (fecha == null && obligatorio) return anotar(campo, nombre, Lectura.falla(Lecturas.falta(nombre)));
         return anotar(campo, nombre, Lectura.de(fecha == null ? null : fecha.toString()));
     }
@@ -102,8 +104,8 @@ public final class Validacion {
         nombrados.add(new Nombrado(palabra.toLowerCase(Locale.ROOT), campo));
     }
 
-    public void alMencionar(String palabra, JDateChooser selector) {
-        alMencionar(palabra, editor(selector));
+    public void alMencionar(String palabra, CampoFecha selector) {
+        alMencionar(palabra, selector.editor());
     }
 
     private <T> T anotar(JComponent campo, String nombre, Lectura<T> lectura) {
@@ -177,9 +179,5 @@ public final class Validacion {
         // Sin ancho fijo: la etiqueta es de Componentes.texto y corta línea al ancho del formulario.
         mensaje.setText("<html>" + textos.stream().map(Formato::escapar).collect(Collectors.joining("<br>"))
                 + "</html>");
-    }
-
-    private static JComponent editor(JDateChooser selector) {
-        return (JComponent) selector.getDateEditor().getUiComponent();
     }
 }

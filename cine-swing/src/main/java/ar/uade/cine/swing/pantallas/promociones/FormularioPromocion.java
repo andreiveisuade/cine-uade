@@ -4,16 +4,15 @@ import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Seccion;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -43,8 +42,8 @@ final class FormularioPromocion extends Seccion {
     private final JPanel beneficio = new JPanel(tarjetas);
     // Tipo → campo → su caja de texto. Cada tipo tiene las suyas: una caja no puede estar en dos tarjetas.
     private final Map<String, Map<CampoBeneficio, JTextField>> camposPorTipo = new LinkedHashMap<>();
-    private final JDateChooser desde = Fechas.selector(LocalDate.now());
-    private final JDateChooser hasta = Fechas.selector(null);
+    private final CampoFecha desde = new CampoFecha(LocalDate.now());
+    private final CampoFecha hasta = new CampoFecha(null);
     private final SelectorDias dias = new SelectorDias();
     private final JTextField horaDesde = new JTextField();
     private final JTextField horaHasta = new JTextField();
@@ -146,8 +145,8 @@ final class FormularioPromocion extends Seccion {
         nombre.setText("");
         if (tipo.getItemCount() > 0) tipo.setSelectedIndex(0);
         camposPorTipo.values().forEach(cajas -> cajas.forEach(CampoBeneficio::reiniciar));
-        Fechas.poner(desde, LocalDate.now());
-        hasta.setDate(null);
+        desde.poner(LocalDate.now());
+        hasta.poner(null);
         dias.limpiar();
         horaDesde.setText("");
         horaHasta.setText("");
