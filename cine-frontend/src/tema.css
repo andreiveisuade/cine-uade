@@ -1,0 +1,57 @@
+/* Tokens que Mantine no cubre: superficies, bandas, contenedor y ritmo vertical. */
+:root {
+  --cine-ancho: 1280px;
+  --cine-gutter: 1rem;
+  --cine-seccion: 3rem;
+  --cine-sombra: 0 18px 40px -20px rgb(0 0 0 / 0.45);
+  /* La banda (hero, trailer) es la sala: oscura en los dos modos. */
+  --cine-banda: #0b0d11;
+  --cine-banda-texto: #eef0f4;
+  --cine-banda-tenue: #a8aebb;
+}
+
+@media (min-width: 48em) {
+  :root { --cine-gutter: 1.5rem; --cine-seccion: 4rem; }
+}
+
+@media (min-width: 75em) {
+  :root { --cine-gutter: 2.5rem; --cine-seccion: 5rem; }
+}
+
+[data-mantine-color-scheme="light"] {
+  --cine-superficie: #ffffff;
+  --cine-superficie-2: #ebe9e3;
+  --cine-borde: #dcd9d1;
+  --cine-sombra: 0 14px 32px -18px rgb(30 25 10 / 0.28);
+}
+
+[data-mantine-color-scheme="dark"] {
+  --cine-superficie: #15171d;
+  --cine-superficie-2: #1e2129;
+  --cine-borde: #2b2f39;
+  --mantine-color-default-border: #2b2f39;
+}
+
+html { overflow-x: clip; }
+
+body {
+  font-stretch: 100%;
+  font-feature-settings: "ss01";
+}
+
+h1, h2, h3, .cine-display {
+  font-stretch: 72%;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Precios, horas y códigos: cifras del mismo ancho para que las columnas no bailen. */
+.cine-cifras { font-variant-numeric: tabular-nums; }
+
+::selection { background: var(--mantine-color-ambar-4); color: #15171d; }
+
+:focus-visible { outline: 2px solid var(--mantine-color-ambar-5); outline-offset: 2px; }
+
+a { text-underline-offset: 0.2em; }
+
+[data-mantine-color-scheme="dark"] { scrollbar-color: #3b404d var(--mantine-color-body); }

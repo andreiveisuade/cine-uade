@@ -1,4 +1,4 @@
-import { Alert, Center, Group, Loader, Text } from "@mantine/core";
+import { Alert, Center, Group, Loader, Stack, Text } from "@mantine/core";
 
 export function Cargando({ mensaje = "Cargando…" }) {
   return (
@@ -25,10 +25,13 @@ export function EsperaOError({ carga, esqueleto = <Cargando /> }) {
   return carga.error ? <ErrorCaja>{carga.error}</ErrorCaja> : esqueleto;
 }
 
-export function Vacio({ children }) {
+// Un hueco con borde punteado: se lee como "acá iría algo", no como un error.
+export function Vacio({ children, accion }) {
   return (
-    <Text c="dimmed" ta="center" py="xl">
-      {children}
-    </Text>
+    <Stack align="center" gap="sm" py="xl" px="md" ta="center"
+      style={{ border: "1px dashed var(--cine-borde)", borderRadius: "var(--mantine-radius-lg)" }}>
+      <Text c="dimmed">{children}</Text>
+      {accion}
+    </Stack>
   );
 }
