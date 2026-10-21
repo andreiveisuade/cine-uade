@@ -25,11 +25,8 @@ public class GestorEmpleados {
     private final ClienteRepository clienteRepository;
     private final PasswordEncoder claves;
 
-    // Sin llamadas desde la API: no hay alta de administradores (el de demo lo siembra
-    // seed/02-admin.sql). Queda para que los tests armen empleados con la clave ya en bcrypt.
-    // La clave en claro solo la ve el gestor, que la valida como Contrasena antes del hash; nombre,
-    // email y rol los valida Empleado. Se busca también entre los clientes: comparten el UNIQUE del
-    // email y EmpleadoRepository no los ve.
+    // Sin llamadas desde la API (el admin de demo sale de seed/02-admin.sql): queda para que los tests armen empleados.
+    // Se busca también entre los clientes: comparten el UNIQUE del email y EmpleadoRepository no los ve.
     public void registrar(String nombre, String email, String password, Rol rol) {
         Contrasena clave = new Contrasena(password);
         Empleado empleado = new Empleado(nombre, email, claves.encode(clave.valor()), rol);

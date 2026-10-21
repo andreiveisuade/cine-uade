@@ -26,10 +26,8 @@ public class GestorClientes {
     private final EmpleadoRepository empleadoRepository;
     private final PasswordEncoder claves;
 
-    // Nombre y email los valida Usuario, y la clave Contrasena: un dato inválido se rechaza antes que
-    // el email ocupado. Se busca también entre los empleados: comparten el UNIQUE del email y
-    // ClienteRepository no los ve. Si el email es de quien reservó sin cuenta, la cuenta es suya:
-    // registrarse la abre sobre ese cliente y sus reservas de antes quedan a su nombre.
+    // Dato inválido se rechaza antes que el email ocupado, que se busca también entre empleados (UNIQUE compartido).
+    // Si el email es de quien reservó sin cuenta, registrarse la abre sobre ese cliente y conserva sus reservas.
     public Cliente registrar(String nombre, String email, String password) {
         Cliente nuevo = new Cliente(nombre, email);
         Contrasena clave = new Contrasena(password);
@@ -41,8 +39,7 @@ public class GestorClientes {
         return clienteRepository.save(cliente);
     }
 
-    // Al comprar, el email es un dato más del formulario: el de un empleado es un 400 y no el 409
-    // del alta, que la web toma como butaca perdida y le vacía la selección al cliente.
+    // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.
     public Cliente identificar(String nombre, String email) {
         return buscarPorEmail(email).orElseGet(() -> {
             Cliente nuevo = new Cliente(nombre, email);
