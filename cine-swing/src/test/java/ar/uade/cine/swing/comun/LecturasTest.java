@@ -9,10 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Solo formato y obligatoriedad: que un precio negativo o cero pase acá es a propósito, porque esa regla es del
- * backend. Sin Swing: cada lectura es texto que entra y valor o motivo que sale.
- */
+/** Solo formato y obligatoriedad: que un precio negativo pase acá es a propósito, esa regla es del backend. */
 class LecturasTest {
 
     @Test

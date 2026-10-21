@@ -11,11 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * El backend de mentira en un puerto libre: cada test declara qué contesta cada ruta y después mira qué le pidieron.
- * Así se prueba el cliente con cada respuesta posible sin levantar el backend ni MySQL. Público: los comandos de las
- * pantallas (AccionDeFila) se prueban contra él desde su subdominio.
- */
+/** El backend de mentira en un puerto libre: cada test declara qué contesta cada ruta y mira qué le pidieron. */
 public final class ServidorFalso {
 
     public record Recibido(String metodo, String ruta, String autorizacion, String cuerpo) {

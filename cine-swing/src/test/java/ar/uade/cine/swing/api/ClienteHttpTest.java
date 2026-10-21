@@ -19,10 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Lo que es del transporte y no de una ruta: las credenciales, el 401, los errores con y sin JSON y la conexión. Las
- * operaciones que se usan son cualquiera; lo que se mira es lo que hace ClienteHttp con cada respuesta.
- */
+/** Lo del transporte y no de una ruta: credenciales, 401, errores con y sin JSON y conexión. */
 class ClienteHttpTest {
 
     private static final String BASIC_ENCARGADO = "Basic " + Base64.getEncoder()

@@ -15,9 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Qué se marca, qué se muestra y adónde va cada rechazo. Los campos se crean sin ventana, así corre headless.
- */
+/** Qué se marca, qué se muestra y adónde va cada rechazo; sin ventana, corre headless. */
 class ValidacionTest {
 
     @Test
