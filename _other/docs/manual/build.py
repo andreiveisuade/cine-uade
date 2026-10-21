@@ -25,14 +25,8 @@ svg_map = {
     "{{SVG_USUARIOS}}": DIAGRAMAS / "usuarios-herencia.svg",
     "{{SVG_PROMOCIONES}}": DIAGRAMAS / "promociones-herencia.svg",
     "{{SVG_BUTACA_CARRERA}}": DIAGRAMAS / "butaca-carrera.svg",
-    # Los principios, uno por diagrama: el codigo que los aplica esta al lado en el texto.
+    # Capas del sistema; los principios y patrones van en patron-*.svg, mas abajo.
     "{{SVG_CAPAS_PAQUETES}}": DIAGRAMAS / "capas.svg",
-    "{{SVG_SOLID_DIP}}": DIAGRAMAS / "solid-dip.svg",
-    "{{SVG_SOLID_ISP}}": DIAGRAMAS / "solid-isp.svg",
-    "{{SVG_SOLID_OCP}}": DIAGRAMAS / "solid-ocp.svg",
-    "{{SVG_GRASP_FABRICACION}}": DIAGRAMAS / "grasp-pure-fabrication.svg",
-    "{{SVG_PATRON_STATE}}": DIAGRAMAS / "patron-state.svg",
-    "{{SVG_PATRON_OBSERVER}}": DIAGRAMAS / "patron-observer.svg",
     "{{SVG_API_ERRORES}}": DIAGRAMAS / "api-errores.svg",
     "{{SVG_BASE_VENTA_ER}}": DIAGRAMAS / "base-venta-er.svg",
     "{{SVG_CHECKOUT_PASARELA}}": DIAGRAMAS / "checkout-pasarela.svg",
@@ -48,6 +42,11 @@ svg_map = {
     "{{SVG_TRASLADO_SERVIDOR}}": DIAGRAMAS / "traslado-servidor.svg",
     "{{SVG_VALIDACION_CAPAS}}": DIAGRAMAS / "validacion-capas.svg",
 }
+
+# Un diagrama por patron o principio, en el estilo de los apuntes de la catedra
+# (_estilo-patrones.iuml): patron-<nombre>.svg es el placeholder {{SVG_PATRON_<NOMBRE>}}.
+for svg in sorted(DIAGRAMAS.glob("patron-*.svg")):
+    svg_map["{{SVG_PATRON_" + svg.stem[len("patron-"):].upper().replace("-", "_") + "}}"] = svg
 
 
 # Capturas de la corrida de pruebas. Van embebidas como data URI por el mismo motivo

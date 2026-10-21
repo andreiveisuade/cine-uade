@@ -1,0 +1,19 @@
+@startuml
+!include _estilo-patrones.iuml
+class Sala {
+  + generarAsientos(butacasPorFila, especiales) : List<Asiento>
+}
+class Asiento
+class Combo {
+  + {static} armar(nombre, precio, componentes) : Combo
+}
+class ItemCombo
+class CompraCandy
+class ItemCompra
+Sala ..> Asiento : <<create>>
+Combo "1" *--> "1..*" ItemCombo
+Combo ..> ItemCombo : <<create>>
+CompraCandy "1" *--> "1..*" ItemCompra
+note right of Sala : agrega y tiene los datos\npara inicializar sus asientos
+note right of Combo : contiene sus componentes\n→ los crea
+@enduml

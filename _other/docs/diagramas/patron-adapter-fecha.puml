@@ -1,0 +1,31 @@
+@startuml
+!include _estilo-patrones.iuml
+class FormularioFuncion <<Client>>
+class PantallaAgenda <<Client>>
+class CampoFecha <<Adapter>> {
+  - selector : JDateChooser
+  + valor() : LocalDate
+  + poner(fecha : LocalDate)
+  + iso() : String
+  + alCambiar(accion : Runnable)
+}
+class Calendario <<Adapter>> {
+  - calendario : JCalendar
+  + valor() : LocalDate
+  + poner(fecha : LocalDate)
+  + alCambiar(accion : Runnable)
+}
+class JDateChooser <<Adaptee>> {
+  + getDate() : Date
+  + setDate(Date)
+}
+class JCalendar <<Adaptee>> {
+  + getDate() : Date
+  + setDate(Date)
+}
+FormularioFuncion --> CampoFecha
+PantallaAgenda --> Calendario
+CampoFecha --> JDateChooser
+Calendario --> JCalendar
+note bottom of CampoFecha : traduce LocalDate a Date;\nsin interfaz Target, el Adapter es\nla clase que usa la pantalla
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Violación: depende de lo concreto (hipotético)" {
+  class "GestorPagos" as G1
+  class "MercadoPagoHttp" as M1
+  G1 --> M1
+  note bottom of G1 : el gestor nombra a MercadoPago:\nno se prueba sin red ni se cambia
+}
+package "Corrección: ambos dependen de la abstracción" {
+  class GestorPagos
+  interface PasarelaPagos {
+    + crear(...) : Checkout
+    + autorizar(checkout) : String
+  }
+  class MercadoPagoHttp
+  class MercadoPagoEmulado
+  class Adaptadores {
+    + pasarela() : PasarelaPagos
+  }
+  GestorPagos --> PasarelaPagos
+  MercadoPagoHttp ..|> PasarelaPagos
+  MercadoPagoEmulado ..|> PasarelaPagos
+  Adaptadores ..> PasarelaPagos : elige la implementación
+}
+G1 -[hidden]right- GestorPagos
+@enduml

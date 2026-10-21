@@ -1,0 +1,27 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Violación: una subclase rompe el contrato (hipotético)" {
+  abstract class "Promocion" as P1 {
+    + calcularDescuento(entradas) : Dinero
+  }
+  class "PromocionRota" as R #FBE3E3 {
+    + calcularDescuento(entradas) : Dinero
+  }
+  R --|> P1
+  note bottom of R : devuelve un descuento mayor al subtotal\no lanza excepción: el gestor debe chequear el tipo
+}
+package "Corrección: toda subclase cumple el contrato" {
+  abstract class Promocion {
+    + {abstract} calcularDescuento(entradas) : Dinero
+    # {static} topear(descuento, entradas) : Dinero
+  }
+  class PromocionPorcentaje
+  class PromocionMontoFijo
+  class PromocionNxM
+  PromocionPorcentaje --|> Promocion
+  PromocionMontoFijo --|> Promocion
+  PromocionNxM --|> Promocion
+  note bottom of PromocionMontoFijo : todas topean el descuento al subtotal:\nsustituibles sin que el gestor lo note
+}
+P1 -[hidden]right- Promocion
+@enduml

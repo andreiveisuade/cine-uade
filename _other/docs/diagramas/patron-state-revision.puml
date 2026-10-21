@@ -1,0 +1,22 @@
+@startuml
+!include _estilo-patrones.iuml
+class Pelicula <<Context>> {
+  - estadoRevision : EstadoRevision
+  + exigirProgramable()
+  + confirmar()
+  + descartar()
+}
+enum EstadoRevision <<State>> {
+  ~ exigirPublicable(titulo)
+  ~ exigirProgramable(titulo)
+  ~ seMuestraAlPublico()
+}
+class PENDIENTE <<ConcreteState>>
+class CONFIRMADA <<ConcreteState>>
+class DESCARTADA <<ConcreteState>>
+Pelicula o--> EstadoRevision
+EstadoRevision <|-- PENDIENTE
+EstadoRevision <|-- CONFIRMADA
+EstadoRevision <|-- DESCARTADA
+note bottom of Pelicula : delega la pregunta al estado\nsolo la CONFIRMADA se ve al público
+@enduml

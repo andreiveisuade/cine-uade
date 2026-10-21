@@ -1,0 +1,17 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorPagos <<Client>>
+interface PasarelaPagos <<Target>> {
+  + crear(reservaId, medio, monto, vence)
+  + autorizar(checkout)
+}
+class MercadoPagoHttp <<Adapter>> {
+  + crear(reservaId, medio, monto, vence)
+  + autorizar(checkout)
+}
+class "API REST de Mercado Pago" as Mp <<Adaptee>>
+GestorPagos --> PasarelaPagos
+PasarelaPagos <|.. MercadoPagoHttp
+MercadoPagoHttp --> Mp
+note bottom of MercadoPagoHttp : traduce crear() a una preferencia\nde Checkout Pro, sin el SDK
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+!include _estilo-patrones.iuml
+class PeliculaController <<Director>>
+class MapeoTmdb <<Director>>
+class DatosPeliculaBuilder <<Builder>> {
+  + titulo(String) : DatosPeliculaBuilder
+  + duracion(Integer) : DatosPeliculaBuilder
+  + director(String) : DatosPeliculaBuilder
+  + armar() : DatosPelicula
+}
+class DatosPelicula <<Product>> {
+  titulo, duracionMinutos, generos,
+  clasificacion, director, sinopsis, ...
+  + {static} con() : DatosPeliculaBuilder
+}
+class GestorCartelera
+PeliculaController ..> DatosPeliculaBuilder
+MapeoTmdb ..> DatosPeliculaBuilder
+DatosPelicula ..> DatosPeliculaBuilder : con()
+DatosPeliculaBuilder ..> DatosPelicula : <<create>>
+GestorCartelera ..> DatosPelicula
+note bottom of DatosPeliculaBuilder : cada dato con su nombre;\nlo no nombrado viaja null
+@enduml

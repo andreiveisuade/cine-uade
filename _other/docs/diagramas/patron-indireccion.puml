@@ -1,0 +1,13 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorReservas
+interface ReservaRepository <<indirección>> {
+  + findByCodigo(codigo) : Optional<Reserva>
+}
+class Reserva
+class BD <<MySQL o H2>>
+GestorReservas --> ReservaRepository
+ReservaRepository ..> Reserva
+ReservaRepository ..> BD
+note right of ReservaRepository : intermediario entre el gestor y la BD:\nel gestor no conoce SQL ni el motor
+@enduml

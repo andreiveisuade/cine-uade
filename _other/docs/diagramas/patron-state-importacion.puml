@@ -1,0 +1,36 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorImportaciones
+class Importacion <<Context>> {
+  - estado : EstadoImportacion
+  - resumen : ResumenDeCorrida
+  + terminar(resumen, cuando)
+  + fallar(motivo, cuando)
+  + estaEnCurso() : boolean
+}
+enum EstadoImportacion <<State>> {
+  EN_CURSO
+  TERMINADA
+  FALLIDA
+  ~ terminar() : EstadoImportacion
+  ~ fallar() : EstadoImportacion
+}
+class ResumenDeCorrida <<record>> {
+  nuevas : int
+  salteadas : int
+  fallidas : int
+  detalle : String
+}
+class Corrida {
+  ~ nueva(id, titulo)
+  ~ salteada()
+  ~ fallida(nombre, motivo)
+  ~ resumen() : ResumenDeCorrida
+}
+GestorImportaciones ..> Corrida
+GestorImportaciones ..> Importacion
+Importacion --> EstadoImportacion
+Importacion *-- ResumenDeCorrida
+Corrida ..> ResumenDeCorrida : <<create>>
+note bottom of EstadoImportacion : decide la transición:\nEN_CURSO pasa a TERMINADA o FALLIDA,\nel resto la rechaza
+@enduml

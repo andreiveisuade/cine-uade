@@ -1,0 +1,29 @@
+@startuml
+!include _estilo-patrones.iuml
+abstract class "ComprobanteTxt<T>" as Base <<AbstractClass>> {
+  # imprimir(dato : T) {final}
+  # marca() : String
+  # titulo(dato : T) : String
+  # cuerpo(dato : T) : List<String>
+  # leyendas() : List<String>
+  # archivo(dato : T) : String
+  # queEs(dato : T) : String
+}
+class GeneradorTicketTxt <<ConcreteClass>> {
+  # titulo(dato)
+  # cuerpo(dato)
+}
+class GeneradorReciboTxt <<ConcreteClass>> {
+  # titulo(dato)
+  # cuerpo(dato)
+}
+class GeneradorTicketCandyTxt <<ConcreteClass>> {
+  # marca()
+  # titulo(dato)
+  # cuerpo(dato)
+}
+Base <|-- GeneradorTicketTxt : T = Reserva
+Base <|-- GeneradorReciboTxt : T = Cobro
+Base <|-- GeneradorTicketCandyTxt : T = Venta
+note right of Base : imprimir() fija el esqueleto;\nlas subclases completan los pasos
+@enduml

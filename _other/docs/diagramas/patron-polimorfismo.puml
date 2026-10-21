@@ -1,0 +1,31 @@
+@startuml
+!include _estilo-patrones.iuml
+class Entrada {
+  + Entrada(asiento, tarifa, precioDeLaButaca)
+}
+enum TipoTarifa {
+  GENERAL
+  MENOR
+  JUBILADO
+  ESTUDIANTE
+  + aplicarA(Dinero) : Dinero
+}
+enum TipoAsiento {
+  ESTANDAR
+  VIP
+  PAREJA
+  ACCESIBLE
+  + aplicarA(Dinero) : Dinero
+}
+enum TipoSala {
+  DOS_D
+  TRES_D
+  IMAX
+  CUATRO_D
+  + aplicarA(Dinero) : Dinero
+}
+Entrada --> TipoTarifa
+Funcion --> TipoAsiento
+Funcion --> TipoSala
+note bottom of TipoTarifa : cada tipo aplica su multiplicador:\nsin if (tarifa == ...) en quien calcula
+@enduml

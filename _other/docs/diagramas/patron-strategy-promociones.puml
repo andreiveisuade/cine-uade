@@ -1,0 +1,29 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorPromociones <<Context>> {
+  + calcularPara(entradas, inicio, medio)
+  - mejorDescuento(entradas, inicio, medio)
+}
+abstract class Promocion <<Strategy>> {
+  + {abstract} calcularDescuento(entradas)
+  + aplicaA(inicio, medio)
+}
+class PromocionPorcentaje <<ConcreteStrategy>> {
+  - porcentaje
+  + calcularDescuento(entradas)
+}
+class PromocionMontoFijo <<ConcreteStrategy>> {
+  - monto
+  + calcularDescuento(entradas)
+}
+class PromocionNxM <<ConcreteStrategy>> {
+  - lleva
+  - paga
+  + calcularDescuento(entradas)
+}
+GestorPromociones o--> "*" Promocion
+Promocion <|-- PromocionPorcentaje
+Promocion <|-- PromocionMontoFijo
+Promocion <|-- PromocionNxM
+note right of Promocion : herencia y no interfaz:\ncada subclase tiene datos propios persistidos
+@enduml

@@ -1,0 +1,18 @@
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 13
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1D2B4F
+  ArrowColor #555F73
+  FontColor #1D2B4F
+  StereotypeFontColor #2E75B6
+}
+skinparam note {
+  BackgroundColor #F4F7FB
+  BorderColor #2E75B6
+  FontColor #1D2B4F
+}
+hide empty members

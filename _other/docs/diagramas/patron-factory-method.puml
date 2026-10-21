@@ -1,0 +1,22 @@
+@startuml
+!include _estilo-patrones.iuml
+enum TipoPromocion <<Creator>> {
+  PORCENTAJE
+  MONTO_FIJO
+  NXM
+  + {abstract} crear(nombre, parametros, condiciones, hoy)
+}
+abstract class Promocion <<Product>>
+class PromocionPorcentaje <<ConcreteProduct>>
+class PromocionMontoFijo <<ConcreteProduct>>
+class PromocionNxM <<ConcreteProduct>>
+class GestorPromociones <<Client>> {
+  + crear(tipo, nombre, parametros, condiciones)
+}
+GestorPromociones ..> TipoPromocion
+TipoPromocion ..> Promocion : crea
+Promocion <|-- PromocionPorcentaje
+Promocion <|-- PromocionMontoFijo
+Promocion <|-- PromocionNxM
+note bottom of TipoPromocion : cada constante decide\nqué subclase instancia
+@enduml

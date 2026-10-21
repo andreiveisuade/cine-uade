@@ -1,0 +1,20 @@
+@startuml
+!include _estilo-patrones.iuml
+class ManejadorErrores <<Client>> {
+  - CADENA : List<LecturaDelCuerpo>
+  + cuerpoIlegible(e) : ResponseEntity<ErrorVistaDTO>
+}
+interface LecturaDelCuerpo <<Handler>> {
+  + mensaje(e) : Optional<String>
+}
+class SinCuerpo <<ConcreteHandler>>
+class CampoConValorInvalido <<ConcreteHandler>>
+class RaizQueNoEsObjeto <<ConcreteHandler>>
+class JsonMalFormado <<ConcreteHandler>>
+ManejadorErrores o--> "4" LecturaDelCuerpo : en orden
+LecturaDelCuerpo <|.. SinCuerpo
+LecturaDelCuerpo <|.. CampoConValorInvalido
+LecturaDelCuerpo <|.. RaizQueNoEsObjeto
+LecturaDelCuerpo <|.. JsonMalFormado
+note bottom of JsonMalFormado : último eslabón: siempre contesta
+@enduml

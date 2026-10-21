@@ -1,0 +1,27 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Baja cohesión" {
+  class "Ocupacion" as O1 {
+    + asientosOcupados(funcionId, sesion)
+    + libresEntre(asientos, ocupados)
+    + bloquear(funcionId, codigos, sesion)
+    + liberar(funcionId, sesion)
+    + borrarVencidos()
+  }
+}
+package "Alta cohesión" {
+  class "Ocupacion" as O2 {
+    + asientosOcupados(funcionId, sesion)
+    + libresEntre(asientos, ocupados)
+  }
+  class BloqueoDeButacas {
+    + bloquear(funcionId, codigos, sesion)
+    + liberar(funcionId, sesion)
+    + borrarVencidos()
+  }
+  class ButacasBloqueadas
+  BloqueoDeButacas --> O2
+  BloqueoDeButacas ..> ButacasBloqueadas
+}
+note bottom of O1 : ocupación y bloqueo mezclados:\ndos motivos para cambiar
+@enduml

@@ -87,12 +87,9 @@ package "model.cartelera" {
     +getPedidaEn(): LocalDateTime
     +getTerminoEn(): LocalDateTime [0..1]
     +getEstado(): EstadoImportacion
-    +getNuevas(): int
-    +getSalteadas(): int
-    +getFallidas(): int
-    +getDetalle(): String [0..1]
+    +getResumen(): ResumenDeCorrida
     --si se puede correr otra--
-    +terminar(nuevas, salteadas, fallidas, detalle, cuando)
+    +terminar(resumen, cuando)
     +fallar(motivo, cuando)
     +estaEnCurso(): boolean
     +quedoColgada(plazo, ahora): boolean
@@ -100,8 +97,16 @@ package "model.cartelera" {
   }
   ' Tres y no cuatro: no hay PENDIENTE. La corrida arranca en el mismo
   ' instante en que se la pide, asi que nunca hay una esperando su turno.
+  ' State: el estado decide las transiciones (EN_CURSO -> TERMINADA | FALLIDA).
   enum EstadoImportacion <<enum>> {
     EN_CURSO / TERMINADA / FALLIDA
+  }
+  ' Los contadores y el detalle viajan juntos, sobre las mismas columnas.
+  class ResumenDeCorrida <<record>> <<Embeddable>> {
+    nuevas: int
+    salteadas: int
+    fallidas: int
+    detalle: String [0..1]
   }
 }
 
@@ -280,5 +285,7 @@ Programacion *-- "1" FormatoDeFuncion
 Funcion "*" --> "0..1" Programacion : generada por >
 Programacion "*" --> "1" Pelicula
 Programacion "*" --> "1" Sala
+
+Importacion *-- ResumenDeCorrida
 
 @enduml

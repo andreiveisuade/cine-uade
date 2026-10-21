@@ -1,0 +1,20 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorReservas {
+  - butacasPedidas(funcion, tarifas) : List<ButacaPedida>
+}
+class Reserva {
+  + Reserva(funcion, cliente, butacas, creadaEn)
+}
+class ButacaPedida <<record>> {
+  asiento : Asiento
+  tarifa : TipoTarifa
+}
+class Entrada
+GestorReservas ..> Reserva
+GestorReservas ..> ButacaPedida
+Reserva "1" *--> "1..10" Entrada : contiene
+Reserva ..> Entrada : <<create>>
+Reserva ..> ButacaPedida
+note bottom of Reserva : Reserva contiene las entradas\ny conoce el precio de su función\n→ es su Creador
+@enduml

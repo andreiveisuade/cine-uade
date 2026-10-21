@@ -1,0 +1,27 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Violación: switch por tipo (hipotético)" {
+  class "GestorPagos" as G1 #FBE3E3 {
+    + descuento(tipo, ...) : Dinero
+  }
+  note bottom of G1 : switch (tipo) { PORCENTAJE, MONTO_FIJO, NXM }\nuna promo nueva obliga a editar el gestor
+}
+package "Corrección: se extiende sin modificar" {
+  abstract class Promocion {
+    + {abstract} calcularDescuento(entradas) : Dinero
+  }
+  class PromocionPorcentaje
+  class PromocionMontoFijo
+  class PromocionNxM
+  class "Promocion3x2 (nueva)" as Nueva
+  enum TipoPromocion {
+    + crear(...) : Promocion
+  }
+  PromocionPorcentaje --|> Promocion
+  PromocionMontoFijo --|> Promocion
+  PromocionNxM --|> Promocion
+  Nueva --|> Promocion
+  TipoPromocion ..> Promocion : <<create>>
+}
+G1 -[hidden]right- Promocion
+@enduml

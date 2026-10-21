@@ -1,0 +1,32 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Antes: una clase, tres razones para cambiar" {
+  class "PlanificadorGrilla" as P0 #FBE3E3 {
+    + proponer(criterios) : PropuestaGrilla
+    + aplicar(criterios) : PropuestaGrilla
+    - repartir(...) : List<PaseSugerido>
+    - primerIntento(fecha) : LocalDateTime
+    - cierre(fecha) : LocalDateTime
+  }
+}
+package "Después: una razón para cambiar por clase" {
+  class PlanificadorGrilla {
+    + proponer(criterios) : PropuestaGrilla
+    + aplicar(criterios) : PropuestaGrilla
+  }
+  class RepartoDePases {
+    - asignados : Map<Integer, Integer>
+    + repartir(salas, agendas, ventana) : List<PaseSugerido>
+  }
+  class VentanaDelDia {
+    + fechas() : List<LocalDate>
+    + primerIntento(fecha) : LocalDateTime
+    + cierre(fecha) : LocalDateTime
+  }
+  PlanificadorGrilla ..> RepartoDePases
+  PlanificadorGrilla ..> VentanaDelDia
+  RepartoDePases ..> VentanaDelDia
+}
+P0 -[hidden]right- PlanificadorGrilla
+note bottom of RepartoDePases : el algoritmo de reparto\ncambia sin tocar al caso de uso
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+!include _estilo-patrones.iuml
+class ReservaController <<HTTP>> {
+  + reservar(PedidoReservaDTO) : ResponseEntity
+  + cancelar(id) : ReservaVistaDTO
+}
+class GestorReservas <<controlador de CU>> {
+  + reservar(funcionId, email, butacas) : Reserva
+  + cancelar(id) : Reserva
+}
+class Reserva
+class Entrada
+ReservaController --> GestorReservas
+GestorReservas --> Reserva : coordina
+Reserva "1" *--> "1..*" Entrada
+note right of ReservaController : recibe el pedido, traduce y\ndelega: no tiene lógica de negocio
+note right of GestorReservas : orquesta el caso de uso\ny delega en el modelo
+@enduml

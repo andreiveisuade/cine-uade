@@ -1,0 +1,21 @@
+@startuml
+!include _estilo-patrones.iuml
+abstract class "PantallaListado<T>" as PantallaListado <<AbstractClass>> {
+  + recargar()
+  + buscar()
+  # {abstract} obtener(filtros)
+  # {abstract} tabla()
+  # {abstract} sinFiltrar(todas)
+  # alRecargar(todas)
+  # alMostrar(visibles)
+}
+class PantallaFunciones <<ConcreteClass>>
+class PantallaPeliculas <<ConcreteClass>>
+class PantallaProgramaciones <<ConcreteClass>>
+class PantallaReservas <<ConcreteClass>>
+PantallaListado <|-- PantallaFunciones
+PantallaListado <|-- PantallaPeliculas
+PantallaListado <|-- PantallaProgramaciones
+PantallaListado <|-- PantallaReservas
+note right of PantallaListado : recargar() fija el esqueleto;\nlas subclases completan los pasos
+@enduml

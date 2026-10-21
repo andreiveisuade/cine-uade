@@ -1,0 +1,22 @@
+@startuml
+!include _estilo-patrones.iuml
+class Reserva
+class Funcion
+class GestorReservas
+class Ocupacion <<fabricación pura>> {
+  + asientosOcupados(funcionId, sesion) : Set<Integer>
+  + bloquear(funcionId, codigos, sesion) : Bloqueo
+}
+class AgendaDeSala <<fabricación pura>> {
+  + chocaCon(inicio, fin) : Optional<Funcion>
+}
+class ValidadorReserva <<fabricación pura>> {
+  + {static} validar(...) : void
+}
+GestorReservas --> Ocupacion
+GestorFunciones --> AgendaDeSala
+Reserva ..> ValidadorReserva
+note bottom of Ocupacion : no es concepto del cine ni CU:\nevita duplicar "ocupado" en dos gestores
+note bottom of AgendaDeSala : única definición del choque\nde funciones en una sala
+note bottom of ValidadorReserva : saca las reglas de la entidad\npara mantenerla cohesiva
+@enduml
