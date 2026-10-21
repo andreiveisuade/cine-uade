@@ -131,8 +131,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         return texto;
     }
 
-    // Lo decide el backend con las mismas reglas que al cobrar y cancelar (R13, R17, R19): un botón habilitado no
-    // termina en un rechazo por el estado o la hora.
+    // Mismas reglas del backend que al cobrar y cancelar (R13, R17, R19): un botón habilitado no termina en rechazo.
     private void habilitar() {
         cobrar.setEnabled(tabla.seleccionada().map(Reserva::cobrable).orElse(false));
         botones.refrescar();

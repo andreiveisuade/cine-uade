@@ -32,10 +32,7 @@ import java.util.List;
 import static ar.uade.cine.swing.comun.Formato.hora;
 
 // El planificador de la semana: el backend elige elenco y pases; acá solo se piden, se comparan y se aplican.
-/**
- * Planificador de la semana: el backend elige el elenco y reparte los pases; acá solo se piden y se muestran.
- * Determinista: lo que muestra Previsualizar es exactamente lo que crea Aplicar.
- */
+// Determinista: lo que muestra Previsualizar es lo que crea Aplicar.
 public final class PantallaPlanificador extends Pantalla {
 
     private record Idiomas(List<String> idiomas, List<String> proyecciones) {

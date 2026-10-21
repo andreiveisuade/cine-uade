@@ -75,8 +75,7 @@ final class ProductosALaVenta extends JScrollPane {
         JPanel producto = new JPanel(new BorderLayout());
         producto.add(nombre, BorderLayout.NORTH);
         if (p.esCombo()) {
-            // Debajo del nombre y sin ancho propio: un combo largo se corta con "…" en vez de empujar el precio y la
-            // cantidad fuera de la vista.
+            // Sin ancho propio: un combo largo se corta con "…" en vez de empujar el precio fuera de la vista.
             JLabel trae = new JLabel(PantallaCandy.componentesDe(p));
             trae.setForeground(Colores.secundario());
             trae.setToolTipText(PantallaCandy.componentesDe(p));

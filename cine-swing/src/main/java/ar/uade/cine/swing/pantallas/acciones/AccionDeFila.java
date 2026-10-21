@@ -3,12 +3,7 @@ package ar.uade.cine.swing.pantallas.acciones;
 import java.util.Optional;
 
 // Una operación sobre la fila elegida de un listado: qué dice su botón, qué pregunta, qué pide y qué avisa.
-/**
- * Patrón Command: las pantallas repetían "tomar la fila, confirmar, pedir fuera del EDT, avisar y recargar" en cada
- * botón, con el detalle de la operación mezclado en el armado de la vista. Ahora cada operación es un objeto
- * (ConcreteCommand, uno por archivo en su subdominio) que conoce a su Api (Receiver); {@link BotonesDeFila} (Invoker)
- * lo dispara sin saber cuál es, y la pantalla (Client) solo arma la lista.
- */
+// Patrón Command: ConcreteCommand por operación, con su Api (Receiver); BotonesDeFila (Invoker) la dispara sin saber cuál es.
 public interface AccionDeFila<T> {
 
     /** El texto del botón mientras no hay fila elegida. */

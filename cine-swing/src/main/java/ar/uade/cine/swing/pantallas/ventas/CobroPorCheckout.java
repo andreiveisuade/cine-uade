@@ -20,8 +20,7 @@ record CobroPorCheckout(ApiVentas api) implements FormaDeCobro {
 
     @Override
     public void enviar(Reserva reserva, MedioPago medio, CajaDeCobro caja) {
-        // Abrir el checkout no cobra, así que no se pregunta. Valida R5, R17 y R19 antes de mandar a pagar: si no,
-        // hay plata que devolver.
+        // Abrir el checkout no cobra, no se pregunta; valida R5, R17 y R19 antes: si no, hay plata que devolver.
         caja.pedir(() -> api.abrirCheckout(reserva.id(), medio.nombre()), caja::mostrarCheckout);
     }
 }

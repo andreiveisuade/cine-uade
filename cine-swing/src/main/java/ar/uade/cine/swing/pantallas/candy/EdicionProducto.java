@@ -16,10 +16,7 @@ import javax.swing.JTextField;
 import java.awt.Component;
 
 // El diálogo que cambia nombre y precio de un producto de la carta, lo único que el backend deja editar.
-/**
- * Con un campo mal, el diálogo vuelve a abrirse con el motivo en vez de cerrarse y perder lo tipeado; también si el que
- * lo rechaza es el backend.
- */
+// Con un campo mal, el diálogo se reabre con el motivo para no perder lo tipeado.
 final class EdicionProducto {
 
     private final Component origen;

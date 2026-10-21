@@ -52,8 +52,7 @@ public final class PantallaSalas extends Pantalla {
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final JTextField distribucion = Campos.soloListaDeEnteros(new JTextField());
-    // Vacío dice cómo se escribe; con filas, las cuenta. A la vista y no en un tooltip: el formato no se
-    // adivina por el nombre del campo, y un tooltip solo aparece si se pasa el mouse (y tapa el campo).
+    // A la vista y no en un tooltip: el formato no se adivina por el nombre del campo.
     private static final String FORMATO_FILAS =
             "Una cantidad por fila, separadas por coma; la primera fila es la A. Ej: 8, 10, 12";
     private final JLabel resumenDistribucion = Componentes.nota(FORMATO_FILAS);

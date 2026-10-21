@@ -7,11 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 // Un listado con filtros y su conteo; Template Method: cada pantalla dice cómo pedir y qué contar, no cuándo.
-/**
- * Películas, funciones, grillas y reservas se listaban igual y cada una lo reescribía: al entrar se piden todas (para
- * el "mostrando 3 de 40") y después lo filtrado, cada vez que cambia un filtro. Todas se vuelven a pedir solo al entrar
- * o después de un cambio, no en cada filtro.
- */
+// Al entrar se piden todas (para el "mostrando 3 de 40") y después lo filtrado en cada cambio de filtro.
 public abstract class PantallaListado<T> extends Pantalla {
 
     protected final BarraFiltros filtros = new BarraFiltros();

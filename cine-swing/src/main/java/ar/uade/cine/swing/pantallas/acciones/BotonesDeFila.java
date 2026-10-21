@@ -11,10 +11,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 // Los botones de las acciones de fila: cada uno toma la fila elegida, confirma si hace falta, pide y recarga.
-/**
- * Invoker del patrón Command (ver {@link AccionDeFila}): la política de {@link Mensajes} ("lo destructivo se
- * confirma") la cumple acá, para todas las acciones, en vez de depender de que cada pantalla se acuerde.
- */
+// Invoker del Command: acá se cumple "lo destructivo se confirma" (Mensajes), para todas las acciones.
 public final class BotonesDeFila<T> {
 
     private record Boton<T>(AccionDeFila<T> accion, JButton boton) {

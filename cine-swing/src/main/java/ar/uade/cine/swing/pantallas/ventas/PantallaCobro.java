@@ -33,10 +33,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // Cobro de una reserva: el detalle de lo que se cobra a un lado, el medio y el botón al otro (PanelCobro).
-/**
- * El importe no se tipea: sale del total de las butacas y el descuento lo resuelve el backend al cobrar, porque depende
- * del medio de pago.
- */
+// El importe no se tipea: el descuento depende del medio y lo resuelve el backend al cobrar.
 public final class PantallaCobro extends Pantalla {
 
     private record Datos(Reserva reserva, List<MedioPago> medios, List<Tarifa> tarifas) {
@@ -60,8 +57,7 @@ public final class PantallaCobro extends Pantalla {
         centro.add(cuerpo, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
 
-        // GET /api/reservas/{id} trae lo mismo embebido que el listado. Un 404 se muestra en la pantalla, no en un
-        // diálogo: sin reserva no hay nada más que hacer acá.
+        // Un 404 se muestra en la pantalla y no en un diálogo: sin reserva no hay nada más que hacer.
         Tarea.ejecutar(this, () -> new Datos(apiVentas.obtenerReserva(reservaId), apiCatalogos.obtenerMediosPago(),
                 apiCatalogos.obtenerTarifas()), this::pintar, error -> {
             if (!error.esSesionVencida()) mostrarNota(error.getMessage());

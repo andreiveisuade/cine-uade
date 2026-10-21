@@ -8,10 +8,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 // Cada campo de beneficio de una promoción: nombre en el JSON, etiqueta, si es entero y valor inicial.
-/**
- * Cuáles pide cada tipo de promoción lo dice {@code GET /api/tipos-promocion}, no este enum: un tipo nuevo que use
- * estos campos no toca la pantalla.
- */
+// Qué campos pide cada tipo lo dice {@code GET /api/tipos-promocion}, no este enum.
 enum CampoBeneficio {
 
     PORCENTAJE("porcentaje", "Porcentaje", false, "30"),
