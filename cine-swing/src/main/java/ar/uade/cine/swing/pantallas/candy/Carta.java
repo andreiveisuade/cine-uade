@@ -163,7 +163,7 @@ final class Carta extends Seccion {
         String tipo = v.elegido(tipoProducto, "Tipo");
         Double precio = v.decimal(precioProducto, "Precio", true);
         if (!v.ok()) return;
-        PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio);
+        PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio, null);
         Tarea.ejecutar(this, () -> apiCandy.crearProductoCandy(pedido), creado -> {
             avisar("Producto agregado");
             nombreProducto.setText("");
@@ -179,7 +179,7 @@ final class Carta extends Seccion {
         Double precio = v.decimal(precioCombo, "Precio del combo", true);
         v.alMencionar("combo", precioCombo);
         if (!v.ok()) return;
-        PedidoCombo pedido = new PedidoCombo(nombre, precio, cantidadesCombo.elegidas());
+        PedidoCombo pedido = new PedidoCombo(nombre, precio, cantidadesCombo.elegidas(), null);
         Tarea.ejecutar(this, () -> apiCandy.armarComboCandy(pedido), creado -> {
             avisar("Combo armado");
             nombreCombo.setText("");

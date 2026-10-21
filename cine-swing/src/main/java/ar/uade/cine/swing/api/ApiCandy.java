@@ -2,12 +2,12 @@ package ar.uade.cine.swing.api;
 
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
+import ar.uade.cine.swing.api.dto.candy.PedidoEdicionProducto;
 import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.PedidoVenta;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import lombok.RequiredArgsConstructor;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,11 +29,8 @@ public final class ApiCandy {
         return http.post("/candy/combos", combo, Producto.class);
     }
 
-    public Producto editarProductoCandy(int id, String nombre, Double precio) {
-        Map<String, Object> cuerpo = new LinkedHashMap<>();
-        cuerpo.put("nombre", nombre);
-        cuerpo.put("precio", precio);
-        return http.put("/candy/productos/" + id, cuerpo, Producto.class);
+    public Producto editarProductoCandy(int id, PedidoEdicionProducto producto) {
+        return http.put("/candy/productos/" + id, producto, Producto.class);
     }
 
     public Producto cambiarDisponibilidadCandy(int id, boolean disponible) {

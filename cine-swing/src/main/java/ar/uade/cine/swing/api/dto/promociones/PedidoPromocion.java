@@ -9,5 +9,5 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PedidoPromocion(String nombre, String tipo, Double porcentaje, Double monto, Integer lleva,
                               Integer paga, String vigenciaDesde, String vigenciaHasta, List<String> diasSemana,
-                              String horaDesde, String horaHasta, List<String> mediosPago) {
+                              String horaDesde, String horaHasta, List<String> mediosPago, String imagenUrl) {
 }

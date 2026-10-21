@@ -1,16 +1,25 @@
 package ar.uade.cine.swing.api;
 
+import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
+import ar.uade.cine.swing.api.dto.candy.PedidoEdicionProducto;
+import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.cartelera.PedidoPelicula;
 import ar.uade.cine.swing.api.dto.catalogos.TipoProducto;
 import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
+import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
+import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,5 +167,75 @@ class ApisTest {
         // Un backend viejo que no los manda deja los botones apagados, no prendidos.
         assertFalse(reservas.get(1).cobrable());
         assertFalse(reservas.get(1).cancelable());
+    }
+
+    @Test
+    void subeLaImagenEnMultipartConElCampoArchivo(@TempDir Path carpeta) throws IOException {
+        Path archivo = Files.writeString(carpeta.resolve("poster.png"), "PNGDATA");
+        servidor.responder("POST /api/imagenes", 201, "{\"url\":\"/api/imagenes/abc.png\"}");
+
+        String url = new ApiImagenes(http).subir(archivo);
+
+        assertEquals("/api/imagenes/abc.png", url);
+        ServidorFalso.Recibido pedido = servidor.ultimo();
+        assertTrue(pedido.tipoCuerpo().startsWith("multipart/form-data; boundary="));
+        String limite = pedido.tipoCuerpo().substring(pedido.tipoCuerpo().indexOf('=') + 1);
+        assertEquals("--" + limite + "\r\n"
+                + "Content-Disposition: form-data; name=\"archivo\"; filename=\"poster.png\"\r\n"
+                + "Content-Type: image/png\r\n\r\n"
+                + "PNGDATA\r\n--" + limite + "--\r\n", pedido.cuerpo());
+        assertTrue(pedido.autorizacion().startsWith("Basic "));
+    }
+
+    @Test
+    void laImagenSeDescargaPorLaUrlQueGuardoElBackend() {
+        servidor.responder("GET /api/imagenes/abc.png", 200, "PNGDATA");
+
+        byte[] datos = new ApiImagenes(http).descargar("/api/imagenes/abc.png");
+
+        assertEquals("PNGDATA", new String(datos, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void editarUnaPromocionMandaElMismoCuerpoQueElAltaPorPut() {
+        servidor.responder("PUT /api/promociones/7", 200, "{\"id\":7,\"nombre\":\"Miercoles\",\"activa\":true,"
+                + "\"imagenUrl\":\"/api/imagenes/abc.png\"}");
+        PedidoPromocion pedido = new PedidoPromocion("Miercoles", "PORCENTAJE", 30.0, null, null, null,
+                "2026-10-01", "2026-12-31", List.of("WEDNESDAY"), null, null, List.of(), "/api/imagenes/abc.png");
+
+        Promocion editada = new ApiPromociones(http).editarPromocion(7, pedido);
+
+        assertEquals("/api/imagenes/abc.png", editada.imagenUrl());
+        assertEquals("PUT", servidor.ultimo().metodo());
+        assertEquals("""
+                {"nombre":"Miercoles","tipo":"PORCENTAJE","porcentaje":30.0,"monto":null,"lleva":null,"paga":null,\
+                "vigenciaDesde":"2026-10-01","vigenciaHasta":"2026-12-31","diasSemana":["WEDNESDAY"],\
+                "horaDesde":null,"horaHasta":null,"mediosPago":[],"imagenUrl":"/api/imagenes/abc.png"}""",
+                servidor.ultimo().cuerpo());
+    }
+
+    @Test
+    void laImagenViajaEnLosPedidosDeProductoYCombo() {
+        servidor.responder("POST /api/candy/productos", 201, "{\"id\":1}");
+        servidor.responder("POST /api/candy/combos", 201, "{\"id\":2}");
+        ApiCandy candy = new ApiCandy(http);
+
+        candy.crearProductoCandy(new PedidoProducto("Pochoclos", "POCHOCLOS", 5000.0, "/api/imagenes/a.png"));
+        assertEquals("{\"nombre\":\"Pochoclos\",\"tipo\":\"POCHOCLOS\",\"precio\":5000.0,"
+                + "\"imagenUrl\":\"/api/imagenes/a.png\"}", servidor.ultimo().cuerpo());
+
+        candy.armarComboCandy(new PedidoCombo("Combo", 8000.0, Map.of(1, 2), "/api/imagenes/b.png"));
+        assertEquals("{\"nombre\":\"Combo\",\"precio\":8000.0,\"componentes\":{\"1\":2},"
+                + "\"imagenUrl\":\"/api/imagenes/b.png\"}", servidor.ultimo().cuerpo());
+    }
+
+    // El PUT de producto reemplaza todo: un null en imagenUrl es "sin imagen", tiene que viajar.
+    @Test
+    void editarUnProductoSinImagenMandaImagenUrlEnNull() {
+        servidor.responder("PUT /api/candy/productos/3", 200, "{\"id\":3}");
+
+        new ApiCandy(http).editarProductoCandy(3, new PedidoEdicionProducto("Agua", 1500.0, null));
+
+        assertEquals("{\"nombre\":\"Agua\",\"precio\":1500.0,\"imagenUrl\":null}", servidor.ultimo().cuerpo());
     }
 }

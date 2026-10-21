@@ -14,7 +14,7 @@ import java.util.Map;
 /** El backend de mentira en un puerto libre: cada test declara qué contesta cada ruta y mira qué le pidieron. */
 public final class ServidorFalso {
 
-    public record Recibido(String metodo, String ruta, String autorizacion, String cuerpo) {
+    public record Recibido(String metodo, String ruta, String autorizacion, String tipoCuerpo, String cuerpo) {
     }
 
     private record Respuesta(int estado, String cuerpo) {
@@ -53,7 +53,8 @@ public final class ServidorFalso {
         String cuerpo = new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         synchronized (recibidos) {
             recibidos.add(new Recibido(intercambio.getRequestMethod(), ruta,
-                    intercambio.getRequestHeaders().getFirst("Authorization"), cuerpo));
+                    intercambio.getRequestHeaders().getFirst("Authorization"),
+                    intercambio.getRequestHeaders().getFirst("Content-Type"), cuerpo));
         }
         Respuesta respuesta = respuestas.getOrDefault(intercambio.getRequestMethod() + " " + ruta,
                 new Respuesta(404, "{\"error\":\"No existe " + ruta + "\"}"));

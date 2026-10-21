@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.candy;
 
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ErrorApi;
+import ar.uade.cine.swing.api.dto.candy.PedidoEdicionProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
@@ -72,7 +73,8 @@ final class EdicionProducto {
     }
 
     private void guardar(Validacion v, String nuevoNombre, Double nuevoPrecio) {
-        Tarea.ejecutar(origen, () -> apiCandy.editarProductoCandy(producto.id(), nuevoNombre, nuevoPrecio), editado -> {
+        Tarea.ejecutar(origen, () -> apiCandy.editarProductoCandy(producto.id(),
+                new PedidoEdicionProducto(nuevoNombre, nuevoPrecio, producto.imagenUrl())), editado -> {
             Mensajes.exito(origen, "Producto actualizado");
             alGuardar.run();
         }, e -> {

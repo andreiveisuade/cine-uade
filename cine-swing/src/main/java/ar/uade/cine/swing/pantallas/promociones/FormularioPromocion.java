@@ -129,7 +129,7 @@ final class FormularioPromocion extends Seccion {
         if (!v.ok()) return;
         PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
                 (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
-                vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados());
+                vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(), null);
         Tarea.ejecutar(this, () -> apiPromociones.crearPromocion(pedido), creada -> {
             avisar("Promoción creada");
             limpiar();
