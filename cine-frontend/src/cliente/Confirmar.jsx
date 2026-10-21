@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Alert, Anchor, Button, Grid, Paper, Stack, Table, Text, TextInput, Title } from "@mantine/core";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
@@ -27,8 +27,9 @@ export function Confirmar() {
   const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
   const [enviando, setEnviando] = useState(false);
-  // La reserva ya está hecha y se va al ticket: vaciar la selección no es "se perdió".
-  const reservada = useRef(false);
+  // La reserva ya está hecha y se va al ticket: vaciar la selección no es "se perdió". Es estado y no ref porque
+  // el render lo lee (esta pantalla sigue montada mientras dura la animación de salida).
+  const [reservada, setReservada] = useState(false);
   const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
   const funcion = carga.datos?.[0];
 
@@ -37,7 +38,7 @@ export function Confirmar() {
 
   if (!funcion) return <EsperaOError carga={carga} />;
   // Si se recargó la página la selección se perdió: volver al mapa.
-  if (!reservada.current && (seleccion.funcionId !== funcion.id || Object.keys(seleccion.butacas).length === 0)) {
+  if (!reservada && (seleccion.funcionId !== funcion.id || Object.keys(seleccion.butacas).length === 0)) {
     return <Navigate to={`/funcion/${funcion.id}`} replace />;
   }
 
@@ -62,7 +63,7 @@ export function Confirmar() {
         sesion: sesionDeCompra(),
       });
       recordarCliente({ nombre: nombre.trim(), email: email.trim() });
-      reservada.current = true;
+      setReservada(true);
       setSeleccion({ funcionId: null, butacas: {} });
       // El alta ya trae la reserva entera: el ticket la dibuja sin volver a pedirla.
       navegar(`/ticket/${reserva.codigo}`, { state: { reserva } });
