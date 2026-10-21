@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Box, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import { m } from "motion/react";
 
@@ -35,10 +36,23 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
   const filas = [];
   for (let fila = 1; fila <= sala.filas; fila++) filas.push(asientos.filter((a) => a.fila === fila));
 
+  // 32 px es el mínimo táctil: una sala ancha no entra en un celular, así que el scroll arranca en el centro.
+  const marco = useRef(null);
+  const [desborda, setDesborda] = useState(false);
+  useEffect(() => {
+    const el = marco.current;
+    if (!el) return;
+    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    setDesborda(el.scrollWidth > el.clientWidth + 1);
+  }, [sala.filas, asientos.length]);
+
   return (
-    <Paper withBorder p={{ base: "md", sm: "xl" }} style={{ overflowX: "auto" }}>
+    <Paper withBorder p={{ base: "md", sm: "xl" }}>
+      {desborda && <Text size="xs" c="dimmed" ta="center" mb="xs">Deslizá para ver toda la sala</Text>}
+      <Box ref={marco} style={{ overflowX: "auto", ...(desborda && {
+        maskImage: "linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent)" }) }}>
       {/* La pantalla es una curva de luz: de ahí sale el ámbar del sitio. */}
-      <Box mx="auto" mb="xl" maw={520} aria-hidden>
+      <Box mx="auto" mb="xl" miw={280} maw={520} aria-hidden>
         <Box h={14} style={{ borderTop: "3px solid var(--mantine-color-ambar-4)", borderRadius: "50% / 100% 100% 0 0",
                              boxShadow: "0 -10px 28px -8px var(--mantine-color-ambar-4)" }} />
         <Text ta="center" fz={10} fw={700} c="dimmed" style={{ letterSpacing: "0.35em" }}>PANTALLA</Text>
@@ -53,7 +67,7 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
                 <UnstyledButton component={m.button} key={a.codigo} title={titulo} disabled={deshabilitado}
                   whileTap={deshabilitado ? undefined : { scale: 0.8 }} transition={POP}
                   onClick={() => alElegir?.(a)}
-                  style={{ height: 30, width: a.tipo === "PAREJA" ? 52 : 30, borderRadius: "6px 6px 3px 3px", fontSize: 11,
+                  style={{ height: 32, width: a.tipo === "PAREJA" ? 56 : 32, borderRadius: "6px 6px 3px 3px", fontSize: 11,
                            fontWeight: 550, fontVariantNumeric: "tabular-nums", textAlign: "center", flexShrink: 0, ...estilo }}>
                   {a.numero}{SIMBOLO[a.tipo]}
                 </UnstyledButton>
@@ -62,6 +76,7 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
           </Group>
         ))}
       </Stack>
+      </Box>
     </Paper>
   );
 }

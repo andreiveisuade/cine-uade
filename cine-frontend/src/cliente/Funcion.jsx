@@ -90,9 +90,6 @@ export function Funcion() {
     <div>
       <Encabezado titulo={funcion.pelicula.titulo} volver={{ a: `/pelicula/${funcion.peliculaId}`, texto: "Otras funciones" }}>
         <DatosFuncion funcion={funcion} size="md" fw={500} />
-        <Text size="sm" c="dimmed" className="cine-cifras">
-          {funcion.libres} butacas libres de {funcion.sala.capacidadSala} · precio base {precio(funcion.precio)}
-        </Text>
       </Encabezado>
 
       <Grid gap="lg" align="flex-start">
