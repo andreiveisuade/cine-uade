@@ -172,8 +172,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals(1, reservas.reservar(1, 1, generales("A1", "A1"), null).getCantidadEntradas());
     }
 
-    // "a1" y "A1" son dos claves del pedido y una sola butaca: antes llegaban dos entradas al
-    // UNIQUE y salía el 409 de "alguien tomó una de esas butacas", que no era lo que pasaba.
+    // "a1" y "A1" son dos claves y una butaca: sin normalizar, el UNIQUE daba el 409 de "alguien tomó una".
     @Test
     void laMismaButacaEscritaDeDosManerasSeRechazaComoRepetida() {
         Rechazo error = assertThrows(Rechazo.class,

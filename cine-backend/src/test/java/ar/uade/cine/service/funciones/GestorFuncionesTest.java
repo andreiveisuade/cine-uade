@@ -147,8 +147,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertEquals(1, funciones.listar().size());
     }
 
-    // R3 se busca por rango y no en toda la historia de la sala: el rango tiene que alcanzar a
-    // una función que empezó el día anterior y todavía se está proyectando.
+    // R3 se busca por rango: tiene que alcanzar a la función que empezó ayer y sigue proyectándose.
     @Test
     void rechazaFuncionQueEmpiezaMientrasCorreUnaLargaDelDiaAnterior() {
         cartelera.agregar("Satantango", 432, List.of(Genero.DRAMA), Clasificacion.MAS_16);

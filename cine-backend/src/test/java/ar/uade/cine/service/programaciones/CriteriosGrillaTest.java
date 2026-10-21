@@ -45,8 +45,7 @@ class CriteriosGrillaTest {
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(precio)))).getMessage());
     }
 
-    // hoy es el 14/08/2026. Una grilla que empieza en el pasado daba 201 sin crear nada (R20), y una que
-    // termina a más de un año se proponía entera y después no se podía aplicar.
+    // Hoy es el 14/08/2026. Una grilla que empieza en el pasado o termina a más de un año se rechaza (R20).
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             empieza ayer,                   2026-08-13, 7,  La grilla no puede empezar en el pasado

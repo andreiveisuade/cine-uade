@@ -28,8 +28,7 @@ class RepartoDePasesTest {
 
     private static final LocalDate DIA = LocalDate.of(2026, 9, 1);
 
-    // Una película de 100 minutos en una sala con 20 de limpieza, de 14 a 23: un pase cada dos horas
-    // mientras el siguiente termine antes del cierre.
+    // Película de 100 min, sala con 20 de limpieza, de 14 a 23: un pase cada dos horas mientras termine antes del cierre.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             el día entero desde la apertura,          2026-08-31T10:00, 14:00 16:00 18:00 20:00

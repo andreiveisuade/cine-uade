@@ -240,8 +240,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals(1, gestor.listarEnCartelera(null).size());
     }
 
-    // Si retuviera su conexión mientras extiende las grillas, pediría una segunda: con el pool
-    // entero pidiendo la cartelera a la vez, todos esperarían una que nadie suelta.
+    // Retener la conexión mientras extiende las grillas pediría otra: con el pool lleno, todos esperan.
     @Test
     void laCarteleraPublicaSeArreglaConUnaSolaConexionLibre() throws Exception {
         HikariDataSource pool = dataSource.unwrap(HikariDataSource.class);

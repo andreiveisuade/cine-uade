@@ -134,9 +134,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
-    // Las dos transacciones de cobrar y cancelar a la vez: cada una lee la reserva todavía
-    // RESERVADA, pasa su chequeo y escribe. Sin @Version ganaba la última; ahora la segunda
-    // escribe sobre una versión vieja y falla, y la reserva queda como la dejó la primera.
+    // Cobrar y cancelar a la vez: ambas leen RESERVADA y escriben; @Version hace fallar a la segunda.
     @Test
     void cobrarYCancelarALaVezLaMismaReservaNoTerminanLasDos() {
         int id = reservas.reservar(1, 1, generales("A1"), null).getId();
@@ -394,9 +392,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 
-    // Autorizar es cobrarle al cliente y no hay devolución (R13): la reserva que dejó de ser
-    // cobrable se rechaza antes de llegar a la pasarela, igual que al abrir el checkout.
-    // El checkout se abre directo en la pasarela: se abrió cuando todavía se podía cobrar.
+    // Autorizar es cobrar sin devolución (R13): la reserva ya no cobrable se rechaza antes de la pasarela,
+    // aunque el checkout se haya abierto cuando todavía se podía.
     @Test
     void noSeAutorizaEnLaPasarelaElCheckoutDeUnaReservaQueYaNoSePuedeCobrar() {
         PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
