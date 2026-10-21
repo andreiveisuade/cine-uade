@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -48,6 +54,9 @@ class PagoControllerTest extends PruebaDeApi {
     @Autowired
     private GestorSalas salas;
 
+    @LocalServerPort
+    private int puerto;
+
     private Reserva reserva;
 
     @BeforeEach
@@ -74,6 +83,28 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(checkout.get("id").asText().isBlank());
         assertTrue(checkout.get("urlPago").asText().contains(checkout.get("id").asText()));
         assertFalse(checkout.get("codigoQr").asText().isBlank());
+    }
+
+    // Llega el navegador del comprador, sin credenciales: vuelve a su ticket, no a un JSON. Con un
+    // cliente que no sigue el 302, porque lo que se prueba es adónde manda.
+    @Test
+    void laVueltaDesdeLaPasarelaCobraYRedirigeAlTicket() throws Exception {
+        String checkout = checkout("QR").json().get("id").asText();
+
+        HttpResponse<Void> respuesta = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                        URI.create("http://localhost:" + puerto + "/api/checkouts/" + checkout + "/retorno")).build(),
+                HttpResponse.BodyHandlers.discarding());
+
+        assertEquals(302, respuesta.statusCode());
+        assertEquals("/#/ticket/" + reserva.getCodigo(), respuesta.headers().firstValue("Location").orElseThrow());
+        assertEquals(200, get("/api/reservas/" + reserva.getId() + "/pago").estado(), "quedó cobrada");
+    }
+
+    @Test
+    void laVueltaDeUnCheckoutQueNoExisteEs404() {
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/checkouts/no-existe/retorno", null, null, null);
+
+        assertEquals(404, respuesta.estado());
     }
 
     @Test

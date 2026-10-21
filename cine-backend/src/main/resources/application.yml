@@ -87,6 +87,12 @@ cine:
     token: ${TMDB_TOKEN:}
     region: ${TMDB_REGION:AR}
     base: https://api.themoviedb.org/3
+  mercadopago:
+    # El Access Token de Mercado Pago (credenciales de prueba). Sin él, la pasarela emulada.
+    token: ${MP_ACCESS_TOKEN:}
+    base: https://api.mercadopago.com
+    # Adonde MP devuelve al comprador después de pagar: la dirección del sitio vista desde su navegador.
+    sitio: ${CINE_URL_PUBLICA:http://localhost:8080}
   incaa:
     # El encabezado de la declaración jurada. Ficticios: el TP no tiene un exhibidor inscripto.
     razon-social: ${INCAA_RAZON_SOCIAL:Cine UADE S.A.}
