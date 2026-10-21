@@ -13,7 +13,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | Textos | Nombres, títulos, emails, códigos y enums se comparan sin distinguir mayúsculas ni espacios alrededor |
 | Números | Un entero no acepta decimales (`1.0` tampoco) |
 | Importes | Un precio o un monto que se carga es mayor a cero, con hasta 2 decimales y hasta $ 1.000.000. Los precios que salen ya traen los multiplicadores |
-| Auth | HTTP Basic sin sesión: `Authorization: Basic base64(email:contraseña)` en cada pedido |
+| Auth | Empleados (Swing): HTTP Basic en cada pedido, `Authorization: Basic base64(email:contraseña)`. Clientes (web): cookie `JSESSIONID` que abre `POST /sesion`, HttpOnly y `SameSite=Lax` |
 
 ### Respuestas
 
@@ -32,11 +32,11 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `400` | Dato inválido o regla incumplida. Lo que falta se rechaza antes de buscar nada; un importe, antes que el resto | `Falta el nombre` |
 | `400` | Un enum, una fecha o un parámetro que no se entiende | `El medio de pago no es válido: CRIPTO` |
 | `400` | Un cuerpo ilegible: ausente, JSON roto, raíz que no es objeto, tipo equivocado o decimal en un entero | `El campo precio tiene un valor inválido: abc` |
-| `401` | Sin credenciales, o inválidas (también en rutas públicas) | `Hace falta iniciar sesión para esta operación` · `Email o contraseña incorrectos` |
+| `401` | Sin credenciales o sin sesión, o inválidas (también en rutas públicas) | `Hace falta iniciar sesión para esta operación` · `Email o contraseña incorrectos` |
 | `403` | El rol no alcanza | `Tu rol no tiene permiso para esta operación` |
-| `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente | `No existe la película 99` |
+| `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
-| `409` | Nombre, título o email ya usado | `Ya existe una sala con ese nombre` |
+| `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
 | `413` · `502` · `504` | nginx: cuerpo de más de 1 MB, backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
@@ -45,9 +45,12 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/clientes`, `/reservas`, `/funciones/{id}/bloqueos` y `/reservas/codigo/{codigo}/cancelacion`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/reservas?email=`, `/candy/productos`, los catálogos y Swagger |
+| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, los catálogos y Swagger |
+| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
+
+Un cliente con sesión que llama una ruta del encargado recibe `403`. `GET /reservas?email=` ya no existe.
 
 ## Catálogos
 
@@ -74,7 +77,7 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /cartelera?genero=` | Las películas en exhibición |
 | `GET /peliculas/{id}` | Una película |
 | `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
-| `POST /clientes` | `{nombre, email}`. Email `usuario@dominio.algo`, guardado en minúsculas, único también contra los empleados (`409`). Opcional: reservar da de alta igual |
+| `POST /clientes` | `{nombre, email, password}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes (reclamo, sin verificar el email); si ya tiene clave, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
 
 ```json
@@ -135,8 +138,8 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 | Ruta | Qué hace |
 |---|---|
 | `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo` |
-| `POST /reservas/codigo/{codigo}/cancelacion` | El cliente cancela la suya: solo sin cobrar (R13); libera las butacas (R6) |
-| `GET /reservas?email=` | Las de ese cliente, **sin `codigo`**: el email no prueba ser el dueño |
+| `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
+| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `400`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
 | `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
 
@@ -157,17 +160,42 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 - Cobrar y cancelar a la vez: gana el primero y el otro recibe `409`.
 - `GET /reservas/{id}/pago`: el pago, o `404` si todavía no se cobró.
 
-`POST /reservas/{id}/checkout` `{ "medio": "QR" }`: medios electrónicos, contra una pasarela emulada. Devuelve
-`{id, monto, urlPago, codigoQr}`; efectivo es `400`. `POST /checkouts/{id}/confirmacion`, sin cuerpo, lo
-autoriza: `201` con el pago. Revalida la reserva.
+`POST /reservas/{id}/checkout` `{ "medio": "QR" }` (encargado) y `POST /reservas/codigo/{codigo}/checkout`
+(cliente con sesión, solo la suya: sin sesión `401`, ajena `404`): medios electrónicos, efectivo es `400`. Ambos
+van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `201` con
+`{id, reservaId, medio, monto, urlPago, codigoQr}`.
+
+- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. `urlPago` lleva a MP.
+- `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
+- `POST /checkouts/{id}/confirmacion`, sin cuerpo, lo autoriza: `201` con el pago y revalida la reserva. Con MP
+  consulta `GET /v1/payments/search`; sin un pago `approved` da `409` con el motivo (rechazado, pendiente, sin pago).
+- `GET /checkouts/{id}/retorno` (público): la back_url de MP. Ignora la query que agrega MP, consulta el pago y
+  cobra si está aprobado (recargar no cobra dos veces). `302` a `/#/ticket/<codigo>` o
+  `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
+- Sin webhook (localhost): un pago `pending` no se re-consulta hasta que el comprador vuelva a abrir la back_url.
+
+### Rutas de la web
+
+| Ruta | Qué muestra |
+|---|---|
+| `#/` | Hero con destacadas y la cartelera |
+| `#/nosotros` | Integrantes y descripción del cine |
+| `#/ingresar` · `#/registro` | Entrar con email y clave · alta con nombre, email y clave (después entra solo) |
+| `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Pagar online. Sin sesión: búsqueda por código |
+| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. `aviso` es el motivo si el pago de MP no se cobró |
 
 ---
 
 # Encargado
 
-`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol}` (`ADMINISTRADOR` o `ACOMODADOR`).
-No hay token: quien llama guarda las credenciales y las manda en cada pedido. Clave mala y email inexistente
-dan el mismo `401`.
+`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol}` (`ADMINISTRADOR`, `ACOMODADOR` o
+`CLIENTE`). Clave mala y email inexistente dan el mismo `401`.
+
+- Empleado: no hay token ni sesión; quien llama guarda las credenciales y las manda en cada pedido (Swing).
+- Cliente: la respuesta setea `JSESSIONID` (HttpOnly, `SameSite=Lax`) y los pedidos siguientes la mandan sin Basic
+  (`credentials: 'same-origin'`, el default de fetch). Sin CSRF: `SameSite=Lax` no envía la cookie en un `POST` o `DELETE` de otro sitio.
+- `POST /sesion` sin Basic devuelve al usuario de la cookie, o `401`: así la web sabe quién está.
+- `DELETE /sesion` → `204`: invalida la sesión y borra la cookie.
 
 ## Cartelera y salas
 
