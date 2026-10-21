@@ -159,12 +159,13 @@ export function Ticket() {
 
   useEffect(() => {
     if (!pagoEnVivo || quieto || celebrada.current === codigo) return;
-    celebrada.current = codigo;
     // Se baja recién cuando hace falta: casi ningún ticket la usa.
     let vigente = true;
     let confetti;
     import("canvas-confetti").then(({ default: lanzar }) => {
       if (!vigente) return;
+      // Se marca al lanzar y no al entrar: StrictMode desmonta y vuelve a correr el efecto, y el primero se descarta.
+      celebrada.current = codigo;
       confetti = lanzar;
       lanzar({ particleCount: 120, spread: 75, origin: { y: 0.3 }, disableForReducedMotion: true });
     });
@@ -182,8 +183,13 @@ export function Ticket() {
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
 
   async function copiar() {
-    await navigator.clipboard.writeText(armarTicket(reserva));
-    avisar("Comprobante copiado");
+    // Sin permiso o fuera de HTTPS el navegador rechaza la escritura.
+    try {
+      await navigator.clipboard.writeText(armarTicket(reserva));
+      avisar("Comprobante copiado");
+    } catch {
+      avisar("No pudimos copiar el comprobante. Seleccionalo y copialo a mano.", "error");
+    }
   }
 
   return (

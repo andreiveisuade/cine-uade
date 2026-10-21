@@ -5,6 +5,7 @@ import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-ro
 import * as api from "../api/api-http.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { BotonTema } from "../componentes/BotonTema.jsx";
+import { ErrorDePantalla } from "../componentes/ErrorDePantalla.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { CompraEnCurso } from "./compra.jsx";
 import { Cartelera } from "./Cartelera.jsx";
@@ -97,23 +98,25 @@ export function AppCliente() {
         <AppShell.Main>
           <Container size="lg" py="md">
             <CompraEnCurso>
-              <AnimatePresence mode="wait" initial={false}>
-                <m.div key={seccion} {...PANTALLA}>
-                  <Routes location={ubicacion}>
-                    <Route index element={<Cartelera conHero />} />
-                    <Route path="cartelera/:genero?" element={<Cartelera />} />
-                    <Route path="pelicula/:id" element={<Pelicula />} />
-                    <Route path="funcion/:id" element={<Funcion />} />
-                    <Route path="confirmar/:id" element={<Confirmar />} />
-                    <Route path="ticket/:codigo" element={<Ticket />} />
-                    <Route path="mis-reservas" element={<MisReservas />} />
-                    <Route path="registro" element={<Registro />} />
-                    <Route path="ingresar" element={<Ingresar />} />
-                    <Route path="nosotros" element={<Nosotros />} />
-                    <Route path="*" element={<NoExiste />} />
-                  </Routes>
-                </m.div>
-              </AnimatePresence>
+              <ErrorDePantalla>
+                <AnimatePresence mode="wait" initial={false}>
+                  <m.div key={seccion} {...PANTALLA}>
+                    <Routes location={ubicacion}>
+                      <Route index element={<Cartelera conHero />} />
+                      <Route path="cartelera/:genero?" element={<Cartelera />} />
+                      <Route path="pelicula/:id" element={<Pelicula />} />
+                      <Route path="funcion/:id" element={<Funcion />} />
+                      <Route path="confirmar/:id" element={<Confirmar />} />
+                      <Route path="ticket/:codigo" element={<Ticket />} />
+                      <Route path="mis-reservas" element={<MisReservas />} />
+                      <Route path="registro" element={<Registro />} />
+                      <Route path="ingresar" element={<Ingresar />} />
+                      <Route path="nosotros" element={<Nosotros />} />
+                      <Route path="*" element={<NoExiste />} />
+                    </Routes>
+                  </m.div>
+                </AnimatePresence>
+              </ErrorDePantalla>
             </CompraEnCurso>
           </Container>
         </AppShell.Main>

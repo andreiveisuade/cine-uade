@@ -12,7 +12,8 @@ export function Ingresar() {
   const avisar = useAvisar();
   const { setUsuario } = useSesion();
   // El ticket manda el email con que se reservó, para entrar con ese.
-  const [email, setEmail] = useState(useLocation().state?.email || "");
+  const { state } = useLocation();
+  const [email, setEmail] = useState(state?.email || "");
   const [clave, setClave] = useState("");
   const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});

@@ -16,6 +16,8 @@ export function PagarOnline({ codigo }) {
 
   async function empezar() {
     setError(null);
+    // Mientras llegan los medios el botón queda cargando: un doble clic no pide dos veces.
+    setEnviando(true);
     try {
       // Online solo los que pasan por la pasarela; el efectivo se paga en la boletería.
       const electronicos = (await api.obtenerMediosDePago()).filter((m) => m.requiereAutorizacion);
@@ -24,6 +26,7 @@ export function PagarOnline({ codigo }) {
     } catch (e) {
       setError(e.message);
     }
+    setEnviando(false);
   }
 
   async function abrir() {
@@ -40,7 +43,7 @@ export function PagarOnline({ codigo }) {
   if (!medios) {
     return (
       <Stack gap="xs">
-        <Button onClick={empezar}>Pagar online</Button>
+        <Button loading={enviando} onClick={empezar}>Pagar online</Button>
         {error && <ErrorCaja>{error}</ErrorCaja>}
       </Stack>
     );

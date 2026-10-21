@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Button, Divider, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
@@ -47,14 +46,11 @@ export function Funcion() {
   const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
   const funcion = carga.datos?.[0];
 
-  // Otra función es otra compra: lo elegido para la anterior no se arrastra.
-  useEffect(() => {
-    if (funcion && seleccion.funcionId !== funcion.id) setSeleccion({ funcionId: funcion.id, butacas: {} });
-  }, [funcion, seleccion.funcionId, setSeleccion]);
-
   useRenovarBloqueo(funcion?.id);
 
   if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
+  // Otra función es otra compra: lo elegido para la anterior no se arrastra. Se deriva acá y no con un efecto que
+  // la vacíe; el primer clic la reemplaza porque `alternar` escribe la selección entera con este funcionId.
   const butacas = seleccion.funcionId === funcion.id ? seleccion.butacas : {};
   const { elegidas, total } = resumenCompra(funcion, butacas);
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useState } from "react";
 import { NativeSelect, Text } from "@mantine/core";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -44,14 +44,16 @@ const RENOVAR_CADA_MS = 60_000;
 
 export function useRenovarBloqueo(funcionId) {
   const { seleccion, setSeleccion } = useCompra();
-  // El intervalo se arma una vez: la ref le deja leer la selección de ahora.
-  const actual = useRef(seleccion.butacas);
-  actual.current = seleccion.butacas;
+  // El intervalo se arma una vez por función; el evento de efecto lee la selección de ahora sin rearmarlo
+  // (una ref escrita en el render rompería la pureza del render).
+  // Si la selección es de otra función no hay nada que sostener en esta.
+  const sostenerActual = useEffectEvent(async () =>
+    seleccion.funcionId === funcionId ? sostenerSeleccion(funcionId, seleccion.butacas) : []);
 
   useEffect(() => {
     if (!funcionId) return;
     const renovacion = setInterval(async () => {
-      const rechazadas = await sostenerSeleccion(funcionId, actual.current).catch(() => []);
+      const rechazadas = await sostenerActual().catch(() => []);
       if (rechazadas.length) {
         // Seguir mostrándolas elegidas sería prometer una butaca que ya no está.
         setSeleccion((s) => ({ ...s, butacas: sinButacas(s.butacas, rechazadas) }));

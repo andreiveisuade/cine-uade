@@ -80,8 +80,10 @@ function CarteleraEsqueleto() {
 export function Cartelera({ conHero = false }) {
   const { genero } = useParams();
   const carga = useCargar(() => Promise.all([api.obtenerCartelera(genero), api.obtenerGeneros()]), [genero]);
-  if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<CarteleraEsqueleto />} />;
-  const [peliculas, generos] = carga.datos;
+  // Mientras llega otro género se queda la lista anterior: las tarjetas se reordenan en vez de pasar por el esqueleto.
+  const datos = carga.datos ?? carga.previos;
+  if (!datos) return <EsperaOError carga={carga} esqueleto={<CarteleraEsqueleto />} />;
+  const [peliculas, generos] = datos;
 
   return (
     <Stack gap="lg">
