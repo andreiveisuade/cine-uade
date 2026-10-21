@@ -1,52 +1,53 @@
 #!/bin/sh
-# Sube cada webp de listas/ y se lo asigna a la promoción o producto del mismo nombre.
+# Sube cada webp de listas/ y se lo asigna a la promoción, producto o combo del mismo nombre.
 #
-# Funciona cuando se mergee el backend de imágenes: POST /api/imagenes (multipart, campo
-# `archivo`, admin) devuelve {"url"}, e `imagenUrl` se guarda con PUT en promociones y productos.
+#     ./cargar.sh                      # API=http://localhost:8080/api  ADMIN=encargado@cine.uade.ar:cine2026
 #
-#     ./cargar.sh
-#
-# El archivo se llama como el ítem: promo-miercoles-2x1.webp -> promoción "Miércoles 2x1";
-# producto-pochoclos-grandes.webp / combo-clasico.webp -> producto "Pochoclos grandes" / combo "Combo clásico".
-# Se compara sin acentos, en minúsculas y con guiones.
+# promo-miercoles-2x1.webp -> promoción "Miércoles 2x1"; producto-pochoclos-grandes.webp -> "Pochoclos grandes";
+# combo-clasico.webp -> "Combo clásico". Se compara sin acentos, en minúsculas y con guiones; lo que no existe se saltea.
 
-set -e
 cd "$(dirname "$0")"
-API="${API:-http://localhost:8080/api}"
-ADMIN="${ADMIN:-encargado@cine.uade.ar:cine2026}"
+API=${API:-http://localhost:8080/api} ADMIN=${ADMIN:-encargado@cine.uade.ar:cine2026} exec python3 - <<'EOF'
+import base64, glob, json, os, re, unicodedata, urllib.request, uuid
 
-# "Miércoles 2x1" -> "miercoles-2x1"
-slug() {
-    printf '%s' "$1" | perl -MUnicode::Normalize -CS -pe '$_=NFD($_); s/\p{M}//g' | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//; s/-$//'
-}
+API, ADMIN = os.environ["API"], os.environ["ADMIN"]
+AUTH = "Basic " + base64.b64encode(ADMIN.encode()).decode()
 
-# Busca en un listado el id cuyo nombre, pasado por slug(), es $2. $1 es el recurso.
-buscar_id() {
-    curl -s -u "$ADMIN" "$API/$1" | tr '{' '\n' | sed -n 's/.*"id":\([0-9]*\).*"nombre":"\([^"]*\)".*/\1 \2/p' |
-    while read -r id nombre; do
-        [ "$(slug "$nombre")" = "$2" ] && echo "$id" && break
-    done
-}
+def pedir(metodo, ruta, cuerpo=None, tipo="application/json"):
+    req = urllib.request.Request(API + ruta, data=cuerpo, method=metodo, headers={"Authorization": AUTH, "Content-Type": tipo})
+    with urllib.request.urlopen(req) as r:
+        texto = r.read()
+        return r.status, json.loads(texto) if texto else None
 
-# Reemplaza o agrega imagenUrl en el JSON actual del ítem y lo guarda con PUT.
-asignar() {
-    actual=$(curl -s -u "$ADMIN" "$API/$1/$2")
-    nuevo=$(printf '%s' "$actual" | sed 's/,"imagenUrl":"[^"]*"//; s/,"imagenUrl":null//; s/}$//')",\"imagenUrl\":\"$3\"}"
-    curl -s -o /dev/null -w '%{http_code}' -u "$ADMIN" -X PUT "$API/$1/$2" -H 'Content-Type: application/json' -d "$nuevo"
-}
+def slug(texto):
+    sin_acentos = "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
+    return re.sub(r"[^a-z0-9]+", "-", sin_acentos.lower()).strip("-")
 
-for webp in listas/*.webp; do
-    [ -f "$webp" ] || continue
-    nombre=$(basename "$webp" .webp)
-    case "$nombre" in
-        promo-*)    recurso=promociones;      clave=${nombre#promo-} ;;
-        producto-*) recurso=candy/productos;  clave=${nombre#producto-} ;;
-        combo-*)    recurso=candy/combos;     clave=$nombre ;;
-        *) echo "  salto $nombre: prefijo desconocido"; continue ;;
-    esac
-    id=$(buscar_id "$recurso" "$clave")
-    if [ -z "$id" ]; then echo "  salto $nombre: no hay ítem con ese nombre"; continue; fi
-    url=$(curl -s -u "$ADMIN" -F "archivo=@$webp;type=image/webp" "$API/imagenes" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')
-    if [ -z "$url" ]; then echo "  falló $nombre: la subida no devolvió url"; continue; fi
-    echo "  $(asignar "$recurso" "$id" "$url")   $nombre -> $recurso/$id"
-done
+def subir(ruta_webp):
+    borde = uuid.uuid4().hex
+    archivo = open(ruta_webp, "rb").read()
+    cuerpo = (f"--{borde}\r\nContent-Disposition: form-data; name=\"archivo\"; filename=\"{os.path.basename(ruta_webp)}\"\r\n"
+              f"Content-Type: image/webp\r\n\r\n").encode() + archivo + f"\r\n--{borde}--\r\n".encode()
+    return pedir("POST", "/imagenes", cuerpo, f"multipart/form-data; boundary={borde}")[1]["url"]
+
+promos = {slug(p["nombre"]): p for p in pedir("GET", "/promociones")[1]}
+productos = {slug(p["nombre"]): p for p in pedir("GET", "/candy/productos?todos=true")[1]}
+
+for webp in sorted(glob.glob("listas/*.webp")):
+    nombre = os.path.basename(webp)[:-5]
+    if nombre.startswith("promo-"):
+        item = promos.get(nombre[len("promo-"):])
+    else:
+        item = productos.get(nombre[len("producto-"):] if nombre.startswith("producto-") else nombre)
+    if not item:
+        print(f"  salto {nombre}: no hay ítem con ese nombre")
+        continue
+    url = subir(webp)
+    if nombre.startswith("promo-"):
+        cuerpo = {k: v for k, v in item.items() if k not in ("id", "activa")} | {"imagenUrl": url}
+        estado, _ = pedir("PUT", f"/promociones/{item['id']}", json.dumps(cuerpo).encode())
+    else:
+        cuerpo = {"nombre": item["nombre"], "precio": item["precio"], "imagenUrl": url}
+        estado, _ = pedir("PUT", f"/candy/productos/{item['id']}", json.dumps(cuerpo).encode())
+    print(f"  {estado}   {nombre} -> {item['nombre']}")
+EOF
