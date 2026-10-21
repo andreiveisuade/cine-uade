@@ -1,6 +1,7 @@
 package ar.uade.cine.infrastructure.pasarelas.emulada;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +19,7 @@ public class MercadoPagoEmulado implements PasarelaPagos {
     private final Map<String, Checkout> checkouts = new ConcurrentHashMap<>();
 
     @Override
-    public Checkout crear(int reservaId, MedioPago medio, Dinero monto) {
+    public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = "MP-" + numero(10);
         // El QR lleva solo el id: con el monto adentro, alguien podría editarlo antes de pagar.
         Checkout checkout = new Checkout(id, reservaId, medio, monto, HOST + id, "MP-QR|" + id);

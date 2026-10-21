@@ -334,6 +334,19 @@ class GestorPagosTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void elCheckoutVenceCuandoVenceLaReserva() {
+        PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, eventos, reloj);
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+
+        new TransactionTemplate(transacciones)
+                .executeWithoutResult(estado -> conEsaPasarela.iniciarCheckout(reserva.getId(), MedioPago.QR));
+
+        assertEquals(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR), pasarela.vence);
+    }
+
+    @Test
     void elEfectivoNoAbreCheckout() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
@@ -389,7 +402,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
                 pasarela, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
         reservas.cancelar(reserva.getId());
 
         Rechazo error = assertThrows(Rechazo.class,
@@ -416,7 +429,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
                 pasarela, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
 
         // Armado a mano no tiene el proxy de @Transactional: sin esto la función LAZY no se carga.
         RetornoCheckout retorno = new TransactionTemplate(transacciones)
@@ -450,6 +463,13 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private static class PasarelaQueCuenta extends MercadoPagoEmulado {
 
         private int autorizaciones;
+        private LocalDateTime vence;
+
+        @Override
+        public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
+            this.vence = vence;
+            return super.crear(reservaId, medio, monto, vence);
+        }
 
         @Override
         public String autorizar(Checkout checkout) {

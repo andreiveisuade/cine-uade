@@ -9,6 +9,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -32,6 +37,12 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final SecureRandom AZAR = new SecureRandom();
     private static final String MONEDA = "ARS";
+    // Los payment_type_id de MP Argentina: los que no son el medio pedido van en excluded_payment_types.
+    private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
+            "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
+    // MP interpreta la fecha con su zona: sin ella, la toma en la de su servidor y no en la del cine.
+    private static final ZoneOffset HORA_ARGENTINA = ZoneOffset.ofHours(-3);
+    private static final DateTimeFormatter FECHA_MP = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     // Con un sitio local MP rechaza la preferencia entera si pide auto_return: el comprador vuelve con
     // el botón "Volver al sitio".
@@ -52,7 +63,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     // El monto viaja como un solo ítem: el detalle de butacas ya está en la reserva y el total ya trae el descuento.
     @Override
-    public Checkout crear(int reservaId, MedioPago medio, Dinero monto) {
+    public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
         String retorno = sitio + "/api/checkouts/" + id + "/retorno";
 
@@ -67,6 +78,12 @@ public class MercadoPagoHttp implements PasarelaPagos {
                 .put("success", retorno)
                 .put("failure", retorno)
                 .put("pending", retorno);
+        ArrayNode excluidos = preferencia.putObject("payment_methods").putArray("excluded_payment_types");
+        TIPOS_DE_PAGO.stream()
+                .filter(tipo -> !tiposDe(medio).contains(tipo))
+                .forEach(tipo -> excluidos.addObject().put("id", tipo));
+        preferencia.put("expires", true);
+        preferencia.put("expiration_date_to", vence.atOffset(HORA_ARGENTINA).format(FECHA_MP));
         if (!HOSTS_LOCALES.contains(URI.create(sitio).getHost())) {
             preferencia.put("auto_return", "approved");
         }
@@ -134,6 +151,19 @@ public class MercadoPagoHttp implements PasarelaPagos {
             case "rejected", "cancelled" -> "Mercado Pago rechazó el pago: probá de nuevo con otro medio";
             default -> "Mercado Pago todavía no aprobó el pago: recargá la página en unos minutos";
         });
+    }
+
+    // Del medio pedido depende la promo, así que MP solo ofrece los tipos de pago que son ese medio.
+    // QR es pagar desde la app de MP, que descuenta del dinero en cuenta; la transferencia sale del banco
+    // o de la cuenta de MP (CVU), que para MP es también dinero en cuenta.
+    private static Set<String> tiposDe(MedioPago medio) {
+        return switch (medio) {
+            case DEBITO -> Set.of("debit_card");
+            case CREDITO -> Set.of("credit_card");
+            case QR -> Set.of("account_money");
+            case TRANSFERENCIA -> Set.of("bank_transfer", "account_money");
+            case EFECTIVO -> throw new IllegalStateException("El efectivo no abre checkout");
+        };
     }
 
     private static boolean coincide(JsonNode pago, Checkout checkout) {

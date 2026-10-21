@@ -10,8 +10,11 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +35,7 @@ import ar.uade.cine.model.ventas.MedioPago;
 class MercadoPagoHttpTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final LocalDateTime VENCE = LocalDateTime.of(2026, 8, 14, 10, 30);
 
     private HttpServer servidor;
     private final List<String> pedidos = new ArrayList<>();
@@ -69,7 +73,7 @@ class MercadoPagoHttpTest {
 
     @Test
     void laPreferenciaLlevaElMontoLaReferenciaYLaVueltaAlBackend() throws IOException {
-        Checkout checkout = pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(7680));
+        Checkout checkout = pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(7680), VENCE);
 
         JsonNode preferencia = JSON.readTree(preferenciaEnviada);
         assertEquals(7680.0, preferencia.at("/items/0/unit_price").asDouble(), 0.001);
@@ -84,6 +88,37 @@ class MercadoPagoHttpTest {
         assertEquals(Dinero.de(7680), checkout.monto());
     }
 
+    // Del medio pedido depende la promo: MP no tiene que ofrecer pagar con otro.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            debito        | DEBITO        | debit_card
+            credito       | CREDITO       | credit_card
+            qr            | QR            | account_money
+            transferencia | TRANSFERENCIA | bank_transfer account_money
+            """)
+    void laPreferenciaExcluyeLoQueNoEsElMedioPedido(String caso, MedioPago medio, String permitidos)
+            throws IOException {
+        pasarela("http://localhost:8080").crear(25, medio, Dinero.de(100), VENCE);
+
+        Set<String> excluidos = new HashSet<>();
+        JSON.readTree(preferenciaEnviada).at("/payment_methods/excluded_payment_types")
+                .forEach(tipo -> excluidos.add(tipo.path("id").asText()));
+        Set<String> esperados = new HashSet<>(Set.of("credit_card", "debit_card", "prepaid_card", "ticket",
+                "atm", "bank_transfer", "account_money", "digital_currency"));
+        esperados.removeAll(Set.of(permitidos.split(" ")));
+        assertEquals(esperados, excluidos, caso);
+    }
+
+    // R13/R17: pasado el vencimiento la reserva ya soltó las butacas y no hay devolución; MP no debe cobrar.
+    @Test
+    void laPreferenciaVenceConLaReservaEnHoraArgentina() throws IOException {
+        pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), VENCE);
+
+        JsonNode preferencia = JSON.readTree(preferenciaEnviada);
+        assertTrue(preferencia.path("expires").asBoolean());
+        assertEquals("2026-08-14T10:30:00.000-03:00", preferencia.path("expiration_date_to").asText());
+    }
+
     // MP rechaza la preferencia entera si pide auto_return con una back_url local.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
@@ -92,7 +127,7 @@ class MercadoPagoHttpTest {
             sitio publico,  https://cine.ejemplo.ar, true
             """)
     void elAutoReturnSoloConUnSitioPublico(String caso, String sitio, boolean conAutoReturn) throws IOException {
-        pasarela(sitio).crear(25, MedioPago.QR, Dinero.de(100));
+        pasarela(sitio).crear(25, MedioPago.QR, Dinero.de(100), VENCE);
 
         assertEquals(conAutoReturn, JSON.readTree(preferenciaEnviada).has("auto_return"), caso);
     }
@@ -101,7 +136,7 @@ class MercadoPagoHttpTest {
     void conCredencialesDePruebaElLinkEsElDelSandbox() {
         MercadoPagoHttp pasarela = new MercadoPagoHttp("TEST-123", direccion(), "http://localhost:8080");
 
-        assertEquals("https://mp.test/sandbox", pasarela.crear(25, MedioPago.QR, Dinero.de(100)).urlPago());
+        assertEquals("https://mp.test/sandbox", pasarela.crear(25, MedioPago.QR, Dinero.de(100), VENCE).urlPago());
     }
 
     @Test
@@ -177,7 +212,7 @@ class MercadoPagoHttpTest {
         servidor.createContext("/", intercambio -> responder(intercambio, 401, "{\"message\": \"invalid token\"}"));
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
-                () -> pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100)));
+                () -> pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), VENCE));
 
         assertEquals("Mercado Pago no respondió bien: probá de nuevo en un rato", error.getMessage());
         assertFalse(error.getMessage().contains("token"));

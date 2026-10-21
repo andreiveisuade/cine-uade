@@ -1,5 +1,6 @@
 package ar.uade.cine.infrastructure.pasarelas;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import ar.uade.cine.model.ventas.MedioPago;
@@ -8,7 +9,8 @@ import ar.uade.cine.model.dinero.Dinero;
 // Puerto: la pasarela de pagos electrónicos (checkout y autorización); cambiarla no toca GestorPagos (DIP).
 public interface PasarelaPagos {
 
-    Checkout crear(int reservaId, MedioPago medio, Dinero monto);
+    // Vence con la reserva (R17): después ya soltó sus butacas y lo cobrado no tendría devolución (R13).
+    Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence);
 
     Optional<Checkout> buscar(String checkoutId);
 

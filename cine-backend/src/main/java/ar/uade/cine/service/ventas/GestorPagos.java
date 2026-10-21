@@ -68,6 +68,8 @@ public class GestorPagos {
     }
 
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
+    // Cada pedido abre un checkout nuevo, porque el comprador puede cambiar de medio. Pagar dos abiertos
+    // queda acotado a la vida de la reserva (vencen con ella) y solo el primero la cobra (R5).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva);
@@ -75,7 +77,8 @@ public class GestorPagos {
 
         Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());
 
-        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto);
+        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto,
+                reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR));
         log.info("checkout {} · reserva {} · {} · a pagar {}",
                 checkout.id(), reservaId, medio, monto);
         return checkout;
