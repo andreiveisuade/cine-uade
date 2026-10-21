@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Carousel } from "@mantine/carousel";
 import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
-import { Badge, Box, Card, Chip, Image, Collapse, Group, SimpleGrid, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import { AspectRatio, Badge, Box, Card, Chip, Image, Collapse, Group, SimpleGrid, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { AnimatePresence, m, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import * as api from "../api/api-http.js";
@@ -198,32 +198,36 @@ function TarjetaPromo({ promo, orden }) {
             }}>
             {promo.imagenUrl && <FondoPromo promo={promo} />}
             <Barrido />
-            <Stack gap="sm" pos="relative">
-              <Group justify="space-between" mih={30}>
-                <Text size="sm" fw={700} c="gray.3" tt="uppercase">{promo.nombre}</Text>
-                {hoy && (
-                  <m.div animate={quieto ? undefined : { scale: [1, 1.08, 1] }}
-                    transition={{ duration: 1.2, repeat: Infinity }}>
-                    <UnstyledButton onClick={festejar}>
-                      <Badge color="yellow" c="dark.9" size="lg" variant="filled" style={{ cursor: "pointer" }}>¡Hoy aplica!</Badge>
-                    </UnstyledButton>
-                  </m.div>
-                )}
-                {empiezaDespues && <Badge color="gray" variant="light">Desde {fecha(promo.vigenciaDesde, false)}</Badge>}
-              </Group>
-              <Beneficio texto={promo.beneficio} />
-              <DiasDeLaSemana promo={promo} />
-              <Group gap={6}>
-                {promo.horaDesde && (
-                  <Badge variant="light" color="grape" tt="none">{promo.horaDesde.slice(0, 5)}–{promo.horaHasta.slice(0, 5)}</Badge>
-                )}
-                {promo.mediosPago.map((medio) => (
-                  <Badge key={medio} variant="light" color="cyan" tt="none">{etiqueta(medio)}</Badge>
-                ))}
-                <Badge variant="light" color="gray" tt="none">Hasta {fecha(promo.vigenciaHasta, false)}</Badge>
-              </Group>
-              <Condiciones promo={promo} />
-            </Stack>
+            {/* La foto viene en 16:9: el espaciador da ese alto como mínimo y el texto, si no entra, lo estira. */}
+            <Box style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)" }}>
+              {promo.imagenUrl && <Box style={{ gridArea: "1 / 1", aspectRatio: "16 / 9" }} />}
+              <Stack gap="sm" pos="relative" style={{ gridArea: "1 / 1" }}>
+                <Group justify="space-between" mih={30}>
+                  <Text size="sm" fw={700} c="gray.3" tt="uppercase">{promo.nombre}</Text>
+                  {hoy && (
+                    <m.div animate={quieto ? undefined : { scale: [1, 1.08, 1] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}>
+                      <UnstyledButton onClick={festejar}>
+                        <Badge color="yellow" c="dark.9" size="lg" variant="filled" style={{ cursor: "pointer" }}>¡Hoy aplica!</Badge>
+                      </UnstyledButton>
+                    </m.div>
+                  )}
+                  {empiezaDespues && <Badge color="gray" variant="light">Desde {fecha(promo.vigenciaDesde, false)}</Badge>}
+                </Group>
+                <Beneficio texto={promo.beneficio} />
+                <DiasDeLaSemana promo={promo} />
+                <Group gap={6}>
+                  {promo.horaDesde && (
+                    <Badge variant="light" color="grape" tt="none">{promo.horaDesde.slice(0, 5)}–{promo.horaHasta.slice(0, 5)}</Badge>
+                  )}
+                  {promo.mediosPago.map((medio) => (
+                    <Badge key={medio} variant="light" color="cyan" tt="none">{etiqueta(medio)}</Badge>
+                  ))}
+                  <Badge variant="light" color="gray" tt="none">Hasta {fecha(promo.vigenciaHasta, false)}</Badge>
+                </Group>
+                <Condiciones promo={promo} />
+              </Stack>
+            </Box>
           </Card>
         </m.div>
       </m.div>
@@ -267,7 +271,9 @@ function TarjetaCombo({ combo }) {
       <Card radius="lg" padding="lg" withBorder h="100%">
         {combo.imagenUrl && (
           <Card.Section mb="sm">
-            <Image src={combo.imagenUrl} alt={combo.nombre} loading="lazy" h={160} fit="cover" />
+            <AspectRatio ratio={16 / 9}>
+              <Image src={combo.imagenUrl} alt={combo.nombre} loading="lazy" fit="cover" />
+            </AspectRatio>
           </Card.Section>
         )}
         <Stack gap="xs" h="100%">
@@ -315,7 +321,9 @@ function Candy({ productos }) {
               <Card radius="md" padding="sm" withBorder h="100%">
                 {p.imagenUrl && (
                   <Card.Section mb="xs">
-                    <Image src={p.imagenUrl} alt={p.nombre} loading="lazy" h={110} fit="cover" />
+                    <AspectRatio ratio={1}>
+                      <Image src={p.imagenUrl} alt={p.nombre} loading="lazy" fit="cover" />
+                    </AspectRatio>
                   </Card.Section>
                 )}
                 <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{etiqueta(p.tipo)}</Text>
