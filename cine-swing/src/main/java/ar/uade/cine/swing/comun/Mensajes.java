@@ -11,21 +11,6 @@ import javax.swing.Timer;
 import java.awt.Component;
 
 // Dónde va cada mensaje: error de campo en línea, global en diálogo, éxito en la barra; la política vive acá.
-/**
- * Dónde se muestra cada mensaje. Todo pasa por acá, así que cambiar la política toca este archivo:
- * <ul>
- *   <li><b>Error de un campo</b> (formato, obligatorio, un 400 del backend o un 409 que nombra un campo, como un
- *   nombre repetido): en línea, junto al formulario y con el campo marcado. Lo hace {@link Validacion}; si el error no
- *   es de ese tipo, lo manda a {@link #error}.</li>
- *   <li><b>Error que no es de ningún campo</b> (sin conexión, 500, 403, un 409 sin campo como la reserva que otro
- *   pedido cambió, o un 400 en una pantalla sin formulario): {@link #error}, un diálogo modal con el texto del backend
- *   tal cual. El 401 no: vuelve al login.</li>
- *   <li><b>Acción destructiva o sin vuelta atrás</b>: {@link #confirmar} antes de mandar, con un botón que dice qué
- *   se va a hacer.</li>
- *   <li><b>Éxito</b>: {@link #exito}, en la barra de estado de la ventana, en verde, y se borra solo. Sin diálogo:
- *   no hay nada que decidir, y un clic de más en cada alta cansa.</li>
- * </ul>
- */
 public final class Mensajes {
 
     private static final String BARRA = "cine.barraDeEstado";

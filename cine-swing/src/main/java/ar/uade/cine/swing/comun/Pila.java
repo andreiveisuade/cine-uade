@@ -6,10 +6,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 // Un panel que apila de arriba abajo, todo alineado a la izquierda, como piden los paneles de detalle.
-/**
- * BoxLayout centra a quien no dice su alineación, y cada {@code add} tenía que acordarse de pedir la izquierda: acá se
- * pide una sola vez.
- */
+// BoxLayout centra a quien no dice su alineación: acá se pide la izquierda una sola vez.
 public class Pila extends JPanel {
 
     public Pila() {

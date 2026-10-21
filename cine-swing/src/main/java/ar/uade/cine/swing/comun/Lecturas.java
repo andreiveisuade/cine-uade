@@ -11,11 +11,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 // Lee el formato de lo tipeado (números, listas, horas, emails) sin Swing; Validacion lo usa y marca.
-/**
- * Un obligatorio vacío, "abc" en un precio o una "x" en "8,x,12" no son reglas del cine: son un pedido mal armado. Lo
- * que sí es regla (precio mayor a cero, rangos, R1 a R20) no se mira acá, lo decide el backend. Separado de
- * {@link Validacion} para probarlo solo, sin campos ni ventana.
- */
+// Separado de Validacion para probarlo sin campos ni ventana.
 public final class Lecturas {
 
     private static final Pattern ENTERO = Pattern.compile("-?\\d+");

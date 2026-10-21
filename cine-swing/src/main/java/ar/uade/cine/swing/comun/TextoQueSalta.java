@@ -10,10 +10,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
 // Una etiqueta HTML que corta línea al ancho que le da el layout; la crea Componentes.texto.
-/**
- * Un JLabel con HTML no corta línea solo: informa el ancho de todo el texto en un renglón. Este mide la altura
- * que necesita al ancho que el layout le dio, y pide re-layout cuando ese ancho cambia.
- */
 final class TextoQueSalta extends JLabel {
 
     private static final int ANCHO_INICIAL = 420;

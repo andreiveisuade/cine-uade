@@ -16,11 +16,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 // La barra de filtros de un listado: cada filtro con su clave de la API, un Limpiar y el conteo al final.
-/**
- * Cada filtro sabe leerse y vaciarse, así "Limpiar" no dispara una búsqueda por cada campo que vuelve a cero, y el
- * texto libre busca al dejar de tipear y no en cada tecla. Los valores salen con la clave que espera la API, en el
- * orden en que se agregaron.
- */
+// Cada filtro sabe vaciarse, así Limpiar no dispara una búsqueda por campo.
 public final class BarraFiltros extends JPanel {
 
     private final JLabel conteo = new JLabel(" ");
@@ -44,7 +40,7 @@ public final class BarraFiltros extends JPanel {
         return this;
     }
 
-    /** Un combo cuyo primer ítem es el "Todas" al que vuelve Limpiar; un combo es una decisión y busca enseguida. */
+    /** Combo con "Todas" como primer ítem, al que vuelve Limpiar; busca enseguida. */
     public <T> BarraFiltros combo(String etiqueta, String clave, JComboBox<Opcion<T>> combo) {
         agregar(new JLabel(etiqueta), combo);
         valores.put(clave, () -> {
@@ -71,7 +67,7 @@ public final class BarraFiltros extends JPanel {
         return this;
     }
 
-    /** El botón que vuelve todo a cero sin buscar en el medio, y después corre {@code despues} una sola vez. */
+    /** Vuelve todo a cero sin buscar en el medio y corre {@code despues} una vez. */
     public BarraFiltros limpiar(Runnable despues) {
         JButton limpiar = new JButton("Limpiar");
         limpiar.addActionListener(e -> {
@@ -86,7 +82,7 @@ public final class BarraFiltros extends JPanel {
         this.alCambiar = accion;
     }
 
-    /** Para llenar los combos desde el código sin que cada ítem agregado dispare una búsqueda. */
+    /** Para llenar combos desde el código sin disparar búsquedas. */
     public void enSilencio(Runnable cambios) {
         callada = true;
         try {

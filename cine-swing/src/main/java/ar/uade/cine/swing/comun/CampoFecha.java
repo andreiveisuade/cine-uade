@@ -8,8 +8,7 @@ import java.awt.BorderLayout;
 import java.time.LocalDate;
 
 // Un campo para elegir un día, que las pantallas leen y ponen como LocalDate.
-// Patrón Adapter: las pantallas (Client) esperan LocalDate y JDateChooser de JCalendar (Adaptee) trabaja con
-// java.util.Date; este campo (Adapter) lo envuelve y traduce con Fechas. Cambiar de librería toca este archivo.
+// Patrón Adapter: traduce LocalDate (pantallas) a java.util.Date de JDateChooser, con Fechas.
 public final class CampoFecha extends JPanel {
 
     private final JDateChooser selector;

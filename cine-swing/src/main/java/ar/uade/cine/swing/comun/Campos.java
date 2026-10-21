@@ -17,13 +17,6 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 // Qué se deja tipear en un campo y cuándo reaccionar a lo tipeado; leer y validar el valor es de Validacion.
-/**
- * Lo que se hace con un campo mientras se lo usa: qué se deja tipear, qué opción está elegida y cuándo reaccionar a
- * lo tipeado. Leer el valor para mandarlo es de {@link Validacion}, que separa dos cosas: el formato y la
- * obligatoriedad (un número mal tipeado, un obligatorio vacío) los revisa el cliente antes de mandar, porque no son
- * reglas del cine sino un pedido mal armado; las reglas de negocio (precio mayor a cero, rangos, R1 a R20) las
- * decide solo el backend, y su mensaje se muestra tal cual.
- */
 public final class Campos {
 
     // Lo que se deja tipear en cada caso. El signo se deja: un negativo es un número; si vale lo dice el backend.
@@ -51,7 +44,7 @@ public final class Campos {
         return soloSi(campo, LISTA_A_MEDIAS);
     }
 
-    // El patrón se prueba contra el texto como quedaría, no contra lo tipeado: así un pegado entero también pasa por acá.
+    // Se prueba contra el texto como quedaría, así un pegado entero también pasa.
     private static <C extends JTextComponent> C soloSi(C campo, Pattern permitido) {
         ((AbstractDocument) campo.getDocument()).setDocumentFilter(new SoloSi(campo, permitido));
         return campo;
@@ -135,10 +128,7 @@ public final class Campos {
         });
     }
 
-    /**
-     * Corre {@code accion} cuando cambia cualquiera de los campos, sea texto, combo, fecha, hora o días: para invalidar
-     * una previsualización que ya no corresponde a lo que dice el formulario.
-     */
+    /** Corre {@code accion} ante cualquier cambio de los campos, para invalidar una previsualización. */
     public static void alCambiar(Runnable accion, JComponent... campos) {
         for (JComponent campo : campos) {
             switch (campo) {
@@ -152,10 +142,7 @@ public final class Campos {
         }
     }
 
-    /**
-     * Corre {@code accion} cuando se deja de tipear. Devuelve el Timer para que un "Limpiar" que vacía el campo pueda
-     * pararlo y buscar una sola vez.
-     */
+    /** Corre {@code accion} al dejar de tipear; devuelve el Timer para que Limpiar lo pare. */
     public static Timer alDejarDeTipear(JTextComponent campo, Runnable accion) {
         Timer espera = new Timer(ESPERA_AL_TIPEAR_MS, e -> accion.run());
         espera.setRepeats(false);
