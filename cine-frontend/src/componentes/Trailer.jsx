@@ -41,7 +41,7 @@ export function Trailer({ id, titulo, radio = "md" }) {
         )}
       </AspectRatio>
       {corriendo && !conSonido && (
-        <Button pos="absolute" bottom={16} left={16} size="md" radius="xl" color="yellow" c="dark.9" onClick={activarSonido}>
+        <Button pos="absolute" bottom={16} left={16} style={{ zIndex: 1 }} size="md" radius="xl" color="yellow" c="dark.9" onClick={activarSonido}>
           Activar sonido
         </Button>
       )}

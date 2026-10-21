@@ -43,20 +43,20 @@ function Fondo({ pelicula }) {
   );
 }
 
-function Ficha({ pelicula, hayFunciones }) {
+function Ficha({ pelicula, hayFunciones, sobreElFondo }) {
   const quieto = useReducedMotion();
   const { scrollY } = useScroll();
   // El póster sube más lento que la página: da profundidad sin moverse del lugar.
   const y = useTransform(scrollY, [0, 600], [0, quieto ? 0 : -60]);
   return (
-    <Grid gap="xl" mt={{ base: -60, sm: -100 }} pos="relative">
+    <Grid gap="xl" mt={sobreElFondo ? { base: -60, sm: -100 } : 0} pos="relative">
       <Grid.Col span={{ base: 5, xs: 4, md: 3 }}>
         <m.div style={{ y, boxShadow: "0 18px 40px -16px rgba(0,0,0,0.6)", borderRadius: "var(--mantine-radius-sm)" }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}>
           <Poster pelicula={pelicula} />
         </m.div>
       </Grid.Col>
-      <Grid.Col span={{ base: 12, xs: 8, md: 9 }} pt={{ base: "xs", xs: 70, sm: 110 }}>
+      <Grid.Col span={{ base: 12, xs: 8, md: 9 }} pt={sobreElFondo ? { base: "xs", xs: 70, sm: 110 } : undefined}>
         <m.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>
           <Stack gap="xs">
             <Title order={1} fz={{ base: 30, sm: 44 }} lh={1.05}>{pelicula.titulo}</Title>
@@ -99,7 +99,7 @@ export function Pelicula() {
           <Trailer id={pelicula.trailerYoutube} titulo={pelicula.titulo} radio="lg" />
         </m.div>
         : <Fondo pelicula={pelicula} />}
-      <Ficha pelicula={pelicula} hayFunciones={funciones.length > 0} />
+      <Ficha pelicula={pelicula} hayFunciones={funciones.length > 0} sobreElFondo={!pelicula.trailerYoutube} />
 
       <Title id="funciones" order={2} size="h3">Funciones</Title>
       {funciones.length ? (
