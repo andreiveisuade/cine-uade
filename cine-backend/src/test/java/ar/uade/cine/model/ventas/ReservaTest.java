@@ -2,6 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -92,6 +93,24 @@ class ReservaTest {
         assertEquals(8, reserva.getCodigo().length());
         assertEquals(Dinero.de(10000), reserva.getTotal());
         assertTrue(reserva.estaVigente());
+    }
+
+    // R13/R17: la vencida ya soltó sus butacas aunque todavía figure RESERVADA: no hay qué cancelar.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            recién hecha,        2026-08-14T10:00, true
+            al filo de los 30,   2026-08-14T10:30, true
+            vencida,             2026-08-14T10:31, false
+            """)
+    void seCancelaSoloMientrasNoVencio(String caso, LocalDateTime ahora, boolean cancelable) {
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, entradas("A1"), CREADA);
+
+        assertEquals(cancelable, reserva.esCancelable(ahora), caso);
+    }
+
+    @Test
+    void laPagadaNoSeCancela() {
+        assertFalse(pagada().esCancelable(CREADA));
     }
 
     // La función es el 20/08 a las 20: el acomodador deja pasar ese día y no otro.
