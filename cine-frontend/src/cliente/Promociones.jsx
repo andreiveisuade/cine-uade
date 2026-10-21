@@ -3,16 +3,17 @@ import { Chip, Group, Skeleton, Stack, Text } from "@mantine/core";
 import { AnimatePresence, m } from "motion/react";
 import * as api from "@/api/api-http.js";
 import { etiqueta } from "@/api/etiquetas.js";
-import { Destacados } from "@/componentes/Destacados.jsx";
-import { Encabezado } from "@/componentes/Encabezado.jsx";
-import { EsperaOError, Vacio } from "@/componentes/Estado.jsx";
-import { Grilla } from "@/componentes/Grilla.jsx";
-import { Seccion } from "@/componentes/Seccion.jsx";
+import { Destacados } from "@/compartido/layout/Destacados.jsx";
+import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
+import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
+import { Vacio } from "@/compartido/estado/Vacio.jsx";
+import { Grilla } from "@/compartido/layout/Grilla.jsx";
+import { Seccion } from "@/compartido/layout/Seccion.jsx";
 import { corre, DIAS, TarjetaPromo } from "@/componentes/TarjetaPromo.jsx";
 import { TarjetaCombo } from "@/componentes/TarjetaCombo.jsx";
 import { TarjetaProducto } from "@/componentes/TarjetaProducto.jsx";
-import { useCargar } from "@/componentes/useCargar.js";
-import { useTitulo } from "@/componentes/useTitulo.js";
+import { useCargar } from "@/compartido/hooks/useCargar.js";
+import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 
 // Entran escalonadas una sola vez; al filtrar, las que quedan se corren con `layout`.
 const TARJETA = {

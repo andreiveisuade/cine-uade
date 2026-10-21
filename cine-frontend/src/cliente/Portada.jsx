@@ -4,9 +4,9 @@ import { AnimatePresence, m } from "motion/react";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
 import { duracion } from "@/api/formato.js";
-import { Banda } from "@/componentes/Banda.jsx";
-import { ChipClasificacion } from "@/componentes/Chips.jsx";
-import { Poster } from "@/componentes/Poster.jsx";
+import { Banda } from "@/compartido/layout/Banda.jsx";
+import { ChipClasificacion } from "@/compartido/ui/Chips.jsx";
+import { Poster } from "@/compartido/ui/Poster.jsx";
 import { Trailer } from "@/componentes/Trailer.jsx";
 
 // Con trailer, un cuadro del video en 16:9; sin él, el póster agrandado y difuminado.

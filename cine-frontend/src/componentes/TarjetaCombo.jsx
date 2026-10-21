@@ -1,7 +1,7 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Foto } from "./Foto.jsx";
 import { precio } from "@/api/formato.js";
-import { MontoAnimado } from "./MontoAnimado.jsx";
+import { MontoAnimado } from "@/compartido/ui/MontoAnimado.jsx";
 
 // El ahorro y el precio mandan; lo que trae el combo va en una línea.
 export function TarjetaCombo({ combo, destacada = false }) {

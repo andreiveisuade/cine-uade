@@ -4,14 +4,15 @@ import { Link, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, duracion, hora, porDia, precio } from "@/api/formato.js";
-import { Banda } from "@/componentes/Banda.jsx";
-import { Chip, ChipClasificacion } from "@/componentes/Chips.jsx";
-import { EsperaOError, Vacio } from "@/componentes/Estado.jsx";
-import { Poster } from "@/componentes/Poster.jsx";
+import { Banda } from "@/compartido/layout/Banda.jsx";
+import { Chip, ChipClasificacion } from "@/compartido/ui/Chips.jsx";
+import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
+import { Vacio } from "@/compartido/estado/Vacio.jsx";
+import { Poster } from "@/compartido/ui/Poster.jsx";
 import { Trailer } from "@/componentes/Trailer.jsx";
-import { useCargar } from "@/componentes/useCargar.js";
-import { useTitulo } from "@/componentes/useTitulo.js";
-import { Volver } from "@/componentes/Volver.jsx";
+import { useCargar } from "@/compartido/hooks/useCargar.js";
+import { useTitulo } from "@/compartido/hooks/useTitulo.js";
+import { Volver } from "@/compartido/layout/Volver.jsx";
 
 function PeliculaEsqueleto() {
   return (

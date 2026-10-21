@@ -2,7 +2,7 @@ import { MantineProvider } from "@mantine/core";
 import { domMax, LazyMotion, MotionConfig } from "motion/react";
 import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { Avisos } from "@/componentes/Avisos.jsx";
+import { Avisos } from "@/compartido/estado/Avisos.jsx";
 import { CompraEnCurso } from "@/cliente/compra.jsx";
 import { SesionDelCliente } from "@/cliente/sesion.jsx";
 

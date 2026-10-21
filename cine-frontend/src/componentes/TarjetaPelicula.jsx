@@ -2,8 +2,8 @@ import { Box, Group, Text } from "@mantine/core";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
 import { duracion } from "@/api/formato.js";
-import { ChipClasificacion } from "./Chips.jsx";
-import { Poster } from "./Poster.jsx";
+import { ChipClasificacion } from "@/compartido/ui/Chips.jsx";
+import { Poster } from "@/compartido/ui/Poster.jsx";
 
 // Sin caja alrededor: el póster es la tarjeta y debajo va lo justo para decidir.
 export function TarjetaPelicula({ pelicula, previa }) {

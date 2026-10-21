@@ -3,7 +3,7 @@ import "@fontsource-variable/archivo/standard.css";
 import "./tema.css";
 import { localStorageColorSchemeManager, MantineProvider } from "@mantine/core";
 import { LazyMotion, MotionConfig } from "motion/react";
-import { Avisos } from "@/componentes/Avisos.jsx";
+import { Avisos } from "@/compartido/estado/Avisos.jsx";
 import { tema, variables } from "./tema.js";
 
 // Las funciones de animación bajan en un chunk aparte: el primer pintado no las espera.

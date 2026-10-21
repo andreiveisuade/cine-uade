@@ -4,12 +4,13 @@ import { Link, Navigate, useNavigate, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { etiqueta } from "@/api/etiquetas.js";
 import { precio } from "@/api/formato.js";
-import { useAvisar } from "@/componentes/Avisos.jsx";
-import { ErrorCaja, EsperaOError } from "@/componentes/Estado.jsx";
-import { useCargar } from "@/componentes/useCargar.js";
-import { useTitulo } from "@/componentes/useTitulo.js";
+import { useAvisar } from "@/compartido/estado/Avisos.jsx";
+import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
+import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
+import { useCargar } from "@/compartido/hooks/useCargar.js";
+import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { useSesion } from "./sesion.jsx";
-import { Encabezado } from "@/componentes/Encabezado.jsx";
+import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
          SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
          useRenovarBloqueo } from "./compra.jsx";

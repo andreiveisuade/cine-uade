@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
-import { useAvisar } from "@/componentes/Avisos.jsx";
-import { useTitulo } from "@/componentes/useTitulo.js";
-import { ErrorCaja } from "@/componentes/Estado.jsx";
+import { useAvisar } from "@/compartido/estado/Avisos.jsx";
+import { useTitulo } from "@/compartido/hooks/useTitulo.js";
+import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { faltantes } from "./compra.jsx";
 import { useSesion } from "./sesion.jsx";
 

@@ -1,7 +1,7 @@
 import { Anchor, Text } from "@mantine/core";
 import { useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
-import { useAvisar } from "@/componentes/Avisos.jsx";
+import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useSesion } from "@/cliente/sesion.jsx";
 import { Enlace } from "./Enlace.jsx";
 

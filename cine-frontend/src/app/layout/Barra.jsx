@@ -1,6 +1,6 @@
 import { Burger, Drawer, Group, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Contenedor } from "@/componentes/Contenedor.jsx";
+import { Contenedor } from "@/compartido/layout/Contenedor.jsx";
 import { BotonTema } from "./BotonTema.jsx";
 import { Enlace } from "./Enlace.jsx";
 import { EnlacesDeCuenta } from "./EnlacesDeCuenta.jsx";

@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { AppShell } from "@mantine/core";
 import { useLocation } from "react-router";
-import { Contenedor } from "@/componentes/Contenedor.jsx";
+import { Contenedor } from "@/compartido/layout/Contenedor.jsx";
 import { CompraEnCurso } from "@/cliente/compra.jsx";
 import { SesionDelCliente } from "@/cliente/sesion.jsx";
-import { Barra } from "./layout/Barra.jsx";
-import { Pie } from "./layout/Pie.jsx";
+import { Barra } from "@/app/layout/Barra.jsx";
+import { Pie } from "@/app/layout/Pie.jsx";
 import { ErrorDePantalla } from "./ErrorDePantalla.jsx";
 import { Rutas } from "./Rutas.jsx";
 

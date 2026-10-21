@@ -1,6 +1,6 @@
 import { List, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { Encabezado } from "@/componentes/Encabezado.jsx";
-import { useTitulo } from "@/componentes/useTitulo.js";
+import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
+import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 
 const INTEGRANTES = ["Andrei Veis", "Lucas Ezequiel Manrique Simonini", "Valentino Garmendia"];
 
