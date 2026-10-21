@@ -29,6 +29,8 @@ cine:
   comprobantes:
     # Adentro de target/: `mvn clean` se los lleva y no ensucian el repo.
     tickets: target/comprobantes/tickets
+  imagenes:
+    dir: target/imagenes
   importador:
     corrida-maxima: 5m
     # Sin espera: es una protección contra el doble clic y tiene su propio test; dejarla

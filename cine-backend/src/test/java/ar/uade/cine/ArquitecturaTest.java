@@ -36,6 +36,7 @@ class ArquitecturaTest {
     // Los adaptadores concretos: el resto depende del puerto y Adaptadores elige cuál va.
     private static final List<String> IMPLEMENTACIONES = List.of(
             "infrastructure.comprobantes.txt",
+            "infrastructure.imagenes.disco",
             "infrastructure.importador.tmdb",
             "infrastructure.pasarelas.emulada",
             "infrastructure.pasarelas.mercadopago");
@@ -100,7 +101,7 @@ class ArquitecturaTest {
 
         // Lo de un adaptador va en su subcarpeta (comprobantes/txt, importador/tmdb); seguridad/ no es un puerto.
         @ParameterizedTest(name = "infrastructure/{0}/")
-        @ValueSource(strings = {"comprobantes", "importador", "pasarelas", "reloj"})
+        @ValueSource(strings = {"comprobantes", "imagenes", "importador", "pasarelas", "reloj"})
         @DisplayName("la raíz de cada puerto tiene solo su contrato: la interfaz y su excepción")
         void laRaizDeCadaPuertoTieneSoloSuContrato(String puerto) {
             List<String> ajenos;

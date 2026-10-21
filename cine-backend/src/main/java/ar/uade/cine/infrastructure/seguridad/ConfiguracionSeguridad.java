@@ -68,6 +68,7 @@ public class ConfiguracionSeguridad {
             "/api/reservas/codigo/*",
             "/api/checkouts/*/retorno",
             "/api/candy/productos", "/api/candy/productos/*",
+            "/api/imagenes/*",
             "/api/promociones/vigentes",
             "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",

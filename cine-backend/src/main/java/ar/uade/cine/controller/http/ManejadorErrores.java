@@ -28,6 +28,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import ar.uade.cine.controller.http.cuerpo.CampoConValorInvalido;
@@ -36,6 +37,7 @@ import ar.uade.cine.controller.http.cuerpo.LecturaDelCuerpo;
 import ar.uade.cine.controller.http.cuerpo.RaizQueNoEsObjeto;
 import ar.uade.cine.controller.http.cuerpo.SinCuerpo;
 import ar.uade.cine.dto.comun.ErrorVistaDTO;
+import ar.uade.cine.model.imagenes.Imagen;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -168,6 +170,12 @@ public class ManejadorErrores {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorVistaDTO> rutaInexistente(NoResourceFoundException e, HttpServletRequest pedido) {
         return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
+    }
+
+    // Pasado el tope de multipart el archivo ni se lee: el mismo 400 que da Imagen hasta ese tope.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorVistaDTO> archivoDemasiadoGrande(MaxUploadSizeExceededException e) {
+        return responder(HttpStatus.BAD_REQUEST, Imagen.DEMASIADO_PESADA);
     }
 
     @ExceptionHandler(DataAccessException.class)

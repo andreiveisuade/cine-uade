@@ -26,6 +26,12 @@ spring:
         # Las colecciones EAGER y los LAZY de una lista se cargan de a 50 ids por IN, no uno por fila.
         default_batch_fetch_size: 50
 
+  servlet:
+    multipart:
+      # Por encima de los 2 MB de Imagen: hasta acá el archivo llega y el 400 lo explica Imagen.
+      max-file-size: 3MB
+      max-request-size: 3MB
+
   jackson:
     deserialization:
       # Un campo de más en el pedido no se rechaza
@@ -56,6 +62,9 @@ cine:
   comprobantes:
     # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.
     tickets: ${CINE_TICKETS:tickets}
+  imagenes:
+    # Las fotos de promos y productos. En Docker es /app/imagenes, el volumen imagenes.
+    dir: ${CINE_IMAGENES:imagenes}
   importador:
     # Pasado este tiempo una corrida EN_CURSO se da por perdida (backend reiniciado a mitad)
     corrida-maxima: 5m
