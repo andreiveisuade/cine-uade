@@ -56,6 +56,7 @@ public class GestorImportaciones {
             // También saltea lo que TMDB repite entre páginas; si no, R1 lo contaría como falla.
             String clave = clave(candidata.titulo());
             if (!clave.isEmpty() && !yaEstan.add(clave)) {
+                completarTrailer(candidata);
                 corrida.salteada();
                 continue;
             }
@@ -70,6 +71,15 @@ public class GestorImportaciones {
         }
 
         importacion.terminar(corrida.resumen(), reloj.ahora());
+    }
+
+    // Una falla acá no frena la corrida: la película ya estaba y sin trailer sigue andando.
+    private void completarTrailer(DatosPelicula candidata) {
+        try {
+            cartelera.completarTrailer(candidata);
+        } catch (RuntimeException e) {
+            log.warn("El importador no pudo completar el trailer de «{}»", nombreDe(candidata), e);
+        }
     }
 
     // Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado.

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
@@ -86,6 +87,12 @@ public class GestorCartelera {
         } else if (Boolean.FALSE.equals(datos.enCartelera())) {
             pelicula.sacarDeCartelera();
         }
+    }
+
+    // Para las que el importador saltea por ya estar: les llena el trailer si no tienen, y nada más.
+    public void completarTrailer(DatosPelicula importada) {
+        TrailerYoutube.siEs(importada.trailerYoutube()).ifPresent(trailer -> peliculaRepository
+                .findByTituloIgnoreCase(importada.titulo().strip()).ifPresent(p -> p.completarTrailer(trailer)));
     }
 
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
