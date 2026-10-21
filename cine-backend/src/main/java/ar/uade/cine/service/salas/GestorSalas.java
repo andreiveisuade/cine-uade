@@ -46,12 +46,10 @@ public class GestorSalas {
         return agregar(nombre, tipo, butacasPorFila, porTipo, Sala.LIMPIEZA_POR_DEFECTO);
     }
 
-    // Las especiales llegan por tipo, como las listas del pedido. Sin limpieza, la de siempre: el alta
-    // no la exige, a diferencia del nombre, el tipo y las filas.
+    // Sin limpieza: el alta no la exige, a diferencia del nombre, el tipo y las filas.
     public Sala agregar(String nombre, TipoSala tipo, List<Integer> butacasPorFila,
                         Map<TipoAsiento, List<String>> especiales, Integer minutosLimpieza) {
         int limpieza = minutosLimpieza == null ? Sala.LIMPIEZA_POR_DEFECTO : minutosLimpieza;
-        // Los datos de la sala y sus filas se rechazan antes de consultar el nombre repetido.
         Sala sala = new Sala(nombre, tipo, limpieza);
         List<Asiento> asientos = sala.generarAsientos(butacasPorFila, especiales);
         if (salaRepository.existsByNombreIgnoreCase(sala.getNombre())) {
@@ -63,10 +61,8 @@ public class GestorSalas {
         return sala;
     }
 
-    // Primero los datos (400), como en el alta, y después lo que mira la base. Si algo rechaza, la
-    // transacción deshace la edición. El nombre repetido se busca sin la sala misma: la consulta hace
-    // flush de la edición, y además la collation de MySQL ignora los acentos, así que renombrar
-    // "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
+    // El nombre repetido se busca sin la sala misma: la collation de MySQL ignora acentos y daba 409 falso
+    // al renombrar "Sala Unica" a "Sala Única".
     // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.exigir(id, "la sala");
@@ -82,8 +78,7 @@ public class GestorSalas {
         return sala;
     }
 
-    // Devuelve la sala y no la butaca: es lo que muestra quien la marcó, y asiento.getSala() es
-    // LAZY, así que fuera de la transacción no se podría leer.
+    // Devuelve la sala: asiento.getSala() es LAZY y fuera de la transacción no se podría leer.
     public Sala marcarFueraDeServicio(int salaId, String codigo) {
         Sala sala = salaRepository.exigir(salaId, "la sala");
         butaca(sala, codigo).marcarFueraDeServicio();
@@ -96,9 +91,7 @@ public class GestorSalas {
         return sala;
     }
 
-    // 404 y no 400: la butaca viene en la ruta, así que es el recurso que no existe, y lo dice como
-    // cualquier otro. Las de una reserva vienen en el cuerpo y siguen siendo un pedido inválido
-    // (Asiento.exigirConCodigo).
+    // 404 y no 400: la butaca viene en la ruta; las del cuerpo de una reserva siguen siendo 400.
     private Asiento butaca(Sala sala, String codigo) {
         return Asiento.conCodigo(asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(sala.getId()), codigo)
                 .orElseThrow(() -> new RecursoNoEncontrado(
