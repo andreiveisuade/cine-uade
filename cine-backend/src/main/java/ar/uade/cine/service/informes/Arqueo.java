@@ -14,8 +14,7 @@ import ar.uade.cine.model.dinero.Dinero;
 public record Arqueo(LocalDate fecha, Dinero total, int entradas,
                      Map<MedioPago, TotalPorMedio> porMedio, List<Pago> pagos) {
 
-    // Las reservas son las de esos pagos: una reserva tiene a lo sumo un pago, así que cada una
-    // cuenta sus entradas una sola vez.
+    // Una reserva tiene a lo sumo un pago: cada una cuenta sus entradas una sola vez.
     public static Arqueo de(LocalDate fecha, List<Pago> pagos, List<Reserva> reservas) {
         Map<MedioPago, TotalPorMedio> porMedio = new EnumMap<>(MedioPago.class);
         Dinero total = Dinero.CERO;

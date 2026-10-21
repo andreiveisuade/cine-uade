@@ -20,7 +20,6 @@ public record DeclaracionJurada(LocalDate desde, LocalDate hasta, LocalDateTime 
                                 List<FilaFuncion> funciones, List<TotalPelicula> peliculas,
                                 Totales total) {
 
-    // Suma las filas por película y en total. El gestor solo arma las filas.
     public static DeclaracionJurada de(PeriodoDeclarado periodo, LocalDateTime generadaEn,
                                        List<FilaFuncion> filas) {
         Map<Integer, TotalPelicula> porPelicula = new LinkedHashMap<>();
