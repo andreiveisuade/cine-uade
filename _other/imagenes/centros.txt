@@ -1,0 +1,2 @@
+producto-pochoclos-grandes 0.66
+combo-clasico 0.36
