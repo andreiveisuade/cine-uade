@@ -12,7 +12,7 @@ import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { faltantes } from "@/compartido/formularios/faltantes.js";
-import { PagarOnline } from "./PagarOnline.jsx";
+import { PagarOnline } from "@/ticket/PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
 
 export function MisReservas() {

@@ -4,7 +4,7 @@ import { Cartelera } from "@/cartelera/Cartelera.jsx";
 import { Pelicula } from "@/cartelera/pelicula/Pelicula.jsx";
 import { Funcion } from "@/compra/funcion/Funcion.jsx";
 import { Confirmar } from "@/compra/confirmar/Confirmar.jsx";
-import { Ticket } from "@/cliente/Ticket.jsx";
+import { Ticket } from "@/ticket/Ticket.jsx";
 import { MisReservas } from "@/cliente/MisReservas.jsx";
 import { Registro } from "@/cliente/Registro.jsx";
 import { Ingresar } from "@/cliente/Ingresar.jsx";
