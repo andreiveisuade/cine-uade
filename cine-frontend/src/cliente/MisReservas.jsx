@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Anchor, Button, Group, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Badge, Button, Group, Paper, Stack, Text, TextInput } from "@mantine/core";
 import { Link, useNavigate } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
 import { fechaHora, precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { Cargando, EsperaOError, Vacio } from "../componentes/Estado.jsx";
+import { Encabezado } from "../componentes/Encabezado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { useTitulo } from "../componentes/useTitulo.js";
 import { faltantes } from "./compra.jsx";
@@ -39,37 +40,55 @@ function ReservasDelCliente() {
   }
 
   return (
-    <Stack gap="md" maw={720}>
-      <Title order={1}>Mis reservas</Title>
+    <div>
+      <Encabezado titulo="Mis reservas" />
       {carga.datos.length ? (
-        carga.datos.map((r) => (
-          <Paper key={r.id} withBorder p="md">
-            <Group justify="space-between" align="flex-start">
-              <div>
-                <Text fw={600}>{r.pelicula.titulo}</Text>
-                <Text size="sm" c="dimmed">
-                  {fechaHora(r.funcion.inicio)} · {r.sala.nombre} · {r.cantidadEntradas} entrada
-                  {r.cantidadEntradas === 1 ? "" : "s"} · {precio(r.total)}
-                </Text>
-                <Text size="sm">
-                  {etiqueta(r.estado)} · <Anchor component={Link} to={`/ticket/${r.codigo}`} size="sm"
-                    ff="monospace">{r.codigo}</Anchor>
-                </Text>
-              </div>
-              {r.cancelable && (
-                <Button variant="outline" color="red" size="xs" loading={cancelando === r.codigo}
-                  onClick={() => cancelar(r.codigo)}>
-                  Cancelar
-                </Button>
-              )}
-            </Group>
-            {r.cobrable && <Group mt="sm"><PagarOnline codigo={r.codigo} /></Group>}
-          </Paper>
-        ))
+        <Stack gap="sm" maw={880}>
+          {carga.datos.map((r) => (
+            <FilaReserva key={r.id} reserva={r} cancelando={cancelando === r.codigo} cancelar={() => cancelar(r.codigo)} />
+          ))}
+        </Stack>
       ) : (
-        <Vacio>Todavía no tenés reservas.</Vacio>
+        <Vacio accion={<Button component={Link} to="/cartelera" variant="default">Ver la cartelera</Button>}>
+          Todavía no tenés reservas.
+        </Vacio>
       )}
-    </Stack>
+    </div>
+  );
+}
+
+const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gray", CANCELADA: "gray" };
+
+// Una fila por reserva: la fecha como bloque a la izquierda, lo que es en el medio y lo que se puede hacer a la derecha.
+function FilaReserva({ reserva: r, cancelando, cancelar }) {
+  const [diaMes, mes] = [r.funcion.inicio.slice(8, 10), r.funcion.inicio.slice(5, 7)];
+  return (
+    <Paper withBorder p="md" style={{ opacity: ["EXPIRADA", "CANCELADA"].includes(r.estado) ? 0.65 : 1 }}>
+      <Group justify="space-between" align="center" gap="md">
+        <Group gap="md" wrap="nowrap" align="center">
+          <Stack gap={0} align="center" w={56} py={6} bg="var(--cine-superficie-2)" style={{ borderRadius: "var(--mantine-radius-md)", flexShrink: 0 }}>
+            <Text className="cine-display cine-cifras" fz={28} fw={850} lh={1}>{diaMes}</Text>
+            <Text size="xs" c="dimmed" className="cine-cifras">/{mes}</Text>
+          </Stack>
+          <Stack gap={4}>
+            <Group gap="sm">
+              <Text fw={700} fz="lg" lh={1.2}>{r.pelicula.titulo}</Text>
+              <Badge color={COLOR_ESTADO[r.estado]} variant={r.estado === "RESERVADA" ? "light" : "filled"}>{etiqueta(r.estado)}</Badge>
+            </Group>
+            <Text size="sm" c="dimmed" className="cine-cifras">
+              {fechaHora(r.funcion.inicio)} · {r.sala.nombre} · {r.cantidadEntradas} entrada{r.cantidadEntradas === 1 ? "" : "s"} · {precio(r.total)}
+            </Text>
+          </Stack>
+        </Group>
+        <Group gap="xs">
+          <Button component={Link} to={`/ticket/${r.codigo}`} variant="default" size="sm" ff="monospace">{r.codigo}</Button>
+          {r.cancelable && (
+            <Button variant="subtle" color="red" size="sm" loading={cancelando} onClick={cancelar}>Cancelar</Button>
+          )}
+        </Group>
+      </Group>
+      {r.cobrable && <Group mt="md"><PagarOnline codigo={r.codigo} /></Group>}
+    </Paper>
   );
 }
 
@@ -88,22 +107,21 @@ function BuscarPorCodigo() {
   }
 
   return (
-    <Stack gap="md" maw={520}>
-      <div>
-        <Title order={1}>Mis reservas</Title>
-        <Text size="sm" c="dimmed">
+    <Stack gap={0} maw={560}>
+      <Encabezado titulo="Mis reservas">
+        <Text c="dimmed">
           Ingresá el código de acceso de tu ticket para verlo. Para pagarla online o cancelarla,{" "}
-          <Anchor component={Link} to="/ingresar" size="sm">ingresá</Anchor> con tu cuenta.
+          <Anchor component={Link} to="/ingresar">ingresá</Anchor> con tu cuenta.
         </Text>
-      </div>
-      <Paper withBorder p="md">
+      </Encabezado>
+      <Paper withBorder p="lg">
         <form onSubmit={buscar}>
           <Group gap="xs" align="flex-end">
             <TextInput label="Código de acceso" required placeholder="A1B2 C3D4" value={codigo} style={{ flex: 1 }}
               error={faltan.codigo}
               styles={{ input: { fontFamily: "var(--mantine-font-family-monospace)", textTransform: "uppercase", letterSpacing: "0.1em" } }}
               onChange={(e) => setCodigo(e.currentTarget.value)} />
-            <Button type="submit">Buscar</Button>
+            <Button type="submit" size="sm">Buscar</Button>
           </Group>
         </form>
       </Paper>
