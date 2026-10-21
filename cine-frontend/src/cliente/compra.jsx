@@ -46,7 +46,9 @@ export function useRenovarBloqueo(funcionId) {
   const { seleccion, setSeleccion } = useCompra();
   // El intervalo se arma una vez por función; el evento de efecto lee la selección de ahora sin rearmarlo
   // (una ref escrita en el render rompería la pureza del render).
-  const sostenerActual = useEffectEvent(() => sostenerSeleccion(funcionId, seleccion.butacas));
+  // Si la selección es de otra función no hay nada que sostener en esta.
+  const sostenerActual = useEffectEvent(async () =>
+    seleccion.funcionId === funcionId ? sostenerSeleccion(funcionId, seleccion.butacas) : []);
 
   useEffect(() => {
     if (!funcionId) return;
