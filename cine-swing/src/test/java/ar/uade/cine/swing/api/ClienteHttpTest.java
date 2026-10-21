@@ -5,6 +5,8 @@ import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -95,6 +97,30 @@ class ClienteHttpTest {
         assertEquals("Email o contraseña incorrectos", error.getMessage());
         assertEquals(401, error.estado());
         assertEquals(0, avisos.get());
+        assertNull(autorizacionDelSiguientePedido());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "administrador entra, ADMINISTRADOR",
+            "acomodador entra, ACOMODADOR"
+    })
+    void unEmpleadoEntra(String caso, String rol) {
+        servidor.responder("POST /api/sesion", 200,
+                "{\"id\":2,\"nombre\":\"Empleado\",\"email\":\"puerta@cine.uade.ar\",\"rol\":\"" + rol + "\"}");
+
+        assertEquals(rol, sesion.login("puerta@cine.uade.ar", "otra").rol());
+    }
+
+    @Test
+    void unClienteNoEntraNiDejaCredencialesGuardadas() {
+        servidor.responder("POST /api/sesion", 200,
+                "{\"id\":9,\"nombre\":\"Cliente\",\"email\":\"cliente@mail.com\",\"rol\":\"CLIENTE\"}");
+
+        ErrorApi error = assertThrows(ErrorApi.class, () -> sesion.login("cliente@mail.com", "clave"));
+
+        assertEquals("Esta aplicación es para empleados del cine: los clientes compran en la web", error.getMessage());
+        assertEquals(401, error.estado());
         assertNull(autorizacionDelSiguientePedido());
     }
 
