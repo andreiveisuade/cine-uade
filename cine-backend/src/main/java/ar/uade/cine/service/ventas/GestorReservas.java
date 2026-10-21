@@ -45,9 +45,7 @@ public class GestorReservas {
     private final BloqueoDeButacas bloqueo;
     private final Reloj reloj;
 
-    // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado. La función va
-    // antes que el cliente: si no existe o ya empezó (R19), eso anula lo demás, y un email de empleado no
-    // puede taparlo.
+    // El alta del cliente comparte la transacción. La función va antes que el cliente: si no existe o ya empezó (R19) anula lo demás.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
                             String sesion) {
         Funcion funcion = enVenta.exigir(funcionId);
@@ -63,9 +61,8 @@ public class GestorReservas {
     private Reserva vender(Funcion funcion, Cliente cliente, Map<String, TipoTarifa> butacas, String sesion) {
         // Un pedido sin butacas es uno vacío: la reserva sin entradas la rechaza Reserva.
         List<ButacaPedida> pedidas = butacasPedidas(funcion, butacas == null ? Map.of() : butacas);
-        // La reserva crea sus entradas (Creador) y valida el pedido entero (tope, repetidas) antes de mirar la
-        // ocupación, como el bloqueo: once butacas con una tomada eran un 409 y la web recargaba el mapa por un
-        // pedido que nunca iba a pasar.
+        // La reserva valida el pedido entero (tope, repetidas) antes de mirar la ocupación, como el bloqueo:
+        // once butacas con una tomada daban un 409 y la web recargaba el mapa por un pedido inválido.
         Reserva nueva = new Reserva(funcion, cliente, pedidas, reloj.ahora());
         List<Entrada> entradas = nueva.getEntradas();
         exigirLibres(entradas, ocupacion.asientosOcupados(funcion.getId(), sesion));
@@ -81,8 +78,7 @@ public class GestorReservas {
         return reserva;
     }
 
-    // Lo único que la reserva no puede hacer sola: buscar los asientos en la base. Lista y no mapa: "a1" y "A1"
-    // son el mismo asiento, y un mapa los juntaría en silencio en vez de dejar que la reserva rechace la repetida.
+    // Lista y no mapa: "a1" y "A1" son el mismo asiento y un mapa los juntaría en vez de dejar rechazar la repetida.
     private List<ButacaPedida> butacasPedidas(Funcion funcion, Map<String, TipoTarifa> butacas) {
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
 

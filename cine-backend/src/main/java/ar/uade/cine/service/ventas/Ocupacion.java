@@ -19,8 +19,7 @@ import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // Única definición de butaca ocupada (R4), la del mapa y la venta; reservas vigentes más bloqueos ajenos.
-// Alta cohesión (GRASP) / SRP: antes también bloqueaba, exigía R19 y vencía reservas; eso vive en
-// BloqueoDeButacas, FuncionesEnVenta y ExpiracionDeReservas, y acá queda una sola razón para cambiar.
+// SRP: bloqueo, R19 y vencimiento viven en BloqueoDeButacas, FuncionesEnVenta y ExpiracionDeReservas.
 @Service
 @RequiredArgsConstructor
 public class Ocupacion {

@@ -44,8 +44,7 @@ public class GestorPagos {
         return registrarPago(reserva, medio, codigoAutorizacion);
     }
 
-    // Sin save() de la reserva: la trajo esta transacción y el cambio de estado sale en el
-    // commit, donde también se chequea su @Version.
+    // Sin save(): la reserva la trajo esta transacción y su cambio sale en el commit, donde se chequea @Version.
     private Pago registrarPago(Reserva reserva, MedioPago medio, String codigoAutorizacion) {
         PoliticaPromociones.Descuento descuento = descuentoPara(reserva, medio);
 
@@ -68,8 +67,7 @@ public class GestorPagos {
     }
 
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
-    // Cada pedido abre un checkout nuevo, porque el comprador puede cambiar de medio. Pagar dos abiertos
-    // queda acotado a la vida de la reserva (vencen con ella) y solo el primero la cobra (R5).
+    // Cada pedido abre un checkout nuevo; pagar dos abiertos queda acotado a la reserva y solo el primero la cobra (R5).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva);
@@ -84,16 +82,14 @@ public class GestorPagos {
         return checkout;
     }
 
-    // La reserva sale del checkout y no de quien confirma. El descuento se recalcula: pudo cambiar una promoción.
-    // Se valida antes de autorizar: autorizar es cobrarle al cliente, y si la reserva ya no se
-    // puede cobrar esa plata no tiene cómo volver (R13).
+    // El descuento se recalcula: pudo cambiar una promoción. Se valida antes de autorizar, porque esa plata
+    // no tiene cómo volver (R13).
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         return cobrarCheckout(checkout, buscarReserva(checkout.reservaId()));
     }
 
-    // El comprador vuelve de la pasarela al navegador, sin nadie que lea un error JSON: lo que impide
-    // cobrar viaja como aviso. Recargar la página de vuelta no es un segundo cobro: ya está pagada.
+    // El comprador vuelve al navegador sin nadie que lea JSON: lo que impide cobrar viaja como aviso.
     public RetornoCheckout retornarDeCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
@@ -107,8 +103,7 @@ public class GestorPagos {
         return new RetornoCheckout(reserva.getCodigo(), null);
     }
 
-    // La conciliación: el mismo cobro que la vuelta, para el comprador que pagó y no volvió al sitio. Si la
-    // vuelta llegó antes no hace nada; true si la cobró ahora. Lo que impide cobrar sale como Rechazo.
+    // Conciliación: el mismo cobro que la vuelta, para quien pagó y no volvió; true si la cobró ahora.
     public boolean conciliarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
@@ -119,9 +114,8 @@ public class GestorPagos {
         return true;
     }
 
-    // Duplicated Code → Extract Method: confirmar, volver y conciliar cobran igual y difieren solo en qué
-    // hacen con el rechazo (propagarlo, avisarlo, contarlo). La idempotencia mira el estado de la reserva,
-    // que pasa a PAGADA en la misma transacción que guarda el pago: la base se consulta una vez, al validar.
+    // Extract Method: confirmar, volver y conciliar cobran igual y difieren solo en qué hacen con el rechazo.
+    // La idempotencia mira el estado de la reserva (PAGADA en la misma transacción que el pago).
     private Pago cobrarCheckout(PasarelaPagos.Checkout checkout, Reserva reserva) {
         validarQueSePuedaCobrar(reserva);
         return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
@@ -136,8 +130,7 @@ public class GestorPagos {
         return reservaRepository.exigir(reservaId, "la reserva");
     }
 
-    // Lo propio de la reserva lo decide ella (el mismo método que habilita el cobro en la vista), y lo
-    // del medio y la autorización, Pago al nacer. Acá queda lo que necesita la base.
+    // Lo propio de la reserva lo decide ella, y del medio y la autorización, Pago; acá lo que necesita la base.
     private void validarQueSePuedaCobrar(Reserva reserva) {
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
         reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
