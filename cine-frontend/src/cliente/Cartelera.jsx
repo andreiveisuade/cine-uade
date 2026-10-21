@@ -1,4 +1,5 @@
 import { Box, Button, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { AnimatePresence, m } from "motion/react";
 import { Link, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -41,6 +42,13 @@ function Hero({ peliculas }) {
   );
 }
 
+// Entran escalonadas por posición; al filtrar, las que quedan se corren a su lugar nuevo con `layout`.
+const TARJETA = {
+  oculta: { opacity: 0, y: 12 },
+  visible: (orden) => ({ opacity: 1, y: 0, transition: { duration: 0.25, delay: Math.min(orden, 8) * 0.04 } }),
+  saliente: { opacity: 0, scale: 0.95, transition: { duration: 0.15 } },
+};
+
 export function Cartelera({ conHero = false }) {
   const { genero } = useParams();
   const carga = useCargar(() => Promise.all([api.obtenerCartelera(genero), api.obtenerGeneros()]), [genero]);
@@ -72,21 +80,26 @@ export function Cartelera({ conHero = false }) {
 
       {peliculas.length ? (
         <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
-          {peliculas.map((p) => (
-            <Card key={p.id} component={Link} to={`/pelicula/${p.id}`} withBorder padding="sm">
-              <Card.Section>
-                <Poster pelicula={p} />
-              </Card.Section>
-              <Text fw={600} mt="sm" lh={1.2}>{p.titulo}</Text>
-              <Group gap={6} mt={6}>
-                <ChipClasificacion valor={p.clasificacion} />
-                <Text size="xs" c="dimmed">{duracion(p.duracionMinutos)}</Text>
-              </Group>
-              <Group gap={4} mt={6}>
-                {p.generos.map((g) => <Chip key={g} valor={g} />)}
-              </Group>
-            </Card>
-          ))}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {peliculas.map((p, orden) => (
+              <m.div key={p.id} layout custom={orden} variants={TARJETA} initial="oculta" animate="visible" exit="saliente"
+                whileHover={{ y: -4 }} transition={{ layout: { duration: 0.25 }, y: { duration: 0.15 } }}>
+                <Card component={Link} to={`/pelicula/${p.id}`} withBorder padding="sm" h="100%">
+                  <Card.Section>
+                    <Poster pelicula={p} />
+                  </Card.Section>
+                  <Text fw={600} mt="sm" lh={1.2}>{p.titulo}</Text>
+                  <Group gap={6} mt={6}>
+                    <ChipClasificacion valor={p.clasificacion} />
+                    <Text size="xs" c="dimmed">{duracion(p.duracionMinutos)}</Text>
+                  </Group>
+                  <Group gap={4} mt={6}>
+                    {p.generos.map((g) => <Chip key={g} valor={g} />)}
+                  </Group>
+                </Card>
+              </m.div>
+            ))}
+          </AnimatePresence>
         </SimpleGrid>
       ) : (
         <Vacio>No hay películas de ese género en cartelera.</Vacio>
