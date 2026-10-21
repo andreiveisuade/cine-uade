@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.pantallas.ventas;
 
 import ar.uade.cine.swing.api.ApiVentas;
-import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.ventas.Checkout;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
@@ -25,13 +24,14 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // El lado del cobro: medio de pago y el botón que cobra en caja o abre el checkout, según pida el catálogo.
-final class PanelCobro extends Seccion {
+final class PanelCobro extends Seccion implements CajaDeCobro {
 
     private final ApiVentas apiVentas;
     private final Navegacion navegacion;
@@ -41,6 +41,8 @@ final class PanelCobro extends Seccion {
     private final JButton enviar = new JButton();
     private final JLabel error = Componentes.texto(" ");
     private final JPanel checkout = new JPanel(new BorderLayout());
+    private FormaDeCobro forma;
+    private Validacion validacion;
 
     PanelCobro(ApiVentas apiVentas, Navegacion navegacion, Reserva reserva, List<MedioPago> medios) {
         super(new BorderLayout());
@@ -73,51 +75,42 @@ final class PanelCobro extends Seccion {
         // Un checkout es de un medio y un monto concretos: cambiar el medio lo invalida.
         medio.addActionListener(e -> {
             Componentes.reemplazar(checkout);
-            refrescar();
+            elegirForma();
         });
         enviar.addActionListener(e -> enviar());
-        refrescar();
+        elegirForma();
     }
 
-    // R11: en un medio electrónico la autorización la devuelve el procesador, no se tipea.
-    private boolean porCheckout() {
-        MedioPago elegido = Campos.elegido(medio);
-        return elegido != null && elegido.requiereAutorizacion();
-    }
-
-    private void refrescar() {
-        boolean electronico = porCheckout();
-        enviar.setText(electronico ? "Abrir checkout" : "Registrar cobro");
-        explicacion.setText("<html>" + (electronico
-                ? "El cliente paga en la pasarela y el código de autorización lo devuelve ella."
-                : "Se cobra en la caja del cine. El efectivo no lleva código de autorización.") + "</html>");
+    // Strategy: el medio elegido decide la forma de cobro, y el botón y la explicación salen de ella.
+    private void elegirForma() {
+        forma = FormaDeCobro.para(Campos.elegido(medio), apiVentas);
+        enviar.setText(forma.boton());
+        explicacion.setText("<html>" + forma.explicacion() + "</html>");
     }
 
     private void enviar() {
-        Validacion v = new Validacion(error);
-        MedioPago elegido = v.elegido(medio, "Medio de pago");
-        if (!v.ok()) return;
-        Consumer<ErrorApi> fallo = e -> {
-            enviar.setEnabled(true);
-            v.mostrarError(e);
-        };
-        if (!porCheckout()) {
-            // Un cobro registrado no se deshace: se pregunta antes. Abrir el checkout, en cambio, no cobra.
-            if (!confirmar("¿Registrar el cobro de la reserva #" + reserva.id() + " en "
-                    + etiqueta(elegido.nombre()).toLowerCase() + "? No se puede deshacer.", "Sí, cobrar")) return;
-            enviar.setEnabled(false);
-            Tarea.ejecutar(this, () -> apiVentas.cobrar(reserva.id(), elegido.nombre(), ""), this::cobrado, fallo);
-        } else {
-            // Abrir el checkout valida R5, R17 y R19 antes de mandar a pagar: si no, hay plata que devolver.
-            enviar.setEnabled(false);
-            Tarea.ejecutar(this, () -> apiVentas.abrirCheckout(reserva.id(), elegido.nombre()), c -> {
-                enviar.setEnabled(true);
-                mostrarCheckout(c);
-            }, fallo);
-        }
+        validacion = new Validacion(error);
+        MedioPago elegido = validacion.elegido(medio, "Medio de pago");
+        if (!validacion.ok()) return;
+        forma.enviar(reserva, elegido, this);
     }
 
-    private void cobrado(Pago pago) {
+    @Override
+    public boolean confirmar(String pregunta, String si) {
+        return super.confirmar(pregunta, si);
+    }
+
+    @Override
+    public <T> void pedir(Callable<T> trabajo, Consumer<T> alTerminar) {
+        enviar.setEnabled(false);
+        Tarea.ejecutar(this, trabajo, alTerminar, e -> {
+            enviar.setEnabled(true);
+            validacion.mostrarError(e);
+        });
+    }
+
+    @Override
+    public void cobrado(Pago pago) {
         avisar(pago.descuento() > 0
                 ? "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()) + " · "
                 + precio(pago.descuento()) + " de descuento"
@@ -125,7 +118,9 @@ final class PanelCobro extends Seccion {
         navegacion.ir(Destino.CAJA);
     }
 
-    private void mostrarCheckout(Checkout abierto) {
+    @Override
+    public void mostrarCheckout(Checkout abierto) {
+        enviar.setEnabled(true);
         Componentes.reemplazar(checkout, new PanelCheckout(apiVentas, abierto, this::cobrado));
     }
 }
