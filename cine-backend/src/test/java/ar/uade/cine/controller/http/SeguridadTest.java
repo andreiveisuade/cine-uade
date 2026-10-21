@@ -138,11 +138,12 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.estado()).isNotIn(401, 403);
     }
 
+    // Por email cualquiera listaba las reservas de otro: las del cliente salen de su sesión.
     @Test
-    @DisplayName("mis reservas es público con email; el listado completo, del encargado")
-    void listadoDeReservasSegunElEmail() {
+    @DisplayName("el listado de reservas es del encargado, también filtrado por email")
+    void listadoDeReservasEsDelEncargado() {
         assertThat(pedirComo(HttpMethod.GET, "/api/reservas?email=alguien@mail.com", null, null, null).estado())
-                .isEqualTo(200);
+                .isEqualTo(401);
         assertThat(pedirComo(HttpMethod.GET, "/api/reservas", null, null, null).estado())
                 .isEqualTo(401);
     }
@@ -167,7 +168,7 @@ class SeguridadTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("el cliente ve y cancela su reserva con el código, sin credenciales")
+    @DisplayName("el ticket se ve con el código sin credenciales; cancelarlo pide la sesión del dueño (R21)")
     void reservaPorCodigoEsPublica() {
         Reserva reserva = unaReserva();
         String ruta = "/api/reservas/codigo/" + reserva.getCodigo().toLowerCase();
@@ -176,9 +177,8 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(detalle.estado()).isEqualTo(200);
         assertThat(detalle.json().get("id").asInt()).isEqualTo(reserva.getId());
 
-        Respuesta cancelada = pedirComo(HttpMethod.POST, ruta + "/cancelacion", null, null, null);
-        assertThat(cancelada.estado()).isEqualTo(200);
-        assertThat(cancelada.json().get("estado").asText()).isEqualTo("CANCELADA");
+        assertThat(pedirComo(HttpMethod.POST, ruta + "/cancelacion", null, null, null).estado())
+                .isEqualTo(401);
     }
 
     @Test
@@ -188,19 +188,6 @@ class SeguridadTest extends PruebaDeApi {
 
         assertThat(respuesta.estado()).isEqualTo(404);
         assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
-    }
-
-    @Test
-    @DisplayName("mis reservas por email no revela el código de acceso")
-    void misReservasSinCodigo() {
-        unaReserva();
-
-        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/reservas?email=andrei@uade.edu.ar",
-                null, null, null);
-
-        assertThat(respuesta.json()).hasSize(1);
-        assertThat(respuesta.json().get(0).has("codigo")).isFalse();
-        assertThat(get("/api/reservas").json().get(0).has("codigo")).isTrue();
     }
 
     // El firewall rechaza antes de cualquier controller y el pedido termina en /error: sin

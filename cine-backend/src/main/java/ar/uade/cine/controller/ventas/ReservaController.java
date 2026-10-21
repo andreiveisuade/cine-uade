@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.ventas;
 
+import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/reservas (reservar, consultar, cancelar, también por código); delega en GestorReservas.
+// Rutas de /api/reservas (reservar, consultar, cancelar, las del cliente); delega en GestorReservas.
 // El tag lo comparten BloqueoController y AccesoController: bloquear y entrar son del mismo circuito.
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
@@ -43,20 +44,24 @@ public class ReservaController {
     private final ConsultasReservas consultas;
     private final VistasReservas vistas;
 
-    @Operation(summary = "Las reservas del cine; con email, las de ese cliente sin el código de acceso")
+    // Sin ?email=: era pública y cualquiera listaba las reservas de otro sabiendo su email. El
+    // encargado busca por email con q; el cliente ve las suyas en /api/reservas/mias.
+    @Operation(summary = "Las reservas del cine (encargado)")
     @GetMapping("/api/reservas")
-    public List<ReservaVistaDTO> listar(@RequestParam(required = false) String email,
-                                        @RequestParam(required = false) String estado,
+    public List<ReservaVistaDTO> listar(@RequestParam(required = false) String estado,
                                         @RequestParam(required = false) String dia,
                                         @RequestParam(required = false) String q) {
-        if (email != null && !email.isBlank()) {
-            // Sin código: la ruta es pública y el email no prueba ser el dueño.
-            return vistas.reservasSinCodigo(consultas.listarPorEmail(email));
-        }
         // vistas.reservas() y no un map de vistas.reserva(): evita tres consultas por fila.
         return vistas.reservas(consultas.buscar(new CriteriosReserva(
                 Parseo.constanteOpcional(EstadoReserva.class, estado, "el estado de la reserva"),
                 Parseo.diaOpcional(dia, "el día"), q)));
+    }
+
+    // El email sale de la sesión, no del pedido: nadie pide las de otro.
+    @Operation(summary = "Las reservas del cliente de la sesión, la más nueva primero")
+    @GetMapping("/api/reservas/mias")
+    public List<ReservaVistaDTO> mias(Principal cliente) {
+        return vistas.reservas(consultas.listarPorEmail(cliente.getName()));
     }
 
     @Operation(summary = "El detalle de una reserva (encargado)")
@@ -99,9 +104,9 @@ public class ReservaController {
         return vistas.reserva(reservas.cancelar(id));
     }
 
-    @Operation(summary = "El cliente cancela su reserva con el código de acceso")
+    @Operation(summary = "El cliente cancela su reserva, con la sesión abierta (R21)")
     @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
-    public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo) {
-        return vistas.reserva(reservas.cancelar(consultas.obtenerPorCodigo(codigo).getId()));
+    public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo, Principal cliente) {
+        return vistas.reserva(reservas.cancelarDelCliente(codigo, cliente.getName()));
     }
 }
