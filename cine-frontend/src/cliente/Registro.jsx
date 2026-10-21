@@ -12,7 +12,8 @@ export function Registro() {
   const avisar = useAvisar();
   const { setUsuario } = useSesion();
   const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState(useLocation().state?.email || "");
+  const { state } = useLocation();
+  const [email, setEmail] = useState(state?.email || "");
   const [clave, setClave] = useState("");
   const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
