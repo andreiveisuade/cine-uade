@@ -1,5 +1,6 @@
-import { Alert, Anchor, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { Alert, Anchor, Badge, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
+import { m, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -63,12 +64,29 @@ function armarTicket(reserva) {
   ].join("\n");
 }
 
+// El sello cae solo si el pago se vio llegar en esta pantalla; un ticket que ya abrió pago lo muestra quieto.
+const SELLO_CAYENDO = { opacity: 0, scale: 2.2, rotate: -24 };
+const SELLO = { opacity: 1, scale: 1, rotate: -8 };
+
+// El ticket sale de la impresora: se destapa de arriba hacia abajo.
+const IMPRESION = {
+  initial: { clipPath: "inset(0 0 100% 0)" },
+  animate: { clipPath: "inset(0 0 0% 0)", transition: { duration: 0.4, ease: "easeOut" } },
+};
+
 // No es un QR dibujado: el código en claro se escanea o se tipea igual, sin sumar una librería.
-function TarjetaCodigo({ reserva }) {
+function TarjetaCodigo({ reserva, pagoEnVivo }) {
   if (!reserva.codigo) return null;
   const usada = reserva.ingresadaEn;
   return (
-    <Paper withBorder p="lg" ta="center" style={{ borderWidth: 2, opacity: usada ? 0.6 : 1 }}>
+    <Paper withBorder p="lg" ta="center" pos="relative" style={{ borderWidth: 2, opacity: usada ? 0.6 : 1 }}>
+      {reserva.estado === "PAGADA" && (
+        <Badge component={m.div} initial={pagoEnVivo ? SELLO_CAYENDO : false} animate={SELLO}
+          transition={{ type: "spring", stiffness: 400, damping: 18 }}
+          color="green" variant="outline" size="lg" pos="absolute" top={12} right={12} style={{ borderWidth: 2 }}>
+          Pagada
+        </Badge>
+      )}
       <Text size="xs" tt="uppercase" c="dimmed" style={{ letterSpacing: "0.15em" }}>Código de acceso</Text>
       <Text ff="monospace" fz={32} fw={700} style={{ letterSpacing: "0.2em", textDecoration: usada ? "line-through" : "none" }}>
         {reserva.codigo.slice(0, 4)} {reserva.codigo.slice(4)}
@@ -133,8 +151,30 @@ export function Ticket() {
     return () => clearInterval(intervalo);
   }, [esperandoPago, codigo]);
 
+  const reserva = actualizada?.codigo === codigo ? actualizada : inicial;
+  // Lo refrescado solo existe si se estaba esperando el pago: si dice PAGADA, el cambio pasó con la pantalla abierta.
+  const pagoEnVivo = actualizada?.codigo === codigo && actualizada.estado === "PAGADA";
+  const quieto = useReducedMotion();
+  const celebrada = useRef(null);
+
+  useEffect(() => {
+    if (!pagoEnVivo || quieto || celebrada.current === codigo) return;
+    celebrada.current = codigo;
+    // Se baja recién cuando hace falta: casi ningún ticket la usa.
+    let vigente = true;
+    let confetti;
+    import("canvas-confetti").then(({ default: lanzar }) => {
+      if (!vigente) return;
+      confetti = lanzar;
+      lanzar({ particleCount: 120, spread: 75, origin: { y: 0.3 }, disableForReducedMotion: true });
+    });
+    return () => {
+      vigente = false;
+      confetti?.reset();
+    };
+  }, [pagoEnVivo, quieto, codigo]);
+
   if (!carga.datos) return <EsperaOError carga={carga} />;
-  const reserva = actualizada?.codigo === codigo ? actualizada : carga.datos[0];
   const avisoEstado = AVISO_POR_ESTADO[reserva.estado];
   const productos = carga.datos[1];
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
@@ -151,14 +191,16 @@ export function Ticket() {
       <Grid gap="md" align="flex-start">
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Stack gap="md">
-            <TarjetaCodigo reserva={reserva} />
+            <TarjetaCodigo reserva={reserva} pagoEnVivo={pagoEnVivo} />
             {conAcreditacion.length > 0 && (
               <Alert color="yellow" title="Traé el carnet">
                 En la puerta se acredita la tarifa de{" "}
                 {conAcreditacion.map((e) => `${e.codigo} (${etiqueta(e.tarifa).toLowerCase()})`).join(", ")}.
               </Alert>
             )}
-            <Code block fz="xs">{armarTicket(reserva)}</Code>
+            <m.div {...IMPRESION}>
+              <Code block fz="xs">{armarTicket(reserva)}</Code>
+            </m.div>
             <Group>
               <Button component={Link} to="/">Volver a la cartelera</Button>
               <Button variant="default" onClick={copiar}>Copiar</Button>
