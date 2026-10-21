@@ -1,10 +1,8 @@
 import { useEffect } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { Anchor, AppShell, Container, Group, Text } from "@mantine/core";
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
-import * as api from "../api/api-http.js";
-import { useAvisar } from "../componentes/Avisos.jsx";
-import { BotonTema } from "../componentes/BotonTema.jsx";
+import { AppShell } from "@mantine/core";
+import { Route, Routes, useLocation } from "react-router";
+import { Contenedor } from "../componentes/Contenedor.jsx";
 import { ErrorDePantalla } from "../componentes/ErrorDePantalla.jsx";
 import { NoExiste } from "../componentes/NoExiste.jsx";
 import { CompraEnCurso } from "./compra.jsx";
@@ -16,52 +14,11 @@ import { Ticket } from "./Ticket.jsx";
 import { MisReservas } from "./MisReservas.jsx";
 import { Registro } from "./Registro.jsx";
 import { Ingresar } from "./Ingresar.jsx";
-import { SesionDelCliente, useSesion } from "./sesion.jsx";
+import { SesionDelCliente } from "./sesion.jsx";
+import { Barra } from "./Barra.jsx";
+import { Pie } from "./Pie.jsx";
 import { Nosotros } from "./Nosotros.jsx";
 import { Promociones } from "./Promociones.jsx";
-
-function Enlace({ a, children }) {
-  return (
-    <Anchor component={NavLink} to={a} size="sm" c="dimmed"
-      style={({ isActive }) => (isActive ? { color: "var(--mantine-color-text)", fontWeight: 600 } : undefined)}>
-      {children}
-    </Anchor>
-  );
-}
-
-function EnlacesDeCuenta() {
-  const { usuario, setUsuario } = useSesion();
-  const navegar = useNavigate();
-  const avisar = useAvisar();
-
-  async function salir() {
-    try {
-      await api.salir();
-      setUsuario(null);
-      navegar("/");
-    } catch (e) {
-      avisar(e.message, "error");
-    }
-  }
-
-  // Mientras se pregunta por la sesión no se muestra ninguna de las dos barras: evita el parpadeo.
-  if (usuario === undefined) return null;
-  if (!usuario) {
-    return (
-      <>
-        <Enlace a="/ingresar">Ingresar</Enlace>
-        <Enlace a="/registro">Registrarme</Enlace>
-      </>
-    );
-  }
-  return (
-    <>
-      <Text size="sm" fw={600}>{usuario.nombre}</Text>
-      <Enlace a="/mis-reservas">Mis reservas</Enlace>
-      <Anchor component="button" size="sm" c="dimmed" onClick={salir}>Salir</Anchor>
-    </>
-  );
-}
 
 // Corta y sin desplazamiento grande: acompaña el cambio de pantalla sin demorarlo.
 const PANTALLA = {
@@ -80,25 +37,13 @@ export function AppCliente() {
 
   return (
     <SesionDelCliente>
-      <AppShell header={{ height: 60 }} padding="md">
-        <AppShell.Header>
-          <Container size="lg" h="100%">
-            <Group h="100%" justify="space-between" wrap="nowrap">
-              <Anchor component={Link} to="/" fw={800} fz="lg" c="var(--mantine-color-text)" underline="never">
-                CINE UADE
-              </Anchor>
-              <Group gap="md" wrap="nowrap">
-                <Enlace a="/promociones">Promos</Enlace>
-                <Enlace a="/nosotros">Nosotros</Enlace>
-                <EnlacesDeCuenta />
-                <BotonTema />
-              </Group>
-            </Group>
-          </Container>
+      <AppShell header={{ height: 64 }}>
+        <AppShell.Header style={{ borderColor: "var(--cine-borde)" }}>
+          <Barra />
         </AppShell.Header>
-  
-        <AppShell.Main>
-          <Container size="lg" py="md">
+
+        <AppShell.Main style={{ display: "flex", flexDirection: "column" }}>
+          <Contenedor pt="var(--cine-gutter)" w="100%" style={{ flex: 1 }}>
             <CompraEnCurso>
               <ErrorDePantalla>
                 <AnimatePresence mode="wait" initial={false}>
@@ -121,7 +66,8 @@ export function AppCliente() {
                 </AnimatePresence>
               </ErrorDePantalla>
             </CompraEnCurso>
-          </Container>
+          </Contenedor>
+          <Pie />
         </AppShell.Main>
       </AppShell>
     </SesionDelCliente>
