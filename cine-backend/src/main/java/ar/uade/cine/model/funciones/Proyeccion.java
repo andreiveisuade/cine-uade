@@ -7,8 +7,7 @@ public enum Proyeccion {
     DOS_D,
     TRES_D;
 
-    // R8: el 3D necesita una sala que lo soporte; el 2D entra en cualquiera. Acá y no en la validación
-    // porque también la pregunta la grilla automática, para repartir pases solo en las salas que sirven.
+    // R8: el 3D necesita una sala que lo soporte. Acá porque también lo pregunta la grilla automática.
     public boolean sePuedeProyectarEn(TipoSala tipo) {
         return this != TRES_D || tipo.soportaTresD();
     }
