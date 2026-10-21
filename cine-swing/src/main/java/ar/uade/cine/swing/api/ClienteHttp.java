@@ -19,12 +19,7 @@ import java.util.Base64;
 import java.util.List;
 
 // El transporte con el backend: Basic, JSON y errores; lo comparten todas las Api, que solo saben de rutas.
-/**
- * La mitad de {@code cine-frontend/src/api/api-http.js} que no depende de ninguna ruta: {@code pedir()} y
- * {@code mensajeDeError()}. Las operaciones viven en una {@code Api} por subdominio, y cada pantalla recibe solo las
- * que usa. Es bloqueante a propósito: quien llama la corre fuera del EDT (ver {@code comun.Tarea}), y así los tests la
- * usan sin ventanas.
- */
+// Bloqueante a propósito: quien llama lo corre fuera del EDT (comun.Tarea).
 public final class ClienteHttp {
 
     public static final String URL_POR_DEFECTO = "http://localhost:8080";
@@ -69,12 +64,7 @@ public final class ClienteHttp {
         credenciales = null;
     }
 
-    /**
-     * Las credenciales nuevas van en Basic, que es lo único que valida el backend (Spring Security). Nunca las viejas:
-     * si vencieron, el filtro rechazaría el pedido antes de probar las nuevas. Se guardan solo si el login contestó
-     * bien: un 401 sale por excepción antes de llegar a guardarlas, y no avisa sesión vencida porque acá quiere decir
-     * "clave incorrecta".
-     */
+    /** Credenciales nuevas en Basic, nunca las viejas; se guardan solo si el login contestó bien (un 401 sale antes). */
     <T> T ingresar(String ruta, String email, String password, Class<T> tipo) {
         String nuevas = Base64.getEncoder().encodeToString(
                 (Parametros.oVacio(email) + ":" + Parametros.oVacio(password)).getBytes(StandardCharsets.UTF_8));
@@ -168,11 +158,7 @@ public final class ClienteHttp {
         return respuesta;
     }
 
-    /**
-     * El {@code {"error": "..."}} del backend (y del nginx del proyecto, que también contesta en JSON) va tal
-     * cual. Cualquier otra cosa (texto, un cuerpo vacío, el HTML de otro proxy) no se muestra: va a la consola
-     * para depurar y en pantalla queda un mensaje según el código.
-     */
+    /** Usa el campo {@code error} del backend; cualquier otra cosa va a la consola y en pantalla un mensaje por código. */
     private String mensajeDeError(int estado, byte[] cuerpo) {
         String texto = new String(cuerpo, StandardCharsets.UTF_8).strip();
         try {
