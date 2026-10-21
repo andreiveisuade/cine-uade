@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -204,6 +205,23 @@ class MercadoPagoHttpTest {
                 () -> pasarela("http://localhost:8080").autorizar(checkout()), caso);
 
         assertEquals(mensaje, error.getMessage());
+    }
+
+    // La conciliación: los pagos aprobados desde un momento, con la referencia de un checkout nuestro.
+    @Test
+    void losAprobadosDesdeUnMomentoSonLosCheckoutsConPagoAprobado() {
+        pagosEnMp = """
+                [{"id": 1, "status": "approved", "external_reference": "25-QR-7"},
+                 {"id": 2, "status": "approved", "external_reference": "venta-de-otro-sistema"},
+                 {"id": 3, "status": "approved", "external_reference": "25-QR-7"},
+                 {"id": 4, "status": "approved", "external_reference": "26-DEBITO-8"}]""";
+
+        List<String> aprobados = pasarela("http://localhost:8080").aprobadosDesde(VENCE);
+
+        assertEquals(List.of("25-QR-7", "26-DEBITO-8"), aprobados);
+        String pedido = URLDecoder.decode(pedidos.get(pedidos.size() - 1), StandardCharsets.UTF_8);
+        assertTrue(pedido.contains("status=approved"), pedido);
+        assertTrue(pedido.contains("begin_date=2026-08-14T10:30:00.000-03:00"), pedido);
     }
 
     @Test

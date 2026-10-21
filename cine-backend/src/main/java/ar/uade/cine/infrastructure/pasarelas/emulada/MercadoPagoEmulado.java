@@ -2,6 +2,7 @@ package ar.uade.cine.infrastructure.pasarelas.emulada;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +37,12 @@ public class MercadoPagoEmulado implements PasarelaPagos {
     @Override
     public String autorizar(Checkout checkout) {
         return "MP-AUT-" + numero(8);
+    }
+
+    // Acá nadie paga afuera: el checkout emulado se cobra solo cuando alguien lo confirma.
+    @Override
+    public List<String> aprobadosDesde(LocalDateTime desde) {
+        return List.of();
     }
 
     private static String numero(int digitos) {

@@ -114,6 +114,19 @@ public class GestorPagos {
         return new RetornoCheckout(reserva.getCodigo(), null);
     }
 
+    // La conciliación: el mismo cobro que la vuelta, para el comprador que pagó y no volvió al sitio. Si la
+    // vuelta llegó antes no hace nada; true si la cobró ahora. Lo que impide cobrar sale como Rechazo.
+    public boolean conciliarCheckout(String checkoutId) {
+        PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
+        Reserva reserva = buscarReserva(checkout.reservaId());
+        if (pagoRepository.existsByReservaId(reserva.getId())) {
+            return false;
+        }
+        validarQueSePuedaCobrar(reserva);
+        registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+        return true;
+    }
+
     private PasarelaPagos.Checkout buscarCheckout(String checkoutId) {
         return pasarela.buscar(checkoutId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));

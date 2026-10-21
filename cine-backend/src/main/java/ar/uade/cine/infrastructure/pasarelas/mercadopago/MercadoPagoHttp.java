@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +38,8 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final SecureRandom AZAR = new SecureRandom();
     private static final String MONEDA = "ARS";
+    // <reservaId>-<MEDIO>-<azar>: el que arma crear. Cualquier otra referencia es de otra venta de la cuenta.
+    private static final String FORMATO_ID = "\\d{1,9}-[A-Z]+-\\d+";
     // Los payment_type_id de MP Argentina: los que no son el medio pedido van en excluded_payment_types.
     private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
             "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
@@ -98,7 +101,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     // El id lo arma crear, pero llega por la URL: solo vale si MP tiene una preferencia con ese external_reference.
     @Override
     public Optional<Checkout> buscar(String checkoutId) {
-        if (checkoutId == null || !checkoutId.matches("\\d{1,9}-[A-Z]+-\\d+")) {
+        if (checkoutId == null || !checkoutId.matches(FORMATO_ID)) {
             return Optional.empty();
         }
         String[] partes = checkoutId.split("-");
@@ -164,6 +167,23 @@ public class MercadoPagoHttp implements PasarelaPagos {
             case TRANSFERENCIA -> Set.of("bank_transfer", "account_money");
             case EFECTIVO -> throw new IllegalStateException("El efectivo no abre checkout");
         };
+    }
+
+    // Sin webhook (MP no llega a localhost) la conciliación pregunta. Un checkout con dos aprobados sale una vez.
+    @Override
+    public List<String> aprobadosDesde(LocalDateTime desde) {
+        JsonNode pagos = pedir(get("/v1/payments/search?status=approved&sort=date_created&criteria=desc"
+                + "&range=date_created&end_date=NOW&limit=100&begin_date="
+                + URLEncoder.encode(desde.atOffset(HORA_ARGENTINA).format(FECHA_MP), StandardCharsets.UTF_8)))
+                .path("results");
+        List<String> checkouts = new ArrayList<>();
+        for (JsonNode pago : pagos) {
+            String referencia = pago.path("external_reference").asText();
+            if (referencia.matches(FORMATO_ID) && !checkouts.contains(referencia)) {
+                checkouts.add(referencia);
+            }
+        }
+        return checkouts;
     }
 
     private static boolean coincide(JsonNode pago, Checkout checkout) {

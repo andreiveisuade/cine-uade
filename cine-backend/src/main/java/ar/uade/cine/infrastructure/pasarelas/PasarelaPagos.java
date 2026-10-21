@@ -1,6 +1,7 @@
 package ar.uade.cine.infrastructure.pasarelas;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import ar.uade.cine.model.ventas.MedioPago;
@@ -15,6 +16,9 @@ public interface PasarelaPagos {
     Optional<Checkout> buscar(String checkoutId);
 
     String autorizar(Checkout checkout);
+
+    // Los checkouts con un pago aprobado desde ese momento, para cobrarlos aunque el comprador no vuelva.
+    List<String> aprobadosDesde(LocalDateTime desde);
 
     // Guarda reservaId y medio para que quien confirma no pueda decir que paga otra cosa.
     record Checkout(String id, int reservaId, MedioPago medio, Dinero monto,
