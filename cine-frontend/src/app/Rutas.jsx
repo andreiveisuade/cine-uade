@@ -1,7 +1,7 @@
 import { AnimatePresence, m } from "motion/react";
 import { Route, Routes, useLocation } from "react-router";
-import { Cartelera } from "@/cliente/Cartelera.jsx";
-import { Pelicula } from "@/cliente/Pelicula.jsx";
+import { Cartelera } from "@/cartelera/Cartelera.jsx";
+import { Pelicula } from "@/cartelera/pelicula/Pelicula.jsx";
 import { Funcion } from "@/cliente/Funcion.jsx";
 import { Confirmar } from "@/cliente/Confirmar.jsx";
 import { Ticket } from "@/cliente/Ticket.jsx";
