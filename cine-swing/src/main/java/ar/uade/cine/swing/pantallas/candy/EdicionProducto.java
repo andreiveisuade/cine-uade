@@ -1,8 +1,11 @@
 package ar.uade.cine.swing.pantallas.candy;
 
 import ar.uade.cine.swing.api.ApiCandy;
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ErrorApi;
+import ar.uade.cine.swing.api.dto.candy.PedidoEdicionProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
+import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Formulario;
@@ -15,7 +18,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import java.awt.Component;
 
-// El diálogo que cambia nombre y precio de un producto de la carta, lo único que el backend deja editar.
+// El diálogo que cambia nombre, precio e imagen de un producto de la carta, lo único que el backend deja editar.
 // Con un campo mal, el diálogo se reabre con el motivo para no perder lo tipeado.
 final class EdicionProducto {
 
@@ -25,10 +28,12 @@ final class EdicionProducto {
     private final Runnable alGuardar;
     private final JTextField nombre;
     private final JTextField precio;
+    private final CampoImagen imagen;
     private final JLabel error = Componentes.texto(" ");
     private final Formulario formulario;
 
-    EdicionProducto(Component origen, ApiCandy apiCandy, Producto producto, Runnable alGuardar) {
+    EdicionProducto(Component origen, ApiCandy apiCandy, ApiImagenes apiImagenes, Producto producto,
+                    Runnable alGuardar) {
         this.origen = origen;
         this.apiCandy = apiCandy;
         this.producto = producto;
@@ -36,9 +41,12 @@ final class EdicionProducto {
         nombre = new JTextField(producto.nombre(), 20);
         precio = Campos.soloDecimal(new JTextField(producto.precio() % 1 == 0
                 ? String.valueOf((long) producto.precio()) : String.valueOf(producto.precio())));
+        imagen = new CampoImagen(apiImagenes);
+        imagen.poner(producto.imagenUrl());
         formulario = new Formulario()
                 .obligatorio("Nombre", nombre)
-                .obligatorio("Precio", precio);
+                .obligatorio("Precio", precio)
+                .campo("Imagen", imagen);
         if (producto.esCombo()) {
             formulario.ancho(Componentes.nota("Trae " + PantallaCandy.componentesDe(producto)
                     + ". Los componentes se fijan al armarlo."));
@@ -72,7 +80,8 @@ final class EdicionProducto {
     }
 
     private void guardar(Validacion v, String nuevoNombre, Double nuevoPrecio) {
-        Tarea.ejecutar(origen, () -> apiCandy.editarProductoCandy(producto.id(), nuevoNombre, nuevoPrecio), editado -> {
+        Tarea.ejecutar(origen, () -> apiCandy.editarProductoCandy(producto.id(),
+                new PedidoEdicionProducto(nuevoNombre, nuevoPrecio, imagen.url())), editado -> {
             Mensajes.exito(origen, "Producto actualizado");
             alGuardar.run();
         }, e -> {

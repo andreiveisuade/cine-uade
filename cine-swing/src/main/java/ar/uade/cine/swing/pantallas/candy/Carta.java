@@ -2,9 +2,11 @@ package ar.uade.cine.swing.pantallas.candy;
 
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
 import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
+import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -38,6 +40,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
 final class Carta extends Seccion {
 
     private final ApiCandy apiCandy;
+    private final ApiImagenes apiImagenes;
     private final JButton editar = new JButton("Editar");
     private final Tabla<Producto> tabla = new Tabla<>(
             Columna.<Producto>de("Producto", Producto::nombre).ancho(200),
@@ -49,18 +52,23 @@ final class Carta extends Seccion {
     private final JTextField nombreProducto = new JTextField();
     private final JComboBox<Opcion<String>> tipoProducto = new JComboBox<>();
     private final JTextField precioProducto = Campos.soloDecimal(new JTextField());
+    private final CampoImagen imagenProducto;
     private final JLabel errorProducto = Componentes.texto(" ");
 
     private final JTextField nombreCombo = new JTextField();
     private final JTextField precioCombo = Campos.soloDecimal(new JTextField());
     private final JPanel filasCombo = new JPanel(new GridBagLayout());
     private final Cantidades cantidadesCombo = new Cantidades();
+    private final CampoImagen imagenCombo;
     private final JLabel errorCombo = Componentes.texto(" ");
     private final BotonesDeFila<Producto> botones;
 
-    Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos) {
+    Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
         super(new BorderLayout(12, 8));
         this.apiCandy = apiCandy;
+        this.apiImagenes = apiImagenes;
+        this.imagenProducto = new CampoImagen(apiImagenes);
+        this.imagenCombo = new CampoImagen(apiImagenes);
         // Command: ver AccionDeFila.
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarDisponibilidadProducto(apiCandy));
         JPanel acciones = new JPanel(new FlujoConSalto());
@@ -107,6 +115,7 @@ final class Carta extends Seccion {
                 .obligatorio("Nombre", nombreProducto)
                 .obligatorio("Tipo", tipoProducto)
                 .obligatorio("Precio", precioProducto)
+                .campo("Imagen", imagenProducto)
                 .ancho(agregar)
                 .ancho(errorProducto)), BorderLayout.NORTH);
         columna.add(Componentes.conBorde(new Formulario()
@@ -117,6 +126,7 @@ final class Carta extends Seccion {
                 .ancho(new JLabel("Qué trae (cantidad)"))
                 .ancho(filasCombo)
                 .obligatorio("Precio del combo", precioCombo)
+                .campo("Imagen", imagenCombo)
                 .ancho(armar)
                 .ancho(errorCombo)
                 .cerrar()), BorderLayout.CENTER);
@@ -163,11 +173,12 @@ final class Carta extends Seccion {
         String tipo = v.elegido(tipoProducto, "Tipo");
         Double precio = v.decimal(precioProducto, "Precio", true);
         if (!v.ok()) return;
-        PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio);
+        PedidoProducto pedido = new PedidoProducto(nombre, tipo, precio, imagenProducto.url());
         Tarea.ejecutar(this, () -> apiCandy.crearProductoCandy(pedido), creado -> {
             avisar("Producto agregado");
             nombreProducto.setText("");
             precioProducto.setText("");
+            imagenProducto.poner(null);
             recargar();
         }, v::mostrarError);
     }
@@ -179,16 +190,17 @@ final class Carta extends Seccion {
         Double precio = v.decimal(precioCombo, "Precio del combo", true);
         v.alMencionar("combo", precioCombo);
         if (!v.ok()) return;
-        PedidoCombo pedido = new PedidoCombo(nombre, precio, cantidadesCombo.elegidas());
+        PedidoCombo pedido = new PedidoCombo(nombre, precio, cantidadesCombo.elegidas(), imagenCombo.url());
         Tarea.ejecutar(this, () -> apiCandy.armarComboCandy(pedido), creado -> {
             avisar("Combo armado");
             nombreCombo.setText("");
             precioCombo.setText("");
+            imagenCombo.poner(null);
             recargar();
         }, v::mostrarError);
     }
 
     private void editar(Producto p) {
-        new EdicionProducto(this, apiCandy, p, this::recargar).abrir();
+        new EdicionProducto(this, apiCandy, apiImagenes, p, this::recargar).abrir();
     }
 }

@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
-// Promociones (CU-17): alta, baja y reactivación. No hay borrado: explican por qué un cobro salió ese monto.
+// Promociones (CU-17): alta, edición, baja y reactivación. No hay borrado: explican por qué un cobro salió ese monto.
 @RequiredArgsConstructor
 public final class ApiPromociones {
 
@@ -19,6 +19,10 @@ public final class ApiPromociones {
 
     public Promocion crearPromocion(PedidoPromocion promocion) {
         return http.post("/promociones", promocion, Promocion.class);
+    }
+
+    public Promocion editarPromocion(int id, PedidoPromocion promocion) {
+        return http.put("/promociones/" + id, promocion, Promocion.class);
     }
 
     public Promocion cambiarActivacionPromocion(int id, boolean activa) {

@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas.candy;
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiClientes;
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
@@ -14,10 +15,11 @@ import java.util.stream.Collectors;
 /** Pestañas y no una pantalla larga: cobrar un pochoclo no puede pedir scrollear entre combos. */
 public final class PantallaCandy extends Pantalla {
 
-    public PantallaCandy(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes) {
+    public PantallaCandy(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes,
+                        ApiImagenes apiImagenes) {
         super("Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
         JTabbedPane pestanas = new JTabbedPane();
-        pestanas.addTab("Carta", new Carta(apiCandy, apiCatalogos));
+        pestanas.addTab("Carta", new Carta(apiCandy, apiCatalogos, apiImagenes));
         pestanas.addTab("Venta de mostrador", new VentaMostrador(apiCandy, apiCatalogos, apiClientes));
         pestanas.addTab("Ventas del día", new VentasDelDia(apiCandy));
         add(pestanas, BorderLayout.CENTER);

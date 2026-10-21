@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -17,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 // El transporte con el backend: Basic, JSON y errores; lo comparten todas las Api, que solo saben de rutas.
 // Bloqueante a propósito: quien llama lo corre fuera del EDT (comun.Tarea).
@@ -102,6 +104,23 @@ public final class ClienteHttp {
         pedir("DELETE", ruta, null, tipo(JsonNode.class));
     }
 
+    /** Un archivo en multipart/form-data, sin librerías: java.net.http no lo arma solo. */
+    <T> T subir(String ruta, String campo, String nombreArchivo, String tipoArchivo, byte[] datos, Class<T> tipo) {
+        String limite = UUID.randomUUID().toString();
+        ByteArrayOutputStream cuerpo = new ByteArrayOutputStream();
+        cuerpo.writeBytes(("--" + limite + "\r\nContent-Disposition: form-data; name=\"" + campo + "\"; filename=\""
+                + nombreArchivo + "\"\r\nContent-Type: " + tipoArchivo + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+        cuerpo.writeBytes(datos);
+        cuerpo.writeBytes(("\r\n--" + limite + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        return leer(enviar("POST", ruta, "multipart/form-data; boundary=" + limite,
+                HttpRequest.BodyPublishers.ofByteArray(cuerpo.toByteArray()), credenciales, true, ESPERA), tipo(tipo));
+    }
+
+    /** El cuerpo crudo, para lo que no es JSON (una imagen). */
+    byte[] bytes(String ruta) {
+        return enviar("GET", ruta, null, HttpRequest.BodyPublishers.noBody(), credenciales, true, ESPERA).body();
+    }
+
     private JavaType tipo(Class<?> clase) {
         return json.getTypeFactory().constructType(clase);
     }
@@ -113,7 +132,14 @@ public final class ClienteHttp {
     // `avisaVencida`: un 401 del login es "clave incorrecta", no una sesión que se cayó.
     private <T> T pedir(String metodo, String ruta, Object cuerpo, JavaType tipo, String clave,
                         boolean avisaVencida, Duration espera) {
-        HttpResponse<byte[]> respuesta = enviar(metodo, ruta, cuerpo, clave, avisaVencida, espera);
+        return leer(cuerpo == null
+                ? enviar(metodo, ruta, null, HttpRequest.BodyPublishers.noBody(), clave, avisaVencida, espera)
+                : enviar(metodo, ruta, "application/json",
+                        HttpRequest.BodyPublishers.ofString(escribir(cuerpo), StandardCharsets.UTF_8),
+                        clave, avisaVencida, espera), tipo);
+    }
+
+    private <T> T leer(HttpResponse<byte[]> respuesta, JavaType tipo) {
         String texto = new String(respuesta.body(), StandardCharsets.UTF_8);
         if (texto.isBlank()) return null;
         try {
@@ -125,16 +151,13 @@ public final class ClienteHttp {
     }
 
     /** Manda el pedido y convierte cualquier estado de error en {@link ErrorApi}; el cuerpo de un 2xx queda crudo. */
-    private HttpResponse<byte[]> enviar(String metodo, String ruta, Object cuerpo, String clave,
+    private HttpResponse<byte[]> enviar(String metodo, String ruta, String tipoCuerpo,
+                                        HttpRequest.BodyPublisher cuerpo, String clave,
                                         boolean avisaVencida, Duration espera) {
         HttpRequest.Builder pedido = HttpRequest.newBuilder(URI.create(base + ruta)).timeout(espera);
         if (clave != null) pedido.header("Authorization", "Basic " + clave);
-        if (cuerpo != null) {
-            pedido.header("Content-Type", "application/json");
-            pedido.method(metodo, HttpRequest.BodyPublishers.ofString(escribir(cuerpo), StandardCharsets.UTF_8));
-        } else {
-            pedido.method(metodo, HttpRequest.BodyPublishers.noBody());
-        }
+        if (tipoCuerpo != null) pedido.header("Content-Type", tipoCuerpo);
+        pedido.method(metodo, cuerpo);
 
         HttpResponse<byte[]> respuesta;
         try {

@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas.promociones;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
@@ -12,6 +13,7 @@ import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.pantallas.Pantalla;
 import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
@@ -23,7 +25,7 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-// Promociones (CU-17): el listado con su baja y reactivación, y el alta al costado (FormularioPromocion).
+// Promociones (CU-17): el listado con su baja y reactivación, y el alta o la edición al costado (FormularioPromocion).
 /** No se borran: una que ya se usó explica por qué se cobró ese monto. */
 public final class PantallaPromociones extends Pantalla {
 
@@ -42,15 +44,18 @@ public final class PantallaPromociones extends Pantalla {
             Columna.<Promocion>de("Cuándo", PantallaPromociones::condiciones).ancho(240),
             Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
 
-    public PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones) {
+    public PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones, ApiImagenes apiImagenes) {
         super("Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
         this.apiCatalogos = apiCatalogos;
         this.apiPromociones = apiPromociones;
-        this.formulario = new FormularioPromocion(apiPromociones, this::recargar);
+        this.formulario = new FormularioPromocion(apiPromociones, apiImagenes, this::recargar);
 
         // Command: ver AccionDeFila.
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarActivacionPromocion(apiPromociones));
+        JButton editar = new JButton("Editar");
+        editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
         JPanel acciones = new JPanel(new FlujoConSalto());
+        acciones.add(editar);
         botones.agregarA(acciones);
         JPanel abajo = new JPanel(new BorderLayout(0, 4));
         abajo.add(acciones, BorderLayout.NORTH);
@@ -64,7 +69,12 @@ public final class PantallaPromociones extends Pantalla {
         add(centro, BorderLayout.CENTER);
         add(formulario, BorderLayout.EAST);
 
-        tabla.tabla().getSelectionModel().addListSelectionListener(e -> botones.refrescar());
+        tabla.alDobleClic(formulario::editar);
+        tabla.tabla().getSelectionModel().addListSelectionListener(e -> {
+            editar.setEnabled(tabla.seleccionada().isPresent());
+            botones.refrescar();
+        });
+        editar.setEnabled(false);
         botones.refrescar();
         cargar(apiCatalogos::obtenerTiposPromocion, formulario::armarTipos);
         recargar();
