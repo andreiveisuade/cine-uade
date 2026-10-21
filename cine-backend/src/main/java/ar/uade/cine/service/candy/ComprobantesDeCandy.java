@@ -16,13 +16,8 @@ import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 
 // Emite el ticket de una compra de candy cuando ya quedó guardada; Observer que escucha a GestorCandy.
-//
-// Patrón Observer (GoF), el mismo que ComprobantesDeVentas: GestorCandy (el sujeto) publica
-// CompraCandyRegistrada y no sabe que existe un ticket; esta clase (el observador) lo emite.
-// Qué resolvía: el ticket se escribía antes del commit, y una compra que después no se guardaba dejaba
-// su ticket en la carpeta. Cómo se lee: @TransactionalEventListener corre recién cuando la transacción de
-// la venta confirma (AFTER_COMMIT) y no corre si se deshace. Relee la compra por id en una transacción de
-// solo lectura propia (REQUIRES_NEW), porque la de la venta ya terminó.
+// Patrón Observer (GoF): el ticket se emite recién AFTER_COMMIT; antes una compra no guardada dejaba su ticket.
+// Relee la compra por id en una transacción propia (REQUIRES_NEW), porque la de la venta ya terminó.
 @Service
 @RequiredArgsConstructor
 @Slf4j

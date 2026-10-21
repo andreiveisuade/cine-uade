@@ -36,10 +36,8 @@ public class GestorCandy {
         return vender(clienteId, null, cantidades, medio, codigoAutorizacion);
     }
 
-    // El cliente sale de la reserva; si el pedido además nombra uno, tiene que ser ese: antes se lo
-    // descartaba en silencio y la compra quedaba a nombre de otro sin que nadie se enterara.
-    // Solo sobre una reserva pagada: el candy se retira con el QR de la entrada, y una cancelada o
-    // vencida no tiene entrada que mostrar.
+    // El cliente sale de la reserva; si el pedido nombra uno, tiene que ser ese.
+    // Solo reserva pagada: el candy se retira con el QR de la entrada.
     public CompraCandy venderParaReserva(int reservaId, Integer clienteId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
@@ -60,8 +58,7 @@ public class GestorCandy {
         if (clienteId != null) {
             clienteRepository.exigir(clienteId, "el cliente");
         }
-        // El pedido y el medio antes de buscar los productos: efectivo con código es un error de carga que
-        // se rechaza aunque además falte un producto.
+        // Pedido y medio antes que los productos: efectivo con código se rechaza aunque falte un producto
         CompraCandy.validarPedido(cantidades, medio, codigoAutorizacion);
         CompraCandy compra = new CompraCandy(clienteId, reservaId, reloj.ahora(), medio, codigoAutorizacion,
                 productos.obtener(cantidades));
