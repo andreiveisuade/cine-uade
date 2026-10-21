@@ -19,6 +19,12 @@ export default defineConfig({
       },
     },
   },
+  // Los tests corren en jsdom con el mismo Vite: comparten plugins y resolución con la app.
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.js",
+    coverage: { include: ["src/**/*.{js,jsx}"], exclude: ["src/test/**", "src/**/*.test.{js,jsx}"] },
+  },
   server: {
     proxy: {
       "/api": SISTEMA,
