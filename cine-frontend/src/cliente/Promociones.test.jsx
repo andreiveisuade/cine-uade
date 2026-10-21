@@ -58,10 +58,13 @@ describe("Promociones", () => {
   it.each([
     ["el miércoles es su día", ["WEDNESDAY"], "2026-08-01", true],
     ["corre todos los días", [], "2026-08-01", true],
-    ["solo los jueves", ["THURSDAY"], "2026-08-01", false],
+    ["promo de jueves un miércoles", ["THURSDAY"], "2026-08-01", false],
+    ["corre jueves y miércoles", ["THURSDAY", "WEDNESDAY"], "2026-08-01", true],
     ["todavía no empezó", ["WEDNESDAY"], "2026-11-01", false],
-  ])("¡Hoy aplica! cuando %s", async (_, diasSemana, vigenciaDesde, aplica) => {
-    api.obtenerPromocionesVigentes.mockResolvedValue([promo({ diasSemana, vigenciaDesde })]);
+    ["su franja todavía no terminó", ["WEDNESDAY"], "2026-08-01", true, "13:00", "17:00"],
+    ["su franja ya terminó hoy", ["WEDNESDAY"], "2026-08-01", false, "08:00", "11:00"],
+  ])("¡Hoy aplica! cuando %s", async (_, diasSemana, vigenciaDesde, aplica, horaDesde, horaHasta) => {
+    api.obtenerPromocionesVigentes.mockResolvedValue([promo({ diasSemana, vigenciaDesde, horaDesde, horaHasta })]);
     abrir();
 
     await screen.findByText("2x1");

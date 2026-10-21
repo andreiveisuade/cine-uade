@@ -3,6 +3,7 @@ import { Carousel } from "@mantine/carousel";
 import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
 import { Badge, Box, Card, Chip, Collapse, Group, SimpleGrid, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { AnimatePresence, m, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -42,10 +43,13 @@ function hoyIso() {
 
 const corre = (promo, dia) => promo.diasSemana.length === 0 || promo.diasSemana.includes(dia);
 
-// Solo presentación: si el descuento entra en una compra lo decide el backend al cobrar.
+// Solo presentación (el descuento lo decide el cobro): «hoy» es que alguna función de hoy todavía pueda entrar,
+// así que con franja ya terminada a esta hora no se anuncia.
 function aplicaHoy(promo) {
   const hoy = hoyIso();
-  return promo.vigenciaDesde <= hoy && hoy <= promo.vigenciaHasta && corre(promo, hoyEnLaSemana());
+  const ahora = new Date().toTimeString().slice(0, 5);
+  const franjaAbierta = !promo.horaHasta || ahora < promo.horaHasta.slice(0, 5);
+  return promo.vigenciaDesde <= hoy && hoy <= promo.vigenciaHasta && corre(promo, hoyEnLaSemana()) && franjaAbierta;
 }
 
 function festejar(evento) {
@@ -270,6 +274,8 @@ function TarjetaCombo({ combo }) {
 
 function Candy({ productos }) {
   const quieto = useReducedMotion();
+  // En celular las flechas tapan la tarjeta: ahí se pasa deslizando y con los indicadores.
+  const ancho = useMediaQuery("(min-width: 36em)");
   // Una sola instancia por montaje: el carrusel la arranca y la frena él mismo.
   const [autoplay] = useState(() => Autoplay({ delay: 2800, stopOnInteraction: false, stopOnMouseEnter: true }));
   const combos = productos.filter((p) => p.esCombo);
@@ -280,7 +286,7 @@ function Candy({ productos }) {
       {combos.length > 0 && (
         <Carousel slideSize={{ base: "85%", sm: "50%", md: "33.333%" }} slideGap="lg" withIndicators={combos.length > 1}
           emblaOptions={{ loop: combos.length > 2, align: "start" }} plugins={quieto ? [] : [autoplay]}
-          withControls={combos.length > 1}>
+          withControls={ancho && combos.length > 1} controlsOffset={-16}>
           {combos.map((c) => <Carousel.Slide key={c.id} py="sm"><TarjetaCombo combo={c} /></Carousel.Slide>)}
         </Carousel>
       )}
