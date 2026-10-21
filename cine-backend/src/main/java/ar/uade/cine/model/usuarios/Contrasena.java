@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 import ar.uade.cine.model.validacion.Regla;
 
-// La contraseña en claro de un empleado nuevo, antes del hash; Value Object con las reglas del alta.
+// La contraseña en claro de un usuario nuevo, antes del hash; Value Object con las reglas del alta.
 // No se guarda: el gestor la pasa a bcrypt y la descarta. toString no la muestra, por si llega a un log.
 public record Contrasena(String valor) {
 

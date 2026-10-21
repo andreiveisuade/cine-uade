@@ -68,7 +68,7 @@ class OcupacionTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 12, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        clientes.registrar("Andrei", "andrei@uade.edu.ar");
+        clientes.identificar("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
         reloj.mover(ahora);

@@ -216,7 +216,7 @@ class ManejadorErroresTest extends PruebaDeApi {
 
     @Test
     void unEmailSinFormatoEs400() {
-        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana-sin-arroba\"}");
+        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana-sin-arroba\",\"password\":\"clave-segura\"}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("El email tiene que tener la forma usuario@dominio.com", respuesta.error());
@@ -257,7 +257,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("El nombre no puede tener más de 50 caracteres", sala.error());
 
         Respuesta cliente = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@"
-                + ("m".repeat(31) + ".").repeat(3) + "com\"}");
+                + ("m".repeat(31) + ".").repeat(3) + "com\",\"password\":\"clave-segura\"}");
         assertEquals(400, cliente.estado());
         assertEquals("El email no puede tener más de 100 caracteres", cliente.error());
     }
@@ -281,12 +281,12 @@ class ManejadorErroresTest extends PruebaDeApi {
 
     @Test
     void unClienteConEmailRepetidoEs409() {
-        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");
+        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
 
-        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Otra\",\"email\":\"ana@mail.com\"}");
+        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Otra\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
 
         assertEquals(409, respuesta.estado());
-        assertEquals("Ya existe un usuario con ese email", respuesta.error());
+        assertEquals("Ya existe una cuenta con ese email", respuesta.error());
     }
 
     @Test
