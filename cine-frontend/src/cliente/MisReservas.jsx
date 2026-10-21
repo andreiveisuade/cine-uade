@@ -11,7 +11,7 @@ import { Vacio } from "@/compartido/estado/Vacio.jsx";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
-import { faltantes } from "./compra.jsx";
+import { faltantes } from "@/compartido/formularios/faltantes.js";
 import { PagarOnline } from "./PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
 

@@ -5,7 +5,7 @@ import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "./compra.jsx";
+import { faltantes } from "@/compartido/formularios/faltantes.js";
 import { useSesion } from "./sesion.jsx";
 
 export function Registro() {

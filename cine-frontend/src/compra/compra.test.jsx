@@ -1,7 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
-import { catalogoTarifas, CompraEnCurso, resumenCompra, useCompra, useRenovarBloqueo } from "./compra.jsx";
+import { catalogoTarifas, resumenCompra } from "./tarifas.js";
+import { CompraEnCurso, useCompra } from "./CompraEnCurso.jsx";
+import { useRenovarBloqueo } from "./useRenovarBloqueo.js";
 
 vi.mock("@/api/api-http.js");
 
