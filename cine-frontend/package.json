@@ -15,6 +15,7 @@
     "@mantine/carousel": "9.6.2",
     "@mantine/core": "^9.6.2",
     "@mantine/hooks": "^9.6.2",
+    "@tabler/icons-react": "3.48.0",
     "canvas-confetti": "1.9.4",
     "embla-carousel": "8.6.0",
     "embla-carousel-autoplay": "8.6.0",

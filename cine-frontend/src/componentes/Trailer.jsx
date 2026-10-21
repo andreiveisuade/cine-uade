@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { AspectRatio, Box, Button, Image, UnstyledButton } from "@mantine/core";
 import { useReducedMotion } from "@mantine/hooks";
+import { IconPlayerPlayFilled } from "@tabler/icons-react";
 
 // El navegador solo deja arrancar solo un video muteado; el sonido se prende después con la IFrame API por postMessage.
 export function urlTrailer(id, { autoplay = true, controles = true } = {}) {
@@ -35,8 +36,10 @@ export function Trailer({ id, titulo, radio = "md" }) {
         ) : (
           <UnstyledButton pos="relative" onClick={() => setElegido(true)} aria-label={`Reproducir el trailer de ${titulo}`}>
             <Image src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" fit="cover" h="100%" />
-            <Box pos="absolute" top="50%" left="50%" fz={56} c="white"
-              style={{ transform: "translate(-50%, -50%)", textShadow: "0 2px 16px black" }}>▶</Box>
+            <Box pos="absolute" top="50%" left="50%" c="#15171d" bg="var(--mantine-color-ambar-4)" p="md"
+              style={{ transform: "translate(-50%, -50%)", borderRadius: "50%", display: "flex", boxShadow: "0 8px 24px rgb(0 0 0 / 0.5)" }}>
+              <IconPlayerPlayFilled size={32} aria-hidden />
+            </Box>
           </UnstyledButton>
         )}
       </AspectRatio>

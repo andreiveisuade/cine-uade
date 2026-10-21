@@ -1,7 +1,7 @@
-import { Anchor, Badge, Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Anchor, Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { Link } from "react-router";
 import * as api from "../api/api-http.js";
-import { etiqueta } from "../api/etiquetas.js";
+import { MediosDePago } from "../componentes/MediosDePago.jsx";
 import { Contenedor } from "../componentes/Contenedor.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Marca } from "./Barra.jsx";
@@ -37,12 +37,7 @@ export function Pie() {
           </Columna>
           {medios.datos?.length > 0 && (
             <Columna titulo="Medios de pago">
-              <Group gap={6}>
-                {medios.datos.map((m) => (
-                  <Badge key={m.nombre} variant="default" size="lg" tt="none" fw={500}>{etiqueta(m.nombre)}</Badge>
-                ))}
-              </Group>
-              <Text size="xs" c="dimmed">El efectivo, en la boletería.</Text>
+              <MediosDePago medios={medios.datos.map((m) => m.nombre)} />
             </Columna>
           )}
         </SimpleGrid>
