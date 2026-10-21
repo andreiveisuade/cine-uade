@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,6 +48,7 @@ class PeliculaTest {
             sin clasificación,    Dune, 155,        DRAMA, ,    Falta la clasificación por edad
             todo mal: gana el título, '', 0,        ,      ,    Falta el título
             """)
+    @DisplayName("R2, R7, R10: título, duración, género y clasificación son obligatorios")
     void unaPeliculaSinTituloDuracionGeneroOClasificacionNoSeConstruye(String caso, String titulo,
             Integer duracion, Genero genero, Clasificacion clasificacion, String mensaje) {
         rechaza(mensaje, () -> new Pelicula(titulo, duracion, generos(genero), clasificacion));
@@ -54,6 +56,7 @@ class PeliculaTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 600})
+    @DisplayName("R2: la duración va de 1 minuto a 10 horas")
     void laDuracionVaDeUnMinutoADiezHoras(int minutos) {
         assertEquals(minutos, new Pelicula("Dune", minutos, List.of(Genero.DRAMA), Clasificacion.ATP)
                 .getDuracionMinutos());

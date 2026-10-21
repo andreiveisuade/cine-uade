@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -112,6 +113,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     // 409 y no 400, como la carrera perdida en el flush: la web vuelve al mapa solo ante un 409.
     @Test
+    @DisplayName("R4: rechaza una butaca ya ocupada")
     void rechazaButacaYaOcupada() {
         reservas.reservar(1, 1, generales("B3"), null);
 
@@ -216,6 +218,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R6: cancelar libera las butacas")
     void cancelarLiberaLasButacas() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"), null);
         reservas.cancelar(reserva.getId());
@@ -347,6 +350,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R6: la reserva vencida libera sus butacas")
     void unaReservaSinPagarVencidaLiberaSusButacas() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         assertEquals(8, asientosLibres(1, null).size());
@@ -409,6 +413,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R18: se ingresa una sola vez y solo si está pagada")
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Rechazo sinPagar = assertThrows(Rechazo.class,
@@ -429,6 +434,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     // Con la entrada del 20/08 no se pasa el 19 ni el 21, y el rechazo no la marca como usada.
     @Test
+    @DisplayName("R18: se ingresa solo el día de la función")
     void seIngresaSoloElDiaDeLaFuncion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
@@ -477,6 +483,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R4: la ocupación es por función")
     void laMismaButacaSeVendeParaUnaFuncionFutura() {
         funcionQueYaEmpezo();
 

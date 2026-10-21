@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -126,6 +127,7 @@ class ProductoTest {
 
     @ParameterizedTest(name = "a $ {0}")
     @CsvSource({"6500", "7000"})
+    @DisplayName("R14: el combo tiene que salir menos que sus componentes")
     void elComboTieneQueSalirMenosQueSusComponentesSueltos(double precio) {
         rechaza("El combo tiene que salir menos que sus componentes sueltos ($ 6500.00)",
                 () -> Combo.armar("Combo caro", Dinero.de(precio), Map.of(pochoclos, 1, gaseosa, 1)));
@@ -147,6 +149,7 @@ class ProductoTest {
     }
 
     @Test
+    @DisplayName("R14: el combo editado tiene que seguir conviniendo")
     void elComboEditadoNoPuedeDejarDeConvenirYNoTocaNadaSiRechaza() {
         Producto combo = comboPareja();
 
@@ -158,6 +161,7 @@ class ProductoTest {
     }
 
     @Test
+    @DisplayName("R14: abaratar un componente deja al combo sin convenir")
     void abaratarUnComponenteDejaAlComboSinConvenir() {
         Combo combo = comboPareja();
         combo.exigirQueSigaConviniendo();

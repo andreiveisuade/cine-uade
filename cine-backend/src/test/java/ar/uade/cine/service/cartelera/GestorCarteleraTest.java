@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -119,6 +120,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R2: rechaza una duración inválida")
     void rechazaDuracionInvalida() {
         assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin duración", 0, List.of(Genero.DRAMA), Clasificacion.ATP));
@@ -138,6 +140,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R7: rechaza una película sin género")
     void rechazaPeliculaSinGenero() {
         assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin género", 100, List.of(), Clasificacion.ATP));
@@ -173,6 +176,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     }
 
     @Test
+    @DisplayName("R10: rechaza una película sin clasificación")
     void rechazaPeliculaSinClasificacion() {
         assertThrows(Rechazo.class,
                 () -> gestor.agregar("Sin clasificar", 100, List.of(Genero.DRAMA), null));

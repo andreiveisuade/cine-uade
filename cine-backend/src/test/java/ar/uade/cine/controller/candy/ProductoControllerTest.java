@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -103,6 +104,7 @@ class ProductoControllerTest extends PruebaDeApi {
     }
 
     @Test
+    @DisplayName("R14: el combo editado no puede quedar más caro que sus componentes")
     void elComboNoPuedeQuedarMasCaroQueSusComponentes() {
         Respuesta respuesta = put("/api/candy/productos/" + combo, "{\"nombre\":\"Combo clásico\",\"precio\":7000}");
 
@@ -111,6 +113,7 @@ class ProductoControllerTest extends PruebaDeApi {
     }
 
     @Test
+    @DisplayName("R14: abaratar un componente no puede dejar al combo sin convenir")
     void abaratarUnComponenteNoPuedeDejarAlComboSinConvenir() {
         Respuesta respuesta = put("/api/candy/productos/" + pochoclos,
                 "{\"nombre\":\"Pochoclos grandes\",\"precio\":2000}");

@@ -10,6 +10,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -120,6 +121,7 @@ class SalaTest {
 
     // Sin tope, [100000] creaba cien mil butacas.
     @Test
+    @DisplayName("R2: una fila tiene como máximo 40 butacas")
     void unaFilaTieneComoMaximoCuarentaButacas() {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
