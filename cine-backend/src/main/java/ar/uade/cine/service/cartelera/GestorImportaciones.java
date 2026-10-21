@@ -51,34 +51,26 @@ public class GestorImportaciones {
     private void correr(Importacion importacion) {
         List<DatosPelicula> candidatas = catalogo.enCartelera(importacion.getPaginas());
         Set<String> yaEstan = titulosCargados();
-        StringBuilder detalle = new StringBuilder();
-        int nuevas = 0;
-        int salteadas = 0;
-        int fallidas = 0;
+        Corrida corrida = new Corrida();
 
         for (DatosPelicula candidata : candidatas) {
             // También saltea lo que TMDB repite entre páginas; si no, R1 lo contaría como falla.
             String clave = clave(candidata.titulo());
             if (!clave.isEmpty() && !yaEstan.add(clave)) {
-                salteadas++;
+                corrida.salteada();
                 continue;
             }
             try {
                 Pelicula creada = revision.importar(candidata);
-                detalle.append("+ [").append(creada.getId()).append("] ")
-                        .append(creada.getTitulo()).append('\n');
-                nuevas++;
+                corrida.nueva(creada.getId(), creada.getTitulo());
             } catch (RuntimeException e) {
                 // Cualquier falla y no solo un Rechazo: un error de la base cortaba la corrida y la dejaba
                 // EN_CURSO, con el importador bloqueado hasta que caducara. Una candidata no frena a las demás.
-                detalle.append("✗ ").append(nombreDe(candidata)).append(": ")
-                        .append(motivoDe(candidata, e)).append('\n');
-                fallidas++;
+                corrida.fallida(nombreDe(candidata), motivoDe(candidata, e));
             }
         }
 
-        importacion.terminar(nuevas, salteadas, fallidas,
-                detalle.isEmpty() ? null : detalle.toString().strip(), reloj.ahora());
+        importacion.terminar(corrida.resumen(), reloj.ahora());
     }
 
     // Incluye las descartadas: si no, cada corrida volvería a proponer lo ya rechazado.

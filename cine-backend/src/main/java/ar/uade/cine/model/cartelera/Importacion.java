@@ -3,7 +3,7 @@ package ar.uade.cine.model.cartelera;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -32,14 +32,9 @@ public class Importacion {
 
     private LocalDateTime terminoEn;
 
-    private int nuevas;
-
-    private int salteadas;
-
-    private int fallidas;
-
-    @Column(columnDefinition = "TEXT")
-    private String detalle;
+    // Arranca en cero: las columnas de los contadores son NOT NULL y una corrida en curso todavía no contó nada.
+    @Embedded
+    private ResumenDeCorrida resumen = ResumenDeCorrida.deFalla(null);
 
     protected Importacion() {
     }
@@ -50,24 +45,38 @@ public class Importacion {
         this.pedidaEn = pedidaEn;
     }
 
-    public void terminar(int nuevas, int salteadas, int fallidas, String detalle,
-                         LocalDateTime cuando) {
-        this.estado = EstadoImportacion.TERMINADA;
-        this.nuevas = nuevas;
-        this.salteadas = salteadas;
-        this.fallidas = fallidas;
-        this.detalle = detalle;
+    // State: el estado decide si la transición vale.
+    public void terminar(ResumenDeCorrida resumen, LocalDateTime cuando) {
+        this.estado = estado.terminar();
+        this.resumen = resumen;
         this.terminoEn = cuando;
     }
 
     public void fallar(String motivo, LocalDateTime cuando) {
-        this.estado = EstadoImportacion.FALLIDA;
-        this.detalle = motivo;
+        this.estado = estado.fallar();
+        this.resumen = ResumenDeCorrida.deFalla(motivo);
         this.terminoEn = cuando;
     }
 
     public boolean estaEnCurso() {
-        return estado == EstadoImportacion.EN_CURSO;
+        return estado.estaEnCurso();
+    }
+
+    // La vista y el historial leen los datos sueltos, como antes del resumen.
+    public int getNuevas() {
+        return resumen.nuevas();
+    }
+
+    public int getSalteadas() {
+        return resumen.salteadas();
+    }
+
+    public int getFallidas() {
+        return resumen.fallidas();
+    }
+
+    public String getDetalle() {
+        return resumen.detalle();
     }
 
     public boolean quedoColgada(Duration plazo, LocalDateTime ahora) {
