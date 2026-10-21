@@ -39,13 +39,13 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
-| `413` · `502` · `504` | nginx: cuerpo de más de 1 MB, backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
+| `413` · `502` · `504` | nginx: cuerpo de más de 1 MB (3 MB en `POST /imagenes`), backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
 
 ### Quién puede llamar a qué
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, los catálogos y Swagger |
+| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
 | Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
@@ -265,11 +265,13 @@ una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
 ## Promociones (CU-17)
 
 `POST /promociones`: `nombre`, `tipo` y la vigencia son obligatorios; lo que no aplica al tipo va en `null`.
+`imagenUrl` es opcional (ver [Imágenes](#imágenes)).
 
 ```json
 { "nombre": "Miércoles 2x1", "tipo": "NXM", "lleva": 2, "paga": 1,
   "vigenciaDesde": "2026-08-01", "vigenciaHasta": "2026-12-31",
-  "diasSemana": ["WEDNESDAY"], "horaDesde": null, "horaHasta": null, "mediosPago": [] }
+  "diasSemana": ["WEDNESDAY"], "horaDesde": null, "horaHasta": null, "mediosPago": [],
+  "imagenUrl": "/api/imagenes/0f8fad5b-d9cb-469f-a165-70867728950e.webp" }
 ```
 
 | `tipo` | Campos |
@@ -282,7 +284,10 @@ una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
 - `400`: vigencia vencida, ningún día elegido dentro de la vigencia, franja que no empieza antes de terminar.
   Lo común se valida antes que lo propio del tipo.
 - `GET /promociones`, `GET /promociones/{id}` y `PATCH /promociones/{id}` con `{"activa": false|true}`. No hay
-  `DELETE`.
+  `DELETE`. `imagenUrl` sale solo si tiene imagen.
+- `PUT /promociones/{id}`: mismo cuerpo, validaciones y mensajes que el alta; reemplaza todo (sin `imagenUrl` le
+  saca la imagen) menos `activa`. `404` si no existe; `400` `El tipo de una promoción no se puede cambiar`; `409`
+  con el nombre de otra. Una promo ya usada en cobros se edita igual: cada pago congeló su descuento.
 - No se acumulan: gana el mayor descuento (R15). Las tarifas reducidas quedan afuera (R16).
 
 `GET /promociones/vigentes` (público): las activas que no terminaron, también las que empiezan más adelante,
@@ -292,20 +297,22 @@ compra lo decide el cobro, no este listado.
 ```json
 [{ "nombre": "Miércoles 2x1", "tipo": "NXM", "beneficio": "2x1",
    "vigenciaDesde": "2026-08-01", "vigenciaHasta": "2026-12-31", "diasSemana": ["WEDNESDAY"],
-   "mediosPago": [], "tarifasExcluidas": ["MENOR", "JUBILADO", "ESTUDIANTE"] }]
+   "mediosPago": [], "tarifasExcluidas": ["MENOR", "JUBILADO", "ESTUDIANTE"],
+   "imagenUrl": "/api/imagenes/0f8fad5b-d9cb-469f-a165-70867728950e.webp" }]
 ```
 
-`beneficio`: `"2x1"`, `"30 % OFF"`, `"$500 OFF"`. `horaDesde`/`horaHasta` solo si tiene franja.
+`beneficio`: `"2x1"`, `"30 % OFF"`, `"$500 OFF"`. `horaDesde`/`horaHasta` solo si tiene franja; `imagenUrl`, solo
+si tiene imagen.
 
 ## Candy (CU-13 a CU-16)
 
 | Ruta | Notas |
 |---|---|
-| `GET /candy/productos?todos=` | La carta; sin `todos=true`, solo lo disponible. Cada uno trae `precioSuelto` y `ahorro` (en un suelto, su precio y `0`) |
+| `GET /candy/productos?todos=` | La carta; sin `todos=true`, solo lo disponible. Cada uno trae `precioSuelto` y `ahorro` (en un suelto, su precio y `0`) e `imagenUrl` (`null` sin imagen) |
 | `GET /candy/productos/{id}` | Un producto |
-| `POST /candy/productos` | `{nombre, tipo, precio}`; un `COMBO` va por `/combos`. Nombre único (`409`) |
-| `POST /candy/combos` | `{nombre, precio, componentes: {productoId: cantidad}}`: dos productos o más, ninguno combo, 1 a 20 de cada uno. Más barato que los componentes sueltos (R14) |
-| `PUT /candy/productos/{id}` | `{nombre, precio}`. `400` si un combo que lo trae deja de convenir (R14) |
+| `POST /candy/productos` | `{nombre, tipo, precio, imagenUrl}`; un `COMBO` va por `/combos`. Nombre único (`409`) |
+| `POST /candy/combos` | `{nombre, precio, componentes: {productoId: cantidad}, imagenUrl}`: dos productos o más, ninguno combo, 1 a 20 de cada uno. Más barato que los componentes sueltos (R14) |
+| `PUT /candy/productos/{id}` | `{nombre, precio, imagenUrl}`; sin `imagenUrl` le saca la imagen. `400` si un combo que lo trae deja de convenir (R14) |
 | `PATCH /candy/productos/{id}` | `{disponible}`. No hay `DELETE`: el producto vive en compras viejas |
 | `POST /candy/compras` | La venta, que nace cobrada |
 | `GET /candy/compras?fecha=&clienteId=` | Las del cliente, o si no las del día |
@@ -326,6 +333,21 @@ En el alta, el combo y la edición, nombre y precio se validan antes que el nomb
 - Cada cantidad de 1 a 20; lo que salió de la carta no se vende. El código, como al cobrar una reserva (R11).
 - El pedido y el medio de pago se validan antes de buscar los productos (`404`).
 - `ahorro` es el descuento de los combos, congelado al vender.
+
+## Imágenes
+
+Las fotos de promociones y productos. Primero se sube el archivo y después su `url` va como `imagenUrl`.
+
+| Ruta | Notas |
+|---|---|
+| `POST /imagenes` | Multipart, campo `archivo`. JPG, PNG o WEBP de hasta 2 MB, reconocido por su contenido y no por la extensión, que la pone el backend. → `201 {"url": "/api/imagenes/<uuid>.<ext>"}` con `Location` |
+| `GET /imagenes/{nombre}` | Público. Los bytes con su `Content-Type` y `Cache-Control: max-age=31536000, public, immutable`: cada subida es un uuid nuevo y no cambia. `404` `No existe la imagen X` si no está o el nombre no tiene la forma `<uuid>.<ext>` |
+
+- `400`: `Falta la imagen` (sin `archivo` o vacío), `La imagen tiene que ser JPG, PNG o WEBP`,
+  `La imagen tiene que pesar 2 MB como máximo`.
+- `imagenUrl` en promociones y productos: vacía o `null` es sin imagen; si no, tiene que ser una `url` de
+  `POST /imagenes` (`400` `La imagen tiene que ser una subida al sistema`). No hace falta que el archivo exista.
+- Viven en el volumen `imagenes` (`cine.imagenes.dir`, `/app/imagenes`): sobreviven a reconstruir el backend.
 
 ## Caja e informes
 
