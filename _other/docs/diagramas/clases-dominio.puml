@@ -189,9 +189,7 @@ package "model.funciones" {
     +getSalaId(): int
     +getProgramacionId(): Integer [0..1]
     +getInicio(): LocalDateTime
-    +getVersion(): Version
-    +getProyeccion(): Proyeccion
-    +getPrecio(): Dinero
+    +getFormato(): FormatoDeFuncion
     +precioEn(sala): Dinero
     +precioDe(asiento, sala): Dinero
     --el paso del tiempo, derivado--
@@ -209,6 +207,17 @@ package "model.funciones" {
     TRES_D
     --
     +sePuedeProyectarEn(TipoSala): boolean
+  }
+
+  ' Introduce Parameter Object: version, proyeccion y precio viajaban sueltos por la funcion,
+  ' la programacion, la grilla y el gestor (Data Clump). Es @Embeddable de las dos entidades y
+  ' no movio ninguna columna. R8 cruza el formato con la sala: la pide la entidad (Experto).
+  class FormatoDeFuncion <<record>> <<Embeddable>> {
+    version: Version
+    proyeccion: Proyeccion
+    precio: Dinero
+    --
+    +exigirProyectableEn(sala)
   }
 }
 
@@ -237,9 +246,7 @@ package "model.programaciones" {
     +horarios(tope): List<LocalDateTime>
     +exigirGenerableA(ahora)
     --lo que copia a cada funcion--
-    +getVersion(): Version
-    +getProyeccion(): Proyeccion
-    +getPrecio(): Dinero
+    +getFormato(): FormatoDeFuncion
     +estaActiva(): boolean
     +activar() / desactivar()
     --lo que ya paso--
@@ -572,6 +579,8 @@ Funcion "*" --> "1" Sala : {R3: no se superponen en el tiempo}
 ' Es asociacion y NO composicion, que es lo que la distingue de Sala <>- Asiento:
 ' la funcion no se va con la grilla. Dar de baja una programacion solo evita que
 ' genere nuevas; las ya generadas sobreviven con sus entradas vendidas encima.
+Funcion *-- "1" FormatoDeFuncion
+Programacion *-- "1" FormatoDeFuncion
 Funcion "*" --> "0..1" Programacion : generada por >
 Programacion "*" --> "1" Pelicula
 Programacion "*" --> "1" Sala
