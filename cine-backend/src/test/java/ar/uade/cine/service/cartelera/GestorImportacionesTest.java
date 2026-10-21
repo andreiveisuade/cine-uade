@@ -280,7 +280,19 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     }
 
     private static DatosPelicula sinDuracion(String titulo) {
-        return new DatosPelicula(titulo, 0, List.of(Genero.DRAMA), Clasificacion.ATP,
-                "", "", 2026, "Inglés", "", false, 6.0, 50);
+        return DatosPelicula.con()
+                .titulo(titulo)
+                .duracion(0)
+                .generos(List.of(Genero.DRAMA))
+                .clasificacion(Clasificacion.ATP)
+                .director("")
+                .sinopsis("")
+                .anio(2026)
+                .idiomaOriginal("Inglés")
+                .posterUrl("")
+                .enCartelera(false)
+                .puntaje(6.0)
+                .votos(50)
+                .armar();
     }
 }

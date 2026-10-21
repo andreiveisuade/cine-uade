@@ -122,13 +122,23 @@ public class PeliculaController {
     }
 
     private static DatosPelicula datosDe(PedidoEdicionPeliculaDTO pedido) {
-        return new DatosPelicula(pedido.titulo(), pedido.duracionMinutos(),
-                pedido.generos() == null
-                        ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"),
-                pedido.clasificacion() == null
+        // Builder: el pedido nombra cada dato; lo que no mandó queda null.
+        return DatosPelicula.con()
+                .titulo(pedido.titulo())
+                .duracion(pedido.duracionMinutos())
+                .generos(pedido.generos() == null
+                        ? null : Parseo.constantes(Genero.class, pedido.generos(), "el género"))
+                .clasificacion(pedido.clasificacion() == null
                         ? null : Parseo.constante(Clasificacion.class, pedido.clasificacion(),
-                                "la clasificación por edad"),
-                pedido.director(), pedido.sinopsis(), pedido.anio(), pedido.idiomaOriginal(),
-                pedido.posterUrl(), pedido.enCartelera(), pedido.puntaje(), pedido.votos());
+                                "la clasificación por edad"))
+                .director(pedido.director())
+                .sinopsis(pedido.sinopsis())
+                .anio(pedido.anio())
+                .idiomaOriginal(pedido.idiomaOriginal())
+                .posterUrl(pedido.posterUrl())
+                .enCartelera(pedido.enCartelera())
+                .puntaje(pedido.puntaje())
+                .votos(pedido.votos())
+                .armar();
     }
 }

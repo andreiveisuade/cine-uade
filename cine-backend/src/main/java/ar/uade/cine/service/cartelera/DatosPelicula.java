@@ -14,7 +14,11 @@ public record DatosPelicula(String titulo, Integer duracionMinutos, List<Genero>
 
     public static DatosPelicula deAlta(String titulo, int duracionMinutos, List<Genero> generos,
                                        Clasificacion clasificacion) {
-        return new DatosPelicula(titulo, duracionMinutos, generos, clasificacion,
-                null, null, null, null, null, null, null, null);
+        return con().titulo(titulo).duracion(duracionMinutos).generos(generos).clasificacion(clasificacion).armar();
+    }
+
+    // Builder: cada dato se nombra en vez de ir por posición.
+    public static DatosPeliculaBuilder con() {
+        return new DatosPeliculaBuilder();
     }
 }
