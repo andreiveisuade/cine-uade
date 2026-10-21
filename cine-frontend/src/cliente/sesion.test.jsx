@@ -1,6 +1,6 @@
-import { renderHook, screen, waitFor } from "@testing-library/react";
+import { renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../api/api-http.js";
 import { renderConApp } from "../test/renderConApp.jsx";
 import { AppCliente } from "./AppCliente.jsx";
@@ -25,6 +25,8 @@ describe("SesionDelCliente", () => {
 });
 
 describe("barra de la cuenta", () => {
+  beforeEach(() => api.obtenerMediosDePago.mockResolvedValue([]));
+
   it.each([
     ["anónimo", () => Promise.reject(new Error("401")), ["Ingresar", "Registrarme"], ["Mis reservas", "Salir"]],
     ["con sesión", () => Promise.resolve(ANA), ["Ana", "Mis reservas", "Salir"], ["Ingresar", "Registrarme"]],
@@ -32,8 +34,10 @@ describe("barra de la cuenta", () => {
     api.sesionActual.mockImplementation(respuesta);
     renderConApp(<AppCliente />, { ruta: "/*", en: "/nosotros" });
 
-    for (const texto of visibles) expect(await screen.findByText(texto)).toBeInTheDocument();
-    for (const texto of ocultos) expect(screen.queryByText(texto)).not.toBeInTheDocument();
+    // La barra, no el pie: el pie lleva a Mis reservas siempre y ahí se pide el código si no hay sesión.
+    const barra = screen.getByRole("banner");
+    for (const texto of visibles) expect(await within(barra).findByText(texto)).toBeInTheDocument();
+    for (const texto of ocultos) expect(within(barra).queryByText(texto)).not.toBeInTheDocument();
   });
 
   it("Salir cierra la sesión en el backend y vuelve a la barra anónima", async () => {
@@ -43,9 +47,9 @@ describe("barra de la cuenta", () => {
     api.obtenerCartelera.mockResolvedValue([]);
     renderConApp(<AppCliente />, { ruta: "/*", en: "/nosotros" });
 
-    await userEvent.click(await screen.findByText("Salir"));
+    await userEvent.click(await within(screen.getByRole("banner")).findByText("Salir"));
 
     expect(api.salir).toHaveBeenCalledOnce();
-    expect(await screen.findByText("Ingresar")).toBeInTheDocument();
+    expect(await within(screen.getByRole("banner")).findByText("Ingresar")).toBeInTheDocument();
   });
 });
