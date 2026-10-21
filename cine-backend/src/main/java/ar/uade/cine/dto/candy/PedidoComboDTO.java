@@ -13,5 +13,7 @@ public record PedidoComboDTO(
         @Schema(description = "Menor a la suma de los componentes sueltos (R14)", example = "9000.00")
         @NotNull(message = "Falta el precio") Double precio,
         @Schema(description = "id de producto → cantidad: dos productos o más, ninguno combo, 1 a 20 de cada uno", example = "{\"1\": 2, \"2\": 2}")
-        Map<Integer, Integer> componentes) {
+        Map<Integer, Integer> componentes,
+        @Schema(description = "La url que devolvió POST /api/imagenes; vacía o null es sin imagen")
+        String imagenUrl) {
 }

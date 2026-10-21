@@ -163,7 +163,8 @@ CREATE TABLE IF NOT EXISTS promocion (
     vigencia_hasta DATE NOT NULL,
     hora_desde TIME NULL,
     hora_hasta TIME NULL,
-    activa BOOLEAN NOT NULL DEFAULT TRUE
+    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    imagen_url VARCHAR(255) NULL
 );
 
 -- Dias que corre la promocion (constante de DayOfWeek); sin filas = todos
@@ -205,7 +206,8 @@ CREATE TABLE IF NOT EXISTS producto (
     nombre VARCHAR(60) NOT NULL UNIQUE,
     tipo VARCHAR(15) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
-    disponible BOOLEAN NOT NULL DEFAULT TRUE
+    disponible BOOLEAN NOT NULL DEFAULT TRUE,
+    imagen_url VARCHAR(255) NULL
 );
 
 -- Contenido de cada combo; ambas claves apuntan a producto

@@ -13,6 +13,7 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.ProductoSuelto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.repository.candy.ProductoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
@@ -26,16 +27,19 @@ public class GestorProductos {
     private final ProductoRepository productoRepository;
 
     // Se construye antes del chequeo de nombre repetido: un dato inválido se rechaza primero
-    public Producto agregar(String nombre, TipoProducto tipo, Dinero precio) {
+    public Producto agregar(String nombre, TipoProducto tipo, Dinero precio, ImagenUrl imagen) {
         Producto producto = new ProductoSuelto(nombre, tipo, precio);
+        producto.cambiarImagen(imagen);
         exigirNombreLibre(producto.getNombre());
         return productoRepository.save(producto);
     }
 
     // Como el alta: se valida, luego el nombre repetido y recién después se buscan los componentes.
-    public Combo armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
+    public Combo armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes, ImagenUrl imagen) {
         exigirNombreLibre(Producto.validarNombreYPrecio(nombre, precio));
-        return productoRepository.save(Combo.armar(nombre, precio, obtener(componentes)));
+        Combo combo = Combo.armar(nombre, precio, obtener(componentes));
+        combo.cambiarImagen(imagen);
+        return productoRepository.save(combo);
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +79,7 @@ public class GestorProductos {
     }
 
     // El combo se revisa a sí mismo (R14); los combos que traen al suelto editado los busca la base.
-    public Producto editar(int productoId, String nombre, Dinero precio) {
+    public Producto editar(int productoId, String nombre, Dinero precio, ImagenUrl imagen) {
         Producto producto = obtener(productoId);
         // Se valida sin editar: con el producto ya modificado, la consulta haría flush y chocaría con el UNIQUE.
         String nombreValido = Producto.validarNombreYPrecio(nombre, precio);
@@ -83,6 +87,7 @@ public class GestorProductos {
             throw nombreRepetido();
         }
         producto.editar(nombre, precio);
+        producto.cambiarImagen(imagen);
         productoRepository.findCombosQueTraen(productoId).forEach(Combo::exigirQueSigaConviniendo);
         return producto;
     }

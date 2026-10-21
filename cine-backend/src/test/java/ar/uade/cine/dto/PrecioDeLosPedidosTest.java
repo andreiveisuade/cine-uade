@@ -35,9 +35,9 @@ class PrecioDeLosPedidosTest {
                 pedido("programación", precio -> new PedidoProgramacionDTO(1, 1, "2026-09-01", null, "20:00",
                         List.of(), "SUBTITULADA", "DOS_D", precio)),
                 pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)),
-                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio)),
-                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of())),
-                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio)));
+                pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio, null)),
+                pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of(), null)),
+                pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio, null)));
     }
 
     private static Arguments pedido(String nombre, Function<Double, Object> conPrecio) {

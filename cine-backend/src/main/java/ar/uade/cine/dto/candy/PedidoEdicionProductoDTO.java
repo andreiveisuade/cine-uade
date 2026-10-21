@@ -9,5 +9,7 @@ public record PedidoEdicionProductoDTO(
         @Schema(example = "Pochoclos medianos")
         @NotBlank(message = "Falta el nombre") String nombre,
         @Schema(description = "Mayor a 0", example = "5000.00")
-        @NotNull(message = "Falta el precio") Double precio) {
+        @NotNull(message = "Falta el precio") Double precio,
+        @Schema(description = "La url que devolvió POST /api/imagenes; vacía o null es sin imagen")
+        String imagenUrl) {
 }

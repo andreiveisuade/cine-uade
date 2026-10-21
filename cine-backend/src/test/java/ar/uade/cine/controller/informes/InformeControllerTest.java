@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeApi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -132,7 +133,7 @@ class InformeControllerTest extends PruebaDeApi {
     @Test
     void elInformeSumaLaBoleteriaYElCandyDeLaFuncion() {
         Producto pochoclos = productos
-                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         candy.venderParaReserva(reserva.getId(), null,
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
@@ -150,7 +151,7 @@ class InformeControllerTest extends PruebaDeApi {
     @Test
     void elCandyDeMostradorNoLlegaAlInformeDeLaFuncion() {
         Producto pochoclos = productos
-                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         candy.vender(null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 

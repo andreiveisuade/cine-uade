@@ -11,5 +11,7 @@ public record PedidoProductoDTO(
         @Schema(description = "Un COMBO no va acá: se arma en POST /api/candy/combos", allowableValues = {"POCHOCLOS", "BEBIDA", "GOLOSINA"}, example = "GOLOSINA")
         @NotBlank(message = "Falta el tipo de producto") String tipo,
         @Schema(description = "Mayor a 0", example = "8500.00")
-        @NotNull(message = "Falta el precio") Double precio) {
+        @NotNull(message = "Falta el precio") Double precio,
+        @Schema(description = "La url que devolvió POST /api/imagenes; vacía o null es sin imagen")
+        String imagenUrl) {
 }

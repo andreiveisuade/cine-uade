@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -46,7 +47,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
 
     @Test
     void unaVentaConUnaCantidadEnNullEs400YNo500() {
-        int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
+        int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
 
         Respuesta respuesta = post("/api/candy/compras",
                 "{\"cantidades\":{\"" + pochoclos + "\":null},\"medio\":\"EFECTIVO\"}");
@@ -68,7 +69,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
     // El clienteId se respeta aunque venga la reserva: no se compra a nombre del dueño sin avisar.
     @Test
     void unaVentaParaLaReservaDeOtroClienteEs400() {
-        int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
+        int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
         int duenio = clientes.identificar("Andrei", "andrei@uade.edu.ar").getId();
         int otro = clientes.identificar("Otra", "otra@uade.edu.ar").getId();
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);

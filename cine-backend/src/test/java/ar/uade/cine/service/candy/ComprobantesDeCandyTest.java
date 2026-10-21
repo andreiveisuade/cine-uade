@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -39,7 +40,7 @@ class ComprobantesDeCandyTest extends PruebaDeIntegracion {
 
     @BeforeEach
     void prepararCarta() {
-        pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000)).getId();
+        pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA).getId();
     }
 
     @Test

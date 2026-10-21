@@ -18,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
@@ -74,8 +75,8 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @BeforeEach
     void prepararCarta() {
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
-        pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
-        gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500)).getId();
+        pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500), ImagenUrl.NINGUNA).getId();
     }
 
     private Map<Integer, Integer> pedido(int idA, int cantidadA) {
@@ -93,14 +94,14 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void elComboTieneQueSalirMenosQueSusComponentes() {
         assertThrows(Rechazo.class,
-                () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa()));
+                () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
         assertThrows(Rechazo.class,
-                () -> carta.armarCombo("Combo carísimo", Dinero.de(7000), pochoclosYGaseosa()));
+                () -> carta.armarCombo("Combo carísimo", Dinero.de(7000), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
     }
 
     @Test
     void armaElComboYGuardaQueTrae() {
-        Producto combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa());
+        Producto combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA);
 
         assertTrue(combo.esCombo());
         assertEquals(2, combo.getComponentes().size());
@@ -110,22 +111,22 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void unComboNecesitaAlMenosDosProductos() {
         assertThrows(Rechazo.class,
-                () -> carta.armarCombo("Combo de uno", Dinero.de(3000), pedido(pochoclos, 1)));
+                () -> carta.armarCombo("Combo de uno", Dinero.de(3000), pedido(pochoclos, 1), ImagenUrl.NINGUNA));
     }
 
     @Test
     void unComboNoPuedeContenerOtroCombo() {
-        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA).getId();
 
         Map<Integer, Integer> anidado = pedido(combo, 1);
         anidado.put(gaseosa, 1);
         assertThrows(Rechazo.class,
-                () -> carta.armarCombo("Combo del combo", Dinero.de(6000), anidado));
+                () -> carta.armarCombo("Combo del combo", Dinero.de(6000), anidado, ImagenUrl.NINGUNA));
     }
 
     @Test
     void elAhorroEsLaDiferenciaContraComprarloSuelto() {
-        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA).getId();
 
         CompraCandy compra = candy.vender(1, pedido(combo, 2), MedioPago.EFECTIVO, "");
 
@@ -135,10 +136,10 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void editarElComboDespuesDeVenderNoCambiaElAhorroDeLaCompra() {
-        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA).getId();
         candy.vender(1, pedido(combo, 2), MedioPago.EFECTIVO, "");
 
-        carta.editar(combo, "Combo pareja", Dinero.de(6000));
+        carta.editar(combo, "Combo pareja", Dinero.de(6000), ImagenUrl.NINGUNA);
 
         CompraCandy guardada = candy.listarComprasDe(1).get(0);
         assertEquals(Dinero.de(2000.0), guardada.getAhorro(), "el ahorro de cuando se vendió, no el de hoy");
@@ -178,7 +179,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void emiteElTicketConElDetalleYElAhorro() throws IOException {
-        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa()).getId();
+        int combo = carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA).getId();
         CompraCandy compra = candy.vender(1, pedido(combo, 1), MedioPago.DEBITO, "AUT-77");
 
         Path ticket = DIRECTORIO_TICKETS.resolve("candy-" + compra.getId() + ".txt");
@@ -206,9 +207,9 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void rechazaProductoRepetidoOPrecioInvalido() {
         assertThrows(Rechazo.class,
-                () -> carta.agregar("pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)));
+                () -> carta.agregar("pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA));
         assertThrows(Rechazo.class,
-                () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0)));
+                () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0), ImagenUrl.NINGUNA));
     }
 
     // Nombre y precio van antes que el nombre repetido en las tres: el 409 no puede tapar un pedido inválido.
@@ -222,9 +223,9 @@ class GestorCandyTest extends PruebaDeIntegracion {
         Dinero negativo = Dinero.de(-5);
         DatoInvalido error = assertThrows(DatoInvalido.class, () -> {
             switch (operacion) {
-                case "alta" -> carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, negativo);
-                case "edición" -> carta.editar(gaseosa, "Pochoclos grandes", negativo);
-                default -> carta.armarCombo("Pochoclos grandes", negativo, pochoclosYGaseosa());
+                case "alta" -> carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, negativo, ImagenUrl.NINGUNA);
+                case "edición" -> carta.editar(gaseosa, "Pochoclos grandes", negativo, ImagenUrl.NINGUNA);
+                default -> carta.armarCombo("Pochoclos grandes", negativo, pochoclosYGaseosa(), ImagenUrl.NINGUNA);
             }
         });
 
@@ -234,12 +235,12 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void unComboNoSeDaDeAltaComoProductoSuelto() {
         assertThrows(Rechazo.class,
-                () -> carta.agregar("Combo trucho", TipoProducto.COMBO, Dinero.de(5000)));
+                () -> carta.agregar("Combo trucho", TipoProducto.COMBO, Dinero.de(5000), ImagenUrl.NINGUNA));
     }
 
     @Test
     void seVendeSinClienteIdentificado() {
-        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+        Producto pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
 
         CompraCandy compra = candy.vender(null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
@@ -320,15 +321,15 @@ class GestorCandyTest extends PruebaDeIntegracion {
     // La igualdad la decide la base: la collation de MySQL ignora acentos y el UPPER de H2 convierte ß en SS.
     @Test
     void renombrarUnProductoComoLoComparaLaBaseNoChocaConsigoMismo() {
-        int weiss = carta.agregar("Weiß", TipoProducto.BEBIDA, Dinero.de(3000)).getId();
+        int weiss = carta.agregar("Weiß", TipoProducto.BEBIDA, Dinero.de(3000), ImagenUrl.NINGUNA).getId();
 
-        assertEquals("WEISS", carta.editar(weiss, "WEISS", Dinero.de(3000)).getNombre());
+        assertEquals("WEISS", carta.editar(weiss, "WEISS", Dinero.de(3000), ImagenUrl.NINGUNA).getNombre());
     }
 
     @Test
     void renombrarloComoOtroProductoEsRepetido() {
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
-                () -> carta.editar(gaseosa, " pochoclos GRANDES ", Dinero.de(2500)));
+                () -> carta.editar(gaseosa, " pochoclos GRANDES ", Dinero.de(2500), ImagenUrl.NINGUNA));
 
         assertEquals("Ya existe un producto con ese nombre", error.getMessage());
     }

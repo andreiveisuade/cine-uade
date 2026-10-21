@@ -13,6 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -115,7 +116,7 @@ class ComprobantesTxtTest extends PruebaDeIntegracion {
 
     @Test
     void elTicketDeCandy() {
-        int pochoclos = carta.agregar("Pochoclos grandes con manteca", TipoProducto.POCHOCLOS, Dinero.de(3000)).getId();
+        int pochoclos = carta.agregar("Pochoclos grandes con manteca", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA).getId();
         CompraCandy compra = candy.vender(null, Map.of(pochoclos, 2), MedioPago.EFECTIVO, "");
 
         assertEquals("""

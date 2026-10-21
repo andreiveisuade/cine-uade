@@ -6,6 +6,7 @@ import org.hibernate.annotations.DiscriminatorFormula;
 
 import ar.uade.cine.model.candy.validacion.ValidadorProducto;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,6 +42,8 @@ public abstract class Producto {
 
     @Getter(AccessLevel.NONE)
     private boolean disponible = true;
+
+    private String imagenUrl;
 
     protected Producto() {
     }
@@ -98,6 +101,10 @@ public abstract class Producto {
         validarEdicion(nuevoNombre, nuevoPrecio);
         this.nombre = nuevoNombre;
         this.precio = nuevoPrecio;
+    }
+
+    public void cambiarImagen(ImagenUrl imagen) {
+        this.imagenUrl = imagen.valor();
     }
 
     // Lo que cada clase agrega a la edición; el suelto no pide nada más, el combo pide R14.

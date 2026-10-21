@@ -10,6 +10,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -98,7 +99,7 @@ class AplicacionTest extends PruebaDeIntegracion {
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
         Producto pochoclos = productos
-                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         CompraCandy compra = candy.venderParaReserva(reserva.getId(), null,
                 Map.of(pochoclos.getId(), 2), MedioPago.EFECTIVO, "");
 
@@ -119,7 +120,7 @@ class AplicacionTest extends PruebaDeIntegracion {
                 Map.of("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         Producto pochoclos = productos
-                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000));
+                .agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         candy.venderParaReserva(reserva.getId(), null, Map.of(pochoclos.getId(), 1),
                 MedioPago.EFECTIVO, "");
 

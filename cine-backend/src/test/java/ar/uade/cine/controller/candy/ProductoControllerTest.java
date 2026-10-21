@@ -1,6 +1,7 @@
 package ar.uade.cine.controller.candy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
@@ -23,13 +25,14 @@ class ProductoControllerTest extends PruebaDeApi {
     private GestorProductos carta;
 
     private int pochoclos;
+    private int gaseosa;
     private int combo;
 
     @BeforeEach
     void unaCartaConCombo() {
-        pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
-        int gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500)).getId();
-        combo = carta.armarCombo("Combo clásico", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1)).getId();
+        pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500), ImagenUrl.NINGUNA).getId();
+        combo = carta.armarCombo("Combo clásico", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1), ImagenUrl.NINGUNA).getId();
     }
 
     // La página de promos muestra el ahorro tal cual llega: 4000 + 2500 sueltos contra 5500 en combo.
@@ -154,5 +157,45 @@ class ProductoControllerTest extends PruebaDeApi {
             }
         }
         return false;
+    }
+
+    private static final String IMAGEN = "/api/imagenes/0f8fad5b-d9cb-469f-a165-70867728950e.png";
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            alta    | POST | /api/candy/productos | {"nombre":"Agua","tipo":"BEBIDA","precio":1500,"imagenUrl":"IMAGEN"}
+            combo   | POST | /api/candy/combos    | {"nombre":"Combo grande","precio":6000,"componentes":{"POCHOCLOS":1,"GASEOSA":1},"imagenUrl":"IMAGEN"}
+            edicion | PUT  | /api/candy/productos/POCHOCLOS | {"nombre":"Pochoclos grandes","precio":4000,"imagenUrl":"IMAGEN"}
+            """)
+    void laImagenSubidaSeGuardaYSaleEnLaCartaPublica(String caso, String metodo, String ruta, String cuerpo) {
+        Respuesta respuesta = pedirComo(HttpMethod.valueOf(metodo), conIds(ruta), conIds(cuerpo).replace("IMAGEN", IMAGEN),
+                EMAIL_ADMIN, CLAVE_ADMIN);
+
+        int id = respuesta.json().get("id").asInt();
+        assertEquals(IMAGEN, respuesta.json().get("imagenUrl").asText());
+        assertEquals(IMAGEN, pedirComo(HttpMethod.GET, "/api/candy/productos/" + id, null, null, null)
+                .json().get("imagenUrl").asText());
+    }
+
+    private String conIds(String texto) {
+        return texto.replace("POCHOCLOS", String.valueOf(pochoclos)).replace("GASEOSA", String.valueOf(gaseosa));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            alta    | POST | /api/candy/productos | {"nombre":"Agua","tipo":"BEBIDA","precio":1500,"imagenUrl":"https://otro.com/agua.png"}
+            combo   | POST | /api/candy/combos    | {"nombre":"Combo grande","precio":6000,"componentes":{},"imagenUrl":"/api/imagenes/../x.png"}
+            edicion | PUT  | /api/candy/productos/1 | {"nombre":"Pochoclos grandes","precio":4000,"imagenUrl":"/api/candy/productos/1"}
+            """)
+    void unaImagenQueNoSeSubioAlSistemaEs400(String caso, String metodo, String ruta, String cuerpo) {
+        Respuesta respuesta = pedirComo(HttpMethod.valueOf(metodo), ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La imagen tiene que ser una subida al sistema", respuesta.error());
+    }
+
+    @Test
+    void sinImagenLaCartaTraeImagenUrlEnNull() {
+        assertTrue(get("/api/candy/productos/" + pochoclos).json().get("imagenUrl").isNull());
     }
 }

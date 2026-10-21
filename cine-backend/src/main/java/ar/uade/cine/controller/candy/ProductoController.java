@@ -20,6 +20,7 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.dto.candy.PedidoComboDTO;
 import ar.uade.cine.dto.candy.PedidoDisponibilidadDTO;
 import ar.uade.cine.dto.candy.PedidoEdicionProductoDTO;
@@ -61,8 +62,9 @@ public class ProductoController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductoVistaDTO> agregar(@Valid @RequestBody PedidoProductoDTO pedido) {
         Dinero precio = precio(pedido.precio());
+        ImagenUrl imagen = new ImagenUrl(pedido.imagenUrl());
         Producto producto = carta.agregar(pedido.nombre(),
-                Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"), precio);
+                Parseo.constante(TipoProducto.class, pedido.tipo(), "el tipo de producto"), precio, imagen);
         return creado(producto);
     }
 
@@ -70,13 +72,17 @@ public class ProductoController {
     @PostMapping("/api/candy/combos")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ProductoVistaDTO> armarCombo(@Valid @RequestBody PedidoComboDTO pedido) {
-        return creado(carta.armarCombo(pedido.nombre(), precio(pedido.precio()), pedido.componentes()));
+        Dinero precio = precio(pedido.precio());
+        ImagenUrl imagen = new ImagenUrl(pedido.imagenUrl());
+        return creado(carta.armarCombo(pedido.nombre(), precio, pedido.componentes(), imagen));
     }
 
-    @Operation(summary = "Editar nombre y precio de un producto o combo")
+    @Operation(summary = "Editar nombre, precio e imagen de un producto o combo")
     @PutMapping("/api/candy/productos/{id}")
     public ProductoVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoEdicionProductoDTO pedido) {
-        return vistas.producto(carta.editar(id, pedido.nombre(), precio(pedido.precio())));
+        Dinero precio = precio(pedido.precio());
+        ImagenUrl imagen = new ImagenUrl(pedido.imagenUrl());
+        return vistas.producto(carta.editar(id, pedido.nombre(), precio, imagen));
     }
 
     @Operation(summary = "Sacar un producto de la carta, o reponerlo")
