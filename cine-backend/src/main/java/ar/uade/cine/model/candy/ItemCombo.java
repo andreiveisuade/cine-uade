@@ -26,7 +26,7 @@ public class ItemCombo {
     protected ItemCombo() {
     }
 
-    // Solo lo crea Producto.armarCombo. La cantidad llega como Integer porque viene del pedido: sin
+    // Solo lo crea Combo.armar. La cantidad llega como Integer porque viene del pedido: sin
     // chequear el null, el unboxing daría un 500. La regla es la de ItemCompra: es la misma cantidad.
     ItemCombo(Producto producto, Integer cantidad) {
         this.cantidad = ValidadorCombo.componente(producto, cantidad);
@@ -37,8 +37,9 @@ public class ItemCombo {
         return producto.getNombre();
     }
 
+    // Composite: le pregunta al componente su precio suelto en vez de leer su precio; lo que el combo suma.
     public Dinero precioSuelto() {
-        return producto.getPrecio().por(cantidad);
+        return producto.getPrecioSuelto().por(cantidad);
     }
 
     @Override

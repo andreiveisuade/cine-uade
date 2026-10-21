@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.Producto;
+import ar.uade.cine.model.candy.ProductoSuelto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
@@ -21,7 +22,7 @@ class RepositorioTest extends PruebaDeIntegracion {
 
     @Test
     void exigirDevuelveLoQueExisteYRechazaConElNombreDeLoQueFalta() {
-        Producto agua = productos.save(new Producto("Agua", TipoProducto.BEBIDA, Dinero.de(1500)));
+        Producto agua = productos.save(new ProductoSuelto("Agua", TipoProducto.BEBIDA, Dinero.de(1500)));
 
         assertEquals("Agua", productos.exigir(agua.getId(), "el producto").getNombre());
         assertEquals("No existe el producto 999",

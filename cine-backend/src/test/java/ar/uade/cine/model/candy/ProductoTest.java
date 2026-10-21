@@ -18,8 +18,8 @@ import ar.uade.cine.model.rechazos.Rechazo;
 // Sin Spring ni base: los invariantes viven en el producto, así que se prueban con new.
 class ProductoTest {
 
-    private final Producto pochoclos = new Producto("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000));
-    private final Producto gaseosa = new Producto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
+    private final Producto pochoclos = new ProductoSuelto("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000));
+    private final Producto gaseosa = new ProductoSuelto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
 
     private static void rechaza(String mensaje, Executable accion) {
         assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
@@ -29,8 +29,8 @@ class ProductoTest {
         return pesos == null ? null : Dinero.de(pesos);
     }
 
-    private Producto comboPareja() {
-        return Producto.armarCombo("Combo pareja", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1));
+    private Combo comboPareja() {
+        return Combo.armar("Combo pareja", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -45,17 +45,17 @@ class ProductoTest {
             """)
     void unSueltoInvalidoNoSeConstruye(String caso, String nombre, TipoProducto tipo, Double precio,
             String mensaje) {
-        rechaza(mensaje, () -> new Producto(nombre, tipo, pesos(precio)));
+        rechaza(mensaje, () -> new ProductoSuelto(nombre, tipo, pesos(precio)));
     }
 
     @Test
     void elNombreSeGuardaSinEspaciosYSoloLosEspaciosNoCuentanParaElLargo() {
         String sesenta = "x".repeat(60);
 
-        assertEquals("Agua", new Producto("  Agua  ", TipoProducto.BEBIDA, Dinero.de(100)).getNombre());
-        assertEquals(sesenta, new Producto(" " + sesenta + " ", TipoProducto.BEBIDA, Dinero.de(100)).getNombre());
+        assertEquals("Agua", new ProductoSuelto("  Agua  ", TipoProducto.BEBIDA, Dinero.de(100)).getNombre());
+        assertEquals(sesenta, new ProductoSuelto(" " + sesenta + " ", TipoProducto.BEBIDA, Dinero.de(100)).getNombre());
         rechaza("El nombre no puede tener más de 60 caracteres",
-                () -> new Producto(sesenta + "x", null, Dinero.de(100)));
+                () -> new ProductoSuelto(sesenta + "x", null, Dinero.de(100)));
     }
 
     @Test
@@ -69,16 +69,29 @@ class ProductoTest {
         assertEquals(Dinero.de(1000), combo.getAhorro());
     }
 
+    // Composite: quien cobra pregunta a un Producto sin saber si es hoja o combo, y cada uno contesta lo suyo.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            suelto, 4000, 0
+            combo,  6500, 1000
+            """)
+    void cualquierProductoContestaSuPrecioSueltoYSuAhorro(String caso, double precioSuelto, double ahorro) {
+        Producto producto = caso.equals("combo") ? comboPareja() : pochoclos;
+
+        assertEquals(Dinero.de(precioSuelto), producto.getPrecioSuelto());
+        assertEquals(Dinero.de(ahorro), producto.getAhorro());
+    }
+
     @Test
     void unComboJuntaAlMenosDosProductosYLosDatosSeRechazanAntes() {
         rechaza("Un combo tiene que juntar al menos dos productos distintos",
-                () -> Producto.armarCombo("Combo de uno", Dinero.de(3000), Map.of(pochoclos, 1)));
+                () -> Combo.armar("Combo de uno", Dinero.de(3000), Map.of(pochoclos, 1)));
         rechaza("Un combo tiene que juntar al menos dos productos distintos",
-                () -> Producto.armarCombo("Combo vacío", Dinero.de(3000), null));
+                () -> Combo.armar("Combo vacío", Dinero.de(3000), null));
         rechaza("Falta el nombre",
-                () -> Producto.armarCombo(" ", Dinero.de(3000), Map.of(pochoclos, 1)));
+                () -> Combo.armar(" ", Dinero.de(3000), Map.of(pochoclos, 1)));
         rechaza("El precio tiene que ser mayor a cero",
-                () -> Producto.armarCombo("Combo gratis", Dinero.CERO, Map.of(pochoclos, 1)));
+                () -> Combo.armar("Combo gratis", Dinero.CERO, Map.of(pochoclos, 1)));
     }
 
     @Test
@@ -88,9 +101,9 @@ class ProductoTest {
         sinCantidad.put(gaseosa, 1);
 
         rechaza("Falta la cantidad de Pochoclos",
-                () -> Producto.armarCombo("Combo", Dinero.de(3000), sinCantidad));
+                () -> Combo.armar("Combo", Dinero.de(3000), sinCantidad));
         rechaza("Un combo no puede contener otro combo: Combo pareja",
-                () -> Producto.armarCombo("Combo doble", Dinero.de(6000), Map.of(comboPareja(), 1, gaseosa, 1)));
+                () -> Combo.armar("Combo doble", Dinero.de(6000), Map.of(comboPareja(), 1, gaseosa, 1)));
     }
 
     // Los mismos textos que un renglón de la venta (CompraCandyTest): la cantidad es la misma cosa en los dos.
@@ -101,12 +114,12 @@ class ProductoTest {
             más de veinte, 21, La cantidad de Pochoclos tiene que ser como máximo 20
             """)
     void laCantidadDeUnComponenteVaDeUnoAVeinte(String caso, int cantidad, String mensaje) {
-        rechaza(mensaje, () -> Producto.armarCombo("Combo", Dinero.de(3000), Map.of(pochoclos, cantidad, gaseosa, 1)));
+        rechaza(mensaje, () -> Combo.armar("Combo", Dinero.de(3000), Map.of(pochoclos, cantidad, gaseosa, 1)));
     }
 
     @Test
     void veinteDeUnComponenteTodaviaEsUnCombo() {
-        Producto combo = Producto.armarCombo("Combo gigante", Dinero.de(80000), Map.of(pochoclos, 20, gaseosa, 1));
+        Producto combo = Combo.armar("Combo gigante", Dinero.de(80000), Map.of(pochoclos, 20, gaseosa, 1));
 
         assertEquals(20, combo.getComponentes().stream().mapToInt(ItemCombo::cantidad).max().orElseThrow());
     }
@@ -115,7 +128,7 @@ class ProductoTest {
     @CsvSource({"6500", "7000"})
     void elComboTieneQueSalirMenosQueSusComponentesSueltos(double precio) {
         rechaza("El combo tiene que salir menos que sus componentes sueltos ($ 6500.00)",
-                () -> Producto.armarCombo("Combo caro", Dinero.de(precio), Map.of(pochoclos, 1, gaseosa, 1)));
+                () -> Combo.armar("Combo caro", Dinero.de(precio), Map.of(pochoclos, 1, gaseosa, 1)));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -146,7 +159,7 @@ class ProductoTest {
 
     @Test
     void abaratarUnComponenteDejaAlComboSinConvenir() {
-        Producto combo = comboPareja();
+        Combo combo = comboPareja();
         combo.exigirQueSigaConviniendo();
 
         pochoclos.editar("Pochoclos", Dinero.de(2000));

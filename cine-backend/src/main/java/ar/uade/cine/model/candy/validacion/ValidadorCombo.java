@@ -2,11 +2,12 @@ package ar.uade.cine.model.candy.validacion;
 
 import java.util.Map;
 
+import ar.uade.cine.model.candy.Combo;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Lo que pide un combo al armarse: dos componentes o más, ninguno combo, y R14; lo llama Producto.
+// Lo que pide un combo al armarse: dos componentes o más, ninguno combo, y R14; lo llama Combo.
 // ItemCombo lo llama por cada componente. Nombre y precio son los de cualquier producto: ValidadorProducto.
 public final class ValidadorCombo {
 
@@ -31,10 +32,19 @@ public final class ValidadorCombo {
     }
 
     // R14: un combo que no sale menos que sus componentes sueltos no tiene por qué comprarse.
-    public static void exigirQueConvenga(Producto combo, Dinero precio) {
+    public static void exigirQueConvenga(Combo combo, Dinero precio) {
         if (!combo.getPrecioSuelto().esMayorQue(precio)) {
             throw new DatoInvalido("El combo tiene que salir menos que sus componentes sueltos ($ "
                     + combo.getPrecioSuelto() + ")");
+        }
+    }
+
+    // R14 del lado de la edición: un combo que pasa a costar lo mismo que sus sueltos ya no conviene. Lo usa
+    // también el combo que trae un suelto recién abaratado, con su propio nombre y precio.
+    public static void exigirQueSigaConviniendo(Combo combo, String nombre, Dinero precio) {
+        if (!combo.getPrecioSuelto().esMayorQue(precio)) {
+            throw new DatoInvalido("Con ese precio, el combo " + nombre + " dejaría de salir menos que sus"
+                    + " componentes sueltos ($ " + combo.getPrecioSuelto() + ")");
         }
     }
 }

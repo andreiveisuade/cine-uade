@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import ar.uade.cine.model.candy.Combo;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.repository.Repositorio;
 
@@ -20,8 +21,8 @@ public interface ProductoRepository extends Repositorio<Producto> {
     boolean existsByNombreIgnoreCaseAndIdNot(String nombre, int id);
 
     @Query("""
-            select distinct c from Producto c join c.componentes i
-            where c.tipo = ar.uade.cine.model.candy.TipoProducto.COMBO and i.producto.id = :productoId
+            select distinct c from Combo c join c.componentes i
+            where i.producto.id = :productoId
             order by c.id""")
-    List<Producto> findCombosQueTraen(@Param("productoId") int productoId);
+    List<Combo> findCombosQueTraen(@Param("productoId") int productoId);
 }
