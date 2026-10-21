@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AnimatePresence, m } from "motion/react";
 import { Anchor, AppShell, Container, Group, Text } from "@mantine/core";
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import * as api from "../api/api-http.js";
@@ -60,8 +61,18 @@ function EnlacesDeCuenta() {
   );
 }
 
+// Corta y sin desplazamiento grande: acompaña el cambio de pantalla sin demorarlo.
+const PANTALLA = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+  exit: { opacity: 0, transition: { duration: 0.12 } },
+};
+
 export function AppCliente() {
-  const { pathname } = useLocation();
+  const ubicacion = useLocation();
+  const { pathname } = ubicacion;
+  // La clave es la sección, no la ruta entera: cambiar de género en la cartelera no la remonta y deja reordenar.
+  const seccion = pathname.split("/")[1];
   // Cada pantalla arranca arriba, como una página.
   useEffect(() => window.scrollTo(0, 0), [pathname]);
 
@@ -86,19 +97,23 @@ export function AppCliente() {
         <AppShell.Main>
           <Container size="lg" py="md">
             <CompraEnCurso>
-              <Routes>
-                <Route index element={<Cartelera conHero />} />
-                <Route path="cartelera/:genero?" element={<Cartelera />} />
-                <Route path="pelicula/:id" element={<Pelicula />} />
-                <Route path="funcion/:id" element={<Funcion />} />
-                <Route path="confirmar/:id" element={<Confirmar />} />
-                <Route path="ticket/:codigo" element={<Ticket />} />
-                <Route path="mis-reservas" element={<MisReservas />} />
-                <Route path="registro" element={<Registro />} />
-                <Route path="ingresar" element={<Ingresar />} />
-                <Route path="nosotros" element={<Nosotros />} />
-                <Route path="*" element={<NoExiste />} />
-              </Routes>
+              <AnimatePresence mode="wait" initial={false}>
+                <m.div key={seccion} {...PANTALLA}>
+                  <Routes location={ubicacion}>
+                    <Route index element={<Cartelera conHero />} />
+                    <Route path="cartelera/:genero?" element={<Cartelera />} />
+                    <Route path="pelicula/:id" element={<Pelicula />} />
+                    <Route path="funcion/:id" element={<Funcion />} />
+                    <Route path="confirmar/:id" element={<Confirmar />} />
+                    <Route path="ticket/:codigo" element={<Ticket />} />
+                    <Route path="mis-reservas" element={<MisReservas />} />
+                    <Route path="registro" element={<Registro />} />
+                    <Route path="ingresar" element={<Ingresar />} />
+                    <Route path="nosotros" element={<Nosotros />} />
+                    <Route path="*" element={<NoExiste />} />
+                  </Routes>
+                </m.div>
+              </AnimatePresence>
             </CompraEnCurso>
           </Container>
         </AppShell.Main>
