@@ -1,36 +1,44 @@
 import { useState } from "react";
-import { Anchor, Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
-import { useNavigate } from "react-router";
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "../api/api-http.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja } from "../componentes/Estado.jsx";
-import { clienteRecordado, faltantes, olvidarCliente, recordarCliente } from "./compra.jsx";
+import { faltantes } from "./compra.jsx";
+import { useSesion } from "./sesion.jsx";
 
 export function Registro() {
   const navegar = useNavigate();
   const avisar = useAvisar();
-  const [recordado, setRecordado] = useState(clienteRecordado);
+  const { setUsuario } = useSesion();
   const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(useLocation().state?.email || "");
+  const [clave, setClave] = useState("");
   const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
+  const [enviando, setEnviando] = useState(false);
 
   async function registrar(evento) {
     evento.preventDefault();
     const vacios = faltantes({
       nombre: { valor: nombre, etiqueta: "tu nombre" },
       email: { valor: email, etiqueta: "tu email" },
+      clave: { valor: clave, etiqueta: "una contraseña" },
     });
     setFaltan(vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
+    setEnviando(true);
     try {
-      const cliente = await api.registrarCliente({ nombre: nombre.trim(), email: email.trim() });
-      recordarCliente(cliente);
-      avisar(`Listo, ${cliente.nombre}`);
-      navegar("/");
+      await api.registrarCliente({ nombre: nombre.trim(), email: email.trim(), password: clave });
+      // Recién creada la cuenta, entrar con ella: pedirle la clave de nuevo no agrega nada.
+      const usuario = await api.ingresar(email.trim(), clave);
+      setUsuario(usuario);
+      avisar(`Listo, ${usuario.nombre}`);
+      navegar("/mis-reservas");
     } catch (e) {
       setError(e.message);
+      setEnviando(false);
     }
   }
 
@@ -38,16 +46,11 @@ export function Registro() {
     <Stack gap="md" maw={440} mx="auto">
       <div>
         <Title order={1}>Registrarme</Title>
-        <Text size="sm" c="dimmed">No hace falta para comprar: es para no tener que cargar tus datos cada vez.</Text>
+        <Text size="sm" c="dimmed">
+          No hace falta para reservar: es para pagar online y ver tus reservas. Si ya reservaste, usá ese mismo email
+          y las vas a encontrar en tu cuenta.
+        </Text>
       </div>
-      {recordado && (
-        <Paper withBorder p="sm">
-          <Text size="sm">
-            Este navegador ya recuerda a <strong>{recordado.nombre}</strong> ({recordado.email}).{" "}
-            <Anchor component="button" size="sm" onClick={() => { olvidarCliente(); setRecordado(null); }}>Olvidar</Anchor>
-          </Text>
-        </Paper>
-      )}
       <Paper withBorder p="md">
         <form onSubmit={registrar}>
           <Stack gap="sm">
@@ -55,8 +58,13 @@ export function Registro() {
               onChange={(e) => setNombre(e.currentTarget.value)} />
             <TextInput label="Email" type="email" required value={email} error={faltan.email}
               onChange={(e) => setEmail(e.currentTarget.value)} />
-            <Button type="submit">Registrarme</Button>
+            <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
+              onChange={(e) => setClave(e.currentTarget.value)} />
+            <Button type="submit" loading={enviando}>Registrarme</Button>
             {error && <ErrorCaja>{error}</ErrorCaja>}
+            <Text size="xs" c="dimmed">
+              ¿Ya tenés cuenta? <Anchor component={Link} to="/ingresar" state={{ email }} size="xs">Ingresá</Anchor>
+            </Text>
           </Stack>
         </form>
       </Paper>
