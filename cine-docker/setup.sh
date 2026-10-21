@@ -31,6 +31,13 @@ docker info >/dev/null 2>&1 || fatal "Docker está instalado pero no corriendo. 
 docker compose version >/dev/null 2>&1 || fatal "Falta 'docker compose'. Actualizá Docker Desktop."
 ok "Docker corriendo"
 
+# Java solo lo pide el panel de escritorio; el sistema levanta sin él.
+if java -version 2>&1 | grep -q 'version "21'; then
+  ok "Java 21"
+else
+  aviso "Falta Java 21 (solo para el panel de escritorio). Instalalo con: brew install openjdk@21"
+fi
+
 # El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
 # que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
 if [ -d ../.githooks ] && [ "$(git -C .. config core.hooksPath 2>/dev/null)" != ".githooks" ]; then
@@ -113,17 +120,22 @@ else
     || aviso "Falló el sembrado. Probá a mano: ./seed/datos-de-ejemplo.sh"
 fi
 
-puerto=$(grep '^PUERTO_WEB=' .env | cut -d= -f2- || echo 8080)
+var() { grep "^$1=" .env | cut -d= -f2- || true; }
+puerto=$(var PUERTO_WEB); puerto=${puerto:-8080}
+adminer=$(var PUERTO_ADMINER); adminer=${adminer:-8081}
 
 cat <<FIN
 
 $(printf '\033[1mListo\033[0m')
 
-  Cliente     http://localhost:${puerto:-8080}
-  Panel       cd ../cine-swing && mvn exec:java   encargado@cine.uade.ar / cine2026
-  Puerta      el mismo panel de escritorio        puerta@cine.uade.ar / cine2026
-  Swagger     http://localhost:${puerto:-8080}/swagger-ui.html
-  Adminer     http://localhost:$(grep '^PUERTO_ADMINER=' .env | cut -d= -f2- || echo 8081)   servidor: mysql
+  Cliente     http://localhost:${puerto}
+  Swagger     http://localhost:${puerto}/swagger-ui.html
+  Panel       cd ../cine-swing && ./mvnw compile exec:java
+              encargado@cine.uade.ar / cine2026   (Puerta: puerta@cine.uade.ar / cine2026)
+
+  Adminer     http://localhost:${adminer}/?server=mysql&username=$(var DB_USER)&db=$(var DB_NAME)
+              usuario $(var DB_USER)   clave $(var DB_PASSWORD)
+              (la clave es de tu MySQL local, la generó este script; está en .env)
 
   Para bajarlo:  docker compose down
   Guía completa: ../_other/COMO-LEVANTARLO.md

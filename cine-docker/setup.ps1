@@ -45,6 +45,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 Ok "Docker corriendo"
 
+# Java solo lo pide el panel de escritorio; el sistema levanta sin el.
+$java = (cmd /c "java -version 2>&1") -join ' '
+if ($java -match 'version "21') { Ok "Java 21" }
+else { Aviso "Falta Java 21 (solo para el panel de escritorio). Instalalo con: winget install EclipseAdoptium.Temurin.21.JDK" }
+
 # El repo es publico y el token de TMDB es personal: este hook frena el commit si algo
 # que va a subir parece una credencial. Los hooks no se versionan, hay que apuntarlos.
 if ((Test-Path ..\.githooks) -and ((git -C .. config core.hooksPath) -ne '.githooks')) {
@@ -143,15 +148,21 @@ $puerto  = Get-Variable-Env .env 'PUERTO_WEB'
 $adminer = Get-Variable-Env .env 'PUERTO_ADMINER'
 if (-not $puerto)  { $puerto  = '8080' }
 if (-not $adminer) { $adminer = '8081' }
+$dbUser = Get-Variable-Env .env 'DB_USER'
+$dbName = Get-Variable-Env .env 'DB_NAME'
+$dbPass = Get-Variable-Env .env 'DB_PASSWORD'
 
 Write-Host ""
 Write-Host "Listo" -ForegroundColor White
 Write-Host ""
 Write-Host "  Cliente     http://localhost:$puerto"
-Write-Host "  Panel       cd ..\cine-swing; mvn exec:java   encargado@cine.uade.ar / cine2026"
-Write-Host "  Puerta      el mismo panel de escritorio       puerta@cine.uade.ar / cine2026"
 Write-Host "  Swagger     http://localhost:$puerto/swagger-ui.html"
-Write-Host "  Adminer     http://localhost:$adminer   servidor: mysql"
+Write-Host "  Panel       cd ..\cine-swing; .\mvnw.cmd compile exec:java"
+Write-Host "              encargado@cine.uade.ar / cine2026   (Puerta: puerta@cine.uade.ar / cine2026)"
+Write-Host ""
+Write-Host "  Adminer     http://localhost:$adminer/?server=mysql&username=$dbUser&db=$dbName"
+Write-Host "              usuario $dbUser   clave $dbPass"
+Write-Host "              (la clave es de tu MySQL local, la genero este script; esta en .env)"
 Write-Host ""
 Write-Host "  Para bajarlo:  docker compose down"
 Write-Host "  Guia completa: ..\_other\COMO-LEVANTARLO.md"
