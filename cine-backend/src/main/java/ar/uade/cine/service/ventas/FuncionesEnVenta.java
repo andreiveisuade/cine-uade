@@ -10,7 +10,7 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 
 // R19: una función que ya arrancó no se vende, así que tampoco se le apartan butacas.
-// Alta cohesión (GRASP) / SRP: salió de Ocupacion, que cambiaba por cuatro reglas; esta cambia solo si cambia R19.
+// SRP: salió de Ocupacion; cambia solo si cambia R19.
 @Service
 @RequiredArgsConstructor
 public class FuncionesEnVenta {

@@ -3,7 +3,6 @@ package ar.uade.cine.service.cartelera;
 import ar.uade.cine.model.cartelera.ResumenDeCorrida;
 
 // Acumula lo que va pasando en una corrida del importador y entrega el resumen; dueña del formato del detalle.
-// Experto: antes GestorImportaciones llevaba tres contadores y armaba los renglones (Feature Envy sobre el resumen).
 // Un renglón por película: «+ [id] título» si entró, «✗ título: motivo» si falló; las salteadas solo se cuentan.
 class Corrida {
 

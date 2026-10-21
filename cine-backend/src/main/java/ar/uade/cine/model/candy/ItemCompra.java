@@ -16,8 +16,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 // Renglón de una venta del candy; congela nombre, precio y ahorro. Cantidad y stock: ValidadorCompraCandy.
-// Nombre, precio y ahorro se congelan al vender para que el ticket no cambie: si después se
-// edita el combo, la compra vieja sigue diciendo lo que se cobró y lo que se ahorró.
+// Se congela al vender para que el ticket no cambie si después se edita el combo
 @Entity
 @Table(name = "item_compra")
 @Getter
@@ -29,8 +28,7 @@ public class ItemCompra {
     @Getter(AccessLevel.NONE)
     private int id;
 
-    // EAGER a propósito, como las colecciones: el id del producto lo leen las vistas, ya
-    // fuera de la transacción.
+    // EAGER: las vistas leen el id del producto fuera de la transacción
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
@@ -49,8 +47,7 @@ public class ItemCompra {
     protected ItemCompra() {
     }
 
-    // Solo lo crea CompraCandy. La cantidad llega como Integer porque viene del pedido: un null
-    // tiene su propio mensaje en vez de un 500 por el unboxing.
+    // Integer porque viene del pedido: el null tiene su propio mensaje, no un 500
     ItemCompra(Producto producto, Integer cantidad) {
         this.cantidad = ValidadorCompraCandy.renglon(producto, cantidad);
         this.producto = producto;

@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Quien compra entradas, por email; con cuenta si se registró con clave. Usuario con rol fijo CLIENTE.
-// Reservar sin cuenta lo da de alta sin clave: registrarse después le abre la cuenta a ese mismo cliente.
+// Reservar sin cuenta lo da de alta sin clave; registrarse después abre la cuenta de ese mismo cliente.
 @Entity
 @DiscriminatorValue("CLIENTE")
 public class Cliente extends Usuario {

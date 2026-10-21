@@ -30,16 +30,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 // Reserva de butacas sin repetir (R5, R6, R13, R17-R19); Experto en sus transiciones, @Version por carreras.
-// Contexto del patrón State: no pregunta en qué estado está. Cada operación le pide la transición a
-// EstadoReserva (`estado = estado.pagar()`), que rechaza si no corresponde, y las preguntas (¿espera el
-// pago?, ¿ocupa butacas?) también las contesta el estado.
+// Contexto del patrón State: cada operación le pide la transición a EstadoReserva (`estado = estado.pagar()`).
 @Entity
 @Getter
 public class Reserva {
 
     public static final int MINUTOS_PARA_PAGAR = 30;
 
-    // Como la lee el acomodador en la puerta: el toString de LocalDateTime traía segundos y nanos.
     private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DIA = DateTimeFormatter.ofPattern("dd/MM");
 
@@ -69,11 +66,8 @@ public class Reserva {
 
     private LocalDateTime ingresadaEn;
 
-    // Cobrar, cancelar y expirar leen la reserva, miran su estado y lo escriben. Sin esto,
-    // cobrar y cancelar a la vez pasaban los dos el chequeo y ganaba el último en escribir:
-    // una reserva CANCELADA con su pago adentro. Con la versión, el segundo UPDATE no
-    // encuentra la fila que leyó y falla, y ManejadorErrores lo contesta como 409.
-    // Solo acá: es la única entidad con transiciones de estado que compiten entre sí.
+    // Cobrar y cancelar a la vez pasaban los dos el chequeo y quedaba una CANCELADA con su pago;
+    // con la versión el segundo UPDATE falla y ManejadorErrores lo contesta como 409.
     @Version
     @Getter(AccessLevel.NONE)
     private int version;
@@ -81,9 +75,7 @@ public class Reserva {
     protected Reserva() {
     }
 
-    // Patrón Creador (GRASP): antes GestorReservas armaba las entradas y se las entregaba; la reserva las contiene
-    // y conoce la función que les pone precio, así que las crea ella. Primero cada entrada valida su butaca (R9)
-    // y después la reserva el pedido entero (tope, repetidas): el mismo orden que antes.
+    // Patrón Creador (GRASP): la reserva contiene las entradas y conoce la función que les pone precio, así que las crea ella.
     public Reserva(Funcion funcion, Cliente cliente, List<ButacaPedida> butacas, LocalDateTime creadaEn) {
         ValidadorReserva.validarFuncion(funcion);
         List<Entrada> entradas = butacas.stream()
@@ -101,7 +93,7 @@ public class Reserva {
         });
     }
 
-    // El tope de butacas por compra. Estático porque el bloqueo lo aplica antes de que la reserva exista.
+    // Estático porque el bloqueo lo aplica antes de que la reserva exista.
     public static void validarTopeDeButacas(Collection<?> butacas) {
         ValidadorReserva.validarTope(butacas);
     }
@@ -130,9 +122,7 @@ public class Reserva {
         estado = estado.pagar();
     }
 
-    // Por qué no se puede cobrar ahora, o vacío si se puede: R5 (solo una que espera el pago), R17 (la
-    // vencida ya soltó sus butacas) y R19 (función empezada). Lo usan GestorPagos para rechazar y
-    // la vista para habilitar el cobro, así que el botón y el rechazo no pueden diferir.
+    // Por qué no se puede cobrar, o vacío: R5, R17 (vencida) y R19 (función empezada). Lo usan el gestor y la vista.
     public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
         if (!estado.esperaPago()) {
             return Optional.of(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR));
@@ -150,8 +140,7 @@ public class Reserva {
         return impedimentoParaCobrar(ahora).isEmpty();
     }
 
-    // R13: se cancela solo lo que todavía no se cobró. R17: la vencida ya soltó sus butacas aunque
-    // figure RESERVADA hasta que alguien la expire, igual que en impedimentoParaCobrar.
+    // R13: se cancela solo lo que no se cobró. R17: la vencida ya soltó sus butacas aunque figure RESERVADA.
     public boolean esCancelable(LocalDateTime ahora) {
         return estado.esperaPago() && !estaVencida(ahora);
     }
@@ -168,7 +157,7 @@ public class Reserva {
         soltarButacasAl(estado.expirar());
     }
 
-    // R18. El momento lo pone el gestor con su reloj: la reserva no sabe qué hora es.
+    // R18. El momento lo pone el gestor: la reserva no sabe qué hora es.
     public void registrarIngreso(LocalDateTime cuando) {
         EstadoReserva siguiente = estado.ingresar();
         if (ingresadaEn != null) {
@@ -179,8 +168,7 @@ public class Reserva {
         ingresadaEn = cuando;
     }
 
-    // Por la Puerta se entra solo el día de la función: con la entrada de mañana, o la de ayer que nadie
-    // usó, el acomodador no tiene por qué dejar pasar a nadie.
+    // Se entra solo el día de la función: la de mañana o la de ayer no deja pasar.
     private void exigirElDiaDeLaFuncion(LocalDateTime cuando) {
         LocalDate dia = funcion.getInicio().toLocalDate();
         if (!dia.equals(cuando.toLocalDate())) {
@@ -198,7 +186,6 @@ public class Reserva {
         return estado.ocupaButacas();
     }
 
-    // Si debería expirar: el estado lo escribe la primera operación que se cruza con ella.
     public boolean estaVencida(LocalDateTime ahora) {
         return estado.esperaPago() && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
     }

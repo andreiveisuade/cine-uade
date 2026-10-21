@@ -91,10 +91,8 @@ public class GestorFunciones {
         return "La sala ya tiene una función en ese horario";
     }
 
-    // Solo las funciones que pueden chocar con algo entre desde y hasta, no la historia entera
-    // de la sala: una que empezó antes choca si sigue proyectándose o limpiándose, y ninguna
-    // dura más que la película más larga del catálogo; una que empieza después choca si
-    // arranca antes de que termine la limpieza de lo que se quiere programar.
+    // Solo las funciones que pueden chocar entre desde y hasta: las que empezaron antes (ninguna dura más que
+    // la película más larga) y las que arrancan antes de que termine la limpieza.
     @Transactional(readOnly = true)
     public AgendaDeSala agendaDe(int salaId, LocalDateTime desde, LocalDateTime hasta) {
         int limpieza = salaRepository.findById(salaId).map(Sala::getMinutosLimpieza).orElse(0);

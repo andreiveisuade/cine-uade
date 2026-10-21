@@ -21,9 +21,8 @@ import ar.uade.cine.model.ventas.SesionDeCompra;
 import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.ventas.BloqueoButacaRepository;
 
-// Bloqueo efímero de butacas mientras el cliente elige: tomar, soltar y limpiar los vencidos. Solo UX: la venta
-// la decide la reserva.
-// Alta cohesión (GRASP) / SRP: salió de Ocupacion junto con su @Scheduled; cambia si cambia cómo se elige en el mapa.
+// Bloqueo efímero de butacas mientras el cliente elige; solo UX, la venta la decide la reserva.
+// SRP: salió de Ocupacion junto con su @Scheduled; cambia si cambia cómo se elige en el mapa.
 @Service
 @RequiredArgsConstructor
 public class BloqueoDeButacas {
@@ -66,24 +65,20 @@ public class BloqueoDeButacas {
         bloqueos.liberar(funcionId, SesionDeCompra.comoSeGuarda(sesion));
     }
 
-    // Solo higiene: una fila vencida ya no ocupa nada, porque vigentes() filtra por
-    // vencimiento y renovarOTomarVencida() la pisa. Sin esto la tabla crecería con cada
-    // mapa abandonado. En el perfil test no corre: ver Adaptadores.Tareas.
+    // Higiene: una fila vencida ya no ocupa nada (vigentes() filtra); sin esto la tabla crecería. No corre en test.
     @Scheduled(fixedDelay = 5, initialDelay = 5, timeUnit = TimeUnit.MINUTES)
     public void borrarVencidos() {
         bloqueos.borrarVencidos(reloj.ahora());
     }
 
-    // Sin leer antes de escribir: entre un SELECT que dice "libre" y el INSERT cabe otra
-    // sesión. Por qué alcanzan estas dos sentencias, en BloqueoButacaRepository.
+    // Sin leer antes de escribir: entre un SELECT "libre" y el INSERT cabe otra sesión (ver BloqueoButacaRepository).
     private boolean tomar(int funcionId, int asientoId, String sesion, LocalDateTime ahora) {
         LocalDateTime vence = ahora.plus(MIENTRAS_ELIGE);
         return bloqueos.renovarOTomarVencida(funcionId, asientoId, sesion, vence, ahora) > 0
                 || bloqueos.insertarSiNoEsta(funcionId, asientoId, sesion, vence) > 0;
     }
 
-    // Las butacas del pedido, con las reglas de la venta: que sean de la sala, que estén en servicio (R9)
-    // y hasta el tope de una compra. Antes se apartaba una fuera de servicio que después no se podía comprar.
+    // Las butacas del pedido, con las reglas de la venta: de la sala, en servicio (R9) y hasta el tope.
     // distinct() alcanza para "a1" y "A1": exigirConCodigo devuelve la misma instancia de deLaSala.
     private List<Asiento> butacasPedidas(Funcion funcion, Collection<String> codigos) {
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());

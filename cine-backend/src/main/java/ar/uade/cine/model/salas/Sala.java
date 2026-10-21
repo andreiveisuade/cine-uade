@@ -40,8 +40,6 @@ public class Sala {
     }
 
     // No toca las butacas: rehacerlas dejaría entradas vendidas apuntando a asientos inexistentes.
-    // Valida lo mismo que el alta, y todo antes de asignar nada: el gestor solo chequea lo que
-    // necesita la base (nombre repetido, funciones programadas).
     public void editar(String nombre, TipoSala tipo, int minutosLimpieza) {
         String nuevoNombre = ValidadorSala.nombre(nombre);
         ValidadorSala.tipo(tipo);
@@ -51,9 +49,7 @@ public class Sala {
         this.minutosLimpieza = minutosLimpieza;
     }
 
-    // Creadora de sus butacas porque las contiene, y por eso dueña de la distribución. Solo en el
-    // alta: editar no las toca. Las especiales llegan por tipo, como las listas del pedido, para que
-    // una butaca repetida en dos se pueda rechazar.
+    // Creadora de sus butacas porque las contiene; solo en el alta. Las especiales llegan por tipo para rechazar repetidas.
     public List<Asiento> generarAsientos(List<Integer> butacasPorFila,
                                          Map<TipoAsiento, List<String>> especiales) {
         ValidadorSala.distribucion(butacasPorFila);

@@ -14,19 +14,15 @@ import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.validacion.Regla;
 
 // Pedido de grilla automática del encargado; Value Object: completa los defaults y se valida al nacer.
-// Se valida al construirse: el planificador nunca ve unos criterios imposibles, y se queda solo
-// con lo que necesita la base (que haya salas).
-// Apertura y cierre no son una FranjaHoraria: el cierre 00:00 es el final del día, y una franja
-// que termina a la medianoche empezaría antes de terminar.
+// Se valida al construirse: el planificador nunca ve criterios imposibles.
+// Apertura y cierre no son una FranjaHoraria: el cierre 00:00 es el final del día.
 public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, LocalTime cierre,
                               int cuantasPeliculas, FormatoDeFuncion formato) {
 
     // La propuesta se arma entera en memoria, pase por pase: sin tope, un pedido de años la tumba.
     public static final int MAXIMO_DIAS = 31;
 
-    // Los pases se reparten entre el elenco: con cuatro salas de 14 a 0 salen unos veinte por día, así
-    // que pasadas las veinte películas a alguna le toca menos de un pase diario y no se sostiene en
-    // cartel. El default son ocho.
+    // Con cuatro salas salen ~20 pases por día: pasadas 20 películas, a alguna le toca menos de uno. Default: ocho.
     public static final int MAXIMO_PELICULAS = 20;
 
     public CriteriosGrilla {
@@ -42,15 +38,13 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
         }
     }
 
-    // Lo que el pedido no trae es una semana desde hoy, de 14 a 0, con 8 películas subtituladas en 2D.
-    // Se completa y se valida en una sola construcción: el primer error es el del pedido, no el de un
-    // default. hoy lo pasa quien tiene el reloj, igual que a las funciones que la grilla va a crear: no
-    // empieza en el pasado ni termina a más de un año.
+    // Sin lo que el pedido no trae: una semana desde hoy, de 14 a 0, con 8 películas subtituladas en 2D.
+    // Completa y valida en una construcción; hoy lo pasa quien tiene el reloj: no empieza en el pasado ni pasa de un año.
     public static CriteriosGrilla completando(LocalDate hoy, LocalDate desde, Integer dias, LocalTime apertura,
                                               LocalTime cierre, Integer cuantasPeliculas, Dinero precio,
                                               Version version, Proyeccion proyeccion) {
         LocalDate inicio = desde == null ? hoy : desde;
-        // Antes daba 201 con cero funciones: los días pasados no tienen ningún pase posible (R20).
+        // R20: los días pasados no tienen ningún pase posible
         if (inicio.isBefore(hoy)) {
             throw new DatoInvalido("La grilla no puede empezar en el pasado");
         }
@@ -75,9 +69,8 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
         return cierreDe(fecha, cierre);
     }
 
-    // Un cierre 00:00 es el final del día, no su principio: el instante en que empieza el siguiente,
-    // así entra el pase que termina justo a la medianoche. Estática porque el constructor compacto
-    // la usa antes de que los campos tengan valor.
+    // Un cierre 00:00 es el instante en que empieza el día siguiente, así entra el pase que termina a medianoche.
+    // Estática: el constructor compacto la usa antes de que los campos tengan valor.
     private static LocalDateTime cierreDe(LocalDate fecha, LocalTime cierre) {
         return cierre.equals(LocalTime.MIDNIGHT) ? fecha.plusDays(1).atStartOfDay() : fecha.atTime(cierre);
     }

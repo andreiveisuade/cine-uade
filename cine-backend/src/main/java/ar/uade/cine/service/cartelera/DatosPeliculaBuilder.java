@@ -5,12 +5,9 @@ import java.util.List;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 
-// Arma un DatosPelicula nombrando cada dato; lo que no se nombra viaja null, que en una edición es "no lo mandé".
-// Patrón Builder (GoF, creacional): construir paso a paso un objeto con muchos datos sin constructor telescópico.
-// Qué resolvía: DatosPelicula tiene doce componentes posicionales, cuatro String y tres Integer seguidos; cruzar
-// dos compilaba y guardaba una sinopsis en el director, y la sopa de null no decía qué dato era cada uno.
-// Cómo se lee: DatosPelicula.con().titulo("Matrix").duracion(136)...armar(). Solo para este record de entrada sin
-// reglas: las entidades no llevan Builder, su constructor valida todo antes de asignar.
+// Arma un DatosPelicula nombrando cada dato; lo no nombrado viaja null, que en edición es "no lo mandé".
+// Patrón Builder (GoF): doce componentes posicionales se podían cruzar sin error de compilación.
+// Solo para este record sin reglas: las entidades validan en su constructor.
 public final class DatosPeliculaBuilder {
 
     private String titulo;

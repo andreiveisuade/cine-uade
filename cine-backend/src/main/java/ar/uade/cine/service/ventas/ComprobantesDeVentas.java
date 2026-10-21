@@ -17,20 +17,9 @@ import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // Emite ticket de reserva y recibo de cobro cuando ya quedaron guardados; Observer que corre tras el commit.
-//
-// Patrón Observer (GoF): el sujeto avisa que algo pasó y no sabe quién escucha ni qué hace con el aviso.
-// Acá los sujetos son GestorReservas y GestorPagos, que publican ReservaCreada y PagoRegistrado con el
-// ApplicationEventPublisher de Spring; esta clase es el observador. Spring hace de lista de suscriptores:
-// encuentra los métodos anotados con @TransactionalEventListener por el tipo de su parámetro.
-//
-// Qué resolvía: los gestores escribían el archivo antes del commit. Si el commit fallaba después (el
-// @Version de Reserva salta recién al hacer commit, cuando otra operación la canceló o la venció), quedaba
-// en la carpeta un recibo de un cobro que no existió. Además cada gestor dependía de su generador.
-//
-// Cómo se lee: con la fase AFTER_COMMIT, que es la de @TransactionalEventListener por defecto, Spring
-// guarda el aviso hasta que la transacción del gestor confirma, y si se deshace lo descarta: sin commit no
-// hay comprobante. Para entonces la sesión de la venta ya no navega relaciones LAZY, así que cada método
-// abre una transacción de solo lectura propia (REQUIRES_NEW, la única que Spring admite acá) y relee por id.
+// Patrón Observer (GoF): GestorReservas y GestorPagos publican ReservaCreada y PagoRegistrado; esta clase escucha.
+// AFTER_COMMIT: sin commit no hay comprobante; antes un rollback tardío (@Version) dejaba recibos de cobros que no existieron.
+// Cada método abre su transacción de solo lectura (REQUIRES_NEW) y relee por id: la sesión de la venta ya no navega LAZY.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -58,8 +47,7 @@ public class ComprobantesDeVentas {
         }
     }
 
-    // Después del commit la venta ya existe: si el archivo falla no hay nada que deshacer, y contestarle un
-    // error al cliente lo haría reintentar una compra que ya hizo. Queda en el log para reimprimirlo.
+    // Si el archivo falla no hay nada que deshacer: avisar error haría reintentar una compra ya hecha. Queda en el log.
     private static void emitir(Runnable comprobante, String cual) {
         try {
             comprobante.run();

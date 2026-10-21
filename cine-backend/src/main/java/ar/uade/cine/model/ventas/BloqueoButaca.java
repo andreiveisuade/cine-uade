@@ -19,10 +19,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 // La butaca que alguien está eligiendo, por función, durante MIENTRAS_ELIGE; solo experiencia de usuario.
-// La doble venta la impide el UNIQUE de entrada. La clave es el par función-butaca, así que la base
-// no deja que dos sesiones la tengan a la vez.
-// Nadie la instancia: se toma, renueva y suelta con consultas de BloqueoButacaRepository,
-// porque cada una tiene que ser una sola sentencia atómica.
+// La doble venta la impide el UNIQUE de entrada; la clave función-butaca evita dos sesiones a la vez.
+// Nadie la instancia: se toma, renueva y suelta con consultas atómicas de BloqueoButacaRepository.
 @Entity
 @IdClass(BloqueoButaca.Clave.class)
 public class BloqueoButaca {
@@ -30,8 +28,7 @@ public class BloqueoButaca {
     public record Clave(int funcion, int asiento) implements Serializable {
     }
 
-    // CASCADE igual que en el schema: borrar la función o la sala no puede trabarse por
-    // alguien que estaba mirando el mapa.
+    // CASCADE como en el schema: borrar la función o la sala no se traba por quien miraba el mapa.
     @Id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "funcion_id")
@@ -55,7 +52,6 @@ public class BloqueoButaca {
     protected BloqueoButaca() {
     }
 
-    // No inicializa el proxy: el id ya viene en la fila.
     public int asientoId() {
         return asiento.getId();
     }

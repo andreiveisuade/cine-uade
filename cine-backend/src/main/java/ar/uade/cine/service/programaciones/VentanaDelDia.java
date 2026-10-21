@@ -7,8 +7,7 @@ import java.util.List;
 import ar.uade.cine.model.funciones.Funcion;
 
 // Desde cuándo y hasta cuándo se puede programar cada día de la grilla; Fabricación pura con el reloj leído una vez.
-// SRP: la comparten el reparto y los indicadores, para que la ocupación se mida contra lo que el reparto
-// puede usar de verdad.
+// SRP: la comparten reparto e indicadores, así la ocupación se mide contra lo que el reparto puede usar.
 final class VentanaDelDia {
 
     static final int MINUTOS_ENTRE_INTENTOS = 30;
@@ -25,8 +24,7 @@ final class VentanaDelDia {
         return criterios.desde().datesUntil(criterios.desde().plusDays(criterios.dias())).toList();
     }
 
-    // R20: hoy arranca en el primer intento que todavía no pasó; en un día que ya pasó da el
-    // cierre o más, sin nada por repartir.
+    // R20: hoy arranca en el primer intento que no pasó; en un día pasado da el cierre o más: nada que repartir.
     LocalDateTime primerIntento(LocalDate fecha) {
         LocalDateTime momento = fecha.atTime(criterios.apertura());
         LocalDateTime limite = cierre(fecha);

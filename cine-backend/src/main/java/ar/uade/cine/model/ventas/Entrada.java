@@ -34,8 +34,7 @@ public class Entrada {
     @Getter
     private int id;
 
-    // EAGER a propósito, como las colecciones: el código de la butaca lo leen las vistas,
-    // ya fuera de la transacción.
+    // EAGER a propósito: las vistas leen el código de la butaca fuera de la transacción.
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "asiento_id", nullable = false)
     private Asiento asiento;
@@ -56,9 +55,8 @@ public class Entrada {
     protected Entrada() {
     }
 
-    // El precio queda fijo al vender: si después cambia el de la función, lo vendido no cambia. Llega el de
-    // la butaca con tarifa general (Funcion#precioDe) y la entrada le aplica la suya: la conoce ella.
-    // Una butaca pedida sin tarifa va a la general: es el default del modelo, no de quien arma el pedido.
+    // El precio queda fijo al vender; llega el de la butaca con tarifa general y la entrada le aplica la suya.
+    // Sin tarifa va a la general: es el default del modelo.
     public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precioDeLaButaca) {
         ValidadorEntrada.validar(asiento);
         TipoTarifa vendida = Objects.requireNonNullElse(tarifa, TipoTarifa.GENERAL);

@@ -33,9 +33,8 @@ public class ConsultasReservas {
         return reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
     }
 
-    // R21: el cliente opera (cancelar, pagar online) solo sobre la suya. La de otro sale con el mismo 404
-    // que un código que no existe: el código no prueba ser el dueño, y un 403 confirmaría que la reserva
-    // existe. Rechazo no tiene un 403 propio, y agregarlo para decir menos no hace falta.
+    // R21: el cliente opera solo sobre la suya. La de otro da el mismo 404 que un código inexistente:
+    // un 403 confirmaría que la reserva existe.
     public Reserva obtenerDelCliente(String codigo, String emailDelCliente) {
         Reserva reserva = obtenerPorCodigo(codigo);
         if (!reserva.getCliente().getEmail().equals(emailDelCliente)) {
@@ -44,14 +43,12 @@ public class ConsultasReservas {
         return reserva;
     }
 
-    // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay
-    // sesión que los traiga, y traerlos de a uno es la consulta por fila que se quiere evitar.
+    // Con todo cargado (join fetch): fuera de la transacción no hay sesión y traerlos de a uno es el N+1.
     public List<Reserva> conDetalle(Collection<Integer> ids) {
         return ids.isEmpty() ? List.of() : reservaRepository.findConDetalle(ids);
     }
 
-    // Las de un cliente, la más nueva primero, en una consulta. Sin email no hay a quién buscar;
-    // con espacios o mayúsculas, se busca como lo guarda Email.
+    // Las de un cliente, la más nueva primero. Sin email no hay a quién buscar; se busca como lo guarda Email.
     public List<Reserva> listarPorEmail(String email) {
         return Email.paraBuscar(email).map(Email::valor)
                 .map(reservaRepository::findByCliente_EmailOrderByIdDesc).orElse(List.of());

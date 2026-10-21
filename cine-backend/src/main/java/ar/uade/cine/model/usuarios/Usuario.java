@@ -16,7 +16,7 @@ import jakarta.persistence.Table;
 
 import ar.uade.cine.model.usuarios.validacion.ValidadorUsuario;
 
-// Cliente o empleado de la tabla usuario; el nombre lo valida ValidadorUsuario, y el email, Email.
+// Cliente o empleado de la tabla usuario; nombre lo valida ValidadorUsuario, email lo valida Email.
 // Discriminador por fórmula: tres roles caen en dos clases (ADMINISTRADOR y ACOMODADOR son Empleado).
 @Entity
 @Table(name = "usuario")
@@ -31,7 +31,6 @@ public abstract class Usuario {
 
     private String nombre;
 
-    // El texto que ya normalizó Email: es con lo que se busca, también desde las reservas del cliente.
     @Column(unique = true)
     private String email;
 
@@ -39,8 +38,7 @@ public abstract class Usuario {
     @Column(name = "rol", nullable = false)
     private Rol rol;
 
-    // Acá y no en Empleado: el cliente con cuenta también entra con clave, y es la misma columna.
-    // Null en el cliente que compró sin registrarse.
+    // Acá y no en Empleado: el cliente con cuenta también entra con clave. Null si compró sin registrarse.
     @Column(name = "password_hash", length = 100)
     private String passwordHash;
 

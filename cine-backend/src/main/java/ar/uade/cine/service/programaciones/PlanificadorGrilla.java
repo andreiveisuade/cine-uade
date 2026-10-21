@@ -41,8 +41,7 @@ public class PlanificadorGrilla {
         if (cargadas.isEmpty()) {
             throw new DatoInvalido("No hay salas cargadas para programar");
         }
-        // R8: una grilla en 3D reparte solo entre las salas que lo proyectan. Antes la propuesta ponía
-        // pases en una sala 2D, y aplicarla rechazaba el primero.
+        // R8: una grilla en 3D reparte solo entre las salas que lo proyectan.
         List<Sala> salas = cargadas.stream()
                 .filter(sala -> criterios.formato().proyeccion().sePuedeProyectarEn(sala.getTipo()))
                 .toList();

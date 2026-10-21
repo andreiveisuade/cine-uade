@@ -13,19 +13,15 @@ import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.validacion.Regla;
 
 // Reglas del período, la hora y los días de una programación; Fabricación pura que llama Programacion.
-// El formato y el precio no están acá: son los de una función, y los valida FormatoDeFuncion.
 public final class ValidadorProgramacion {
 
-    // Un año, bisiesto incluido. Una programación cerrada genera todo su rango en una sola transacción,
-    // y la previsualización lo arma entero en memoria: sin tope, de 2026 a 9999 eran 2,9 millones de
-    // funciones y el servidor se quedaba sin memoria.
+    // Un año, bisiesto incluido: la cerrada se genera en una transacción y la previsualización en memoria; sin tope se caía el servidor.
     public static final int MAXIMO_DIAS = 366;
 
     private ValidadorProgramacion() {
     }
 
-    // Sin hasta queda abierta: se extiende sola, de a catorce días. Los mensajes le dicen rango, como
-    // el formulario.
+    // Sin hasta queda abierta: se extiende sola, de a catorce días.
     public static Periodo periodo(LocalDate desde, LocalDate hasta) {
         Regla.objeto(desde).obligatorio("Falta la fecha de inicio");
         Periodo periodo = Periodo.de(desde, hasta, "El rango");
@@ -40,8 +36,7 @@ public final class ValidadorProgramacion {
         ValidadorFuncion.sinSegundos(hora, "La hora de la función");
     }
 
-    // Sin días elegidos son todos. Con días, alguno tiene que caer en un rango cerrado: si no, la
-    // grilla no generaría funciones. Uno abierto no tiene fin contra el cual medir: algún lunes llega.
+    // Sin días son todos. Con días, alguno tiene que caer en un rango cerrado; el abierto siempre alcanza.
     public static Set<DayOfWeek> dias(Set<DayOfWeek> dias, Periodo periodo) {
         Regla.lista(dias).sinNulos("Falta el día de la semana");
         Set<DayOfWeek> elegidos = dias == null || dias.isEmpty()

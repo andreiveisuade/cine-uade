@@ -53,10 +53,7 @@ public class Funcion {
         this(pelicula, sala, inicio, formato, null);
     }
 
-    // Que la película esté confirmada, que no empiece en el pasado (R20) y que no pise a otra (R3)
-    // no son invariantes de la función sino del alta: dependen del buzón, del reloj y de las otras
-    // funciones de la sala. Una función que quedó en el pasado sigue siendo válida (R12).
-    // El formato llega ya validado, como Value Object; acá queda R8, que cruza el formato con la sala.
+    // R20 y R3 no son invariantes sino del alta: dependen del reloj y de las otras funciones de la sala.
     public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato,
                    Integer programacionId) {
         formato.exigirProyectableEn(sala);
@@ -68,9 +65,7 @@ public class Funcion {
         this.programacionId = programacionId;
     }
 
-    // R19 y R20 con un solo corte: la que empieza en este instante ya empezó, y nacería sin poder
-    // venderse. Estática para preguntar por un horario antes de que la función exista, como hacen la
-    // programación y la grilla al saltear lo que ya pasó.
+    // R19 y R20 con un solo corte: la que empieza en este instante ya empezó. Estática para usarla antes de crearla.
     public static boolean yaPaso(LocalDateTime inicio, LocalDateTime ahora) {
         return !inicio.isAfter(ahora);
     }
@@ -79,8 +74,7 @@ public class Funcion {
         return yaPaso(inicio, ahora);
     }
 
-    // R20 y el horizonte miran el reloj, así que no son invariantes: los exige el alta, con la hora que
-    // le pasa el gestor.
+    // R20 y el horizonte miran el reloj: los exige el alta, con la hora que pasa el gestor.
     public void exigirProgramableA(LocalDateTime ahora) {
         if (yaEmpezo(ahora)) {
             throw new DatoInvalido("La función no puede empezar en el pasado");
@@ -89,7 +83,6 @@ public class Funcion {
                 "La función tiene que empezar dentro del próximo año");
     }
 
-    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
         return pelicula.getId();
     }
@@ -120,14 +113,12 @@ public class Funcion {
         return inicio.plusMinutes(duracionMinutos);
     }
 
-    // Experto en el precio: la función tiene el base, y cada tipo (sala, butaca, tarifa) aplica su parte.
-    // Base × tipo de sala es el «desde» de la cartelera. Recibe la sala aunque es la suya porque this.sala
-    // es LAZY: las vistas corren fuera de la transacción y la leen por su cuenta.
+    // Experto en el precio: cada tipo aplica su parte. Recibe la sala porque this.sala es LAZY y las vistas corren fuera de la transacción.
     public Dinero precioEn(Sala sala) {
         return sala.getTipo().aplicarA(formato.precio());
     }
 
-    // Base × sala × butaca: lo que muestra el mapa, con la tarifa general. La entrada le aplica la suya.
+    // Base × sala × butaca, con la tarifa general; la entrada aplica la suya.
     public Dinero precioDe(Asiento asiento, Sala sala) {
         return asiento.getTipo().aplicarA(precioEn(sala));
     }

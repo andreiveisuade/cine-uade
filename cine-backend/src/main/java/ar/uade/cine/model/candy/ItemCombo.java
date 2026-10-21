@@ -15,8 +15,7 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public class ItemCombo {
 
-    // EAGER a propósito, como las colecciones: el nombre del componente lo leen las vistas,
-    // ya fuera de la transacción.
+    // EAGER: las vistas leen el nombre del componente fuera de la transacción
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
@@ -26,8 +25,7 @@ public class ItemCombo {
     protected ItemCombo() {
     }
 
-    // Solo lo crea Combo.armar. La cantidad llega como Integer porque viene del pedido: sin
-    // chequear el null, el unboxing daría un 500. La regla es la de ItemCompra: es la misma cantidad.
+    // Integer porque viene del pedido: el null daría un 500 por unboxing
     ItemCombo(Producto producto, Integer cantidad) {
         this.cantidad = ValidadorCombo.componente(producto, cantidad);
         this.producto = producto;
@@ -37,7 +35,7 @@ public class ItemCombo {
         return producto.getNombre();
     }
 
-    // Composite: le pregunta al componente su precio suelto en vez de leer su precio; lo que el combo suma.
+    // Composite: pregunta el precio suelto del componente, no su precio
     public Dinero precioSuelto() {
         return producto.getPrecioSuelto().por(cantidad);
     }

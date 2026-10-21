@@ -3,26 +3,8 @@ package ar.uade.cine.model.cartelera;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Revisión de una película importada; patrón State: cada estado decide si se publica, se programa y se ve.
-//
-// Qué es: el patrón State pone el comportamiento que depende del estado adentro del estado mismo.
-// Pelicula no pregunta «¿estás confirmada? ¿estás descartada?»: le delega la decisión a su
-// estadoRevision, y cada constante responde a su manera.
-//
-// Qué problema resolvía: las preguntas por el estado estaban repartidas y repetidas.
-// Pelicula.ponerEnCartelera comparaba contra CONFIRMADA, y GestorFunciones comparaba contra DESCARTADA
-// y después contra CONFIRMADA, cada uno con sus textos. Para saber qué permite una descartada había que
-// buscar todos esos if, y un estado nuevo obligaba a encontrarlos a todos. Acá lo que permite cada
-// estado se lee junto, y como los métodos son abstractos, una constante nueva no compila hasta decir
-// qué hace en cada operación.
-//
-// Cómo se lee: cada constante tiene su cuerpo { ... } con su versión de los métodos abstractos.
-// CONFIRMADA deja hacer todo; PENDIENTE rechaza pidiendo que la revisen; DESCARTADA rechaza diciendo
-// que se descartó, porque ya no está en el buzón y pedirle al encargado que la revise lo mandaría a
-// buscarla donde no está. Solo la confirmada se le muestra al público. Las transiciones
-// (dejarPendiente, confirmar, descartar) quedan en Pelicula, que es la que cambia de estado.
-// Es un enum y no una jerarquía de clases porque los estados no tienen datos propios, y JPA guarda el
-// nombre de la constante en estado_revision como antes, sin ningún mapeo extra. Los métodos son de
-// paquete: afuera se le habla a la película (pelicula.exigirProgramable()), no a su estado.
+// CONFIRMADA deja hacer todo; PENDIENTE pide revisión; DESCARTADA dice que se descartó (ya no está en el buzón).
+// Enum y no jerarquía: sin datos propios, y JPA guarda el nombre igual. Métodos de paquete: afuera se habla con Pelicula.
 public enum EstadoRevision {
 
     // Lo que trae el importador: espera en el buzón a que alguien la mire.

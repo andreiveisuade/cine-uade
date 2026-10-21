@@ -13,9 +13,7 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
 
     private static final int CENTAVOS_POR_PESO = 100;
 
-    // Las columnas de plata son DECIMAL(10,2): pasado $ 99.999.999,99, MySQL rechaza el INSERT y el usuario
-    // vería un 500. Un millón deja lugar para lo que se calcula encima: la entrada multiplica el precio por
-    // sala, butaca y tarifa, y lo que más recarga hoy es 3,24.
+    // DECIMAL(10,2): pasado $ 99.999.999,99 MySQL rechaza el INSERT. Un millón deja margen para lo que se calcula encima.
     public static final Dinero IMPORTE_MAXIMO = new Dinero(1_000_000L * CENTAVOS_POR_PESO);
 
     public static Dinero de(double pesos) {
@@ -26,9 +24,7 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return new Dinero(centavos);
     }
 
-    // El importe tal como llega del pedido, en pesos. Se valida al convertirlo, como cualquier Value Object:
-    // así el controller lo rechaza antes de que el gestor busque nada, y la regla sigue viviendo acá y no
-    // en un @Positive del DTO. Más de dos decimales se rechaza: redondearlo en silencio cobraría otro precio.
+    // Importe del pedido, en pesos; se valida acá y no con @Positive del DTO. Más de dos decimales se rechaza: redondear cobraría otro precio.
     public static Dinero importe(Double pesos, String que) {
         Regla.numero(pesos).obligatorio("Falta el " + que)
                 .mayorQueCero("El " + que + " tiene que ser mayor a cero")
@@ -36,8 +32,7 @@ public record Dinero(long centavos) implements Comparable<Dinero> {
         return importeValido(de(pesos), que);
     }
 
-    // Un precio o monto que se carga a mano. Un solo lugar para producto, función, grilla y promoción: el
-    // mismo problema dice el mismo texto en todas. «que» es el nombre del importe, masculino: "precio".
+    // Precio o monto cargado a mano; un solo lugar para que el mismo problema diga el mismo texto. «que» es el nombre del importe.
     public static Dinero importeValido(Dinero importe, String que) {
         if (importe == null) {
             throw new DatoInvalido("Falta el " + que);

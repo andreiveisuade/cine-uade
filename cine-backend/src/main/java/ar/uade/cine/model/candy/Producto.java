@@ -19,10 +19,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 // Artículo de la carta del candy, suelto o combo; Experto en su disponibilidad y en editar nombre y precio.
-// Patrón Composite (Component): antes una sola clase hacía de hoja y de grupo, y getAhorro, R14 y toString
-// preguntaban esCombo(). Ahora quien cobra (ItemCompra) o muestra (VistasCandy) le habla a un Producto y
-// cada subclase contesta lo suyo: ProductoSuelto es la hoja, Combo el grupo. Los datos los validan
-// ValidadorProducto y ValidadorCombo al construirse o editarse: así no se arma uno inválido.
+// Patrón Composite (Component): ProductoSuelto es la hoja, Combo el grupo; cada uno contesta lo suyo sin esCombo().
 // Discriminador por fórmula, como Usuario: la columna tipo ya existía y cuatro rubros caen en dos clases.
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -58,9 +55,8 @@ public abstract class Producto {
         this.precio = precioValido;
     }
 
-    // Nombre y precio sin tocar ningún producto: GestorProductos los valida antes de buscar el nombre
-    // repetido, y uno ya modificado haría flush contra el UNIQUE en esa consulta. Devuelve el nombre recortado,
-    // el mismo valor que se guarda y que la base compara.
+    // Valida sin tocar ningún producto: uno ya modificado haría flush contra el UNIQUE al buscar el nombre repetido.
+    // Devuelve el nombre recortado, el mismo que se guarda.
     public static String validarNombreYPrecio(String nombre, Dinero precio) {
         String nombreValido = ValidadorProducto.nombre(nombre);
         ValidadorProducto.precio(precio);
@@ -72,8 +68,7 @@ public abstract class Producto {
 
     public abstract Dinero getAhorro();
 
-    // Lectura transparente del Composite: la hoja no tiene hijos y lo dice con una lista vacía. Armar o
-    // agregar no está acá (obligaría al suelto a un método que no puede cumplir): solo Combo.armar.
+    // Lectura transparente del Composite: la hoja devuelve lista vacía; armar solo existe en Combo.armar.
     public List<ItemCombo> getComponentes() {
         return List.of();
     }
@@ -96,8 +91,7 @@ public abstract class Producto {
         disponible = true;
     }
 
-    // Los componentes no cambian: se fijan al armar el combo. Valida todo antes de asignar: si rechaza,
-    // no toca nada.
+    // Los componentes se fijan al armar. Valida todo antes de asignar.
     public void editar(String nombre, Dinero precio) {
         String nuevoNombre = ValidadorProducto.nombre(nombre);
         Dinero nuevoPrecio = ValidadorProducto.precio(precio);

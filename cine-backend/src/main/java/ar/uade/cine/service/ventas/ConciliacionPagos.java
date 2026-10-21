@@ -14,8 +14,7 @@ import ar.uade.cine.model.ventas.Reserva;
 
 // Cobra lo que la pasarela aprobó aunque el comprador no vuelva al sitio (R17); tarea programada.
 // MP no muestra "Volver al sitio" con una back_url local: sin esto cobraba y la reserva vencía.
-// Sin @Transactional a propósito, como GestorImportaciones: cada checkout va en su propia transacción de
-// GestorPagos, y uno que no se puede cobrar no deja rollback-only a los demás.
+// Sin @Transactional: cada checkout va en la transacción de GestorPagos y uno incobrable no arrastra a los demás.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,8 +24,7 @@ public class ConciliacionPagos {
     private final GestorPagos pagos;
     private final Reloj reloj;
 
-    // El intervalo va por placeholder porque la anotación no lee un record Propiedades*. En el perfil test
-    // no corre: ver Adaptadores.Tareas. Devuelve cuántas cobró, para los tests.
+    // Intervalo por placeholder: la anotación no lee un record Propiedades*. No corre en test (Adaptadores.Tareas).
     @Scheduled(fixedDelayString = "${cine.mercadopago.conciliacion}",
             initialDelayString = "${cine.mercadopago.conciliacion}")
     public int conciliar() {

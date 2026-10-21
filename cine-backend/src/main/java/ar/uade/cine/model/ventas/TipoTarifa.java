@@ -17,8 +17,7 @@ public enum TipoTarifa {
     private final double multiplicadorPrecio;
     @Accessors(fluent = true)
     private final boolean requiereAcreditacion;
-    // R16: una tarifa reducida ya es un descuento y no se le suma una promoción. Una tarifa nueva
-    // dice acá si participa, sin tocar a GestorPromociones.
+    // R16: la reducida ya es un descuento y no suma promoción; una tarifa nueva dice acá si participa.
     @Accessors(fluent = true)
     private final boolean participaDePromociones;
 
@@ -28,7 +27,6 @@ public enum TipoTarifa {
         this.participaDePromociones = participaDePromociones;
     }
 
-    // La última parte del precio de una entrada: la reducción de la tarifa sobre el precio de la butaca.
     public Dinero aplicarA(Dinero precio) {
         return precio.por(multiplicadorPrecio);
     }

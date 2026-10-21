@@ -8,8 +8,7 @@ import ar.uade.cine.model.validacion.Regla;
 import ar.uade.cine.model.ventas.MedioPago;
 
 // Lo que pide una venta del candy: productos, medio de pago y renglones vendibles; lo llama CompraCandy.
-// ItemCompra lo llama por renglón. El código de autorización lo valida MedioPago (R11), que sabe qué medio
-// lo lleva.
+// El código de autorización lo valida MedioPago (R11), que sabe qué medio lo lleva.
 public final class ValidadorCompraCandy {
 
     private ValidadorCompraCandy() {
@@ -24,7 +23,7 @@ public final class ValidadorCompraCandy {
         return Regla.objeto(medio).obligatorio("Falta el medio de pago").valor();
     }
 
-    // Por renglón: la cantidad es la misma regla que en un combo; lo que se sacó de la carta no se vende.
+    // Por renglón: lo que se sacó de la carta no se vende
     public static int renglon(Producto producto, Integer cantidad) {
         int valida = ValidadorCantidad.valida(cantidad, producto.getNombre());
         if (!producto.estaDisponible()) {

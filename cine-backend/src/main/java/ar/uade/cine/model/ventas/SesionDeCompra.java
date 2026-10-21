@@ -3,7 +3,7 @@ package ar.uade.cine.model.ventas;
 import ar.uade.cine.model.validacion.Regla;
 
 // Sesión del navegador que elige butacas; Value Object presente, recortado y del largo de la columna.
-// No es una credencial: dice de quién es un bloqueo, y la doble venta la sigue impidiendo el UNIQUE de entrada.
+// No es una credencial: dice de quién es un bloqueo.
 public record SesionDeCompra(String valor) {
 
     // El largo de bloqueo_butaca.sesion. El front manda un UUID, que mide 36.
@@ -14,8 +14,7 @@ public record SesionDeCompra(String valor) {
                 .hasta(LARGO_MAXIMO, "La sesión").valor();
     }
 
-    // Al reservar y en el mapa la sesión es optativa: sin ella no hay bloqueos propios que descontar. Se
-    // recorta como al bloquear, o " abc" no reconocería como suyos los bloqueos que tomó "abc".
+    // Optativa al reservar y en el mapa; se recorta como al bloquear, o " abc" no reconocería los bloqueos de "abc".
     public static String comoSeGuarda(String sesion) {
         return sesion == null ? null : sesion.strip();
     }
