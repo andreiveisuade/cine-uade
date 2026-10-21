@@ -8,7 +8,7 @@ import { SesionDelCliente } from "../cliente/sesion.jsx";
 
 // Los mismos providers que Base y AppCliente, sin animaciones: Motion salta a su estado final y los tests no esperan.
 // `ruta` es el patrón de la pantalla (para useParams) y `en` la URL de entrada.
-export function renderConApp(ui, { ruta = "/", en = "/" } = {}) {
+export function renderConApp(ui, { ruta = "/", en = "/", ...opciones } = {}) {
   return render(
     <MantineProvider>
       <LazyMotion features={domMax} strict>
@@ -28,5 +28,6 @@ export function renderConApp(ui, { ruta = "/", en = "/" } = {}) {
         </MotionConfig>
       </LazyMotion>
     </MantineProvider>,
+    opciones,
   );
 }
