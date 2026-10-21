@@ -89,11 +89,12 @@ class MercadoPagoHttpTest {
         assertEquals(Dinero.de(7680), checkout.monto());
     }
 
-    // Del medio pedido depende la promo: MP no tiene que ofrecer pagar con otro.
+    // Del medio pedido depende la promo: MP no tiene que ofrecer pagar con otro. account_money nunca se excluye:
+    // MP responde 400 "account_money cannot be excluded".
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
-            debito        | DEBITO        | debit_card
-            credito       | CREDITO       | credit_card
+            debito        | DEBITO        | debit_card account_money
+            credito       | CREDITO       | credit_card account_money
             qr            | QR            | account_money
             transferencia | TRANSFERENCIA | bank_transfer account_money
             """)
@@ -108,6 +109,7 @@ class MercadoPagoHttpTest {
                 "atm", "bank_transfer", "account_money", "digital_currency"));
         esperados.removeAll(Set.of(permitidos.split(" ")));
         assertEquals(esperados, excluidos, caso);
+        assertFalse(excluidos.contains("account_money"), caso);
     }
 
     // R13/R17: pasado el vencimiento la reserva ya soltó las butacas y no hay devolución; MP no debe cobrar.
@@ -166,7 +168,8 @@ class MercadoPagoHttpTest {
     void unPagoAprobadoDaElCodigoDeAutorizacion() {
         pagosEnMp = """
                 [{"id": 111, "status": "rejected"},
-                 {"id": 222, "status": "approved", "transaction_amount": 100.0, "currency_id": "ARS"}]""";
+                 {"id": 222, "status": "approved", "transaction_amount": 100.0, "currency_id": "ARS",
+                  "payment_type_id": "account_money"}]""";
 
         assertEquals("MP-222", pasarela("http://localhost:8080").autorizar(checkout()));
         assertTrue(pedidos.stream().anyMatch(p -> p.contains("external_reference=25-QR-7")), pedidos.toString());
@@ -181,7 +184,8 @@ class MercadoPagoHttpTest {
             """)
     void unAprobadoQueNoCoincideConElCheckoutNoAutoriza(String caso, double monto, String moneda) {
         pagosEnMp = """
-                [{"id": 222, "status": "approved", "transaction_amount": %s, "currency_id": "%s"}]"""
+                [{"id": 222, "status": "approved", "transaction_amount": %s, "currency_id": "%s",
+                  "payment_type_id": "account_money"}]"""
                 .formatted(monto, moneda);
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
@@ -189,6 +193,34 @@ class MercadoPagoHttpTest {
 
         assertEquals("Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería",
                 error.getMessage());
+    }
+
+    // El medio del checkout es el que promete la promo: un aprobado con otro tipo de pago no lo paga.
+    // account_money cuenta siempre, porque MP lo ofrece en todo checkout.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            credito en checkout de debito   | DEBITO  | credit_card   | false
+            debito en checkout de debito    | DEBITO  | debit_card    | true
+            saldo en checkout de debito     | DEBITO  | account_money | true
+            debito en checkout de credito   | CREDITO | debit_card    | false
+            saldo en checkout de credito    | CREDITO | account_money | true
+            tarjeta en checkout de qr       | QR      | credit_card   | false
+            """)
+    void unAprobadoCuentaSoloConUnTipoDePagoDelMedioDelCheckout(String caso, MedioPago medio, String tipo,
+            boolean cuenta) {
+        pagosEnMp = """
+                [{"id": 222, "status": "approved", "transaction_amount": 100.0, "currency_id": "ARS",
+                  "payment_type_id": "%s"}]""".formatted(tipo);
+        Checkout checkout = new Checkout("25-" + medio + "-7", 25, medio, Dinero.de(100), "", "");
+
+        if (cuenta) {
+            assertEquals("MP-222", pasarela("http://localhost:8080").autorizar(checkout), caso);
+        } else {
+            ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                    () -> pasarela("http://localhost:8080").autorizar(checkout), caso);
+            assertEquals("Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería",
+                    error.getMessage());
+        }
     }
 
     @ParameterizedTest(name = "{0}")
