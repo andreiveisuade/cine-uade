@@ -1,7 +1,7 @@
 import { Badge } from "@mantine/core";
 import { COLOR_CLASIFICACION, etiqueta } from "../api/etiquetas.js";
 
-export function Chip({ valor, color = "gray", variant = "light" }) {
+export function Chip({ valor, color = "gray", variant = color === "gray" ? "default" : "light" }) {
   return (
     // Sin el mínimo, en una columna angosta de tabla Mantine lo recorta a "A…".
     <Badge color={color} variant={variant} tt="none" miw="max-content">
