@@ -11,8 +11,7 @@ import java.util.List;
 import ar.uade.cine.infrastructure.comprobantes.ComprobanteException;
 
 // Arma un comprobante .txt de 44 columnas y lo escribe a disco; cada Generador*Txt completa lo suyo.
-// Patrón Template Method: los tres generadores repetían encabezado, pie y escritura, y nada impedía que uno
-// se olvidara de la línea final. imprimir es el algoritmo, final; las subclases solo llenan los pasos abstractos.
+// Template Method: imprimir es final, así ningún generador olvida la línea final.
 abstract class ComprobanteTxt<T> {
 
     private static final DateTimeFormatter FORMATO_FECHA =

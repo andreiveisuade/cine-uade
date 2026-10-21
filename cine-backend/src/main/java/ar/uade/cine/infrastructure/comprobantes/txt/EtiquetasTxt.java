@@ -2,8 +2,7 @@ package ar.uade.cine.infrastructure.comprobantes.txt;
 
 import java.util.Map;
 
-// El comprobante lo lee una persona: nunca el nombre de la constante. Es el mismo diccionario que
-// etiquetas.js en la web y Formato en Swing, del lado de quien presenta, no en el modelo.
+// El comprobante lo lee una persona: mismo diccionario que etiquetas.js (web) y Formato (Swing).
 final class EtiquetasTxt {
 
     private static final Map<String, String> ETIQUETAS = Map.ofEntries(

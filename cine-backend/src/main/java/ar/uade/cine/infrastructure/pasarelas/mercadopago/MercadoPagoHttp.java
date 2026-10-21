@@ -30,8 +30,7 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.ventas.MedioPago;
 
 // Checkout Pro de Mercado Pago por HTTP (preferencias y pagos); Adapter de PasarelaPagos, sin el SDK de MP.
-// El id del checkout es el external_reference: se conoce antes de crear la preferencia y entra en la back_url.
-// MP no llega a localhost con un webhook, así que autorizar no espera aviso: le pregunta a MP por el pago.
+// El id es el external_reference (va en la back_url); MP no llega a localhost, así que autorizar le pregunta.
 @Slf4j
 public class MercadoPagoHttp implements PasarelaPagos {
 
@@ -47,8 +46,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final ZoneOffset HORA_ARGENTINA = ZoneOffset.ofHours(-3);
     private static final DateTimeFormatter FECHA_MP = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
-    // Con un sitio local MP rechaza la preferencia entera si pide auto_return: el comprador vuelve con
-    // el botón "Volver al sitio".
+    // Con sitio local MP rechaza la preferencia si pide auto_return: el comprador vuelve con el botón.
     private static final Set<String> HOSTS_LOCALES = Set.of("localhost", "127.0.0.1");
 
     private final String token;
@@ -122,9 +120,8 @@ public class MercadoPagoHttp implements PasarelaPagos {
                 Dinero.de(preferencia.path("items").path(0).path("unit_price").asDouble()), urlPago, urlPago));
     }
 
-    // Lo que dijo el comprador al volver (la query de la back_url) no cuenta: se puede escribir a mano.
-    // Cuenta lo que MP tiene registrado para ese external_reference, y solo si es el monto, la moneda
-    // y un tipo de pago del medio del checkout: un aprobado por otra cosa no paga esta reserva.
+    // Lo que dijo el comprador al volver no cuenta (se escribe a mano): vale lo que MP registró para el
+    // external_reference, si coinciden monto, moneda y tipo de pago del medio.
     @Override
     public String autorizar(Checkout checkout) {
         JsonNode pagos = pedir(get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
@@ -157,11 +154,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
         });
     }
 
-    // Del medio pedido depende la promo, así que MP solo ofrece los tipos de pago que son ese medio.
-    // account_money va en todos: MP no deja excluirlo (400 "account_money cannot be excluded") y siempre
-    // lo ofrece, así que un aprobado con saldo también vale para el medio.
-    // QR es pagar desde la app de MP, que descuenta del dinero en cuenta; la transferencia sale del banco
-    // o de la cuenta de MP (CVU), que para MP es también dinero en cuenta.
+    // account_money va en todos: MP no deja excluirlo y siempre lo ofrece; QR y transferencia también son dinero en cuenta.
     private static Set<String> tiposDe(MedioPago medio) {
         return switch (medio) {
             case DEBITO -> Set.of("debit_card", "account_money");

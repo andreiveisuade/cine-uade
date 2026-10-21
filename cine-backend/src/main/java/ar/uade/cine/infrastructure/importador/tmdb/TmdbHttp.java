@@ -105,8 +105,7 @@ public class TmdbHttp implements CatalogoExterno {
         return MapeoTmdb.aPelicula(resumen, detalle, estrenos);
     }
 
-    // Lo que dice cada ImportadorError queda en el detalle de la corrida y lo lee el encargado: texto fijo
-    // en español. El de Java ("null" sin red, la ruta pedida) va al log, con la causa.
+    // Texto fijo en español para el detalle de la corrida; el mensaje de Java va al log con la causa.
     private JsonNode pedir(String ruta, String... parametros) {
         HttpRequest pedido = HttpRequest.newBuilder(URI.create(base + ruta + consulta(parametros)))
                 .header("Authorization", "Bearer " + token)

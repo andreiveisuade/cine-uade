@@ -42,9 +42,7 @@ public class Adaptadores {
         return new GeneradorReciboTxt(comprobantes.tickets());
     }
 
-    // Las tareas de fondo (hoy, borrar los bloqueos de butaca vencidos) no corren en los
-    // tests: ahí el tiempo lo mueve el RelojMovible, y una tarea que se dispara sola
-    // borraría filas en el medio de una prueba.
+    // Sin tareas de fondo en tests: el RelojMovible mueve el tiempo y una tarea sola borraría filas a mitad de prueba
     @Configuration
     @Profile("!test")
     @EnableScheduling
@@ -57,8 +55,7 @@ public class Adaptadores {
         return LocalDateTime::now;
     }
 
-    // Strategy: con token, el Checkout Pro de Mercado Pago (en modo prueba no cobra de verdad); sin él,
-    // la emulada. Mismo criterio que TMDB: no tener cuenta de MP no debe impedir vender.
+    // Strategy: con token, el Checkout Pro de Mercado Pago (modo prueba no cobra); sin él, la emulada.
     @Bean
     public PasarelaPagos pasarelaPagos(PropiedadesMercadoPago mercadoPago) {
         return mercadoPago.configurado()

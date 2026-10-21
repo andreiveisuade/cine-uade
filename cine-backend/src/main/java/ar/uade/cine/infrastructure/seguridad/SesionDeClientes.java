@@ -12,8 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 // Guarda en la sesión HTTP solo la identidad de un cliente; Decorator de HttpSessionSecurityContextRepository.
-// La web entra una vez y sigue con la cookie, sin tener la clave en JS. Swing manda Basic en cada pedido:
-// si ese login también se guardara, cada pedido del panel abriría una sesión que nadie usa.
+// Swing manda Basic en cada pedido: guardar ese login abriría una sesión que nadie usa.
 class SesionDeClientes implements SecurityContextRepository {
 
     private static final String CLIENTE = "ROLE_" + Rol.CLIENTE.name();
