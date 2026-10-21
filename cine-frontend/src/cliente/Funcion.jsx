@@ -66,9 +66,8 @@ export function Funcion() {
     try {
       rechazadas = await sostenerSeleccion(funcion.id, nuevas);
     } catch (e) {
-      // Un 400 es una selección que el backend no aparta entera (pasa el tope de una compra, o una butaca salió
-      // de servicio): la butaca recién elegida se suelta y se dice por qué. Otro error no cambia nada: la doble
-      // venta la sigue impidiendo la base.
+      // Un 400 es una selección que el backend no aparta entera (tope, butaca fuera de servicio): se suelta y se dice por qué.
+      // Otro error no cambia nada: la doble venta la impide la base.
       if (e.status !== 400) return;
       if (!butacas[asiento.codigo]) {
         setSeleccion((s) => ({ ...s, butacas: sinButacas(s.butacas, [asiento.codigo]) }));
