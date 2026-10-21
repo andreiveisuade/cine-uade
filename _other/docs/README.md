@@ -16,6 +16,9 @@ archify/exportar.sh capas.archify.json    # tras tocar un .archify.json (skill a
 cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
 
+DER desde `schema.sql`, desde la raíz del repo (Python 3 solo; el export pide la skill diagram-design en `~/.claude/skills`):
+`python3 _other/docs/diagramas/der/generar_der.py && python3 ~/.claude/skills/diagram-design/scripts/export_svg.py _other/docs/diagramas/der-design.html && python3 _other/docs/diagramas/der/verificar_der.py`
+
 Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `imagen_map`.
 
 ## Diagramas
