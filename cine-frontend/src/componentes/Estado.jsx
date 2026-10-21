@@ -20,8 +20,9 @@ export function ErrorCaja({ children }) {
   );
 }
 
-export function EsperaOError({ carga }) {
-  return carga.error ? <ErrorCaja>{carga.error}</ErrorCaja> : <Cargando />;
+// `esqueleto` es la forma de la pantalla que viene: se ve dónde va a quedar cada cosa antes de que llegue.
+export function EsperaOError({ carga, esqueleto = <Cargando /> }) {
+  return carga.error ? <ErrorCaja>{carga.error}</ErrorCaja> : esqueleto;
 }
 
 export function Vacio({ children }) {

@@ -1,4 +1,5 @@
 import { Box, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
+import { m } from "motion/react";
 
 export const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
@@ -22,6 +23,11 @@ export const ESTILO = {
   },
 };
 
+// Las filas entran de a una, de la pantalla hacia el fondo, como se llena una sala.
+const SALA = { oculta: {}, visible: { transition: { staggerChildren: 0.03 } } };
+const FILA = { oculta: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0, transition: { duration: 0.2 } } };
+const POP = { type: "spring", stiffness: 500, damping: 15 };
+
 // pintar: (asiento) => { estilo, deshabilitado, titulo }
 export function MapaButacas({ sala, asientos, pintar, alElegir }) {
   const filas = [];
@@ -32,14 +38,15 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
       <Box mb="md" py={4} bg="dark.6" c="white" ta="center" fz={10} style={{ letterSpacing: "0.3em", borderRadius: 4 }}>
         PANTALLA
       </Box>
-      <Stack gap={4} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
+      <Stack component={m.div} variants={SALA} initial="oculta" animate="visible" gap={4} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
         {filas.map((deLaFila, i) => (
-          <Group key={i} gap={4} justify="center" wrap="nowrap">
+          <Group component={m.div} variants={FILA} key={i} gap={4} justify="center" wrap="nowrap">
             <Text w={16} ta="right" fz="xs" fw={600} c="dimmed">{deLaFila[0]?.codigo.charAt(0)}</Text>
             {deLaFila.map((a) => {
               const { estilo, deshabilitado, titulo } = pintar(a);
               return (
-                <UnstyledButton key={a.codigo} title={titulo} disabled={deshabilitado}
+                <UnstyledButton component={m.button} key={a.codigo} title={titulo} disabled={deshabilitado}
+                  whileTap={deshabilitado ? undefined : { scale: 0.8 }} transition={POP}
                   onClick={() => alElegir?.(a)}
                   style={{ height: 28, width: a.tipo === "PAREJA" ? 48 : 28, borderRadius: 4, fontSize: 10,
                            fontWeight: 500, textAlign: "center", flexShrink: 0, ...estilo }}>

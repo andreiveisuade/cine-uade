@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Button, Divider, Grid, Group, Paper, ScrollArea, Stack, Text, Title } from "@mantine/core";
+import { Button, Divider, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -7,6 +7,7 @@ import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/MapaButacas.jsx";
+import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
 import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
@@ -21,6 +22,19 @@ function pintarParaComprar(asiento, elegidas) {
   if (asiento.ocupado) return { estilo: ESTILO.ocupada, deshabilitado: true, titulo: `${asiento.codigo} · ocupada` };
   if (elegidas[asiento.codigo]) return { estilo: ESTILO.elegida, deshabilitado: false, titulo };
   return { estilo: estiloTipo(asiento.tipo), deshabilitado: false, titulo };
+}
+
+function FuncionEsqueleto() {
+  return (
+    <Stack gap="md" mt={36}>
+      <Skeleton h={36} w="50%" />
+      <Skeleton h={14} w="35%" />
+      <Grid gap="md">
+        <Grid.Col span={{ base: 12, lg: 9 }}><Skeleton h={320} /></Grid.Col>
+        <Grid.Col span={{ base: 12, lg: 3 }}><Skeleton h={200} /></Grid.Col>
+      </Grid>
+    </Stack>
+  );
 }
 
 export function Funcion() {
@@ -40,7 +54,7 @@ export function Funcion() {
 
   useRenovarBloqueo(funcion?.id);
 
-  if (!funcion) return <EsperaOError carga={carga} />;
+  if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
   const butacas = seleccion.funcionId === funcion.id ? seleccion.butacas : {};
   const { elegidas, total } = resumenCompra(funcion, butacas);
 
@@ -124,7 +138,7 @@ export function Funcion() {
               <Text size="sm" fw={600}>
                 {elegidas.length ? `${elegidas.length} butaca${elegidas.length > 1 ? "s" : ""}` : "Total"}
               </Text>
-              <Text fw={700}>{precio(total)}</Text>
+              <Text fw={700}><MontoAnimado valor={total} /></Text>
             </Group>
             <Button fullWidth disabled={!elegidas.length} onClick={() => navegar(`/confirmar/${funcion.id}`)}>
               Continuar
