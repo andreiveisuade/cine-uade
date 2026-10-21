@@ -49,22 +49,22 @@ export function Ingresar() {
   }
 
   return (
-    <Stack gap="md" maw={440} mx="auto">
+    <Stack gap="lg" maw={420} mx="auto" pt={{ base: "md", sm: "xl" }}>
       <div>
         <Title order={1}>Ingresar</Title>
-        <Text size="sm" c="dimmed">Con tu cuenta ves tus reservas, las pagás online o las cancelás.</Text>
+        <Text size="sm" c="dimmed" mt={6}>Con tu cuenta ves tus reservas, las pagás online o las cancelás.</Text>
       </div>
-      <Paper withBorder p="md">
+      <Paper withBorder p="lg">
         <form onSubmit={entrar}>
-          <Stack gap="sm">
+          <Stack gap="md">
             <TextInput label="Email" type="email" required value={email} error={faltan.email}
               onChange={(e) => setEmail(e.currentTarget.value)} />
             <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
               onChange={(e) => setClave(e.currentTarget.value)} />
-            <Button type="submit" loading={enviando}>Ingresar</Button>
+            <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
             {error && <ErrorCaja>{error}</ErrorCaja>}
-            <Text size="xs" c="dimmed">
-              ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="xs">Registrate</Anchor>
+            <Text size="sm" c="dimmed" ta="center">
+              ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="sm">Registrate</Anchor>
             </Text>
           </Stack>
         </form>

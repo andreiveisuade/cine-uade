@@ -46,27 +46,27 @@ export function Registro() {
   }
 
   return (
-    <Stack gap="md" maw={440} mx="auto">
+    <Stack gap="lg" maw={420} mx="auto" pt={{ base: "md", sm: "xl" }}>
       <div>
         <Title order={1}>Registrarme</Title>
-        <Text size="sm" c="dimmed">
+        <Text size="sm" c="dimmed" mt={6}>
           No hace falta para reservar: es para pagar online y ver tus reservas. Si ya reservaste, usá ese mismo email
           y las vas a encontrar en tu cuenta.
         </Text>
       </div>
-      <Paper withBorder p="md">
+      <Paper withBorder p="lg">
         <form onSubmit={registrar}>
-          <Stack gap="sm">
+          <Stack gap="md">
             <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
               onChange={(e) => setNombre(e.currentTarget.value)} />
             <TextInput label="Email" type="email" required value={email} error={faltan.email}
               onChange={(e) => setEmail(e.currentTarget.value)} />
             <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
               onChange={(e) => setClave(e.currentTarget.value)} />
-            <Button type="submit" loading={enviando}>Registrarme</Button>
+            <Button type="submit" size="md" mt="xs" loading={enviando}>Registrarme</Button>
             {error && <ErrorCaja>{error}</ErrorCaja>}
-            <Text size="xs" c="dimmed">
-              ¿Ya tenés cuenta? <Anchor component={Link} to="/ingresar" state={{ email }} size="xs">Ingresá</Anchor>
+            <Text size="sm" c="dimmed" ta="center">
+              ¿Ya tenés cuenta? <Anchor component={Link} to="/ingresar" state={{ email }} size="sm">Ingresá</Anchor>
             </Text>
           </Stack>
         </form>
