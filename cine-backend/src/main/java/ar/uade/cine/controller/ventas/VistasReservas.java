@@ -18,7 +18,6 @@ import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Pago;
@@ -67,11 +66,7 @@ public class VistasReservas {
 
         return lista.stream()
                 .map(r -> {
-                    Reserva completa = conDetalle.get(r.getId());
-                    if (completa == null) {
-                        throw new RecursoNoEncontrado("No existe la reserva " + r.getId());
-                    }
-                    return dto(completa, asientosPorSala, porReserva.get(r.getId()));
+                    return dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()));
                 })
                 .toList();
     }
