@@ -41,6 +41,12 @@ public class PromocionPorcentaje extends Promocion {
     }
 
     @Override
+    public String beneficio() {
+        String numero = porcentaje == Math.rint(porcentaje) ? String.valueOf((long) porcentaje) : String.valueOf(porcentaje);
+        return numero.replace('.', ',') + " % OFF";
+    }
+
+    @Override
     public Dinero calcularDescuento(List<Entrada> entradas) {
         return topear(subtotalDe(entradas).porcentaje(porcentaje), entradas);
     }

@@ -18,7 +18,7 @@ public class VistasCandy {
 
     public ProductoVistaDTO producto(Producto p) {
         return new ProductoVistaDTO(p.getId(), p.getNombre(), p.getTipo().name(), p.getPrecio().aPesos(),
-                p.estaDisponible(), p.esCombo(),
+                p.estaDisponible(), p.esCombo(), p.getPrecioSuelto().aPesos(), p.getAhorro().aPesos(),
                 p.getComponentes().stream().map(this::componente).toList());
     }
 

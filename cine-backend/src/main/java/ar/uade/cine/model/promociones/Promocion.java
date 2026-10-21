@@ -99,6 +99,14 @@ public abstract class Promocion {
 
     public abstract Dinero calcularDescuento(List<Entrada> entradas);
 
+    // Lo que se anuncia en grande («2x1», «30 % OFF»): lo dice cada subclase, el front no lo arma.
+    public abstract String beneficio();
+
+    // Se publica mientras no termine, aunque empiece más adelante: así se anuncia antes de arrancar.
+    public boolean sigueVigente(LocalDate hoy) {
+        return activa && !vigencia.hasta().isBefore(hoy);
+    }
+
     public boolean aplicaA(LocalDateTime inicioFuncion, MedioPago medio) {
         if (!activa || inicioFuncion == null) {
             return false;

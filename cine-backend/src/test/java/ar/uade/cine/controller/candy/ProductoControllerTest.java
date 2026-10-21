@@ -31,6 +31,16 @@ class ProductoControllerTest extends PruebaDeApi {
         combo = carta.armarCombo("Combo clásico", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1)).getId();
     }
 
+    // La página de promos muestra el ahorro tal cual llega: 4000 + 2500 sueltos contra 5500 en combo.
+    @Test
+    void laCartaPublicaTraeElPrecioSueltoYElAhorroDelCombo() {
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/candy/productos/" + combo, null, null, null);
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(6500.0, respuesta.json().get("precioSuelto").asDouble());
+        assertEquals(1000.0, respuesta.json().get("ahorro").asDouble());
+    }
+
     @Test
     void editaNombreYPrecio() {
         Respuesta respuesta = put("/api/candy/productos/" + pochoclos,
