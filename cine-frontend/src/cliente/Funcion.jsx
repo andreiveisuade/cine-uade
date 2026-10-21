@@ -1,4 +1,4 @@
-import { Button, Divider, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
+import { Button, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -9,7 +9,7 @@ import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/Mapa
 import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { useTitulo } from "../componentes/useTitulo.js";
-import { Volver } from "../componentes/Volver.jsx";
+import { Encabezado } from "../componentes/Encabezado.jsx";
 import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
          sostenerSeleccion, useCambiarTarifa, useCompra, useRenovarBloqueo } from "./compra.jsx";
 
@@ -26,7 +26,7 @@ function pintarParaComprar(asiento, elegidas) {
 
 function FuncionEsqueleto() {
   return (
-    <Stack gap="md" mt={36}>
+    <Stack gap="md" mt="xl">
       <Skeleton h={36} w="50%" />
       <Skeleton h={14} w="35%" />
       <Grid gap="md">
@@ -87,18 +87,16 @@ export function Funcion() {
   }
 
   return (
-    <Stack gap="md">
-      <Volver a={`/pelicula/${funcion.peliculaId}`}>{funcion.pelicula.titulo}</Volver>
-      <div>
-        <Title order={1}>{funcion.pelicula.titulo}</Title>
-        <DatosFuncion funcion={funcion} />
-        <Text size="sm" c="dimmed">
+    <div>
+      <Encabezado titulo={funcion.pelicula.titulo} volver={{ a: `/pelicula/${funcion.peliculaId}`, texto: "Otras funciones" }}>
+        <DatosFuncion funcion={funcion} size="md" fw={500} />
+        <Text size="sm" c="dimmed" className="cine-cifras">
           {funcion.libres} butacas libres de {funcion.sala.capacidadSala} · precio base {precio(funcion.precio)}
         </Text>
-      </div>
+      </Encabezado>
 
-      <Grid gap="md" align="flex-start">
-        <Grid.Col span={{ base: 12, lg: 9 }}>
+      <Grid gap="lg" align="flex-start">
+        <Grid.Col span={{ base: 12, lg: 8 }}>
           <MapaButacas sala={funcion.sala} asientos={funcion.asientos}
             pintar={(a) => pintarParaComprar(a, butacas)} alElegir={alternar} />
           <Referencia items={[
@@ -112,17 +110,18 @@ export function Funcion() {
           ]} />
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, lg: 3 }} style={{ position: "sticky", top: 76 }}>
-          <Paper withBorder p="md">
-            <Text fw={600} mb="xs">Tu selección</Text>
+        <Grid.Col span={{ base: 12, lg: 4 }} style={{ position: "sticky", top: 88 }}>
+          <Paper withBorder p="lg">
+            <Title order={2} fz="h4" mb="sm">Tu selección</Title>
             {elegidas.length ? (
-              <ScrollArea.Autosize mah={260}>
+              <ScrollArea.Autosize mah={280}>
                 {elegidas.map((a) => (
-                  <Group key={a.codigo} justify="space-between" py={4} wrap="nowrap">
-                    <Text fw={500} size="sm">{a.codigo}</Text>
+                  <Group key={a.codigo} justify="space-between" py={6} wrap="nowrap"
+                    style={{ borderBottom: "1px solid var(--cine-borde)" }}>
+                    <Text fw={700} className="cine-cifras">{a.codigo}</Text>
                     <Group gap="xs" wrap="nowrap">
                       <SelectorTarifa valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
-                      <Text size="sm" w={80} ta="right">{precio(precioConTarifa(a, butacas[a.codigo]))}</Text>
+                      <Text size="sm" w={80} ta="right" className="cine-cifras">{precio(precioConTarifa(a, butacas[a.codigo]))}</Text>
                     </Group>
                   </Group>
                 ))}
@@ -130,19 +129,18 @@ export function Funcion() {
             ) : (
               <Text size="sm" c="dimmed">Elegí una o más butacas</Text>
             )}
-            <Divider my="sm" />
-            <Group justify="space-between" mb="sm">
+            <Group justify="space-between" align="baseline" mt="md" mb="md">
               <Text size="sm" fw={600}>
                 {elegidas.length ? `${elegidas.length} butaca${elegidas.length > 1 ? "s" : ""}` : "Total"}
               </Text>
-              <Text fw={700}><MontoAnimado valor={total} /></Text>
+              <Text className="cine-display cine-cifras" fz={34} fw={850} lh={1}><MontoAnimado valor={total} /></Text>
             </Group>
-            <Button fullWidth disabled={!elegidas.length} onClick={() => navegar(`/confirmar/${funcion.id}`)}>
+            <Button fullWidth size="md" disabled={!elegidas.length} onClick={() => navegar(`/confirmar/${funcion.id}`)}>
               Continuar
             </Button>
           </Paper>
         </Grid.Col>
       </Grid>
-    </Stack>
+    </div>
   );
 }

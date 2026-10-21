@@ -3,20 +3,22 @@ import { m } from "motion/react";
 
 const SIMBOLO = { VIP: "*", PAREJA: "&", ACCESIBLE: "+", ESTANDAR: "" };
 
-const COLOR_TIPO = { VIP: "yellow", PAREJA: "pink", ACCESIBLE: "blue", ESTANDAR: "gray" };
+// El ámbar queda para lo elegido: ningún tipo de butaca lo usa.
+const COLOR_TIPO = { VIP: "grape", PAREJA: "pink", ACCESIBLE: "blue", ESTANDAR: "gray" };
 
 export function estiloTipo(tipo) {
   const color = COLOR_TIPO[tipo];
   return {
-    border: `1px solid var(--mantine-color-${color}-${tipo === "ESTANDAR" ? 5 : 6})`,
-    background: tipo === "ESTANDAR" ? "var(--mantine-color-body)" : `var(--mantine-color-${color}-light)`,
+    border: tipo === "ESTANDAR" ? "1px solid var(--cine-borde)" : `1.5px solid var(--mantine-color-${color}-5)`,
+    background: tipo === "ESTANDAR" ? "var(--cine-superficie-2)" : `var(--mantine-color-${color}-light)`,
     color: "var(--mantine-color-text)",
   };
 }
 
 export const ESTILO = {
-  elegida: { background: "var(--mantine-color-green-filled)", color: "white", border: "1px solid transparent" },
-  ocupada: { background: "var(--mantine-color-gray-6)", color: "white", border: "1px solid transparent", cursor: "not-allowed" },
+  elegida: { background: "var(--mantine-color-ambar-4)", color: "#15171d", fontWeight: 700, border: "1px solid transparent",
+             boxShadow: "0 0 0 3px color-mix(in srgb, var(--mantine-color-ambar-4) 30%, transparent)" },
+  ocupada: { background: "var(--mantine-color-dark-3)", color: "var(--mantine-color-dark-0)", border: "1px solid transparent", cursor: "not-allowed", opacity: 0.55 },
   fueraDeServicio: {
     background: "var(--mantine-color-default-hover)", color: "var(--mantine-color-dimmed)",
     textDecoration: "line-through", border: "1px dashed var(--mantine-color-default-border)", cursor: "not-allowed",
@@ -34,13 +36,16 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
   for (let fila = 1; fila <= sala.filas; fila++) filas.push(asientos.filter((a) => a.fila === fila));
 
   return (
-    <Paper withBorder p="md" style={{ overflowX: "auto" }}>
-      <Box mb="md" py={4} bg="dark.6" c="white" ta="center" fz={10} style={{ letterSpacing: "0.3em", borderRadius: 4 }}>
-        PANTALLA
+    <Paper withBorder p={{ base: "md", sm: "xl" }} style={{ overflowX: "auto" }}>
+      {/* La pantalla es una curva de luz: de ahí sale el ámbar del sitio. */}
+      <Box mx="auto" mb="xl" maw={520} aria-hidden>
+        <Box h={14} style={{ borderTop: "3px solid var(--mantine-color-ambar-4)", borderRadius: "50% / 100% 100% 0 0",
+                             boxShadow: "0 -10px 28px -8px var(--mantine-color-ambar-4)" }} />
+        <Text ta="center" fz={10} fw={700} c="dimmed" style={{ letterSpacing: "0.35em" }}>PANTALLA</Text>
       </Box>
-      <Stack component={m.div} variants={SALA} initial="oculta" animate="visible" gap={4} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
+      <Stack component={m.div} variants={SALA} initial="oculta" animate="visible" gap={6} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
         {filas.map((deLaFila, i) => (
-          <Group component={m.div} variants={FILA} key={i} gap={4} justify="center" wrap="nowrap">
+          <Group component={m.div} variants={FILA} key={i} gap={6} justify="center" wrap="nowrap">
             <Text w={16} ta="right" fz="xs" fw={600} c="dimmed">{deLaFila[0]?.codigo.charAt(0)}</Text>
             {deLaFila.map((a) => {
               const { estilo, deshabilitado, titulo } = pintar(a);
@@ -48,8 +53,8 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
                 <UnstyledButton component={m.button} key={a.codigo} title={titulo} disabled={deshabilitado}
                   whileTap={deshabilitado ? undefined : { scale: 0.8 }} transition={POP}
                   onClick={() => alElegir?.(a)}
-                  style={{ height: 28, width: a.tipo === "PAREJA" ? 48 : 28, borderRadius: 4, fontSize: 10,
-                           fontWeight: 500, textAlign: "center", flexShrink: 0, ...estilo }}>
+                  style={{ height: 30, width: a.tipo === "PAREJA" ? 52 : 30, borderRadius: "6px 6px 3px 3px", fontSize: 11,
+                           fontWeight: 550, fontVariantNumeric: "tabular-nums", textAlign: "center", flexShrink: 0, ...estilo }}>
                   {a.numero}{SIMBOLO[a.tipo]}
                 </UnstyledButton>
               );
@@ -63,7 +68,7 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
 
 export function Referencia({ items }) {
   return (
-    <Group gap="md" mt="sm">
+    <Group gap="md" mt="md" justify="center">
       {items.map(([estilo, texto]) => (
         <Group key={texto} gap={6} wrap="nowrap">
           <Box w={12} h={12} style={{ borderRadius: 3, ...estilo }} />
