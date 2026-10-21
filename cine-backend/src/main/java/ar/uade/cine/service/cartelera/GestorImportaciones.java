@@ -21,8 +21,7 @@ import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 // Corre el importador de TMDB y registra cada corrida; de a una por vez y con espera entre corridas.
-// Sin @Transactional a propósito: la primera alta rechazada marcaría la transacción
-// rollback-only y se perdería la corrida entera, incluso el registro.
+// Sin @Transactional: la primera alta rechazada marcaría rollback-only y perdería la corrida entera.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -64,8 +63,8 @@ public class GestorImportaciones {
                 Pelicula creada = revision.importar(candidata);
                 corrida.nueva(creada.getId(), creada.getTitulo());
             } catch (RuntimeException e) {
-                // Cualquier falla y no solo un Rechazo: un error de la base cortaba la corrida y la dejaba
-                // EN_CURSO, con el importador bloqueado hasta que caducara. Una candidata no frena a las demás.
+                // Cualquier falla y no solo un Rechazo: si no, la corrida quedaba EN_CURSO y bloqueaba el importador.
+                // Una candidata no frena a las demás.
                 corrida.fallida(nombreDe(candidata), motivoDe(candidata, e));
             }
         }
@@ -100,9 +99,8 @@ public class GestorImportaciones {
         return titulo == null || titulo.isBlank() ? "(sin título)" : titulo.strip();
     }
 
-    // Sincronizado y aparte de la corrida para rechazar el segundo pedido sin hacerlo esperar.
-    // Alcanza con un candado porque hay un solo backend. La corrida se arma primero: unas páginas
-    // fuera de rango se rechazan antes de mirar el historial, y no dejan registro.
+    // Sincronizado y aparte de la corrida para rechazar el segundo pedido sin esperar; un solo backend, un candado.
+    // La corrida se arma primero: páginas fuera de rango se rechazan sin dejar registro.
     private synchronized Importacion reservarTurno(Integer paginas) {
         Importacion importacion = new Importacion(paginas, reloj.ahora());
         List<Importacion> ultimas = listar();

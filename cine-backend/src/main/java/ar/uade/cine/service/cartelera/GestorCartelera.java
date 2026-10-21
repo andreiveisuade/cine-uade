@@ -38,8 +38,8 @@ public class GestorCartelera {
         return agregar(DatosPelicula.deAlta(titulo, duracionMinutos, generos, clasificacion));
     }
 
-    // Los datos los valida la película; acá queda el título repetido, que necesita la base.
-    // Construirla primero rechaza un dato inválido antes que un título repetido.
+    // Los datos los valida la película; acá el título repetido, que necesita la base.
+    // Se construye primero: un dato inválido se rechaza antes que un título repetido.
     public Pelicula agregar(DatosPelicula datos) {
         Pelicula pelicula = new Pelicula(datos.titulo(), datos.duracionMinutos(), datos.generos(),
                 datos.clasificacion());
@@ -59,8 +59,7 @@ public class GestorCartelera {
         Clasificacion clasificacion = cambios.clasificacion() == null
                 ? actual.getClasificacion() : cambios.clasificacion();
         actual.actualizar(titulo, duracion, generos, clasificacion);
-        // Después de actualizar, por el mismo orden que el alta. La consulta hace flush de la
-        // fila ya cambiada, pero se excluye a sí misma y el rechazo deshace la transacción.
+        // Mismo orden que el alta: la consulta se excluye a sí misma y el rechazo deshace la transacción.
         exigirTituloLibre(actual);
         aplicarCatalogo(actual, cambios);
         return actual;
@@ -87,8 +86,7 @@ public class GestorCartelera {
     }
 
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
-    // Sin transacción propia: si no, retendría su conexión mientras extenderActivas, que corre fuera
-    // de transacción, pide otra. Con el pool entero pidiendo la cartelera a la vez, todos esperarían.
+    // Sin transacción propia: retendría una conexión mientras extenderActivas pide otra y el pool se bloquea.
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<Pelicula> listarEnCartelera(Genero genero) {
         LocalDateTime ahora = reloj.ahora();
@@ -129,8 +127,7 @@ public class GestorCartelera {
         return peliculaRepository.exigir(id, "la película");
     }
 
-    // Para quien no es del personal, lo que el buzón no aprobó no existe: el mismo 404 que un id que
-    // nunca existió, así no se ve qué trajo el importador ni qué se descartó.
+    // Para quien no es del personal, lo no aprobado da el mismo 404 que un id inexistente.
     @Transactional(readOnly = true)
     public Pelicula obtenerPublica(int id) {
         Pelicula pelicula = obtener(id);

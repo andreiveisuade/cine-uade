@@ -17,7 +17,6 @@ public record DatosPelicula(String titulo, Integer duracionMinutos, List<Genero>
         return con().titulo(titulo).duracion(duracionMinutos).generos(generos).clasificacion(clasificacion).armar();
     }
 
-    // Builder: cada dato se nombra en vez de ir por posición.
     public static DatosPeliculaBuilder con() {
         return new DatosPeliculaBuilder();
     }
