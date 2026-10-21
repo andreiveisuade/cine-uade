@@ -37,7 +37,7 @@ function Hero({ peliculas }) {
           </div>
         </Stack>
         {destacadas.length > 0 && (
-          <Carousel w={{ base: "100%", md: 460 }} slideSize={{ base: "40%", sm: "33.333%" }} slideGap="md"
+          <Carousel w="100%" maw={400} slideSize="33.333%" slideGap="md"
             emblaOptions={{ loop: destacadas.length > 3, align: "start" }} plugins={quieto ? [] : [autoplay]}
             controlSize={28} withControls={destacadas.length > 3}>
             {destacadas.map((p) => (
