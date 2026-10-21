@@ -21,8 +21,8 @@ class CompraCandyTest {
 
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 8, 13, 20, 0);
 
-    private final Producto pochoclos = new Producto("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000));
-    private final Producto gaseosa = new Producto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
+    private final Producto pochoclos = new ProductoSuelto("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000));
+    private final Producto gaseosa = new ProductoSuelto("Gaseosa", TipoProducto.BEBIDA, Dinero.de(2500));
 
     private static void rechaza(String mensaje, Executable accion) {
         assertEquals(mensaje, assertThrows(Rechazo.class, accion).getMessage());
@@ -76,7 +76,7 @@ class CompraCandyTest {
 
     @Test
     void elRenglonCongelaPrecioYAhorroDelMomentoDeLaVenta() {
-        Producto combo = Producto.armarCombo("Combo pareja", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1));
+        Producto combo = Combo.armar("Combo pareja", Dinero.de(5500), Map.of(pochoclos, 1, gaseosa, 1));
         CompraCandy compra = comprar(MedioPago.EFECTIVO, "", Map.of(combo, 2));
 
         combo.editar("Combo pareja", Dinero.de(6000));

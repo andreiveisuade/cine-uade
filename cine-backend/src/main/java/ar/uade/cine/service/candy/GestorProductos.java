@@ -8,14 +8,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.candy.Combo;
 import ar.uade.cine.model.candy.Producto;
+import ar.uade.cine.model.candy.ProductoSuelto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.repository.candy.ProductoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Carta del candy y sus combos; Controlador: acá lo que pide la base, nombre libre y combos afectados.
-// Nombre, precio, qué puede traer un combo y R14 los validan los validadores que llama Producto.
+// Nombre, precio, qué puede traer un combo y R14 los validan los validadores que llaman ProductoSuelto y Combo.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -25,16 +27,16 @@ public class GestorProductos {
 
     // Se construye antes de buscar el nombre repetido para que un dato inválido se rechace primero.
     public Producto agregar(String nombre, TipoProducto tipo, Dinero precio) {
-        Producto producto = new Producto(nombre, tipo, precio);
+        Producto producto = new ProductoSuelto(nombre, tipo, precio);
         exigirNombreLibre(producto.getNombre());
         return productoRepository.save(producto);
     }
 
     // Como el alta, nombre y precio se validan antes de buscar el repetido. El nombre repetido va antes de
     // buscar los componentes: si el combo ya existe, no hace falta ir a buscar lo que trae.
-    public Producto armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
+    public Combo armarCombo(String nombre, Dinero precio, Map<Integer, Integer> componentes) {
         exigirNombreLibre(Producto.validarNombreYPrecio(nombre, precio));
-        return productoRepository.save(Producto.armarCombo(nombre, precio, obtener(componentes)));
+        return productoRepository.save(Combo.armar(nombre, precio, obtener(componentes)));
     }
 
     @Transactional(readOnly = true)
@@ -86,7 +88,7 @@ public class GestorProductos {
             throw nombreRepetido();
         }
         producto.editar(nombre, precio);
-        productoRepository.findCombosQueTraen(productoId).forEach(Producto::exigirQueSigaConviniendo);
+        productoRepository.findCombosQueTraen(productoId).forEach(Combo::exigirQueSigaConviniendo);
         return producto;
     }
 

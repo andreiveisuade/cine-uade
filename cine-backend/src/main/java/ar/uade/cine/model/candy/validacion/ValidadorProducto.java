@@ -1,12 +1,11 @@
 package ar.uade.cine.model.candy.validacion;
 
-import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.validacion.Regla;
 
-// Los datos de un producto de la carta (nombre, tipo, precio) y R14 al editarlo; lo llama solo Producto.
+// Los datos de un producto de la carta (nombre, tipo, precio); lo llaman Producto y ProductoSuelto.
 // Producto se queda con su estado y sus transiciones; acá, qué dato no puede entrar. Cada guarda devuelve
 // el valor ya limpio, así Producto valida todo antes de asignar nada.
 public final class ValidadorProducto {
@@ -24,10 +23,11 @@ public final class ValidadorProducto {
     }
 
     // Va antes que el nombre: un combo sin nombre se rechaza por ser combo, que es el error de fondo.
-    public static void exigirQueNoSeaCombo(TipoProducto tipo) {
+    public static TipoProducto exigirQueNoSeaCombo(TipoProducto tipo) {
         if (tipo != null && tipo.esCombo()) {
             throw new DatoInvalido("Un combo se da de alta como combo: con sus componentes");
         }
+        return tipo;
     }
 
     public static TipoProducto tipo(TipoProducto tipo) {
@@ -38,12 +38,4 @@ public final class ValidadorProducto {
         return Dinero.importeValido(precio, "precio");
     }
 
-    // R14 del lado de la edición: un combo que pasa a costar lo mismo que sus sueltos ya no conviene. Lo usa
-    // también el combo que trae un suelto recién abaratado, con su propio nombre y precio.
-    public static void exigirQueSigaConviniendo(Producto producto, String nombre, Dinero precio) {
-        if (producto.esCombo() && !producto.getPrecioSuelto().esMayorQue(precio)) {
-            throw new DatoInvalido("Con ese precio, el combo " + nombre + " dejaría de salir menos que sus"
-                    + " componentes sueltos ($ " + producto.getPrecioSuelto() + ")");
-        }
-    }
 }
