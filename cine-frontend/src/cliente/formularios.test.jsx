@@ -1,0 +1,88 @@
+import { fireEvent, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as api from "../api/api-http.js";
+import { renderConApp } from "../test/renderConApp.jsx";
+import { Ingresar } from "./Ingresar.jsx";
+import { Registro } from "./Registro.jsx";
+
+vi.mock("../api/api-http.js");
+
+const ANA = { nombre: "Ana", rol: "CLIENTE" };
+
+// Los dos formularios se comportan igual; cambian los campos y a qué endpoint va el envío.
+const FORMULARIOS = [
+  { nombre: "Ingresar", pantalla: <Ingresar />, boton: "Ingresar", pedido: "ingresar",
+    campos: { Email: "ana@mail.com", Contraseña: "secreta" } },
+  { nombre: "Registro", pantalla: <Registro />, boton: "Registrarme", pedido: "registrarCliente",
+    campos: { Nombre: "Ana", Email: "ana@mail.com", Contraseña: "secreta" } },
+];
+
+async function completar(campos) {
+  for (const [etiqueta, valor] of Object.entries(campos)) {
+    await userEvent.type(screen.getByLabelText(etiqueta, { exact: false }), valor);
+  }
+}
+
+beforeEach(() => {
+  api.sesionActual.mockRejectedValue(new Error("401"));
+});
+
+describe.each(FORMULARIOS)("$nombre", ({ pantalla, boton, pedido, campos }) => {
+  it("con campos vacíos o solo de espacios marca lo que falta y no le pide nada al backend", async () => {
+    renderConApp(pantalla);
+    await completar(Object.fromEntries(Object.keys(campos).map((c) => [c, "   "])));
+
+    // Se envía el form directo: `required` del navegador frena el vacío, lo que se prueba es la validación propia.
+    fireEvent.submit(screen.getByRole("button", { name: boton }).closest("form"));
+
+    expect(screen.getAllByText(/^Completá /)).toHaveLength(Object.keys(campos).length);
+    expect(api[pedido]).not.toHaveBeenCalled();
+  });
+
+  it("muestra el error del backend tal cual", async () => {
+    api[pedido].mockRejectedValue(new Error("Email o contraseña incorrectos"));
+    renderConApp(pantalla);
+    await completar(campos);
+
+    await userEvent.click(screen.getByRole("button", { name: boton }));
+
+    expect(await screen.findByText("Email o contraseña incorrectos")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: boton })).toBeEnabled();
+  });
+
+  it("deja el botón cargando mientras envía", async () => {
+    api[pedido].mockReturnValue(new Promise(() => {}));
+    renderConApp(pantalla);
+    await completar(campos);
+
+    await userEvent.click(screen.getByRole("button", { name: boton }));
+
+    expect(screen.getByRole("button", { name: boton })).toHaveAttribute("data-loading", "true");
+    expect(screen.getByRole("button", { name: boton })).toBeDisabled();
+  });
+
+  it("al entrar lleva a Mis reservas", async () => {
+    api.registrarCliente.mockResolvedValue(null);
+    api.ingresar.mockResolvedValue(ANA);
+    renderConApp(pantalla);
+    await completar(campos);
+
+    await userEvent.click(screen.getByRole("button", { name: boton }));
+
+    expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
+    expect(api.ingresar).toHaveBeenCalledWith("ana@mail.com", "secreta");
+  });
+});
+
+describe("Ingresar", () => {
+  it("una cuenta del personal no entra a la web", async () => {
+    api.ingresar.mockResolvedValue({ nombre: "Pepe", rol: "ENCARGADO" });
+    renderConApp(<Ingresar />);
+    await completar(FORMULARIOS[0].campos);
+
+    await userEvent.click(screen.getByRole("button", { name: "Ingresar" }));
+
+    expect(await screen.findByText(/Esa cuenta es del personal del cine/)).toBeInTheDocument();
+  });
+});
