@@ -183,8 +183,13 @@ export function Ticket() {
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
 
   async function copiar() {
-    await navigator.clipboard.writeText(armarTicket(reserva));
-    avisar("Comprobante copiado");
+    // Sin permiso o fuera de HTTPS el navegador rechaza la escritura.
+    try {
+      await navigator.clipboard.writeText(armarTicket(reserva));
+      avisar("Comprobante copiado");
+    } catch {
+      avisar("No pudimos copiar el comprobante. Seleccionalo y copialo a mano.", "error");
+    }
   }
 
   return (
