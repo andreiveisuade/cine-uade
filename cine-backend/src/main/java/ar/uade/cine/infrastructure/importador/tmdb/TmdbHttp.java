@@ -25,7 +25,7 @@ import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-// Baja la cartelera de TMDB por HTTP con 4 hilos y pausa entre llamadas; Adapter del puerto CatalogoExterno.
+// Baja la cartelera de TMDB (con trailer) por HTTP con 4 hilos y pausa entre llamadas; Adapter del puerto CatalogoExterno.
 @Slf4j
 public class TmdbHttp implements CatalogoExterno {
 
@@ -96,18 +96,31 @@ public class TmdbHttp implements CatalogoExterno {
         int id = resumen.path("id").asInt();
         JsonNode detalle = SIN_RESPUESTA;
         JsonNode estrenos = SIN_RESPUESTA;
+        String trailer = null;
         try {
             detalle = pedir("/movie/" + id);
             estrenos = pedir("/movie/" + id + "/release_dates");
+            trailer = trailer(id);
         } catch (ImportadorError e) {
             log.warn("TMDB no pudo completar «{}»: {}", resumen.path("title").asText("?"), e.getMessage());
         }
-        return MapeoTmdb.aPelicula(resumen, detalle, estrenos);
+        return MapeoTmdb.aPelicula(resumen, detalle, estrenos, trailer);
+    }
+
+    // Muchas no tienen trailer doblado o subtitulado: entonces el original en inglés.
+    private String trailer(int id) {
+        String enCastellano = MapeoTmdb.trailerDe(pedir("/movie/" + id + "/videos"));
+        return enCastellano != null ? enCastellano
+                : MapeoTmdb.trailerDe(pedirEn("en-US", "/movie/" + id + "/videos"));
+    }
+
+    private JsonNode pedir(String ruta, String... parametros) {
+        return pedirEn("es-AR", ruta, parametros);
     }
 
     // Texto fijo en español para el detalle de la corrida; el mensaje de Java va al log con la causa.
-    private JsonNode pedir(String ruta, String... parametros) {
-        HttpRequest pedido = HttpRequest.newBuilder(URI.create(base + ruta + consulta(parametros)))
+    private JsonNode pedirEn(String idioma, String ruta, String... parametros) {
+        HttpRequest pedido = HttpRequest.newBuilder(URI.create(base + ruta + consulta(idioma, parametros)))
                 .header("Authorization", "Bearer " + token)
                 .header("Accept", "application/json")
                 .timeout(Duration.ofSeconds(20))
@@ -135,8 +148,8 @@ public class TmdbHttp implements CatalogoExterno {
         }
     }
 
-    private String consulta(String... parametros) {
-        StringBuilder url = new StringBuilder("?language=es-AR");
+    private String consulta(String idioma, String... parametros) {
+        StringBuilder url = new StringBuilder("?language=" + idioma);
         for (int i = 0; i < parametros.length; i += 2) {
             url.append('&').append(parametros[i]).append('=')
                     .append(URLEncoder.encode(parametros[i + 1], StandardCharsets.UTF_8));
