@@ -29,10 +29,8 @@ public class GestorPromociones implements PoliticaPromociones {
     private final PromocionRepository promocionRepository;
     private final Reloj reloj;
 
-    // Un solo alta para los tres tipos: el tipo crea su subclase (Factory Method en TipoPromocion) y la
-    // subclase valida lo suyo. Hoy sale del reloj: una promoción ya vencida no se carga.
-    // El nombre repetido es lo único que la entidad no puede ver sola: hace falta el repositorio. La
-    // entidad ya lo recortó, así que se busca lo mismo que se va a guardar.
+    // Un solo alta para los tres tipos: el tipo crea su subclase (Factory Method en TipoPromocion).
+    // El nombre repetido necesita el repositorio: se busca el ya recortado por la entidad.
     public Promocion crear(TipoPromocion tipo, String nombre, ParametrosPromocion parametros,
                            CondicionesPromocion condiciones) {
         Promocion promocion = tipo.crear(nombre, parametros, condiciones, reloj.hoy());
