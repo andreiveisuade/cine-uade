@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
 // Lo que entra al registrar un cliente (POST /api/clientes); exige nombre, email y clave, que valida el modelo.
-// Sin @Email: aceptaba «a@b», y reservar da de alta sin pasar por acá. Queda una sola regla, la de Email.
 public record PedidoClienteDTO(
         @Schema(example = "Ana Pérez")
         @NotBlank(message = "Falta el nombre") String nombre,

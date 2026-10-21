@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 // Lo que entra al editar un producto o combo (PUT /api/candy/productos/{id}); exige nombre y precio.
-// Solo presencia: el precio lo valida Dinero.importe al convertirlo en el controller.
 public record PedidoEdicionProductoDTO(
         @Schema(example = "Pochoclos medianos")
         @NotBlank(message = "Falta el nombre") String nombre,

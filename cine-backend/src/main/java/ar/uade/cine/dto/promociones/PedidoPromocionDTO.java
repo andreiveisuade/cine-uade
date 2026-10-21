@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
 // Lo que entra al cargar una promoción (POST /api/promociones); exige nombre, tipo y vigencia.
-// Lo ajeno al tipo va null y se ignora; lo propio lo exige la subclase que crea el tipo.
 public record PedidoPromocionDTO(
         @Schema(example = "Martes de descuento")
         @NotBlank(message = "Falta el nombre") String nombre,

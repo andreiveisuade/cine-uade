@@ -8,9 +8,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 // Lo que entra al crear una película (POST /api/peliculas); exige título, duración, géneros y clasificación.
-// Solo presencia, con los mismos textos que ValidadorPelicula: el rango de la duración y el resto de las
-// reglas las aplica la película, también en el alta que no pasa por HTTP.
-// Los enums viajan como texto con el nombre de la constante; @Schema lista los valores porque el tipo es String.
+// Solo presencia, con los textos de ValidadorPelicula; el resto lo aplica la película. Los enums viajan como String.
 public record PedidoPeliculaDTO(
         @Schema(description = "Único en el catálogo, hasta 100 caracteres", example = "Matrix")
         @NotBlank(message = "Falta el título") String titulo,
