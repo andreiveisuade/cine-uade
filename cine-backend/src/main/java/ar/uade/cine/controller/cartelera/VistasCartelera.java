@@ -45,7 +45,8 @@ public class VistasCartelera {
                 p.getGeneros().stream().map(Enum::name).toList(),
                 p.getClasificacion().name(), catalogo.posterUrl(), catalogo.director(), catalogo.anio(),
                 catalogo.idiomaOriginal(), catalogo.sinopsis(), p.estaEnCartelera(),
-                p.getEstadoRevision().name(), catalogo.puntaje(), catalogo.votos());
+                p.getEstadoRevision().name(), catalogo.puntaje(), catalogo.votos(),
+                p.getTrailerYoutube());
     }
 
     public ImportacionVistaDTO importacion(Importacion i) {

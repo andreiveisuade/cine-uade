@@ -84,11 +84,13 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 { "id": 1, "titulo": "Matrix", "duracionMinutos": 136, "generos": ["ACCION"],
   "clasificacion": "MAS_16", "posterUrl": "…", "director": "…", "anio": 1999,
   "idiomaOriginal": "Inglés", "sinopsis": "…",
-  "enCartelera": true, "estadoRevision": "CONFIRMADA", "puntaje": 8.2, "votos": 26000 }
+  "enCartelera": true, "estadoRevision": "CONFIRMADA", "puntaje": 8.2, "votos": 26000,
+  "trailerYoutube": "vKQi3bBA1y8" }
 ```
 
 `estadoRevision` (`PENDIENTE`, `CONFIRMADA`, `DESCARTADA`) dice si entró al catálogo; `enCartelera`, si se
-está dando. Una función suma `precioDesde` y la sala con `minutosLimpieza`.
+está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe en
+`https://www.youtube.com/embed/{id}`. Una función suma `precioDesde` y la sala con `minutosLimpieza`.
 
 ## Mapa de butacas
 
@@ -206,10 +208,10 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 |---|---|
 | `GET /peliculas?q=&genero=&publicada=` | Todas. `q` busca en el título; `publicada` es `enCartelera` |
 | `GET /peliculas/pendientes` | El buzón del importador |
-| `POST /peliculas` | Título único (R1, `409`), duración 1 a 600 (R2), al menos un género (R7), clasificación (R10). `puntaje` 0 a 10, `anio` desde 1895, `posterUrl` con `http(s)://`. Nace `CONFIRMADA` |
+| `POST /peliculas` | Título único (R1, `409`), duración 1 a 600 (R2), al menos un género (R7), clasificación (R10). `puntaje` 0 a 10, `anio` desde 1895, `posterUrl` con `http(s)://`. `trailerYoutube` acepta el id o una URL de YouTube (`watch?v=`, `youtu.be/`, `/embed/`) y guarda el id; otra cosa, `400 El trailer tiene que ser un video de YouTube`. Nace `CONFIRMADA` |
 | `POST /peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /peliculas/{id}/descarte` | `DESCARTADA`; `400` si tiene funciones |
-| `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA` |
+| `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA`. `trailerYoutube: ""` saca el trailer |
 | `DELETE /peliculas/{id}` | `400` si tiene funciones o una programación |
 | `GET /salas` · `GET /salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle suma `asientos` |
 | `POST /salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. 1 a 26 filas, 1 a 40 butacas por fila; cada código especial existe y está en una sola lista. Limpieza 0 a 120, 15 por defecto. Nombre único (`409`) |
@@ -381,6 +383,8 @@ pagar (R18), ya se usó o no es el día de la función; `404` si no existe. El c
     "detalle": "+ [41] Hablan las aves\n✗ Yo, narciso: La duración…" }
 ```
 
+- Cada película trae su trailer de TMDB: un `Trailer` de YouTube, el oficial y más nuevo; en castellano y si no hay, en inglés.
+- Una que ya estaba y no tiene trailer lo recibe en la corrida (cuenta en `salteadas`); el que ya tiene, aunque lo haya corregido el encargado, no se toca.
 - Lo nuevo entra al buzón como `PENDIENTE`. Una candidata inválida cuenta en `fallidas` y la corrida sigue.
 - TMDB caído: `201` con `FALLIDA`. Una corrida trabada pasa a `FALLIDA` a los 5 minutos.
 - `400`: otra importación en curso, o la anterior terminó hace menos de 60 segundos.

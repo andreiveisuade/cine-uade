@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS pelicula (
     -- Valoracion de 0 a 10 (vote_average de TMDB); con ella ordena el planificador
     puntaje DECIMAL(3,1) NOT NULL DEFAULT 0,
     -- Votos detras del puntaje: un 8,0 sobre seis votos no vale lo que sobre cinco mil
-    votos INT NOT NULL DEFAULT 0
+    votos INT NOT NULL DEFAULT 0,
+    -- Id del video de YouTube del trailer (11 caracteres); NULL si no tiene
+    trailer_youtube VARCHAR(20) NULL
 );
 
 -- Una película tiene varios géneros: tabla aparte con la relación.

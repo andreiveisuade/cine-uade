@@ -29,5 +29,7 @@ public record PedidoEdicionPeliculaDTO(
         @Schema(description = "De 0 a 10", example = "8.2")
         Double puntaje, 
         @Schema(example = "26000")
-        Integer votos) {
+        Integer votos,
+        @Schema(description = "Id del video de YouTube o su URL; vacío lo saca", example = "vKQi3bBA1y8")
+        String trailerYoutube) {
 }

@@ -2,6 +2,7 @@ package ar.uade.cine.infrastructure.importador.tmdb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,8 @@ import com.sun.net.httpserver.HttpServer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -65,6 +68,47 @@ class TmdbHttpTest {
         assertEquals(List.of(Genero.CIENCIA_FICCION), duna.generos());
         assertEquals(Clasificacion.MAS_13, duna.clasificacion());
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", duna.posterUrl());
+    }
+
+    // es-AR primero; sin trailer en castellano, el en-US; sin ninguno, null.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            en castellano,     castellano1, ingles12345, castellano1
+            solo en ingles,    ,            ingles12345, ingles12345
+            sin trailer,       ,            ,
+            """)
+    void elTrailerSeBuscaEnCastellanoYSiNoEnIngles(String caso, String castellano, String ingles, String trailer) {
+        levantar(intercambio -> {
+            String idioma = intercambio.getRequestURI().getQuery().contains("language=en-US") ? ingles : castellano;
+            switch (intercambio.getRequestURI().getPath()) {
+                case "/movie/now_playing" -> responder(intercambio, 200, """
+                        {"results": [{"id": 42, "title": "Duna"}], "total_pages": 1}""");
+                case "/movie/42/videos" -> responder(intercambio, 200, idioma == null ? "{\"results\": []}"
+                        : "{\"results\": [{\"site\": \"YouTube\", \"type\": \"Trailer\", \"key\": \""
+                        + idioma + "\", \"official\": true}]}");
+                default -> responder(intercambio, 200, "{\"title\": \"Duna\", \"runtime\": 166}");
+            }
+        });
+
+        assertEquals(trailer, catalogo().enCartelera(1).get(0).trailerYoutube());
+    }
+
+    // Sin videos la película entra igual, con la duración del detalle que sí llegó.
+    @Test
+    void unErrorAlPedirLosVideosDejaLaPeliculaSinTrailer() {
+        levantar(intercambio -> {
+            switch (intercambio.getRequestURI().getPath()) {
+                case "/movie/now_playing" -> responder(intercambio, 200, """
+                        {"results": [{"id": 42, "title": "Duna"}], "total_pages": 1}""");
+                case "/movie/42/videos" -> responder(intercambio, 500, "{}");
+                default -> responder(intercambio, 200, "{\"title\": \"Duna\", \"runtime\": 166}");
+            }
+        });
+
+        DatosPelicula duna = catalogo().enCartelera(1).get(0);
+
+        assertNull(duna.trailerYoutube());
+        assertEquals(166, duna.duracionMinutos());
     }
 
     @Test

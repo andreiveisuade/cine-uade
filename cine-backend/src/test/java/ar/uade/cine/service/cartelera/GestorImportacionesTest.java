@@ -77,6 +77,41 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void laImportadaTraeElTrailerDeTmdb() {
+        catalogo.queTraiga(conTrailer("Duna", "Way9Dexny3w"));
+
+        gestor.ejecutar(1);
+
+        assertEquals("Way9Dexny3w", peliculaRepository.findAll().get(0).getTrailerYoutube());
+    }
+
+    // Las importadas antes del trailer lo consiguen solas en la próxima corrida, sin volver al buzón.
+    @Test
+    void unaYaImportadaSinTrailerLoCompletaLaProximaCorrida() {
+        Pelicula vieja = revision.importar(pelicula("Duna"));
+        revision.confirmar(vieja.getId());
+        catalogo.queTraiga(conTrailer("duna", "Way9Dexny3w"));
+
+        Importacion importacion = gestor.ejecutar(1);
+
+        Pelicula duna = peliculaRepository.findById(vieja.getId()).orElseThrow();
+        assertEquals("Way9Dexny3w", duna.getTrailerYoutube());
+        assertEquals(EstadoRevision.CONFIRMADA, duna.getEstadoRevision());
+        assertEquals(1, importacion.getSalteadas());
+    }
+
+    @Test
+    void elTrailerQueCorrigioElEncargadoNoSePisa() {
+        int id = cartelera.agregar(DatosPelicula.con().titulo("Duna").duracion(155).generos(List.of(Genero.DRAMA))
+                .clasificacion(Clasificacion.ATP).trailerYoutube("n9xhJrPXop4").armar()).getId();
+        catalogo.queTraiga(conTrailer("Duna", "Way9Dexny3w"));
+
+        gestor.ejecutar(1);
+
+        assertEquals("n9xhJrPXop4", peliculaRepository.findById(id).orElseThrow().getTrailerYoutube());
+    }
+
+    @Test
     void lasQueYaEstanNoSeVuelvenAProponer() {
         catalogo.queTraiga("Duna", "Vaiana");
         gestor.ejecutar(1);
@@ -294,5 +329,11 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
                 .puntaje(6.0)
                 .votos(50)
                 .armar();
+    }
+
+    private static DatosPelicula conTrailer(String titulo, String trailer) {
+        DatosPelicula base = pelicula(titulo);
+        return DatosPelicula.con().titulo(titulo).duracion(base.duracionMinutos()).generos(base.generos())
+                .clasificacion(base.clasificacion()).enCartelera(false).trailerYoutube(trailer).armar();
     }
 }

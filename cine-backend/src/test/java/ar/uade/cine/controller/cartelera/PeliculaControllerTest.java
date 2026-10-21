@@ -115,6 +115,38 @@ class PeliculaControllerTest extends PruebaDeApi {
         }
     }
 
+    // Se manda la URL que se copia del navegador y se guarda el id, que es lo que embebe la web.
+    @Test
+    void elAltaConLaUrlDelTrailerGuardaElIdDelVideo() {
+        Respuesta respuesta = post("/api/peliculas", "{\"titulo\":\"Dune\",\"duracionMinutos\":155,"
+                + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\","
+                + "\"trailerYoutube\":\"https://www.youtube.com/watch?v=Way9Dexny3w\"}");
+
+        assertEquals(201, respuesta.estado());
+        assertEquals("Way9Dexny3w", respuesta.json().get("trailerYoutube").asText());
+    }
+
+    // Parcial como el resto: sin el campo queda el que estaba, vacío lo saca.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            sin el campo queda el anterior | {"titulo":"Dune"}                                      | 200 | Way9Dexny3w
+            otro id lo reemplaza           | {"trailerYoutube":"https://youtu.be/n9xhJrPXop4"}      | 200 | n9xhJrPXop4
+            vacío lo saca                  | {"trailerYoutube":""}                                  | 200 |
+            otro sitio es 400              | {"trailerYoutube":"https://vimeo.com/123"}             | 400 | Way9Dexny3w
+            """)
+    void editarElTrailer(String caso, String cuerpo, int estado, String queda) {
+        int id = revision.importar(DatosPelicula.con().titulo("Dune").duracion(155).generos(List.of(Genero.ACCION))
+                .clasificacion(Clasificacion.ATP).trailerYoutube("Way9Dexny3w").armar()).getId();
+
+        Respuesta respuesta = put("/api/peliculas/" + id, cuerpo);
+
+        assertEquals(estado, respuesta.estado());
+        if (estado == 400) {
+            assertEquals("El trailer tiene que ser un video de YouTube", respuesta.error());
+        }
+        assertEquals(queda, revision.listarPendientes().get(0).getTrailerYoutube());
+    }
+
     private int importadaEn(EstadoRevision estado) {
         int id = revision.importar(DatosPelicula.deAlta("Dune", 155, List.of(Genero.ACCION), Clasificacion.ATP))
                 .getId();

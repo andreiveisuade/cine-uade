@@ -49,6 +49,9 @@ public class Pelicula {
     @Getter(AccessLevel.NONE)
     private boolean enCartelera = true;
 
+    // Solo el id del video: la web lo embebe y Swing lo abre en el navegador. Null es "sin trailer".
+    private String trailerYoutube;
+
     @Enumerated(EnumType.STRING)
     private EstadoRevision estadoRevision = EstadoRevision.CONFIRMADA;
 
@@ -82,6 +85,18 @@ public class Pelicula {
     // El catálogo es inmutable: se reemplaza entero por otro armado con conCambios, que ya viene validado.
     public void cambiarCatalogo(CatalogoPelicula catalogo) {
         this.catalogo = catalogo;
+    }
+
+    // Vacío lo saca; cualquier otra cosa tiene que ser un video de YouTube.
+    public void cambiarTrailer(String texto) {
+        trailerYoutube = texto.isBlank() ? null : new TrailerYoutube(texto).id();
+    }
+
+    // El que trae el importador solo llena el hueco: no pisa el que corrigió el encargado.
+    public void completarTrailer(TrailerYoutube trailer) {
+        if (trailerYoutube == null) {
+            trailerYoutube = trailer.id();
+        }
     }
 
     // El planificador de la grilla ordena por estos dos: se los pide a la película, no a su catálogo.

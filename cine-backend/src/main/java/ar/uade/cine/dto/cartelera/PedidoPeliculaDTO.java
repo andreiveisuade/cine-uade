@@ -32,5 +32,7 @@ public record PedidoPeliculaDTO(
         @Schema(description = "Si sale en la cartelera pública apenas se crea", example = "true")
         Boolean enCartelera,
         @Schema(description = "De 0 a 10", example = "8.2") Double puntaje,
-        @Schema(description = "De 0 a 100.000.000", example = "26000") Integer votos) {
+        @Schema(description = "De 0 a 100.000.000", example = "26000") Integer votos,
+        @Schema(description = "Id del video de YouTube o su URL (watch?v=, youtu.be/, /embed/); se guarda el id",
+                example = "https://www.youtube.com/watch?v=vKQi3bBA1y8") String trailerYoutube) {
 }

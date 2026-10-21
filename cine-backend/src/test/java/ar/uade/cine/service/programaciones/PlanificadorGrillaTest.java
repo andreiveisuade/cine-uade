@@ -50,12 +50,12 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
     private Pelicula cargar(String titulo, double puntaje, int duracion, Genero... generos) {
         return cartelera.agregar(new DatosPelicula(titulo, duracion, List.of(generos), Clasificacion.ATP,
-                null, null, null, null, null, null, puntaje, null));
+                null, null, null, null, null, null, puntaje, null, null));
     }
 
     private void votar(Pelicula pelicula, int votos) {
         cartelera.editar(pelicula.getId(), new DatosPelicula(null, null, null, null,
-                null, null, null, null, null, null, null, votos));
+                null, null, null, null, null, null, null, votos, null));
     }
 
     private CriteriosGrilla unDia(int cuantasPeliculas) {

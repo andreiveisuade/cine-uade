@@ -1,6 +1,8 @@
 package ar.uade.cine.swing.comun;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
@@ -87,5 +89,17 @@ class LecturasTest {
         assertTrue(Lecturas.leerEmail("ana@mail.com", "Cliente", false).valida());
         assertFalse(Lecturas.leerEmail("ana", "Cliente", false).valida());
         assertTrue(Lecturas.leerEmail("", "Cliente", false).valida());
+    }
+
+    // Solo arma la dirección para el botón Ver: si es un video de YouTube lo decide el backend al guardar.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            id solo,       vKQi3bBA1y8,                                 https://www.youtube.com/watch?v=vKQi3bBA1y8
+            url completa,  https://youtu.be/vKQi3bBA1y8,                https://youtu.be/vKQi3bBA1y8
+            url sin https, ' www.youtube.com/watch?v=vKQi3bBA1y8 ',     https://www.youtube.com/watch?v=vKQi3bBA1y8
+            vacio,         '  ',
+            """)
+    void laDireccionDelTrailerSaleDelIdODeLaUrl(String caso, String escrito, String direccion) {
+        assertEquals(direccion, Lecturas.direccionDelTrailer(escrito));
     }
 }

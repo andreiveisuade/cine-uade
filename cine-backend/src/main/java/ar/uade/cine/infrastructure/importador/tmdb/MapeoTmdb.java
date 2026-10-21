@@ -3,6 +3,7 @@ package ar.uade.cine.infrastructure.importador.tmdb;
 import static java.util.Map.entry;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -12,9 +13,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, idioma, póster); Fabricación pura.
+// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, idioma, póster, trailer); Fabricación pura.
 final class MapeoTmdb {
 
     private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
@@ -63,9 +65,9 @@ final class MapeoTmdb {
     private MapeoTmdb() {
     }
 
-    // Las tres respuestas de TMDB por película: la del listado, el detalle y las fechas de estreno.
+    // Las respuestas de TMDB por película: la del listado, el detalle, las fechas de estreno y el trailer ya elegido.
     // Nace enCartelera = false: nada se publica sin que el encargado la mire.
-    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, JsonNode estrenos) {
+    static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, JsonNode estrenos, String trailer) {
         // Builder: cada dato de TMDB queda nombrado junto a su componente.
         return DatosPelicula.con()
                 .titulo(textoDe(detalle, "title", textoDe(resumen, "title", "")))
@@ -80,7 +82,25 @@ final class MapeoTmdb {
                 .enCartelera(false)
                 .puntaje(puntajeDe(detalle.path("vote_average").asDouble(0)))
                 .votos(detalle.path("vote_count").asInt(0))
+                .trailerYoutube(trailer)
                 .armar();
+    }
+
+    // Solo un Trailer de YouTube; el oficial primero y, entre iguales, el más nuevo. Null si no hay.
+    static String trailerDe(JsonNode videos) {
+        List<JsonNode> trailers = new ArrayList<>();
+        for (JsonNode video : videos.path("results")) {
+            if ("YouTube".equals(video.path("site").asText()) && "Trailer".equals(video.path("type").asText())
+                    && TrailerYoutube.siEs(video.path("key").asText()).isPresent()) {
+                trailers.add(video);
+            }
+        }
+        // published_at es ISO-8601: ordenar el texto es ordenar la fecha.
+        return trailers.stream()
+                .max(Comparator.<JsonNode, Boolean>comparing(v -> v.path("official").asBoolean())
+                        .thenComparing(v -> v.path("published_at").asText("")))
+                .map(v -> v.path("key").asText())
+                .orElse(null);
     }
 
     static List<Genero> generosDe(JsonNode detalle) {

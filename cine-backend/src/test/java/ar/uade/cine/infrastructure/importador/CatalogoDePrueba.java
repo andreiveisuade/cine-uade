@@ -40,7 +40,7 @@ public class CatalogoDePrueba implements CatalogoExterno {
 
     public static DatosPelicula pelicula(String titulo) {
         return new DatosPelicula(titulo, 120, List.of(Genero.DRAMA), Clasificacion.ATP,
-                "", "", 2026, "Inglés", "", false, 7.5, 100);
+                "", "", 2026, "Inglés", "", false, 7.5, 100, null);
     }
 
     public CatalogoDePrueba queTraiga(DatosPelicula... peliculas) {

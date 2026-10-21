@@ -93,7 +93,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Pelicula completa = cartelera.editar(1,
                 new DatosPelicula(null, null, null, null, "Wachowski",
                         "Un hacker descubre la verdad", 1999, "Inglés", "http://poster.jpg",
-                        null, null, null));
+                        null, null, null, null));
 
         PeliculaVistaDTO vista = vistas.pelicula(completa);
 

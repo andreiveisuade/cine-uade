@@ -44,7 +44,7 @@ class HumoContraBackendTest {
 
         // El seed no trae películas: se crea una propia para colgarle la función.
         Pelicula pelicula = apis.cartelera().crearPelicula(new PedidoPelicula("Humo Swing " + System.nanoTime(),
-                100, List.of("DRAMA"), "ATP", null, null, null, null, null, null));
+                100, List.of("DRAMA"), "ATP", null, null, null, null, null, null, null));
         try {
             Sala sala = salas.stream().filter(s -> "DOS_D".equals(s.tipo())).findFirst().orElseThrow();
             Funcion funcion = apis.funciones().programarFuncion(new PedidoFuncion(pelicula.id(), sala.id(),

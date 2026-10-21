@@ -123,6 +123,26 @@ class MapeoTmdbTest {
         assertEquals(puntaje, MapeoTmdb.puntajeDe(promedio));
     }
 
+    // Teaser, featurette o un video de otro sitio no son el trailer; entre trailers, el oficial y el más nuevo.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            uno solo               | [{"site":"YouTube","type":"Trailer","key":"aaaaaaaaaaa","official":true,"published_at":"2024-01-01T00:00:00.000Z"}] | aaaaaaaaaaa
+            el teaser no           | [{"site":"YouTube","type":"Teaser","key":"aaaaaaaaaaa","official":true,"published_at":"2024-01-01T00:00:00.000Z"}] |
+            otro sitio no          | [{"site":"Vimeo","type":"Trailer","key":"aaaaaaaaaaa","official":true,"published_at":"2024-01-01T00:00:00.000Z"}] |
+            oficial antes que nuevo| [{"site":"YouTube","type":"Trailer","key":"nuevoNoOfic","official":false,"published_at":"2024-06-01T00:00:00.000Z"},{"site":"YouTube","type":"Trailer","key":"viejoOficia","official":true,"published_at":"2024-01-01T00:00:00.000Z"}] | viejoOficia
+            el oficial más nuevo   | [{"site":"YouTube","type":"Trailer","key":"oficialVieo","official":true,"published_at":"2024-01-01T00:00:00.000Z"},{"site":"YouTube","type":"Trailer","key":"oficialNuev","official":true,"published_at":"2024-03-01T00:00:00.000Z"}] | oficialNuev
+            clave que no es video  | [{"site":"YouTube","type":"Trailer","key":"rara","official":true,"published_at":"2024-01-01T00:00:00.000Z"}] |
+            sin videos             | [] |
+            """)
+    void elTrailerEsElDeYoutubeOficialYMasReciente(String caso, String videos, String trailer) {
+        assertEquals(trailer, MapeoTmdb.trailerDe(json("{\"results\": " + videos + "}")));
+    }
+
+    @Test
+    void sinRespuestaDeVideosNoHayTrailer() {
+        assertNull(MapeoTmdb.trailerDe(MissingNode.getInstance()));
+    }
+
     @Test
     void laPeliculaCompletaLlegaConLosNombresNuestros() {
         JsonNode resumen = json("""
@@ -136,7 +156,7 @@ class MapeoTmdbTest {
         JsonNode estrenos = json("""
                 {"results": [{"iso_3166_1": "AR", "release_dates": [{"certification": "+13"}]}]}""");
 
-        DatosPelicula pelicula = MapeoTmdb.aPelicula(resumen, detalle, estrenos);
+        DatosPelicula pelicula = MapeoTmdb.aPelicula(resumen, detalle, estrenos, "Way9Dexny3w");
 
         assertEquals("Duna: Parte dos", pelicula.titulo());
         assertEquals(166, pelicula.duracionMinutos());
@@ -148,12 +168,13 @@ class MapeoTmdbTest {
         assertEquals(8.2, pelicula.puntaje());
         assertEquals(5400, pelicula.votos());
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", pelicula.posterUrl());
+        assertEquals("Way9Dexny3w", pelicula.trailerYoutube());
     }
 
     @Test
     void laPeliculaNaceFueraDeCartelera() {
         DatosPelicula pelicula = MapeoTmdb.aPelicula(json("{}"), json("""
-                {"title": "Duna", "runtime": 166}"""), MissingNode.getInstance());
+                {"title": "Duna", "runtime": 166}"""), MissingNode.getInstance(), null);
 
         assertFalse(pelicula.enCartelera());
     }
@@ -164,7 +185,7 @@ class MapeoTmdbTest {
                 {"id": 7, "title": "Una que TMDB no completó"}""");
 
         DatosPelicula pelicula = MapeoTmdb.aPelicula(
-                resumen, MissingNode.getInstance(), MissingNode.getInstance());
+                resumen, MissingNode.getInstance(), MissingNode.getInstance(), null);
 
         assertEquals("Una que TMDB no completó", pelicula.titulo());
         assertEquals(0, pelicula.duracionMinutos());

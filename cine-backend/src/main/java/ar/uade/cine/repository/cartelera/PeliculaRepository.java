@@ -2,6 +2,7 @@ package ar.uade.cine.repository.cartelera;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,8 @@ import ar.uade.cine.repository.Repositorio;
 public interface PeliculaRepository extends Repositorio<Pelicula> {
 
     boolean existsByTituloIgnoreCaseAndIdNot(String titulo, int id);
+
+    Optional<Pelicula> findByTituloIgnoreCase(String titulo);
 
     List<Pelicula> findByEstadoRevision(EstadoRevision estado);
 

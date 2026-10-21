@@ -37,7 +37,7 @@ class GrillaControllerTest extends PruebaDeApi {
     void levantarLaApiConUnCine() {
 
         cartelera.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13,
-                null, null, null, null, null, null, 8.7, null));
+                null, null, null, null, null, null, 8.7, null, null));
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
     }
 
