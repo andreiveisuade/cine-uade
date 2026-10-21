@@ -9,7 +9,7 @@ import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { useTitulo } from "../componentes/useTitulo.js";
 import { useSesion } from "./sesion.jsx";
-import { Volver } from "../componentes/Volver.jsx";
+import { Encabezado } from "../componentes/Encabezado.jsx";
 import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
          SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
          useRenovarBloqueo } from "./compra.jsx";
@@ -83,21 +83,20 @@ export function Confirmar() {
   }
 
   return (
-    <Stack gap="md">
-      <Volver a={`/funcion/${funcion.id}`}>Cambiar butacas</Volver>
-      <Title order={1}>Confirmar reserva</Title>
+    <div>
+      <Encabezado titulo="Confirmar reserva" volver={{ a: `/funcion/${funcion.id}`, texto: "Cambiar butacas" }} />
 
-      <Grid gap="md" align="flex-start">
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <Paper withBorder p="md">
-            <Title order={2} size="h4" mb="sm">Tus datos</Title>
+      <Grid gap="lg" align="flex-start">
+        <Grid.Col span={{ base: 12, md: 5 }} order={{ base: 2, md: 1 }}>
+          <Paper withBorder p="lg">
+            <Title order={2} fz="h4" mb="md">Tus datos</Title>
             <form onSubmit={confirmar}>
               <Stack gap="sm">
                 <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
                   onChange={(e) => setNombre(e.currentTarget.value)} />
                 <TextInput label="Email" type="email" required value={email} error={faltan.email}
                   onChange={(e) => setEmail(e.currentTarget.value)} />
-                <Button type="submit" loading={enviando}>Confirmar reserva</Button>
+                <Button type="submit" size="md" mt="xs" loading={enviando}>Confirmar reserva</Button>
                 {error && <ErrorCaja>{error}</ErrorCaja>}
                 {usuario === null && (
                   <Text size="xs" c="dimmed">
@@ -111,11 +110,11 @@ export function Confirmar() {
           </Paper>
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 7 }}>
-          <Paper withBorder p="md">
-            <Title order={2} size="h4">{funcion.pelicula.titulo}</Title>
-            <DatosFuncion funcion={funcion} c="dimmed" mb="sm" />
-            <Table>
+        <Grid.Col span={{ base: 12, md: 7 }} order={{ base: 1, md: 2 }}>
+          <Paper withBorder p="lg">
+            <Title order={2} fz="h3">{funcion.pelicula.titulo}</Title>
+            <DatosFuncion funcion={funcion} c="dimmed" mb="md" />
+            <Table verticalSpacing="sm" className="cine-cifras">
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Butaca</Table.Th><Table.Th>Tipo</Table.Th><Table.Th>Tarifa</Table.Th>
@@ -136,8 +135,8 @@ export function Confirmar() {
               </Table.Tbody>
               <Table.Tfoot>
                 <Table.Tr>
-                  <Table.Th colSpan={3}>Total</Table.Th>
-                  <Table.Th ta="right">{precio(total)}</Table.Th>
+                  <Table.Th colSpan={3} fz="md">Total</Table.Th>
+                  <Table.Th ta="right"><Text span className="cine-display" fz={30} fw={850}>{precio(total)}</Text></Table.Th>
                 </Table.Tr>
               </Table.Tfoot>
             </Table>
@@ -149,7 +148,7 @@ export function Confirmar() {
               total definitivo aparece recién ahí.
             </Text>
             {aAcreditar.length > 0 && (
-              <Alert color="yellow" mt="sm" title="Acordate del carnet">
+              <Alert color="ambar" variant="light" mt="md" title="Acordate del carnet">
                 En la puerta te van a pedir que acredites la tarifa de{" "}
                 {aAcreditar.map((a) => `${a.codigo} (${etiqueta(butacas[a.codigo]).toLowerCase()})`).join(", ")}.
               </Alert>
@@ -157,6 +156,6 @@ export function Confirmar() {
           </Paper>
         </Grid.Col>
       </Grid>
-    </Stack>
+    </div>
   );
 }
