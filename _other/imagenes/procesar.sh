@@ -3,7 +3,7 @@
 #
 #     ./procesar.sh
 #
-# Promos (nombre promo-*) 16:9 a 1600x900; productos y combos 1:1 a 1000x1000.
+# Promos y combos (anchos, van en tarjetas y carrusel) 16:9 a 1600x900; productos sueltos 1:1 a 1000x1000.
 # Usa sips y cwebp (brew install webp), sin instalar nada más. Baja la calidad
 # desde 80 hasta que el webp pesa menos de 300 KB. centros.txt corrige el recorte: `nombre 0.66` = el
 # sujeto está al 66 % del ancho (sin línea, centro).
@@ -19,7 +19,7 @@ for origen in originales/*.png originales/*.jpg originales/*.jpeg; do
     [ -f "$origen" ] || continue
     base=$(basename "$origen"); nombre="${base%.*}"
     case "$nombre" in
-        promo-*) ancho=1600; alto=900 ;;
+        promo-*|combo-*) ancho=1600; alto=900 ;;
         *)       ancho=1000; alto=1000 ;;
     esac
 

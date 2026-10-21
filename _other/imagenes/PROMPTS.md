@@ -36,11 +36,11 @@ ES: Ambiente de sala de cine oscura con luces de neón azul y violeta y acentos 
 | `promo-medio-pago.png` | A smartphone showing an abstract QR-like pattern and a payment card beside cinema tickets, blue neon glow. | Un celular con un patrón abstracto tipo QR y una tarjeta junto a entradas de cine, brillo de neón azul. |
 | `promo-vacaciones.png` | Popcorn, 3D glasses and tickets arranged like a holiday flat lay, warm orange and golden light, festive confetti. | Pochoclos, anteojos 3D y entradas dispuestos como en vacaciones, luz naranja y dorada cálida, confeti festivo. |
 
-## Plantillas de combos (1:1)
+## Plantillas de combos (16:9: van en el carrusel)
 
 | Archivo | EN | ES |
 |---|---|---|
-| `combo-pareja.png` | One popcorn bucket and two soda cups with straws, romantic violet and blue neon, shared. | Un balde de pochoclos y dos vasos de gaseosa con pajita, neón violeta y azul romántico, para compartir. |
+| `combo-pareja.png` (16:9) | One popcorn bucket and two soda cups with straws, romantic violet and blue neon, shared. | Un balde de pochoclos y dos vasos de gaseosa con pajita, neón violeta y azul romántico, para compartir. |
 | `combo-familiar.png` | Two large popcorn buckets, four soda cups and candy, abundant spread on a dark counter, golden light. | Dos baldes grandes de pochoclos, cuatro vasos de gaseosa y golosinas, mesa abundante sobre mostrador oscuro, luz dorada. |
 | `combo-dulce.png` | Popcorn with caramel drizzle, chocolate bars and candy, soda cup, warm orange glow. | Pochoclos con caramelo, barras de chocolate y golosinas, vaso de gaseosa, brillo naranja cálido. |
 
