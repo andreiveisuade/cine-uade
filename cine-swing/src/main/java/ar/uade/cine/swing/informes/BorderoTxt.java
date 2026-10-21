@@ -11,10 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 
 // El borderó INCAA en texto, igual al que escribía el backend; se emite en la PC del encargado, sin Swing.
-/**
- * El borderó en texto para el INCAA, idéntico al que escribía el backend (GeneradorBorderoTxt y ComprobanteTxt):
- * se emite en la PC del encargado y no en el servidor, pero el archivo no cambia. Sin Swing, para probarlo solo.
- */
+// Idéntico al que escribía el backend (GeneradorBorderoTxt, ComprobanteTxt); sin Swing para probarlo solo.
 public final class BorderoTxt {
 
     private static final String LINEA = "=".repeat(44);
@@ -26,10 +23,7 @@ public final class BorderoTxt {
         return "bordero-funcion-" + funcionId + ".txt";
     }
 
-    /**
-     * {@code ordenTarifas}: el de {@code GET /api/tarifas}, que es el del enum. El backend recorría un EnumMap y el
-     * JSON llega ordenado alfabético, así que sin reordenar JUBILADO saldría antes que GENERAL.
-     */
+    /** {@code ordenTarifas}: el del enum ({@code GET /api/tarifas}); el JSON llega alfabético y JUBILADO saldría antes que GENERAL. */
     public static String escribir(Bordero bordero, List<String> ordenTarifas) {
         List<String> lineas = new ArrayList<>(List.of(
                 LINEA,

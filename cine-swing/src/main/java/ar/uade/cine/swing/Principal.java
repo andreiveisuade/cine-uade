@@ -10,11 +10,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.SwingUtilities;
 
 // Arranca el panel de escritorio y lo alterna con el login: un 401 en cualquier pantalla vuelve al login.
-/**
- * Arranca el panel del encargado de escritorio. Lleva el ida y vuelta entre login y panel: un 401 en cualquier
- * pantalla cierra el panel y reabre el login: las credenciales viven solo en memoria, así que una sesión
- * rechazada no tiene nada que rescatar y lo único útil es volver a pedirlas.
- */
+// Las credenciales viven solo en memoria: una sesión rechazada no tiene qué rescatar, solo volver a pedirlas.
 public final class Principal {
 
     private final ClienteHttp http = new ClienteHttp(ClienteHttp.urlConfigurada());
@@ -22,8 +18,7 @@ public final class Principal {
     private VentanaPrincipal panel;
 
     public static void main(String[] args) {
-        // Oscuro por defecto; -Dcine.tema=claro vuelve al claro. Antes de crear cualquier componente: los que ya
-        // existen se quedan con los colores del tema anterior.
+        // Antes de crear cualquier componente: los que ya existen se quedan con los colores del tema anterior.
         if ("claro".equalsIgnoreCase(System.getProperty("cine.tema"))) {
             FlatLightLaf.setup();
         } else {

@@ -24,10 +24,7 @@ import ar.uade.cine.swing.pantallas.ventas.PantallaReservas;
 import javax.swing.JComponent;
 
 // Crea cada pantalla con solo las Api que usa; Creador (GRASP): es la única clase que las tiene todas a mano.
-/**
- * Aparte de VentanaPrincipal para que el marco quede en cabecera y menú, y para poder armar cada pantalla en un test
- * sin abrir una ventana. Cada llamada crea una pantalla nueva, que es lo que hace que muestre datos frescos.
- */
+// Cada llamada crea una pantalla nueva, así muestra datos frescos; aparte de VentanaPrincipal para probarlas sin ventana.
 final class Pantallas {
 
     private final Apis apis;
