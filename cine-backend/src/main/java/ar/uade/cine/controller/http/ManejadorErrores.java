@@ -5,10 +5,8 @@ import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -32,11 +30,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.fasterxml.jackson.core.exc.InputCoercionException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-
+import ar.uade.cine.controller.http.cuerpo.CampoConValorInvalido;
+import ar.uade.cine.controller.http.cuerpo.JsonMalFormado;
+import ar.uade.cine.controller.http.cuerpo.LecturaDelCuerpo;
+import ar.uade.cine.controller.http.cuerpo.RaizQueNoEsObjeto;
+import ar.uade.cine.controller.http.cuerpo.SinCuerpo;
 import ar.uade.cine.dto.comun.ErrorVistaDTO;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
@@ -56,7 +54,10 @@ public class ManejadorErrores {
 
     private static final String ERROR_INESPERADO = "Ocurrió un error inesperado en el servidor";
 
-    private static final Pattern FUERA_DE_RANGO = Pattern.compile("^Numeric value \\((.+?)\\) out of range");
+    // Chain of Responsibility: el orden de la lista es la regla. Sin causa no vino cuerpo; con camino, el error
+    // es de un campo; sin camino, de la raíz; y el último contesta lo que ninguno reconoció.
+    private static final List<LecturaDelCuerpo> CADENA = List.of(
+            new SinCuerpo(), new CampoConValorInvalido(), new RaizQueNoEsObjeto(), new JsonMalFormado());
 
     // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
 
@@ -147,40 +148,11 @@ public class ManejadorErrores {
         return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
     }
 
-    // Un JSON bien formado con un tipo equivocado ("precio": "abc") no es "JSON inválido": el
-    // mensaje nombra el campo, que es lo que el usuario puede corregir. Sin causa es que no vino
-    // cuerpo: Spring lo lee como null y lo rechaza él, sin pasar por Jackson. Sin camino, lo que
-    // no encaja es la raíz: un array, un número o un texto son JSON válido, pero no un pedido.
+    // Qué corregir en un cuerpo que no se pudo leer lo decide la cadena (ver LecturaDelCuerpo).
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorVistaDTO> cuerpoIlegible(HttpMessageNotReadableException e) {
-        if (e.getCause() == null) {
-            return responder(HttpStatus.BAD_REQUEST, "Falta el cuerpo del pedido");
-        }
-        if (e.getCause() instanceof JsonMappingException mapeo && !mapeo.getPath().isEmpty()) {
-            String campo = mapeo.getPath().stream()
-                    .map(r -> r.getFieldName() != null ? r.getFieldName() : String.valueOf(r.getIndex()))
-                    .collect(Collectors.joining("."));
-            return responder(HttpStatus.BAD_REQUEST,
-                    "El campo " + campo + " tiene un valor inválido" + valorDe(mapeo));
-        }
-        if (e.getCause() instanceof MismatchedInputException) {
-            return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido tiene que ser un objeto JSON");
-        }
-        return responder(HttpStatus.BAD_REQUEST, "El cuerpo del pedido no es un JSON válido");
-    }
-
-    // Un número que no entra en un int ({"funcionId": 99999999999}) lo rechaza el parser, que ya
-    // cerró cuando llega acá: el valor sobrevive solo en su mensaje. Si Jackson lo cambiara, el
-    // texto pierde el valor pero sigue nombrando el campo.
-    private static String valorDe(JsonMappingException e) {
-        if (e instanceof InvalidFormatException formato) {
-            return ": " + formato.getValue();
-        }
-        if (e.getCause() instanceof InputCoercionException desborde) {
-            Matcher valor = FUERA_DE_RANGO.matcher(desborde.getOriginalMessage());
-            return valor.find() ? ": " + valor.group(1) : "";
-        }
-        return "";
+        String mensaje = CADENA.stream().map(l -> l.mensaje(e)).flatMap(Optional::stream).findFirst().orElseThrow();
+        return responder(HttpStatus.BAD_REQUEST, mensaje);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
