@@ -1,10 +1,13 @@
 package ar.uade.cine.swing.pantallas.promociones;
 
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.catalogos.TipoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
+import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.CampoFecha;
+import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Formulario;
@@ -30,12 +33,15 @@ import java.util.List;
 import java.util.Map;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 
-// El alta de una promoción (CU-17): una tarjeta de beneficio por tipo, con los campos que pide el catálogo.
+// El alta y la edición de una promoción (CU-17): una tarjeta de beneficio por tipo, con los campos del catálogo.
+// Al editar el tipo queda fijo: el backend no deja cambiarlo.
 final class FormularioPromocion extends Seccion {
 
     private final ApiPromociones apiPromociones;
-    private final Runnable alCrear;
+    private final Runnable alGuardar;
+    private final JLabel titulo = Componentes.subtitulo("Nueva promoción");
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
     private final CardLayout tarjetas = new CardLayout();
@@ -49,22 +55,28 @@ final class FormularioPromocion extends Seccion {
     private final JTextField horaHasta = new JTextField();
     private final Map<String, JCheckBox> medios = new LinkedHashMap<>();
     private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
+    private final CampoImagen imagen;
+    private final JButton guardar = new JButton("Crear promoción");
+    private final JButton cancelar = new JButton("Cancelar");
     private final JLabel error = Componentes.texto(" ");
+    private Promocion editando;
 
-    FormularioPromocion(ApiPromociones apiPromociones, Runnable alCrear) {
+    FormularioPromocion(ApiPromociones apiPromociones, ApiImagenes apiImagenes, Runnable alGuardar) {
         super(new BorderLayout());
         this.apiPromociones = apiPromociones;
-        this.alCrear = alCrear;
+        this.alGuardar = alGuardar;
+        this.imagen = new CampoImagen(apiImagenes);
         tipo.addActionListener(e -> {
             if (Campos.elegido(tipo) != null) tarjetas.show(beneficio, Campos.elegido(tipo));
         });
         horaDesde.setToolTipText("HH:mm, vacío = sin límite");
         horaHasta.setToolTipText("HH:mm, vacío = sin límite");
-        JButton crear = new JButton("Crear promoción");
-        crear.addActionListener(e -> crear());
+        guardar.addActionListener(e -> guardar());
+        cancelar.addActionListener(e -> limpiar());
+        cancelar.setVisible(false);
 
         add(Componentes.lateral(Componentes.conBorde(new Formulario()
-                .ancho(Componentes.subtitulo("Nueva promoción"))
+                .ancho(titulo)
                 .obligatorio("Nombre", nombre)
                 .obligatorio("Tipo", tipo)
                 .ancho(beneficio)
@@ -76,7 +88,8 @@ final class FormularioPromocion extends Seccion {
                 .campo("Hasta hora", horaHasta)
                 .ancho(new JLabel("Medios (ninguno = cualquiera)"))
                 .ancho(panelMedios)
-                .ancho(crear)
+                .campo("Imagen", imagen)
+                .ancho(Componentes.botones(guardar, cancelar))
                 .ancho(error)
                 .ancho(Componentes.nota("Las condiciones se evalúan contra el horario de la <b>función</b>, no "
                         + "contra el momento de la compra: un 2x1 de los miércoles vale para la función del miércoles "
@@ -112,7 +125,28 @@ final class FormularioPromocion extends Seccion {
         panelMedios.revalidate();
     }
 
-    private void crear() {
+    /** Precarga todo lo de la promoción; guardar la edita en vez de crear otra. */
+    void editar(Promocion p) {
+        editando = p;
+        titulo.setText("Editar " + p.nombre());
+        nombre.setText(p.nombre());
+        nombre.setCaretPosition(0);
+        Campos.elegir(tipo, p.tipo());
+        tipo.setEnabled(false);
+        camposPorTipo.getOrDefault(p.tipo(), Map.of()).forEach((campo, caja) -> campo.poner(caja, p));
+        desde.poner(LocalDate.parse(p.vigenciaDesde()));
+        hasta.poner(LocalDate.parse(p.vigenciaHasta()));
+        dias.poner(p.diasSemana());
+        horaDesde.setText(hora(p.horaDesde()));
+        horaHasta.setText(hora(p.horaHasta()));
+        medios.forEach((medio, caja) -> caja.setSelected(p.mediosPago() != null && p.mediosPago().contains(medio)));
+        imagen.poner(p.imagenUrl());
+        guardar.setText("Guardar cambios");
+        cancelar.setVisible(true);
+        error.setText(" ");
+    }
+
+    private void guardar() {
         Validacion v = new Validacion(error);
         String nombreLeido = v.texto(nombre, "Nombre", true);
         String elegido = v.elegido(tipo, "Tipo");
@@ -129,11 +163,13 @@ final class FormularioPromocion extends Seccion {
         if (!v.ok()) return;
         PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
                 (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
-                vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(), null);
-        Tarea.ejecutar(this, () -> apiPromociones.crearPromocion(pedido), creada -> {
-            avisar("Promoción creada");
+                vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(), imagen.url());
+        Promocion actual = editando;
+        Tarea.ejecutar(this, () -> actual == null ? apiPromociones.crearPromocion(pedido)
+                : apiPromociones.editarPromocion(actual.id(), pedido), guardada -> {
+            avisar(actual == null ? "Promoción creada" : "Cambios guardados");
             limpiar();
-            alCrear.run();
+            alGuardar.run();
         }, v::mostrarError);
     }
 
@@ -141,7 +177,14 @@ final class FormularioPromocion extends Seccion {
         return medios.entrySet().stream().filter(e -> e.getValue().isSelected()).map(Map.Entry::getKey).toList();
     }
 
+    private static String hora(String iso) {
+        return iso == null ? "" : horaDelDia(iso);
+    }
+
     private void limpiar() {
+        editando = null;
+        titulo.setText("Nueva promoción");
+        tipo.setEnabled(true);
         nombre.setText("");
         if (tipo.getItemCount() > 0) tipo.setSelectedIndex(0);
         camposPorTipo.values().forEach(cajas -> cajas.forEach(CampoBeneficio::reiniciar));
@@ -151,5 +194,9 @@ final class FormularioPromocion extends Seccion {
         horaDesde.setText("");
         horaHasta.setText("");
         medios.values().forEach(c -> c.setSelected(false));
+        imagen.poner(null);
+        guardar.setText("Crear promoción");
+        cancelar.setVisible(false);
+        error.setText(" ");
     }
 }

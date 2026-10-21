@@ -28,6 +28,10 @@ public final class SelectorDias extends JPanel {
         return DIAS.stream().filter(d -> casillas.get(DIAS.indexOf(d)).isSelected()).toList();
     }
 
+    public void poner(List<String> dias) {
+        casillas.forEach(c -> c.setSelected(dias != null && dias.contains(DIAS.get(casillas.indexOf(c)))));
+    }
+
     public void limpiar() {
         casillas.forEach(c -> c.setSelected(false));
     }

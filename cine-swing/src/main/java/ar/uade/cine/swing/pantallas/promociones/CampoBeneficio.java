@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.pantallas.promociones;
 
+import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Validacion;
 
@@ -49,6 +50,18 @@ enum CampoBeneficio {
 
     void reiniciar(JTextField caja) {
         caja.setText(inicial);
+    }
+
+    /** El valor que ya tiene la promoción que se edita, sin el ".0" de los enteros. */
+    void poner(JTextField caja, Promocion p) {
+        Number valor = switch (this) {
+            case PORCENTAJE -> p.porcentaje();
+            case MONTO -> p.monto();
+            case LLEVA -> p.lleva();
+            case PAGA -> p.paga();
+        };
+        if (valor == null) reiniciar(caja);
+        else caja.setText(valor.doubleValue() % 1 == 0 ? String.valueOf(valor.longValue()) : String.valueOf(valor));
     }
 
     Number leer(Validacion v, JTextField caja) {
