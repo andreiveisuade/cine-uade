@@ -6,6 +6,19 @@ const SISTEMA = "http://localhost:8080";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Las librerías cambian menos que la app: en su propio chunk el navegador las reusa entre versiones.
+        codeSplitting: {
+          groups: [
+            { name: "react", test: /node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/ },
+            { name: "mantine", test: /node_modules[\\/](@mantine|@floating-ui|embla-carousel)/ },
+          ],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       "/api": SISTEMA,
