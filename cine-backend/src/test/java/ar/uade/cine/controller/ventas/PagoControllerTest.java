@@ -224,7 +224,7 @@ class PagoControllerTest extends PruebaDeApi {
 
         reloj.mover(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
         assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R17: vencida");
-        assertTrue(get(ruta).json().get("cancelable").asBoolean(), "sigue RESERVADA hasta que alguien la expire");
+        assertFalse(get(ruta).json().get("cancelable").asBoolean(), "R17: vencida, aunque siga RESERVADA");
         assertEquals(400, post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").estado());
 
         reloj.reiniciar();

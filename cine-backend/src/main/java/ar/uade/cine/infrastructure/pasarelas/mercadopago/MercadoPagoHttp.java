@@ -9,6 +9,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
@@ -31,6 +37,15 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final SecureRandom AZAR = new SecureRandom();
+    private static final String MONEDA = "ARS";
+    // <reservaId>-<MEDIO>-<azar>: el que arma crear. Cualquier otra referencia es de otra venta de la cuenta.
+    private static final String FORMATO_ID = "\\d{1,9}-[A-Z]+-\\d+";
+    // Los payment_type_id de MP Argentina: los que no son el medio pedido van en excluded_payment_types.
+    private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
+            "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
+    // MP interpreta la fecha con su zona: sin ella, la toma en la de su servidor y no en la del cine.
+    private static final ZoneOffset HORA_ARGENTINA = ZoneOffset.ofHours(-3);
+    private static final DateTimeFormatter FECHA_MP = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     // Con un sitio local MP rechaza la preferencia entera si pide auto_return: el comprador vuelve con
     // el botón "Volver al sitio".
@@ -51,7 +66,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     // El monto viaja como un solo ítem: el detalle de butacas ya está en la reserva y el total ya trae el descuento.
     @Override
-    public Checkout crear(int reservaId, MedioPago medio, Dinero monto) {
+    public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
         String retorno = sitio + "/api/checkouts/" + id + "/retorno";
 
@@ -59,13 +74,19 @@ public class MercadoPagoHttp implements PasarelaPagos {
         preferencia.putArray("items").addObject()
                 .put("title", "Reserva " + reservaId + " · Cine UADE")
                 .put("quantity", 1)
-                .put("currency_id", "ARS")
+                .put("currency_id", MONEDA)
                 .put("unit_price", monto.aPesos());
         preferencia.put("external_reference", id);
         preferencia.putObject("back_urls")
                 .put("success", retorno)
                 .put("failure", retorno)
                 .put("pending", retorno);
+        ArrayNode excluidos = preferencia.putObject("payment_methods").putArray("excluded_payment_types");
+        TIPOS_DE_PAGO.stream()
+                .filter(tipo -> !tiposDe(medio).contains(tipo))
+                .forEach(tipo -> excluidos.addObject().put("id", tipo));
+        preferencia.put("expires", true);
+        preferencia.put("expiration_date_to", vence.atOffset(HORA_ARGENTINA).format(FECHA_MP));
         if (!HOSTS_LOCALES.contains(URI.create(sitio).getHost())) {
             preferencia.put("auto_return", "approved");
         }
@@ -80,7 +101,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     // El id lo arma crear, pero llega por la URL: solo vale si MP tiene una preferencia con ese external_reference.
     @Override
     public Optional<Checkout> buscar(String checkoutId) {
-        if (checkoutId == null || !checkoutId.matches("\\d{1,9}-[A-Z]+-\\d+")) {
+        if (checkoutId == null || !checkoutId.matches(FORMATO_ID)) {
             return Optional.empty();
         }
         String[] partes = checkoutId.split("-");
@@ -102,15 +123,28 @@ public class MercadoPagoHttp implements PasarelaPagos {
     }
 
     // Lo que dijo el comprador al volver (la query de la back_url) no cuenta: se puede escribir a mano.
-    // Cuenta lo que MP tiene registrado para ese external_reference.
+    // Cuenta lo que MP tiene registrado para ese external_reference, y solo si es el monto y la moneda
+    // del checkout: un aprobado por otra cosa no paga esta reserva.
     @Override
     public String autorizar(Checkout checkout) {
         JsonNode pagos = pedir(get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
                 + URLEncoder.encode(checkout.id(), StandardCharsets.UTF_8))).path("results");
+        boolean aprobadoQueNoCoincide = false;
         for (JsonNode pago : pagos) {
-            if ("approved".equals(pago.path("status").asText())) {
+            if (!"approved".equals(pago.path("status").asText())) {
+                continue;
+            }
+            if (coincide(pago, checkout)) {
                 return "MP-" + pago.path("id").asText();
             }
+            log.warn("Pago {} de MP aprobado para el checkout {} por {} {}: se esperaban ARS {}",
+                    pago.path("id").asText(), checkout.id(), pago.path("currency_id").asText(),
+                    pago.path("transaction_amount").asText(), checkout.monto());
+            aprobadoQueNoCoincide = true;
+        }
+        if (aprobadoQueNoCoincide) {
+            throw new ConflictoDeNegocio("Mercado Pago registró un pago que no coincide con la reserva: "
+                    + "acercate a la boletería");
         }
         if (pagos.isEmpty()) {
             throw new ConflictoDeNegocio("Mercado Pago todavía no registró el pago: si ya pagaste, "
@@ -120,6 +154,41 @@ public class MercadoPagoHttp implements PasarelaPagos {
             case "rejected", "cancelled" -> "Mercado Pago rechazó el pago: probá de nuevo con otro medio";
             default -> "Mercado Pago todavía no aprobó el pago: recargá la página en unos minutos";
         });
+    }
+
+    // Del medio pedido depende la promo, así que MP solo ofrece los tipos de pago que son ese medio.
+    // QR es pagar desde la app de MP, que descuenta del dinero en cuenta; la transferencia sale del banco
+    // o de la cuenta de MP (CVU), que para MP es también dinero en cuenta.
+    private static Set<String> tiposDe(MedioPago medio) {
+        return switch (medio) {
+            case DEBITO -> Set.of("debit_card");
+            case CREDITO -> Set.of("credit_card");
+            case QR -> Set.of("account_money");
+            case TRANSFERENCIA -> Set.of("bank_transfer", "account_money");
+            case EFECTIVO -> throw new IllegalStateException("El efectivo no abre checkout");
+        };
+    }
+
+    // Sin webhook (MP no llega a localhost) la conciliación pregunta. Un checkout con dos aprobados sale una vez.
+    @Override
+    public List<String> aprobadosDesde(LocalDateTime desde) {
+        JsonNode pagos = pedir(get("/v1/payments/search?status=approved&sort=date_created&criteria=desc"
+                + "&range=date_created&end_date=NOW&limit=100&begin_date="
+                + URLEncoder.encode(desde.atOffset(HORA_ARGENTINA).format(FECHA_MP), StandardCharsets.UTF_8)))
+                .path("results");
+        List<String> checkouts = new ArrayList<>();
+        for (JsonNode pago : pagos) {
+            String referencia = pago.path("external_reference").asText();
+            if (referencia.matches(FORMATO_ID) && !checkouts.contains(referencia)) {
+                checkouts.add(referencia);
+            }
+        }
+        return checkouts;
+    }
+
+    private static boolean coincide(JsonNode pago, Checkout checkout) {
+        return MONEDA.equals(pago.path("currency_id").asText())
+                && Dinero.de(pago.path("transaction_amount").asDouble()).equals(checkout.monto());
     }
 
     // Con credenciales de prueba (TEST-...) el link que no cobra es el sandbox_init_point.

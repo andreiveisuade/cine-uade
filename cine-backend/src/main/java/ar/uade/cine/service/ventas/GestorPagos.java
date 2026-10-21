@@ -68,6 +68,8 @@ public class GestorPagos {
     }
 
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
+    // Cada pedido abre un checkout nuevo, porque el comprador puede cambiar de medio. Pagar dos abiertos
+    // queda acotado a la vida de la reserva (vencen con ella) y solo el primero la cobra (R5).
     public PasarelaPagos.Checkout iniciarCheckout(int reservaId, MedioPago medio) {
         Reserva reserva = buscarReserva(reservaId);
         validarQueSePuedaCobrar(reserva);
@@ -75,7 +77,8 @@ public class GestorPagos {
 
         Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());
 
-        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto);
+        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto,
+                reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR));
         log.info("checkout {} · reserva {} · {} · a pagar {}",
                 checkout.id(), reservaId, medio, monto);
         return checkout;
@@ -109,6 +112,19 @@ public class GestorPagos {
         }
         registrarPago(reserva, checkout.medio(), autorizacion);
         return new RetornoCheckout(reserva.getCodigo(), null);
+    }
+
+    // La conciliación: el mismo cobro que la vuelta, para el comprador que pagó y no volvió al sitio. Si la
+    // vuelta llegó antes no hace nada; true si la cobró ahora. Lo que impide cobrar sale como Rechazo.
+    public boolean conciliarCheckout(String checkoutId) {
+        PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
+        Reserva reserva = buscarReserva(checkout.reservaId());
+        if (pagoRepository.existsByReservaId(reserva.getId())) {
+            return false;
+        }
+        validarQueSePuedaCobrar(reserva);
+        registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+        return true;
     }
 
     private PasarelaPagos.Checkout buscarCheckout(String checkoutId) {

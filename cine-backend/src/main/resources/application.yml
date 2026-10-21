@@ -93,6 +93,8 @@ cine:
     base: https://api.mercadopago.com
     # Adonde MP devuelve al comprador después de pagar: la dirección del sitio vista desde su navegador.
     sitio: ${CINE_URL_PUBLICA:http://localhost:8080}
+    # Cada cuánto se le pregunta a MP por los pagos aprobados, por si el comprador no volvió al sitio.
+    conciliacion: 60s
   incaa:
     # El encabezado de la declaración jurada. Ficticios: el TP no tiene un exhibidor inscripto.
     razon-social: ${INCAA_RAZON_SOCIAL:Cine UADE S.A.}

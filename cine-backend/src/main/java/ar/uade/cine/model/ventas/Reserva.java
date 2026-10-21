@@ -143,9 +143,10 @@ public class Reserva {
         return impedimentoParaCobrar(ahora).isEmpty();
     }
 
-    // R13: se cancela solo lo que todavía no se cobró. Es la misma condición que cancelar().
-    public boolean esCancelable() {
-        return estado.esperaPago();
+    // R13: se cancela solo lo que todavía no se cobró. R17: la vencida ya soltó sus butacas aunque
+    // figure RESERVADA hasta que alguien la expire, igual que en impedimentoParaCobrar.
+    public boolean esCancelable(LocalDateTime ahora) {
+        return estado.esperaPago() && !estaVencida(ahora);
     }
 
     public boolean estaPagada() {

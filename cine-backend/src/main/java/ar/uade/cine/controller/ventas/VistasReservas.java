@@ -84,7 +84,7 @@ public class VistasReservas {
                 Fechas.texto(r.getIngresadaEn()),
                 r.getEntradas().stream().map(this::entrada).toList(),
                 r.getCantidadEntradas(), r.getTotal().aPesos(),
-                r.esCobrable(reloj.ahora()), r.esCancelable(),
+                r.esCobrable(reloj.ahora()), r.esCancelable(reloj.ahora()),
                 vistasCartelera.funcion(f, f.getSala(), asientos),
                 vistasCartelera.pelicula(f.getPelicula()),
                 vistasSalas.sala(f.getSala(), asientos),
