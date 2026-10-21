@@ -47,7 +47,9 @@ Opcional: sin `MP_ACCESS_TOKEN` el checkout usa la pasarela emulada. Para probar
 1. En [mercadopago.com.ar/developers/panel](https://www.mercadopago.com.ar/developers/panel), crear una aplicación de Checkout Pro y copiar el Access Token de **prueba** al `.env`. Después, `docker compose up -d backend`.
 2. Crear dos cuentas de prueba (vendedor y comprador). Entrar a MP con la del **comprador**.
 3. En la web: ingresar como cliente, Mis reservas, Pagar online. Pagar con la tarjeta de prueba, titular `APRO` (aprobado).
-4. En localhost MP no vuelve solo: tocar **Volver al sitio**. Si `CINE_URL_PUBLICA` es público (https), vuelve solo.
+4. En localhost MP no vuelve solo. No hace falta tocar **Volver al sitio**: si el pago se aprobó, la conciliación (`cine.mercadopago.conciliacion`, 60 s por defecto) lo cobra en un minuto como máximo. Si `CINE_URL_PUBLICA` es público (https), vuelve solo.
+
+El comprador de prueba es obligatorio: pagar como invitado con un vendedor de prueba da «Una de las partes con la que intentás hacer el pago es de prueba». En DEBITO/CREDITO MP puede ofrecer también «dinero en cuenta» (no se puede excluir).
 
 ## La base
 

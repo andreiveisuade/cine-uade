@@ -133,11 +133,11 @@ ocupados.
 - Devuelve la reserva con `codigo` (el del QR) y `entradas[].tarifa`.
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
-(R5, R17, R19) y al cancelar (R13).
+(R5, R17, R19) y al cancelar (R13). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo` |
+| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
 | `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `400`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
@@ -165,14 +165,17 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `201` con
 `{id, reservaId, medio, monto, urlPago, codigoQr}`.
 
-- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. `urlPago` lleva a MP.
+- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`; `account_money` se acepta siempre porque MP no deja excluirlo.
 - `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
 - `POST /checkouts/{id}/confirmacion`, sin cuerpo, lo autoriza: `201` con el pago y revalida la reserva. Con MP
   consulta `GET /v1/payments/search`; sin un pago `approved` da `409` con el motivo (rechazado, pendiente, sin pago).
 - `GET /checkouts/{id}/retorno` (público): la back_url de MP. Ignora la query que agrega MP, consulta el pago y
   cobra si está aprobado (recargar no cobra dos veces). `302` a `/#/ticket/<codigo>` o
   `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
-- Sin webhook (localhost): un pago `pending` no se re-consulta hasta que el comprador vuelva a abrir la back_url.
+- Un `approved` cuenta solo si coincide monto, moneda (ARS) y tipo de pago del medio; si no, `409` en `/confirmacion` y aviso
+  «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería» en el retorno.
+- Sin webhook (localhost): una tarea del backend (`ConciliacionPagos`, cada 60 s) busca los aprobados de los últimos 30 min
+  y cobra los que el comprador no volvió a confirmar. Un pago `pending` se cobra cuando MP lo aprueba.
 
 ### Rutas de la web
 
