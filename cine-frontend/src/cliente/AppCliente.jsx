@@ -18,6 +18,7 @@ import { Registro } from "./Registro.jsx";
 import { Ingresar } from "./Ingresar.jsx";
 import { SesionDelCliente, useSesion } from "./sesion.jsx";
 import { Nosotros } from "./Nosotros.jsx";
+import { Promociones } from "./Promociones.jsx";
 
 function Enlace({ a, children }) {
   return (
@@ -87,6 +88,7 @@ export function AppCliente() {
                 CINE UADE
               </Anchor>
               <Group gap="md" wrap="nowrap">
+                <Enlace a="/promociones">Promos</Enlace>
                 <Enlace a="/nosotros">Nosotros</Enlace>
                 <EnlacesDeCuenta />
                 <BotonTema />
@@ -111,6 +113,7 @@ export function AppCliente() {
                       <Route path="mis-reservas" element={<MisReservas />} />
                       <Route path="registro" element={<Registro />} />
                       <Route path="ingresar" element={<Ingresar />} />
+                      <Route path="promociones" element={<Promociones />} />
                       <Route path="nosotros" element={<Nosotros />} />
                       <Route path="*" element={<NoExiste />} />
                     </Routes>
