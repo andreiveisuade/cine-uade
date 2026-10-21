@@ -29,6 +29,7 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |
 | `secuencia-candy.puml` | Comprar en el candy: del combo al ticket |
+| `sistema-contexto.html` | C4 nivel 1 (diagram-design, exportado a `.svg`): cliente, encargado y acomodador, el sistema, Mercado Pago y TMDB |
 | `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué carpeta construye a cada uno |
 | `reserva-clases.archify.json` | Las mismas capas con las clases de `POST /api/reservas` (Archify) |
 | `peticion-capas.puml` | Una petición de punta a punta: contenedores, puertos y capas |
