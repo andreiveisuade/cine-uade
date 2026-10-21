@@ -24,13 +24,10 @@ export function Pie() {
     <Box component="footer" mt="var(--cine-seccion)" bg="var(--cine-superficie)" style={{ borderTop: "1px solid var(--cine-borde)" }}>
       <Contenedor py="xl">
         <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing="xl">
-          <Stack gap="sm">
-            <Group gap="sm" wrap="nowrap">
-              <img src="/favicon.svg" alt="" width={32} height={32} />
-              <Marca />
-            </Group>
-            <Text size="sm" c="dimmed" maw="32ch">Apagá el celu. Prendé la peli.</Text>
-          </Stack>
+          <Group gap="sm" wrap="nowrap" align="center" h="fit-content">
+            <img src="/favicon.svg" alt="" width={32} height={32} />
+            <Marca />
+          </Group>
           <Columna titulo="El cine">
             <Stack gap={8} component="nav" aria-label="Pie">
               {ENLACES.map(([a, texto]) => (
