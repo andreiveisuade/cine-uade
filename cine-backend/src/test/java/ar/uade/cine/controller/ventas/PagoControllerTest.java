@@ -28,6 +28,7 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -65,7 +66,8 @@ class PagoControllerTest extends PruebaDeApi {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, 1,
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL), null);
@@ -277,7 +279,8 @@ class PagoControllerTest extends PruebaDeApi {
     void elPedidoSeValidaAntesDeMirarLaOcupacion(String caso, String butacas, String mensaje) {
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(6, 6));
         Funcion funcion = funciones.programar(1, 2,
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         reservas.reservar(funcion.getId(), reserva.getClienteId(), Map.of("A1", TipoTarifa.GENERAL), null);
 
         Respuesta respuesta = post("/api/reservas", "{\"funcionId\":" + funcion.getId()

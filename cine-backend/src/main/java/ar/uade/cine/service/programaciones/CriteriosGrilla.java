@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
@@ -18,8 +19,7 @@ import ar.uade.cine.model.validacion.Regla;
 // Apertura y cierre no son una FranjaHoraria: el cierre 00:00 es el final del día, y una franja
 // que termina a la medianoche empezaría antes de terminar.
 public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, LocalTime cierre,
-                              int cuantasPeliculas, Dinero precio, Version version,
-                              Proyeccion proyeccion) {
+                              int cuantasPeliculas, FormatoDeFuncion formato) {
 
     // La propuesta se arma entera en memoria, pase por pase: sin tope, un pedido de años la tumba.
     public static final int MAXIMO_DIAS = 31;
@@ -35,7 +35,6 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
                 .entre(1, MAXIMO_DIAS, "La grilla no puede cubrir más de " + MAXIMO_DIAS + " días");
         Regla.numero(cuantasPeliculas).mayorQueCero("Hay que programar al menos una película")
                 .entre(1, MAXIMO_PELICULAS, "La grilla no puede tener más de " + MAXIMO_PELICULAS + " películas");
-        ValidadorFuncion.formato(version, proyeccion, precio);
         // Los pases arrancan en la apertura y de ahí en adelante: con segundos, ninguno sería programable.
         ValidadorFuncion.sinSegundos(apertura, "La hora de apertura");
         if (!desde.atTime(apertura).isBefore(cierreDe(desde, cierre))) {
@@ -60,9 +59,8 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
                 apertura == null ? LocalTime.of(14, 0) : apertura,
                 cierre == null ? LocalTime.MIDNIGHT : cierre,
                 cuantasPeliculas == null ? 8 : cuantasPeliculas,
-                precio,
-                version == null ? Version.SUBTITULADA : version,
-                proyeccion == null ? Proyeccion.DOS_D : proyeccion);
+                new FormatoDeFuncion(version == null ? Version.SUBTITULADA : version,
+                        proyeccion == null ? Proyeccion.DOS_D : proyeccion, precio));
         ValidadorFuncion.dentroDelHorizonte(criterios.periodo().hasta(), hoy,
                 "La grilla tiene que terminar dentro del próximo año");
         return criterios;

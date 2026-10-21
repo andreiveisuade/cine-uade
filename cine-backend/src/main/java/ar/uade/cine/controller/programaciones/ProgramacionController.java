@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
@@ -100,6 +101,7 @@ public class ProgramacionController {
         Version version = Parseo.constante(Version.class, pedido.idioma(), "el idioma");
         Proyeccion proyeccion = Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección");
 
-        return new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias, version, proyeccion, precio);
+        return new DatosGrilla(peliculaId, salaId, desde, hasta, hora, dias,
+                new FormatoDeFuncion(version, proyeccion, precio));
     }
 }

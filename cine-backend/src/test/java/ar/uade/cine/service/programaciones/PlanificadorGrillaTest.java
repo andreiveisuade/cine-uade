@@ -19,6 +19,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
@@ -59,8 +60,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
     private CriteriosGrilla unDia(int cuantasPeliculas) {
         return new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1,
-                LocalTime.of(14, 0), LocalTime.of(23, 0), cuantasPeliculas, Dinero.de(5000),
-                Version.SUBTITULADA, Proyeccion.DOS_D);
+                LocalTime.of(14, 0), LocalTime.of(23, 0), cuantasPeliculas,
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @Test
@@ -227,7 +228,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         cargar("Dos horas", 8.0, 120, Genero.DRAMA);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
         CriteriosGrilla deNoche = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(22, 0),
-                LocalTime.MIDNIGHT, 1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+                LocalTime.MIDNIGHT, 1, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PropuestaGrilla propuesta = planificador.proponer(deNoche);
 
@@ -260,7 +261,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         Pelicula pelicula = cargar("Una", 8.0, Genero.ACCION);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
         funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 16, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PropuestaGrilla propuesta = planificador.proponer(unDia(1));
 
@@ -297,7 +298,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
 
         funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 16, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         int conUnaCargada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
 
         assertEquals(sinNada - 100, conUnaCargada,
@@ -312,7 +313,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         int sinNada = planificador.proponer(unDia(1)).indicadores().minutosDisponibles();
 
         funciones.programar(pelicula.getId(), 1, LocalDateTime.of(2026, 9, 1, 10, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         assertEquals(sinNada, planificador.proponer(unDia(1)).indicadores().minutosDisponibles());
     }
@@ -361,7 +362,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
 
     private static CriteriosGrilla unDiaEn3D() {
         return new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(14, 0), LocalTime.of(23, 0), 1,
-                Dinero.de(5000), Version.SUBTITULADA, Proyeccion.TRES_D);
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000)));
     }
 
     // R8: antes la propuesta ponía pases en la sala 2D, y aplicarla rechazaba el primero.
@@ -387,7 +388,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         int sinNada = planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles();
 
         funciones.programar(pelicula.getId(), dosD, LocalDateTime.of(2026, 9, 1, 16, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         assertEquals(sinNada, planificador.proponer(unDiaEn3D()).indicadores().minutosDisponibles());
     }
@@ -416,7 +417,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
         reloj.mover(reloj.hoy().atTime(15, 10));
         CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 2, LocalTime.of(8, 0), LocalTime.of(23, 0),
-                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+                1, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PropuestaGrilla propuesta = planificador.aplicar(hoy);
 
@@ -432,11 +433,13 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
     void hoyLosMinutosDisponiblesSonSoloLosQueNoPasaron() {
         cargar("Una", 8.0, Genero.ACCION);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
-        funciones.programar(1, 1, reloj.hoy().atTime(14, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        funciones.programar(1, 1, reloj.hoy().atTime(20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        funciones.programar(1, 1, reloj.hoy().atTime(14, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        funciones.programar(1, 1, reloj.hoy().atTime(20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         reloj.mover(reloj.hoy().atTime(15, 10));
         CriteriosGrilla hoy = new CriteriosGrilla(reloj.hoy(), 1, LocalTime.of(14, 0), LocalTime.of(23, 0),
-                1, Dinero.de(5000), Version.SUBTITULADA, Proyeccion.DOS_D);
+                1, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         IndicadoresGrilla indicadores = planificador.proponer(hoy).indicadores();
 

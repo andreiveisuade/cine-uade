@@ -18,6 +18,7 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
@@ -44,7 +45,8 @@ class ProgramacionControllerTest extends PruebaDeApi {
     @Test
     void darDeBajaDevuelveLaGrillaYaInactiva() {
         int id = programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 7), LocalDate.of(2026, 9, 13),
-                LocalTime.of(20, 30), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))
+                LocalTime.of(20, 30), Set.of(),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))))
                 .programacion().getId();
 
         Respuesta respuesta = patch("/api/programaciones/" + id, "{\"activa\":false}");

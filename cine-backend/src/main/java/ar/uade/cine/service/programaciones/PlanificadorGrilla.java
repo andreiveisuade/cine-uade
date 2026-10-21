@@ -49,7 +49,7 @@ public class PlanificadorGrilla {
         // R8: una grilla en 3D reparte solo entre las salas que lo proyectan. Antes la propuesta ponía
         // pases en una sala 2D, y aplicarla rechazaba el primero.
         List<Sala> salas = cargadas.stream()
-                .filter(sala -> criterios.proyeccion().sePuedeProyectarEn(sala.getTipo()))
+                .filter(sala -> criterios.formato().proyeccion().sePuedeProyectarEn(sala.getTipo()))
                 .toList();
         if (salas.isEmpty()) {
             throw new DatoInvalido("No hay salas que puedan proyectar en 3D");
@@ -70,7 +70,7 @@ public class PlanificadorGrilla {
         PropuestaGrilla propuesta = proponer(criterios);
         for (PaseSugerido pase : propuesta.pases()) {
             funciones.programar(pase.peliculaId(), pase.salaId(), pase.inicio(),
-                    criterios.version(), criterios.proyeccion(), criterios.precio());
+                    criterios.formato());
         }
         return propuesta;
     }

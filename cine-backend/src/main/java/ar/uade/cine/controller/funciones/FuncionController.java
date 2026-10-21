@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.funciones;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.controller.cartelera.VistasCartelera;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -69,11 +71,12 @@ public class FuncionController {
         // El precio primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos
         // y que la búsqueda de la película y la sala.
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
-        Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(),
-                Parseo.momento(pedido.inicio(), "la fecha y hora de la función"),
+        LocalDateTime inicio = Parseo.momento(pedido.inicio(), "la fecha y hora de la función");
+        FormatoDeFuncion formato = new FormatoDeFuncion(
                 Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
                 Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
                 precio);
+        Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(), inicio, formato);
         return Creado.en("/api/funciones/" + funcion.getId(), vistas.funcionConPelicula(funcion));
     }
 

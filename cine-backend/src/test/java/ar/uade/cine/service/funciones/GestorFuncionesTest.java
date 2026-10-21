@@ -24,6 +24,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -60,16 +61,16 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         cartelera.agregar("Interstellar", 120, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10, 10));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
     }
 
     private void cargarMasFunciones() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 2", TipoSala.DOS_D, List.of(10, 10));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     // R20
@@ -77,7 +78,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void noSeProgramaUnaFuncionEnElPasado() {
         Rechazo error = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, reloj.ahora().minusMinutes(1),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertEquals("La función no puede empezar en el pasado", error.getMessage());
         assertEquals(1, funciones.listar().size(), "solo la del arranque");
@@ -88,10 +89,10 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void ahoraMismoYaCuentaComoPasadoYUnMinutoDespuesNo() {
         assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, reloj.ahora(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertDoesNotThrow(() -> funciones.programar(1, 1, reloj.ahora().plusMinutes(1),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     // El horizonte se mide en días: el mismo día del año que viene entra a cualquier hora, el siguiente no.
@@ -99,11 +100,11 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void noSeProgramaUnaFuncionAMasDeUnAnio() {
         Rechazo error = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 15, 20, 0),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertEquals("La función tiene que empezar dentro del próximo año", error.getMessage());
         assertDoesNotThrow(() -> funciones.programar(1, 1, LocalDateTime.of(2027, 8, 14, 23, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     // R20 mira el alta, no el historial (R12): la que ya pasó sigue ahí.
@@ -142,7 +143,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio) {
         assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDate.of(2026, 8, 20).atTime(inicio),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
         assertEquals(1, funciones.listar().size());
     }
 
@@ -152,18 +153,18 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void rechazaFuncionQueEmpiezaMientrasCorreUnaLargaDelDiaAnterior() {
         cartelera.agregar("Satantango", 432, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 25, 22, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
         assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
     void elMensajeExplicaQueElChoqueEsPorLaLimpieza() {
         Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 5),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertTrue(e.getMessage().contains("limpieza"), e.getMessage());
         assertTrue(e.getMessage().contains("22:15"), e.getMessage());
@@ -173,7 +174,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void aceptaFuncionCuandoYaTerminoLaLimpieza() {
         assertDoesNotThrow(
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 22, 15),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
         assertEquals(2, funciones.listar().size());
     }
 
@@ -181,11 +182,11 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     void sinLimpiezaLasFuncionesSePuedenEncadenar() {
         salas.agregar("Sala sin corte", TipoSala.DOS_D, List.of(10, 10), Map.of(), 0);
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 22, 0),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
@@ -200,7 +201,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 22, 0),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
@@ -208,7 +209,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2", TipoSala.TRES_D, List.of(6, 8));
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500))));
     }
 
     @Test
@@ -218,7 +219,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
-                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertEquals("La película Dune todavía no está confirmada: revisala antes de programarla", e.getMessage());
     }
@@ -232,7 +233,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         Rechazo e = assertThrows(Rechazo.class,
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
-                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
         assertEquals("La película Dune está descartada: no se puede programar", e.getMessage());
     }
@@ -245,14 +246,14 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
         assertDoesNotThrow(
                 () -> funciones.programar(importada.getId(), 1, LocalDateTime.of(2026, 8, 25, 20, 0),
-                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
     void rechazaPeliculaInexistente() {
         assertThrows(Rechazo.class,
                 () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
-                        Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
@@ -285,7 +286,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     private Funcion funcionDeLas20() {
         return new Funcion(null, new Sala("Sala 1", TipoSala.DOS_D, 15), LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @Test

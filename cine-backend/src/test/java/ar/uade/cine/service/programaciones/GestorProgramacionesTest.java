@@ -22,6 +22,7 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -93,7 +94,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void laFuncionSueltaNoTieneProgramacion() {
         int id = crearSemana(Set.of()).programacion().getId();
         Funcion suelta = funciones.programar(1, 1, LocalDateTime.of(2026, 10, 1, 20, 30),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         assertTrue(programaciones.funcionesDe(id).stream().noneMatch(f -> f.getId() == suelta.getId()));
     }
@@ -111,7 +112,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Test
     void marcaLasFechasQueChocanYGeneraElResto() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PlanProgramacion plan = crearSemana(Set.of());
 
@@ -126,7 +127,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Test
     void laPrevisualizacionCoincideConLoQueTerminaGenerando() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PlanProgramacion previo = previsualizarSemana();
         PlanProgramacion alta = crearSemana(Set.of());
@@ -142,7 +143,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertTrue(previo.salteadas().isEmpty(), "cuando se previsualizó, la sala estaba libre");
 
         funciones.programar(1, 1, LocalDateTime.of(2026, 9, 9, 21, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         PlanProgramacion alta = crearSemana(Set.of());
 
         assertEquals(1, alta.salteadas().size(), "al aplicar, la fecha ya estaba tomada");
@@ -190,10 +191,10 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
         assertThrows(Rechazo.class,
                 () -> programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))));
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))));
         assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
     }
 
@@ -201,7 +202,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void rechazaUnRangoQueTerminaAntesDeEmpezar() {
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     // Primero lo que se busca, como en el alta de una función suelta: la programación necesita la sala
@@ -210,7 +211,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void unaPeliculaQueNoExisteSaleAntesQueUnRangoAlReves() {
         Rechazo error = assertThrows(Rechazo.class,
                 () -> programaciones.previsualizar(new DatosGrilla(99, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
 
         assertEquals("No existe la película 99", error.getMessage());
     }
@@ -219,17 +220,18 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void rechazaPrecioCeroYPeliculaInexistente() {
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0))));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0)))));
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                        Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
         assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
-                        LAS_2030, Set.of(DayOfWeek.MONDAY), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+                        LAS_2030, Set.of(DayOfWeek.MONDAY),
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     @Test
@@ -306,7 +308,8 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Test
     void unaGrillaQueArrancaHoyConLaHoraYaPasadaSalteaEseDia() {
         PlanProgramacion plan = programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), reloj.hoy().plusDays(2),
-                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                LocalTime.of(9, 0), Set.of(),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
 
         assertEquals(List.of(LocalDateTime.of(2026, 8, 15, 9, 0), LocalDateTime.of(2026, 8, 16, 9, 0)),
                 plan.funciones().stream().map(f -> f.inicio()).toList());
@@ -318,7 +321,8 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     @Test
     void laPrevisualizacionTampocoMuestraLoQueYaPaso() {
         DatosGrilla datos = new DatosGrilla(1, 1, reloj.hoy().minusDays(3), reloj.hoy().plusDays(2),
-                LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalTime.of(9, 0), Set.of(),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         PlanProgramacion previo = programaciones.previsualizar(datos);
         PlanProgramacion alta = programaciones.crear(datos);
@@ -333,7 +337,8 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void rechazaUnRangoQueYaPasoEntero() {
         Rechazo error = assertThrows(Rechazo.class,
                 () -> programaciones.crear(new DatosGrilla(1, 1, reloj.hoy().minusDays(5), reloj.hoy(),
-                        LocalTime.of(9, 0), Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+                        LocalTime.of(9, 0), Set.of(),
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
 
         assertEquals("Todos los horarios del rango ya pasaron: la grilla no generaría funciones",
                 error.getMessage());
@@ -358,7 +363,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     private void cargarGrillas() {
         crearSemana(Set.of());
         PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),
-                Set.of(), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                Set.of(), new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
         programaciones.desactivar(enSala2.programacion().getId());
     }
 
@@ -382,16 +387,16 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     private PlanProgramacion crearAbierta() {
         return programaciones.crear(new DatosGrilla(1, 1, reloj.hoy(), null, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     private PlanProgramacion crearSemana(Set<DayOfWeek> dias) {
         return programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, dias,
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     private PlanProgramacion previsualizarSemana() {
         return programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 }

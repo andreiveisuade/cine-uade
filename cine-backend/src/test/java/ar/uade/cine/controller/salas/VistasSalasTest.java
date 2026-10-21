@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -138,7 +139,7 @@ class VistasSalasTest extends PruebaDeIntegracion {
 
     private Funcion programarEn(Sala sala, double precio) {
         return funciones.programar(1, sala.getId(), LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(precio));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(precio)));
     }
 
     private Asiento asiento(Sala sala, String codigo) {
