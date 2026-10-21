@@ -16,6 +16,7 @@ import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.PantallaListado;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -108,18 +109,11 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
     private JPanel accionesDeFila() {
         JPanel acciones = new JPanel(new FlujoConSalto());
         JButton informes = new JButton("Borderó e informe");
-        JButton borrar = new JButton("Borrar");
         informes.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirInformes));
-        borrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::borrar));
         acciones.add(informes);
-        acciones.add(borrar);
+        // Command: ver AccionDeFila.
+        new BotonesDeFila<>(this, tabla, this::recargar, new BorrarFuncion(apiFunciones)).agregarA(acciones);
         return acciones;
-    }
-
-    private void borrar(Funcion funcion) {
-        if (!confirmar("¿Borrar la función de " + funcion.pelicula().titulo() + " del " + dia(funcion.inicio())
-                + " " + hora(funcion.inicio()) + "?", "Sí, borrar")) return;
-        accion(() -> apiFunciones.eliminarFuncion(funcion.id()), "Función borrada", this::recargar);
     }
 
     private void abrirInformes(Funcion funcion) {

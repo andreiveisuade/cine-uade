@@ -2,7 +2,6 @@ package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ApiCatalogos;
-import ar.uade.cine.swing.api.dto.cartelera.PedidoPelicula;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
@@ -12,6 +11,7 @@ import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.pantallas.PantallaListado;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -98,24 +98,12 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
 
     private JPanel accionesDeFila() {
         JButton editar = new JButton("Editar");
-        JButton publicar = new JButton("Publicar / despublicar");
-        JButton borrar = new JButton("Borrar");
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
-        publicar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
-            // Despublicar la baja de la cartelera del cliente aunque tenga funciones: se pregunta. Publicar no.
-            if (p.enCartelera() && !confirmar("¿Despublicar " + p.titulo() + "? Deja de verse en la cartelera "
-                    + "aunque tenga funciones.", "Sí, despublicar")) return;
-            accion(() -> apiCartelera.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera())),
-                    p.enCartelera() ? "Despublicada" : "Publicada", this::recargar);
-        }));
-        borrar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
-            if (!confirmar("¿Borrar " + p.titulo() + "?", "Sí, borrar")) return;
-            accion(() -> apiCartelera.eliminarPelicula(p.id()), "Película borrada", this::recargar);
-        }));
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(editar);
-        acciones.add(publicar);
-        acciones.add(borrar);
+        // Command: cada operación es un objeto y BotonesDeFila la dispara (ver AccionDeFila).
+        new BotonesDeFila<>(this, tabla, this::recargar, new PublicarPelicula(apiCartelera),
+                new BorrarPelicula(apiCartelera)).agregarA(acciones);
         return acciones;
     }
 }

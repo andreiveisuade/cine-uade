@@ -17,6 +17,7 @@ import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -69,13 +70,12 @@ public final class PantallaSalas extends Pantalla {
         this.navegacion = navegacion;
 
         JButton butacas = new JButton("Butacas");
-        JButton borrar = new JButton("Borrar");
         butacas.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirMapa));
-        borrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::borrar));
         tabla.alDobleClic(this::abrirMapa);
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(butacas);
-        acciones.add(borrar);
+        // Command: ver AccionDeFila.
+        new BotonesDeFila<>(this, tabla, this::recargar, new BorrarSala(apiSalas)).agregarA(acciones);
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         centro.add(tabla.conScroll(), BorderLayout.CENTER);
@@ -157,11 +157,6 @@ public final class PantallaSalas extends Pantalla {
             limpieza.setText("15");
             recargar();
         }, v::mostrarError);
-    }
-
-    private void borrar(Sala sala) {
-        if (!confirmar("¿Borrar " + sala.nombre() + "?", "Sí, borrar")) return;
-        accion(() -> apiSalas.eliminarSala(sala.id()), "Sala borrada", this::recargar);
     }
 
     private void abrirMapa(Sala sala) {

@@ -16,6 +16,7 @@ import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Seccion;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -38,7 +39,6 @@ final class Carta extends Seccion {
 
     private final ApiCandy apiCandy;
     private final JButton editar = new JButton("Editar");
-    private final JButton alternar = new JButton("Sacar de la carta");
     private final Tabla<Producto> tabla = new Tabla<>(
             Columna.<Producto>de("Producto", Producto::nombre).ancho(200),
             Columna.<Producto>de("Tipo", p -> etiqueta(p.tipo())),
@@ -56,13 +56,16 @@ final class Carta extends Seccion {
     private final JPanel filasCombo = new JPanel(new GridBagLayout());
     private final Cantidades cantidadesCombo = new Cantidades();
     private final JLabel errorCombo = Componentes.texto(" ");
+    private final BotonesDeFila<Producto> botones;
 
     Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos) {
         super(new BorderLayout(12, 8));
         this.apiCandy = apiCandy;
+        // Command: ver AccionDeFila.
+        this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarDisponibilidadProducto(apiCandy));
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(editar);
-        acciones.add(alternar);
+        botones.agregarA(acciones);
         JPanel abajo = new JPanel(new BorderLayout(0, 4));
         abajo.add(acciones, BorderLayout.NORTH);
         abajo.add(Componentes.nota("Los productos no se borran: se sacan de la carta. Uno que ya se vendió tiene "
@@ -78,12 +81,6 @@ final class Carta extends Seccion {
         tabla.tabla().getSelectionModel().addListSelectionListener(e -> habilitar());
         tabla.alDobleClic(this::editar);
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(this::editar));
-        alternar.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
-            if (p.disponible() && !confirmar("¿Sacar " + p.nombre() + " de la carta? Deja de venderse en el "
-                    + "mostrador.", "Sí, sacar")) return;
-            accion(() -> apiCandy.cambiarDisponibilidadCandy(p.id(), !p.disponible()),
-                    p.nombre() + (p.disponible() ? " salió de la carta" : " volvió a la carta"), this::recargar);
-        }));
         habilitar();
         // Qué tipos se dan de alta sueltos lo dice el catálogo: el combo se arma abajo, con sus componentes.
         cargar(apiCatalogos::obtenerTiposProducto, tipos -> tipos.stream().filter(t -> !t.esCombo())
@@ -94,9 +91,7 @@ final class Carta extends Seccion {
     private void habilitar() {
         var elegido = tabla.seleccionada();
         editar.setEnabled(elegido.isPresent());
-        alternar.setEnabled(elegido.isPresent());
-        alternar.setText(elegido.map(p -> p.disponible() ? "Sacar de la carta" : "Reponer")
-                .orElse("Sacar de la carta"));
+        botones.refrescar();
     }
 
     private JScrollPane altas() {

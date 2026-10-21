@@ -13,7 +13,8 @@ import java.util.Map;
 
 /**
  * El backend de mentira en un puerto libre: cada test declara qué contesta cada ruta y después mira qué le pidieron.
- * Así se prueba el cliente con cada respuesta posible sin levantar el backend ni MySQL.
+ * Así se prueba el cliente con cada respuesta posible sin levantar el backend ni MySQL. Público: los comandos de las
+ * pantallas (AccionDeFila) se prueban contra él desde su subdominio.
  */
 public final class ServidorFalso {
 
