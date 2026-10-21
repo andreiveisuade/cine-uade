@@ -2,6 +2,7 @@ package ar.uade.cine.model.promociones;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 import ar.uade.cine.model.promociones.validacion.ValidadorPromocion;
 import ar.uade.cine.model.ventas.Entrada;
@@ -35,6 +36,13 @@ public class PromocionMontoFijo extends Promocion {
     @Override
     public ParametrosPromocion getParametros() {
         return ParametrosPromocion.deMonto(monto.aPesos());
+    }
+
+    @Override
+    public String beneficio() {
+        long centavos = monto.centavos() % 100;
+        String pesos = String.format(Locale.of("es", "AR"), "%,d", monto.centavos() / 100);
+        return "$" + pesos + (centavos == 0 ? "" : String.format(",%02d", centavos)) + " OFF";
     }
 
     @Override

@@ -43,6 +43,11 @@ public class PromocionNxM extends Promocion {
     }
 
     @Override
+    public String beneficio() {
+        return lleva + "x" + paga;
+    }
+
+    @Override
     public Dinero calcularDescuento(List<Entrada> entradas) {
         int grupos = entradas.size() / lleva;
         int gratis = grupos * (lleva - paga);

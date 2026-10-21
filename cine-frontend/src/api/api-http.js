@@ -103,5 +103,7 @@ export const obtenerReservaPorCodigo = (codigo) =>
 export const cancelarReservaPorCodigo = (codigo) =>
   post(`/reservas/codigo/${encodeURIComponent(codigo)}/cancelacion`);
 
+export const obtenerPromocionesVigentes = () => get("/promociones/vigentes");
+
 export const obtenerProductosCandy = (todos = false) =>
   get(`/candy/productos${todos ? "?todos=true" : ""}`);

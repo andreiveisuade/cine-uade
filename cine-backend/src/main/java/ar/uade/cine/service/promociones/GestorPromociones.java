@@ -87,6 +87,15 @@ public class GestorPromociones implements PoliticaPromociones {
         return promocionRepository.findAll();
     }
 
+    // Las que se anuncian al público: activas y sin terminar, la próxima a arrancar primero.
+    @Transactional(readOnly = true)
+    public List<Promocion> vigentes() {
+        return promocionRepository.findByActivaTrue().stream()
+                .filter(p -> p.sigueVigente(reloj.hoy()))
+                .sorted(Comparator.comparing((Promocion p) -> p.getVigencia().desde()).thenComparing(Promocion::getId))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Promocion obtener(int id) {
         return promocionRepository.exigir(id, "la promoción");

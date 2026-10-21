@@ -190,4 +190,40 @@ class PromocionTest {
         assertTrue(dosPorUno.aplicaA(LocalDateTime.of(2026, 8, 20, 10, 0), MedioPago.EFECTIVO));
         assertTrue(dosPorUno.aplicaA(LocalDateTime.of(2026, 8, 20, 23, 59), MedioPago.EFECTIVO));
     }
+
+    // Lo que muestra la página de promos: cada subclase dice su beneficio, el front no lo arma.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            dos por uno,         NXM,        ,     , 2, 1, 2x1
+            porcentaje entero,   PORCENTAJE, 30.0, ,  ,  , 30 % OFF
+            porcentaje decimal,  PORCENTAJE, 12.5, ,  ,  , '12,5 % OFF'
+            monto entero,        MONTO_FIJO, , 500.0, , , $500 OFF
+            monto de miles,      MONTO_FIJO, , 1500.0, , , $1.500 OFF
+            monto con centavos,  MONTO_FIJO, , 99.5,  , , '$99,50 OFF'
+            """)
+    void cadaSubclaseDescribeSuBeneficio(String caso, TipoPromocion tipo, Double porcentaje, Double monto,
+            Integer lleva, Integer paga, String beneficio) {
+        Promocion promocion = tipo.crear("Promo", new ParametrosPromocion(porcentaje, monto, lleva, paga), AGOSTO, HOY);
+
+        assertEquals(beneficio, promocion.beneficio());
+    }
+
+    // Vigente para anunciarla: activa y sin terminar; la que empieza más adelante también se publica.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            en curso,          2026-08-14, true,  true
+            termina hoy,       2026-08-31, true,  true
+            empieza despues,   2026-07-20, true,  true
+            ya termino,        2026-09-01, true,  false
+            dada de baja,      2026-08-14, false, false
+            """)
+    void sigueVigenteSiEstaActivaYNoTermino(String caso, LocalDate dia, boolean activa, boolean vigente) {
+        Promocion promocion = TipoPromocion.PORCENTAJE.crear("Promo", ParametrosPromocion.dePorcentaje(10.0),
+                AGOSTO, LocalDate.of(2026, 7, 1));
+        if (!activa) {
+            promocion.desactivar();
+        }
+
+        assertEquals(vigente, promocion.sigueVigente(dia));
+    }
 }

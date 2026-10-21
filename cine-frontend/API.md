@@ -45,7 +45,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, los catálogos y Swagger |
+| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, los catálogos y Swagger |
 | Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
@@ -285,11 +285,23 @@ una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
   `DELETE`.
 - No se acumulan: gana el mayor descuento (R15). Las tarifas reducidas quedan afuera (R16).
 
+`GET /promociones/vigentes` (público): las activas que no terminaron, también las que empiezan más adelante,
+ordenadas por inicio. Sin `id` ni `activa`; `beneficio` lo arma cada tipo y se muestra tal cual. Que aplique a una
+compra lo decide el cobro, no este listado.
+
+```json
+[{ "nombre": "Miércoles 2x1", "tipo": "NXM", "beneficio": "2x1",
+   "vigenciaDesde": "2026-08-01", "vigenciaHasta": "2026-12-31", "diasSemana": ["WEDNESDAY"],
+   "mediosPago": [], "tarifasExcluidas": ["MENOR", "JUBILADO", "ESTUDIANTE"] }]
+```
+
+`beneficio`: `"2x1"`, `"30 % OFF"`, `"$500 OFF"`. `horaDesde`/`horaHasta` solo si tiene franja.
+
 ## Candy (CU-13 a CU-16)
 
 | Ruta | Notas |
 |---|---|
-| `GET /candy/productos?todos=` | La carta; sin `todos=true`, solo lo disponible |
+| `GET /candy/productos?todos=` | La carta; sin `todos=true`, solo lo disponible. Cada uno trae `precioSuelto` y `ahorro` (en un suelto, su precio y `0`) |
 | `GET /candy/productos/{id}` | Un producto |
 | `POST /candy/productos` | `{nombre, tipo, precio}`; un `COMBO` va por `/combos`. Nombre único (`409`) |
 | `POST /candy/combos` | `{nombre, precio, componentes: {productoId: cantidad}}`: dos productos o más, ninguno combo, 1 a 20 de cada uno. Más barato que los componentes sueltos (R14) |

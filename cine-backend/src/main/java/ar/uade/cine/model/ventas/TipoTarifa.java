@@ -1,5 +1,8 @@
 package ar.uade.cine.model.ventas;
 
+import java.util.Arrays;
+import java.util.List;
+
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -25,6 +28,10 @@ public enum TipoTarifa {
         this.multiplicadorPrecio = multiplicadorPrecio;
         this.requiereAcreditacion = requiereAcreditacion;
         this.participaDePromociones = participaDePromociones;
+    }
+
+    public static List<TipoTarifa> excluidasDePromociones() {
+        return Arrays.stream(values()).filter(t -> !t.participaDePromociones).toList();
     }
 
     public Dinero aplicarA(Dinero precio) {

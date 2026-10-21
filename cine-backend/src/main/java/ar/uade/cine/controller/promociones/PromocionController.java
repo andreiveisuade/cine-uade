@@ -29,6 +29,7 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.comun.PedidoActivacionDTO;
 import ar.uade.cine.dto.promociones.PedidoPromocionDTO;
+import ar.uade.cine.dto.promociones.PromocionPublicaVistaDTO;
 import ar.uade.cine.dto.promociones.PromocionVistaDTO;
 import ar.uade.cine.service.promociones.GestorPromociones;
 
@@ -50,6 +51,12 @@ public class PromocionController {
     @GetMapping("/api/promociones")
     public List<PromocionVistaDTO> listar() {
         return promociones.listar().stream().map(vistas::promocion).toList();
+    }
+
+    @Operation(summary = "Las promociones que se anuncian al público: activas y sin terminar")
+    @GetMapping("/api/promociones/vigentes")
+    public List<PromocionPublicaVistaDTO> vigentes() {
+        return promociones.vigentes().stream().map(vistas::publica).toList();
     }
 
     @Operation(summary = "El detalle de una promoción")

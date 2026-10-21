@@ -5,9 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import org.springframework.http.HttpMethod;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import ar.uade.cine.PruebaDeApi;
 
@@ -137,5 +143,33 @@ class PromocionControllerTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals("El monto del descuento no puede superar $ 1000000.00", respuesta.error());
+    }
+
+    // Sin credenciales: la ve cualquiera. La vencida y la dada de baja no salen.
+    @Test
+    void lasVigentesSonPublicasYSoloLasActivasSinTerminar() {
+        post("/api/promociones", "{\"nombre\":\"Miércoles 2x1\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":1,"
+                + "\"vigenciaDesde\":\"2026-08-01\",\"vigenciaHasta\":\"2026-12-31\",\"diasSemana\":[\"WEDNESDAY\"],"
+                + "\"mediosPago\":[\"DEBITO\"]}");
+        post("/api/promociones", "{\"nombre\":\"Agosto\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20,"
+                + "\"vigenciaDesde\":\"2026-08-01\",\"vigenciaHasta\":\"2026-08-20\"}");
+        int baja = post("/api/promociones", "{\"nombre\":\"Baja\",\"tipo\":\"MONTO_FIJO\",\"monto\":500,"
+                + "\"vigenciaDesde\":\"2026-08-01\",\"vigenciaHasta\":\"2026-12-31\"}").json().get("id").asInt();
+        patch("/api/promociones/" + baja, "{\"activa\":false}");
+        reloj.mover(LocalDateTime.of(2026, 8, 21, 10, 0));
+
+        Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/promociones/vigentes", null, null, null);
+
+        assertEquals(200, respuesta.estado());
+        JsonNode promos = respuesta.json();
+        assertEquals(1, promos.size());
+        JsonNode dosPorUno = promos.get(0);
+        assertEquals("Miércoles 2x1", dosPorUno.get("nombre").asText());
+        assertEquals("2x1", dosPorUno.get("beneficio").asText());
+        assertEquals("WEDNESDAY", dosPorUno.get("diasSemana").get(0).asText());
+        assertEquals("DEBITO", dosPorUno.get("mediosPago").get(0).asText());
+        assertEquals("[\"MENOR\",\"JUBILADO\",\"ESTUDIANTE\"]", dosPorUno.get("tarifasExcluidas").toString());
+        assertNull(dosPorUno.get("id"));
+        assertNull(dosPorUno.get("activa"));
     }
 }
