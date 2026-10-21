@@ -52,7 +52,7 @@ class ReservaTest {
         DatoInvalido error = assertThrows(DatoInvalido.class, () -> new Reserva(
                 falta.equals("funcion") ? null : FUNCION,
                 falta.equals("cliente") ? null : CLIENTE,
-                falta.equals("entradas") ? List.of() : entradas("A1"),
+                falta.equals("entradas") ? List.of() : butacas("A1"),
                 falta.equals("creadaEn") ? null : CREADA));
 
         assertEquals(mensaje, error.getMessage());
@@ -82,19 +82,36 @@ class ReservaTest {
     @Test
     void laMismaButacaDosVecesSeRechazaComoRepetida() {
         DatoInvalido error = assertThrows(DatoInvalido.class,
-                () -> new Reserva(FUNCION, CLIENTE, entradas("A1", "B2", "A1"), CREADA));
+                () -> new Reserva(FUNCION, CLIENTE, butacas("A1", "B2", "A1"), CREADA));
 
         assertEquals("La butaca A1 está repetida en el pedido", error.getMessage());
     }
 
     @Test
     void nacePorPagarConUnCodigoDeAccesoYSusButacasOcupadas() {
-        Reserva reserva = new Reserva(FUNCION, CLIENTE, entradas("A1", "A2"), CREADA);
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1", "A2"), CREADA);
 
         assertEquals(EstadoReserva.RESERVADA, reserva.getEstado());
         assertEquals(8, reserva.getCodigo().length());
         assertEquals(Dinero.de(10000), reserva.getTotal());
         assertTrue(reserva.estaVigente());
+    }
+
+    // Creador: la reserva arma sus entradas con el precio que le da su función, butaca por tarifa.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            estándar general,  ESTANDAR, GENERAL,  5000
+            vip general,       VIP,      GENERAL,  7500
+            vip jubilado,      VIP,      JUBILADO, 3750
+            """)
+    void creaSusEntradasConElPrecioDeSuFuncion(String caso, TipoAsiento tipo, TipoTarifa tarifa, int precio) {
+        Asiento butaca = new Asiento(SALA, 1, 1, tipo);
+
+        Entrada entrada = new Reserva(FUNCION, CLIENTE, List.of(new ButacaPedida(butaca, tarifa)), CREADA)
+                .getEntradas().get(0);
+
+        assertEquals(tarifa, entrada.tarifa());
+        assertEquals(Dinero.de(precio), entrada.precio());
     }
 
     // R13/R17: la vencida ya soltó sus butacas aunque todavía figure RESERVADA: no hay qué cancelar.
@@ -105,7 +122,7 @@ class ReservaTest {
             vencida,             2026-08-14T10:31, false
             """)
     void seCancelaSoloMientrasNoVencio(String caso, LocalDateTime ahora, boolean cancelable) {
-        Reserva reserva = new Reserva(FUNCION, CLIENTE, entradas("A1"), CREADA);
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA);
 
         assertEquals(cancelable, reserva.esCancelable(ahora), caso);
     }
@@ -145,27 +162,26 @@ class ReservaTest {
     }
 
     private static Reserva pagada() {
-        Reserva reserva = new Reserva(FUNCION, CLIENTE, entradas("A1"), CREADA);
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA);
         reserva.pagar();
         return reserva;
     }
 
-    private static List<Entrada> entradas(String... codigos) {
-        List<Entrada> entradas = new ArrayList<>();
+    private static List<ButacaPedida> butacas(String... codigos) {
+        List<ButacaPedida> butacas = new ArrayList<>();
         for (String codigo : codigos) {
             int fila = codigo.charAt(0) - 'A' + 1;
             int numero = Integer.parseInt(codigo.substring(1));
-            entradas.add(new Entrada(new Asiento(SALA, fila, numero, TipoAsiento.ESTANDAR), TipoTarifa.GENERAL,
-                    Dinero.de(5000)));
+            butacas.add(new ButacaPedida(new Asiento(SALA, fila, numero, TipoAsiento.ESTANDAR), TipoTarifa.GENERAL));
         }
-        return entradas;
+        return butacas;
     }
 
-    private static List<Entrada> primeras(int cuantas) {
-        List<Entrada> entradas = new ArrayList<>();
+    private static List<ButacaPedida> primeras(int cuantas) {
+        List<ButacaPedida> butacas = new ArrayList<>();
         for (int numero = 1; numero <= cuantas; numero++) {
-            entradas.addAll(entradas("A" + numero));
+            butacas.addAll(butacas("A" + numero));
         }
-        return entradas;
+        return butacas;
     }
 }

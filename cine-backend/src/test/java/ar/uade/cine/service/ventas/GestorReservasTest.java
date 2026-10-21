@@ -39,6 +39,7 @@ import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.ButacaPedida;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -488,7 +489,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Funcion empezada = funcionQueYaEmpezo();
         Asiento butaca = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(1).get(0);
         Reserva reserva = reservaRepository.save(new Reserva(empezada, clienteRepository.exigir(1, "el cliente"),
-                List.of(new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(5000))),
+                List.of(new ButacaPedida(butaca, TipoTarifa.GENERAL)),
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));
 
