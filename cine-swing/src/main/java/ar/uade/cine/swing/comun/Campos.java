@@ -1,7 +1,5 @@
 package ar.uade.cine.swing.comun;
 
-import com.toedter.calendar.JDateChooser;
-
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
@@ -146,7 +144,7 @@ public final class Campos {
             switch (campo) {
                 case JTextComponent texto -> alCambiar(texto, accion);
                 case JComboBox<?> combo -> combo.addActionListener(e -> accion.run());
-                case JDateChooser fecha -> fecha.addPropertyChangeListener("date", e -> accion.run());
+                case CampoFecha fecha -> fecha.alCambiar(accion);
                 case JSpinner spinner -> spinner.addChangeListener(e -> accion.run());
                 case SelectorDias dias -> dias.alCambiar(accion);
                 default -> throw new IllegalArgumentException("No se sabe escuchar un " + campo.getClass());

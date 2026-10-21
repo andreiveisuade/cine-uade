@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiFunciones;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.funciones.PedidoFuncion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
@@ -13,7 +14,6 @@ import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Seccion;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -33,7 +33,7 @@ final class FormularioFuncion extends Seccion {
     private final Runnable alProgramar;
     private final JComboBox<Opcion<Integer>> pelicula = new JComboBox<>();
     private final JComboBox<Opcion<Integer>> sala = new JComboBox<>();
-    private final JDateChooser dia = Fechas.selector(LocalDate.now());
+    private final CampoFecha dia = new CampoFecha(LocalDate.now());
     private final JSpinner hora = Fechas.hora(LocalTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(1));
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();

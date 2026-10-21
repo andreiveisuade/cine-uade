@@ -2,14 +2,13 @@ package ar.uade.cine.swing.pantallas.candy;
 
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.TablaCompras;
 import ar.uade.cine.swing.pantallas.Seccion;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,7 +22,7 @@ import java.util.Map;
 final class VentasDelDia extends Seccion {
 
     private final ApiCandy apiCandy;
-    private final JDateChooser fecha = Fechas.selector(LocalDate.now());
+    private final CampoFecha fecha = new CampoFecha(LocalDate.now());
     private final JLabel cantidad = new JLabel(" ");
     private final Tabla<CompraCandy> tabla = TablaCompras.crear();
 
@@ -38,13 +37,13 @@ final class VentasDelDia extends Seccion {
         add(barra, BorderLayout.NORTH);
         add(tabla.conScroll(), BorderLayout.CENTER);
         add(Componentes.nota("El total cobrado del día está en Caja, al lado de la boletería."), BorderLayout.SOUTH);
-        fecha.addPropertyChangeListener("date", e -> recargar());
+        fecha.alCambiar(this::recargar);
         recargar();
     }
 
     private void recargar() {
         Map<String, String> filtros = new LinkedHashMap<>();
-        filtros.put("fecha", Fechas.iso(fecha));
+        filtros.put("fecha", fecha.iso());
         cargar(() -> apiCandy.obtenerComprasCandy(filtros), compras -> {
             cantidad.setText(Formato.cantidad(compras.size(), "venta", "ventas"));
             tabla.mostrar(compras);

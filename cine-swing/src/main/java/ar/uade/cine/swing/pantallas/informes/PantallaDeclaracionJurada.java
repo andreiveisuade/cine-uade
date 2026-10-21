@@ -9,8 +9,8 @@ import ar.uade.cine.swing.api.dto.informes.PeliculaDeclarada;
 import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.api.dto.informes.TotalDeclarado;
 import ar.uade.cine.swing.comun.Archivos;
+import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -18,7 +18,6 @@ import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.informes.DeclaracionJuradaCsv;
 import ar.uade.cine.swing.pantallas.Pantalla;
-import com.toedter.calendar.JDateChooser;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -46,8 +45,8 @@ public final class PantallaDeclaracionJurada extends Pantalla {
 
     private final ApiCatalogos apiCatalogos;
     private final ApiInformes apiInformes;
-    private final JDateChooser desde = Fechas.selector(null);
-    private final JDateChooser hasta = Fechas.selector(null);
+    private final CampoFecha desde = new CampoFecha(null);
+    private final CampoFecha hasta = new CampoFecha(null);
     private final JLabel encabezado = new JLabel(" ");
     private final JLabel total = new JLabel(" ");
     private final JLabel error = Componentes.texto(" ");
@@ -117,8 +116,8 @@ public final class PantallaDeclaracionJurada extends Pantalla {
     // Las dos fechas o ninguna: con una sola el pedido está incompleto, y la que falta es obligatoria. Que el período
     // sea válido (desde antes que hasta, hasta 31 días) lo dice el backend.
     private void consultar() {
-        boolean hayDesde = Fechas.leer(desde) != null;
-        boolean hayHasta = Fechas.leer(hasta) != null;
+        boolean hayDesde = desde.valor() != null;
+        boolean hayHasta = hasta.valor() != null;
         Validacion v = new Validacion(error);
         String inicio = v.fecha(desde, "Desde", hayHasta);
         String fin = v.fecha(hasta, "Hasta", hayDesde);
@@ -133,8 +132,8 @@ public final class PantallaDeclaracionJurada extends Pantalla {
         actual = datos;
         DeclaracionJurada d = datos.declaracion();
         // Lo que eligió el backend queda a la vista: sin fechas, es él quien decide qué semana es "la última".
-        Fechas.poner(desde, LocalDate.parse(d.desde()));
-        Fechas.poner(hasta, LocalDate.parse(d.hasta()));
+        desde.poner(LocalDate.parse(d.desde()));
+        hasta.poner(LocalDate.parse(d.hasta()));
         encabezado.setText(d.exhibidor().razonSocial() + " · CUIT " + d.exhibidor().cuit() + " · exhibidor "
                 + d.exhibidor().numeroExhibidor() + " · generada " + fechaHora(d.generadaEn()));
         funciones.mostrar(d.funciones());
