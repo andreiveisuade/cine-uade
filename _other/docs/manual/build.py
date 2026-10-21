@@ -39,6 +39,8 @@ svg_map = {
     "{{SVG_PRUEBAS_NIVELES}}": DIAGRAMAS / "pruebas-niveles.svg",
     "{{SVG_RECHAZOS_JERARQUIA}}": DIAGRAMAS / "rechazos-jerarquia.svg",
     "{{SVG_REGLAS_DONDE_VIVEN}}": DIAGRAMAS / "reglas-donde-viven.svg",
+    "{{SVG_FRONT_ESTRUCTURA}}": DIAGRAMAS / "front-estructura.svg",
+    "{{SVG_FRONT_FLUJO}}": DIAGRAMAS / "front-flujo.svg",
     "{{SVG_SWING_PANTALLAS}}": DIAGRAMAS / "swing-pantallas.svg",
     "{{SVG_SWING_PEDIDO}}": DIAGRAMAS / "swing-pedido.svg",
     "{{SVG_TRASLADO_SERVIDOR}}": DIAGRAMAS / "traslado-servidor.svg",

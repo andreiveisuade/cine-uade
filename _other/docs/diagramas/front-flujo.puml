@@ -1,0 +1,27 @@
+@startuml front-flujo
+title Front: de la pantalla al backend y de vuelta (Pelicula)
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+
+participant "Pelicula.jsx\ncartelera/pelicula/" as P
+participant "useCargar\ncompartido/hooks/" as H
+participant "api-http.js\napi/" as A
+participant "nginx :8080\n/api" as N
+participant "backend\nPeliculaController" as B
+
+P -> H : useCargar(() => Promise.all([\n obtenerPelicula(id), obtenerFuncionesDePelicula(id)]), [id])
+H -> A : pedir() en un efecto
+A -> N : GET /api/peliculas/7\nGET /api/peliculas/7/funciones
+N -> B : proxy_pass
+B --> A : 200 JSON (DTO)
+A --> H : datos
+H --> P : { datos, error, cargando, recargar }
+P -> P : FichaPelicula, ListaFunciones...\n(todo derivado en el render)
+
+== error ==
+B --> A : 4xx {"error": "..."}
+A --> H : throw Error(mensaje del backend)
+H --> P : { error }
+P -> P : EsperaOError muestra el mensaje tal cual
+@enduml

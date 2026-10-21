@@ -1,0 +1,43 @@
+@startuml front-estructura
+title Front: carpetas por funcionalidad, dependencias hacia abajo
+
+skinparam packageStyle rectangle
+skinparam nodesep 22
+skinparam ranksep 40
+skinparam defaultTextAlignment center
+
+package "app/" as APP #F7EBE3 {
+  [main.jsx\nProveedores\nAppCliente] as MARCO
+  [Rutas.jsx\nuna URL, una pantalla] as RUTAS
+  [layout/\nBarra, Pie] as LAYOUT
+}
+
+package "pantallas por funcionalidad" as PANT {
+  [cartelera/\nhome, pelicula, trailer] as CART
+  [compra/\nfuncion, confirmar, mapa\nCompraEnCurso, bloqueo] as COMPRA
+  [ticket/\nentrada, pagar online\nventa cruzada] as TICKET
+  [cuenta/\ningresar, registro\nmis reservas, sesion] as CUENTA
+  [promos/\npromos, candy\ntarjetas] as PROMOS
+  [institucional/\nnosotros] as INST
+}
+
+package "compartido/" as COMP #F2F0ED {
+  [hooks/\nuseCargar, useTitulo] as HOOKS
+  [layout/ estado/ ui/\nformularios/] as PIEZAS
+}
+
+package "api/" as API #F2F0ED {
+  [api-http.js\nunico acceso al backend] as HTTP
+  [etiquetas, formato\niconos] as PRES
+}
+
+MARCO --> RUTAS
+MARCO --> LAYOUT
+RUTAS --> PANT
+TICKET ..> PROMOS : tarjetas
+CUENTA ..> TICKET : PagarOnline
+PANT --> COMP
+PANT --> API
+COMP --> PRES
+LAYOUT --> COMP
+@enduml

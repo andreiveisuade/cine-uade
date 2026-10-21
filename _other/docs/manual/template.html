@@ -945,18 +945,33 @@ docker compose up -d --build
         <li>Solo la venta al cliente, con <a href="#usuarios">cuenta opcional</a>. Encargado y acomodador usan el <a href="#swing">panel Swing</a>.</li>
         <li>React 19, React Router por hash (<code>#/pelicula/3</code>) y Mantine, en <code>cine-frontend/src</code>.</li>
         <li>Vite compila a un <code>index.html</code> HTML5; nginx lo sirve y reenvía <code>/api</code>: sin CORS.</li>
-        <li>CSS3: la hoja de Mantine con tema propio (claro y oscuro), sin <code>.css</code> propios.</li>
+        <li>CSS3: la hoja de Mantine con tema propio (claro y oscuro) más <code>app/tema.css</code> y el <code>.module.css</code> de la entrada.</li>
       </ul>
+      <h3 id="front-carpetas">Carpetas</h3>
+      <ul>
+        <li>Una carpeta por funcionalidad (<code>cartelera/</code>, <code>compra/</code>, <code>ticket/</code>, <code>cuenta/</code>, <code>promos/</code>, <code>institucional/</code>); <code>app/</code> arma el marco y <code>compartido/</code> y <code>api/</code> no conocen ninguna pantalla.</li>
+        <li>Un componente por archivo. Una pantalla compone piezas con nombre de intención (<code>FichaPelicula</code>, <code>TuSeleccion</code>, <code>TalonEntrada</code>) y saca la lógica no visual a hooks (<code>useReservar</code>, <code>useEsperarPago</code>).</li>
+        <li>Imports con <code>./</code> en la misma carpeta y <code>@/</code> (es <code>src/</code>) entre carpetas. Tests al lado de su componente.</li>
+        <li>Callbacks que se pasan por prop: <code>alVerbo</code> (<code>alElegir</code>, <code>alCambiar</code>); handlers internos en infinitivo (<code>reservar</code>, <code>cancelar</code>).</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_FRONT_ESTRUCTURA}}
+        <figcaption>Las pantallas dependen de <code>compartido/</code> y <code>api/</code>, nunca al revés</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_FRONT_FLUJO}}
+        <figcaption>Un dato: pantalla → <code>useCargar</code> → <code>api-http.js</code> → backend; el error vuelve con el mensaje del backend</figcaption>
+      </figure>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Pieza</th><th>Qué hace</th></tr></thead>
           <tbody>
             <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API; convierte el <code>{"error"}</code> en el mensaje que se muestra</td></tr>
             <tr><td><code>useCargar</code></td><td>Carga los datos de una pantalla y descarta respuestas viejas</td></tr>
-            <tr><td><code>cliente/compra.jsx</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
-            <tr><td><code>cliente/AppCliente.jsx</code></td><td>Las rutas de las pantallas</td></tr>
-            <tr><td><code>cliente/sesion.jsx</code></td><td>Quién tiene la sesión, preguntándoselo al backend; la verdadera es la cookie</td></tr>
-            <tr><td><code>cliente/PagarOnline.jsx</code></td><td>Elegir medio, ver el monto que devuelve el backend e ir a Mercado Pago</td></tr>
+            <tr><td><code>compra/CompraEnCurso.jsx</code>, <code>useRenovarBloqueo</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
+            <tr><td><code>app/Rutas.jsx</code></td><td>Las rutas de las pantallas</td></tr>
+            <tr><td><code>cuenta/SesionDelCliente.jsx</code></td><td>Quién tiene la sesión, preguntándoselo al backend; la verdadera es la cookie</td></tr>
+            <tr><td><code>ticket/PagarOnline.jsx</code></td><td>Elegir medio, ver el monto que devuelve el backend e ir a Mercado Pago</td></tr>
           </tbody>
         </table>
       </div>
@@ -976,6 +991,14 @@ docker compose up -d --build
           </tbody>
         </table>
       </div>
+      <h3 id="diseno">Sistema de diseño</h3>
+      <ul>
+        <li>Tokens en <code>app/tema.js</code> y <code>app/tema.css</code>: Archivo Variable (display angosto y cuerpo normal) y un solo color de marca, ámbar; neutros fríos para claro y oscuro, y la banda oscura de la sala.</li>
+        <li>Layout común en <code>compartido/layout/</code>: <code>Contenedor</code> de 1280 px con gutters de 16/24/40, <code>Grilla</code> por ancho mínimo y <code>Destacados</code> (el primero a ancho completo): el layout se adapta a la cantidad de ítems.</li>
+        <li>Tarjetas de una sola fuente: <code>TarjetaPelicula</code> en <code>cartelera/</code>; <code>TarjetaPromo</code>, <code>TarjetaCombo</code> y <code>TarjetaProducto</code> en <code>promos/tarjetas/</code>, usadas en Promos y en la venta cruzada del ticket.</li>
+        <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código; el comprobante de texto del backend queda para copiar.</li>
+        <li>Íconos con <code>@tabler/icons-react</code>; medios de pago y tarifas con ícono mapeado en <code>api/iconos.js</code>, como las etiquetas.</li>
+      </ul>
       <h3 id="hooks-estado">Hooks y estado</h3>
       <ul>
         <li><strong><code>useCargar(pedir, deps)</code></strong> → <code>{ datos, error, previos, cargando, recargar }</code>. <code>datos</code>/<code>error</code> son null mientras las deps no coincidan con las de la respuesta (no se ve lo de otro id); <code>previos</code> es lo último llegado, para que la cartelera reordene al cambiar de género.</li>
