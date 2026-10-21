@@ -1,52 +1,37 @@
-import { Anchor, Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Anchor, Box, Group, Text } from "@mantine/core";
 import { Link } from "react-router";
 import * as api from "../api/api-http.js";
-import { MediosDePago } from "../componentes/MediosDePago.jsx";
 import { Contenedor } from "../componentes/Contenedor.jsx";
+import { MediosDePago } from "../componentes/MediosDePago.jsx";
 import { useCargar } from "../componentes/useCargar.js";
-import { Marca } from "./Barra.jsx";
 
 const ENLACES = [["/cartelera", "Cartelera"], ["/promociones", "Promos"], ["/mis-reservas", "Mis reservas"], ["/nosotros", "Nosotros"]];
 
-function Columna({ titulo, children }) {
-  return (
-    <Stack gap="sm">
-      <Text size="sm" fw={700}>{titulo}</Text>
-      {children}
-    </Stack>
-  );
-}
-
-// Solo lo que el sistema sabe: los medios salen del catálogo del backend; si no llegan, la columna no aparece.
+// Una franja baja que no compite con el contenido. En celular la navegación ya está en el menú: no se repite.
+// Los medios salen del catálogo del backend; si no llegan, no aparecen.
 export function Pie() {
   const medios = useCargar(() => api.obtenerMediosDePago(), []);
   return (
-    <Box component="footer" mt="var(--cine-seccion)" bg="var(--cine-superficie)" style={{ borderTop: "1px solid var(--cine-borde)" }}>
-      <Contenedor py="xl">
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing="xl">
-          <Group gap="sm" wrap="nowrap" align="center" h="fit-content">
-            <img src="/favicon.svg" alt="" width={32} height={32} />
-            <Marca />
-          </Group>
-          <Columna titulo="El cine">
-            <Stack gap={8} component="nav" aria-label="Pie">
+    <Box component="footer" mt="var(--cine-seccion)" style={{ borderTop: "1px solid var(--cine-borde)" }}>
+      <Contenedor py="md">
+        <Group justify="space-between" gap="md" wrap="wrap">
+          <Group gap="lg" wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
+              <img src="/favicon.svg" alt="" width={20} height={20} />
+              <Text className="cine-display" fw={800} fz="sm">CINE UADE</Text>
+            </Group>
+            <Group gap="md" component="nav" aria-label="Pie" visibleFrom="sm">
               {ENLACES.map(([a, texto]) => (
-                <Anchor key={a} component={Link} to={a} size="sm" c="dimmed" w="fit-content">{texto}</Anchor>
+                <Anchor key={a} component={Link} to={a} size="xs" c="dimmed">{texto}</Anchor>
               ))}
-            </Stack>
-          </Columna>
-          {medios.datos?.length > 0 && (
-            <Columna titulo="Medios de pago">
-              <MediosDePago medios={medios.datos.map((m) => m.nombre)} />
-            </Columna>
-          )}
-        </SimpleGrid>
+            </Group>
+          </Group>
+          <Group gap="lg" wrap="wrap">
+            {medios.datos?.length > 0 && <MediosDePago medios={medios.datos.map((m) => m.nombre)} tamanio={18} />}
+            <Text size="xs" c="dimmed">TPO Aplicaciones Interactivas · UADE · 2C 2026</Text>
+          </Group>
+        </Group>
       </Contenedor>
-      <Box style={{ borderTop: "1px solid var(--cine-borde)" }}>
-        <Contenedor py="md">
-          <Text size="xs" c="dimmed">TPO Aplicaciones Interactivas · UADE · 2C 2026</Text>
-        </Contenedor>
-      </Box>
     </Box>
   );
 }

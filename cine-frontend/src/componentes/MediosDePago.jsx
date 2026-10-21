@@ -7,7 +7,7 @@ const NOTA = { EFECTIVO: "en la boletería" };
 // En fila y sin cajas: el ícono dice el medio y el tooltip (y el lector de pantalla) su nombre.
 export function MediosDePago({ medios, tamanio = 26 }) {
   return (
-    <Group gap="md" component="ul" p={0} m={0} style={{ listStyle: "none" }} aria-label="Medios de pago">
+    <Group gap={tamanio < 22 ? "sm" : "md"} component="ul" p={0} m={0} style={{ listStyle: "none" }} aria-label="Medios de pago">
       {medios.map((medio) => {
         const Icono = iconoMedio(medio);
         const texto = NOTA[medio] ? `${etiqueta(medio)}, ${NOTA[medio]}` : etiqueta(medio);
