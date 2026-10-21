@@ -15,6 +15,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import ar.uade.cine.PruebaDeApi;
@@ -38,6 +39,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
 
     private static final String ANA = "ana@mail.com";
     private static final String CLAVE = "clave-de-ana";
+    private static final String QR = "{\"medio\":\"QR\"}";
 
     @Autowired
     private TestRestTemplate http;
@@ -204,6 +206,44 @@ class CuentaDelClienteTest extends PruebaDeApi {
                 .isEqualTo(403);
     }
 
+    // El mismo camino que el checkout del encargado: mismo medio, mismo monto con descuento.
+    @Test
+    @DisplayName("el cliente abre el checkout de su reserva con la sesión, igual que el encargado por id")
+    void abreElCheckoutDeLaSuya() {
+        Reserva suya = reservar("Ana", ANA, "A1");
+
+        Respuesta delCliente = conCookie(HttpMethod.POST, checkout(suya), entrar(ANA, CLAVE), QR);
+        Respuesta delEncargado = post("/api/reservas/" + suya.getId() + "/checkout", QR);
+
+        assertThat(delCliente.estado()).isEqualTo(delEncargado.estado());
+        assertThat(delCliente.json().get("reservaId").asInt()).isEqualTo(suya.getId());
+        assertThat(delCliente.json().get("medio").asText()).isEqualTo("QR");
+        assertThat(delCliente.json().get("monto").asDouble()).isEqualTo(delEncargado.json().get("monto").asDouble());
+    }
+
+    @Test
+    @DisplayName("el checkout de la reserva de otro es 404, como cancelarla")
+    void elCheckoutDeLaDeOtroEs404() {
+        Reserva ajena = reservar("Beto", "beto@mail.com", "A2");
+
+        Respuesta respuesta = conCookie(HttpMethod.POST, checkout(ajena), entrar(ANA, CLAVE), QR);
+
+        assertThat(respuesta.estado()).isEqualTo(404);
+        assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
+    }
+
+    @Test
+    @DisplayName("sin sesión, el checkout por código es 401")
+    void elCheckoutSinSesionEs401() {
+        Reserva suya = reservar("Ana", ANA, "A1");
+
+        assertThat(pedirComo(HttpMethod.POST, checkout(suya), QR, null, null).estado()).isEqualTo(401);
+    }
+
+    private static String checkout(Reserva reserva) {
+        return "/api/reservas/codigo/" + reserva.getCodigo() + "/checkout";
+    }
+
     private Reserva reservar(String nombre, String email, String butaca) {
         return reservas.reservar(funcionId, nombre, email, Map.of(butaca, TipoTarifa.GENERAL), null);
     }
@@ -219,10 +259,17 @@ class CuentaDelClienteTest extends PruebaDeApi {
     }
 
     private Respuesta conCookie(HttpMethod metodo, String ruta, String cookie) {
+        return conCookie(metodo, ruta, cookie, null);
+    }
+
+    private Respuesta conCookie(HttpMethod metodo, String ruta, String cookie, String cuerpo) {
         HttpHeaders cabeceras = new HttpHeaders();
         cabeceras.add(HttpHeaders.COOKIE, cookie);
+        if (cuerpo != null) {
+            cabeceras.setContentType(MediaType.APPLICATION_JSON);
+        }
         ResponseEntity<String> respuesta = http.exchange(URI.create(ruta), metodo,
-                new HttpEntity<>(null, cabeceras), String.class);
+                new HttpEntity<>(cuerpo, cabeceras), String.class);
         return new Respuesta(respuesta.getStatusCode().value(), respuesta.getBody(), respuesta.getHeaders());
     }
 }

@@ -107,6 +107,6 @@ public class ReservaController {
     @Operation(summary = "El cliente cancela su reserva, con la sesión abierta (R21)")
     @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
     public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo, Principal cliente) {
-        return vistas.reserva(reservas.cancelarDelCliente(codigo, cliente.getName()));
+        return vistas.reserva(reservas.cancelar(consultas.obtenerDelCliente(codigo, cliente.getName()).getId()));
     }
 }

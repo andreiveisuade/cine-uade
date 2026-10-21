@@ -117,9 +117,10 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
-                        // R21: el dueño cancela la suya; que sea suya lo decide GestorReservas.
+                        // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.
                         .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
-                        .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",
+                                "/api/reservas/codigo/*/checkout").hasRole(CLIENTE)
                         // El acomodador entra al panel para llegar a la puerta.
                         .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
