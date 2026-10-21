@@ -20,6 +20,14 @@ window.ResizeObserver = class {
   disconnect() {}
 };
 
+// El carrusel de Embla lo usa para saber qué slide se ve.
+window.IntersectionObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return []; }
+};
+
 window.scrollTo = () => {};
 
 afterEach(() => {

@@ -1,10 +1,13 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import confetti from "canvas-confetti";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../api/api-http.js";
 import { renderConApp } from "../test/renderConApp.jsx";
 import { Promociones } from "./Promociones.jsx";
 
 vi.mock("../api/api-http.js");
+vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 
 const promo = (cambios) => ({
   nombre: "Miércoles 2x1", tipo: "NXM", beneficio: "2x1",
@@ -45,6 +48,8 @@ describe("Promociones", () => {
 
     expect(await screen.findByText("30 % OFF")).toBeInTheDocument();
     expect(screen.getByText("Débito")).toBeInTheDocument();
+    expect(screen.getByText("14:00–18:00")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Ver condiciones ▼"));
     expect(screen.getByText("Funciones de 14:00 a 18:00")).toBeInTheDocument();
     expect(screen.getByText("Del 01/08/2026 al 31/12/2026")).toBeInTheDocument();
     expect(screen.getByText("No suma con las tarifas menor, jubilado, estudiante")).toBeInTheDocument();
@@ -63,12 +68,21 @@ describe("Promociones", () => {
     expect(screen.queryByText("¡Hoy aplica!") !== null).toBe(aplica);
   });
 
+  it("tocar ¡Hoy aplica! festeja con confetti", async () => {
+    api.obtenerPromocionesVigentes.mockResolvedValue([promo()]);
+    abrir();
+
+    await userEvent.click(await screen.findByText("¡Hoy aplica!"));
+
+    await vi.waitFor(() => expect(confetti).toHaveBeenCalledOnce());
+  });
+
   it("muestra los combos con el ahorro que manda el backend y los sueltos", async () => {
     api.obtenerProductosCandy.mockResolvedValue([combo, pochoclos]);
     abrir();
 
     const tarjeta = (await screen.findByText("Combo clásico")).closest(".mantine-Card-root");
-    expect(within(tarjeta).getByText("$ 1.000")).toBeInTheDocument();
+    expect(await within(tarjeta).findByText("$ 1.000")).toBeInTheDocument();
     expect(within(tarjeta).getByText("$ 6.500")).toBeInTheDocument();
     expect(within(tarjeta).getByText("1 × Gaseosa 500ml")).toBeInTheDocument();
     expect(screen.getByText("$ 4.000")).toBeInTheDocument();
