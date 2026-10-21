@@ -10,18 +10,11 @@ CREATE TABLE IF NOT EXISTS pelicula (
     idioma_original VARCHAR(40) NOT NULL DEFAULT '',
     poster_url VARCHAR(255) NOT NULL DEFAULT '',
     en_cartelera BOOLEAN NOT NULL DEFAULT TRUE,
-    -- Si el encargado ya decidio que hacer con ella: PENDIENTE, CONFIRMADA o DESCARTADA.
-    -- Lo que trae el importador de TMDB nace PENDIENTE y espera en el buzon; lo que carga
-    -- el encargado nace CONFIRMADA, porque cargarlo ya es haberlo decidido. Es un eje
-    -- distinto de en_cartelera, que es si se esta dando.
+    -- PENDIENTE, CONFIRMADA o DESCARTADA; lo importado nace PENDIENTE, lo cargado a mano CONFIRMADA
     estado_revision VARCHAR(15) NOT NULL DEFAULT 'CONFIRMADA',
-    -- Valoracion de 0 a 10: el vote_average de TMDB para lo importado. Es con lo que el
-    -- planificador de la grilla ordena, porque "programar las mejores" necesita un numero
-    -- que compare dos peliculas.
+    -- Valoracion de 0 a 10 (vote_average de TMDB); con ella ordena el planificador
     puntaje DECIMAL(3,1) NOT NULL DEFAULT 0,
-    -- Sobre cuantos votos se calculo ese puntaje. Es lo que dice cuanto vale: un 8,0 sobre
-    -- seis votos y un 8,0 sobre cinco mil son el mismo numero y no la misma informacion, y
-    -- un 0,0 sobre cero votos no es una pelicula mala sino una que nadie vio todavia.
+    -- Votos detras del puntaje: un 8,0 sobre seis votos no vale lo que sobre cinco mil
     votos INT NOT NULL DEFAULT 0
 );
 
@@ -34,15 +27,12 @@ CREATE TABLE IF NOT EXISTS pelicula_genero (
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
 );
 
--- La sala no guarda su distribución de butacas: eso lo dice la tabla asiento, que es la
--- única fuente de verdad. Cuántas butacas por fila se usa una sola vez, al generarlas.
+-- La distribucion de butacas la dice la tabla asiento, no la sala
 CREATE TABLE IF NOT EXISTS sala (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL,
     tipo VARCHAR(15) NOT NULL,
-    -- Cuanto hay que dejar entre dos funciones para levantar la sala. Va por sala y no
-    -- como constante del sistema porque no todas tardan lo mismo. DEFAULT para que las
-    -- salas cargadas antes de esta columna sigan teniendo un margen razonable.
+    -- Minutos entre funciones para levantar la sala; por sala porque no todas tardan lo mismo
     minutos_limpieza INT NOT NULL DEFAULT 15
 );
 
@@ -58,12 +48,8 @@ CREATE TABLE IF NOT EXISTS asiento (
     FOREIGN KEY (sala_id) REFERENCES sala(id) ON DELETE CASCADE
 );
 
--- Clientes y empleados viven en la misma tabla: comparten nombre y email.
--- La columna rol discrimina cual es cual (CLIENTE, ADMINISTRADOR, ACOMODADOR) y
--- password_hash solo lo usan los empleados: el cliente compra sin iniciar sesion,
--- por eso admite NULL. El corte de la herencia no es el cargo sino tener contrasena,
--- y por eso el acomodador no necesita ni una columna ni una tabla nueva: es un rol mas.
--- 100 y no 64: un hash bcrypt con su prefijo ({bcrypt}$2a$10$...) mide 68.
+-- Clientes y empleados en una tabla, discriminados por rol; password_hash NULL en el cliente, que compra sin sesion
+-- 100 y no 64: un hash bcrypt con prefijo mide 68
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
@@ -72,26 +58,9 @@ CREATE TABLE IF NOT EXISTS usuario (
     password_hash VARCHAR(100) NULL
 );
 
--- La grilla con la que un cine arma su cartelera: "Matrix en la Sala 1, todos los dias a
--- las 20:30, del 1 al 15 de septiembre". Una sola alta en vez de quince.
---
--- Guarda el patron temporal (desde/hasta + hora_inicio + los dias de programacion_dia) y
--- todo lo que cada funcion necesita para nacer: version, proyeccion y precio. No guarda
--- cuantas funciones genero: eso se cuenta desde funcion.programacion_id, que es la unica
--- fuente de verdad. Es el mismo criterio que sala, que no guarda su capacidad.
---
--- activa reemplaza al borrado, igual que promocion.activa: dar de baja una grilla evita
--- que genere funciones nuevas, pero las ya generadas quedan — pueden tener entradas
--- vendidas, y en este sistema nada que haya producido ventas se borra.
---
--- hasta NULL = grilla abierta: corre hasta que la den de baja, que es lo normal en un
--- cine. Es lo que le da sentido a activa: si toda grilla tuviera fin y generara su rango
--- entero al darse de alta, dar de baja no evitaria ninguna funcion.
---
--- generada_hasta es lo unico de la tabla que no describe la intencion sino lo que ya
--- paso: hasta que fecha se materializaron las funciones. Se guarda en vez de derivarse
--- de funcion.programacion_id porque una funcion se puede cancelar o mover de sala, y
--- entonces la cuenta daria de menos y se volverian a generar fechas ya procesadas.
+-- Grilla de funciones: patron temporal mas version, proyeccion y precio con los que nace cada funcion
+-- No cuenta las funciones generadas: salen de funcion.programacion_id; activa reemplaza al borrado
+-- hasta NULL = grilla abierta; generada_hasta se guarda porque derivarlo regeneraria fechas si se cancela o mueve una funcion
 CREATE TABLE IF NOT EXISTS programacion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
@@ -108,10 +77,7 @@ CREATE TABLE IF NOT EXISTS programacion (
     FOREIGN KEY (sala_id) REFERENCES sala(id)
 );
 
--- Que dias de la semana corre la grilla, con el nombre de la constante de DayOfWeek. Va
--- en tabla aparte por lo mismo que promocion_dia y pelicula_genero: una columna con
--- "MONDAY,WEDNESDAY" adentro no se puede consultar ni indexar.
--- Sin filas = todos los dias del rango.
+-- Dias de la grilla (constante de DayOfWeek) en tabla aparte, como pelicula_genero; sin filas = todos
 CREATE TABLE IF NOT EXISTS programacion_dia (
     programacion_id INT NOT NULL,
     dia VARCHAR(10) NOT NULL,
@@ -119,14 +85,8 @@ CREATE TABLE IF NOT EXISTS programacion_dia (
     FOREIGN KEY (programacion_id) REFERENCES programacion(id) ON DELETE CASCADE
 );
 
--- version es DOBLADA o SUBTITULADA: cómo se escucha esta copia. No es el idioma hablado
--- de la película, que es un dato de catálogo suyo.
---
--- programacion_id dice de que grilla salio la funcion, y admite NULL porque la grilla no
--- reemplaza a CU-03: la funcion suelta que carga el administrador —el preestreno, la
--- funcion especial— no pertenece a ninguna. Es lo que hace que la relacion sea 0..1 y no
--- 1, y por lo que la asociacion es asociacion y no composicion: la funcion no se va con
--- la grilla, sobrevive a su baja con sus reservas encima.
+-- version es DOBLADA o SUBTITULADA, no el idioma de la pelicula
+-- programacion_id admite NULL: la funcion suelta sobrevive a la baja de su grilla
 CREATE TABLE IF NOT EXISTS funcion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
@@ -141,21 +101,10 @@ CREATE TABLE IF NOT EXISTS funcion (
     FOREIGN KEY (programacion_id) REFERENCES programacion(id)
 );
 
--- estado: RESERVADA, PAGADA, CANCELADA o EXPIRADA. La ultima no la escribe ningun
--- proceso de fondo: la primera consulta que se cruza con una reserva vencida la cierra
--- al pasar y libera sus butacas, porque el UNIQUE de entrada no sabe de vencimientos.
---
--- codigo es el que va en el QR y se valida en la puerta. Como el cliente no inicia
--- sesion, es la unica credencial que existe en el sistema: por eso no puede ser el id,
--- o con la reserva 5 en la mano se imprime la 6.
---
--- ingresada_en en NULL significa que todavia no entraron. Va como fecha y no como un
--- estado mas porque el ingreso es otro eje: una reserva puede estar PAGADA y no usada,
--- y mezclarlos obligaria a revisar las reglas que hoy miran estado (R5, R13).
---
--- version es el bloqueo optimista de JPA (@Version): cada UPDATE la incrementa y exige
--- encontrar la que leyo. Es lo que impide que cobrar y cancelar la misma reserva a la
--- vez terminen los dos bien.
+-- estado: RESERVADA, PAGADA, CANCELADA o EXPIRADA; la ultima la cierra la primera consulta que ve la reserva vencida
+-- codigo es el del QR y la unica credencial del cliente: no puede ser el id
+-- ingresada_en NULL = no entro; es fecha y no estado para no mezclar ejes con R5 y R13
+-- version: bloqueo optimista de JPA (@Version) contra cobrar y cancelar a la vez
 CREATE TABLE IF NOT EXISTS reserva (
     id INT PRIMARY KEY AUTO_INCREMENT,
     funcion_id INT NOT NULL,
@@ -169,23 +118,10 @@ CREATE TABLE IF NOT EXISTS reserva (
     FOREIGN KEY (cliente_id) REFERENCES usuario(id)
 );
 
--- Una entrada por butaca, con lo que se cobro por ella: si manana cambia el precio
--- de la funcion, el ticket ya emitido sigue diciendo lo que se pago.
---
--- tarifa es quien compra (GENERAL, MENOR, JUBILADO, ESTUDIANTE) y va aca y no en la
--- reserva porque es por persona: en una reserva de cuatro puede haber dos generales,
--- un menor y un jubilado. Ya esta incluida en precio, que es el precio de LISTA:
--- funcion x tipo de sala x tipo de butaca x tarifa. Ninguna promocion lo toca — el
--- descuento se aplica sobre el total y vive en pago.
---
--- funcion_id no es un dato nuevo (sale de la reserva): es lo que hace posible el
--- UNIQUE que impide vender la misma butaca dos veces en la misma funcion. Sin el,
--- dos reservas simultaneas podian tomar la misma butaca: las dos leian "libre"
--- antes de que la otra escribiera.
---
--- Es NULL cuando la reserva se cancela. MySQL no aplica el UNIQUE a las filas con
--- NULL, asi que la butaca vuelve a estar disponible sin borrar la entrada: la
--- reserva cancelada conserva que butacas tenia y a que precio.
+-- Una entrada por butaca con el precio cobrado, congelado aunque cambie el de la funcion
+-- tarifa va aca y no en reserva porque es por persona; precio es el de lista, el descuento vive en pago
+-- funcion_id (sale de la reserva) existe para el UNIQUE contra la doble venta de una butaca
+-- NULL al cancelar la reserva: MySQL no aplica el UNIQUE a NULL y la entrada conserva su historia
 CREATE TABLE IF NOT EXISTS entrada (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reserva_id INT NOT NULL,
@@ -200,21 +136,8 @@ CREATE TABLE IF NOT EXISTS entrada (
     FOREIGN KEY (funcion_id) REFERENCES funcion(id)
 );
 
--- La butaca que alguien esta eligiendo en el mapa, apartada tres minutos para que no se
--- la lleve el de al lado mientras completa sus datos. Es experiencia de usuario, no la
--- garantia contra la doble venta: esa sigue siendo el UNIQUE de entrada.
---
--- La clave primaria (funcion_id, asiento_id) es lo que hace que dos sesiones no puedan
--- tenerla a la vez: tomarla es un UPDATE condicional (la propia, o una vencida) y si no
--- habia fila un INSERT IGNORE, y el segundo INSERT de la misma butaca no entra. Ninguno
--- lee antes de escribir, asi que no hace falta un lock explicito.
---
--- Vencer no borra: una fila con vence_en pasado ya no ocupa nada, porque todas las
--- consultas filtran por vence_en y la siguiente sesion la pisa. La borra una tarea de
--- fondo cada cinco minutos, por higiene.
---
--- ON DELETE CASCADE porque una funcion sin reservas se puede borrar, y que alguien este
--- mirando su mapa no es motivo para impedirlo.
+-- Butaca apartada tres minutos mientras se elige; la garantia contra la doble venta es el UNIQUE de entrada
+-- La PK (funcion_id, asiento_id) arbitra entre sesiones sin lock explicito; una tarea borra las vencidas
 CREATE TABLE IF NOT EXISTS bloqueo_butaca (
     funcion_id INT NOT NULL,
     asiento_id INT NOT NULL,
@@ -225,19 +148,9 @@ CREATE TABLE IF NOT EXISTS bloqueo_butaca (
     FOREIGN KEY (asiento_id) REFERENCES asiento(id) ON DELETE CASCADE
 );
 
--- Las tres clases de promocion van a la misma tabla con tipo como discriminador, igual
--- que usuario: comparten todas las condiciones y solo cambia como calculan el descuento.
--- Por eso las columnas del beneficio son NULL: cada tipo usa la suya y deja las otras
--- vacias. Con tres filas por promocion en tablas separadas se ganaba normalizacion y se
--- perdia poder leer una promocion entera de un SELECT.
---
---   PORCENTAJE  usa porcentaje      30.00 -> 30% del subtotal
---   MONTO_FIJO  usa monto           2000.00 de descuento
---   NXM         usa lleva y paga    2 y 1 -> el clasico 2x1
---
--- activa reemplaza al borrado, igual que producto.disponible: una promocion ya usada en
--- un cobro no se puede borrar (la FK de pago lo impide) porque el comprobante tiene que
--- seguir diciendo por que se cobro ese monto.
+-- Las tres clases de promocion en una tabla con tipo como discriminador, como usuario
+--   PORCENTAJE usa porcentaje, MONTO_FIJO usa monto, NXM usa lleva y paga (2 y 1 = 2x1)
+-- activa reemplaza al borrado: la FK de pago impide borrar una promocion ya cobrada
 CREATE TABLE IF NOT EXISTS promocion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(60) NOT NULL UNIQUE,
@@ -253,10 +166,7 @@ CREATE TABLE IF NOT EXISTS promocion (
     activa BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Que dias corre la promocion, con el nombre de la constante de DayOfWeek. Va en tabla
--- aparte y no como lista separada por comas por lo mismo que pelicula_genero: una
--- columna con "MONDAY,WEDNESDAY" adentro no se puede consultar ni indexar.
--- Sin filas = corre todos los dias.
+-- Dias que corre la promocion (constante de DayOfWeek); sin filas = todos
 CREATE TABLE IF NOT EXISTS promocion_dia (
     promocion_id INT NOT NULL,
     dia VARCHAR(10) NOT NULL,
@@ -264,8 +174,7 @@ CREATE TABLE IF NOT EXISTS promocion_dia (
     FOREIGN KEY (promocion_id) REFERENCES promocion(id) ON DELETE CASCADE
 );
 
--- Con que medios de pago aplica. Sin filas = con cualquiera. Es lo que hace que el
--- descuento del banco solo se pueda resolver al cobrar y no al reservar.
+-- Medios de pago con los que aplica; sin filas = cualquiera
 CREATE TABLE IF NOT EXISTS promocion_medio (
     promocion_id INT NOT NULL,
     medio VARCHAR(15) NOT NULL,
@@ -273,20 +182,9 @@ CREATE TABLE IF NOT EXISTS promocion_medio (
     FOREIGN KEY (promocion_id) REFERENCES promocion(id) ON DELETE CASCADE
 );
 
--- Comprobante de cobro de una reserva. Una reserva tiene a lo sumo un pago: el UNIQUE
--- lo garantiza desde la base, no solo desde el codigo.
---
--- Aca vive el descuento y no en entrada. El motivo es el 2x1: "cada dos butacas una
--- gratis" no se puede escribir como factor sobre una butaca. Y como las promociones no
--- se acumulan y gana la que mas descuenta (R15), todas tienen que producir la misma
--- unidad para poder compararse: un monto sobre el total de la reserva.
---
--- Las tres columnas cuentan la misma historia y por eso van las tres:
---   subtotal   la suma de los precios de lista de las entradas
---   descuento  cuanto saco la promocion que gano (0 si no aplico ninguna)
---   monto      lo que entro de verdad en la caja, y lo que suma el arqueo
--- Guardar la promocion ademas del descuento es lo que permite auditar meses despues por
--- que se cobro eso, aunque la promocion ya este desactivada.
+-- Comprobante de cobro; UNIQUE garantiza un pago por reserva
+-- El descuento vive aca y no en entrada: el 2x1 no es un factor por butaca (R15 compara montos)
+-- subtotal = lista, descuento = lo que saco la promocion ganadora, monto = lo que entro en caja
 CREATE TABLE IF NOT EXISTS pago (
     id INT PRIMARY KEY AUTO_INCREMENT,
     reserva_id INT NOT NULL UNIQUE,
@@ -301,8 +199,7 @@ CREATE TABLE IF NOT EXISTS pago (
     FOREIGN KEY (promocion_id) REFERENCES promocion(id)
 );
 
--- Un combo es un producto mas: tiene precio propio y se vende como una unidad.
--- disponible reemplaza al borrado: el producto puede estar en compras ya emitidas.
+-- Un combo es un producto con precio propio; disponible reemplaza al borrado (hay compras emitidas)
 CREATE TABLE IF NOT EXISTS producto (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(60) NOT NULL UNIQUE,
@@ -311,11 +208,8 @@ CREATE TABLE IF NOT EXISTS producto (
     disponible BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Que trae cada combo. Las dos claves apuntan a producto: el combo y lo que contiene
--- son productos, y por eso un combo puede armarse con cualquiera de los otros.
--- Que el precio del combo sea menor a la suma de sus componentes (R14) lo valida Producto,
--- y GestorProductos al cambiar el precio de un suelto: es una comparacion entre filas
--- distintas y la base no la puede expresar.
+-- Contenido de cada combo; ambas claves apuntan a producto
+-- R14 (combo mas barato que la suma) lo valida Producto: la base no compara filas
 CREATE TABLE IF NOT EXISTS combo_item (
     combo_id INT NOT NULL,
     producto_id INT NOT NULL,
@@ -325,15 +219,8 @@ CREATE TABLE IF NOT EXISTS combo_item (
     FOREIGN KEY (producto_id) REFERENCES producto(id)
 );
 
--- Venta de mostrador: no tiene estados porque se cobra en el acto, y por eso lleva
--- encima el medio de pago en vez de pasar por la tabla pago, que es de las reservas.
---
--- Las dos claves admiten NULL porque la compra llega por dos caminos distintos:
---   mostrador   sin cliente ni reserva, que es como se compran unos pochoclos
---   web         despues de comprar la entrada, con el "desea agregar pochoclos?".
---               Ahi tiene reserva, y de la reserva sale el cliente sin volver a pedirlo.
--- Que la compra conozca su reserva permite retirar mostrando el mismo QR de la entrada,
--- y le da al arqueo cuanto candy vende el upsell contra el mostrador.
+-- Venta de mostrador, cobrada en el acto: lleva el medio de pago y no pasa por pago
+-- cliente y reserva admiten NULL: mostrador no tiene ninguno, la web los toma de la reserva
 CREATE TABLE IF NOT EXISTS compra_candy (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NULL,
@@ -345,9 +232,7 @@ CREATE TABLE IF NOT EXISTS compra_candy (
     FOREIGN KEY (reserva_id) REFERENCES reserva(id)
 );
 
--- El nombre, el precio y el ahorro quedan congelados en la linea, igual que en entrada: el
--- ticket emitido tiene que seguir diciendo lo que se cobro, y lo que se ahorro con el
--- combo, aunque despues cambie la carta. ahorro_unitario es 0 en lo que no es combo.
+-- Nombre, precio y ahorro congelados en la linea, como en entrada; ahorro_unitario es 0 si no es combo
 CREATE TABLE IF NOT EXISTS item_compra (
     id INT PRIMARY KEY AUTO_INCREMENT,
     compra_id INT NOT NULL,
@@ -361,13 +246,8 @@ CREATE TABLE IF NOT EXISTS item_compra (
     FOREIGN KEY (producto_id) REFERENCES producto(id)
 );
 
--- Cada vez que alguien pide cartelera nueva desde el panel. No apunta a las peliculas que
--- trajo —no hay clave foranea— porque las peliculas ya estan guardadas con su
--- estado_revision: repetir aca cuales fueron seria tener dos versiones del mismo hecho, y
--- un dia no coinciden. Los contadores son el resumen de la corrida, no un indice.
---
--- `detalle` es el log de la corrida, o el motivo si fallo: es texto para leer, no para
--- consultar. Por eso es TEXT y no una tabla de lineas.
+-- Corridas del importador disparadas desde el panel; sin FK a pelicula, que ya guarda su estado_revision
+-- `detalle` es el log o el motivo de la falla: texto para leer, no para consultar
 CREATE TABLE IF NOT EXISTS importacion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     estado VARCHAR(15) NOT NULL,
