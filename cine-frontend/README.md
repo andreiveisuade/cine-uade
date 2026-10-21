@@ -18,19 +18,66 @@ npm run coverage   # reporte en coverage/ (ignorado en git)
 
 Tras tocar el front, para verlo en el 8080: `docker compose up -d --build --no-deps frontend` desde `cine-docker`.
 
-## Estructura
+## Carpetas
+
+Una carpeta por funcionalidad. `app/` arma el marco; `compartido/` y `api/` no conocen ninguna pantalla.
 
 ```
-nginx.conf        estáticos + proxy de /api y Swagger
-API.md            contrato con el backend
 src/
-  api/            api-http.js (único acceso a la API), etiquetas.js, formato.js
-  componentes/    useCargar, MapaButacas, Poster, Avisos…
-  cliente/        AppCliente.jsx (rutas) + una pantalla por archivo
+  app/            main.jsx, Proveedores (tema, Motion, avisos), AppCliente (marco), Rutas, ErrorDePantalla
+    layout/       Barra, Pie, Marca, BotonTema
+  api/            api-http.js (único acceso al backend), etiquetas, formato, iconos
+  compartido/     lo que usa más de una pantalla
+    hooks/        useCargar, useTitulo
+    layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
+    estado/       Cargando, EsperaOError, ErrorCaja, Vacio, Avisos
+    ui/           Poster, Chips, MontoAnimado, MediosDePago
+    formularios/  faltantes
+  cartelera/      home con portada, cartelera, película y trailer
+  compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
+  ticket/         la entrada, acciones, pagar online, espera del pago, venta cruzada
+  cuenta/         sesión, ingresar, registro, mis reservas
+  promos/         promos por día, candy y las tarjetas (también las usa el ticket)
+  institucional/  nosotros
+  test/           setup de Vitest y renderConApp
 ```
 
-Una pantalla nueva es un componente en `cliente/` más su `<Route>` en `AppCliente.jsx`. Una operación nueva
-va en `api-http.js` y en `API.md`.
+Un componente por archivo, con el nombre del archivo. Tests al lado de su componente.
+
+## Cómo viaja un dato
+
+```
+Pelicula.jsx → useCargar(() => api.obtenerPelicula(id), [id]) → api-http.js → GET /api/peliculas/7 → backend
+```
+
+La pantalla nunca hace `fetch`. Si el backend rechaza, `api-http.js` tira un `Error` con su `{error}` y la
+pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
+
+## Contextos y hooks propios
+
+- `SesionDelCliente` / `useSesion`: quién tiene la sesión (`undefined` preguntando, `null` nadie).
+- `CompraEnCurso` / `useCompra`: butacas elegidas con su tarifa, en memoria.
+- `Avisos` / `useAvisar`: los toasts.
+- `useCargar(pedir, deps)`: datos de una pantalla, descarta respuestas viejas.
+- `useTitulo(texto)`: el título de la pestaña.
+- `useRenovarBloqueo(funcionId)`: renueva el bloqueo de las butacas cada minuto.
+- `useCambiarTarifa()`: cambia la tarifa de una butaca elegida.
+- `useAlternarButaca`: elegir o soltar una butaca y bloquearla en el backend.
+- `useReservar(funcionId)`: crea la reserva y va al ticket, o vuelve al mapa si perdió una butaca.
+- `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
+- `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.
+- `usePrevia`: trailer muteado al dejar el mouse sobre un póster.
+- `useScrollCentrado`: el mapa de butacas arranca centrado en el celular.
+
+## Dónde va algo nuevo
+
+- **Pantalla:** un componente en la carpeta de su funcionalidad y su `<Route>` en `app/Rutas.jsx`. Si pasa
+  de ~150 líneas, partirla en piezas con nombre de intención y la lógica a un `useXxx`.
+- **Componente:** en la carpeta de la pantalla que lo usa; a `compartido/` recién cuando lo usa otra.
+- **Operación de API:** una función en `api/api-http.js` y su ruta en `API.md`.
+
+Imports: `./` dentro de la carpeta, `@/` (es `src/`) entre carpetas. Callbacks por prop: `alVerbo`
+(`alElegir`, `alCambiar`); handlers internos en infinitivo (`reservar`, `cancelar`).
 
 ## Lo que el front respeta
 
