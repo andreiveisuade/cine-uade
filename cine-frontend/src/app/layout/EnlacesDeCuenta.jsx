@@ -2,7 +2,7 @@ import { Anchor, Text } from "@mantine/core";
 import { useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
-import { useSesion } from "@/cliente/sesion.jsx";
+import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { Enlace } from "./Enlace.jsx";
 
 export function EnlacesDeCuenta({ alElegir }) {

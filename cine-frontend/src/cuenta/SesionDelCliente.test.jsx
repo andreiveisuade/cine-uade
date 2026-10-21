@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
 import { renderConApp } from "@/test/renderConApp.jsx";
 import { AppCliente } from "@/app/AppCliente.jsx";
-import { SesionDelCliente, useSesion } from "./sesion.jsx";
+import { SesionDelCliente, useSesion } from "./SesionDelCliente.jsx";
 
 vi.mock("@/api/api-http.js");
 

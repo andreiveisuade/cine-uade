@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Button, PasswordInput, Text, TextInput } from "@mantine/core";
 import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { faltantes } from "@/compartido/formularios/faltantes.js";
-import { useSesion } from "./sesion.jsx";
+import { FormularioCentrado } from "./FormularioCentrado.jsx";
+import { useSesion } from "./SesionDelCliente.jsx";
 
 export function Ingresar() {
   const navegar = useNavigate();
@@ -49,26 +50,17 @@ export function Ingresar() {
   }
 
   return (
-    <Stack gap="lg" maw={420} mx="auto" pt={{ base: "md", sm: "xl" }}>
-      <div>
-        <Title order={1}>Ingresar</Title>
-        <Text size="sm" c="dimmed" mt={6}>Con tu cuenta ves tus reservas, las pagás online o las cancelás.</Text>
-      </div>
-      <Paper withBorder p="lg">
-        <form onSubmit={entrar}>
-          <Stack gap="md">
-            <TextInput label="Email" type="email" required value={email} error={faltan.email}
-              onChange={(e) => setEmail(e.currentTarget.value)} />
-            <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
-              onChange={(e) => setClave(e.currentTarget.value)} />
-            <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
-            {error && <ErrorCaja>{error}</ErrorCaja>}
-            <Text size="sm" c="dimmed" ta="center">
-              ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="sm">Registrate</Anchor>
-            </Text>
-          </Stack>
-        </form>
-      </Paper>
-    </Stack>
+    <FormularioCentrado titulo="Ingresar" alEnviar={entrar}
+      bajada="Con tu cuenta ves tus reservas, las pagás online o las cancelás.">
+      <TextInput label="Email" type="email" required value={email} error={faltan.email}
+        onChange={(e) => setEmail(e.currentTarget.value)} />
+      <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
+        onChange={(e) => setClave(e.currentTarget.value)} />
+      <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
+      {error && <ErrorCaja>{error}</ErrorCaja>}
+      <Text size="sm" c="dimmed" ta="center">
+        ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="sm">Registrate</Anchor>
+      </Text>
+    </FormularioCentrado>
   );
 }

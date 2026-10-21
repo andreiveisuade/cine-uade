@@ -3,7 +3,7 @@ import { AppShell } from "@mantine/core";
 import { useLocation } from "react-router";
 import { Contenedor } from "@/compartido/layout/Contenedor.jsx";
 import { CompraEnCurso } from "@/compra/CompraEnCurso.jsx";
-import { SesionDelCliente } from "@/cliente/sesion.jsx";
+import { SesionDelCliente } from "@/cuenta/SesionDelCliente.jsx";
 import { Barra } from "@/app/layout/Barra.jsx";
 import { Pie } from "@/app/layout/Pie.jsx";
 import { ErrorDePantalla } from "./ErrorDePantalla.jsx";

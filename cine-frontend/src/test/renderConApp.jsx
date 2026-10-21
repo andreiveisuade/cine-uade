@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { Avisos } from "@/compartido/estado/Avisos.jsx";
 import { CompraEnCurso } from "@/compra/CompraEnCurso.jsx";
-import { SesionDelCliente } from "@/cliente/sesion.jsx";
+import { SesionDelCliente } from "@/cuenta/SesionDelCliente.jsx";
 
 // Los mismos providers que Proveedores y AppCliente, sin animaciones: Motion salta a su estado final y los tests no esperan.
 // `ruta` es el patrón de la pantalla (para useParams) y `en` la URL de entrada.

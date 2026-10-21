@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Grid } from "@mantine/core";
 import { Navigate, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
-import { useSesion } from "@/cliente/sesion.jsx";
+import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";

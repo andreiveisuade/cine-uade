@@ -1,7 +1,7 @@
 import { Anchor, Box, Button, Group, Text } from "@mantine/core";
 import { IconCopy, IconFileText, IconQrcode } from "@tabler/icons-react";
 import { Link } from "react-router";
-import { useSesion } from "@/cliente/sesion.jsx";
+import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { armarComprobante } from "./armarComprobante.js";
 import { PagarOnline } from "./PagarOnline.jsx";
