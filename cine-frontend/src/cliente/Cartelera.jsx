@@ -1,5 +1,9 @@
+import { useState } from "react";
+import { Carousel } from "@mantine/carousel";
+import "@mantine/carousel/styles.css";
+import Autoplay from "embla-carousel-autoplay";
 import { Box, Button, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
-import { AnimatePresence, m } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Link, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -9,16 +13,22 @@ import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
 import { Poster } from "../componentes/Poster.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 
-// Portada de la home: nombre, propuesta, CTA a la cartelera y hasta 3 destacadas de la misma lista.
+// Portada de la home: una sala a oscuras con las destacadas pasando en la pantalla. Sin películas queda el texto solo.
 function Hero({ peliculas }) {
-  const destacadas = peliculas.slice(0, 3);
+  const destacadas = peliculas.slice(0, 8);
+  const quieto = useReducedMotion();
+  // Una sola instancia por montaje: el carrusel la arranca y la frena él mismo.
+  const [autoplay] = useState(() => Autoplay({ delay: 3500, stopOnInteraction: false, stopOnMouseEnter: true }));
   return (
-    <Box p={{ base: "lg", sm: "xl" }} bg="var(--mantine-color-default-hover)"
-      style={{ borderRadius: "var(--mantine-radius-md)" }}>
+    <Box p={{ base: "lg", sm: "xl" }} c="white"
+      style={{
+        borderRadius: "var(--mantine-radius-md)",
+        background: "radial-gradient(ellipse at 75% 0%, var(--mantine-color-indigo-9), var(--mantine-color-dark-8) 55%, var(--mantine-color-dark-9))",
+      }}>
       <Group justify="space-between" align="center" gap="xl" wrap="wrap">
-        <Stack gap="sm" maw={460}>
+        <Stack gap="sm" maw={420}>
           <Title order={1} fz={{ base: 32, sm: 44 }} lh={1.1}>CINE UADE</Title>
-          <Text size="lg">Tu cine de barrio: salas 2D y 3D, candy y entradas online.</Text>
+          <Text size="lg" c="gray.4">Tu cine de barrio: salas 2D y 3D, candy y entradas online.</Text>
           <div>
             <Button size="md"
               onClick={() => document.getElementById("cartelera")?.scrollIntoView({ behavior: "smooth" })}>
@@ -27,15 +37,22 @@ function Hero({ peliculas }) {
           </div>
         </Stack>
         {destacadas.length > 0 && (
-          <Group gap="md" wrap="nowrap">
+          <Carousel w={{ base: "100%", md: 460 }} slideSize={{ base: "40%", sm: "33.333%" }} slideGap="md"
+            emblaOptions={{ loop: destacadas.length > 3, align: "start" }} plugins={quieto ? [] : [autoplay]}
+            controlSize={28} withControls={destacadas.length > 3}>
             {destacadas.map((p) => (
-              <Box key={p.id} component={Link} to={`/pelicula/${p.id}`} w={{ base: 80, xs: 110, sm: 130 }}
-                style={{ textDecoration: "none", color: "inherit" }}>
-                <Poster pelicula={p} />
-                <Text size="xs" fw={600} mt={4} lh={1.2} lineClamp={2}>{p.titulo}</Text>
-              </Box>
+              <Carousel.Slide key={p.id}>
+                <Box component={Link} to={`/pelicula/${p.id}`} display="block" c="white"
+                  style={{ textDecoration: "none" }}>
+                  {/* El brillo es la luz del proyector rebotando en el póster. */}
+                  <Box style={{ borderRadius: "var(--mantine-radius-sm)", boxShadow: "0 8px 28px -6px var(--mantine-color-indigo-5)" }}>
+                    <Poster pelicula={p} />
+                  </Box>
+                  <Text size="xs" fw={600} mt={6} lh={1.2} lineClamp={2}>{p.titulo}</Text>
+                </Box>
+              </Carousel.Slide>
             ))}
-          </Group>
+          </Carousel>
         )}
       </Group>
     </Box>
