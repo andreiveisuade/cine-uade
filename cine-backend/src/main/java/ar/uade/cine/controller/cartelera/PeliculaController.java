@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 // Rutas de /api/cartelera y /api/peliculas: cartelera pública y ABM; traduce HTTP a GestorCartelera.
@@ -86,7 +87,10 @@ public class PeliculaController {
         return pedido.isUserInRole(Rol.ADMINISTRADOR.name()) ? cartelera.obtener(id) : cartelera.obtenerPublica(id);
     }
 
-    @Operation(summary = "Dar de alta una película a mano")
+    @Operation(summary = "Dar de alta una película a mano",
+            description = "Nace confirmada (no pasa por el buzón del importador). Géneros y clasificación "
+                    + "son los de GET /api/generos y GET /api/clasificaciones.")
+    @ApiResponse(responseCode = "201", description = "Creada; Location apunta a GET /api/peliculas/{id}")
     @PostMapping("/api/peliculas")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PeliculaVistaDTO> agregar(@Valid @RequestBody PedidoPeliculaDTO pedido) {

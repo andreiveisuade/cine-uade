@@ -2,6 +2,7 @@ package ar.uade.cine.dto.cartelera;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -9,12 +10,29 @@ import jakarta.validation.constraints.NotNull;
 // Lo que entra al crear una película (POST /api/peliculas); exige título, duración, géneros y clasificación.
 // Solo presencia, con los mismos textos que ValidadorPelicula: el rango de la duración y el resto de las
 // reglas las aplica la película, también en el alta que no pasa por HTTP.
+// Los enums viajan como texto con el nombre de la constante; @Schema lista los valores porque el tipo es String.
 public record PedidoPeliculaDTO(
+        @Schema(description = "Único en el catálogo, hasta 100 caracteres", example = "Matrix")
         @NotBlank(message = "Falta el título") String titulo,
+        @Schema(description = "De 1 a 600 minutos", example = "136")
         @NotNull(message = "Falta la duración") Integer duracionMinutos,
+        @Schema(description = "Al menos uno; los repetidos se juntan",
+                allowableValues = {"ACCION", "COMEDIA", "DRAMA", "TERROR", "CIENCIA_FICCION", "ANIMACION",
+                        "DOCUMENTAL", "ROMANCE"},
+                example = "[\"ACCION\", \"CIENCIA_FICCION\"]")
         @NotEmpty(message = "La película tiene que tener al menos un género") List<String> generos,
+        @Schema(description = "Edad mínima", allowableValues = {"ATP", "MAS_13", "MAS_16", "MAS_18"},
+                example = "MAS_16")
         @NotBlank(message = "Falta la clasificación por edad") String clasificacion,
-        String director, String sinopsis, Integer anio,
-        String idiomaOriginal, String posterUrl, Boolean enCartelera,
-        Double puntaje, Integer votos) {
+        @Schema(description = "Hasta 100 caracteres", example = "Lana y Lilly Wachowski") String director,
+        @Schema(description = "Hasta 5000 caracteres",
+                example = "Un programador descubre que su realidad es una simulación.") String sinopsis,
+        @Schema(description = "Desde 1895", example = "1999") Integer anio,
+        @Schema(description = "Hasta 40 caracteres", example = "Inglés") String idiomaOriginal,
+        @Schema(description = "Empieza con http:// o https://; hasta 255 caracteres",
+                example = "https://image.tmdb.org/t/p/w500/matrix.jpg") String posterUrl,
+        @Schema(description = "Si sale en la cartelera pública apenas se crea", example = "true")
+        Boolean enCartelera,
+        @Schema(description = "De 0 a 10", example = "8.2") Double puntaje,
+        @Schema(description = "De 0 a 100.000.000", example = "26000") Integer votos) {
 }

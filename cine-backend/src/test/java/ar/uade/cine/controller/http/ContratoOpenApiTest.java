@@ -9,10 +9,14 @@ import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.PruebaDeApi;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 class ContratoOpenApiTest extends PruebaDeApi {
 
@@ -114,6 +118,42 @@ class ContratoOpenApiTest extends PruebaDeApi {
                         "/api/candy/compras", "/api/candy/combos", "/api/acceso")
                 .forEach(ruta -> assertThat(respuestas(rutas, ruta, "post").has("404")).as(ruta).isTrue());
         assertThat(respuestas(rutas, "/api/salas", "post").has("404")).isFalse();
+    }
+
+    // Es lo que hace el botón Try it out: manda el cuerpo de ejemplo tal cual. Con un ejemplo inválido
+    // ("string" de género) el alta de película daba 400 y no había forma de probarla desde Swagger.
+    @Test
+    @DisplayName("el cuerpo de ejemplo del alta de película se puede enviar tal cual")
+    void elEjemploDelAltaDePeliculaEsValido() {
+        JsonNode propiedades = get("/v3/api-docs").json().get("components").get("schemas")
+                .get("PedidoPeliculaDTO").get("properties");
+        ObjectNode ejemplo = JsonNodeFactory.instance.objectNode();
+        propiedades.properties().forEach(campo -> ejemplo.set(campo.getKey(), campo.getValue().get("example")));
+
+        Respuesta respuesta = post("/api/peliculas", ejemplo.toString());
+
+        assertThat(respuesta.estado()).as(respuesta.cuerpo()).isEqualTo(201);
+    }
+
+    // Los altas que no dependen de otros registros: Try it out manda lo que lista cada esquema, y los campos
+    // sin ejemplo los deja Swagger UI con su valor por defecto, así que acá se omiten.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "producto de candy, PedidoProductoDTO, /api/candy/productos",
+            "sala,              PedidoSalaDTO,     /api/salas",
+            "cliente,           PedidoClienteDTO,  /api/clientes",
+            "promoción,         PedidoPromocionDTO, /api/promociones"})
+    @DisplayName("el cuerpo de ejemplo de cada alta se puede enviar tal cual")
+    void elEjemploDeLosAltasEsValido(String caso, String esquema, String ruta) {
+        JsonNode propiedades = get("/v3/api-docs").json().get("components").get("schemas")
+                .get(esquema).get("properties");
+        ObjectNode ejemplo = JsonNodeFactory.instance.objectNode();
+        propiedades.properties().stream().filter(campo -> campo.getValue().has("example"))
+                .forEach(campo -> ejemplo.set(campo.getKey(), campo.getValue().get("example")));
+
+        Respuesta respuesta = post(ruta, ejemplo.toString());
+
+        assertThat(respuesta.estado()).as(respuesta.cuerpo()).isEqualTo(201);
     }
 
     private JsonNode operacion(String ruta, String metodo) {
