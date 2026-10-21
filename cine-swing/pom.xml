@@ -16,7 +16,19 @@
     <maven.compiler.release>21</maven.compiler.release>
     <clase.principal>ar.uade.cine.swing.Principal</clase.principal>
     <lombok.version>1.18.46</lombok.version>
+    <grupos></grupos>
+    <grupos.excluidos>humo</grupos.excluidos>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>humo</id>
+      <properties>
+        <grupos>humo</grupos>
+        <grupos.excluidos></grupos.excluidos>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -76,6 +88,9 @@
         <configuration>
           <!-- Los tests no abren ventanas: sin esto, en una máquina sin pantalla (CI) AWT falla al cargar. -->
           <argLine>-Djava.awt.headless=true</argLine>
+          <!-- El humo pide el backend levantado: queda fuera del test de siempre y corre con -Phumo. -->
+          <excludedGroups>${grupos.excluidos}</excludedGroups>
+          <groups>${grupos}</groups>
         </configuration>
       </plugin>
       <!-- Un solo jar con Jackson y FlatLaf adentro: `java -jar target/cine-swing.jar` sin classpath a mano. -->
