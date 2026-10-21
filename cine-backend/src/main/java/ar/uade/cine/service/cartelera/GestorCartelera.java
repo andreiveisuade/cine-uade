@@ -78,6 +78,9 @@ public class GestorCartelera {
         pelicula.cambiarCatalogo(pelicula.getCatalogo().conCambios(datos.director(), datos.sinopsis(),
                 datos.anio(), datos.idiomaOriginal(), datos.posterUrl(), datos.puntaje(), datos.votos(),
                 reloj.hoy()));
+        if (datos.trailerYoutube() != null) {
+            pelicula.cambiarTrailer(datos.trailerYoutube());
+        }
         if (Boolean.TRUE.equals(datos.enCartelera())) {
             pelicula.ponerEnCartelera();
         } else if (Boolean.FALSE.equals(datos.enCartelera())) {

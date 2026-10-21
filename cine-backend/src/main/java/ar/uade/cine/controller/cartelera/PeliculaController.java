@@ -116,7 +116,7 @@ public class PeliculaController {
         return datosDe(new PedidoEdicionPeliculaDTO(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos(), pedido.clasificacion(), pedido.director(), pedido.sinopsis(),
                 pedido.anio(), pedido.idiomaOriginal(), pedido.posterUrl(), pedido.enCartelera(),
-                pedido.puntaje(), pedido.votos()));
+                pedido.puntaje(), pedido.votos(), pedido.trailerYoutube()));
     }
 
     private static DatosPelicula datosDe(PedidoEdicionPeliculaDTO pedido) {
@@ -137,6 +137,7 @@ public class PeliculaController {
                 .enCartelera(pedido.enCartelera())
                 .puntaje(pedido.puntaje())
                 .votos(pedido.votos())
+                .trailerYoutube(pedido.trailerYoutube())
                 .armar();
     }
 }

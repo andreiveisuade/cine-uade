@@ -6,7 +6,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 
 // Arma un DatosPelicula nombrando cada dato; lo no nombrado viaja null, que en edición es "no lo mandé".
-// Patrón Builder (GoF): doce componentes posicionales se podían cruzar sin error de compilación.
+// Patrón Builder (GoF): trece componentes posicionales se podían cruzar sin error de compilación.
 // Solo para este record sin reglas: las entidades validan en su constructor.
 public final class DatosPeliculaBuilder {
 
@@ -22,6 +22,7 @@ public final class DatosPeliculaBuilder {
     private Boolean enCartelera;
     private Double puntaje;
     private Integer votos;
+    private String trailerYoutube;
 
     DatosPeliculaBuilder() {
     }
@@ -86,8 +87,13 @@ public final class DatosPeliculaBuilder {
         return this;
     }
 
+    public DatosPeliculaBuilder trailerYoutube(String trailerYoutube) {
+        this.trailerYoutube = trailerYoutube;
+        return this;
+    }
+
     public DatosPelicula armar() {
         return new DatosPelicula(titulo, duracionMinutos, generos, clasificacion, director, sinopsis,
-                anio, idiomaOriginal, posterUrl, enCartelera, puntaje, votos);
+                anio, idiomaOriginal, posterUrl, enCartelera, puntaje, votos, trailerYoutube);
     }
 }
