@@ -2,10 +2,7 @@ package ar.uade.cine.service.programaciones;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +28,6 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 @RequiredArgsConstructor
 @Slf4j
 public class GestorProgramaciones {
-
-    private static final DateTimeFormatter MOMENTO = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     private final ProgramacionRepository programacionRepository;
     private final FuncionRepository funcionRepository;
@@ -93,21 +88,15 @@ public class GestorProgramaciones {
         // que esta misma grilla va creando no están en la agenda: caen una por día, así que
         // solo chocarían con una película de más de un día, y a esa la frena programar(),
         // que vuelve a mirar R3 antes de guardar.
-        AgendaDeSala agenda = pendientes.isEmpty() ? null : funciones.agendaDe(grilla.getSalaId(),
-                pendientes.get(0),
-                pendientes.get(pendientes.size() - 1).plusMinutes(pelicula.getDuracionMinutos()));
-        List<FuncionPlanificada> plan = new ArrayList<>();
-        for (LocalDateTime inicio : pendientes) {
-            LocalDateTime fin = inicio.plusMinutes(pelicula.getDuracionMinutos());
-            Optional<Funcion> choque = agenda.chocaCon(inicio, fin);
-            if (choque.isPresent()) {
-                plan.add(new FuncionPlanificada(inicio, true,
-                        "la sala ya tiene la función " + choque.get().getId() + " a las "
-                        + choque.get().getInicio().format(MOMENTO)));
-                continue;
-            }
-            plan.add(new FuncionPlanificada(inicio, false, null));
-        }
+        int duracion = pelicula.getDuracionMinutos();
+        // Null Object: sin pendientes no se lee la sala.
+        AgendaDeSala agenda = pendientes.isEmpty() ? AgendaDeSala.vacia() : funciones.agendaDe(grilla.getSalaId(),
+                pendientes.get(0), pendientes.get(pendientes.size() - 1).plusMinutes(duracion));
+        List<FuncionPlanificada> plan = pendientes.stream()
+                .map(inicio -> agenda.chocaCon(inicio, inicio.plusMinutes(duracion))
+                        .map(choque -> FuncionPlanificada.salteadaPor(inicio, choque))
+                        .orElseGet(() -> FuncionPlanificada.programable(inicio)))
+                .toList();
         return new PlanProgramacion(grilla, plan);
     }
 

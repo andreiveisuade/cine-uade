@@ -21,6 +21,12 @@ public final class AgendaDeSala {
         this.tomados = tomados;
     }
 
+    // Patrón Null Object: evitaba un null y su if en el cliente cuando no hay horarios que revisar;
+    // se lee como una agenda sin funciones tomadas, que cumple el contrato y nunca choca.
+    public static AgendaDeSala vacia() {
+        return new AgendaDeSala(0, List.of());
+    }
+
     public Optional<Funcion> chocaCon(LocalDateTime inicio, LocalDateTime fin) {
         LocalDateTime finConLimpieza = fin.plusMinutes(minutosLimpieza);
         return tomados.stream()
