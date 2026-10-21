@@ -93,7 +93,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-        clientes.registrar("Andrei", "andrei@uade.edu.ar");
+        clientes.identificar("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
         reloj.mover(ahora);
@@ -496,7 +496,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     private void cargarReservas() {
-        clientes.registrar("Sofía Pérez", "sofia@ejemplo.com");
+        clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
         cartelera.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));

@@ -73,7 +73,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     // INSERT chocaba con el UNIQUE del email.
     @Test
     void elEmailDeUnClienteNoSeRegistraComoEmpleado() {
-        clientes.registrar("Ana", "ana@mail.com");
+        clientes.identificar("Ana", "ana@mail.com");
 
         assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());

@@ -131,7 +131,3 @@ export function clienteRecordado() {
 export function recordarCliente(cliente) {
   localStorage.setItem(CLAVE_CLIENTE, JSON.stringify({ nombre: cliente.nombre, email: cliente.email }));
 }
-
-export function olvidarCliente() {
-  localStorage.removeItem(CLAVE_CLIENTE);
-}

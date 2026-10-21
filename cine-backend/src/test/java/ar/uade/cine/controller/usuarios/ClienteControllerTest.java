@@ -13,7 +13,7 @@ class ClienteControllerTest extends PruebaDeApi {
     // Daba 500: el alta no veía a los empleados y el INSERT chocaba con el UNIQUE del email.
     @Test
     void registrarConElEmailDeUnEmpleadoEs409() {
-        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\"}");
+        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\",\"password\":\"clave-segura\"}");
 
         assertEquals(409, respuesta.estado());
         assertEquals("Ya existe un usuario con ese email", respuesta.error());
@@ -22,7 +22,7 @@ class ClienteControllerTest extends PruebaDeApi {
     // Un filtro sobre la colección: siempre una lista, con el cliente o vacía; nunca el literal null.
     @Test
     void laBusquedaPorEmailEsUnaListaQueIgnoraLosEspaciosYSinEmailVieneVacia() {
-        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");
+        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
 
         JsonNode encontrados = get("/api/clientes?email=%20ana@mail.com%20").json();
         assertEquals(1, encontrados.size());
@@ -35,7 +35,7 @@ class ClienteControllerTest extends PruebaDeApi {
     // El Location del alta apunta al filtro: seguirlo trae al cliente recién creado.
     @Test
     void elAltaApuntaAlFiltroQueLoEncuentra() {
-        Respuesta alta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}");
+        Respuesta alta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
 
         JsonNode encontrados = get(alta.cabeceras().getLocation().toString()).json();
         assertEquals(alta.json().get("id").asInt(), encontrados.get(0).get("id").asInt());

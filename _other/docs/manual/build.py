@@ -31,6 +31,7 @@ svg_map = {
     "{{SVG_API_ERRORES}}": DIAGRAMAS / "api-errores.svg",
     "{{SVG_BASE_VENTA_ER}}": DIAGRAMAS / "base-venta-er.svg",
     "{{SVG_CHECKOUT_PASARELA}}": DIAGRAMAS / "checkout-pasarela.svg",
+    "{{SVG_PAGO_MERCADOPAGO}}": DIAGRAMAS / "pago-mercadopago.svg",
     "{{SVG_GRILLA_PLAN}}": DIAGRAMAS / "grilla-plan.svg",
     "{{SVG_PRECIO_ENTRADA}}": DIAGRAMAS / "precio-entrada.svg",
     "{{SVG_PRUEBAS_NIVELES}}": DIAGRAMAS / "pruebas-niveles.svg",

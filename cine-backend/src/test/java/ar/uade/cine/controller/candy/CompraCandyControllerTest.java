@@ -70,8 +70,8 @@ class CompraCandyControllerTest extends PruebaDeApi {
     @Test
     void unaVentaParaLaReservaDeOtroClienteEs400() {
         int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();
-        int duenio = clientes.registrar("Andrei", "andrei@uade.edu.ar").getId();
-        int otro = clientes.registrar("Otra", "otra@uade.edu.ar").getId();
+        int duenio = clientes.identificar("Andrei", "andrei@uade.edu.ar").getId();
+        int otro = clientes.identificar("Otra", "otra@uade.edu.ar").getId();
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5));
         funciones.programar(1, 1, reloj.ahora().plusDays(1), Version.SUBTITULADA, Proyeccion.DOS_D,

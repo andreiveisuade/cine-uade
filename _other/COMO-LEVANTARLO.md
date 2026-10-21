@@ -56,6 +56,21 @@ Opcional: sin él solo falta el importador. Andrei lo pasa por privado. Va en `c
 | «TMDB rechazó el token…» | Mal pegado, revocado, o es la API key y no el token |
 | «No se pudo llegar a TMDB…» | El backend no tiene internet |
 
+## Mercado Pago (opcional)
+
+Sin `MP_ACCESS_TOKEN` el pago online usa la pasarela emulada y todo anda igual. Para probar con Mercado Pago, en
+sandbox y sin cobrar:
+
+1. [Panel de desarrolladores](https://www.mercadopago.com.ar/developers/panel): crear una aplicación de Checkout Pro y copiar el Access Token de **prueba**.
+2. Pegarlo en `cine-docker/.env` (`MP_ACCESS_TOKEN=TEST-...`, sin comillas) y `docker compose up -d backend`. `CINE_URL_PUBLICA` queda en `http://localhost:8080`.
+3. Crear en el mismo panel una cuenta de prueba de **comprador** y entrar a Mercado Pago con ella.
+4. En la web: registrarse o ingresar, reservar, Mis reservas, **Pagar online**, **Ir a pagar**. Tarjeta de prueba con titular `APRO` (aprobado).
+5. En localhost MP no vuelve solo: tocar **Volver al sitio**. El ticket muestra el pago cobrado.
+
+| Mensaje en el ticket | Causa |
+|---|---|
+| Pago rechazado / pendiente / sin pago | MP no tiene un pago aprobado para esa reserva; se puede volver a pagar |
+
 ## Sin Docker
 
 Hace falta un MySQL con la base creada desde `cine-backend/src/main/resources/schema.sql` y el usuario de

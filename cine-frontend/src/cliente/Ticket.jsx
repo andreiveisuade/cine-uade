@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { Alert, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
-import { Link, useLocation, useParams } from "react-router";
+import { Alert, Anchor, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
+import { Link, useLocation, useParams, useSearchParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
 import { fechaHora, precio, precioExacto } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { PagarOnline } from "./PagarOnline.jsx";
+import { useSesion } from "./sesion.jsx";
 
 const LINEA = "=".repeat(44);
 
@@ -90,8 +91,9 @@ function CartaCandy({ productos, reservaId }) {
 export function Ticket() {
   const { codigo } = useParams();
   const avisar = useAvisar();
-  const [cancelando, setCancelando] = useState(false);
-  const [cancelada, setCancelada] = useState(null);
+  const { usuario } = useSesion();
+  // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
+  const aviso = useSearchParams()[0].get("aviso");
   const recien = useLocation().state?.reserva;
   // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide por código,
   // que es la única llave del cliente: el id se adivina. La carta es opcional.
@@ -100,7 +102,7 @@ export function Ticket() {
     api.obtenerProductosCandy().catch(() => []),
   ]), [codigo]);
   if (!carga.datos) return <EsperaOError carga={carga} />;
-  const reserva = cancelada || carga.datos[0];
+  const reserva = carga.datos[0];
   const productos = carga.datos[1];
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
 
@@ -109,19 +111,9 @@ export function Ticket() {
     avisar("Comprobante copiado");
   }
 
-  async function cancelar() {
-    setCancelando(true);
-    try {
-      setCancelada(await api.cancelarReservaPorCodigo(reserva.codigo));
-      avisar("Reserva cancelada, las butacas quedaron libres");
-    } catch (e) {
-      avisar(e.message, "error");
-    }
-    setCancelando(false);
-  }
-
   return (
     <Stack gap="md">
+      {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
       {reserva.estado === "CANCELADA"
         ? <Alert color="gray">Esta reserva está cancelada.</Alert>
         : <Alert color="green">Reserva confirmada. Presentá este comprobante en boletería.</Alert>}
@@ -139,10 +131,17 @@ export function Ticket() {
             <Group>
               <Button component={Link} to="/">Volver a la cartelera</Button>
               <Button variant="default" onClick={copiar}>Copiar</Button>
-              {reserva.estado === "RESERVADA" && (
-                <Button variant="outline" color="red" loading={cancelando} onClick={cancelar}>Cancelar reserva</Button>
-              )}
             </Group>
+            {/* Sin cancelar acá: el ticket es público y se muestra en la puerta; cancelar es del dueño, en Mis reservas. */}
+            {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} />}
+            {usuario === null && recien && reserva.cobrable && (
+              <Text size="sm" c="dimmed">
+                Para pagarla online,{" "}
+                <Anchor component={Link} to="/registro" state={{ email: reserva.cliente.email }} size="sm">registrate</Anchor>{" "}
+                o <Anchor component={Link} to="/ingresar" state={{ email: reserva.cliente.email }} size="sm">ingresá</Anchor>{" "}
+                con {reserva.cliente.email}. Si no, se paga en la boletería.
+              </Text>
+            )}
           </Stack>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }}>

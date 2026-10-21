@@ -467,14 +467,14 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="resumen">
       <h2>Resumen</h2>
       <p>
-        El cliente elige película, función y butacas desde la web y reserva sin registrarse: recibe un código,
-        paga en la boletería y entra con él. El encargado, desde una app de escritorio, trae la cartelera de
+        El cliente elige película, función y butacas desde la web y reserva con o sin cuenta: recibe un código,
+        paga en la boletería o, con cuenta, online con Mercado Pago, y entra con él. El encargado, desde una app de escritorio, trae la cartelera de
         TMDB, programa las funciones, cobra, vende candy y cierra la caja; el acomodador valida las entradas en
         la puerta. El sistema impide vender dos veces la misma butaca y calcula precios, tarifas y promociones.
       </p>
       <p>
         Backend en Java 21 con Spring Boot sobre MySQL; web en React; panel de escritorio en Swing; todo
-        levantado con Docker Compose. 25 casos de uso y 20 reglas de negocio (R1 a R20).
+        levantado con Docker Compose. 25 casos de uso y 21 reglas de negocio (R1 a R21).
       </p>
     </section>
 
@@ -528,6 +528,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>R18</td><td>Solo ingresa una reserva pagada, una sola vez y el día de la función</td></tr>
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
+            <tr><td>R21</td><td>Un cliente solo ve, cancela y paga las reservas que son suyas</td></tr>
           </tbody>
         </table>
       </div>
@@ -865,7 +866,7 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="api">
       <h2>API HTTP</h2>
       <p>
-        71 endpoints REST bajo <code>/api</code> en 19 controladores, JSON de ida y vuelta. Cada ruta, con su
+        74 endpoints REST bajo <code>/api</code> en 19 controladores, JSON de ida y vuelta. Cada ruta, con su
         cuerpo, sus respuestas y sus errores, está en <a href="../../../cine-frontend/API.md">API.md</a> y en
         <a href="#swagger">Swagger</a>; acá, el panorama.
       </p>
@@ -935,7 +936,7 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="frontend">
       <h2>Frontend</h2>
       <p>
-        La venta al cliente, sin login; el encargado y el acomodador usan el <a href="#swing">panel de
+        La venta al cliente, con cuenta opcional (cookie de sesión); el encargado y el acomodador usan el <a href="#swing">panel de
         escritorio</a>. React 19, React Router por hash (<code>#/pelicula/3</code>) y Mantine, en
         <code>cine-frontend/src</code>. Vite compila el JSX a un <code>index.html</code> HTML5 con su JavaScript; nginx
         lo sirve y reenvía <code>/api</code>, así que no hace falta CORS. El CSS3 es la hoja de Mantine con un tema
@@ -948,10 +949,32 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API; convierte el <code>{"error"}</code> en el mensaje que se muestra</td></tr>
             <tr><td><code>useCargar</code></td><td>Carga los datos de una pantalla y descarta respuestas viejas</td></tr>
             <tr><td><code>cliente/compra.jsx</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
-            <tr><td><code>cliente/AppCliente.jsx</code></td><td>Las rutas de las 7 pantallas</td></tr>
+            <tr><td><code>cliente/AppCliente.jsx</code></td><td>Las rutas de las pantallas</td></tr>
+            <tr><td><code>cliente/sesion.jsx</code></td><td>Quién tiene la sesión, preguntándoselo al backend; la verdadera es la cookie</td></tr>
+            <tr><td><code>cliente/PagarOnline.jsx</code></td><td>Elegir medio, ver el monto que devuelve el backend e ir a Mercado Pago</td></tr>
           </tbody>
         </table>
       </div>
+      <h3>Pantallas</h3>
+      <ul>
+        <li><strong>Home (<code>#/</code>):</strong> hero con tres destacadas y botón a la cartelera, y debajo la cartelera. <code>#/cartelera/:genero</code> filtra.</li>
+        <li><strong><code>#/nosotros</code>:</strong> integrantes y descripción del cine.</li>
+        <li><strong><code>#/registro</code> e <code>#/ingresar</code>:</strong> alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o el nombre, Mis reservas y Salir.</li>
+        <li><strong><code>#/mis-reservas</code>:</strong> con sesión, sus reservas con Cancelar y Pagar online; sin sesión, la búsqueda por código.</li>
+        <li><strong>Pagar online:</strong> medio, monto del backend, Mercado Pago, y vuelta al ticket.</li>
+        <li><strong><code>#/ticket/&lt;codigo&gt;</code>:</strong> público y sin cancelar; muestra el <code>?aviso=</code> si el pago no se cobró.</li>
+      </ul>
+      <h3 id="abm-productos">Productos con detalle, borrado y modificación</h3>
+      <p>
+        La guía pide un front con productos listados, con detalle, borrado y modificación. El ABM de catálogo
+        (películas, candy, salas) es del encargado y vive en el <a href="#swing">panel Swing</a>, otro cliente de
+        la misma API. La web es del cliente final: lista las películas, muestra su detalle y deja ver, cancelar y
+        pagar sus reservas.
+      </p>
+      <ul>
+        <li><strong>Por qué no en la web:</strong> un ABM en la web obligaría a un login de administrador en el navegador, la superficie que más conviene evitar.</li>
+        <li><strong>Mismo contrato:</strong> Swing y la web llaman a los mismos endpoints y el backend decide las reglas; ninguno de los dos clientes las repite.</li>
+      </ul>
       <p>
         Ninguna regla vive en el front: lo único que anticipa, pedir el carnet de las tarifas reducidas, es un
         aviso que el backend vuelve a validar.
@@ -998,7 +1021,7 @@ body.lightbox-locked { overflow: hidden; }
       <p>
         Swing revisa solo lo que hace a un pedido bien armado: los campos obligatorios (marcados con
         <code>*</code>) y el formato de lo tipeado (un número, <code>8,10,12</code>, <code>A1</code>,
-        <code>HH:mm</code>). Las reglas, R1 a R20, las decide el backend. Si el formato inválido viajara como
+        <code>HH:mm</code>). Las reglas, R1 a R21, las decide el backend. Si el formato inválido viajara como
         <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio». Un precio cero o
         negativo, en cambio, pasa a propósito: está bien escrito, y si vale lo decide el modelo; duplicar la regla
         daría dos lugares que se pueden contradecir. Todos los formularios usan <code>comun/Validacion</code>; el
@@ -1135,9 +1158,10 @@ body.lightbox-locked { overflow: hidden; }
         <figcaption>La jerarquía de usuarios y el enum que discrimina adentro</figcaption>
       </figure>
       <ul>
-        <li><strong><code>Cliente</code> y <code>Empleado</code></strong> comparten tabla, con discriminador <code>rol</code>. Herencia porque difieren en datos: solo el empleado tiene contraseña. Los cargos no son clases: los distingue <code>Rol</code>.</li>
+        <li><strong><code>Cliente</code> y <code>Empleado</code></strong> comparten tabla, con discriminador <code>rol</code>. La clave (<code>password_hash</code>) vive en <code>Usuario</code>, porque el cliente con cuenta también la tiene; un cliente sin clave es el que reservó sin cuenta. Los cargos no son clases: los distingue <code>Rol</code>.</li>
         <li><strong>El email</strong> se guarda normalizado (recortado y en minúsculas), así se busca igual en clientes, reservas y login.</li>
-        <li><strong>El cliente no tiene login:</strong> el <a href="#acceso">código de la reserva</a> es su credencial. Por id, que es secuencial, solo accede el encargado.</li>
+        <li><strong>Cliente con cuenta, opcional:</strong> se registra con nombre, email y clave (<code>Cliente.abrirCuenta</code>) y ve, cancela y paga sus reservas (R21). Sin cuenta sigue reservando y el <a href="#acceso">código de la reserva</a> es su credencial. Por id, que es secuencial, solo accede el encargado.</li>
+        <li><strong>Reclamo del email:</strong> quien reservó sin cuenta se registra con ese email y la cuenta se abre sobre el mismo cliente, así que ve sus reservas de antes. <em>Riesgo aceptado:</em> no se verifica el email; quien sepa el de un comprador sin cuenta lo reclama primero y ve sus reservas, con el código. El arreglo sería confirmarlo por mail.</li>
         <li><strong>Contraseñas en bcrypt.</strong> Un hash sin prefijo es el SHA-256 viejo: se acepta, y el primer login correcto lo reescribe en bcrypt, único momento en que se tiene la clave en claro (<a href="#decorator">Decorator</a> para las de más de 72 bytes). El login no distingue email inexistente de clave errónea, para no revelar qué emails existen.</li>
       </ul>
 
@@ -1147,15 +1171,17 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
-            <tr><td>Público</td><td>Lo que usa la venta web: cartelera, catálogos, bloquear y reservar, alta de cliente, la propia reserva <em>por código</em>, carta del candy. Una película que el buzón no aprobó da 404</td></tr>
+            <tr><td>Público</td><td>Lo que usa la venta web: cartelera, catálogos, bloquear y reservar, alta de cliente, la reserva <em>por código</em>, el retorno de Mercado Pago, carta del candy. Una película que el buzón no aprobó da 404</td></tr>
+            <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelarlas y abrir su checkout, solo si son suyas (R21): ajena da 404, igual que un código inexistente, para no confirmar que existe</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
           </tbody>
         </table>
       </div>
       <ul>
-        <li><strong>HTTP Basic sin sesión:</strong> credenciales en cada pedido y sin cookie, por eso CSRF está apagado.</li>
-        <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más y <code>SesionController</code> devuelve el empleado que el filtro ya autenticó. Dos caminos podrían no coincidir.</li>
+        <li><strong>Basic para Swing, cookie para la web:</strong> el empleado manda credenciales en cada pedido y no se le crea sesión. Al cliente, <code>POST /api/sesion</code> le setea <code>JSESSIONID</code> (HttpOnly, <code>SameSite=Lax</code>) y <code>DELETE /api/sesion</code> la cierra. <code>SesionDeClientes</code>, un <a href="#decorator">Decorator</a> del repositorio de contexto de Spring, guarda en sesión solo la identidad de un usuario <code>CLIENTE</code>.</li>
+        <li><strong>CSRF apagado, con <code>SameSite=Lax</code> en su lugar:</strong> un <code>POST</code> o <code>DELETE</code> de otro sitio llega sin la cookie. Un token CSRF sería más fuerte, pero obliga al front a leerlo y reenviarlo.</li>
+        <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más y <code>SesionController</code> devuelve el usuario que el filtro ya autenticó. Al abrir sesión se cambia el id (session fixation).</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
@@ -1291,7 +1317,19 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         {{SVG_CHECKOUT_PASARELA}}
         <figcaption>El checkout se valida al abrirlo y otra vez antes de autorizar</figcaption>
       </figure>
-      <p>El código de autorización lo emite <code>PasarelaPagos</code>, un puerto con una implementación emulada; una real sería otro <code>@Bean</code>.</p>
+      <p>El código de autorización lo emite <code>PasarelaPagos</code>, un puerto con dos implementaciones (<a href="#grasp">Strategy</a>) que <code>Adaptadores</code> elige al arrancar, como con TMDB: con <code>MP_ACCESS_TOKEN</code>, <code>MercadoPagoHttp</code> (Checkout Pro en sandbox, <code>java.net.http</code> y Jackson, sin SDK); sin token, la emulada.</p>
+      <h3 id="mercadopago">Mercado Pago</h3>
+      <figure class="diagram">
+        {{SVG_PAGO_MERCADOPAGO}}
+        <figcaption>El pago se confirma al volver, consultando a Mercado Pago, no por lo que diga la URL</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Id del checkout = <code>external_reference</code></strong> (<code>&lt;reservaId&gt;-&lt;MEDIO&gt;-&lt;azar&gt;</code>): se conoce antes de crear la preferencia, así entra en la <code>back_url</code> sin un segundo pedido. Un id inventado da 404.</li>
+        <li><strong>Sin webhook:</strong> el backend corre en localhost y MP no puede llamarlo. Al volver, <code>GET /api/checkouts/{id}/retorno</code> consulta <code>/v1/payments/search</code>; la query de la URL se ignora porque es falsificable. Recargar no cobra dos veces: si ya hay pago, no hace nada.</li>
+        <li><strong>Mismo camino que la caja:</strong> <code>registrarPago</code>, con el mismo descuento y el mismo recibo. El medio es el que se eligió al abrir el checkout, porque de él depende la promoción.</li>
+        <li><strong>Riesgos aceptados:</strong> un pago <code>pending</code> no se re-consulta hasta que el comprador vuelva a abrir el retorno; y si MP aprueba cuando la reserva ya venció (R17), MP cobró y el sistema no registra, sin devolución (R13).</li>
+        <li><strong>Local:</strong> MP rechaza una <code>back_url</code> a localhost con <code>auto_return</code>, así que ahí el comprador toca «Volver al sitio».</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="precios">
@@ -1946,6 +1984,7 @@ docker compose up -d --build
             <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code>, <code>PeliculaTest</code>, <code>SalaTest</code></td></tr>
             <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
+            <tr><td>R21</td><td><code>CuentaDelClienteTest</code>, <code>GestorClientesTest</code></td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>
@@ -1966,7 +2005,7 @@ docker compose up -d --build
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 25 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R20, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R21, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>
@@ -2031,7 +2070,10 @@ docker compose up -d --build
             <tr><td>Ids sueltos donde nadie navega (<code>Pago.reservaId</code>…)</td><td><code>@ManyToOne</code></td><td>La FK está igual en la base</td></tr>
             <tr><td><code>@Version</code> solo en <code>Reserva</code></td><td>En todas o <code>@Lock</code></td><td>Es la única con transiciones que compiten; las butacas las cierra el <code>UNIQUE</code></td></tr>
             <tr><td><code>Reloj</code> como puerto</td><td><code>LocalDateTime.now()</code></td><td>Tests sin fecha real</td></tr>
-            <tr><td>HTTP Basic sin sesión</td><td>Tokens</td><td>Lo mínimo que protege</td></tr>
+            <tr><td>HTTP Basic para el panel; cookie de sesión solo para el cliente web</td><td>Tokens en JavaScript</td><td>Nada sensible al alcance del JS; Swing no necesita cookie</td></tr>
+            <tr><td><code>SameSite=Lax</code></td><td>Token CSRF</td><td>La cookie no viaja en un <code>POST</code> o <code>DELETE</code> de otro sitio, y el front no tiene que reenviar nada</td></tr>
+            <tr><td>Reclamo del email sin verificarlo</td><td>Confirmar por mail</td><td>Menos piezas; el riesgo está aceptado (<a href="#usuarios">usuarios</a>)</td></tr>
+            <tr><td>Retorno de Mercado Pago que consulta el pago</td><td>Webhook</td><td>El backend corre en localhost y MP no llega; el pago se consulta a su API (<a href="#pasarela">pasarela</a>)</td></tr>
             <tr><td>Importador dentro del backend</td><td>Proceso aparte</td><td>Sus reglas tienen tests y compilador</td></tr>
             <tr><td>WAR ejecutable</td><td>JAR</td><td>Embebido o en Tomcat</td></tr>
 

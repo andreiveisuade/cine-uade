@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.ventas.CodigoDeAcceso;
@@ -30,6 +31,17 @@ public class ConsultasReservas {
 
     public Reserva obtenerPorCodigo(String codigo) {
         return reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
+    }
+
+    // R21: el cliente opera (cancelar, pagar online) solo sobre la suya. La de otro sale con el mismo 404
+    // que un código que no existe: el código no prueba ser el dueño, y un 403 confirmaría que la reserva
+    // existe. Rechazo no tiene un 403 propio, y agregarlo para decir menos no hace falta.
+    public Reserva obtenerDelCliente(String codigo, String emailDelCliente) {
+        Reserva reserva = obtenerPorCodigo(codigo);
+        if (!reserva.getCliente().getEmail().equals(emailDelCliente)) {
+            throw new RecursoNoEncontrado("No existe ninguna reserva con ese código");
+        }
+        return reserva;
     }
 
     // Con función, película, sala y cliente ya cargados: afuera de la transacción no hay

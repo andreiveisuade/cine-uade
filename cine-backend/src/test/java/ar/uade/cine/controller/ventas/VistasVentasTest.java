@@ -205,18 +205,18 @@ class VistasVentasTest extends PruebaDeIntegracion {
     @Test
     void losListadosCuestanLasMismasConsultasConDosVentasQueConOcho() {
         vender(2);
-        long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null, null));
-        long delClienteConDos = consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null));
+        long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null));
+        long delClienteConDos = consultasDe(() -> reservaController.mias(cliente::getEmail));
         long arqueoConDos = consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString()));
 
         vender(6);
-        assertEquals(16, reservaController.listar(null, null, null, null).size());
+        assertEquals(16, reservaController.listar(null, null, null).size());
 
-        assertEquals(reservasConDos, consultasDe(() -> reservaController.listar(null, null, null, null)),
+        assertEquals(reservasConDos, consultasDe(() -> reservaController.listar(null, null, null)),
                 "GET /api/reservas");
         assertEquals(delClienteConDos,
-                consultasDe(() -> reservaController.listar(cliente.getEmail(), null, null, null)),
-                "GET /api/reservas?email=");
+                consultasDe(() -> reservaController.mias(cliente::getEmail)),
+                "GET /api/reservas/mias");
         assertEquals(arqueoConDos,
                 consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString())),
                 "GET /api/arqueo");

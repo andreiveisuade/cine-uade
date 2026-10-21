@@ -138,15 +138,6 @@ public class ConfiguracionOpenApi {
                 operacion.setSecurity(List.of());
             }
         },
-        PUBLICO_CON_EMAIL {
-            // Requisito vacío primero: con ?email= no hace falta credencial.
-            @Override
-            void documentar(Operation operacion) {
-                operacion.setSecurity(List.of(new SecurityRequirement(),
-                        new SecurityRequirement().addList(ESQUEMA_BASIC)));
-                pideCredencial(operacion);
-            }
-        },
         PROTEGIDO {
             @Override
             void documentar(Operation operacion) {
@@ -176,9 +167,6 @@ public class ConfiguracionOpenApi {
             }
             if (coincide(concreta, ConfiguracionSeguridad.GET_PUBLICOS)) {
                 return Acceso.PUBLICO;
-            }
-            if (ruta.equals(ConfiguracionSeguridad.GET_PUBLICO_CON_EMAIL)) {
-                return Acceso.PUBLICO_CON_EMAIL;
             }
         }
         return Acceso.PROTEGIDO;

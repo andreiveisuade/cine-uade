@@ -46,19 +46,14 @@ public class VistasReservas {
     private final Reloj reloj;
 
     public List<ReservaVistaDTO> reservas(List<Reserva> lista) {
-        return armar(lista, true);
-    }
-
-    // Sin el código de acceso: es la credencial del cliente y esta vista sale por una ruta pública.
-    public List<ReservaVistaDTO> reservasSinCodigo(List<Reserva> lista) {
-        return armar(lista, false);
+        return armar(lista);
     }
 
     public ReservaVistaDTO reserva(Reserva r) {
-        return armar(List.of(r), true).get(0);
+        return armar(List.of(r)).get(0);
     }
 
-    private List<ReservaVistaDTO> armar(List<Reserva> lista, boolean conCodigo) {
+    private List<ReservaVistaDTO> armar(List<Reserva> lista) {
         if (lista.isEmpty()) {
             return List.of();
         }
@@ -75,17 +70,17 @@ public class VistasReservas {
                     if (completa == null) {
                         throw new RecursoNoEncontrado("No existe la reserva " + r.getId());
                     }
-                    return dto(completa, conCodigo, asientosPorSala, porReserva.get(r.getId()));
+                    return dto(completa, asientosPorSala, porReserva.get(r.getId()));
                 })
                 .toList();
     }
 
-    private ReservaVistaDTO dto(Reserva r, boolean conCodigo, Map<Integer, List<Asiento>> asientosPorSala,
+    private ReservaVistaDTO dto(Reserva r, Map<Integer, List<Asiento>> asientosPorSala,
                                 Pago pago) {
         Funcion f = r.getFuncion();
         List<Asiento> asientos = asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe);
         return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
-                Fechas.texto(r.getCreadaEn()), conCodigo ? r.getCodigo() : null,
+                Fechas.texto(r.getCreadaEn()), r.getCodigo(),
                 Fechas.texto(r.getIngresadaEn()),
                 r.getEntradas().stream().map(this::entrada).toList(),
                 r.getCantidadEntradas(), r.getTotal().aPesos(),

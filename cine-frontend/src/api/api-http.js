@@ -1,10 +1,11 @@
 const BASE = "/api";
 
 async function pedir(ruta, opciones = {}) {
-  const cabeceras = opciones.cuerpo ? { "Content-Type": "application/json" } : {};
+  const cabeceras = { ...(opciones.cuerpo ? { "Content-Type": "application/json" } : {}), ...opciones.cabeceras };
 
   let respuesta;
   try {
+    // Sin `credentials`: el default (same-origin) manda la cookie de la sesión del cliente.
     respuesta = await fetch(BASE + ruta, {
       headers: cabeceras,
       method: opciones.metodo || "GET",
@@ -71,7 +72,27 @@ export const obtenerFuncion = (id, sesion) => get(`/funciones/${id}${consulta({ 
 export const bloquearButacas = ({ funcionId, sesion, butacas }) =>
   post(`/funciones/${Number(funcionId)}/bloqueos`, { sesion, butacas });
 
-export const registrarCliente = ({ nombre, email }) => post("/clientes", { nombre, email });
+export const registrarCliente = ({ nombre, email, password }) => post("/clientes", { nombre, email, password });
+
+// Basic solo para entrar: después la sesión vive en la cookie HttpOnly y el front no guarda la clave.
+// TextEncoder porque btoa no acepta una clave con tildes o eñes.
+export const ingresar = (email, clave) =>
+  pedir("/sesion", {
+    metodo: "POST",
+    cabeceras: { Authorization: "Basic " + btoa(String.fromCharCode(...new TextEncoder().encode(`${email}:${clave}`))) },
+  });
+
+// Sin Basic, el backend contesta con quien tenga la cookie, o 401 si no hay sesión.
+export const sesionActual = () => post("/sesion");
+
+export const salir = () => pedir("/sesion", { metodo: "DELETE" });
+
+export const obtenerMisReservas = () => get("/reservas/mias");
+
+export const obtenerMediosDePago = () => get("/medios-pago");
+
+export const abrirCheckout = (codigo, medio) =>
+  post(`/reservas/codigo/${encodeURIComponent(codigo)}/checkout`, { medio });
 
 export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
   post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });

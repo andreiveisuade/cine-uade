@@ -3,6 +3,7 @@ package ar.uade.cine.controller.ventas;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.RetornoCheckout;
 
@@ -38,6 +40,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PagoController {
 
     private final GestorPagos pagos;
+    private final ConsultasReservas consultas;
     private final VistasPagos vistas;
 
     @Operation(summary = "Cobrar una reserva. El monto sale de la reserva, no del pedido")
@@ -65,6 +68,17 @@ public class PagoController {
     public CheckoutVistaDTO abrirCheckout(@PathVariable int id,
                                           @Valid @RequestBody PedidoCheckoutDTO pedido) {
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
+        return vistas.checkout(pagos.iniciarCheckout(id, medio));
+    }
+
+    // El mismo checkout que el del encargado; la reserva sale del código y de la sesión (R21).
+    @Operation(summary = "El cliente abre el checkout de su reserva, con la sesión abierta")
+    @PostMapping("/api/reservas/codigo/{codigo}/checkout")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CheckoutVistaDTO abrirCheckoutDelCliente(@PathVariable String codigo, Principal cliente,
+                                                    @Valid @RequestBody PedidoCheckoutDTO pedido) {
+        MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
+        int id = consultas.obtenerDelCliente(codigo, cliente.getName()).getId();
         return vistas.checkout(pagos.iniciarCheckout(id, medio));
     }
 

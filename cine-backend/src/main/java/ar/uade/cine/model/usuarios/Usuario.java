@@ -39,6 +39,11 @@ public abstract class Usuario {
     @Column(name = "rol", nullable = false)
     private Rol rol;
 
+    // Acá y no en Empleado: el cliente con cuenta también entra con clave, y es la misma columna.
+    // Null en el cliente que compró sin registrarse.
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
     protected Usuario() {
     }
 
@@ -46,5 +51,9 @@ public abstract class Usuario {
         this.nombre = ValidadorUsuario.nombre(nombre);
         this.email = new Email(email).valor();
         this.rol = rol;
+    }
+
+    protected void guardarPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }

@@ -4,17 +4,19 @@ import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.usuarios.Contrasena;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-// Registro e identificación de clientes por email; Usuario valida los datos y el gestor el email ocupado.
+// Registro con clave e identificación por email de clientes; Usuario valida los datos, el gestor el email.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -22,19 +24,21 @@ public class GestorClientes {
 
     private final ClienteRepository clienteRepository;
     private final EmpleadoRepository empleadoRepository;
+    private final PasswordEncoder claves;
 
-    // Nombre y email los valida Usuario. Se construye antes de buscar el email repetido para que
-    // un dato inválido se rechace primero, como cuando la validación estaba acá. Se busca también
-    // entre los empleados: comparten el UNIQUE del email y ClienteRepository no los ve. El texto
-    // es el mismo para los dos: no dice de quién es el email.
-    public Cliente registrar(String nombre, String email) {
-        Cliente cliente = new Cliente(nombre, email);
-        if (clienteRepository.existsByEmail(cliente.getEmail())
-                || empleadoRepository.existsByEmail(cliente.getEmail())) {
+    // Nombre y email los valida Usuario, y la clave Contrasena: un dato inválido se rechaza antes que
+    // el email ocupado. Se busca también entre los empleados: comparten el UNIQUE del email y
+    // ClienteRepository no los ve. Si el email es de quien reservó sin cuenta, la cuenta es suya:
+    // registrarse la abre sobre ese cliente y sus reservas de antes quedan a su nombre.
+    public Cliente registrar(String nombre, String email, String password) {
+        Cliente nuevo = new Cliente(nombre, email);
+        Contrasena clave = new Contrasena(password);
+        if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
             throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
         }
-        clienteRepository.save(cliente);
-        return cliente;
+        Cliente cliente = clienteRepository.findByEmail(nuevo.getEmail()).orElse(nuevo);
+        cliente.abrirCuenta(claves.encode(clave.valor()));
+        return clienteRepository.save(cliente);
     }
 
     // Al comprar, el email es un dato más del formulario: el de un empleado es un 400 y no el 409

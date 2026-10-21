@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,7 +14,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,10 +24,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.model.usuarios.Usuario;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
@@ -36,8 +40,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
-// Qué rol puede llamar cada ruta y cómo se autentica (Basic contra empleado, bcrypt); SecurityFilterChain.
-// HTTP Basic sin sesión: sin cookie no hay CSRF, por eso está apagado. Lo no enumerado pide ADMINISTRADOR.
+// Qué rol puede llamar cada ruta y cómo se autentica (Basic contra usuario, bcrypt); SecurityFilterChain.
+// Los empleados mandan Basic en cada pedido y no tienen sesión; el cliente entra con Basic una vez y sigue
+// con la cookie de sesión (SesionDeClientes). CSRF apagado: la cookie es SameSite=Lax, así que un POST o
+// un DELETE desde otro sitio llega sin ella. Lo no enumerado pide ADMINISTRADOR.
 // Los 401/403 salen sin WWW-Authenticate, que abriría el cuadro de login del navegador.
 @Slf4j
 @Configuration
@@ -45,15 +51,16 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ConfiguracionSeguridad {
 
     private static final String ADMINISTRADOR = Rol.ADMINISTRADOR.name();
+    private static final String COOKIE_DE_SESION = "JSESSIONID";
     private static final String ACOMODADOR = Rol.ACOMODADOR.name();
+    private static final String CLIENTE = Rol.CLIENTE.name();
 
     // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
 
     public static final String[] POST_PUBLICOS = {
             "/api/clientes",
             "/api/reservas",
-            "/api/funciones/*/bloqueos",
-            "/api/reservas/codigo/*/cancelacion"};
+            "/api/funciones/*/bloqueos"};
 
     public static final String[] GET_PUBLICOS = {
             "/api/cartelera",
@@ -69,11 +76,9 @@ public class ConfiguracionSeguridad {
 
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
-    // Abierta solo con ?email=: ningún patrón de ruta mira el parámetro.
-    public static final String GET_PUBLICO_CON_EMAIL = "/api/reservas";
-
     @Bean
     public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json) throws Exception {
+        SecurityContextRepository sesion = new SesionDeClientes();
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
                         // Mismo texto para clave y email: distinguirlos revela qué emails existen.
@@ -87,10 +92,16 @@ public class ConfiguracionSeguridad {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable)
-                .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(salida -> salida
+                        .logoutRequestMatcher(PathPatternRequestMatcher.withDefaults()
+                                .matcher(HttpMethod.DELETE, "/api/sesion"))
+                        .deleteCookies(COOKIE_DE_SESION)
+                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
+                .securityContext(contexto -> contexto.securityContextRepository(sesion))
+                // Guardaría en la sesión cada pedido que da 401, y crearía una para cualquiera.
+                .requestCache(AbstractHttpConfigurer::disable)
                 // También acá: el de fábrica del filtro Basic agrega WWW-Authenticate.
-                .httpBasic(basic -> basic.authenticationEntryPoint(sinIdentidad))
+                .httpBasic(basic -> basic.authenticationEntryPoint(sinIdentidad).securityContextRepository(sesion))
                 .exceptionHandling(errores -> errores
                         .authenticationEntryPoint(sinIdentidad)
                         .accessDeniedHandler(sinPermiso))
@@ -104,35 +115,39 @@ public class ConfiguracionSeguridad {
                         // Va antes que /api/peliculas/*, que si no lo abriría por coincidencia.
                         .requestMatchers(HttpMethod.GET, GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS).hasRole(ADMINISTRADOR)
                         .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
-                        .requestMatchers(reservasDeUnEmail()).permitAll()
 
-                        // El login también: el acomodador entra al panel para llegar a la puerta.
-                        .requestMatchers(HttpMethod.POST, "/api/sesion", "/api/acceso")
-                        .hasAnyRole(ADMINISTRADOR, ACOMODADOR)
+                        .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
+                        // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.
+                        .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",
+                                "/api/reservas/codigo/*/checkout").hasRole(CLIENTE)
+                        // El acomodador entra al panel para llegar a la puerta.
+                        .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
                 .build();
     }
 
-    private static RequestMatcher reservasDeUnEmail() {
-        return pedido -> HttpMethod.GET.matches(pedido.getMethod())
-                && GET_PUBLICO_CON_EMAIL.equals(pedido.getServletPath())
-                && pedido.getParameter("email") != null
-                && !pedido.getParameter("email").isBlank();
+    // Lax y no Strict: con Strict, entrar al cine desde un link de otro sitio llegaría sin la sesión.
+    @Bean
+    public CookieSameSiteSupplier cookieDeSesionSoloDelMismoSitio() {
+        return CookieSameSiteSupplier.ofLax().whenHasName(COOKIE_DE_SESION);
     }
 
     // El email se busca como lo guarda Email: el login tampoco distingue mayúsculas ni espacios.
-    // Un empleado sin hash (una fila cargada a mano con NULL) no tiene con qué comparar la clave: cuenta
-    // como un email que no existe, así el 401 dice lo mismo que una clave equivocada. Armar el User con
-    // NULL tiraba, y el 401 decía «Hace falta iniciar sesión».
+    // Sin hash (el cliente que compró sin registrarse, o una fila de empleado cargada a mano con NULL)
+    // no hay con qué comparar la clave: cuenta como un email que no existe, así el 401 dice lo mismo
+    // que una clave equivocada. Armar el User con NULL tiraba, y el 401 decía «Hace falta iniciar sesión».
     @Bean
-    public UserDetailsService empleadosComoUsuarios(EmpleadoRepository empleados) {
-        return email -> Email.paraBuscar(email).map(Email::valor).flatMap(empleados::findByEmail)
-                .filter(empleado -> empleado.getPasswordHash() != null)
-                .map(empleado -> User.withUsername(empleado.getEmail())
-                        .password(empleado.getPasswordHash())
-                        .roles(empleado.getRol().name())
+    public UserDetailsService usuariosConClave(EmpleadoRepository empleados, ClienteRepository clientes) {
+        return email -> Email.paraBuscar(email).map(Email::valor)
+                .<Usuario>flatMap(valor -> empleados.findByEmail(valor).<Usuario>map(empleado -> empleado)
+                        .or(() -> clientes.findByEmail(valor)))
+                .filter(usuario -> usuario.getPasswordHash() != null)
+                .map(usuario -> User.withUsername(usuario.getEmail())
+                        .password(usuario.getPasswordHash())
+                        .roles(usuario.getRol().name())
                         .build())
-                .orElseThrow(() -> new UsernameNotFoundException("No hay un empleado con ese email"));
+                .orElseThrow(() -> new UsernameNotFoundException("No hay un usuario con ese email"));
     }
 
     // Lo nuevo sale como {bcrypt}…; un hash sin prefijo es el SHA-256 de antes y se sigue
