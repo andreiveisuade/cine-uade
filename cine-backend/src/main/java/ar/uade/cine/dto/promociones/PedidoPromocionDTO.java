@@ -5,7 +5,7 @@ import java.util.List;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-// Lo que entra al cargar una promoción (POST /api/promociones); exige nombre, tipo y vigencia.
+// Lo que entra al cargar una promoción (POST y PUT /api/promociones); exige nombre, tipo y vigencia.
 public record PedidoPromocionDTO(
         @Schema(example = "Martes de descuento")
         @NotBlank(message = "Falta el nombre") String nombre,
@@ -30,5 +30,7 @@ public record PedidoPromocionDTO(
         @Schema(description = "HH:MM, opcional")
         String horaHasta,
         @Schema(description = "Vacío son todos", allowableValues = {"EFECTIVO", "DEBITO", "CREDITO", "QR", "TRANSFERENCIA"}, example = "[]")
-        List<String> mediosPago) {
+        List<String> mediosPago,
+        @Schema(description = "La url que devolvió POST /api/imagenes; vacía o null es sin imagen")
+        String imagenUrl) {
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.model.promociones.validacion.ValidadorPromocion;
 import ar.uade.cine.model.tiempo.FranjaHoraria;
 import ar.uade.cine.model.tiempo.Periodo;
@@ -75,21 +76,53 @@ public abstract class Promocion {
     @Getter(AccessLevel.NONE)
     private boolean activa = true;
 
+    private String imagenUrl;
+
     protected Promocion() {
     }
 
     // Lo común se valida acá y lo propio en cada subclase, así no se arma una inválida. FranjaHoraria rechaza la que cruza medianoche.
     protected Promocion(String nombre, CondicionesPromocion condiciones, LocalDate hoy) {
-        String nombreValido = ValidadorPromocion.nombre(nombre);
-        Periodo vigenciaValida = ValidadorPromocion.vigencia(condiciones.desde(), condiciones.hasta());
-        FranjaHoraria franjaValida = new FranjaHoraria(condiciones.horaDesde(), condiciones.horaHasta());
-        Set<DayOfWeek> dias = copia(condiciones.dias(), DayOfWeek.class);
-        ValidadorPromocion.exigirQueAlgunaVezAplique(vigenciaValida, dias, hoy);
-        this.nombre = nombreValido;
-        this.vigencia = vigenciaValida;
-        this.franja = franjaValida;
-        this.diasSemana = dias;
-        this.mediosPago = copia(condiciones.mediosPago(), MedioPago.class);
+        asignar(Comunes.validar(nombre, condiciones, hoy));
+    }
+
+    // Mismo orden que el alta: lo común antes que lo propio del tipo, y nada se asigna si algo falla.
+    // El tipo queda: cambiarlo sería otra subclase, y la fila guarda el discriminador.
+    public void editar(TipoPromocion tipo, String nombre, ParametrosPromocion parametros,
+                       CondicionesPromocion condiciones, LocalDate hoy) {
+        ValidadorPromocion.exigirMismoTipo(getTipo(), tipo);
+        Comunes comunes = Comunes.validar(nombre, condiciones, hoy);
+        cambiarParametros(parametros);
+        asignar(comunes);
+    }
+
+    // Lo propio del tipo al editar: cada subclase valida todo lo suyo antes de asignar.
+    protected abstract void cambiarParametros(ParametrosPromocion parametros);
+
+    public void cambiarImagen(ImagenUrl imagen) {
+        this.imagenUrl = imagen.valor();
+    }
+
+    private void asignar(Comunes comunes) {
+        this.nombre = comunes.nombre();
+        this.vigencia = comunes.vigencia();
+        this.franja = comunes.franja();
+        this.diasSemana = comunes.dias();
+        this.mediosPago = comunes.medios();
+    }
+
+    private record Comunes(String nombre, Periodo vigencia, FranjaHoraria franja, Set<DayOfWeek> dias,
+                           Set<MedioPago> medios) {
+
+        static Comunes validar(String nombre, CondicionesPromocion condiciones, LocalDate hoy) {
+            String nombreValido = ValidadorPromocion.nombre(nombre);
+            Periodo vigenciaValida = ValidadorPromocion.vigencia(condiciones.desde(), condiciones.hasta());
+            FranjaHoraria franjaValida = new FranjaHoraria(condiciones.horaDesde(), condiciones.horaHasta());
+            Set<DayOfWeek> dias = copia(condiciones.dias(), DayOfWeek.class);
+            ValidadorPromocion.exigirQueAlgunaVezAplique(vigenciaValida, dias, hoy);
+            return new Comunes(nombreValido, vigenciaValida, franjaValida, dias,
+                    copia(condiciones.mediosPago(), MedioPago.class));
+        }
     }
 
     public abstract TipoPromocion getTipo();

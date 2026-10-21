@@ -25,7 +25,7 @@ public class VistasPromociones {
                 p.getDiasSemana().stream().map(Enum::name).toList(),
                 texto(franja.desde()), texto(franja.hasta()),
                 p.getMediosPago().stream().map(Enum::name).toList(),
-                p.estaActiva());
+                p.estaActiva(), p.getImagenUrl());
     }
 
     // R16: las tarifas que no suman promoción salen del enum, no de una lista del front.
@@ -36,7 +36,7 @@ public class VistasPromociones {
                 p.getDiasSemana().stream().map(Enum::name).toList(),
                 texto(franja.desde()), texto(franja.hasta()),
                 p.getMediosPago().stream().map(Enum::name).toList(),
-                TipoTarifa.excluidasDePromociones().stream().map(Enum::name).toList());
+                TipoTarifa.excluidasDePromociones().stream().map(Enum::name).toList(), p.getImagenUrl());
     }
 
     private static String texto(LocalTime hora) {

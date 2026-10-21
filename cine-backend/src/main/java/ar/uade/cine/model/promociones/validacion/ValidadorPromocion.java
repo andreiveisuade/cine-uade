@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.validacion.Regla;
@@ -27,6 +28,12 @@ public final class ValidadorPromocion {
     public static String nombre(String nombre) {
         return Regla.texto(nombre).obligatorio("Falta el nombre").recortado()
                 .hasta(LARGO_MAXIMO_DEL_NOMBRE, "El nombre").valor();
+    }
+
+    public static void exigirMismoTipo(TipoPromocion actual, TipoPromocion pedido) {
+        if (actual != pedido) {
+            throw new DatoInvalido("El tipo de una promoción no se puede cambiar");
+        }
     }
 
     public static Periodo vigencia(LocalDate desde, LocalDate hasta) {

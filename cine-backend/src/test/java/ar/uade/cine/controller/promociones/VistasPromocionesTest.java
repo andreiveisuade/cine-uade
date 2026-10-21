@@ -14,6 +14,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -36,7 +37,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         Promocion promocion = promociones.crear(TipoPromocion.PORCENTAJE, "Martes 30%",
                 ParametrosPromocion.dePorcentaje(30.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(DayOfWeek.TUESDAY), null, null, Set.of()));
+                Set.of(DayOfWeek.TUESDAY), null, null, Set.of()), ImagenUrl.NINGUNA);
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -52,7 +53,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         Promocion promocion = promociones.crear(TipoPromocion.MONTO_FIJO, "$2000 off",
                 ParametrosPromocion.deMonto(2000.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -65,7 +66,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
     void elNxMMandaCuantoSeLlevaYCuantoSePaga() {
         Promocion promocion = promociones.crear(TipoPromocion.NXM, "2x1", ParametrosPromocion.deNxM(2, 1),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -81,7 +82,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         Promocion promocion = promociones.crear(TipoPromocion.PORCENTAJE, "Siempre 10%",
                 ParametrosPromocion.dePorcentaje(10.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -97,7 +98,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
                 ParametrosPromocion.dePorcentaje(25.0),
                 new CondicionesPromocion(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31),
                 Set.of(DayOfWeek.FRIDAY), LocalTime.of(22, 0), LocalTime.of(23, 59),
-                Set.of(MedioPago.EFECTIVO)));
+                Set.of(MedioPago.EFECTIVO)), ImagenUrl.NINGUNA);
 
         PromocionVistaDTO vista = vistas.promocion(promocion);
 
@@ -114,7 +115,7 @@ class VistasPromocionesTest extends PruebaDeIntegracion {
         Promocion promocion = promociones.crear(TipoPromocion.PORCENTAJE, "Martes 30%",
                 ParametrosPromocion.dePorcentaje(30.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         assertTrue(vistas.promocion(promocion).activa());
 
         promociones.desactivar(promocion.getId());

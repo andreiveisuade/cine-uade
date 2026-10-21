@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.Promocion;
@@ -69,21 +71,21 @@ public class PromocionController {
     @PostMapping("/api/promociones")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PromocionVistaDTO> crear(@Valid @RequestBody PedidoPromocionDTO pedido) {
-        LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
-        LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
-        Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
-        Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
-        // Una hora vacía es una hora que no vino, como en el resto de la API: la franja queda abierta.
-        LocalTime horaDesde = Parseo.horaOpcional(pedido.horaDesde(), "la hora de inicio");
-        LocalTime horaHasta = Parseo.horaOpcional(pedido.horaHasta(), "la hora de fin");
-        CondicionesPromocion condiciones = new CondicionesPromocion(desde, hasta, dias,
-                horaDesde, horaHasta, medios);
-        ParametrosPromocion parametros = new ParametrosPromocion(pedido.porcentaje(), pedido.monto(),
-                pedido.lleva(), pedido.paga());
-
+        CondicionesPromocion condiciones = condiciones(pedido);
+        ImagenUrl imagen = new ImagenUrl(pedido.imagenUrl());
         // Sin switch: el tipo crea su subclase (Factory Method en TipoPromocion).
-        Promocion promocion = promociones.crear(tipoDe(pedido.tipo()), pedido.nombre(), parametros, condiciones);
+        Promocion promocion = promociones.crear(tipoDe(pedido.tipo()), pedido.nombre(), parametros(pedido),
+                condiciones, imagen);
         return Creado.en("/api/promociones/" + promocion.getId(), vistas.promocion(promocion));
+    }
+
+    @Operation(summary = "Editar una promoción: mismo cuerpo que el alta; el tipo no cambia")
+    @PutMapping("/api/promociones/{id}")
+    public PromocionVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoPromocionDTO pedido) {
+        CondicionesPromocion condiciones = condiciones(pedido);
+        ImagenUrl imagen = new ImagenUrl(pedido.imagenUrl());
+        return vistas.promocion(promociones.editar(id, tipoDe(pedido.tipo()), pedido.nombre(), parametros(pedido),
+                condiciones, imagen));
     }
 
     @Operation(summary = "Dar de baja una promoción sin borrarla, o reactivarla")
@@ -92,6 +94,21 @@ public class PromocionController {
                                                @Valid @RequestBody PedidoActivacionDTO pedido) {
         Promocion promocion = pedido.activa() ? promociones.activar(id) : promociones.desactivar(id);
         return vistas.promocion(promocion);
+    }
+
+    private static CondicionesPromocion condiciones(PedidoPromocionDTO pedido) {
+        LocalDate desde = Parseo.dia(pedido.vigenciaDesde(), "el inicio de la vigencia");
+        LocalDate hasta = Parseo.dia(pedido.vigenciaHasta(), "el fin de la vigencia");
+        Set<DayOfWeek> dias = new LinkedHashSet<>(Parseo.constantes(DayOfWeek.class, pedido.diasSemana(), "el día de la semana"));
+        Set<MedioPago> medios = new LinkedHashSet<>(Parseo.constantes(MedioPago.class, pedido.mediosPago(), "el medio de pago"));
+        // Una hora vacía es una hora que no vino, como en el resto de la API: la franja queda abierta.
+        LocalTime horaDesde = Parseo.horaOpcional(pedido.horaDesde(), "la hora de inicio");
+        LocalTime horaHasta = Parseo.horaOpcional(pedido.horaHasta(), "la hora de fin");
+        return new CondicionesPromocion(desde, hasta, dias, horaDesde, horaHasta, medios);
+    }
+
+    private static ParametrosPromocion parametros(PedidoPromocionDTO pedido) {
+        return new ParametrosPromocion(pedido.porcentaje(), pedido.monto(), pedido.lleva(), pedido.paga());
     }
 
     // El mensaje nombra etiquetas y no constantes, a diferencia de Parseo.constante

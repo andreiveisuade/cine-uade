@@ -8,5 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record PromocionPublicaVistaDTO(String nombre, String tipo, String beneficio, String vigenciaDesde,
                                        String vigenciaHasta, List<String> diasSemana, String horaDesde,
-                                       String horaHasta, List<String> mediosPago, List<String> tarifasExcluidas) {
+                                       String horaHasta, List<String> mediosPago, List<String> tarifasExcluidas,
+                                       String imagenUrl) {
 }

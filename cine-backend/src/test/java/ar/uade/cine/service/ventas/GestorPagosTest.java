@@ -24,6 +24,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
@@ -186,7 +187,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         Promocion promo = promociones.crear(TipoPromocion.NXM, "2x1", ParametrosPromocion.deNxM(2, 1),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
 
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -211,7 +212,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elDescuentoBancarioSoloEntraSiSePagaConEseMedio() {
         promociones.crear(TipoPromocion.MONTO_FIJO, "Banco", ParametrosPromocion.deMonto(1000.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of(MedioPago.CREDITO)));
+                Set.of(), null, null, Set.of(MedioPago.CREDITO)), ImagenUrl.NINGUNA);
 
         Reserva enEfectivo = reservas.reservar(1, 1, generales("A1"), null);
         Reserva conTarjeta = reservas.reservar(1, 1, generales("A2"), null);
@@ -224,7 +225,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -265,7 +266,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elRepartoPorMedioCuentaElMontoConDescuento() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -299,7 +300,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elReciboMuestraElDescuentoQueSeAplicoAlCobrar() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -326,7 +327,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elMontoDelCheckoutYaTraeElDescuentoAplicado() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(Dinero.de(2500.0), pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).monto());

@@ -33,6 +33,13 @@ public class PromocionNxM extends Promocion {
     }
 
     @Override
+    protected void cambiarParametros(ParametrosPromocion parametros) {
+        ValidadorPromocion.exigirNxM(parametros.lleva(), parametros.paga());
+        this.lleva = parametros.lleva();
+        this.paga = parametros.paga();
+    }
+
+    @Override
     public TipoPromocion getTipo() {
         return TipoPromocion.NXM;
     }

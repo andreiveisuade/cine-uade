@@ -15,6 +15,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
@@ -60,11 +61,11 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     private Promocion porcentaje(String nombre, double porcentaje) {
         return promociones.crear(TipoPromocion.PORCENTAJE, nombre, ParametrosPromocion.dePorcentaje(porcentaje),
-                AGOSTO);
+                AGOSTO, ImagenUrl.NINGUNA);
     }
 
     private Promocion dosPorUno(String nombre) {
-        return promociones.crear(TipoPromocion.NXM, nombre, ParametrosPromocion.deNxM(2, 1), AGOSTO);
+        return promociones.crear(TipoPromocion.NXM, nombre, ParametrosPromocion.deNxM(2, 1), AGOSTO, ImagenUrl.NINGUNA);
     }
 
     private boolean corre(List<Entrada> entradas, LocalDateTime inicioFuncion, MedioPago medio) {
@@ -81,7 +82,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void elMontoFijoNuncaDescuentaMasQueElTotal() {
         Promocion promo = promociones.crear(TipoPromocion.MONTO_FIJO, "2000 off",
-                ParametrosPromocion.deMonto(2000.0), AGOSTO);
+                ParametrosPromocion.deMonto(2000.0), AGOSTO, ImagenUrl.NINGUNA);
 
         assertEquals(Dinero.de(1500), promo.calcularDescuento(List.of(entrada(1500))));
     }
@@ -152,7 +153,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void laDelMiercolesNoCorreUnJueves() {
         promociones.crear(TipoPromocion.NXM, "Miércoles 2x1", ParametrosPromocion.deNxM(2, 1),
-                condiciones(Set.of(DayOfWeek.WEDNESDAY), null, Set.of()));
+                condiciones(Set.of(DayOfWeek.WEDNESDAY), null, Set.of()), ImagenUrl.NINGUNA);
 
         List<Entrada> dos = List.of(entrada(5000), entrada(5000));
 
@@ -163,7 +164,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void laDelBancoSoloCorreConEseMedioDePago() {
         promociones.crear(TipoPromocion.MONTO_FIJO, "Banco", ParametrosPromocion.deMonto(1000.0),
-                condiciones(Set.of(), null, Set.of(MedioPago.CREDITO)));
+                condiciones(Set.of(), null, Set.of(MedioPago.CREDITO)), ImagenUrl.NINGUNA);
 
         List<Entrada> una = List.of(entrada(5000));
 
@@ -175,7 +176,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     void fueraDeVigenciaNoCorre() {
         promociones.crear(TipoPromocion.PORCENTAJE, "Septiembre", ParametrosPromocion.dePorcentaje(30.0),
                 new CondicionesPromocion(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), Set.of(), null, null,
-                        Set.of()));
+                        Set.of()), ImagenUrl.NINGUNA);
 
         assertFalse(corre(List.of(entrada(5000)), JUEVES, MedioPago.EFECTIVO));
     }
@@ -183,7 +184,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void laTrasnocheNoCorreEnLaFuncionDeLaTarde() {
         promociones.crear(TipoPromocion.PORCENTAJE, "Trasnoche", ParametrosPromocion.dePorcentaje(40.0),
-                condiciones(Set.of(), LocalTime.of(23, 0), Set.of()));
+                condiciones(Set.of(), LocalTime.of(23, 0), Set.of()), ImagenUrl.NINGUNA);
 
         assertFalse(corre(List.of(entrada(5000)),
                 LocalDateTime.of(2026, 8, 20, 18, 0), MedioPago.EFECTIVO));
@@ -202,9 +203,9 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     @Test
     void rechazaUnNxMQueNoDescuenta() {
         assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.NXM, "2x2",
-                ParametrosPromocion.deNxM(2, 2), AGOSTO));
+                ParametrosPromocion.deNxM(2, 2), AGOSTO, ImagenUrl.NINGUNA));
         assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.NXM, "2x3",
-                ParametrosPromocion.deNxM(2, 3), AGOSTO));
+                ParametrosPromocion.deNxM(2, 3), AGOSTO, ImagenUrl.NINGUNA));
     }
 
     @Test
@@ -216,7 +217,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     void rechazaUnaVigenciaAlReves() {
         assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.PORCENTAJE, "rara",
                 ParametrosPromocion.dePorcentaje(10.0),
-                new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of())));
+                new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA));
     }
 
     // El día de hoy lo pone el gestor desde el reloj: la misma promoción de agosto ya no se carga en septiembre.
@@ -241,7 +242,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         porcentaje("30 off", 30);
 
         assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.MONTO_FIJO, "30 off",
-                ParametrosPromocion.deMonto(500.0), AGOSTO));
+                ParametrosPromocion.deMonto(500.0), AGOSTO, ImagenUrl.NINGUNA));
     }
 
     @Test
@@ -249,7 +250,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
         porcentaje("30 off ", 30);
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class, () -> promociones.crear(
-                TipoPromocion.MONTO_FIJO, "30 off", ParametrosPromocion.deMonto(500.0), AGOSTO));
+                TipoPromocion.MONTO_FIJO, "30 off", ParametrosPromocion.deMonto(500.0), AGOSTO, ImagenUrl.NINGUNA));
         assertEquals("Ya existe una promoción con ese nombre", error.getMessage());
     }
 }

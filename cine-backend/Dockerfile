@@ -26,8 +26,9 @@ WORKDIR /app
 COPY --from=build /build/target/cine-api.war ./cine-api.war
 
 # GeneradorTicketTxt escribe en tickets/ relativo al working dir, así que el directorio
-# tiene que existir y ser del usuario que corre el proceso.
-RUN mkdir -p /app/tickets && chown -R cine:cine /app
+# tiene que existir y ser del usuario que corre el proceso. imagenes/ también: el volumen
+# con nombre que se monta ahí copia este dueño la primera vez.
+RUN mkdir -p /app/tickets /app/imagenes && chown -R cine:cine /app
 
 USER cine
 

@@ -31,6 +31,11 @@ public class PromocionPorcentaje extends Promocion {
     }
 
     @Override
+    protected void cambiarParametros(ParametrosPromocion parametros) {
+        this.porcentaje = ValidadorPromocion.porcentaje(parametros.porcentaje());
+    }
+
+    @Override
     public TipoPromocion getTipo() {
         return TipoPromocion.PORCENTAJE;
     }

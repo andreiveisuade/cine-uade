@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
@@ -134,7 +135,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void elBorderoSeparaElBrutoDelDescuentoYDelNeto() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
@@ -163,7 +164,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Test
     void elInformeSumaLasEntradasYElCandyDeLaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
-                TipoProducto.POCHOCLOS, Dinero.de(3000));
+                TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         candy.venderParaReserva(reserva.getId(), null, Map.of(pochoclos.getId(), 2),
@@ -180,7 +181,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Test
     void elCandyDeMostradorNoEntraEnElInformeDeNingunaFuncion() {
         Producto pochoclos = productos.agregar("Pochoclos",
-                TipoProducto.POCHOCLOS, Dinero.de(3000));
+                TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         Reserva reserva = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         candy.vender(null, Map.of(pochoclos.getId(), 1), MedioPago.EFECTIVO, "");
@@ -196,7 +197,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Test
     void elCandyDeOtraFuncionNoEntraEnEsteInforme() {
         Producto pochoclos = productos.agregar("Pochoclos",
-                TipoProducto.POCHOCLOS, Dinero.de(3000));
+                TipoProducto.POCHOCLOS, Dinero.de(3000), ImagenUrl.NINGUNA);
         Reserva deLaOtra = reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(deLaOtra.getId(), MedioPago.EFECTIVO, "");
         candy.venderParaReserva(deLaOtra.getId(), null, Map.of(pochoclos.getId(), 1),
@@ -258,7 +259,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void cadaFilaDeLaDeclaracionEsElBorderoDeSuFuncion() {
         promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
                 new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()));
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.JUBILADO);

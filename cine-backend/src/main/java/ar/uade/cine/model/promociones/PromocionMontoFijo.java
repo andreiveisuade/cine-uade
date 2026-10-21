@@ -29,6 +29,11 @@ public class PromocionMontoFijo extends Promocion {
     }
 
     @Override
+    protected void cambiarParametros(ParametrosPromocion parametros) {
+        this.monto = ValidadorPromocion.monto(parametros.monto());
+    }
+
+    @Override
     public TipoPromocion getTipo() {
         return TipoPromocion.MONTO_FIJO;
     }

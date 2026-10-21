@@ -172,4 +172,134 @@ class PromocionControllerTest extends PruebaDeApi {
         assertNull(dosPorUno.get("id"));
         assertNull(dosPorUno.get("activa"));
     }
+
+    private static final String IMAGEN = "/api/imagenes/0f8fad5b-d9cb-469f-a165-70867728950e.webp";
+    private static final String VIGENCIA = "\"vigenciaDesde\":\"2026-09-01\",\"vigenciaHasta\":\"2026-12-31\"";
+
+    private int altaDeMartes() {
+        return post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20,"
+                + VIGENCIA + "}").json().get("id").asInt();
+    }
+
+    @Test
+    void laImagenSubidaSeGuardaYSaleEnElDetalleYEnLasVigentes() {
+        Respuesta alta = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20,"
+                + VIGENCIA + ",\"imagenUrl\":\"" + IMAGEN + "\"}");
+
+        assertEquals(201, alta.estado());
+        assertEquals(IMAGEN, alta.json().get("imagenUrl").asText());
+        JsonNode publica = pedirComo(HttpMethod.GET, "/api/promociones/vigentes", null, null, null).json().get(0);
+        assertEquals(IMAGEN, publica.get("imagenUrl").asText());
+        assertNull(get("/api/promociones/" + altaDeOtra()).json().get("imagenUrl"));
+    }
+
+    private int altaDeOtra() {
+        return post("/api/promociones", "{\"nombre\":\"Jueves\",\"tipo\":\"NXM\",\"lleva\":2,\"paga\":1,"
+                + VIGENCIA + "}").json().get("id").asInt();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            alta    | POST | /api/promociones
+            edicion | PUT  | /api/promociones/1
+            """)
+    void unaImagenQueNoSeSubioAlSistemaEs400(String caso, String metodo, String ruta) {
+        altaDeMartes();
+
+        Respuesta respuesta = pedirComo(HttpMethod.valueOf(metodo), ruta, "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":20," + VIGENCIA + ",\"imagenUrl\":\"https://otro.com/promo.png\"}", EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La imagen tiene que ser una subida al sistema", respuesta.error());
+    }
+
+    // No toca activa: la dada de baja sigue de baja después de editarla.
+    @Test
+    void laEdicionReemplazaTodoMenosLaActivacion() {
+        int id = altaDeMartes();
+        patch("/api/promociones/" + id, "{\"activa\":false}");
+
+        Respuesta respuesta = put("/api/promociones/" + id, "{\"nombre\":\"Martes y jueves\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":35,\"vigenciaDesde\":\"2026-10-01\",\"vigenciaHasta\":\"2026-11-30\","
+                + "\"diasSemana\":[\"TUESDAY\",\"THURSDAY\"],\"horaDesde\":\"14:00\",\"horaHasta\":\"18:00\","
+                + "\"mediosPago\":[\"DEBITO\"],\"imagenUrl\":\"" + IMAGEN + "\"}");
+
+        assertEquals(200, respuesta.estado());
+        JsonNode editada = get("/api/promociones/" + id).json();
+        assertEquals("Martes y jueves", editada.get("nombre").asText());
+        assertEquals(35.0, editada.get("porcentaje").asDouble());
+        assertEquals("2026-10-01", editada.get("vigenciaDesde").asText());
+        assertEquals("[\"TUESDAY\",\"THURSDAY\"]", editada.get("diasSemana").toString());
+        assertEquals("14:00", editada.get("horaDesde").asText());
+        assertEquals("[\"DEBITO\"]", editada.get("mediosPago").toString());
+        assertEquals(IMAGEN, editada.get("imagenUrl").asText());
+        assertFalse(editada.get("activa").asBoolean());
+    }
+
+    @Test
+    void editarSinImagenLaSaca() {
+        int id = post("/api/promociones", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20,"
+                + VIGENCIA + ",\"imagenUrl\":\"" + IMAGEN + "\"}").json().get("id").asInt();
+
+        put("/api/promociones/" + id, "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\",\"porcentaje\":20," + VIGENCIA + "}");
+
+        assertNull(get("/api/promociones/" + id).json().get("imagenUrl"));
+    }
+
+    @Test
+    void editarUnaQueNoExisteEs404() {
+        Respuesta respuesta = put("/api/promociones/99", "{\"nombre\":\"Martes\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":20," + VIGENCIA + "}");
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la promoción 99", respuesta.error());
+    }
+
+    @Test
+    void elTipoNoSeCambia() {
+        int id = altaDeMartes();
+
+        Respuesta respuesta = put("/api/promociones/" + id, "{\"nombre\":\"Martes\",\"tipo\":\"NXM\","
+                + "\"lleva\":2,\"paga\":1," + VIGENCIA + "}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El tipo de una promoción no se puede cambiar", respuesta.error());
+        assertEquals("PORCENTAJE", get("/api/promociones/" + id).json().get("tipo").asText());
+    }
+
+    // Las mismas guardas y mensajes que el alta, y una inválida no cambia nada.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            sin nombre           | "tipo":"PORCENTAJE","porcentaje":20,VIGENCIA                                        | Falta el nombre
+            sin porcentaje       | "nombre":"Martes","tipo":"PORCENTAJE",VIGENCIA                                      | Falta el porcentaje
+            casi cien por ciento | "nombre":"Martes","tipo":"PORCENTAJE","porcentaje":99.999,VIGENCIA                  | El porcentaje tiene que estar entre 1 y 99
+            vencida              | "nombre":"Martes","tipo":"PORCENTAJE","porcentaje":20,"vigenciaDesde":"2026-08-01","vigenciaHasta":"2026-08-10" | La vigencia ya terminó: el fin tiene que ser hoy o después
+            vencida y sin porcentaje | "nombre":"Martes","tipo":"PORCENTAJE","vigenciaDesde":"2026-08-01","vigenciaHasta":"2026-08-10" | La vigencia ya terminó: el fin tiene que ser hoy o después
+            fecha mal escrita    | "nombre":"Martes","tipo":"PORCENTAJE","porcentaje":20,"vigenciaDesde":"2026-13-45","vigenciaHasta":"2026-12-31" | El inicio de la vigencia no es válido: usá AAAA-MM-DD
+            tipo que no existe   | "nombre":"Martes","tipo":"REGALO",VIGENCIA                                          | El tipo de promoción tiene que ser porcentaje, monto fijo o NxM
+            """)
+    void unaEdicionInvalidaEs400ConElMensajeDelAltaYNoCambiaNada(String caso, String campos, String mensaje) {
+        int id = altaDeMartes();
+
+        Respuesta respuesta = put("/api/promociones/" + id, "{" + campos.replace("VIGENCIA", VIGENCIA) + "}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+        assertEquals(20.0, get("/api/promociones/" + id).json().get("porcentaje").asDouble());
+    }
+
+    @Test
+    void editarConElNombreDeOtraEs409YConElPropioNo() {
+        int martes = altaDeMartes();
+        altaDeOtra();
+
+        Respuesta repetido = put("/api/promociones/" + martes, "{\"nombre\":\" jueves \",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":20," + VIGENCIA + "}");
+        assertEquals(409, repetido.estado());
+        assertEquals("Ya existe una promoción con ese nombre", repetido.error());
+        assertEquals("Martes", get("/api/promociones/" + martes).json().get("nombre").asText());
+
+        assertEquals(200, put("/api/promociones/" + martes, "{\"nombre\":\"MARTES\",\"tipo\":\"PORCENTAJE\","
+                + "\"porcentaje\":25," + VIGENCIA + "}").estado());
+    }
 }
