@@ -53,7 +53,6 @@ public class Programacion {
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
-    // Sus dos columnas se llaman como los campos del record: desde y hasta.
     @Embedded
     private Periodo periodo;
 
@@ -78,8 +77,7 @@ public class Programacion {
     protected Programacion() {
     }
 
-    // La película y la sala llegan ya buscadas y con su 404, como en el alta de una función suelta:
-    // hacen falta para R8. Se valida todo antes de asignar nada.
+    // Película y sala llegan ya buscadas (hacen falta para R8); se valida todo antes de asignar.
     public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
                         LocalTime horaInicio, Set<DayOfWeek> diasSemana, FormatoDeFuncion formato) {
         Periodo validado = ValidadorProgramacion.periodo(desde, hasta);
@@ -94,8 +92,7 @@ public class Programacion {
         this.formato = formato;
     }
 
-    // R20 y el horizonte miran el reloj, así que los exige el alta, con la hora que le pasa el gestor.
-    // Solo en una cerrada: una abierta genera de a catorce días, siempre por delante.
+    // R20 y el horizonte miran el reloj: los exige el alta. Solo en una cerrada; la abierta genera de a 14 días.
     public void exigirGenerableA(LocalDateTime ahora) {
         LocalDate hasta = periodo.hasta();
         if (hasta == null) {
@@ -142,7 +139,6 @@ public class Programacion {
         this.generadaHasta = tope;
     }
 
-    // No inicializa el proxy: sirve fuera de la transacción, donde se arman las vistas.
     public int getPeliculaId() {
         return pelicula.getId();
     }
