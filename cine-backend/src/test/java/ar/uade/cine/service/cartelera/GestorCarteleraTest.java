@@ -34,6 +34,7 @@ import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -84,7 +85,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
             sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
         }
         funcionRepository.save(new Funcion(peliculaRepository.findById(peliculaId).orElseThrow(), sala,
-                inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                inicio, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     @Test
@@ -522,7 +523,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         sala = salaRepository.save(new Sala("Sala 1", TipoSala.DOS_D, 15));
         programacionRepository.save(new Programacion(pelicula, sala,
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
 
         Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));

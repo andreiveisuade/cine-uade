@@ -27,6 +27,7 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.TipoSala;
@@ -71,7 +72,7 @@ class ComprobantesDeVentasTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
     }
 

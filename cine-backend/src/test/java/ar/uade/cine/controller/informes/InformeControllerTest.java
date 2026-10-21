@@ -29,6 +29,7 @@ import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -78,7 +79,8 @@ class InformeControllerTest extends PruebaDeApi {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, 1,
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.JUBILADO), null);
@@ -185,7 +187,7 @@ class InformeControllerTest extends PruebaDeApi {
     void laDeclaracionTotalizaCadaPeliculaAparteYSumaTodoEnElTotal() {
         cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         Funcion funcion = funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4000)));
         Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
         pagos.cobrar(reservas.reservar(funcion.getId(), cliente.getId(), Map.of("A1", TipoTarifa.MENOR), null).getId(),
                 MedioPago.EFECTIVO, "");

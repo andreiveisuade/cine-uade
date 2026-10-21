@@ -26,6 +26,7 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -156,7 +157,8 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
                 Map.of("A1", TipoAsiento.VIP));
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Funcion funcion = funciones.programar(1, imax.getId(),
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         FuncionVistaDTO vista = funcion(funcion);
 
@@ -182,7 +184,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Pelicula matrix = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Sala sinGuardar = new Sala("Sala 9", TipoSala.DOS_D, 15);
         Funcion huerfana = new Funcion(matrix, sinGuardar, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         assertThrows(RecursoNoEncontrado.class, () -> funcion(huerfana));
     }
@@ -192,7 +194,8 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Pelicula sinGuardar = new Pelicula("Fantasma", 100, List.of(Genero.DRAMA), Clasificacion.ATP);
         Funcion sinPelicula = new Funcion(sinGuardar, sala,
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         FuncionVistaDTO vista = vistas.funcionConPelicula(sinPelicula);
 
@@ -231,9 +234,10 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
                     Clasificacion.ATP).getId();
             LocalDateTime inicio = LocalDateTime.of(2026, 9, 1, 10, 0).plusDays(programadas);
             int sala = programadas % 2 + 1;
-            funciones.programar(matrix, sala, inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
-            funciones.programar(otra, sala, inicio.plusHours(4), Version.SUBTITULADA, Proyeccion.DOS_D,
-                    Dinero.de(5000));
+            funciones.programar(matrix, sala, inicio,
+                    new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+            funciones.programar(otra, sala, inicio.plusHours(4),
+                    new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         }
     }
 
@@ -253,7 +257,8 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         return funciones.programar(1, sala.getId(),
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     private FuncionVistaDTO funcion(Funcion f) {

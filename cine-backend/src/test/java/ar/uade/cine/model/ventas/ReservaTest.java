@@ -20,6 +20,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -35,7 +36,8 @@ class ReservaTest {
     private static final Sala SALA = new Sala("Sala 1", TipoSala.DOS_D, 15);
     private static final Funcion FUNCION = new Funcion(
             new Pelicula("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13), SALA,
-            LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+            LocalDateTime.of(2026, 8, 20, 20, 0),
+            new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     private static final Cliente CLIENTE = new Cliente("Ana", "ana@mail.com");
     private static final LocalDateTime CREADA = LocalDateTime.of(2026, 8, 14, 10, 0);
 

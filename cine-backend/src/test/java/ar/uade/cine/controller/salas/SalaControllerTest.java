@@ -17,6 +17,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
@@ -163,7 +164,7 @@ class SalaControllerTest extends PruebaDeApi {
     void conFuncionesProgramadasNoSeLeCambiaElTipo() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         funciones.programar(1, sala, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"IMAX\"}");
 
@@ -179,7 +180,7 @@ class SalaControllerTest extends PruebaDeApi {
         Pelicula pelicula = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         programaciones.save(new Programacion(pelicula, salas.obtener(sala),
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
 
         Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/salas/" + sala, null,
                 EMAIL_ADMIN, CLAVE_ADMIN);

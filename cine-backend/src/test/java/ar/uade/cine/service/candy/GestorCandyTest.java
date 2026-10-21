@@ -25,6 +25,7 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
@@ -254,7 +255,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5));
         funciones.programar(1, 1, reloj.ahora().plusDays(1),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         return reservas.reservar(1, 1, Map.of("A1", TipoTarifa.GENERAL), null);
     }
 

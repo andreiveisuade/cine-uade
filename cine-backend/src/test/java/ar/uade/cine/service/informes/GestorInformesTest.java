@@ -21,6 +21,7 @@ import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
@@ -72,9 +73,9 @@ class GestorInformesTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
     }
 
@@ -238,7 +239,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     @Test
     void laDeclaracionSoloTraeLasFuncionesDelPeriodoConEntradasCobradas() {
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 27, 20, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
         Reserva cobrada = reservas.reservar(1, 1, butacas("A1", TipoTarifa.GENERAL), null);
         reservas.reservar(2, 1, butacas("A1", TipoTarifa.GENERAL), null);
         Reserva fueraDelPeriodo = reservas.reservar(3, 1, butacas("A1", TipoTarifa.GENERAL), null);
@@ -277,7 +278,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
     void laDeclaracionTotalizaPorPeliculaYEnGeneral() {
         cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4000)));
         Map<String, TipoTarifa> pedido = new LinkedHashMap<>();
         pedido.put("A1", TipoTarifa.GENERAL);
         pedido.put("A2", TipoTarifa.MENOR);

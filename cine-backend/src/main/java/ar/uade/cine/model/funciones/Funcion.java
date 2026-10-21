@@ -9,9 +9,8 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -44,35 +43,28 @@ public class Funcion {
 
     private LocalDateTime inicio;
 
-    @Enumerated(EnumType.STRING)
-    private Version version;
-
-    @Enumerated(EnumType.STRING)
-    private Proyeccion proyeccion;
-
-    private Dinero precio;
+    @Embedded
+    private FormatoDeFuncion formato;
 
     protected Funcion() {
     }
 
-    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
-                   Proyeccion proyeccion, Dinero precio) {
-        this(pelicula, sala, inicio, version, proyeccion, precio, null);
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato) {
+        this(pelicula, sala, inicio, formato, null);
     }
 
     // Que la película esté confirmada, que no empiece en el pasado (R20) y que no pise a otra (R3)
     // no son invariantes de la función sino del alta: dependen del buzón, del reloj y de las otras
     // funciones de la sala. Una función que quedó en el pasado sigue siendo válida (R12).
-    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Version version,
-                   Proyeccion proyeccion, Dinero precio, Integer programacionId) {
-        ValidadorFuncion.formato(sala, version, proyeccion, precio);
+    // El formato llega ya validado, como Value Object; acá queda R8, que cruza el formato con la sala.
+    public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato,
+                   Integer programacionId) {
+        formato.exigirProyectableEn(sala);
         ValidadorFuncion.inicio(inicio);
         this.pelicula = pelicula;
         this.sala = sala;
         this.inicio = inicio;
-        this.version = version;
-        this.proyeccion = proyeccion;
-        this.precio = precio;
+        this.formato = formato;
         this.programacionId = programacionId;
     }
 
@@ -106,10 +98,22 @@ public class Funcion {
         return sala.getId();
     }
 
+    public Version getVersion() {
+        return formato.version();
+    }
+
+    public Proyeccion getProyeccion() {
+        return formato.proyeccion();
+    }
+
+    public Dinero getPrecio() {
+        return formato.precio();
+    }
+
     @Override
     public String toString() {
         return "[" + id + "] película " + getPeliculaId() + " en sala " + getSalaId() + " - " + inicio
-                + " - " + proyeccion + " " + version + " - desde $" + precio;
+                + " - " + formato.proyeccion() + " " + formato.version() + " - desde $" + formato.precio();
     }
 
     public LocalDateTime getFin(int duracionMinutos) {
@@ -120,7 +124,7 @@ public class Funcion {
     // Base × tipo de sala es el «desde» de la cartelera. Recibe la sala aunque es la suya porque this.sala
     // es LAZY: las vistas corren fuera de la transacción y la leen por su cuenta.
     public Dinero precioEn(Sala sala) {
-        return sala.getTipo().aplicarA(precio);
+        return sala.getTipo().aplicarA(formato.precio());
     }
 
     // Base × sala × butaca: lo que muestra el mapa, con la tarifa general. La entrada le aplica la suya.

@@ -22,6 +22,7 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -66,7 +67,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         funcionId = funcion.getId();
         pedirComo(HttpMethod.POST, "/api/clientes",
                 "{\"nombre\":\"Ana\",\"email\":\"" + ANA + "\",\"password\":\"" + CLAVE + "\"}", null, null);

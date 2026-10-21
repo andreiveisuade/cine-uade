@@ -12,6 +12,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
@@ -37,13 +38,15 @@ class FuncionTest {
             precio cero,                  SUBTITULADA, DOS_D,  DOS_D, 0,    El precio tiene que ser mayor a cero
             precio de cien millones,      SUBTITULADA, DOS_D,  DOS_D, 100000000, El precio no puede superar $ 1000000.00
             sin idioma y sin precio,      ,            DOS_D,  DOS_D, 0,    Falta el idioma
-            R8 y precio cero gana R8,     SUBTITULADA, TRES_D, DOS_D, 0,    La sala Sala 1 no puede proyectar en 3D
+            # El formato se valida al construirse, antes de que la función mire su sala para R8.
+            R8 y precio cero gana el precio, SUBTITULADA, TRES_D, DOS_D, 0, El precio tiene que ser mayor a cero
             """)
     void unaFuncionSinFormatoSinPrecioOEn3DSinSoporteNoSeConstruye(String caso, Version version,
             Proyeccion proyeccion, TipoSala tipo, double precio, String mensaje) {
         Sala sala = new Sala("Sala 1", tipo, 15);
 
-        rechaza(mensaje, () -> new Funcion(MATRIX, sala, LAS_20, version, proyeccion, Dinero.de(precio)));
+        rechaza(mensaje, () -> new Funcion(MATRIX, sala, LAS_20,
+                new FormatoDeFuncion(version, proyeccion, Dinero.de(precio))));
     }
 
     // Las 20:30:46 no se anuncian en ninguna cartelera.
@@ -58,7 +61,8 @@ class FuncionTest {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
         rechaza(mensaje,
-                () -> new Funcion(MATRIX, sala, inicio, Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                () -> new Funcion(MATRIX, sala, inicio,
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     // R20 con el corte de R19: la que empieza en este instante ya empezó. El horizonte se mide en días:
@@ -84,7 +88,7 @@ class FuncionTest {
 
     private static Funcion deLas20() {
         return new Funcion(MATRIX, new Sala("Sala 1", TipoSala.DOS_D, 15), LAS_20,
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     // R20 es del alta, no de la función: la que quedó en el pasado es historial (R12).
@@ -93,6 +97,6 @@ class FuncionTest {
         Sala imax = new Sala("Sala IMAX", TipoSala.IMAX, 15);
 
         assertDoesNotThrow(() -> new Funcion(MATRIX, imax, LocalDateTime.of(2020, 1, 1, 20, 0),
-                Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
     }
 }

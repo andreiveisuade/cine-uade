@@ -5,16 +5,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
-import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.DatoInvalido;
-import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.validacion.Regla;
 
-// Reglas de los datos de una función, compartidas con la programación y la grilla; Fabricación pura.
+// Reglas del horario de una función, compartidas con la programación y la grilla; Fabricación pura.
 // Las llaman Funcion, Programacion y CriteriosGrilla: las dos últimas generan funciones con estos mismos
 // datos, así que los rechazan antes de generar la primera y con el mismo texto que el alta de una suelta.
+// El formato y el precio no están acá: los valida FormatoDeFuncion al construirse.
 public final class ValidadorFuncion {
 
     // La cartelera se arma con semanas de anticipación: a más de un año es un error de tipeo (2062 por
@@ -23,21 +20,6 @@ public final class ValidadorFuncion {
     private static final int ANIOS_DE_HORIZONTE = 1;
 
     private ValidadorFuncion() {
-    }
-
-    public static void formato(Sala sala, Version version, Proyeccion proyeccion, Dinero precio) {
-        idiomaYProyeccion(version, proyeccion);
-        // R8
-        if (!proyeccion.sePuedeProyectarEn(sala.getTipo())) {
-            throw new DatoInvalido("La sala " + sala.getNombre() + " no puede proyectar en 3D");
-        }
-        Dinero.importeValido(precio, "precio");
-    }
-
-    // Sin sala: la grilla automática la elige pase por pase, y ahí mira R8.
-    public static void formato(Version version, Proyeccion proyeccion, Dinero precio) {
-        idiomaYProyeccion(version, proyeccion);
-        Dinero.importeValido(precio, "precio");
     }
 
     public static void inicio(LocalDateTime inicio) {
@@ -60,11 +42,5 @@ public final class ValidadorFuncion {
         if (dia.isAfter(hoy.plusYears(ANIOS_DE_HORIZONTE))) {
             throw new DatoInvalido(mensaje);
         }
-    }
-
-    // La API le dice idioma a lo que acá es la versión: el mensaje usa la palabra del formulario.
-    private static void idiomaYProyeccion(Version version, Proyeccion proyeccion) {
-        Regla.objeto(version).obligatorio("Falta el idioma");
-        Regla.objeto(proyeccion).obligatorio("Falta la proyección");
     }
 }

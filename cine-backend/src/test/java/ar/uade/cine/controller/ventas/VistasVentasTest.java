@@ -29,6 +29,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.salas.Sala;
@@ -94,7 +95,8 @@ class VistasVentasTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, sala.getId(),
-                LocalDateTime.of(2026, 8, 20, 20, 0), Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
     }
 
@@ -232,7 +234,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
                     Clasificacion.ATP).getId();
             int funcion = funciones.programar(pelicula, sala.getId(),
                     LocalDateTime.of(2026, 9, 1, 10, 0).plusHours(3L * vendidas),
-                    Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)).getId();
+                    new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
             Cliente otro = clientes.identificar("Cliente " + vendidas, "cliente" + vendidas + "@uade.edu.ar");
             for (int clienteId : List.of(cliente.getId(), otro.getId())) {
                 Reserva reserva = reservas.reservar(funcion, clienteId,

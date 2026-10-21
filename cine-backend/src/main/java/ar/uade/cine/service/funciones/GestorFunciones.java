@@ -13,8 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
@@ -22,7 +21,6 @@ import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
 // Alta, baja y consulta de funciones; @Service que aplica lo que la función no ve sola: R3, R12 y R20.
@@ -39,16 +37,15 @@ public class GestorFunciones {
     private final ReservaRepository reservaRepository;
     private final Reloj reloj;
 
-    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio,
-                             Version version, Proyeccion proyeccion, Dinero precio) {
-        return programar(peliculaId, salaId, inicio, version, proyeccion, precio, null);
+    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, FormatoDeFuncion formato) {
+        return programar(peliculaId, salaId, inicio, formato, null);
     }
 
-    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, Version version,
-                             Proyeccion proyeccion, Dinero precio, Integer programacionId) {
+    public Funcion programar(int peliculaId, int salaId, LocalDateTime inicio, FormatoDeFuncion formato,
+                             Integer programacionId) {
         Pelicula pelicula = peliculaConfirmada(peliculaId);
         Sala sala = salaRepository.exigir(salaId, "la sala");
-        Funcion funcion = new Funcion(pelicula, sala, inicio, version, proyeccion, precio, programacionId);
+        Funcion funcion = new Funcion(pelicula, sala, inicio, formato, programacionId);
         funcion.exigirProgramableA(reloj.ahora());
 
         // R3

@@ -30,6 +30,7 @@ import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -92,7 +93,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
@@ -155,7 +156,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void unaCompraNoLlevaMasDeDiezButacas() {
         salas.agregar("Sala grande", TipoSala.DOS_D, List.of(12));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         Map<String, TipoTarifa> once = generales("A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11");
 
         Rechazo error = assertThrows(Rechazo.class, () -> reservas.reservar(2, 1, once, null));
@@ -285,7 +286,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elPrecioDependeDelTipoDeSalaYDeButaca() {
         salas.agregar("Sala 2", TipoSala.IMAX, List.of(4), Map.of("A1", TipoAsiento.VIP));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
-                Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
 
         Reserva vip = reservas.reservar(2, 1, generales("A1"), null);
         assertEquals(Dinero.de(12000.0), vip.getTotal());
@@ -298,7 +299,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elRecargoPremiumSeAplicaUnaSolaVez() {
         salas.agregar("Sala VIP", TipoSala.IMAX, List.of(2), Map.of("A1", TipoAsiento.VIP));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 22, 20, 0),
-                Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         assertEquals(Dinero.de(12000.0), reservas.reservar(2, 1, generales("A1"), null).getTotal());
     }
@@ -307,7 +308,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elPrecioSeRedondeaADosDecimales() {
         salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(3));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 23, 20, 0),
-                Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5250.50));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5250.50)));
 
         assertEquals(Dinero.de(6825.65), reservas.reservar(2, 1, generales("A1"), null).getTotal());
     }
@@ -324,7 +325,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
         assertThrows(Rechazo.class,
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 24, 20, 0),
-                        Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
     }
 
     @Test
@@ -464,7 +465,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     private Funcion funcionQueYaEmpezo() {
         return funcionRepository.save(new Funcion(cartelera.buscar(1).orElseThrow(),
                 salas.obtener(1), reloj.ahora().minusMinutes(30),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
     @Test
@@ -499,7 +500,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
         cartelera.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
-                Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         reservas.reservar(1, 1, generales("A1", "A2"), null);
         reservas.reservar(2, 2, generales("B1"), null);

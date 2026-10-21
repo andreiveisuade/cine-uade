@@ -117,7 +117,7 @@ public class GestorProgramaciones {
         PlanProgramacion plan = planDe(grilla, pelicula, tope);
         for (FuncionPlanificada funcion : plan.programables()) {
             funciones.programar(grilla.getPeliculaId(), grilla.getSalaId(), funcion.inicio(),
-                    grilla.getVersion(), grilla.getProyeccion(), grilla.getPrecio(), grilla.getId());
+                    grilla.getFormato(), grilla.getId());
         }
         grilla.marcarGeneradaHasta(tope);
         return plan;
@@ -129,7 +129,7 @@ public class GestorProgramaciones {
     private Programacion armar(DatosGrilla datos) {
         Programacion grilla = new Programacion(funciones.peliculaProgramable(datos.peliculaId()),
                 salaRepository.exigir(datos.salaId(), "la sala"), datos.desde(), datos.hasta(),
-                datos.horaInicio(), datos.diasSemana(), datos.version(), datos.proyeccion(), datos.precio());
+                datos.horaInicio(), datos.diasSemana(), datos.formato());
         grilla.exigirGenerableA(reloj.ahora());
         return grilla;
     }

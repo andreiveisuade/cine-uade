@@ -12,6 +12,7 @@ import java.util.Set;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
@@ -68,13 +69,8 @@ public class Programacion {
     @Enumerated(EnumType.STRING)
     private Set<DayOfWeek> diasSemana = EnumSet.noneOf(DayOfWeek.class);
 
-    @Enumerated(EnumType.STRING)
-    private Version version;
-
-    @Enumerated(EnumType.STRING)
-    private Proyeccion proyeccion;
-
-    private Dinero precio;
+    @Embedded
+    private FormatoDeFuncion formato;
 
     @Getter(AccessLevel.NONE)
     private boolean activa = true;
@@ -88,20 +84,17 @@ public class Programacion {
     // La película y la sala llegan ya buscadas y con su 404, como en el alta de una función suelta:
     // hacen falta para R8. Se valida todo antes de asignar nada.
     public Programacion(Pelicula pelicula, Sala sala, LocalDate desde, LocalDate hasta,
-                        LocalTime horaInicio, Set<DayOfWeek> diasSemana, Version version,
-                        Proyeccion proyeccion, Dinero precio) {
+                        LocalTime horaInicio, Set<DayOfWeek> diasSemana, FormatoDeFuncion formato) {
         Periodo validado = ValidadorProgramacion.periodo(desde, hasta);
         ValidadorProgramacion.hora(horaInicio);
         Set<DayOfWeek> dias = ValidadorProgramacion.dias(diasSemana, validado);
-        ValidadorFuncion.formato(sala, version, proyeccion, precio);
+        formato.exigirProyectableEn(sala);
         this.pelicula = pelicula;
         this.sala = sala;
         this.periodo = validado;
         this.horaInicio = horaInicio;
         this.diasSemana = dias;
-        this.version = version;
-        this.proyeccion = proyeccion;
-        this.precio = precio;
+        this.formato = formato;
     }
 
     // R20 y el horizonte miran el reloj, así que los exige el alta, con la hora que le pasa el gestor.
@@ -159,6 +152,18 @@ public class Programacion {
 
     public int getSalaId() {
         return sala.getId();
+    }
+
+    public Version getVersion() {
+        return formato.version();
+    }
+
+    public Proyeccion getProyeccion() {
+        return formato.proyeccion();
+    }
+
+    public Dinero getPrecio() {
+        return formato.precio();
     }
 
     public Set<DayOfWeek> getDiasSemana() {

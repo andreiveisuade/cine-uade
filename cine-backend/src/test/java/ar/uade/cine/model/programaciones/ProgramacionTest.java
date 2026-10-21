@@ -23,6 +23,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
@@ -35,8 +36,8 @@ class ProgramacionTest {
     private static final Sala SALA = new Sala("Sala 1", TipoSala.DOS_D, 15);
 
     private static Programacion grilla(LocalDate desde, LocalDate hasta, LocalTime hora, Set<DayOfWeek> dias) {
-        return new Programacion(MATRIX, SALA, desde, hasta, hora, dias, Version.SUBTITULADA, Proyeccion.DOS_D,
-                Dinero.de(5000));
+        return new Programacion(MATRIX, SALA, desde, hasta, hora, dias,
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -86,7 +87,7 @@ class ProgramacionTest {
             Proyeccion proyeccion, double precio, String mensaje) {
         assertEquals(mensaje, assertThrows(Rechazo.class,
                 () -> new Programacion(MATRIX, SALA, LocalDate.of(2026, 9, 7), null, LocalTime.of(20, 30), Set.of(),
-                        version, proyeccion, Dinero.de(precio))).getMessage());
+                        new FormatoDeFuncion(version, proyeccion, Dinero.de(precio)))).getMessage());
     }
 
     // R20 y el horizonte miran el reloj: los pide el alta. El 14/08/2026 a las 10:00, un rango cerrado

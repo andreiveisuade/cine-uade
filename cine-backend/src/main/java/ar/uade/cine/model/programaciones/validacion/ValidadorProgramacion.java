@@ -13,7 +13,7 @@ import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.validacion.Regla;
 
 // Reglas del período, la hora y los días de una programación; Fabricación pura que llama Programacion.
-// El formato y el precio no están acá: son los de una función, y los valida ValidadorFuncion.
+// El formato y el precio no están acá: son los de una función, y los valida FormatoDeFuncion.
 public final class ValidadorProgramacion {
 
     // Un año, bisiesto incluido. Una programación cerrada genera todo su rango en una sola transacción,
