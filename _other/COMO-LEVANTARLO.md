@@ -1,6 +1,6 @@
 # Cómo levantarlo
 
-Requiere **Docker Desktop abierto**. El panel de escritorio, además, JDK 21 y Maven.
+Requiere **Docker Desktop abierto**. El panel de escritorio, además, JDK 21 (Maven no: el proyecto trae `mvnw`).
 
 ## Con el script
 
@@ -29,8 +29,11 @@ La promo del seed vence a los 90 días. Correr el seed dos veces da `409` inofen
 ## Usarlo
 
 ```sh
-cd cine-swing && mvn exec:java       # el panel, en otra terminal
+cd cine-swing && ./mvnw compile exec:java      # el panel, en otra terminal
+cd cine-swing; .\mvnw.cmd compile exec:java    # Windows (PowerShell)
 ```
+
+En IntelliJ: la configuración **Panel Swing** ya viene en el proyecto.
 
 | | Dónde | Credenciales |
 |---|---|---|
@@ -38,7 +41,7 @@ cd cine-swing && mvn exec:java       # el panel, en otra terminal
 | Panel del encargado | `cine-swing` | `encargado@cine.uade.ar` / `cine2026` |
 | Puerta | el mismo panel | `puerta@cine.uade.ar` / `cine2026` |
 | Swagger | <http://localhost:8080/swagger-ui.html> | las rutas del encargado piden el mismo usuario |
-| Adminer | <http://localhost:8081> | servidor `mysql`, `DB_USER` / `DB_PASSWORD` del `.env` |
+| Adminer | <http://localhost:8081> | servidor `mysql`, `DB_USER` / `DB_PASSWORD` del `.env` (`setup` los imprime al final) |
 
 Las películas no se siembran: **Importador** del panel → confirmarlas en **Por revisar** → funciones desde
 **Funciones**, **Grilla** o **Planificador**.
@@ -101,6 +104,10 @@ cd cine-frontend && npm run coverage  # reporte en coverage/
 | `port is already allocated` | Cambiar `PUERTO_WEB` o `PUERTO_ADMINER` en el `.env` |
 | `localhost:8080` no responde, o «El servidor no está disponible» | El backend está arrancando o se cayó: `docker compose ps` y `docker compose logs backend` |
 | La web carga vacía | Falta importar películas y programar funciones |
+| Adminer no conecta | Servidor **`mysql`**, no `localhost`. Usuario y base: `DB_USER` y `DB_NAME`; la clave es `DB_PASSWORD` del `cine-docker/.env` (local, la generó el setup). El setup imprime la URL lista |
+| `mvn` no se reconoce | No hace falta Maven: usar `./mvnw` (`.\mvnw.cmd` en Windows) dentro de `cine-swing` |
+| `ClassNotFoundException` al correr el panel | `exec:java` no compila: usar `compile exec:java` |
+| `JAVA_HOME` no definido o Java viejo | Instalar JDK 21: `winget install EclipseAdoptium.Temurin.21.JDK` o `brew install openjdk@21` |
 | Cambiaste el `.env` y sigue igual | La base se creó con la clave vieja: `docker compose down -v`, **que borra los datos** |
 | El backend no levanta tras un `git pull` | Faltan migraciones: ver [La base](../cine-docker/README.md#la-base) |
 

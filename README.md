@@ -20,11 +20,11 @@ Integrantes: Andrei Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia
 
 ## Levantarlo
 
-Requiere Docker Desktop; el panel, además, JDK 21 y Maven.
+Requiere Docker Desktop; el panel, además, JDK 21.
 
 ```bash
 cd cine-docker && ./setup.sh          # Windows: .\setup.ps1
-cd ../cine-swing && mvn exec:java     # panel de escritorio
+cd ../cine-swing && ./mvnw compile exec:java   # panel (Windows: .\mvnw.cmd)
 ```
 
 | | |

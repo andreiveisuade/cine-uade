@@ -6,13 +6,15 @@ quedan solo en el backend.
 
 ## Correrlo
 
-Requiere JDK 21, Maven y el sistema levantado ([`cine-docker`](../cine-docker/README.md)).
+Requiere JDK 21 y el sistema levantado ([`cine-docker`](../cine-docker/README.md)).
 
 ```bash
-mvn exec:java                                   # sin empaquetar
-mvn package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
-mvn clean test                                  # contra un servidor HTTP falso, sin backend ni pantalla
+./mvnw compile exec:java                        # sin empaquetar (Windows: .\mvnw.cmd)
+./mvnw package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
+./mvnw clean test                               # contra un servidor HTTP falso, sin backend ni pantalla
 ```
+
+`exec:java` no compila, por eso el `compile`. El wrapper baja Maven solo; en IntelliJ usar la configuración **Panel Swing**.
 
 Apunta a `http://localhost:8080`; otro servidor con `-Dcine.api.url=...` o `CINE_API_URL`. Tema claro con
 `-Dcine.tema=claro`. `encargado@cine.uade.ar` / `cine2026` ve todo; `puerta@cine.uade.ar` / `cine2026`,
