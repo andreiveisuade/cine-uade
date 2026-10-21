@@ -1,4 +1,4 @@
-import { Card, Grid, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Card, Grid, Group, SimpleGrid, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { Link, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -9,10 +9,27 @@ import { Poster } from "../componentes/Poster.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
 
+function PeliculaEsqueleto() {
+  return (
+    <Grid gap="xl" mt={36}>
+      <Grid.Col span={{ base: 12, xs: 4, md: 3 }}>
+        <Skeleton style={{ aspectRatio: "2 / 3" }} />
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, xs: 8, md: 9 }}>
+        <Stack gap="sm">
+          <Skeleton h={36} w="60%" />
+          <Skeleton h={14} w="40%" />
+          <Skeleton h={60} w="80%" mt="xs" />
+        </Stack>
+      </Grid.Col>
+    </Grid>
+  );
+}
+
 export function Pelicula() {
   const { id } = useParams();
   const carga = useCargar(() => Promise.all([api.obtenerPelicula(id), api.obtenerFuncionesDePelicula(id)]), [id]);
-  if (!carga.datos) return <EsperaOError carga={carga} />;
+  if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<PeliculaEsqueleto />} />;
   const [pelicula, funciones] = carga.datos;
 
   return (

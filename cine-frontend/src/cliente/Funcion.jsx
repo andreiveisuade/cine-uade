@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Button, Divider, Grid, Group, Paper, ScrollArea, Stack, Text, Title } from "@mantine/core";
+import { Button, Divider, Grid, Group, Paper, ScrollArea, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { useNavigate, useParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -24,6 +24,19 @@ function pintarParaComprar(asiento, elegidas) {
   return { estilo: estiloTipo(asiento.tipo), deshabilitado: false, titulo };
 }
 
+function FuncionEsqueleto() {
+  return (
+    <Stack gap="md" mt={36}>
+      <Skeleton h={36} w="50%" />
+      <Skeleton h={14} w="35%" />
+      <Grid gap="md">
+        <Grid.Col span={{ base: 12, lg: 9 }}><Skeleton h={320} /></Grid.Col>
+        <Grid.Col span={{ base: 12, lg: 3 }}><Skeleton h={200} /></Grid.Col>
+      </Grid>
+    </Stack>
+  );
+}
+
 export function Funcion() {
   const { id } = useParams();
   const navegar = useNavigate();
@@ -41,7 +54,7 @@ export function Funcion() {
 
   useRenovarBloqueo(funcion?.id);
 
-  if (!funcion) return <EsperaOError carga={carga} />;
+  if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
   const butacas = seleccion.funcionId === funcion.id ? seleccion.butacas : {};
   const { elegidas, total } = resumenCompra(funcion, butacas);
 

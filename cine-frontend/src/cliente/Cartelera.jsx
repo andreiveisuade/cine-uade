@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Carousel } from "@mantine/carousel";
 import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
-import { Box, Button, Card, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Box, Button, Card, Group, SimpleGrid, Skeleton, Stack, Text, Title } from "@mantine/core";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Link, useParams } from "react-router";
 import * as api from "../api/api-http.js";
@@ -66,10 +66,21 @@ const TARJETA = {
   saliente: { opacity: 0, scale: 0.95, transition: { duration: 0.15 } },
 };
 
+function CarteleraEsqueleto() {
+  return (
+    <Stack gap="lg">
+      <Skeleton h={28} w={180} />
+      <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
+        {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} style={{ aspectRatio: "2 / 3" }} />)}
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
 export function Cartelera({ conHero = false }) {
   const { genero } = useParams();
   const carga = useCargar(() => Promise.all([api.obtenerCartelera(genero), api.obtenerGeneros()]), [genero]);
-  if (!carga.datos) return <EsperaOError carga={carga} />;
+  if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<CarteleraEsqueleto />} />;
   const [peliculas, generos] = carga.datos;
 
   return (

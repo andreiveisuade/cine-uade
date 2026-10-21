@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
+import { Alert, Anchor, Badge, Button, Code, Grid, Group, Paper, Skeleton, Stack, Text } from "@mantine/core";
 import { m, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router";
@@ -174,7 +174,9 @@ export function Ticket() {
     };
   }, [pagoEnVivo, quieto, codigo]);
 
-  if (!carga.datos) return <EsperaOError carga={carga} />;
+  if (!carga.datos) {
+    return <EsperaOError carga={carga} esqueleto={<Stack gap="md" maw={640}><Skeleton h={48} /><Skeleton h={130} /><Skeleton h={360} /></Stack>} />;
+  }
   const avisoEstado = AVISO_POR_ESTADO[reserva.estado];
   const productos = carga.datos[1];
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
