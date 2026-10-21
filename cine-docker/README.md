@@ -7,7 +7,7 @@ Levanta el sistema completo desde las carpetas hermanas. Cómo ponerlo a andar y
 |---|---|
 | `docker-compose.yml` | Los cuatro servicios, las dos redes y el volumen de la base |
 | `.env.example` | Las variables, comentadas. Se copia a `.env`, que no se versiona |
-| `setup.sh`, `setup.ps1` | Arman el `.env`, levantan, esperan a que esté sano y siembran. Repetibles |
+| `setup.sh`, `setup.ps1` | Chequean Java 21, arman el `.env`, levantan, esperan a que esté sano, siembran e imprimen Adminer y el panel. Repetibles |
 | `seed/02-admin.sql` | Los dos usuarios de demo, al crear la base |
 | `seed/datos-de-ejemplo.sh` | Seis salas, la carta del candy y una promoción, por la API y no por SQL, para que pasen por las reglas |
 
@@ -69,7 +69,7 @@ docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$
 Las comillas simples hacen que las variables las resuelva el contenedor, no la terminal. Si falta una
 migración que cambia tablas, el backend no arranca (`ddl-auto: validate`) y el log dice qué no coincide.
 
-Para mirar los datos, Adminer en `localhost:8081`, con servidor **`mysql`** (no `localhost`). Para Workbench o
+Para mirar los datos, Adminer en `localhost:8081`, con servidor **`mysql`** (no `localhost`), usuario `DB_USER` y la clave `DB_PASSWORD` del `.env` (local; el setup la imprime al final). Para Workbench o
 DBeaver, publicar el puerto en un `docker-compose.override.yml`, que Compose lee solo y no se versiona:
 
 ```yaml
@@ -78,3 +78,12 @@ services:
     ports:
       - "127.0.0.1:3306:3306"
 ```
+
+## Problemas comunes
+
+| Lo que ves | Qué hacer |
+|---|---|
+| Adminer no deja entrar | Servidor `mysql` (no `localhost`); usuario `DB_USER` y clave `DB_PASSWORD` del `.env` |
+| `mvn` no se reconoce | Usar el wrapper: `cd ../cine-swing && ./mvnw compile exec:java` (`.\mvnw.cmd` en Windows) |
+| `ClassNotFoundException` | `exec:java` no compila: incluir `compile` |
+| El setup avisa que falta Java 21 | `winget install EclipseAdoptium.Temurin.21.JDK` o `brew install openjdk@21`; solo lo usa el panel |

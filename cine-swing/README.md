@@ -6,14 +6,16 @@ quedan solo en el backend.
 
 ## Correrlo
 
-Requiere JDK 21, Maven y el sistema levantado ([`cine-docker`](../cine-docker/README.md)).
+Requiere JDK 21 y el sistema levantado ([`cine-docker`](../cine-docker/README.md)).
 
 ```bash
-mvn exec:java                                   # sin empaquetar
-mvn package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
-mvn clean test                                  # contra un servidor HTTP falso, sin backend ni pantalla
-mvn -Phumo test                                 # humo: las Api reales contra el backend levantado
+./mvnw compile exec:java                        # sin empaquetar (Windows: .\mvnw.cmd)
+./mvnw package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
+./mvnw clean test                               # contra un servidor HTTP falso, sin backend ni pantalla
+./mvnw -Phumo test                              # humo: las Api reales contra el backend levantado
 ```
+
+`exec:java` no compila, por eso el `compile`. El wrapper baja Maven solo; en IntelliJ usar la configuración **Panel Swing**.
 
 El humo (`HumoContraBackendTest`) entra como encargado, lista salas, catálogos y reservas, crea y borra una
 película con su función, y prueba el login del acomodador y el rechazo de un cliente. Pide el seed de
