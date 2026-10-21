@@ -1,0 +1,269 @@
+@startuml der
+title Modelo de datos (DER) - las 20 tablas de schema.sql
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 50
+hide empty members
+hide circle
+
+' Fuente: cine-backend/src/main/resources/schema.sql. Las migracion-*.sql solo
+' llevan bases viejas a ese mismo estado: no agregan nada que schema.sql no tenga.
+' * = NOT NULL. Los tipos van solo donde dicen algo (DECIMAL de plata, DATETIME,
+' VARCHAR de un enum). base-venta-er.puml queda como zoom de la venta.
+
+package "cartelera" #F2F0ED {
+  entity pelicula {
+    * id : INT <<PK>>
+    --
+    * titulo : VARCHAR(100)
+    * duracion_minutos : INT
+    * clasificacion : VARCHAR(10)
+    * estado_revision : VARCHAR(15)
+    * en_cartelera : BOOLEAN
+    * puntaje : DECIMAL(3,1)
+    director, sinopsis, anio, poster_url...
+  }
+  entity pelicula_genero {
+    * **(pelicula_id, genero) <<PK>>**
+    --
+    * pelicula_id <<FK>> ON DELETE CASCADE
+  }
+  entity importacion {
+    * id : INT <<PK>>
+    --
+    * estado : VARCHAR(15)
+    * pedida_en : DATETIME
+    termino_en : DATETIME
+    * nuevas, salteadas, fallidas : INT
+  }
+}
+
+package "salas" #E8EEF4 {
+  entity sala {
+    * id : INT <<PK>>
+    --
+    * nombre : VARCHAR(50)
+    * tipo : VARCHAR(15)
+    * minutos_limpieza : INT
+  }
+  entity asiento {
+    * id : INT <<PK>>
+    --
+    * sala_id <<FK>> ON DELETE CASCADE
+    * fila, numero : INT
+    * tipo, estado : VARCHAR
+    **UNIQUE (sala_id, fila, numero)**
+  }
+}
+
+package "funciones y programaciones" #EAF2E6 {
+  entity programacion {
+    * id : INT <<PK>>
+    --
+    * pelicula_id <<FK>>
+    * sala_id <<FK>>
+    * desde : DATE
+    hasta : DATE (NULL = abierta)
+    * hora_inicio : TIME
+    * version, proyeccion
+    * precio : DECIMAL(10,2)
+    * activa : BOOLEAN
+    generada_hasta : DATE
+  }
+  entity programacion_dia {
+    * **(programacion_id, dia) <<PK>>**
+    --
+    * programacion_id <<FK>> ON DELETE CASCADE
+  }
+  entity funcion {
+    * id : INT <<PK>>
+    --
+    * pelicula_id <<FK>>
+    * sala_id <<FK>>
+    programacion_id <<FK>> NULL
+    * inicio : DATETIME
+    * version, proyeccion
+    * precio : DECIMAL(10,2)
+  }
+}
+
+package "ventas" #F7EBE3 {
+  entity reserva {
+    * id : INT <<PK>>
+    --
+    * funcion_id <<FK>>
+    * cliente_id <<FK>>
+    * estado : VARCHAR(15)
+    * creada_en : DATETIME
+    * codigo : VARCHAR(32) **UNIQUE**
+    ingresada_en : DATETIME
+    * **version : INT** (@Version)
+  }
+  entity entrada {
+    * id : INT <<PK>>
+    --
+    * reserva_id <<FK>> ON DELETE CASCADE
+    * asiento_id <<FK>>
+    funcion_id <<FK>> NULL al liberar
+    * tarifa : VARCHAR(15)
+    * precio : DECIMAL(10,2)
+    **UNIQUE (funcion_id, asiento_id)**
+    UNIQUE (reserva_id, asiento_id)
+  }
+  entity bloqueo_butaca {
+    * **(funcion_id, asiento_id) <<PK>>**
+    --
+    * funcion_id <<FK>> ON DELETE CASCADE
+    * asiento_id <<FK>> ON DELETE CASCADE
+    * sesion : VARCHAR(64)
+    * vence_en : DATETIME
+  }
+  entity pago {
+    * id : INT <<PK>>
+    --
+    * reserva_id <<FK>> **UNIQUE**
+    promocion_id <<FK>> NULL
+    * subtotal, descuento, monto : DECIMAL(10,2)
+    * medio : VARCHAR(15)
+    * fecha : DATETIME
+    * codigo_autorizacion : VARCHAR(50)
+  }
+}
+
+package "promociones" #F4EEF7 {
+  entity promocion {
+    * id : INT <<PK>>
+    --
+    * nombre : VARCHAR(60) **UNIQUE**
+    * tipo : VARCHAR(15) (discriminador)
+    porcentaje, monto : DECIMAL
+    lleva, paga : INT
+    * vigencia_desde, vigencia_hasta : DATE
+    hora_desde, hora_hasta : TIME
+    * activa : BOOLEAN
+  }
+  entity promocion_dia {
+    * **(promocion_id, dia) <<PK>>**
+    --
+    * promocion_id <<FK>> ON DELETE CASCADE
+  }
+  entity promocion_medio {
+    * **(promocion_id, medio) <<PK>>**
+    --
+    * promocion_id <<FK>> ON DELETE CASCADE
+  }
+}
+
+package "candy" #FBF4DD {
+  entity producto {
+    * id : INT <<PK>>
+    --
+    * nombre : VARCHAR(60) **UNIQUE**
+    * tipo : VARCHAR(15)
+    * precio : DECIMAL(10,2)
+    * disponible : BOOLEAN
+  }
+  entity combo_item {
+    * **(combo_id, producto_id) <<PK>>**
+    --
+    * combo_id <<FK>> ON DELETE CASCADE
+    * producto_id <<FK>>
+    * cantidad : INT
+  }
+  entity compra_candy {
+    * id : INT <<PK>>
+    --
+    cliente_id <<FK>> NULL
+    reserva_id <<FK>> NULL
+    * fecha : DATETIME
+    * medio : VARCHAR(15)
+    * codigo_autorizacion : VARCHAR(50)
+  }
+  entity item_compra {
+    * id : INT <<PK>>
+    --
+    * compra_id <<FK>> ON DELETE CASCADE
+    * producto_id <<FK>>
+    * nombre : VARCHAR(60)
+    * cantidad : INT
+    * precio_unitario, ahorro_unitario : DECIMAL(10,2)
+    UNIQUE (compra_id, producto_id)
+  }
+}
+
+package "usuarios" #ECECEC {
+  entity usuario {
+    * id : INT <<PK>>
+    --
+    * nombre : VARCHAR(100)
+    * email : VARCHAR(100) **UNIQUE**
+    * rol : VARCHAR(15) (discriminador)
+    password_hash : VARCHAR(100) NULL
+  }
+}
+
+pelicula ||--o{ pelicula_genero
+sala ||--o{ asiento
+
+pelicula ||--o{ programacion
+sala ||--o{ programacion
+programacion ||--o{ programacion_dia
+pelicula ||--o{ funcion
+sala ||--o{ funcion
+programacion |o--o{ funcion : genera
+
+funcion ||--o{ reserva
+usuario ||--o{ reserva
+reserva ||--|{ entrada
+asiento ||--o{ entrada
+funcion |o--o{ entrada
+funcion ||--o{ bloqueo_butaca
+asiento ||--o{ bloqueo_butaca
+reserva ||--o| pago
+promocion |o--o{ pago
+
+promocion ||--o{ promocion_dia
+promocion ||--o{ promocion_medio
+
+producto ||--o{ combo_item : es combo
+producto ||--o{ combo_item : componente
+usuario |o--o{ compra_candy
+reserva |o--o{ compra_candy
+compra_candy ||--|{ item_compra
+producto ||--o{ item_compra
+
+note right of entrada
+  **Doble venta**: UNIQUE (funcion_id, asiento_id).
+  Si dos ventas pasan la validacion del gestor,
+  saveAndFlush de la segunda choca -> 409.
+  Liberar pone funcion_id en NULL: el UNIQUE no
+  compara NULL, la butaca se revende y queda historial.
+end note
+
+note right of reserva
+  **version** es el @Version de Reserva:
+  cobrar y cancelar a la vez -> el segundo
+  UPDATE no encuentra su version -> 409.
+  **codigo** UNIQUE: es la credencial de la puerta.
+end note
+
+note bottom of bloqueo_butaca
+  La PK compuesta ES la regla: una butaca de una
+  funcion solo puede estar bloqueada por una sesion.
+  Se toma con un INSERT atomico y vence en 3 minutos.
+end note
+
+note bottom of pago
+  reserva_id UNIQUE: un pago por reserva.
+  El descuento vive aca, no en entrada (R15).
+end note
+
+note bottom of importacion
+  Sin FK a pelicula: lo que trajo esta en
+  pelicula.estado_revision (una sola fuente).
+end note
+
+@enduml
