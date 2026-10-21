@@ -1,0 +1,34 @@
+@startuml conciliacion-pagos
+title Conciliacion: la tarea cobra lo que Mercado Pago aprobo aunque el comprador no vuelva
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+hide footbox
+
+participant "ConciliacionPagos\n(cada 60 s)" as T <<Tarea>>
+participant "PasarelaPagos\n(MercadoPagoHttp)" as PP <<Adapter>>
+participant "Mercado Pago" as MP <<externo>>
+participant "GestorPagos" as GP
+
+T -> PP : aprobadosDesde(ahora - 30 min)
+PP -> MP : GET /v1/payments/search?status=approved&range=date_created
+MP --> PP : pagos aprobados
+PP --> T : ids de checkout (external_reference)
+loop cada id, en su propia transaccion
+  T -> GP : conciliarCheckout(id)
+  alt ya tiene pago
+    GP --> T : nada (idempotente con el retorno)
+  else sin pago
+    GP -> PP : autorizar(checkout)
+    note right of PP
+      cuenta si coinciden monto, moneda
+      y tipo de pago del medio
+    end note
+    GP -> GP : registrarPago (mismo camino que caja)
+  end
+end
+note over T
+  si MP no responde: warn y 0 cobrados
+  si un id falla: warn y sigue con el resto
+end note
+@enduml

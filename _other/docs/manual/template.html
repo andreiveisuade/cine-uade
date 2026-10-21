@@ -962,7 +962,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong><code>#/registro</code> e <code>#/ingresar</code>:</strong> alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o el nombre, Mis reservas y Salir.</li>
         <li><strong><code>#/mis-reservas</code>:</strong> con sesión, sus reservas con Cancelar y Pagar online; sin sesión, la búsqueda por código.</li>
         <li><strong>Pagar online:</strong> medio, monto del backend, Mercado Pago, y vuelta al ticket.</li>
-        <li><strong><code>#/ticket/&lt;codigo&gt;</code>:</strong> público y sin cancelar; muestra el <code>?aviso=</code> si el pago no se cobró.</li>
+        <li><strong><code>#/ticket/&lt;codigo&gt;</code>:</strong> público y sin cancelar. El aviso y el texto de la tarjeta cambian con el estado (Reservada, Pagada, Vencida, Cancelada), y muestra el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta la reserva por código cada 10 segundos, así pasa a Pagada solo cuando la conciliación cobra.</li>
       </ul>
       <h3 id="abm-productos">Productos con detalle, borrado y modificación</h3>
       <p>
@@ -1065,6 +1065,12 @@ body.lightbox-locked { overflow: hidden; }
         interrumpía cada alta. Todo pasa por <code>comun/Mensajes</code>, así que cambiar la política toca un
         archivo. Un error sin el <code>{"error"}</code> del backend (el HTML de un nginx) nunca se muestra crudo:
         queda un mensaje según el código.
+      </p>
+
+      <p>
+        El login rechaza a los clientes: <code>ApiSesion.login</code> pregunta <code>Empleado.esEmpleado()</code>
+        (administrador o acomodador), olvida las credenciales que <code>ClienteHttp</code> ya guardó y muestra en el
+        formulario «Esta aplicación es para empleados del cine: los clientes compran en la web». El panel no se abre.
       </p>
 
       <h3>Las pantallas</h3>
@@ -1270,6 +1276,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         Una reserva <code>RESERVADA</code> vence a los 30 minutos. El <code>UNIQUE</code> no sabe de tiempo, así que la
         primera consulta que la encuentra la pasa a <code>EXPIRADA</code> y libera sus butacas
         (<code>funcion_id = NULL</code>). Sin proceso de fondo.
+        La vista de la reserva trae <code>cancelable: false</code> también cuando venció aunque figure <code>RESERVADA</code>.
       </p>
 
       <h3>El ticket</h3>
@@ -1338,14 +1345,55 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <h3 id="mercadopago">Mercado Pago</h3>
       <figure class="diagram">
         {{SVG_PAGO_MERCADOPAGO}}
-        <figcaption>El pago se confirma al volver, consultando a Mercado Pago, no por lo que diga la URL</figcaption>
+        <figcaption>Al volver se consulta a Mercado Pago, no se confía en lo que diga la URL</figcaption>
       </figure>
       <ul>
         <li><strong>Id del checkout = <code>external_reference</code></strong> (<code>&lt;reservaId&gt;-&lt;MEDIO&gt;-&lt;azar&gt;</code>): se conoce antes de crear la preferencia, así entra en la <code>back_url</code> sin un segundo pedido. Un id inventado da 404.</li>
-        <li><strong>Sin webhook:</strong> el backend corre en localhost y MP no puede llamarlo. Al volver, <code>GET /api/checkouts/{id}/retorno</code> consulta <code>/v1/payments/search</code>; la query de la URL se ignora porque es falsificable. Recargar no cobra dos veces: si ya hay pago, no hace nada.</li>
+        <li><strong>El retorno:</strong> <code>GET /api/checkouts/{id}/retorno</code> consulta <code>/v1/payments/search</code>; la query de la URL se ignora porque es falsificable. Recargar no cobra dos veces: si ya hay pago, no hace nada.</li>
         <li><strong>Mismo camino que la caja:</strong> <code>registrarPago</code>, con el mismo descuento y el mismo recibo. El medio es el que se eligió al abrir el checkout, porque de él depende la promoción.</li>
-        <li><strong>Riesgos aceptados:</strong> un pago <code>pending</code> no se re-consulta hasta que el comprador vuelva a abrir el retorno; y si MP aprueba cuando la reserva ya venció (R17), MP cobró y el sistema no registra, sin devolución (R13).</li>
-        <li><strong>Local:</strong> MP rechaza una <code>back_url</code> a localhost con <code>auto_return</code>, así que ahí el comprador toca «Volver al sitio».</li>
+        <li><strong>Un aprobado cuenta solo si coincide</strong> monto, moneda (ARS) y un <code>payment_type_id</code> del medio. Si no, aviso «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería».</li>
+        <li><strong>Local:</strong> MP no muestra «Volver al sitio» ni hace <code>auto_return</code> con una <code>back_url</code> a localhost. Con una URL https (túnel) vuelve solo.</li>
+      </ul>
+      <h3 id="conciliacion">Conciliación: cobrar sin que el comprador vuelva</h3>
+      <figure class="diagram">
+        {{SVG_CONCILIACION_PAGOS}}
+        <figcaption>Una tarea cada 60 segundos cobra lo que MP aprobó</figcaption>
+      </figure>
+      <ul>
+        <li><strong>Por qué:</strong> si el comprador cierra la pestaña tras pagar, MP cobró y la reserva sigue <code>RESERVADA</code>. <code>ConciliacionPagos</code> (<code>@Scheduled</code>, propiedad <code>cine.mercadopago.conciliacion</code>, <code>60s</code>) lo repara en un minuto.</li>
+        <li><strong>Sin persistir checkouts:</strong> el id es el <code>external_reference</code> y <code>aprobadosDesde</code> lo recupera con una sola búsqueda de los aprobados de los últimos 30 minutos (<code>MINUTOS_PARA_PAGAR</code>: uno más viejo es de una reserva ya cobrada o vencida). Sin tabla ni migración. MP no filtra por prefijo, así que buscar por reserva exigiría una consulta por pendiente en cada vuelta.</li>
+        <li><strong>Un solo camino:</strong> <code>conciliarCheckout</code> hace lo mismo que el retorno, cada id en su transacción. Es idempotente con el retorno; si MP no responde o un id falla, avisa en el log y sigue.</li>
+        <li><strong>Webhook, el camino de producción:</strong> hace falta una URL https pública, <code>notification_url</code> en la preferencia, un <code>POST</code> público que valide la firma <code>x-signature</code> y llame a <code>conciliarCheckout</code> con el pago consultado a MP, no con el cuerpo. La conciliación quedaría de respaldo. No está implementado: el backend corre en localhost.</li>
+      </ul>
+      <h3 id="medio-atado">El medio queda atado a la preferencia</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Medio</th><th><code>payment_type_id</code> que acepta</th></tr></thead>
+          <tbody>
+            <tr><td>DEBITO</td><td><code>debit_card</code>, <code>account_money</code></td></tr>
+            <tr><td>CREDITO</td><td><code>credit_card</code>, <code>account_money</code></td></tr>
+            <tr><td>QR</td><td><code>account_money</code> (se paga desde la app de MP)</td></tr>
+            <tr><td>TRANSFERENCIA</td><td><code>bank_transfer</code>, <code>account_money</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><code>tiposDe</code> es la única fuente: las exclusiones de la preferencia salen de restarlo al total de tipos, y <code>autorizar</code> lo vuelve a exigir al aprobar.</li>
+        <li><strong><code>account_money</code> se acepta siempre:</strong> MP no deja excluirlo (400 «account_money cannot be excluded»). En DEBITO/CREDITO el comprador puede ver «dinero en cuenta»; un pago con otra tarjeta no concilia y manda a la boletería.</li>
+        <li><strong>La preferencia vence con la reserva</strong> (<code>expires</code> y <code>expiration_date_to</code> = creación + 30 minutos): un link viejo no cobra una reserva que ya venció.</li>
+      </ul>
+      <h3 id="riesgos-mp">Riesgos</h3>
+      <ul>
+        <li><strong>Se cierran:</strong> aprobado que nadie registra (la conciliación), pago de otro monto, moneda o medio (<code>autorizar</code>), link de pago que sobrevive a la reserva (vencimiento).</li>
+        <li><strong>Queda: doble cobro acotado.</strong> Cada vez que el comprador abre el checkout se crea una preferencia nueva (puede cambiar de medio), y dos abiertas de la misma reserva viven hasta vencer. Solo el primer aprobado cobra (R5); el segundo queda en el log como «ya tiene un pago registrado» y se devuelve a mano desde MP. Evitarlo del todo exige persistir checkouts o devoluciones automáticas.</li>
+        <li><strong>Queda:</strong> un aprobado que llega con la reserva ya vencida (R17) es plata cobrada sin registrar; la conciliación lo avisa en cada vuelta mientras esté en la ventana.</li>
+        <li><strong>Carrera conocida:</strong> retorno y conciliación a la vez sobre la misma reserva chocan con el <code>@Version</code>: el segundo falla (la conciliación sigue, el retorno da 409).</li>
+      </ul>
+      <h3 id="probar-mp">Cómo se probó contra el sandbox</h3>
+      <ul>
+        <li>Pago sin volver al sitio: la conciliación lo cobró a los 3 segundos (<code>1 cobrados</code>); reserva <code>PAGADA</code>, <code>CREDITO</code>.</li>
+        <li>Con checkout CREDITO MP ofreció solo tarjetas de crédito.</li>
+        <li>Hay que entrar con el <strong>comprador de prueba</strong> del panel de MP: pagar como invitado con un vendedor de prueba da «Una de las partes con la que intentás hacer el pago es de prueba».</li>
       </ul>
     </section>
 
