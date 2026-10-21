@@ -4,9 +4,9 @@ import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
 import { Group, Stack, Title } from "@mantine/core";
 import { useReducedMotion } from "motion/react";
-import { TarjetaCombo } from "@/componentes/TarjetaCombo.jsx";
-import { TarjetaProducto } from "@/componentes/TarjetaProducto.jsx";
-import { TarjetaPromo } from "@/componentes/TarjetaPromo.jsx";
+import { TarjetaCombo } from "@/promos/tarjetas/TarjetaCombo.jsx";
+import { TarjetaProducto } from "@/promos/tarjetas/TarjetaProducto.jsx";
+import { TarjetaPromo } from "@/promos/tarjetas/TarjetaPromo.jsx";
 import { LlamadoAlCandy } from "./LlamadoAlCandy.jsx";
 
 // Lo que se puede sumar a la función, en el orden en que conviene: combos, sueltos con foto, promos de entradas.

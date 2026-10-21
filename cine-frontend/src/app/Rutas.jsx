@@ -9,7 +9,7 @@ import { MisReservas } from "@/cuenta/reservas/MisReservas.jsx";
 import { Registro } from "@/cuenta/Registro.jsx";
 import { Ingresar } from "@/cuenta/Ingresar.jsx";
 import { Nosotros } from "@/cliente/Nosotros.jsx";
-import { Promociones } from "@/cliente/Promociones.jsx";
+import { Promociones } from "@/promos/Promociones.jsx";
 import { NoExiste } from "./NoExiste.jsx";
 
 // Corta y sin desplazamiento grande: acompaña el cambio de pantalla sin demorarlo.
