@@ -24,9 +24,10 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.ventas.BloqueoDeButacas;
+import ar.uade.cine.service.ventas.ButacasBloqueadas;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
-import ar.uade.cine.service.ventas.Ocupacion;
 
 // Arma los JSON de reservas y del bloqueo de butacas; Assembler que compone Cartelera, Salas y Pagos.
 // Un listado de N reservas cuesta un número fijo de consultas: las reservas con su función,
@@ -97,8 +98,8 @@ public class VistasReservas {
                 e.precio().aPesos());
     }
 
-    public BloqueoVistaDTO bloqueo(Ocupacion.Bloqueo bloqueo) {
+    public BloqueoVistaDTO bloqueo(ButacasBloqueadas bloqueo) {
         return new BloqueoVistaDTO(bloqueo.sesion(), bloqueo.conseguidas(), bloqueo.rechazadas(),
-                Ocupacion.MIENTRAS_ELIGE.toSeconds());
+                BloqueoDeButacas.MIENTRAS_ELIGE.toSeconds());
     }
 }

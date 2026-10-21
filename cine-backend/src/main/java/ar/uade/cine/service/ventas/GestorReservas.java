@@ -40,7 +40,9 @@ public class GestorReservas {
     private final ClienteRepository clienteRepository;
     private final GestorClientes clientes;
     private final ApplicationEventPublisher eventos;
+    private final FuncionesEnVenta enVenta;
     private final Ocupacion ocupacion;
+    private final BloqueoDeButacas bloqueo;
     private final Reloj reloj;
 
     // El alta del cliente comparte la transacción: una reserva rechazada no lo deja creado. La función va
@@ -48,13 +50,13 @@ public class GestorReservas {
     // puede taparlo.
     public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
                             String sesion) {
-        Funcion funcion = ocupacion.funcionEnVenta(funcionId);
+        Funcion funcion = enVenta.exigir(funcionId);
         return vender(funcion, clientes.identificar(nombre, email), butacas, sesion);
     }
 
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas,
                             String sesion) {
-        Funcion funcion = ocupacion.funcionEnVenta(funcionId);
+        Funcion funcion = enVenta.exigir(funcionId);
         return vender(funcion, clienteRepository.exigir(clienteId, "el cliente"), butacas, sesion);
     }
 
@@ -67,7 +69,7 @@ public class GestorReservas {
         exigirLibres(entradas, ocupacion.asientosOcupados(funcion.getId(), sesion));
         Reserva reserva = guardarCompitiendoPorLasButacas(nueva);
         if (sesion != null) {
-            ocupacion.liberar(funcion.getId(), sesion);
+            bloqueo.liberar(funcion.getId(), sesion);
         }
         log.info("reserva {} creada · funcion {} · {} · total {}", reserva.getId(), funcion.getId(),
                 detalleDe(entradas), reserva.getTotal());
