@@ -4,15 +4,13 @@ import java.nio.charset.StandardCharsets;
 
 import ar.uade.cine.model.validacion.Regla;
 
-// La contraseña en claro de un usuario nuevo, antes del hash; Value Object con las reglas del alta.
-// No se guarda: el gestor la pasa a bcrypt y la descarta. toString no la muestra, por si llega a un log.
+// Contraseña en claro de un usuario nuevo, antes del hash; Value Object con las reglas del alta.
+// No se guarda y toString no la muestra.
 public record Contrasena(String valor) {
 
     private static final int MINIMO = 6;
 
-    // bcrypt usa solo los primeros 72 bytes, y BCrypt.hashpw rechaza los que se pasan con una
-    // IllegalArgumentException en inglés que salía como 500. Se cuentan en UTF-8, como los cuenta bcrypt:
-    // una tilde o una eñe ocupan dos.
+    // bcrypt usa solo los primeros 72 bytes (UTF-8) y BCrypt.hashpw rechaza los que se pasan con un 500.
     private static final int MAXIMO_EN_BYTES = 72;
 
     public Contrasena {
