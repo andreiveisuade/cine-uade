@@ -7,11 +7,13 @@ import { fechaHora, precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { Cargando, EsperaOError, Vacio } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { faltantes } from "./compra.jsx";
 import { PagarOnline } from "./PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
 
 export function MisReservas() {
+  useTitulo("Mis reservas");
   const { usuario } = useSesion();
   if (usuario === undefined) return <Cargando />;
   return usuario ? <ReservasDelCliente /> : <BuscarPorCodigo />;

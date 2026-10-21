@@ -11,6 +11,7 @@ import { precio } from "../api/formato.js";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 
 const DIAS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
@@ -347,6 +348,7 @@ function Esqueleto({ alto, cantidad, cols }) {
 }
 
 export function Promociones() {
+  useTitulo("Promos");
   const promos = useCargar(() => api.obtenerPromocionesVigentes(), []);
   const carta = useCargar(() => api.obtenerProductosCandy(), []);
 

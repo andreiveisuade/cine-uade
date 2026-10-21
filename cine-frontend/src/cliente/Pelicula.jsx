@@ -9,6 +9,7 @@ import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
 import { Poster } from "../componentes/Poster.jsx";
 import { Trailer } from "../componentes/Trailer.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { Volver } from "../componentes/Volver.jsx";
 
 function PeliculaEsqueleto() {
@@ -88,6 +89,7 @@ function Ficha({ pelicula, hayFunciones, sobreElFondo }) {
 export function Pelicula() {
   const { id } = useParams();
   const carga = useCargar(() => Promise.all([api.obtenerPelicula(id), api.obtenerFuncionesDePelicula(id)]), [id]);
+  useTitulo(carga.datos?.[0].titulo);
   if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<PeliculaEsqueleto />} />;
   const [pelicula, funciones] = carga.datos;
 

@@ -3,6 +3,7 @@ import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } f
 import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "../api/api-http.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { ErrorCaja } from "../componentes/Estado.jsx";
 import { faltantes } from "./compra.jsx";
 import { useSesion } from "./sesion.jsx";
@@ -10,6 +11,7 @@ import { useSesion } from "./sesion.jsx";
 export function Ingresar() {
   const navegar = useNavigate();
   const avisar = useAvisar();
+  useTitulo("Ingresar");
   const { setUsuario } = useSesion();
   // El ticket manda el email con que se reservó, para entrar con ese.
   const { state } = useLocation();

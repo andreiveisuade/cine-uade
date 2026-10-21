@@ -14,6 +14,7 @@ import { EsperaOError, Vacio } from "../componentes/Estado.jsx";
 import { Poster } from "../componentes/Poster.jsx";
 import { Trailer, urlTrailer } from "../componentes/Trailer.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 
 // Portada de la home: una sala a oscuras con las destacadas pasando en la pantalla. Sin películas queda el texto solo.
 function Hero({ peliculas }) {
@@ -120,6 +121,7 @@ function CarteleraEsqueleto() {
 
 export function Cartelera({ conHero = false }) {
   const { genero } = useParams();
+  useTitulo(conHero ? undefined : "Cartelera");
   const previa = usePrevia();
   const carga = useCargar(() => Promise.all([api.obtenerCartelera(genero), api.obtenerGeneros()]), [genero]);
   // Mientras llega otro género se queda la lista anterior: las tarjetas se reordenan en vez de pasar por el esqueleto.

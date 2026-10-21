@@ -1,8 +1,10 @@
 import { List, Stack, Text, Title } from "@mantine/core";
+import { useTitulo } from "../componentes/useTitulo.js";
 
 const INTEGRANTES = ["Andrei Veis", "Lucas Ezequiel Manrique Simonini", "Valentino Garmendia"];
 
 export function Nosotros() {
+  useTitulo("Nosotros");
   return (
     <Stack gap="md" maw={640}>
       <Title order={1}>Nosotros</Title>

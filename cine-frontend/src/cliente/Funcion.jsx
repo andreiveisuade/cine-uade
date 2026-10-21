@@ -8,6 +8,7 @@ import { EsperaOError } from "../componentes/Estado.jsx";
 import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/MapaButacas.jsx";
 import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { Volver } from "../componentes/Volver.jsx";
 import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
          sostenerSeleccion, useCambiarTarifa, useCompra, useRenovarBloqueo } from "./compra.jsx";
@@ -47,6 +48,7 @@ export function Funcion() {
   const funcion = carga.datos?.[0];
 
   useRenovarBloqueo(funcion?.id);
+  useTitulo(funcion && `Butacas de ${funcion.pelicula.titulo}`);
 
   if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
   // Otra función es otra compra: lo elegido para la anterior no se arrastra. Se deriva acá y no con un efecto que

@@ -7,6 +7,7 @@ import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { useSesion } from "./sesion.jsx";
 import { Volver } from "../componentes/Volver.jsx";
 import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
@@ -17,6 +18,7 @@ export function Confirmar() {
   const { id } = useParams();
   const navegar = useNavigate();
   const avisar = useAvisar();
+  useTitulo("Confirmar reserva");
   const { seleccion, setSeleccion } = useCompra();
   const cambiarTarifa = useCambiarTarifa();
   const { usuario } = useSesion();

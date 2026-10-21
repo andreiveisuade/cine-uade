@@ -8,6 +8,7 @@ import { fechaHora, precio, precioExacto } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useTitulo } from "../componentes/useTitulo.js";
 import { PagarOnline } from "./PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
 
@@ -128,6 +129,7 @@ function CartaCandy({ productos, reservaId }) {
 export function Ticket() {
   const { codigo } = useParams();
   const avisar = useAvisar();
+  useTitulo("Tu ticket");
   const { usuario } = useSesion();
   // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
   const aviso = useSearchParams()[0].get("aviso");
