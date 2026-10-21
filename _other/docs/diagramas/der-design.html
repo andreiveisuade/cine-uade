@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modelo de datos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper: #f5f5f5; --color-ink: #2d3142; --color-muted: #4f5d75; --color-accent: #bf4520;
+      --font-sans: 'Geist', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+      --font-mono: 'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); padding: 3rem 2rem; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { width: 100%; min-width: 3510px; display: block; }
+    .tname { font-family: var(--font-sans); font-weight: 600; font-size: 14px; fill: #2d3142; }
+    .cname { font-family: var(--font-sans); font-weight: 500; font-size: 12px; fill: #2d3142; }
+    .ctype { font-family: var(--font-mono); font-size: 10px; fill: #4f5d75; }
+    .cdef { fill: #8a93a6; }
+    .chip { font-family: var(--font-mono); font-size: 8px; font-weight: 600; letter-spacing: 0.04em; }
+    .sub { font-family: var(--font-mono); font-size: 9px; fill: #4f5d75; }
+    .eyebrow { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.16em; }
+    .note { font-family: var(--font-mono); font-size: 9.5px; fill: #2d3142; }
+    .note.acc { fill: #bf4520; font-weight: 600; }
+    .legend { font-family: var(--font-mono); font-size: 11px; fill: #4f5d75; }
+    .h1 { font-family: var(--font-serif); font-size: 40px; fill: #2d3142; }
+    .eb { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; fill: #4f5d75; }
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <svg viewBox="0 0 3510 1278" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="der-design-title der-design-desc">
+      <title id="der-design-title">Modelo de datos del cine</title>
+      <desc id="der-design-desc">Las 20 tablas de schema.sql agrupadas en siete subdominios, con todas sus columnas, tipos, claves, restricciones y las 25 claves foraneas con su cardinalidad.</desc>
+      <rect width="3510" height="1278" fill="#f5f5f5"/>
+      <text x="170" y="50" class="eb">SCHEMA.SQL · MYSQL 8.4 · 20 TABLAS · 25 FK</text>
+      <text x="170" y="92" class="h1">Modelo de datos del cine</text>
+<rect x="150" y="114" width="440" height="910" rx="8" fill="#3d6b8f" fill-opacity="0.06" stroke="#3d6b8f" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="162" y="132" class="eyebrow" fill="#3d6b8f">CARTELERA</text>
+<rect x="700" y="114" width="440" height="826" rx="8" fill="#6b5a8f" fill-opacity="0.06" stroke="#6b5a8f" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="712" y="132" class="eyebrow" fill="#6b5a8f">FUNCIONES Y PROGRAMACIONES</text>
+<rect x="1250" y="114" width="440" height="484" rx="8" fill="#4f7a5a" fill-opacity="0.06" stroke="#4f7a5a" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="1262" y="132" class="eyebrow" fill="#4f7a5a">SALAS</text>
+<rect x="1250" y="642" width="440" height="206" rx="8" fill="#8f4a3d" fill-opacity="0.06" stroke="#8f4a3d" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="1262" y="660" class="eyebrow" fill="#8f4a3d">VENTAS</text>
+<rect x="1800" y="114" width="440" height="986" rx="8" fill="#8f4a3d" fill-opacity="0.06" stroke="#8f4a3d" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="1812" y="132" class="eyebrow" fill="#8f4a3d">VENTAS</text>
+<rect x="2350" y="114" width="440" height="202" rx="8" fill="#7a6a3d" fill-opacity="0.06" stroke="#7a6a3d" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="2362" y="132" class="eyebrow" fill="#7a6a3d">USUARIOS</text>
+<rect x="2350" y="360" width="440" height="718" rx="8" fill="#8f5a6b" fill-opacity="0.06" stroke="#8f5a6b" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="2362" y="378" class="eyebrow" fill="#8f5a6b">PROMOCIONES</text>
+<rect x="2900" y="114" width="440" height="958" rx="8" fill="#3d7a7a" fill-opacity="0.06" stroke="#3d7a7a" stroke-opacity="0.45" stroke-dasharray="4,4"/>
+<text x="2912" y="132" class="eyebrow" fill="#3d7a7a">CANDY</text>
+<path d="M 170.0 614.0 L 104.0 614.0 Q 96.0 614.0 96.0 606.0 L 96.0 200.0 Q 96.0 192.0 104.0 192.0 L 170.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 170.0 614.0 L 104.0 614.0 Q 96.0 614.0 96.0 606.0 L 96.0 200.0 Q 96.0 192.0 104.0 192.0 L 170.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="pelicula_genero.pelicula_id->pelicula"/>
+<path d="M 158 614.0 L 170 608.0 M 158 614.0 L 170 620.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="152" cy="614.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="162" y1="186.0" x2="162" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="157" y1="186.0" x2="157" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1670.0 446.0 L 1714.0 446.0 Q 1722.0 446.0 1722.0 438.0 L 1722.0 200.0 Q 1722.0 192.0 1714.0 192.0 L 1670.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1670.0 446.0 L 1714.0 446.0 Q 1722.0 446.0 1722.0 438.0 L 1722.0 200.0 Q 1722.0 192.0 1714.0 192.0 L 1670.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="asiento.sala_id->sala"/>
+<path d="M 1682 446.0 L 1670 440.0 M 1682 446.0 L 1670 452.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1688" cy="446.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1678" y1="186.0" x2="1678" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1683" y1="186.0" x2="1683" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 720.0 216.0 L 614.0 216.0 Q 606.0 216.0 606.0 208.0 L 606.0 204.0 Q 606.0 196.0 598.0 196.0 L 570.0 196.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 720.0 216.0 L 614.0 216.0 Q 606.0 216.0 606.0 208.0 L 606.0 204.0 Q 606.0 196.0 598.0 196.0 L 570.0 196.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="programacion.pelicula_id->pelicula"/>
+<path d="M 708 216.0 L 720 210.0 M 708 216.0 L 720 222.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="702" cy="216.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="578" y1="190.0" x2="578" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="583" y1="190.0" x2="583" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1120.0 240.0 L 1164.0 240.0 Q 1172.0 240.0 1172.0 232.0 L 1172.0 204.0 Q 1172.0 196.0 1180.0 196.0 L 1270.0 196.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1120.0 240.0 L 1164.0 240.0 Q 1172.0 240.0 1172.0 232.0 L 1172.0 204.0 Q 1172.0 196.0 1180.0 196.0 L 1270.0 196.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="programacion.sala_id->sala"/>
+<path d="M 1132 240.0 L 1120 234.0 M 1132 240.0 L 1120 246.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1138" cy="240.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1262" y1="190.0" x2="1262" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1257" y1="190.0" x2="1257" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 720.0 542.0 L 652.0 542.0 Q 644.0 542.0 644.0 534.0 L 644.0 200.0 Q 644.0 192.0 652.0 192.0 L 720.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 720.0 542.0 L 652.0 542.0 Q 644.0 542.0 644.0 534.0 L 644.0 200.0 Q 644.0 192.0 652.0 192.0 L 720.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="programacion_dia.programacion_id->programacion"/>
+<path d="M 708 542.0 L 720 536.0 M 708 542.0 L 720 548.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="702" cy="542.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="712" y1="186.0" x2="712" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="707" y1="186.0" x2="707" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 720.0 768.0 L 692.0 768.0 Q 684.0 768.0 684.0 760.0 L 684.0 220.0 Q 684.0 212.0 676.0 212.0 L 570.0 212.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 720.0 768.0 L 692.0 768.0 Q 684.0 768.0 684.0 760.0 L 684.0 220.0 Q 684.0 212.0 676.0 212.0 L 570.0 212.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="funcion.pelicula_id->pelicula"/>
+<path d="M 708 768.0 L 720 762.0 M 708 768.0 L 720 774.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="702" cy="768.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="578" y1="206.0" x2="578" y2="218.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="583" y1="206.0" x2="583" y2="218.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1120.0 792.0 L 1180.0 792.0 Q 1188.0 792.0 1188.0 784.0 L 1188.0 220.0 Q 1188.0 212.0 1196.0 212.0 L 1270.0 212.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1120.0 792.0 L 1180.0 792.0 Q 1188.0 792.0 1188.0 784.0 L 1188.0 220.0 Q 1188.0 212.0 1196.0 212.0 L 1270.0 212.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="funcion.sala_id->sala"/>
+<path d="M 1132 792.0 L 1120 786.0 M 1132 792.0 L 1120 798.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1138" cy="792.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1262" y1="206.0" x2="1262" y2="218.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1257" y1="206.0" x2="1257" y2="218.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1120.0 816.0 L 1194.0 816.0 Q 1202.0 816.0 1202.0 808.0 L 1202.0 200.0 Q 1202.0 192.0 1194.0 192.0 L 1120.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1120.0 816.0 L 1194.0 816.0 Q 1202.0 816.0 1202.0 808.0 L 1202.0 200.0 Q 1202.0 192.0 1194.0 192.0 L 1120.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" data-fk="funcion.programacion_id->programacion"/>
+<path d="M 1132 816.0 L 1120 810.0 M 1132 816.0 L 1120 822.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1138" cy="816.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1128" y1="186.0" x2="1128" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="1136" cy="192.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1820.0 240.0 L 1792.0 240.0 Q 1784.0 240.0 1784.0 248.0 L 1784.0 1112.0 Q 1784.0 1120.0 1776.0 1120.0 L 1242.0 1120.0 Q 1234.0 1120.0 1234.0 1112.0 L 1234.0 716.0 Q 1234.0 708.0 1226.0 708.0 L 1120.0 708.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1820.0 240.0 L 1792.0 240.0 Q 1784.0 240.0 1784.0 248.0 L 1784.0 1112.0 Q 1784.0 1120.0 1776.0 1120.0 L 1242.0 1120.0 Q 1234.0 1120.0 1234.0 1112.0 L 1234.0 716.0 Q 1234.0 708.0 1226.0 708.0 L 1120.0 708.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="reserva.funcion_id->funcion"/>
+<path d="M 1808 240.0 L 1820 234.0 M 1808 240.0 L 1820 246.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1802" cy="240.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1128" y1="702.0" x2="1128" y2="714.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1133" y1="702.0" x2="1133" y2="714.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2220.0 264.0 L 2248.0 264.0 Q 2256.0 264.0 2256.0 256.0 L 2256.0 200.0 Q 2256.0 192.0 2264.0 192.0 L 2370.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2220.0 264.0 L 2248.0 264.0 Q 2256.0 264.0 2256.0 256.0 L 2256.0 200.0 Q 2256.0 192.0 2264.0 192.0 L 2370.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="reserva.cliente_id->usuario"/>
+<path d="M 2232 264.0 L 2220 258.0 M 2232 264.0 L 2220 270.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2238" cy="264.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2362" y1="186.0" x2="2362" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="2357" y1="186.0" x2="2357" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2220.0 564.0 L 2274.0 564.0 Q 2282.0 564.0 2282.0 556.0 L 2282.0 204.0 Q 2282.0 196.0 2274.0 196.0 L 2220.0 196.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2220.0 564.0 L 2274.0 564.0 Q 2282.0 564.0 2282.0 556.0 L 2282.0 204.0 Q 2282.0 196.0 2274.0 196.0 L 2220.0 196.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="entrada.reserva_id->reserva"/>
+<path d="M 2232 564.0 L 2220 558.0 M 2232 564.0 L 2220 570.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2238" cy="564.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2228" y1="190.0" x2="2228" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="2233" y1="190.0" x2="2233" y2="202.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1820.0 588.0 L 1714.0 588.0 Q 1706.0 588.0 1706.0 580.0 L 1706.0 410.0 Q 1706.0 402.0 1698.0 402.0 L 1670.0 402.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1820.0 588.0 L 1714.0 588.0 Q 1706.0 588.0 1706.0 580.0 L 1706.0 410.0 Q 1706.0 402.0 1698.0 402.0 L 1670.0 402.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="entrada.asiento_id->asiento"/>
+<path d="M 1808 588.0 L 1820 582.0 M 1808 588.0 L 1820 594.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1802" cy="588.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1678" y1="396.0" x2="1678" y2="408.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1683" y1="396.0" x2="1683" y2="408.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1820.0 612.0 L 1776.0 612.0 Q 1768.0 612.0 1768.0 620.0 L 1768.0 1140.0 Q 1768.0 1148.0 1760.0 1148.0 L 1226.0 1148.0 Q 1218.0 1148.0 1218.0 1140.0 L 1218.0 732.0 Q 1218.0 724.0 1210.0 724.0 L 1120.0 724.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1820.0 612.0 L 1776.0 612.0 Q 1768.0 612.0 1768.0 620.0 L 1768.0 1140.0 Q 1768.0 1148.0 1760.0 1148.0 L 1226.0 1148.0 Q 1218.0 1148.0 1218.0 1140.0 L 1218.0 732.0 Q 1218.0 724.0 1210.0 724.0 L 1120.0 724.0" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" data-fk="entrada.funcion_id->funcion"/>
+<path d="M 1808 612.0 L 1820 606.0 M 1808 612.0 L 1820 618.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1802" cy="612.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1128" y1="718.0" x2="1128" y2="730.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="1136" cy="724.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1270.0 720.0 L 1164.0 720.0 Q 1156.0 720.0 1156.0 728.0 L 1156.0 732.0 Q 1156.0 740.0 1148.0 740.0 L 1120.0 740.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1270.0 720.0 L 1164.0 720.0 Q 1156.0 720.0 1156.0 728.0 L 1156.0 732.0 Q 1156.0 740.0 1148.0 740.0 L 1120.0 740.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="bloqueo_butaca.funcion_id->funcion"/>
+<path d="M 1258 720.0 L 1270 714.0 M 1258 720.0 L 1270 726.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1252" cy="720.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1128" y1="734.0" x2="1128" y2="746.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1133" y1="734.0" x2="1133" y2="746.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1670.0 744.0 L 1730.0 744.0 Q 1738.0 744.0 1738.0 736.0 L 1738.0 426.0 Q 1738.0 418.0 1730.0 418.0 L 1670.0 418.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1670.0 744.0 L 1730.0 744.0 Q 1738.0 744.0 1738.0 736.0 L 1738.0 426.0 Q 1738.0 418.0 1730.0 418.0 L 1670.0 418.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="bloqueo_butaca.asiento_id->asiento"/>
+<path d="M 1682 744.0 L 1670 738.0 M 1682 744.0 L 1670 750.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="1688" cy="744.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1678" y1="412.0" x2="1678" y2="424.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1683" y1="412.0" x2="1683" y2="424.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2770.0 836.0 L 2824.0 836.0 Q 2832.0 836.0 2832.0 828.0 L 2832.0 450.0 Q 2832.0 442.0 2824.0 442.0 L 2770.0 442.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2770.0 836.0 L 2824.0 836.0 Q 2832.0 836.0 2832.0 828.0 L 2832.0 450.0 Q 2832.0 442.0 2824.0 442.0 L 2770.0 442.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="promocion_dia.promocion_id->promocion"/>
+<path d="M 2782 836.0 L 2770 830.0 M 2782 836.0 L 2770 842.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2788" cy="836.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2778" y1="436.0" x2="2778" y2="448.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="2783" y1="436.0" x2="2783" y2="448.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2770.0 998.0 L 2850.0 998.0 Q 2858.0 998.0 2858.0 990.0 L 2858.0 466.0 Q 2858.0 458.0 2850.0 458.0 L 2770.0 458.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2770.0 998.0 L 2850.0 998.0 Q 2858.0 998.0 2858.0 990.0 L 2858.0 466.0 Q 2858.0 458.0 2850.0 458.0 L 2770.0 458.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="promocion_medio.promocion_id->promocion"/>
+<path d="M 2782 998.0 L 2770 992.0 M 2782 998.0 L 2770 1004.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2788" cy="998.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2778" y1="452.0" x2="2778" y2="464.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="2783" y1="452.0" x2="2783" y2="464.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 1820.0 858.0 L 1760.0 858.0 Q 1752.0 858.0 1752.0 850.0 L 1752.0 200.0 Q 1752.0 192.0 1760.0 192.0 L 1820.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 1820.0 858.0 L 1760.0 858.0 Q 1752.0 858.0 1752.0 850.0 L 1752.0 200.0 Q 1752.0 192.0 1760.0 192.0 L 1820.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="pago.reserva_id->reserva"/>
+<line x1="1812" y1="852.0" x2="1812" y2="864.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="1804" cy="858.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="1812" y1="186.0" x2="1812" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="1807" y1="186.0" x2="1807" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2220.0 906.0 L 2300.0 906.0 Q 2308.0 906.0 2308.0 898.0 L 2308.0 446.0 Q 2308.0 438.0 2316.0 438.0 L 2370.0 438.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2220.0 906.0 L 2300.0 906.0 Q 2308.0 906.0 2308.0 898.0 L 2308.0 446.0 Q 2308.0 438.0 2316.0 438.0 L 2370.0 438.0" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" data-fk="pago.promocion_id->promocion"/>
+<path d="M 2232 906.0 L 2220 900.0 M 2232 906.0 L 2220 912.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2238" cy="906.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2362" y1="432.0" x2="2362" y2="444.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="2354" cy="438.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 3320.0 950.0 L 3348.0 950.0 Q 3356.0 950.0 3356.0 942.0 L 3356.0 716.0 Q 3356.0 708.0 3348.0 708.0 L 3320.0 708.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 3320.0 950.0 L 3348.0 950.0 Q 3356.0 950.0 3356.0 942.0 L 3356.0 716.0 Q 3356.0 708.0 3348.0 708.0 L 3320.0 708.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="combo_item.combo_id->producto"/>
+<path d="M 3332 950.0 L 3320 944.0 M 3332 950.0 L 3320 956.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="3338" cy="950.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="3328" y1="702.0" x2="3328" y2="714.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="3333" y1="702.0" x2="3333" y2="714.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 3320.0 974.0 L 3374.0 974.0 Q 3382.0 974.0 3382.0 966.0 L 3382.0 732.0 Q 3382.0 724.0 3374.0 724.0 L 3320.0 724.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 3320.0 974.0 L 3374.0 974.0 Q 3382.0 974.0 3382.0 966.0 L 3382.0 732.0 Q 3382.0 724.0 3374.0 724.0 L 3320.0 724.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="combo_item.producto_id->producto"/>
+<path d="M 3332 974.0 L 3320 968.0 M 3332 974.0 L 3320 980.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="3338" cy="974.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="3328" y1="718.0" x2="3328" y2="730.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="3333" y1="718.0" x2="3333" y2="730.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2920.0 216.0 L 2814.0 216.0 Q 2806.0 216.0 2806.0 208.0 L 2806.0 200.0 Q 2806.0 192.0 2798.0 192.0 L 2770.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2920.0 216.0 L 2814.0 216.0 Q 2806.0 216.0 2806.0 208.0 L 2806.0 200.0 Q 2806.0 192.0 2798.0 192.0 L 2770.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" data-fk="compra_candy.cliente_id->usuario"/>
+<path d="M 2908 216.0 L 2920 210.0 M 2908 216.0 L 2920 222.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2902" cy="216.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2778" y1="186.0" x2="2778" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="2786" cy="192.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 2920.0 240.0 L 2892.0 240.0 Q 2884.0 240.0 2884.0 248.0 L 2884.0 1126.0 Q 2884.0 1134.0 2876.0 1134.0 L 2342.0 1134.0 Q 2334.0 1134.0 2334.0 1126.0 L 2334.0 220.0 Q 2334.0 212.0 2326.0 212.0 L 2220.0 212.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 2920.0 240.0 L 2892.0 240.0 Q 2884.0 240.0 2884.0 248.0 L 2884.0 1126.0 Q 2884.0 1134.0 2876.0 1134.0 L 2342.0 1134.0 Q 2334.0 1134.0 2334.0 1126.0 L 2334.0 220.0 Q 2334.0 212.0 2326.0 212.0 L 2220.0 212.0" fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" data-fk="compra_candy.reserva_id->reserva"/>
+<path d="M 2908 240.0 L 2920 234.0 M 2908 240.0 L 2920 246.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="2902" cy="240.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="2228" y1="206.0" x2="2228" y2="218.0" stroke="#4f5d75" stroke-width="1.2"/><circle cx="2236" cy="212.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 3320.0 446.0 L 3400.0 446.0 Q 3408.0 446.0 3408.0 438.0 L 3408.0 200.0 Q 3408.0 192.0 3400.0 192.0 L 3320.0 192.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 3320.0 446.0 L 3400.0 446.0 Q 3408.0 446.0 3408.0 438.0 L 3408.0 200.0 Q 3408.0 192.0 3400.0 192.0 L 3320.0 192.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="item_compra.compra_id->compra_candy"/>
+<path d="M 3332 446.0 L 3320 440.0 M 3332 446.0 L 3320 452.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="3338" cy="446.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="3328" y1="186.0" x2="3328" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="3333" y1="186.0" x2="3333" y2="198.0" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 3320.0 470.0 L 3426.0 470.0 Q 3434.0 470.0 3434.0 478.0 L 3434.0 732.0 Q 3434.0 740.0 3426.0 740.0 L 3320.0 740.0" fill="none" stroke="#f5f5f5" stroke-width="5"/>
+<path d="M 3320.0 470.0 L 3426.0 470.0 Q 3434.0 470.0 3434.0 478.0 L 3434.0 732.0 Q 3434.0 740.0 3426.0 740.0 L 3320.0 740.0" fill="none" stroke="#4f5d75" stroke-width="1.2" data-fk="item_compra.producto_id->producto"/>
+<path d="M 3332 470.0 L 3320 464.0 M 3332 470.0 L 3320 476.0" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="3338" cy="470.0" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="3328" y1="734.0" x2="3328" y2="746.0" stroke="#4f5d75" stroke-width="1.2"/><line x1="3333" y1="734.0" x2="3333" y2="746.0" stroke="#4f5d75" stroke-width="1.2"/>
+<g data-table="pelicula">
+<rect x="170" y="150" width="400" height="366" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 176 150 H 564 Q 570 150 570 156 V 180 H 170 V 156 Q 170 150 176 150 Z" fill="#3d6b8f" fill-opacity="0.14"/>
+<line x1="170" y1="180" x2="570" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="182" y="170" class="tname">pelicula</text>
+<text x="558" y="169" class="sub" text-anchor="end">13 columnas</text>
+<g data-col="id">
+<text x="182" y="208.0" class="cname">id</text>
+<rect x="320.0" y="197.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="328.6" y="207.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="341.2" y="197.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="349.8" y="207.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="558" y="208.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="171" y="228" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="titulo">
+<text x="182" y="244.0" class="cname">titulo</text>
+<rect x="320.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="244.0" class="ctype" text-anchor="end">VARCHAR(100)</text>
+</g>
+<g data-col="duracion_minutos">
+<text x="182" y="268.0" class="cname">duracion_minutos</text>
+<rect x="320.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="268.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="171" y="276" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="clasificacion">
+<text x="182" y="292.0" class="cname">clasificacion</text>
+<rect x="320.0" y="281.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="291.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="292.0" class="ctype" text-anchor="end">VARCHAR(10)</text>
+</g>
+<g data-col="director">
+<text x="182" y="316.0" class="cname">director</text>
+<rect x="320.0" y="305.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="315.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="316.0" class="ctype" text-anchor="end">VARCHAR(100)<tspan class="cdef">&#160;=&#160;&#x27;&#x27;</tspan></text>
+</g>
+<rect x="171" y="324" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="sinopsis">
+<text x="182" y="340.0" class="cname">sinopsis</text>
+<text x="558" y="340.0" class="ctype" text-anchor="end">TEXT NULL</text>
+</g>
+<g data-col="anio">
+<text x="182" y="364.0" class="cname">anio</text>
+<rect x="320.0" y="353.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="363.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="364.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<rect x="171" y="372" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="idioma_original">
+<text x="182" y="388.0" class="cname">idioma_original</text>
+<rect x="320.0" y="377.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="387.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="388.0" class="ctype" text-anchor="end">VARCHAR(40)<tspan class="cdef">&#160;=&#160;&#x27;&#x27;</tspan></text>
+</g>
+<g data-col="poster_url">
+<text x="182" y="412.0" class="cname">poster_url</text>
+<rect x="320.0" y="401.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="411.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="412.0" class="ctype" text-anchor="end">VARCHAR(255)<tspan class="cdef">&#160;=&#160;&#x27;&#x27;</tspan></text>
+</g>
+<rect x="171" y="420" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="en_cartelera">
+<text x="182" y="436.0" class="cname">en_cartelera</text>
+<rect x="320.0" y="425.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="435.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="436.0" class="ctype" text-anchor="end">BOOLEAN<tspan class="cdef">&#160;=&#160;TRUE</tspan></text>
+</g>
+<g data-col="estado_revision">
+<text x="182" y="460.0" class="cname">estado_revision</text>
+<rect x="320.0" y="449.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="459.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="460.0" class="ctype" text-anchor="end">VARCHAR(15)<tspan class="cdef">&#160;=&#160;&#x27;CONFIRMADA&#x27;</tspan></text>
+</g>
+<rect x="171" y="468" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="puntaje">
+<text x="182" y="484.0" class="cname">puntaje</text>
+<rect x="320.0" y="473.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="483.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="484.0" class="ctype" text-anchor="end">DECIMAL(3,1)<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<g data-col="votos">
+<text x="182" y="508.0" class="cname">votos</text>
+<rect x="320.0" y="497.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="507.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="508.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+</g>
+<g data-table="pelicula_genero">
+<rect x="170" y="572" width="400" height="106" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 176 572 H 564 Q 570 572 570 578 V 602 H 170 V 578 Q 170 572 176 572 Z" fill="#3d6b8f" fill-opacity="0.14"/>
+<line x1="170" y1="602" x2="570" y2="602" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="182" y="592" class="tname">pelicula_genero</text>
+<text x="558" y="591" class="sub" text-anchor="end">2 columnas</text>
+<g data-col="pelicula_id">
+<text x="182" y="618.0" class="cname">pelicula_id</text>
+<rect x="320.0" y="607.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="328.6" y="617.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="341.2" y="607.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="349.8" y="617.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="362.4" y="607.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="371.0" y="617.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="383.6" y="607.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="406.2" y="617.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="558" y="618.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="171" y="626" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="genero">
+<text x="182" y="642.0" class="cname">genero</text>
+<rect x="320.0" y="631.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="328.6" y="641.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="341.2" y="631.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="349.8" y="641.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="642.0" class="ctype" text-anchor="end">VARCHAR(30)</text>
+</g>
+<line x1="170" y1="650" x2="570" y2="650" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="182" y="665" class="note">PK (pelicula_id, genero)</text>
+</g>
+<g data-table="sala">
+<rect x="1270" y="150" width="400" height="150" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1276 150 H 1664 Q 1670 150 1670 156 V 180 H 1270 V 156 Q 1270 150 1276 150 Z" fill="#4f7a5a" fill-opacity="0.14"/>
+<line x1="1270" y1="180" x2="1670" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1282" y="170" class="tname">sala</text>
+<text x="1658" y="169" class="sub" text-anchor="end">4 columnas</text>
+<g data-col="id">
+<text x="1282" y="208.0" class="cname">id</text>
+<rect x="1420.0" y="197.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1428.6" y="207.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1441.2" y="197.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1449.8" y="207.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="1658" y="208.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1271" y="228" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nombre">
+<text x="1282" y="244.0" class="cname">nombre</text>
+<rect x="1420.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="244.0" class="ctype" text-anchor="end">VARCHAR(50)</text>
+</g>
+<g data-col="tipo">
+<text x="1282" y="268.0" class="cname">tipo</text>
+<rect x="1420.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="268.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="1271" y="276" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="minutos_limpieza">
+<text x="1282" y="292.0" class="cname">minutos_limpieza</text>
+<rect x="1420.0" y="281.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="291.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="292.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;15</tspan></text>
+</g>
+</g>
+<g data-table="asiento">
+<rect x="1270" y="356" width="400" height="226" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1276 356 H 1664 Q 1670 356 1670 362 V 386 H 1270 V 362 Q 1270 356 1276 356 Z" fill="#4f7a5a" fill-opacity="0.14"/>
+<line x1="1270" y1="386" x2="1670" y2="386" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1282" y="376" class="tname">asiento</text>
+<text x="1658" y="375" class="sub" text-anchor="end">6 columnas</text>
+<g data-col="id">
+<text x="1282" y="414.0" class="cname">id</text>
+<rect x="1420.0" y="403.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1428.6" y="413.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1441.2" y="403.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1449.8" y="413.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="1658" y="414.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1271" y="434" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="sala_id">
+<text x="1282" y="450.0" class="cname">sala_id</text>
+<rect x="1420.0" y="439.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1428.6" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1441.2" y="439.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1449.8" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="1462.4" y="439.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1485.0" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="1658" y="450.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="fila">
+<text x="1282" y="474.0" class="cname">fila</text>
+<rect x="1420.0" y="463.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="473.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="474.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1271" y="482" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="numero">
+<text x="1282" y="498.0" class="cname">numero</text>
+<rect x="1420.0" y="487.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="497.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="498.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="tipo">
+<text x="1282" y="522.0" class="cname">tipo</text>
+<rect x="1420.0" y="511.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="521.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="522.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="1271" y="530" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="estado">
+<text x="1282" y="546.0" class="cname">estado</text>
+<rect x="1420.0" y="535.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="545.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="546.0" class="ctype" text-anchor="end">VARCHAR(20)<tspan class="cdef">&#160;=&#160;&#x27;HABILITADO&#x27;</tspan></text>
+</g>
+<line x1="1270" y1="554" x2="1670" y2="554" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="1282" y="569" class="note">UQ (sala_id, fila, numero)</text>
+</g>
+<g data-table="usuario">
+<rect x="2370" y="150" width="400" height="150" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2376 150 H 2764 Q 2770 150 2770 156 V 180 H 2370 V 156 Q 2370 150 2376 150 Z" fill="#7a6a3d" fill-opacity="0.14"/>
+<line x1="2370" y1="180" x2="2770" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2382" y="170" class="tname">usuario</text>
+<text x="2758" y="169" class="sub" text-anchor="end">5 columnas</text>
+<g data-col="id">
+<text x="2382" y="196.0" class="cname">id</text>
+<rect x="2520.0" y="185.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="195.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="185.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="195.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="2758" y="196.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2371" y="204" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nombre">
+<text x="2382" y="220.0" class="cname">nombre</text>
+<rect x="2520.0" y="209.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="219.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="220.0" class="ctype" text-anchor="end">VARCHAR(100)</text>
+</g>
+<g data-col="email">
+<text x="2382" y="244.0" class="cname">email</text>
+<rect x="2520.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="243.0" class="chip" text-anchor="middle" fill="#2d3142">UQ</text>
+<rect x="2541.2" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="244.0" class="ctype" text-anchor="end">VARCHAR(100)</text>
+</g>
+<rect x="2371" y="252" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="rol">
+<text x="2382" y="268.0" class="cname">rol</text>
+<rect x="2520.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="268.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<g data-col="password_hash">
+<text x="2382" y="292.0" class="cname">password_hash</text>
+<text x="2758" y="292.0" class="ctype" text-anchor="end">VARCHAR(100) NULL</text>
+</g>
+</g>
+<g data-table="programacion">
+<rect x="720" y="150" width="400" height="294" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 726 150 H 1114 Q 1120 150 1120 156 V 180 H 720 V 156 Q 720 150 726 150 Z" fill="#6b5a8f" fill-opacity="0.14"/>
+<line x1="720" y1="180" x2="1120" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="732" y="170" class="tname">programacion</text>
+<text x="1108" y="169" class="sub" text-anchor="end">11 columnas</text>
+<g data-col="id">
+<text x="732" y="196.0" class="cname">id</text>
+<rect x="870.0" y="185.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="878.6" y="195.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="891.2" y="185.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="195.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="1108" y="196.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="721" y="204" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="pelicula_id">
+<text x="732" y="220.0" class="cname">pelicula_id</text>
+<rect x="870.0" y="209.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="878.6" y="219.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="891.2" y="209.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="219.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="220.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="sala_id">
+<text x="732" y="244.0" class="cname">sala_id</text>
+<rect x="870.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="878.6" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="891.2" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="244.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="721" y="252" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="desde">
+<text x="732" y="268.0" class="cname">desde</text>
+<rect x="870.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="268.0" class="ctype" text-anchor="end">DATE</text>
+</g>
+<g data-col="hasta">
+<text x="732" y="292.0" class="cname">hasta</text>
+<text x="1108" y="292.0" class="ctype" text-anchor="end">DATE NULL</text>
+</g>
+<rect x="721" y="300" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="hora_inicio">
+<text x="732" y="316.0" class="cname">hora_inicio</text>
+<rect x="870.0" y="305.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="315.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="316.0" class="ctype" text-anchor="end">TIME</text>
+</g>
+<g data-col="version">
+<text x="732" y="340.0" class="cname">version</text>
+<rect x="870.0" y="329.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="339.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="340.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="721" y="348" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="proyeccion">
+<text x="732" y="364.0" class="cname">proyeccion</text>
+<rect x="870.0" y="353.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="363.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="364.0" class="ctype" text-anchor="end">VARCHAR(10)</text>
+</g>
+<g data-col="precio">
+<text x="732" y="388.0" class="cname">precio</text>
+<rect x="870.0" y="377.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="387.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="388.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<rect x="721" y="396" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="activa">
+<text x="732" y="412.0" class="cname">activa</text>
+<rect x="870.0" y="401.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="411.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="412.0" class="ctype" text-anchor="end">BOOLEAN<tspan class="cdef">&#160;=&#160;TRUE</tspan></text>
+</g>
+<g data-col="generada_hasta">
+<text x="732" y="436.0" class="cname">generada_hasta</text>
+<text x="1108" y="436.0" class="ctype" text-anchor="end">DATE NULL</text>
+</g>
+</g>
+<g data-table="programacion_dia">
+<rect x="720" y="500" width="400" height="106" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 726 500 H 1114 Q 1120 500 1120 506 V 530 H 720 V 506 Q 720 500 726 500 Z" fill="#6b5a8f" fill-opacity="0.14"/>
+<line x1="720" y1="530" x2="1120" y2="530" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="732" y="520" class="tname">programacion_dia</text>
+<text x="1108" y="519" class="sub" text-anchor="end">2 columnas</text>
+<g data-col="programacion_id">
+<text x="732" y="546.0" class="cname">programacion_id</text>
+<rect x="870.0" y="535.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="878.6" y="545.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="891.2" y="535.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="899.8" y="545.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="912.4" y="535.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="921.0" y="545.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="933.6" y="535.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="956.2" y="545.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="1108" y="546.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="721" y="554" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="dia">
+<text x="732" y="570.0" class="cname">dia</text>
+<rect x="870.0" y="559.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="878.6" y="569.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="891.2" y="559.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="569.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="570.0" class="ctype" text-anchor="end">VARCHAR(10)</text>
+</g>
+<line x1="720" y1="578" x2="1120" y2="578" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="732" y="593" class="note">PK (programacion_id, dia)</text>
+</g>
+<g data-table="funcion">
+<rect x="720" y="662" width="400" height="262" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 726 662 H 1114 Q 1120 662 1120 668 V 692 H 720 V 668 Q 720 662 726 662 Z" fill="#6b5a8f" fill-opacity="0.14"/>
+<line x1="720" y1="692" x2="1120" y2="692" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="732" y="682" class="tname">funcion</text>
+<text x="1108" y="681" class="sub" text-anchor="end">8 columnas</text>
+<g data-col="id">
+<text x="732" y="728.0" class="cname">id</text>
+<rect x="870.0" y="717.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="878.6" y="727.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="891.2" y="717.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="727.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="1108" y="728.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="721" y="756" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="pelicula_id">
+<text x="732" y="772.0" class="cname">pelicula_id</text>
+<rect x="870.0" y="761.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="878.6" y="771.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="891.2" y="761.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="771.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="772.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="sala_id">
+<text x="732" y="796.0" class="cname">sala_id</text>
+<rect x="870.0" y="785.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="878.6" y="795.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="891.2" y="785.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="899.8" y="795.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="796.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="721" y="804" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="programacion_id">
+<text x="732" y="820.0" class="cname">programacion_id</text>
+<rect x="870.0" y="809.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="878.6" y="819.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="1108" y="820.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<g data-col="inicio">
+<text x="732" y="844.0" class="cname">inicio</text>
+<rect x="870.0" y="833.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="843.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="844.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<rect x="721" y="852" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="version">
+<text x="732" y="868.0" class="cname">version</text>
+<rect x="870.0" y="857.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="867.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="868.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<g data-col="proyeccion">
+<text x="732" y="892.0" class="cname">proyeccion</text>
+<rect x="870.0" y="881.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="891.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="892.0" class="ctype" text-anchor="end">VARCHAR(10)</text>
+</g>
+<rect x="721" y="900" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="precio">
+<text x="732" y="916.0" class="cname">precio</text>
+<rect x="870.0" y="905.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="878.6" y="915.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1108" y="916.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+</g>
+<g data-table="reserva">
+<rect x="1820" y="150" width="400" height="292" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1826 150 H 2214 Q 2220 150 2220 156 V 180 H 1820 V 156 Q 1820 150 1826 150 Z" fill="#8f4a3d" fill-opacity="0.14"/>
+<line x1="1820" y1="180" x2="2220" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1832" y="170" class="tname">reserva</text>
+<text x="2208" y="169" class="sub" text-anchor="end">8 columnas</text>
+<g data-col="id">
+<text x="1832" y="208.0" class="cname">id</text>
+<rect x="1970.0" y="197.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1978.6" y="207.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1991.2" y="197.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="207.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="2208" y="208.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1821" y="228" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="funcion_id">
+<text x="1832" y="244.0" class="cname">funcion_id</text>
+<rect x="1970.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1991.2" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="244.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="cliente_id">
+<text x="1832" y="268.0" class="cname">cliente_id</text>
+<rect x="1970.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1991.2" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="268.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1821" y="276" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="estado">
+<text x="1832" y="292.0" class="cname">estado</text>
+<rect x="1970.0" y="281.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="291.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="292.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<g data-col="creada_en">
+<text x="1832" y="316.0" class="cname">creada_en</text>
+<rect x="1970.0" y="305.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="315.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="316.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<rect x="1821" y="324" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="codigo">
+<text x="1832" y="340.0" class="cname">codigo</text>
+<rect x="1970.0" y="329.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/><text x="1978.6" y="339.0" class="chip" text-anchor="middle" fill="#2d3142">UQ</text>
+<rect x="1991.2" y="329.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="339.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="340.0" class="ctype" text-anchor="end">VARCHAR(32)</text>
+</g>
+<g data-col="ingresada_en">
+<text x="1832" y="364.0" class="cname">ingresada_en</text>
+<text x="2208" y="364.0" class="ctype" text-anchor="end">DATETIME NULL</text>
+</g>
+<rect x="1821" y="372" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="version">
+<text x="1832" y="388.0" class="cname">version</text>
+<rect x="1970.0" y="377.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="387.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="388.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<line x1="1820" y1="396" x2="2220" y2="396" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="1832" y="411" class="note">version = @Version: cobrar y cancelar a la vez, uno pierde</text>
+<text x="1832" y="429" class="note">codigo UQ: la credencial del QR, no el id</text>
+</g>
+<g data-table="entrada">
+<rect x="1820" y="498" width="400" height="238" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1826 498 H 2214 Q 2220 498 2220 504 V 528 H 1820 V 504 Q 1820 498 1826 498 Z" fill="#8f4a3d" fill-opacity="0.14"/>
+<line x1="1820" y1="528" x2="2220" y2="528" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1832" y="518" class="tname">entrada</text>
+<text x="2208" y="517" class="sub" text-anchor="end">6 columnas</text>
+<g data-col="id">
+<text x="1832" y="544.0" class="cname">id</text>
+<rect x="1970.0" y="533.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1978.6" y="543.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1991.2" y="533.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="543.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="2208" y="544.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1821" y="552" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="reserva_id">
+<text x="1832" y="568.0" class="cname">reserva_id</text>
+<rect x="1970.0" y="557.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="567.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1991.2" y="557.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="567.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="2012.4" y="557.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2035.0" y="567.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="2208" y="568.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="asiento_id">
+<text x="1832" y="592.0" class="cname">asiento_id</text>
+<rect x="1970.0" y="581.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="591.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1991.2" y="581.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="591.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="592.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1821" y="600" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="funcion_id">
+<text x="1832" y="616.0" class="cname">funcion_id</text>
+<rect x="1970.0" y="605.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="615.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="2208" y="616.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<g data-col="tarifa">
+<text x="1832" y="640.0" class="cname">tarifa</text>
+<rect x="1970.0" y="629.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="639.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="640.0" class="ctype" text-anchor="end">VARCHAR(15)<tspan class="cdef">&#160;=&#160;&#x27;GENERAL&#x27;</tspan></text>
+</g>
+<rect x="1821" y="648" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="precio">
+<text x="1832" y="664.0" class="cname">precio</text>
+<rect x="1970.0" y="653.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="663.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="664.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<line x1="1820" y1="672" x2="2220" y2="672" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="1832" y="687" class="note">UQ (reserva_id, asiento_id)</text>
+<text x="1832" y="705" class="note acc">UQ (funcion_id, asiento_id): una butaca, una venta por funcion (R4)</text>
+<text x="1832" y="723" class="note">funcion_id NULL al cancelar: el UNIQUE no aplica a NULL</text>
+</g>
+<g data-table="bloqueo_butaca">
+<rect x="1270" y="678" width="400" height="154" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1276 678 H 1664 Q 1670 678 1670 684 V 708 H 1270 V 684 Q 1270 678 1276 678 Z" fill="#8f4a3d" fill-opacity="0.14"/>
+<line x1="1270" y1="708" x2="1670" y2="708" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1282" y="698" class="tname">bloqueo_butaca</text>
+<text x="1658" y="697" class="sub" text-anchor="end">4 columnas</text>
+<g data-col="funcion_id">
+<text x="1282" y="724.0" class="cname">funcion_id</text>
+<rect x="1420.0" y="713.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1428.6" y="723.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1441.2" y="713.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1449.8" y="723.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1462.4" y="713.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1471.0" y="723.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="1483.6" y="713.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1506.2" y="723.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="1658" y="724.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1271" y="732" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="asiento_id">
+<text x="1282" y="748.0" class="cname">asiento_id</text>
+<rect x="1420.0" y="737.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1428.6" y="747.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1441.2" y="737.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1449.8" y="747.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1462.4" y="737.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1471.0" y="747.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="1483.6" y="737.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1506.2" y="747.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="1658" y="748.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="sesion">
+<text x="1282" y="772.0" class="cname">sesion</text>
+<rect x="1420.0" y="761.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="771.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="772.0" class="ctype" text-anchor="end">VARCHAR(64)</text>
+</g>
+<rect x="1271" y="780" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="vence_en">
+<text x="1282" y="796.0" class="cname">vence_en</text>
+<rect x="1420.0" y="785.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1428.6" y="795.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1658" y="796.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<line x1="1270" y1="804" x2="1670" y2="804" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="1282" y="819" class="note acc">PK (funcion_id, asiento_id): una sola sesion aparta la butaca</text>
+</g>
+<g data-table="promocion">
+<rect x="2370" y="396" width="400" height="342" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2376 396 H 2764 Q 2770 396 2770 402 V 426 H 2370 V 402 Q 2370 396 2376 396 Z" fill="#8f5a6b" fill-opacity="0.14"/>
+<line x1="2370" y1="426" x2="2770" y2="426" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2382" y="416" class="tname">promocion</text>
+<text x="2758" y="415" class="sub" text-anchor="end">12 columnas</text>
+<g data-col="id">
+<text x="2382" y="454.0" class="cname">id</text>
+<rect x="2520.0" y="443.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="453.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="443.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="453.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="2758" y="454.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2371" y="474" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nombre">
+<text x="2382" y="490.0" class="cname">nombre</text>
+<rect x="2520.0" y="479.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="489.0" class="chip" text-anchor="middle" fill="#2d3142">UQ</text>
+<rect x="2541.2" y="479.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="489.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="490.0" class="ctype" text-anchor="end">VARCHAR(60)</text>
+</g>
+<g data-col="tipo">
+<text x="2382" y="514.0" class="cname">tipo</text>
+<rect x="2520.0" y="503.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="513.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="514.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="2371" y="522" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="porcentaje">
+<text x="2382" y="538.0" class="cname">porcentaje</text>
+<text x="2758" y="538.0" class="ctype" text-anchor="end">DECIMAL(5,2) NULL</text>
+</g>
+<g data-col="monto">
+<text x="2382" y="562.0" class="cname">monto</text>
+<text x="2758" y="562.0" class="ctype" text-anchor="end">DECIMAL(10,2) NULL</text>
+</g>
+<rect x="2371" y="570" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="lleva">
+<text x="2382" y="586.0" class="cname">lleva</text>
+<text x="2758" y="586.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<g data-col="paga">
+<text x="2382" y="610.0" class="cname">paga</text>
+<text x="2758" y="610.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<rect x="2371" y="618" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="vigencia_desde">
+<text x="2382" y="634.0" class="cname">vigencia_desde</text>
+<rect x="2520.0" y="623.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="633.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="634.0" class="ctype" text-anchor="end">DATE</text>
+</g>
+<g data-col="vigencia_hasta">
+<text x="2382" y="658.0" class="cname">vigencia_hasta</text>
+<rect x="2520.0" y="647.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="657.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="658.0" class="ctype" text-anchor="end">DATE</text>
+</g>
+<rect x="2371" y="666" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="hora_desde">
+<text x="2382" y="682.0" class="cname">hora_desde</text>
+<text x="2758" y="682.0" class="ctype" text-anchor="end">TIME NULL</text>
+</g>
+<g data-col="hora_hasta">
+<text x="2382" y="706.0" class="cname">hora_hasta</text>
+<text x="2758" y="706.0" class="ctype" text-anchor="end">TIME NULL</text>
+</g>
+<rect x="2371" y="714" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="activa">
+<text x="2382" y="730.0" class="cname">activa</text>
+<rect x="2520.0" y="719.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2528.6" y="729.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="730.0" class="ctype" text-anchor="end">BOOLEAN<tspan class="cdef">&#160;=&#160;TRUE</tspan></text>
+</g>
+</g>
+<g data-table="promocion_dia">
+<rect x="2370" y="794" width="400" height="106" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2376 794 H 2764 Q 2770 794 2770 800 V 824 H 2370 V 800 Q 2370 794 2376 794 Z" fill="#8f5a6b" fill-opacity="0.14"/>
+<line x1="2370" y1="824" x2="2770" y2="824" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2382" y="814" class="tname">promocion_dia</text>
+<text x="2758" y="813" class="sub" text-anchor="end">2 columnas</text>
+<g data-col="promocion_id">
+<text x="2382" y="840.0" class="cname">promocion_id</text>
+<rect x="2520.0" y="829.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="839.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="829.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="2549.8" y="839.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="2562.4" y="829.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2571.0" y="839.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="2583.6" y="829.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2606.2" y="839.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="2758" y="840.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2371" y="848" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="dia">
+<text x="2382" y="864.0" class="cname">dia</text>
+<rect x="2520.0" y="853.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="863.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="853.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="863.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="864.0" class="ctype" text-anchor="end">VARCHAR(10)</text>
+</g>
+<line x1="2370" y1="872" x2="2770" y2="872" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="2382" y="887" class="note">PK (promocion_id, dia)</text>
+</g>
+<g data-table="promocion_medio">
+<rect x="2370" y="956" width="400" height="106" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2376 956 H 2764 Q 2770 956 2770 962 V 986 H 2370 V 962 Q 2370 956 2376 956 Z" fill="#8f5a6b" fill-opacity="0.14"/>
+<line x1="2370" y1="986" x2="2770" y2="986" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2382" y="976" class="tname">promocion_medio</text>
+<text x="2758" y="975" class="sub" text-anchor="end">2 columnas</text>
+<g data-col="promocion_id">
+<text x="2382" y="1002.0" class="cname">promocion_id</text>
+<rect x="2520.0" y="991.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="1001.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="991.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="2549.8" y="1001.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="2562.4" y="991.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2571.0" y="1001.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="2583.6" y="991.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2606.2" y="1001.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="2758" y="1002.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2371" y="1010" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="medio">
+<text x="2382" y="1026.0" class="cname">medio</text>
+<rect x="2520.0" y="1015.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="2528.6" y="1025.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="2541.2" y="1015.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2549.8" y="1025.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2758" y="1026.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<line x1="2370" y1="1034" x2="2770" y2="1034" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="2382" y="1049" class="note">PK (promocion_id, medio)</text>
+</g>
+<g data-table="pago">
+<rect x="1820" y="792" width="400" height="292" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 1826 792 H 2214 Q 2220 792 2220 798 V 822 H 1820 V 798 Q 1820 792 1826 792 Z" fill="#8f4a3d" fill-opacity="0.14"/>
+<line x1="1820" y1="822" x2="2220" y2="822" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="1832" y="812" class="tname">pago</text>
+<text x="2208" y="811" class="sub" text-anchor="end">9 columnas</text>
+<g data-col="id">
+<text x="1832" y="838.0" class="cname">id</text>
+<rect x="1970.0" y="827.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="1978.6" y="837.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="1991.2" y="827.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1999.8" y="837.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="2208" y="838.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="1821" y="846" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="reserva_id">
+<text x="1832" y="862.0" class="cname">reserva_id</text>
+<rect x="1970.0" y="851.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="861.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="1991.2" y="851.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/><text x="1999.8" y="861.0" class="chip" text-anchor="middle" fill="#2d3142">UQ</text>
+<rect x="2012.4" y="851.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="2021.0" y="861.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="862.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="subtotal">
+<text x="1832" y="886.0" class="cname">subtotal</text>
+<rect x="1970.0" y="875.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="885.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="886.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<rect x="1821" y="894" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="promocion_id">
+<text x="1832" y="910.0" class="cname">promocion_id</text>
+<rect x="1970.0" y="899.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="1978.6" y="909.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="2208" y="910.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<g data-col="descuento">
+<text x="1832" y="934.0" class="cname">descuento</text>
+<rect x="1970.0" y="923.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="933.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="934.0" class="ctype" text-anchor="end">DECIMAL(10,2)<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<rect x="1821" y="942" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="monto">
+<text x="1832" y="958.0" class="cname">monto</text>
+<rect x="1970.0" y="947.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="957.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="958.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<g data-col="medio">
+<text x="1832" y="982.0" class="cname">medio</text>
+<rect x="1970.0" y="971.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="981.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="982.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="1821" y="990" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="fecha">
+<text x="1832" y="1006.0" class="cname">fecha</text>
+<rect x="1970.0" y="995.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="1005.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="1006.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<g data-col="codigo_autorizacion">
+<text x="1832" y="1030.0" class="cname">codigo_autorizacion</text>
+<rect x="1970.0" y="1019.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1978.6" y="1029.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="2208" y="1030.0" class="ctype" text-anchor="end">VARCHAR(50)<tspan class="cdef">&#160;=&#160;&#x27;&#x27;</tspan></text>
+</g>
+<line x1="1820" y1="1038" x2="2220" y2="1038" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="1832" y="1053" class="note">reserva_id UQ: un pago por reserva</text>
+<text x="1832" y="1071" class="note">el descuento vive aca, no en entrada (R15)</text>
+</g>
+<g data-table="producto">
+<rect x="2920" y="662" width="400" height="190" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2926 662 H 3314 Q 3320 662 3320 668 V 692 H 2920 V 668 Q 2920 662 2926 662 Z" fill="#3d7a7a" fill-opacity="0.14"/>
+<line x1="2920" y1="692" x2="3320" y2="692" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2932" y="682" class="tname">producto</text>
+<text x="3308" y="681" class="sub" text-anchor="end">5 columnas</text>
+<g data-col="id">
+<text x="2932" y="728.0" class="cname">id</text>
+<rect x="3070.0" y="717.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="727.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="3091.2" y="717.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="727.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="3308" y="728.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="756" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nombre">
+<text x="2932" y="772.0" class="cname">nombre</text>
+<rect x="3070.0" y="761.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="771.0" class="chip" text-anchor="middle" fill="#2d3142">UQ</text>
+<rect x="3091.2" y="761.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="771.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="772.0" class="ctype" text-anchor="end">VARCHAR(60)</text>
+</g>
+<g data-col="tipo">
+<text x="2932" y="796.0" class="cname">tipo</text>
+<rect x="3070.0" y="785.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="795.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="796.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="2921" y="804" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="precio">
+<text x="2932" y="820.0" class="cname">precio</text>
+<rect x="3070.0" y="809.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="819.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="820.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<g data-col="disponible">
+<text x="2932" y="844.0" class="cname">disponible</text>
+<rect x="3070.0" y="833.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="843.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="844.0" class="ctype" text-anchor="end">BOOLEAN<tspan class="cdef">&#160;=&#160;TRUE</tspan></text>
+</g>
+</g>
+<g data-table="combo_item">
+<rect x="2920" y="908" width="400" height="148" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2926 908 H 3314 Q 3320 908 3320 914 V 938 H 2920 V 914 Q 2920 908 2926 908 Z" fill="#3d7a7a" fill-opacity="0.14"/>
+<line x1="2920" y1="938" x2="3320" y2="938" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2932" y="928" class="tname">combo_item</text>
+<text x="3308" y="927" class="sub" text-anchor="end">3 columnas</text>
+<g data-col="combo_id">
+<text x="2932" y="954.0" class="cname">combo_id</text>
+<rect x="3070.0" y="943.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="953.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="3091.2" y="943.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3099.8" y="953.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="3112.4" y="943.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3121.0" y="953.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="3133.6" y="943.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3156.2" y="953.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="3308" y="954.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="962" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="producto_id">
+<text x="2932" y="978.0" class="cname">producto_id</text>
+<rect x="3070.0" y="967.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="977.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="3091.2" y="967.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3099.8" y="977.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="3112.4" y="967.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3121.0" y="977.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="978.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="cantidad">
+<text x="2932" y="1002.0" class="cname">cantidad</text>
+<rect x="3070.0" y="991.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="1001.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="1002.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<line x1="2920" y1="1010" x2="3320" y2="1010" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="2932" y="1025" class="note">PK (combo_id, producto_id)</text>
+<text x="2932" y="1043" class="note">R14 (combo mas barato que la suma) la valida Producto</text>
+</g>
+<g data-table="compra_candy">
+<rect x="2920" y="150" width="400" height="174" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2926 150 H 3314 Q 3320 150 3320 156 V 180 H 2920 V 156 Q 2920 150 2926 150 Z" fill="#3d7a7a" fill-opacity="0.14"/>
+<line x1="2920" y1="180" x2="3320" y2="180" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2932" y="170" class="tname">compra_candy</text>
+<text x="3308" y="169" class="sub" text-anchor="end">6 columnas</text>
+<g data-col="id">
+<text x="2932" y="196.0" class="cname">id</text>
+<rect x="3070.0" y="185.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="195.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="3091.2" y="185.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="195.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="3308" y="196.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="204" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="cliente_id">
+<text x="2932" y="220.0" class="cname">cliente_id</text>
+<rect x="3070.0" y="209.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3078.6" y="219.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="3308" y="220.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<g data-col="reserva_id">
+<text x="2932" y="244.0" class="cname">reserva_id</text>
+<rect x="3070.0" y="233.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3078.6" y="243.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="3308" y="244.0" class="ctype" text-anchor="end">INT NULL</text>
+</g>
+<rect x="2921" y="252" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="fecha">
+<text x="2932" y="268.0" class="cname">fecha</text>
+<rect x="3070.0" y="257.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="267.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="268.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<g data-col="medio">
+<text x="2932" y="292.0" class="cname">medio</text>
+<rect x="3070.0" y="281.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="291.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="292.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<rect x="2921" y="300" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="codigo_autorizacion">
+<text x="2932" y="316.0" class="cname">codigo_autorizacion</text>
+<rect x="3070.0" y="305.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="315.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="316.0" class="ctype" text-anchor="end">VARCHAR(50)<tspan class="cdef">&#160;=&#160;&#x27;&#x27;</tspan></text>
+</g>
+</g>
+<g data-table="item_compra">
+<rect x="2920" y="380" width="400" height="226" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 2926 380 H 3314 Q 3320 380 3320 386 V 410 H 2920 V 386 Q 2920 380 2926 380 Z" fill="#3d7a7a" fill-opacity="0.14"/>
+<line x1="2920" y1="410" x2="3320" y2="410" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="2932" y="400" class="tname">item_compra</text>
+<text x="3308" y="399" class="sub" text-anchor="end">7 columnas</text>
+<g data-col="id">
+<text x="2932" y="426.0" class="cname">id</text>
+<rect x="3070.0" y="415.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="3078.6" y="425.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="3091.2" y="415.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="425.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="3308" y="426.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="434" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="compra_id">
+<text x="2932" y="450.0" class="cname">compra_id</text>
+<rect x="3070.0" y="439.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3078.6" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="3091.2" y="439.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<rect x="3112.4" y="439.0" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3135.0" y="449.0" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="3308" y="450.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<g data-col="producto_id">
+<text x="2932" y="474.0" class="cname">producto_id</text>
+<rect x="3070.0" y="463.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#4f5d75" stroke-width="0.8"/><text x="3078.6" y="473.0" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<rect x="3091.2" y="463.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3099.8" y="473.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="474.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="482" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nombre">
+<text x="2932" y="498.0" class="cname">nombre</text>
+<rect x="3070.0" y="487.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="497.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="498.0" class="ctype" text-anchor="end">VARCHAR(60)</text>
+</g>
+<g data-col="cantidad">
+<text x="2932" y="522.0" class="cname">cantidad</text>
+<rect x="3070.0" y="511.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="521.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="522.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="2921" y="530" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="precio_unitario">
+<text x="2932" y="546.0" class="cname">precio_unitario</text>
+<rect x="3070.0" y="535.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="545.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="546.0" class="ctype" text-anchor="end">DECIMAL(10,2)</text>
+</g>
+<g data-col="ahorro_unitario">
+<text x="2932" y="570.0" class="cname">ahorro_unitario</text>
+<rect x="3070.0" y="559.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="3078.6" y="569.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="3308" y="570.0" class="ctype" text-anchor="end">DECIMAL(10,2)<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<line x1="2920" y1="578" x2="3320" y2="578" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="2932" y="593" class="note">UQ (compra_id, producto_id)</text>
+</g>
+<g data-table="importacion">
+<rect x="170" y="734" width="400" height="274" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.55"/>
+<path d="M 176 734 H 564 Q 570 734 570 740 V 764 H 170 V 740 Q 170 734 176 734 Z" fill="#3d6b8f" fill-opacity="0.14"/>
+<line x1="170" y1="764" x2="570" y2="764" stroke="#2d3142" stroke-opacity="0.3"/>
+<text x="182" y="754" class="tname">importacion</text>
+<text x="558" y="753" class="sub" text-anchor="end">9 columnas</text>
+<g data-col="id">
+<text x="182" y="780.0" class="cname">id</text>
+<rect x="320.0" y="769.0" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#2d3142" stroke-width="0.8"/><text x="328.6" y="779.0" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<rect x="341.2" y="769.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="349.8" y="779.0" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="558" y="780.0" class="ctype" text-anchor="end">INT</text>
+</g>
+<rect x="171" y="788" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="estado">
+<text x="182" y="804.0" class="cname">estado</text>
+<rect x="320.0" y="793.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="803.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="804.0" class="ctype" text-anchor="end">VARCHAR(15)</text>
+</g>
+<g data-col="paginas">
+<text x="182" y="828.0" class="cname">paginas</text>
+<rect x="320.0" y="817.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="827.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="828.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;1</tspan></text>
+</g>
+<rect x="171" y="836" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="pedida_en">
+<text x="182" y="852.0" class="cname">pedida_en</text>
+<rect x="320.0" y="841.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="851.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="852.0" class="ctype" text-anchor="end">DATETIME</text>
+</g>
+<g data-col="termino_en">
+<text x="182" y="876.0" class="cname">termino_en</text>
+<text x="558" y="876.0" class="ctype" text-anchor="end">DATETIME NULL</text>
+</g>
+<rect x="171" y="884" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="nuevas">
+<text x="182" y="900.0" class="cname">nuevas</text>
+<rect x="320.0" y="889.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="899.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="900.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<g data-col="salteadas">
+<text x="182" y="924.0" class="cname">salteadas</text>
+<rect x="320.0" y="913.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="923.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="924.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<rect x="171" y="932" width="398" height="24" fill="#2d3142" fill-opacity="0.03"/>
+<g data-col="fallidas">
+<text x="182" y="948.0" class="cname">fallidas</text>
+<rect x="320.0" y="937.0" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="328.6" y="947.0" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="558" y="948.0" class="ctype" text-anchor="end">INT<tspan class="cdef">&#160;=&#160;0</tspan></text>
+</g>
+<g data-col="detalle">
+<text x="182" y="972.0" class="cname">detalle</text>
+<text x="558" y="972.0" class="ctype" text-anchor="end">TEXT NULL</text>
+</g>
+<line x1="170" y1="980" x2="570" y2="980" stroke="#2d3142" stroke-opacity="0.2"/>
+<text x="182" y="995" class="note">sin FK a pelicula: lo trae pelicula.estado_revision</text>
+</g>
+<line x1="170" y1="1188" x2="3340" y2="1188" stroke="#2d3142" stroke-opacity="0.15"/>
+<line x1="170" y1="1208" x2="210" y2="1208" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="202" y1="1202" x2="202" y2="1214" stroke="#4f5d75" stroke-width="1.2"/><line x1="197" y1="1202" x2="197" y2="1214" stroke="#4f5d75" stroke-width="1.2"/>
+<text x="222" y="1212" class="legend">uno exactamente (FK NOT NULL)</text>
+<line x1="470" y1="1208" x2="510" y2="1208" stroke="#4f5d75" stroke-width="1.2"/>
+<line x1="502" y1="1202" x2="502" y2="1214" stroke="#4f5d75" stroke-width="1.2"/><circle cx="494" cy="1208" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<text x="522" y="1212" class="legend">cero o uno (FK NULL o UNIQUE)</text>
+<line x1="770" y1="1208" x2="810" y2="1208" stroke="#4f5d75" stroke-width="1.2"/>
+<path d="M 798 1208 L 810 1202 M 798 1208 L 810 1214" stroke="#4f5d75" stroke-width="1.2" fill="none"/><circle cx="792" cy="1208" r="3.5" fill="#f5f5f5" stroke="#4f5d75" stroke-width="1.2"/>
+<text x="822" y="1212" class="legend">cero o muchos</text>
+<line x1="1070" y1="1208" x2="1110" y2="1208" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="1122" y="1212" class="legend">FK que admite NULL</text>
+<rect x="1310.0" y="1201" width="17.2" height="14" rx="2" fill="#2d3142" stroke="#9aa3b2" stroke-width="0.8"/><text x="1318.6" y="1211" class="chip" text-anchor="middle" fill="#ffffff">PK</text>
+<text x="1333.2" y="1212" class="legend">clave primaria</text>
+<rect x="1432.8" y="1201" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1441.4" y="1211" class="chip" text-anchor="middle" fill="#4f5d75">FK</text>
+<text x="1456.0" y="1212" class="legend">clave foranea</text>
+<rect x="1549.2" y="1201" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1557.8" y="1211" class="chip" text-anchor="middle" fill="#4f5d75">UQ</text>
+<text x="1572.4" y="1212" class="legend">unique</text>
+<rect x="1620.8" y="1201" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1629.4" y="1211" class="chip" text-anchor="middle" fill="#4f5d75">NN</text>
+<text x="1644.0" y="1212" class="legend">not null</text>
+<rect x="1705.2" y="1201" width="17.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1713.8" y="1211" class="chip" text-anchor="middle" fill="#4f5d75">AI</text>
+<text x="1728.4" y="1212" class="legend">auto_increment</text>
+<rect x="1828.0" y="1201" width="45.2" height="14" rx="2" fill="#ffffff" stroke="#9aa3b2" stroke-width="0.8"/><text x="1850.6" y="1211" class="chip" text-anchor="middle" fill="#4f5d75">CASCADE</text>
+<text x="1879.2" y="1212" class="legend">on delete cascade</text>
+<text x="170" y="1242" class="legend">Tipos y defaults tal cual schema.sql (MySQL 8.4); "= valor" es el DEFAULT. Pie de cada tabla: claves compuestas y las reglas que sostiene.</text>
+    </svg>
+  </div>
+</body>
+</html>
