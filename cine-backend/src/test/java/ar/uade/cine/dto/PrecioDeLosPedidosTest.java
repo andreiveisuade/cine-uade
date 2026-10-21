@@ -23,8 +23,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 
-// Los seis pedidos con precio solo exigen que venga: el valor lo valida Dinero.importe cuando el controller
-// lo convierte, antes de cualquier búsqueda. La regla vive en un solo lugar y no también en un @Positive.
+// Los pedidos con precio solo exigen que venga: el valor lo valida Dinero.importe, sin @Positive duplicado.
 class PrecioDeLosPedidosTest {
 
     private static final Validator VALIDADOR = Validation.buildDefaultValidatorFactory().getValidator();

@@ -89,8 +89,7 @@ class MercadoPagoHttpTest {
         assertEquals(Dinero.de(7680), checkout.monto());
     }
 
-    // Del medio pedido depende la promo: MP no tiene que ofrecer pagar con otro. account_money nunca se excluye:
-    // MP responde 400 "account_money cannot be excluded".
+    // MP no debe ofrecer otro medio que el pedido; account_money nunca se excluye (MP responde 400).
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             debito        | DEBITO        | debit_card account_money
@@ -175,8 +174,7 @@ class MercadoPagoHttpTest {
         assertTrue(pedidos.stream().anyMatch(p -> p.contains("external_reference=25-QR-7")), pedidos.toString());
     }
 
-    // Lo que se aprobó tiene que ser lo que se pidió: el comprador puede pagar otra preferencia con la misma
-    // referencia, o MP puede cobrar en otra moneda. El checkout es de $100.
+    // Lo aprobado debe ser lo pedido: otra preferencia con la misma referencia, u otra moneda, no vale.
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             otro monto   | 90.0  | ARS
@@ -195,8 +193,7 @@ class MercadoPagoHttpTest {
                 error.getMessage());
     }
 
-    // El medio del checkout es el que promete la promo: un aprobado con otro tipo de pago no lo paga.
-    // account_money cuenta siempre, porque MP lo ofrece en todo checkout.
+    // Un aprobado con otro tipo de pago no paga la promo; account_money cuenta siempre.
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             credito en checkout de debito   | DEBITO  | credit_card   | false
