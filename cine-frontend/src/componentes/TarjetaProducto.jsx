@@ -2,12 +2,12 @@ import { AspectRatio, Card, Text } from "@mantine/core";
 import { etiqueta } from "../api/etiquetas.js";
 import { precio } from "../api/formato.js";
 
-export function TarjetaProducto({ producto }) {
+export function TarjetaProducto({ producto, ratio = 1 }) {
   return (
     <Card padding="md" withBorder h="100%">
       {producto.imagenUrl && (
         <Card.Section mb="sm">
-          <AspectRatio ratio={1}>
+          <AspectRatio ratio={ratio}>
             <img src={producto.imagenUrl} alt={producto.nombre} loading="lazy" style={{ objectFit: "cover" }} />
           </AspectRatio>
         </Card.Section>

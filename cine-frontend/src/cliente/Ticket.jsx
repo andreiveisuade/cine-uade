@@ -1,31 +1,20 @@
-import { Alert, Anchor, Badge, Button, Code, Grid, Group, Paper, Skeleton, Stack, Text } from "@mantine/core";
-import { m, useReducedMotion } from "motion/react";
+import { Alert, Anchor, Box, Button, Code, Group, Modal, Skeleton, Stack, Text } from "@mantine/core";
+import { IconCopy, IconFileText, IconQrcode } from "@tabler/icons-react";
+import { useReducedMotion } from "motion/react";
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
-import { fechaHora, precio, precioExacto } from "../api/formato.js";
+import { fechaHora, precioExacto } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { useTitulo } from "../componentes/useTitulo.js";
+import { EntradaTicket, vigente } from "./EntradaTicket.jsx";
 import { PagarOnline } from "./PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
-
-// Qué le decimos al comprador según el estado que manda el backend; el front no decide vencimientos.
-const AVISO_POR_ESTADO = {
-  RESERVADA: { color: "green", texto: "Reserva confirmada. Pagala online o en boletería antes de que venza." },
-  PAGADA: { color: "green", texto: "Entrada paga. Mostrá el código en la puerta." },
-  EXPIRADA: { color: "gray", texto: "Esta reserva venció. Las butacas ya se liberaron." },
-  CANCELADA: { color: "gray", texto: "Esta reserva está cancelada." },
-};
-
-const CODIGO_POR_ESTADO = {
-  RESERVADA: "Todavía no está paga. Sirve una sola vez cuando se pague.",
-  PAGADA: "Mostralo en la puerta. Sirve una sola vez.",
-  EXPIRADA: "Ya no sirve: la reserva venció.",
-  CANCELADA: "Ya no sirve: la reserva se canceló.",
-};
+import { VentaCruzada } from "./VentaCruzada.jsx";
 
 // El pago se concilia solo en el backend: mientras espera, se vuelve a pedir para que aparezca "Pagada" sin recargar.
 const CADA_MS = 10_000;
@@ -65,64 +54,19 @@ function armarTicket(reserva) {
   ].join("\n");
 }
 
-// El sello cae solo si el pago se vio llegar en esta pantalla; un ticket que ya abrió pago lo muestra quieto.
-const SELLO_CAYENDO = { opacity: 0, scale: 2.2, rotate: -24 };
-const SELLO = { opacity: 1, scale: 1, rotate: -8 };
-
-// El ticket sale de la impresora: se destapa de arriba hacia abajo.
-const IMPRESION = {
-  initial: { clipPath: "inset(0 0 100% 0)" },
-  animate: { clipPath: "inset(0 0 0% 0)", transition: { duration: 0.4, ease: "easeOut" } },
-};
-
-// No es un QR dibujado: el código en claro se escanea o se tipea igual, sin sumar una librería.
-function TarjetaCodigo({ reserva, pagoEnVivo }) {
-  if (!reserva.codigo) return null;
-  const usada = reserva.ingresadaEn;
+// Para la puerta: el código y el QR a pantalla llena, con brillo máximo de contraste.
+function EnLaPuerta({ reserva, abierto, cerrar }) {
   return (
-    <Paper withBorder p="lg" ta="center" pos="relative" style={{ borderWidth: 2, opacity: usada ? 0.6 : 1 }}>
-      {reserva.estado === "PAGADA" && (
-        <Badge component={m.div} initial={pagoEnVivo ? SELLO_CAYENDO : false} animate={SELLO}
-          transition={{ type: "spring", stiffness: 400, damping: 18 }}
-          color="green" variant="outline" size="lg" pos="absolute" top={12} right={12} style={{ borderWidth: 2 }}>
-          Pagada
-        </Badge>
-      )}
-      <Text size="xs" tt="uppercase" c="dimmed" style={{ letterSpacing: "0.15em" }}>Código de acceso</Text>
-      <Text ff="monospace" fz={32} fw={700} style={{ letterSpacing: "0.2em", textDecoration: usada ? "line-through" : "none" }}>
-        {reserva.codigo.slice(0, 4)} {reserva.codigo.slice(4)}
-      </Text>
-      <Text size="xs" c="dimmed">
-        {usada ? `Ya se usó el ${fechaHora(usada)}` : CODIGO_POR_ESTADO[reserva.estado]}
-      </Text>
-    </Paper>
-  );
-}
-
-// Solo para mirar: el candy nace cobrado en el mostrador y no tiene circuito de reserva.
-function CartaCandy({ productos, reservaId }) {
-  if (!productos.length) return null;
-  return (
-    <Paper withBorder p="md">
-      <Text fw={600}>¿Pochoclos para la función?</Text>
-      <Text size="sm" c="dimmed" mb="sm">
-        Comprá en el mostrador del candy antes de entrar. Con la reserva ya pagada, si decís su número (#{reservaId}),
-        la compra queda a tu nombre.
-      </Text>
-      <Stack gap={6}>
-        {productos.map((p) => (
-          <Group key={p.id} justify="space-between" align="baseline" wrap="nowrap">
-            <div>
-              <Text size="sm">{p.nombre}</Text>
-              {p.componentes?.length > 0 && (
-                <Text size="xs" c="dimmed">{p.componentes.map((c) => `${c.cantidad}× ${c.nombre}`).join(" + ")}</Text>
-              )}
-            </div>
-            <Text size="sm" fw={500} style={{ whiteSpace: "nowrap" }}>{precio(p.precio)}</Text>
-          </Group>
-        ))}
+    <Modal opened={abierto} onClose={cerrar} centered title="Mostralo en la puerta" radius="lg">
+      <Stack align="center" gap="md" pb="md">
+        <Box p="md" bg="white" style={{ borderRadius: "var(--mantine-radius-md)", lineHeight: 0 }}>
+          <QRCodeSVG value={reserva.codigo} size={240} level="M" />
+        </Box>
+        <Text ff="monospace" fz={40} fw={700} style={{ letterSpacing: "0.18em" }}>
+          {reserva.codigo.slice(0, 4)} {reserva.codigo.slice(4)}
+        </Text>
       </Stack>
-    </Paper>
+    </Modal>
   );
 }
 
@@ -135,11 +79,13 @@ export function Ticket() {
   const aviso = useSearchParams()[0].get("aviso");
   const recien = useLocation().state?.reserva;
   // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide por código,
-  // que es la única llave del cliente: el id se adivina. La carta es opcional.
+  // que es la única llave del cliente: el id se adivina. La carta y las promos son opcionales.
   const carga = useCargar(() => Promise.all([
     recien?.codigo === codigo ? recien : api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
+    api.obtenerPromocionesVigentes().catch(() => []),
   ]), [codigo]);
+  const [enPuerta, setEnPuerta] = useState(false);
   const [actualizada, setActualizada] = useState(null);
   const inicial = carga.datos?.[0];
   const esperandoPago = inicial?.estado === "RESERVADA" && inicial.cobrable
@@ -162,75 +108,75 @@ export function Ticket() {
   useEffect(() => {
     if (!pagoEnVivo || quieto || celebrada.current === codigo) return;
     // Se baja recién cuando hace falta: casi ningún ticket la usa.
-    let vigente = true;
+    let activo = true;
     let confetti;
     import("canvas-confetti").then(({ default: lanzar }) => {
-      if (!vigente) return;
+      if (!activo) return;
       // Se marca al lanzar y no al entrar: StrictMode desmonta y vuelve a correr el efecto, y el primero se descarta.
       celebrada.current = codigo;
       confetti = lanzar;
       lanzar({ particleCount: 120, spread: 75, origin: { y: 0.3 }, disableForReducedMotion: true });
     });
     return () => {
-      vigente = false;
+      activo = false;
       confetti?.reset();
     };
   }, [pagoEnVivo, quieto, codigo]);
 
   if (!carga.datos) {
-    return <EsperaOError carga={carga} esqueleto={<Stack gap="md" maw={640}><Skeleton h={48} /><Skeleton h={130} /><Skeleton h={360} /></Stack>} />;
+    return <EsperaOError carga={carga} esqueleto={<Stack gap="md"><Skeleton h={420} radius="lg" /><Skeleton h={48} w={320} /></Stack>} />;
   }
-  const avisoEstado = AVISO_POR_ESTADO[reserva.estado];
-  const productos = carga.datos[1];
-  const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
+  const [, productos, promos] = carga.datos;
 
-  async function copiar() {
+  async function copiar(texto, aviso) {
     // Sin permiso o fuera de HTTPS el navegador rechaza la escritura.
     try {
-      await navigator.clipboard.writeText(armarTicket(reserva));
-      avisar("Comprobante copiado");
+      await navigator.clipboard.writeText(texto);
+      avisar(aviso);
     } catch {
-      avisar("No pudimos copiar el comprobante. Seleccionalo y copialo a mano.", "error");
+      avisar("No pudimos copiar. Seleccionalo y copialo a mano.", "error");
     }
   }
 
   return (
-    <Stack gap="md">
-      {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
-      {avisoEstado && <Alert color={avisoEstado.color}>{avisoEstado.texto}</Alert>}
-      <Grid gap="md" align="flex-start">
-        <Grid.Col span={{ base: 12, md: 7 }}>
-          <Stack gap="md">
-            <TarjetaCodigo reserva={reserva} pagoEnVivo={pagoEnVivo} />
-            {conAcreditacion.length > 0 && (
-              <Alert color="yellow" title="Traé el carnet">
-                En la puerta se acredita la tarifa de{" "}
-                {conAcreditacion.map((e) => `${e.codigo} (${etiqueta(e.tarifa).toLowerCase()})`).join(", ")}.
-              </Alert>
-            )}
-            <m.div {...IMPRESION}>
-              <Code block fz="xs">{armarTicket(reserva)}</Code>
-            </m.div>
-            <Group>
-              <Button component={Link} to="/">Volver a la cartelera</Button>
-              <Button variant="default" onClick={copiar}>Copiar</Button>
-            </Group>
+    <Stack gap="var(--cine-seccion)">
+      <Stack gap="lg">
+        {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
+        <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
+
+        <Group gap="sm" justify="space-between" align="flex-start">
+          <Box id="pagar">
             {/* Sin cancelar acá: el ticket es público y se muestra en la puerta; cancelar es del dueño, en Mis reservas. */}
+            {reserva.estado === "PAGADA" && !reserva.ingresadaEn && (
+              <Button size="md" leftSection={<IconQrcode size={20} />} onClick={() => setEnPuerta(true)}>Mostrar en la puerta</Button>
+            )}
             {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} />}
             {usuario === null && recien && reserva.cobrable && (
-              <Text size="sm" c="dimmed">
+              <Text size="sm" c="dimmed" maw="52ch">
                 Para pagarla online,{" "}
                 <Anchor component={Link} to="/registro" state={{ email: reserva.cliente.email }} size="sm">registrate</Anchor>{" "}
                 o <Anchor component={Link} to="/ingresar" state={{ email: reserva.cliente.email }} size="sm">ingresá</Anchor>{" "}
                 con {reserva.cliente.email}. Si no, se paga en la boletería.
               </Text>
             )}
-          </Stack>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 5 }}>
-          <CartaCandy productos={productos} reservaId={reserva.id} />
-        </Grid.Col>
-      </Grid>
+          </Box>
+          <Group gap="xs">
+            <Button variant="default" leftSection={<IconCopy size={16} />} onClick={() => copiar(reserva.codigo, "Código copiado")}>Copiar código</Button>
+            <Button variant="default" leftSection={<IconFileText size={16} />} onClick={() => copiar(armarTicket(reserva), "Comprobante copiado")}>
+              Copiar comprobante
+            </Button>
+            <Button variant="subtle" color="gray" c="var(--mantine-color-text)" component={Link} to="/">Volver a la cartelera</Button>
+          </Group>
+        </Group>
+
+        <Box component="details" c="dimmed" fz="sm">
+          <Box component="summary" style={{ cursor: "pointer" }}>Ver el comprobante en texto</Box>
+          <Code block fz="xs" mt="sm">{armarTicket(reserva)}</Code>
+        </Box>
+      </Stack>
+
+      {vigente(reserva) && <VentaCruzada reserva={reserva} productos={productos} promos={promos} />}
+      {reserva.codigo && <EnLaPuerta reserva={reserva} abierto={enPuerta} cerrar={() => setEnPuerta(false)} />}
     </Stack>
   );
 }

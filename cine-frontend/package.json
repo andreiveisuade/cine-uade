@@ -21,6 +21,7 @@
     "embla-carousel-autoplay": "8.6.0",
     "embla-carousel-react": "8.6.0",
     "motion": "14.5.0",
+    "qrcode.react": "4.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0"
