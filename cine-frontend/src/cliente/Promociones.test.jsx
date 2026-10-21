@@ -103,4 +103,15 @@ describe("Promociones", () => {
 
     expect(await screen.findByText("No se pudo conectar con el servidor")).toBeInTheDocument();
   });
+
+  it("usa la imagen de la promo y del combo cuando la tienen", async () => {
+    api.obtenerPromocionesVigentes.mockResolvedValue([promo({ imagenUrl: "/api/imagenes/a.webp" }), promo({ nombre: "Sin foto" })]);
+    api.obtenerProductosCandy.mockResolvedValue([{ ...combo, imagenUrl: "/api/imagenes/c.png" }, pochoclos]);
+    abrir();
+
+    expect(await screen.findByAltText("Miércoles 2x1")).toHaveAttribute("src", "/api/imagenes/a.webp");
+    expect(screen.queryByAltText("Sin foto")).not.toBeInTheDocument();
+    expect(await screen.findByAltText("Combo clásico")).toHaveAttribute("loading", "lazy");
+    expect(screen.queryByAltText("Pochoclos grandes")).not.toBeInTheDocument();
+  });
 });
