@@ -979,6 +979,23 @@ body.lightbox-locked { overflow: hidden; }
         Ninguna regla vive en el front: lo único que anticipa, pedir el carnet de las tarifas reducidas, es un
         aviso que el backend vuelve a validar.
       </p>
+      <h3 id="animaciones">Animaciones</h3>
+      <p>
+        Las animaciones acompañan lo que pasa en la pantalla, cortas (150 a 400 ms), sin decoración gratuita. Se usa
+        <strong>Motion</strong> (<code>motion/react</code>) porque es declarativa: la animación se describe con props
+        (<code>initial</code>, <code>animate</code>, <code>exit</code>, <code>layout</code>) y sigue al estado de React,
+        a diferencia de GSAP, que se maneja con llamadas imperativas sobre el DOM por fuera del render.
+      </p>
+      <ul>
+        <li><strong>Librerías:</strong> <code>motion</code>, <code>canvas-confetti</code> y <code>@mantine/carousel</code> (con Embla y su autoplay), con versión exacta en <code>package.json</code>.</li>
+        <li><strong>Mapa de butacas:</strong> las filas entran escalonadas, la butaca hace un pop al tocarla y el total corre hasta el valor nuevo.</li>
+        <li><strong>Entre pantallas:</strong> <code>AnimatePresence</code> con un fundido corto por sección; la sesión y la compra en curso quedan afuera y no se remontan.</li>
+        <li><strong>Cartelera:</strong> las tarjetas entran escalonadas, se elevan con el hover y se reacomodan con <code>layout</code> al filtrar por género. El hero muestra las destacadas en un carrusel.</li>
+        <li><strong>Ticket:</strong> se imprime al aparecer; si el pago llega con la pantalla abierta cae un sello y sale confetti una sola vez por reserva.</li>
+        <li><strong>Carga:</strong> <code>Skeleton</code> de Mantine con la forma de cada pantalla en lugar del «Cargando…».</li>
+        <li><strong>Movimiento reducido:</strong> <code>MotionConfig reducedMotion="user"</code> respeta la preferencia del sistema; con ella no hay autoplay ni confetti.</li>
+        <li><strong>Peso:</strong> las funciones de Motion y el confetti bajan en chunks aparte, cargados después del primer pintado.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="swing">
