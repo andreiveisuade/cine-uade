@@ -203,8 +203,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
         assertNotNull(vista.sala());
     }
 
-    // Las funciones nuevas caen todas en las mismas dos salas y cada una es de una película
-    // distinta: si el listado leyera sala, butacas o película por fila, las consultas crecerían.
+    // Funciones en las mismas dos salas, cada una de otra película: leerlas por fila haría crecer las consultas.
     @Test
     void losListadosDeFuncionesCuestanLasMismasConsultasConDosQueConOcho() {
         int matrix = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP).getId();

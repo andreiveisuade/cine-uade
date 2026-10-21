@@ -202,8 +202,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals(10000.0, vista.monto());
     }
 
-    // Cada venta suma una película, una función y un cliente distintos: si el listado
-    // leyera alguno de ellos por fila, las consultas crecerían con las ventas.
+    // Cada venta suma película, función y cliente distintos: leerlos por fila haría crecer las consultas.
     @Test
     void losListadosCuestanLasMismasConsultasConDosVentasQueConOcho() {
         vender(2);

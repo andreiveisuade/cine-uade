@@ -67,8 +67,7 @@ class PeliculaControllerTest extends PruebaDeApi {
         assertEquals("La duración tiene que estar entre 1 y 600 minutos", respuesta.error());
     }
 
-    // Pública, pero lo que el buzón no aprobó no existe sin sesión de administrador: ni para el cliente
-    // ni para el acomodador, que no revisa cartelera.
+    // Pública, pero lo no aprobado en el buzón no existe sin sesión de administrador (ni para el acomodador).
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             pendiente sin sesión,             PENDIENTE,  ,                    ,             404
@@ -93,7 +92,7 @@ class PeliculaControllerTest extends PruebaDeApi {
         }
     }
 
-    // Mismo criterio que el detalle: respondía 200 con [] y dejaba saber qué ids trajo el importador.
+    // Mismo criterio que el detalle: no revela qué ids trajo el importador.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             pendiente sin sesión,            PENDIENTE,  ,                  ,                404

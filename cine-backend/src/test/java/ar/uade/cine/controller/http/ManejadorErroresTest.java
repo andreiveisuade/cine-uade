@@ -48,16 +48,13 @@ class ManejadorErroresTest extends PruebaDeApi {
     @Autowired
     private TestRestTemplate cliente;
 
-    // Rutas que solo existen en este test: provocan lo que el uso normal de la API no provoca a pedido.
-    // Clases miembro de un @TestConfiguration: Spring las registra solas, sin @Bean.
+    // Rutas solo de este test, para provocar lo que la API normal no provoca (miembros de @TestConfiguration).
     @TestConfiguration
     static class RutasDePrueba {
 
         static final String RUTA_CHOQUE = "/api/prueba/choque";
 
-        // Una carrera no se repite a pedido: graba dos clientes con el mismo email por el repositorio,
-        // salteando al gestor, como dos altas simultáneas que pasaron su existsBy… La base rechaza la
-        // segunda con la excepción de verdad.
+        // Una carrera no se repite a pedido: dos altas con el mismo email por el repositorio, la base rechaza la segunda.
         @RestController
         static class Choque {
 
@@ -310,8 +307,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("No existe la ruta /api/salas/", conBarraFinal.error());
     }
 
-    // Sin el Content-Type fijado, Spring negociaba el error contra el Accept y no podía escribirlo:
-    // un 500 vacío con XML, la página Whitelabel con HTML.
+    // Sin Content-Type fijado Spring negocia contra el Accept: 500 vacío con XML, Whitelabel con HTML.
     @ParameterizedTest
     @ValueSource(strings = {"application/xml", "text/html"})
     void unErrorSaleEnJsonAunqueElClientePidaOtroFormato(String formato) {
@@ -426,8 +422,7 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("Falta el código de acceso", enBlanco.error());
     }
 
-    // La puerta de entrada: lo que llega mal armado sale con un status y un texto que nombran qué
-    // corregir, nunca con un 500 ni con lo que Jackson hizo con el valor en silencio.
+    // Lo mal armado sale con un status y un texto que nombran qué corregir, nunca un 500.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             cuerpo que no es JSON,           POST, /api/salas,                             text/plain,       nombre=Sala 1,                    415, El cuerpo del pedido tiene que ser JSON
