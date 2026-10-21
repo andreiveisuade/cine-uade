@@ -7,6 +7,7 @@ import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { ErrorCaja, EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
+import { useSesion } from "./sesion.jsx";
 import { Volver } from "../componentes/Volver.jsx";
 import { catalogoTarifas, clienteRecordado, DatosFuncion, faltantes, precioConTarifa, recordarCliente, resumenCompra,
          SelectorTarifa, sesionDeCompra, tarifaPorNombre, useCambiarTarifa, useCompra,
@@ -18,7 +19,9 @@ export function Confirmar() {
   const avisar = useAvisar();
   const { seleccion, setSeleccion } = useCompra();
   const cambiarTarifa = useCambiarTarifa();
-  const [recordado] = useState(clienteRecordado);
+  const { usuario } = useSesion();
+  // Con sesión, los datos de la cuenta: reservar con ese email la deja en Mis reservas.
+  const [recordado] = useState(() => usuario || clienteRecordado());
   const [nombre, setNombre] = useState(recordado?.nombre || "");
   const [email, setEmail] = useState(recordado?.email || "");
   const [error, setError] = useState(null);
@@ -93,10 +96,11 @@ export function Confirmar() {
                   onChange={(e) => setEmail(e.currentTarget.value)} />
                 <Button type="submit" loading={enviando}>Confirmar reserva</Button>
                 {error && <ErrorCaja>{error}</ErrorCaja>}
-                {!recordado && (
+                {usuario === null && (
                   <Text size="xs" c="dimmed">
-                    ¿Ya compraste antes? <Anchor component={Link} to="/registro" size="xs">Registrate</Anchor> para
-                    no cargar los datos cada vez.
+                    Para pagar online hace falta una cuenta:{" "}
+                    <Anchor component={Link} to="/ingresar" size="xs">ingresá</Anchor> o{" "}
+                    <Anchor component={Link} to="/registro" size="xs">registrate</Anchor>, antes o después de reservar.
                   </Text>
                 )}
               </Stack>
