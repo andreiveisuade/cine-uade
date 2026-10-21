@@ -468,7 +468,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#solid" data-target="solid">SOLID</a></li>
         <li><a href="#grasp" data-target="grasp">GRASP y otros patrones</a></li>
-        <li><a href="#mapa-diseno" data-target="mapa-diseno">Mapa de diseño y refactorings</a></li>
+        <li><a href="#mapa-diseno" data-target="mapa-diseno">Refactorings y decisiones conscientes</a></li>
         <li><a href="#iteraciones" data-target="iteraciones">Iteraciones de patrones</a></li>
       </ol>
 
@@ -1786,13 +1786,18 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h2>SOLID</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Principio</th><th>Dónde</th></tr></thead>
+          <thead><tr><th>Principio</th><th>Dónde</th><th>Por qué</th></tr></thead>
           <tbody>
-            <tr><td><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea; un controller por familia de rutas. Los comprobantes salieron de los gestores a sus observadores, y la validación de cada entidad a su <code>Validador*</code></td></tr>
-            <tr><td><strong>O</strong> · Abierto/cerrado</td><td>Un tipo de promoción nuevo es una constante de <code>TipoPromocion</code> y una subclase de <code>Promocion</code>: el cobro, el controller y la vista no cambian</td></tr>
-            <tr><td><strong>L</strong> · Liskov</td><td><code>TmdbHttp</code> y el <code>CatalogoDePrueba</code> de los tests cumplen el mismo <code>CatalogoExterno</code></td></tr>
-            <tr><td><strong>I</strong> · Segregación</td><td><code>GestorPagos</code> depende de <code>PoliticaPromociones</code> (un método), no del ABM</td></tr>
-            <tr><td><strong>D</strong> · Inversión</td><td>Los gestores dependen de <code>*Repository</code>, <code>PasarelaPagos</code>, <code>Reloj</code> y <code>Generador*</code>; solo <code>Adaptadores</code> elige la implementación, y <code>ArquitecturaTest</code> lo verifica</td></tr>
+            <tr><td rowspan="3"><strong>S</strong> · Responsabilidad única</td><td><code>GestorReservas</code> vende, <code>GestorPagos</code> cobra, <code>GestorCaja</code> arquea por día, <code>GestorInformes</code> corta por función; un controller por familia de rutas</td><td>Cada uno cambia por una razón distinta</td></tr>
+            <tr><td><code>Ocupacion</code></td><td>«Butaca ocupada» (R4) en un solo lugar: mapa, bloqueo y venta la usan</td></tr>
+            <tr><td>Comprobantes en observadores; validación en <code>Validador*</code></td><td>Salieron de los gestores y las entidades</td></tr>
+            <tr><td rowspan="2"><strong>O</strong> · Abierto/cerrado</td><td><code>TipoPromocion</code> + subclase de <code>Promocion</code></td><td>Un tipo nuevo no cambia cobro, controller ni vista</td></tr>
+            <tr><td><code>TipoAsiento</code></td><td>El multiplicador viaja con la constante: el precio no tiene <code>switch</code></td></tr>
+            <tr><td rowspan="2"><strong>L</strong> · Liskov</td><td><code>TmdbHttp</code> y <code>CatalogoDePrueba</code></td><td>Cumplen el mismo <code>CatalogoExterno</code></td></tr>
+            <tr><td><code>Promocion</code> y sus tres subclases</td><td>Responden <code>getParametros()</code> y <code>calcularDescuento()</code> sin que nadie pregunte cuál es</td></tr>
+            <tr><td rowspan="2"><strong>I</strong> · Segregación</td><td><code>GestorPagos</code> → <code>PoliticaPromociones</code></td><td>Un método, no el ABM</td></tr>
+            <tr><td><code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorTicketCandy</code></td><td>Tres puertos chicos; cada listener usa el suyo</td></tr>
+            <tr><td><strong>D</strong> · Inversión</td><td>Gestores → <code>*Repository</code>, <code>PasarelaPagos</code>, <code>Reloj</code>, <code>Generador*</code>, <code>PoliticaPromociones</code></td><td>Solo <code>Adaptadores</code> nombra implementaciones; <code>ArquitecturaTest</code> lo verifica</td></tr>
           </tbody>
         </table>
       </div>
@@ -1810,10 +1815,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <figcaption>DIP: solo <code>Adaptadores</code> elige una implementación concreta</figcaption>
       </figure>
 
-      <p>
-        Entre gestores no hay interfaces: una sola implementación no oculta nada. La excepción es
-        <code>PoliticaPromociones</code>, que separa a quien cobra del ABM de promociones.
-      </p>
+      <p>Entre gestores no hay interfaces: una sola implementación no oculta nada. Los puertos sí (<a href="#mapa-diseno">por qué</a>).</p>
     </section>
 
     <section class="doc-section" id="grasp">
@@ -1822,13 +1824,13 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>, R8 en <code>Funcion</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres, porque depende de otras reservas</td></tr>
-            <tr><td><strong>Creador</strong></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Producto.armarCombo</code> → <code>ItemCombo</code>, <code>CompraCandy</code> → <code>ItemCompra</code>. Los constructores de los ítems son de paquete</td></tr>
-            <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, los <code>Validador*</code> y los observadores de comprobantes</td></tr>
-            <tr><td><strong>Controlador</strong></td><td>Los <code>Gestor*</code> reciben cada operación del sistema; los <code>*Controller</code> solo traducen HTTP. Por eso los tests llaman a los gestores sin HTTP</td></tr>
-            <tr><td><strong>Polimorfismo</strong></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code> y <code>TipoTarifa</code>; las subclases de <code>Promocion</code>; las constantes de <code>TipoPromocion</code>, <code>EstadoReserva</code> y <code>EstadoRevision</code></td></tr>
-            <tr><td><strong>Variaciones protegidas</strong></td><td><code>*Repository</code>, <code>PasarelaPagos</code>, <code>Generador*</code>, <code>PoliticaPromociones</code></td></tr>
-            <tr><td><strong>Bajo acoplamiento / alta cohesión</strong></td><td>Constructor con lo justo; un subpaquete por subdominio</td></tr>
+            <tr><td><strong>Experto</strong></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
+            <tr><td><strong>Creador</strong></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Producto.armarCombo</code> → <code>ItemCombo</code>, <code>CompraCandy</code> → <code>ItemCompra</code> (constructores de paquete); <code>TipoPromocion</code> tiene los datos para crear su subclase</td></tr>
+            <tr><td><strong>Fabricación pura</strong></td><td><code>Ocupacion</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
+            <tr><td><strong>Controlador</strong></td><td><code>Gestor*</code> reciben cada operación; <code>*Controller</code> solo traduce HTTP. Los tests llaman a los gestores sin HTTP</td></tr>
+            <tr><td><strong>Polimorfismo</strong></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code>; constantes de <code>TipoPromocion</code>, <code>EstadoReserva</code>, <code>EstadoRevision</code></td></tr>
+            <tr><td><strong>Variaciones protegidas</strong></td><td><code>*Repository</code>, <code>PasarelaPagos</code> (sandbox o emulada), <code>Reloj</code> (real o movible), <code>Generador*</code>, <code>PoliticaPromociones</code></td></tr>
+            <tr><td><strong>Bajo acoplamiento / alta cohesión</strong></td><td>Constructor con lo justo; un subpaquete por subdominio; <code>ArquitecturaTest</code> rompe el build con un import prohibido</td></tr>
           </tbody>
         </table>
       </div>
@@ -1839,7 +1841,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </figure>
 
       <h3>Patrones de diseño</h3>
-      <p>El javadoc de cada clase dice qué patrón implementa, qué resolvía acá y cómo se lee.</p>
+      <p>El javadoc de cada clase dice qué patrón implementa y qué resolvía.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Patrón</th><th>Dónde y para qué</th></tr></thead>
@@ -1847,93 +1849,84 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><strong>MVC en capas</strong></td><td><code>model/</code>, los clientes con los <code>*VistaDTO</code>, <code>controller/</code> (<a href="#capas">capas</a>)</td></tr>
             <tr><td><strong>Repository</strong></td><td>Los <code>*Repository</code>, sobre una <a href="#repositorio">base común</a>: el gestor no ve SQL</td></tr>
             <tr><td><strong>DTO + Assembler</strong></td><td><code>dto/</code> y los <code>Vistas*</code>: el contrato no depende de las entidades (<a href="#dto">DTO</a>)</td></tr>
-            <tr><td><strong>Strategy</strong></td><td>Las subclases de <code>Promocion</code>, sin <code>switch</code> en el cobro; <code>PasarelaPagos</code> y <code>Reloj</code>, elegidas por <code>@Bean</code></td></tr>
+            <tr><td><strong>Strategy</strong></td><td>Subclases de <code>Promocion</code>, sin <code>switch</code> en el cobro; <code>PasarelaPagos</code> y <code>Reloj</code>, elegidas en runtime por <code>@Bean</code> en <code>Adaptadores</code></td></tr>
             <tr><td><strong>State</strong></td><td><code>EstadoReserva</code> y <code>EstadoRevision</code> (<a href="#state">abajo</a>)</td></tr>
-            <tr><td><strong>Observer</strong></td><td>Los comprobantes, después del commit (<a href="#observer">abajo</a>)</td></tr>
-            <tr><td><strong>Factory Method</strong></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase (<a href="#promociones-factory">en promociones</a>)</td></tr>
-            <tr><td><strong>Decorator</strong></td><td><code>PasswordBcrypt</code> (<a href="#decorator">abajo</a>)</td></tr>
-            <tr><td><strong>Adapter</strong></td><td><code>TmdbHttp</code> para <code>CatalogoExterno</code>, <code>MercadoPagoEmulado</code> para <code>PasarelaPagos</code>, <code>DineroConverter</code> entre <code>Dinero</code> y la columna: cambiar el proveedor no toca los gestores</td></tr>
+            <tr><td><strong>Observer</strong></td><td>Comprobantes después del commit (<a href="#observer">abajo</a>)</td></tr>
+            <tr><td><strong>Factory Method</strong></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
+            <tr><td><strong>Decorator</strong></td><td><code>PasswordBcrypt</code>, <code>SesionDeClientes</code> (<a href="#decorator">abajo</a>)</td></tr>
+            <tr><td><strong>Adapter</strong></td><td><code>TmdbHttp</code> → <code>CatalogoExterno</code>, <code>MercadoPagoEmulado</code> → <code>PasarelaPagos</code>, <code>DineroConverter</code> entre <code>Dinero</code> y la columna: cambiar el proveedor no toca gestores</td></tr>
             <tr><td><strong>Facade</strong></td><td>Cada gestor, entrada única a su subdominio para controllers, importador y tests</td></tr>
-            <tr><td><strong>Value Object</strong>, <strong>Parameter Object</strong>, <strong>Fluent Interface</strong></td><td><a href="#value-objects">Abajo</a>; <code>CondicionesPromocion</code>; <code>Regla</code> (<a href="#validacion">validación</a>)</td></tr>
-            <tr><td><strong>Template Method</strong></td><td>En Swing, <code>PantallaListado&lt;T&gt;</code> fija cuándo se pide y se filtra; cada listado, cómo pedir</td></tr>
-            <tr><td><strong>Singleton</strong>, <strong>Proxy</strong>, <strong>Front Controller</strong></td><td>Los pone Spring: los beans, <code>@Transactional</code>, <code>DispatcherServlet</code></td></tr>
+            <tr><td><strong>Template Method</strong></td><td><code>PantallaListado&lt;T&gt;</code> (Swing) fija cuándo se pide y filtra, cada listado cómo pedir; <code>ComprobanteTxt</code>, la base de los <code>.txt</code></td></tr>
+            <tr><td><strong>Value Object</strong>, <strong>Parameter Object</strong>, <strong>Fluent Interface</strong></td><td><a href="#value-objects">Abajo</a>; <code>CondicionesPromocion</code>, <code>FormatoDeFuncion</code>; <code>Regla</code> (<a href="#validacion">validación</a>)</td></tr>
+            <tr><td><strong>Excepción sellada</strong></td><td><code>Rechazo</code>: <code>ManejadorErrores</code> sabe que no hay un quinto tipo (<a href="#rechazos">abajo</a>)</td></tr>
+            <tr><td><strong>Singleton</strong>, <strong>Proxy</strong>, <strong>Front Controller</strong></td><td>Los pone Spring: beans, <code>@Transactional</code>, <code>DispatcherServlet</code></td></tr>
           </tbody>
         </table>
       </div>
 
       <h3 id="state">State: el estado decide qué se puede hacer</h3>
-      <p>
-        <code>Reserva</code> preguntaba <code>estado == RESERVADA</code> en cinco métodos: sumar un estado era revisarlos
-        todos. Ahora cada constante de <code>EstadoReserva</code> sobrescribe solo lo que permite (<code>RESERVADA</code> se
-        paga, cancela o expira; <code>PAGADA</code> deja ingresar), y lo demás cae en el método del enum, que rechaza. La
-        transición devuelve el estado siguiente: <code>estado = estado.pagar()</code>. Nadie compara estados fuera del enum.
-      </p>
-      <p>
-        <code>EstadoRevision</code> hace lo mismo con el buzón del importador, con métodos abstractos: un estado nuevo no
-        compila hasta decidir cada operación. Enum y no jerarquía de clases porque los estados no tienen datos, y JPA guarda
-        el nombre de la constante sin mapeo extra.
-      </p>
       <figure class="diagram">
         {{SVG_PATRON_STATE}}
         <figcaption>Cada estado decide sus transiciones; la reserva asigna el que le devuelven</figcaption>
       </figure>
+      <ul>
+        <li><strong>Antes:</strong> <code>estado == RESERVADA</code> en cinco métodos de <code>Reserva</code>.</li>
+        <li><strong>Ahora:</strong> cada constante de <code>EstadoReserva</code> sobrescribe lo que permite (<code>RESERVADA</code> se paga, cancela o expira; <code>PAGADA</code> deja ingresar); el resto rechaza. <code>estado = estado.pagar()</code>. Nadie compara estados fuera del enum.</li>
+        <li><code>EstadoRevision</code> (buzón del importador) usa métodos abstractos: un estado nuevo no compila hasta decidir cada operación.</li>
+        <li>Enum y no clases: los estados no tienen datos y JPA guarda el nombre sin mapeo extra.</li>
+      </ul>
 
       <h3 id="observer">Observer: los comprobantes, después del commit</h3>
-      <p>
-        Los gestores escribían el ticket o el recibo dentro de su transacción. Si el commit fallaba después (el
-        <code>@Version</code> salta al confirmar), quedaba el recibo de un cobro que no existió; si fallaba el archivo, se
-        deshacía una venta correcta.
-      </p>
-      <p>
-        Ahora el gestor publica un evento (<code>PagoRegistrado</code>…) y no sabe quién escucha.
-        <code>ComprobantesDeVentas</code> y <code>ComprobantesDeCandy</code> lo reciben con
-        <code>@TransactionalEventListener</code>, que Spring llama solo si la transacción confirmó, y releen por id en una
-        transacción propia de solo lectura (<code>REQUIRES_NEW</code>). Si el archivo falla, la venta ya existe.
-      </p>
       <figure class="diagram">
         {{SVG_PATRON_OBSERVER}}
         <figcaption>El gestor publica el evento; el comprobante se escribe cuando la venta confirmó</figcaption>
       </figure>
+      <ul>
+        <li><strong>Antes:</strong> ticket o recibo dentro de la transacción. Si el commit fallaba (el <code>@Version</code> salta al confirmar), quedaba el recibo de un cobro inexistente; si fallaba el archivo, se deshacía una venta correcta.</li>
+        <li><strong>Ahora:</strong> el gestor publica <code>ReservaCreada</code>, <code>PagoRegistrado</code> o <code>CompraCandyRegistrada</code> (solo el id). <code>ComprobantesDeVentas</code>/<code>ComprobantesDeCandy</code> escuchan con <code>@TransactionalEventListener</code> (solo si confirmó) y releen en <code>REQUIRES_NEW</code> de solo lectura. Si el archivo falla, la venta queda y el error va al log.</li>
+      </ul>
 
-      <h3 id="decorator">Decorator: bcrypt con un límite</h3>
-      <p>
-        bcrypt no acepta claves de más de 72 bytes. Una así solo puede venir del SHA-256 viejo, y re-hashearla en el
-        primer login daba un 500. <code>PasswordBcrypt</code> implementa <code>PasswordEncoder</code> y
-        envuelve al de Spring: delega todo, salvo que <code>encode</code> deja en SHA-256 lo que no entra en 72 bytes. Misma
-        interfaz que lo decorado y una condición antes de delegar.
-      </p>
+      <h3 id="decorator">Decorator</h3>
+      <ul>
+        <li><strong><code>PasswordBcrypt</code>:</strong> bcrypt no acepta más de 72 bytes; una clave así solo viene del SHA-256 viejo, y re-hashearla en el login daba 500. Envuelve al <code>PasswordEncoder</code> de Spring y delega todo, salvo que <code>encode</code> deja en SHA-256 lo que no entra.</li>
+        <li><strong><code>SesionDeClientes</code>:</strong> envuelve el repositorio de contexto de Spring y guarda en sesión solo la identidad de un <code>CLIENTE</code> (<a href="#usuarios">usuarios</a>).</li>
+      </ul>
 
       <h3 id="value-objects">Value Objects</h3>
-      <p>
-        Un concepto con regla propia es un tipo que se valida y se normaliza al construirse, en vez de repetir la regla donde
-        se usa el dato (la vigencia de una promoción y el rango de una grilla validaban el orden cada una a su modo).
-        Son <code>Dinero</code> (centavos), <code>Periodo</code>, <code>FranjaHoraria</code>, <code>Email</code> (recortado y en minúsculas), <code>Contrasena</code> (su <code>toString</code> no la muestra),
-        <code>CodigoDeAcceso</code>, <code>SesionDeCompra</code>, <code>FormatoDeFuncion</code> (versión, proyección y precio) y <code>CatalogoPelicula</code>, que se reemplaza entero para
-        que la película nunca quede a medio validar. <code>Periodo</code>, <code>FranjaHoraria</code>,
-        <code>FormatoDeFuncion</code> y <code>CatalogoPelicula</code> son <code>@Embeddable</code>: no movieron ninguna columna.
-      </p>
+      <p>Un concepto con regla propia es un tipo que se valida y normaliza al construirse, en vez de repetir la regla donde se usa (vigencia de promoción y rango de grilla validaban el orden cada una a su modo).</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Value Object</th><th>Qué asegura</th></tr></thead>
+          <tbody>
+            <tr><td><a href="#dinero"><code>Dinero</code></a></td><td>Centavos exactos</td></tr>
+            <tr><td><code>Email</code></td><td>Recortado y en minúsculas</td></tr>
+            <tr><td><code>Contrasena</code></td><td>Su <code>toString</code> no la muestra</td></tr>
+            <tr><td><code>CodigoDeAcceso</code>, <code>SesionDeCompra</code></td><td>Generado y normalizado (<a href="#acceso">acceso</a>) / la sesión anónima del bloqueo</td></tr>
+            <tr><td><code>Periodo</code>, <code>FranjaHoraria</code></td><td>Orden de inicio y fin</td></tr>
+            <tr><td><code>FormatoDeFuncion</code></td><td>Versión, proyección y precio juntos</td></tr>
+            <tr><td><code>CatalogoPelicula</code></td><td>Se reemplaza entero: la película nunca queda a medio validar</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>Periodo</code>, <code>FranjaHoraria</code>, <code>FormatoDeFuncion</code> y <code>CatalogoPelicula</code> son <code>@Embeddable</code>: no movieron columnas.</p>
 
       <h3 id="rechazos">La jerarquía de rechazos</h3>
-      <p>
-        Se rechazaba con <code>IllegalArgumentException</code>: una librería también la tira, con un texto en inglés que
-        llegaba al usuario, y Spring Data la traduce al salir de un repositorio, así que el 404 de <code>exigir</code> salía
-        500. Ahora es un <code>Rechazo</code>, con una hija por status; una <code>IllegalArgumentException</code> suelta es un
-        500 genérico y <code>ArquitecturaTest</code> prohíbe crearla. Sellada cierra la lista: <code>ManejadorErroresTest</code>
-        falla hasta que un tipo nuevo tenga su status.
-      </p>
       <figure class="diagram">
         {{SVG_RECHAZOS_JERARQUIA}}
         <figcaption>Un tipo por status; <code>ManejadorErrores</code> lo traduce con el texto intacto</figcaption>
       </figure>
+      <ul>
+        <li><strong>Antes:</strong> <code>IllegalArgumentException</code>. Una librería también la tira (texto en inglés al usuario) y Spring Data la traduce al salir de un repositorio: el 404 de <code>exigir</code> salía 500.</li>
+        <li><strong>Ahora:</strong> <code>Rechazo</code> sellada con cuatro hijas: <code>DatoInvalido</code> 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> 409.</li>
+        <li>Una <code>IllegalArgumentException</code> suelta es 500 genérico; <code>ArquitecturaTest</code> prohíbe crearla. <code>ManejadorErroresTest</code> falla hasta que un tipo nuevo tenga status.</li>
+      </ul>
 
       <h3 id="repositorio">Una base para los repositorios</h3>
-      <p>
-        «Buscar por id o 404» estaba escrito 28 veces, más 8 métodos privados con su propio texto.
-        <code>Repositorio&lt;T&gt;</code> extiende <code>JpaRepository&lt;T, Integer&gt;</code> con un método <code>default</code>,
-        <code>exigir(id, "la película")</code>, que tira <code>RecursoNoEncontrado</code> («No existe la película 7»). Los 13
-        repositorios con id numérico lo heredan, sin clase base. <code>@NoRepositoryBean</code> evita que Spring Data cree un
-        bean para la base genérica.
-      </p>
+      <ul>
+        <li>«Buscar por id o 404» estaba escrito 28 veces, más 8 métodos privados con su texto.</li>
+        <li><code>Repositorio&lt;T&gt;</code> extiende <code>JpaRepository&lt;T, Integer&gt;</code> con un <code>default</code> <code>exigir(id, "la película")</code> → <code>RecursoNoEncontrado</code> («No existe la película 7»).</li>
+        <li>Los 13 repositorios con id numérico lo heredan. <code>@NoRepositoryBean</code>: Spring Data no crea bean para la base.</li>
+      </ul>
 
       <h3 id="validacion">Dónde se valida cada cosa</h3>
       <figure class="diagram">
@@ -1941,74 +1934,39 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <figcaption>Cada capa valida lo suyo; cada regla está una sola vez</figcaption>
       </figure>
       <ul>
-        <li><strong>En el DTO, solo presencia:</strong> un <code>@Positive</code> no lo vería el importador ni un test, y sería
-          una segunda copia de la regla.</li>
-        <li><strong>La regla es de la entidad; el código, de su validador.</strong> La entidad queda con estado y métodos con
-          intención; lo que no puede entrar vive en <code>model/&lt;subdominio&gt;/validacion/Validador&lt;Entidad&gt;</code>,
-          que llama la entidad y nunca el gestor. Se valida todo antes de asignar: una edición rechazada no deja la entidad a
-          medio cambiar.</li>
-        <li><strong>Guardas fluidas, sin cadenas de if:</strong>
-          <code>Regla.texto(titulo).obligatorio("Falta el título").recortado().hasta(100, "El título").valor()</code>.</li>
-        <li><strong>La base cierra</strong> lo que dos pedidos simultáneos podrían colar. Los clientes no aplican reglas (ver
-          <a href="#swing">Swing</a>).</li>
+        <li><strong>DTO, solo presencia:</strong> un <code>@Positive</code> no lo vería el importador ni un test, y sería otra copia de la regla.</li>
+        <li><strong>La regla es de la entidad; el código, de su validador</strong> (<code>model/&lt;subdominio&gt;/validacion/Validador&lt;Entidad&gt;</code>, 15). Lo llama la entidad, nunca el gestor. Valida todo antes de asignar: una edición rechazada no deja la entidad a medio cambiar.</li>
+        <li><strong>Guardas fluidas:</strong> <code>Regla.texto(titulo).obligatorio("Falta el título").recortado().hasta(100, "El título").valor()</code>.</li>
+        <li><strong>La base cierra</strong> lo que dos pedidos simultáneos podrían colar. Los clientes no aplican reglas (<a href="#swing">Swing</a>).</li>
       </ul>
     </section>
 
     <section class="doc-section" id="mapa-diseno">
-      <h2>Mapa de diseño y refactorings</h2>
-      <p>Dónde defender cada principio, y qué smells se corrigieron y cuáles se dejaron a propósito.</p>
-      <h3>Principios y patrones</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Principio o patrón</th><th>Clase</th><th>Por qué</th></tr></thead>
-          <tbody>
-            <tr><td>SRP</td><td><code>GestorInformes</code>, <code>GestorCaja</code></td><td>El corte por función y el corte por día cambian por razones distintas</td></tr>
-            <tr><td>SRP</td><td><code>Ocupacion</code></td><td>La definición de butaca ocupada (R4) está en un solo lugar: mapa, bloqueo y venta la usan</td></tr>
-            <tr><td>OCP</td><td><code>TipoPromocion</code>, <code>Promocion</code></td><td>Un tipo nuevo es una constante y una subclase; controller y vista no cambian</td></tr>
-            <tr><td>OCP</td><td><code>TipoAsiento</code></td><td>El multiplicador viaja con la constante: el precio no tiene <code>switch</code></td></tr>
-            <tr><td>LSP</td><td><code>Promocion</code> y sus tres subclases</td><td>Todas responden <code>getParametros()</code> y <code>calcularDescuento()</code> sin que nadie pregunte cuál es</td></tr>
-            <tr><td>ISP</td><td><code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorTicketCandy</code></td><td>Tres puertos chicos; cada listener depende solo del que usa</td></tr>
-            <tr><td>DIP</td><td><code>PoliticaPromociones</code>, <code>Adaptadores</code></td><td><code>GestorPagos</code> depende de la regla, no del ABM; solo <code>Adaptadores</code> nombra implementaciones concretas</td></tr>
-            <tr><td>Experto</td><td><code>Reserva</code>, <code>MedioPago</code>, <code>Asiento</code></td><td>Pagar, cancelar y expirar los decide quien tiene el estado; qué autorización exige un medio, el medio; R9, el asiento</td></tr>
-            <tr><td>Creador</td><td><code>TipoPromocion</code></td><td>Tiene los datos para crear su subclase</td></tr>
-            <tr><td>Controlador</td><td><code>*Controller</code> → <code>Gestor*</code></td><td>El controller solo traduce HTTP; el gestor coordina el caso de uso</td></tr>
-            <tr><td>Fabricación pura</td><td><code>Repositorio.exigir</code>, <code>Regla</code></td><td>El «buscar o 404» y las guardas fluidas no pertenecen a ninguna entidad</td></tr>
-            <tr><td>Variaciones protegidas</td><td><code>PasarelaPagos</code>, <code>Reloj</code></td><td>Lo que varía (sandbox o emulada, reloj real o movible) queda detrás de un puerto</td></tr>
-            <tr><td>Bajo acoplamiento</td><td><code>ArquitecturaTest</code></td><td>Un import prohibido rompe el build</td></tr>
-            <tr><td>Polimorfismo / State</td><td><code>EstadoReserva</code></td><td>Reemplaza <code>estado == X</code> desperdigado</td></tr>
-            <tr><td>Factory Method</td><td><code>TipoPromocion</code></td><td>Había tres lugares que tocar por cada tipo nuevo</td></tr>
-            <tr><td>Observer</td><td><code>ComprobantesDeVentas</code></td><td><code>@TransactionalEventListener</code>: no queda el recibo de un cobro que hizo rollback</td></tr>
-            <tr><td>Strategy</td><td><code>PasarelaPagos</code> en <code>Adaptadores</code></td><td>Elección en runtime por configuración</td></tr>
-            <tr><td>Template Method</td><td><code>PantallaListado</code> (Swing), <code>ComprobanteTxt</code></td><td>El algoritmo común en la base; cada hija pone lo suyo</td></tr>
-            <tr><td>Decorator</td><td><code>PasswordBcrypt</code></td><td>Migra SHA-256 a bcrypt sin tocar Spring Security</td></tr>
-            <tr><td>Excepción sellada</td><td><code>Rechazo</code></td><td>Jerarquía cerrada: <code>ManejadorErrores</code> sabe que no hay un quinto tipo</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h2>Refactorings y decisiones conscientes</h2>
+      <p>El mapa de cada principio y patrón a su clase está en <a href="#solid">SOLID</a> y <a href="#grasp">GRASP y patrones</a>.</p>
 
       <h3>Refactorings aplicados</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Smell</th><th>Refactoring</th><th>Resultado</th></tr></thead>
           <tbody>
-            <tr><td><strong>Data Clump</strong> y Long Parameter List: versión, proyección y precio viajaban sueltos por cinco firmas</td><td>Introduce Parameter Object: <code>FormatoDeFuncion</code></td><td>Record <code>@Embeddable</code> de <code>Funcion</code> y <code>Programacion</code>, validado al construirse. Las columnas no cambiaron. <code>GestorFunciones.programar</code> pasa de 7 a 5 parámetros y <code>Programacion</code> de 9 a 7. R8 queda en la entidad porque cruza el formato con la sala</td></tr>
+            <tr><td><strong>Data Clump</strong> y Long Parameter List: versión, proyección y precio viajaban sueltos por cinco firmas</td><td>Introduce Parameter Object: <code>FormatoDeFuncion</code></td><td>Record <code>@Embeddable</code> de <code>Funcion</code> y <code>Programacion</code>, validado al construirse; columnas iguales. <code>GestorFunciones.programar</code> de 7 a 5 parámetros, <code>Programacion</code> de 9 a 7. R8 queda en la entidad (cruza formato con sala). Costo: con R8 y precio inválidos a la vez sale primero el precio; por HTTP no cambia, los controllers ya validaban el precio antes</td></tr>
             <tr><td><strong>Código duplicado</strong>: confirmar, retornar y conciliar repetían el cobro por checkout</td><td>Extract Method: <code>cobrarCheckout</code></td><td>Los tres públicos solo deciden qué hacer con el rechazo. <code>existsByReservaId</code> se consulta una vez</td></tr>
           </tbody>
         </table>
       </div>
-      <p>
-        Costo de <code>FormatoDeFuncion</code>: al validarse antes que la entidad, si hay R8 y precio inválido a la vez sale primero el
-        precio. Por HTTP no cambia: los controllers ya validaban el precio antes.
-      </p>
 
       <h3>Decisiones conscientes</h3>
-      <ul>
-        <li><strong>CQS en <code>Ocupacion</code>:</strong> consultar la ocupación expira las reservas vencidas, o sea una consulta que escribe. Se deja:
-          está documentado, es correcto y está testeado; moverlo a una tarea programada agrega una pieza sin arreglar un bug. <code>Reserva.estaVencida</code> es la red de seguridad en la lectura.</li>
-        <li><strong>Interfaces-puerto con una implementación</strong> (<code>PoliticaPromociones</code>, los <code>Generador*</code>, <code>CatalogoExterno</code>): la regla de no tener interfaces de una sola implementación vale para los gestores, no para los puertos.
-          Son Variaciones protegidas con un doble en los tests o una segunda implementación plausible (PDF, otro catálogo).</li>
-        <li><strong><code>switch</code> sobre <code>MedioPago</code> en <code>MercadoPagoHttp</code>:</strong> qué tipos de pago de MP son cada medio lo sabe MP, no el dominio. Sin polimorfismo; el <code>switch</code> exhaustivo no compila si falta un medio.</li>
-      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Qué se deja</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><strong>CQS roto en <code>Ocupacion</code>:</strong> consultar la ocupación expira las reservas vencidas</td><td>Documentado, correcto y testeado; una tarea programada agrega una pieza sin arreglar un bug. <code>Reserva.estaVencida</code> es la red en la lectura</td></tr>
+            <tr><td><strong>Puertos con una implementación</strong> (<code>PoliticaPromociones</code>, <code>Generador*</code>, <code>CatalogoExterno</code>)</td><td>La regla «sin interfaz de una implementación» es para gestores. Son Variaciones protegidas con doble en tests o segunda implementación plausible (PDF, otro catálogo)</td></tr>
+            <tr><td><strong><code>switch</code> sobre <code>MedioPago</code> en <code>MercadoPagoHttp</code></strong></td><td>Qué tipos de pago de MP son cada medio lo sabe MP, no el dominio. El <code>switch</code> exhaustivo no compila si falta un medio</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="doc-section" id="iteraciones">
@@ -2149,17 +2107,18 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
 
     <section class="doc-section" id="preguntas">
       <h2>Preguntas de guía</h2>
+      <p>Respuesta corta para la defensa; el detalle, en el link.</p>
 
       <h3>Arquitectura</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Por qué dividieron el proyecto en estas capas?</td><td>Para que cada cambio toque un solo lugar. <code>ArquitecturaTest</code> lo hace cumplir (<a href="#capas">capas</a>).</td></tr>
-            <tr><td>¿Qué responsabilidad tiene cada capa?</td><td><code>controller/</code> traduce HTTP, <code>service/</code> aplica las reglas que piden la base o el reloj, <code>model/</code> son las entidades que validan sus datos, <code>repository/</code> persiste e <code>infrastructure/</code> habla con afuera (<a href="#capas">tabla</a>).</td></tr>
-            <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Las reglas quedarían atadas a HTTP: el importador, que da de alta por <code>GestorRevisionCartelera</code>, y los tests de gestor tendrían que duplicarlas.</td></tr>
-            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>En la entidad si depende de un solo objeto (Experto: R8 en <code>Funcion</code>); en el gestor si necesita la base (R4 en <code>GestorReservas</code>). Es el único paso común a API, importador y seed (<a href="#validacion">dónde se valida</a>).</td></tr>
-            <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code>, el driver, <code>schema.sql</code> y el único SQL nativo (<code>INSERT IGNORE</code> en <code>BloqueoButacaRepository</code>). Los gestores no: dependen de <code>JpaRepository</code>, y los tests ya corren en H2 (<a href="#persistencia">persistencia</a>).</td></tr>
+            <tr><td>¿Por qué dividieron el proyecto en estas capas?</td><td>Cada cambio toca un solo lugar; <code>ArquitecturaTest</code> lo hace cumplir (<a href="#capas">capas</a>).</td></tr>
+            <tr><td>¿Qué responsabilidad tiene cada capa?</td><td>Controller traduce HTTP, service aplica reglas que piden base o reloj, model valida sus datos, repository persiste, infrastructure habla con afuera (<a href="#capas">tabla</a>).</td></tr>
+            <tr><td>¿Qué ocurriría si colocáramos toda la lógica en el Controller?</td><td>Reglas atadas a HTTP: el importador (que da de alta por <code>GestorRevisionCartelera</code>) y los tests tendrían que duplicarlas.</td></tr>
+            <tr><td>¿Dónde debería estar una regla de negocio y por qué?</td><td>Entidad si depende de un objeto (R8 en <code>Funcion</code>); gestor si necesita la base (R4). Único paso común a API, importador y seed (<a href="#validacion">validación</a>).</td></tr>
+            <tr><td>¿Qué componente debería modificarse si cambiamos el motor de base de datos?</td><td><code>application.yml</code>, driver, <code>schema.sql</code> y el único SQL nativo (<code>INSERT IGNORE</code> de <code>BloqueoButacaRepository</code>). Gestores no; los tests ya corren en H2 (<a href="#persistencia">persistencia</a>).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2169,10 +2128,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Dónde está el Model en su aplicación?</td><td>En <code>model/</code>: entidades, enums con comportamiento y Value Objects (<a href="#dominio">dominio</a>). La View son la web y Swing, que reciben <code>*VistaDTO</code> en JSON.</td></tr>
-            <tr><td>¿Cuál es la responsabilidad del Controller?</td><td>Recibir el pedido, validar el DTO (<code>@Valid</code>), llamar al gestor y devolver el DTO con su código: <code>POST /api/reservas</code> → <code>GestorReservas.reservar</code> → 201.</td></tr>
-            <tr><td>¿Qué diferencia hay entre Controller y Service?</td><td>El controller sabe de HTTP y no decide; el service decide reglas y transacción y no sabe de HTTP (<a href="#clases">clases</a>).</td></tr>
-            <tr><td>¿Por qué la View no debería acceder directamente a la base de datos?</td><td>Se saltearía reglas y seguridad y quedaría atada al esquema. Los clientes pasan por la API; en Docker ni tienen ruta a MySQL (<a href="#correr">redes</a>).</td></tr>
+            <tr><td>¿Dónde está el Model en su aplicación?</td><td><code>model/</code> (<a href="#dominio">dominio</a>). La View: web y Swing, con <code>*VistaDTO</code> en JSON.</td></tr>
+            <tr><td>¿Cuál es la responsabilidad del Controller?</td><td>Recibir, validar el DTO (<code>@Valid</code>), llamar al gestor, devolver con su código: <code>POST /api/reservas</code> → <code>GestorReservas.reservar</code> → 201.</td></tr>
+            <tr><td>¿Qué diferencia hay entre Controller y Service?</td><td>Controller sabe HTTP y no decide; service decide reglas y transacción y no sabe HTTP (<a href="#clases">clases</a>).</td></tr>
+            <tr><td>¿Por qué la View no debería acceder directamente a la base de datos?</td><td>Se saltearía reglas y seguridad y quedaría atada al esquema. En Docker ni tiene ruta a MySQL (<a href="#correr">redes</a>).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2182,10 +2141,10 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué problema resuelve DAO?</td><td>Separa cómo se guarda de qué se decide: el gestor pide <code>exigir(id, "la reserva")</code> sin SQL (<a href="#repositorio">repositorios</a>).</td></tr>
-            <tr><td>¿Qué responsabilidad tiene?</td><td>Leer y escribir una entidad: CRUD, consultas derivadas del nombre y <code>@Query</code>. No valida reglas.</td></tr>
-            <tr><td>¿Qué ocurriría si elimináramos esta capa?</td><td>Los gestores usarían <code>EntityManager</code> o JDBC: SQL mezclado con reglas. <code>ArquitecturaTest</code> lo prohíbe.</td></tr>
-            <tr><td>¿DAO y ORM son lo mismo?</td><td>No. DAO es un patrón de acceso a datos (los <code>*Repository</code>); ORM, la herramienta que traduce objetos a tablas (Hibernate).</td></tr>
+            <tr><td>¿Qué problema resuelve DAO?</td><td>Separa cómo se guarda de qué se decide: <code>exigir(id, "la reserva")</code> sin SQL (<a href="#repositorio">repositorios</a>).</td></tr>
+            <tr><td>¿Qué responsabilidad tiene?</td><td>Leer y escribir una entidad (CRUD, consultas derivadas, <code>@Query</code>). No valida reglas.</td></tr>
+            <tr><td>¿Qué ocurriría si elimináramos esta capa?</td><td>SQL o <code>EntityManager</code> mezclado con reglas en los gestores; <code>ArquitecturaTest</code> lo prohíbe.</td></tr>
+            <tr><td>¿DAO y ORM son lo mismo?</td><td>No: DAO es el patrón (<code>*Repository</code>); ORM, la herramienta (Hibernate).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2195,11 +2154,11 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué significa Object-Relational Mapping?</td><td>Trabajar con objetos y que Hibernate genere el SQL: una <code>Reserva</code> con sus <code>Entrada</code> se guarda sin escribir <code>INSERT</code>.</td></tr>
-            <tr><td>¿Qué relación existe entre una Entity y una tabla?</td><td>Clase = tabla, instancia = fila, atributo = columna. <code>ddl-auto: validate</code> y <code>MapeoContraSchemaTest</code> verifican que coincidan (<a href="#base-de-datos">base de datos</a>).</td></tr>
-            <tr><td>¿Qué representa una relación @OneToMany?</td><td>Un padre con muchos hijos: <code>Reserva.entradas</code>, que se guardan y borran con la reserva (<a href="#anotaciones">anotaciones</a>).</td></tr>
-            <tr><td>¿Qué ventajas tiene utilizar ORM?</td><td>Sin SQL repetitivo, transacciones declarativas, base intercambiable y mapeo validado al arrancar.</td></tr>
-            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, lazy fuera de la transacción y escrituras perdidas. Acá el N+1 está medido por tests y <code>@Version</code> vuelve 409 la escritura perdida (<a href="#persistencia">persistencia</a>).</td></tr>
+            <tr><td>¿Qué significa Object-Relational Mapping?</td><td>Objetos de un lado, SQL generado por Hibernate: una <code>Reserva</code> con sus <code>Entrada</code> se guarda sin <code>INSERT</code>.</td></tr>
+            <tr><td>¿Qué relación existe entre una Entity y una tabla?</td><td>Clase = tabla, instancia = fila, atributo = columna; <code>ddl-auto: validate</code> y <code>MapeoContraSchemaTest</code> lo verifican (<a href="#der">DER</a>).</td></tr>
+            <tr><td>¿Qué representa una relación @OneToMany?</td><td>Padre con muchos hijos: <code>Reserva.entradas</code>, que se guardan y borran con ella (<a href="#anotaciones">anotaciones</a>).</td></tr>
+            <tr><td>¿Qué ventajas tiene utilizar ORM?</td><td>Sin SQL repetitivo, transacciones declarativas, base intercambiable, mapeo validado al arrancar.</td></tr>
+            <tr><td>¿Qué problemas puede generar una mala utilización del ORM?</td><td>N+1, <code>EAGER</code> que arrastra grafos, lazy fuera de transacción, escrituras perdidas. Acá: N+1 medido por tests, <code>@Version</code> → 409 (<a href="#persistencia">persistencia</a>).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2209,9 +2168,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Por qué esta tabla tiene esa clave primaria?</td><td><code>id AUTO_INCREMENT</code> donde hay identidad; compuesta donde el par es lo único (<code>bloqueo_butaca</code>). Lo único de negocio va con <code>UNIQUE</code> (<code>usuario.email</code>).</td></tr>
-            <tr><td>¿Qué relación existe entre estas tablas?</td><td>Por FK: <code>funcion</code> → <code>pelicula</code>, <code>sala</code>; <code>reserva</code> → <code>funcion</code>; <code>entrada</code> → <code>reserva</code>, <code>asiento</code> (<a href="#base-de-datos">tablas</a>).</td></tr>
-            <tr><td>¿Qué sucede cuando eliminás este registro?</td><td>Los hijos se van con el padre (<code>ON DELETE CASCADE</code>). Una sala con funciones no se borra: <code>GestorSalas</code> la rechaza por R12 antes que la FK.</td></tr>
+            <tr><td>¿Por qué esta tabla tiene esa clave primaria?</td><td><code>id AUTO_INCREMENT</code> donde hay identidad; compuesta donde el par es lo único (<code>bloqueo_butaca</code>); lo único de negocio, <code>UNIQUE</code> (<code>usuario.email</code>).</td></tr>
+            <tr><td>¿Qué relación existe entre estas tablas?</td><td>FK: <code>funcion</code> → <code>pelicula</code>, <code>sala</code>; <code>reserva</code> → <code>funcion</code>; <code>entrada</code> → <code>reserva</code>, <code>asiento</code> (<a href="#der">DER</a>).</td></tr>
+            <tr><td>¿Qué sucede cuando eliminás este registro?</td><td>Los hijos se van con el padre (<code>ON DELETE CASCADE</code>). Sala con funciones: <code>GestorSalas</code> la rechaza por R12 antes que la FK.</td></tr>
             <tr><td>¿Dónde se está realizando realmente la persistencia?</td><td>En Hibernate, al commit de la transacción del gestor: flush y SQL a MySQL por JDBC.</td></tr>
           </tbody>
         </table>
@@ -2222,12 +2181,12 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué diferencia hay entre GET y POST?</td><td>GET consulta sin efectos y sin cuerpo (<code>GET /api/cartelera</code>); POST crea o ejecuta una acción con cuerpo JSON (<code>POST /api/reservas</code>).</td></tr>
-            <tr><td>¿Por qué utilizaron este endpoint?</td><td>Rutas por recurso y acciones como subrecurso (<code>/api/reservas/{id}/pago</code>); el cliente entra por código porque el id es adivinable (<a href="#api">API</a>).</td></tr>
-            <tr><td>¿Qué significa un HTTP 404?</td><td>Que lo pedido no existe: «No existe la película 999», o el pago de una reserva sin cobrar (<a href="#respuestas">respuestas</a>).</td></tr>
-            <tr><td>¿Qué información viaja en el request?</td><td>Verbo, ruta, query, cabeceras (<code>Authorization: Basic</code> en el panel) y el <code>Pedido*DTO</code>. Nunca el precio ni el monto.</td></tr>
-            <tr><td>¿Qué devuelve el servidor?</td><td>Un código y JSON: el <code>*VistaDTO</code> o <code>{"error"}</code> con el texto del rechazo (<a href="#respuestas">política de respuestas</a>).</td></tr>
-            <tr><td>¿Qué formato de archivo usamos y por qué no otro?</td><td>JSON: el front lo lee nativo, Jackson lo maneja sin configurar y pesa menos que XML. Los comprobantes son <code>.txt</code> porque se imprimen (<a href="#informes">informes</a>).</td></tr>
+            <tr><td>¿Qué diferencia hay entre GET y POST?</td><td>GET consulta, sin efectos ni cuerpo (<code>GET /api/cartelera</code>); POST crea o actúa, con JSON (<code>POST /api/reservas</code>).</td></tr>
+            <tr><td>¿Por qué utilizaron este endpoint?</td><td>Rutas por recurso, acciones como subrecurso (<code>/api/reservas/{id}/pago</code>); el cliente entra por código porque el id es adivinable (<a href="#api">API</a>).</td></tr>
+            <tr><td>¿Qué significa un HTTP 404?</td><td>Que no existe: «No existe la película 999», o el pago de una reserva sin cobrar (<a href="#respuestas">respuestas</a>).</td></tr>
+            <tr><td>¿Qué información viaja en el request?</td><td>Verbo, ruta, query, cabeceras (<code>Authorization: Basic</code> o la cookie) y el <code>Pedido*DTO</code>. Nunca precio ni monto.</td></tr>
+            <tr><td>¿Qué devuelve el servidor?</td><td>Código y JSON: <code>*VistaDTO</code> o <code>{"error"}</code> (<a href="#respuestas">política</a>).</td></tr>
+            <tr><td>¿Qué formato de archivo usamos y por qué no otro?</td><td>JSON: nativo en el front, Jackson sin configurar, más liviano que XML. Comprobantes <code>.txt</code> porque se imprimen; la DDJJ en <code>.csv</code> (<a href="#informes">informes</a>).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2237,11 +2196,11 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Pregunta</th><th>Respuesta</th></tr></thead>
           <tbody>
-            <tr><td>¿Qué patrón están utilizando?</td><td>MVC en capas, Repository, DTO, Strategy, State, Observer, Factory Method, Decorator y Adapter, entre otros (<a href="#grasp">dónde</a>).</td></tr>
-            <tr><td>¿Por qué eligieron ese patrón?</td><td>Cada uno aísla lo que cambia: Strategy el descuento, State lo que permite cada estado, Adapter el proveedor externo, DTO el contrato.</td></tr>
-            <tr><td>¿Qué problema solucionaría?</td><td>Sin State, <code>if (estado == …)</code> repartidos; sin Observer, recibos de cobros que no se confirmaron; sin DTO, renombrar un atributo rompería el front (<a href="#state">State</a>, <a href="#observer">Observer</a>).</td></tr>
-            <tr><td>¿Podrían haberlo hecho de otra manera?</td><td>Sí: JDBC a mano, entidades serializadas, un <code>switch</code> de promociones (<a href="#decisiones">decisiones</a>).</td></tr>
-            <tr><td>¿Qué ventaja aporta esta decisión?</td><td>Cambios locales y testeables: una promo es una clase, una pasarela real otro <code>@Bean</code>.</td></tr>
+            <tr><td>¿Qué patrón están utilizando?</td><td>MVC en capas, Repository, DTO, Strategy, State, Observer, Factory Method, Decorator, Adapter, entre otros (<a href="#grasp">dónde</a>).</td></tr>
+            <tr><td>¿Por qué eligieron ese patrón?</td><td>Cada uno aísla lo que cambia: Strategy el descuento, State lo que permite cada estado, Adapter el proveedor, DTO el contrato.</td></tr>
+            <tr><td>¿Qué problema solucionaría?</td><td>Sin State, <code>if (estado == …)</code> repartidos; sin Observer, recibos de cobros no confirmados; sin DTO, renombrar un atributo rompe el front.</td></tr>
+            <tr><td>¿Podrían haberlo hecho de otra manera?</td><td>Sí: JDBC a mano, entidades serializadas, <code>switch</code> de promociones (<a href="#decisiones">decisiones</a>).</td></tr>
+            <tr><td>¿Qué ventaja aporta esta decisión?</td><td>Cambios locales y testeables: una promo es una clase; una pasarela real, otro <code>@Bean</code>.</td></tr>
           </tbody>
         </table>
       </div>
