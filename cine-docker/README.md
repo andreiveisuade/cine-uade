@@ -36,8 +36,18 @@ Todas en `.env`, explicadas en `.env.example`:
 | `PUERTO_WEB`, `PUERTO_ADMINER` | Los puertos del host |
 | `TZ` | Zona horaria; en UTC la caja del día pierde las funciones de la noche |
 | `TMDB_TOKEN`, `TMDB_REGION` | El importador de cartelera; sin token el resto anda igual |
+| `MP_ACCESS_TOKEN`, `CINE_URL_PUBLICA` | Pago online con Mercado Pago (sandbox) y la dirección a la que vuelve el comprador. Sin token, pasarela emulada |
 
 Si falta una obligatoria, Compose no arranca y dice cuál. Cambiar una clave no alcanza a una base ya creada.
+
+## Mercado Pago (pruebas)
+
+Opcional: sin `MP_ACCESS_TOKEN` el checkout usa la pasarela emulada. Para probar el pago real, sin cobrar:
+
+1. En [mercadopago.com.ar/developers/panel](https://www.mercadopago.com.ar/developers/panel), crear una aplicación de Checkout Pro y copiar el Access Token de **prueba** al `.env`. Después, `docker compose up -d backend`.
+2. Crear dos cuentas de prueba (vendedor y comprador). Entrar a MP con la del **comprador**.
+3. En la web: ingresar como cliente, Mis reservas, Pagar online. Pagar con la tarjeta de prueba, titular `APRO` (aprobado).
+4. En localhost MP no vuelve solo: tocar **Volver al sitio**. Si `CINE_URL_PUBLICA` es público (https), vuelve solo.
 
 ## La base
 
