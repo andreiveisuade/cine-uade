@@ -89,10 +89,7 @@ public class GestorPagos {
     // puede cobrar esa plata no tiene cómo volver (R13).
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
-        Reserva reserva = buscarReserva(checkout.reservaId());
-        validarQueSePuedaCobrar(reserva);
-
-        return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+        return cobrarCheckout(checkout, buscarReserva(checkout.reservaId()));
     }
 
     // El comprador vuelve de la pasarela al navegador, sin nadie que lea un error JSON: lo que impide
@@ -100,17 +97,13 @@ public class GestorPagos {
     public RetornoCheckout retornarDeCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
-        if (pagoRepository.existsByReservaId(reserva.getId())) {
-            return new RetornoCheckout(reserva.getCodigo(), null);
+        if (!reserva.estaPagada()) {
+            try {
+                cobrarCheckout(checkout, reserva);
+            } catch (Rechazo motivo) {
+                return new RetornoCheckout(reserva.getCodigo(), motivo.getMessage());
+            }
         }
-        String autorizacion;
-        try {
-            validarQueSePuedaCobrar(reserva);
-            autorizacion = pasarela.autorizar(checkout);
-        } catch (Rechazo motivo) {
-            return new RetornoCheckout(reserva.getCodigo(), motivo.getMessage());
-        }
-        registrarPago(reserva, checkout.medio(), autorizacion);
         return new RetornoCheckout(reserva.getCodigo(), null);
     }
 
@@ -119,12 +112,19 @@ public class GestorPagos {
     public boolean conciliarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
-        if (pagoRepository.existsByReservaId(reserva.getId())) {
+        if (reserva.estaPagada()) {
             return false;
         }
-        validarQueSePuedaCobrar(reserva);
-        registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+        cobrarCheckout(checkout, reserva);
         return true;
+    }
+
+    // Duplicated Code → Extract Method: confirmar, volver y conciliar cobran igual y difieren solo en qué
+    // hacen con el rechazo (propagarlo, avisarlo, contarlo). La idempotencia mira el estado de la reserva,
+    // que pasa a PAGADA en la misma transacción que guarda el pago: la base se consulta una vez, al validar.
+    private Pago cobrarCheckout(PasarelaPagos.Checkout checkout, Reserva reserva) {
+        validarQueSePuedaCobrar(reserva);
+        return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
     }
 
     private PasarelaPagos.Checkout buscarCheckout(String checkoutId) {
