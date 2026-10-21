@@ -123,8 +123,8 @@ public class MercadoPagoHttp implements PasarelaPagos {
     }
 
     // Lo que dijo el comprador al volver (la query de la back_url) no cuenta: se puede escribir a mano.
-    // Cuenta lo que MP tiene registrado para ese external_reference, y solo si es el monto y la moneda
-    // del checkout: un aprobado por otra cosa no paga esta reserva.
+    // Cuenta lo que MP tiene registrado para ese external_reference, y solo si es el monto, la moneda
+    // y un tipo de pago del medio del checkout: un aprobado por otra cosa no paga esta reserva.
     @Override
     public String autorizar(Checkout checkout) {
         JsonNode pagos = pedir(get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
@@ -134,12 +134,13 @@ public class MercadoPagoHttp implements PasarelaPagos {
             if (!"approved".equals(pago.path("status").asText())) {
                 continue;
             }
-            if (coincide(pago, checkout)) {
+            if (coincide(pago, checkout) && tiposDe(checkout.medio()).contains(pago.path("payment_type_id").asText())) {
                 return "MP-" + pago.path("id").asText();
             }
-            log.warn("Pago {} de MP aprobado para el checkout {} por {} {}: se esperaban ARS {}",
+            log.warn("Pago {} de MP aprobado para el checkout {} por {} {} con {}: se esperaban ARS {} con {}",
                     pago.path("id").asText(), checkout.id(), pago.path("currency_id").asText(),
-                    pago.path("transaction_amount").asText(), checkout.monto());
+                    pago.path("transaction_amount").asText(), pago.path("payment_type_id").asText(),
+                    checkout.monto(), tiposDe(checkout.medio()));
             aprobadoQueNoCoincide = true;
         }
         if (aprobadoQueNoCoincide) {
@@ -157,12 +158,14 @@ public class MercadoPagoHttp implements PasarelaPagos {
     }
 
     // Del medio pedido depende la promo, así que MP solo ofrece los tipos de pago que son ese medio.
+    // account_money va en todos: MP no deja excluirlo (400 "account_money cannot be excluded") y siempre
+    // lo ofrece, así que un aprobado con saldo también vale para el medio.
     // QR es pagar desde la app de MP, que descuenta del dinero en cuenta; la transferencia sale del banco
     // o de la cuenta de MP (CVU), que para MP es también dinero en cuenta.
     private static Set<String> tiposDe(MedioPago medio) {
         return switch (medio) {
-            case DEBITO -> Set.of("debit_card");
-            case CREDITO -> Set.of("credit_card");
+            case DEBITO -> Set.of("debit_card", "account_money");
+            case CREDITO -> Set.of("credit_card", "account_money");
             case QR -> Set.of("account_money");
             case TRANSFERENCIA -> Set.of("bank_transfer", "account_money");
             case EFECTIVO -> throw new IllegalStateException("El efectivo no abre checkout");
