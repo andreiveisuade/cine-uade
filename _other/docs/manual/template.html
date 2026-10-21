@@ -1207,9 +1207,16 @@ docker compose up -d --build
       <h2>Modelo de datos (DER)</h2>
       <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 20 tablas.</p>
       <figure class="diagram">
-        {{SVG_DER}}
-        <figcaption>Las 20 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+        {{SVG_DER_DESIGN}}
+        <figcaption>Las 20 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
       </figure>
+      <details>
+        <summary>Versión completa en PlantUML (<code>der.puml</code>)</summary>
+        <figure class="diagram">
+          {{SVG_DER}}
+          <figcaption>Las 20 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+        </figure>
+      </details>
       <ul>
         <li><code>bloqueo_butaca</code> no tiene id: su PK <code>(funcion_id, asiento_id)</code> es la regla de que una sola sesión tiene la butaca mientras elige (<a href="#bloqueo">bloqueo</a>).</li>
         <li><code>reserva.codigo</code> <code>UNIQUE</code> es la credencial de la puerta; <code>reserva.version</code> es el <code>@Version</code> (<a href="#cobrar-cancelar">cobrar contra cancelar</a>).</li>

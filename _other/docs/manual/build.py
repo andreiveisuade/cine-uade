@@ -12,6 +12,8 @@ svg_map = {
     "{{SVG_DOMINIO_VENTAS}}": DIAGRAMAS / "clases-ventas.svg",
     "{{SVG_DOMINIO_CANDY}}": DIAGRAMAS / "clases-candy-valores.svg",
     "{{SVG_DER}}": DIAGRAMAS / "der.svg",
+    # Hecho con diagram-design, como sistema-contexto.
+    "{{SVG_DER_DESIGN}}": DIAGRAMAS / "der-design.svg",
     # Hecho con diagram-design: el .html es la fuente y el .svg sale de su export_svg.py.
     "{{SVG_CONTEXTO}}": DIAGRAMAS / "sistema-contexto.svg",
     "{{SVG_RESERVA_CLASES}}": DIAGRAMAS / "reserva-clases.svg",
