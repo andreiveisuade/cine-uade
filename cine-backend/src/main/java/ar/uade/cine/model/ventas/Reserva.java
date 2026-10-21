@@ -81,7 +81,14 @@ public class Reserva {
     protected Reserva() {
     }
 
-    public Reserva(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
+    // Patrón Creador (GRASP): antes GestorReservas armaba las entradas y se las entregaba; la reserva las contiene
+    // y conoce la función que les pone precio, así que las crea ella. Primero cada entrada valida su butaca (R9)
+    // y después la reserva el pedido entero (tope, repetidas): el mismo orden que antes.
+    public Reserva(Funcion funcion, Cliente cliente, List<ButacaPedida> butacas, LocalDateTime creadaEn) {
+        ValidadorReserva.validarFuncion(funcion);
+        List<Entrada> entradas = butacas.stream()
+                .map(b -> new Entrada(b.asiento(), b.tarifa(), funcion.precioDe(b.asiento(), funcion.getSala())))
+                .toList();
         ValidadorReserva.validar(funcion, cliente, entradas, creadaEn);
         this.funcion = funcion;
         this.cliente = cliente;

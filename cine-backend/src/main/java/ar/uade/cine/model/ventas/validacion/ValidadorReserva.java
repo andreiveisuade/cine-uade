@@ -27,13 +27,18 @@ public final class ValidadorReserva {
     }
 
     public static void validar(Funcion funcion, Cliente cliente, List<Entrada> entradas, LocalDateTime creadaEn) {
-        Regla.objeto(funcion).obligatorio("Falta la función");
+        validarFuncion(funcion);
         Regla.objeto(cliente).obligatorio("Falta el cliente");
         Regla.objeto(creadaEn).obligatorio("Falta la fecha y hora de la reserva");
         Regla.lista(entradas).noVacia("Hay que elegir al menos una butaca").hasta(MAXIMO_BUTACAS, TOPE);
         repetida(entradas).ifPresent(codigo -> {
             throw new DatoInvalido("La butaca " + codigo + " está repetida en el pedido");
         });
+    }
+
+    // Aparte porque la reserva necesita la función para ponerles precio a sus entradas antes de validarlas.
+    public static void validarFuncion(Funcion funcion) {
+        Regla.objeto(funcion).obligatorio("Falta la función");
     }
 
     // El mismo tope para el bloqueo, que aparta las butacas antes de que la reserva exista.

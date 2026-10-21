@@ -18,8 +18,8 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.salas.Asiento;
-import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.ButacaPedida;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
@@ -62,10 +62,12 @@ public class GestorReservas {
 
     private Reserva vender(Funcion funcion, Cliente cliente, Map<String, TipoTarifa> butacas, String sesion) {
         // Un pedido sin butacas es uno vacío: la reserva sin entradas la rechaza Reserva.
-        List<Entrada> entradas = armarEntradas(funcion, butacas == null ? Map.of() : butacas);
-        // La reserva valida el pedido entero (tope, repetidas) antes de mirar la ocupación, como el bloqueo:
-        // once butacas con una tomada eran un 409 y la web recargaba el mapa por un pedido que nunca iba a pasar.
-        Reserva nueva = new Reserva(funcion, cliente, entradas, reloj.ahora());
+        List<ButacaPedida> pedidas = butacasPedidas(funcion, butacas == null ? Map.of() : butacas);
+        // La reserva crea sus entradas (Creador) y valida el pedido entero (tope, repetidas) antes de mirar la
+        // ocupación, como el bloqueo: once butacas con una tomada eran un 409 y la web recargaba el mapa por un
+        // pedido que nunca iba a pasar.
+        Reserva nueva = new Reserva(funcion, cliente, pedidas, reloj.ahora());
+        List<Entrada> entradas = nueva.getEntradas();
         exigirLibres(entradas, ocupacion.asientosOcupados(funcion.getId(), sesion));
         Reserva reserva = guardarCompitiendoPorLasButacas(nueva);
         if (sesion != null) {
@@ -79,18 +81,17 @@ public class GestorReservas {
         return reserva;
     }
 
-    private List<Entrada> armarEntradas(Funcion funcion, Map<String, TipoTarifa> butacas) {
-        Sala sala = funcion.getSala();
+    // Lo único que la reserva no puede hacer sola: buscar los asientos en la base. Lista y no mapa: "a1" y "A1"
+    // son el mismo asiento, y un mapa los juntaría en silencio en vez de dejar que la reserva rechace la repetida.
+    private List<ButacaPedida> butacasPedidas(Funcion funcion, Map<String, TipoTarifa> butacas) {
         List<Asiento> deLaSala = asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(funcion.getSalaId());
 
-        List<Entrada> entradas = new ArrayList<>();
+        List<ButacaPedida> pedidas = new ArrayList<>();
         for (Map.Entry<String, TipoTarifa> pedido : butacas.entrySet()) {
             // Buscar entre los de esta sala garantiza que sea de la sala de la función; la base no lo valida.
-            Asiento asiento = Asiento.exigirConCodigo(deLaSala, pedido.getKey());
-            // La entrada valida su butaca (R9) y resuelve la tarifa; que esté libre depende de las otras reservas.
-            entradas.add(new Entrada(asiento, pedido.getValue(), funcion.precioDe(asiento, sala)));
+            pedidas.add(new ButacaPedida(Asiento.exigirConCodigo(deLaSala, pedido.getKey()), pedido.getValue()));
         }
-        return entradas;
+        return pedidas;
     }
 
     private static void exigirLibres(List<Entrada> entradas, Set<Integer> ocupados) {
