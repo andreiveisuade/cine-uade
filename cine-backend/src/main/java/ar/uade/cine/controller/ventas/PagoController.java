@@ -1,5 +1,9 @@
 package ar.uade.cine.controller.ventas;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +23,7 @@ import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.RetornoCheckout;
 
 import jakarta.validation.Valid;
 
@@ -69,5 +74,16 @@ public class PagoController {
     public ResponseEntity<PagoVistaDTO> confirmarCheckout(@PathVariable String id) {
         PagoVistaDTO pago = vistas.pago(pagos.confirmarCheckout(id));
         return Creado.en("/api/reservas/" + pago.reservaId() + "/pago", pago);
+    }
+
+    // La back_url de Mercado Pago: llega el navegador del comprador, así que contesta con un 302 a su
+    // ticket y no con JSON. Si no se cobró, el ticket recibe el motivo en `aviso`.
+    @Operation(summary = "Vuelta desde Mercado Pago: cobra si MP aprobó el pago y redirige al ticket")
+    @GetMapping("/api/checkouts/{id}/retorno")
+    public ResponseEntity<Void> retornoCheckout(@PathVariable String id) {
+        RetornoCheckout retorno = pagos.retornarDeCheckout(id);
+        String destino = "/#/ticket/" + retorno.codigoReserva() + (retorno.aviso() == null
+                ? "" : "?aviso=" + URLEncoder.encode(retorno.aviso(), StandardCharsets.UTF_8));
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(destino)).build();
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -84,12 +85,35 @@ public class GestorPagos {
     // Se valida antes de autorizar: autorizar es cobrarle al cliente, y si la reserva ya no se
     // puede cobrar esa plata no tiene cómo volver (R13).
     public Pago confirmarCheckout(String checkoutId) {
-        PasarelaPagos.Checkout checkout = pasarela.buscar(checkoutId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));
+        PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
         validarQueSePuedaCobrar(reserva);
 
         return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+    }
+
+    // El comprador vuelve de la pasarela al navegador, sin nadie que lea un error JSON: lo que impide
+    // cobrar viaja como aviso. Recargar la página de vuelta no es un segundo cobro: ya está pagada.
+    public RetornoCheckout retornarDeCheckout(String checkoutId) {
+        PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
+        Reserva reserva = buscarReserva(checkout.reservaId());
+        if (pagoRepository.existsByReservaId(reserva.getId())) {
+            return new RetornoCheckout(reserva.getCodigo(), null);
+        }
+        String autorizacion;
+        try {
+            validarQueSePuedaCobrar(reserva);
+            autorizacion = pasarela.autorizar(checkout);
+        } catch (Rechazo motivo) {
+            return new RetornoCheckout(reserva.getCodigo(), motivo.getMessage());
+        }
+        registrarPago(reserva, checkout.medio(), autorizacion);
+        return new RetornoCheckout(reserva.getCodigo(), null);
+    }
+
+    private PasarelaPagos.Checkout buscarCheckout(String checkoutId) {
+        return pasarela.buscar(checkoutId)
+                .orElseThrow(() -> new RecursoNoEncontrado("No existe el checkout " + checkoutId));
     }
 
     private Reserva buscarReserva(int reservaId) {

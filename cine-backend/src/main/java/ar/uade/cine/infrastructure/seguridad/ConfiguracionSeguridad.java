@@ -61,6 +61,7 @@ public class ConfiguracionSeguridad {
             "/api/peliculas/*/funciones",
             "/api/funciones/*",
             "/api/reservas/codigo/*",
+            "/api/checkouts/*/retorno",
             "/api/candy/productos", "/api/candy/productos/*",
             "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",

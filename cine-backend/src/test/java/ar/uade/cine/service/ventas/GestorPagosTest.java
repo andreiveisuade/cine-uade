@@ -21,8 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
 
 import ar.uade.cine.repository.ventas.PagoRepository;
@@ -71,6 +74,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private PagoRepository pagoRepository;
     @Autowired
     private PoliticaPromociones politica;
+    @Autowired
+    private PlatformTransactionManager transacciones;
     @Autowired
     private ApplicationEventPublisher eventos;
     @Autowired
@@ -392,6 +397,54 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertEquals("La reserva está cancelada: no se puede cobrar", error.getMessage());
         assertEquals(0, pasarela.autorizaciones);
+    }
+
+    @Test
+    void volverDeLaPasarelaConElPagoAprobadoCobraLaReserva() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+
+        RetornoCheckout retorno = pagos.retornarDeCheckout(checkout);
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), null), retorno);
+        assertEquals(Dinero.de(5000.0), pagoRepository.findByReservaId(reserva.getId()).orElseThrow().getMonto());
+    }
+
+    @Test
+    void volverDeLaPasarelaSinPagoAprobadoNoCobraYDiceElMotivo() {
+        PasarelaQueNoAprueba pasarela = new PasarelaQueNoAprueba();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, eventos, reloj);
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal()).id();
+
+        // Armado a mano no tiene el proxy de @Transactional: sin esto la función LAZY no se carga.
+        RetornoCheckout retorno = new TransactionTemplate(transacciones)
+                .execute(estado -> conEsaPasarela.retornarDeCheckout(checkout));
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), "Mercado Pago rechazó el pago"), retorno);
+        assertFalse(pagoRepository.existsByReservaId(reserva.getId()));
+    }
+
+    // Recargar la página de vuelta no es un segundo cobro ni un error para el comprador.
+    @Test
+    void volverDosVecesDeLaPasarelaCobraUnaSola() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+        pagos.retornarDeCheckout(checkout);
+
+        RetornoCheckout otraVez = pagos.retornarDeCheckout(checkout);
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), null), otraVez);
+        assertEquals(1, pagoRepository.findByReservaIdIn(List.of(reserva.getId())).size());
+    }
+
+    private static class PasarelaQueNoAprueba extends MercadoPagoEmulado {
+
+        @Override
+        public String autorizar(Checkout checkout) {
+            throw new ConflictoDeNegocio("Mercado Pago rechazó el pago");
+        }
     }
 
     private static class PasarelaQueCuenta extends MercadoPagoEmulado {
