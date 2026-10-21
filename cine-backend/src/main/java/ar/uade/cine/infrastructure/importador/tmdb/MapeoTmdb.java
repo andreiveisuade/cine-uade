@@ -66,19 +66,21 @@ final class MapeoTmdb {
     // Las tres respuestas de TMDB por película: la del listado, el detalle y las fechas de estreno.
     // Nace enCartelera = false: nada se publica sin que el encargado la mire.
     static DatosPelicula aPelicula(JsonNode resumen, JsonNode detalle, JsonNode estrenos) {
-        return new DatosPelicula(
-                textoDe(detalle, "title", textoDe(resumen, "title", "")),
-                detalle.path("runtime").asInt(0),
-                generosDe(detalle),
-                clasificacionDe(certificacionArgentina(estrenos)),
-                "",
-                textoDe(detalle, "overview", ""),
-                anioDe(detalle.path("release_date").asText(null)),
-                idiomaDe(detalle.path("original_language").asText("")),
-                urlPoster(resumen.path("poster_path").asText(null)),
-                false,
-                puntajeDe(detalle.path("vote_average").asDouble(0)),
-                detalle.path("vote_count").asInt(0));
+        // Builder: cada dato de TMDB queda nombrado junto a su componente.
+        return DatosPelicula.con()
+                .titulo(textoDe(detalle, "title", textoDe(resumen, "title", "")))
+                .duracion(detalle.path("runtime").asInt(0))
+                .generos(generosDe(detalle))
+                .clasificacion(clasificacionDe(certificacionArgentina(estrenos)))
+                .director("")
+                .sinopsis(textoDe(detalle, "overview", ""))
+                .anio(anioDe(detalle.path("release_date").asText(null)))
+                .idiomaOriginal(idiomaDe(detalle.path("original_language").asText("")))
+                .posterUrl(urlPoster(resumen.path("poster_path").asText(null)))
+                .enCartelera(false)
+                .puntaje(puntajeDe(detalle.path("vote_average").asDouble(0)))
+                .votos(detalle.path("vote_count").asInt(0))
+                .armar();
     }
 
     static List<Genero> generosDe(JsonNode detalle) {
