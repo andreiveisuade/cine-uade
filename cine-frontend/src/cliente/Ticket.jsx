@@ -1,4 +1,5 @@
 import { Alert, Anchor, Button, Code, Grid, Group, Paper, Stack, Text } from "@mantine/core";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router";
 import * as api from "../api/api-http.js";
 import { etiqueta } from "../api/etiquetas.js";
@@ -8,6 +9,24 @@ import { EsperaOError } from "../componentes/Estado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { PagarOnline } from "./PagarOnline.jsx";
 import { useSesion } from "./sesion.jsx";
+
+// Qué le decimos al comprador según el estado que manda el backend; el front no decide vencimientos.
+const AVISO_POR_ESTADO = {
+  RESERVADA: { color: "green", texto: "Reserva confirmada. Pagala online o en boletería antes de que venza." },
+  PAGADA: { color: "green", texto: "Entrada paga. Mostrá el código en la puerta." },
+  EXPIRADA: { color: "gray", texto: "Esta reserva venció. Las butacas ya se liberaron." },
+  CANCELADA: { color: "gray", texto: "Esta reserva está cancelada." },
+};
+
+const CODIGO_POR_ESTADO = {
+  RESERVADA: "Todavía no está paga. Sirve una sola vez cuando se pague.",
+  PAGADA: "Mostralo en la puerta. Sirve una sola vez.",
+  EXPIRADA: "Ya no sirve: la reserva venció.",
+  CANCELADA: "Ya no sirve: la reserva se canceló.",
+};
+
+// El pago se concilia solo en el backend: mientras espera, se vuelve a pedir para que aparezca "Pagada" sin recargar.
+const CADA_MS = 10_000;
 
 const LINEA = "=".repeat(44);
 
@@ -55,7 +74,7 @@ function TarjetaCodigo({ reserva }) {
         {reserva.codigo.slice(0, 4)} {reserva.codigo.slice(4)}
       </Text>
       <Text size="xs" c="dimmed">
-        {usada ? `Ya se usó el ${fechaHora(usada)}` : "Mostralo en la puerta. Sirve una sola vez."}
+        {usada ? `Ya se usó el ${fechaHora(usada)}` : CODIGO_POR_ESTADO[reserva.estado]}
       </Text>
     </Paper>
   );
@@ -101,8 +120,22 @@ export function Ticket() {
     recien?.codigo === codigo ? recien : api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
   ]), [codigo]);
+  const [actualizada, setActualizada] = useState(null);
+  const inicial = carga.datos?.[0];
+  const esperandoPago = inicial?.estado === "RESERVADA" && inicial.cobrable
+    && !(actualizada?.codigo === codigo && actualizada.estado !== "RESERVADA");
+
+  useEffect(() => {
+    if (!esperandoPago) return;
+    const intervalo = setInterval(() => {
+      api.obtenerReservaPorCodigo(codigo).then(setActualizada, () => {});
+    }, CADA_MS);
+    return () => clearInterval(intervalo);
+  }, [esperandoPago, codigo]);
+
   if (!carga.datos) return <EsperaOError carga={carga} />;
-  const reserva = carga.datos[0];
+  const reserva = actualizada?.codigo === codigo ? actualizada : carga.datos[0];
+  const avisoEstado = AVISO_POR_ESTADO[reserva.estado];
   const productos = carga.datos[1];
   const conAcreditacion = reserva.entradas.filter((e) => e.tarifa && e.tarifa !== "GENERAL");
 
@@ -114,9 +147,7 @@ export function Ticket() {
   return (
     <Stack gap="md">
       {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
-      {reserva.estado === "CANCELADA"
-        ? <Alert color="gray">Esta reserva está cancelada.</Alert>
-        : <Alert color="green">Reserva confirmada. Presentá este comprobante en boletería.</Alert>}
+      {avisoEstado && <Alert color={avisoEstado.color}>{avisoEstado.texto}</Alert>}
       <Grid gap="md" align="flex-start">
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Stack gap="md">
