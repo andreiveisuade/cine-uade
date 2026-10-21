@@ -1,0 +1,24 @@
+@startuml
+!include _estilo-patrones.iuml
+class "Vista web (cine-frontend)" as Web <<View>>
+class "Pantalla Swing" as Swing <<View>>
+class ReservaController <<Controller>> {
+  + reservar(pedido)
+  + detalle(id)
+}
+class GestorReservas <<Model>> {
+  + reservar(...)
+}
+class Reserva <<Model>>
+class PedidoReservaDTO
+class ReservaVistaDTO
+Web --> ReservaController : PedidoReservaDTO
+Swing --> ReservaController : PedidoReservaDTO
+ReservaController --> GestorReservas : invoca
+GestorReservas --> Reserva
+ReservaController ..> ReservaVistaDTO : datos para mostrar
+Web ..> ReservaVistaDTO
+Swing ..> ReservaVistaDTO
+ReservaController ..> PedidoReservaDTO
+note bottom of ReservaController : las Vistas nunca hablan\ncon el modelo ni con las entidades
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+!include _estilo-patrones.iuml
+abstract class Producto <<Component>> {
+  + getPrecioSuelto() : Dinero
+  + getAhorro() : Dinero
+  + getComponentes() : List<ItemCombo>
+  + esCombo() : boolean
+}
+class ProductoSuelto <<Leaf>> {
+  + getPrecioSuelto() : Dinero
+  + getAhorro() : Dinero
+}
+class Combo <<Composite>> {
+  - componentes : List<ItemCombo>
+  + armar(nombre, precio, componentes) : Combo
+  + getPrecioSuelto() : Dinero
+  + getAhorro() : Dinero
+}
+class ItemCombo {
+  - cantidad : int
+  + precioSuelto() : Dinero
+}
+Producto <|-- ProductoSuelto
+Producto <|-- Combo
+Combo *--> "1..*" ItemCombo : componentes
+ItemCombo --> Producto
+note bottom of Combo : getPrecioSuelto() suma\nlos precios de sus componentes
+@enduml

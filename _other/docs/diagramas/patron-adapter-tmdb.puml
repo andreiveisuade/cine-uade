@@ -1,0 +1,17 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorImportaciones <<Client>>
+interface CatalogoExterno <<Target>> {
+  + enCartelera(paginas)
+  + consultar()
+}
+class TmdbHttp <<Adapter>> {
+  + enCartelera(paginas)
+  + consultar()
+}
+class "API REST de TMDB" as Tmdb <<Adaptee>>
+GestorImportaciones --> CatalogoExterno
+CatalogoExterno <|.. TmdbHttp
+TmdbHttp --> Tmdb
+note bottom of TmdbHttp : traduce enCartelera() a pedidos HTTP\ny el JSON a DatosPelicula
+@enduml

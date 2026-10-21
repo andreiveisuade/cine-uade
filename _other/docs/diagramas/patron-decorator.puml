@@ -1,0 +1,28 @@
+@startuml
+!include _estilo-patrones.iuml
+interface PasswordEncoder <<Component>> {
+  + encode(clave)
+  + matches(clave, hash)
+}
+class PasswordBcrypt <<Decorator>> {
+  - claves : PasswordEncoder
+  + encode(clave)
+}
+class BCryptPasswordEncoder <<ConcreteComponent>>
+interface SecurityContextRepository <<Component>> {
+  + saveContext(contexto, pedido, respuesta)
+}
+class SesionDeClientes <<Decorator>> {
+  - sesiones : HttpSessionSecurityContextRepository
+  + saveContext(contexto, pedido, respuesta)
+}
+class HttpSessionSecurityContextRepository <<ConcreteComponent>>
+PasswordEncoder <|.. PasswordBcrypt
+PasswordEncoder <|.. BCryptPasswordEncoder
+PasswordBcrypt o--> PasswordEncoder
+SecurityContextRepository <|.. SesionDeClientes
+SecurityContextRepository <|.. HttpSessionSecurityContextRepository
+SesionDeClientes o--> HttpSessionSecurityContextRepository
+note bottom of PasswordBcrypt : claves de más de 72 bytes\npasan por SHA-256 antes
+note bottom of SesionDeClientes : solo guarda sesión\nsi el usuario es cliente
+@enduml

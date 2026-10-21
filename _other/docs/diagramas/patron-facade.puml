@@ -1,0 +1,26 @@
+@startuml
+!include _estilo-patrones.iuml
+class PantallaPromociones <<Client>>
+class Apis <<Facade>> {
+  + {static} sobre(http)
+}
+class ApiPromociones <<Facade>> {
+  + listar()
+  + crear(promocion)
+}
+class ApiVentas <<Facade>>
+class ClienteHttp <<Facade>> {
+  + lista(ruta, tipo)
+  + post(ruta, cuerpo, tipo)
+}
+class HttpClient <<Subsystem>>
+class ObjectMapper <<Subsystem>>
+PantallaPromociones --> Apis
+Apis --> ApiPromociones
+Apis --> ApiVentas
+ApiPromociones --> ClienteHttp
+ApiVentas --> ClienteHttp
+ClienteHttp --> HttpClient
+ClienteHttp --> ObjectMapper
+note bottom of ClienteHttp : esconde HTTP, JSON y errores\ndetrás de lista() y post()
+@enduml

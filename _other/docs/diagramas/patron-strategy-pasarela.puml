@@ -1,0 +1,24 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorPagos <<Context>> {
+  - pasarela : PasarelaPagos
+  + iniciarCheckout(reservaId, medio)
+}
+interface PasarelaPagos <<Strategy>> {
+  + crear(reservaId, medio, monto, vence)
+  + buscar(checkoutId)
+  + autorizar(checkout)
+  + aprobadosDesde(desde)
+}
+class MercadoPagoHttp <<ConcreteStrategy>>
+class MercadoPagoEmulado <<ConcreteStrategy>>
+class Adaptadores <<Config>> {
+  + pasarelaPagos(mercadoPago)
+}
+GestorPagos o--> PasarelaPagos
+PasarelaPagos <|.. MercadoPagoHttp
+PasarelaPagos <|.. MercadoPagoEmulado
+Adaptadores ..> MercadoPagoHttp : elige
+Adaptadores ..> MercadoPagoEmulado : elige
+note right of GestorPagos : cobra sin saber qué pasarela hay;\nelige Adaptadores según el token
+@enduml

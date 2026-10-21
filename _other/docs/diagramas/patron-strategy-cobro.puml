@@ -1,0 +1,27 @@
+@startuml
+!include _estilo-patrones.iuml
+class PanelCobro <<Context>> {
+  - forma : FormaDeCobro
+  - elegirForma()
+  - enviar()
+}
+interface FormaDeCobro <<Strategy>> {
+  + boton() : String
+  + explicacion() : String
+  + enviar(reserva, medio, caja)
+  + para(medio, api) : FormaDeCobro
+}
+class CobroEnCaja <<ConcreteStrategy>> {
+  + enviar(reserva, medio, caja)
+}
+class CobroPorCheckout <<ConcreteStrategy>> {
+  + enviar(reserva, medio, caja)
+}
+class ApiVentas
+PanelCobro o--> FormaDeCobro
+FormaDeCobro <|.. CobroEnCaja
+FormaDeCobro <|.. CobroPorCheckout
+CobroEnCaja --> ApiVentas : cobrar
+CobroPorCheckout --> ApiVentas : abrirCheckout
+note right of PanelCobro : delega el "cómo" cobrar\nen la forma elegida según el medio
+@enduml

@@ -1,0 +1,13 @@
+@startuml
+!include _estilo-patrones.iuml
+class GestorProgramaciones <<Client>> {
+  - planDe(grilla, pelicula, tope) : PlanProgramacion
+}
+class AgendaDeSala <<NullObject>> {
+  + vacia() : AgendaDeSala
+  + chocaCon(inicio, fin) : Optional<Funcion>
+  + chocaEn(inicio, fin) : boolean
+}
+GestorProgramaciones --> AgendaDeSala
+note bottom of AgendaDeSala : vacia() nunca choca:\nel cliente no pregunta si es null
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+!include _estilo-patrones.iuml
+class PantallaPeliculas <<Client>>
+class "BotonesDeFila<T>" as Inv <<Invoker>> {
+  + agregarA(panel : JPanel)
+  + refrescar()
+  - disparar(accion)
+}
+interface "AccionDeFila<T>" as Cmd <<Command>> {
+  + texto() : String
+  + habilitada(fila : T) : boolean
+  + ejecutar(fila : T)
+}
+class PublicarPelicula <<ConcreteCommand>>
+class BorrarPelicula <<ConcreteCommand>>
+class CancelarReserva <<ConcreteCommand>>
+class ApiCartelera <<Receiver>>
+class ApiVentas <<Receiver>>
+PantallaPeliculas ..> Inv
+PantallaPeliculas ..> PublicarPelicula : <<create>>
+Inv o--> "*" Cmd
+Cmd <|.. PublicarPelicula
+Cmd <|.. BorrarPelicula
+Cmd <|.. CancelarReserva
+PublicarPelicula --> ApiCartelera
+BorrarPelicula --> ApiCartelera
+CancelarReserva --> ApiVentas
+note bottom of Inv : cada botón dispara una acción\nsin saber qué API llama
+@enduml

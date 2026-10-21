@@ -1,0 +1,22 @@
+@startuml
+!include _estilo-patrones.iuml
+interface PasarelaPagos <<punto de variación>>
+class MercadoPagoHttp
+class MercadoPagoEmulado
+interface Reloj <<punto de variación>>
+interface CatalogoExterno <<punto de variación>>
+class TmdbHttp
+class GestorPagos
+class GestorReservas
+class GestorImportaciones
+GestorPagos --> PasarelaPagos
+GestorPagos --> Reloj
+GestorReservas --> Reloj
+GestorImportaciones --> CatalogoExterno
+MercadoPagoHttp ..|> PasarelaPagos
+MercadoPagoEmulado ..|> PasarelaPagos
+TmdbHttp ..|> CatalogoExterno
+note bottom of PasarelaPagos : la pasarela cambia (real/emulada):\nlos gestores no se enteran
+note bottom of Reloj : el tiempo cambia (real/movible en tests)
+note bottom of CatalogoExterno : TMDB puede caerse o cambiar de proveedor
+@enduml

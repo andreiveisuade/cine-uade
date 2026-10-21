@@ -11,26 +11,35 @@ set namespaceSeparator none
 ' de cada decision y la materia prima del manual.
 
 package "model.candy" {
-  ' Un combo nace solo por armarCombo(), que crea sus ItemCombo (Creador) y
-  ' valida R14 antes de devolverlo: no hay combo sin componentes declarados.
-  ' editar() revisa R14 sobre el combo editado; exigirQueSigaConviniendo() es
-  ' el otro lado, el combo al que le abarataron un componente suelto: el combo
-  ' no se entera solo, se lo pregunta el gestor. Sin stock no se borra, sale de
-  ' la venta: vive en compras viejas.
-  class Producto <<Entity>> {
+  ' Composite: Producto es el Component y cada uno contesta su precio suelto y su
+  ' ahorro, sin que nadie pregunte si es combo. Combo.armar() crea sus ItemCombo
+  ' (Creador) y valida R14 antes de devolverlo: no hay combo sin componentes.
+  ' Editar un combo revisa R14 (validarEdicion); exigirQueSigaConviniendo() es el
+  ' otro lado, el combo al que le abarataron un componente: se lo pregunta el
+  ' gestor. Sin stock no se borra, sale de la venta: vive en compras viejas.
+  abstract class Producto <<Entity>> {
     +getNombre(): String
     +getTipo(): TipoProducto
     +getPrecio(): Dinero
     +estaDisponible(): boolean
+    +{abstract} getPrecioSuelto(): Dinero
+    +{abstract} getAhorro(): Dinero
     +getComponentes(): List<ItemCombo>
-    +esCombo(): boolean
-    {static} +armarCombo(nombre, precio, componentes): Producto
     +editar(nombre, precio)
-    +exigirQueSigaConviniendo()
     +sacarDeLaVenta() / volverALaVenta()
   }
+  class ProductoSuelto <<Entity>> {
+    +getPrecioSuelto(): Dinero
+    +getAhorro(): Dinero
+  }
+  class Combo <<Entity>> {
+    {static} +armar(nombre, precio, componentes): Combo
+    +getPrecioSuelto(): Dinero
+    +getAhorro(): Dinero
+    +exigirQueSigaConviniendo()
+  }
   ' La autoreferencia es lo que hace al combo una promocion y no un producto
-  ' con nombre bonito: sabiendo que trae, el propio Producto valida que cueste
+  ' con nombre bonito: sabiendo que trae, el propio Combo valida que cueste
   ' menos que comprarlo suelto (R14).
   class ItemCombo <<Embeddable>> {
     +producto(): Producto
@@ -118,8 +127,9 @@ package "model.tiempo" {
 ' De la vista 2/3: solo el nombre, para anclar las flechas.
 class Cliente <<Entity>>
 class Reserva <<Entity>>
-' 0 si el producto no es combo; 2 o mas si lo es.
-Producto "1" *-- "0, 2..*" ItemCombo : contiene y crea >
+Producto <|-- ProductoSuelto
+Producto <|-- Combo
+Combo "1" *-- "2..*" ItemCombo : contiene y crea >
 ItemCombo "*" --> "1" Producto : refiere a >
 CompraCandy "*" --> "0..1" Cliente
 CompraCandy "*" --> "0..1" Reserva

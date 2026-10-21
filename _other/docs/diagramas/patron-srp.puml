@@ -1,0 +1,32 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Violación: GestorReservas hacía todo (antes)" {
+  class GestorReservas #FBE3E3 {
+    + reservar() : Reserva
+    + cancelar(id) : Reserva
+    + validarDatos() : void
+    + emitirTicket(r) : void
+    + expirarVencidas() : void
+  }
+}
+package "Corrección: una razón para cambiar por clase" {
+  class "GestorReservas" as G2 {
+    + reservar() : Reserva
+    + cancelar(id) : Reserva
+  }
+  class ValidadorReserva {
+    + {static} validar(...) : void
+  }
+  class ComprobantesDeVentas {
+    + emitirTicket(ReservaCreada) : void
+  }
+  class ExpiracionDeReservas {
+    + expirarVencidas(reservas) : void
+  }
+  G2 ..> ValidadorReserva
+  G2 ..> ExpiracionDeReservas
+  G2 ..> ComprobantesDeVentas : ReservaCreada
+}
+GestorReservas -[hidden]right- G2
+note bottom of GestorReservas : validar, emitir ticket y expirar\nera código del gestor (hipotético)
+@enduml

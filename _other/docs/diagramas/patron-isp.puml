@@ -1,0 +1,29 @@
+@startuml
+!include _estilo-patrones.iuml
+package "Violación: depende de toda la clase (antes)" {
+  class "GestorPagos" as G1
+  class "GestorPromociones" as GP1 {
+    + crear(...) : Promocion
+    + activar(id) : void
+    + desactivar(id) : void
+    + listar() : List<Promocion>
+    + calcularPara(...) : Descuento
+  }
+  G1 --> GP1
+  note bottom of G1 : cobrar solo necesita calcularPara,\nqueda atado al ABM entero
+}
+package "Corrección: interfaz de un solo método" {
+  class GestorPagos
+  interface PoliticaPromociones {
+    + calcularPara(entradas, inicio, medio) : Descuento
+  }
+  class GestorPromociones {
+    + crear(...) : Promocion
+    + activar(id) : void
+    + calcularPara(...) : Descuento
+  }
+  GestorPagos --> PoliticaPromociones
+  GestorPromociones ..|> PoliticaPromociones
+}
+G1 -[hidden]right- GestorPagos
+@enduml
