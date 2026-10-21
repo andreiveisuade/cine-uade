@@ -31,6 +31,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final SecureRandom AZAR = new SecureRandom();
+    private static final String MONEDA = "ARS";
 
     // Con un sitio local MP rechaza la preferencia entera si pide auto_return: el comprador vuelve con
     // el botón "Volver al sitio".
@@ -59,7 +60,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
         preferencia.putArray("items").addObject()
                 .put("title", "Reserva " + reservaId + " · Cine UADE")
                 .put("quantity", 1)
-                .put("currency_id", "ARS")
+                .put("currency_id", MONEDA)
                 .put("unit_price", monto.aPesos());
         preferencia.put("external_reference", id);
         preferencia.putObject("back_urls")
@@ -102,15 +103,28 @@ public class MercadoPagoHttp implements PasarelaPagos {
     }
 
     // Lo que dijo el comprador al volver (la query de la back_url) no cuenta: se puede escribir a mano.
-    // Cuenta lo que MP tiene registrado para ese external_reference.
+    // Cuenta lo que MP tiene registrado para ese external_reference, y solo si es el monto y la moneda
+    // del checkout: un aprobado por otra cosa no paga esta reserva.
     @Override
     public String autorizar(Checkout checkout) {
         JsonNode pagos = pedir(get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
                 + URLEncoder.encode(checkout.id(), StandardCharsets.UTF_8))).path("results");
+        boolean aprobadoQueNoCoincide = false;
         for (JsonNode pago : pagos) {
-            if ("approved".equals(pago.path("status").asText())) {
+            if (!"approved".equals(pago.path("status").asText())) {
+                continue;
+            }
+            if (coincide(pago, checkout)) {
                 return "MP-" + pago.path("id").asText();
             }
+            log.warn("Pago {} de MP aprobado para el checkout {} por {} {}: se esperaban ARS {}",
+                    pago.path("id").asText(), checkout.id(), pago.path("currency_id").asText(),
+                    pago.path("transaction_amount").asText(), checkout.monto());
+            aprobadoQueNoCoincide = true;
+        }
+        if (aprobadoQueNoCoincide) {
+            throw new ConflictoDeNegocio("Mercado Pago registró un pago que no coincide con la reserva: "
+                    + "acercate a la boletería");
         }
         if (pagos.isEmpty()) {
             throw new ConflictoDeNegocio("Mercado Pago todavía no registró el pago: si ya pagaste, "
@@ -120,6 +134,11 @@ public class MercadoPagoHttp implements PasarelaPagos {
             case "rejected", "cancelled" -> "Mercado Pago rechazó el pago: probá de nuevo con otro medio";
             default -> "Mercado Pago todavía no aprobó el pago: recargá la página en unos minutos";
         });
+    }
+
+    private static boolean coincide(JsonNode pago, Checkout checkout) {
+        return MONEDA.equals(pago.path("currency_id").asText())
+                && Dinero.de(pago.path("transaction_amount").asDouble()).equals(checkout.monto());
     }
 
     // Con credenciales de prueba (TEST-...) el link que no cobra es el sandbox_init_point.

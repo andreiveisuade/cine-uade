@@ -129,10 +129,30 @@ class MercadoPagoHttpTest {
     @Test
     void unPagoAprobadoDaElCodigoDeAutorizacion() {
         pagosEnMp = """
-                [{"id": 111, "status": "rejected"}, {"id": 222, "status": "approved"}]""";
+                [{"id": 111, "status": "rejected"},
+                 {"id": 222, "status": "approved", "transaction_amount": 100.0, "currency_id": "ARS"}]""";
 
         assertEquals("MP-222", pasarela("http://localhost:8080").autorizar(checkout()));
         assertTrue(pedidos.stream().anyMatch(p -> p.contains("external_reference=25-QR-7")), pedidos.toString());
+    }
+
+    // Lo que se aprobó tiene que ser lo que se pidió: el comprador puede pagar otra preferencia con la misma
+    // referencia, o MP puede cobrar en otra moneda. El checkout es de $100.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            otro monto   | 90.0  | ARS
+            otra moneda  | 100.0 | USD
+            """)
+    void unAprobadoQueNoCoincideConElCheckoutNoAutoriza(String caso, double monto, String moneda) {
+        pagosEnMp = """
+                [{"id": 222, "status": "approved", "transaction_amount": %s, "currency_id": "%s"}]"""
+                .formatted(monto, moneda);
+
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                () -> pasarela("http://localhost:8080").autorizar(checkout()), caso);
+
+        assertEquals("Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería",
+                error.getMessage());
     }
 
     @ParameterizedTest(name = "{0}")
