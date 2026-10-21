@@ -44,7 +44,6 @@ public class Pago {
     protected Pago() {
     }
 
-    // La autorización se arma acá y no en el gestor: es parte de lo que el pago tiene que cumplir (R11).
     public Pago(int reservaId, Dinero subtotal, Integer promocionId, Dinero descuento,
                 MedioPago medio, LocalDateTime fecha, String codigoAutorizacion) {
         ValidadorPago.validar(subtotal, descuento, medio);
@@ -59,7 +58,6 @@ public class Pago {
         this.codigoAutorizacion = autorizacion;
     }
 
-    // El recibo de caja es del efectivo: un cobro electrónico ya tiene el comprobante de la pasarela.
     public boolean llevaRecibo() {
         return medio.seCobraEnCaja();
     }

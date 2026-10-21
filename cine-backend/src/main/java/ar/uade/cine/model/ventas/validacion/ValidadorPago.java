@@ -5,8 +5,7 @@ import ar.uade.cine.model.validacion.Regla;
 import ar.uade.cine.model.ventas.MedioPago;
 
 // Qué cumple un cobro al registrarse: medio de pago e importes que cierran; guardas de Regla que llama Pago.
-// Los importes no los tipea nadie, salen de la reserva y de la promoción: si no cierran es
-// un error del cálculo, y es mejor frenarlo acá que guardar un monto negativo en la caja.
+// Los importes salen de la reserva y la promoción: si no cierran es un error de cálculo, mejor frenarlo acá.
 public final class ValidadorPago {
 
     private ValidadorPago() {
