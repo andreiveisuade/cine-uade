@@ -3,6 +3,8 @@
 Venta web al cliente, con cuenta opcional: cartelera, butacas, confirmación, ticket y mis reservas. React 19, React
 Router y Mantine, compilado con Vite y servido por nginx. El encargado usa [`cine-swing`](../cine-swing/README.md).
 
+Para entender React con este código: [`REACT.md`](REACT.md).
+
 ## Correrlo
 
 Con el sistema levantado ([`cine-docker`](../cine-docker/README.md)) y Node 20.19 o superior:
