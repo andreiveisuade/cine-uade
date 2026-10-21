@@ -29,7 +29,6 @@ import ar.uade.cine.service.informes.InformeFuncion;
 
 // Arma los JSON de borderó, arqueos y declaración jurada; Assembler que reusa VistasPagos y VistasCandy.
 // El exhibidor sale de la configuración y no de un gestor: es el encabezado del documento, no una cifra.
-// El CSV que se sube al INCAA lo arma el cliente de escritorio con este JSON.
 @Component
 @RequiredArgsConstructor
 public class VistasInformes {

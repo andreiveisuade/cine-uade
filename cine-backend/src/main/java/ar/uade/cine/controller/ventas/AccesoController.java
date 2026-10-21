@@ -15,8 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 // Ruta POST /api/acceso (Puerta): valida el código y registra el ingreso vía GestorAcceso; no decide nada.
-// La Puerta: la usa el acomodador y no la boletería. Devuelve una reserva, pero cambia con el
-// control de acceso y no con el circuito de compra.
+// La usa el acomodador: devuelve una reserva pero cambia con el control de acceso, no con la compra
 @Tag(name = "Reservas")
 @RestController
 @RequiredArgsConstructor

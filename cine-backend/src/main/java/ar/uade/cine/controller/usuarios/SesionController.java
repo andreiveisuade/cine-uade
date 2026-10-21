@@ -23,10 +23,8 @@ public class SesionController {
     private final GestorClientes clientes;
     private final VistasUsuarios vistas;
 
-    // Las credenciales las verifica el filtro Basic, igual que en cualquier otra ruta: si el
-    // login las comparara por su cuenta, habría dos caminos que pueden no coincidir. El cuerpo
-    // no se lee, así que un cliente viejo que todavía manda {email,password} sigue entrando.
-    // Si entra un cliente, el filtro ya le abrió la sesión y la respuesta lleva la cookie.
+    // El filtro Basic verifica las credenciales (un solo camino) y abre la sesión: la respuesta lleva la cookie
+    // El cuerpo no se lee: un cliente viejo que manda {email,password} sigue entrando
     @Operation(summary = "Login con HTTP Basic: devuelve quién se identificó; al cliente le abre la sesión con cookie")
     @PostMapping("/api/sesion")
     public UsuarioVistaDTO iniciar(Authentication identidad) {

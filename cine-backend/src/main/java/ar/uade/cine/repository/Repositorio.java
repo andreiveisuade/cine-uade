@@ -5,11 +5,7 @@ import org.springframework.data.repository.NoRepositoryBean;
 
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
-// Base de los repositorios con id numérico; reúne en un solo lugar el «buscar por id o 404».
-// Antes cada gestor y cada controller repetía `findById(id).orElseThrow(...)`, y había 8 métodos
-// privados buscarOFallar/buscarFuncion que hacían lo mismo con su propio texto. Se recicla heredando
-// una interfaz: el método default lo reciben todos los repositorios, y @NoRepositoryBean evita que
-// Spring Data intente crear un bean para esta base genérica.
+// Base de los repositorios con id numérico; centraliza el «buscar por id o 404» (default, @NoRepositoryBean).
 @NoRepositoryBean
 public interface Repositorio<T> extends JpaRepository<T, Integer> {
 

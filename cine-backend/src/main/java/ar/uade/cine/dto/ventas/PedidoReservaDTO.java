@@ -6,8 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
 // Lo que entra al reservar (POST /api/reservas); butacas va código → tarifa, y sin tarifa es GENERAL.
-// La tarifa viaja como texto, igual que los demás enums: la traduce el controller con Parseo, así acepta
-// minúsculas y el error nombra la butaca en vez de «butacas.A1».
+// La tarifa viaja como texto: la traduce el controller con Parseo, así acepta minúsculas y el error nombra la butaca.
 public record PedidoReservaDTO(
         @Schema(example = "1")
         @NotNull(message = "Falta la función") Integer funcionId,

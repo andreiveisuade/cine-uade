@@ -44,36 +44,29 @@ import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import jakarta.servlet.http.HttpServletRequest;
 
 // Traduce cada excepción a status HTTP y JSON {error}; @RestControllerAdvice: ningún controller atrapa.
-// Dentro de este advice Spring elige el handler de la excepción más cercana en la jerarquía
-// (ExceptionDepthComparator), no el primero declarado: el orden de los métodos no cambia nada.
-// Un Rechazo cae en el handler de su tipo; la IllegalArgumentException, que ya no es su base, en el suyo.
-// La política de respuestas de toda la API, éxitos incluidos, está en la cabecera de Creado.
+// Spring elige el handler de la excepción más cercana en la jerarquía: el orden de los métodos no importa.
 @RestControllerAdvice
 @Slf4j
 public class ManejadorErrores {
 
     private static final String ERROR_INESPERADO = "Ocurrió un error inesperado en el servidor";
 
-    // Chain of Responsibility: el orden de la lista es la regla. Sin causa no vino cuerpo; con camino, el error
-    // es de un campo; sin camino, de la raíz; y el último contesta lo que ninguno reconoció.
+    // Chain of Responsibility: el orden de la lista es la regla; el último contesta lo que ninguno reconoció.
     private static final List<LecturaDelCuerpo> CADENA = List.of(
             new SinCuerpo(), new CampoConValorInvalido(), new RaizQueNoEsObjeto(), new JsonMalFormado());
 
     // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
 
-    // El pedido, tal como vino, no se puede aceptar: falta un dato o no cumple una regla.
     @ExceptionHandler(DatoInvalido.class)
     public ResponseEntity<ErrorVistaDTO> datoInvalido(DatoInvalido e) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
-    // El id o el código, de la ruta o del cuerpo, no corresponde a nada.
     @ExceptionHandler(RecursoNoEncontrado.class)
     public ResponseEntity<ErrorVistaDTO> noEncontrado(RecursoNoEncontrado e) {
         return responder(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    // El pedido es válido, pero choca con algo que ya existe: un nombre, un email o un título repetido.
     @ExceptionHandler(ConflictoDeNegocio.class)
     public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
@@ -111,19 +104,13 @@ public class ManejadorErrores {
                 .orElse("El pedido no es válido");
     }
 
-    // Dos operaciones sobre la misma reserva a la vez (cobrar y cancelar): la segunda escribe
-    // sobre una versión vieja. Spring ya traduce la OptimisticLockException de JPA a esta, y
-    // controller/ no puede nombrar jakarta.persistence (ArquitecturaTest). Aunque es subclase de
-    // DataAccessException no cae en su 500: gana este handler por ser el más cercano.
+    // Dos operaciones a la vez sobre la misma reserva: la segunda pierde. Gana sobre el 500 de DataAccessException.
     @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<ErrorVistaDTO> conflictoDeVersion(OptimisticLockingFailureException e) {
         return responder(HttpStatus.CONFLICT, "La reserva cambió mientras se procesaba: volvé a intentarlo");
     }
 
-    // Lo que queda después de las validaciones de los gestores son carreras: dos altas que pasan
-    // el mismo existsBy… y la segunda choca con el UNIQUE, o dos cobros con UNIQUE(pago.reserva_id).
-    // La base no falló, así que no es el 500 de DataAccessException. La causa, al log: nombra la
-    // restricción, y eso no es para el usuario.
+    // Carrera contra un UNIQUE tras pasar la validación del gestor; la causa nombra la restricción y va al log.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorVistaDTO> conflictoDeIntegridad(DataIntegrityViolationException e) {
         log.warn("Un pedido chocó con una restricción de la base: {}", e.getMostSpecificCause().getMessage());
@@ -131,17 +118,14 @@ public class ManejadorErrores {
                 "Otro pedido cambió estos datos al mismo tiempo: recargá y volvé a intentarlo");
     }
 
-    // Red para una fecha que pasó Parseo y desborda en la aritmética de un gestor: sin esto es un 500,
-    // y lo que la provocó es el pedido. Parseo ya corta los años fuera de 1000..9999; si igual llega
-    // una, el detalle va al log para encontrar qué fecha se escapó.
+    // Fecha que pasó Parseo y desborda en la aritmética de un gestor: es del pedido, no un 500; detalle al log.
     @ExceptionHandler(DateTimeException.class)
     public ResponseEntity<ErrorVistaDTO> fechaFueraDeRango(DateTimeException e) {
         log.warn("Una fecha del pedido desbordó: {}", e.getMessage());
         return responder(HttpStatus.BAD_REQUEST, "Una de las fechas del pedido no es válida");
     }
 
-    // Solo las variables de ruta llegan tipadas (int id): la query viaja como String y la lee Parseo.
-    // /api/funciones/abc no nombra ninguna función: para el usuario es lo mismo que una ruta que no existe.
+    // Solo las variables de ruta llegan tipadas; la query viaja como String y la lee Parseo.
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorVistaDTO> identificadorInvalido(MethodArgumentTypeMismatchException e,
                                                                HttpServletRequest pedido) {
@@ -180,8 +164,7 @@ public class ManejadorErrores {
         return responder(HttpStatus.NOT_ACCEPTABLE, "Esta API responde solo JSON");
     }
 
-    // La URI tal como llegó: getResourcePath() viene sin la barra final, y "/api/salas/" decía
-    // que no existe /api/salas, que sí existe.
+    // getResourcePath() viene sin la barra final: /api/salas/ decía que no existe /api/salas.
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorVistaDTO> rutaInexistente(NoResourceFoundException e, HttpServletRequest pedido) {
         return responder(HttpStatus.NOT_FOUND, "No existe la ruta " + pedido.getRequestURI());
@@ -193,9 +176,8 @@ public class ManejadorErrores {
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo acceder a los datos");
     }
 
-    // Sin esto Spring contesta con su propio formato y el front, que espera {error}, muestra vacío.
-    // Lo que Spring rechaza sin un handler propio (un header que falta, por ejemplo) conserva su
-    // status, pero no su detail: viene en inglés, o vacío. El detail va al log.
+    // Sin esto Spring contesta en su formato y el front, que espera {error}, muestra vacío.
+    // Conserva el status pero su detail viene en inglés o vacío: se reemplaza y el detail va al log.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorVistaDTO> errorInesperado(Exception e) {
         if (e instanceof ErrorResponse deSpring) {
@@ -207,8 +189,7 @@ public class ManejadorErrores {
         return responder(HttpStatus.INTERNAL_SERVER_ERROR, ERROR_INESPERADO);
     }
 
-    // Por status y no por excepción: Spring tiene muchas, y en el uso normal de la API no llega ninguna.
-    // ErroresController usa los mismos para lo que llega a /error sin pasar por acá.
+    // Por status y no por excepción: Spring tiene muchas; ErroresController usa los mismos.
     static String textoDe(HttpStatusCode estado) {
         return switch (estado.value()) {
             case 404 -> "No existe lo que se pidió";
@@ -217,8 +198,7 @@ public class ManejadorErrores {
         };
     }
 
-    // Content-Type fijo: así Spring no negocia contra el Accept. Con Accept: application/xml no
-    // podía escribir el DTO y el error salía como un 500 vacío; con text/html, la página Whitelabel.
+    // Content-Type fijo: con Accept: application/xml el error salía como 500 vacío.
     static ResponseEntity<ErrorVistaDTO> responder(HttpStatusCode estado, String mensaje) {
         return ResponseEntity.status(estado)
                 .contentType(MediaType.APPLICATION_JSON)

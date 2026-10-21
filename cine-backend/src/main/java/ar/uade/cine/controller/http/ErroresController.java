@@ -15,10 +15,8 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 
 // Contesta /error, adonde llega lo que no pasó por ManejadorErrores; {error} en castellano según el status.
-// Lo que rechaza el firewall de Spring Security (una ruta con ;, // o %2e) y lo que escapa de un filtro no
-// llegan a ningún controller: el servidor lo reenvía a /error. El de Boot contestaba
-// {"timestamp","status","error":"Bad Request","path"}, en inglés, y Swing y la web mostraban «Bad Request».
-// Con un ErrorController declarado, Boot no registra el suyo. Oculto en Swagger: no es una ruta de la API.
+// Lo que rechaza el firewall de Spring Security o escapa de un filtro no llega a ningún controller: se reenvía acá.
+// Declarar un ErrorController evita el de Boot (JSON en inglés); oculto en Swagger.
 @Hidden
 @RestController
 public class ErroresController implements ErrorController {

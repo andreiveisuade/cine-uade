@@ -28,9 +28,8 @@ import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.controller.salas.VistasSalas;
 
 // Arma los JSON de películas, funciones con sala, precio y butacas, e importaciones; Assembler compartido.
-// Un listado de N funciones cuesta un número fijo de consultas por sala y no por fila: las
-// películas en una, y la sala y sus butacas una vez por sala. VistasCarteleraTest cuenta las
-// sentencias.
+// Un listado cuesta consultas fijas: películas en una, sala y butacas una vez por sala;
+// VistasCarteleraTest cuenta las sentencias
 @Component
 @RequiredArgsConstructor
 public class VistasCartelera {

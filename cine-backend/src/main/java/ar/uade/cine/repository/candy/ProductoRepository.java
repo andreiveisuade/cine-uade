@@ -16,8 +16,7 @@ public interface ProductoRepository extends Repositorio<Producto> {
 
     boolean existsByNombreIgnoreCase(String nombre);
 
-    // Al renombrar: el producto se excluye por id y no comparando nombres en Java, porque la base compara
-    // con su collation (utf8mb4_0900_ai_ci ignora acentos) y Java no. "Maní" → "Mani" chocaba consigo mismo.
+    // Al renombrar: excluye por id; comparar en Java ignora la collation de la base ("Maní" vs "Mani").
     boolean existsByNombreIgnoreCaseAndIdNot(String nombre, int id);
 
     @Query("""

@@ -11,8 +11,7 @@ import com.fasterxml.jackson.core.exc.InputCoercionException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
-// Eslabón del JSON bien formado con un tipo equivocado ("precio": "abc"): no es "JSON inválido", y el mensaje
-// nombra el campo, que es lo que el usuario puede corregir.
+// Eslabón del JSON bien formado con tipo equivocado ("precio": "abc"); el mensaje nombra el campo a corregir.
 public class CampoConValorInvalido implements LecturaDelCuerpo {
 
     private static final Pattern FUERA_DE_RANGO = Pattern.compile("^Numeric value \\((.+?)\\) out of range");
@@ -31,9 +30,7 @@ public class CampoConValorInvalido implements LecturaDelCuerpo {
                 .collect(Collectors.joining("."));
     }
 
-    // Un número que no entra en un int ({"funcionId": 99999999999}) lo rechaza el parser, que ya
-    // cerró cuando llega acá: el valor sobrevive solo en su mensaje. Si Jackson lo cambiara, el
-    // texto pierde el valor pero sigue nombrando el campo.
+    // Un número fuera de int lo rechaza el parser: el valor sobrevive solo en su mensaje, que sigue nombrando el campo.
     private static String valorDe(JsonMappingException e) {
         if (e instanceof InvalidFormatException formato) {
             return ": " + formato.getValue();

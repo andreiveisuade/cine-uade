@@ -94,9 +94,8 @@ public class SalaController {
                 : salas.reponer(salaId, codigo));
     }
 
-    // Las tres listas tal como vinieron, cada una con su tipo: normalizar los códigos y rechazar el que
-    // está en dos es cosa de Sala.generarAsientos. EnumMap porque acepta una lista que no vino (null) y
-    // recorre siempre en el orden de TipoAsiento.
+    // Listas tal cual vinieron, cada una con su tipo; Sala.generarAsientos normaliza y rechaza duplicados
+    // EnumMap: acepta una lista null y recorre en el orden de TipoAsiento
     private static Map<TipoAsiento, List<String>> especiales(PedidoSalaDTO pedido) {
         Map<TipoAsiento, List<String>> especiales = new EnumMap<>(TipoAsiento.class);
         especiales.put(TipoAsiento.VIP, pedido.codigosVip());

@@ -6,9 +6,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
-// Arranque del sistema del cine; el component scan de Spring arma y conecta todos los beans, nada a mano.
-// Hereda de SpringBootServletInitializer para correr también como WAR en un Tomcat externo.
-// El scan registra los records Propiedades*: cada uno vive al lado de la clase que lo usa.
+// Arranque del sistema; el component scan arma los beans, y SpringBootServletInitializer permite correr como WAR.
 @SpringBootApplication
 @ConfigurationPropertiesScan
 public class Aplicacion extends SpringBootServletInitializer {

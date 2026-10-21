@@ -60,8 +60,7 @@ public class PagoController {
                 .orElseThrow(() -> new RecursoNoEncontrado("La reserva " + id + " todavía no tiene un pago")));
     }
 
-    // Alta sin Location: el checkout vive en la pasarela y no tiene GET por id. Lo que queda es el
-    // pago, y ese lo apunta la confirmación.
+    // Alta sin Location: el checkout vive en la pasarela y no tiene GET por id
     @Operation(summary = "Abrir el checkout electrónico: devuelve el QR y el link de pago")
     @PostMapping("/api/reservas/{id}/checkout")
     @ResponseStatus(HttpStatus.CREATED)
@@ -90,8 +89,7 @@ public class PagoController {
         return Creado.en("/api/reservas/" + pago.reservaId() + "/pago", pago);
     }
 
-    // La back_url de Mercado Pago: llega el navegador del comprador, así que contesta con un 302 a su
-    // ticket y no con JSON. Si no se cobró, el ticket recibe el motivo en `aviso`.
+    // back_url de Mercado Pago: llega el navegador del comprador, así que responde 302 al ticket (motivo en `aviso`)
     @Operation(summary = "Vuelta desde Mercado Pago: cobra si MP aprobó el pago y redirige al ticket")
     @GetMapping("/api/checkouts/{id}/retorno")
     public ResponseEntity<Void> retornoCheckout(@PathVariable String id) {

@@ -1,17 +1,5 @@
--- Los bloqueos de butaca mientras se elige, que antes vivian en Redis.
---
--- Una tabla nueva, sin tocar ninguna existente. Redis estaba solo para esto: guardar tres
--- minutos quien esta eligiendo cada butaca. Con la tabla, el bloqueo vive en la misma base
--- que las entradas —una sola fuente de verdad, y un contenedor menos que levantar,
--- monitorear y explicar— y la atomicidad la da la clave primaria en vez de un script Lua.
---
--- No hay nada que migrar: los bloqueos duran tres minutos, asi que lo que hubiera en Redis
--- al apagarlo ya vencio. Quien estaba eligiendo en ese momento vuelve a tocar el mapa.
---
--- Aplicar sobre una base ya creada; en una base nueva ya viene en schema.sql.
---
---     docker compose exec -T mysql mysql -u"$DB_USER" -p"$DB_PASSWORD" appsinteractivas \
---       < ../cine-backend/src/main/resources/migracion-bloqueos.sql
+-- Bloqueos de butaca en la base en vez de Redis; la atomicidad la da la clave primaria
+-- Sobre base ya creada; en una nueva viene en schema.sql
 
 CREATE TABLE IF NOT EXISTS bloqueo_butaca (
     funcion_id INT NOT NULL,

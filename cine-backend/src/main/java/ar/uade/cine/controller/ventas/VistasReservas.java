@@ -29,9 +29,8 @@ import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 
 // Arma los JSON de reservas y del bloqueo de butacas; Assembler que compone Cartelera, Salas y Pagos.
-// Un listado de N reservas cuesta un número fijo de consultas: las reservas con su función,
-// película, sala y cliente en una (ConsultasReservas#conDetalle), sus pagos en otra, y las
-// butacas una vez por sala, no por fila. VistasVentasTest cuenta las sentencias.
+// Un listado cuesta consultas fijas: reservas con detalle en una, pagos en otra, butacas por sala;
+// VistasVentasTest cuenta las sentencias
 @Component
 @RequiredArgsConstructor
 public class VistasReservas {

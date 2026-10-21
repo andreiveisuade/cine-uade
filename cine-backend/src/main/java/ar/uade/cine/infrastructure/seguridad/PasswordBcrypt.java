@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 // Codifica en bcrypt la clave que entra en sus 72 bytes, y la que no en el SHA-256 viejo; Decorator.
-// Lo necesita el re-hash del primer login, que codifica la clave en claro antes de guardarla: con más de
-// 72 bytes, BCrypt.hashpw tiraba una IllegalArgumentException adentro del filtro y el login era un 500.
-// Una clave así solo puede estar guardada en SHA-256 (el alta pide Contrasena, que no la deja pasar), así
-// que lo que sale es el mismo hash que ya estaba: el empleado entra y no se migra nada.
+// Con más de 72 bytes BCrypt.hashpw tiraba en el filtro (login 500); esas claves solo existen como SHA-256.
 @RequiredArgsConstructor
 class PasswordBcrypt implements PasswordEncoder {
 

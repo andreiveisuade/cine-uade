@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 // Lo que entra al armar un combo (POST /api/candy/combos); exige nombre y precio, los componentes el modelo.
-// Solo presencia: el precio lo valida Dinero.importe al convertirlo en el controller.
 public record PedidoComboDTO(
         @Schema(description = "Único en la carta", example = "Combo pareja")
         @NotBlank(message = "Falta el nombre") String nombre,

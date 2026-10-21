@@ -13,22 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.ventas.BloqueoButaca;
 
-// Persistencia del bloqueo efímero de butacas; Repository con el único SQL nativo del backend.
-// Tomar una butaca son dos sentencias y ninguna lee antes de escribir: renovar y, si no
-// había fila que renovar, insertar. La atomicidad la da la base —el UPDATE condicional
-// bloquea la fila y reevalúa el WHERE, y la clave primaria no deja entrar un segundo
-// INSERT—, así que no hace falta @Lock(PESSIMISTIC_WRITE) ni un SELECT ... FOR UPDATE.
-//
-// INSERT IGNORE y no un INSERT que choque: perder la butaca es el caso normal, no un
-// error. Con el INSERT común cada pérdida era una excepción que deja la transacción
-// rollback-only y un ERROR de Hibernate en el log; así es un 0 en filas afectadas. H2 lo
-// entiende en MODE=MySQL, que es lo que corre la suite.
-//
-// Las dos van en su propia transacción (REQUIRES_NEW) para que sus locks duren lo mínimo
-// y no queden atados a la transacción de quien llama. En MySQL importa más de lo que
-// parece: el UPDATE que no encuentra fila deja un gap lock hasta el commit, y dos
-// sesiones con el mismo gap lock que después insertan se matan en un deadlock. Cerrando
-// el UPDATE antes del INSERT, el segundo INSERT espera al primero y lo ignora.
+// Persistencia del bloqueo efímero de butacas; único SQL nativo del backend.
+// Tomar = UPDATE condicional (renovar) y, si no había fila, INSERT IGNORE: la atomicidad la da la base.
+// REQUIRES_NEW acorta los locks: el UPDATE sin fila deja un gap lock que, con dos sesiones, termina en deadlock.
 public interface BloqueoButacaRepository extends JpaRepository<BloqueoButaca, BloqueoButaca.Clave> {
 
     @Query("""

@@ -41,10 +41,8 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
 // Qué rol puede llamar cada ruta y cómo se autentica (Basic contra usuario, bcrypt); SecurityFilterChain.
-// Los empleados mandan Basic en cada pedido y no tienen sesión; el cliente entra con Basic una vez y sigue
-// con la cookie de sesión (SesionDeClientes). CSRF apagado: la cookie es SameSite=Lax, así que un POST o
-// un DELETE desde otro sitio llega sin ella. Lo no enumerado pide ADMINISTRADOR.
-// Los 401/403 salen sin WWW-Authenticate, que abriría el cuadro de login del navegador.
+// Empleados: Basic en cada pedido, sin sesión; cliente: Basic una vez y cookie (SesionDeClientes). CSRF apagado: SameSite=Lax.
+// 401/403 sin WWW-Authenticate, que abriría el login del navegador. Lo no enumerado pide ADMINISTRADOR.
 @Slf4j
 @Configuration
 @EnableWebSecurity
@@ -134,9 +132,7 @@ public class ConfiguracionSeguridad {
     }
 
     // El email se busca como lo guarda Email: el login tampoco distingue mayúsculas ni espacios.
-    // Sin hash (el cliente que compró sin registrarse, o una fila de empleado cargada a mano con NULL)
-    // no hay con qué comparar la clave: cuenta como un email que no existe, así el 401 dice lo mismo
-    // que una clave equivocada. Armar el User con NULL tiraba, y el 401 decía «Hace falta iniciar sesión».
+    // Sin hash (cliente sin registrar o empleado con NULL) cuenta como email inexistente; User con NULL tiraba.
     @Bean
     public UserDetailsService usuariosConClave(EmpleadoRepository empleados, ClienteRepository clientes) {
         return email -> Email.paraBuscar(email).map(Email::valor)
@@ -150,9 +146,7 @@ public class ConfiguracionSeguridad {
                 .orElseThrow(() -> new UsernameNotFoundException("No hay un usuario con ese email"));
     }
 
-    // Lo nuevo sale como {bcrypt}…; un hash sin prefijo es el SHA-256 de antes y se sigue
-    // aceptando, para no romper el seed ni las bases ya creadas. Solo bcrypt en el mapa: el
-    // de fábrica de Spring también aceptaría {noop}, una clave en texto plano en la base.
+    // Hash sin prefijo = SHA-256 viejo (seed y bases previas); solo bcrypt en el mapa: el de fábrica acepta {noop}.
     @Bean
     public PasswordEncoder passwordEncoder() {
         DelegatingPasswordEncoder claves = new DelegatingPasswordEncoder("bcrypt",
@@ -161,10 +155,8 @@ public class ConfiguracionSeguridad {
         return new PasswordBcrypt(claves);
     }
 
-    // Spring Security lo llama después de un login correcto cuyo hash no es bcrypt: es el único
-    // momento en que se tiene la clave en claro. Sin esto los SHA-256 no migrarían nunca, porque
-    // no hay pantalla para cambiar la contraseña. Si el hash nuevo es el mismo, la clave no entra
-    // en bcrypt (ver PasswordBcrypt): no hay nada que guardar, y queda en el log para saber quién.
+    // Único momento con la clave en claro: sin este re-hash los SHA-256 no migran nunca (no hay cambio de clave).
+    // Si el hash nuevo es el mismo (clave fuera de bcrypt, ver PasswordBcrypt) no se guarda y queda en el log.
     @Bean
     public UserDetailsPasswordService rehashearAlEntrar(GestorEmpleados empleados) {
         return (usuario, hashNuevo) -> {
@@ -178,8 +170,7 @@ public class ConfiguracionSeguridad {
         };
     }
 
-    // Sin charset, igual que los errores de ManejadorErrores: Jackson escribe los bytes en UTF-8 de
-    // todos modos, y JSON es UTF-8 por definición.
+    // Sin charset, como ManejadorErrores: JSON es UTF-8 por definición
     private static void responder(HttpServletResponse respuesta, ObjectMapper json,
                                   HttpStatus estado, String mensaje) throws IOException {
         respuesta.setStatus(estado.value());
