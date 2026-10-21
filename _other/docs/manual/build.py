@@ -8,7 +8,12 @@ CAPTURAS = MANUAL / "capturas"
 
 svg_map = {
     "{{SVG_CASOS_USO}}": DIAGRAMAS / "casos-de-uso.svg",
-    "{{SVG_DOMINIO}}": DIAGRAMAS / "clases-dominio.svg",
+    "{{SVG_DOMINIO_CATALOGO}}": DIAGRAMAS / "clases-catalogo.svg",
+    "{{SVG_DOMINIO_VENTAS}}": DIAGRAMAS / "clases-ventas.svg",
+    "{{SVG_DOMINIO_CANDY}}": DIAGRAMAS / "clases-candy-valores.svg",
+    "{{SVG_DER}}": DIAGRAMAS / "der.svg",
+    # Hecho con diagram-design: el .html es la fuente y el .svg sale de su export_svg.py.
+    "{{SVG_CONTEXTO}}": DIAGRAMAS / "sistema-contexto.svg",
     "{{SVG_RESERVA_CLASES}}": DIAGRAMAS / "reserva-clases.svg",
     "{{SVG_SECUENCIA}}": DIAGRAMAS / "secuencia-reserva.svg",
     "{{SVG_SECUENCIA_CANDY}}": DIAGRAMAS / "secuencia-candy.svg",

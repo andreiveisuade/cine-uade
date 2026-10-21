@@ -436,6 +436,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#candy" data-target="candy">Candy</a></li>
         <li><a href="#informes" data-target="informes">Informes por función</a></li>
         <li><a href="#persistencia" data-target="persistencia">Persistencia</a></li>
+        <li><a href="#der" data-target="der">Modelo de datos (DER)</a></li>
         <li><a href="#base-de-datos" data-target="base-de-datos">Base de datos</a></li>
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#solid" data-target="solid">SOLID</a></li>
@@ -613,6 +614,15 @@ body.lightbox-locked { overflow: hidden; }
 
     <section class="doc-section" id="capas">
       <h2>Arquitectura en capas</h2>
+      <figure class="diagram">
+        {{SVG_CONTEXTO}}
+        <figcaption>El sistema en su contexto (C4 nivel 1): quién lo usa y con qué sistemas externos habla</figcaption>
+      </figure>
+      <p>
+        Tres actores y dos sistemas externos. El cliente entra por la web con cookie de sesión; encargado y acomodador,
+        por Swing con HTTP Basic, al mismo <code>/api</code>. El backend sale a Mercado Pago (Checkout Pro, y cada 60 s
+        concilia los pagos aprobados porque MP no llega a localhost con un webhook) y a TMDB cuando el encargado importa.
+      </p>
       <p>
         El backend (<code>ar.uade.cine</code>) son seis capas. Una capa usa a las de abajo y nunca a las de arriba.
         La excepción es <code>infrastructure/</code>, el borde con el exterior: el gestor usa sus puertos y la
@@ -1135,9 +1145,18 @@ body.lightbox-locked { overflow: hidden; }
         <a href="#value-objects">Value Object</a>.
       </p>
 
+      <p>En tres vistas por subdominio: en una sola el diagrama medía casi 7000 px de ancho. Una clase de otra vista aparece solo con su nombre, para anclar la flecha.</p>
       <figure class="diagram">
-        {{SVG_DOMINIO}}
-        <figcaption>Entidades, enums y sus relaciones</figcaption>
+        {{SVG_DOMINIO_CATALOGO}}
+        <figcaption>1/3: cartelera, salas, funciones y la grilla que las genera</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_DOMINIO_VENTAS}}
+        <figcaption>2/3: usuarios (la clave vive en <code>Usuario</code>), ventas con su State y promociones con su Factory Method</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_DOMINIO_CANDY}}
+        <figcaption>3/3: candy y los Value Objects de plata y tiempo</figcaption>
       </figure>
 
       <h3>Lo que se deriva en vez de guardarse</h3>
@@ -1537,12 +1556,30 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </ul>
     </section>
 
+    <section class="doc-section" id="der">
+      <h2>Modelo de datos (DER)</h2>
+      <figure class="diagram">
+        {{SVG_DER}}
+        <figcaption>Las 20 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+      </figure>
+      <ul>
+        <li>Fuente: <code>schema.sql</code>. Las <code>migracion-*.sql</code> solo llevan una base vieja al mismo estado; no agregan nada.</li>
+        <li><code>UNIQUE (funcion_id, asiento_id)</code> de <code>entrada</code> es la última red contra la doble venta; liberar pone <code>funcion_id</code> en <code>NULL</code> y la butaca se revende.</li>
+        <li><code>bloqueo_butaca</code> no tiene id: su PK <code>(funcion_id, asiento_id)</code> es la regla de que una sola sesión tiene la butaca mientras elige.</li>
+        <li><code>reserva.version</code> es el <code>@Version</code>: cobrar y cancelar a la vez, el segundo recibe 409. <code>reserva.codigo</code> <code>UNIQUE</code> es la credencial de la puerta.</li>
+        <li><code>pago.reserva_id</code> <code>UNIQUE</code>: un pago por reserva, y el descuento de la promoción vive ahí, no en la entrada.</li>
+        <li><code>usuario</code> y <code>promocion</code> son tabla única con discriminador (<code>rol</code>, <code>tipo</code>); <code>password_hash</code> es <code>NULL</code> en el cliente sin cuenta.</li>
+        <li>Plata en <code>DECIMAL(10,2)</code> (en Java, <code>Dinero</code> en centavos); los enums en <code>VARCHAR</code> con su <code>name()</code>.</li>
+        <li><code>importacion</code> no tiene FK a <code>pelicula</code>: lo que trajo cada corrida está en <code>pelicula.estado_revision</code>.</li>
+      </ul>
+    </section>
+
     <section class="doc-section" id="base-de-datos">
       <h2>Base de datos</h2>
       <p>MySQL 8.4. Esquema en <code>cine-backend/src/main/resources/schema.sql</code>: 20 tablas.</p>
       <figure class="diagram">
         {{SVG_BASE_VENTA_ER}}
-        <figcaption>El núcleo de la venta: claves, <code>UNIQUE</code> y cascadas</figcaption>
+        <figcaption>Zoom del <a href="#der">DER</a> en la venta: claves, <code>UNIQUE</code> y cascadas</figcaption>
       </figure>
       <div class="table-wrap">
         <table>
