@@ -23,8 +23,7 @@ public class PromocionNxM extends Promocion {
     protected PromocionNxM() {
     }
 
-    // Solo la crea TipoPromocion.NXM (Factory Method) o un test. Integer porque vienen del pedido: que
-    // falte uno lo dice el modelo, en vez de un 500 por el unboxing.
+    // Solo la crea TipoPromocion.NXM o un test. Integer porque vienen del pedido: que falte uno lo dice el modelo.
     public PromocionNxM(String nombre, Integer lleva, Integer paga, CondicionesPromocion condiciones,
                         LocalDate hoy) {
         super(nombre, condiciones, hoy);

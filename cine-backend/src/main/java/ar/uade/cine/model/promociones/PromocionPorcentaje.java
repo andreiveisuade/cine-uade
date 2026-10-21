@@ -24,8 +24,7 @@ public class PromocionPorcentaje extends Promocion {
     protected PromocionPorcentaje() {
     }
 
-    // Solo la crea TipoPromocion.PORCENTAJE (Factory Method) o un test. Double porque viene del pedido:
-    // que falte lo dice el modelo.
+    // Solo la crea TipoPromocion.PORCENTAJE o un test. Double porque viene del pedido.
     public PromocionPorcentaje(String nombre, Double porcentaje, CondicionesPromocion condiciones, LocalDate hoy) {
         super(nombre, condiciones, hoy);
         this.porcentaje = ValidadorPromocion.porcentaje(porcentaje);

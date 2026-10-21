@@ -21,8 +21,7 @@ public class PromocionMontoFijo extends Promocion {
     protected PromocionMontoFijo() {
     }
 
-    // Solo la crea TipoPromocion.MONTO_FIJO (Factory Method) o un test. El monto llega en pesos, como
-    // viene del pedido, así «Falta el monto del descuento» lo dice el modelo.
+    // Solo la crea TipoPromocion.MONTO_FIJO o un test. El monto llega en pesos, como viene del pedido.
     public PromocionMontoFijo(String nombre, Double monto, CondicionesPromocion condiciones, LocalDate hoy) {
         super(nombre, condiciones, hoy);
         this.monto = ValidadorPromocion.monto(monto);

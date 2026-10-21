@@ -33,9 +33,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 // Promoción sobre entradas; Polimorfismo: cada subclase calcula su descuento y dice sus parámetros.
-// Esta decide si aplica (vigencia, días, franja y medio). Cada subclase la crea su TipoPromocion
-// (Factory Method) y los datos los valida ValidadorPromocion, que llaman el constructor de acá y el
-// de cada subclase.
+// Esta decide si aplica (vigencia, días, franja, medio); TipoPromocion crea la subclase y ValidadorPromocion valida.
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo")
@@ -52,7 +50,6 @@ public abstract class Promocion {
     @Column(unique = true)
     private String nombre;
 
-    // Value Objects sobre las columnas de siempre: el schema no se mueve.
     @Embedded
     @AttributeOverride(name = "desde", column = @Column(name = "vigencia_desde"))
     @AttributeOverride(name = "hasta", column = @Column(name = "vigencia_hasta"))
@@ -81,9 +78,7 @@ public abstract class Promocion {
     protected Promocion() {
     }
 
-    // Lo común a las tres clases se valida acá y lo propio de cada una en su constructor: así no se
-    // puede armar una promoción inválida, venga del gestor o de un test. Por eso lo común sale primero.
-    // La franja que cruza la medianoche la rechaza FranjaHoraria: aplicaA no la correría nunca.
+    // Lo común se valida acá y lo propio en cada subclase, así no se arma una inválida. FranjaHoraria rechaza la que cruza medianoche.
     protected Promocion(String nombre, CondicionesPromocion condiciones, LocalDate hoy) {
         String nombreValido = ValidadorPromocion.nombre(nombre);
         Periodo vigenciaValida = ValidadorPromocion.vigencia(condiciones.desde(), condiciones.hasta());
@@ -99,8 +94,7 @@ public abstract class Promocion {
 
     public abstract TipoPromocion getTipo();
 
-    // Polimorfismo: cada subclase describe sus propios parámetros y deja en null los ajenos. Reemplaza la
-    // cadena de instanceof con la que la vista averiguaba qué clase tenía enfrente.
+    // Polimorfismo: cada subclase describe sus parámetros y deja en null los ajenos; reemplaza el instanceof de la vista.
     public abstract ParametrosPromocion getParametros();
 
     public abstract Dinero calcularDescuento(List<Entrada> entradas);
