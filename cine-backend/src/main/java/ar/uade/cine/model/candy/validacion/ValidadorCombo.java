@@ -8,7 +8,6 @@ import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Lo que pide un combo al armarse: dos componentes o más, ninguno combo, y R14; lo llama Combo.
-// ItemCombo lo llama por cada componente. Nombre y precio son los de cualquier producto: ValidadorProducto.
 public final class ValidadorCombo {
 
     private ValidadorCombo() {
@@ -21,8 +20,7 @@ public final class ValidadorCombo {
         }
     }
 
-    // Por componente y en este orden, como llega el pedido: primero su cantidad y después si es otro combo.
-    // Un combo dentro de otro haría recursivo el precio suelto y el ahorro.
+    // Por componente: primero la cantidad, después si es combo (un combo anidado haría recursivo el ahorro).
     public static int componente(Producto producto, Integer cantidad) {
         int valida = ValidadorCantidad.valida(cantidad, producto.getNombre());
         if (producto.esCombo()) {
@@ -39,8 +37,7 @@ public final class ValidadorCombo {
         }
     }
 
-    // R14 del lado de la edición: un combo que pasa a costar lo mismo que sus sueltos ya no conviene. Lo usa
-    // también el combo que trae un suelto recién abaratado, con su propio nombre y precio.
+    // R14 al editar; lo usa también el combo que trae un suelto recién abaratado.
     public static void exigirQueSigaConviniendo(Combo combo, String nombre, Dinero precio) {
         if (!combo.getPrecioSuelto().esMayorQue(precio)) {
             throw new DatoInvalido("Con ese precio, el combo " + nombre + " dejaría de salir menos que sus"

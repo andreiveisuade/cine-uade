@@ -52,8 +52,7 @@ public class CompraCandy {
     protected CompraCandy() {
     }
 
-    // Creador: la compra contiene sus renglones, así que los crea ella y cada ItemCompra valida
-    // lo suyo. GestorCandy solo busca los productos y pone la fecha. Todo se valida antes de asignar.
+    // Creador: crea sus ItemCompra, cada uno valida lo suyo; todo se valida antes de asignar
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                        String codigoAutorizacion, Map<Producto, Integer> cantidades) {
         String autorizacion = validarPedido(cantidades, medio, codigoAutorizacion);
@@ -68,8 +67,7 @@ public class CompraCandy {
         this.items.addAll(renglones);
     }
 
-    // Lo que se valida sin buscar los productos: GestorCandy lo llama antes de ir a la base, así un pedido
-    // vacío o un medio mal cargado no quedan tapados por el 404 de un producto. Devuelve el código limpio.
+    // Valida sin buscar productos: así un pedido vacío no queda tapado por el 404 de un producto. Devuelve el código limpio
     public static String validarPedido(Map<?, Integer> cantidades, MedioPago medio, String codigoAutorizacion) {
         ValidadorCompraCandy.exigirProductos(cantidades);
         return ValidadorCompraCandy.medio(medio).autorizacion(codigoAutorizacion);
