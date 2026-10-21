@@ -440,6 +440,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
         <li><a href="#solid" data-target="solid">SOLID</a></li>
         <li><a href="#grasp" data-target="grasp">GRASP y otros patrones</a></li>
+        <li><a href="#mapa-diseno" data-target="mapa-diseno">Mapa de diseño y refactorings</a></li>
         <li><a href="#preguntas" data-target="preguntas">Preguntas de guía</a></li>
       </ol>
 
@@ -963,6 +964,16 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong><code>#/mis-reservas</code>:</strong> con sesión, sus reservas con Cancelar y Pagar online; sin sesión, la búsqueda por código.</li>
         <li><strong>Pagar online:</strong> medio, monto del backend, Mercado Pago, y vuelta al ticket.</li>
         <li><strong><code>#/ticket/&lt;codigo&gt;</code>:</strong> público y sin cancelar. El aviso y el texto de la tarjeta cambian con el estado (Reservada, Pagada, Vencida, Cancelada), y muestra el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta la reserva por código cada 10 segundos, así pasa a Pagada solo cuando la conciliación cobra.</li>
+      </ul>
+      <h3 id="hooks-estado">Hooks y estado</h3>
+      <ul>
+        <li><strong><code>useCargar(pedir, deps)</code>:</strong> devuelve <code>{ datos, error, previos, cargando, recargar }</code>. <code>datos</code> y <code>error</code> son null mientras las deps no coincidan con las de la respuesta, así no se ve lo de otro id; <code>previos</code> es lo último que llegó, para que la cartelera reordene al cambiar de género.</li>
+        <li><strong>Contextos:</strong> <code>SesionDelCliente</code> (quién tiene la sesión) y <code>CompraEnCurso</code> (selección y renovación del bloqueo). Los dos envuelven las rutas, así que no se remontan al cambiar de pantalla.</li>
+        <li><strong><code>useEffectEvent</code>:</strong> la renovación del bloqueo lee la selección actual sin escribir un ref durante el render.</li>
+        <li><strong>Sin refs en el render:</strong> lo que el render lee es estado (<code>reservada</code> en Confirmar), no un ref.</li>
+        <li><strong>StrictMode</strong> activo en <code>main.jsx</code>: los efectos corren dos veces en desarrollo y tienen que aguantarlo (el confetti marca <code>celebrada</code> al lanzar, no al entrar al efecto).</li>
+        <li><strong>ESLint de hooks:</strong> <code>npm run lint</code> con <code>eslint-plugin-react-hooks</code>. Un único <code>eslint-disable</code>, justificado, en <code>useCargar</code>.</li>
+        <li><strong>Error boundary:</strong> <code>ErrorDePantalla</code> envuelve las rutas; si una pantalla falla muestra «Algo salió mal» y un botón que limpia el error y vuelve al inicio.</li>
       </ul>
       <h3 id="abm-productos">Productos con detalle, borrado y modificación</h3>
       <p>
@@ -1716,9 +1727,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         Un concepto con regla propia es un tipo que se valida y se normaliza al construirse, en vez de repetir la regla donde
         se usa el dato (la vigencia de una promoción y el rango de una grilla validaban el orden cada una a su modo).
         Son <code>Dinero</code> (centavos), <code>Periodo</code>, <code>FranjaHoraria</code>, <code>Email</code> (recortado y en minúsculas), <code>Contrasena</code> (su <code>toString</code> no la muestra),
-        <code>CodigoDeAcceso</code>, <code>SesionDeCompra</code> y <code>CatalogoPelicula</code>, que se reemplaza entero para
-        que la película nunca quede a medio validar. <code>Periodo</code>, <code>FranjaHoraria</code> y
-        <code>CatalogoPelicula</code> son <code>@Embeddable</code>: no movieron ninguna columna.
+        <code>CodigoDeAcceso</code>, <code>SesionDeCompra</code>, <code>FormatoDeFuncion</code> (versión, proyección y precio) y <code>CatalogoPelicula</code>, que se reemplaza entero para
+        que la película nunca quede a medio validar. <code>Periodo</code>, <code>FranjaHoraria</code>,
+        <code>FormatoDeFuncion</code> y <code>CatalogoPelicula</code> son <code>@Embeddable</code>: no movieron ninguna columna.
       </p>
 
       <h3 id="rechazos">La jerarquía de rechazos</h3>
@@ -1759,6 +1770,63 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <code>Regla.texto(titulo).obligatorio("Falta el título").recortado().hasta(100, "El título").valor()</code>.</li>
         <li><strong>La base cierra</strong> lo que dos pedidos simultáneos podrían colar. Los clientes no aplican reglas (ver
           <a href="#swing">Swing</a>).</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="mapa-diseno">
+      <h2>Mapa de diseño y refactorings</h2>
+      <p>Dónde defender cada principio, y qué smells se corrigieron y cuáles se dejaron a propósito.</p>
+      <h3>Principios y patrones</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Principio o patrón</th><th>Clase</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>SRP</td><td><code>GestorInformes</code>, <code>GestorCaja</code></td><td>El corte por función y el corte por día cambian por razones distintas</td></tr>
+            <tr><td>SRP</td><td><code>Ocupacion</code></td><td>La definición de butaca ocupada (R4) está en un solo lugar: mapa, bloqueo y venta la usan</td></tr>
+            <tr><td>OCP</td><td><code>TipoPromocion</code>, <code>Promocion</code></td><td>Un tipo nuevo es una constante y una subclase; controller y vista no cambian</td></tr>
+            <tr><td>OCP</td><td><code>TipoAsiento</code></td><td>El multiplicador viaja con la constante: el precio no tiene <code>switch</code></td></tr>
+            <tr><td>LSP</td><td><code>Promocion</code> y sus tres subclases</td><td>Todas responden <code>getParametros()</code> y <code>calcularDescuento()</code> sin que nadie pregunte cuál es</td></tr>
+            <tr><td>ISP</td><td><code>GeneradorTicket</code>, <code>GeneradorRecibo</code>, <code>GeneradorTicketCandy</code></td><td>Tres puertos chicos; cada listener depende solo del que usa</td></tr>
+            <tr><td>DIP</td><td><code>PoliticaPromociones</code>, <code>Adaptadores</code></td><td><code>GestorPagos</code> depende de la regla, no del ABM; solo <code>Adaptadores</code> nombra implementaciones concretas</td></tr>
+            <tr><td>Experto</td><td><code>Reserva</code>, <code>MedioPago</code>, <code>Asiento</code></td><td>Pagar, cancelar y expirar los decide quien tiene el estado; qué autorización exige un medio, el medio; R9, el asiento</td></tr>
+            <tr><td>Creador</td><td><code>TipoPromocion</code></td><td>Tiene los datos para crear su subclase</td></tr>
+            <tr><td>Controlador</td><td><code>*Controller</code> → <code>Gestor*</code></td><td>El controller solo traduce HTTP; el gestor coordina el caso de uso</td></tr>
+            <tr><td>Fabricación pura</td><td><code>Repositorio.exigir</code>, <code>Regla</code></td><td>El «buscar o 404» y las guardas fluidas no pertenecen a ninguna entidad</td></tr>
+            <tr><td>Variaciones protegidas</td><td><code>PasarelaPagos</code>, <code>Reloj</code></td><td>Lo que varía (sandbox o emulada, reloj real o movible) queda detrás de un puerto</td></tr>
+            <tr><td>Bajo acoplamiento</td><td><code>ArquitecturaTest</code></td><td>Un import prohibido rompe el build</td></tr>
+            <tr><td>Polimorfismo / State</td><td><code>EstadoReserva</code></td><td>Reemplaza <code>estado == X</code> desperdigado</td></tr>
+            <tr><td>Factory Method</td><td><code>TipoPromocion</code></td><td>Había tres lugares que tocar por cada tipo nuevo</td></tr>
+            <tr><td>Observer</td><td><code>ComprobantesDeVentas</code></td><td><code>@TransactionalEventListener</code>: no queda el recibo de un cobro que hizo rollback</td></tr>
+            <tr><td>Strategy</td><td><code>PasarelaPagos</code> en <code>Adaptadores</code></td><td>Elección en runtime por configuración</td></tr>
+            <tr><td>Template Method</td><td><code>PantallaListado</code> (Swing), <code>ComprobanteTxt</code></td><td>El algoritmo común en la base; cada hija pone lo suyo</td></tr>
+            <tr><td>Decorator</td><td><code>PasswordBcrypt</code></td><td>Migra SHA-256 a bcrypt sin tocar Spring Security</td></tr>
+            <tr><td>Excepción sellada</td><td><code>Rechazo</code></td><td>Jerarquía cerrada: <code>ManejadorErrores</code> sabe que no hay un quinto tipo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Refactorings aplicados</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Smell</th><th>Refactoring</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Data Clump</strong> y Long Parameter List: versión, proyección y precio viajaban sueltos por cinco firmas</td><td>Introduce Parameter Object: <code>FormatoDeFuncion</code></td><td>Record <code>@Embeddable</code> de <code>Funcion</code> y <code>Programacion</code>, validado al construirse. Las columnas no cambiaron. <code>GestorFunciones.programar</code> pasa de 7 a 5 parámetros y <code>Programacion</code> de 9 a 7. R8 queda en la entidad porque cruza el formato con la sala</td></tr>
+            <tr><td><strong>Código duplicado</strong>: confirmar, retornar y conciliar repetían el cobro por checkout</td><td>Extract Method: <code>cobrarCheckout</code></td><td>Los tres públicos solo deciden qué hacer con el rechazo. <code>existsByReservaId</code> se consulta una vez</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Costo de <code>FormatoDeFuncion</code>: al validarse antes que la entidad, si hay R8 y precio inválido a la vez sale primero el
+        precio. Por HTTP no cambia: los controllers ya validaban el precio antes.
+      </p>
+
+      <h3>Decisiones conscientes</h3>
+      <ul>
+        <li><strong>CQS en <code>Ocupacion</code>:</strong> consultar la ocupación expira las reservas vencidas, o sea una consulta que escribe. Se deja:
+          está documentado, es correcto y está testeado; moverlo a una tarea programada agrega una pieza sin arreglar un bug. <code>Reserva.estaVencida</code> es la red de seguridad en la lectura.</li>
+        <li><strong>Interfaces-puerto con una implementación</strong> (<code>PoliticaPromociones</code>, los <code>Generador*</code>, <code>CatalogoExterno</code>): la regla de no tener interfaces de una sola implementación vale para los gestores, no para los puertos.
+          Son Variaciones protegidas con un doble en los tests o una segunda implementación plausible (PDF, otro catálogo).</li>
+        <li><strong><code>switch</code> sobre <code>MedioPago</code> en <code>MercadoPagoHttp</code>:</strong> qué tipos de pago de MP son cada medio lo sabe MP, no el dominio. Sin polimorfismo; el <code>switch</code> exhaustivo no compila si falta un medio.</li>
       </ul>
     </section>
 
@@ -1998,6 +2066,23 @@ docker compose up -d --build
         Comandos, Postman, humo de punta a punta, planilla de recorrida visual y última corrida:
         <a href="../PRUEBAS.md"><code>PRUEBAS.md</code></a>.
       </p>
+
+      <h3 id="cobertura">Cobertura medida</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th></tr></thead>
+          <tbody>
+            <tr><td>Backend</td><td>1146</td><td>95,2 %</td><td>90,6 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code> (JaCoCo)</td></tr>
+            <tr><td>Swing</td><td>63</td><td>49,8 %</td><td>31,3 %</td><td><code>cd cine-swing &amp;&amp; mvn test</code></td></tr>
+            <tr><td>Front</td><td>49</td><td>64,7 %</td><td>45,4 %</td><td><code>cd cine-frontend &amp;&amp; npm test</code>; <code>npm run coverage</code> deja el reporte en <code>coverage/</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><strong>Swing, por qué tan baja:</strong> las pantallas (41 % de líneas, 1 % de ramas) son listeners y formularios; corren headless y no tienen reglas de negocio, que viven en el backend. Lo que sí tiene lógica (<code>api</code>, <code>comun</code>, <code>informes</code>) está testeado.</li>
+        <li><strong>Front:</strong> Vitest, jsdom y Testing Library, con los tests al lado del código (<code>src/**/*.test.jsx</code>) y <code>src/test/renderConApp.jsx</code> que arma la app con sesión, compra y rutas. La API se mockea, por eso <code>api/</code> mide 47 %.</li>
+        <li><strong>Lint del front:</strong> <code>npm run lint</code>.</li>
+      </ul>
 
       <h3>Casos de la defensa</h3>
       <p>CP-01 a CP-09 y CP-19 recorren la API con Postman; CP-10 a CP-18 se hacen a mano en la web y en Swing.</p>
