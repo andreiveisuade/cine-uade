@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Carousel } from "@mantine/carousel";
 import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
-import { Badge, Box, Card, Chip, Collapse, Group, SimpleGrid, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import { Badge, Box, Card, Chip, Image, Collapse, Group, SimpleGrid, Skeleton, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { AnimatePresence, m, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import * as api from "../api/api-http.js";
@@ -154,6 +154,18 @@ function Condiciones({ promo }) {
   );
 }
 
+// La foto va de fondo y el degradé oscuro la tapa del lado del texto: el beneficio se tiene que leer igual.
+function FondoPromo({ promo }) {
+  return (
+    <>
+      <img src={promo.imagenUrl} alt={promo.nombre} loading="lazy"
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      <Box pos="absolute" inset={0}
+        style={{ background: "linear-gradient(100deg, rgba(10,10,20,0.92) 35%, rgba(10,10,20,0.55) 70%, rgba(10,10,20,0.25))" }} />
+    </>
+  );
+}
+
 function TarjetaPromo({ promo, orden }) {
   const quieto = useReducedMotion();
   const hoy = aplicaHoy(promo);
@@ -184,6 +196,7 @@ function TarjetaPromo({ promo, orden }) {
               background: SALA, color: "white", overflow: "hidden",
               boxShadow: hoy ? "0 16px 48px -14px var(--mantine-color-yellow-5)" : "0 12px 36px -18px var(--mantine-color-indigo-5)",
             }}>
+            {promo.imagenUrl && <FondoPromo promo={promo} />}
             <Barrido />
             <Stack gap="sm" pos="relative">
               <Group justify="space-between" mih={30}>
@@ -252,6 +265,11 @@ function TarjetaCombo({ combo }) {
   return (
     <m.div whileHover={{ y: -6, scale: 1.02 }} style={{ height: "100%" }}>
       <Card radius="lg" padding="lg" withBorder h="100%">
+        {combo.imagenUrl && (
+          <Card.Section mb="sm">
+            <Image src={combo.imagenUrl} alt={combo.nombre} loading="lazy" h={160} fit="cover" />
+          </Card.Section>
+        )}
         <Stack gap="xs" h="100%">
           <Badge color="green" size="xl" variant="filled" tt="none" style={{ alignSelf: "flex-start" }}>
             Ahorrás <MontoAnimado valor={combo.ahorro} desde={0} />
@@ -295,6 +313,11 @@ function Candy({ productos }) {
           {sueltos.map((p, i) => (
             <m.div key={p.id} variants={TARJETA} custom={i} initial="oculta" animate="visible" whileHover={{ y: -4 }}>
               <Card radius="md" padding="sm" withBorder h="100%">
+                {p.imagenUrl && (
+                  <Card.Section mb="xs">
+                    <Image src={p.imagenUrl} alt={p.nombre} loading="lazy" h={110} fit="cover" />
+                  </Card.Section>
+                )}
                 <Text size="xs" c="dimmed" tt="uppercase" fw={700}>{etiqueta(p.tipo)}</Text>
                 <Text fw={600} size="sm" lineClamp={1}>{p.nombre}</Text>
                 <Text fw={900} fz="lg">{precio(p.precio)}</Text>
