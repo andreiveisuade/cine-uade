@@ -22,7 +22,9 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 
 | Archivo | Qué muestra |
 |---|---|
-| `clases-dominio.puml` | Entidades, value objects, enums y relaciones del negocio, agrupados por subdominio |
+| `clases-catalogo.puml` | Dominio 1/3: cartelera, salas, funciones y grilla |
+| `clases-ventas.puml` | Dominio 2/3: usuarios, ventas y promociones, con sus Value Objects |
+| `clases-candy-valores.puml` | Dominio 3/3: candy, `Dinero`, `Periodo` y `FranjaHoraria` |
 | `capas.archify.json` | Las seis capas y quién llama a quién (Archify) |
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |
@@ -46,7 +48,8 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
 | `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
 | `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
-| `base-venta-er.puml` | Tablas de la venta con sus PK, FK, `UNIQUE` y cascadas |
+| `der.puml` | DER completo: las 20 tablas de `schema.sql` por subdominio, con las restricciones que sostienen reglas |
+| `base-venta-er.puml` | Zoom del DER en la venta: PK, FK, `UNIQUE` y cascadas |
 | `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
 | `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |
 | `grilla-plan.puml` | La grilla: un plan para previsualizar, crear y extender |

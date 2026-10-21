@@ -1,0 +1,257 @@
+@startuml clases-ventas
+title Modelo de dominio (2/3) - usuarios, ventas y promociones
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+set namespaceSeparator none
+
+' Una de las tres vistas del modelo (clases-catalogo, clases-ventas, clases-candy-valores):
+' en un solo diagrama media 6800px de ancho y no se leia. Los comentarios ' son el porque
+' de cada decision y la materia prima del manual.
+
+package "model.usuarios" {
+  ' El email se guarda como lo normaliza el Value Object Email (sin espacios y
+  ' en minusculas): es con lo que se busca al cliente, sus reservas y el login.
+  ' La clave vive aca y no en Empleado: el cliente con cuenta tambien entra con
+  ' clave, y es la misma columna. Null en el cliente que compro sin registrarse.
+  abstract class Usuario <<Entity>> {
+    +getNombre(): String
+    +getEmail(): String
+    +getRol(): Rol
+    +getPasswordHash(): String [0..1]
+    #guardarPasswordHash(hash)
+  }
+  ' abrirCuenta una sola vez: una segunda pisaria la clave del dueno con la de
+  ' quien conozca su email.
+  class Cliente <<Entity>> {
+    +tieneCuenta(): boolean
+    +abrirCuenta(passwordHash)
+  }
+  ' Rol discrimina la tabla unica por formula: ADMINISTRADOR y ACOMODADOR caen
+  ' los dos en Empleado.
+  class Empleado <<Entity>> {
+    +reemplazarPasswordHash(hash)
+  }
+  ' Value Objects de la entrada: llegan como texto y salen normalizados o rechazan.
+  class Email <<record>> {
+    valor: String
+    --
+    {static} +paraBuscar(texto): Optional<Email>
+  }
+  ' En claro solo hasta el bcrypt; toString no la muestra, por si llega a un log.
+  class Contrasena <<record>> {
+    valor: String
+  }
+  enum Rol <<enum>> {
+    CLIENTE
+    ADMINISTRADOR
+    ACOMODADOR
+    --
+    +esEmpleado(): boolean
+  }
+}
+
+package "model.ventas" {
+  ' Nace RESERVADA, pasa a PAGADA al cobrar, CANCELADA si el cliente la da de
+  ' baja y EXPIRADA si nadie la pago a tiempo. Expira sin proceso de fondo: la
+  ' primera operacion que se cruza con una vencida la cierra al pasar.
+  ' State: Reserva no compara su estado. Cada operacion le pide la transicion a
+  ' EstadoReserva (estado = estado.pagar()), que rechaza si no corresponde, y
+  ' las preguntas (espera el pago?, ocupa butacas?) tambien las contesta el
+  ' estado. Ver patron-state.puml.
+  ' codigo es el del QR y, como el cliente no inicia sesion, es su unica
+  ' credencial: por eso no puede ser el id. Lo genera y lo normaliza el Value
+  ' Object CodigoDeAcceso. ingresadaEn null = no entraron aun.
+  ' estaVencida(ahora) recibe el instante por parametro, igual que yaEmpezo()
+  ' en Funcion, para poder probarla sin esperar media hora. Lleva @Version: si
+  ' cobrar y cancelar compiten, el segundo en escribir falla (409) en vez de
+  ' pisar al primero.
+  class Reserva <<Entity>> {
+    {static} +MINUTOS_PARA_PAGAR: int = 30
+    +getFuncion(): Funcion
+    +getCliente(): Cliente
+    +getFuncionId(): int
+    +getClienteId(): int
+    +getCreadaEn(): LocalDateTime
+    +getEntradas(): List<Entrada>
+    +getCantidadEntradas(): int
+    +getTotal(): Dinero
+    +getEstado(): EstadoReserva
+    {static} +validarTopeDeButacas(butacas)
+    --transiciones, las decide el estado--
+    +pagar() / cancelar() / expirar()
+    +registrarIngreso(cuando)
+    --preguntas--
+    +estaVigente(): boolean
+    +estaPagada(): boolean
+    +estaVencida(ahora): boolean
+    +impedimentoParaCobrar(ahora): Optional<String>
+    +esCobrable(ahora): boolean
+    +esCancelable(): boolean
+    --control de acceso--
+    +getCodigo(): String
+    +getIngresadaEn(): LocalDateTime
+  }
+  ' Sin DAO propio: vive y muere con su reserva (cascade + orphanRemoval).
+  ' precio es el de lista (funcion x TipoSala x TipoAsiento x TipoTarifa): llega
+  ' el de la butaca y la entrada le aplica su tarifa. Se congela al reservar y
+  ' ninguna promocion lo toca. La tarifa va aca porque es por persona: en una
+  ' reserva de cuatro puede haber dos generales, un menor y un jubilado.
+  class Entrada <<Entity>> {
+    +asientoId(): int
+    +codigoAsiento(): String
+    +tarifa(): TipoTarifa
+    +precio(): Dinero
+  }
+  ' El descuento vive aca y no en la entrada: el 2x1 no se puede escribir como
+  ' factor sobre una butaca, y como las promociones no se acumulan y gana la
+  ' mejor (R15), todas tienen que producir la misma unidad: un monto sobre la
+  ' reserva. Consecuencia: el total definitivo no existe hasta el pago, porque
+  ' el descuento bancario depende del medio que se elige al cobrar.
+  class Pago <<Entity>> {
+    +getReservaId(): int
+    +getSubtotal(): Dinero
+    +getPromocionId(): Integer
+    +getDescuento(): Dinero
+    +getMonto(): Dinero
+    +getMedio(): MedioPago
+    +getFecha(): LocalDateTime
+    +getCodigoAutorizacion(): String
+    +llevaRecibo(): boolean
+  }
+  ' La butaca mientras se elige: 3 minutos a nombre de una sesion anonima.
+  ' PK (funcion_id, asiento_id): la base no deja que dos sesiones la tengan.
+  ' Nadie la instancia: se toma, renueva y suelta con sentencias atomicas.
+  class BloqueoButaca <<Entity>> {
+    +asientoId(): int
+    +sesion(): String
+  }
+  enum EstadoReserva <<enum>> <<State>> {
+    RESERVADA / PAGADA
+    CANCELADA / EXPIRADA
+    --
+    ~pagar() / cancelar() / expirar() / ingresar()
+    +esperaPago(): boolean
+    +ocupaButacas(): boolean
+    +estaPagada(): boolean
+  }
+  ' Quien compra, no donde se sienta. Sin login no hay como validar "jubilado"
+  ' al vender: la tarifa se declara al comprar y se acredita en la puerta, y
+  ' por eso el enum sabe cual requiere acreditacion. Tambien sabe si entra en
+  ' una promocion (R16): una tarifa nueva lo dice aca, sin tocar al gestor.
+  enum TipoTarifa <<enum>> {
+    GENERAL / MENOR
+    JUBILADO / ESTUDIANTE
+    --
+    +getMultiplicadorPrecio(): double
+    +requiereAcreditacion(): boolean
+    +participaDePromociones(): boolean
+    +aplicarA(Dinero): Dinero
+  }
+  ' R11: que autorizacion lleva cada medio lo decide el medio; el efectivo se
+  ' cobra en la caja y no lleva codigo.
+  enum MedioPago <<enum>> {
+    EFECTIVO / DEBITO / CREDITO
+    QR / TRANSFERENCIA
+    --
+    +requiereAutorizacion(): boolean
+    +autorizacion(codigo): String
+    +seCobraEnCaja(): boolean
+    +exigirCheckout()
+  }
+  ' La credencial de la puerta: la genera sin O, I, 0 ni 1 y la normaliza para buscar.
+  class CodigoDeAcceso <<record>> {
+    valor: String
+    --
+    {static} +generar(): CodigoDeAcceso
+  }
+  ' De quien es un bloqueo; no es credencial: la doble venta la frena el UNIQUE.
+  class SesionDeCompra <<record>> {
+    valor: String
+  }
+}
+
+package "model.promociones" {
+  ' Clase abstracta @Entity con tres subclases de verdad, que es cuando la
+  ' abstraccion paga: un tipo de beneficio nuevo es una clase, no un case mas
+  ' en un switch. Van a tabla unica con discriminador, igual que Usuario.
+  ' calcularDescuento recibe una lista de entradas y no la reserva entera
+  ' porque las de tarifa reducida no participan del descuento (R16).
+  ' aplicaA recibe el inicio de la funcion y el medio de pago por parametro, no
+  ' un objeto Funcion completo: todo lo que evalua -vigencia, dia, franja, medio-
+  ' sale de esos dos datos. getParametros() lo contesta cada subclase: la vista
+  ' ya no averigua con instanceof que clase tiene enfrente.
+  abstract class Promocion <<Entity>> {
+    --condiciones--
+    +getNombre(): String
+    +getTipo(): TipoPromocion
+    +getVigencia(): Periodo
+    +getDiasSemana(): Set<DayOfWeek>
+    +getFranja(): FranjaHoraria
+    +getMediosPago(): Set<MedioPago>
+    +estaActiva(): boolean
+    +activar() / desactivar()
+    +aplicaA(inicioFuncion, medio): boolean
+    --beneficio--
+    +{abstract} getParametros(): ParametrosPromocion
+    +{abstract} calcularDescuento(List<Entrada>): Dinero
+    {static} #topear(Dinero, List<Entrada>): Dinero
+    {static} #subtotalDe(List<Entrada>): Dinero
+  }
+  ' Factory Method: cada constante crea su subclase, asi el alta nombra el tipo
+  ' y nunca la clase, sin switch en el controller. Un tipo nuevo es una
+  ' constante y una subclase: el compilador no deja olvidarse de crear().
+  ' getCampos() publica en el catalogo que campos pide cada tipo.
+  enum TipoPromocion <<enum>> <<Factory Method>> {
+    PORCENTAJE(porcentaje)
+    MONTO_FIJO(monto)
+    NXM(lleva, paga)
+    --
+    +getCampos(): List<String>
+    +{abstract} crear(nombre, parametros, condiciones, hoy): Promocion
+  }
+  ' Parameter Object: cuando corre (vigencia, dias, horario, medios), crudo; lo
+  ' valida Promocion, que arma con eso su Periodo y su FranjaHoraria.
+  class CondicionesPromocion <<record>> {
+    desde / hasta / dias / horaDesde / horaHasta / mediosPago
+  }
+  ' Lo propio de cada tipo, de ida y de vuelta, con null en lo ajeno.
+  class ParametrosPromocion <<record>> {
+    porcentaje / monto / lleva / paga
+  }
+  class PromocionPorcentaje {
+    +getPorcentaje(): double
+  }
+  class PromocionMontoFijo {
+    +getMonto(): Dinero
+  }
+  class PromocionNxM {
+    +getLleva(): int
+    +getPaga(): int
+  }
+}
+
+' De la vista 1/3: solo el nombre, para anclar las flechas.
+class Funcion <<Entity>>
+class Asiento <<Entity>>
+Cliente --|> Usuario
+Empleado --|> Usuario
+PromocionPorcentaje --|> Promocion
+PromocionMontoFijo --|> Promocion
+PromocionNxM --|> Promocion
+TipoPromocion ..> Promocion : crea >
+TipoPromocion ..> CondicionesPromocion : recibe >
+Reserva ..> CodigoDeAcceso : codigo
+BloqueoButaca ..> SesionDeCompra : sesion
+Usuario ..> Email : email
+Reserva "*" --> "1" Funcion
+Reserva "*" --> "1" Cliente
+Reserva "1" *-- "1..10" Entrada
+Entrada "*" --> "1" Asiento : {asiento.sala = reserva.funcion.sala}
+BloqueoButaca "*" --> "1" Funcion
+BloqueoButaca "*" --> "1" Asiento
+Pago "0..1" --> "1" Reserva
+Pago "*" --> "0..1" Promocion
+
+@enduml
