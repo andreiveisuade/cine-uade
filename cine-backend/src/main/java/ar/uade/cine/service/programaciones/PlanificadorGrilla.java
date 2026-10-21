@@ -3,9 +3,6 @@ package ar.uade.cine.service.programaciones;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +30,6 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 @RequiredArgsConstructor
 public class PlanificadorGrilla {
 
-    private static final int MINUTOS_ENTRE_INTENTOS = 30;
-
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
@@ -60,9 +55,12 @@ public class PlanificadorGrilla {
             throw new DatoInvalido(
                     "No hay películas confirmadas para armar la grilla: revisá el buzón de importadas");
         }
-        List<PaseSugerido> pases = repartir(elenco, salas, criterios, new PuntajeConfiable(elenco));
+        // SRP y Fabricación pura: la ventana horaria y el reparto viven aparte; acá solo se orquesta.
+        VentanaDelDia ventana = new VentanaDelDia(criterios, reloj.ahora());
+        List<PaseSugerido> pases = new RepartoDePases(elenco, new PuntajeConfiable(elenco))
+                .repartir(salas, agendasDe(salas, criterios), ventana);
         return new PropuestaGrilla(elenco, pases,
-                IndicadoresGrilla.de(elenco, pases, minutosLibres(salas, criterios)));
+                IndicadoresGrilla.de(elenco, pases, minutosLibres(salas, ventana, criterios)));
     }
 
     // Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada.
@@ -75,86 +73,29 @@ public class PlanificadorGrilla {
         return propuesta;
     }
 
-    private List<PaseSugerido> repartir(List<Pelicula> elenco, List<Sala> salas, CriteriosGrilla criterios,
-                                        PuntajeConfiable puntajes) {
-        List<PaseSugerido> pases = new ArrayList<>();
-        Map<Integer, Integer> asignados = new HashMap<>();
-        elenco.forEach(p -> asignados.put(p.getId(), 0));
-
-        Map<Integer, AgendaDeSala> agendas = new HashMap<>();
+    // Una lectura por sala para todo el rango, y no una por intento.
+    private Map<Integer, AgendaDeSala> agendasDe(List<Sala> salas, CriteriosGrilla criterios) {
         LocalDateTime desde = criterios.desde().atStartOfDay();
         LocalDateTime hasta = criterios.desde().plusDays(criterios.dias()).atStartOfDay();
-        salas.forEach(sala -> agendas.put(sala.getId(), funciones.agendaDe(sala.getId(), desde, hasta)));
-
-        for (int dia = 0; dia < criterios.dias(); dia++) {
-            LocalDate fecha = criterios.desde().plusDays(dia);
-            for (Sala sala : salas) {
-                LocalDateTime momento = primerIntento(fecha, criterios);
-                LocalDateTime limite = criterios.cierreDe(fecha);
-
-                while (momento.isBefore(limite)) {
-                    Pelicula elegida = conMasDeuda(elenco, asignados, puntajes);
-                    LocalDateTime fin = momento.plusMinutes(elegida.getDuracionMinutos());
-                    if (fin.isAfter(limite)) {
-                        // No se prueba una más corta: se llevaría siempre el último turno.
-                        break;
-                    }
-                    if (agendas.get(sala.getId()).chocaEn(momento, fin)) {
-                        momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
-                        continue;
-                    }
-                    pases.add(new PaseSugerido(elegida.getId(), elegida.getTitulo(),
-                            sala.getId(), sala.getNombre(), momento, elegida.getDuracionMinutos()));
-                    asignados.merge(elegida.getId(), 1, Integer::sum);
-                    momento = fin.plusMinutes(sala.getMinutosLimpieza());
-                }
-            }
-        }
-        return pases;
+        return salas.stream().collect(Collectors.toMap(Sala::getId,
+                sala -> funciones.agendaDe(sala.getId(), desde, hasta)));
     }
 
-    // R20: hoy arranca en el primer intento que todavía no pasó; en un día que ya pasó da el
-    // cierre o más, sin nada por repartir. Lo usan el reparto y la ventana de los indicadores,
-    // para que la ocupación se mida contra lo que el reparto puede usar de verdad.
-    private LocalDateTime primerIntento(LocalDate fecha, CriteriosGrilla criterios) {
-        LocalDateTime momento = fecha.atTime(criterios.apertura());
-        LocalDateTime limite = criterios.cierreDe(fecha);
-        while (momento.isBefore(limite) && Funcion.yaPaso(momento, reloj.ahora())) {
-            momento = momento.plusMinutes(MINUTOS_ENTRE_INTENTOS);
-        }
-        return momento;
-    }
-
-    private Pelicula conMasDeuda(List<Pelicula> elenco, Map<Integer, Integer> asignados,
-                                 PuntajeConfiable puntajes) {
-        return elenco.stream()
-                .min(Comparator.comparingDouble(
-                                (Pelicula p) -> asignados.get(p.getId()) / peso(p, puntajes))
-                        .thenComparing(Pelicula::getTitulo))
-                .orElseThrow();
-    }
-
-    // Nunca cero: con puntaje 0 la deuda sería infinita y se llevaría la grilla entera.
-    private double peso(Pelicula pelicula, PuntajeConfiable puntajes) {
-        return Math.max(puntajes.de(pelicula), 0.1);
-    }
-
-    private int minutosLibres(List<Sala> salas, CriteriosGrilla criterios) {
+    private int minutosLibres(List<Sala> salas, VentanaDelDia ventana, CriteriosGrilla criterios) {
         long minutosPorSala = 0;
-        for (int dia = 0; dia < criterios.dias(); dia++) {
-            LocalDate fecha = criterios.desde().plusDays(dia);
-            minutosPorSala += Math.max(Duration.between(primerIntento(fecha, criterios),
-                    criterios.cierreDe(fecha)).toMinutes(), 0);
+        for (LocalDate fecha : ventana.fechas()) {
+            minutosPorSala += Math.max(Duration.between(ventana.primerIntento(fecha),
+                    ventana.cierre(fecha)).toMinutes(), 0);
         }
-        int ventana = (int) (minutosPorSala * salas.size());
+        int disponibles = (int) (minutosPorSala * salas.size());
 
         // Solo lo cargado en las salas de la grilla: lo de una sala 2D no le quita tiempo a una en 3D.
         Set<Integer> deLaGrilla = salas.stream().map(Sala::getId).collect(Collectors.toSet());
         List<Funcion> programadas = funciones.buscar(null, null, criterios.periodo()).stream()
                 .filter(f -> deLaGrilla.contains(f.getSalaId()))
                 // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
-                .filter(f -> !f.getInicio().isBefore(primerIntento(f.getInicio().toLocalDate(), criterios)))
-                .filter(f -> f.getInicio().isBefore(criterios.cierreDe(f.getInicio().toLocalDate())))
+                .filter(f -> !f.getInicio().isBefore(ventana.primerIntento(f.getInicio().toLocalDate())))
+                .filter(f -> f.getInicio().isBefore(ventana.cierre(f.getInicio().toLocalDate())))
                 .toList();
         Map<Integer, Integer> duraciones = peliculaRepository
                 .findAllById(programadas.stream().map(Funcion::getPeliculaId).distinct().toList()).stream()
@@ -164,6 +105,6 @@ public class PlanificadorGrilla {
                 .sum();
 
         // Con funciones cargadas a mano el descuento puede pasarse de la ventana.
-        return Math.max(ventana - ocupados, 0);
+        return Math.max(disponibles - ocupados, 0);
     }
 }
