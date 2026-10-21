@@ -136,7 +136,7 @@ export function Confirmar() {
               <Table.Tfoot>
                 <Table.Tr>
                   <Table.Th colSpan={3} fz="md">Total</Table.Th>
-                  <Table.Th ta="right"><Text span className="cine-display" fz={30} fw={850}>{precio(total)}</Text></Table.Th>
+                  <Table.Th ta="right"><Text span className="cine-display" fz={30} fw={850} style={{ whiteSpace: "nowrap" }}>{precio(total)}</Text></Table.Th>
                 </Table.Tr>
               </Table.Tfoot>
             </Table>
