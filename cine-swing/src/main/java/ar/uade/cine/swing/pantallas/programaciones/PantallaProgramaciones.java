@@ -16,8 +16,8 @@ import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.pantallas.PantallaListado;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -55,8 +55,8 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
             Columna.<Programacion>numero("Precio", p -> precio(p.precio())),
             Columna.<Programacion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
     private final JTextArea detalle = Componentes.areaDeLectura(6, 30);
-    private final JButton cambiarActivacion = new JButton("Dar de baja");
     private final FormularioProgramacion formulario;
+    private final BotonesDeFila<Programacion> botones;
 
     public PantallaProgramaciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos,
                                   ApiProgramaciones apiProgramaciones, ApiSalas apiSalas) {
@@ -64,6 +64,9 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
                 + "con algo ya programado en esa sala se saltean, y el informe dice cuáles.");
         this.apiProgramaciones = apiProgramaciones;
         this.formulario = new FormularioProgramacion(apiProgramaciones, this::recargar);
+        // Command: ver AccionDeFila.
+        this.botones = new BotonesDeFila<>(this, tabla, this::recargar,
+                new CambiarActivacionGrilla(apiProgramaciones));
 
         filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
         JComboBox<Opcion<String>> filtroEstado = new JComboBox<>();
@@ -132,18 +135,12 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
 
     private JPanel accionesDeFila() {
         JPanel acciones = new JPanel(new FlujoConSalto());
-        cambiarActivacion.addActionListener(e -> tabla.seleccionada().ifPresent(p -> {
-            if (p.activa() && !confirmar("¿Dar de baja esta grilla? Deja de generar funciones; las que ya generó "
-                    + "quedan.", "Sí, dar de baja")) return;
-            accion(() -> apiProgramaciones.cambiarActivacionProgramacion(p.id(), !p.activa()),
-                    p.activa() ? "Grilla dada de baja" : "Grilla reactivada", this::recargar);
-        }));
-        acciones.add(cambiarActivacion);
+        botones.agregarA(acciones);
         return acciones;
     }
 
     private void verDetalle(Programacion elegida) {
-        cambiarActivacion.setText(elegida.activa() ? "Dar de baja" : "Reactivar");
+        botones.refrescar();
         cargar(() -> apiProgramaciones.obtenerProgramacion(elegida.id()), grilla -> {
             if (grilla.funciones() == null || grilla.funciones().isEmpty()) {
                 detalle.setText("Esta grilla no generó ninguna función: todas sus fechas chocaban con algo ya "

@@ -6,13 +6,13 @@ import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.FlujoConSalto;
-import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.PantallaListado;
+import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -39,7 +39,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
     private final Navegacion navegacion;
     private final JLabel resumen = new JLabel(" ");
     private final JButton cobrar = new JButton("Cobrar");
-    private final JButton cancelar = new JButton("Cancelar reserva");
+    private final BotonesDeFila<Reserva> botones;
     private final Tabla<Reserva> tabla = new Tabla<>(
             Columna.<Reserva>de("#", r -> r.id()).ancho(40),
             Columna.<Reserva>de("Función", PantallaReservas::funcion).ancho(280),
@@ -54,6 +54,8 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         super("Reservas", null);
         this.apiVentas = apiVentas;
         this.navegacion = navegacion;
+        // Command: ver AccionDeFila.
+        this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CancelarReserva(apiVentas));
 
         JTextField buscar = new JTextField(22);
         buscar.setToolTipText("cliente, email, película o butaca");
@@ -70,7 +72,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
 
         JPanel acciones = new JPanel(new FlujoConSalto());
         acciones.add(cobrar);
-        acciones.add(cancelar);
+        botones.agregarA(acciones);
 
         JPanel centro = new JPanel(new BorderLayout(0, 8));
         centro.add(norte, BorderLayout.NORTH);
@@ -83,7 +85,6 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
             if (r.cobrable()) abrirCobro(r);
         });
         cobrar.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirCobro));
-        cancelar.addActionListener(e -> tabla.seleccionada().ifPresent(this::cancelar));
         habilitar();
         recargar();
     }
@@ -134,17 +135,10 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
     // termina en un rechazo por el estado o la hora.
     private void habilitar() {
         cobrar.setEnabled(tabla.seleccionada().map(Reserva::cobrable).orElse(false));
-        cancelar.setEnabled(tabla.seleccionada().map(Reserva::cancelable).orElse(false));
+        botones.refrescar();
     }
 
     private void abrirCobro(Reserva reserva) {
         navegacion.abrirCobro(reserva.id());
-    }
-
-    private void cancelar(Reserva reserva) {
-        if (!Mensajes.confirmar(this, "¿Cancelar la reserva #" + reserva.id() + "? Las butacas quedan libres.",
-                "Sí, cancelar la reserva", "Volver")) return;
-        accion(() -> apiVentas.cancelarReserva(reserva.id()), "Reserva cancelada, las butacas quedaron libres",
-                this::recargar);
     }
 }
