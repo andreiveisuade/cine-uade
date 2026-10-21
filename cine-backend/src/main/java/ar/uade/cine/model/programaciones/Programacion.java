@@ -11,11 +11,8 @@ import java.util.List;
 import java.util.Set;
 
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
-import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.funciones.validacion.ValidadorFuncion;
 import ar.uade.cine.model.programaciones.validacion.ValidadorProgramacion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
@@ -154,16 +151,8 @@ public class Programacion {
         return sala.getId();
     }
 
-    public Version getVersion() {
-        return formato.version();
-    }
-
-    public Proyeccion getProyeccion() {
-        return formato.proyeccion();
-    }
-
-    public Dinero getPrecio() {
-        return formato.precio();
+    public FormatoDeFuncion getFormato() {
+        return formato;
     }
 
     public Set<DayOfWeek> getDiasSemana() {
