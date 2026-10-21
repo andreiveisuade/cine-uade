@@ -11,6 +11,7 @@ import { Confirmar } from "./Confirmar.jsx";
 import { Ticket } from "./Ticket.jsx";
 import { MisReservas } from "./MisReservas.jsx";
 import { Registro } from "./Registro.jsx";
+import { Nosotros } from "./Nosotros.jsx";
 
 function Enlace({ a, children }) {
   return (
@@ -35,6 +36,7 @@ export function AppCliente() {
               CINE UADE
             </Anchor>
             <Group gap="md" wrap="nowrap">
+              <Enlace a="/nosotros">Nosotros</Enlace>
               <Enlace a="/mis-reservas">Mis reservas</Enlace>
               <Enlace a="/registro">Registrarme</Enlace>
               <BotonTema />
@@ -47,7 +49,7 @@ export function AppCliente() {
         <Container size="lg" py="md">
           <CompraEnCurso>
             <Routes>
-              <Route index element={<Cartelera />} />
+              <Route index element={<Cartelera conHero />} />
               <Route path="cartelera/:genero?" element={<Cartelera />} />
               <Route path="pelicula/:id" element={<Pelicula />} />
               <Route path="funcion/:id" element={<Funcion />} />
@@ -55,6 +57,7 @@ export function AppCliente() {
               <Route path="ticket/:codigo" element={<Ticket />} />
               <Route path="mis-reservas" element={<MisReservas />} />
               <Route path="registro" element={<Registro />} />
+              <Route path="nosotros" element={<Nosotros />} />
               <Route path="*" element={<NoExiste />} />
             </Routes>
           </CompraEnCurso>
