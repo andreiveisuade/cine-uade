@@ -191,8 +191,7 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
     }
 
-    // El firewall rechaza antes de cualquier controller y el pedido termina en /error: sin
-    // ErroresController, el JSON de Boot decía "Bad Request", en inglés, y eso mostraba Swing.
+    // El firewall rechaza antes de todo controller y termina en /error: sin ErroresController salía el JSON de Boot en inglés.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             punto y coma en la ruta, /api/peliculas/1;x=1
@@ -217,8 +216,7 @@ class SeguridadTest extends PruebaDeApi {
                 Map.of("A1", TipoTarifa.GENERAL), null);
     }
 
-    // Un header que no se puede leer no es un 500 ni abre el cuadro del navegador: 401 con {error}.
-    // Basic roto dice lo mismo que una clave equivocada; otro esquema es como no mandar nada.
+    // Header ilegible: 401 con {error}, no 500 ni cuadro del navegador; Basic roto equivale a clave equivocada.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             base64 roto,               Basic !!!,                          Email o contraseña incorrectos

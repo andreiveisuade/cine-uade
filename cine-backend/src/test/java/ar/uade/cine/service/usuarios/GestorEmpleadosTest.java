@@ -69,8 +69,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
                 .getMessage());
     }
 
-    // El simétrico del cliente con email de empleado: EmpleadoRepository no ve a los clientes y el
-    // INSERT chocaba con el UNIQUE del email.
+    // Simétrico del cliente con email de empleado: EmpleadoRepository no ve a los clientes y chocaba con el UNIQUE.
     @Test
     void elEmailDeUnClienteNoSeRegistraComoEmpleado() {
         clientes.identificar("Ana", "ana@mail.com");

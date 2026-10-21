@@ -175,8 +175,7 @@ class DineroTest {
             assertEquals(Dinero.IMPORTE_MAXIMO, Dinero.importeValido(Dinero.IMPORTE_MAXIMO, "precio"));
         }
 
-        // Las columnas de plata son DECIMAL(10,2): la entrada más cara, con el recargo más alto de sala,
-        // butaca y tarifa sobre el precio tope, también tiene que entrar, o MySQL la rechaza con un 500.
+        // Las columnas de plata son DECIMAL(10,2): la entrada más cara posible también tiene que entrar.
         @Test
         void elTopeDejaLugarParaLosMultiplicadoresDeLaEntrada() {
             double sala = maximo(Arrays.stream(TipoSala.values()).mapToDouble(TipoSala::getMultiplicadorPrecio));

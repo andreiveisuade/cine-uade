@@ -56,8 +56,7 @@ class ProgramacionControllerTest extends PruebaDeApi {
         assertFalse(get("/api/programaciones/" + id).json().get("activa").asBoolean());
     }
 
-    // El precio se valida al convertirlo, antes de buscar la película. El rango, después: la programación
-    // necesita la sala para R8, así que primero se buscan, como en el alta de una función suelta.
+    // El precio se valida al convertirlo; el rango después, porque R8 necesita la sala ya buscada.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             precio cero y película inexistente,    99, 2026-09-07, 2026-09-13, 0,    400, El precio tiene que ser mayor a cero

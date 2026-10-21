@@ -55,8 +55,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
         assertEquals("Falta la cantidad de Pochoclos grandes", respuesta.error());
     }
 
-    // El medio se valida antes de buscar los productos: un código en efectivo es un error de carga y se
-    // rechaza aunque además falte un producto, como antes de mover la venta al Observer.
+    // El medio se valida antes de buscar los productos: un código en efectivo es error de carga aunque falte uno.
     @Test
     void elEfectivoConCodigoSeRechazaAntesDeBuscarLosProductos() {
         Respuesta respuesta = post("/api/candy/compras",
@@ -66,8 +65,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
         assertEquals("El pago en efectivo no lleva código de autorización", respuesta.error());
     }
 
-    // Antes el controller descartaba el clienteId cuando venía la reserva, y la compra quedaba a nombre
-    // del dueño de la reserva sin avisar.
+    // El clienteId se respeta aunque venga la reserva: no se compra a nombre del dueño sin avisar.
     @Test
     void unaVentaParaLaReservaDeOtroClienteEs400() {
         int pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000)).getId();

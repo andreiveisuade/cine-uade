@@ -140,8 +140,7 @@ class PromocionTest {
                 () -> new PromocionPorcentaje("Trasnoche", 20.0, franja, HOY));
     }
 
-    // Una promoción que no va a correr nunca no se guarda: vencida, o con días que no caen en lo que le
-    // queda de vigencia. Hoy es viernes 14.
+    // Una promoción que no correría nunca no se guarda: vencida, o con días fuera de su vigencia. Hoy es viernes 14.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             terminó ayer,                       2026-07-01, 2026-08-13, ,         La vigencia ya terminó: el fin tiene que ser hoy o después

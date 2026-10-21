@@ -98,8 +98,7 @@ class ArquitecturaTest {
                     archivo -> capaDe(archivo).equals("infrastructure") && !archivo.equals(adaptadores)));
         }
 
-        // Lo que configura o implementa un adaptador va en la subcarpeta de ese adaptador
-        // (comprobantes/txt, importador/tmdb). seguridad/ no es un puerto: configura Spring Security.
+        // Lo de un adaptador va en su subcarpeta (comprobantes/txt, importador/tmdb); seguridad/ no es un puerto.
         @ParameterizedTest(name = "infrastructure/{0}/")
         @ValueSource(strings = {"comprobantes", "importador", "pasarelas", "reloj"})
         @DisplayName("la raíz de cada puerto tiene solo su contrato: la interfaz y su excepción")
@@ -127,8 +126,7 @@ class ArquitecturaTest {
     @DisplayName("Los rechazos son explícitos")
     class Rechazos {
 
-        // ManejadorErrores contesta una IllegalArgumentException suelta con 500: la puede tirar una
-        // librería con un texto técnico. Lo que el usuario tiene que leer va por un Rechazo.
+        // ManejadorErrores contesta una IllegalArgumentException suelta con 500: lo legible va por un Rechazo.
         @Test
         @DisplayName("nadie tira una IllegalArgumentException suelta, sino un Rechazo de model/rechazos")
         void nadieTiraUnaIllegalArgumentExceptionSuelta() {
@@ -143,7 +141,7 @@ class ArquitecturaTest {
     @DisplayName("Cada endpoint contesta una sola forma")
     class Respuestas {
 
-        // Con ResponseEntity<Object> un mismo endpoint contestaba el DTO o el literal null, según el caso.
+        // ResponseEntity<Object> deja que un endpoint conteste el DTO o null según el caso.
         @Test
         @DisplayName("ningún controller contesta ResponseEntity<Object>")
         void ningunControllerContestaObject() {

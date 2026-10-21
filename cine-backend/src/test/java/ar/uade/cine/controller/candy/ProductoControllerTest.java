@@ -52,8 +52,7 @@ class ProductoControllerTest extends PruebaDeApi {
         assertEquals("No existe el producto 99", get("/api/candy/productos/99").error());
     }
 
-    // Sin el @Positive del DTO, el precio lo valida Dinero.importe al convertirlo en el controller: igual
-    // que antes, un precio inválido se rechaza antes de buscar el nombre repetido o el producto.
+    // Sin @Positive en el DTO: Dinero.importe rechaza el precio inválido antes de buscar el nombre repetido.
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             alta en cero con nombre repetido    | POST | /api/candy/productos    | {"nombre":"Pochoclos grandes","tipo":"POCHOCLOS","precio":0} | El precio tiene que ser mayor a cero

@@ -211,8 +211,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0)));
     }
 
-    // Nombre y precio van antes que el nombre repetido en las tres: el alta ya era así, y la edición y el
-    // combo contestaban 409 por el nombre a un pedido que igual no iba a pasar.
+    // Nombre y precio van antes que el nombre repetido en las tres: el 409 no puede tapar un pedido inválido.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             alta con precio negativo,    alta
@@ -318,8 +317,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 MedioPago.EFECTIVO, "").getReservaId(), "con el mismo cliente, se vende");
     }
 
-    // Quién es igual a quién lo decide la base y no Java: la collation de MySQL ignora acentos ("Maní" y
-    // "Mani") y el UPPER de H2 convierte la ß en SS. Comparando en Java, el producto chocaba consigo mismo.
+    // La igualdad la decide la base: la collation de MySQL ignora acentos y el UPPER de H2 convierte ß en SS.
     @Test
     void renombrarUnProductoComoLoComparaLaBaseNoChocaConsigoMismo() {
         int weiss = carta.agregar("Weiß", TipoProducto.BEBIDA, Dinero.de(3000)).getId();

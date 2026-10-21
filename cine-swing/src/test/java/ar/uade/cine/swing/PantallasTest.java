@@ -23,10 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Cada entrada del menú y cada detalle se arman sin backend, en headless. Lo que se cuida es lo que mueve un refactor
- * de pantallas: el orden en que se inicializan los campos, un panel extraído que llega null, un callback que rompe. El
- * servidor falso contesta 401 a todo, como una sesión vencida: es la única respuesta de error que no abre un diálogo,
- * que en headless no se puede mostrar.
+ * Cada menú y detalle se arman sin backend, en headless: cuida el orden de init, paneles null y callbacks que rompen.
+ * El servidor falso contesta 401 a todo: es el único error que no abre un diálogo.
  */
 class PantallasTest {
 

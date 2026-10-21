@@ -427,8 +427,7 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         assertEquals(propuesta.pases().size(), funciones.listar().size(), "aplicar no choca con R20");
     }
 
-    // R20: a las 15:10 la ventana de hoy va de 15:30 a 23:00 (450 minutos). La de las 14:00 ya
-    // empezó y no la ocupa; la de las 20:00 sí descuenta sus 100.
+    // R20: a las 15:10 la ventana de hoy va de 15:30 a 23:00 (450 min); la de las 20:00 descuenta sus 100.
     @Test
     void hoyLosMinutosDisponiblesSonSoloLosQueNoPasaron() {
         cargar("Una", 8.0, Genero.ACCION);

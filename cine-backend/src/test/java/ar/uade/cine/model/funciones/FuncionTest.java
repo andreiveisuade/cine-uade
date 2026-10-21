@@ -65,8 +65,7 @@ class FuncionTest {
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
-    // R20 con el corte de R19: la que empieza en este instante ya empezó. El horizonte se mide en días:
-    // una función del 20/08/2026 entra si hoy es el 20/08/2025, a cualquier hora, y no si es el 19.
+    // R20 con el corte de R19: la que empieza ahora ya empezó; el horizonte se mide en días, a cualquier hora.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             en el minuto en que empieza, 2026-08-20T20:00, La función no puede empezar en el pasado

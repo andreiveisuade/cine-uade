@@ -97,8 +97,7 @@ class ComprobantesDeVentasTest extends PruebaDeIntegracion {
         assertEquals(List.of(), comprobantes());
     }
 
-    // El caso que motivó el Observer. El @Version de Reserva salta recién en el commit, cuando otra
-    // operación la canceló mientras se cobraba: antes quedaba el recibo de un cobro que no existió.
+    // El caso que motivó el Observer: el @Version salta en el commit si otra operación canceló mientras se cobraba.
     @Test
     void unCobroQueChocaAlConfirmarNoDejaRecibo() {
         int id = reservar().getId();

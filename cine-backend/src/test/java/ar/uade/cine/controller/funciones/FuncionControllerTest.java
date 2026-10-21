@@ -54,8 +54,7 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals("2026-08-14T20:30:00", respuesta.json().get("inicio").asText());
     }
 
-    // Un mensaje por dato, como en programaciones: "la versión o el formato" no decía cuál faltaba,
-    // y la API le dice idioma a lo que el dominio llama versión.
+    // Un mensaje por dato: "la versión o el formato" no decía cuál faltaba.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             sin idioma,     '"proyeccion":"DOS_D"',   Falta el idioma
@@ -81,8 +80,7 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(0, get("/api/funciones").json().size());
     }
 
-    // El precio se valida al convertirlo, antes que el resto del pedido y que la búsqueda de la película,
-    // como cuando lo rechazaba el DTO.
+    // El precio se valida al convertirlo, antes del resto del pedido y de buscar la película.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             precio cero,                        1,  2026-08-14T20:30:00, 0,     El precio tiene que ser mayor a cero
@@ -101,8 +99,7 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(mensaje, respuesta.error());
     }
 
-    // Como en la declaración jurada: antes devolvía una lista vacía, que no se distinguía de un período
-    // sin funciones.
+    // Como en la declaración jurada: una lista vacía no se distinguiría de un período sin funciones.
     @Test
     void buscarConUnDesdePosteriorAlHastaEs400() {
         Respuesta respuesta = get("/api/funciones?desde=2026-08-20&hasta=2026-08-14");

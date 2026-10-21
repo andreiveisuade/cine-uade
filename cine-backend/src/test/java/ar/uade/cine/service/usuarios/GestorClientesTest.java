@@ -138,8 +138,7 @@ class GestorClientesTest extends PruebaDeIntegracion {
         assertTrue(cliente.tieneCuenta());
     }
 
-    // Quien reservó sin cuenta ya está dado de alta: registrarse le pone clave a ese mismo cliente,
-    // así sus reservas de antes quedan en su cuenta.
+    // Quien reservó sin cuenta ya es cliente: registrarse le pone clave a ese mismo y conserva sus reservas.
     @Test
     void elQueReservoSinCuentaReclamaSuEmailAlRegistrarse() {
         Cliente sinCuenta = gestor.identificar("Andrei", "andrei@uade.edu.ar");

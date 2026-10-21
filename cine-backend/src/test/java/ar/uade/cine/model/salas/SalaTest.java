@@ -128,7 +128,7 @@ class SalaTest {
         assertEquals(40, sala.generarAsientos(List.of(40), Map.of()).size());
     }
 
-    // Antes se ignoraba: la sala quedaba sin la butaca especial que pidió el encargado, sin aviso.
+    // La butaca especial pedida no se ignora en silencio.
     @Test
     void unaEspecialQueNoCaeEnLaDistribucionSeRechaza() {
         Sala sala = new Sala("Sala 1", TipoSala.DOS_D, 15);

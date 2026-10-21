@@ -87,8 +87,7 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(checkout.get("codigoQr").asText().isBlank());
     }
 
-    // Llega el navegador del comprador, sin credenciales: vuelve a su ticket, no a un JSON. Con un
-    // cliente que no sigue el 302, porque lo que se prueba es adónde manda.
+    // Llega el navegador del comprador sin credenciales: redirige a su ticket, no a un JSON.
     @Test
     void laVueltaDesdeLaPasarelaCobraYRedirigeAlTicket() throws Exception {
         String checkout = checkout("QR").json().get("id").asText();
@@ -269,8 +268,7 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("La butaca B1 está fuera de servicio", fueraDeServicio.error());
     }
 
-    // Regresión: el tope y las repetidas se miraban después de la ocupación y salía 409, con el que la web
-    // recarga el mapa como si otro hubiera ganado la butaca. Es un pedido que no pasa nunca: 400, como el bloqueo.
+    // El tope y las repetidas se miran antes de la ocupación: 400 y no 409 (la web recarga el mapa solo ante 409).
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             once con una ocupada | "A1":"GENERAL","A2":"GENERAL","A3":"GENERAL","A4":"GENERAL","A5":"GENERAL","A6":"GENERAL","B1":"GENERAL","B2":"GENERAL","B3":"GENERAL","B4":"GENERAL","B5":"GENERAL" | Una compra tiene que tener como máximo 10 butacas

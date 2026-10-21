@@ -132,8 +132,7 @@ class SalaControllerTest extends PruebaDeApi {
         assertEquals("Los minutos de limpieza no pueden ser negativos", respuesta.error());
     }
 
-    // El repetido se busca sin la sala misma. En MySQL además cuenta que la collation ignora los acentos:
-    // renombrar "Sala Unica" a "Sala Única" la encontraba a ella y daba un 409 falso.
+    // El repetido se busca sin la sala misma: con la collation de MySQL, "Sala Unica" → "Sala Única" la encontraba a ella.
     @Test
     void renombrarUnaSalaASuPropioNombreConOtrasMayusculasNoEsRepetido() {
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"SALA 1\",\"tipo\":\"DOS_D\"}");

@@ -120,8 +120,7 @@ class ContratoOpenApiTest extends PruebaDeApi {
         assertThat(respuestas(rutas, "/api/salas", "post").has("404")).isFalse();
     }
 
-    // Es lo que hace el botón Try it out: manda el cuerpo de ejemplo tal cual. Con un ejemplo inválido
-    // ("string" de género) el alta de película daba 400 y no había forma de probarla desde Swagger.
+    // Try it out manda el cuerpo de ejemplo tal cual: con un ejemplo inválido no se podría probar desde Swagger.
     @Test
     @DisplayName("el cuerpo de ejemplo del alta de película se puede enviar tal cual")
     void elEjemploDelAltaDePeliculaEsValido() {
@@ -135,8 +134,7 @@ class ContratoOpenApiTest extends PruebaDeApi {
         assertThat(respuesta.estado()).as(respuesta.cuerpo()).isEqualTo(201);
     }
 
-    // Los altas que no dependen de otros registros: Try it out manda lo que lista cada esquema, y los campos
-    // sin ejemplo los deja Swagger UI con su valor por defecto, así que acá se omiten.
+    // Altas sin dependencias: Try it out manda lo que lista el esquema; los campos sin ejemplo se omiten.
     @ParameterizedTest(name = "{0}")
     @CsvSource({
             "producto de candy, PedidoProductoDTO, /api/candy/productos",

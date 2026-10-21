@@ -205,8 +205,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
-    // Primero lo que se busca, como en el alta de una función suelta: la programación necesita la sala
-    // para R8, así que el 404 sale antes que sus propios datos.
+    // Primero lo que se busca (R8 necesita la sala): el 404 sale antes que los datos propios.
     @Test
     void unaPeliculaQueNoExisteSaleAntesQueUnRangoAlReves() {
         Rechazo error = assertThrows(Rechazo.class,
