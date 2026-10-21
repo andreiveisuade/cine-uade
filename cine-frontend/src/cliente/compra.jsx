@@ -44,9 +44,8 @@ const RENOVAR_CADA_MS = 60_000;
 
 export function useRenovarBloqueo(funcionId) {
   const { seleccion, setSeleccion } = useCompra();
-  // El intervalo se arma una vez por función; el evento de efecto lee la selección de ahora sin rearmarlo
-  // (una ref escrita en el render rompería la pureza del render).
-  // Si la selección es de otra función no hay nada que sostener en esta.
+  // El intervalo se arma una vez por función y lee la selección actual sin rearmarlo.
+  // Si la selección es de otra función no hay nada que sostener.
   const sostenerActual = useEffectEvent(async () =>
     seleccion.funcionId === funcionId ? sostenerSeleccion(funcionId, seleccion.butacas) : []);
 
@@ -108,10 +107,7 @@ export function SelectorTarifa({ valor, alCambiar }) {
   );
 }
 
-/**
- * Los campos que quedaron vacíos o solo con espacios, con el texto que va debajo de cada uno. `required` del navegador
- * frena el vacío pero no "   ", que llegaría al backend como un nombre en blanco.
- */
+/** Campos vacíos o solo espacios, con su texto: `required` frena el vacío pero no "   ". */
 export function faltantes(campos) {
   return Object.fromEntries(
     Object.entries(campos)

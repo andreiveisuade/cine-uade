@@ -14,11 +14,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 // El CSV de la declaración jurada semanal al INCAA; el backend da los números, esto es solo el archivo.
-/**
- * La declaración jurada semanal en CSV. Lo arma el cliente y no el backend: el backend da los números y esto es solo
- * su presentación en archivo. Registros etiquetados en la primera columna, cada bloque con su encabezado, y una
- * columna de entradas por cada tarifa del catálogo, vendiera o no, para que el archivo tenga siempre la misma forma.
- */
+// Una columna de entradas por cada tarifa del catálogo, vendiera o no, para que el archivo tenga siempre la misma forma.
 public final class DeclaracionJuradaCsv {
 
     static final String TEXTO_DECLARACION = "Declaro bajo juramento que los datos consignados son correctos y "

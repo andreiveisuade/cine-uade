@@ -73,8 +73,7 @@ public final class VentanaLogin extends JFrame {
             dispose();
             alIngresar.accept(empleado);
         }, error -> {
-            // En el login, el 401 es "email o contraseña incorrectos": va al lado del formulario, no en un diálogo.
-            // Sin conexión o un 500 no se arreglan cambiando la clave: esos van al diálogo de errores globales.
+            // En el login el 401 es clave incorrecta y va junto al formulario; sin conexión o un 500 van al diálogo global.
             ingresar.setEnabled(true);
             if (error.estado() != 401 && !error.esDelFormulario()) {
                 Mensajes.error(this, error);

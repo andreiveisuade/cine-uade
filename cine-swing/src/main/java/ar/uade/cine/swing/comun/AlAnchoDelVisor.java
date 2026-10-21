@@ -8,11 +8,7 @@ import java.awt.LayoutManager;
 import java.awt.Rectangle;
 
 // Un panel que sigue el ancho del scroll, para que un título largo no haga aparecer la barra horizontal.
-/**
- * Un panel que sigue el ancho del scroll en vez de estirarlo: sin esto, lo más ancho del contenido (un título largo,
- * una nota, un combo) empuja todo hacia afuera y aparece la barra horizontal. {@code llenarAlto} lo estira hasta el
- * fondo cuando el contenido es más corto que el scroll, para que un recuadro llegue abajo como la tabla de al lado.
- */
+// {@code llenarAlto} lo estira hasta el fondo si el contenido es más corto que el scroll.
 public final class AlAnchoDelVisor extends JPanel implements Scrollable {
 
     private final boolean llenarAlto;

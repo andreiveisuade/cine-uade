@@ -34,10 +34,6 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // La declaración jurada semanal al INCAA: los números los da el backend y el CSV se escribe en esta PC.
-/**
- * La declaración jurada semanal al INCAA. Los números los da el backend; el archivo lo escribe esta PC con
- * {@link DeclaracionJuradaCsv}. Sin fechas, el backend devuelve la última semana cinematográfica (jueves a miércoles).
- */
 public final class PantallaDeclaracionJurada extends Pantalla {
 
     private record Datos(DeclaracionJurada declaracion, List<String> tarifas) {
@@ -113,8 +109,7 @@ public final class PantallaDeclaracionJurada extends Pantalla {
         consultar();
     }
 
-    // Las dos fechas o ninguna: con una sola el pedido está incompleto, y la que falta es obligatoria. Que el período
-    // sea válido (desde antes que hasta, hasta 31 días) lo dice el backend.
+    // Las dos fechas o ninguna; que el período sea válido lo dice el backend.
     private void consultar() {
         boolean hayDesde = desde.valor() != null;
         boolean hayHasta = hasta.valor() != null;

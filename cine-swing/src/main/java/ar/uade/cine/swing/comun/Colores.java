@@ -6,11 +6,6 @@ import javax.swing.UIManager;
 import java.awt.Color;
 
 // Los colores de estado y de tipo de butaca, cada uno con su par claro y oscuro; el resto sale del tema.
-/**
- * Los pocos colores que no salen del look and feel: estados (error, éxito, aviso) y los tipos de butaca. Cada uno
- * tiene su par claro y oscuro, porque un rojo que se lee sobre blanco se pierde sobre gris oscuro. El resto de la
- * pantalla usa los colores del tema vía UIManager.
- */
 public final class Colores {
 
     private Colores() {
@@ -86,8 +81,7 @@ public final class Colores {
         return par(0xFFFFFF, 0x1E1E1E);
     }
 
-    // Un color por película en la agenda: pastel con texto oscuro en claro; en oscuro, el mismo tono mezclado con el
-    // fondo, para que los bloques no encandilen y el texto del tema se siga leyendo.
+    // Un color por película: pastel en claro, mezclado con el fondo en oscuro.
     private static final int[][] PELICULAS = {
             {0xC3FAE8, 0x0CA678}, {0xD0EBFF, 0x1C7ED6}, {0xFFF3BF, 0xF59F00}, {0xFFDEEB, 0xD6336C},
             {0xE5DBFF, 0x7048E8}, {0xC5F6FA, 0x1098AD}, {0xFFE8CC, 0xF76707}, {0xDBE4FF, 0x4263EB}};

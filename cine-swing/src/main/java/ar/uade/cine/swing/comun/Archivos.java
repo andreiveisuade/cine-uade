@@ -15,10 +15,7 @@ public final class Archivos {
     private Archivos() {
     }
 
-    /**
-     * Pregunta dónde, con {@code sugerido} como nombre, y escribe en UTF-8. Vacío si el encargado canceló o si no se
-     * pudo escribir: eso último ya se avisó con un diálogo.
-     */
+    /** Vacío si el encargado canceló o no se pudo escribir (eso ya se avisó con un diálogo). */
     public static Optional<Path> guardar(Component origen, String sugerido, String contenido, String que) {
         JFileChooser elegir = new JFileChooser();
         elegir.setSelectedFile(new File(sugerido));

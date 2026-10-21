@@ -31,10 +31,7 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // Listado con filtros de las funciones, con el alta al costado; doble clic abre su borderó e informe.
-/**
- * No anticipa R3 ni R8 antes de mandar: el backend las valida igual y su mensaje llega tal cual, así la regla vive en
- * un solo lugar.
- */
+// Sin anticipar R3 ni R8: el backend las valida y su mensaje llega tal cual.
 public final class PantallaFunciones extends PantallaListado<Funcion> {
 
     private record Catalogos(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas,

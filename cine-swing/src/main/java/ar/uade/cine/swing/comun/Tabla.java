@@ -18,10 +18,6 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 // Una JTable sobre una lista de records; cada columna saca su texto de la fila, sin TableModel por pantalla.
-/**
- * Una JTable sobre una lista de records: cada columna dice cómo sacar su texto de la fila. Evita repetir en cada
- * pantalla un AbstractTableModel con su switch por índice de columna.
- */
 public final class Tabla<T> {
 
     public static final int ALTO_FILA = 26;

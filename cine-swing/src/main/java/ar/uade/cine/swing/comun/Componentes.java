@@ -36,16 +36,10 @@ public final class Componentes {
         return panel;
     }
 
-    /**
-     * Lo que ocupa el formulario al costado de una tabla, igual en todas las pantallas. A 960 px de ventana deja
-     * para la tabla un poco más de lo que se lleva el formulario.
-     */
+    /** Ancho del formulario al costado de una tabla, igual en todas las pantallas. */
     public static final int ANCHO_LATERAL = 340;
 
-    /**
-     * El formulario de al lado de la tabla: ancho fijo, la tabla toma el resto y el scroll es solo vertical. El
-     * contenido se ajusta a ese ancho en vez de estirarlo, así un título largo al editar no lo corta a la derecha.
-     */
+    /** Formulario junto a la tabla: ancho fijo, scroll solo vertical, contenido ajustado a ese ancho. */
     public static JScrollPane lateral(JComponent contenido) {
         AlAnchoDelVisor visor = new AlAnchoDelVisor(new BorderLayout(), true);
         visor.add(contenido, BorderLayout.CENTER);
@@ -112,10 +106,7 @@ public final class Componentes {
         return panel;
     }
 
-    /**
-     * Una cifra grande con su título arriba, en un recuadro: el arqueo y los indicadores del planificador. {@code
-     * detalle} y {@code variacion} son opcionales.
-     */
+    /** Cifra grande con título arriba (arqueo, indicadores); {@code detalle} y {@code variacion} opcionales. */
     public static JPanel cifra(String titulo, String valor, String detalle, String variacion) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));

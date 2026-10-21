@@ -53,12 +53,7 @@ public final class Formulario extends JPanel {
         return this;
     }
 
-    /**
-     * Cuando el formulario no entra a lo ancho, GridBagLayout pasa <i>todos</i> los componentes a su tamaño
-     * mínimo: las etiquetas se amontonan y los campos quedan de dos letras. Midiendo siempre con el preferido,
-     * la diferencia la absorbe la columna con peso, que es la de los campos: un título largo al editar se ve
-     * cortado adentro de su campo en vez de empujar el formulario fuera de la vista.
-     */
+    /** Mide siempre con el preferido: si no, GridBagLayout colapsa todo al mínimo cuando no entra a lo ancho. */
     private static final class AchicaLosCampos extends GridBagLayout {
 
         @Override

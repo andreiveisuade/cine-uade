@@ -88,8 +88,7 @@ public final class PantallaPuerta extends Pantalla {
             mostrarValida(validada.reserva(), validada.seAcreditan());
             reiniciar();
         }, error -> {
-            // Los tres motivos se muestran igual de fuerte: en la puerta solo importa que no pasa. Pero sin conexión
-            // o con el servidor caído no se sabe si pasa: eso no es un NO PASA, es un error global.
+            // Sin conexión o con el servidor caído no se sabe si pasa: error global, no NO PASA.
             if (error.esSesionVencida()) return;
             if (!error.esDelFormulario()) {
                 Mensajes.error(this, error);

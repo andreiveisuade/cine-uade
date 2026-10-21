@@ -28,10 +28,6 @@ import java.util.List;
 import java.util.Locale;
 
 // El puente entre JCalendar y java.time: en pantalla dd/MM/yyyy, al backend ISO como pide el contrato.
-/**
- * El único lugar donde se cruza {@link Date} (lo que usan JCalendar y los spinners) con {@code java.time}: en pantalla
- * la fecha se ve dd/MM/yyyy, y al backend le viaja ISO (2026-08-13) como pide el contrato.
- */
 public final class Fechas {
 
     public static final Locale ARGENTINA = Locale.forLanguageTag("es-AR");
@@ -60,11 +56,7 @@ public final class Fechas {
         return calendario;
     }
 
-    /**
-     * JCalendar trae colores fijos pensados para fondo blanco: encabezado celeste, domingos bordó, el día elegido
-     * gris claro. Con el tema oscuro eso se lee mal, así que se pasan a los del tema. El día elegido no tiene setter
-     * (es un campo protected que JDayChooser pinta en cada redibujo), por eso va por reflexión.
-     */
+    /** JCalendar trae colores para fondo blanco: se pasan a los del tema; el día elegido va por reflexión (sin setter). */
     private static void tematizar(JCalendar calendario) {
         JDayChooser dias = calendario.getDayChooser();
         dias.setWeekOfYearVisible(false);
@@ -109,10 +101,7 @@ public final class Fechas {
         return campos;
     }
 
-    /**
-     * El editor de texto de JDateChooser pinta la fecha en negro fijo (y en verde o rojo mientras se tipea): sobre el
-     * tema oscuro el negro no se ve. Se traducen esos colores a los del tema.
-     */
+    /** El editor pinta la fecha en negro fijo: se traducen esos colores a los del tema. */
     private static final class EditorDeFecha extends JTextFieldDateEditor {
 
         @Override

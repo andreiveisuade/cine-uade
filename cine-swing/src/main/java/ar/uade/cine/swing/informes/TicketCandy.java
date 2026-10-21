@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Locale;
 
 // El ticket de una venta de candy en ancho fijo, como de impresora de mostrador; sin Swing, se prueba solo.
-/**
- * El ticket de una venta de candy en texto de ancho fijo, como sale de una impresora de mostrador. Sin Swing, para
- * probarlo solo: la pantalla de Candy nada más lo muestra.
- */
 public final class TicketCandy {
 
     private static final String LINEA = "=".repeat(40);
