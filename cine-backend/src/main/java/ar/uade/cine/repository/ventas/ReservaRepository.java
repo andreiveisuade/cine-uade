@@ -19,8 +19,7 @@ public interface ReservaRepository extends Repositorio<Reserva> {
 
     Optional<Reserva> findByCodigo(String codigo);
 
-    // El exigir() de Repositorio por código de acceso: la web y la puerta dicen lo mismo. El texto no
-    // repite el código, que es la credencial del cliente.
+    // exigir() por código de acceso; el texto no lo repite, es la credencial del cliente.
     default Reserva exigirPorCodigo(CodigoDeAcceso codigo) {
         return findByCodigo(codigo.valor())
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
@@ -44,8 +43,7 @@ public interface ReservaRepository extends Repositorio<Reserva> {
     List<Reserva> buscar(@Param("estado") EstadoReserva estado, @Param("desde") LocalDateTime desde,
                          @Param("hasta") LocalDateTime hasta);
 
-    // Lo que muestra una reserva, en una sola consulta: los listados la usan en vez de leer
-    // función, película, sala y cliente por fila.
+    // Lo que muestra una reserva en una sola consulta, para los listados.
     @Query("""
             select r from Reserva r
               join fetch r.funcion f join fetch f.pelicula join fetch f.sala join fetch r.cliente
