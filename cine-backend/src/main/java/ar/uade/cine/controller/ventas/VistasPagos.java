@@ -34,8 +34,7 @@ public class VistasPagos {
         return dto(p, null, null, null);
     }
 
-    // El arqueo sí dice qué se vendió y a quién. Por el mismo camino que las reservas: una
-    // consulta para todas, no tres por pago. VistasVentasTest cuenta las sentencias.
+    // El arqueo dice qué se vendió y a quién; una consulta para todos los pagos (VistasVentasTest)
     public List<PagoVistaDTO> pagosDeArqueo(List<Pago> lista) {
         Map<Integer, Reserva> porId = reservas.conDetalle(lista.stream().map(Pago::getReservaId).toList())
                 .stream()

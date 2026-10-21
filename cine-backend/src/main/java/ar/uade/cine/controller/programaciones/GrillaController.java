@@ -51,10 +51,8 @@ public class GrillaController {
         return vistas.propuesta(aplicada, aplicada.pases().size());
     }
 
-    // El precio no tiene default: es una decisión comercial del cine. Acá solo se lee el pedido; lo
-    // que falte lo completa CriteriosGrilla, con el día de hoy que sale del reloj. El precio va
-    // primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos.
-    // Un idioma o una proyección vacíos cuentan como no enviados, igual que las fechas y las horas.
+    // El precio no tiene default (decisión comercial) y se valida primero; lo que falte lo completa CriteriosGrilla
+    // Un idioma o una proyección vacíos cuentan como no enviados, igual que fechas y horas
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
         LocalDate desde = Parseo.diaOpcional(pedido.desde(), "la fecha de inicio");

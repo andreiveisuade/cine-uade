@@ -32,8 +32,7 @@ public class ClienteController {
     private final GestorClientes clientes;
     private final VistasUsuarios vistas;
 
-    // Un filtro sobre la colección, así que contesta una lista: con el cliente o vacía. Sin email,
-    // vacía también: no se listan todos los clientes, el email es la clave.
+    // Filtro sobre la colección: lista con el cliente o vacía; sin email también vacía
     @Operation(summary = "Buscar un cliente por email: una lista con él, o vacía si no está")
     @GetMapping("/api/clientes")
     public List<ClienteVistaDTO> buscarPorEmail(@RequestParam(required = false) String email) {
@@ -45,7 +44,6 @@ public class ClienteController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ClienteVistaDTO> registrar(@Valid @RequestBody PedidoClienteDTO pedido) {
         ClienteVistaDTO cliente = vistas.cliente(clientes.registrar(pedido.nombre(), pedido.email(), pedido.password()));
-        // No hay GET por id: el cliente se busca por email.
         return Creado.en(UriComponentsBuilder.fromPath("/api/clientes")
                 .queryParam("email", cliente.email()).encode().toUriString(), cliente);
     }

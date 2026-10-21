@@ -14,8 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 // Rutas /api/arqueo y /api/candy/arqueo: el cierre de caja de un día vía GestorCaja; solo lee, no cobra.
-// El corte por día (GestorCaja), como la pantalla Caja del panel. Cada arqueo se ve en Swagger
-// junto a lo que arquea: por eso el tag va en el método y no en la clase.
+// Cada arqueo va en Swagger junto a lo que arquea: por eso el tag está en el método
 @RestController
 @RequiredArgsConstructor
 public class CajaController {

@@ -65,9 +65,8 @@ public class PeliculaController {
                 .stream().map(vistas::pelicula).toList();
     }
 
-    // Pública, pero el panel también la usa: el administrador ve cualquiera, el resto solo las que pasaron
-    // el buzón. Quién pregunta lo resuelve el filtro Basic, como en /api/sesion; sin credenciales,
-    // isUserInRole da false.
+    // Pública, pero el administrador ve cualquiera y el resto solo las revisadas; el filtro Basic resuelve
+    // quién pregunta (sin credenciales, isUserInRole da false)
     @Operation(summary = "El detalle de una película; sin sesión de administrador, solo las confirmadas")
     @GetMapping("/api/peliculas/{id}")
     public PeliculaVistaDTO detalle(@PathVariable int id, HttpServletRequest pedido) {
@@ -77,8 +76,7 @@ public class PeliculaController {
     @Operation(summary = "Las funciones programadas de una película")
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id, HttpServletRequest pedido) {
-        // Se busca antes: sin ella el listado saldría vacío, y vacío no es 404. Con el mismo criterio que
-        // el detalle, así una pendiente no se delata respondiendo [] donde el detalle dice que no existe.
+        // Se busca antes y con el criterio del detalle: sin eso saldría [] y delataría una pendiente
         visiblePara(pedido, id);
         return vistas.funciones(funciones.listarPorPelicula(id));
     }

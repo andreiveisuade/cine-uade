@@ -87,8 +87,7 @@ public class ProductoController {
         return vistas.producto(producto);
     }
 
-    // Al convertirlo y antes que nada: un precio inválido no espera a que se busque el producto, el
-    // nombre repetido ni los componentes del combo.
+    // Se valida al convertir, antes de buscar el producto o los componentes
     private static Dinero precio(Double pesos) {
         return Dinero.importe(pesos, "precio");
     }

@@ -50,8 +50,7 @@ public class FuncionController {
                                         @RequestParam(required = false) String hasta) {
         Integer pelicula = Parseo.numeroOpcional(peliculaId, "el id de la película");
         Integer sala = Parseo.numeroOpcional(salaId, "el id de la sala");
-        // Al revés es un 400, como en la declaración jurada: antes devolvía una lista vacía, que se
-        // confundía con un período sin funciones.
+        // Al revés es 400: una lista vacía se confundiría con un período sin funciones
         Periodo periodo = Periodo.de(Parseo.diaOpcional(desde, "la fecha de inicio"),
                 Parseo.diaOpcional(hasta, "la fecha de fin"), "El período");
         return vistas.funcionesConPelicula(funciones.buscar(pelicula, sala, periodo));
@@ -68,8 +67,6 @@ public class FuncionController {
     @PostMapping("/api/funciones")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<FuncionVistaDTO> programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
-        // El precio primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos
-        // y que la búsqueda de la película y la sala.
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
         LocalDateTime inicio = Parseo.momento(pedido.inicio(), "la fecha y hora de la función");
         FormatoDeFuncion formato = new FormatoDeFuncion(

@@ -44,8 +44,7 @@ public class ReservaController {
     private final ConsultasReservas consultas;
     private final VistasReservas vistas;
 
-    // Sin ?email=: era pública y cualquiera listaba las reservas de otro sabiendo su email. El
-    // encargado busca por email con q; el cliente ve las suyas en /api/reservas/mias.
+    // Sin ?email= público (listaba reservas ajenas): el encargado busca con q, el cliente en /mias
     @Operation(summary = "Las reservas del cine (encargado)")
     @GetMapping("/api/reservas")
     public List<ReservaVistaDTO> listar(@RequestParam(required = false) String estado,

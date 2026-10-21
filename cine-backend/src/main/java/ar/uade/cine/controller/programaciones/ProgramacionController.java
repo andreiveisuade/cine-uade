@@ -87,8 +87,6 @@ public class ProgramacionController {
         return vistas.programacion(grilla);
     }
 
-    // El precio primero, como cuando lo rechazaba el DTO: antes que el formato de los otros campos y que
-    // la búsqueda de la película y la sala.
     private DatosGrilla datos(PedidoProgramacionDTO pedido) {
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
         int peliculaId = pedido.peliculaId();

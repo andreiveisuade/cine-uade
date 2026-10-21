@@ -87,8 +87,7 @@ public class PromocionController {
         return vistas.promocion(promocion);
     }
 
-    // Que venga lo exige el pedido; acá, que sea uno de los tres. El mensaje nombra las etiquetas y no las
-    // constantes, a diferencia de Parseo.constante.
+    // El mensaje nombra etiquetas y no constantes, a diferencia de Parseo.constante
     private static TipoPromocion tipoDe(String tipo) {
         try {
             return TipoPromocion.valueOf(tipo.trim().toUpperCase(Locale.ROOT));
