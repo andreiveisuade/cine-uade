@@ -7,6 +7,7 @@ import { precio } from "../api/formato.js";
 import { useAvisar } from "../componentes/Avisos.jsx";
 import { EsperaOError } from "../componentes/Estado.jsx";
 import { ESTILO, estiloTipo, MapaButacas, Referencia } from "../componentes/MapaButacas.jsx";
+import { MontoAnimado } from "../componentes/MontoAnimado.jsx";
 import { useCargar } from "../componentes/useCargar.js";
 import { Volver } from "../componentes/Volver.jsx";
 import { catalogoTarifas, DatosFuncion, precioConTarifa, resumenCompra, SelectorTarifa, sesionDeCompra, sinButacas,
@@ -124,7 +125,7 @@ export function Funcion() {
               <Text size="sm" fw={600}>
                 {elegidas.length ? `${elegidas.length} butaca${elegidas.length > 1 ? "s" : ""}` : "Total"}
               </Text>
-              <Text fw={700}>{precio(total)}</Text>
+              <Text fw={700}><MontoAnimado valor={total} /></Text>
             </Group>
             <Button fullWidth disabled={!elegidas.length} onClick={() => navegar(`/confirmar/${funcion.id}`)}>
               Continuar
