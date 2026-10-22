@@ -1,0 +1,55 @@
+@startuml usuarios-sesiones
+title Login del cliente, pedido del empleado y recuperar la clave
+
+skinparam sequenceMessageAlign left
+skinparam maxMessageSize 220
+hide footbox
+
+actor "Cliente\n(web)" as CLI
+actor "Empleado\n(Swing / Android)" as EMP
+participant "FiltroDeIntentos\n+ LimiteDeIntentos" as LI
+participant "Spring Security\n(Basic, ConfiguracionSeguridad)" as SEC
+participant "SesionDeClientes\nRegistroDeSesiones" as SES
+participant "Controller" as CTRL
+participant "GestorCuentas" as GCU
+
+== Login del cliente: Basic una vez, despues cookie ==
+CLI -> LI : POST /api/sesion\nAuthorization: Basic
+alt 5 fallos seguidos por email o IP
+  LI --> CLI : 429 sin tocar bcrypt
+else
+  LI -> SEC : sigue
+  SEC -> SEC : bcrypt.matches
+  alt clave mala o email inexistente
+    SEC --> CLI : 401 (mismo texto); cuenta un fallo
+  else ok
+    SEC -> SES : CLIENTE: guarda la identidad,\ncambia el id (session fixation)\ny la registra por email
+    SEC -> CTRL : SesionController.iniciar
+    CTRL --> CLI : 200 usuario + Set-Cookie JSESSIONID\n(HttpOnly, SameSite=Lax)
+  end
+end
+CLI -> SEC : GET /api/reservas/mias  (solo cookie)
+SEC --> CLI : 200 sus reservas (R21)
+
+== Pedido del empleado: Basic en cada pedido, sin sesion ==
+EMP -> LI : PUT /api/peliculas/7\nAuthorization: Basic
+LI -> SEC : sigue
+SEC -> SEC : bcrypt + rol ADMINISTRADOR
+SEC -> CTRL : atiende
+CTRL --> EMP : 200, sin cookie
+
+== Recuperar la clave (R25), sin sesion ==
+CLI -> CTRL : POST /api/cuenta/recuperacion\n{email, codigoReserva, nueva}
+CTRL -> GCU : recuperarClave(email, codigo, nueva, ip)
+alt bloqueado
+  GCU --> CLI : 429
+else email inexistente, sin cuenta,\ncodigo ajeno o inventado
+  GCU -> LI : fallo(email, ip)
+  GCU --> CLI : 403 SinPrueba, un solo texto
+else el codigo es de una entrada suya
+  GCU -> LI : exito(email)
+  GCU -> GCU : bcrypt de la nueva
+  GCU -> SES : cerrarTodas(email)
+  GCU --> CLI : 204; entra con la nueva
+end
+@enduml
