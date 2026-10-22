@@ -20,7 +20,7 @@ Requiere JDK 21 y el sistema levantado ([`cine-docker`](../cine-docker/README.md
 El humo (`HumoContraBackendTest`) entra como encargado, lista salas, catálogos y reservas, crea y borra una
 película con su función, y prueba el login del acomodador y el rechazo de un cliente. Pide el seed de
 `datos-de-ejemplo.sh` (usa una sala `DOS_D`) y deja una sola cuenta fija, `humo-swing@cine.uade.ar`: el backend
-no da de baja clientes. Otro servidor con `-Dcine.api.url=...`.
+no da de baja clientes.
 
 Apunta a `http://localhost:8080`; otro servidor con `-Dcine.api.url=...` o `CINE_API_URL`. Tema claro con
 `-Dcine.tema=claro`. `encargado@cine.uade.ar` / `cine2026` ve todo; `puerta@cine.uade.ar` / `cine2026`,
