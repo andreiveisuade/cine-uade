@@ -22,11 +22,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 const CHECKOUT = { id: "1-MERCADO_PAGO-9", monto: 4500, medio: "MERCADO_PAGO", urlPago: "https://pasarela/pagar/1" };
 
+beforeEach(() => vi.stubGlobal("location", { ...window.location, assign: vi.fn() }));
+
 async function irAPagar() {
   await userEvent.click(screen.getByRole("button", { name: "Pagar online" }));
   await userEvent.click(await screen.findByRole("button", { name: "Continuar" }));
   expect(await screen.findByText(/4\.500/)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("link", { name: "Ir a pagar" }));
+  await userEvent.click(screen.getByRole("button", { name: "Ir a pagar" }));
 }
 
 describe("PagarOnline", () => {
@@ -54,7 +56,7 @@ describe("PagarOnline", () => {
     expect(await screen.findByRole("button", { name: "Continuar" })).toBeInTheDocument();
   });
 
-  it("muestra el monto que calcula el backend e Ir a pagar abre la pasarela en otra pestaña", async () => {
+  it("muestra el monto que calcula el backend e Ir a pagar navega a la pasarela en la misma pestaña", async () => {
     api.abrirCheckout.mockResolvedValue(CHECKOUT);
     renderConApp(<PagarOnline codigo="ABCD1234" />);
 
@@ -63,11 +65,8 @@ describe("PagarOnline", () => {
 
     expect(api.abrirCheckout).toHaveBeenCalledWith("ABCD1234", "MERCADO_PAGO");
     expect(await screen.findByText(/4\.500/)).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "Ir a pagar" });
-    expect(link).toHaveAttribute("href", "https://pasarela/pagar/1");
-    expect(link).toHaveAttribute("target", "_blank");
-    await userEvent.click(link);
-    expect(await screen.findByText(/en la pestaña de Mercado Pago/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ir a pagar" }));
+    expect(window.location.assign).toHaveBeenCalledWith("https://pasarela/pagar/1");
   });
 
   it("Ya pagué le avisa la vuelta al backend y vuelve a consultar la reserva", async () => {

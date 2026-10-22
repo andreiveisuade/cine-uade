@@ -1,8 +1,8 @@
 import { useEffect, useEffectEvent } from "react";
 import * as api from "@/api/api-http.js";
 
-// Al volver a la pestaña del ticket después de pagar en la de Mercado Pago, el backend consulta el pago en el
-// momento: en localhost MP no redirige al sitio y, sin esto, el ticket esperaba a la conciliación (hasta 60 s).
+// Al volver al ticket con Atrás después de pagar en Mercado Pago, el backend consulta el pago en el momento:
+// en localhost MP no redirige al sitio y, sin esto, el ticket esperaba a la conciliación (hasta 60 s).
 export function useVueltaDelPago(checkoutId, alVolver) {
   const avisar = useEffectEvent(() => api.avisarVueltaDelPago(checkoutId).then(alVolver));
 

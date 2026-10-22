@@ -51,11 +51,10 @@ export function PagarOnline({ codigo, alVolver }) {
     setEnviando(false);
   }
 
-  // Un link y no window.open: el navegador abre la pestaña sin bloqueo de pop-ups, y el ticket queda abierto
-  // esperando el pago. Hay navegadores (el de cmux) en los que window.open abre igual pero devuelve null.
+  // En la misma pestaña: otra pestaña algunos navegadores ni la muestran. MP vuelve solo al ticket (auto_return);
+  // si se vuelve con Atrás y el navegador restaura la página, queda "Ya pagué".
   const irAPagar = (props) => (
-    <Button component="a" href={checkout.urlPago} target="_blank" rel="noopener" onClick={() => setPagando(true)}
-      {...props} />
+    <Button onClick={() => { setPagando(true); window.location.assign(checkout.urlPago); }} {...props} />
   );
 
   if (!medios) {
@@ -73,8 +72,8 @@ export function PagarOnline({ codigo, alVolver }) {
         {pagando ? (
           <>
             <Text size="sm">
-              Estás pagando <strong>{precio(checkout.monto)}</strong> en la pestaña de Mercado Pago. Cuando termines,
-              volvé acá: el ticket se actualiza solo.
+              Estás pagando <strong>{precio(checkout.monto)}</strong> en Mercado Pago. Al terminar te trae de vuelta
+              acá y el ticket se actualiza solo.
             </Text>
             <Group gap="xs">
               <Button onClick={yaPague}>Ya pagué</Button>
