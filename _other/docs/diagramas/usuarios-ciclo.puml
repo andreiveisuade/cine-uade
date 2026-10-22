@@ -1,0 +1,24 @@
+@startuml usuarios-ciclo
+title Ciclo de vida de la cuenta de un cliente
+
+hide empty description
+
+[*] --> SinCuenta : compra sin cuenta\n(GestorClientes.identificar)
+[*] --> ConCuenta : POST /clientes\nemail nuevo
+
+state "Sin cuenta\npassword_hash NULL\nsu credencial: el codigo de la entrada" as SinCuenta
+state "Con cuenta\nbcrypt en password_hash" as ConCuenta
+state "Clave temporal\ndebe_cambiar_clave = true" as Temporal
+
+SinCuenta --> ConCuenta : abre cuenta (R22)\ncon el codigo de una entrada suya
+ConCuenta --> ConCuenta : cambia nombre (R23)\ncambia clave (R24)\nrecupera clave (R25)
+SinCuenta --> Temporal : boleteria asigna clave (R27)
+ConCuenta --> Temporal : boleteria asigna clave (R27)\ncierra sus sesiones
+Temporal --> ConCuenta : cambia la clave (R24)\no la recupera (R25)
+ConCuenta --> SinCuenta : baja con la clave actual (R26)\nreservas, pagos y entradas quedan
+
+note right of Temporal
+  Lo hace cumplir la web:
+  al entrar la lleva a #/mi-cuenta
+end note
+@enduml
