@@ -57,7 +57,7 @@ public class GestorImportaciones {
             String clave = clave(candidata.titulo());
             if (!clave.isEmpty() && !yaEstan.add(clave)) {
                 completarTrailer(candidata);
-                corrida.salteada();
+                corrida.salteada(nombreDe(candidata));
                 continue;
             }
             try {

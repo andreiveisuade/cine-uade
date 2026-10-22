@@ -3,6 +3,7 @@ package ar.uade.cine.controller.cartelera;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,11 +13,13 @@ import org.springframework.stereotype.Component;
 import ar.uade.cine.model.cartelera.CatalogoPelicula;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.cartelera.RenglonDeCorrida;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.dto.cartelera.EstadoImportadorVistaDTO;
 import ar.uade.cine.dto.cartelera.ImportacionVistaDTO;
+import ar.uade.cine.dto.cartelera.PeliculaDeCorridaVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
@@ -50,9 +53,27 @@ public class VistasCartelera {
     }
 
     public ImportacionVistaDTO importacion(Importacion i) {
-        return new ImportacionVistaDTO(i.getId(), i.getEstado().name(), i.getPaginas(),
+        return importaciones(List.of(i)).get(0);
+    }
+
+    // El estado de revisión de todas las nuevas en una consulta, no una por corrida.
+    public List<ImportacionVistaDTO> importaciones(List<Importacion> lista) {
+        Map<Integer, Pelicula> traidas = cartelera.buscar(lista.stream()
+                        .flatMap(i -> RenglonDeCorrida.leer(i.getDetalle()).stream())
+                        .map(RenglonDeCorrida::peliculaId).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(Pelicula::getId, p -> p));
+        return lista.stream().map(i -> new ImportacionVistaDTO(i.getId(), i.getEstado().name(), i.getPaginas(),
                 Fechas.texto(i.getPedidaEn()), Fechas.texto(i.getTerminoEn()), i.getNuevas(),
-                i.getSalteadas(), i.getFallidas(), i.getDetalle());
+                i.getSalteadas(), i.getFallidas(), i.getDetalle(),
+                RenglonDeCorrida.leer(i.getDetalle()).stream().map(r -> peliculaDeCorrida(r, traidas)).toList()))
+                .toList();
+    }
+
+    // Una nueva que después se borró queda sin estado: la corrida sigue contando que entró.
+    private static PeliculaDeCorridaVistaDTO peliculaDeCorrida(RenglonDeCorrida r, Map<Integer, Pelicula> traidas) {
+        Pelicula pelicula = r.peliculaId() == null ? null : traidas.get(r.peliculaId());
+        return new PeliculaDeCorridaVistaDTO(r.resultado().name(), r.peliculaId(), r.titulo(), r.motivo(),
+                pelicula == null ? null : pelicula.getEstadoRevision().name());
     }
 
     public EstadoImportadorVistaDTO estado(CatalogoExterno.Estado estado) {

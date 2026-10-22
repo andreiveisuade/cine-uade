@@ -159,6 +159,16 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     }
 
     @Test
+    void laQueYaEstabaQuedaEnElDetalleConSuTitulo() {
+        catalogo.queTraiga("Duna", "Duna");
+
+        Importacion importacion = gestor.ejecutar(1);
+
+        int id = peliculaRepository.findAll().get(0).getId();
+        assertEquals("+ [" + id + "] Duna\n= Duna", importacion.getDetalle());
+    }
+
+    @Test
     void laQueElAltaRechazaQuedaFallidaYLaCorridaSigue() {
         catalogo.queTraiga(sinDuracion("Corto de festival"), pelicula("Duna"));
 
@@ -195,7 +205,7 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
         assertEquals(1, importacion.getNuevas());
         assertEquals(1, importacion.getFallidas());
         int duna = peliculaRepository.findAll().get(0).getId();
-        assertEquals("✗ Rota: No se pudo guardar: el motivo quedó en el log del servidor\n+ [" + duna + "] Duna",
+        assertEquals("✗ Rota\tNo se pudo guardar: el motivo quedó en el log del servidor\n+ [" + duna + "] Duna",
                 importacion.getDetalle());
         assertEquals(EstadoImportacion.TERMINADA, gestor.ejecutar(1).getEstado(), "el importador no quedó trabado");
     }

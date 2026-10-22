@@ -380,8 +380,19 @@ pagar (R18), ya se usó o no es el día de la función; `404` si no existe. El c
 
 ```json
 → { "id": 7, "estado": "TERMINADA", "paginas": 2, "nuevas": 9, "salteadas": 20, "fallidas": 1,
-    "detalle": "+ [41] Hablan las aves\n✗ Yo, narciso: La duración…" }
+    "detalle": "+ [41] Hablan las aves\n= Cars\n✗ Yo, narciso\tLa duración…",
+    "peliculas": [
+      { "resultado": "NUEVA", "peliculaId": 41, "titulo": "Hablan las aves", "motivo": null,
+        "estadoRevision": "PENDIENTE" },
+      { "resultado": "YA_ESTABA", "peliculaId": null, "titulo": "Cars", "motivo": null, "estadoRevision": null },
+      { "resultado": "RECHAZADA", "peliculaId": null, "titulo": "Yo, narciso", "motivo": "La duración…",
+        "estadoRevision": null } ] }
 ```
+
+- `peliculas` es una por título que trajo TMDB, en el orden en que llegó: `NUEVA` (entró al buzón), `YA_ESTABA`
+  (cuenta en `salteadas`) o `RECHAZADA` (cuenta en `fallidas`, con su `motivo`). `estadoRevision` es el de hoy,
+  solo en las nuevas; `null` si después se borró. Los clientes leen esta lista, no `detalle`: en una `FALLIDA`,
+  `detalle` es el motivo de la falla y `peliculas` viene vacía.
 
 - Cada película trae su trailer de TMDB: un `Trailer` de YouTube, el oficial y más nuevo; en castellano y si no hay, en inglés.
 - Una que ya estaba y no tiene trailer lo recibe en la corrida (cuenta en `salteadas`); el que ya tiene, aunque lo haya corregido el encargado, no se toca.

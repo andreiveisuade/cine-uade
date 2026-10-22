@@ -18,14 +18,14 @@ class CorridaTest {
     }
 
     @Test
-    void cuentaCadaResultadoYArmaUnRenglonPorNuevaOFallida() {
+    void cuentaCadaResultadoYArmaUnRenglonPorPelicula() {
         Corrida corrida = new Corrida();
 
         corrida.nueva(7, "Duna");
-        corrida.salteada();
+        corrida.salteada("Cars");
         corrida.fallida("Corto de festival", "La duración tiene que ser positiva");
 
         assertEquals(new ResumenDeCorrida(1, 1, 1,
-                "+ [7] Duna\n✗ Corto de festival: La duración tiene que ser positiva"), corrida.resumen());
+                "+ [7] Duna\n= Cars\n✗ Corto de festival\tLa duración tiene que ser positiva"), corrida.resumen());
     }
 }

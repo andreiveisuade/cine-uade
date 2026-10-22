@@ -37,7 +37,7 @@ public class ImportacionController {
     @Operation(summary = "El historial de importaciones")
     @GetMapping("/api/importaciones")
     public List<ImportacionVistaDTO> listar() {
-        return importaciones.listar().stream().map(vistas::importacion).toList();
+        return vistas.importaciones(importaciones.listar());
     }
 
     // Alta sin Location: una corrida no tiene GET por id, queda en el historial de GET /api/importaciones.

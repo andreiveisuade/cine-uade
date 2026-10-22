@@ -2947,6 +2947,7 @@ docker compose up -d --build
         <li><strong><code>MapeoTmdb</code> traduce todo</strong> (géneros y certificación a los enums del cine): adentro TMDB no existe.</li>
         <li><strong>Idempotente</strong> por R1: da de alta por <code>GestorRevisionCartelera</code>, con las mismas reglas que el alta manual.</li>
         <li>Cada corrida queda en <code>importacion</code>: una a la vez, de 1 a 3 páginas. Una película que falla al guardarse cuenta como fallida y la corrida sigue.</li>
+        <li><strong>Un renglón por película</strong> (nueva, ya estaba o rechazada con su motivo): <code>RenglonDeCorrida</code> escribe y lee ese texto, y la API lo manda como lista con el estado de revisión de hoy. Ningún cliente parsea el detalle.</li>
       </ul>
     </section>
 

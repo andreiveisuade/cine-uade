@@ -47,6 +47,21 @@ class ImportacionControllerTest extends PruebaDeApi {
     }
 
     @Test
+    void cadaPeliculaDeLaCorridaViajaConSuResultadoYSuRevision() {
+        catalogo.queTraiga("Duna", "Duna");
+
+        Respuesta respuesta = post("/api/importaciones", "{}");
+
+        var peliculas = respuesta.json().get("peliculas");
+        assertEquals(2, peliculas.size());
+        assertEquals("NUEVA", peliculas.get(0).get("resultado").asText());
+        assertEquals("Duna", peliculas.get(0).get("titulo").asText());
+        assertEquals("PENDIENTE", peliculas.get(0).get("estadoRevision").asText());
+        assertEquals("YA_ESTABA", peliculas.get(1).get("resultado").asText());
+        assertTrue(peliculas.get(1).get("estadoRevision").isNull());
+    }
+
+    @Test
     void sinCuerpoTambienVale() {
         Respuesta respuesta = post("/api/importaciones", "");
 
