@@ -498,7 +498,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Docker Compose. 27 casos de uso, reglas R1 a R22.</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R22.</li>
       </ul>
     </section>
 
@@ -518,7 +518,7 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="casos-de-uso">
       <h2>Casos de uso</h2>
       <ul>
-        <li><strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta): con contraseña, en el <a href="#swing">panel Swing</a>.</li>
+        <li><strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta): con contraseña, en el <a href="#swing">panel Swing</a>. El acomodador también desde el <a href="#android">celular</a>.</li>
         <li><strong>Cliente</strong>: en la web, con <a href="#usuarios">cuenta opcional</a> o solo con el código de su reserva.</li>
         <li><strong>Tarea de conciliación</strong>: cobra lo que Mercado Pago aprobó (<a href="#conciliacion">detalle</a>).</li>
       </ul>
@@ -557,6 +557,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy</td><td>—</td></tr>
             <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td></tr>
             <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código</td><td>R18</td></tr>
+            <tr><td>CU-18b</td><td>Acomodador</td><td>Validar una entrada desde el celular: escanea el QR o tipea el código (extiende CU-18)</td><td>R18</td></tr>
             <tr><td>CU-19</td><td>Admin</td><td>Emitir el <a href="#informes">borderó</a> de una función y la declaración jurada del período (INCAA)</td><td>—</td></tr>
             <tr><td>CU-20</td><td>Admin</td><td>Recaudación de una función, boletería y candy</td><td>—</td></tr>
           </tbody>
@@ -1231,6 +1232,8 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li>Seguridad: clave solo en memoria; por <code>http</code> solo a la red propia (docker local), a internet solo <code>https</code>; no sigue redirecciones; <code>FLAG_SECURE</code>.</li>
         <li>Tests JVM contra MockWebServer, como Swing con su servidor falso: <code>cd cine-android &amp;&amp; ./gradlew test</code>.</li>
       </ul>
+      <!-- captura android -->
+      <p>Sin captura: <code>FLAG_SECURE</code> bloquea las capturas de la app.</p>
     </section>
 
     <section class="doc-section" id="dominio">
