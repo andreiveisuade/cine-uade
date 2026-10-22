@@ -45,12 +45,14 @@ server:
   # Detrás de nginx o del proxy de Render: X-Forwarded-Proto hace https las URLs y Secure la cookie.
   forward-headers-strategy: native
 
-# La documentación de la API, generada desde los @RestController.
+# La documentación de la API, generada desde los @RestController. En producción CINE_SWAGGER=false: no publica el mapa de la API.
 springdoc:
   api-docs:
+    enabled: ${CINE_SWAGGER:true}
     # El JSON de OpenAPI. nginx lo proxea junto con /swagger-ui.
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${CINE_SWAGGER:true}
     path: /swagger-ui.html
     # Por ruta: el orden no cambia al agregar un controlador
     operations-sorter: method
