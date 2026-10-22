@@ -74,7 +74,7 @@
     <div class="diagram-container">
       <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sistema-contexto-title sistema-contexto-desc">
         <title id="sistema-contexto-title">El sistema en su contexto</title>
-        <desc id="sistema-contexto-desc">Cliente, encargado y acomodador usan el sistema del cine, que cobra con Mercado Pago y trae la cartelera de TMDB.</desc>
+        <desc id="sistema-contexto-desc">Cliente (web), encargado (Swing) y acomodador (Swing o Android) usan el sistema del cine, que cobra con Mercado Pago y trae la cartelera de TMDB.</desc>
         <defs>
           <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
           <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
@@ -93,17 +93,20 @@
 
         
 <path d="M220,152 H312 Q320,152 320,160 V212 Q320,220 328,220 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
-<line x1="220" y1="270" x2="400" y2="270" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
-<path d="M220,432 H312 Q320,432 320,424 V328 Q320,320 328,320 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="220" y1="242" x2="400" y2="242" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="220" y1="332" x2="400" y2="332" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M220,432 H312 Q320,432 320,424 V348 Q320,340 328,340 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
 <path d="M600,220 H652 Q660,220 660,212 V180 Q660,172 668,172 H760" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
 <path d="M600,320 H652 Q660,320 660,328 V364 Q660,372 668,372 H760" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
 <path d="M130,120 V68 Q130,60 138,60 H852 Q860,60 860,68 V140" fill="none" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow-link)"/>
 <rect x="226.4" y="132" width="79.19999999999999" height="14" rx="2" fill="#f5f5f5"/>
 <text x="266" y="142" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">WEB · COOKIE</text>
-<rect x="267.6" y="250" width="84.8" height="14" rx="2" fill="#f5f5f5"/>
-<text x="310" y="260" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">SWING · BASIC</text>
-<rect x="223.6" y="412" width="84.8" height="14" rx="2" fill="#f5f5f5"/>
-<text x="266" y="422" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">SWING · BASIC</text>
+<rect x="267.6" y="222" width="84.8" height="14" rx="2" fill="#f5f5f5"/>
+<text x="310" y="232" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">SWING · BASIC</text>
+<rect x="267.6" y="312" width="84.8" height="14" rx="2" fill="#f5f5f5"/>
+<text x="310" y="322" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">SWING · BASIC</text>
+<rect x="218" y="412" width="96" height="14" rx="2" fill="#f5f5f5"/>
+<text x="266" y="422" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">ANDROID · BASIC</text>
 <rect x="674.4" y="152" width="79.19999999999999" height="14" rx="2" fill="#f5f5f5"/>
 <text x="714" y="162" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">CHECKOUT PRO</text>
 <rect x="677.2" y="352" width="73.6" height="14" rx="2" fill="#f5f5f5"/>
@@ -116,27 +119,33 @@
 <text x="73.0" y="140" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ACTOR</text>
 <text x="52" y="162" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Cliente</text>
 <text x="52" y="178" fill="#5a6580" font-size="9" font-family="Geist Mono">navegador · React</text>
-<rect x="40" y="238" width="180" height="64" rx="6" fill="#f5f5f5"/>
-<rect x="40" y="238" width="180" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
-<rect x="52" y="248" width="42" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
-<text x="73.0" y="258" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ACTOR</text>
-<text x="52" y="280" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Encargado</text>
-<text x="52" y="296" fill="#5a6580" font-size="9" font-family="Geist Mono">cine-swing · panel</text>
+<rect x="40" y="210" width="180" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="40" y="210" width="180" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="52" y="220" width="42" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="73.0" y="230" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ACTOR</text>
+<text x="52" y="252" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Encargado</text>
+<text x="52" y="268" fill="#5a6580" font-size="9" font-family="Geist Mono">cine-swing · panel</text>
+<rect x="40" y="300" width="180" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="40" y="300" width="180" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="52" y="310" width="42" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="73.0" y="320" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ACTOR</text>
+<text x="52" y="342" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Acomodador</text>
+<text x="52" y="358" fill="#5a6580" font-size="9" font-family="Geist Mono">cine-swing · Puerta</text>
 <rect x="40" y="400" width="180" height="64" rx="6" fill="#f5f5f5"/>
 <rect x="40" y="400" width="180" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
 <rect x="52" y="410" width="42" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
 <text x="73.0" y="420" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ACTOR</text>
 <text x="52" y="442" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Acomodador</text>
-<text x="52" y="458" fill="#5a6580" font-size="9" font-family="Geist Mono">cine-swing · Puerta</text>
+<text x="52" y="458" fill="#5a6580" font-size="9" font-family="Geist Mono">cine-android · Puerta</text>
 <rect x="400" y="180" width="200" height="180" rx="6" fill="#f5f5f5"/>
 <rect x="400" y="180" width="200" height="180" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.4"/>
 <rect x="412" y="190" width="54" height="14" rx="2" fill="none" stroke="#bf4520" stroke-width="0.8"/>
 <text x="439.0" y="200" fill="#bf4520" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">SISTEMA</text>
 <text x="412" y="222" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Cine UADE</text>
-<text x="412" y="238" fill="#5a6580" font-size="9" font-family="Geist Mono">nginx + React (web)</text>
+<text x="412" y="238" fill="#5a6580" font-size="9" font-family="Geist Mono">React (web)</text>
 <text x="412" y="252" fill="#5a6580" font-size="9" font-family="Geist Mono">Spring Boot · /api</text>
 <text x="412" y="266" fill="#5a6580" font-size="9" font-family="Geist Mono">MySQL 8.4</text>
-<text x="412" y="280" fill="#5a6580" font-size="9" font-family="Geist Mono"></text>
+<text x="412" y="280" fill="#5a6580" font-size="9" font-family="Geist Mono">prod: Render + Aiven</text>
 <text x="412" y="294" fill="#5a6580" font-size="9" font-family="Geist Mono">conciliacion de pagos</text>
 <text x="412" y="308" fill="#5a6580" font-size="9" font-family="Geist Mono">cada 60 s</text>
 <rect x="760" y="140" width="180" height="64" rx="6" fill="#f5f5f5"/>
@@ -154,7 +163,7 @@
 <line x1="40" y1="500" x2="920" y2="500" stroke="rgba(45,49,66,0.12)"/>
 <rect x="40" y="516" width="14" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520"/><text x="60" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">el sistema</text>
 <rect x="160" y="516" width="14" height="10" rx="2" fill="#f5f5f5" stroke="#2e5aa8" stroke-dasharray="3,2"/><text x="180" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">sistema externo</text>
-<line x1="300" y1="521" x2="330" y2="521" stroke="#4f5d75" stroke-width="1.2"/><text x="338" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">HTTP a /api por nginx</text>
+<line x1="300" y1="521" x2="330" y2="521" stroke="#4f5d75" stroke-width="1.2"/><text x="338" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">HTTP a /api</text>
 <line x1="500" y1="521" x2="530" y2="521" stroke="#2e5aa8" stroke-width="1.2"/><text x="538" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">llamada saliente del backend</text>
 <line x1="730" y1="521" x2="760" y2="521" stroke="#2e5aa8" stroke-dasharray="4,3"/><text x="768" y="525" fill="#5a6580" font-size="9" font-family="Geist Mono">navegador redirigido</text>
 
