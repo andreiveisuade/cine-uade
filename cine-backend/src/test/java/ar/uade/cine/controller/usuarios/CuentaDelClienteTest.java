@@ -10,6 +10,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -83,13 +85,37 @@ class CuentaDelClienteTest extends PruebaDeApi {
         assertThat(respuesta.error()).isEqualTo("Ya existe una cuenta con ese email");
     }
 
+    // R22: el código de una entrada prueba que quien abre la cuenta es el que compró; sin él, cualquiera
+    // que conozca el email vería sus códigos en /mias. Sin código, el ajeno y el inventado dan el mismo 403.
+    @ParameterizedTest(name = "R22: {0}")
+    @CsvSource(textBlock = """
+            sin código,               ''
+            con el código de otro,    AJENO
+            con un código inventado,  ZZZZZZZZ
+            """)
+    void abrirLaCuentaDeQuienYaComproExigeElCodigoDeSuEntrada(String caso, String codigo) {
+        reservar("Beto", "beto@mail.com", "A1");
+        Reserva ajena = reservar("Ana", ANA, "A2");
+        String enviado = "AJENO".equals(codigo) ? ajena.getCodigo() : codigo;
+
+        Respuesta alta = pedirComo(HttpMethod.POST, "/api/clientes", "{\"nombre\":\"Beto\",\"email\":\"beto@mail.com\","
+                + "\"password\":\"clave-de-beto\",\"codigoReserva\":\"" + enviado + "\"}", null, null);
+
+        assertThat(alta.estado()).isEqualTo(403);
+        assertThat(alta.error()).isEqualTo(
+                "Para abrir esta cuenta hace falta el código de una de sus entradas: está en el ticket de la compra");
+        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, "beto@mail.com", "clave-de-beto").estado())
+                .isEqualTo(401);
+    }
+
     @Test
-    @DisplayName("quien reservó sin cuenta se registra con ese email y ve las reservas de antes")
-    void elQueReservoSinCuentaReclamaSuEmail() {
+    @DisplayName("R22: quien reservó sin cuenta se registra con el código de su entrada y ve las reservas de antes")
+    void elQueReservoSinCuentaReclamaSuEmailConElCodigo() {
         Reserva deAntes = reservar("Beto", "beto@mail.com", "A1");
 
-        Respuesta alta = pedirComo(HttpMethod.POST, "/api/clientes",
-                "{\"nombre\":\"Beto\",\"email\":\"beto@mail.com\",\"password\":\"clave-de-beto\"}", null, null);
+        Respuesta alta = pedirComo(HttpMethod.POST, "/api/clientes", "{\"nombre\":\"Beto\",\"email\":\"beto@mail.com\","
+                + "\"password\":\"clave-de-beto\",\"codigoReserva\":\" " + deAntes.getCodigo().toLowerCase() + "\"}",
+                null, null);
         assertThat(alta.estado()).isEqualTo(201);
 
         Respuesta mias = conCookie(HttpMethod.GET, "/api/reservas/mias", entrar("beto@mail.com", "clave-de-beto"));

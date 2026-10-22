@@ -38,6 +38,7 @@ import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.rechazos.SinPrueba;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
@@ -84,6 +85,7 @@ class ManejadorErroresTest extends PruebaDeApi {
                     case "inexistente" -> new RecursoNoEncontrado("No existe la sala 7");
                     case "conflicto" -> new ConflictoDeNegocio("Ya existe una sala con ese nombre");
                     case "butaca" -> new ButacaOcupada("La butaca B4 ya está ocupada");
+                    case "prueba" -> new SinPrueba("Falta el código");
                     default -> new IllegalArgumentException("Illegal base64 character 2d");
                 };
             }
@@ -137,6 +139,7 @@ class ManejadorErroresTest extends PruebaDeApi {
             inexistente, 404, No existe la sala 7
             conflicto,   409, Ya existe una sala con ese nombre
             butaca,      409, La butaca B4 ya está ocupada
+            prueba,      403, Falta el código
             """)
     void cadaRechazoSaleConSuStatusYSuTextoIntacto(String tipo, int estado, String mensaje) {
         Respuesta respuesta = post(RutasDePrueba.RUTA_RECHAZOS + tipo, null);
