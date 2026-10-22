@@ -15,7 +15,15 @@ export function PagarOnline({ codigo, alVolver }) {
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [pagando, setPagando] = useState(false);
-  const yaPague = useVueltaDelPago(pagando ? checkout.id : null, alVolver);
+  const avisarVuelta = useVueltaDelPago(pagando ? checkout.id : null, alVolver);
+
+  // Si MP rechazó, el motivo viaja en el 302 del retorno, que el fetch no lee: se mira cómo quedó la reserva.
+  async function yaPague() {
+    setError(null);
+    await avisarVuelta();
+    const reserva = await api.obtenerReservaPorCodigo(codigo).catch(() => null);
+    if (reserva?.cobrable) setError("Mercado Pago todavía no confirmó el pago");
+  }
 
   async function empezar() {
     setError(null);
