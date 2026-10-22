@@ -498,7 +498,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing):</strong> valida entradas en la puerta.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Docker Compose. 27 casos de uso, reglas R1 a R21.</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Docker Compose. 27 casos de uso, reglas R1 a R22.</li>
       </ul>
     </section>
 
@@ -539,7 +539,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20</td></tr>
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
-            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único</td></tr>
+            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único, R22</td></tr>
             <tr><td>CU-05b</td><td>Cliente</td><td>Ingresar con su cuenta y salir</td><td>R21</td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R9, R19</td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
@@ -572,6 +572,8 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Otros flujos alternativos</h3>
       <ul>
         <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
+        <li><strong>CU-05:</strong> si el email ya compró sin cuenta, el formulario pide «Código de una de tus entradas» (está en el ticket de la compra) y el backend responde 403 hasta que sea de una reserva de ese cliente. Con el código correcto abre la cuenta y ve sus reservas de antes (R22). Si ya tiene cuenta, o el email es de un empleado: 409 «Ya existe una cuenta con ese email».</li>
+        <li><strong>CU-05b:</strong> cinco claves equivocadas seguidas, por email o por IP: 429 «Demasiados intentos: esperá un minuto y probá de nuevo» (<a href="#seguridad">límite de intentos</a>).</li>
         <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
       </ul>
     </section>
@@ -619,7 +621,7 @@ cp .env.example .env          # MYSQL_ROOT_PASSWORD, DB_PASSWORD, TMDB_TOKEN; MP
 docker compose up -d --build
 ./seed/datos-de-ejemplo.sh    # datos de ejemplo, por API</code></pre>
       <ul>
-        <li>Web: <code>localhost:8080</code>; Swagger: <code>/swagger-ui.html</code>.</li>
+        <li>Web: <code>localhost:8080</code>; Swagger: <code>/swagger-ui.html</code> (apagado en Render con <code>CINE_SWAGGER=false</code>).</li>
         <li>Panel: <code>cd cine-swing &amp;&amp; mvn exec:java</code>. Usuario <code>encargado@cine.uade.ar</code> / <code>cine2026</code>; <code>puerta@cine.uade.ar</code> para la Puerta.</li>
         <li>Instalación, token de TMDB, Adminer y problemas comunes: <a href="../../COMO-LEVANTARLO.md"><code>_other/COMO-LEVANTARLO.md</code></a>.</li>
       </ul>
@@ -1159,7 +1161,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R21. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R22. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1290,7 +1292,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave vive en <code>Usuario</code> (el cliente con cuenta también la tiene); sin clave = reservó sin cuenta. Los cargos los distingue <code>Rol</code>, no clases.</li>
         <li><strong>Email</strong> normalizado: se busca igual en clientes, reservas y login.</li>
         <li><strong>Cuenta opcional:</strong> nombre, email y clave (<code>Cliente.abrirCuenta</code>); ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Por id (secuencial) solo accede el encargado.</li>
-        <li><strong>Reclamo del email:</strong> quien reservó sin cuenta se registra con ese email y ve sus reservas de antes. <em>Riesgo aceptado:</em> sin verificación, quien sepa el email ajeno lo reclama primero y ve sus reservas con el código. Arreglo: confirmar por mail.</li>
+        <li><strong>Reclamo del email (R22):</strong> quien reservó sin cuenta se registra con ese email y ve sus reservas de antes, pero tiene que mandar el código de una de ellas (<code>GestorClientes.registrar</code> compara <code>reserva.getClienteId()</code> con el cliente). Sin código, ajeno o inventado: 403 <code>SinPrueba</code> con un solo texto, así no se delata qué códigos existen. Es 403 y no 400 ni 409 porque la web decide por status: 400 es «dato inválido», 409 «ya existe cuenta», y ninguno debe abrir el campo del código. <em>Límite aceptado:</em> que pida código delata que ese email compró, pero un email nuevo se registra directo, así que la diferencia ya existía. Quien tenga el ticket de otro lo reclama; confirmar por mail lo cerraría.</li>
         <li><strong>Contraseñas en bcrypt.</strong> Un hash sin prefijo es el SHA-256 viejo: se acepta y el primer login correcto lo reescribe en bcrypt (único momento con la clave en claro; las de más de 72 bytes, ver <a href="#decorator">Decorator</a>). El login no distingue email inexistente de clave errónea.</li>
       </ul>
 
@@ -1313,7 +1315,10 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li><strong>CSRF apagado, <code>SameSite=Lax</code> en su lugar:</strong> un <code>POST</code>/<code>DELETE</code> de otro sitio llega sin cookie. Un token sería más fuerte, pero el front tendría que reenviarlo.</li>
         <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
         <li><strong>Mensajes neutros contra enumeración:</strong> <code>POST /clientes</code> con el email de un empleado o de un cliente con cuenta da el mismo 409 «Ya existe una cuenta con ese email». <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
-        <!-- T50b: cuenta sobre un cliente existente con código de reserva, límite de intentos y swagger -->
+        <li><strong>Límite de intentos:</strong> <code>FiltroDeIntentos</code> corre antes de <code>BasicAuthenticationFilter</code> y cuenta todo pedido con <code>Authorization: Basic</code> (login del cliente y cada pedido de Swing). Un 401 es un fallo; otro status, un acierto. Cinco fallos seguidos por email o por IP bloquean un minuto con 429 y sin tocar bcrypt; los fallos vencen al minuto del último y cada fallo barre los vencidos. Un acierto reinicia solo el contador del email: reiniciar el de la IP dejaría esquivar el límite alternando con una cuenta propia. La IP es <code>getRemoteAddr()</code>, que con <code>forward-headers-strategy: native</code> es la de <code>X-Forwarded-For</code>.
+          <br><em>Por qué:</em> bcrypt cuesta ~1 s con 0,1 CPU en Render, así que unos pocos intentos por segundo tumban el servicio, además de permitir adivinar claves. Cortar antes de bcrypt evita ese costo.
+          <br><em>Límite conocido:</em> el contador por IP frena a todos los que salen por la misma IP pública. Si el Swing del cine está detrás de un router, cinco claves mal en un minuto dejan sin panel a todo el cine ese minuto. Si molesta, se sube el umbral de IP. El contador vive en memoria: un reinicio lo borra.</li>
+        <li><strong>Swagger apagado en producción:</strong> springdoc lee <code>CINE_SWAGGER</code> (por defecto <code>true</code>); <code>render.yaml</code> la fija en <code>false</code> y ni la UI ni <code>/v3/api-docs</code> existen. Si el servicio se creó a mano, se carga en el panel.</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>, también un archivo estático que no esté en <code>FRONT</code> (<code>/otra</code> da 401). El front no necesita más: las rutas son por hash.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
@@ -1735,6 +1740,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
             <tr><td>R21</td><td>Un cliente solo ve, cancela y paga las reservas que son suyas</td></tr>
+            <tr><td>R22</td><td>Abrir una cuenta sobre un cliente que ya compró sin cuenta exige el código de una de sus entradas: prueba de que es quien compró</td></tr>
           </tbody>
         </table>
       </div>
@@ -1843,7 +1849,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code>, <code>PeliculaTest</code>, <code>SalaTest</code></td></tr>
             <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
-            <tr><td>R21</td><td><code>CuentaDelClienteTest</code>, <code>GestorClientesTest</code></td></tr>
+            <tr><td>R21, R22</td><td><code>CuentaDelClienteTest</code>, <code>GestorClientesTest</code></td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>
@@ -2417,7 +2423,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R21, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R22, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>
