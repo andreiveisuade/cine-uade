@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.ventas.Reserva;
@@ -23,6 +24,7 @@ public class ExpiracionDeReservas {
     private final Reloj reloj;
 
     // Escribe porque el UNIQUE no sabe de vencimientos.
+    @Transactional
     public void expirarVencidas(List<Reserva> reservas) {
         LocalDateTime ahora = reloj.ahora();
         for (Reserva reserva : reservas) {
