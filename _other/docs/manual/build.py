@@ -26,6 +26,9 @@ svg_map = {
     "{{SVG_IMPORTADOR}}": DIAGRAMAS / "importador-flujo.svg",
     "{{SVG_PETICION}}": DIAGRAMAS / "peticion-capas.svg",
     "{{SVG_USUARIOS}}": DIAGRAMAS / "usuarios-herencia.svg",
+    "{{SVG_USUARIOS_CAPAS}}": DIAGRAMAS / "usuarios-capas.svg",
+    "{{SVG_USUARIOS_SESIONES}}": DIAGRAMAS / "usuarios-sesiones.svg",
+    "{{SVG_USUARIOS_CICLO}}": DIAGRAMAS / "usuarios-ciclo.svg",
     "{{SVG_PROMOCIONES}}": DIAGRAMAS / "promociones-herencia.svg",
     "{{SVG_BUTACA_CARRERA}}": DIAGRAMAS / "butaca-carrera.svg",
     # Capas del sistema; los principios y patrones van en patron-*.svg, mas abajo.

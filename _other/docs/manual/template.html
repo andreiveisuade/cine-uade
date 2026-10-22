@@ -435,6 +435,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y seguridad</a></li>
+        <li><a href="#cuentas" data-target="cuentas">Usuarios y cuentas</a></li>
         <li><a href="#der" data-target="der">Modelo de datos (DER)</a></li>
         <li><a href="#persistencia" data-target="persistencia">Persistencia</a></li>
         <li><a href="#dto" data-target="dto">El patrón DTO</a></li>
@@ -1346,6 +1347,51 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li><strong>Swagger apagado en producción:</strong> springdoc lee <code>CINE_SWAGGER</code> (por defecto <code>true</code>); <code>render.yaml</code> la fija en <code>false</code> y ni la UI ni <code>/v3/api-docs</code> existen. Si el servicio se creó a mano, se carga en el panel.</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>, también un archivo estático que no esté en <code>FRONT</code> (<code>/otra</code> da 401). El front no necesita más: las rutas son por hash.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="cuentas">
+      <h2>Usuarios y cuentas</h2>
+      <p>Lo mismo que <a href="#usuarios">Usuarios y seguridad</a>, en diagramas: qué pieza hace qué, cómo viaja la identidad y por qué estados pasa una cuenta. Las rutas, en <a href="#seguridad">Quién puede llamar a qué</a>.</p>
+      <figure class="diagram">
+        {{SVG_USUARIOS_CAPAS}}
+        <figcaption>De la tabla <code>usuario</code> a los tres clientes, una pieza por renglón</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_USUARIOS_SESIONES}}
+        <figcaption>Cliente: Basic una vez y después cookie. Empleado: Basic en cada pedido. Recuperar la clave: el código de una entrada</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_USUARIOS_CICLO}}
+        <figcaption>Una cuenta es una clave sobre un cliente: abrirla, cambiarla o darla de baja no toca sus reservas</figcaption>
+      </figure>
+
+      <h3 id="cuentas-reglas">Reglas de usuarios</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Regla</th><th>Qué asegura</th><th>Dónde</th></tr></thead>
+          <tbody>
+            <tr><td>R21</td><td>Solo sus reservas; la ajena da 404 como un código inexistente</td><td><code>ConsultasReservas</code></td></tr>
+            <tr><td>R22</td><td>Abrir cuenta sobre un email que ya compró pide el código de una entrada suya; si no, 403 con un solo texto</td><td><code>GestorClientes.registrar</code></td></tr>
+            <tr><td>R23</td><td>Cambia el nombre con las reglas del alta; el email no</td><td><code>GestorCuentas.renombrar</code></td></tr>
+            <tr><td>R24</td><td>Cambiar la clave pide la actual; su sesión sigue con otro id, las demás se cierran</td><td><code>GestorCuentas.cambiarClave</code></td></tr>
+            <tr><td>R25</td><td>Recuperar con email + código propio; toda falla, el mismo 403; cierra todas las sesiones</td><td><code>GestorCuentas.recuperarClave</code></td></tr>
+            <tr><td>R26</td><td>Baja con la clave actual: borra solo la clave</td><td><code>GestorCuentas.darDeBaja</code></td></tr>
+            <tr><td>R27</td><td>Solo <code>ADMINISTRADOR</code>; la genera el backend, se muestra una vez y marca <code>debeCambiarClave</code></td><td><code>GestorCuentas.asignarClaveTemporal</code></td></tr>
+            <tr><td>Intentos</td><td>Cinco fallos por email o IP: 429 un minuto, antes de bcrypt. Cuentan login, Basic, recuperación, clave actual del cambio y de la baja</td><td><code>LimiteDeIntentos</code></td></tr>
+            <tr><td>Mensajes neutros</td><td>Login, alta, compra y recuperación no delatan qué emails o códigos existen</td><td>Gestores y filtro Basic</td></tr>
+            <tr><td>Ticket público</td><td>El email sale enmascarado (<code>a***@mail.com</code>): con el código sería todo lo que pide R25</td><td><code>VistasReservas</code>, <code>Email.enmascarado</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><em>Límites conocidos</em> (<code>API.md</code> › Seguridad): <code>debeCambiarClave</code> lo hace cumplir solo la web, el backend no bloquea otras rutas a quien no la cambió; y login, recuperación, cambio de clave y baja comparten el mismo contador por email e IP. Además, sesiones e intentos viven en memoria: una sola instancia.</p>
+
+      <h3 id="cuentas-nunca">Qué nunca pasa</h3>
+      <ul>
+        <li><strong>La clave no se guarda ni se loguea:</strong> solo su bcrypt. La temporal sale en claro una vez, en la respuesta a Swing.</li>
+        <li><strong>El front no decide permisos:</strong> esconde botones, pero quien rechaza es <code>ConfiguracionSeguridad</code>, cerrada por defecto.</li>
+        <li><strong>Ninguna ruta de <code>/cuenta</code> recibe a quién modificar:</strong> el cliente es siempre el de la sesión.</li>
+        <li><strong>Swing y Android no tocan la base:</strong> hablan HTTP con Basic, como cualquier otro cliente.</li>
       </ul>
     </section>
 
