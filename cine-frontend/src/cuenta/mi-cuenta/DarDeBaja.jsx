@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "@/compartido/formularios/faltantes.js";
+import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { useSesion } from "../SesionDelCliente.jsx";
 import { SeccionDeCuenta } from "./SeccionDeCuenta.jsx";
 
@@ -22,6 +22,7 @@ export function DarDeBaja() {
     evento.preventDefault();
     const vacios = faltantes({ actual: { valor: actual, etiqueta: "tu contraseña" } });
     setFaltan(vacios);
+    enfocarPrimero(evento.currentTarget, vacios);
     if (!Object.keys(vacios).length) setConfirmando(true);
   }
 
@@ -44,7 +45,7 @@ export function DarDeBaja() {
     <SeccionDeCuenta titulo="Dar de baja la cuenta" alEnviar={pedirConfirmacion}>
       <Text size="sm" c="dimmed">Tus reservas siguen valiendo: las encontrás con el código de cada entrada.</Text>
       <PasswordInput label="Contraseña" autoComplete="current-password" required value={actual}
-        error={faltan.actual} onChange={(e) => setActual(e.currentTarget.value)} />
+        name="actual" error={faltan.actual} onChange={(e) => setActual(e.currentTarget.value)} />
       <Button type="submit" color="red" variant="light">Dar de baja</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
       <Modal opened={confirmando} onClose={() => setConfirmando(false)} title="¿Dar de baja tu cuenta?">

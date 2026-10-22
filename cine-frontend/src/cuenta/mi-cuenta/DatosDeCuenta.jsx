@@ -3,7 +3,7 @@ import { Button, TextInput } from "@mantine/core";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "@/compartido/formularios/faltantes.js";
+import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { useSesion } from "../SesionDelCliente.jsx";
 import { SeccionDeCuenta } from "./SeccionDeCuenta.jsx";
 
@@ -19,6 +19,7 @@ export function DatosDeCuenta() {
     evento.preventDefault();
     const vacios = faltantes({ nombre: { valor: nombre, etiqueta: "tu nombre" } });
     setFaltan(vacios);
+    enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
     setEnviando(true);
@@ -33,7 +34,7 @@ export function DatosDeCuenta() {
 
   return (
     <SeccionDeCuenta titulo="Tus datos" alEnviar={guardar}>
-      <TextInput label="Nombre" autoComplete="name" required value={nombre} error={faltan.nombre}
+      <TextInput label="Nombre" autoComplete="name" required value={nombre} name="nombre" error={faltan.nombre}
         onChange={(e) => setNombre(e.currentTarget.value)} />
       <TextInput label="Email" type="email" autoComplete="email" value={usuario.email ?? ""} readOnly
         description="El email no se puede cambiar" />

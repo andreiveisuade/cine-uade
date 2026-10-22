@@ -35,4 +35,15 @@ describe("RecuperarClave", () => {
 
     expect(await screen.findByText("Demasiados intentos, probá más tarde")).toBeInTheDocument();
   });
+
+  it("lleva el foco al primer campo que falta", async () => {
+    renderConApp(<RecuperarClave />);
+    await userEvent.type(screen.getByLabelText(/^Email/), "ana@mail.com");
+    await userEvent.type(screen.getByLabelText(/^Código de una de tus entradas/), "   ");
+    await userEvent.type(screen.getByLabelText(/^Contraseña nueva/), "   ");
+    await userEvent.click(screen.getByRole("button", { name: "Cambiar contraseña" }));
+
+    expect(screen.getByLabelText(/^Código de una de tus entradas/)).toHaveFocus();
+    expect(api.recuperarClave).not.toHaveBeenCalled();
+  });
 });

@@ -5,7 +5,7 @@ import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "@/compartido/formularios/faltantes.js";
+import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
 
 const BAJADA = "El código de una de tus entradas prueba que la cuenta es tuya.";
@@ -30,6 +30,7 @@ export function RecuperarClave() {
       nueva: { valor: nueva, etiqueta: "la contraseña nueva" },
     });
     setFaltan(vacios);
+    enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
     setEnviando(true);
@@ -46,11 +47,11 @@ export function RecuperarClave() {
   return (
     <FormularioCentrado titulo="Recuperar clave" alEnviar={recuperar} bajada={BAJADA}>
       <TextInput label="Email" type="email" autoComplete="email" required autoFocus value={email}
-        error={faltan.email} onChange={(e) => setEmail(e.currentTarget.value)} />
-      <TextInput label="Código de una de tus entradas" required value={codigo} error={faltan.codigo}
+        name="email" error={faltan.email} onChange={(e) => setEmail(e.currentTarget.value)} />
+      <TextInput label="Código de una de tus entradas" required value={codigo} name="codigo" error={faltan.codigo}
         description="Está en el ticket que recibiste al comprar" onChange={(e) => setCodigo(e.currentTarget.value)} />
       <PasswordInput label="Contraseña nueva" autoComplete="new-password" required value={nueva}
-        error={faltan.nueva} onChange={(e) => setNueva(e.currentTarget.value)} />
+        name="nueva" error={faltan.nueva} onChange={(e) => setNueva(e.currentTarget.value)} />
       <Button type="submit" size="md" mt="xs" loading={enviando}>Cambiar contraseña</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
       <Text size="sm" c="dimmed" ta="center">

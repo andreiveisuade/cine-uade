@@ -5,7 +5,7 @@ import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "@/compartido/formularios/faltantes.js";
+import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
 import { useSesion } from "./SesionDelCliente.jsx";
 
@@ -29,6 +29,7 @@ export function Ingresar() {
       clave: { valor: clave, etiqueta: "tu contraseña" },
     });
     setFaltan(vacios);
+    enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
     setEnviando(true);
@@ -52,9 +53,9 @@ export function Ingresar() {
   return (
     <FormularioCentrado titulo="Ingresar" alEnviar={entrar}
       bajada="Con tu cuenta ves tus reservas, las pagás online o las cancelás.">
-      <TextInput label="Email" type="email" autoComplete="email" required value={email} error={faltan.email}
+      <TextInput label="Email" type="email" autoComplete="email" required value={email} name="email" error={faltan.email}
         onChange={(e) => setEmail(e.currentTarget.value)} />
-      <PasswordInput label="Contraseña" autoComplete="current-password" required value={clave} error={faltan.clave}
+      <PasswordInput label="Contraseña" autoComplete="current-password" required value={clave} name="clave" error={faltan.clave}
         onChange={(e) => setClave(e.currentTarget.value)} />
       <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
