@@ -263,3 +263,10 @@ CREATE TABLE IF NOT EXISTS importacion (
     fallidas INT NOT NULL DEFAULT 0,
     detalle TEXT
 );
+
+-- Las fotos de promos y productos, con el nombre de su URL; en la base y no en disco para que un despliegue sin
+-- disco persistente no las pierda. MEDIUMBLOB: hasta 16 MB, y Imagen corta en 2 MB
+CREATE TABLE IF NOT EXISTS imagen (
+    nombre VARCHAR(60) PRIMARY KEY,
+    contenido MEDIUMBLOB NOT NULL
+);
