@@ -74,8 +74,8 @@ public final class PantallaClientes extends Pantalla {
     }
 
     private void asignar() {
-        if (!confirmar("¿Asignarle una clave temporal a " + cliente.nombre() + "? La clave que tenga deja de valer "
-                + "y se cierran sus sesiones en la web.", "Sí, asignar")) return;
+        if (!confirmar("¿Asignarle una clave temporal a " + cliente.nombre() + "? La clave que tenga deja de valer.",
+                "Sí, asignar")) return;
         Tarea.ejecutar(this, () -> apiClientes.asignarClaveTemporal(cliente.id()), temporal -> {
             clave.setText(temporal.clave());
             clave.setVisible(true);

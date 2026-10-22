@@ -6,12 +6,11 @@
 -- No hay endpoint de alta de administradores —el TP no modela quién los crea— así que
 -- el primero tiene que venir sembrado desde acá.
 --
--- La contraseña es cine2026, guardada como su SHA-256 sin prefijo: el formato de antes de
--- bcrypt, que Spring Security sigue aceptando y reemplaza por {bcrypt} en el primer login.
+-- La contraseña es cine2026, guardada en bcrypt con el prefijo {bcrypt} que pide el PasswordEncoder.
 -- Son credenciales de demo de un TP: para cualquier otra cosa, cambiarlas antes de levantar.
 
 INSERT INTO usuario (nombre, email, rol, password_hash) VALUES
     ('Encargado', 'encargado@cine.uade.ar', 'ADMINISTRADOR',
-     'e502da39b133e465645bc74c757b40f2d5ecd62681ee5c9b63fb1a4cdfb41b53'),
+     '{bcrypt}$2y$10$8i462loUwlEda/Y6fd0jGuIXRhqVWuSfbxWInx/S/Wzto7YTScsjO'),
     ('Acomodador', 'puerta@cine.uade.ar', 'ACOMODADOR',
-     'e502da39b133e465645bc74c757b40f2d5ecd62681ee5c9b63fb1a4cdfb41b53');
+     '{bcrypt}$2y$10$8i462loUwlEda/Y6fd0jGuIXRhqVWuSfbxWInx/S/Wzto7YTScsjO');

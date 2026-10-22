@@ -42,14 +42,14 @@ public class CuentaController {
         return vistas.usuario(cuentas.renombrar(identidad.getName(), pedido.nombre()));
     }
 
-    // Session fixation: el id cambia antes de cerrar las demás, y la respuesta lleva la cookie nueva.
-    @Operation(summary = "Cambiar la clave con la actual; las otras sesiones del cliente se cierran (R24)")
+    // Session fixation: el id cambia recién con la clave cambiada, y la respuesta lleva la cookie nueva.
+    @Operation(summary = "Cambiar la clave con la actual (R24)")
     @PostMapping("/api/cuenta/clave")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cambiarClave(@Valid @RequestBody PedidoCambioClaveDTO pedido, Authentication identidad,
                              HttpServletRequest http) {
-        cuentas.cambiarClave(identidad.getName(), pedido.actual(), pedido.nueva(), http.getRemoteAddr(),
-                http::changeSessionId);
+        cuentas.cambiarClave(identidad.getName(), pedido.actual(), pedido.nueva(), http.getRemoteAddr());
+        http.changeSessionId();
     }
 
     @Operation(summary = "Recuperar la clave sin sesión con el código de una entrada propia (R25)")

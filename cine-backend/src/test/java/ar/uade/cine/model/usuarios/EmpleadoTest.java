@@ -63,11 +63,7 @@ class EmpleadoTest {
     @NullSource
     @ValueSource(strings = {"", "   "})
     void unEmpleadoNoSeQuedaSinContrasena(String hash) {
-        Empleado empleado = new Empleado("Ana", "ana@cine.com", "{bcrypt}x", Rol.ACOMODADOR);
-
         rechaza("Falta la contraseña", () -> new Empleado("Ana", "ana@cine.com", hash, Rol.ACOMODADOR));
-        rechaza("Falta la contraseña", () -> empleado.reemplazarPasswordHash(hash));
-        assertEquals("{bcrypt}x", empleado.getPasswordHash());
     }
 
     // API.md promete emails sin distinguir mayúsculas: «BETO@x.com» y «beto@x.com» eran dos clientes.

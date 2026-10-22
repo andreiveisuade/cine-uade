@@ -1,7 +1,6 @@
 package ar.uade.cine.service.usuarios;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.seguridad.LimiteDeIntentos;
-import ar.uade.cine.infrastructure.seguridad.RegistroDeSesiones;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.DemasiadosIntentos;
 import ar.uade.cine.model.rechazos.SinPrueba;
@@ -21,7 +19,7 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // La cuenta de un cliente ya abierta: datos, clave, recuperación y baja (R23 a R27); el alta es de GestorClientes.
-// Las claves las compara y hashea solo el PasswordEncoder de seguridad; cada cambio de clave cierra sesiones.
+// Las claves las compara y hashea solo el PasswordEncoder de seguridad.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -37,7 +35,6 @@ public class GestorCuentas {
     private final ReservaRepository reservaRepository;
     private final PasswordEncoder claves;
     private final LimiteDeIntentos intentos;
-    private final RegistroDeSesiones sesiones;
 
     // R23
     public Cliente renombrar(String email, String nombre) {
@@ -46,14 +43,12 @@ public class GestorCuentas {
         return cliente;
     }
 
-    // R24: la nueva se valida antes que la actual, como en el alta; la sesión que sigue es la del que la cambió.
-    // Su id nuevo se pide recién con la clave cambiada: un intento fallido no rota la cookie.
-    public void cambiarClave(String email, String actual, String nueva, String ip, Supplier<String> sesionQueSigue) {
+    // R24: la nueva se valida antes que la actual, como en el alta.
+    public void cambiarClave(String email, String actual, String nueva, String ip) {
         Cliente cliente = conCuenta(email);
         Contrasena clave = new Contrasena(nueva);
         exigirClave(cliente, actual, ip);
         cliente.cambiarClave(claves.encode(clave.valor()));
-        sesiones.cerrarLasDemas(cliente.getEmail(), sesionQueSigue.get());
     }
 
     // R25: el código de una de sus entradas prueba que es el dueño, como en R22; cuenta para el límite de intentos.
@@ -73,7 +68,6 @@ public class GestorCuentas {
         intentos.exito(quien);
         Cliente cliente = dueno.get();
         cliente.cambiarClave(claves.encode(clave.valor()));
-        sesiones.cerrarTodas(cliente.getEmail());
     }
 
     // R26: borra solo la clave; reservas, pagos y entradas son ventas del cine y quedan.
@@ -81,7 +75,6 @@ public class GestorCuentas {
         Cliente cliente = conCuenta(email);
         exigirClave(cliente, actual, ip);
         cliente.cerrarCuenta();
-        sesiones.cerrarTodas(cliente.getEmail());
     }
 
     // R27: se devuelve en claro una sola vez, para que el encargado se la pase al cliente; no se guarda ni se loguea.
@@ -89,11 +82,9 @@ public class GestorCuentas {
         Cliente cliente = clienteRepository.exigir(clienteId, "el cliente");
         Contrasena temporal = Contrasena.temporal();
         cliente.asignarClaveTemporal(claves.encode(temporal.valor()));
-        sesiones.cerrarTodas(cliente.getEmail());
         return temporal;
     }
 
-    // La sesión es de un cliente con cuenta: la baja y los cambios de clave cierran las sesiones que la usaban.
     private Cliente conCuenta(String email) {
         return clienteRepository.findByEmail(email).filter(Cliente::tieneCuenta).orElseThrow();
     }

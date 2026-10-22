@@ -3,7 +3,6 @@ package ar.uade.cine.infrastructure.seguridad;
 import java.io.IOException;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,10 +13,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,14 +26,12 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
-import ar.uade.cine.service.usuarios.GestorEmpleados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -47,7 +41,6 @@ import jakarta.servlet.http.HttpServletResponse;
 // Qué rol puede llamar cada ruta y cómo se autentica (Basic contra usuario, bcrypt); SecurityFilterChain.
 // Empleados: Basic en cada pedido, sin sesión; cliente: Basic una vez y cookie (SesionDeClientes). CSRF apagado: SameSite=Lax.
 // 401/403 sin WWW-Authenticate, que abriría el login del navegador. Lo no enumerado pide ADMINISTRADOR.
-@Slf4j
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
@@ -88,9 +81,9 @@ public class ConfiguracionSeguridad {
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos,
-                                               RegistroDeSesiones registro) throws Exception {
-        SecurityContextRepository sesion = new SesionDeClientes(registro);
+    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos)
+            throws Exception {
+        SecurityContextRepository sesion = new SesionDeClientes();
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
                         // Mismo texto para clave y email: distinguirlos revela qué emails existen.
@@ -110,7 +103,6 @@ public class ConfiguracionSeguridad {
                         .deleteCookies(COOKIE_DE_SESION)
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .securityContext(contexto -> contexto.securityContextRepository(sesion))
-                .addFilterBefore(new FiltroDeSesionesCerradas(registro), BasicAuthenticationFilter.class)
                 .addFilterBefore(new FiltroDeIntentos(intentos, json), BasicAuthenticationFilter.class)
                 // Guardaría en la sesión cada pedido que da 401, y crearía una para cualquiera.
                 .requestCache(AbstractHttpConfigurer::disable)
@@ -145,18 +137,6 @@ public class ConfiguracionSeguridad {
                 .build();
     }
 
-    // Bean y no un new: así escucha los eventos de sesión (cambio de id, destruida) que publica el de abajo.
-    @Bean
-    public SessionRegistry sesionesAbiertas() {
-        return new SessionRegistryImpl();
-    }
-
-    // Publica los cambios de id y las sesiones destruidas: sin él RegistroDeSesiones guardaría ids muertos.
-    @Bean
-    public HttpSessionEventPublisher eventosDeSesion() {
-        return new HttpSessionEventPublisher();
-    }
-
     // Lax y no Strict: con Strict, entrar al cine desde un link de otro sitio llegaría sin la sesión.
     @Bean
     public CookieSameSiteSupplier cookieDeSesionSoloDelMismoSitio() {
@@ -178,28 +158,10 @@ public class ConfiguracionSeguridad {
                 .orElseThrow(() -> new UsernameNotFoundException("No hay un usuario con ese email"));
     }
 
-    // Hash sin prefijo = SHA-256 viejo (seed y bases previas); solo bcrypt en el mapa: el de fábrica acepta {noop}.
+    // Los hashes guardados llevan el prefijo {bcrypt}; solo bcrypt en el mapa: el de fábrica acepta {noop}.
     @Bean
     public PasswordEncoder passwordEncoder() {
-        DelegatingPasswordEncoder claves = new DelegatingPasswordEncoder("bcrypt",
-                Map.of("bcrypt", new BCryptPasswordEncoder()));
-        claves.setDefaultPasswordEncoderForMatches(new PasswordSha256());
-        return new PasswordBcrypt(claves);
-    }
-
-    // Único momento con la clave en claro: sin este re-hash los SHA-256 no migran nunca (no hay cambio de clave).
-    // Si el hash nuevo es el mismo (clave fuera de bcrypt, ver PasswordBcrypt) no se guarda y queda en el log.
-    @Bean
-    public UserDetailsPasswordService rehashearAlEntrar(GestorEmpleados empleados) {
-        return (usuario, hashNuevo) -> {
-            if (hashNuevo.equals(usuario.getPassword())) {
-                log.warn("{} no pasa a bcrypt: su clave tiene más de 72 bytes y el hash sigue en SHA-256",
-                        usuario.getUsername());
-                return usuario;
-            }
-            empleados.reemplazarHash(usuario.getUsername(), hashNuevo);
-            return User.withUserDetails(usuario).password(hashNuevo).build();
-        };
+        return new DelegatingPasswordEncoder("bcrypt", Map.of("bcrypt", new BCryptPasswordEncoder()));
     }
 
     // Sin charset, como ManejadorErrores: JSON es UTF-8 por definición
