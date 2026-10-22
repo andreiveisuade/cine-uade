@@ -724,9 +724,10 @@ mysql ... defaultdb &lt; cine-docker/seed/02-admin.sql</code></pre>
 <pre><code>printf %s '&lt;clave nueva&gt;' | shasum -a 256
 UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cine.uade.ar', 'puerta@cine.uade.ar');</code></pre></li>
         <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
-        <li><strong>Datos:</strong> un <code>mysqldump</code> de la base local se lleva películas, funciones e imágenes juntas.</li>
-        <li><!-- T48 -->URL pública: <code>https://&lt;servicio&gt;.onrender.com</code> (se completa al desplegar). Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>CINE_API_URL=https://&lt;servicio&gt;.onrender.com mvn exec:java</code>.</li>
-        <li><!-- T48 -->Humo: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, la cookie de sesión sale <code>Secure</code>.</li>
+        <li><strong>Base:</strong> <code>cine-docker/aiven/cargar-aiven.sh</code> aplica <code>schema.sql</code> y crea los dos empleados con clave nueva en bcrypt (pide las claves sin eco).</li>
+        <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (salas, candy, promo), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador, Por revisar y la grilla.</li>
+        <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>./mvnw compile exec:java -Dcine.api.url=https://cine-uade.onrender.com</code>.</li>
+        <li>Humo del 22/10/2026: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, Swagger 404, la cookie de sesión sale <code>Secure; HttpOnly; SameSite=Lax</code>. Recorrido completo: compra en la web, pago en Mercado Pago sandbox que vuelve solo al ticket como Pagada, la misma reserva en Reservas del panel y el ingreso en Puerta con el acomodador.</li>
       </ol>
     </section>
 
