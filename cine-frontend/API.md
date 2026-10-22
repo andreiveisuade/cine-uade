@@ -174,6 +174,8 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 - `GET /checkouts/{id}/retorno` (público): la back_url de MP. Ignora la query que agrega MP, consulta el pago y
   cobra si está aprobado (recargar no cobra dos veces). `302` a `/#/ticket/<codigo>` o
   `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
+  El front abre MP en otra pestaña y, al volver a la del ticket (o con «Ya pagué»), llama esta misma ruta con
+  `redirect: "manual"`: en localhost MP no redirige al sitio y así no espera a la conciliación.
 - Un `approved` cuenta solo si coincide monto, moneda (ARS) y tipo de pago del medio; si no, `409` en `/confirmacion` y aviso
   «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería» en el retorno.
 - Sin webhook (localhost): una tarea del backend (`ConciliacionPagos`, cada 60 s) busca los aprobados de los últimos 30 min

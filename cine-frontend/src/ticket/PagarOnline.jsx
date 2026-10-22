@@ -4,15 +4,18 @@ import * as api from "@/api/api-http.js";
 import { etiqueta } from "@/api/etiquetas.js";
 import { precio } from "@/api/formato.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
+import { useVueltaDelPago } from "./useVueltaDelPago.js";
 
 // Elegir el medio, abrir el checkout y recién ahí ir a la pasarela: el monto con la promo del medio lo calcula
 // el backend, y se muestra antes de salir del sitio.
-export function PagarOnline({ codigo }) {
+export function PagarOnline({ codigo, alVolver }) {
   const [medios, setMedios] = useState(null);
   const [medio, setMedio] = useState("");
   const [checkout, setCheckout] = useState(null);
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
+  const [pagando, setPagando] = useState(false);
+  const yaPague = useVueltaDelPago(pagando ? checkout.id : null, alVolver);
 
   async function empezar() {
     setError(null);
@@ -40,6 +43,13 @@ export function PagarOnline({ codigo }) {
     setEnviando(false);
   }
 
+  // Un link y no window.open: el navegador abre la pestaña sin bloqueo de pop-ups, y el ticket queda abierto
+  // esperando el pago. Hay navegadores (el de cmux) en los que window.open abre igual pero devuelve null.
+  const irAPagar = (props) => (
+    <Button component="a" href={checkout.urlPago} target="_blank" rel="noopener" onClick={() => setPagando(true)}
+      {...props} />
+  );
+
   if (!medios) {
     return (
       <Stack gap="xs">
@@ -52,13 +62,25 @@ export function PagarOnline({ codigo }) {
   return (
     <Paper withBorder p="sm">
       <Stack gap="xs">
-        {checkout ? (
+        {pagando ? (
+          <>
+            <Text size="sm">
+              Estás pagando <strong>{precio(checkout.monto)}</strong> en la pestaña de Mercado Pago. Cuando termines,
+              volvé acá: el ticket se actualiza solo.
+            </Text>
+            <Group gap="xs">
+              <Button onClick={yaPague}>Ya pagué</Button>
+              {irAPagar({ variant: "default", children: "Abrir Mercado Pago" })}
+              <Button variant="subtle" onClick={() => { setPagando(false); setCheckout(null); }}>Cambiar medio</Button>
+            </Group>
+          </>
+        ) : checkout ? (
           <>
             <Text size="sm">
               Vas a pagar <strong>{precio(checkout.monto)}</strong> con {etiqueta(checkout.medio).toLowerCase()}.
             </Text>
             <Group gap="xs">
-              <Button onClick={() => (window.location = checkout.urlPago)}>Ir a pagar</Button>
+              {irAPagar({ children: "Ir a pagar" })}
               <Button variant="default" onClick={() => setCheckout(null)}>Cambiar medio</Button>
             </Group>
           </>

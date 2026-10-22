@@ -94,6 +94,12 @@ export const obtenerMediosDePago = () => get("/medios-pago");
 export const abrirCheckout = (codigo, medio) =>
   post(`/reservas/codigo/${encodeURIComponent(codigo)}/checkout`, { medio });
 
+// La vuelta del comprador sin salir del ticket: el backend consulta MP y cobra si aprobó. El 302 al ticket no se
+// sigue (ya estamos ahí) y una falla no importa: la conciliación cobra igual.
+export const avisarVueltaDelPago = (checkoutId) =>
+  fetch(`${BASE}/checkouts/${encodeURIComponent(checkoutId)}/retorno`, { redirect: "manual" })
+    .then(() => {}, () => {});
+
 export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
   post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });
 

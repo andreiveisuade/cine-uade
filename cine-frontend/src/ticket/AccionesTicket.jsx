@@ -7,7 +7,7 @@ import { armarComprobante } from "./armarComprobante.js";
 import { PagarOnline } from "./PagarOnline.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
-export function AccionesTicket({ reserva, recien, alMostrarEnPuerta }) {
+export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDelPago }) {
   const { usuario } = useSesion();
   const avisar = useAvisar();
 
@@ -28,7 +28,7 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta }) {
         {reserva.estado === "PAGADA" && !reserva.ingresadaEn && (
           <Button size="md" leftSection={<IconQrcode size={20} />} onClick={alMostrarEnPuerta}>Mostrar en la puerta</Button>
         )}
-        {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} />}
+        {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} alVolver={alVolverDelPago} />}
         {usuario === null && recien && reserva.cobrable && (
           <Text size="sm" c="dimmed" maw="52ch">
             Para pagarla online,{" "}
