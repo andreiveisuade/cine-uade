@@ -1516,8 +1516,8 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Ruta</th><th>Qué muestra</th></tr></thead>
           <tbody>
-            <tr><td><code>#/</code></td><td>Hero con carrusel de hasta ocho destacadas (Ver trailer abre un modal) y la cartelera; <code>#/cartelera/:genero</code> filtra</td></tr>
-            <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster con parallax y Comprar entradas que baja a las funciones</td></tr>
+            <tr><td><code>#/</code></td><td>Portada con hasta 5 destacadas que rota sola cada 7 s con barra de avance y miniaturas para elegir; se frena con el mouse o el foco encima, con la pestaña oculta y con movimiento reducido (WCAG 2.2.2). De fondo, un cuadro del trailer o el póster difuminado; Ver trailer abre un modal. Abajo la cartelera; <code>#/cartelera/:genero</code> filtra</td></tr>
+            <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster y Comprar entradas que baja a las funciones</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
             <tr><td><code>#/registro</code>, <code>#/ingresar</code></td><td>Alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o nombre, Mis reservas y Salir</td></tr>
@@ -1565,7 +1565,7 @@ docker compose up -d --build
             <tr><td>Librerías</td><td><code>motion</code>, <code>canvas-confetti</code>, <code>@mantine/carousel</code> (Embla + autoplay), versión exacta en <code>package.json</code></td></tr>
             <tr><td>Mapa de butacas</td><td>Filas escalonadas, pop al tocar, total que corre al valor nuevo</td></tr>
             <tr><td>Entre pantallas</td><td><code>AnimatePresence</code> con fundido; sesión y compra quedan afuera y no se remontan</td></tr>
-            <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; carrusel en el hero. Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
+            <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; la portada rota sola (se frena como dice <code>#/</code>). Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
             <tr><td>Ticket</td><td>Se imprime al aparecer; si el pago llega con la pantalla abierta, sello y confetti una vez por reserva</td></tr>
             <tr><td>Carga</td><td><code>Skeleton</code> con la forma de cada pantalla</td></tr>
             <tr><td>Movimiento reducido</td><td><code>MotionConfig reducedMotion="user"</code>; sin autoplay ni confetti. El trailer queda en miniatura con play</td></tr>
