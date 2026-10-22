@@ -21,10 +21,6 @@ public class Empleado extends Usuario {
         guardarPasswordHash(ValidadorEmpleado.passwordHash(passwordHash));
     }
 
-    public void reemplazarPasswordHash(String passwordHash) {
-        guardarPasswordHash(ValidadorEmpleado.passwordHash(passwordHash));
-    }
-
     @Override
     public String toString() {
         return "[" + getId() + "] " + getNombre() + " <" + getEmail() + "> ("

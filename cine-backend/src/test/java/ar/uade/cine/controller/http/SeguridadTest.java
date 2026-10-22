@@ -244,9 +244,8 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.json().get("email").asText()).isEqualTo(EMAIL_ADMIN);
     }
 
-    // El admin tiene el hash SHA-256 viejo y el acomodador uno bcrypt: los dos caminos de verificación.
     @Test
-    @DisplayName("una contraseña vacía es 401, con hash viejo o con bcrypt")
+    @DisplayName("una contraseña vacía es 401, para el admin y para el acomodador")
     void unaContrasenaVaciaEs401() {
         Respuesta admin = pedirComo(HttpMethod.POST, "/api/sesion", null, EMAIL_ADMIN, "");
         Respuesta acomodador = pedirComo(HttpMethod.POST, "/api/sesion", null, "puerta@cine.test", "");

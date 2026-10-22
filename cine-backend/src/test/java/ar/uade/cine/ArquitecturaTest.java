@@ -51,7 +51,7 @@ class ArquitecturaTest {
                 repository,     'repository/ conoce el modelo que guarda, y nada más'
                 service,        'service/ no importa controller/ ni dto/: las reglas no saben que existe HTTP'
                 dto,            'dto/ no tiene lógica: no importa service/ ni repository/'
-                # 'service' porque importador/ devuelve DatosPelicula y seguridad/ re-hashea claves por GestorEmpleados.
+                # 'service' porque importador/ devuelve DatosPelicula.
                 infrastructure, 'infrastructure/ es adaptador de salida, no llama a la entrada'
                 controller,     'controller/ no toca la base: habla con los gestores'
                 """)

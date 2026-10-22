@@ -15,7 +15,7 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-// Empleados para la sesión y el re-hash a bcrypt al entrar; el alta existe solo para los tests.
+// Empleados para la sesión; el alta existe solo para los tests.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -35,11 +35,6 @@ public class GestorEmpleados {
             throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
         }
         empleadoRepository.save(empleado);
-    }
-
-    // El hash ya viene armado: lo pide el login, que es quien tiene la clave en claro.
-    public void reemplazarHash(String email, String hashNuevo) {
-        empleadoRepository.findByEmail(email).ifPresent(empleado -> empleado.reemplazarPasswordHash(hashNuevo));
     }
 
     @Transactional(readOnly = true)

@@ -3,7 +3,6 @@ package ar.uade.cine.infrastructure.seguridad;
 import java.io.IOException;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +14,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,7 +32,6 @@ import ar.uade.cine.model.usuarios.Rol;
 import ar.uade.cine.model.usuarios.Usuario;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
-import ar.uade.cine.service.usuarios.GestorEmpleados;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,7 +41,6 @@ import jakarta.servlet.http.HttpServletResponse;
 // Qué rol puede llamar cada ruta y cómo se autentica (Basic contra usuario, bcrypt); SecurityFilterChain.
 // Empleados: Basic en cada pedido, sin sesión; cliente: Basic una vez y cookie (SesionDeClientes). CSRF apagado: SameSite=Lax.
 // 401/403 sin WWW-Authenticate, que abriría el login del navegador. Lo no enumerado pide ADMINISTRADOR.
-@Slf4j
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
@@ -162,28 +158,10 @@ public class ConfiguracionSeguridad {
                 .orElseThrow(() -> new UsernameNotFoundException("No hay un usuario con ese email"));
     }
 
-    // Hash sin prefijo = SHA-256 viejo (seed y bases previas); solo bcrypt en el mapa: el de fábrica acepta {noop}.
+    // Los hashes guardados llevan el prefijo {bcrypt}; solo bcrypt en el mapa: el de fábrica acepta {noop}.
     @Bean
     public PasswordEncoder passwordEncoder() {
-        DelegatingPasswordEncoder claves = new DelegatingPasswordEncoder("bcrypt",
-                Map.of("bcrypt", new BCryptPasswordEncoder()));
-        claves.setDefaultPasswordEncoderForMatches(new PasswordSha256());
-        return new PasswordBcrypt(claves);
-    }
-
-    // Único momento con la clave en claro: sin este re-hash los SHA-256 no migran nunca (no hay cambio de clave).
-    // Si el hash nuevo es el mismo (clave fuera de bcrypt, ver PasswordBcrypt) no se guarda y queda en el log.
-    @Bean
-    public UserDetailsPasswordService rehashearAlEntrar(GestorEmpleados empleados) {
-        return (usuario, hashNuevo) -> {
-            if (hashNuevo.equals(usuario.getPassword())) {
-                log.warn("{} no pasa a bcrypt: su clave tiene más de 72 bytes y el hash sigue en SHA-256",
-                        usuario.getUsername());
-                return usuario;
-            }
-            empleados.reemplazarHash(usuario.getUsername(), hashNuevo);
-            return User.withUserDetails(usuario).password(hashNuevo).build();
-        };
+        return new DelegatingPasswordEncoder("bcrypt", Map.of("bcrypt", new BCryptPasswordEncoder()));
     }
 
     // Sin charset, como ManejadorErrores: JSON es UTF-8 por definición
