@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 // Solo los campos que muestra la Puerta; el resto del JSON se ignora.
 @Serializable
-data class Usuario(val nombre: String, val email: String, val rol: String)
+data class Usuario(val nombre: String, val rol: String)
 
 @Serializable
 data class Reserva(
