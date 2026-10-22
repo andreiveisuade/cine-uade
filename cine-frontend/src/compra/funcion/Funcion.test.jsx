@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
@@ -53,6 +53,20 @@ describe("Funcion: elegir butacas", () => {
 
     expect(api.bloquearButacas).toHaveBeenLastCalledWith(expect.objectContaining({ butacas: [] }));
     expect(screen.getByText("Elegí una o más butacas")).toBeInTheDocument();
+  });
+
+  // Dos clics antes de que React vuelva a pintar: el segundo no puede partir de la selección vieja.
+  it("dos clics seguidos en butacas distintas suman las dos", async () => {
+    api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
+    const [a1, a2] = [await butaca("A1"), await butaca("A2")];
+
+    await act(async () => {
+      a1.click();
+      a2.click();
+    });
+
+    expect(api.bloquearButacas).toHaveBeenLastCalledWith(expect.objectContaining({ butacas: ["A1", "A2"] }));
+    expect(screen.getByText("2 butacas")).toBeInTheDocument();
   });
 
   // El backend contesta 200 con `rechazadas` cuando otro ganó la butaca, y 400 cuando no aparta la selección entera

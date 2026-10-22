@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { sinButacas, sostenerSeleccion } from "@/compra/bloqueo.js";
 import { useCompra } from "@/compra/CompraEnCurso.jsx";
@@ -6,13 +7,20 @@ import { useCompra } from "@/compra/CompraEnCurso.jsx";
 export function useAlternarButaca(funcion, butacas, recargar) {
   const { setSeleccion } = useCompra();
   const avisar = useAvisar();
+  // Dos clics antes de que React vuelva a pintar verían las mismas `butacas`: la vigente se lleva en un ref.
+  const vigentes = useRef(butacas);
+  useLayoutEffect(() => {
+    vigentes.current = butacas;
+  }, [butacas]);
 
   return async function alternar(asiento) {
+    const butacas = vigentes.current;
     // Arranca en GENERAL: una tarifa reducida hay que acreditarla en la puerta.
     const nuevas = butacas[asiento.codigo]
       ? sinButacas(butacas, [asiento.codigo])
       : { ...butacas, [asiento.codigo]: "GENERAL" };
     // Se pinta antes del bloqueo para que se vea elegida en el acto.
+    vigentes.current = nuevas;
     setSeleccion({ funcionId: funcion.id, butacas: nuevas });
 
     let rechazadas;
