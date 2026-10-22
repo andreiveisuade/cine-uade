@@ -86,7 +86,7 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
 | `POST /clientes` | `{nombre, email, password, codigoReserva?}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes, pero tiene que mandar `codigoReserva`, el de una de sus entradas (R22): sin él, o con uno ajeno o inventado, `403` con el mismo texto en los tres casos. Con email nuevo el código se ignora. Si ya tiene clave, o el email es de un empleado, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
-| `POST /clientes/{id}/clave-temporal` | Sin cuerpo. Solo `ADMINISTRADOR` (Swing, boletería). `200 {"clave":"k7m2qx9pab"}`: diez letras y números sin `l`, `o`, `0` ni `1`, en claro una sola vez (no se guarda ni se loguea). Abre la cuenta si no la tenía, cierra todas sus sesiones y marca `debeCambiarClave` (R27). Id inexistente o de un empleado, `404 No existe el cliente N` |
+| `POST /clientes/{id}/clave-temporal` | Sin cuerpo. Solo `ADMINISTRADOR` (Swing, boletería). `200 {"clave":"k7m2qx9pab"}`: diez letras y números sin `l`, `o`, `0` ni `1`, en claro una sola vez (no se guarda ni se loguea). Abre la cuenta si no la tenía y marca `debeCambiarClave` (R27). Id inexistente o de un empleado, `404 No existe el cliente N` |
 
 ### La cuenta (cliente con sesión, R23 a R26)
 
@@ -96,9 +96,9 @@ son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cooki
 | Ruta | Qué hace |
 |---|---|
 | `PUT /cuenta` | `{nombre}` → `200` con el usuario de `POST /sesion`. Mismas reglas que el alta; el email no cambia (si viaja, se ignora) (R23) |
-| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`, que cuenta para el límite de intentos (`429`). La respuesta trae una cookie nueva (cambia el id de sesión) y las demás sesiones del cliente quedan cerradas: su próximo pedido es `401`. Apaga `debeCambiarClave` (R24) |
-| `DELETE /cuenta` | `{actual}` → `204`; la clave equivocada cuenta para el límite de intentos. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie) y las demás. Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
-| `POST /cuenta/recuperacion` | Pública. `{email, codigoReserva, nueva}` → `204`. El código de una entrada propia prueba que es el dueño, como en R22. Cualquier otro caso, `403` neutro (ver Errores). Pasa por el límite de intentos (`429`), por email y por IP. Cierra todas las sesiones del cliente (R25) |
+| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`, que cuenta para el límite de intentos (`429`). La respuesta trae una cookie nueva (cambia el id de sesión). Apaga `debeCambiarClave` (R24) |
+| `DELETE /cuenta` | `{actual}` → `204`; la clave equivocada cuenta para el límite de intentos. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie). Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
+| `POST /cuenta/recuperacion` | Pública. `{email, codigoReserva, nueva}` → `204`. El código de una entrada propia prueba que es el dueño, como en R22. Cualquier otro caso, `403` neutro (ver Errores). Pasa por el límite de intentos (`429`), por email y por IP (R25) |
 
 ```json
 { "id": 1, "titulo": "Matrix", "duracionMinutos": 136, "generos": ["ACCION"],

@@ -133,19 +133,6 @@ class CuentaControllerTest extends PruebaDeApi {
         assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, NUEVA).estado()).isEqualTo(200);
     }
 
-    @Test
-    @DisplayName("R24: cambiar la clave cierra las otras sesiones del cliente")
-    void cambiarLaClaveCierraLasOtrasSesiones() {
-        String otroDispositivo = entrar(ANA, CLAVE);
-
-        conCookie(HttpMethod.POST, "/api/cuenta/clave", entrar(ANA, CLAVE),
-                "{\"actual\":\"" + CLAVE + "\",\"nueva\":\"" + NUEVA + "\"}");
-
-        Respuesta vieja = conCookie(HttpMethod.GET, "/api/reservas/mias", otroDispositivo);
-        assertThat(vieja.estado()).isEqualTo(401);
-        assertThat(vieja.error()).isEqualTo("Hace falta iniciar sesión para esta operación");
-    }
-
     @ParameterizedTest(name = "R24: {0}")
     @CsvSource(textBlock = """
             actual equivocada,  '{"actual":"no-es-esta","nueva":"otra-clave-de-ana"}', La contraseña actual no es correcta
@@ -203,17 +190,15 @@ class CuentaControllerTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("R25: con el código de una entrada suya recupera la clave y cierra las sesiones de antes")
+    @DisplayName("R25: con el código de una entrada suya recupera la clave")
     void recuperaLaClave() {
         Reserva suya = reservar(ANA, "A1");
-        String sesionDeAntes = entrar(ANA, CLAVE);
 
         Respuesta respuesta = recuperar(" ANA@mail.com ", suya.getCodigo().toLowerCase(), NUEVA);
 
         assertThat(respuesta.estado()).isEqualTo(204);
         assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, NUEVA).estado()).isEqualTo(200);
         assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, CLAVE).estado()).isEqualTo(401);
-        assertThat(conCookie(HttpMethod.GET, "/api/reservas/mias", sesionDeAntes).estado()).isEqualTo(401);
     }
 
     // Distinguir los casos le diría a cualquiera qué emails tienen cuenta en el cine.
@@ -311,14 +296,11 @@ class CuentaControllerTest extends PruebaDeApi {
     @Test
     @DisplayName("R27: el encargado asigna una clave temporal; el cliente entra con ella y se le pide cambiarla")
     void claveTemporal() {
-        String sesionDeAntes = entrar(ANA, CLAVE);
-
         Respuesta asignada = post(claveTemporalDe(ANA), null);
 
         assertThat(asignada.estado()).isEqualTo(200);
         String temporal = asignada.json().get("clave").asText();
         assertThat(temporal).hasSize(10);
-        assertThat(conCookie(HttpMethod.GET, "/api/reservas/mias", sesionDeAntes).estado()).isEqualTo(401);
         Respuesta login = pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, temporal);
         assertThat(login.json().get("debeCambiarClave").asBoolean()).isTrue();
 
