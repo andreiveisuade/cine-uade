@@ -496,7 +496,7 @@ body.lightbox-locked { overflow: hidden; }
       <ul>
         <li><strong>Cliente (web):</strong> elige película, función y butacas; reserva con o sin cuenta y recibe un código. Paga en boletería o, con cuenta, online con Mercado Pago. Entra con el código.</li>
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
-        <li><strong>Acomodador (Swing):</strong> valida entradas en la puerta.</li>
+        <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
         <li>Java 21 + Spring Boot + MySQL; React; Swing; Docker Compose. 27 casos de uso, reglas R1 a R22.</li>
       </ul>
@@ -1220,6 +1220,17 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <img src="{{IMG_SWING_PUERTA}}" alt="Puerta (CU-18): lo único que ve el acomodador" loading="lazy">
         <figcaption>Puerta (CU-18): lo único que ve el acomodador</figcaption>
       </figure>
+    </section>
+
+    <section class="doc-section" id="android">
+      <h2>Puerta en el celular (Android)</h2>
+      <ul>
+        <li><code>cine-android/</code>: Kotlin + Jetpack Compose, tercer cliente de la misma API. Solo la Puerta (CU-18): login, escáner a pantalla completa y resultado.</li>
+        <li>CameraX + ML Kit (en el teléfono, solo QR) lee el código; <code>POST /api/acceso</code> con Basic decide. Verde <strong>ADELANTE</strong> con película, sala, hora, butacas y tarifas, o rojo con el <code>{error}</code> tal cual.</li>
+        <li>Vibración distinta para cada resultado, vuelta sola al escáner a los 4 s, ingreso a mano si la cámara no enfoca. No reenvía el mismo código mientras se ve su resultado.</li>
+        <li>Seguridad: clave solo en memoria; por <code>http</code> solo a la red propia (docker local), a internet solo <code>https</code>; no sigue redirecciones; <code>FLAG_SECURE</code>.</li>
+        <li>Tests JVM contra MockWebServer, como Swing con su servidor falso: <code>cd cine-android &amp;&amp; ./gradlew test</code>.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="dominio">
