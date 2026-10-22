@@ -152,6 +152,15 @@ class ApisTest {
         assertTrue(clientes.buscarClientePorEmail("nadie@mail.com").isEmpty());
     }
 
+    // R27: el pedido no lleva cuerpo; la clave viene en la respuesta y es lo único que se lee.
+    @Test
+    void asignarClaveTemporalDevuelveLaClave() {
+        servidor.responder("POST /api/clientes/3/clave-temporal", 200, "{\"clave\":\"abcd2345ef\"}");
+
+        assertEquals("abcd2345ef", new ApiClientes(http).asignarClaveTemporal(3).clave());
+        assertEquals("POST", servidor.ultimo().metodo());
+    }
+
     @Test
     void laReservaTraeSiSePuedeCobrarYCancelar() {
         servidor.responder("GET /api/reservas", 200, """

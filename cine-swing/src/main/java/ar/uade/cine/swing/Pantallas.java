@@ -16,6 +16,7 @@ import ar.uade.cine.swing.pantallas.programaciones.PantallaPlanificador;
 import ar.uade.cine.swing.pantallas.programaciones.PantallaProgramaciones;
 import ar.uade.cine.swing.pantallas.promociones.PantallaPromociones;
 import ar.uade.cine.swing.pantallas.salas.PantallaMapaSala;
+import ar.uade.cine.swing.pantallas.usuarios.PantallaClientes;
 import ar.uade.cine.swing.pantallas.salas.PantallaSalas;
 import ar.uade.cine.swing.pantallas.ventas.PantallaCobro;
 import ar.uade.cine.swing.pantallas.ventas.PantallaPuerta;
@@ -53,6 +54,7 @@ final class Pantallas {
             case CANDY -> new PantallaCandy(apis.candy(), apis.catalogos(), apis.clientes(), apis.imagenes());
             case CAJA -> new PantallaCaja(apis.informes());
             case DECLARACION_JURADA -> new PantallaDeclaracionJurada(apis.catalogos(), apis.informes());
+            case CLIENTES -> new PantallaClientes(apis.clientes());
             case PUERTA -> new PantallaPuerta(apis.catalogos(), apis.ventas());
         };
     }
