@@ -26,26 +26,30 @@ export function Rutas() {
   const ubicacion = useLocation();
   // La clave es la sección, no la ruta entera: cambiar de género en la cartelera no la remonta y deja reordenar.
   const seccion = ubicacion.pathname.split("/")[1];
+  const pantalla = (
+    <Routes location={ubicacion}>
+      <Route index element={<Cartelera conHero />} />
+      <Route path="cartelera/:genero?" element={<Cartelera />} />
+      <Route path="pelicula/:id" element={<Pelicula />} />
+      <Route path="funcion/:id" element={<Funcion />} />
+      <Route path="confirmar/:id" element={<Confirmar />} />
+      <Route path="ticket/:codigo" element={<Ticket />} />
+      <Route path="mis-reservas" element={<MisReservas />} />
+      <Route path="registro" element={<Registro />} />
+      <Route path="ingresar" element={<Ingresar />} />
+      <Route path="mi-cuenta" element={<MiCuenta />} />
+      <Route path="recuperar-clave" element={<RecuperarClave />} />
+      <Route path="promociones" element={<Promociones />} />
+      <Route path="nosotros" element={<Nosotros />} />
+      <Route path="*" element={<NoExiste />} />
+    </Routes>
+  );
+  // Si vuela un póster, la pantalla cambia de golpe: el fundido lo hace la View Transition, y mientras dura no
+  // corren los cuadros de Motion, así que la salida de AnimatePresence no terminaría nunca.
+  if (ubicacion.state?.vuela) return <div key={seccion}>{pantalla}</div>;
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <m.div key={seccion} {...PANTALLA}>
-        <Routes location={ubicacion}>
-          <Route index element={<Cartelera conHero />} />
-          <Route path="cartelera/:genero?" element={<Cartelera />} />
-          <Route path="pelicula/:id" element={<Pelicula />} />
-          <Route path="funcion/:id" element={<Funcion />} />
-          <Route path="confirmar/:id" element={<Confirmar />} />
-          <Route path="ticket/:codigo" element={<Ticket />} />
-          <Route path="mis-reservas" element={<MisReservas />} />
-          <Route path="registro" element={<Registro />} />
-          <Route path="ingresar" element={<Ingresar />} />
-          <Route path="mi-cuenta" element={<MiCuenta />} />
-          <Route path="recuperar-clave" element={<RecuperarClave />} />
-          <Route path="promociones" element={<Promociones />} />
-          <Route path="nosotros" element={<Nosotros />} />
-          <Route path="*" element={<NoExiste />} />
-        </Routes>
-      </m.div>
+      <m.div key={seccion} {...PANTALLA}>{pantalla}</m.div>
     </AnimatePresence>
   );
 }

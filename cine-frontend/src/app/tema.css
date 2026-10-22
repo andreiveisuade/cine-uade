@@ -61,3 +61,11 @@ a { text-underline-offset: 0.2em; }
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+
+/* Póster que vuela de la tarjeta a la película (useVolarPoster); el resto de la página, fundido corto. */
+::view-transition-group(*) { animation-duration: 400ms; animation-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }
+}

@@ -4,9 +4,9 @@ import { BotonButaca } from "./BotonButaca.jsx";
 import { PantallaDeLuz } from "./PantallaDeLuz.jsx";
 import { useScrollCentrado } from "./useScrollCentrado.js";
 
-// Las filas entran de a una, de la pantalla hacia el fondo, como se llena una sala.
-const SALA = { oculta: {}, visible: { transition: { staggerChildren: 0.03 } } };
-const FILA = { oculta: { opacity: 0, y: 6 }, visible: { opacity: 1, y: 0, transition: { duration: 0.2 } } };
+// Se encienden las luces: fila por fila desde la pantalla; el escalón se achica en salas grandes para no pasar de 0,5 s.
+const FILA = { oculta: { opacity: 0, y: 6, scale: 0.98 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2 } } };
+const encender = (filas) => ({ oculta: {}, visible: { transition: { staggerChildren: Math.min(0.03, 0.3 / filas) } } });
 
 // pintar: (asiento) => { estilo, deshabilitado, titulo }
 export function MapaButacas({ sala, asientos, pintar, alElegir }) {
@@ -20,7 +20,7 @@ export function MapaButacas({ sala, asientos, pintar, alElegir }) {
       <Box ref={marco} style={{ overflowX: "auto", ...(desborda && {
         maskImage: "linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent)" }) }}>
         <PantallaDeLuz />
-        <Stack component={m.div} variants={SALA} initial="oculta" animate="visible" gap={6} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
+        <Stack component={m.div} variants={encender(sala.filas)} initial="oculta" animate="visible" gap={6} style={{ minWidth: "max-content" }} mx="auto" w="fit-content">
           {filas.map((deLaFila, i) => (
             <Group component={m.div} variants={FILA} key={i} gap={6} justify="center" wrap="nowrap">
               <Text w={16} ta="right" fz="xs" fw={600} c="dimmed">{deLaFila[0]?.codigo.charAt(0)}</Text>
