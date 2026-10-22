@@ -42,7 +42,7 @@ export function Ingresar() {
       }
       setUsuario(usuario);
       avisar(`Hola, ${usuario.nombre}`);
-      navegar("/mis-reservas");
+      navegar(usuario.debeCambiarClave ? "/mi-cuenta" : "/mis-reservas");
     } catch (e) {
       setError(e.message);
       setEnviando(false);
@@ -52,12 +52,13 @@ export function Ingresar() {
   return (
     <FormularioCentrado titulo="Ingresar" alEnviar={entrar}
       bajada="Con tu cuenta ves tus reservas, las pagás online o las cancelás.">
-      <TextInput label="Email" type="email" required value={email} error={faltan.email}
+      <TextInput label="Email" type="email" autoComplete="email" required value={email} error={faltan.email}
         onChange={(e) => setEmail(e.currentTarget.value)} />
-      <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
+      <PasswordInput label="Contraseña" autoComplete="current-password" required value={clave} error={faltan.clave}
         onChange={(e) => setClave(e.currentTarget.value)} />
       <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
+      <Anchor component={Link} to="/recuperar-clave" state={{ email }} size="sm" ta="center">¿Olvidaste tu clave?</Anchor>
       <Text size="sm" c="dimmed" ta="center">
         ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="sm">Registrate</Anchor>
       </Text>

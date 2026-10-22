@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
 import { renderConApp } from "@/test/renderConApp.jsx";
@@ -84,6 +85,22 @@ describe("Ingresar", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ingresar" }));
 
     expect(await screen.findByText(/Esa cuenta es del personal del cine/)).toBeInTheDocument();
+  });
+});
+
+describe("Ingresar con clave temporal", () => {
+  it("lleva a Mi cuenta en vez de Mis reservas", async () => {
+    api.ingresar.mockResolvedValue({ ...ANA, debeCambiarClave: true });
+    renderConApp(
+      <Routes>
+        <Route path="/" element={<Ingresar />} />
+        <Route path="/mi-cuenta" element={<p>mi cuenta</p>} />
+      </Routes>, { ruta: "/*" });
+    await completar(FORMULARIOS[0].campos);
+
+    await userEvent.click(screen.getByRole("button", { name: "Ingresar" }));
+
+    expect(await screen.findByText("mi cuenta")).toBeInTheDocument();
   });
 });
 
