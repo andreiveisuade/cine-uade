@@ -17,13 +17,14 @@ public record Email(String valor) {
     // Misma regla que Swing; única del backend, porque POST /api/reservas da de alta al cliente sin pasar por el DTO.
     private static final Pattern FORMA = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
 
-    // Se mide ya normalizado, o " ana@mail.com" escaparía al chequeo del repetido.
+    // Se mide ya normalizado, o " ana@mail.com" escaparía al chequeo del repetido. El largo va antes que la
+    // forma: la regex sobre un texto enorme es lenta (ReDoS) y en Render no hay nginx que corte el cuerpo.
     public Email {
         valor = Regla.texto(valor).obligatorio("Falta el email").recortado().valor().toLowerCase(Locale.ROOT);
+        Regla.texto(valor).hasta(LARGO_MAXIMO, "El email");
         if (!FORMA.matcher(valor).matches()) {
             throw new DatoInvalido("El email tiene que tener la forma usuario@dominio.com");
         }
-        Regla.texto(valor).hasta(LARGO_MAXIMO, "El email");
     }
 
     // R25: el código del ticket es media prueba de dueño; mostrarlo junto al email completo daría las dos mitades.

@@ -74,6 +74,16 @@ class EmailTest {
         rechaza("El email no puede tener más de 100 caracteres", "a" + cien);
     }
 
+    // CodeQL (ReDoS): la forma se probaba antes que el largo y un texto enorme hacía trabajar de más a la regex.
+    @Test
+    void unTextoEnormeSeRechazaPorElLargoSinPasarPorLaForma() {
+        String enorme = "a@".repeat(50_000);
+
+        long antes = System.nanoTime();
+        rechaza("El email no puede tener más de 100 caracteres", enorme);
+        assertTrue(System.nanoTime() - antes < 1_000_000_000L, "tardó más de un segundo");
+    }
+
     // Buscar no es guardar: lo que no es un email no encuentra a nadie, y no es un error.
     @ParameterizedTest(name = "[{0}]")
     @NullSource
