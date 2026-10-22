@@ -351,7 +351,7 @@ Las fotos de promociones y productos. Primero se sube el archivo y después su `
   `La imagen tiene que pesar 2 MB como máximo`.
 - `imagenUrl` en promociones y productos: vacía o `null` es sin imagen; si no, tiene que ser una `url` de
   `POST /imagenes` (`400` `La imagen tiene que ser una subida al sistema`). No hace falta que el archivo exista.
-- Viven en el volumen `imagenes` (`cine.imagenes.dir`, `/app/imagenes`): sobreviven a reconstruir el backend.
+- Viven en la tabla `imagen` (MEDIUMBLOB, por nombre): un dump de la base se las lleva.
 
 ## Caja e informes
 
