@@ -8,7 +8,7 @@ def txt(e): return "".join(e.itertext()).replace("\xa0", " ").strip()
 drawn = {g.get("data-table"): g for g in root.iter(NS + "g") if g.get("data-table")}
 fks_sql = set()
 tabs = re.findall(r"CREATE TABLE IF NOT EXISTS (\w+) \((.*?)\);", sql, re.S)
-if len(tabs) != 20: err.append(f"schema tiene {len(tabs)} tablas")
+if len(tabs) != 21: err.append(f"schema tiene {len(tabs)} tablas")
 if set(drawn) != {t for t, _ in tabs}: err.append(f"tablas distintas: {set(drawn) ^ {t for t,_ in tabs}}")
 for t, body in tabs:
     parts = [p.strip() for p in re.split(r",\s*\n", body.strip()) if p.strip()]
@@ -47,5 +47,5 @@ for t, body in tabs:
             err.append(f"{t}.{cn}: dibujado {name} {sorted(chips)} '{typ}' / esperado {sorted(exp)} '{etyp}'")
 fks_svg = {p.get("data-fk") for p in root.iter(NS + "path") if p.get("data-fk")}
 if fks_svg != fks_sql: err.append(f"FK distintas: {fks_svg ^ fks_sql}")
-print("\n".join(err) or f"OK: 20 tablas, {sum(len(re.findall(chr(10), b)) for _,b in tabs)} lineas, {len(fks_sql)} FK coinciden")
+print("\n".join(err) or f"OK: 21 tablas, {sum(len(re.findall(chr(10), b)) for _,b in tabs)} lineas, {len(fks_sql)} FK coinciden")
 sys.exit(1 if err else 0)

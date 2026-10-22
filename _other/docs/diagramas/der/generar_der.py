@@ -48,6 +48,7 @@ ZONES = {
     "usuarios": ("Usuarios", "#7a6a3d"),
     "promociones": ("Promociones", "#8f5a6b"),
     "candy": ("Candy", "#3d7a7a"),
+    "imagenes": ("Imágenes", "#5a5a5a"),
 }
 ZONE_OF = {
     "pelicula": "cartelera", "pelicula_genero": "cartelera", "importacion": "cartelera",
@@ -57,9 +58,10 @@ ZONE_OF = {
     "usuario": "usuarios",
     "promocion": "promociones", "promocion_dia": "promociones", "promocion_medio": "promociones",
     "producto": "candy", "combo_item": "candy", "compra_candy": "candy", "item_compra": "candy",
+    "imagen": "imagenes",
 }
 COLUMNS = [
-    ["pelicula", "pelicula_genero", "importacion"],
+    ["pelicula", "pelicula_genero", "importacion", "imagen"],
     ["programacion", "programacion_dia", "funcion"],
     ["sala", "asiento", "bloqueo_butaca"],
     ["reserva", "entrada", "pago"],
@@ -378,9 +380,9 @@ html = f'''<!DOCTYPE html>
   <div class="diagram-container">
     <svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="der-design-title der-design-desc">
       <title id="der-design-title">Modelo de datos del cine</title>
-      <desc id="der-design-desc">Las 20 tablas de schema.sql agrupadas en siete subdominios, con todas sus columnas, tipos, claves, restricciones y las 25 claves foraneas con su cardinalidad.</desc>
+      <desc id="der-design-desc">Las 21 tablas de schema.sql agrupadas en ocho subdominios, con todas sus columnas, tipos, claves, restricciones y las 25 claves foraneas con su cardinalidad.</desc>
       <rect width="{W}" height="{H}" fill="{PAPER}"/>
-      <text x="{X0}" y="50" class="eb">SCHEMA.SQL · MYSQL 8.4 · 20 TABLAS · 25 FK</text>
+      <text x="{X0}" y="50" class="eb">SCHEMA.SQL · MYSQL 8.4 · 21 TABLAS · 25 FK</text>
       <text x="{X0}" y="92" class="h1">Modelo de datos del cine</text>
 {svg}
     </svg>

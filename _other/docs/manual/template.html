@@ -417,6 +417,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#entorno" data-target="entorno">Tecnologías</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#despliegue" data-target="despliegue">Despliegue</a></li>
       </ol>
 
       <p class="toc-group-label">Arquitectura</p>
@@ -567,6 +568,12 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-03:</strong> si el inicio es ahora o ya pasó, rechaza con 400 y no guarda nada.</li>
         <li><strong>CU-03b:</strong> los pases que ya pasaron se saltean: no se previsualizan, no se crean ni cuentan como choques. Si un rango cerrado ya pasó entero, rechaza con 400.</li>
       </ul>
+
+      <h3>Otros flujos alternativos</h3>
+      <ul>
+        <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
+        <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="entorno">
@@ -577,9 +584,9 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, Lombok</td></tr>
             <tr><td>Datos</td><td>MySQL 8.4; H2 en los tests</td></tr>
-            <tr><td>Frontend</td><td>React 19, React Router y Mantine, compilado con Vite y servido por nginx</td></tr>
+            <tr><td>Frontend</td><td>React 19, React Router y Mantine, compilado con Vite; lo sirve nginx en local y el backend en Render</td></tr>
             <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar, Jackson; <code>java.net.http</code> contra la API</td></tr>
-            <tr><td>Despliegue</td><td>Docker Compose: 4 servicios en dos redes</td></tr>
+            <tr><td>Despliegue</td><td>Local: Docker Compose, 4 servicios en dos redes. Público: <a href="#despliegue">Render Free + Aiven MySQL Free</a></td></tr>
             <tr><td>Externo</td><td>API de TMDB; Mercado Pago Checkout Pro (sandbox)</td></tr>
           </tbody>
         </table>
@@ -619,7 +626,7 @@ docker compose up -d --build
 
       <figure class="diagram">
         {{SVG_DOCKER}}
-        <figcaption>Los contenedores, las dos redes y qué carpeta construye a cada uno</figcaption>
+        <figcaption>En local: los contenedores, las dos redes y qué carpeta construye a cada uno. El público, en <a href="#despliegue">Despliegue</a></figcaption>
       </figure>
       <figure class="diagram">
         {{SVG_ARRANQUE}}
@@ -639,6 +646,86 @@ docker compose up -d --build
         Sin Docker, <code>mvn package</code> arma <code>target/cine-api.war</code>: corre con <code>java -jar</code> o en <code>webapps/</code> de un Tomcat.
         Lo habilitan <code>packaging war</code>, <code>spring-boot-starter-tomcat</code> <code>provided</code> y <code>Aplicacion extends SpringBootServletInitializer</code> (un Tomcat externo no llama a <code>main()</code>).
       </p>
+    </section>
+
+    <section class="doc-section" id="despliegue">
+      <h2>Despliegue</h2>
+      <figure class="diagram">
+        {{SVG_DESPLIEGUE_RENDER}}
+        <figcaption>Un contenedor en Render sirve API y front por el mismo origen https; la base vive en Aiven</figcaption>
+      </figure>
+
+      <h3>Por qué Render Free + Aiven MySQL Free</h3>
+      <ul>
+        <li><strong>Un solo contenedor</strong> sirve la API y el build de React: un origen https, así la cookie de sesión y la vuelta de Mercado Pago andan sin proxy ni CORS.</li>
+        <li><strong>Aiven</strong> da MySQL gratis: el mismo motor que en local, sin tocar <code>schema.sql</code>.</li>
+      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Descartado</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Vercel</td><td>Front aparte: otro origen, cookie entre sitios y CORS</td></tr>
+            <tr><td>Cloudflare R2</td><td>Las imágenes van en la base (<a href="#imagenes">imágenes</a>): un servicio menos</td></tr>
+            <tr><td>Supabase</td><td>Es Postgres; el esquema y los tests son de MySQL</td></tr>
+            <tr><td>Oracle Cloud</td><td>Una VM para administrar a mano</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Límites aceptados</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Límite</th><th>Efecto</th></tr></thead>
+          <tbody>
+            <tr><td>Render se duerme a los 15 min sin pedidos</td><td>El primer pedido lo despierta: ~9 min con 0,1 CPU</td></tr>
+            <tr><td>Sesiones en memoria</td><td>Cada sueño o deploy desloguea a todos</td></tr>
+            <tr><td>Dormido no corre <code>@Scheduled</code></td><td>La <a href="#conciliacion">conciliación</a> no corre; un pago aprobado sin retorno durante el sueño puede quedar afuera de su ventana de 30 min</td></tr>
+            <tr><td>512 MB de memoria</td><td>Medido: 316 MB RSS. <code>-XX:MaxRAMPercentage=70</code>, porque con el 25 % de fábrica el heap quedaba en 128 MB</td></tr>
+            <tr><td>Disco efímero</td><td>Imágenes en la tabla <code>imagen</code>; tickets <code>.txt</code> se pierden al reiniciar</td></tr>
+            <tr><td>Aiven Free: 1 GB, se apaga por inactividad</td><td>Sobra para el TP; hay que volver a prenderla desde su panel</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Qué lo arma</h3>
+      <ul>
+        <li><strong><code>Dockerfile</code> raíz, en tres etapas:</strong> node compila el front → maven copia <code>dist/</code> a <code>static/</code> y arma el war → JRE alpine con usuario sin privilegios y <code>TZ</code>. El compose local no lo usa: sigue con nginx.</li>
+        <li><strong><code>render.yaml</code>:</strong> servicio docker, plan free, health check en <code>/api/generos</code>. Fija <code>TZ</code> y <code>DB_POOL=5</code>; <code>PORT</code> lo pone Render.</li>
+        <li><strong><code>server.forward-headers-strategy: native</code>:</strong> Render termina TLS y le habla http al contenedor. Tomcat lee <code>X-Forwarded-Proto</code> y la cookie sale <code>Secure</code>. Con <code>framework</code> salía sin <code>Secure</code>: Tomcat arma la cookie con su propio <code>isSecure</code>, no con el del wrapper de Spring. Si en Render saliera sin <code>Secure</code> (proxy fuera del rango privado), agregar <code>server.tomcat.remoteip.internal-proxies: ".*"</code>.</li>
+        <li><strong>GET públicos del front:</strong> el array <code>FRONT</code> de <a href="#seguridad"><code>ConfiguracionSeguridad</code></a>; el resto sigue cerrado.</li>
+        <li><strong>Reloj de Buenos Aires</strong> fijo en código, no en <code>TZ</code> (<a href="#decisiones">decisión</a>).</li>
+      </ul>
+
+      <h3>Variables (solo en el panel de Render, <code>sync: false</code>)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Qué es</th></tr></thead>
+          <tbody>
+            <tr><td><code>SPRING_DATASOURCE_URL</code></td><td><code>jdbc:mysql://&lt;host&gt;:&lt;port&gt;/defaultdb?sslMode=REQUIRED</code> de Aiven</td></tr>
+            <tr><td><code>SPRING_DATASOURCE_USERNAME</code>, <code>SPRING_DATASOURCE_PASSWORD</code></td><td>Usuario de Aiven</td></tr>
+            <tr><td><code>MP_ACCESS_TOKEN</code></td><td>Credenciales de prueba de Mercado Pago</td></tr>
+            <tr><td><code>TMDB_TOKEN</code></td><td>Token del importador</td></tr>
+            <tr><td><code>CINE_URL_PUBLICA</code></td><td><code>https://&lt;servicio&gt;.onrender.com</code>: adonde vuelve MP. Sin ella vuelve a localhost</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Ningún valor va al repo. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
+
+      <h3>Pasos</h3>
+      <ol>
+        <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga a mano antes del primer arranque:
+<pre><code>mysql --ssl-mode=REQUIRED -h &lt;host&gt; -P &lt;port&gt; -u avnadmin -p defaultdb \
+  &lt; cine-backend/src/main/resources/schema.sql
+mysql ... defaultdb &lt; cine-docker/seed/02-admin.sql</code></pre>
+          Si la base ya existía, los <code>migracion-*.sql</code> que falten, en <a href="#der">su orden</a>.</li>
+        <li><strong>Admin con clave nueva.</strong> <code>cine2026</code> es pública (está en el repo). Se pisa con el SHA-256 de una nueva, que el primer login pasa a bcrypt:
+<pre><code>printf %s '&lt;clave nueva&gt;' | shasum -a 256
+UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cine.uade.ar', 'puerta@cine.uade.ar');</code></pre></li>
+        <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
+        <li><strong>Datos:</strong> un <code>mysqldump</code> de la base local se lleva películas, funciones e imágenes juntas.</li>
+        <li><!-- T48 -->URL pública: <code>https://&lt;servicio&gt;.onrender.com</code> (se completa al desplegar). Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>CINE_API_URL=https://&lt;servicio&gt;.onrender.com mvn exec:java</code>.</li>
+        <li><!-- T48 -->Humo: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, la cookie de sesión sale <code>Secure</code>.</li>
+      </ol>
     </section>
 
     <section class="doc-section" id="capas">
@@ -752,15 +839,16 @@ docker compose up -d --build
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
             <tr><td>66 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen (<a href="#dto">DTO</a>)</td></tr>
-            <tr><td><code>Repositorio&lt;T&gt;</code> + 14 <code>*Repository</code></td><td>Base con <code>exigir</code> (<a href="#repositorio">detalle</a>); Spring Data genera la implementación</td></tr>
+            <tr><td><code>Repositorio&lt;T&gt;</code> + 15 <code>*Repository</code></td><td>Base con <code>exigir</code> (<a href="#repositorio">detalle</a>); Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación; <code>Adaptadores.Tareas</code> prende las tareas programadas fuera de los tests</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoHttp</code> / <code>MercadoPagoEmulado</code></td><td>Checkout y autorización (<a href="#pasarela">pasarela</a>)</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; los piden los observadores</td></tr>
+            <tr><td><code>AlmacenDeImagenes</code> → <code>AlmacenDeImagenesEnBase</code></td><td>Guarda y lee las imágenes subidas en la tabla <code>imagen</code> (<a href="#imagenes">por qué</a>)</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
-            <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
+            <tr><td><code>Reloj</code></td><td>La hora actual de Buenos Aires (<code>Reloj.ZONA</code>), reemplazable en tests</td></tr>
             <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordBcrypt</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt (<a href="#decorator">Decorator</a>) y el SHA-256 heredado</td></tr>
             <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas de cada puerto</td></tr>
             <tr><td><code>Propiedades*</code></td><td>Cada sección <code>cine.*</code> de <code>application.yml</code>, tipada, junto a quien la usa</td></tr>
@@ -980,14 +1068,14 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Ruta</th><th>Qué muestra</th></tr></thead>
           <tbody>
-            <tr><td><code>#/</code></td><td>Hero con carrusel de hasta ocho destacadas (Ver trailer abre un modal) y la cartelera; <code>#/cartelera/:genero</code> filtra</td></tr>
-            <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster con parallax y Comprar entradas que baja a las funciones</td></tr>
+            <tr><td><code>#/</code></td><td>Portada con hasta 5 destacadas que rota sola cada 7 s con barra de avance y miniaturas para elegir; se frena con el mouse o el foco encima, con la pestaña oculta y con movimiento reducido (WCAG 2.2.2). De fondo, un cuadro del trailer o el póster difuminado; Ver trailer abre un modal. Abajo la cartelera; <code>#/cartelera/:genero</code> filtra</td></tr>
+            <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster y Comprar entradas que baja a las funciones</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
             <tr><td><code>#/registro</code>, <code>#/ingresar</code></td><td>Alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
             <tr><td>Pagar online</td><td>Medio, monto del backend, Mercado Pago y vuelta al ticket</td></tr>
-            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra</td></tr>
+            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra. «Ya pagué» avisa el retorno y relee la reserva: si sigue <code>cobrable</code>, «Mercado Pago todavía no confirmó el pago»</td></tr>
           </tbody>
         </table>
       </div>
@@ -1029,7 +1117,7 @@ docker compose up -d --build
             <tr><td>Librerías</td><td><code>motion</code>, <code>canvas-confetti</code>, <code>@mantine/carousel</code> (Embla + autoplay), versión exacta en <code>package.json</code></td></tr>
             <tr><td>Mapa de butacas</td><td>Filas escalonadas, pop al tocar, total que corre al valor nuevo</td></tr>
             <tr><td>Entre pantallas</td><td><code>AnimatePresence</code> con fundido; sesión y compra quedan afuera y no se remontan</td></tr>
-            <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; carrusel en el hero. Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
+            <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; la portada rota sola (se frena como dice <code>#/</code>). Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
             <tr><td>Ticket</td><td>Se imprime al aparecer; si el pago llega con la pantalla abierta, sello y confetti una vez por reserva</td></tr>
             <tr><td>Carga</td><td><code>Skeleton</code> con la forma de cada pantalla</td></tr>
             <tr><td>Movimiento reducido</td><td><code>MotionConfig reducedMotion="user"</code>; sin autoplay ni confetti. El trailer queda en miniatura con play</td></tr>
@@ -1213,6 +1301,7 @@ docker compose up -d --build
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
             <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, alta de cliente, reserva <em>por código</em>, retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
+            <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
             <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
@@ -1223,23 +1312,25 @@ docker compose up -d --build
         <li><strong>Basic para Swing, cookie para la web:</strong> el empleado manda credenciales en cada pedido, sin sesión. Al cliente, <code>POST /api/sesion</code> setea <code>JSESSIONID</code> (HttpOnly, <code>SameSite=Lax</code>) y <code>DELETE</code> la cierra; <code>SesionDeClientes</code> (<a href="#decorator">Decorator</a>) guarda solo la identidad de un <code>CLIENTE</code>.</li>
         <li><strong>CSRF apagado, <code>SameSite=Lax</code> en su lugar:</strong> un <code>POST</code>/<code>DELETE</code> de otro sitio llega sin cookie. Un token sería más fuerte, pero el front tendría que reenviarlo.</li>
         <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
-        <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
+        <li><strong>Mensajes neutros contra enumeración:</strong> <code>POST /clientes</code> con el email de un empleado o de un cliente con cuenta da el mismo 409 «Ya existe una cuenta con ese email». <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
+        <!-- T50b: cuenta sobre un cliente existente con código de reserva, límite de intentos y swagger -->
+        <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>, también un archivo estático que no esté en <code>FRONT</code> (<code>/otra</code> da 401). El front no necesita más: las rutas son por hash.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
     </section>
 
     <section class="doc-section" id="der">
       <h2>Modelo de datos (DER)</h2>
-      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 20 tablas.</p>
+      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 21 tablas.</p>
       <figure class="diagram">
         {{SVG_DER_DESIGN}}
-        <figcaption>Las 20 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
+        <figcaption>Las 21 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
       </figure>
       <details>
         <summary>Versión completa en PlantUML (<code>der.puml</code>)</summary>
         <figure class="diagram">
           {{SVG_DER}}
-          <figcaption>Las 20 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+          <figcaption>Las 21 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
         </figure>
       </details>
       <ul>
@@ -1248,6 +1339,7 @@ docker compose up -d --build
         <li><code>pago.reserva_id</code> <code>UNIQUE</code>: un pago por reserva; el descuento de la promoción vive ahí, no en la entrada.</li>
         <li><code>usuario</code> y <code>promocion</code>: tabla única con discriminador (<code>rol</code>, <code>tipo</code>); <code>password_hash</code> <code>NULL</code> en el cliente sin cuenta.</li>
         <li>Plata en <code>DECIMAL(10,2)</code> (en Java, <a href="#dinero"><code>Dinero</code></a> en centavos); enums en <code>VARCHAR</code> con su <code>name()</code>.</li>
+        <li><code>imagen</code> sin FK: <code>promocion.imagen_url</code> y <code>producto.imagen_url</code> guardan la URL <code>/api/imagenes/&lt;nombre&gt;</code>, no el id (<a href="#imagenes">imágenes</a>).</li>
         <li><code>importacion</code> sin FK a <code>pelicula</code>: lo que trajo cada corrida está en <code>pelicula.estado_revision</code>.</li>
       </ul>
 
@@ -1274,6 +1366,7 @@ docker compose up -d --build
       <ul>
         <li>Dos clientes pueden ver A1 libre a la vez. El gestor valida antes para dar un mensaje claro; la red es <code>UNIQUE (funcion_id, asiento_id)</code> de <code>entrada</code>: <code>saveAndFlush</code> choca y el gestor lo traduce a <code>ButacaOcupada</code> (409).</li>
         <li>Liberar pone <code>funcion_id = NULL</code>, que el <code>UNIQUE</code> no compara: la reventa no choca y queda el historial.</li>
+        <li>Lo mismo con las funciones: <code>GET /cartelera</code> extiende las grillas sin lock, y dos pedidos al despertar el servidor podían crear la misma función dos veces. <code>UNIQUE (sala_id, inicio)</code> en <code>funcion</code>; <code>GestorFunciones.programar</code> hace <code>saveAndFlush</code> y traduce el choque a 409 «Ya hay una función en esa sala a esa hora». La extensión de grillas atrapa el choque, corta esa grilla y sigue con las otras.</li>
       </ul>
 
       <h3 id="cobrar-cancelar">Cobrar contra cancelar</h3>
@@ -1285,7 +1378,7 @@ docker compose up -d --build
 
       <h3>Esquema y migraciones</h3>
       <ul>
-        <li>MySQL corre <code>schema.sql</code> solo con el volumen vacío. Sobre una base existente, los <code>migracion-*.sql</code> a mano (orden y comando en <code>cine-docker/README.md</code>); solo la llevan al mismo estado.</li>
+        <li>MySQL corre <code>schema.sql</code> solo con el volumen vacío. Sobre una base existente, los <code>migracion-*.sql</code> a mano (comando en <code>cine-docker/README.md</code>); solo la llevan al mismo estado. Orden: <code>programaciones</code>, <code>grilla-abierta</code>, <code>limpieza</code>, <code>staging</code>, <code>puntaje</code>, <code>votos</code>, <code>importaciones</code>, <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code>, <code>ahorro-congelado</code>, <code>email-minusculas</code>, <code>imagenes</code>, <code>trailer</code>, <code>imagenes-en-base</code> y <code>funcion-unica</code> (este trae arriba, comentado, el <code>SELECT</code> que encuentra duplicados).</li>
         <li>Los tests usan H2 creada con el mismo <code>schema.sql</code> y <code>ddl-auto: validate</code>: restricciones iguales a MySQL; <code>MapeoContraSchemaTest</code> verifica el mapeo.</li>
         <li>Un texto más largo que su columna es un 400 de la entidad, no un 500 de la base.</li>
       </ul>
@@ -1294,8 +1387,8 @@ docker compose up -d --build
     <section class="doc-section" id="persistencia">
       <h2>Persistencia</h2>
       <ul>
-        <li>DAO: 14 interfaces <code>*Repository</code>; la implementación la genera Spring Data y Hibernate (ORM) traduce a SQL.</li>
-        <li>13 extienden <a href="#repositorio"><code>Repositorio</code></a>; <code>BloqueoButacaRepository</code> va directo a <code>JpaRepository</code> (clave compuesta).</li>
+        <li>DAO: 15 interfaces <code>*Repository</code>; la implementación la genera Spring Data y Hibernate (ORM) traduce a SQL.</li>
+        <li>13 extienden <a href="#repositorio"><code>Repositorio</code></a>; <code>BloqueoButacaRepository</code> (clave compuesta) y <code>ArchivoDeImagenRepository</code> (clave texto) van directo a <code>JpaRepository</code>.</li>
         <li>Consultas derivadas del nombre; <code>@Query</code> donde no alcanza. Los gestores no saben si atrás hay MySQL o H2.</li>
       </ul>
       <h3>El costo de las consultas</h3>
@@ -1318,6 +1411,14 @@ docker compose up -d --build
           (<code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code>) porque las vistas los
           leen afuera. Las colecciones <code>EAGER</code> van en lotes de 50 ids (<code>default_batch_fetch_size</code>).</li>
         <li><code>@Transactional(readOnly = true)</code> en las lecturas.</li>
+      </ul>
+
+      <h3 id="imagenes">Imágenes en la base</h3>
+      <ul>
+        <li>Las fotos de promociones y productos van a la tabla <code>imagen</code>: <code>nombre</code> de PK y <code>contenido</code> <code>MEDIUMBLOB</code> (hasta 16 MB). <code>GET /api/imagenes/{nombre}</code> las sirve; si no está, 404.</li>
+        <li><strong>Por qué no disco:</strong> el de <a href="#despliegue">Render Free</a> se borra en cada deploy y en cada reinicio. En la base sobreviven, y un <code>mysqldump</code> se lleva datos e imágenes juntos.</li>
+        <li><strong>Puerto:</strong> <code>GestorImagenes</code> depende de <code>AlmacenDeImagenes</code> (<code>guardar</code>, <code>leer</code>); la implementación es <code>AlmacenDeImagenesEnBase</code>. El cambio de disco a base no tocó al gestor ni a los controladores.</li>
+        <li><code>contenido</code> lleva <code>@Lob</code>: sin eso <code>ddl-auto: validate</code> esperaba <code>VARBINARY</code> y no aceptaba el <code>MEDIUMBLOB</code> de MySQL ni el <code>BLOB</code> de H2.</li>
       </ul>
     </section>
 
@@ -1615,7 +1716,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td>R1</td><td>No hay dos películas con el mismo título</td></tr>
             <tr><td>R2</td><td>Duración de película de 1 a 600 minutos, y de 1 a 40 butacas en cada fila de la sala</td></tr>
-            <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza</td></tr>
+            <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza; dos pedidos a la vez los frena <code>UNIQUE (sala_id, inicio)</code></td></tr>
             <tr><td>R4</td><td>No se reserva una butaca ya tomada <strong>en esa función</strong></td></tr>
             <tr><td>R5</td><td>Solo se cobra una reserva RESERVADA, y una sola vez</td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td></tr>
@@ -2270,6 +2371,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
             <tr><td>Ids sueltos donde nadie navega (<code>Pago.reservaId</code>…)</td><td><code>@ManyToOne</code></td><td>La FK está igual en la base</td></tr>
             <tr><td><code>@Version</code> solo en <code>Reserva</code></td><td>En todas o <code>@Lock</code></td><td>Es la única con transiciones que compiten; las butacas las cierra el <code>UNIQUE</code></td></tr>
             <tr><td><code>Reloj</code> como puerto</td><td><code>LocalDateTime.now()</code></td><td>Tests sin fecha real</td></tr>
+            <tr><td>Reloj con zona fija <code>America/Argentina/Buenos_Aires</code></td><td>La zona de la JVM</td><td>El contenedor de Render corre en UTC: R19 y R20 se corrían 3 h y la búsqueda de pagos en MP no encontraba nada. Ahora no depende de <code>TZ</code></td></tr>
             <tr><td>HTTP Basic para el panel; cookie de sesión solo para el cliente web</td><td>Tokens en JavaScript</td><td>Nada sensible al alcance del JS; Swing no necesita cookie</td></tr>
             <tr><td><code>SameSite=Lax</code></td><td>Token CSRF</td><td>La cookie no viaja en un <code>POST</code> o <code>DELETE</code> de otro sitio, y el front no tiene que reenviar nada</td></tr>
             <tr><td>Reclamo del email sin verificarlo</td><td>Confirmar por mail</td><td>Menos piezas; el riesgo está aceptado (<a href="#usuarios">usuarios</a>)</td></tr>
@@ -2320,7 +2422,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
       <p><strong>Pendiente:</strong></p>
       <ul>
         <li>La <a href="#terminal">terminal de boletería</a> que vende sin red y sincroniza al volver.</li>
-        <li>Despliegue en un servidor.</li>
+        <li>Completar en el manual la URL pública cuando quede desplegado (<a href="#despliegue">Despliegue</a>).</li>
         <li>En Swing, el alta de sala con un editor visual en vez de tipear listas.</li>
         <li>El formulario de promociones deja huecos donde van los campos de los otros tipos.</li>
         <li>El subtítulo de Candy dice «sin reserva de por medio», pero el formulario ofrece asociar una reserva.</li>
@@ -2354,7 +2456,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
             <tr><td><code>equals</code>/<code>hashCode</code> en las entidades</td><td>Ninguna va a un <code>Set</code>; uno por id generado cambia al guardar</td></tr>
             <tr><td>Batch de inserts</td><td>Con <code>IDENTITY</code> Hibernate no puede agrupar</td></tr>
             <tr><td>Caché de segundo nivel</td><td>Un solo backend y la ocupación cambia todo el tiempo: sumaría invalidación sin ganancia</td></tr>
-            <tr><td>Zona horaria</td><td>Un cine, una zona, sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code></td></tr>
+            <tr><td>Zona horaria en los datos</td><td>Un cine, una zona, sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code>. La zona se fija una vez, en el <code>Reloj</code></td></tr>
             <tr><td>Todos los errores de un pedido juntos (patrón Notification)</td><td>El backend corta en el primer dato inválido: dos errores se ven de a uno. Juntarlos toca los 15 validadores, <code>ManejadorErrores</code>, el contrato y los dos clientes; a cambio, cada formulario dice el formato de sus campos. Es la mejora siguiente si los formularios crecen</td></tr>
           </tbody>
         </table>
