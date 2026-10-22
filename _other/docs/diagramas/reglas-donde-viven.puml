@@ -22,6 +22,7 @@ package "service/: lo que necesita otras filas" as srv {
   class AgendaDeSala <<R3>>
   class Ocupacion <<R4>>
   class GestorPromociones <<R15, R16>>
+  class ConsultasReservas <<R21>>
 }
 
 package "model/: con la hora que le pasa el gestor" as hora {
@@ -55,4 +56,5 @@ Producto -[hidden]right-> MedioPago
 GestorCartelera -[hidden]right-> Bajas
 AgendaDeSala -[hidden]right-> Ocupacion
 Ocupacion -[hidden]right-> GestorPromociones
+GestorPromociones -[hidden]right-> ConsultasReservas
 @enduml

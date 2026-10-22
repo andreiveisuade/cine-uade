@@ -43,7 +43,7 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
 | `patron-*.puml` | Un diagrama por patrón GoF, principio SOLID y patrón GRASP aplicado, con `_estilo-patrones.iuml` (el estilo de los apuntes) |
 | `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
-| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R20 |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R21 |
 | `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
 | `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
 | `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
