@@ -30,9 +30,23 @@ class EmailTest {
             sin usuario,         @cine.com
             con espacio,         'ana @cine.com'
             dos arrobas,         a@b@cine.com
+            punto al final,      a@cine.com.
+            dos puntos seguidos, a@cine..com
+            dominio con punto,   a@.cine.com
             """)
     void unEmailSinLaFormaUsuarioArrobaDominioSeRechaza(String caso, String email) {
         rechaza("El email tiene que tener la forma usuario@dominio.com", email);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            simple,              ana@cine.com
+            puntos en el usuario, ana.perez@cine.com
+            subdominios,         ana@mail.cine.com.ar
+            con signo más,       ana+cine@mail.com
+            """)
+    void unEmailConLaFormaUsuarioArrobaDominioSeAcepta(String caso, String email) {
+        assertEquals(email, new Email(email).valor());
     }
 
     @ParameterizedTest(name = "email [{0}]")

@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
@@ -48,16 +47,8 @@ public class PagoController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<PagoVistaDTO> cobrar(@PathVariable int id, @Valid @RequestBody PedidoPagoDTO pedido) {
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
-        return Creado.en("/api/reservas/" + id + "/pago",
+        return Creado.en("/api/reservas/" + id,
                 vistas.pago(pagos.cobrar(id, medio, pedido.codigoAutorizacion())));
-    }
-
-    // Una reserva sin cobrar no tiene el recurso: 404, y el texto distingue eso de una reserva que no existe.
-    @Operation(summary = "El pago de una reserva; 404 si todavía no se cobró")
-    @GetMapping("/api/reservas/{id}/pago")
-    public PagoVistaDTO pagoDe(@PathVariable int id) {
-        return vistas.pago(pagos.buscarPorReserva(id)
-                .orElseThrow(() -> new RecursoNoEncontrado("La reserva " + id + " todavía no tiene un pago")));
     }
 
     // Alta sin Location: el checkout vive en la pasarela y no tiene GET por id

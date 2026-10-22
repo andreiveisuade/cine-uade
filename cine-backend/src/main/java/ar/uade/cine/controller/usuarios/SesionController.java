@@ -24,7 +24,7 @@ public class SesionController {
     private final VistasUsuarios vistas;
 
     // El filtro Basic verifica las credenciales (un solo camino) y abre la sesión: la respuesta lleva la cookie
-    // El cuerpo no se lee: un cliente viejo que manda {email,password} sigue entrando
+    // El cuerpo se ignora: las credenciales van por Basic
     @Operation(summary = "Login con HTTP Basic: devuelve quién se identificó; al cliente le abre la sesión con cookie")
     @PostMapping("/api/sesion")
     public UsuarioVistaDTO iniciar(Authentication identidad) {

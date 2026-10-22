@@ -98,7 +98,7 @@ class PagoControllerTest extends PruebaDeApi {
 
         assertEquals(302, respuesta.statusCode());
         assertEquals("/#/ticket/" + reserva.getCodigo(), respuesta.headers().firstValue("Location").orElseThrow());
-        assertEquals(200, get("/api/reservas/" + reserva.getId() + "/pago").estado(), "quedó cobrada");
+        assertEquals("PAGADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText(), "quedó cobrada");
     }
 
     @Test
@@ -125,7 +125,7 @@ class PagoControllerTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals("El pago en efectivo no lleva código de autorización", respuesta.error());
-        assertEquals(404, get("/api/reservas/" + reserva.getId() + "/pago").estado(), "no se cobró");
+        assertEquals("RESERVADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText(), "no se cobró");
     }
 
     @Test
@@ -153,27 +153,15 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("No existe la reserva 99", respuesta.error());
     }
 
-    // Los dos son 404, pero el texto dice cuál de las dos cosas falta.
     @Test
-    void elPagoDeUnaReservaSinCobrarEs404YElDeUnaQueNoExisteTambien() {
-        Respuesta sinCobrar = get("/api/reservas/" + reserva.getId() + "/pago");
-        Respuesta inexistente = get("/api/reservas/99/pago");
+    void laReservaCobradaTraeElPagoQueDevolvioElCobro() {
+        String ruta = "/api/reservas/" + reserva.getId();
+        Respuesta cobro = post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}");
 
-        assertEquals(404, sinCobrar.estado());
-        assertEquals("La reserva " + reserva.getId() + " todavía no tiene un pago", sinCobrar.error());
-        assertEquals(404, inexistente.estado());
-        assertEquals("No existe la reserva 99", inexistente.error());
-    }
+        Respuesta leida = get(ruta);
 
-    @Test
-    void elPagoDeUnaReservaCobradaEsElQueDevolvioElCobro() {
-        String ruta = "/api/reservas/" + reserva.getId() + "/pago";
-        Respuesta cobro = post(ruta, "{\"medio\":\"EFECTIVO\"}");
-
-        Respuesta pago = get(ruta);
-
-        assertEquals(200, pago.estado());
-        assertEquals(cobro.json(), pago.json());
+        assertEquals(ruta, cobro.cabeceras().getLocation().toString());
+        assertEquals(cobro.json(), leida.json().get("pago"));
     }
 
     @Test

@@ -56,7 +56,7 @@ public final class ValidadorPromocion {
         }
     }
 
-    // De 1 a 99 y con dos decimales (DECIMAL(5,2)): antes 99,999 se guardaba como 100 y las entradas salían gratis.
+    // Dos decimales: DECIMAL(5,2) redondearía 99,999 a 100 (entrada gratis).
     public static double porcentaje(Double porcentaje) {
         return Regla.numero(porcentaje).obligatorio("Falta el porcentaje")
                 .entre(1.0, 99.0, "El porcentaje tiene que estar entre 1 y 99")

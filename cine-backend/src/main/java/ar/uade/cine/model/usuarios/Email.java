@@ -15,7 +15,8 @@ public record Email(String valor) {
     private static final int LARGO_MAXIMO = 100;
 
     // Misma regla que Swing; única del backend, porque POST /api/reservas da de alta al cliente sin pasar por el DTO.
-    private static final Pattern FORMA = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
+    // Las partes del dominio excluyen el punto: una sola forma de partir el texto, la regex es lineal (ReDoS).
+    private static final Pattern FORMA = Pattern.compile("[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+");
 
     // Se mide ya normalizado, o " ana@mail.com" escaparía al chequeo del repetido. El largo va antes que la
     // forma: la regex sobre un texto enorme es lenta (ReDoS) y en Render no hay nginx que corte el cuerpo.

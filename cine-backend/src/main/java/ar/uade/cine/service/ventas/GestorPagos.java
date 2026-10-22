@@ -2,7 +2,6 @@ package ar.uade.cine.service.ventas;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -137,20 +137,13 @@ public class GestorPagos {
             throw new DatoInvalido(motivo);
         });
         if (pagoRepository.existsByReservaId(reserva.getId())) {
-            throw new DatoInvalido("La reserva " + reserva.getId() + " ya tiene un pago registrado");
+            throw new ConflictoDeNegocio("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
     }
 
     // Recién al cobrar se conoce el medio, y de él dependen las promociones.
     private PoliticaPromociones.Descuento descuentoPara(Reserva reserva, MedioPago medio) {
         return promociones.calcularPara(reserva.getEntradas(), reserva.getFuncion().getInicio(), medio);
-    }
-
-    // Vacío si la reserva todavía no se cobró; si ni siquiera existe, RecursoNoEncontrado.
-    @Transactional(readOnly = true)
-    public Optional<Pago> buscarPorReserva(int reservaId) {
-        buscarReserva(reservaId);
-        return pagoRepository.findByReservaId(reservaId);
     }
 
     @Transactional(readOnly = true)

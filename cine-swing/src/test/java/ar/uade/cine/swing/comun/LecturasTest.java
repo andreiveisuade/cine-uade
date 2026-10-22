@@ -88,6 +88,8 @@ class LecturasTest {
     void elEmailTieneQueParecerUnEmail() {
         assertTrue(Lecturas.leerEmail("ana@mail.com", "Cliente", false).valida());
         assertFalse(Lecturas.leerEmail("ana", "Cliente", false).valida());
+        assertFalse(Lecturas.leerEmail("ana@mail..com", "Cliente", false).valida());
+        assertFalse(Lecturas.leerEmail("ana@mail.com.", "Cliente", false).valida());
         assertTrue(Lecturas.leerEmail("", "Cliente", false).valida());
     }
 

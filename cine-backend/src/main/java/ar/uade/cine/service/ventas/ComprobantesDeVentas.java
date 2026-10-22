@@ -18,8 +18,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // Emite ticket de reserva y recibo de cobro cuando ya quedaron guardados; Observer que corre tras el commit.
 // Patrón Observer (GoF): GestorReservas y GestorPagos publican ReservaCreada y PagoRegistrado; esta clase escucha.
-// AFTER_COMMIT: sin commit no hay comprobante; antes un rollback tardío (@Version) dejaba recibos de cobros que no existieron.
-// Cada método abre su transacción de solo lectura (REQUIRES_NEW) y relee por id: la sesión de la venta ya no navega LAZY.
+// AFTER_COMMIT: sin commit no hay comprobante. REQUIRES_NEW de solo lectura: la sesión de la venta ya no navega LAZY.
 @Service
 @RequiredArgsConstructor
 @Slf4j

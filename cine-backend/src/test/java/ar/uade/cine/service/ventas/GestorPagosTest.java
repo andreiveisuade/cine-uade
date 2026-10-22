@@ -179,7 +179,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Arqueo arqueo = caja.arqueoDe(reloj.hoy());
         assertEquals(2, arqueo.pagos().size());
         assertEquals(Dinero.de(15000.0), arqueo.total());
-        assertTrue(pagos.buscarPorReserva(primera.getId()).isPresent());
+        assertTrue(pagoRepository.existsByReservaId(primera.getId()));
     }
 
     @Test
