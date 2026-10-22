@@ -7,6 +7,7 @@ skinparam ranksep 45
 actor "Cliente" as cliente
 node "Navegador" as web
 node "PC del encargado\ncine-swing" as swing
+node "Celular del acomodador\ncine-android (Puerta)" as android
 
 cloud "Render (plan free, 512 MB, 0,1 CPU)" {
   node "proxy https de Render\n(termina TLS, X-Forwarded-Proto)" as proxy
@@ -26,6 +27,7 @@ cloud "TMDB" as tmdb
 cliente --> web
 web --> proxy : "https://<servicio>.onrender.com\ncookie JSESSIONID Secure"
 swing --> proxy : "https + HTTP Basic\n(CINE_API_URL)"
+android --> proxy : "https + HTTP Basic\nPOST /api/acceso"
 proxy --> api : "http :PORT"
 proxy --> front : "GET publicos (FRONT)"
 api --> aiven : "JDBC con TLS\nsslMode=REQUIRED, pool 5"
