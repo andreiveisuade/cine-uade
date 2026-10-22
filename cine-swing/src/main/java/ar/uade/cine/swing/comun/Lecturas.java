@@ -18,7 +18,7 @@ public final class Lecturas {
     private static final Pattern DECIMAL = Pattern.compile("-?\\d+([.,]\\d+)?");
     // Letra de fila y número de butaca: A1, J12. Si la butaca existe en la sala lo dice el backend.
     private static final Pattern CODIGO_BUTACA = Pattern.compile("[A-Z]+\\d+");
-    private static final Pattern EMAIL = Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
+    private static final Pattern EMAIL = Pattern.compile("[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+");
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
 
     private Lecturas() {
