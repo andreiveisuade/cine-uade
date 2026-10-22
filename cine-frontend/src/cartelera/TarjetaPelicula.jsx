@@ -4,12 +4,15 @@ import { etiqueta } from "@/api/etiquetas.js";
 import { duracion } from "@/api/formato.js";
 import { ChipClasificacion } from "@/compartido/ui/Chips.jsx";
 import { Poster } from "@/compartido/ui/Poster.jsx";
+import { useVolarPoster } from "./useVolarPoster.js";
 
 // Sin caja alrededor: el póster es la tarjeta y debajo va lo justo para decidir.
 export function TarjetaPelicula({ pelicula, previa }) {
+  const volar = useVolarPoster();
+  const a = `/pelicula/${pelicula.id}`;
   return (
-    <Box component={Link} to={`/pelicula/${pelicula.id}`} display="block" c="inherit" style={{ textDecoration: "none" }}>
-      <Box pos="relative" style={{ borderRadius: "var(--mantine-radius-md)", overflow: "hidden", boxShadow: "var(--cine-sombra)" }}>
+    <Box component={Link} to={a} onClick={volar(pelicula.id, a)} display="block" c="inherit" style={{ textDecoration: "none" }}>
+      <Box pos="relative" data-poster={pelicula.id} style={{ borderRadius: "var(--mantine-radius-md)", overflow: "hidden", boxShadow: "var(--cine-sombra)" }}>
         <Poster pelicula={pelicula} />
         {previa}
       </Box>

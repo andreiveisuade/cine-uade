@@ -23,7 +23,7 @@ export function Pelicula() {
       <PantallaTrailer pelicula={pelicula} />
       <Grid gap={{ base: "lg", md: "xl" }}>
         <Grid.Col span={{ base: 12, sm: 3 }} visibleFrom="sm">
-          <Box style={{ borderRadius: "var(--mantine-radius-md)", overflow: "hidden", boxShadow: "var(--cine-sombra)" }}>
+          <Box data-poster={pelicula.id} style={{ borderRadius: "var(--mantine-radius-md)", overflow: "hidden", boxShadow: "var(--cine-sombra)" }}>
             <Poster pelicula={pelicula} />
           </Box>
         </Grid.Col>
