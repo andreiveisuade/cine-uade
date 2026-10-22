@@ -22,10 +22,10 @@ export function Ticket() {
   // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
   const aviso = useSearchParams()[0].get("aviso");
   const recien = useLocation().state?.reserva;
-  // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide por código,
-  // que es la única llave del cliente: el id se adivina. La carta y las promos son opcionales.
+  // Siempre por código, aunque venga en la navegación: el historial la conserva al recargar y quedaría
+  // la foto de cuando se reservó. El código es la única llave del cliente. La carta y las promos son opcionales.
   const carga = useCargar(() => Promise.all([
-    recien?.codigo === codigo ? recien : api.obtenerReservaPorCodigo(codigo),
+    api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
     api.obtenerPromocionesVigentes().catch(() => []),
   ]), [codigo]);
