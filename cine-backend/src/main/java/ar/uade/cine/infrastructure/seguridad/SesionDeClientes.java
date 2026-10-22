@@ -18,6 +18,11 @@ class SesionDeClientes implements SecurityContextRepository {
     private static final String CLIENTE = "ROLE_" + Rol.CLIENTE.name();
 
     private final HttpSessionSecurityContextRepository sesiones = new HttpSessionSecurityContextRepository();
+    private final RegistroDeSesiones registro;
+
+    SesionDeClientes(RegistroDeSesiones registro) {
+        this.registro = registro;
+    }
 
     @Override
     public DeferredSecurityContext loadDeferredContext(HttpServletRequest pedido) {
@@ -40,6 +45,7 @@ class SesionDeClientes implements SecurityContextRepository {
             pedido.changeSessionId();
         }
         sesiones.saveContext(contexto, pedido, respuesta);
+        registro.registrar(pedido.getSession().getId(), contexto.getAuthentication().getName());
     }
 
     @Override
