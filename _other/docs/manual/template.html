@@ -567,6 +567,12 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-03:</strong> si el inicio es ahora o ya pasó, rechaza con 400 y no guarda nada.</li>
         <li><strong>CU-03b:</strong> los pases que ya pasaron se saltean: no se previsualizan, no se crean ni cuentan como choques. Si un rango cerrado ya pasó entero, rechaza con 400.</li>
       </ul>
+
+      <h3>Otros flujos alternativos</h3>
+      <ul>
+        <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
+        <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="entorno">
@@ -761,7 +767,7 @@ docker compose up -d --build
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; los piden los observadores</td></tr>
             <tr><td><code>AlmacenDeImagenes</code> → <code>AlmacenDeImagenesEnBase</code></td><td>Guarda y lee las imágenes subidas en la tabla <code>imagen</code> (<a href="#imagenes">por qué</a>)</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
-            <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
+            <tr><td><code>Reloj</code></td><td>La hora actual de Buenos Aires (<code>Reloj.ZONA</code>), reemplazable en tests</td></tr>
             <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordBcrypt</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt (<a href="#decorator">Decorator</a>) y el SHA-256 heredado</td></tr>
             <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas de cada puerto</td></tr>
             <tr><td><code>Propiedades*</code></td><td>Cada sección <code>cine.*</code> de <code>application.yml</code>, tipada, junto a quien la usa</td></tr>
@@ -988,7 +994,7 @@ docker compose up -d --build
             <tr><td><code>#/registro</code>, <code>#/ingresar</code></td><td>Alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
             <tr><td>Pagar online</td><td>Medio, monto del backend, Mercado Pago y vuelta al ticket</td></tr>
-            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra</td></tr>
+            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra. «Ya pagué» avisa el retorno y relee la reserva: si sigue <code>cobrable</code>, «Mercado Pago todavía no confirmó el pago»</td></tr>
           </tbody>
         </table>
       </div>
@@ -1224,6 +1230,8 @@ docker compose up -d --build
         <li><strong>Basic para Swing, cookie para la web:</strong> el empleado manda credenciales en cada pedido, sin sesión. Al cliente, <code>POST /api/sesion</code> setea <code>JSESSIONID</code> (HttpOnly, <code>SameSite=Lax</code>) y <code>DELETE</code> la cierra; <code>SesionDeClientes</code> (<a href="#decorator">Decorator</a>) guarda solo la identidad de un <code>CLIENTE</code>.</li>
         <li><strong>CSRF apagado, <code>SameSite=Lax</code> en su lugar:</strong> un <code>POST</code>/<code>DELETE</code> de otro sitio llega sin cookie. Un token sería más fuerte, pero el front tendría que reenviarlo.</li>
         <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
+        <li><strong>Mensajes neutros contra enumeración:</strong> <code>POST /clientes</code> con el email de un empleado o de un cliente con cuenta da el mismo 409 «Ya existe una cuenta con ese email». <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
+        <!-- T50b: cuenta sobre un cliente existente con código de reserva, límite de intentos y swagger -->
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
@@ -1276,6 +1284,7 @@ docker compose up -d --build
       <ul>
         <li>Dos clientes pueden ver A1 libre a la vez. El gestor valida antes para dar un mensaje claro; la red es <code>UNIQUE (funcion_id, asiento_id)</code> de <code>entrada</code>: <code>saveAndFlush</code> choca y el gestor lo traduce a <code>ButacaOcupada</code> (409).</li>
         <li>Liberar pone <code>funcion_id = NULL</code>, que el <code>UNIQUE</code> no compara: la reventa no choca y queda el historial.</li>
+        <li>Lo mismo con las funciones: <code>GET /cartelera</code> extiende las grillas sin lock, y dos pedidos al despertar el servidor podían crear la misma función dos veces. <code>UNIQUE (sala_id, inicio)</code> en <code>funcion</code>; <code>GestorFunciones.programar</code> hace <code>saveAndFlush</code> y traduce el choque a 409 «Ya hay una función en esa sala a esa hora». La extensión de grillas atrapa el choque, corta esa grilla y sigue con las otras.</li>
       </ul>
 
       <h3 id="cobrar-cancelar">Cobrar contra cancelar</h3>
@@ -1287,7 +1296,7 @@ docker compose up -d --build
 
       <h3>Esquema y migraciones</h3>
       <ul>
-        <li>MySQL corre <code>schema.sql</code> solo con el volumen vacío. Sobre una base existente, los <code>migracion-*.sql</code> a mano (orden y comando en <code>cine-docker/README.md</code>); solo la llevan al mismo estado.</li>
+        <li>MySQL corre <code>schema.sql</code> solo con el volumen vacío. Sobre una base existente, los <code>migracion-*.sql</code> a mano (comando en <code>cine-docker/README.md</code>); solo la llevan al mismo estado. Orden: <code>programaciones</code>, <code>grilla-abierta</code>, <code>limpieza</code>, <code>staging</code>, <code>puntaje</code>, <code>votos</code>, <code>importaciones</code>, <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code>, <code>ahorro-congelado</code>, <code>email-minusculas</code>, <code>imagenes</code>, <code>trailer</code>, <code>imagenes-en-base</code> y <code>funcion-unica</code> (este trae arriba, comentado, el <code>SELECT</code> que encuentra duplicados).</li>
         <li>Los tests usan H2 creada con el mismo <code>schema.sql</code> y <code>ddl-auto: validate</code>: restricciones iguales a MySQL; <code>MapeoContraSchemaTest</code> verifica el mapeo.</li>
         <li>Un texto más largo que su columna es un 400 de la entidad, no un 500 de la base.</li>
       </ul>
@@ -1625,7 +1634,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td>R1</td><td>No hay dos películas con el mismo título</td></tr>
             <tr><td>R2</td><td>Duración de película de 1 a 600 minutos, y de 1 a 40 butacas en cada fila de la sala</td></tr>
-            <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza</td></tr>
+            <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza; dos pedidos a la vez los frena <code>UNIQUE (sala_id, inicio)</code></td></tr>
             <tr><td>R4</td><td>No se reserva una butaca ya tomada <strong>en esa función</strong></td></tr>
             <tr><td>R5</td><td>Solo se cobra una reserva RESERVADA, y una sola vez</td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td></tr>
@@ -2280,6 +2289,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
             <tr><td>Ids sueltos donde nadie navega (<code>Pago.reservaId</code>…)</td><td><code>@ManyToOne</code></td><td>La FK está igual en la base</td></tr>
             <tr><td><code>@Version</code> solo en <code>Reserva</code></td><td>En todas o <code>@Lock</code></td><td>Es la única con transiciones que compiten; las butacas las cierra el <code>UNIQUE</code></td></tr>
             <tr><td><code>Reloj</code> como puerto</td><td><code>LocalDateTime.now()</code></td><td>Tests sin fecha real</td></tr>
+            <tr><td>Reloj con zona fija <code>America/Argentina/Buenos_Aires</code></td><td>La zona de la JVM</td><td>El contenedor de Render corre en UTC: R19 y R20 se corrían 3 h y la búsqueda de pagos en MP no encontraba nada. Ahora no depende de <code>TZ</code></td></tr>
             <tr><td>HTTP Basic para el panel; cookie de sesión solo para el cliente web</td><td>Tokens en JavaScript</td><td>Nada sensible al alcance del JS; Swing no necesita cookie</td></tr>
             <tr><td><code>SameSite=Lax</code></td><td>Token CSRF</td><td>La cookie no viaja en un <code>POST</code> o <code>DELETE</code> de otro sitio, y el front no tiene que reenviar nada</td></tr>
             <tr><td>Reclamo del email sin verificarlo</td><td>Confirmar por mail</td><td>Menos piezas; el riesgo está aceptado (<a href="#usuarios">usuarios</a>)</td></tr>
@@ -2364,7 +2374,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
             <tr><td><code>equals</code>/<code>hashCode</code> en las entidades</td><td>Ninguna va a un <code>Set</code>; uno por id generado cambia al guardar</td></tr>
             <tr><td>Batch de inserts</td><td>Con <code>IDENTITY</code> Hibernate no puede agrupar</td></tr>
             <tr><td>Caché de segundo nivel</td><td>Un solo backend y la ocupación cambia todo el tiempo: sumaría invalidación sin ganancia</td></tr>
-            <tr><td>Zona horaria</td><td>Un cine, una zona, sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code></td></tr>
+            <tr><td>Zona horaria en los datos</td><td>Un cine, una zona, sin horario de verano: <code>LocalDateTime</code> y <code>DATETIME</code>. La zona se fija una vez, en el <code>Reloj</code></td></tr>
             <tr><td>Todos los errores de un pedido juntos (patrón Notification)</td><td>El backend corta en el primer dato inválido: dos errores se ven de a uno. Juntarlos toca los 15 validadores, <code>ManejadorErrores</code>, el contrato y los dos clientes; a cambio, cada formulario dice el formato de sus campos. Es la mejora siguiente si los formularios crecen</td></tr>
           </tbody>
         </table>
