@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS programacion_dia (
 
 -- version es DOBLADA o SUBTITULADA, no el idioma de la pelicula
 -- programacion_id admite NULL: la funcion suelta sobrevive a la baja de su grilla
+-- UNIQUE (sala_id, inicio): R3 se mira antes de guardar; dos pedidos a la vez la pasan juntos
 CREATE TABLE IF NOT EXISTS funcion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
@@ -98,6 +99,7 @@ CREATE TABLE IF NOT EXISTS funcion (
     version VARCHAR(15) NOT NULL,
     proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
+    UNIQUE (sala_id, inicio),
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
     FOREIGN KEY (sala_id) REFERENCES sala(id),
     FOREIGN KEY (programacion_id) REFERENCES programacion(id)

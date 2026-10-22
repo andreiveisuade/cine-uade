@@ -201,7 +201,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula vieja = gestor.agregar("Titanic", 194, List.of(Genero.ROMANCE), Clasificacion.MAS_13);
         Pelicula actual = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         programarProxima(vieja.getId());
-        programarProxima(actual.getId());
+        programar(actual.getId(), reloj.ahora().plusDays(8));
 
         sacarDeCartelera(vieja);
 
