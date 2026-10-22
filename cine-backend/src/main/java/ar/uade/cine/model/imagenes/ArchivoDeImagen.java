@@ -3,6 +3,7 @@ package ar.uade.cine.model.imagenes;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -15,6 +16,7 @@ public class ArchivoDeImagen {
     @Id
     private String nombre;
 
+    @Lob
     @Column(columnDefinition = "MEDIUMBLOB")
     private byte[] contenido;
 
