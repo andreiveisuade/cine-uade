@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import ar.uade.cine.model.rechazos.DemasiadosIntentos;
 import ar.uade.cine.model.usuarios.Email;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,7 +49,7 @@ class FiltroDeIntentos extends OncePerRequestFilter {
             respuesta.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             respuesta.setContentType(MediaType.APPLICATION_JSON_VALUE);
             json.writeValue(respuesta.getOutputStream(),
-                    Map.of("error", "Demasiados intentos: esperá un minuto y probá de nuevo"));
+                    Map.of("error", DemasiadosIntentos.MENSAJE));
             return;
         }
         cadena.doFilter(pedido, respuesta);
