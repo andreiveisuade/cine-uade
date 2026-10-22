@@ -5,7 +5,7 @@ import java.util.List;
 
 import lombok.Getter;
 
-// Los tres tipos de promoción y cómo nace cada uno; Factory Method: cada constante crea su subclase.
+// Los tres tipos de promoción y cómo nace cada uno: cada constante crea su subclase.
 // Patrón Factory Method: sumar un tipo es una constante y una subclase, sin tocar controller ni vistas.
 @Getter
 public enum TipoPromocion {

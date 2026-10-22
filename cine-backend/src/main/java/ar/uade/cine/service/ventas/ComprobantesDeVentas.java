@@ -16,7 +16,7 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
-// Emite ticket de reserva y recibo de cobro cuando ya quedaron guardados; Observer que corre tras el commit.
+// Emite ticket de reserva y recibo de cobro cuando ya quedaron guardados.
 // Patrón Observer (GoF): GestorReservas y GestorPagos publican ReservaCreada y PagoRegistrado; esta clase escucha.
 // AFTER_COMMIT: sin commit no hay comprobante. REQUIRES_NEW de solo lectura: la sesión de la venta ya no navega LAZY.
 @Service

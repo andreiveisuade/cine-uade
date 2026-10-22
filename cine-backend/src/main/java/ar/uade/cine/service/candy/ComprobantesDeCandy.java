@@ -15,7 +15,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 
-// Emite el ticket de una compra de candy cuando ya quedó guardada; Observer que escucha a GestorCandy.
+// Emite el ticket de una compra de candy cuando ya quedó guardada; escucha a GestorCandy.
 // Patrón Observer (GoF): el ticket se emite recién AFTER_COMMIT; antes una compra no guardada dejaba su ticket.
 // Relee la compra por id en una transacción propia (REQUIRES_NEW), porque la de la venta ya terminó.
 @Service

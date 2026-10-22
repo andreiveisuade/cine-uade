@@ -1,8 +1,8 @@
 @startuml
 !include _estilo-patrones.iuml
 abstract class "PantallaListado<T>" as PantallaListado <<AbstractClass>> {
-  + recargar()
-  + buscar()
+  # recargar() {final}
+  # buscar() {final}
   # {abstract} obtener(filtros)
   # {abstract} tabla()
   # {abstract} sinFiltrar(todas)

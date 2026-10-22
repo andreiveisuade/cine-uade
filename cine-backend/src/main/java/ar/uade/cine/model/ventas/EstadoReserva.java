@@ -2,7 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Estados de una reserva y sus transiciones (R5, R13, R17, R18); patrón State con una constante por estado.
+// Estados de una reserva y sus transiciones (R5, R13, R17, R18), una constante por estado.
 // Patrón State (GoF): la regla de qué se puede hacer en cada estado vive en la constante, no en Reserva.
 // Cada constante sobrescribe lo que permite; el resto rechaza con «La reserva está <etiqueta>: ...». La etiqueta es para mensajes.
 public enum EstadoReserva {

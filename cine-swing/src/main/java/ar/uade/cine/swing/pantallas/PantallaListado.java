@@ -6,7 +6,7 @@ import ar.uade.cine.swing.comun.Tabla;
 import java.util.List;
 import java.util.Map;
 
-// Un listado con filtros y su conteo; Template Method: cada pantalla dice cómo pedir y qué contar, no cuándo.
+// Listado con filtros y su conteo. Patrón Template Method (GoF): cada pantalla dice cómo pedir y qué contar, no cuándo.
 // Al entrar se piden todas (para el "mostrando 3 de 40") y después lo filtrado en cada cambio de filtro.
 public abstract class PantallaListado<T> extends Pantalla {
 

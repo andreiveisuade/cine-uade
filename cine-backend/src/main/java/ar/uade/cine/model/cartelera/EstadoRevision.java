@@ -2,7 +2,7 @@ package ar.uade.cine.model.cartelera;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Revisión de una película importada; patrón State: cada estado decide si se publica, se programa y se ve.
+// Revisión de una película importada. Patrón State (GoF): cada estado decide si se publica, se programa y se ve.
 // CONFIRMADA deja hacer todo; PENDIENTE pide revisión; DESCARTADA dice que se descartó (ya no está en el buzón).
 // Enum y no jerarquía: sin datos propios, y JPA guarda el nombre igual. Métodos de paquete: afuera se habla con Pelicula.
 public enum EstadoRevision {
