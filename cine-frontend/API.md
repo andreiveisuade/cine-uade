@@ -35,11 +35,12 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `401` | Sin credenciales o sin sesión, o inválidas (también en rutas públicas) | `Hace falta iniciar sesión para esta operación` · `Email o contraseña incorrectos` |
 | `403` | El rol no alcanza | `Tu rol no tiene permiso para esta operación` |
 | `403` | `POST /clientes` sobre un email que ya compró sin cuenta, sin el código de una de sus entradas (R22) | `Para abrir esta cuenta hace falta el código de una de sus entradas: está en el ticket de la compra` |
+| `403` | `POST /cuenta/recuperacion` sin prueba (R25): email inexistente, sin cuenta, código ajeno o inventado, todos con el mismo texto | `El email y el código no corresponden a ninguna cuenta: revisá el ticket de una de tus compras` |
 | `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
 | `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
-| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion` y para cualquier ruta con Basic. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
+| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic y para `POST /cuenta/recuperacion` (cuenta cada 403). Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
 | `413` · `502` · `504` | nginx: cuerpo de más de 1 MB (3 MB en `POST /imagenes`), backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
 
@@ -47,8 +48,8 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/clientes`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
+| Público | `POST` de `/clientes`, `/cuenta/recuperacion`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
+| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `POST /cuenta/clave`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
@@ -81,6 +82,19 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
 | `POST /clientes` | `{nombre, email, password, codigoReserva?}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes, pero tiene que mandar `codigoReserva`, el de una de sus entradas (R22): sin él, o con uno ajeno o inventado, `403` con el mismo texto en los tres casos. Con email nuevo el código se ignora. Si ya tiene clave, o el email es de un empleado, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
+| `POST /clientes/{id}/clave-temporal` | Sin cuerpo. Solo `ADMINISTRADOR` (Swing, boletería). `200 {"clave":"k7m2qx9pab"}`: diez letras y números sin `l`, `o`, `0` ni `1`, en claro una sola vez (no se guarda ni se loguea). Abre la cuenta si no la tenía, cierra todas sus sesiones y marca `debeCambiarClave` (R27). Id inexistente o de un empleado, `404 No existe el cliente N` |
+
+### La cuenta (cliente con sesión, R23 a R26)
+
+Siempre la del cliente de la cookie: ninguna ruta recibe su email ni su id. Sin sesión, `401`. Las que cambian estado
+son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cookie en esos métodos desde otro sitio.
+
+| Ruta | Qué hace |
+|---|---|
+| `PUT /cuenta` | `{nombre}` → `200` con el usuario de `POST /sesion`. Mismas reglas que el alta; el email no cambia (si viaja, se ignora) (R23) |
+| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`. La respuesta trae una cookie nueva (cambia el id de sesión) y las demás sesiones del cliente quedan cerradas: su próximo pedido es `401`. Apaga `debeCambiarClave` (R24) |
+| `DELETE /cuenta` | `{actual}` → `204`. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie) y las demás. Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
+| `POST /cuenta/recuperacion` | Pública. `{email, codigoReserva, nueva}` → `204`. El código de una entrada propia prueba que es el dueño, como en R22. Cualquier otro caso, `403` neutro (ver Errores). Pasa por el límite de intentos (`429`), por email y por IP. Cierra todas las sesiones del cliente (R25) |
 
 ```json
 { "id": 1, "titulo": "Matrix", "duracionMinutos": 136, "generos": ["ACCION"],
@@ -189,7 +203,9 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 |---|---|
 | `#/` | Hero con destacadas y la cartelera |
 | `#/nosotros` | Integrantes y descripción del cine |
-| `#/ingresar` · `#/registro` | Entrar con email y clave · alta con nombre, email y clave (después entra solo) |
+| `#/ingresar` · `#/registro` | Entrar con email y clave · alta con nombre, email y clave (después entra solo). Con `debeCambiarClave`, entrar lleva a `#/mi-cuenta` |
+| `#/mi-cuenta` | Con sesión: nombre, cambiar clave y dar de baja (con confirmación) |
+| `#/recuperar-clave` | Sin sesión: email, código de una entrada y clave nueva. Link «¿Olvidaste tu clave?» desde Ingresar |
 | `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Pagar online. Sin sesión: búsqueda por código |
 | `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. `aviso` es el motivo si el pago de MP no se cobró |
 
@@ -197,8 +213,8 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 
 # Encargado
 
-`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol}` (`ADMINISTRADOR`, `ACOMODADOR` o
-`CLIENTE`). Clave mala y email inexistente dan el mismo `401`.
+`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol, debeCambiarClave}` (`ADMINISTRADOR`,
+`ACOMODADOR` o `CLIENTE`; `debeCambiarClave` es `true` solo si el cliente entró con la clave temporal de R27). Clave mala y email inexistente dan el mismo `401`.
 
 - Empleado: no hay token ni sesión; quien llama guarda las credenciales y las manda en cada pedido (Swing).
 - Cliente: la respuesta setea `JSESSIONID` (HttpOnly, `SameSite=Lax`) y los pedidos siguientes la mandan sin Basic
