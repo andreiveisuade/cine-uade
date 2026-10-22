@@ -41,14 +41,9 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `importador-flujo.puml` | Importador de cartelera: TMDB entra por las reglas del cine |
 | `promociones-herencia.puml` | Promociones: una jerarquía, no un switch |
 | `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
-| `patron-state.puml` | State: el estado decide qué se puede hacer, no un if en su dueño |
-| `patron-observer.puml` | Observer: la venta avisa y los comprobantes salen después del commit |
-| `solid-ocp.puml` | SOLID, abierto-cerrado: un beneficio nuevo es una clase |
-| `solid-isp.puml` | SOLID, segregación de interfaces: cobrar no necesita el ABM de promociones |
-| `solid-dip.puml` | SOLID, inversión de dependencias |
-| `grasp-pure-fabrication.puml` | GRASP, fabricación pura |
+| `patron-*.puml` | Un diagrama por patrón GoF, principio SOLID y patrón GRASP aplicado, con `_estilo-patrones.iuml` (el estilo de los apuntes) |
 | `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
-| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R20 |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R21 |
 | `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
 | `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
 | `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
@@ -56,7 +51,11 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `base-venta-er.puml` | Zoom del DER en la venta: PK, FK, `UNIQUE` y cascadas |
 | `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
 | `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |
+| `pago-mercadopago.puml` | Pago online con Mercado Pago: el retorno consulta el pago |
+| `conciliacion-pagos.puml` | Conciliación: la tarea cobra lo que Mercado Pago aprobó aunque el comprador no vuelva |
 | `grilla-plan.puml` | La grilla: un plan para previsualizar, crear y extender |
+| `front-estructura.puml` | Front: carpetas por funcionalidad, dependencias hacia abajo |
+| `front-flujo.puml` | Front: de la pantalla al backend y de vuelta |
 | `swing-pedido.puml` | Swing: un formulario, del clic al mensaje |
 | `swing-pantallas.puml` | Swing: herencia de las pantallas (Template Method) |
 | `traslado-servidor.puml` | Qué dice dónde está cada parte al mudar el servidor |

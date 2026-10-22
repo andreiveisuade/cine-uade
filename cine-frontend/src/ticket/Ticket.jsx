@@ -22,15 +22,15 @@ export function Ticket() {
   // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
   const aviso = useSearchParams()[0].get("aviso");
   const recien = useLocation().state?.reserva;
-  // Recién comprada viene en la navegación; si no (recarga, Mis reservas) se pide por código,
-  // que es la única llave del cliente: el id se adivina. La carta y las promos son opcionales.
+  // Siempre por código, aunque venga en la navegación: el historial la conserva al recargar y quedaría
+  // la foto de cuando se reservó. El código es la única llave del cliente. La carta y las promos son opcionales.
   const carga = useCargar(() => Promise.all([
-    recien?.codigo === codigo ? recien : api.obtenerReservaPorCodigo(codigo),
+    api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
     api.obtenerPromocionesVigentes().catch(() => []),
   ]), [codigo]);
   const [enPuerta, setEnPuerta] = useState(false);
-  const { reserva, pagoEnVivo } = useEsperarPago(codigo, carga.datos?.[0]);
+  const { reserva, pagoEnVivo, consultar } = useEsperarPago(codigo, carga.datos?.[0]);
   useFestejarPago(pagoEnVivo, codigo);
 
   if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<TicketEsqueleto />} />;
@@ -41,7 +41,8 @@ export function Ticket() {
       <Stack gap="lg">
         {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
         <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
-        <AccionesTicket reserva={reserva} recien={recien} alMostrarEnPuerta={() => setEnPuerta(true)} />
+        <AccionesTicket reserva={reserva} recien={recien} alMostrarEnPuerta={() => setEnPuerta(true)}
+          alVolverDelPago={consultar} />
         <ComprobanteTexto reserva={reserva} />
       </Stack>
 

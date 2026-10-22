@@ -10,8 +10,8 @@ spring:
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
     hikari:
-      # Diez conexiones alcanzan: el límite son las consultas en vuelo, no los usuarios
-      maximum-pool-size: 10
+      # Diez conexiones alcanzan: el límite son las consultas en vuelo, no los usuarios. Aiven free pide menos (5).
+      maximum-pool-size: ${DB_POOL:10}
       pool-name: cine
 
   jpa:
@@ -42,13 +42,17 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # Detrás de nginx o del proxy de Render: X-Forwarded-Proto hace https las URLs y Secure la cookie.
+  forward-headers-strategy: native
 
-# La documentación de la API, generada desde los @RestController.
+# La documentación de la API, generada desde los @RestController. En producción CINE_SWAGGER=false: no publica el mapa de la API.
 springdoc:
   api-docs:
+    enabled: ${CINE_SWAGGER:true}
     # El JSON de OpenAPI. nginx lo proxea junto con /swagger-ui.
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${CINE_SWAGGER:true}
     path: /swagger-ui.html
     # Por ruta: el orden no cambia al agregar un controlador
     operations-sorter: method
@@ -62,9 +66,6 @@ cine:
   comprobantes:
     # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.
     tickets: ${CINE_TICKETS:tickets}
-  imagenes:
-    # Las fotos de promos y productos. En Docker es /app/imagenes, el volumen imagenes.
-    dir: ${CINE_IMAGENES:imagenes}
   importador:
     # Pasado este tiempo una corrida EN_CURSO se da por perdida (backend reiniciado a mitad)
     corrida-maxima: 5m

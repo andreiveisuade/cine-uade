@@ -86,3 +86,23 @@ describe("Ingresar", () => {
     expect(await screen.findByText(/Esa cuenta es del personal del cine/)).toBeInTheDocument();
   });
 });
+
+describe("Registro", () => {
+  it("si el email ya compró, pide el código de una entrada y lo manda", async () => {
+    const pideCodigo = Object.assign(new Error("Para abrir esta cuenta hace falta el código"), { status: 403 });
+    api.registrarCliente.mockRejectedValueOnce(pideCodigo).mockResolvedValueOnce(null);
+    api.ingresar.mockResolvedValue(ANA);
+    renderConApp(<Registro />);
+    await completar({ Nombre: "Ana", Email: "ana@mail.com", Contraseña: "secreta" });
+    expect(screen.queryByLabelText(/Código de una de tus entradas/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Registrarme" }));
+    await userEvent.type(await screen.findByLabelText(/Código de una de tus entradas/), " k7m2qx9p ");
+    expect(screen.getByText("Está en el ticket que recibiste al comprar")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Registrarme" }));
+
+    expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
+    expect(api.registrarCliente).toHaveBeenLastCalledWith(
+      { nombre: "Ana", email: "ana@mail.com", password: "secreta", codigoReserva: "k7m2qx9p" });
+  });
+});

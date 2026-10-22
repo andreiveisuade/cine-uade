@@ -44,6 +44,15 @@ describe("Ticket", () => {
     expect(await screen.findByText(texto)).toBeInTheDocument();
   });
 
+  it("al recargar no muestra la reserva vieja que quedó en el historial: la pide al backend", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+
+    renderConApp(<Ticket />, { ruta: "/ticket/:codigo",
+      en: { pathname: "/ticket/ABCD1234", state: { reserva: reserva("RESERVADA", true) } } });
+
+    expect(await screen.findByText("Entrada paga. Mostrá el código en la puerta.")).toBeInTheDocument();
+  });
+
   it("mientras espera el pago vuelve a pedir cada 10 s y deja de pedir al pasar a PAGADA", async () => {
     api.obtenerReservaPorCodigo
       .mockResolvedValueOnce(reserva("RESERVADA", true))

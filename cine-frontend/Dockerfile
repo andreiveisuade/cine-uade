@@ -5,6 +5,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html vite.config.js ./
 COPY src/ ./src/
+COPY public/ ./public/
 RUN npm run build
 
 # Etapa 2: unprivileged corre como uid 101 y trae resueltos los paths de cache y pid.

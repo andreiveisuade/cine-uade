@@ -25,6 +25,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
@@ -74,10 +75,17 @@ public class ConfiguracionSeguridad {
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
             "/api/tarifas", "/api/tipos-producto", "/api/tipos-promocion"};
 
+    // El build de React cuando el backend lo sirve (Render); con nginx no llegan acá.
+    private static final String[] FRONT = {
+            "/", "/index.html", "/assets/**",
+            "/favicon.svg", "/favicon.ico", "/icon-192.png", "/icon-512.png",
+            "/apple-touch-icon.png", "/og.jpg", "/site.webmanifest"};
+
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json) throws Exception {
+    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos)
+            throws Exception {
         SecurityContextRepository sesion = new SesionDeClientes();
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
@@ -98,6 +106,7 @@ public class ConfiguracionSeguridad {
                         .deleteCookies(COOKIE_DE_SESION)
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .securityContext(contexto -> contexto.securityContextRepository(sesion))
+                .addFilterBefore(new FiltroDeIntentos(intentos, json), BasicAuthenticationFilter.class)
                 // Guardaría en la sesión cada pedido que da 401, y crearía una para cualquiera.
                 .requestCache(AbstractHttpConfigurer::disable)
                 // También acá: el de fábrica del filtro Basic agrega WWW-Authenticate.
@@ -115,6 +124,7 @@ public class ConfiguracionSeguridad {
                         // Va antes que /api/peliculas/*, que si no lo abriría por coincidencia.
                         .requestMatchers(HttpMethod.GET, GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS).hasRole(ADMINISTRADOR)
                         .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
+                        .requestMatchers(HttpMethod.GET, FRONT).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
                         // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.

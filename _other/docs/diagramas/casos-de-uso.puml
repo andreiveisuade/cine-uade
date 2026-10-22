@@ -6,6 +6,7 @@ skinparam packageStyle rectangle
 actor "Cliente\n(web)" as cliente
 actor "Administrador del cine\n(app Swing)" as admin
 actor "Acomodador\n(app Swing)" as acomodador
+actor "Acomodador\n(celular Android)" as acomodadorCel
 actor "Conciliacion\n(tarea programada)" as tarea
 
 rectangle Sistema {
@@ -36,6 +37,7 @@ rectangle Sistema {
   usecase "CU-19 Emitir el bordero\nde una funcion y la\ndeclaracion jurada" as CU19
   usecase "CU-20 Recaudacion de\nuna funcion" as CU20
   usecase "CU-18 Validar entrada\nen la puerta" as CU18
+  usecase "CU-18b Validar entrada\ndesde el celular" as CU18b
 }
 CU04 -[hidden]down- CU01b
 CU01b -[hidden]down- CU05
@@ -89,4 +91,6 @@ admin --> CU20
 acomodador --> CU10
 tarea --> CU07c
 acomodador --> CU18
+acomodadorCel --> CU18b
+CU18b .> CU18 : <<extend>>
 @enduml

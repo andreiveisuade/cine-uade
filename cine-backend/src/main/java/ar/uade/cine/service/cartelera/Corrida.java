@@ -1,9 +1,10 @@
 package ar.uade.cine.service.cartelera;
 
+import ar.uade.cine.model.cartelera.RenglonDeCorrida;
 import ar.uade.cine.model.cartelera.ResumenDeCorrida;
 
-// Acumula lo que va pasando en una corrida del importador y entrega el resumen; dueña del formato del detalle.
-// Un renglón por película: «+ [id] título» si entró, «✗ título: motivo» si falló; las salteadas solo se cuentan.
+// Acumula lo que va pasando en una corrida del importador y entrega el resumen.
+// Un renglón por película, también las que ya estaban: el formato es de RenglonDeCorrida.
 class Corrida {
 
     private final StringBuilder detalle = new StringBuilder();
@@ -12,17 +13,22 @@ class Corrida {
     private int fallidas;
 
     void nueva(int id, String titulo) {
-        detalle.append("+ [").append(id).append("] ").append(titulo).append('\n');
+        anotar(RenglonDeCorrida.nueva(id, titulo));
         nuevas++;
     }
 
-    void salteada() {
+    void salteada(String titulo) {
+        anotar(RenglonDeCorrida.yaEstaba(titulo));
         salteadas++;
     }
 
     void fallida(String nombre, String motivo) {
-        detalle.append("✗ ").append(nombre).append(": ").append(motivo).append('\n');
+        anotar(RenglonDeCorrida.rechazada(nombre, motivo));
         fallidas++;
+    }
+
+    private void anotar(RenglonDeCorrida renglon) {
+        detalle.append(renglon.texto()).append('\n');
     }
 
     ResumenDeCorrida resumen() {

@@ -60,9 +60,8 @@ public final class PantallaPlanificador extends Pantalla {
     private int version;
 
     public PantallaPlanificador(ApiCatalogos apiCatalogos, ApiProgramaciones apiProgramaciones) {
-        super("Planificador de la semana", "Elige el elenco con un criterio que mira <b>puntaje y géneros a la "
-                + "vez</b> y reparte los pases entre las salas de forma proporcional al puntaje: la mejor de la semana "
-                + "se lleva cuatro o cinco funciones diarias y la última, una. No pisa funciones ya cargadas.");
+        super("Planificador de la semana", "Arma la semana con las películas confirmadas: elige por puntaje y "
+                + "variedad de géneros, y le da más funciones a la mejor. No pisa lo ya programado.");
         this.apiCatalogos = apiCatalogos;
         this.apiProgramaciones = apiProgramaciones;
 
@@ -84,25 +83,20 @@ public final class PantallaPlanificador extends Pantalla {
         botones.add(aplicar);
 
         Formulario formulario = new Formulario()
-                .ancho(Componentes.subtitulo("Criterios"))
+                .ancho(Componentes.subtitulo("Cuándo"))
                 .campo("Desde", desde)
                 .campo("Días", dias)
                 .campo("Apertura", apertura)
                 .campo("Cierre", cierre)
-                .ancho(Componentes.nota("El cierre a las 00:00 se lee como el final del día. Es hasta cuándo tiene "
-                        + "que <i>haber terminado</i> la última función, no cuándo puede empezar."))
-                .campo("Cuántas películas", cuantasPeliculas)
-                .ancho(Componentes.nota("Títulos distintos en la semana. Solo se eligen entre las confirmadas."))
+                .ancho(Componentes.nota("A esa hora tiene que haber terminado la última función."))
+                .ancho(Componentes.subtitulo("Qué"))
+                .campo("Películas", cuantasPeliculas)
                 .obligatorio("Precio base", precioBase)
                 .campo("Idioma", idioma)
                 .campo("Proyección", proyeccion)
                 .ancho(botones)
                 .ancho(error)
-                .ancho(Componentes.nota("Solo el precio es obligatorio: lo que quede vacío lo completa el servidor "
-                        + "con su valor por defecto (una semana desde hoy, ocho títulos)."))
-                .ancho(Componentes.nota("Previsualizar no escribe nada. Al aplicar, el servidor <b>vuelve a "
-                        + "calcular</b> la propuesta con estos mismos criterios: si alguien programó algo en el "
-                        + "medio, lo respeta."))
+                .ancho(Componentes.nota("Previsualizar no crea nada."))
                 .cerrar();
 
         Campos.alCambiar(this::criteriosCambiados, desde, apertura, cierre, idioma, proyeccion, dias,
@@ -124,7 +118,7 @@ public final class PantallaPlanificador extends Pantalla {
     private PedidoGrilla pedido(Validacion v) {
         String inicio = v.fecha(desde, "Desde", false);
         Integer cuantosDias = v.entero(dias, "Días", false);
-        Integer cuantas = v.entero(cuantasPeliculas, "Cuántas películas", false);
+        Integer cuantas = v.entero(cuantasPeliculas, "Películas", false);
         Double precio = v.decimal(precioBase, "Precio base", true);
         v.alMencionar("películas", cuantasPeliculas);
         if (!v.ok()) return null;
@@ -152,7 +146,7 @@ public final class PantallaPlanificador extends Pantalla {
             boolean aplicada = grilla.funcionesCreadas() > 0;
             aplicar.setText(aplicada ? "Aplicada" : "Crear " + grilla.pases().size() + " funciones");
             aplicar.setEnabled(!aplicada && !grilla.pases().isEmpty());
-            resultado.mostrar(grilla, anterior);
+            resultado.mostrar(grilla, anterior, pedido.cuantasPeliculas());
             if (aplicando) avisar("Se crearon " + grilla.funcionesCreadas() + " funciones");
         }, e -> {
             previsualizar.setEnabled(true);

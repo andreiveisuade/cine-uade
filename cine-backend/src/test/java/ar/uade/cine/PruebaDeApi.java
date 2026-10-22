@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
+import ar.uade.cine.infrastructure.seguridad.LimiteDeIntentos;
 import ar.uade.cine.infrastructure.seguridad.PasswordSha256;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,8 +48,13 @@ public abstract class PruebaDeApi {
     @Autowired
     protected ConfiguracionDePrueba.RelojMovible reloj;
 
+    @Autowired
+    private LimiteDeIntentos intentos;
+
     @BeforeEach
     void dejarLaBaseComoNueva() {
+        // Todos los pedidos salen de 127.0.0.1: los fallos de un test bloquearían la IP en los siguientes.
+        intentos.olvidar();
         limpieza.limpiar();
         catalogoExterno.reiniciar();
         reloj.reiniciar();

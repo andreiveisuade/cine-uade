@@ -15,6 +15,12 @@ env=$(git diff --cached --name-only --diff-filter=A | grep -E '(^|/)\.env(\.|$)'
 tok=$(git diff --cached -U0 | grep -E '^\+.*eyJhbGciOiJIUzI1NiJ9\.[A-Za-z0-9_-]{20,}' | head -3)
 [ -n "$tok" ] && encontrado="${encontrado}${encontrado:+\n\n}un token pegado en el código"
 
+# gitleaks, si está instalado (brew install gitleaks): cientos de patrones de credenciales sobre lo que se commitea.
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --no-banner >/dev/null 2>&1 \
+    || encontrado="${encontrado}${encontrado:+\n\n}gitleaks detectó una credencial (corré: gitleaks git --pre-commit --staged --redact -v)"
+fi
+
 if [ -n "$encontrado" ]; then
   printf '\n  Commit frenado: %b\n\n' "$encontrado"
   printf '  El repo es público. Sacalo del commit con:\n'

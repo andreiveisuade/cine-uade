@@ -1,5 +1,5 @@
 @startuml der
-title Modelo de datos (DER) - las 20 tablas de schema.sql
+title Modelo de datos (DER) - las 21 tablas de schema.sql
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
@@ -87,6 +87,7 @@ package "funciones y programaciones" #EAF2E6 {
     * inicio : DATETIME
     * version, proyeccion
     * precio : DECIMAL(10,2)
+    UNIQUE (sala_id, inicio)
   }
 }
 
@@ -202,6 +203,14 @@ package "usuarios" #ECECEC {
     * email : VARCHAR(100) **UNIQUE**
     * rol : VARCHAR(15) (discriminador)
     password_hash : VARCHAR(100) NULL
+  }
+}
+
+package "imagenes" #ECECEC {
+  entity imagen {
+    * nombre : VARCHAR(60) <<PK>>
+    --
+    * contenido : MEDIUMBLOB
   }
 }
 

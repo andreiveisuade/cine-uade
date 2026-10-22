@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS programacion_dia (
 
 -- version es DOBLADA o SUBTITULADA, no el idioma de la pelicula
 -- programacion_id admite NULL: la funcion suelta sobrevive a la baja de su grilla
+-- UNIQUE (sala_id, inicio): R3 se mira antes de guardar; dos pedidos a la vez la pasan juntos
 CREATE TABLE IF NOT EXISTS funcion (
     id INT PRIMARY KEY AUTO_INCREMENT,
     pelicula_id INT NOT NULL,
@@ -98,6 +99,7 @@ CREATE TABLE IF NOT EXISTS funcion (
     version VARCHAR(15) NOT NULL,
     proyeccion VARCHAR(10) NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
+    UNIQUE (sala_id, inicio),
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id),
     FOREIGN KEY (sala_id) REFERENCES sala(id),
     FOREIGN KEY (programacion_id) REFERENCES programacion(id)
@@ -262,4 +264,11 @@ CREATE TABLE IF NOT EXISTS importacion (
     salteadas INT NOT NULL DEFAULT 0,
     fallidas INT NOT NULL DEFAULT 0,
     detalle TEXT
+);
+
+-- Las fotos de promos y productos, con el nombre de su URL; en la base y no en disco para que un despliegue sin
+-- disco persistente no las pierda. MEDIUMBLOB: hasta 16 MB, y Imagen corta en 2 MB
+CREATE TABLE IF NOT EXISTS imagen (
+    nombre VARCHAR(60) PRIMARY KEY,
+    contenido MEDIUMBLOB NOT NULL
 );

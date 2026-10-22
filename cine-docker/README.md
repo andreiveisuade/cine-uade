@@ -10,6 +10,7 @@ Levanta el sistema completo desde las carpetas hermanas. Cómo ponerlo a andar y
 | `setup.sh`, `setup.ps1` | Chequean Java 21, arman el `.env`, levantan, esperan a que esté sano, siembran e imprimen Adminer y el panel. Repetibles |
 | `seed/02-admin.sql` | Los dos usuarios de demo, al crear la base |
 | `seed/datos-de-ejemplo.sh` | Seis salas, la carta del candy y una promoción, por la API y no por SQL, para que pasen por las reglas |
+| `aiven/cargar-aiven.sh` | Prepara la base de Aiven para Render: carga `schema.sql` y los dos empleados con claves nuevas |
 
 ## Servicios
 
@@ -59,7 +60,7 @@ El comprador de prueba es obligatorio: pagar como invitado con un vendedor de pr
 MySQL corre `schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
 aplicar a mano los `migracion-*.sql` que falten, en este orden: `programaciones`, `grilla-abierta`,
 `limpieza`, `staging`, `puntaje`, `votos`, `importaciones`, `bcrypt`, `bloqueos`, `version-reserva`,
-`ahorro-congelado` y `email-minusculas`.
+`ahorro-congelado`, `email-minusculas`, `imagenes`, `trailer`, `imagenes-en-base` y `funcion-unica`.
 
 ```sh
 docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
@@ -78,6 +79,29 @@ services:
     ports:
       - "127.0.0.1:3306:3306"
 ```
+
+## Render y Aiven
+
+En Render `ddl-auto: validate` no crea tablas y nadie corre `schema.sql`, así que la base de Aiven se prepara
+una vez a mano:
+
+```sh
+./aiven/cargar-aiven.sh
+```
+
+Pide host, puerto, usuario y contraseña de Aiven, y la clave nueva de `encargado@` y `puerta@` (sin eco, dos
+veces, mínimo 8: no quedan en el historial). Corre el cliente de la imagen `mysql:8.4` por `docker run --rm`,
+carga `schema.sql` y los empleados, y se niega a correr si `defaultdb` ya tiene tablas. `cine2026` es solo
+de demo local y no puede quedar en internet.
+
+Los datos de ejemplo contra el sitio público van por la misma API:
+
+```sh
+API=https://cine-uade.onrender.com/api ADMIN='encargado@cine.uade.ar:<clave>' ./seed/datos-de-ejemplo.sh
+```
+
+`ADMIN` es `email:clave` del encargado, la clave nueva de Aiven. Las imágenes viven en la tabla `imagen`, no en disco: ni el
+compose ni Render llevan volumen de imágenes. Qué variables carga Render: [`cine-backend`](../cine-backend/README.md#variables-de-entorno).
 
 ## Problemas comunes
 

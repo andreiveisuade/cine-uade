@@ -21,6 +21,8 @@ export function Registro() {
   const { state } = useLocation();
   const [email, setEmail] = useState(state?.email || "");
   const [clave, setClave] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [pideCodigo, setPideCodigo] = useState(false);
   const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
   const [enviando, setEnviando] = useState(false);
@@ -31,19 +33,23 @@ export function Registro() {
       nombre: { valor: nombre, etiqueta: "tu nombre" },
       email: { valor: email, etiqueta: "tu email" },
       clave: { valor: clave, etiqueta: "una contraseña" },
+      ...(pideCodigo && { codigo: { valor: codigo, etiqueta: "el código" } }),
     });
     setFaltan(vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
     setEnviando(true);
     try {
-      await api.registrarCliente({ nombre: nombre.trim(), email: email.trim(), password: clave });
+      await api.registrarCliente({ nombre: nombre.trim(), email: email.trim(), password: clave,
+        codigoReserva: pideCodigo ? codigo.trim() : undefined });
       // Recién creada la cuenta, entrar con ella: pedirle la clave de nuevo no agrega nada.
       const usuario = await api.ingresar(email.trim(), clave);
       setUsuario(usuario);
       avisar(`Listo, ${usuario.nombre}`);
       navegar("/mis-reservas");
     } catch (e) {
+      // 403: el email ya compró sin cuenta y el backend pide el código de una entrada para probar que es suyo.
+      if (e.status === 403) setPideCodigo(true);
       setError(e.message);
       setEnviando(false);
     }
@@ -57,6 +63,11 @@ export function Registro() {
         onChange={(e) => setEmail(e.currentTarget.value)} />
       <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
         onChange={(e) => setClave(e.currentTarget.value)} />
+      {pideCodigo && (
+        <TextInput label="Código de una de tus entradas" required value={codigo} error={faltan.codigo}
+          description="Está en el ticket que recibiste al comprar"
+          onChange={(e) => setCodigo(e.currentTarget.value)} />
+      )}
       <Button type="submit" size="md" mt="xs" loading={enviando}>Registrarme</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
       <Text size="sm" c="dimmed" ta="center">

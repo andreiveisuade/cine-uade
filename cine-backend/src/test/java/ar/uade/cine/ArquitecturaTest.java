@@ -36,7 +36,7 @@ class ArquitecturaTest {
     // Los adaptadores concretos: el resto depende del puerto y Adaptadores elige cuál va.
     private static final List<String> IMPLEMENTACIONES = List.of(
             "infrastructure.comprobantes.txt",
-            "infrastructure.imagenes.disco",
+            "infrastructure.imagenes.base",
             "infrastructure.importador.tmdb",
             "infrastructure.pasarelas.emulada",
             "infrastructure.pasarelas.mercadopago");

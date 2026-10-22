@@ -7,6 +7,7 @@ skinparam ranksep 45
 actor "Cliente" as usuario
 actor "Encargado /\nacomodador" as encargado
 node "cine-swing\n(escritorio, fuera de Docker)" as swing
+node "cine-android\n(celular en la misma red)" as android
 
 folder "cine-frontend\n(carpeta del monorepo)" as repoFrontend
 folder "cine-backend\n(carpeta del monorepo)" as repoBackend
@@ -38,6 +39,8 @@ repoBackend .down.> backend : build context
 usuario --> frontend : "localhost:8080\n(cookie de sesion JSESSIONID)"
 encargado --> swing
 swing --> frontend : "localhost:8080/api\n(HTTP Basic)"
+encargado --> android
+android --> frontend : "http://<IP:puerto>/api/acceso\n(HTTP Basic, solo red local)"
 dev --> adminer : "127.0.0.1:8081"
 
 frontend --> backend : proxy_pass /api\n-> backend:8080
@@ -54,10 +57,10 @@ legend bottom
   | red **web** | frontend <-> backend |
   | red **datos** | backend y adminer <-> mysql. El frontend no tiene ruta hasta la base |
   | backend | Unico contenedor en las dos redes: es el puente. Sin puerto propio, sin CORS |
-  | cine-swing | Un cliente HTTP mas: entra por el mismo nginx que la web |
+  | cine-swing, cine-android | Clientes HTTP: entran por el mismo nginx que la web |
   | TMDB | Adaptador dentro del backend (infrastructure/importador/), a pedido del encargado |
   | Mercado Pago | Adaptador MercadoPagoHttp (infrastructure/pasarelas/). Sin MP_ACCESS_TOKEN, la pasarela emulada |
-  | Sesion | Web: cookie JSESSIONID. Swing: HTTP Basic en cada pedido |
+  | Sesion | Web: cookie JSESSIONID. Swing y Android: HTTP Basic en cada pedido |
   | cine-docker | Solo orquesta: compose, .env y el seed. Sin codigo de la app |
   | Orden de arranque | mysql healthy -> backend healthy -> frontend |
 endlegend
