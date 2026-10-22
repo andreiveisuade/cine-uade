@@ -74,6 +74,12 @@ public class ConfiguracionSeguridad {
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
             "/api/tarifas", "/api/tipos-producto", "/api/tipos-promocion"};
 
+    // El build de React cuando el backend lo sirve (Render); con nginx no llegan acá.
+    private static final String[] FRONT = {
+            "/", "/index.html", "/assets/**",
+            "/favicon.svg", "/favicon.ico", "/icon-192.png", "/icon-512.png",
+            "/apple-touch-icon.png", "/og.jpg", "/site.webmanifest"};
+
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
@@ -115,6 +121,7 @@ public class ConfiguracionSeguridad {
                         // Va antes que /api/peliculas/*, que si no lo abriría por coincidencia.
                         .requestMatchers(HttpMethod.GET, GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS).hasRole(ADMINISTRADOR)
                         .requestMatchers(HttpMethod.GET, GET_PUBLICOS).permitAll()
+                        .requestMatchers(HttpMethod.GET, FRONT).permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
                         // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.

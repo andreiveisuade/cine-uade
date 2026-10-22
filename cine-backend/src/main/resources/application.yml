@@ -10,8 +10,8 @@ spring:
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
     hikari:
-      # Diez conexiones alcanzan: el límite son las consultas en vuelo, no los usuarios
-      maximum-pool-size: 10
+      # Diez conexiones alcanzan: el límite son las consultas en vuelo, no los usuarios. Aiven free pide menos (5).
+      maximum-pool-size: ${DB_POOL:10}
       pool-name: cine
 
   jpa:
@@ -42,6 +42,8 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # Detrás de nginx o del proxy de Render: X-Forwarded-Proto hace https las URLs y Secure la cookie.
+  forward-headers-strategy: native
 
 # La documentación de la API, generada desde los @RestController.
 springdoc:
