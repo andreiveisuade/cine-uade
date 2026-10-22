@@ -16,7 +16,7 @@ class ClienteControllerTest extends PruebaDeApi {
         Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\",\"password\":\"clave-segura\"}");
 
         assertEquals(409, respuesta.estado());
-        assertEquals("Ya existe un usuario con ese email", respuesta.error());
+        assertEquals("Ya existe una cuenta con ese email", respuesta.error());
     }
 
     // Un filtro sobre la colección: siempre una lista, con el cliente o vacía; nunca el literal null.

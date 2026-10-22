@@ -27,12 +27,13 @@ public class GestorClientes {
     private final PasswordEncoder claves;
 
     // Dato inválido se rechaza antes que el email ocupado, que se busca también entre empleados (UNIQUE compartido).
+    // Empleado o cliente con cuenta, el mismo texto que da abrirCuenta: el alta no delata emails del personal.
     // Si el email es de quien reservó sin cuenta, registrarse la abre sobre ese cliente y conserva sus reservas.
     public Cliente registrar(String nombre, String email, String password) {
         Cliente nuevo = new Cliente(nombre, email);
         Contrasena clave = new Contrasena(password);
         if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
-            throw new ConflictoDeNegocio("Ya existe un usuario con ese email");
+            throw new ConflictoDeNegocio("Ya existe una cuenta con ese email");
         }
         Cliente cliente = clienteRepository.findByEmail(nuevo.getEmail()).orElse(nuevo);
         cliente.abrirCuenta(claves.encode(clave.valor()));
@@ -40,12 +41,12 @@ public class GestorClientes {
     }
 
     // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.
+    // El texto no nombra al empleado: la compra es pública y serviría para listar emails del personal.
     public Cliente identificar(String nombre, String email) {
         return buscarPorEmail(email).orElseGet(() -> {
             Cliente nuevo = new Cliente(nombre, email);
             if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
-                throw new DatoInvalido(
-                        "Ese email es de un empleado del cine: usá otro para comprar");
+                throw new DatoInvalido("No se puede comprar con ese email: usá otro");
             }
             clienteRepository.save(nuevo);
             return nuevo;
