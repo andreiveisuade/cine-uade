@@ -74,6 +74,21 @@ describe.each(FORMULARIOS)("$nombre", ({ pantalla, boton, pedido, campos }) => {
     expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
     expect(api.ingresar).toHaveBeenCalledWith("ana@mail.com", "secreta");
   });
+
+  it("si vino desde la compra, vuelve a donde estaba", async () => {
+    api.registrarCliente.mockResolvedValue(null);
+    api.ingresar.mockResolvedValue(ANA);
+    renderConApp(
+      <Routes>
+        <Route path="/" element={pantalla} />
+        <Route path="/confirmar/5" element={<p>confirmar</p>} />
+      </Routes>, { ruta: "/*", en: { pathname: "/", state: { volver: "/confirmar/5" } } });
+    await completar(campos);
+
+    await userEvent.click(screen.getByRole("button", { name: boton }));
+
+    expect(await screen.findByText("confirmar")).toBeInTheDocument();
+  });
 });
 
 describe("Ingresar", () => {

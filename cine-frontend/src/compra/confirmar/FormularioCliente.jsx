@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Anchor, Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { faltantes } from "@/compartido/formularios/faltantes.js";
 
@@ -8,6 +8,7 @@ export function FormularioCliente({ inicial, usuario, enviando, error, alConfirm
   const [nombre, setNombre] = useState(inicial?.nombre || "");
   const [email, setEmail] = useState(inicial?.email || "");
   const [faltan, setFaltan] = useState({});
+  const { pathname } = useLocation();
 
   function confirmar(evento) {
     evento.preventDefault();
@@ -34,8 +35,8 @@ export function FormularioCliente({ inicial, usuario, enviando, error, alConfirm
           {usuario === null && (
             <Text size="xs" c="dimmed">
               Para pagar online hace falta una cuenta:{" "}
-              <Anchor component={Link} to="/ingresar" size="xs">ingresá</Anchor> o{" "}
-              <Anchor component={Link} to="/registro" size="xs">registrate</Anchor>, antes o después de reservar.
+              <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="xs">ingresá</Anchor> o{" "}
+              <Anchor component={Link} to="/registro" state={{ volver: pathname }} size="xs">registrate</Anchor>, antes o después de reservar.
             </Text>
           )}
         </Stack>

@@ -47,7 +47,8 @@ export function Registro() {
       const usuario = await api.ingresar(email.trim(), clave);
       setUsuario(usuario);
       avisar(`Listo, ${usuario.nombre}`);
-      navegar("/mis-reservas");
+      // Si vino desde la compra o el ticket, vuelve ahí a seguir.
+      navegar(state?.volver || "/mis-reservas");
     } catch (e) {
       // 403: el email ya compró sin cuenta y el backend pide el código de una entrada para probar que es suyo.
       if (e.status === 403) setPideCodigo(true);
@@ -72,7 +73,7 @@ export function Registro() {
       <Button type="submit" size="md" mt="xs" loading={enviando}>Registrarme</Button>
       {error && <ErrorCaja>{error}</ErrorCaja>}
       <Text size="sm" c="dimmed" ta="center">
-        ¿Ya tenés cuenta? <Anchor component={Link} to="/ingresar" state={{ email }} size="sm">Ingresá</Anchor>
+        ¿Ya tenés cuenta? <Anchor component={Link} to="/ingresar" state={{ email, volver: state?.volver }} size="sm">Ingresá</Anchor>
       </Text>
     </FormularioCentrado>
   );

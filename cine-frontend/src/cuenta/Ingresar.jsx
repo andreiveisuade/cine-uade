@@ -14,7 +14,7 @@ export function Ingresar() {
   const avisar = useAvisar();
   useTitulo("Ingresar");
   const { setUsuario } = useSesion();
-  // El ticket manda el email con que se reservó, para entrar con ese.
+  // El ticket manda el email con que se reservó, para entrar con ese, y la compra a dónde volver.
   const { state } = useLocation();
   const [email, setEmail] = useState(state?.email || "");
   const [clave, setClave] = useState("");
@@ -43,7 +43,8 @@ export function Ingresar() {
       }
       setUsuario(usuario);
       avisar(`Hola, ${usuario.nombre}`);
-      navegar(usuario.debeCambiarClave ? "/mi-cuenta" : "/mis-reservas");
+      // Si vino desde la compra o el ticket, vuelve ahí a seguir.
+      navegar(usuario.debeCambiarClave ? "/mi-cuenta" : state?.volver || "/mis-reservas");
     } catch (e) {
       setError(e.message);
       setEnviando(false);
@@ -61,7 +62,7 @@ export function Ingresar() {
       {error && <ErrorCaja>{error}</ErrorCaja>}
       <Anchor component={Link} to="/recuperar-clave" state={{ email }} size="sm" ta="center">¿Olvidaste tu clave?</Anchor>
       <Text size="sm" c="dimmed" ta="center">
-        ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email }} size="sm">Registrate</Anchor>
+        ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email, volver: state?.volver }} size="sm">Registrate</Anchor>
       </Text>
     </FormularioCentrado>
   );

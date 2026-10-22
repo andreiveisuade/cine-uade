@@ -1,6 +1,6 @@
 import { Anchor, Box, Button, Group, Text } from "@mantine/core";
 import { IconCopy, IconFileText, IconQrcode } from "@tabler/icons-react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { armarComprobante } from "./armarComprobante.js";
@@ -9,6 +9,7 @@ import { PagarOnline } from "./PagarOnline.jsx";
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
 export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDelPago }) {
   const { usuario } = useSesion();
+  const { pathname } = useLocation();
   const avisar = useAvisar();
 
   async function copiar(texto, aviso) {
@@ -32,8 +33,8 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
         {usuario === null && recien && reserva.cobrable && (
           <Text size="sm" c="dimmed" maw="52ch">
             Para pagarla online,{" "}
-            <Anchor component={Link} to="/registro" size="sm">registrate</Anchor>{" "}
-            o <Anchor component={Link} to="/ingresar" size="sm">ingresá</Anchor>{" "}
+            <Anchor component={Link} to="/registro" state={{ email: reserva.cliente.email, volver: pathname }} size="sm">registrate</Anchor>{" "}
+            o <Anchor component={Link} to="/ingresar" state={{ email: reserva.cliente.email, volver: pathname }} size="sm">ingresá</Anchor>{" "}
             con {reserva.cliente.email}. Si no, se paga en la boletería.
           </Text>
         )}
