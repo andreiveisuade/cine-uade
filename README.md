@@ -15,6 +15,7 @@ Integrantes: Andrei Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia
 | `cine-backend/` | API REST y reglas de negocio | Java 21, Spring Boot 3.5, JPA, Spring Security, MySQL 8.4 |
 | [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, con cuenta opcional | React 19, Mantine, Vite, nginx |
 | [`cine-swing/`](cine-swing/README.md) | Panel del encargado y Puerta del acomodador | Java 21, Swing, FlatLaf |
+| [`cine-android/`](cine-android/README.md) | Puerta del acomodador en el celular: escanea el QR del ticket | Kotlin, Jetpack Compose, CameraX, ML Kit |
 | [`cine-docker/`](cine-docker/README.md) | Levanta todo: MySQL, backend, frontend y Adminer | Docker Compose |
 | [`_other/`](_other/docs/README.md) | Manual, diagramas y colección de Postman | PlantUML |
 
@@ -25,6 +26,7 @@ Requiere Docker Desktop; el panel, además, JDK 21.
 ```bash
 cd cine-docker && ./setup.sh          # Windows: .\setup.ps1
 cd ../cine-swing && ./mvnw compile exec:java   # panel (Windows: .\mvnw.cmd)
+cd ../cine-android && ./gradlew assembleDebug  # APK de la Puerta para el celular
 ```
 
 | | |
