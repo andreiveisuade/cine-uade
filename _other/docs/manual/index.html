@@ -498,7 +498,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R22.</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R27.</li>
       </ul>
     </section>
 
@@ -540,6 +540,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único, R22</td></tr>
+            <tr><td>CU-05b</td><td>Cliente</td><td>Modificar su nombre y cambiar la clave (<code>#/mi-cuenta</code>)</td><td>R23, R24</td></tr>
+            <tr><td>CU-05c</td><td>Cliente</td><td>Recuperar la clave olvidada con el código de una entrada (<code>#/recuperar-clave</code>)</td><td>R25</td></tr>
+            <tr><td>CU-05d</td><td>Cliente</td><td>Dar de baja la cuenta</td><td>R26</td></tr>
+            <tr><td>CU-05e</td><td>Admin</td><td>Asignar una clave temporal a un cliente desde boletería (Swing, Clientes)</td><td>R27</td></tr>
             <tr><td>CU-05b</td><td>Cliente</td><td>Ingresar con su cuenta y salir</td><td>R21</td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R9, R19</td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
@@ -573,6 +577,10 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Otros flujos alternativos</h3>
       <ul>
         <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
+        <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email no se cambia). <code>POST /api/cuenta/clave</code> pide la actual y la nueva: cambia el id de sesión y cierra las demás sesiones del cliente (R23, R24).</li>
+        <li><strong>CU-05c:</strong> sin sesión, email + código de una entrada propia + clave nueva. Email inexistente, sin cuenta, código ajeno o inventado: el mismo 403 neutro. Cuenta para el límite de intentos (429) por email y por IP; al recuperar se cierran todas las sesiones (R25).</li>
+        <li><strong>CU-05d:</strong> con la clave actual y una confirmación. Se borra solo la clave: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas (son ventas del cine y su butaca ya está en juego). Se reabre con CU-05 y un código (R26, R22).</li>
+        <li><strong>CU-05e:</strong> el encargado busca por email, confirma y el backend genera una clave legible de 10 caracteres que Swing muestra una sola vez, copiable. La cuenta queda con <code>debeCambiarClave</code>: al entrar, la web lleva a <code>#/mi-cuenta</code> (R27).</li>
         <li><strong>CU-05:</strong> si el email ya compró sin cuenta, el formulario pide «Código de una de tus entradas» (está en el ticket de la compra) y el backend responde 403 hasta que sea de una reserva de ese cliente. Con el código correcto abre la cuenta y ve sus reservas de antes (R22). Si ya tiene cuenta, o el email es de un empleado: 409 «Ya existe una cuenta con ese email».</li>
         <li><strong>CU-05b:</strong> cinco claves equivocadas seguidas, por email o por IP: 429 «Demasiados intentos: esperá un minuto y probá de nuevo» (<a href="#seguridad">límite de intentos</a>).</li>
         <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
@@ -1702,7 +1710,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R22. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R27. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1846,6 +1854,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave vive en <code>Usuario</code> (el cliente con cuenta también la tiene); sin clave = reservó sin cuenta. Los cargos los distingue <code>Rol</code>, no clases.</li>
         <li><strong>Email</strong> normalizado: se busca igual en clientes, reservas y login.</li>
         <li><strong>Cuenta opcional:</strong> nombre, email y clave (<code>Cliente.abrirCuenta</code>); ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Por id (secuencial) solo accede el encargado.</li>
+        <li><strong>Sesiones al cambiar la clave (R24 a R27):</strong> <code>RegistroDeSesiones</code> envuelve el <code>SessionRegistry</code> de Spring, indexado por email; <code>SesionDeClientes</code> registra cada login de cliente. No se usa <code>maximumSessions</code>/<code>ConcurrentSessionFilter</code>: el login es Basic y no pasa por <code>SessionManagementFilter</code>, y ese filtro corta el pedido (un login con la cookie vieja daría 401). <code>FiltroDeSesionesCerradas</code> invalida la sesión vencida y sigue como si no hubiera cookie. <em>Límite aceptado:</em> el registro vive en memoria, como el límite de intentos: una sola instancia.</li>
         <li><strong>Reclamo del email (R22):</strong> quien reservó sin cuenta se registra con ese email y ve sus reservas de antes, pero tiene que mandar el código de una de ellas (<code>GestorClientes.registrar</code> compara <code>reserva.getClienteId()</code> con el cliente). Sin código, ajeno o inventado: 403 <code>SinPrueba</code> con un solo texto, así no se delata qué códigos existen. Es 403 y no 400 ni 409 porque la web decide por status: 400 es «dato inválido», 409 «ya existe cuenta», y ninguno debe abrir el campo del código. <em>Límite aceptado:</em> que pida código delata que ese email compró, pero un email nuevo se registra directo, así que la diferencia ya existía. Quien tenga el ticket de otro lo reclama; confirmar por mail lo cerraría.</li>
         <li><strong>Contraseñas en bcrypt.</strong> Un hash sin prefijo es el SHA-256 viejo: se acepta y el primer login correcto lo reescribe en bcrypt (único momento con la clave en claro; las de más de 72 bytes, ver <a href="#decorator">Decorator</a>). El login no distingue email inexistente de clave errónea.</li>
       </ul>
@@ -3395,6 +3404,11 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
             <tr><td>R21</td><td>Un cliente solo ve, cancela y paga las reservas que son suyas</td></tr>
             <tr><td>R22</td><td>Abrir una cuenta sobre un cliente que ya compró sin cuenta exige el código de una de sus entradas: prueba de que es quien compró</td></tr>
+            <tr><td>R23</td><td>Con sesión, el cliente cambia su nombre con las reglas del alta; el email no se cambia</td></tr>
+            <tr><td>R24</td><td>Cambiar la clave exige la actual; la sesión del que la cambia sigue con otro id y las demás se cierran</td></tr>
+            <tr><td>R25</td><td>Sin sesión, la clave se recupera con email + código de una entrada propia; cualquier falla da el mismo mensaje, pasa por el límite de intentos y cierra todas las sesiones</td></tr>
+            <tr><td>R26</td><td>Dar de baja la cuenta exige la clave actual y borra solo la clave: reservas, pagos y entradas quedan</td></tr>
+            <tr><td>R27</td><td>Solo el ADMINISTRADOR asigna una clave temporal generada por el backend; la web pide cambiarla al entrar</td></tr>
           </tbody>
         </table>
       </div>
@@ -3504,6 +3518,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
             <tr><td>R21, R22</td><td><code>CuentaDelClienteTest</code>, <code>GestorClientesTest</code></td></tr>
+            <tr><td>R23 a R27</td><td><code>CuentaControllerTest</code>, <code>ClienteTest</code>, <code>ContrasenaTest</code>, <code>ApisTest</code> (Swing), <code>MiCuenta.test.jsx</code>, <code>RecuperarClave.test.jsx</code></td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>
@@ -4077,7 +4092,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R22, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R27, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>

@@ -51,9 +51,7 @@ public class GestorClientes {
     }
 
     private boolean esDeSuReserva(String codigo, Cliente cliente) {
-        return reservaRepository.findByCodigo(new CodigoDeAcceso(codigo).valor())
-                .filter(reserva -> reserva.getClienteId() == cliente.getId())
-                .isPresent();
+        return reservaRepository.existsByCodigoAndCliente_Id(new CodigoDeAcceso(codigo).valor(), cliente.getId());
     }
 
     // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.

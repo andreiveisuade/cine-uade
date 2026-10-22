@@ -41,6 +41,7 @@ import ar.uade.cine.model.imagenes.Imagen;
 import ar.uade.cine.model.rechazos.ButacaOcupada;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.DemasiadosIntentos;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.rechazos.SinPrueba;
 
@@ -78,6 +79,11 @@ public class ManejadorErrores {
     @ExceptionHandler(SinPrueba.class)
     public ResponseEntity<ErrorVistaDTO> sinPrueba(SinPrueba e) {
         return responder(HttpStatus.FORBIDDEN, e.getMessage());
+    }
+
+    @ExceptionHandler(DemasiadosIntentos.class)
+    public ResponseEntity<ErrorVistaDTO> demasiadosIntentos(DemasiadosIntentos e) {
+        return responder(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
     }
 
     // Otro ganó la butaca (R4): la web vuelve al mapa recargado solo ante un 409.

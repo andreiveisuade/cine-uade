@@ -25,6 +25,9 @@ public interface ReservaRepository extends Repositorio<Reserva> {
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
     }
 
+    // R22 y R25: el código de una entrada prueba que quien lo trae es ese cliente.
+    boolean existsByCodigoAndCliente_Id(String codigo, int clienteId);
+
     List<Reserva> findByFuncion_Id(int funcionId);
 
     List<Reserva> findAllByOrderByIdDesc();

@@ -5,7 +5,7 @@ import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { faltantes } from "@/compartido/formularios/faltantes.js";
+import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
 import { useSesion } from "./SesionDelCliente.jsx";
 
@@ -36,6 +36,7 @@ export function Registro() {
       ...(pideCodigo && { codigo: { valor: codigo, etiqueta: "el código" } }),
     });
     setFaltan(vacios);
+    enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
     setError(null);
     setEnviando(true);
@@ -57,14 +58,14 @@ export function Registro() {
 
   return (
     <FormularioCentrado titulo="Registrarme" alEnviar={registrar} bajada={BAJADA}>
-      <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
+      <TextInput label="Nombre" required value={nombre} name="nombre" error={faltan.nombre}
         onChange={(e) => setNombre(e.currentTarget.value)} />
-      <TextInput label="Email" type="email" required value={email} error={faltan.email}
+      <TextInput label="Email" type="email" required value={email} name="email" error={faltan.email}
         onChange={(e) => setEmail(e.currentTarget.value)} />
-      <PasswordInput label="Contraseña" required value={clave} error={faltan.clave}
+      <PasswordInput label="Contraseña" required value={clave} name="clave" error={faltan.clave}
         onChange={(e) => setClave(e.currentTarget.value)} />
       {pideCodigo && (
-        <TextInput label="Código de una de tus entradas" required value={codigo} error={faltan.codigo}
+        <TextInput label="Código de una de tus entradas" required value={codigo} name="codigo" error={faltan.codigo}
           description="Está en el ticket que recibiste al comprar"
           onChange={(e) => setCodigo(e.currentTarget.value)} />
       )}

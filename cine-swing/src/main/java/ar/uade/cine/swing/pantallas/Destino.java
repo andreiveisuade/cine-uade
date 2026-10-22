@@ -21,6 +21,7 @@ public enum Destino {
     CANDY("Candy"),
     CAJA("Caja"),
     DECLARACION_JURADA("Declaración jurada"),
+    CLIENTES("Clientes"),
     PUERTA("Puerta");
 
     private final String titulo;

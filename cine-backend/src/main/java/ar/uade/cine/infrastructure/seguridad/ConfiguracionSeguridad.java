@@ -14,6 +14,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,6 +30,7 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Rol;
@@ -58,6 +61,7 @@ public class ConfiguracionSeguridad {
 
     public static final String[] POST_PUBLICOS = {
             "/api/clientes",
+            "/api/cuenta/recuperacion",
             "/api/reservas",
             "/api/funciones/*/bloqueos"};
 
@@ -84,9 +88,9 @@ public class ConfiguracionSeguridad {
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos)
-            throws Exception {
-        SecurityContextRepository sesion = new SesionDeClientes();
+    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos,
+                                               RegistroDeSesiones registro) throws Exception {
+        SecurityContextRepository sesion = new SesionDeClientes(registro);
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
                         // Mismo texto para clave y email: distinguirlos revela qué emails existen.
@@ -106,6 +110,7 @@ public class ConfiguracionSeguridad {
                         .deleteCookies(COOKIE_DE_SESION)
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .securityContext(contexto -> contexto.securityContextRepository(sesion))
+                .addFilterBefore(new FiltroDeSesionesCerradas(registro), BasicAuthenticationFilter.class)
                 .addFilterBefore(new FiltroDeIntentos(intentos, json), BasicAuthenticationFilter.class)
                 // Guardaría en la sesión cada pedido que da 401, y crearía una para cualquiera.
                 .requestCache(AbstractHttpConfigurer::disable)
@@ -129,12 +134,27 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
                         // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.
                         .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.PUT, "/api/cuenta").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.DELETE, "/api/cuenta").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/cuenta/clave").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",
                                 "/api/reservas/codigo/*/checkout").hasRole(CLIENTE)
                         // El acomodador entra al panel para llegar a la puerta.
                         .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
                 .build();
+    }
+
+    // Bean y no un new: así escucha los eventos de sesión (cambio de id, destruida) que publica el de abajo.
+    @Bean
+    public SessionRegistry sesionesAbiertas() {
+        return new SessionRegistryImpl();
+    }
+
+    // Publica los cambios de id y las sesiones destruidas: sin él RegistroDeSesiones guardaría ids muertos.
+    @Bean
+    public HttpSessionEventPublisher eventosDeSesion() {
+        return new HttpSessionEventPublisher();
     }
 
     // Lax y no Strict: con Strict, entrar al cine desde un link de otro sitio llegaría sin la sesión.

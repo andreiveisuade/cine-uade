@@ -88,6 +88,16 @@ export const sesionActual = () => post("/sesion");
 
 export const salir = () => pedir("/sesion", { metodo: "DELETE" });
 
+export const modificarCuenta = ({ nombre }) => pedir("/cuenta", { metodo: "PUT", cuerpo: { nombre } });
+
+// El backend rota la cookie al cambiar la clave: la sesión sigue sin volver a entrar.
+export const cambiarClave = ({ actual, nueva }) => post("/cuenta/clave", { actual, nueva });
+
+export const darDeBaja = ({ actual }) => pedir("/cuenta", { metodo: "DELETE", cuerpo: { actual } });
+
+export const recuperarClave = ({ email, codigoReserva, nueva }) =>
+  post("/cuenta/recuperacion", { email, codigoReserva, nueva });
+
 export const obtenerMisReservas = () => get("/reservas/mias");
 
 export const obtenerMediosDePago = () => get("/medios-pago");
