@@ -55,3 +55,9 @@ h1, h2, h3, .cine-display {
 a { text-underline-offset: 0.2em; }
 
 [data-mantine-color-scheme="dark"] { scrollbar-color: #3b404d var(--mantine-color-body); }
+
+/* Barra de la portada: el tiempo hasta la próxima destacada. */
+@keyframes cine-avance {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
