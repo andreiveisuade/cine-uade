@@ -1,7 +1,7 @@
 # Contrato de la API
 
 Base `/api`. La consumen la web (`src/api/api-http.js`) y Swing (una `Api<Subdominio>` por subdominio), con
-los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui.html>.
+los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui.html> (en producción Swagger está apagado: con `CINE_SWAGGER=false` ni la UI ni `/v3/api-docs` existen).
 
 ## Convenciones
 
@@ -34,10 +34,12 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `400` | Un cuerpo ilegible: ausente, JSON roto, raíz que no es objeto, tipo equivocado o decimal en un entero | `El campo precio tiene un valor inválido: abc` |
 | `401` | Sin credenciales o sin sesión, o inválidas (también en rutas públicas) | `Hace falta iniciar sesión para esta operación` · `Email o contraseña incorrectos` |
 | `403` | El rol no alcanza | `Tu rol no tiene permiso para esta operación` |
+| `403` | `POST /clientes` sobre un email que ya compró sin cuenta, sin el código de una de sus entradas (R22) | `Para abrir esta cuenta hace falta el código de una de sus entradas: está en el ticket de la compra` |
 | `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
 | `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
+| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion` y para cualquier ruta con Basic. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
 | `413` · `502` · `504` | nginx: cuerpo de más de 1 MB (3 MB en `POST /imagenes`), backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
 
@@ -77,7 +79,7 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /cartelera?genero=` | Las películas en exhibición |
 | `GET /peliculas/{id}` | Una película |
 | `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
-| `POST /clientes` | `{nombre, email, password}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes (reclamo, sin verificar el email); si ya tiene clave, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
+| `POST /clientes` | `{nombre, email, password, codigoReserva?}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes, pero tiene que mandar `codigoReserva`, el de una de sus entradas (R22): sin él, o con uno ajeno o inventado, `403` con el mismo texto en los tres casos. Con email nuevo el código se ignora. Si ya tiene clave, o el email es de un empleado, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
 
 ```json
@@ -128,7 +130,7 @@ ocupados.
 
 - `butacas`: código → tarifa, de 1 a 10. Una tarifa vacía es `GENERAL`.
 - `sesion`: la de los bloqueos, que se sueltan al confirmar. Opcional en boletería.
-- Si el email es nuevo, da de alta al cliente; el de un empleado es `400`.
+- Si el email es nuevo, da de alta al cliente; el de un empleado es `400 No se puede comprar con ese email: usá otro`.
 - Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`), el cliente,
   cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas: `400`) y
   recién al final la ocupación (`409`). Un pedido que no puede pasar nunca da `400` aunque además tenga una butaca ocupada.
@@ -221,7 +223,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `DELETE /salas/{id}` | `400` si tiene funciones o una programación |
 | `PATCH /salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
-| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año |
+| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
 | `DELETE /funciones/{id}` | `400` si tiene reservas, aun canceladas (R12) |
 
 ## Programaciones (CU-03b)
