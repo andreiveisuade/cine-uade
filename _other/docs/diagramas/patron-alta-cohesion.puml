@@ -3,10 +3,10 @@
 package "Baja cohesión" {
   class "Ocupacion" as O1 {
     + asientosOcupados(funcionId, sesion)
-    + libresEntre(asientos, ocupados)
     + bloquear(funcionId, codigos, sesion)
-    + liberar(funcionId, sesion)
-    + borrarVencidos()
+    + borrarBloqueosVencidos()
+    + funcionEnVenta(funcionId)
+    - expirarVencidas(reservas)
   }
 }
 package "Alta cohesión" {
@@ -19,9 +19,17 @@ package "Alta cohesión" {
     + liberar(funcionId, sesion)
     + borrarVencidos()
   }
+  class FuncionesEnVenta {
+    + exigir(funcionId) : Funcion
+  }
+  class ExpiracionDeReservas {
+    + expirarVencidas(reservas)
+  }
   class ButacasBloqueadas
+  O2 --> ExpiracionDeReservas
   BloqueoDeButacas --> O2
+  BloqueoDeButacas --> FuncionesEnVenta
   BloqueoDeButacas ..> ButacasBloqueadas
 }
-note bottom of O1 : ocupación y bloqueo mezclados:\ndos motivos para cambiar
+note bottom of O1 : R4, bloqueo, R19 y R17 mezclados:\ncuatro motivos para cambiar
 @enduml
