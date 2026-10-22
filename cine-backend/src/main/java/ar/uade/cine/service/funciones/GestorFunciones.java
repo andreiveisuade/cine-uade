@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.tiempo.Periodo;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.repository.funciones.FuncionRepository;
@@ -54,8 +56,17 @@ public class GestorFunciones {
         if (choque.isPresent()) {
             throw new DatoInvalido(motivoDeLaSuperposicion(choque.get(), sala, inicio));
         }
-        funcionRepository.save(funcion);
+        guardarCompitiendoPorElHorario(funcion);
         return funcion;
+    }
+
+    // Dos pedidos a la vez pasan R3 juntos; el UNIQUE (sala_id, inicio) deja entrar a uno.
+    private void guardarCompitiendoPorElHorario(Funcion funcion) {
+        try {
+            funcionRepository.saveAndFlush(funcion);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictoDeNegocio("Ya hay una función en esa sala a esa hora");
+        }
     }
 
     // La película que una programación va a repetir, con la misma exigencia que el alta de una suelta.

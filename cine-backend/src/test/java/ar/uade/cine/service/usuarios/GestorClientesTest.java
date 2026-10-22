@@ -75,20 +75,22 @@ class GestorClientesTest extends PruebaDeIntegracion {
     }
 
     // Daba 500: ClienteRepository no ve a los empleados y el INSERT chocaba con el UNIQUE del email.
+    // Mismo texto que el de un cliente con cuenta: el alta no delata qué emails son del personal.
     @Test
     void elEmailDeUnEmpleadoNoSeRegistraComoCliente() {
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
 
-        assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
+        assertEquals("Ya existe una cuenta con ese email", assertThrows(ConflictoDeNegocio.class,
                 () -> gestor.registrar("Ana", "encargado@cine.com", CLAVE)).getMessage());
     }
 
     // Al comprar, el email es un dato más del formulario: un 409 la web lo toma como butaca perdida.
+    // El texto no dice que es de un empleado: la compra es pública y delataría al personal.
     @Test
     void identificarConElEmailDeUnEmpleadoEsUnDatoInvalidoYNoUnConflicto() {
         empleados.registrar("Encargado", "encargado@cine.com", "secreta123", Rol.ADMINISTRADOR);
 
-        assertEquals("Ese email es de un empleado del cine: usá otro para comprar",
+        assertEquals("No se puede comprar con ese email: usá otro",
                 assertThrowsExactly(DatoInvalido.class,
                         () -> gestor.identificar("Ana", "encargado@cine.com")).getMessage());
     }

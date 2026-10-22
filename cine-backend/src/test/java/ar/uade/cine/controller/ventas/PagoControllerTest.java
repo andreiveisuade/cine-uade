@@ -295,7 +295,7 @@ class PagoControllerTest extends PruebaDeApi {
                 + EMAIL_ADMIN + "\",\"butacas\":{\"B1\":\"GENERAL\"}}");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("Ese email es de un empleado del cine: usá otro para comprar", respuesta.error());
+        assertEquals("No se puede comprar con ese email: usá otro", respuesta.error());
     }
 
     // La función va primero: que no exista o que ya empezó anula la compra, sea quien sea el que compra.

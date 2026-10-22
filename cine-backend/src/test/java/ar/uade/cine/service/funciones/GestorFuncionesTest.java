@@ -28,11 +28,16 @@ import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.tiempo.Periodo;
 import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
@@ -55,6 +60,14 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private GestorReservas reservas;
     @Autowired
     private GestorClientes clientes;
+    @Autowired
+    private FuncionRepository funcionRepository;
+    @Autowired
+    private PeliculaRepository peliculaRepository;
+    @Autowired
+    private SalaRepository salaRepository;
+    @Autowired
+    private ReservaRepository reservaRepository;
 
     @BeforeEach
     void prepararCartelera() {
@@ -71,6 +84,20 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 22, 18, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
+    }
+
+    // Dos altas iguales a la vez pasan R3 juntas: el UNIQUE frena la segunda y el cine responde 409, no 500.
+    @Test
+    void laMismaFuncionDadaDeAltaDosVecesALaVezEsUnConflicto() {
+        GestorFunciones otroPedido = new GestorFuncionesQueNoVeLaCarrera(funcionRepository, peliculaRepository,
+                salaRepository, reservaRepository, reloj);
+
+        Rechazo error = assertThrows(ConflictoDeNegocio.class,
+                () -> otroPedido.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
+
+        assertEquals("Ya hay una función en esa sala a esa hora", error.getMessage());
+        assertEquals(1, funcionRepository.findAll().size());
     }
 
     // R20

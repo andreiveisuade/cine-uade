@@ -26,12 +26,17 @@ import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.funciones.GestorFuncionesQueNoVeLaCarrera;
 import ar.uade.cine.service.salas.GestorSalas;
 
 class GestorProgramacionesTest extends PruebaDeIntegracion {
@@ -52,6 +57,12 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     private GestorCartelera cartelera;
     @Autowired
     private GestorSalas salas;
+    @Autowired
+    private PeliculaRepository peliculaRepository;
+    @Autowired
+    private SalaRepository salaRepository;
+    @Autowired
+    private ReservaRepository reservaRepository;
 
     @BeforeEach
     void prepararCartelera() {
@@ -342,6 +353,27 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertEquals("Todos los horarios del rango ya pasaron: la grilla no generaría funciones",
                 error.getMessage());
         assertTrue(programaciones.buscar(null, null, null).isEmpty());
+    }
+
+    // GET /cartelera extiende: dos pedidos al despertar generan los mismos días; el UNIQUE frena al segundo,
+    // que lo cuenta como falla de esa grilla y sigue con las demás.
+    @Test
+    void extenderDosVecesALaVezNoDuplicaFuncionesYSigueConLasOtrasGrillas() {
+        Programacion atrasada = crearAbierta().programacion();
+        programaciones.crear(new DatosGrilla(1, 2, reloj.hoy(), null, LocalTime.of(23, 0), Set.of(),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000))));
+        int despuesDelAlta = funcionRepository.findAll().size();
+        // El segundo pedido leyó la grilla antes de que el primero guardara su avance.
+        atrasada.marcarGeneradaHasta(reloj.hoy());
+        programacionRepository.save(atrasada);
+        GestorProgramaciones segundoPedido = new GestorProgramaciones(programacionRepository, funcionRepository,
+                salaRepository, new GestorFuncionesQueNoVeLaCarrera(funcionRepository, peliculaRepository,
+                        salaRepository, reservaRepository, reloj), reloj);
+
+        int generadas = segundoPedido.extenderActivas(reloj.hoy().plusDays(3));
+
+        assertEquals(3, generadas, "solo las tres nuevas de la sala 2");
+        assertEquals(despuesDelAlta + 3, funcionRepository.findAll().size());
     }
 
     // R20: una grilla abierta vieja, al extenderse con el reloj adelantado, no rellena días pasados.
