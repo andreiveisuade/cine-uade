@@ -752,13 +752,14 @@ docker compose up -d --build
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
             <tr><td>66 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen (<a href="#dto">DTO</a>)</td></tr>
-            <tr><td><code>Repositorio&lt;T&gt;</code> + 14 <code>*Repository</code></td><td>Base con <code>exigir</code> (<a href="#repositorio">detalle</a>); Spring Data genera la implementación</td></tr>
+            <tr><td><code>Repositorio&lt;T&gt;</code> + 15 <code>*Repository</code></td><td>Base con <code>exigir</code> (<a href="#repositorio">detalle</a>); Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación; <code>Adaptadores.Tareas</code> prende las tareas programadas fuera de los tests</td></tr>
             <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoHttp</code> / <code>MercadoPagoEmulado</code></td><td>Checkout y autorización (<a href="#pasarela">pasarela</a>)</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; los piden los observadores</td></tr>
+            <tr><td><code>AlmacenDeImagenes</code> → <code>AlmacenDeImagenesEnBase</code></td><td>Guarda y lee las imágenes subidas en la tabla <code>imagen</code> (<a href="#imagenes">por qué</a>)</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual, reemplazable en tests</td></tr>
             <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordBcrypt</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt (<a href="#decorator">Decorator</a>) y el SHA-256 heredado</td></tr>
@@ -1230,16 +1231,16 @@ docker compose up -d --build
 
     <section class="doc-section" id="der">
       <h2>Modelo de datos (DER)</h2>
-      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 20 tablas.</p>
+      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 21 tablas.</p>
       <figure class="diagram">
         {{SVG_DER_DESIGN}}
-        <figcaption>Las 20 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
+        <figcaption>Las 21 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
       </figure>
       <details>
         <summary>Versión completa en PlantUML (<code>der.puml</code>)</summary>
         <figure class="diagram">
           {{SVG_DER}}
-          <figcaption>Las 20 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+          <figcaption>Las 21 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
         </figure>
       </details>
       <ul>
@@ -1248,6 +1249,7 @@ docker compose up -d --build
         <li><code>pago.reserva_id</code> <code>UNIQUE</code>: un pago por reserva; el descuento de la promoción vive ahí, no en la entrada.</li>
         <li><code>usuario</code> y <code>promocion</code>: tabla única con discriminador (<code>rol</code>, <code>tipo</code>); <code>password_hash</code> <code>NULL</code> en el cliente sin cuenta.</li>
         <li>Plata en <code>DECIMAL(10,2)</code> (en Java, <a href="#dinero"><code>Dinero</code></a> en centavos); enums en <code>VARCHAR</code> con su <code>name()</code>.</li>
+        <li><code>imagen</code> sin FK: <code>promocion.imagen_url</code> y <code>producto.imagen_url</code> guardan la URL <code>/api/imagenes/&lt;nombre&gt;</code>, no el id (<a href="#imagenes">imágenes</a>).</li>
         <li><code>importacion</code> sin FK a <code>pelicula</code>: lo que trajo cada corrida está en <code>pelicula.estado_revision</code>.</li>
       </ul>
 
@@ -1294,8 +1296,8 @@ docker compose up -d --build
     <section class="doc-section" id="persistencia">
       <h2>Persistencia</h2>
       <ul>
-        <li>DAO: 14 interfaces <code>*Repository</code>; la implementación la genera Spring Data y Hibernate (ORM) traduce a SQL.</li>
-        <li>13 extienden <a href="#repositorio"><code>Repositorio</code></a>; <code>BloqueoButacaRepository</code> va directo a <code>JpaRepository</code> (clave compuesta).</li>
+        <li>DAO: 15 interfaces <code>*Repository</code>; la implementación la genera Spring Data y Hibernate (ORM) traduce a SQL.</li>
+        <li>13 extienden <a href="#repositorio"><code>Repositorio</code></a>; <code>BloqueoButacaRepository</code> (clave compuesta) y <code>ArchivoDeImagenRepository</code> (clave texto) van directo a <code>JpaRepository</code>.</li>
         <li>Consultas derivadas del nombre; <code>@Query</code> donde no alcanza. Los gestores no saben si atrás hay MySQL o H2.</li>
       </ul>
       <h3>El costo de las consultas</h3>
@@ -1318,6 +1320,14 @@ docker compose up -d --build
           (<code>Entrada.asiento</code>, <code>ItemCompra.producto</code>, <code>ItemCombo.producto</code>) porque las vistas los
           leen afuera. Las colecciones <code>EAGER</code> van en lotes de 50 ids (<code>default_batch_fetch_size</code>).</li>
         <li><code>@Transactional(readOnly = true)</code> en las lecturas.</li>
+      </ul>
+
+      <h3 id="imagenes">Imágenes en la base</h3>
+      <ul>
+        <li>Las fotos de promociones y productos van a la tabla <code>imagen</code>: <code>nombre</code> de PK y <code>contenido</code> <code>MEDIUMBLOB</code> (hasta 16 MB). <code>GET /api/imagenes/{nombre}</code> las sirve; si no está, 404.</li>
+        <li><strong>Por qué no disco:</strong> el de <a href="#despliegue">Render Free</a> se borra en cada deploy y en cada reinicio. En la base sobreviven, y un <code>mysqldump</code> se lleva datos e imágenes juntos.</li>
+        <li><strong>Puerto:</strong> <code>GestorImagenes</code> depende de <code>AlmacenDeImagenes</code> (<code>guardar</code>, <code>leer</code>); la implementación es <code>AlmacenDeImagenesEnBase</code>. El cambio de disco a base no tocó al gestor ni a los controladores.</li>
+        <li><code>contenido</code> lleva <code>@Lob</code>: sin eso <code>ddl-auto: validate</code> esperaba <code>VARBINARY</code> y no aceptaba el <code>MEDIUMBLOB</code> de MySQL ni el <code>BLOB</code> de H2.</li>
       </ul>
     </section>
 
