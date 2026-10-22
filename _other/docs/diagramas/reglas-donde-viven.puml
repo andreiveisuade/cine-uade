@@ -23,6 +23,7 @@ package "service/: lo que necesita otras filas" as srv {
   class Ocupacion <<R4>>
   class GestorPromociones <<R15, R16>>
   class ConsultasReservas <<R21>>
+  class GestorClientes <<R22>>
 }
 
 package "model/: con la hora que le pasa el gestor" as hora {
@@ -42,6 +43,7 @@ package "model/: un solo objeto, con su Validador*" as datos {
 
 database "schema.sql" as db {
   class "UNIQUE (funcion_id, asiento_id)" as Unico <<R4, ultima defensa>>
+  class "UNIQUE (sala_id, inicio)" as UnicoFuncion <<R3, ultima defensa>>
 }
 
 Reloj <.left. srv : pide la hora
@@ -57,4 +59,5 @@ GestorCartelera -[hidden]right-> Bajas
 AgendaDeSala -[hidden]right-> Ocupacion
 Ocupacion -[hidden]right-> GestorPromociones
 GestorPromociones -[hidden]right-> ConsultasReservas
+ConsultasReservas -[hidden]right-> GestorClientes
 @enduml
