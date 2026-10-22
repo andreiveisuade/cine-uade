@@ -13,7 +13,7 @@ Integrantes: Andrei Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia
 | Carpeta | Qué es | Tecnología |
 |---|---|---|
 | `cine-backend/` | API REST y reglas de negocio | Java 21, Spring Boot 3.5, JPA, Spring Security, MySQL 8.4 |
-| [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, sin login | React 19, Mantine, Vite, nginx |
+| [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, con cuenta opcional | React 19, Mantine, Vite, nginx |
 | [`cine-swing/`](cine-swing/README.md) | Panel del encargado y Puerta del acomodador | Java 21, Swing, FlatLaf |
 | [`cine-docker/`](cine-docker/README.md) | Levanta todo: MySQL, backend, frontend y Adminer | Docker Compose |
 | [`_other/`](_other/docs/README.md) | Manual, diagramas y colección de Postman | PlantUML |
@@ -33,11 +33,15 @@ cd ../cine-swing && ./mvnw compile exec:java   # panel (Windows: .\mvnw.cmd)
 | Swagger | <http://localhost:8080/swagger-ui.html> |
 | Panel | `encargado@cine.uade.ar` / `cine2026` (todo) o `puerta@cine.uade.ar` / `cine2026` (Puerta) |
 
+Sin tokens el sistema anda entero. En `cine-docker/.env`, `TMDB_TOKEN` habilita el importador de
+cartelera y `MP_ACCESS_TOKEN` (credenciales de prueba) el pago con Mercado Pago sandbox; vacío, la
+pasarela es emulada.
+
 A mano, tests y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md).
 
 ## Documentación
 
-- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R20, casos de uso, arquitectura,
+- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R21, casos de uso, arquitectura,
   decisiones y diagramas. Es la fuente de verdad.
 - [`API.md`](cine-frontend/API.md): el contrato HTTP, endpoint por endpoint.
 - [`PRUEBAS.md`](_other/docs/PRUEBAS.md): cómo se verifica antes de entregar.
