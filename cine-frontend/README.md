@@ -38,7 +38,7 @@ src/
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
   ticket/         la entrada, acciones, pagar online, espera del pago, venta cruzada
-  cuenta/         sesión, ingresar, registro, mis reservas
+  cuenta/         sesión, ingresar, registro, mi cuenta, recuperar clave, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
   institucional/  nosotros
   test/           setup de Vitest y renderConApp

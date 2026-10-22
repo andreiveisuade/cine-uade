@@ -26,6 +26,12 @@ public record Email(String valor) {
         Regla.texto(valor).hasta(LARGO_MAXIMO, "El email");
     }
 
+    // R25: el código del ticket es media prueba de dueño; mostrarlo junto al email completo daría las dos mitades.
+    public String enmascarado() {
+        int arroba = valor.indexOf('@');
+        return valor.charAt(0) + "***" + valor.substring(arroba);
+    }
+
     // Para buscar, no guardar: lo que no es un email no encuentra a nadie en vez de dar 400.
     public static Optional<Email> paraBuscar(String texto) {
         try {

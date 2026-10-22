@@ -8,6 +8,8 @@ import { Ticket } from "@/ticket/Ticket.jsx";
 import { MisReservas } from "@/cuenta/reservas/MisReservas.jsx";
 import { Registro } from "@/cuenta/Registro.jsx";
 import { Ingresar } from "@/cuenta/Ingresar.jsx";
+import { MiCuenta } from "@/cuenta/MiCuenta.jsx";
+import { RecuperarClave } from "@/cuenta/RecuperarClave.jsx";
 import { Nosotros } from "@/institucional/Nosotros.jsx";
 import { Promociones } from "@/promos/Promociones.jsx";
 import { NoExiste } from "./NoExiste.jsx";
@@ -37,6 +39,8 @@ export function Rutas() {
           <Route path="mis-reservas" element={<MisReservas />} />
           <Route path="registro" element={<Registro />} />
           <Route path="ingresar" element={<Ingresar />} />
+          <Route path="mi-cuenta" element={<MiCuenta />} />
+          <Route path="recuperar-clave" element={<RecuperarClave />} />
           <Route path="promociones" element={<Promociones />} />
           <Route path="nosotros" element={<Nosotros />} />
           <Route path="*" element={<NoExiste />} />

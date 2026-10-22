@@ -35,6 +35,7 @@ export function EnlacesDeCuenta({ alElegir }) {
     <>
       <Text size="sm" fw={650}>{usuario.nombre}</Text>
       <Enlace a="/mis-reservas" alElegir={alElegir}>Mis reservas</Enlace>
+      <Enlace a="/mi-cuenta" alElegir={alElegir}>Mi cuenta</Enlace>
       <Anchor component="button" size="sm" fw={500} c="dimmed" onClick={salir}>Salir</Anchor>
     </>
   );

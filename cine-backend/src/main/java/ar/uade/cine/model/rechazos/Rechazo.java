@@ -7,7 +7,8 @@ package ar.uade.cine.model.rechazos;
 // Sellada para que la lista de tipos sea cerrada: uno nuevo se suma acá, y ManejadorErroresTest falla
 // hasta que ManejadorErrores le dé su status.
 public abstract sealed class Rechazo extends RuntimeException
-        permits DatoInvalido, RecursoNoEncontrado, ConflictoDeNegocio, ButacaOcupada, SinPrueba {
+        permits DatoInvalido, RecursoNoEncontrado, ConflictoDeNegocio, ButacaOcupada, SinPrueba,
+        DemasiadosIntentos {
 
     protected Rechazo(String mensaje) {
         super(mensaje);
