@@ -179,6 +179,25 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals("Email o contraseña incorrectos", respuesta.error());
     }
 
+    // Cinco fallos frenan antes de bcrypt, aunque el sexto traiga la clave buena; el Basic de Swing también.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            login del cliente,      POST, /api/sesion
+            Basic de cada pedido,   GET,  /api/salas
+            """)
+    void cincoFallosSeguidosSon429(String caso, HttpMethod metodo, String ruta) {
+        for (int i = 0; i < 5; i++) {
+            assertEquals(401, pedirComo(metodo, ruta, null, EMAIL_ADMIN, "otracosa").estado());
+        }
+
+        Respuesta respuesta = pedirComo(metodo, ruta, null, EMAIL_ADMIN, CLAVE_ADMIN);
+
+        assertEquals(429, respuesta.estado());
+        assertEquals("Demasiados intentos: esperá un minuto y probá de nuevo", respuesta.error());
+        reloj.mover(reloj.ahora().plusMinutes(1));
+        assertEquals(200, pedirComo(metodo, ruta, null, EMAIL_ADMIN, CLAVE_ADMIN).estado());
+    }
+
     @Test
     void unMetodoQueLaRutaNoAceptaEs405() {
         Respuesta respuesta = put("/api/cartelera", "{}");
