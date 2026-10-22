@@ -170,7 +170,7 @@ de que llegue la respuesta, la limpieza la marca vieja y no pisa a la nueva (rac
 ```
 
 Las deps son `[clave, vuelta]` (`:23`): `clave` es `JSON.stringify(dependencias)` y `vuelta` sube con `recargar`.
-Otra limpieza: `ticket/useEsperarPago.js:17` hace `clearInterval`.
+Otra limpieza: `ticket/pago/useEsperarPago.js:17` hace `clearInterval`.
 
 **Error típico.** Sin limpieza, ir rápido de la película 3 a la 4 puede mostrar la 3 si su respuesta llega última.
 Faltar una dependencia deja el efecto con valores viejos; poner un objeto creado en el render lo corre en cada render.
@@ -279,7 +279,7 @@ funciones que otros ponen en deps de efectos. `useMemo` no lo usamos. Refs en `c
   }
 ```
 
-Otras: `cartelera/Trailer.jsx:11` y `compra/mapa/useScrollCentrado.js:5` (nodo del DOM), `ticket/useFestejarPago.js:7`.
+Otras: `cartelera/Trailer.jsx:11` y `compra/mapa/useScrollCentrado.js:5` (nodo del DOM), `ticket/pago/useFestejarPago.js:7`.
 
 **Error típico.** Envolver todo en `useMemo`/`useCallback` «por las dudas»: suma código sin medir nada. Y leer o
 escribir `ref.current` en el render, porque no redibuja (`compra/confirmar/useReservar.js:16` usa estado por eso).
@@ -299,7 +299,7 @@ Sirve para ver efectos que no limpian. En el build de producción no hace nada.
   <StrictMode>
 ```
 
-Y el efecto que lo tiene en cuenta, `ticket/useFestejarPago.js:16`:
+Y el efecto que lo tiene en cuenta, `ticket/pago/useFestejarPago.js:16`:
 
 ```js
       // Se marca al lanzar y no al entrar: StrictMode desmonta y vuelve a correr el efecto, y el primero se descarta.
