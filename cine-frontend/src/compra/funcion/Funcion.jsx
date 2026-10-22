@@ -43,13 +43,14 @@ export function Funcion() {
       </Encabezado>
 
       <Grid gap="lg" align="flex-start">
-        <Grid.Col span={{ base: 12, lg: 8 }}>
+        {/* Selección de ancho fijo: lo que sobra es del mapa, para que la fila más ancha (20 butacas) entre en escritorio. */}
+        <Grid.Col span={{ base: 12, lg: "auto" }} miw={0}>
           <MapaButacas sala={funcion.sala} asientos={funcion.asientos}
             pintar={(a) => pintarParaComprar(a, butacas)} alElegir={alternar} />
           <Referencia items={REFERENCIAS} />
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, lg: 4 }} style={{ position: "sticky", top: 88 }}>
+        <Grid.Col span={{ base: 12, lg: "content" }} w={{ lg: 320 }} style={{ position: "sticky", top: 88 }}>
           <TuSeleccion elegidas={elegidas} butacas={butacas} total={total}
             alContinuar={() => navegar(`/confirmar/${funcion.id}`)} />
         </Grid.Col>
