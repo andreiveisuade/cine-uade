@@ -65,8 +65,16 @@ public class MercadoPagoHttp implements PasarelaPagos {
     @Override
     public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
-        String retorno = sitio + "/api/checkouts/" + id + "/retorno";
+        String cuerpo = preferencia(id, reservaId, medio, monto, vence).toString();
+        JsonNode creada = pedir(HttpRequest.newBuilder(URI.create(base + "/checkout/preferences"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(cuerpo)));
+        String urlPago = urlDePago(creada);
+        return new Checkout(id, reservaId, medio, monto, urlPago, urlPago);
+    }
 
+    private ObjectNode preferencia(String id, int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
+        String retorno = sitio + "/api/checkouts/" + id + "/retorno";
         ObjectNode preferencia = JSON.createObjectNode();
         preferencia.putArray("items").addObject()
                 .put("title", "Reserva " + reservaId + " · Cine UADE")
@@ -87,12 +95,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
         if (!HOSTS_LOCALES.contains(URI.create(sitio).getHost())) {
             preferencia.put("auto_return", "approved");
         }
-
-        JsonNode creada = pedir(HttpRequest.newBuilder(URI.create(base + "/checkout/preferences"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(preferencia.toString())));
-        String urlPago = urlDePago(creada);
-        return new Checkout(id, reservaId, medio, monto, urlPago, urlPago);
+        return preferencia;
     }
 
     // El id lo arma crear, pero llega por la URL: solo vale si MP tiene una preferencia con ese external_reference.
