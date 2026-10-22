@@ -36,9 +36,9 @@ class LoginViewModel(private val io: CoroutineDispatcher = Dispatchers.IO) : Vie
         val actual = _estado.value
         if (actual.cargando) return
         _estado.update { it.copy(cargando = true, error = null) }
-        val api = ApiPuerta(actual.servidor, actual.usuario, actual.clave, io)
         viewModelScope.launch {
             try {
+                val api = ApiPuerta(actual.servidor, actual.usuario, actual.clave, io)
                 val usuario = api.iniciarSesion()
                 _estado.update { it.copy(cargando = false, sesion = Sesion(api, usuario)) }
             } catch (e: Rechazo) {

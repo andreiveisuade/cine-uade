@@ -22,7 +22,7 @@ class ApiPuerta(
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val http: OkHttpClient = clienteHttp,
 ) {
-    private val base = servidor.trim().trimEnd('/')
+    private val base = Servidor.validar(servidor).toString().trimEnd('/')
     private val autorizacion = Credentials.basic(usuario.trim(), clave)
 
     suspend fun iniciarSesion(): Usuario = pedir("/sesion", "")
@@ -48,8 +48,6 @@ class ApiPuerta(
             throw Rechazo("El servidor no respondió a tiempo: volvé a intentarlo")
         } catch (e: IOException) {
             throw Rechazo("No se pudo conectar con el servidor: revisá la dirección y la red")
-        } catch (e: IllegalArgumentException) {
-            throw Rechazo("La dirección del servidor no es válida")
         }
         if (status !in 200..299) throw Rechazo(mensajeDeError(texto, status), status)
         try {
@@ -70,6 +68,9 @@ class ApiPuerta(
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(90, TimeUnit.SECONDS)
             .callTimeout(90, TimeUnit.SECONDS)
+            // La API no redirige: seguir una redirección podría llevar la clave a otro lado o a http.
+            .followRedirects(false)
+            .followSslRedirects(false)
             .build()
 
         // Un cuerpo que no es {error} (HTML de un proxy) nunca se muestra crudo.

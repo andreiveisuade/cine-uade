@@ -72,4 +72,28 @@ class ApiPuertaTest {
         assertEquals(esperado, rechazo.message)
         assertEquals(status, rechazo.status)
     }
+
+    @Test
+    fun noSigueRedireccionesConLaClave() = runTest {
+        servidor.enqueue(MockResponse().setResponseCode(302).setHeader("Location", "http://otro.example/api/acceso"))
+
+        val rechazo = runCatching {
+            ApiPuerta(servidor.url("/api").toString(), "p", "c", StandardTestDispatcher(testScheduler)).registrarAcceso("K7M2P9XQ")
+        }.exceptionOrNull() as Rechazo
+
+        assertEquals(302, rechazo.status)
+        assertEquals(1, servidor.requestCount)
+    }
+
+    @Test
+    fun sinServidorDiceQueNoPudoConectar() = runTest {
+        val url = servidor.url("/api").toString()
+        servidor.shutdown()
+
+        val rechazo = runCatching {
+            ApiPuerta(url, "p", "c", StandardTestDispatcher(testScheduler)).registrarAcceso("K7M2P9XQ")
+        }.exceptionOrNull() as Rechazo
+
+        assertEquals("No se pudo conectar con el servidor: revisá la dirección y la red", rechazo.message)
+    }
 }
