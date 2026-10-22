@@ -62,9 +62,6 @@ cine:
   comprobantes:
     # Relativos al working dir. En Docker es /app, y el Dockerfile crea /app/tickets.
     tickets: ${CINE_TICKETS:tickets}
-  imagenes:
-    # Las fotos de promos y productos. En Docker es /app/imagenes, el volumen imagenes.
-    dir: ${CINE_IMAGENES:imagenes}
   importador:
     # Pasado este tiempo una corrida EN_CURSO se da por perdida (backend reiniciado a mitad)
     corrida-maxima: 5m

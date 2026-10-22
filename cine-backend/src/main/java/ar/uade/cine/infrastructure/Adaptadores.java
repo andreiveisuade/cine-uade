@@ -15,8 +15,7 @@ import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketCandyTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.GeneradorTicketTxt;
 import ar.uade.cine.infrastructure.comprobantes.txt.PropiedadesComprobantes;
 import ar.uade.cine.infrastructure.imagenes.AlmacenDeImagenes;
-import ar.uade.cine.infrastructure.imagenes.disco.AlmacenDeImagenesEnDisco;
-import ar.uade.cine.infrastructure.imagenes.disco.PropiedadesImagenes;
+import ar.uade.cine.infrastructure.imagenes.base.AlmacenDeImagenesEnBase;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.tmdb.PropiedadesTmdb;
 import ar.uade.cine.infrastructure.importador.tmdb.TmdbHttp;
@@ -25,6 +24,7 @@ import ar.uade.cine.infrastructure.pasarelas.emulada.MercadoPagoEmulado;
 import ar.uade.cine.infrastructure.pasarelas.mercadopago.MercadoPagoHttp;
 import ar.uade.cine.infrastructure.pasarelas.mercadopago.PropiedadesMercadoPago;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.repository.imagenes.ArchivoDeImagenRepository;
 
 // Elige qué implementa cada puerto (comprobantes, imágenes, pasarela, reloj, TMDB); solo acá se nombran (DIP).
 @Configuration
@@ -46,8 +46,8 @@ public class Adaptadores {
     }
 
     @Bean
-    public AlmacenDeImagenes almacenDeImagenes(PropiedadesImagenes imagenes) {
-        return new AlmacenDeImagenesEnDisco(imagenes.dir());
+    public AlmacenDeImagenes almacenDeImagenes(ArchivoDeImagenRepository imagenes) {
+        return new AlmacenDeImagenesEnBase(imagenes);
     }
 
     // Sin tareas de fondo en tests: el RelojMovible mueve el tiempo y una tarea sola borraría filas a mitad de prueba
