@@ -12,6 +12,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -26,6 +28,7 @@ import ar.uade.cine.model.salas.TipoSala;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
@@ -135,6 +138,25 @@ class VistasSalasTest extends PruebaDeIntegracion {
 
         assertEquals(12000.0, vip, 0.001, "5000 x 1.6 (IMAX) x 1.5 (VIP)");
         assertEquals(8000.0, estandar, 0.001, "5000 x 1.6 (IMAX)");
+    }
+
+    @ParameterizedTest
+    @EnumSource(TipoTarifa.class)
+    void elPrecioDeCadaTarifaEsElQueCobraLaEntrada(TipoTarifa tarifa) {
+        Sala sala = salas.agregar("Sala 1", TipoSala.IMAX, List.of(1), Map.of("A1", TipoAsiento.VIP));
+        Funcion funcion = programarEn(sala, 4999.99);
+        Asiento a1 = asiento(sala, "A1");
+
+        double mostrado = vistas.asiento(a1, funcion, sala, Set.of()).precios().get(tarifa.name());
+
+        assertEquals(new Entrada(a1, tarifa, funcion.precioDe(a1, sala)).precio().aPesos(), mostrado);
+    }
+
+    @Test
+    void fueraDeUnaFuncionNoHayPreciosPorTarifa() {
+        Sala sala = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(1));
+
+        assertNull(butaca(vistas.salaConButacas(sala), "A1").precios());
     }
 
     private Funcion programarEn(Sala sala, double precio) {
