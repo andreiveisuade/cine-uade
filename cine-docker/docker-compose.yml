@@ -68,10 +68,6 @@ services:
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
       # Adonde MP devuelve al comprador: el sitio como lo ve su navegador, no el nombre del contenedor.
       CINE_URL_PUBLICA: ${CINE_URL_PUBLICA:-http://localhost:${PUERTO_WEB:-8080}}
-      CINE_IMAGENES: /app/imagenes
-    volumes:
-      # Las fotos de promos y productos: en un volumen, así sobreviven a reconstruir el backend.
-      - imagenes:/app/imagenes
     depends_on:
       mysql:
         # Que el contenedor de MySQL esté arriba no significa que la base acepte
@@ -122,7 +118,6 @@ services:
 
 volumes:
   mysql_data:
-  imagenes:
 
 networks:
   # Separadas a propósito: el contenedor que sirve la web no tiene ruta hasta la base.
