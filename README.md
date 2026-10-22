@@ -8,11 +8,14 @@ Docente: Juan Ignacio López.
 
 Integrantes: Andrei Veis, Lucas Ezequiel Manrique Simonini y Valentino Garmendia.
 
+Sitio público: <https://cine-uade.onrender.com> (Render free, base en Aiven MySQL). Tarda hasta un minuto en
+despertar si estuvo inactivo.
+
 ## Estructura
 
 | Carpeta | Qué es | Tecnología |
 |---|---|---|
-| `cine-backend/` | API REST y reglas de negocio | Java 21, Spring Boot 3.5, JPA, Spring Security, MySQL 8.4 |
+| [`cine-backend/`](cine-backend/README.md) | API REST y reglas de negocio | Java 21, Spring Boot 3.5, JPA, Spring Security, MySQL 8.4 |
 | [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, con cuenta opcional | React 19, Mantine, Vite, nginx |
 | [`cine-swing/`](cine-swing/README.md) | Panel del encargado y Puerta del acomodador | Java 21, Swing, FlatLaf |
 | [`cine-android/`](cine-android/README.md) | Puerta del acomodador en el celular: escanea el QR del ticket | Kotlin, Jetpack Compose, CameraX, ML Kit |
@@ -54,7 +57,6 @@ A mano, tests y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO
 
 - Terminal de boletería en Swing que venda sin red y sincronice al volver
   ([diseño](_other/docs/manual/index.html#terminal)).
-- Despliegue en un servidor.
 
 ## Convenciones
 

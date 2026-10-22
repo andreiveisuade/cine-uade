@@ -89,6 +89,8 @@ Imports: `./` dentro de la carpeta, `@/` (es `src/`) entre carpetas. Callbacks p
 - Los enums viajan con el nombre de la constante y `etiquetas.js` los traduce.
 - Las butacas elegidas quedan bloqueadas 3 minutos y se renuevan cada minuto. `sessionStorage` guarda solo
   el id de compra.
+- El ticket siempre pide la reserva al backend por su código; el `state` del historial del navegador no se usa
+  como fuente, así no muestra datos viejos.
 - Sin sesión, a una reserva se llega solo con su código de acceso: el email no prueba ser el dueño. Con
   sesión, también desde Mis reservas.
 
