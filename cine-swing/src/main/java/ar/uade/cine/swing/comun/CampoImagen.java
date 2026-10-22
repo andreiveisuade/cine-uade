@@ -2,7 +2,6 @@ package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ApiImagenes;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -14,7 +13,6 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,7 +57,7 @@ public final class CampoImagen extends JPanel {
         String pedida = url;
         Tarea.ejecutar(this, () -> api.descargar(pedida), datos -> {
             // Si mientras bajaba se eligió otra, esta ya no corresponde.
-            if (pedida.equals(url)) mostrar(leer(datos));
+            if (pedida.equals(url)) mostrar(Poster.leer(datos));
         }, e -> vista.setText("No se pudo cargar"));
     }
 
@@ -87,18 +85,9 @@ public final class CampoImagen extends JPanel {
                 (int) Math.max(1, imagen.getHeight() * escala), Image.SCALE_SMOOTH);
     }
 
-    // ImageIO no lee WEBP: esa queda subida pero sin vista previa.
-    private static BufferedImage leer(byte[] datos) {
-        try {
-            return ImageIO.read(new ByteArrayInputStream(datos));
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
     private static BufferedImage leer(Path archivo) {
         try {
-            return leer(Files.readAllBytes(archivo));
+            return Poster.leer(Files.readAllBytes(archivo));
         } catch (IOException e) {
             return null;
         }

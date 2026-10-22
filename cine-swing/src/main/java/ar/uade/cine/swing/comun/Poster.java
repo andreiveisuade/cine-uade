@@ -35,8 +35,8 @@ public final class Poster extends JLabel {
         }, e -> setText("Sin póster"));
     }
 
-    // ImageIO no lee WEBP: un póster subido en ese formato queda sin vista.
-    private static BufferedImage leer(byte[] datos) {
+    // ImageIO no lee WEBP: una imagen subida en ese formato queda sin vista.
+    static BufferedImage leer(byte[] datos) {
         try {
             return ImageIO.read(new ByteArrayInputStream(datos));
         } catch (IOException e) {
