@@ -9,7 +9,7 @@ class ServidorTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(
         "render por https, https://cine-uade.onrender.com/api/, https://cine-uade.onrender.com/api",
-        "red de casa, http://192.168.0.10:8080/api, http://192.168.0.10:8080/api",
+        "red de casa, http://192.168.255.254:8080/api, http://192.168.255.254:8080/api",
         "red 10, http://10.1.2.3/api, http://10.1.2.3/api",
         "red 172.16, http://172.20.0.5/api, http://172.20.0.5/api",
         "emulador, http://10.0.2.2:8080/api, http://10.0.2.2:8080/api",
