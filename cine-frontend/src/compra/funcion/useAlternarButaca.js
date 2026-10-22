@@ -9,11 +9,13 @@ export function useAlternarButaca(funcion, butacas, recargar) {
   const avisar = useAvisar();
   // Dos clics antes de que React vuelva a pintar verían las mismas `butacas`: la vigente se lleva en un ref.
   const vigentes = useRef(butacas);
+  // Los bloqueos salen de a uno: dos a la vez con la misma sesión el backend los toma en paralelo y rechaza la primera.
+  const cola = useRef(Promise.resolve());
   useLayoutEffect(() => {
     vigentes.current = butacas;
   }, [butacas]);
 
-  return async function alternar(asiento) {
+  return function alternar(asiento) {
     const butacas = vigentes.current;
     // Arranca en GENERAL: una tarifa reducida hay que acreditarla en la puerta.
     const nuevas = butacas[asiento.codigo]
@@ -22,10 +24,15 @@ export function useAlternarButaca(funcion, butacas, recargar) {
     // Se pinta antes del bloqueo para que se vea elegida en el acto.
     vigentes.current = nuevas;
     setSeleccion({ funcionId: funcion.id, butacas: nuevas });
+    cola.current = cola.current.then(() => sostener(asiento, butacas));
+    return cola.current;
+  };
 
+  // Manda la selección vigente al salir de la cola, no la de cuando se tocó: así el último pedido trae todas.
+  async function sostener(asiento, butacas) {
     let rechazadas;
     try {
-      rechazadas = await sostenerSeleccion(funcion.id, nuevas);
+      rechazadas = await sostenerSeleccion(funcion.id, vigentes.current);
     } catch (e) {
       // Un 400 es una selección que el backend no aparta entera (tope, butaca fuera de servicio): se suelta y se dice por qué.
       // Otro error no cambia nada: la doble venta la impide la base.
@@ -43,5 +50,5 @@ export function useAlternarButaca(funcion, butacas, recargar) {
       avisar(`${rechazadas.join(", ")}: alguien las está comprando`, "error");
       recargar();
     }
-  };
+  }
 }

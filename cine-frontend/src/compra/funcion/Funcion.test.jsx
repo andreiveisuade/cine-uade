@@ -69,6 +69,25 @@ describe("Funcion: elegir butacas", () => {
     expect(screen.getByText("2 butacas")).toBeInTheDocument();
   });
 
+  it("no manda un bloqueo mientras el anterior está en vuelo: el backend los tomaría a la vez y rechazaría la primera", async () => {
+    let soltar;
+    api.bloquearButacas
+      .mockImplementationOnce(() => new Promise((r) => { soltar = () => r({ rechazadas: [] }); }))
+      .mockResolvedValue({ rechazadas: [] });
+    const [a1, a2] = [await butaca("A1"), await butaca("A2")];
+
+    await act(async () => {
+      a1.click();
+      a2.click();
+    });
+    expect(api.bloquearButacas).toHaveBeenCalledTimes(1);
+
+    await act(async () => soltar());
+    await waitFor(() => expect(api.bloquearButacas).toHaveBeenCalledTimes(2));
+    expect(api.bloquearButacas).toHaveBeenLastCalledWith(expect.objectContaining({ butacas: ["A1", "A2"] }));
+    expect(screen.getByText("2 butacas")).toBeInTheDocument();
+  });
+
   // El backend contesta 200 con `rechazadas` cuando otro ganó la butaca, y 400 cuando no aparta la selección entera
   // (tope de la compra, butaca fuera de servicio). En los dos la butaca recién pintada vuelve atrás.
   it.each([
