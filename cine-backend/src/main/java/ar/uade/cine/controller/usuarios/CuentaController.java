@@ -48,7 +48,8 @@ public class CuentaController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cambiarClave(@Valid @RequestBody PedidoCambioClaveDTO pedido, Authentication identidad,
                              HttpServletRequest http) {
-        cuentas.cambiarClave(identidad.getName(), pedido.actual(), pedido.nueva(), http.changeSessionId());
+        cuentas.cambiarClave(identidad.getName(), pedido.actual(), pedido.nueva(), http.getRemoteAddr(),
+                http::changeSessionId);
     }
 
     @Operation(summary = "Recuperar la clave sin sesión con el código de una entrada propia (R25)")
@@ -64,7 +65,7 @@ public class CuentaController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void darDeBaja(@Valid @RequestBody PedidoBajaDTO pedido, Authentication identidad,
                           HttpServletRequest http) throws ServletException {
-        cuentas.darDeBaja(identidad.getName(), pedido.actual());
+        cuentas.darDeBaja(identidad.getName(), pedido.actual(), http.getRemoteAddr());
         http.logout();
     }
 

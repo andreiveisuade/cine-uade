@@ -1,6 +1,7 @@
 package ar.uade.cine.service.usuarios;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,12 +47,13 @@ public class GestorCuentas {
     }
 
     // R24: la nueva se valida antes que la actual, como en el alta; la sesión que sigue es la del que la cambió.
-    public void cambiarClave(String email, String actual, String nueva, String sesionQueSigue) {
+    // Su id nuevo se pide recién con la clave cambiada: un intento fallido no rota la cookie.
+    public void cambiarClave(String email, String actual, String nueva, String ip, Supplier<String> sesionQueSigue) {
         Cliente cliente = conCuenta(email);
         Contrasena clave = new Contrasena(nueva);
-        exigirClave(cliente, actual);
+        exigirClave(cliente, actual, ip);
         cliente.cambiarClave(claves.encode(clave.valor()));
-        sesiones.cerrarLasDemas(cliente.getEmail(), sesionQueSigue);
+        sesiones.cerrarLasDemas(cliente.getEmail(), sesionQueSigue.get());
     }
 
     // R25: el código de una de sus entradas prueba que es el dueño, como en R22; cuenta para el límite de intentos.
@@ -75,9 +77,9 @@ public class GestorCuentas {
     }
 
     // R26: borra solo la clave; reservas, pagos y entradas son ventas del cine y quedan.
-    public void darDeBaja(String email, String actual) {
+    public void darDeBaja(String email, String actual, String ip) {
         Cliente cliente = conCuenta(email);
-        exigirClave(cliente, actual);
+        exigirClave(cliente, actual, ip);
         cliente.cerrarCuenta();
         sesiones.cerrarTodas(cliente.getEmail());
     }
@@ -96,10 +98,16 @@ public class GestorCuentas {
         return clienteRepository.findByEmail(email).filter(Cliente::tieneCuenta).orElseThrow();
     }
 
-    private void exigirClave(Cliente cliente, String clave) {
+    // Una cookie robada no sirve para adivinar la clave: mismo límite que el login, por email y por IP.
+    private void exigirClave(Cliente cliente, String clave, String ip) {
+        if (intentos.bloqueado(cliente.getEmail(), ip)) {
+            throw new DemasiadosIntentos();
+        }
         if (!claves.matches(clave, cliente.getPasswordHash())) {
+            intentos.fallo(cliente.getEmail(), ip);
             throw new DatoInvalido(CLAVE_ACTUAL_INCORRECTA);
         }
+        intentos.exito(cliente.getEmail());
     }
 
     private boolean esDeSuReserva(String codigo, Cliente cliente) {

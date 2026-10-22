@@ -40,7 +40,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
 | `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
-| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic y para `POST /cuenta/recuperacion` (cuenta cada 403). Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
+| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic, para `POST /cuenta/recuperacion` (cuenta cada 403) y para la clave actual de `POST /cuenta/clave` y `DELETE /cuenta`. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
 | `413` · `502` · `504` | nginx: cuerpo de más de 1 MB (3 MB en `POST /imagenes`), backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
 
@@ -53,7 +53,11 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
-Un cliente con sesión que llama una ruta del encargado recibe `403`. `GET /reservas?email=` ya no existe.
+Un cliente con sesión que llama una ruta del encargado recibe `403`, y un empleado que llama `/cuenta`, también. `GET /reservas?email=` ya no existe.
+
+### Seguridad
+
+Límites conocidos: `debeCambiarClave` lo hace cumplir solo la web (el backend no bloquea otras rutas a quien no la cambió), y la recuperación, el login, el cambio de clave y la baja comparten el mismo contador de intentos por email e IP.
 
 ## Catálogos
 
@@ -92,8 +96,8 @@ son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cooki
 | Ruta | Qué hace |
 |---|---|
 | `PUT /cuenta` | `{nombre}` → `200` con el usuario de `POST /sesion`. Mismas reglas que el alta; el email no cambia (si viaja, se ignora) (R23) |
-| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`. La respuesta trae una cookie nueva (cambia el id de sesión) y las demás sesiones del cliente quedan cerradas: su próximo pedido es `401`. Apaga `debeCambiarClave` (R24) |
-| `DELETE /cuenta` | `{actual}` → `204`. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie) y las demás. Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
+| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`, que cuenta para el límite de intentos (`429`). La respuesta trae una cookie nueva (cambia el id de sesión) y las demás sesiones del cliente quedan cerradas: su próximo pedido es `401`. Apaga `debeCambiarClave` (R24) |
+| `DELETE /cuenta` | `{actual}` → `204`; la clave equivocada cuenta para el límite de intentos. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie) y las demás. Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
 | `POST /cuenta/recuperacion` | Pública. `{email, codigoReserva, nueva}` → `204`. El código de una entrada propia prueba que es el dueño, como en R22. Cualquier otro caso, `403` neutro (ver Errores). Pasa por el límite de intentos (`429`), por email y por IP. Cierra todas las sesiones del cliente (R25) |
 
 ```json
@@ -155,7 +159,7 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El ticket lo consulta cada 10 s mientras la reserva espera el pago |
+| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): junto con el código sería todo lo que pide la recuperación (R25). El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
 | `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `400`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |

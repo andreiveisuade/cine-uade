@@ -161,6 +161,47 @@ class CuentaControllerTest extends PruebaDeApi {
         assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, CLAVE).estado()).isEqualTo(200);
     }
 
+    @ParameterizedTest(name = "R24 y R26: cinco claves actuales equivocadas en {0} bloquean un minuto")
+    @CsvSource(textBlock = """
+            cambio de clave, POST,   /api/cuenta/clave, '{"actual":"%s","nueva":"otra-clave-de-ana"}'
+            baja,            DELETE, /api/cuenta,       '{"actual":"%s"}'
+            """)
+    void laClaveActualPasaPorElLimiteDeIntentos(String caso, HttpMethod metodo, String ruta, String cuerpo) {
+        String cookie = entrar(ANA, CLAVE);
+        for (int i = 0; i < 5; i++) {
+            assertThat(conCookie(metodo, ruta, cookie, cuerpo.formatted("no-es-esta")).estado()).isEqualTo(400);
+        }
+
+        Respuesta bloqueada = conCookie(metodo, ruta, cookie, cuerpo.formatted(CLAVE));
+
+        assertThat(bloqueada.estado()).isEqualTo(429);
+        assertThat(bloqueada.error()).isEqualTo("Demasiados intentos: esperá un minuto y probá de nuevo");
+    }
+
+    // Con el email completo, quien vea el ticket tendría las dos mitades de la recuperación.
+    @Test
+    @DisplayName("R25: el ticket público por código muestra el email enmascarado; el encargado lo ve entero")
+    void elTicketPublicoEnmascaraElEmail() {
+        Reserva suya = reservar(ANA, "A1");
+
+        Respuesta publica = pedirComo(HttpMethod.GET, "/api/reservas/codigo/" + suya.getCodigo(), null, null, null);
+
+        assertThat(publica.json().get("cliente").get("email").asText()).isEqualTo("a***@mail.com");
+        assertThat(publica.cuerpo()).doesNotContain(ANA);
+        assertThat(get("/api/reservas/" + suya.getId()).json().get("cliente").get("email").asText()).isEqualTo(ANA);
+    }
+
+    // Swing manda Basic sin sesión: la cuenta es solo del cliente.
+    @ParameterizedTest(name = "el empleado no usa /api/cuenta: {0} {1} es 403")
+    @CsvSource(textBlock = """
+            PUT,    /api/cuenta,       '{"nombre":"Otro"}'
+            POST,   /api/cuenta/clave, '{"actual":"clave-de-prueba","nueva":"otra-clave"}'
+            DELETE, /api/cuenta,       '{"actual":"clave-de-prueba"}'
+            """)
+    void elEmpleadoNoTieneCuenta(HttpMethod metodo, String ruta, String cuerpo) {
+        assertThat(pedirComo(metodo, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN).estado()).isEqualTo(403);
+    }
+
     @Test
     @DisplayName("R25: con el código de una entrada suya recupera la clave y cierra las sesiones de antes")
     void recuperaLaClave() {
