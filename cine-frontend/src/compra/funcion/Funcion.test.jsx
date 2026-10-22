@@ -8,7 +8,7 @@ import { Funcion } from "./Funcion.jsx";
 vi.mock("@/api/api-http.js");
 
 const asiento = (codigo, extra = {}) =>
-  ({ codigo, fila: 1, numero: Number(codigo.slice(1)), tipo: "ESTANDAR", precio: 1000, ocupado: false, estado: "ACTIVA", ...extra });
+  ({ codigo, fila: 1, numero: Number(codigo.slice(1)), tipo: "ESTANDAR", precio: 1000, precios: { GENERAL: 1000, JUBILADO: 433 }, ocupado: false, estado: "ACTIVA", ...extra });
 
 const FUNCION = {
   id: 5, peliculaId: 2, pelicula: { titulo: "Matrix" }, inicio: "2026-10-21T20:00:00",
@@ -21,7 +21,6 @@ const butaca = (codigo) => screen.findByTitle(new RegExp(`^${codigo} ·`));
 
 beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
-  api.obtenerTarifas.mockResolvedValue([{ nombre: "GENERAL", multiplicador: 1 }]);
   api.obtenerFuncion.mockResolvedValue(FUNCION);
   renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
 });
@@ -35,6 +34,16 @@ describe("Funcion: elegir butacas", () => {
     expect(api.bloquearButacas).toHaveBeenCalledWith(expect.objectContaining({ funcionId: 5, butacas: ["A1"] }));
     expect(screen.getByText("1 butaca")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continuar" })).toBeEnabled();
+  });
+
+  it("la tarifa ofrece las que trae la butaca y muestra el precio que manda el backend", async () => {
+    api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
+    await userEvent.click(await butaca("A1"));
+    const tarifa = screen.getByRole("combobox");
+
+    expect([...tarifa.options].map((o) => o.value)).toEqual(["GENERAL", "JUBILADO"]);
+    await userEvent.selectOptions(tarifa, "JUBILADO");
+    expect(screen.getByText("$ 433")).toBeInTheDocument();
   });
 
   it("una ocupada no se puede elegir", async () => {

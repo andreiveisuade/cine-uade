@@ -1,10 +1,10 @@
 import { NativeSelect } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { tarifasCargadas } from "./tarifas.js";
 
-export function SelectorTarifa({ valor, alCambiar }) {
+// Las tarifas que se ofrecen son las que el backend le puso precio a esa butaca.
+export function SelectorTarifa({ asiento, valor, alCambiar }) {
   return (
     <NativeSelect size="xs" value={valor} onChange={(e) => alCambiar(e.currentTarget.value)}
-      data={tarifasCargadas().map((t) => ({ value: t.nombre, label: etiqueta(t.nombre) }))} />
+      data={Object.keys(asiento.precios).map((t) => ({ value: t, label: etiqueta(t) }))} />
   );
 }

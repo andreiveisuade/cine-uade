@@ -18,7 +18,7 @@ export function TuSeleccion({ elegidas, butacas, total, alContinuar }) {
               style={{ borderBottom: "1px solid var(--cine-borde)" }}>
               <Text fw={700} className="cine-cifras">{a.codigo}</Text>
               <Group gap="xs" wrap="nowrap">
-                <SelectorTarifa valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
+                <SelectorTarifa asiento={a} valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
                 <Text size="sm" w={80} ta="right" className="cine-cifras">{precio(precioConTarifa(a, butacas[a.codigo]))}</Text>
               </Group>
             </Group>

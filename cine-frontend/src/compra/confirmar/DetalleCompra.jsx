@@ -2,12 +2,11 @@ import { Alert, Paper, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { precio } from "@/api/formato.js";
 import { DatosFuncion } from "@/compra/DatosFuncion.jsx";
-import { tarifaPorNombre } from "@/compra/tarifas.js";
 import { TablaButacas } from "./TablaButacas.jsx";
 
 // Qué se está por reservar: la función, cada butaca con su tarifa y el total.
-export function DetalleCompra({ funcion, butacas, elegidas, total }) {
-  const aAcreditar = elegidas.filter((a) => tarifaPorNombre(butacas[a.codigo]).requiereAcreditacion);
+export function DetalleCompra({ funcion, tarifas, butacas, elegidas, total }) {
+  const aAcreditar = elegidas.filter((a) => tarifas.find((t) => t.nombre === butacas[a.codigo])?.requiereAcreditacion);
   return (
     <Paper withBorder p="lg">
       <Title order={2} fz="h3">{funcion.pelicula.titulo}</Title>
