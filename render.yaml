@@ -20,5 +20,7 @@ services:
         value: "5"
       - key: CINE_URL_PUBLICA
         sync: false
+      - key: CINE_SWAGGER
+        value: "false"
       - key: TZ
         value: America/Argentina/Buenos_Aires

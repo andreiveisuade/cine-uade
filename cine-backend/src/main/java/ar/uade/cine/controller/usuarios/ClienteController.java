@@ -39,11 +39,12 @@ public class ClienteController {
         return clientes.buscarPorEmail(email).map(vistas::cliente).stream().toList();
     }
 
-    @Operation(summary = "Registrar un cliente con clave; si ya compró sin cuenta, la cuenta se abre sobre ese email")
+    @Operation(summary = "Registrar un cliente con clave; si ya compró sin cuenta, pide el código de una de sus entradas")
     @PostMapping("/api/clientes")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ClienteVistaDTO> registrar(@Valid @RequestBody PedidoClienteDTO pedido) {
-        ClienteVistaDTO cliente = vistas.cliente(clientes.registrar(pedido.nombre(), pedido.email(), pedido.password()));
+        ClienteVistaDTO cliente = vistas.cliente(clientes.registrar(
+                pedido.nombre(), pedido.email(), pedido.password(), pedido.codigoReserva()));
         return Creado.en(UriComponentsBuilder.fromPath("/api/clientes")
                 .queryParam("email", cliente.email()).encode().toUriString(), cliente);
     }

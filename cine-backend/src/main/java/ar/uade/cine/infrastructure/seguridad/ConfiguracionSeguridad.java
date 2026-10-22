@@ -25,6 +25,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
@@ -83,7 +84,8 @@ public class ConfiguracionSeguridad {
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json) throws Exception {
+    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos)
+            throws Exception {
         SecurityContextRepository sesion = new SesionDeClientes();
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
                 responder(respuesta, json, HttpStatus.UNAUTHORIZED,
@@ -104,6 +106,7 @@ public class ConfiguracionSeguridad {
                         .deleteCookies(COOKIE_DE_SESION)
                         .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
                 .securityContext(contexto -> contexto.securityContextRepository(sesion))
+                .addFilterBefore(new FiltroDeIntentos(intentos, json), BasicAuthenticationFilter.class)
                 // Guardaría en la sesión cada pedido que da 401, y crearía una para cualquiera.
                 .requestCache(AbstractHttpConfigurer::disable)
                 // También acá: el de fábrica del filtro Basic agrega WWW-Authenticate.

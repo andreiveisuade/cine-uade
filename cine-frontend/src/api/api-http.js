@@ -72,7 +72,8 @@ export const obtenerFuncion = (id, sesion) => get(`/funciones/${id}${consulta({ 
 export const bloquearButacas = ({ funcionId, sesion, butacas }) =>
   post(`/funciones/${Number(funcionId)}/bloqueos`, { sesion, butacas });
 
-export const registrarCliente = ({ nombre, email, password }) => post("/clientes", { nombre, email, password });
+export const registrarCliente = ({ nombre, email, password, codigoReserva }) =>
+  post("/clientes", { nombre, email, password, codigoReserva });
 
 // Basic solo para entrar: después la sesión vive en la cookie HttpOnly y el front no guarda la clave.
 // TextEncoder porque btoa no acepta una clave con tildes o eñes.
