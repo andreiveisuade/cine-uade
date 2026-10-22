@@ -3,12 +3,10 @@ package ar.uade.cine.swing.pantallas.candy;
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiImagenes;
-import ar.uade.cine.swing.api.dto.candy.PedidoCombo;
 import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
@@ -25,18 +23,13 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.util.List;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-// La pestaña de la carta: altas de productos y combos, edición, y sacar o reponer; nada se borra.
+// La pestaña de la carta: alta de productos (los combos, en FormularioCombo), edición, y sacar o reponer; nada se borra.
 final class Carta extends Seccion {
 
     private final ApiCandy apiCandy;
@@ -55,12 +48,7 @@ final class Carta extends Seccion {
     private final CampoImagen imagenProducto;
     private final JLabel errorProducto = Componentes.texto(" ");
 
-    private final JTextField nombreCombo = new JTextField();
-    private final JTextField precioCombo = Campos.soloDecimal(new JTextField());
-    private final JPanel filasCombo = new JPanel(new GridBagLayout());
-    private final Cantidades cantidadesCombo = new Cantidades();
-    private final CampoImagen imagenCombo;
-    private final JLabel errorCombo = Componentes.texto(" ");
+    private final FormularioCombo formularioCombo;
     private final BotonesDeFila<Producto> botones;
 
     Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
@@ -68,7 +56,7 @@ final class Carta extends Seccion {
         this.apiCandy = apiCandy;
         this.apiImagenes = apiImagenes;
         this.imagenProducto = new CampoImagen(apiImagenes);
-        this.imagenCombo = new CampoImagen(apiImagenes);
+        this.formularioCombo = new FormularioCombo(apiCandy, apiImagenes, this::recargar);
         // Command: ver AccionDeFila.
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarDisponibilidadProducto(apiCandy));
         JPanel acciones = new JPanel(new FlujoConSalto());
@@ -105,8 +93,6 @@ final class Carta extends Seccion {
     private JScrollPane altas() {
         JButton agregar = new JButton("Agregar a la carta");
         agregar.addActionListener(e -> crearProducto());
-        JButton armar = new JButton("Armar combo");
-        armar.addActionListener(e -> armarCombo());
 
         // El de combo abajo y estirado: así el costado llega al fondo como en las demás pantallas.
         JPanel columna = new JPanel(new BorderLayout(0, 8));
@@ -118,53 +104,16 @@ final class Carta extends Seccion {
                 .campo("Imagen", imagenProducto)
                 .ancho(agregar)
                 .ancho(errorProducto)), BorderLayout.NORTH);
-        columna.add(Componentes.conBorde(new Formulario()
-                .ancho(Componentes.subtitulo("Armar combo"))
-                .ancho(Componentes.nota("Al menos dos productos. El combo tiene que salir menos que sus "
-                        + "componentes sueltos (R14): si no, no habría motivo para ofrecerlo."))
-                .obligatorio("Nombre", nombreCombo)
-                .ancho(new JLabel("Qué trae (cantidad)"))
-                .ancho(filasCombo)
-                .obligatorio("Precio del combo", precioCombo)
-                .campo("Imagen", imagenCombo)
-                .ancho(armar)
-                .ancho(errorCombo)
-                .cerrar()), BorderLayout.CENTER);
+        columna.add(formularioCombo, BorderLayout.CENTER);
         return Componentes.lateral(columna);
     }
 
     private void recargar() {
         cargar(() -> apiCandy.obtenerProductosCandy(true), productos -> {
             tabla.mostrar(productos);
-            pintarComponentes(productos.stream().filter(p -> !p.esCombo()).toList());
+            formularioCombo.pintarComponentes(productos.stream().filter(p -> !p.esCombo()).toList());
             habilitar();
         });
-    }
-
-    private void pintarComponentes(List<Producto> sueltos) {
-        filasCombo.removeAll();
-        cantidadesCombo.olvidar();
-        if (sueltos.isEmpty()) {
-            filasCombo.add(Componentes.nota("Primero cargá productos sueltos."));
-        }
-        int fila = 0;
-        for (Producto p : sueltos) {
-            JLabel nombre = new JLabel(p.nombre() + "  · " + precio(p.precio()));
-            if (!p.disponible()) nombre.setForeground(Colores.secundario());
-            JSpinner spinner = cantidadesCombo.nueva(p.id());
-            GridBagConstraints izquierda = new GridBagConstraints();
-            izquierda.gridy = fila;
-            izquierda.weightx = 1;
-            izquierda.anchor = GridBagConstraints.WEST;
-            izquierda.insets = new Insets(2, 0, 2, 8);
-            filasCombo.add(nombre, izquierda);
-            GridBagConstraints derecha = new GridBagConstraints();
-            derecha.gridy = fila++;
-            derecha.gridx = 1;
-            filasCombo.add(spinner, derecha);
-        }
-        filasCombo.revalidate();
-        filasCombo.repaint();
     }
 
     private void crearProducto() {
@@ -179,23 +128,6 @@ final class Carta extends Seccion {
             nombreProducto.setText("");
             precioProducto.setText("");
             imagenProducto.poner(null);
-            recargar();
-        }, v::mostrarError);
-    }
-
-    // El mínimo de dos productos y R14 los valida el backend: su mensaje aparece abajo del formulario.
-    private void armarCombo() {
-        Validacion v = new Validacion(errorCombo);
-        String nombre = v.texto(nombreCombo, "Nombre", true);
-        Double precio = v.decimal(precioCombo, "Precio del combo", true);
-        v.alMencionar("combo", precioCombo);
-        if (!v.ok()) return;
-        PedidoCombo pedido = new PedidoCombo(nombre, precio, cantidadesCombo.elegidas(), imagenCombo.url());
-        Tarea.ejecutar(this, () -> apiCandy.armarComboCandy(pedido), creado -> {
-            avisar("Combo armado");
-            nombreCombo.setText("");
-            precioCombo.setText("");
-            imagenCombo.poner(null);
             recargar();
         }, v::mostrarError);
     }

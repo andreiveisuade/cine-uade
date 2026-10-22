@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 // Trae de TMDB lo que está en cartelera en Argentina; nada se publica, todo cae en Por revisar.
@@ -187,13 +188,9 @@ public final class PantallaImportador extends Pantalla {
     }
 
     private static String resumen(Importacion corrida) {
-        return cuenta(corrida.nuevas(), "nueva", "nuevas") + ", "
-                + cuenta(corrida.salteadas(), "ya estaba", "ya estaban") + ", "
-                + cuenta(corrida.fallidas(), "rechazada", "rechazadas");
-    }
-
-    private static String cuenta(int n, String singular, String plural) {
-        return n + " " + (n == 1 ? singular : plural);
+        return cantidad(corrida.nuevas(), "nueva", "nuevas") + ", "
+                + cantidad(corrida.salteadas(), "ya estaba", "ya estaban") + ", "
+                + cantidad(corrida.fallidas(), "rechazada", "rechazadas");
     }
 
     private static String quePaso(PeliculaDeCorrida p) {

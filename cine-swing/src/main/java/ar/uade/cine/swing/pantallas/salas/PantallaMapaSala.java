@@ -57,7 +57,7 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private void pintar(Sala sala) {
-        long rotas = sala.asientos().stream().filter(a -> "FUERA_DE_SERVICIO".equals(a.estado())).count();
+        long rotas = sala.asientos().stream().filter(Asiento::fueraDeServicio).count();
         resumen.setText("<html><span style='font-size:16pt'><b>" + sala.nombre() + "</b></span><br>"
                 + etiqueta(sala.tipo()) + " · " + sala.filas() + " filas · " + sala.capacidadSala() + " butacas · "
                 + rotas + " fuera de servicio</html>");
@@ -65,7 +65,7 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private Estilo estilo(Asiento asiento) {
-        if ("FUERA_DE_SERVICIO".equals(asiento.estado())) {
+        if (asiento.fueraDeServicio()) {
             return new Estilo(Colores.butacaFueraDeServicio(), Colores.borde(), true, true,
                     asiento.codigo() + " · fuera de servicio · clic para reponer");
         }
@@ -74,7 +74,7 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private void alternar(Asiento asiento) {
-        String nuevo = "FUERA_DE_SERVICIO".equals(asiento.estado()) ? "HABILITADO" : "FUERA_DE_SERVICIO";
+        String nuevo = asiento.fueraDeServicio() ? "HABILITADO" : "FUERA_DE_SERVICIO";
         cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), hecho -> recargar());
     }
 
