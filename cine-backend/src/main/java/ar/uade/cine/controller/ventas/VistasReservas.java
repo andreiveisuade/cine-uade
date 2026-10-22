@@ -73,9 +73,7 @@ public class VistasReservas {
         Map<Integer, List<Asiento>> asientosPorSala = new HashMap<>();
 
         return lista.stream()
-                .map(r -> {
-                    return dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()), publica);
-                })
+                .map(r -> dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()), publica))
                 .toList();
     }
 
