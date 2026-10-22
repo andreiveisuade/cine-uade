@@ -121,6 +121,21 @@ public final class ClienteHttp {
         return enviar("GET", ruta, null, HttpRequest.BodyPublishers.noBody(), credenciales, true, ESPERA).body();
     }
 
+    /** Una imagen de otro sitio, como un póster de TMDB: sin credenciales, que son solo para el backend. */
+    byte[] bytesDeAfuera(String url) {
+        try {
+            HttpResponse<byte[]> respuesta = http.send(HttpRequest.newBuilder(URI.create(url)).timeout(ESPERA)
+                    .GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+            if (respuesta.statusCode() >= 400) throw new ErrorApi(respuesta.statusCode(), "No se pudo bajar la imagen");
+            return respuesta.body();
+        } catch (IOException | IllegalArgumentException e) {
+            throw new ErrorApi(0, "No se pudo bajar la imagen");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ErrorApi(0, "Se canceló la descarga de la imagen");
+        }
+    }
+
     private JavaType tipo(Class<?> clase) {
         return json.getTypeFactory().constructType(clase);
     }

@@ -39,7 +39,7 @@ final class Pantallas {
     JComponent de(Destino destino) {
         return switch (destino) {
             case PELICULAS -> new PantallaPeliculas(apis.cartelera(), apis.catalogos());
-            case POR_REVISAR -> new PantallaPendientes(apis.cartelera(), navegacion);
+            case POR_REVISAR -> new PantallaPendientes(apis.cartelera(), apis.imagenes(), navegacion);
             case IMPORTADOR -> new PantallaImportador(apis.cartelera(), navegacion);
             case SALAS -> new PantallaSalas(apis.catalogos(), apis.salas(), navegacion);
             case FUNCIONES -> new PantallaFunciones(apis.cartelera(), apis.catalogos(), apis.funciones(),

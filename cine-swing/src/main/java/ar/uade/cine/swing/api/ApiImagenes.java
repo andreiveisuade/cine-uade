@@ -26,9 +26,9 @@ public final class ApiImagenes {
         return http.subir("/imagenes", "archivo", nombre, tipo(nombre), datos, Imagen.class).url();
     }
 
-    /** La URL es la que guardó el backend, {@code /api/imagenes/...}; el cliente ya apunta a {@code /api}. */
+    /** {@code /api/imagenes/...} va al backend, que el cliente ya apunta a {@code /api}; una URL completa, directo. */
     public byte[] descargar(String url) {
-        return http.bytes(url.replaceFirst("^/api", ""));
+        return url.startsWith("/") ? http.bytes(url.replaceFirst("^/api", "")) : http.bytesDeAfuera(url);
     }
 
     private static String tipo(String nombre) {
