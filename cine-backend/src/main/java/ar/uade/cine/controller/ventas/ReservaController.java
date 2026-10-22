@@ -72,7 +72,7 @@ public class ReservaController {
     @Operation(summary = "El ticket del cliente, por su código de acceso")
     @GetMapping("/api/reservas/codigo/{codigo}")
     public ReservaVistaDTO detallePorCodigo(@PathVariable String codigo) {
-        return vistas.reserva(consultas.obtenerPorCodigo(codigo));
+        return vistas.reservaPublica(consultas.obtenerPorCodigo(codigo));
     }
 
     @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")

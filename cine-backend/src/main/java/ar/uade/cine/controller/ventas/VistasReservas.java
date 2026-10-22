@@ -49,10 +49,19 @@ public class VistasReservas {
     }
 
     public ReservaVistaDTO reserva(Reserva r) {
-        return armar(List.of(r)).get(0);
+        return armar(List.of(r), false).get(0);
+    }
+
+    // La del ticket público por código: el email del cliente sale enmascarado (R25).
+    public ReservaVistaDTO reservaPublica(Reserva r) {
+        return armar(List.of(r), true).get(0);
     }
 
     private List<ReservaVistaDTO> armar(List<Reserva> lista) {
+        return armar(lista, false);
+    }
+
+    private List<ReservaVistaDTO> armar(List<Reserva> lista, boolean publica) {
         if (lista.isEmpty()) {
             return List.of();
         }
@@ -65,13 +74,13 @@ public class VistasReservas {
 
         return lista.stream()
                 .map(r -> {
-                    return dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()));
+                    return dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()), publica);
                 })
                 .toList();
     }
 
     private ReservaVistaDTO dto(Reserva r, Map<Integer, List<Asiento>> asientosPorSala,
-                                Pago pago) {
+                                Pago pago, boolean publica) {
         Funcion f = r.getFuncion();
         List<Asiento> asientos = asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe);
         return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
@@ -83,7 +92,7 @@ public class VistasReservas {
                 vistasCartelera.funcion(f, f.getSala(), asientos),
                 vistasCartelera.pelicula(f.getPelicula()),
                 vistasSalas.sala(f.getSala(), asientos),
-                vistasUsuarios.cliente(r.getCliente()),
+                publica ? vistasUsuarios.clientePublico(r.getCliente()) : vistasUsuarios.cliente(r.getCliente()),
                 pago == null ? null : vistasPagos.pago(pago));
     }
 

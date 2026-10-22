@@ -86,4 +86,9 @@ class EmailTest {
     void paraBuscarNormalizaIgualQueAlGuardar() {
         assertEquals(Optional.of(new Email("beto@cine.com")), Email.paraBuscar(" Beto@CINE.com "));
     }
+
+    @Test
+    void enmascaradoDejaLaPrimeraLetraYElDominio() {
+        assertEquals("a***@mail.com", new Email("ana.perez@mail.com").enmascarado());
+    }
 }
