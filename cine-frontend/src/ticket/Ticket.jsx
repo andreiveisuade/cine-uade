@@ -11,8 +11,8 @@ import { EnLaPuerta } from "./EnLaPuerta.jsx";
 import { EntradaTicket } from "@/ticket/entrada/EntradaTicket.jsx";
 import { vigente } from "./estadoReserva.js";
 import { TicketEsqueleto } from "./TicketEsqueleto.jsx";
-import { useEsperarPago } from "./useEsperarPago.js";
-import { useFestejarPago } from "./useFestejarPago.js";
+import { useEsperarPago } from "./pago/useEsperarPago.js";
+import { useFestejarPago } from "./pago/useFestejarPago.js";
 import { VentaCruzada } from "./VentaCruzada.jsx";
 
 // La reserva como entrada, lo que se puede hacer con ella y lo que se puede sumar a la función.

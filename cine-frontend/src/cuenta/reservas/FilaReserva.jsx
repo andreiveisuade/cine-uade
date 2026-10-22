@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
 import { fechaHora, precio } from "@/api/formato.js";
 import { COLOR_ESTADO } from "@/ticket/estadoReserva.js";
-import { PagarOnline } from "@/ticket/PagarOnline.jsx";
+import { PagarOnline } from "@/ticket/pago/PagarOnline.jsx";
 import { FechaEnBloque } from "./FechaEnBloque.jsx";
 
 // Una fila por reserva: la fecha como bloque a la izquierda, lo que es en el medio y lo que se puede hacer a la derecha.
