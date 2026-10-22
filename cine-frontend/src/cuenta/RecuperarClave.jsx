@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
+import { useEnviar } from "@/compartido/hooks/useEnviar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
@@ -18,9 +19,8 @@ export function RecuperarClave() {
   const [email, setEmail] = useState(state?.email || "");
   const [codigo, setCodigo] = useState("");
   const [nueva, setNueva] = useState("");
-  const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
-  const [enviando, setEnviando] = useState(false);
+  const { enviar, enviando, error } = useEnviar();
 
   async function recuperar(evento) {
     evento.preventDefault();
@@ -32,16 +32,11 @@ export function RecuperarClave() {
     setFaltan(vacios);
     enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
-    setError(null);
-    setEnviando(true);
-    try {
+    await enviar(async () => {
       await api.recuperarClave({ email: email.trim(), codigoReserva: codigo.trim(), nueva });
       avisar("Listo: entrá con tu contraseña nueva");
       navegar("/ingresar", { state: { email: email.trim() } });
-    } catch (e) {
-      setError(e.message);
-      setEnviando(false);
-    }
+    });
   }
 
   return (

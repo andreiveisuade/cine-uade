@@ -3,6 +3,7 @@ import { Button, Group, Modal, PasswordInput, Text } from "@mantine/core";
 import { useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
+import { useEnviar } from "@/compartido/hooks/useEnviar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { useSesion } from "../SesionDelCliente.jsx";
@@ -14,9 +15,8 @@ export function DarDeBaja() {
   const avisar = useAvisar();
   const [actual, setActual] = useState("");
   const [confirmando, setConfirmando] = useState(false);
-  const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
-  const [enviando, setEnviando] = useState(false);
+  const { enviar, enviando, error } = useEnviar();
 
   function pedirConfirmacion(evento) {
     evento.preventDefault();
@@ -27,18 +27,17 @@ export function DarDeBaja() {
   }
 
   async function darDeBaja() {
-    setError(null);
-    setEnviando(true);
-    try {
-      await api.darDeBaja({ actual });
+    await enviar(async () => {
+      try {
+        await api.darDeBaja({ actual });
+      } catch (e) {
+        setConfirmando(false);
+        throw e;
+      }
       setUsuario(null);
       avisar("Cerramos tu cuenta");
       navegar("/");
-    } catch (e) {
-      setError(e.message);
-      setEnviando(false);
-      setConfirmando(false);
-    }
+    });
   }
 
   return (

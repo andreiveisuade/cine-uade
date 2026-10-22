@@ -1,6 +1,6 @@
 import { Group, Tooltip } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { iconoMedio } from "@/api/iconos.js";
+import { iconoMedio } from "@/compartido/iconos.js";
 
 const NOTA = { EFECTIVO: "en la boletería" };
 

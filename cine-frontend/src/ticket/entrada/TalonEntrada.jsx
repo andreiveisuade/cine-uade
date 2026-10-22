@@ -1,7 +1,7 @@
 import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
-import { fechaHora } from "@/api/formato.js";
+import { fechaHora } from "@/compartido/formato.js";
 import { codigoLegible, vigente } from "@/ticket/estadoReserva.js";
 
 const CODIGO_POR_ESTADO = {

@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { armarComprobante } from "./armarComprobante.js";
-import { PagarOnline } from "./PagarOnline.jsx";
+import { PagarOnline } from "./pago/PagarOnline.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
 export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDelPago }) {

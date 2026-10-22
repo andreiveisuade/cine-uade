@@ -2,7 +2,7 @@ import { Box, Group, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
-import { duracion } from "@/api/formato.js";
+import { duracion } from "@/compartido/formato.js";
 import { ChipClasificacion } from "@/compartido/ui/Chips.jsx";
 import { Poster } from "@/compartido/ui/Poster.jsx";
 import { useInclinar } from "./useInclinar.js";

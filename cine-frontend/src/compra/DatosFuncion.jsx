@@ -1,6 +1,6 @@
 import { Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { dia, hora } from "@/api/formato.js";
+import { dia, hora } from "@/compartido/formato.js";
 
 /** Cuándo, dónde y en qué formato: el encabezado de la función en el mapa y en la confirmación. */
 export function DatosFuncion({ funcion, ...props }) {

@@ -28,16 +28,17 @@ Una carpeta por funcionalidad. `app/` arma el marco; `compartido/` y `api/` no c
 src/
   app/            main.jsx, Proveedores (tema, Motion, avisos), AppCliente (marco), Rutas, ErrorDePantalla
     layout/       Barra, Pie, Marca, BotonTema
-  api/            api-http.js (único acceso al backend), etiquetas, formato, iconos
-  compartido/     lo que usa más de una pantalla
-    hooks/        useCargar, useTitulo
+  api/            api-http.js (único acceso al backend) y etiquetas del contrato
+  compartido/     lo que usa más de una pantalla; formato (precio, hora, día) e iconos
+    hooks/        useCargar, useEnviar, useTitulo
     layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
     estado/       Cargando, EsperaOError, ErrorCaja, Vacio, Avisos
     ui/           Poster, Chips, MontoAnimado, MediosDePago
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
-  ticket/         la entrada, acciones, pagar online, espera del pago, venta cruzada
+  ticket/         la entrada, acciones, venta cruzada
+    pago/         pagar online, espera, vuelta y festejo del pago
   cuenta/         sesión, ingresar, registro, mi cuenta, recuperar clave, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
   institucional/  nosotros
@@ -61,6 +62,7 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `CompraEnCurso` / `useCompra`: butacas elegidas con su tarifa, en memoria.
 - `Avisos` / `useAvisar`: los toasts.
 - `useCargar(pedir, deps)`: datos de una pantalla, descarta respuestas viejas.
+- `useEnviar()`: un formulario mandando, con el botón cargando y el error del backend.
 - `useTitulo(texto)`: el título de la pestaña.
 - `useRenovarBloqueo(funcionId)`: renueva el bloqueo de las butacas cada minuto.
 - `useCambiarTarifa()`: cambia la tarifa de una butaca elegida.
@@ -68,6 +70,7 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `useReservar(funcionId)`: crea la reserva y va al ticket, o vuelve al mapa si perdió una butaca.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
 - `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.
+- `usePagarOnline(codigo, alVolver)`: los pasos del pago online, de traer los medios a ir a Mercado Pago.
 - `useRotacion(cantidad, frenada)`: la portada avanza sola cada 7 s y se frena con el mouse, el foco, la
   pestaña oculta o movimiento reducido.
 - `usePrevia`: trailer muteado al dejar el mouse sobre un póster.

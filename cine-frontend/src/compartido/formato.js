@@ -15,17 +15,13 @@ export function duracion(minutos) {
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-function aFecha(iso) {
-  return new Date(iso);
-}
-
 export function hora(iso) {
-  const d = aFecha(iso);
+  const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 export function dia(iso) {
-  const d = aFecha(iso);
+  const d = new Date(iso);
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const diferencia = Math.round((new Date(d).setHours(0, 0, 0, 0) - hoy) / 86400000);
@@ -35,7 +31,7 @@ export function dia(iso) {
 }
 
 export function fechaHora(iso) {
-  const d = aFecha(iso);
+  const d = new Date(iso);
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${hora(iso)}`;
 }
