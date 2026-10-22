@@ -23,7 +23,7 @@ data class EstadoLogin(
 
 data class Sesion(val api: ApiPuerta, val usuario: Usuario)
 
-// Valida usuario y clave con POST /sesion; quién puede usar la Puerta lo decide el backend.
+// Valida usuario y clave con POST /sesion; un cliente no sigue, como en Swing, y /acceso igual lo frena con 403.
 class LoginViewModel(private val io: CoroutineDispatcher = Dispatchers.IO) : ViewModel() {
     private val _estado = MutableStateFlow(EstadoLogin())
     val estado: StateFlow<EstadoLogin> = _estado
@@ -40,6 +40,7 @@ class LoginViewModel(private val io: CoroutineDispatcher = Dispatchers.IO) : Vie
             try {
                 val api = ApiPuerta(actual.servidor, actual.usuario, actual.clave, io)
                 val usuario = api.iniciarSesion()
+                if (usuario.rol == "CLIENTE") throw Rechazo(SOLO_EMPLEADOS)
                 _estado.update { it.copy(cargando = false, sesion = Sesion(api, usuario)) }
             } catch (e: Rechazo) {
                 _estado.update { it.copy(cargando = false, error = e.message) }
@@ -50,6 +51,7 @@ class LoginViewModel(private val io: CoroutineDispatcher = Dispatchers.IO) : Vie
     fun salir() = _estado.update { it.copy(clave = "", sesion = null) }
 
     companion object {
+        const val SOLO_EMPLEADOS = "Esta aplicación es para empleados del cine: los clientes compran en la web"
         const val SERVIDOR_POR_DEFECTO = "https://cine-uade.onrender.com/api"
     }
 }

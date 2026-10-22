@@ -64,6 +64,30 @@ class LoginViewModelTest {
     }
 
     @Test
+    fun unClienteNoEntra() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setBody("""{"id":9,"nombre":"Ana","email":"a@x","rol":"CLIENTE"}"""))
+        val vm = viewModel()
+
+        vm.ingresar()
+        runCurrent()
+
+        assertEquals(LoginViewModel.SOLO_EMPLEADOS, vm.estado.value.error)
+        assertNull(vm.estado.value.sesion)
+    }
+
+    @Test
+    fun conUnServidorHttpAInternetNoMandaLaClave() = runTest(despachador) {
+        val vm = viewModel()
+        vm.cambiarServidor("http://cine-uade.onrender.com/api")
+
+        vm.ingresar()
+        runCurrent()
+
+        assertEquals("Fuera de la red local el servidor tiene que ser https", vm.estado.value.error)
+        assertEquals(0, servidor.requestCount)
+    }
+
+    @Test
     fun salirOlvidaLaClave() = runTest(despachador) {
         servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR"}"""))
         val vm = viewModel()
