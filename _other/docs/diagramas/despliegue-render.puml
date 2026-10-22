@@ -1,0 +1,44 @@
+@startuml despliegue-render
+title Despliegue publico - Render Free + Aiven MySQL Free
+
+skinparam nodesep 30
+skinparam ranksep 45
+
+actor "Cliente" as cliente
+node "Navegador" as web
+node "PC del encargado\ncine-swing" as swing
+
+cloud "Render (plan free, 512 MB, 0,1 CPU)" {
+  node "proxy https de Render\n(termina TLS, X-Forwarded-Proto)" as proxy
+  node "contenedor cine-uade\n(Dockerfile raiz)" {
+    component "Spring Boot\n/api/**" as api
+    artifact "static/\nbuild de React\n(/, /index.html, /assets/**)" as front
+  }
+}
+
+cloud "Aiven (MySQL Free, 1 GB)" {
+  database "defaultdb\nschema.sql + migraciones\ntabla imagen (MEDIUMBLOB)" as aiven
+}
+
+cloud "Mercado Pago\nCheckout Pro sandbox" as mp
+cloud "TMDB" as tmdb
+
+cliente --> web
+web --> proxy : "https://<servicio>.onrender.com\ncookie JSESSIONID Secure"
+swing --> proxy : "https + HTTP Basic\n(CINE_API_URL)"
+proxy --> api : "http :PORT"
+proxy --> front : "GET publicos (FRONT)"
+api --> aiven : "JDBC con TLS\nsslMode=REQUIRED, pool 5"
+api --> mp : "preferencia y consulta del pago"
+web ..> mp : "paga y vuelve a\nCINE_URL_PUBLICA/#/ticket"
+api --> tmdb : "importador"
+
+legend bottom
+  |= Limite aceptado |= Efecto |
+  | Render se duerme a los 15 min | El primer pedido tarda ~9 min en despertar; sesiones en memoria: se desloguea |
+  | Dormido no corre @Scheduled | La conciliacion de MP espera al proximo pedido |
+  | Disco efimero | Imagenes en la tabla imagen, no en disco |
+  | Aiven Free | 1 GB; se apaga por inactividad |
+endlegend
+
+@enduml

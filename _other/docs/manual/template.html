@@ -417,6 +417,7 @@ body.lightbox-locked { overflow: hidden; }
       <ol>
         <li><a href="#entorno" data-target="entorno">Tecnologías</a></li>
         <li><a href="#correr" data-target="correr">Cómo correrlo</a></li>
+        <li><a href="#despliegue" data-target="despliegue">Despliegue</a></li>
       </ol>
 
       <p class="toc-group-label">Arquitectura</p>
@@ -583,9 +584,9 @@ body.lightbox-locked { overflow: hidden; }
           <tbody>
             <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (MVC sobre Tomcat), Spring Data JPA / Hibernate, Spring Security, springdoc, Lombok</td></tr>
             <tr><td>Datos</td><td>MySQL 8.4; H2 en los tests</td></tr>
-            <tr><td>Frontend</td><td>React 19, React Router y Mantine, compilado con Vite y servido por nginx</td></tr>
+            <tr><td>Frontend</td><td>React 19, React Router y Mantine, compilado con Vite; lo sirve nginx en local y el backend en Render</td></tr>
             <tr><td>Escritorio</td><td>Java 21 + Swing, FlatLaf, JCalendar, Jackson; <code>java.net.http</code> contra la API</td></tr>
-            <tr><td>Despliegue</td><td>Docker Compose: 4 servicios en dos redes</td></tr>
+            <tr><td>Despliegue</td><td>Local: Docker Compose, 4 servicios en dos redes. Público: <a href="#despliegue">Render Free + Aiven MySQL Free</a></td></tr>
             <tr><td>Externo</td><td>API de TMDB; Mercado Pago Checkout Pro (sandbox)</td></tr>
           </tbody>
         </table>
@@ -625,7 +626,7 @@ docker compose up -d --build
 
       <figure class="diagram">
         {{SVG_DOCKER}}
-        <figcaption>Los contenedores, las dos redes y qué carpeta construye a cada uno</figcaption>
+        <figcaption>En local: los contenedores, las dos redes y qué carpeta construye a cada uno. El público, en <a href="#despliegue">Despliegue</a></figcaption>
       </figure>
       <figure class="diagram">
         {{SVG_ARRANQUE}}
@@ -645,6 +646,86 @@ docker compose up -d --build
         Sin Docker, <code>mvn package</code> arma <code>target/cine-api.war</code>: corre con <code>java -jar</code> o en <code>webapps/</code> de un Tomcat.
         Lo habilitan <code>packaging war</code>, <code>spring-boot-starter-tomcat</code> <code>provided</code> y <code>Aplicacion extends SpringBootServletInitializer</code> (un Tomcat externo no llama a <code>main()</code>).
       </p>
+    </section>
+
+    <section class="doc-section" id="despliegue">
+      <h2>Despliegue</h2>
+      <figure class="diagram">
+        {{SVG_DESPLIEGUE_RENDER}}
+        <figcaption>Un contenedor en Render sirve API y front por el mismo origen https; la base vive en Aiven</figcaption>
+      </figure>
+
+      <h3>Por qué Render Free + Aiven MySQL Free</h3>
+      <ul>
+        <li><strong>Un solo contenedor</strong> sirve la API y el build de React: un origen https, así la cookie de sesión y la vuelta de Mercado Pago andan sin proxy ni CORS.</li>
+        <li><strong>Aiven</strong> da MySQL gratis: el mismo motor que en local, sin tocar <code>schema.sql</code>.</li>
+      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Descartado</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>Vercel</td><td>Front aparte: otro origen, cookie entre sitios y CORS</td></tr>
+            <tr><td>Cloudflare R2</td><td>Las imágenes van en la base (<a href="#imagenes">imágenes</a>): un servicio menos</td></tr>
+            <tr><td>Supabase</td><td>Es Postgres; el esquema y los tests son de MySQL</td></tr>
+            <tr><td>Oracle Cloud</td><td>Una VM para administrar a mano</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Límites aceptados</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Límite</th><th>Efecto</th></tr></thead>
+          <tbody>
+            <tr><td>Render se duerme a los 15 min sin pedidos</td><td>El primer pedido lo despierta: ~9 min con 0,1 CPU</td></tr>
+            <tr><td>Sesiones en memoria</td><td>Cada sueño o deploy desloguea a todos</td></tr>
+            <tr><td>Dormido no corre <code>@Scheduled</code></td><td>La <a href="#conciliacion">conciliación</a> no corre; un pago aprobado sin retorno durante el sueño puede quedar afuera de su ventana de 30 min</td></tr>
+            <tr><td>512 MB de memoria</td><td>Medido: 316 MB RSS. <code>-XX:MaxRAMPercentage=70</code>, porque con el 25 % de fábrica el heap quedaba en 128 MB</td></tr>
+            <tr><td>Disco efímero</td><td>Imágenes en la tabla <code>imagen</code>; tickets <code>.txt</code> se pierden al reiniciar</td></tr>
+            <tr><td>Aiven Free: 1 GB, se apaga por inactividad</td><td>Sobra para el TP; hay que volver a prenderla desde su panel</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Qué lo arma</h3>
+      <ul>
+        <li><strong><code>Dockerfile</code> raíz, en tres etapas:</strong> node compila el front → maven copia <code>dist/</code> a <code>static/</code> y arma el war → JRE alpine con usuario sin privilegios y <code>TZ</code>. El compose local no lo usa: sigue con nginx.</li>
+        <li><strong><code>render.yaml</code>:</strong> servicio docker, plan free, health check en <code>/api/generos</code>. Fija <code>TZ</code> y <code>DB_POOL=5</code>; <code>PORT</code> lo pone Render.</li>
+        <li><strong><code>server.forward-headers-strategy: native</code>:</strong> Render termina TLS y le habla http al contenedor. Tomcat lee <code>X-Forwarded-Proto</code> y la cookie sale <code>Secure</code>. Con <code>framework</code> salía sin <code>Secure</code>: Tomcat arma la cookie con su propio <code>isSecure</code>, no con el del wrapper de Spring. Si en Render saliera sin <code>Secure</code> (proxy fuera del rango privado), agregar <code>server.tomcat.remoteip.internal-proxies: ".*"</code>.</li>
+        <li><strong>GET públicos del front:</strong> el array <code>FRONT</code> de <a href="#seguridad"><code>ConfiguracionSeguridad</code></a>; el resto sigue cerrado.</li>
+        <li><strong>Reloj de Buenos Aires</strong> fijo en código, no en <code>TZ</code> (<a href="#decisiones">decisión</a>).</li>
+      </ul>
+
+      <h3>Variables (solo en el panel de Render, <code>sync: false</code>)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Qué es</th></tr></thead>
+          <tbody>
+            <tr><td><code>SPRING_DATASOURCE_URL</code></td><td><code>jdbc:mysql://&lt;host&gt;:&lt;port&gt;/defaultdb?sslMode=REQUIRED</code> de Aiven</td></tr>
+            <tr><td><code>SPRING_DATASOURCE_USERNAME</code>, <code>SPRING_DATASOURCE_PASSWORD</code></td><td>Usuario de Aiven</td></tr>
+            <tr><td><code>MP_ACCESS_TOKEN</code></td><td>Credenciales de prueba de Mercado Pago</td></tr>
+            <tr><td><code>TMDB_TOKEN</code></td><td>Token del importador</td></tr>
+            <tr><td><code>CINE_URL_PUBLICA</code></td><td><code>https://&lt;servicio&gt;.onrender.com</code>: adonde vuelve MP. Sin ella vuelve a localhost</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Ningún valor va al repo. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
+
+      <h3>Pasos</h3>
+      <ol>
+        <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga a mano antes del primer arranque:
+<pre><code>mysql --ssl-mode=REQUIRED -h &lt;host&gt; -P &lt;port&gt; -u avnadmin -p defaultdb \
+  &lt; cine-backend/src/main/resources/schema.sql
+mysql ... defaultdb &lt; cine-docker/seed/02-admin.sql</code></pre>
+          Si la base ya existía, los <code>migracion-*.sql</code> que falten, en <a href="#der">su orden</a>.</li>
+        <li><strong>Admin con clave nueva.</strong> <code>cine2026</code> es pública (está en el repo). Se pisa con el SHA-256 de una nueva, que el primer login pasa a bcrypt:
+<pre><code>printf %s '&lt;clave nueva&gt;' | shasum -a 256
+UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cine.uade.ar', 'puerta@cine.uade.ar');</code></pre></li>
+        <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
+        <li><strong>Datos:</strong> un <code>mysqldump</code> de la base local se lleva películas, funciones e imágenes juntas.</li>
+        <li><!-- T48 -->URL pública: <code>https://&lt;servicio&gt;.onrender.com</code> (se completa al desplegar). Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>CINE_API_URL=https://&lt;servicio&gt;.onrender.com mvn exec:java</code>.</li>
+        <li><!-- T48 -->Humo: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, la cookie de sesión sale <code>Secure</code>.</li>
+      </ol>
     </section>
 
     <section class="doc-section" id="capas">
@@ -2341,7 +2422,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
       <p><strong>Pendiente:</strong></p>
       <ul>
         <li>La <a href="#terminal">terminal de boletería</a> que vende sin red y sincroniza al volver.</li>
-        <li>Despliegue en un servidor.</li>
+        <li>Completar en el manual la URL pública cuando quede desplegado (<a href="#despliegue">Despliegue</a>).</li>
         <li>En Swing, el alta de sala con un editor visual en vez de tipear listas.</li>
         <li>El formulario de promociones deja huecos donde van los campos de los otros tipos.</li>
         <li>El subtítulo de Candy dice «sin reserva de por medio», pero el formulario ofrece asociar una reserva.</li>
