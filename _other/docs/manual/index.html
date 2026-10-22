@@ -1574,7 +1574,8 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
       <ul>
         <li>Solo la venta al cliente, con <a href="#usuarios">cuenta opcional</a>. Encargado y acomodador usan el <a href="#swing">panel Swing</a>.</li>
         <li>React 19, React Router por hash (<code>#/pelicula/3</code>) y Mantine, en <code>cine-frontend/src</code>.</li>
-        <li>Vite compila a un <code>index.html</code> HTML5; nginx lo sirve y reenvía <code>/api</code>: sin CORS.</li>
+        <li>Vite compila a un <code>index.html</code> HTML5. En local nginx lo sirve (con <code>public/</code>: favicon, íconos y og) y reenvía <code>/api</code>; en Render lo sirve el backend. Sin CORS en los dos.</li>
+        <li>Guía con ejemplos del código: <code>cine-frontend/REACT.md</code>.</li>
         <li>CSS3: la hoja de Mantine con tema propio (claro y oscuro) más <code>app/tema.css</code> y el <code>.module.css</code> de la entrada.</li>
       </ul>
       <h3 id="front-carpetas">Carpetas</h3>
@@ -1617,7 +1618,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
             <tr><td><code>#/registro</code>, <code>#/ingresar</code></td><td>Alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
             <tr><td>Pagar online</td><td>Medio, monto del backend, Mercado Pago y vuelta al ticket</td></tr>
-            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra. «Ya pagué» avisa el retorno y relee la reserva: si sigue <code>cobrable</code>, «Mercado Pago todavía no confirmó el pago»</td></tr>
+            <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Siempre pide la reserva por código al backend, aunque venga en la navegación: el historial del navegador guarda la de cuando se reservó. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra. «Ya pagué» avisa el retorno y relee la reserva: si sigue <code>cobrable</code>, «Mercado Pago todavía no confirmó el pago»</td></tr>
           </tbody>
         </table>
       </div>
