@@ -10,7 +10,7 @@ import { useCompra } from "@/compra/CompraEnCurso.jsx";
 import { DatosFuncion } from "@/compra/DatosFuncion.jsx";
 import { MapaButacas } from "@/compra/mapa/MapaButacas.jsx";
 import { Referencia } from "@/compra/mapa/Referencia.jsx";
-import { catalogoTarifas, resumenCompra } from "@/compra/tarifas.js";
+import { resumenCompra } from "@/compra/tarifas.js";
 import { useRenovarBloqueo } from "@/compra/useRenovarBloqueo.js";
 import { FuncionEsqueleto } from "./FuncionEsqueleto.jsx";
 import { pintarParaComprar, REFERENCIAS } from "./pintarParaComprar.js";
@@ -23,8 +23,8 @@ export function Funcion() {
   const navegar = useNavigate();
   const { seleccion } = useCompra();
   // Con la sesión, las butacas que uno mismo bloqueó no vuelven como ocupadas.
-  const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
-  const funcion = carga.datos?.[0];
+  const carga = useCargar(() => api.obtenerFuncion(id, sesionDeCompra()), [id]);
+  const funcion = carga.datos;
   // Otra función es otra compra: lo elegido para la anterior no se arrastra. Se deriva acá y no con un efecto que
   // la vacíe; el primer clic la reemplaza porque `alternar` escribe la selección entera con este funcionId.
   const butacas = funcion && seleccion.funcionId === funcion.id ? seleccion.butacas : {};

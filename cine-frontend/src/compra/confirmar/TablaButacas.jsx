@@ -21,7 +21,7 @@ export function TablaButacas({ elegidas, butacas, total }) {
             <Table.Td fw={500}>{a.codigo}</Table.Td>
             <Table.Td>{etiqueta(a.tipo)}</Table.Td>
             <Table.Td>
-              <SelectorTarifa valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
+              <SelectorTarifa asiento={a} valor={butacas[a.codigo]} alCambiar={(t) => cambiarTarifa(a.codigo, t)} />
             </Table.Td>
             <Table.Td ta="right">{precio(precioConTarifa(a, butacas[a.codigo]))}</Table.Td>
           </Table.Tr>

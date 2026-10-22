@@ -119,11 +119,13 @@ está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe 
 ```json
 { "id": 1, "…": "…", "libres": 50,
   "asientos": [{ "id": 5, "fila": 1, "numero": 5, "codigo": "A5", "tipo": "ESTANDAR",
-                 "estado": "HABILITADO", "ocupado": false, "precio": 8000 }] }
+                 "estado": "HABILITADO", "ocupado": false, "precio": 8000,
+                 "precios": { "GENERAL": 8000, "MENOR": 4800, "JUBILADO": 4000, "ESTUDIANTE": 5600 } }] }
 ```
 
 `ocupado` es de esta función (R4); `estado`, del asiento (R9). Sin `sesion`, los bloqueos propios se ven
-ocupados.
+ocupados. `precio` es el de la tarifa general; `precios`, el de cada tarifa con la misma cuenta que la entrada al
+reservar: el cliente los muestra y suma, no los recalcula.
 
 `POST /funciones/{id}/bloqueos`: aparta butacas 3 minutos mientras se elige.
 

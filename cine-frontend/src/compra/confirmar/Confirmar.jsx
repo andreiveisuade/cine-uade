@@ -10,7 +10,7 @@ import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { sesionDeCompra } from "@/compra/bloqueo.js";
 import { clienteRecordado } from "@/compra/clienteRecordado.js";
 import { useCompra } from "@/compra/CompraEnCurso.jsx";
-import { catalogoTarifas, resumenCompra } from "@/compra/tarifas.js";
+import { resumenCompra } from "@/compra/tarifas.js";
 import { useRenovarBloqueo } from "@/compra/useRenovarBloqueo.js";
 import { DetalleCompra } from "./DetalleCompra.jsx";
 import { FormularioCliente } from "./FormularioCliente.jsx";
@@ -24,8 +24,8 @@ export function Confirmar() {
   const { usuario } = useSesion();
   // Con sesión, los datos de la cuenta: reservar con ese email la deja en Mis reservas.
   const [recordado] = useState(() => usuario || clienteRecordado());
-  const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), catalogoTarifas()]), [id]);
-  const funcion = carga.datos?.[0];
+  const carga = useCargar(() => Promise.all([api.obtenerFuncion(id, sesionDeCompra()), api.obtenerTarifas()]), [id]);
+  const [funcion, tarifas] = carga.datos || [];
   const { reservar, enviando, error, reservada } = useReservar(funcion?.id);
 
   // Completar el formulario lleva más de lo que dura un bloqueo.
@@ -48,7 +48,7 @@ export function Confirmar() {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 7 }} order={{ base: 1, md: 2 }}>
-          <DetalleCompra funcion={funcion} butacas={seleccion.butacas} elegidas={elegidas} total={total} />
+          <DetalleCompra funcion={funcion} tarifas={tarifas} butacas={seleccion.butacas} elegidas={elegidas} total={total} />
         </Grid.Col>
       </Grid>
     </div>

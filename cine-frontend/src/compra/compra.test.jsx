@@ -1,38 +1,27 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
-import { catalogoTarifas, resumenCompra } from "./tarifas.js";
+import { resumenCompra } from "./tarifas.js";
 import { CompraEnCurso, useCompra } from "./CompraEnCurso.jsx";
 import { useRenovarBloqueo } from "./useRenovarBloqueo.js";
 
 vi.mock("@/api/api-http.js");
 
-const TARIFAS = [
-  { nombre: "GENERAL", multiplicador: 1 },
-  { nombre: "JUBILADO", multiplicador: 0.5 },
-  { nombre: "ESTUDIANTE", multiplicador: 0.75 },
-];
-
+// Los precios por tarifa vienen del backend; a propósito no son butaca × multiplicador, para que se note si se recalcula.
 const FUNCION = {
   asientos: [
-    { codigo: "A1", precio: 1000 },
-    { codigo: "A2", precio: 1000 },
-    { codigo: "B1", precio: 1500 },
+    { codigo: "A1", precio: 1000, precios: { GENERAL: 1000, JUBILADO: 499.99 } },
+    { codigo: "A2", precio: 1000, precios: { GENERAL: 1000, JUBILADO: 499.99 } },
+    { codigo: "B1", precio: 1500, precios: { GENERAL: 1500, ESTUDIANTE: 1111.11 } },
   ],
 };
 
 describe("resumenCompra", () => {
-  beforeAll(async () => {
-    api.obtenerTarifas.mockResolvedValue(TARIFAS);
-    await catalogoTarifas();
-  });
-
   it.each([
     ["nada elegido", {}, [], 0],
     ["una general", { A1: "GENERAL" }, ["A1"], 1000],
-    ["general más jubilado", { A1: "GENERAL", A2: "JUBILADO" }, ["A1", "A2"], 1500],
-    ["estudiante en butaca cara", { B1: "ESTUDIANTE" }, ["B1"], 1125],
-    ["tarifa que no está en el catálogo cuenta como general", { B1: "INVENTADA" }, ["B1"], 1500],
+    ["general más jubilado", { A1: "GENERAL", A2: "JUBILADO" }, ["A1", "A2"], 1499.99],
+    ["estudiante en butaca cara", { B1: "ESTUDIANTE" }, ["B1"], 1111.11],
   ])("%s", (_caso, butacas, codigos, total) => {
     const resumen = resumenCompra(FUNCION, butacas);
 
