@@ -1,5 +1,5 @@
 import { etiqueta } from "@/api/etiquetas.js";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { ESTILO, estiloTipo } from "@/compra/mapa/estilosButaca.js";
 
 // El fondo dice el estado; el borde y el símbolo, el tipo de butaca.

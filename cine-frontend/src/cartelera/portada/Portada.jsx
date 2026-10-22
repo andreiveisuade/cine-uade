@@ -3,7 +3,7 @@ import { Button, Group, Modal, Stack, Text, Title } from "@mantine/core";
 import { AnimatePresence, m } from "motion/react";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
-import { duracion } from "@/api/formato.js";
+import { duracion } from "@/compartido/formato.js";
 import { Banda } from "@/compartido/layout/Banda.jsx";
 import { ChipClasificacion } from "@/compartido/ui/Chips.jsx";
 import { Trailer } from "@/cartelera/Trailer.jsx";

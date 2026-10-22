@@ -1,5 +1,5 @@
 import { etiqueta } from "@/api/etiquetas.js";
-import { fechaHora, precioExacto } from "@/api/formato.js";
+import { fechaHora, precioExacto } from "@/compartido/formato.js";
 
 const LINEA = "=".repeat(44);
 

@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Text, Title } from "@mantine/core";
-import { duracion } from "@/api/formato.js";
+import { duracion } from "@/compartido/formato.js";
 import { Chip, ChipClasificacion } from "@/compartido/ui/Chips.jsx";
 
 export function FichaPelicula({ pelicula, hayFunciones }) {

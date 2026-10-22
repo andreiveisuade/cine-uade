@@ -1,6 +1,6 @@
 import { Alert, Paper, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { DatosFuncion } from "@/compra/DatosFuncion.jsx";
 import { tarifaPorNombre } from "@/compra/tarifas.js";
 import { TablaButacas } from "./TablaButacas.jsx";

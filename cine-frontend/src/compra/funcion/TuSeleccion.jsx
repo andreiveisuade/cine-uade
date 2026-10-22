@@ -1,5 +1,5 @@
 import { Button, Group, Paper, ScrollArea, Text, Title } from "@mantine/core";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { MontoAnimado } from "@/compartido/ui/MontoAnimado.jsx";
 import { SelectorTarifa } from "@/compra/SelectorTarifa.jsx";
 import { precioConTarifa } from "@/compra/tarifas.js";

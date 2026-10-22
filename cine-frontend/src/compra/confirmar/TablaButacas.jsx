@@ -1,6 +1,6 @@
 import { Table, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { SelectorTarifa } from "@/compra/SelectorTarifa.jsx";
 import { precioConTarifa } from "@/compra/tarifas.js";
 import { useCambiarTarifa } from "@/compra/useCambiarTarifa.js";

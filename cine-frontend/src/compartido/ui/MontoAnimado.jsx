@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { animate, m, useMotionValue, useReducedMotion, useTransform } from "motion/react";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 
 // El total corre hasta el nuevo valor: se ve que cambió y cuánto, sin re-renderizar en cada cuadro.
 // `desde` hace que cuente al aparecer (el ahorro de un combo arranca en 0).

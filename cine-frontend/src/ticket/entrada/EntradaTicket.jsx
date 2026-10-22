@@ -1,6 +1,6 @@
 import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { dia, hora, precio } from "@/api/formato.js";
+import { dia, hora, precio } from "@/compartido/formato.js";
 import { vigente } from "@/ticket/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";

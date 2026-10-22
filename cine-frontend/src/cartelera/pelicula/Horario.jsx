@@ -1,7 +1,7 @@
 import { Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
-import { hora, precio } from "@/api/formato.js";
+import { hora, precio } from "@/compartido/formato.js";
 
 // Un horario es un botón: la hora manda, el resto la acompaña.
 export function Horario({ funcion }) {

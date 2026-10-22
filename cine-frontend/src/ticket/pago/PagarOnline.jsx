@@ -1,6 +1,6 @@
 import { Button, Group, NativeSelect, Paper, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { precio } from "@/api/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { usePagarOnline } from "./usePagarOnline.js";
 

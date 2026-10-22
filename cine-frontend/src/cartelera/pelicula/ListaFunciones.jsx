@@ -1,5 +1,5 @@
 import { Stack, Text } from "@mantine/core";
-import { dia, porDia } from "@/api/formato.js";
+import { dia, porDia } from "@/compartido/formato.js";
 import { Vacio } from "@/compartido/estado/Vacio.jsx";
 import { Horario } from "./Horario.jsx";
 

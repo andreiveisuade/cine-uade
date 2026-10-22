@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { Badge, Group, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
-import { precio } from "@/api/formato.js";
-import { iconoTarifa } from "@/api/iconos.js";
+import { precio } from "@/compartido/formato.js";
+import { iconoTarifa } from "@/compartido/iconos.js";
 import { conAcreditacion } from "@/ticket/estadoReserva.js";
 
 // La tarifa reducida lleva su ícono y la nota del carnet al lado de la butaca, no en un aviso aparte.
