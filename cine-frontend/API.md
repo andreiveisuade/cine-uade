@@ -180,7 +180,7 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 - `400`: ya pagada (R5), sin código si el medio lo exige o con código en efectivo (R11), vencida (R17),
   función empezada (R19).
 - Cobrar y cancelar a la vez: gana el primero y el otro recibe `409`.
-- `GET /reservas/{id}/pago`: el pago, o `404` si todavía no se cobró.
+- `Location` apunta a la reserva: `GET /reservas/{id}` trae el pago en `pago` (`null` si no se cobró).
 
 `POST /reservas/{id}/checkout` `{ "medio": "QR" }` (encargado) y `POST /reservas/codigo/{codigo}/checkout`
 (cliente con sesión, solo la suya: sin sesión `401`, ajena `404`): medios electrónicos, efectivo es `400`. Ambos
