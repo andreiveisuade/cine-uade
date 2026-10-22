@@ -59,7 +59,7 @@ El comprador de prueba es obligatorio: pagar como invitado con un vendedor de pr
 MySQL corre `schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
 aplicar a mano los `migracion-*.sql` que falten, en este orden: `programaciones`, `grilla-abierta`,
 `limpieza`, `staging`, `puntaje`, `votos`, `importaciones`, `bcrypt`, `bloqueos`, `version-reserva`,
-`ahorro-congelado`, `email-minusculas`, `imagenes` y `trailer`.
+`ahorro-congelado`, `email-minusculas`, `imagenes`, `trailer` e `imagenes-en-base`.
 
 ```sh
 docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
