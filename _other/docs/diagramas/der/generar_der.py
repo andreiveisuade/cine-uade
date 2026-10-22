@@ -3,7 +3,7 @@ from html import escape
 from pathlib import Path
 
 ROOT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
-SCHEMA = (ROOT / "cine-backend/src/main/resources/schema.sql").read_text()
+SCHEMA = (ROOT / "cine-backend/src/main/resources/db/schema.sql").read_text()
 OUT = ROOT / "_other/docs/diagramas/der-design.html"
 
 # ---------- parse ----------

@@ -36,7 +36,7 @@ if [ "$(mysql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_
 fi
 
 echo "Cargando schema.sql..."
-mysql < cine-backend/src/main/resources/schema.sql
+mysql < cine-backend/src/main/resources/db/schema.sql
 echo "Cargando empleados..."
 mysql <<SQL
 INSERT INTO usuario (nombre, email, rol, password_hash) VALUES

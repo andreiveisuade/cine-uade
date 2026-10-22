@@ -36,7 +36,7 @@ class MigracionEmailMinusculasTest extends PruebaDeIntegracion {
         assertFalse(clientes.buscarPorEmail("ana@mail.com").isPresent());
 
         try (Connection conexion = base.getConnection()) {
-            ScriptUtils.executeSqlScript(conexion, new ClassPathResource("migracion-email-minusculas.sql"));
+            ScriptUtils.executeSqlScript(conexion, new ClassPathResource("db/migraciones/12-email-minusculas.sql"));
         }
 
         assertEquals("ana@mail.com", jdbc.queryForObject("SELECT email FROM usuario WHERE nombre = 'Ana'", String.class));

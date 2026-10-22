@@ -9,7 +9,7 @@ skinparam ranksep 50
 hide empty members
 hide circle
 
-' Fuente: cine-backend/src/main/resources/schema.sql. Las migracion-*.sql solo
+' Fuente: cine-backend/src/main/resources/db/schema.sql. Las db/migraciones/*.sql solo
 ' llevan bases viejas a ese mismo estado: no agregan nada que schema.sql no tenga.
 ' * = NOT NULL. Los tipos van solo donde dicen algo (DECIMAL de plata, DATETIME,
 ' VARCHAR de un enum). base-venta-er.puml queda como zoom de la venta.

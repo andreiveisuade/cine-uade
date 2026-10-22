@@ -20,8 +20,8 @@ timeout 600 mvn test           # perfil test, base H2 en memoria, sin MySQL
 | (ninguno) | MySQL, por `DB_*` o `SPRING_DATASOURCE_*` | Docker local y Render |
 | `test` | H2 en memoria (`application-test.yml`) | Los tests lo activan solos |
 
-`ddl-auto: validate`: el backend no crea tablas. `schema.sql` y las `migracion-*.sql` se aplican a mano
-(orden en [`cine-docker`](../cine-docker/README.md#la-base)) y, si algo no coincide, no arranca y el log dice qué.
+`ddl-auto: validate`: el backend no crea tablas. `db/schema.sql` y las `db/migraciones/NN-*.sql` se aplican a mano
+(en el orden del número; comando en [`cine-docker`](../cine-docker/README.md#la-base)) y, si algo no coincide, no arranca y el log dice qué.
 
 ## Variables de entorno
 

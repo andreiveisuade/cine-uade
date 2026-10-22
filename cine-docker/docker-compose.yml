@@ -25,7 +25,7 @@ services:
       - mysql_data:/var/lib/mysql
       # Corre solo la primera vez, cuando el volumen está vacío: así el que clona los
       # repos levanta la base ya con las tablas creadas.
-      - ../cine-backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../cine-backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       # Después del schema y por el mismo mecanismo: el primer administrador, que no se
       # puede dar de alta por la API.
       - ./seed/02-admin.sql:/docker-entrypoint-initdb.d/02-admin.sql:ro

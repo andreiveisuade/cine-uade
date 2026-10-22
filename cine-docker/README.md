@@ -57,14 +57,13 @@ El comprador de prueba es obligatorio: pagar como invitado con un vendedor de pr
 
 ## La base
 
-MySQL corre `schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
-aplicar a mano los `migracion-*.sql` que falten, en este orden: `programaciones`, `grilla-abierta`,
-`limpieza`, `staging`, `puntaje`, `votos`, `importaciones`, `bcrypt`, `bloqueos`, `version-reserva`,
-`ahorro-congelado`, `email-minusculas`, `imagenes`, `trailer`, `imagenes-en-base`, `funcion-unica` y `clave-temporal`.
+MySQL corre `db/schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
+aplicar a mano las de `cine-backend/src/main/resources/db/migraciones/` que falten, en el orden del número
+(`01-programaciones.sql` … `17-clave-temporal.sql`).
 
 ```sh
 docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
-  < ../cine-backend/src/main/resources/migracion-bloqueos.sql
+  < ../cine-backend/src/main/resources/db/migraciones/09-bloqueos.sql
 ```
 
 Las comillas simples hacen que las variables las resuelva el contenedor, no la terminal. Si falta una

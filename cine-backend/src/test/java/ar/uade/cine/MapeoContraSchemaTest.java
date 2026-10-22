@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 // en una base aparte y sin otro test que la toque antes.
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:schema;MODE=MySQL;DB_CLOSE_DELAY=-1;"
-                + "INIT=RUNSCRIPT FROM 'src/main/resources/schema.sql'",
+                + "INIT=RUNSCRIPT FROM 'src/main/resources/db/schema.sql'",
         "spring.jpa.hibernate.ddl-auto=validate",
         // El INIT de H2 corre el script en cada conexión que se abre.
         "spring.datasource.hikari.maximum-pool-size=1"

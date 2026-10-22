@@ -1,5 +1,5 @@
 import re, sys, xml.etree.ElementTree as ET
-schema, svgp = (sys.argv[1:3] if len(sys.argv) > 2 else ["cine-backend/src/main/resources/schema.sql", "_other/docs/diagramas/der-design.svg"])
+schema, svgp = (sys.argv[1:3] if len(sys.argv) > 2 else ["cine-backend/src/main/resources/db/schema.sql", "_other/docs/diagramas/der-design.svg"])
 sql = re.sub(r"--[^\n]*", "", open(schema).read())
 NS = "{http://www.w3.org/2000/svg}"
 root = ET.parse(svgp).getroot()

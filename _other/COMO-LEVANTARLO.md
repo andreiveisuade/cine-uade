@@ -76,7 +76,7 @@ sandbox y sin cobrar:
 
 ## Sin Docker
 
-Hace falta un MySQL con la base creada desde `cine-backend/src/main/resources/schema.sql` y el usuario de
+Hace falta un MySQL con la base creada desde `cine-backend/src/main/resources/db/schema.sql` y el usuario de
 `cine-docker/seed/02-admin.sql`.
 
 ```bash
