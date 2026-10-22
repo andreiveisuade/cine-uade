@@ -1220,6 +1220,7 @@ docker compose up -d --build
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
             <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, alta de cliente, reserva <em>por código</em>, retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
+            <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
             <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
@@ -1232,7 +1233,7 @@ docker compose up -d --build
         <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
         <li><strong>Mensajes neutros contra enumeración:</strong> <code>POST /clientes</code> con el email de un empleado o de un cliente con cuenta da el mismo 409 «Ya existe una cuenta con ese email». <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
         <!-- T50b: cuenta sobre un cliente existente con código de reserva, límite de intentos y swagger -->
-        <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>.</li>
+        <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>, también un archivo estático que no esté en <code>FRONT</code> (<code>/otra</code> da 401). El front no necesita más: las rutas son por hash.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
       </ul>
     </section>
