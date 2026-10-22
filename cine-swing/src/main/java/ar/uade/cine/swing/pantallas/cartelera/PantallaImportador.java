@@ -170,7 +170,7 @@ public final class PantallaImportador extends Pantalla {
             }
             recargar(corrida.id());
         }, e -> {
-            // Un 400 (ya hay una corriendo) es una respuesta, no una pantalla rota: va junto al botón.
+            // Un 400 (la anterior terminó recién) va junto al botón; un 409 (otra en curso), en pop-up.
             terminar();
             v.mostrarError(e);
         });

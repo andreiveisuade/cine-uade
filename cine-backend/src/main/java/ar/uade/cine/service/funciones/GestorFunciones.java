@@ -153,7 +153,7 @@ public class GestorFunciones {
     public void eliminar(int id) {
         Funcion funcion = funcionRepository.exigir(id, "la función");
         if (reservaRepository.existsByFuncion_Id(id)) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "La función " + id + " tiene reservas: no se puede eliminar");
         }
         funcionRepository.delete(funcion);

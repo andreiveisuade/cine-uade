@@ -38,7 +38,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `403` | `POST /cuenta/recuperacion` sin prueba (R25): email inexistente, sin cuenta, código ajeno o inventado, todos con el mismo texto | `El email y el código no corresponden a ninguna cuenta: revisá el ticket de una de tus compras` |
 | `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
-| `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado | `Ya existe una sala con ese nombre` |
+| `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado; borrar o cambiar algo en uso (sala con funciones, función con reservas), una reserva ya cobrada, una importación en curso | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
 | `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic, para `POST /cuenta/recuperacion` (cuenta cada 403) y para la clave actual de `POST /cuenta/clave` y `DELETE /cuenta`. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
@@ -234,17 +234,17 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `GET /peliculas/pendientes` | El buzón del importador |
 | `POST /peliculas` | Título único (R1, `409`), duración 1 a 600 (R2), al menos un género (R7), clasificación (R10). `puntaje` 0 a 10, `anio` desde 1895, `posterUrl` con `http(s)://`. `trailerYoutube` acepta el id o una URL de YouTube (`watch?v=`, `youtu.be/`, `/embed/`) y guarda el id; otra cosa, `400 El trailer tiene que ser un video de YouTube`. Nace `CONFIRMADA` |
 | `POST /peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
-| `POST /peliculas/{id}/descarte` | `DESCARTADA`; `400` si tiene funciones |
+| `POST /peliculas/{id}/descarte` | `DESCARTADA`; `409` si tiene funciones |
 | `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA`. `trailerYoutube: ""` saca el trailer |
 | `DELETE /peliculas/{id}` | `400` si tiene funciones o una programación |
 | `GET /salas` · `GET /salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle suma `asientos` |
 | `POST /salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. 1 a 26 filas, 1 a 40 butacas por fila; cada código especial existe y está en una sola lista. Limpieza 0 a 120, 15 por defecto. Nombre único (`409`) |
-| `PUT /salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan; el tipo, tampoco si tiene funciones. Los datos se validan antes que el nombre repetido |
-| `DELETE /salas/{id}` | `400` si tiene funciones o una programación |
+| `PUT /salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan; el tipo, tampoco si tiene funciones (`409`). Los datos se validan antes que el nombre repetido |
+| `DELETE /salas/{id}` | `409` si tiene funciones o una programación |
 | `PATCH /salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
 | `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
-| `DELETE /funciones/{id}` | `400` si tiene reservas, aun canceladas (R12) |
+| `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12) |
 
 ## Programaciones (CU-03b)
 
@@ -422,4 +422,4 @@ pagar (R18), ya se usó o no es el día de la función; `404` si no existe. El c
 - Una que ya estaba y no tiene trailer lo recibe en la corrida (cuenta en `salteadas`); el que ya tiene, aunque lo haya corregido el encargado, no se toca.
 - Lo nuevo entra al buzón como `PENDIENTE`. Una candidata inválida cuenta en `fallidas` y la corrida sigue.
 - TMDB caído: `201` con `FALLIDA`. Una corrida trabada pasa a `FALLIDA` a los 5 minutos.
-- `400`: otra importación en curso, o la anterior terminó hace menos de 60 segundos.
+- `409`: otra importación en curso. `400`: la anterior terminó hace menos de 60 segundos.

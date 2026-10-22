@@ -153,12 +153,12 @@ class ClienteHttpTest {
     @Test
     void elErrorDelBackendLlegaConSuMensajeIntacto() {
         ingresar();
-        servidor.responder("DELETE /api/funciones/3", 400,
+        servidor.responder("DELETE /api/funciones/3", 409,
                 "{\"error\":\"La función tiene reservas: no se puede borrar\"}");
 
         ErrorApi error = assertThrows(ErrorApi.class, () -> funciones.eliminarFuncion(3));
 
-        assertEquals(400, error.estado());
+        assertEquals(409, error.estado());
         assertEquals("La función tiene reservas: no se puede borrar", error.getMessage());
     }
 

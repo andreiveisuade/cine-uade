@@ -11,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -137,7 +138,7 @@ public class GestorPagos {
             throw new DatoInvalido(motivo);
         });
         if (pagoRepository.existsByReservaId(reserva.getId())) {
-            throw new DatoInvalido("La reserva " + reserva.getId() + " ya tiene un pago registrado");
+            throw new ConflictoDeNegocio("La reserva " + reserva.getId() + " ya tiene un pago registrado");
         }
     }
 

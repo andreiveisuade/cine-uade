@@ -15,6 +15,7 @@ import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.infrastructure.importador.CatalogoExterno;
 import ar.uade.cine.infrastructure.importador.ImportadorError;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.repository.cartelera.ImportacionRepository;
@@ -124,7 +125,7 @@ public class GestorImportaciones {
 
     private static void exigirQueNoHayaOtraEnCurso(Importacion ultima) {
         if (ultima.estaEnCurso()) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "Ya hay una importación en curso: esperá a que termine");
         }
     }

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
@@ -43,7 +44,7 @@ public class GestorRevisionCartelera {
     public Pelicula descartar(int id) {
         Pelicula pelicula = peliculaRepository.exigir(id, "la película");
         if (funcionRepository.existsByPelicula_Id(id)) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "No se puede descartar una película que ya tiene funciones programadas");
         }
         pelicula.descartar();

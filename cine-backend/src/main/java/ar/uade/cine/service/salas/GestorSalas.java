@@ -72,7 +72,7 @@ public class GestorSalas {
             throw new ConflictoDeNegocio("Ya existe una sala con ese nombre");
         }
         if (tipo != tipoAnterior && funcionRepository.existsBySala_Id(id)) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
         }
         return sala;
@@ -116,13 +116,13 @@ public class GestorSalas {
     public void eliminar(int id) {
         Sala sala = salaRepository.exigir(id, "la sala");
         if (funcionRepository.existsBySala_Id(id)) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "La sala " + id + " tiene funciones programadas: primero hay que eliminarlas");
         }
         // Una grilla sin funciones generadas también la nombra, y chocaba con la FK en un 500.
         // Las grillas no se borran, solo se dan de baja: la sala queda.
         if (programacionRepository.existsBySala_Id(id)) {
-            throw new DatoInvalido(
+            throw new ConflictoDeNegocio(
                     "La sala " + id + " está programada en una grilla: no se puede eliminar");
         }
         salaRepository.delete(sala);

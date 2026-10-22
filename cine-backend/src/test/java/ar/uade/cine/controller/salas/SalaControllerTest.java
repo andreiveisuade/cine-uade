@@ -167,7 +167,7 @@ class SalaControllerTest extends PruebaDeApi {
 
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"IMAX\"}");
 
-        assertEquals(400, respuesta.estado());
+        assertEquals(409, respuesta.estado());
         assertEquals("La sala " + sala + " tiene funciones programadas: no se le puede cambiar el tipo",
                 respuesta.error());
         assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
@@ -184,7 +184,7 @@ class SalaControllerTest extends PruebaDeApi {
         Respuesta respuesta = pedirComo(HttpMethod.DELETE, "/api/salas/" + sala, null,
                 EMAIL_ADMIN, CLAVE_ADMIN);
 
-        assertEquals(400, respuesta.estado());
+        assertEquals(409, respuesta.estado());
         assertEquals("La sala " + sala + " está programada en una grilla: no se puede eliminar",
                 respuesta.error());
         assertEquals(200, get("/api/salas/" + sala).estado());
