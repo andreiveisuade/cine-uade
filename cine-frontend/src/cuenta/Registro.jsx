@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
+import { useEnviar } from "@/compartido/hooks/useEnviar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
@@ -23,9 +24,8 @@ export function Registro() {
   const [clave, setClave] = useState("");
   const [codigo, setCodigo] = useState("");
   const [pideCodigo, setPideCodigo] = useState(false);
-  const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
-  const [enviando, setEnviando] = useState(false);
+  const { enviar, enviando, error } = useEnviar();
 
   async function registrar(evento) {
     evento.preventDefault();
@@ -38,23 +38,22 @@ export function Registro() {
     setFaltan(vacios);
     enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
-    setError(null);
-    setEnviando(true);
-    try {
-      await api.registrarCliente({ nombre: nombre.trim(), email: email.trim(), password: clave,
-        codigoReserva: pideCodigo ? codigo.trim() : undefined });
+    await enviar(async () => {
+      try {
+        await api.registrarCliente({ nombre: nombre.trim(), email: email.trim(), password: clave,
+          codigoReserva: pideCodigo ? codigo.trim() : undefined });
+      } catch (e) {
+        // 403: el email ya compró sin cuenta y el backend pide el código de una entrada para probar que es suyo.
+        if (e.status === 403) setPideCodigo(true);
+        throw e;
+      }
       // Recién creada la cuenta, entrar con ella: pedirle la clave de nuevo no agrega nada.
       const usuario = await api.ingresar(email.trim(), clave);
       setUsuario(usuario);
       avisar(`Listo, ${usuario.nombre}`);
       // Si vino desde la compra o el ticket, vuelve ahí a seguir.
       navegar(state?.volver || "/mis-reservas");
-    } catch (e) {
-      // 403: el email ya compró sin cuenta y el backend pide el código de una entrada para probar que es suyo.
-      if (e.status === 403) setPideCodigo(true);
-      setError(e.message);
-      setEnviando(false);
-    }
+    });
   }
 
   return (

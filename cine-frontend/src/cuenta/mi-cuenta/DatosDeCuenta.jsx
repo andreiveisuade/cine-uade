@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, TextInput } from "@mantine/core";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
+import { useEnviar } from "@/compartido/hooks/useEnviar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { useSesion } from "../SesionDelCliente.jsx";
@@ -11,9 +12,8 @@ export function DatosDeCuenta() {
   const { usuario, setUsuario } = useSesion();
   const avisar = useAvisar();
   const [nombre, setNombre] = useState(usuario.nombre);
-  const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
-  const [enviando, setEnviando] = useState(false);
+  const { enviar, enviando, error } = useEnviar();
 
   async function guardar(evento) {
     evento.preventDefault();
@@ -21,15 +21,10 @@ export function DatosDeCuenta() {
     setFaltan(vacios);
     enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
-    setError(null);
-    setEnviando(true);
-    try {
+    await enviar(async () => {
       setUsuario(await api.modificarCuenta({ nombre: nombre.trim() }));
       avisar("Guardamos tu nombre");
-    } catch (e) {
-      setError(e.message);
-    }
-    setEnviando(false);
+    });
   }
 
   return (

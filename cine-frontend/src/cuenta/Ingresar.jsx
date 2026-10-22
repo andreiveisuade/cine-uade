@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
+import { useEnviar } from "@/compartido/hooks/useEnviar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
@@ -18,9 +19,8 @@ export function Ingresar() {
   const { state } = useLocation();
   const [email, setEmail] = useState(state?.email || "");
   const [clave, setClave] = useState("");
-  const [error, setError] = useState(null);
   const [faltan, setFaltan] = useState({});
-  const [enviando, setEnviando] = useState(false);
+  const { enviar, enviando, error } = useEnviar();
 
   async function entrar(evento) {
     evento.preventDefault();
@@ -31,24 +31,17 @@ export function Ingresar() {
     setFaltan(vacios);
     enfocarPrimero(evento.currentTarget, vacios);
     if (Object.keys(vacios).length) return;
-    setError(null);
-    setEnviando(true);
-    try {
+    await enviar(async () => {
       const usuario = await api.ingresar(email.trim(), clave);
       // Al personal el backend no le abre sesión con cookie: su lugar es la app de escritorio.
       if (usuario.rol !== "CLIENTE") {
-        setError("Esa cuenta es del personal del cine: entrá desde la aplicación de escritorio");
-        setEnviando(false);
-        return;
+        throw new Error("Esa cuenta es del personal del cine: entrá desde la aplicación de escritorio");
       }
       setUsuario(usuario);
       avisar(`Hola, ${usuario.nombre}`);
       // Si vino desde la compra o el ticket, vuelve ahí a seguir.
       navegar(usuario.debeCambiarClave ? "/mi-cuenta" : state?.volver || "/mis-reservas");
-    } catch (e) {
-      setError(e.message);
-      setEnviando(false);
-    }
+    });
   }
 
   return (
