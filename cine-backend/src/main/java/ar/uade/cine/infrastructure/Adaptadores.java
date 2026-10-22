@@ -60,7 +60,7 @@ public class Adaptadores {
     @Bean
     @Profile("!test")
     public Reloj reloj() {
-        return LocalDateTime::now;
+        return () -> LocalDateTime.now(Reloj.ZONA);
     }
 
     // Strategy: con token, el Checkout Pro de Mercado Pago (modo prueba no cobra); sin él, la emulada.

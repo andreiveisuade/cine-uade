@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.ventas.MedioPago;
@@ -43,7 +43,6 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
             "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
     // MP interpreta la fecha con su zona: sin ella, la toma en la de su servidor y no en la del cine.
-    private static final ZoneOffset HORA_ARGENTINA = ZoneOffset.ofHours(-3);
     private static final DateTimeFormatter FECHA_MP = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     // Con sitio local MP rechaza la preferencia si pide auto_return: el comprador vuelve con el botón.
@@ -84,7 +83,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
                 .filter(tipo -> !tiposDe(medio).contains(tipo))
                 .forEach(tipo -> excluidos.addObject().put("id", tipo));
         preferencia.put("expires", true);
-        preferencia.put("expiration_date_to", vence.atOffset(HORA_ARGENTINA).format(FECHA_MP));
+        preferencia.put("expiration_date_to", vence.atZone(Reloj.ZONA).format(FECHA_MP));
         if (!HOSTS_LOCALES.contains(URI.create(sitio).getHost())) {
             preferencia.put("auto_return", "approved");
         }
@@ -170,7 +169,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     public List<String> aprobadosDesde(LocalDateTime desde) {
         JsonNode pagos = pedir(get("/v1/payments/search?status=approved&sort=date_created&criteria=desc"
                 + "&range=date_created&end_date=NOW&limit=100&begin_date="
-                + URLEncoder.encode(desde.atOffset(HORA_ARGENTINA).format(FECHA_MP), StandardCharsets.UTF_8)))
+                + URLEncoder.encode(desde.atZone(Reloj.ZONA).format(FECHA_MP), StandardCharsets.UTF_8)))
                 .path("results");
         List<String> checkouts = new ArrayList<>();
         for (JsonNode pago : pagos) {
