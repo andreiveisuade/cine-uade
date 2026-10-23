@@ -7,8 +7,6 @@ import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Formulario;
-import ar.uade.cine.swing.comun.Lecturas;
-import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -24,10 +22,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
-import java.awt.Desktop;
 import java.awt.GridLayout;
-import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,8 +42,7 @@ final class FormularioPelicula extends Seccion {
     private final JTextField idiomaOriginal = new JTextField();
     private final JTextArea sinopsis = new JTextArea(4, 20);
     private final JTextField posterUrl = new JTextField();
-    private final JTextField trailer = new JTextField();
-    private final JButton verTrailer = new JButton("Ver");
+    private final CampoTrailer trailer = new CampoTrailer();
     private final JPanel panelGeneros = new JPanel(new GridLayout(0, 2));
     private final List<JCheckBox> generos = new ArrayList<>();
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
@@ -66,7 +60,6 @@ final class FormularioPelicula extends Seccion {
         guardar.addActionListener(e -> guardar());
         cancelar.addActionListener(e -> limpiar());
         cancelar.setVisible(false);
-        verTrailer.addActionListener(e -> verTrailer());
 
         add(Componentes.lateral(Componentes.conBorde(new Formulario()
                 .ancho(tituloFormulario)
@@ -78,7 +71,7 @@ final class FormularioPelicula extends Seccion {
                 .campo("Idioma original", idiomaOriginal)
                 .campo("Sinopsis", new JScrollPane(sinopsis))
                 .campo("Poster (URL)", posterUrl)
-                .campo("Trailer (YouTube)", campoTrailer())
+                .campo("Trailer (YouTube)", trailer)
                 .ancho(new JLabel("Géneros (al menos uno) *"))
                 .ancho(panelGeneros)
                 .ancho(publicada)
@@ -112,7 +105,7 @@ final class FormularioPelicula extends Seccion {
         idiomaOriginal.setText(texto(pelicula.idiomaOriginal()));
         sinopsis.setText(texto(pelicula.sinopsis()));
         posterUrl.setText(texto(pelicula.posterUrl()));
-        trailer.setText(texto(pelicula.trailerYoutube()));
+        trailer.poner(texto(pelicula.trailerYoutube()));
         generos.forEach(c -> c.setSelected(pelicula.generos().contains((String) c.getClientProperty("genero"))));
         publicada.setSelected(pelicula.enCartelera());
         // Al principio y no al final: en el formulario angosto, un título largo se tiene que leer desde el comienzo.
@@ -124,9 +117,10 @@ final class FormularioPelicula extends Seccion {
     private void limpiar() {
         editando = null;
         tituloFormulario.setText("Nueva película");
-        for (JTextField campo : List.of(titulo, duracionMinutos, anio, director, idiomaOriginal, posterUrl, trailer)) {
+        for (JTextField campo : List.of(titulo, duracionMinutos, anio, director, idiomaOriginal, posterUrl)) {
             campo.setText("");
         }
+        trailer.poner("");
         sinopsis.setText("");
         if (clasificacion.getItemCount() > 0) clasificacion.setSelectedIndex(0);
         generos.forEach(c -> c.setSelected(false));
@@ -149,7 +143,7 @@ final class FormularioPelicula extends Seccion {
         // Los textos opcionales viajan aunque estén vacíos, para poder borrar un director al editar.
         PedidoPelicula pedido = new PedidoPelicula(tituloLeido, duracion, elegidos, clasificacionElegida,
                 director.getText().trim(), sinopsis.getText().trim(), anioLeido, idiomaOriginal.getText().trim(),
-                posterUrl.getText().trim(), publicada.isSelected(), trailer.getText().trim());
+                posterUrl.getText().trim(), publicada.isSelected(), trailer.texto());
         Pelicula actual = editando;
         guardar.setEnabled(false);
         Tarea.ejecutar(this, () -> actual == null ? apiCartelera.crearPelicula(pedido)
@@ -162,27 +156,6 @@ final class FormularioPelicula extends Seccion {
             guardar.setEnabled(true);
             v.mostrarError(e);
         });
-    }
-
-    private JPanel campoTrailer() {
-        JPanel campo = new JPanel(new BorderLayout(4, 0));
-        campo.add(trailer, BorderLayout.CENTER);
-        campo.add(verTrailer, BorderLayout.EAST);
-        return campo;
-    }
-
-    // Lo trae el importador; el campo queda para corregirlo. Abre lo escrito, aunque no esté guardado.
-    private void verTrailer() {
-        String direccion = Lecturas.direccionDelTrailer(trailer.getText());
-        if (direccion == null) {
-            Mensajes.error(this, "Falta el trailer: pegá el link de YouTube");
-            return;
-        }
-        try {
-            Desktop.getDesktop().browse(URI.create(direccion));
-        } catch (IOException | IllegalArgumentException | UnsupportedOperationException e) {
-            Mensajes.error(this, "No se pudo abrir el navegador: copiá el link y abrilo a mano");
-        }
     }
 
     private static String texto(String valor) {
