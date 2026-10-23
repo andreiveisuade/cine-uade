@@ -128,10 +128,16 @@ final class GrillaAgenda extends JPanel {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         int ancho = anchoColumna();
+        pintarCabecera(g2, ancho);
+        pintarHoras(g2);
+        pintarLimpiezas(g2, ancho);
+        g2.dispose();
+    }
+
+    private void pintarCabecera(Graphics2D g2, int ancho) {
         Color borde = Colores.borde();
         Color gris = Colores.secundario();
         Font base = getFont();
-
         g2.setColor(new Color(gris.getRed(), gris.getGreen(), gris.getBlue(), 30));
         g2.fillRect(0, 0, getWidth(), ALTO_CABECERA);
         for (int i = 0; i < columnas.size(); i++) {
@@ -147,18 +153,23 @@ final class GrillaAgenda extends JPanel {
         }
         g2.setColor(borde);
         g2.drawLine(0, ALTO_CABECERA, getWidth(), ALTO_CABECERA);
+    }
 
-        g2.setFont(base.deriveFont(11f));
+    private void pintarHoras(Graphics2D g2) {
+        Color borde = Colores.borde();
+        g2.setFont(getFont().deriveFont(11f));
         for (int m = inicio; m <= fin; m += 60) {
             int y = y(m);
             g2.setColor(new Color(borde.getRed(), borde.getGreen(), borde.getBlue(), 128));
             g2.drawLine(ANCHO_HORAS, y, getWidth(), y);
-            g2.setColor(gris);
+            g2.setColor(Colores.secundario());
             String texto = enHora(m);
             g2.drawString(texto, ANCHO_HORAS - 6 - g2.getFontMetrics().stringWidth(texto), y + 4);
         }
+    }
 
-        // Sin la limpieza rayada el hueco parece libre, y la regla aparece recién cuando el alta falla.
+    // Sin la limpieza rayada el hueco parece libre, y la regla aparece recién cuando el alta falla.
+    private void pintarLimpiezas(Graphics2D g2, int ancho) {
         for (Bloque b : bloques) {
             int limpieza = b.funcion().sala().minutosLimpieza();
             if (limpieza <= 0) continue;
@@ -170,13 +181,12 @@ final class GrillaAgenda extends JPanel {
             rayado.setColor(Colores.limpieza());
             rayado.setStroke(new BasicStroke(2));
             for (int d = -alto; d < ancho; d += 8) rayado.drawLine(d, alto, d + alto, 0);
-            rayado.setColor(gris);
+            rayado.setColor(Colores.secundario());
             rayado.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10,
                     new float[]{3, 3}, 0));
             rayado.drawLine(0, 0, ancho, 0);
             rayado.dispose();
         }
-        g2.dispose();
     }
 
     private void centrar(Graphics2D g2, String texto, int x, int ancho, int y) {
