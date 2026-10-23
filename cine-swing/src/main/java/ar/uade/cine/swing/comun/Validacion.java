@@ -68,19 +68,19 @@ public final class Validacion {
     public String fecha(CampoFecha selector, String nombre, boolean obligatorio) {
         LocalDate fecha = selector.valor();
         JComponent campo = selector.editor();
-        if (fecha == null && obligatorio) return anotar(campo, nombre, Lectura.falla(Lecturas.falta(nombre)));
-        return anotar(campo, nombre, Lectura.de(fecha == null ? null : fecha.toString()));
+        if (fecha == null && obligatorio) return anotar(campo, nombre, ValorLeido.falla(Lecturas.falta(nombre)));
+        return anotar(campo, nombre, ValorLeido.de(fecha == null ? null : fecha.toString()));
     }
 
     /** Un combo obligatorio: vacío es que el catálogo no llegó o no hay nada cargado (sin salas, sin películas). */
     public <T> T elegido(JComboBox<Opcion<T>> combo, String nombre) {
         T valor = Campos.elegido(combo);
-        return anotar(combo, nombre, valor == null ? Lectura.falla(Lecturas.falta(nombre)) : Lectura.de(valor));
+        return anotar(combo, nombre, valor == null ? ValorLeido.falla(Lecturas.falta(nombre)) : ValorLeido.de(valor));
     }
 
     /** Para lo que no es texto (casillas): {@code completo} dice si se eligió algo. */
     public void exigir(boolean completo, JComponent campo, String nombre) {
-        anotar(campo, nombre, completo ? Lectura.de(Boolean.TRUE) : Lectura.falla(Lecturas.falta(nombre)));
+        anotar(campo, nombre, completo ? ValorLeido.de(Boolean.TRUE) : ValorLeido.falla(Lecturas.falta(nombre)));
     }
 
     /** Para que un error del backend que nombra algo con otra palabra ("la vigencia") marque ese campo. */
@@ -92,7 +92,7 @@ public final class Validacion {
         alMencionar(palabra, selector.editor());
     }
 
-    private <T> T anotar(JComponent campo, String nombre, Lectura<T> lectura) {
+    private <T> T anotar(JComponent campo, String nombre, ValorLeido<T> lectura) {
         Marcas.desmarcar(campo);
         nombrados.add(new Nombrado(primeraPalabra(nombre), campo));
         if (!lectura.valida()) fallas.add(new Falla(campo, lectura.error()));

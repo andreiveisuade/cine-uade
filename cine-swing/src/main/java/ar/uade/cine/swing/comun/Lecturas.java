@@ -24,73 +24,73 @@ public final class Lecturas {
     private Lecturas() {
     }
 
-    public static Lectura<String> leerTexto(String texto, String nombre, boolean obligatorio) {
-        return leer(texto, nombre, obligatorio, Lectura::de);
+    public static ValorLeido<String> leerTexto(String texto, String nombre, boolean obligatorio) {
+        return leer(texto, nombre, obligatorio, ValorLeido::de);
     }
 
-    public static Lectura<Integer> leerEntero(String texto, String nombre, boolean obligatorio) {
+    public static ValorLeido<Integer> leerEntero(String texto, String nombre, boolean obligatorio) {
         return leer(texto, nombre, obligatorio, limpio -> {
-            if (!ENTERO.matcher(limpio).matches()) return Lectura.falla(noEs(nombre, limpio, "un número entero"));
+            if (!ENTERO.matcher(limpio).matches()) return ValorLeido.falla(noEs(nombre, limpio, "un número entero"));
             try {
-                return Lectura.de(Integer.valueOf(limpio));
+                return ValorLeido.de(Integer.valueOf(limpio));
             } catch (NumberFormatException e) {
-                return Lectura.falla(noEs(nombre, limpio, "un número entero"));
+                return ValorLeido.falla(noEs(nombre, limpio, "un número entero"));
             }
         });
     }
 
     /** Acepta coma o punto decimal: el encargado tipea "2500,50" tanto como "2500.50". */
-    public static Lectura<Double> leerDecimal(String texto, String nombre, boolean obligatorio) {
+    public static ValorLeido<Double> leerDecimal(String texto, String nombre, boolean obligatorio) {
         return leer(texto, nombre, obligatorio, limpio -> DECIMAL.matcher(limpio).matches()
-                ? Lectura.de(Double.valueOf(limpio.replace(",", ".")))
-                : Lectura.falla(noEs(nombre, limpio, "un número")));
+                ? ValorLeido.de(Double.valueOf(limpio.replace(",", ".")))
+                : ValorLeido.falla(noEs(nombre, limpio, "un número")));
     }
 
     /** "8,10,12" → [8, 10, 12]. Un elemento que no es número rechaza la lista entera y se nombra. */
-    public static Lectura<List<Integer>> leerEnteros(String texto, String nombre, boolean obligatorio) {
+    public static ValorLeido<List<Integer>> leerEnteros(String texto, String nombre, boolean obligatorio) {
         List<String> partes = partes(texto);
-        if (partes.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(List.of());
+        if (partes.isEmpty()) return obligatorio ? ValorLeido.falla(falta(nombre)) : ValorLeido.de(List.of());
         List<Integer> numeros = new ArrayList<>();
         for (String parte : partes) {
-            if (parte.isEmpty()) return Lectura.falla(sobraComa(nombre));
-            Lectura<Integer> numero = leerEntero(parte, nombre, true);
-            if (!numero.valida()) return Lectura.falla(noEs(nombre, parte, "un número entero"));
+            if (parte.isEmpty()) return ValorLeido.falla(sobraComa(nombre));
+            ValorLeido<Integer> numero = leerEntero(parte, nombre, true);
+            if (!numero.valida()) return ValorLeido.falla(noEs(nombre, parte, "un número entero"));
             numeros.add(numero.valor());
         }
-        return Lectura.de(numeros);
+        return ValorLeido.de(numeros);
     }
 
     /** "a1, B2" → ["A1", "B2"]. Opcional: vacío es la lista vacía. */
-    public static Lectura<List<String>> leerCodigos(String texto, String nombre) {
+    public static ValorLeido<List<String>> leerCodigos(String texto, String nombre) {
         List<String> partes = partes(texto);
         List<String> codigos = new ArrayList<>();
         for (String parte : partes) {
-            if (parte.isEmpty()) return Lectura.falla(sobraComa(nombre));
+            if (parte.isEmpty()) return ValorLeido.falla(sobraComa(nombre));
             String codigo = parte.toUpperCase(Locale.ROOT);
             if (!CODIGO_BUTACA.matcher(codigo).matches()) {
-                return Lectura.falla(noEs(nombre, parte, "un código de butaca (fila y número, como A1)"));
+                return ValorLeido.falla(noEs(nombre, parte, "un código de butaca (fila y número, como A1)"));
             }
             codigos.add(codigo);
         }
-        return Lectura.de(codigos);
+        return ValorLeido.de(codigos);
     }
 
     /** HH:mm, como la pide la API. "9:05" también vale y viaja "09:05". */
-    public static Lectura<String> leerHora(String texto, String nombre, boolean obligatorio) {
+    public static ValorLeido<String> leerHora(String texto, String nombre, boolean obligatorio) {
         return leer(texto, nombre, obligatorio, limpio -> {
             try {
                 String conCero = limpio.matches("\\d:\\d{2}") ? "0" + limpio : limpio;
-                return Lectura.de(LocalTime.parse(conCero, HORA).format(HORA));
+                return ValorLeido.de(LocalTime.parse(conCero, HORA).format(HORA));
             } catch (DateTimeParseException e) {
-                return Lectura.falla(noEs(nombre, limpio, "una hora (HH:mm)"));
+                return ValorLeido.falla(noEs(nombre, limpio, "una hora (HH:mm)"));
             }
         });
     }
 
-    public static Lectura<String> leerEmail(String texto, String nombre, boolean obligatorio) {
+    public static ValorLeido<String> leerEmail(String texto, String nombre, boolean obligatorio) {
         return leer(texto, nombre, obligatorio, limpio -> EMAIL.matcher(limpio).matches()
-                ? Lectura.de(limpio)
-                : Lectura.falla(noEs(nombre, limpio, "un email")));
+                ? ValorLeido.de(limpio)
+                : ValorLeido.falla(noEs(nombre, limpio, "un email")));
     }
 
     // Lo común a todas: vacío es un faltante si es obligatorio y null si no; lo tipeado, sin espacios, lo interpreta
@@ -103,10 +103,10 @@ public final class Lecturas {
         return limpio.startsWith("http://") || limpio.startsWith("https://") ? limpio : "https://" + limpio;
     }
 
-    private static <T> Lectura<T> leer(String texto, String nombre, boolean obligatorio,
-                                       Function<String, Lectura<T>> interpretar) {
+    private static <T> ValorLeido<T> leer(String texto, String nombre, boolean obligatorio,
+                                          Function<String, ValorLeido<T>> interpretar) {
         String limpio = texto == null ? "" : texto.trim();
-        if (limpio.isEmpty()) return obligatorio ? Lectura.falla(falta(nombre)) : Lectura.de(null);
+        if (limpio.isEmpty()) return obligatorio ? ValorLeido.falla(falta(nombre)) : ValorLeido.de(null);
         return interpretar.apply(limpio);
     }
 

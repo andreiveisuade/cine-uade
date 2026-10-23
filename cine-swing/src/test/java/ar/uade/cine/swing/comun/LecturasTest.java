@@ -24,7 +24,7 @@ class LecturasTest {
 
     @Test
     void unNumeroMalTipeadoNoViajaComoVacio() {
-        Lectura<Double> precio = Lecturas.leerDecimal("abc", "Precio", true);
+        ValorLeido<Double> precio = Lecturas.leerDecimal("abc", "Precio", true);
 
         assertFalse(precio.valida());
         assertEquals("«Precio»: «abc» no es un número", precio.error());
@@ -53,7 +53,7 @@ class LecturasTest {
 
     @Test
     void enUnaListaUnElementoInvalidoRechazaTodoYSeNombra() {
-        Lectura<List<Integer>> filas = Lecturas.leerEnteros("8,x,12", "Butacas por fila", true);
+        ValorLeido<List<Integer>> filas = Lecturas.leerEnteros("8,x,12", "Butacas por fila", true);
 
         assertFalse(filas.valida());
         assertEquals("«Butacas por fila»: «x» no es un número entero", filas.error());
