@@ -1,14 +1,9 @@
 package ar.uade.cine.infrastructure.pasarelas.mercadopago;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -48,16 +43,11 @@ public class MercadoPagoHttp implements PasarelaPagos {
     // Con sitio local MP rechaza la preferencia si pide auto_return: el comprador vuelve con el botón.
     private static final Set<String> HOSTS_LOCALES = Set.of("localhost", "127.0.0.1");
 
-    private final String token;
-    private final String base;
+    private final ClienteMercadoPago api;
     private final String sitio;
-    private final HttpClient cliente = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
 
     public MercadoPagoHttp(String token, String base, String sitio) {
-        this.token = token;
-        this.base = sinBarraFinal(base);
+        this.api = new ClienteMercadoPago(token, sinBarraFinal(base));
         this.sitio = sinBarraFinal(sitio);
     }
 
@@ -66,9 +56,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
         String cuerpo = preferencia(id, reservaId, medio, monto, vence).toString();
-        JsonNode creada = pedir(HttpRequest.newBuilder(URI.create(base + "/checkout/preferences"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(cuerpo)));
+        JsonNode creada = api.post("/checkout/preferences", cuerpo);
         String urlPago = urlDePago(creada);
         return new Checkout(id, reservaId, medio, monto, urlPago, urlPago);
     }
@@ -111,12 +99,12 @@ public class MercadoPagoHttp implements PasarelaPagos {
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
-        JsonNode resumen = pedir(get("/checkout/preferences/search?external_reference="
-                + URLEncoder.encode(checkoutId, StandardCharsets.UTF_8))).path("elements").path(0);
+        JsonNode resumen = api.get("/checkout/preferences/search?external_reference="
+                + URLEncoder.encode(checkoutId, StandardCharsets.UTF_8)).path("elements").path(0);
         if (resumen.isMissingNode()) {
             return Optional.empty();
         }
-        JsonNode preferencia = pedir(get("/checkout/preferences/" + resumen.path("id").asText()));
+        JsonNode preferencia = api.get("/checkout/preferences/" + resumen.path("id").asText());
         String urlPago = urlDePago(preferencia);
         return Optional.of(new Checkout(checkoutId, Integer.parseInt(partes[0]), medio,
                 Dinero.de(preferencia.path("items").path(0).path("unit_price").asDouble()), urlPago, urlPago));
@@ -126,8 +114,8 @@ public class MercadoPagoHttp implements PasarelaPagos {
     // external_reference, si coinciden monto, moneda y tipo de pago del medio.
     @Override
     public String autorizar(Checkout checkout) {
-        JsonNode pagos = pedir(get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
-                + URLEncoder.encode(checkout.id(), StandardCharsets.UTF_8))).path("results");
+        JsonNode pagos = api.get("/v1/payments/search?sort=date_created&criteria=desc&external_reference="
+                + URLEncoder.encode(checkout.id(), StandardCharsets.UTF_8)).path("results");
         boolean aprobadoQueNoCoincide = false;
         for (JsonNode pago : pagos) {
             if (!"approved".equals(pago.path("status").asText())) {
@@ -170,9 +158,9 @@ public class MercadoPagoHttp implements PasarelaPagos {
     // Sin webhook (MP no llega a localhost) la conciliación pregunta. Un checkout con dos aprobados sale una vez.
     @Override
     public List<String> aprobadosDesde(LocalDateTime desde) {
-        JsonNode pagos = pedir(get("/v1/payments/search?status=approved&sort=date_created&criteria=desc"
+        JsonNode pagos = api.get("/v1/payments/search?status=approved&sort=date_created&criteria=desc"
                 + "&range=date_created&end_date=NOW&limit=100&begin_date="
-                + URLEncoder.encode(desde.atZone(Reloj.ZONA).format(FECHA_MP), StandardCharsets.UTF_8)))
+                + URLEncoder.encode(desde.atZone(Reloj.ZONA).format(FECHA_MP), StandardCharsets.UTF_8))
                 .path("results");
         List<String> checkouts = new ArrayList<>();
         for (JsonNode pago : pagos) {
@@ -191,35 +179,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     // Con credenciales de prueba (TEST-...) el link que no cobra es el sandbox_init_point.
     private String urlDePago(JsonNode preferencia) {
-        return preferencia.path(token.startsWith("TEST-") ? "sandbox_init_point" : "init_point").asText();
-    }
-
-    private HttpRequest.Builder get(String ruta) {
-        return HttpRequest.newBuilder(URI.create(base + ruta)).GET();
-    }
-
-    // Lo que dice el rechazo lo lee el comprador: texto fijo. El detalle de MP va al log.
-    private JsonNode pedir(HttpRequest.Builder pedido) {
-        HttpRequest armado = pedido
-                .header("Authorization", "Bearer " + token)
-                .header("Accept", "application/json")
-                .timeout(Duration.ofSeconds(20))
-                .build();
-        try {
-            HttpResponse<String> respuesta = cliente.send(armado, HttpResponse.BodyHandlers.ofString());
-            if (respuesta.statusCode() / 100 != 2) {
-                log.warn("Mercado Pago devolvió {} en {}: {}",
-                        respuesta.statusCode(), armado.uri().getPath(), respuesta.body());
-                throw new ConflictoDeNegocio("Mercado Pago no respondió bien: probá de nuevo en un rato");
-            }
-            return JSON.readTree(respuesta.body());
-        } catch (IOException e) {
-            log.warn("No se pudo llegar a Mercado Pago en {}", armado.uri().getPath(), e);
-            throw new ConflictoDeNegocio("No se pudo llegar a Mercado Pago: probá de nuevo en un rato");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ConflictoDeNegocio("Se interrumpió la consulta a Mercado Pago");
-        }
+        return preferencia.path(api.conCredencialesDePrueba() ? "sandbox_init_point" : "init_point").asText();
     }
 
     private static String sinBarraFinal(String url) {
