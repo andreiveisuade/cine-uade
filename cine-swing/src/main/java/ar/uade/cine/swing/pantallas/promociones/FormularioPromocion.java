@@ -24,10 +24,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.GridLayout;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +42,7 @@ final class FormularioPromocion extends Seccion {
     private final JLabel titulo = Componentes.subtitulo("Nueva promoción");
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
-    private final CardLayout tarjetas = new CardLayout();
-    private final JPanel beneficio = new JPanel(tarjetas);
-    // Tipo → campo → su caja de texto. Cada tipo tiene las suyas: una caja no puede estar en dos tarjetas.
-    private final Map<String, Map<CampoBeneficio, JTextField>> camposPorTipo = new LinkedHashMap<>();
+    private final TarjetasBeneficio beneficio = new TarjetasBeneficio();
     private final CampoFecha desde = new CampoFecha(LocalDate.now());
     private final CampoFecha hasta = new CampoFecha(null);
     private final SelectorDias dias = new SelectorDias();
@@ -67,7 +62,7 @@ final class FormularioPromocion extends Seccion {
         this.alGuardar = alGuardar;
         this.imagen = new CampoImagen(apiImagenes);
         tipo.addActionListener(e -> {
-            if (Campos.elegido(tipo) != null) tarjetas.show(beneficio, Campos.elegido(tipo));
+            if (Campos.elegido(tipo) != null) beneficio.mostrar(Campos.elegido(tipo));
         });
         horaDesde.setToolTipText("HH:mm, vacío = sin límite");
         horaHasta.setToolTipText("HH:mm, vacío = sin límite");
@@ -100,15 +95,7 @@ final class FormularioPromocion extends Seccion {
     /** Una tarjeta por tipo, con los campos que pide. Cambiar de tipo muestra la suya. */
     void armarTipos(List<TipoPromocion> tipos) {
         for (TipoPromocion t : tipos) {
-            Map<CampoBeneficio, JTextField> cajas = new LinkedHashMap<>();
-            Formulario tarjeta = new Formulario();
-            t.campos().stream().flatMap(campo -> CampoBeneficio.llamado(campo).stream()).forEach(campo -> {
-                JTextField caja = campo.caja();
-                cajas.put(campo, caja);
-                tarjeta.obligatorio(campo.etiqueta(), caja);
-            });
-            camposPorTipo.put(t.nombre(), cajas);
-            beneficio.add(tarjeta, t.nombre());
+            beneficio.agregar(t);
             tipo.addItem(new Opcion<>(t.nombre(), etiqueta(t.nombre())));
         }
         beneficio.revalidate();
@@ -133,7 +120,7 @@ final class FormularioPromocion extends Seccion {
         nombre.setCaretPosition(0);
         Campos.elegir(tipo, p.tipo());
         tipo.setEnabled(false);
-        camposPorTipo.getOrDefault(p.tipo(), Map.of()).forEach((campo, caja) -> campo.poner(caja, p));
+        beneficio.poner(p);
         desde.poner(LocalDate.parse(p.vigenciaDesde()));
         hasta.poner(LocalDate.parse(p.vigenciaHasta()));
         dias.poner(p.diasSemana());
@@ -150,16 +137,13 @@ final class FormularioPromocion extends Seccion {
         Validacion v = new Validacion(error);
         String nombreLeido = v.texto(nombre, "Nombre", true);
         String elegido = v.elegido(tipo, "Tipo");
-        // Solo se leen los campos del tipo elegido: los demás viajan en null, como pide el contrato.
-        Map<CampoBeneficio, JTextField> cajas = camposPorTipo.getOrDefault(elegido, Map.of());
-        Map<String, Number> leidos = new HashMap<>();
-        cajas.forEach((campo, caja) -> leidos.put(campo.nombre(), campo.leer(v, caja)));
+        Map<String, Number> leidos = beneficio.leer(v, elegido);
         String vigenciaDesde = v.fecha(desde, "Desde", true);
         String vigenciaHasta = v.fecha(hasta, "Hasta", true);
         String desdeHora = v.hora(horaDesde, "Desde hora", false);
         String hastaHora = v.hora(horaHasta, "Hasta hora", false);
         v.alMencionar("vigencia", desde);
-        if (cajas.containsKey(CampoBeneficio.LLEVA)) v.alMencionar("nxm", cajas.get(CampoBeneficio.LLEVA));
+        beneficio.caja(elegido, CampoBeneficio.LLEVA).ifPresent(lleva -> v.alMencionar("nxm", lleva));
         if (!v.ok()) return;
         PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
                 (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
@@ -187,7 +171,7 @@ final class FormularioPromocion extends Seccion {
         tipo.setEnabled(true);
         nombre.setText("");
         if (tipo.getItemCount() > 0) tipo.setSelectedIndex(0);
-        camposPorTipo.values().forEach(cajas -> cajas.forEach(CampoBeneficio::reiniciar));
+        beneficio.reiniciar();
         desde.poner(LocalDate.now());
         hasta.poner(null);
         dias.limpiar();
