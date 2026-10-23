@@ -3,7 +3,6 @@ package ar.uade.cine.swing.pantallas.cartelera;
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
 import ar.uade.cine.swing.api.dto.cartelera.Importacion;
-import ar.uade.cine.swing.api.dto.cartelera.PeliculaDeCorrida;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
-import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 
 // Trae de TMDB lo que está en cartelera en Argentina; nada se publica, todo cae en Por revisar.
@@ -37,8 +35,6 @@ public final class PantallaImportador extends Pantalla {
 
     private record Datos(List<Importacion> corridas, EstadoImportador estado) {
     }
-
-    private static final int POR_PAGINA = 20;
 
     private final ApiCartelera apiCartelera;
     private final JLabel aviso = new JLabel();
@@ -54,18 +50,13 @@ public final class PantallaImportador extends Pantalla {
             Columna.<Importacion>numero("Nuevas", Importacion::nuevas),
             Columna.<Importacion>numero("Ya estaban", Importacion::salteadas),
             Columna.<Importacion>numero("Rechazadas", Importacion::fallidas));
-    private final JLabel tituloDetalle = Componentes.subtitulo(" ");
-    private final JLabel resumenDetalle = Componentes.texto(" ");
-    private final JButton revisar = new JButton();
-    private final Tabla<PeliculaDeCorrida> peliculas = new Tabla<>(
-            Columna.<PeliculaDeCorrida>de("Resultado", p -> etiqueta(p.resultado())).ancho(90),
-            Columna.<PeliculaDeCorrida>de("Película", PeliculaDeCorrida::titulo).ancho(280),
-            Columna.<PeliculaDeCorrida>de("Qué pasó", PantallaImportador::quePaso).ancho(300));
+    private final DetalleCorrida detalle;
 
     public PantallaImportador(ApiCartelera apiCartelera, Navegacion navegacion) {
         super("Importador", "Trae de TMDB las películas que están hoy en cartelera en Argentina. Nada se "
                 + "publica: todo cae en Por revisar y espera que alguien lo confirme.");
         this.apiCartelera = apiCartelera;
+        this.detalle = new DetalleCorrida(() -> navegacion.ir(Destino.POR_REVISAR));
 
         trayendo.setIndeterminate(true);
         trayendo.setString("Preguntándole a TMDB qué se está dando, y cargando lo que falte. Son unos segundos.");
@@ -73,8 +64,6 @@ public final class PantallaImportador extends Pantalla {
         trayendo.setVisible(false);
         aviso.setForeground(Colores.aviso());
         aviso.setVisible(false);
-        revisar.setVisible(false);
-        revisar.addActionListener(e -> navegacion.ir(Destino.POR_REVISAR));
 
         JPanel controles = new JPanel(new FlujoConSalto());
         controles.add(new JLabel("Cuántas traer"));
@@ -95,13 +84,6 @@ public final class PantallaImportador extends Pantalla {
         listado.add(Componentes.subtitulo("Corridas"), BorderLayout.NORTH);
         listado.add(corridas.conScroll());
 
-        JPanel encabezadoDetalle = new JPanel(new BorderLayout(12, 0));
-        encabezadoDetalle.add(new Pila().agregar(tituloDetalle, resumenDetalle), BorderLayout.CENTER);
-        encabezadoDetalle.add(revisar, BorderLayout.EAST);
-        JPanel detalle = new JPanel(new BorderLayout(0, 6));
-        detalle.add(encabezadoDetalle, BorderLayout.NORTH);
-        detalle.add(peliculas.conScroll());
-
         JSplitPane partes = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listado, detalle);
         partes.setResizeWeight(0.3);
         partes.setDividerLocation(470);
@@ -113,10 +95,9 @@ public final class PantallaImportador extends Pantalla {
         add(centro, BorderLayout.CENTER);
 
         corridas.tabla().getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) mostrar(corridas.seleccionada().orElse(null));
+            if (!e.getValueIsAdjusting()) detalle.mostrar(corridas.seleccionada().orElse(null));
         });
         traer.addActionListener(e -> traer());
-        mostrar(null);
         recargar(null);
     }
 
@@ -134,26 +115,6 @@ public final class PantallaImportador extends Pantalla {
         });
     }
 
-    private void mostrar(Importacion corrida) {
-        if (corrida == null) {
-            tituloDetalle.setText("Todavía no se trajo nada");
-            resumenDetalle.setText("Elegí cuántas películas y apretá Traer cartelera.");
-            resumenDetalle.setForeground(Colores.secundario());
-            revisar.setVisible(false);
-            peliculas.mostrar(List.of());
-            return;
-        }
-        tituloDetalle.setText("Corrida del " + fechaHora(corrida.pedidaEn()));
-        boolean fallo = "FALLIDA".equals(corrida.estado());
-        resumenDetalle.setText(fallo ? "Falló: " + (corrida.detalle() == null ? "sin motivo" : corrida.detalle())
-                : "Pediste hasta " + corrida.paginas() * POR_PAGINA + ". " + resumen(corrida) + ".");
-        resumenDetalle.setForeground(fallo ? Colores.error() : Colores.texto());
-        long pendientes = corrida.peliculas().stream().filter(p -> "PENDIENTE".equals(p.estadoRevision())).count();
-        revisar.setText("Revisar " + (pendientes == 1 ? "la pendiente" : "las " + pendientes + " pendientes"));
-        revisar.setVisible(pendientes > 0);
-        peliculas.mostrar(corrida.peliculas());
-    }
-
     // Sin consultas repetidas: la corrida tarda unos quince segundos y su respuesta ya trae los contadores.
     private void traer() {
         Validacion v = new Validacion(error);
@@ -167,7 +128,7 @@ public final class PantallaImportador extends Pantalla {
                 Mensajes.error(this, corrida.detalle() != null ? corrida.detalle() : "La importación falló");
             } else {
                 avisar(corrida.nuevas() == 0 ? "No había nada nuevo en TMDB"
-                        : resumen(corrida) + ": las nuevas están en Por revisar");
+                        : DetalleCorrida.resumen(corrida) + ": las nuevas están en Por revisar");
             }
             recargar(corrida.id());
         }, e -> {
@@ -185,20 +146,5 @@ public final class PantallaImportador extends Pantalla {
     private void habilitar(boolean si) {
         traer.setEnabled(si);
         paginas.values().forEach(b -> b.setEnabled(si));
-    }
-
-    private static String resumen(Importacion corrida) {
-        return cantidad(corrida.nuevas(), "nueva", "nuevas") + ", "
-                + cantidad(corrida.salteadas(), "ya estaba", "ya estaban") + ", "
-                + cantidad(corrida.fallidas(), "rechazada", "rechazadas");
-    }
-
-    private static String quePaso(PeliculaDeCorrida p) {
-        return switch (p.resultado()) {
-            case "NUEVA" -> p.estadoRevision() == null ? "Entró, después se borró"
-                    : "Entró · hoy: " + etiqueta(p.estadoRevision());
-            case "YA_ESTABA" -> "Ya estaba cargada: no se tocó";
-            default -> p.motivo() == null ? "No pasó las reglas del cine" : p.motivo();
-        };
     }
 }
