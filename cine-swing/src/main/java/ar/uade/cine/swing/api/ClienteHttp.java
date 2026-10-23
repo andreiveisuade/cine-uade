@@ -20,7 +20,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
-// El transporte con el backend: Basic, JSON y errores; lo comparten todas las Api, que solo saben de rutas.
+// El transporte con el backend: Basic, JSON y el 401; lo comparten todas las Api, que solo saben de rutas.
 // Bloqueante a propósito: quien llama lo corre fuera del EDT (comun.Tarea).
 public final class ClienteHttp {
 
@@ -192,26 +192,8 @@ public final class ClienteHttp {
             credenciales = null;
             alVencerSesion.run();
         }
-        if (estado >= 400) throw new ErrorApi(estado, mensajeDeError(estado, respuesta.body()));
+        if (estado >= 400) throw new ErrorApi(estado, MensajeDeError.de(estado, respuesta.body()));
         return respuesta;
-    }
-
-    /** Usa el campo {@code error} del backend; cualquier otra cosa va a la consola y en pantalla un mensaje por código. */
-    private String mensajeDeError(int estado, byte[] cuerpo) {
-        String texto = new String(cuerpo, StandardCharsets.UTF_8).strip();
-        try {
-            JsonNode datos = json.readTree(texto);
-            if (datos != null && datos.hasNonNull("error")) return datos.get("error").asText();
-        } catch (JsonProcessingException e) {
-            // No es JSON: se resuelve abajo, por el código.
-        }
-        if (!texto.isEmpty()) System.err.println("Respuesta " + estado + " sin mensaje de error en JSON: " + texto);
-        return switch (estado) {
-            case 502, 503, 504 -> "El servidor no está disponible en este momento. Probá de nuevo en unos segundos.";
-            case 500 -> "Falló el servidor. Probá de nuevo; si sigue pasando, avisá al administrador.";
-            case 404 -> "No se encontró el recurso en el servidor.";
-            default -> "El servidor respondió con un error (código " + estado + ").";
-        };
     }
 
     private String escribir(Object cuerpo) {
