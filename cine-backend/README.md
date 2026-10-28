@@ -51,5 +51,5 @@ no en disco.
 ## Capas
 
 `controller` → `service` → `repository`, con `dto` en el borde y `model` sin lógica de HTTP. Las reglas
-rechazan con `Rechazo`, que el controlador convierte en `{"error": "…"}`. Convenciones completas en el
-`CLAUDE.md` del repo.
+rechazan con `Rechazo`, que `ManejadorErrores` convierte en `{"error": "…"}`. Capas, subdominios y lo que
+verifica `ArquitecturaTest`: [`ARQUITECTURA.md`](../ARQUITECTURA.md).
