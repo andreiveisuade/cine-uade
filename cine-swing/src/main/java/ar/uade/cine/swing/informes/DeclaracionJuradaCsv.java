@@ -90,12 +90,8 @@ public final class DeclaracionJuradaCsv {
         return String.valueOf(valor == null ? 0 : valor);
     }
 
-    /** Coma decimal y dos decimales, sin separador de miles: 7500 → "7500,00". */
-    static String monto(double valor) {
-        long centavos = Math.round(valor * 100);
-        long pesos = Math.abs(centavos) / 100;
-        long resto = Math.abs(centavos) % 100;
-        return (centavos < 0 ? "-" : "") + pesos + "," + (resto < 10 ? "0" : "") + resto;
+    private static String monto(double valor) {
+        return Formato.conCentavos(valor, ',');
     }
 
     /** RFC 4180: comillas si el campo trae separador, comillas o salto de línea; las comillas se duplican. */

@@ -6,6 +6,7 @@ import ar.uade.cine.swing.api.dto.informes.FuncionDeclarada;
 import ar.uade.cine.swing.api.dto.informes.PeliculaDeclarada;
 import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.api.dto.informes.TotalDeclarado;
+import ar.uade.cine.swing.comun.Formato;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -78,10 +79,10 @@ class DeclaracionJuradaCsvTest {
 
     @Test
     void losMontosVanConComaYDosDecimales() {
-        assertEquals("7500,00", DeclaracionJuradaCsv.monto(7500));
-        assertEquals("1234,57", DeclaracionJuradaCsv.monto(1234.567));
-        assertEquals("0,05", DeclaracionJuradaCsv.monto(0.05));
-        assertEquals("-12,30", DeclaracionJuradaCsv.monto(-12.3));
+        assertEquals("7500,00", Formato.conCentavos(7500, ','));
+        assertEquals("1234,57", Formato.conCentavos(1234.567, ','));
+        assertEquals("0,05", Formato.conCentavos(0.05, ','));
+        assertEquals("-12,30", Formato.conCentavos(-12.3, ','));
     }
 
     @Test

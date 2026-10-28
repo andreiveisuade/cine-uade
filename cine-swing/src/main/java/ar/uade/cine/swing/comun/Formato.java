@@ -41,6 +41,13 @@ public final class Formato {
         return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
     }
 
+    /** Dos decimales con ese separador y sin separador de miles, como Dinero del backend: 7500 → "7500.00". */
+    public static String conCentavos(double monto, char separador) {
+        long centavos = Math.round(monto * 100);
+        long resto = Math.abs(centavos) % 100;
+        return (centavos < 0 ? "-" : "") + Math.abs(centavos) / 100 + separador + (resto < 10 ? "0" : "") + resto;
+    }
+
     /** 0.79 → "79%". */
     public static String porcentaje(double fraccion) {
         return Math.round(fraccion * 100) + "%";
