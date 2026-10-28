@@ -212,8 +212,26 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertEquals(reserva.getTotal(), pago.getSubtotal());
         assertEquals(promo.getId(), pago.getPromocionId());
-        assertEquals(pago.getSubtotal().menos(pago.getDescuento()), pago.getMonto());
-        assertTrue(pago.getDescuento().esMayorQue(Dinero.CERO));
+        assertEquals(Dinero.de(5000), pago.getDescuento(), "el 2x1 de dos entradas de 5000 regala una");
+        assertEquals(Dinero.de(5000), pago.getMonto());
+    }
+
+    @Test
+    @DisplayName("R16: al cobrar, la promoción corre solo sobre las entradas de tarifa general")
+    void alCobrarLaPromocionCorreSoloSobreLaTarifaGeneral() {
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
+        Map<String, TipoTarifa> mixta = new LinkedHashMap<>();
+        mixta.put("A1", TipoTarifa.GENERAL);
+        mixta.put("A2", TipoTarifa.JUBILADO);
+        Reserva reserva = reservas.reservar(1, 1, mixta, null);
+
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        assertEquals(Dinero.de(7500), pago.getSubtotal());
+        assertEquals(Dinero.de(2500), pago.getDescuento(), "el 50 % de la general, no del total");
+        assertEquals(Dinero.de(5000), pago.getMonto());
     }
 
     @Test

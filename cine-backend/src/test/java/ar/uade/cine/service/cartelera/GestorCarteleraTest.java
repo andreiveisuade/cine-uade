@@ -548,7 +548,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
-        assertTrue(e.getMessage().contains("Matrix"), e.getMessage());
+        assertEquals("La película Matrix tiene funciones programadas: sacala de cartelera en vez de borrarla",
+                e.getMessage());
         assertEquals(1, gestor.listar().size());
     }
 
@@ -564,7 +565,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Rechazo e = assertThrows(Rechazo.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
-        assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());
+        assertEquals("La película La Odisea está programada en una grilla: sacala de cartelera en vez de borrarla",
+                e.getMessage());
         assertTrue(funcionRepository.findByPelicula_IdOrderByInicioAsc(pelicula.getId()).isEmpty());
         assertEquals(1, gestor.listar().size());
     }

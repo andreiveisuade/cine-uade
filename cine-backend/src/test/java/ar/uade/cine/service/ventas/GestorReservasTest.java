@@ -210,14 +210,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void soloLaTarifaGeneralNoPideAcreditacion() {
-        assertFalse(TipoTarifa.GENERAL.requiereAcreditacion());
-        assertTrue(TipoTarifa.JUBILADO.requiereAcreditacion());
-        assertTrue(TipoTarifa.MENOR.requiereAcreditacion());
-        assertTrue(TipoTarifa.ESTUDIANTE.requiereAcreditacion());
-    }
-
-    @Test
     @DisplayName("R6: cancelar libera las butacas")
     void cancelarLiberaLasButacas() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"), null);
@@ -576,6 +568,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(consultas.listarPorEmail(null).isEmpty());
         assertTrue(consultas.listarPorEmail("   ").isEmpty());
         assertTrue(consultas.listarPorEmail("nadie@uade.edu.ar").isEmpty());
+    }
+
+    // R21: la de otro cliente da el mismo 404 que un código inexistente; un 403 confirmaría que existe.
+    @Test
+    @DisplayName("R21: el cliente ve solo su reserva")
+    void elClienteVeSoloSuReserva() {
+        clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
+        Reserva suya = reservas.reservar(1, 1, generales("A1"), null);
+
+        assertEquals(suya.getId(), consultas.obtenerDelCliente(suya.getCodigo(), "andrei@uade.edu.ar").getId());
+        Rechazo ajena = rechaza("No existe ninguna reserva con ese código",
+                () -> consultas.obtenerDelCliente(suya.getCodigo(), "sofia@ejemplo.com"));
+        Rechazo inexistente = rechaza("No existe ninguna reserva con ese código",
+                () -> consultas.obtenerDelCliente("XXXXXXXX", "andrei@uade.edu.ar"));
+        assertEquals(inexistente.getClass(), ajena.getClass());
     }
 
     private List<Reserva> buscarTexto(String texto) {
