@@ -137,7 +137,7 @@ final class FormularioPromocion extends Seccion {
         Validacion v = new Validacion(error);
         String nombreLeido = v.texto(nombre, "Nombre", true);
         String elegido = v.elegido(tipo, "Tipo");
-        Map<String, Number> leidos = beneficio.leer(v, elegido);
+        Map<CampoBeneficio, Number> leidos = beneficio.leer(v, elegido);
         String vigenciaDesde = v.fecha(desde, "Desde", true);
         String vigenciaHasta = v.fecha(hasta, "Hasta", true);
         String desdeHora = v.hora(horaDesde, "Desde hora", false);
@@ -145,8 +145,9 @@ final class FormularioPromocion extends Seccion {
         v.alMencionar("vigencia", desde);
         beneficio.caja(elegido, CampoBeneficio.LLEVA).ifPresent(lleva -> v.alMencionar("nxm", lleva));
         if (!v.ok()) return;
-        PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido, (Double) leidos.get("porcentaje"),
-                (Double) leidos.get("monto"), (Integer) leidos.get("lleva"), (Integer) leidos.get("paga"),
+        PedidoPromocion pedido = new PedidoPromocion(nombreLeido, elegido,
+                (Double) leidos.get(CampoBeneficio.PORCENTAJE), (Double) leidos.get(CampoBeneficio.MONTO),
+                (Integer) leidos.get(CampoBeneficio.LLEVA), (Integer) leidos.get(CampoBeneficio.PAGA),
                 vigenciaDesde, vigenciaHasta, dias.elegidos(), desdeHora, hastaHora, tildados(), imagen.url());
         Promocion actual = editando;
         Tarea.ejecutar(this, () -> actual == null ? apiPromociones.crearPromocion(pedido)
