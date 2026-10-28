@@ -1,0 +1,35 @@
+@startuml google-configuracion
+title Ingresar con Google: que se configuro y donde termina cada valor
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment left
+skinparam nodesep 20
+skinparam ranksep 30
+left to right direction
+
+package "Google Cloud Console" {
+  [Proyecto\ncine-uade] as P
+  [Google Auth Platform\nAudience: Externo\nData Access: openid, email, profile\n(ninguno sensible: sin verificacion)] as C
+  [Client: aplicacion web\nredirect URIs, exactas con esquema y puerto:\nhttp://localhost:8080/login/oauth2/code/google\nhttps://cine-uade.onrender.com/login/oauth2/code/google] as W
+}
+
+package "Donde se carga" {
+  [cine-docker/.env\n(local, fuera del repo)] as ENV
+  [Render > Environment\n(render.yaml: sync false)] as REN
+}
+
+package "cine-backend" {
+  [PropiedadesGoogle\ncine.google.client-id / secret] as PG
+  [ConfiguracionSeguridad\noauth2Login con CommonOAuth2Provider.GOOGLE\nsin las dos: no lo arma, /oauth2/** da 401] as CS
+  [GET /api/sesion/google\n{disponible}: la web habilita el boton] as DISP
+}
+
+P --> C
+C --> W
+W --> ENV : GOOGLE_CLIENT_ID\nGOOGLE_CLIENT_SECRET
+W --> REN : GOOGLE_CLIENT_ID\nGOOGLE_CLIENT_SECRET
+ENV --> PG
+REN --> PG
+PG --> CS
+PG --> DISP
+@enduml

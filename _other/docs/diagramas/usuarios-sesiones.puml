@@ -1,5 +1,5 @@
 @startuml usuarios-sesiones
-title Login del cliente, pedido del empleado y recuperar la clave
+title Ingreso del cliente con Google y pedido del empleado con Basic
 
 skinparam sequenceMessageAlign left
 skinparam maxMessageSize 220
@@ -7,48 +7,40 @@ hide footbox
 
 actor "Cliente\n(web)" as CLI
 actor "Empleado\n(Swing / Android)" as EMP
+participant "Google" as GOO
 participant "FiltroDeIntentos\n+ LimiteDeIntentos" as LI
-participant "Spring Security\n(Basic, ConfiguracionSeguridad)" as SEC
+participant "Spring Security\n(ConfiguracionSeguridad)" as SEC
+participant "ClientesDeGoogle\n-> GestorClientes" as CDG
 participant "SesionDeClientes" as SES
 participant "Controller" as CTRL
-participant "GestorCuentas" as GCU
 
-== Login del cliente: Basic una vez, despues cookie ==
-CLI -> LI : POST /api/sesion\nAuthorization: Basic
-alt 5 fallos seguidos por email o IP
-  LI --> CLI : 429 sin tocar bcrypt
-else
-  LI -> SEC : sigue
-  SEC -> SEC : bcrypt.matches
-  alt clave mala o email inexistente
-    SEC --> CLI : 401 (mismo texto); cuenta un fallo
-  else ok
-    SEC -> SES : CLIENTE: guarda la identidad,\ncambia el id (session fixation)
-    SEC -> CTRL : SesionController.iniciar
-    CTRL --> CLI : 200 usuario + Set-Cookie JSESSIONID\n(HttpOnly, SameSite=Lax)
-  end
+== Ingreso del cliente: Google una vez, despues cookie (R28) ==
+CLI -> SEC : GET /oauth2/authorization/google
+SEC --> CLI : 302 a Google (scope openid email profile)
+CLI -> GOO : elige cuenta y acepta
+GOO --> CLI : 302 /login/oauth2/code/google?code=...
+CLI -> SEC : la vuelta con el codigo
+SEC -> GOO : canjea el codigo con el client secret
+GOO --> SEC : id token (email, email_verified, nombre)
+SEC -> CDG : loadUser
+alt email sin verificar o de un empleado
+  CDG --> CLI : 302 /#/ingresar?error=<motivo>
+else ok
+  CDG -> CDG : busca por email o lo da de alta
+  SEC -> SES : CLIENTE: guarda la identidad,\ncambia el id (session fixation)
+  SEC --> CLI : 302 /#/ingresar + Set-Cookie JSESSIONID\n(HttpOnly, SameSite=Lax)
 end
 CLI -> SEC : GET /api/reservas/mias  (solo cookie)
 SEC --> CLI : 200 sus reservas (R21)
 
 == Pedido del empleado: Basic en cada pedido, sin sesion ==
 EMP -> LI : PUT /api/peliculas/7\nAuthorization: Basic
-LI -> SEC : sigue
-SEC -> SEC : bcrypt + rol ADMINISTRADOR
-SEC -> CTRL : atiende
-CTRL --> EMP : 200, sin cookie
-
-== Recuperar la clave (R25), sin sesion ==
-CLI -> CTRL : POST /api/cuenta/recuperacion\n{email, codigoReserva, nueva}
-CTRL -> GCU : recuperarClave(email, codigo, nueva, ip)
-alt bloqueado
-  GCU --> CLI : 429
-else email inexistente, sin cuenta,\ncodigo ajeno o inventado
-  GCU -> LI : fallo(email, ip)
-  GCU --> CLI : 403 SinPrueba, un solo texto
-else el codigo es de una entrada suya
-  GCU -> LI : exito(email)
-  GCU -> GCU : bcrypt de la nueva
-  GCU --> CLI : 204; entra con la nueva
+alt 5 fallos seguidos por email o IP
+  LI --> EMP : 429 sin tocar bcrypt
+else
+  LI -> SEC : sigue
+  SEC -> SEC : bcrypt + rol ADMINISTRADOR
+  SEC -> CTRL : atiende
+  CTRL --> EMP : 200, sin cookie
 end
 @enduml

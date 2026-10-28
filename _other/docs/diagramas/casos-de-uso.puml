@@ -12,8 +12,8 @@ actor "Conciliacion\n(tarea programada)" as tarea
 rectangle Sistema {
   usecase "CU-04 Consultar cartelera" as CU04
   usecase "CU-01b Filtrar por genero" as CU01b
-  usecase "CU-05 Registrarse" as CU05
-  usecase "CU-05b Ingresar con\nmi cuenta" as CU05b
+  usecase "CU-05 Ingresar con Google" as CU05
+  usecase "CU-05b Cambiar mi nombre\no dar de baja la cuenta" as CU05b
   usecase "CU-06 Elegir butacas y reservar" as CU06
   usecase "CU-07b Pagar online\npor checkout" as CU07b
   usecase "CU-07c Cobrar lo que la\npasarela aprobo" as CU07c

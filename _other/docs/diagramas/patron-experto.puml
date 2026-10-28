@@ -7,11 +7,14 @@ class Reserva {
 class Entrada {
   - tarifa : TipoTarifa
   - precio : Dinero
-  + precio() : Dinero
+  + getPrecio() : Dinero
 }
 class Funcion {
-  - precioBase : Dinero
+  - formato : FormatoDeFuncion
   + precioDe(asiento, sala) : Dinero
+}
+class FormatoDeFuncion <<record>> {
+  + precio() : Dinero
 }
 class Asiento {
   - tipo : TipoAsiento
@@ -19,7 +22,8 @@ class Asiento {
 Reserva "1" *--> "1..*" Entrada : contiene
 Reserva "*" --> "1" Funcion
 Entrada "*" --> "1" Asiento
+Funcion *--> "1" FormatoDeFuncion
 note right of Reserva : conoce sus entradas\n→ sabe el total
 note right of Entrada : conoce tarifa y precio\n→ sabe cuánto vale
-note right of Funcion : conoce base y sala\n→ sabe el precio de una butaca
+note right of Funcion : conoce su formato (precio) y sala\n→ sabe el precio de una butaca
 @enduml

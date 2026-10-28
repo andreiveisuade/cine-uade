@@ -1,24 +1,21 @@
 @startuml usuarios-ciclo
-title Ciclo de vida de la cuenta de un cliente
+title Ciclo de vida de un cliente: la cuenta es la de Google
 
 hide empty description
 
 [*] --> SinCuenta : compra sin cuenta\n(GestorClientes.identificar)
-[*] --> ConCuenta : POST /clientes\nemail nuevo
+[*] --> ConGoogle : entra con Google\nemail nuevo: alta con el nombre de Google (R28)
 
-state "Sin cuenta\npassword_hash NULL\nsu credencial: el codigo de la entrada" as SinCuenta
-state "Con cuenta\nbcrypt en password_hash" as ConCuenta
-state "Clave temporal\ndebe_cambiar_clave = true" as Temporal
+state "Sin sesion\nsu credencial: el codigo de la entrada" as SinCuenta
+state "Con sesion de Google\ncookie JSESSIONID, ROLE_CLIENTE" as ConGoogle
 
-SinCuenta --> ConCuenta : abre cuenta (R22)\ncon el codigo de una entrada suya
-ConCuenta --> ConCuenta : cambia nombre (R23)\ncambia clave (R24)\nrecupera clave (R25)
-SinCuenta --> Temporal : boleteria asigna clave (R27)
-ConCuenta --> Temporal : boleteria asigna clave (R27)\ncierra sus sesiones
-Temporal --> ConCuenta : cambia la clave (R24)\no la recupera (R25)
-ConCuenta --> SinCuenta : baja con la clave actual (R26)\nreservas, pagos y entradas quedan
+SinCuenta --> ConGoogle : entra con Google con ese email (R28)\nes el mismo cliente: nombre y reservas
+ConGoogle --> ConGoogle : cambia el nombre (R23)
+ConGoogle --> SinCuenta : salir, o baja (R26)\nreservas, pagos y entradas quedan
 
-note right of Temporal
-  Lo hace cumplir la web:
-  al entrar la lleva a #/mi-cuenta
+note right of ConGoogle
+  Sin clave de cliente:
+  email sin verificar o de un empleado,
+  no entra
 end note
 @enduml

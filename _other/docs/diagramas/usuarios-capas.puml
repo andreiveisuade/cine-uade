@@ -7,56 +7,58 @@ skinparam ranksep 30
 skinparam defaultTextAlignment left
 
 package "clientes (no deciden nada)" {
-  [web cuenta/\nIngresar, Registro, MiCuenta, RecuperarClave\ncookie JSESSIONID] as WEB
-  [Swing\nVentanaLogin, PantallaClientes\nBasic en cada pedido] as SW
+  [web cuenta/\nIngresar (con Google), MiCuenta\ncookie JSESSIONID] as WEB
+  [Swing\nVentanaLogin, PantallaClientes (buscar)\nBasic en cada pedido] as SW
   [Android\nPantallaLogin, ApiPuerta\nBasic en cada pedido] as AND
 }
 
+cloud "Google\n(OIDC)" as GOO
+
 package "controller/usuarios" {
   [SesionController\nPOST /sesion: devuelve al ya autenticado] as SC
-  [ClienteController\nPOST /clientes: alta (R22)] as CC
-  [CuentaController\n/cuenta: nombre, clave, baja, recuperacion\nclave temporal (R23 a R27)] as CUC
+  [ClienteController\nGET /clientes?email: busqueda] as CC
+  [CuentaController\n/cuenta: nombre y baja (R23, R26)] as CUC
 }
 
 package "service/usuarios" {
-  [GestorClientes\nalta, reclamo del email con codigo (R22)] as GCL
-  [GestorCuentas\ncuenta ya abierta: R23 a R27] as GCU
+  [GestorClientes\ningresarConGoogle (R28), renombrar (R23)] as GCL
   [GestorEmpleados\nalta y busqueda del personal] as GEM
 }
 
 package "infrastructure/seguridad" {
-  [ConfiguracionSeguridad\nquien llama a que; cerrado por defecto] as CFG
-  [PasswordEncoder\nbcrypt, unico formato aceptado] as BC
+  [ConfiguracionSeguridad\nquien llama a que; cerrado por defecto\noauth2Login si hay credenciales] as CFG
+  [ClientesDeGoogle\nAdapter de OidcUserService:\nemail verificado -> cliente] as CDG
+  [PasswordEncoder\nbcrypt, solo empleados] as BC
   [SesionDeClientes\nsolo la sesion del CLIENTE va a cookie] as SDC
-  [LimiteDeIntentos\n5 fallos por email o IP: 1 min (429)] as LI
+  [LimiteDeIntentos\nBasic: 5 fallos por email o IP, 1 min (429)] as LI
 }
 
 package "model/usuarios" {
-  [Usuario  <- Cliente, Empleado\nnombre, email, rol; Cliente: abrir/cerrar cuenta] as US
+  [Usuario  <- Cliente, Empleado\nnombre, email, rol; Empleado: passwordHash] as US
   [Email\nnormalizado, se busca igual en todos lados] as EM
-  [Contrasena\npolitica de la clave; genera la temporal] as CO
+  [Contrasena\npolitica de la clave del empleado] as CO
 }
 
-database "tabla usuario\nrol (discriminador), email UNIQUE,\npassword_hash bcrypt (NULL = sin cuenta),\ndebe_cambiar_clave" as DB
+database "tabla usuario\nrol (discriminador), email UNIQUE,\npassword_hash bcrypt solo de empleados" as DB
 
+WEB --> GOO : boton de ingresar\n/oauth2/authorization/google
+GOO --> CDG : vuelve con el codigo
 WEB --> SC
-WEB --> CC
 WEB --> CUC
 SW --> SC
-SW --> CUC
+SW --> CC
 AND --> SC
-SC --> GCL
+CDG --> GCL
 SC --> GEM
 CC --> GCL
-CUC --> GCU
-GCU --> LI
-GCU --> BC
-GCL --> BC
-GCU --> US
+CUC --> GCL
+GEM --> BC
 GCL --> US
+GEM --> US
 US --> EM
 US --> CO
 US --> DB : JPA
+CFG ..> CDG
 CFG ..> SDC
 CFG ..> LI
 CFG ..> BC

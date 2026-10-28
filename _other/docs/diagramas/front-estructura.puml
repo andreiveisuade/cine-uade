@@ -16,7 +16,7 @@ package "pantallas por funcionalidad" as PANT {
   [cartelera/\nhome, pelicula, trailer] as CART
   [compra/\nfuncion, confirmar, mapa\nCompraEnCurso, bloqueo] as COMPRA
   [ticket/\nentrada, pagar online\nventa cruzada] as TICKET
-  [cuenta/\ningresar, registro\nmis reservas, sesion] as CUENTA
+  [cuenta/\ningresar con Google, mi cuenta\nmis reservas, sesion] as CUENTA
   [promos/\npromos, candy\ntarjetas] as PROMOS
   [institucional/\nnosotros] as INST
 }
