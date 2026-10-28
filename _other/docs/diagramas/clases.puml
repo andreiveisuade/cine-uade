@@ -266,6 +266,7 @@ package "model.ventas" {
     + getTotal() : Dinero
     + pagar() : void
     + impedimentoParaCobrar(ahora : LocalDateTime) : Optional<Rechazo>
+    + impedimentoParaPedirCandy(ahora : LocalDateTime) : Optional<Rechazo>
     + esCobrable(ahora : LocalDateTime) : boolean
     + esCancelable(ahora : LocalDateTime) : boolean
     + estaPagada() : boolean
@@ -535,12 +536,15 @@ package "model.candy" {
     - codigoAutorizacion : String
     - estado : EstadoCompraCandy
     - cobradaEn : LocalDateTime
+    - retiradaEn : LocalDateTime
     - items : List<ItemCompra>
     + CompraCandy(clienteId : Integer, reservaId : Integer, fecha : LocalDateTime, medio : MedioPago, codigoAutorizacion : String, cantidades : Map<Producto, Integer>)
     + {static} pendiente(clienteId : int, reservaId : int, fecha : LocalDateTime, cantidades : Map<Producto, Integer>) : CompraCandy
     + {static} validarPedido(cantidades : Map<?, Integer>, medio : MedioPago, codigoAutorizacion : String) : String
     + cobrar(medio : MedioPago, codigoAutorizacion : String, cuando : LocalDateTime) : void
     + anular() : void
+    + registrarRetiro(cuando : LocalDateTime) : void
+    + estaParaRetirar() : boolean
     + estaPendiente() : boolean
     + estaCobrada() : boolean
     + getTotal() : Dinero
@@ -553,6 +557,7 @@ package "model.candy" {
     - etiqueta : String
     ~ cobrar() : EstadoCompraCandy
     ~ anular() : EstadoCompraCandy
+    ~ retirar() : EstadoCompraCandy
     + esperaCobro() : boolean
     + estaCobrada() : boolean
   }
