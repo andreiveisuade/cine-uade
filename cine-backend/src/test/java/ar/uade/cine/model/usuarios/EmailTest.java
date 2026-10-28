@@ -108,7 +108,7 @@ class EmailTest {
 
     @Test
     void paraBuscarNormalizaIgualQueAlGuardar() {
-        assertEquals(Optional.of(new Email("beto@cine.com")), Email.paraBuscar(" Beto@CINE.com "));
+        assertEquals(Optional.of("beto@cine.com"), Email.paraBuscar(" Beto@CINE.com "));
     }
 
     @Test

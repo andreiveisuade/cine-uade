@@ -39,6 +39,6 @@ public class GestorEmpleados {
 
     @Transactional(readOnly = true)
     public Optional<Empleado> buscarPorEmail(String email) {
-        return Email.paraBuscar(email).map(Email::valor).flatMap(empleadoRepository::findByEmail);
+        return Email.paraBuscar(email).flatMap(empleadoRepository::findByEmail);
     }
 }

@@ -70,7 +70,7 @@ class FiltroDeIntentos extends OncePerRequestFilter {
                     StandardCharsets.UTF_8);
             int separador = credenciales.indexOf(':');
             return separador < 0 ? null
-                    : Email.paraBuscar(credenciales.substring(0, separador)).map(Email::valor).orElse(null);
+                    : Email.paraBuscar(credenciales.substring(0, separador)).orElse(null);
         } catch (IllegalArgumentException e) {
             return null;
         }

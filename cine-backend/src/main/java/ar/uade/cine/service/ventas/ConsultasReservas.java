@@ -50,7 +50,7 @@ public class ConsultasReservas {
 
     // Las de un cliente, la más nueva primero. Sin email no hay a quién buscar; se busca como lo guarda Email.
     public List<Reserva> listarPorEmail(String email) {
-        return Email.paraBuscar(email).map(Email::valor)
+        return Email.paraBuscar(email)
                 .map(reservaRepository::findByCliente_EmailOrderByIdDesc).orElse(List.of());
     }
 

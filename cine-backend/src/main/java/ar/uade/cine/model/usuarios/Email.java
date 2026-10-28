@@ -35,9 +35,9 @@ public record Email(String valor) {
     }
 
     // Para buscar, no guardar: lo que no es un email no encuentra a nadie en vez de dar 400.
-    public static Optional<Email> paraBuscar(String texto) {
+    public static Optional<String> paraBuscar(String texto) {
         try {
-            return Optional.of(new Email(texto));
+            return Optional.of(new Email(texto).valor());
         } catch (DatoInvalido noEsUnEmail) {
             return Optional.empty();
         }
