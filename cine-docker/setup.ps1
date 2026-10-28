@@ -101,7 +101,11 @@ Paso "4/5  Levantando"
 
 Info "La primera vez tarda varios minutos: Maven baja las dependencias del backend."
 docker compose up -d --build
-if ($LASTEXITCODE -ne 0) { Fatal "Fallo el build. Mira el error de arriba." }
+if ($LASTEXITCODE -ne 0) {
+  Aviso "No levanto (build o arranque). El motivo esta en: docker compose logs backend"
+  Aviso "Si la base es de una corrida vieja: docker compose down -v (borra solo la base local) y de nuevo .\setup.ps1"
+  exit 1
+}
 
 Write-Host -NoNewline "  Esperando a que los servicios esten sanos"
 $sanos = 0
@@ -124,9 +128,14 @@ Ok "mysql y backend sanos"
 # ------------------------------------------------------------------- 5. datos
 Paso "5/5  Datos de ejemplo"
 
+# En PowerShell 5.1 el stderr redirigido de un programa externo es un error, y con Stop corta el
+# script aunque el programa termine bien: de aca en mas se mira $LASTEXITCODE.
+$ErrorActionPreference = 'Continue'
+
 # Windows no trae shell POSIX ni curl garantizados, asi que el seed corre adentro de un
 # contenedor conectado a la red del compose. No depende de Git Bash.
-$cuenta = docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>$null
+# MYSQL_PWD y no -p: con -p el cliente avisa por stderr que la clave en la linea es insegura.
+$cuenta = docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>$null
 $hayDatos = $false
 if ($cuenta) { $n = 0; if ([int]::TryParse(("$cuenta").Trim(), [ref]$n)) { $hayDatos = $n -gt 0 } }
 
