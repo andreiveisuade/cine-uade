@@ -113,10 +113,15 @@ ok "mysql y backend sanos"
 # ------------------------------------------------------------------- 5. datos
 paso "5/5  Datos de ejemplo"
 
-if [ "$(docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>/dev/null || echo 0)" -gt 0 ]; then
+contar() {
+  docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM '"$1"'"' 2>/dev/null || echo 0
+}
+
+if [ "$(contar sala)" -gt 0 ]; then
   ok "Ya hay datos cargados, no siembro de nuevo"
 else
-  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 && ok "6 salas, la carta del candy y una promoción" \
+  ./seed/datos-de-ejemplo.sh >/dev/null 2>&1 \
+    && ok "6 salas, la carta del candy, $(contar pelicula) películas con una semana de funciones y una promoción" \
     || aviso "Falló el sembrado. Probá a mano: ./seed/datos-de-ejemplo.sh"
 fi
 

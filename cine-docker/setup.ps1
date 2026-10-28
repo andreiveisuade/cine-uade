@@ -135,11 +135,17 @@ $ErrorActionPreference = 'Continue'
 # Windows no trae shell POSIX ni curl garantizados, asi que el seed corre adentro de un
 # contenedor conectado a la red del compose. No depende de Git Bash.
 # MYSQL_PWD y no -p: con -p el cliente avisa por stderr que la clave en la linea es insegura.
-$cuenta = docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM sala"' 2>$null
-$hayDatos = $false
-if ($cuenta) { $n = 0; if ([int]::TryParse(("$cuenta").Trim(), [ref]$n)) { $hayDatos = $n -gt 0 } }
+function Contar($tabla) {
+  # Sin comillas dobles adentro: PowerShell 5.1 las rompe al pasarlas a un programa externo. Las
+  # claves del .env son alfanumericas, asi que el shell del contenedor las lee igual sin comillas.
+  $consulta = 'MYSQL_PWD=$MYSQL_PASSWORD mysql -u$MYSQL_USER $MYSQL_DATABASE -Nse ''SELECT COUNT(*) FROM ' + $tabla + ''''
+  $cuenta = docker compose exec -T mysql sh -c $consulta 2>$null
+  $n = 0
+  if ($cuenta) { [void][int]::TryParse(("$cuenta").Trim(), [ref]$n) }
+  return $n
+}
 
-if ($hayDatos) {
+if ((Contar 'sala') -gt 0) {
   Ok "Ya hay datos cargados, no siembro de nuevo"
 } else {
   $red = (docker network ls --format '{{.Name}}' | Where-Object { $_ -like '*_web' } | Select-Object -First 1)
@@ -148,7 +154,7 @@ if ($hayDatos) {
   } else {
     docker run --rm --network $red -v "${PWD}/seed:/seed:ro" -e API=http://frontend:8080/api `
       --entrypoint sh curlimages/curl:latest /seed/datos-de-ejemplo.sh *> $null
-    if ($LASTEXITCODE -eq 0) { Ok "6 salas, la carta del candy y una promocion" }
+    if ($LASTEXITCODE -eq 0) { Ok "6 salas, la carta del candy, $(Contar 'pelicula') peliculas con una semana de funciones y una promocion" }
     else { Aviso "Fallo el sembrado. Proba a mano: ./seed/datos-de-ejemplo.sh" }
   }
 }
