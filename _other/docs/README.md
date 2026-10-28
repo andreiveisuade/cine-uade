@@ -16,7 +16,7 @@ archify/exportar.sh capas.archify.json    # tras tocar un .archify.json (skill a
 cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
 
-DER desde `schema.sql`, desde la raíz del repo (Python 3 solo; el export pide la skill diagram-design en `~/.claude/skills`):
+DER desde `db/schema.sql`, desde la raíz del repo (Python 3 solo; el export pide la skill diagram-design en `~/.claude/skills`):
 `python3 _other/docs/diagramas/der/generar_der.py && python3 ~/.claude/skills/diagram-design/scripts/export_svg.py _other/docs/diagramas/der-design.html && python3 _other/docs/diagramas/der/verificar_der.py`
 
 Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `imagen_map`.
@@ -43,11 +43,11 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
 | `patron-*.puml` | Un diagrama por patrón GoF, principio SOLID y patrón GRASP aplicado, con `_estilo-patrones.iuml` (el estilo de los apuntes) |
 | `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
-| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R21 |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R22 (R23–R27, la cuenta del cliente, están en la tabla del manual) |
 | `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
 | `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
 | `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |
-| `der.puml` | DER completo: las 20 tablas de `schema.sql` por subdominio, con las restricciones que sostienen reglas |
+| `der.puml` | DER completo: las 21 tablas de `db/schema.sql` por subdominio, con las restricciones que sostienen reglas |
 | `base-venta-er.puml` | Zoom del DER en la venta: PK, FK, `UNIQUE` y cascadas |
 | `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
 | `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |

@@ -20,7 +20,10 @@ despertar si estuvo inactivo.
 | [`cine-swing/`](cine-swing/README.md) | Panel del encargado y Puerta del acomodador | Java 21, Swing, FlatLaf |
 | [`cine-android/`](cine-android/README.md) | Puerta del acomodador en el celular: escanea el QR del ticket | Kotlin, Jetpack Compose, CameraX, ML Kit |
 | [`cine-docker/`](cine-docker/README.md) | Levanta todo: MySQL, backend, frontend y Adminer | Docker Compose |
-| [`_other/`](_other/docs/README.md) | Manual, diagramas y colección de Postman | PlantUML |
+| [`_other/`](_other/docs/README.md) | Manual, diagramas, colección de Postman y las fotos de la carta (`imagenes/`) | PlantUML |
+
+En la raíz, además: el `Dockerfile` es la imagen de producción (compila el front y lo sirve el backend, un solo
+origen `https`) y `render.yaml` el Blueprint de Render que la usa. Cómo encaja todo: [`ARQUITECTURA.md`](ARQUITECTURA.md).
 
 ## Levantarlo
 
@@ -44,14 +47,38 @@ pasarela es emulada.
 
 A mano, tests y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md).
 
+## Por dónde empiezo
+
+1. [`ARQUITECTURA.md`](ARQUITECTURA.md): capas, subdominios y el recorrido de una venta, clase por clase.
+2. [Manual](_other/docs/manual/index.html), secciones Reglas y Casos de uso: qué tiene que hacer el sistema.
+3. [`API.md`](cine-frontend/API.md): lo que se dicen el backend y los clientes.
+4. Para seguir una venta en el código, abrir `cine-backend/.../service/ventas/GestorReservas.java` (reservar) y
+   `GestorPagos.java` (cobrar); el resto del camino está en [Flujo de una venta](ARQUITECTURA.md#flujo-de-una-venta).
+
 ## Documentación
 
-- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R21, casos de uso, arquitectura,
+- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R27, casos de uso, arquitectura,
   decisiones y diagramas. Es la fuente de verdad.
 - [`API.md`](cine-frontend/API.md): el contrato HTTP, endpoint por endpoint.
 - [`PRUEBAS.md`](_other/docs/PRUEBAS.md): cómo se verifica antes de entregar.
 - [Colección de Postman](_other/demo/cine-uade.postman_collection.json): GET, POST, PUT, PATCH y DELETE,
   con casos exitosos y de error.
+
+## Scripts
+
+| Script | Qué hace |
+|---|---|
+| `cine-docker/setup.sh` (`setup.ps1` en Windows) | Deja el sistema andando desde cero; se puede correr de nuevo |
+| `cine-docker/seed/datos-de-ejemplo.sh` | Carga salas, la carta del candy y una promoción por la API (películas no: las trae el importador) |
+| `cine-docker/aiven/cargar-aiven.sh` | Primer deploy: aplica `db/schema.sql` en Aiven y crea los dos empleados con claves nuevas |
+| `cine-docker/aiven/migrar-aiven.sh <n>` | Aplica una migración de `db/migraciones/` a Aiven, por número o nombre, antes del deploy |
+| `_other/demo/humo.sh` | Pruebas de humo de punta a punta contra el sistema levantado; escribe datos: solo en una base desechable |
+| `_other/imagenes/procesar.sh` | Recorta y convierte a webp las fotos de `originales/` a `listas/` |
+| `_other/imagenes/cargar.sh` | Sube cada webp de `listas/` y se lo asigna a la promoción, producto o combo del mismo nombre |
+| `_other/docs/diagramas/archify/exportar.sh` | Regenera un diagrama de Archify como SVG para el manual |
+
+`_other/imagenes/` guarda las fotos de promociones, productos y combos: `PROMPTS.md` dice cómo se generaron,
+`procesar.sh` las deja listas y `cargar.sh` las sube por `POST /api/imagenes`, que las guarda en la base.
 
 ## Pendiente
 

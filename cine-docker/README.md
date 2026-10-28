@@ -11,6 +11,7 @@ Levanta el sistema completo desde las carpetas hermanas. Cómo ponerlo a andar y
 | `seed/02-admin.sql` | Los dos usuarios de demo, al crear la base |
 | `seed/datos-de-ejemplo.sh` | Seis salas, la carta del candy y una promoción, por la API y no por SQL, para que pasen por las reglas |
 | `aiven/cargar-aiven.sh` | Prepara la base de Aiven para Render: carga `schema.sql` y los dos empleados con claves nuevas |
+| `aiven/migrar-aiven.sh` | Aplica una migración de `db/migraciones/` a una base de Aiven ya cargada (`17` o `clave-temporal`) |
 
 ## Servicios
 
