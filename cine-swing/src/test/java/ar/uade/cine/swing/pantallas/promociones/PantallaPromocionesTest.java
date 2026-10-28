@@ -90,6 +90,34 @@ class PantallaPromocionesTest {
     }
 
     @Test
+    void creaUnaNxMConLlevaYPagaEnteros() {
+        servidor.responder("POST /api/promociones", 201, DOS_POR_UNO);
+        encargado.tipear("Nombre", "3x2")
+                .elegir("Tipo", "NxM")
+                .tipear("Lleva", "3")
+                .tipear("Paga", "2")
+                .fecha("Desde", LocalDate.of(2026, 11, 1))
+                .fecha("Hasta", LocalDate.of(2026, 11, 30))
+                .clic("Crear promoción");
+
+        encargado.esperarTexto("Promoción creada");
+        String cuerpo = servidor.ultimo("POST /api/promociones").cuerpo();
+        assertTrue(cuerpo.contains("\"porcentaje\":null,\"monto\":null,\"lleva\":3,\"paga\":2"), cuerpo);
+    }
+
+    @Test
+    void elBeneficioVacioSeMarcaYNoSeManda() {
+        encargado.tipear("Nombre", "Martes")
+                .tipear("Porcentaje", "")
+                .fecha("Desde", LocalDate.of(2026, 11, 1))
+                .fecha("Hasta", LocalDate.of(2026, 11, 30))
+                .clic("Crear promoción");
+
+        encargado.esperarTexto("Falta completar «Porcentaje»");
+        assertEquals(0, servidor.veces("POST /api/promociones"));
+    }
+
+    @Test
     void loQueFaltaOEstaMalEscritoNoSeManda() {
         encargado.tipear("Nombre", " ")
                 .tipear("Desde hora", "25:00")

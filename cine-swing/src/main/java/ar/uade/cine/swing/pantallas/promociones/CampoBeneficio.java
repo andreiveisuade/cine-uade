@@ -65,6 +65,8 @@ enum CampoBeneficio {
     }
 
     Number leer(Validacion v, JTextField caja) {
-        return entero ? v.entero(caja, etiqueta, true) : v.decimal(caja, etiqueta, true);
+        // Sin ternario: con Integer y Double lo desempaqueta a double (NxM viajaba 3.0 y un vacío daba NPE).
+        if (entero) return v.entero(caja, etiqueta, true);
+        return v.decimal(caja, etiqueta, true);
     }
 }
