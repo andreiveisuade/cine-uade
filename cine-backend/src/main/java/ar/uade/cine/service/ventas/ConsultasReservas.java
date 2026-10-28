@@ -38,7 +38,7 @@ public class ConsultasReservas {
     public Reserva obtenerDelCliente(String codigo, String emailDelCliente) {
         Reserva reserva = obtenerPorCodigo(codigo);
         if (!reserva.getCliente().getEmail().equals(emailDelCliente)) {
-            throw new RecursoNoEncontrado("No existe ninguna reserva con ese código");
+            throw new RecursoNoEncontrado(ReservaRepository.NO_EXISTE_CON_ESE_CODIGO);
         }
         return reserva;
     }
