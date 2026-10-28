@@ -34,6 +34,12 @@ describe("Ingresar", () => {
     expect(sessionStorage.getItem("cine.vuelta")).toBe("/confirmar/5");
   });
 
+  it("antes de ir a Google, la política de privacidad está a un click", async () => {
+    renderConApp(<Ingresar />);
+
+    expect(await screen.findByRole("link", { name: "política de privacidad" })).toHaveAttribute("href", "/privacidad.html");
+  });
+
   it("sin credenciales de Google en el servidor avisa y no deja ir", async () => {
     api.ingresoConGoogle.mockResolvedValue({ disponible: false });
     renderConApp(<Ingresar />);
