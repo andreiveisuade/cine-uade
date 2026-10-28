@@ -21,6 +21,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.util.List;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.escapar;
@@ -70,7 +71,7 @@ public final class PantallaMapaSala extends Pantalla {
             return new Estilo(Colores.butacaFueraDeServicio(), Colores.borde(), true, true,
                     asiento.codigo() + " · fuera de servicio · clic para reponer");
         }
-        return new Estilo(MapaButacas.colorTipo(asiento.tipo()), Colores.borde(), true, false,
+        return new Estilo(Colores.butaca(asiento.tipo()), Colores.borde(), true, false,
                 asiento.codigo() + " · " + etiqueta(asiento.tipo()) + " · clic para marcar fuera de servicio");
     }
 
@@ -81,11 +82,11 @@ public final class PantallaMapaSala extends Pantalla {
 
     private static JPanel referencia() {
         JPanel panel = new JPanel(new FlujoConSalto());
-        panel.add(muestra(MapaButacas.colorTipo("ESTANDAR"), "disponible"));
+        panel.add(muestra(Colores.butaca("ESTANDAR"), "disponible"));
         panel.add(muestra(Colores.butacaFueraDeServicio(), "fuera de servicio"));
-        panel.add(muestra(MapaButacas.colorTipo("VIP"), "* VIP"));
-        panel.add(muestra(MapaButacas.colorTipo("PAREJA"), "& pareja"));
-        panel.add(muestra(MapaButacas.colorTipo("ACCESIBLE"), "+ accesible"));
+        for (String tipo : List.of("VIP", "PAREJA", "ACCESIBLE")) {
+            panel.add(muestra(Colores.butaca(tipo), MapaButacas.SIMBOLO.get(tipo) + " " + etiqueta(tipo)));
+        }
         return panel;
     }
 
