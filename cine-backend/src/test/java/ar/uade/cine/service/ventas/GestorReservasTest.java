@@ -377,6 +377,20 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
+    // R17: vencida aunque figure RESERVADA; cancelarla mentiría sobre butacas que ya volvieron a la venta.
+    @Test
+    void noSeCancelaUnaReservaVencida() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
+
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                () -> reservas.cancelar(reserva.getId()));
+
+        assertEquals("La reserva 1 venció: sus butacas volvieron a estar disponibles", error.getMessage());
+        assertEquals(10, asientosLibres(1, null).size(), "las butacas vuelven a la venta igual");
+        assertEquals(EstadoReserva.EXPIRADA, consultas.obtener(reserva.getId()).getEstado());
+    }
+
     // El estado con su etiqueta, no con la constante (EXPIRADA) que viaja en el JSON.
     @Test
     void unaReservaYaExpiradaDiceQueEstaVencida() {

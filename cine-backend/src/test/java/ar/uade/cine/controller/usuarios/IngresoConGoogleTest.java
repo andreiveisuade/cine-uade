@@ -82,6 +82,7 @@ class IngresoConGoogleTest extends PruebaDeApi {
         assertThat(quien.estado()).isEqualTo(200);
         assertThat(quien.json().get("email").asText()).isEqualTo("ana@mail.com");
         assertThat(quien.json().get("rol").asText()).isEqualTo("CLIENTE");
+        assertThat(quien.json().get("empleado").asBoolean()).isFalse();
         assertThat(conSesion(HttpMethod.GET, "/api/reservas/mias", sesion, null).estado()).isEqualTo(200);
     }
 

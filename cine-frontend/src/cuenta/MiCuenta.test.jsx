@@ -16,8 +16,8 @@ beforeEach(() => {
 describe("MiCuenta", () => {
   it("sin sesión manda a ingresar", async () => {
     api.sesionActual.mockRejectedValue(new Error("401"));
-    renderConApp(<MiCuenta />);
-    expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
+    renderConApp(<MiCuenta />, { ruta: "/mi-cuenta", en: "/mi-cuenta" });
+    expect(await screen.findByText("en /ingresar")).toBeInTheDocument();
   });
 
   it("renombra y deja el email solo de lectura", async () => {

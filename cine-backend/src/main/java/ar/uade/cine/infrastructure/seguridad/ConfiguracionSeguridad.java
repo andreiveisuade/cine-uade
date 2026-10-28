@@ -181,7 +181,7 @@ public class ConfiguracionSeguridad {
     // Solo empleados: el cliente entra con Google (R28). Sin hash cuenta como email inexistente; User con NULL tiraba.
     @Bean
     public UserDetailsService usuariosConClave(EmpleadoRepository empleados) {
-        return email -> Email.paraBuscar(email).map(Email::valor)
+        return email -> Email.paraBuscar(email)
                 .flatMap(empleados::findByEmail)
                 .filter(empleado -> empleado.getPasswordHash() != null)
                 .map(empleado -> User.withUsername(empleado.getEmail())

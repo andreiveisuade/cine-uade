@@ -33,6 +33,7 @@ class SesionControllerTest extends PruebaDeApi {
         assertThat(respuesta.estado()).isEqualTo(200);
         assertThat(respuesta.json().get("email").asText()).isEqualTo(EMAIL_ADMIN);
         assertThat(respuesta.json().get("rol").asText()).isEqualTo("ADMINISTRADOR");
+        assertThat(respuesta.json().get("empleado").asBoolean()).isTrue();
         assertThat(respuesta.cuerpo()).doesNotContain("password");
     }
 
@@ -52,6 +53,7 @@ class SesionControllerTest extends PruebaDeApi {
 
         assertThat(respuesta.estado()).isEqualTo(200);
         assertThat(respuesta.json().get("rol").asText()).isEqualTo("ACOMODADOR");
+        assertThat(respuesta.json().get("empleado").asBoolean()).isTrue();
     }
 
     @Test

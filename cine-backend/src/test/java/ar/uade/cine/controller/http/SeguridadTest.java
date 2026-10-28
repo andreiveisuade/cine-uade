@@ -115,23 +115,6 @@ class SeguridadTest extends PruebaDeApi {
     }
 
     @Test
-    @DisplayName("el acomodador valida entradas: pasa el filtro y contesta el gestor")
-    void acomodadorEnLaPuerta() {
-        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/acceso", "{\"codigo\":\"NOEXISTE\"}",
-                "puerta@cine.test", "clave-puerta");
-
-        assertThat(respuesta.estado()).isNotIn(401, 403);
-        assertThat(respuesta.json().has("error")).isTrue();
-    }
-
-    @Test
-    @DisplayName("la puerta sin credenciales es 401")
-    void puertaSinCredencialesEs401() {
-        assertThat(pedirComo(HttpMethod.POST, "/api/acceso", "{\"codigo\":\"X\"}", null, null).estado())
-                .isEqualTo(401);
-    }
-
-    @Test
     @DisplayName("el cliente reserva sin credenciales: el pedido llega al gestor")
     void reservaDelClienteSinCredenciales() {
         Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/reservas", "{\"funcionId\":999}", null, null);
@@ -205,6 +188,49 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(respuesta.estado()).isEqualTo(400);
         assertThat(respuesta.cabeceras().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
         assertThat(respuesta.error()).isEqualTo("El pedido no es válido");
+    }
+
+    // B2: cada familia de rutas con los cuatro que la piden; un rol de más en ConfiguracionSeguridad cambia un 403.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            el cliente no valida entradas           | POST | /api/acceso                     | CLIENTE       | 403
+            el acomodador valida entradas           | POST | /api/acceso                     | ACOMODADOR    | 404
+            el encargado valida entradas            | POST | /api/acceso                     | ADMINISTRADOR | 404
+            la puerta sin credenciales              | POST | /api/acceso                     | ANONIMO       | 401
+            el cliente ve sus reservas              | GET  | /api/reservas/mias              | CLIENTE       | 200
+            el acomodador no tiene reservas propias | GET  | /api/reservas/mias              | ACOMODADOR    | 403
+            el encargado no tiene reservas propias  | GET  | /api/reservas/mias              | ADMINISTRADOR | 403
+            mis reservas sin sesion                 | GET  | /api/reservas/mias              | ANONIMO       | 401
+            el cliente no revisa pendientes         | GET  | /api/peliculas/pendientes       | CLIENTE       | 403
+            el acomodador no revisa pendientes      | GET  | /api/peliculas/pendientes       | ACOMODADOR    | 403
+            el encargado revisa pendientes          | GET  | /api/peliculas/pendientes       | ADMINISTRADOR | 200
+            el cliente no ve la caja del candy      | GET  | /api/candy/compras?fecha=2026-08-20 | CLIENTE   | 403
+            el acomodador no ve la caja del candy   | GET  | /api/candy/compras?fecha=2026-08-20 | ACOMODADOR | 403
+            el encargado ve la caja del candy       | GET  | /api/candy/compras?fecha=2026-08-20 | ADMINISTRADOR | 200
+            el cliente no importa cartelera         | GET  | /api/importaciones              | CLIENTE       | 403
+            el acomodador no importa cartelera      | GET  | /api/importaciones              | ACOMODADOR    | 403
+            el encargado importa cartelera          | GET  | /api/importaciones              | ADMINISTRADOR | 200
+            el cliente no da de alta salas          | POST | /api/salas                      | CLIENTE       | 403
+            el cliente abre su sesion               | POST | /api/sesion                     | CLIENTE       | 200
+            el acomodador abre su sesion            | POST | /api/sesion                     | ACOMODADOR    | 200
+            el encargado abre su sesion             | POST | /api/sesion                     | ADMINISTRADOR | 200
+            """)
+    @DisplayName("matriz de roles: quién puede usar cada familia de rutas")
+    void matrizDeRoles(String caso, HttpMethod metodo, String ruta, String quien, int estado) {
+        String cuerpo = metodo == HttpMethod.POST && !ruta.equals("/api/sesion") ? cuerpoPara(ruta) : null;
+
+        Respuesta respuesta = switch (quien) {
+            case "CLIENTE" -> conSesion(metodo, ruta, entrarConGoogle("cliente@mail.test"), cuerpo);
+            case "ACOMODADOR" -> pedirComo(metodo, ruta, cuerpo, "puerta@cine.test", "clave-puerta");
+            case "ADMINISTRADOR" -> pedirComo(metodo, ruta, cuerpo, EMAIL_ADMIN, CLAVE_ADMIN);
+            default -> pedirComo(metodo, ruta, cuerpo, null, null);
+        };
+
+        assertThat(respuesta.estado()).as(respuesta.cuerpo()).isEqualTo(estado);
+    }
+
+    private static String cuerpoPara(String ruta) {
+        return ruta.equals("/api/acceso") ? "{\"codigo\":\"NOEXISTE\"}" : SALA;
     }
 
     private Reserva unaReserva() {

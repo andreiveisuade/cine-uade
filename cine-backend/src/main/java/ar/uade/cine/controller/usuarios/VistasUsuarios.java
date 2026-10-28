@@ -21,6 +21,6 @@ public class VistasUsuarios {
     }
 
     public UsuarioVistaDTO usuario(Usuario u) {
-        return new UsuarioVistaDTO(u.getId(), u.getNombre(), u.getEmail(), u.getRol().name());
+        return new UsuarioVistaDTO(u.getId(), u.getNombre(), u.getEmail(), u.getRol().name(), u.getRol().esEmpleado());
     }
 }

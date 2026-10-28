@@ -24,6 +24,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // JaCoCo de AGP: createDebugUnitTestCoverageReport deja el XML que leen SonarQube y el manual.
+    buildTypes {
+        debug { enableUnitTestCoverage = true }
+    }
+
     buildFeatures {
         compose = true
     }

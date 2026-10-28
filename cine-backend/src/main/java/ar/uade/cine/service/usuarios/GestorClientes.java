@@ -61,6 +61,6 @@ public class GestorClientes {
     // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guarda Email.
     @Transactional(readOnly = true)
     public Optional<Cliente> buscarPorEmail(String email) {
-        return Email.paraBuscar(email).map(Email::valor).flatMap(clienteRepository::findByEmail);
+        return Email.paraBuscar(email).flatMap(clienteRepository::findByEmail);
     }
 }

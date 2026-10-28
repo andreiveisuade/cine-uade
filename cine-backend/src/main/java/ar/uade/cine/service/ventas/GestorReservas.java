@@ -100,7 +100,7 @@ public class GestorReservas {
 
     public Reserva cancelar(int reservaId) {
         Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
-        reserva.cancelar();
+        reserva.cancelar(reloj.ahora());
         log.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
         return reserva;
