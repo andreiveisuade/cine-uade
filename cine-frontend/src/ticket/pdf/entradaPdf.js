@@ -51,7 +51,8 @@ function cargarPoster(url) {
     };
     imagen.onerror = () => resolver(null);
     setTimeout(() => resolver(null), 4000);
-    imagen.src = url;
+    // Otra URL que la del <img> de la página: la copia en caché vino sin CORS y ensuciaría el canvas.
+    imagen.src = url + (url.includes("?") ? "&" : "?") + "pdf";
   });
 }
 
