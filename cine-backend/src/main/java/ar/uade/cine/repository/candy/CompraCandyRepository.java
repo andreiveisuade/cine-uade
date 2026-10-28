@@ -18,6 +18,8 @@ public interface CompraCandyRepository extends Repositorio<CompraCandy> {
 
     List<CompraCandy> findByClienteId(int clienteId);
 
+    List<CompraCandy> findByClienteIdAndEstadoOrderByCobradaEnDesc(int clienteId, EstadoCompraCandy estado);
+
     List<CompraCandy> findByReservaIdIn(Collection<Integer> reservaIds);
 
     // R30: a lo sumo uno por reserva, porque pedir de nuevo reemplaza el anterior.

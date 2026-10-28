@@ -30,7 +30,7 @@ Diagramas en el [manual](../_other/docs/manual/index.html#correr).
 
 MySQL corre `db/schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
 aplicar a mano las de `cine-backend/src/main/resources/db/migraciones/` que falten, en el orden del número
-(`01-programaciones.sql` … `19-candy-de-la-web.sql`).
+(`01-programaciones.sql` … `20-candy-retirado.sql`).
 
 ```sh
 docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \

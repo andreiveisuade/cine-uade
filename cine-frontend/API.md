@@ -488,7 +488,7 @@ pagar (R18) o ya se usó; `400` si no es el día de la función; `404` si no exi
 todo lo cobrado de esa reserva que todavía no se retiró (lo de la web y lo del mostrador para la reserva). `200` con
 esas compras, cada una con `retiradaEn`. `409` `La entrada no tiene candy para retirar` si no tiene candy cobrado, y
 `El candy de esa entrada ya se retiró el 21/10 19:50` si ya se entregó todo; `404` si el código no existe. El código
-se busca como en `/acceso`. Toda compra de candy trae `retiradaEn` (`null` hasta que se retira).
+se busca como en `/acceso`. Toda compra de candy trae `retiradaEn` cuando ya se retiró (antes no viene).
 
 ## Importador
 

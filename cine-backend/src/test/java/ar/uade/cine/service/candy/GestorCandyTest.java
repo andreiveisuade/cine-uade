@@ -405,19 +405,18 @@ class GestorCandyTest extends PruebaDeIntegracion {
         assertEquals(Dinero.de(4000), candy.pendienteDe(reserva.getId()).orElseThrow().getTotal());
     }
 
-    // R30: se cobra con la reserva, así que solo mientras se pueda cobrar (R5, R17).
+    // R30: sin pagar se cobra con la reserva, así que solo mientras se pueda cobrar (R5, R17).
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
-            pagada    | La reserva está pagada: no se puede cobrar
             cancelada | La reserva está cancelada: no se puede cobrar
             vencida   | venció: sus butacas volvieron a estar disponibles
             """)
     void soloSePideCandyParaUnaReservaQueSePuedeCobrar(String caso, String mensaje) {
         Reserva reserva = reservar();
-        switch (caso) {
-            case "pagada" -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-            case "cancelada" -> reservas.cancelar(reserva.getId());
-            default -> reloj.mover(reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+        if (caso.equals("cancelada")) {
+            reservas.cancelar(reserva.getId());
+        } else {
+            reloj.mover(reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
         }
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
@@ -485,5 +484,68 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
         rechaza("La reserva " + reserva.getId() + " no está pagada: cobrala antes de agregarle candy",
                 () -> candy.venderParaReserva(reserva.getId(), null, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
+    }
+
+    // R30: ya pagada, el pedido se cobra aparte (GestorPagos); hasta que empieza la función.
+    @Test
+    void conLaReservaPagadaSePideCandyHastaQueEmpiezaLaFuncion() {
+        Reserva reserva = reservarYCobrar();
+
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        assertEquals(EstadoCompraCandy.PENDIENTE, candy.pendienteDe(reserva.getId()).orElseThrow().getEstado());
+
+        reloj.mover(reloj.ahora().plusDays(1).plusMinutes(1));
+        DatoInvalido error = assertThrows(DatoInvalido.class,
+                () -> candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 2)));
+        assertEquals("La función ya empezó: el candy se compra en el mostrador", error.getMessage());
+    }
+
+    // D7: con el QR de la entrada se entrega lo de la web y lo del mostrador para esa reserva, una sola vez.
+    @Test
+    void conElQrSeRetiraTodoLoCobradoDeLaReservaUnaSolaVez() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        candy.venderParaReserva(reserva.getId(), null, pedido(gaseosa, 1), MedioPago.EFECTIVO, "");
+
+        List<CompraCandy> retiradas = candy.retirar(reserva.getCodigo().toLowerCase());
+
+        assertEquals(2, retiradas.size());
+        assertTrue(retiradas.stream().allMatch(c -> reloj.ahora().equals(c.getRetiradaEn())));
+        rechaza("El candy de esa entrada ya se retiró el 14/08 10:00", () -> candy.retirar(reserva.getCodigo()));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin candy,           false
+            con candy sin pagar, true
+            """)
+    void unaEntradaSinCandyCobradoNoTieneNadaParaRetirar(String caso, boolean conPedido) {
+        Reserva reserva = reservar();
+        if (conPedido) {
+            candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        }
+
+        rechaza("La entrada no tiene candy para retirar", () -> candy.retirar(reserva.getCodigo()));
+    }
+
+    @Test
+    void retirarConUnCodigoQueNoExisteEs404() {
+        assertThrows(RecursoNoEncontrado.class, () -> candy.retirar("K7M2P9XQ"));
+    }
+
+    // CU-16: lo pendiente y lo anulado no son compras; la más nueva primero.
+    @Test
+    void lasComprasDelClienteSonLasCobradas() {
+        Reserva reserva = reservar();
+        candy.vender(1, pedido(gaseosa, 1), MedioPago.EFECTIVO, "");
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        reloj.mover(reloj.ahora().plusMinutes(5));
+        candy.vender(1, pedido(pochoclos, 2), MedioPago.EFECTIVO, "");
+
+        List<CompraCandy> mias = candy.listarCobradasDe("ANDREI@uade.edu.ar");
+
+        assertEquals(List.of(Dinero.de(8000), Dinero.de(2500)), mias.stream().map(CompraCandy::getTotal).toList());
+        assertEquals(List.of(), candy.listarCobradasDe("nadie@uade.edu.ar"));
     }
 }

@@ -174,6 +174,20 @@ class MercadoPagoHttpTest {
         assertTrue(pedidos.contains("GET /checkout/preferences/search?external_reference=25-CREDITO-99"), pedidos.toString());
     }
 
+    // R30: el candy sumado a una entrada ya paga va solo, y el id dice qué cobrar cuando vuelve.
+    @Test
+    void elCheckoutSoloDeCandyLlevaUnItemYSeReconoceAlBuscarlo() throws IOException {
+        Checkout checkout = pasarela("http://localhost:8080").crearSoloCandy(25, MedioPago.QR, Dinero.de(5500), VENCE);
+
+        JsonNode enviados = JSON.readTree(preferenciaEnviada).path("items");
+        assertEquals(1, enviados.size());
+        assertEquals("Candy de la reserva 25", enviados.path(0).path("title").asText());
+        assertTrue(checkout.id().matches("25-QR-\\d+-CANDY"), checkout.id());
+        assertTrue(checkout.soloCandy());
+        assertTrue(pasarela("http://localhost:8080").buscar(checkout.id()).orElseThrow().soloCandy());
+        assertFalse(pasarela("http://localhost:8080").buscar("25-QR-99").orElseThrow().soloCandy());
+    }
+
     // R30: lo que se valida contra el pago aprobado es todo lo de la preferencia, entradas y candy.
     @Test
     void elMontoDeUnaPreferenciaConCandySumaSusDosItems() {
@@ -239,7 +253,7 @@ class MercadoPagoHttpTest {
         pagosEnMp = """
                 [{"id": 222, "status": "approved", "transaction_amount": 100.0, "currency_id": "ARS",
                   "payment_type_id": "%s"}]""".formatted(tipo);
-        Checkout checkout = new Checkout("25-" + medio + "-7", 25, medio, Dinero.de(100), "", "");
+        Checkout checkout = new Checkout("25-" + medio + "-7", 25, medio, Dinero.de(100), "", "", false);
 
         if (cuenta) {
             assertEquals("MP-222", pasarela("http://localhost:8080").autorizar(checkout), caso);
@@ -297,7 +311,7 @@ class MercadoPagoHttpTest {
     }
 
     private static Checkout checkout() {
-        return new Checkout("25-QR-7", 25, MedioPago.QR, Dinero.de(100), "", "");
+        return new Checkout("25-QR-7", 25, MedioPago.QR, Dinero.de(100), "", "", false);
     }
 
     private MercadoPagoHttp pasarela(String sitio) {

@@ -207,6 +207,13 @@ class SeguridadTest extends PruebaDeApi {
             el cliente no ve la caja del candy      | GET  | /api/candy/compras?fecha=2026-08-20 | CLIENTE   | 403
             el acomodador no ve la caja del candy   | GET  | /api/candy/compras?fecha=2026-08-20 | ACOMODADOR | 403
             el encargado ve la caja del candy       | GET  | /api/candy/compras?fecha=2026-08-20 | ADMINISTRADOR | 200
+            el cliente no entrega candy             | POST | /api/candy/retiros              | CLIENTE       | 403
+            el acomodador entrega candy             | POST | /api/candy/retiros              | ACOMODADOR    | 404
+            el encargado entrega candy              | POST | /api/candy/retiros              | ADMINISTRADOR | 404
+            el retiro sin credenciales              | POST | /api/candy/retiros              | ANONIMO       | 401
+            el cliente ve sus compras de candy      | GET  | /api/candy/compras/mias         | CLIENTE       | 200
+            el encargado no tiene candy propio      | GET  | /api/candy/compras/mias         | ADMINISTRADOR | 403
+            sus compras de candy sin sesion         | GET  | /api/candy/compras/mias         | ANONIMO       | 401
             el cliente no importa cartelera         | GET  | /api/importaciones              | CLIENTE       | 403
             el acomodador no importa cartelera      | GET  | /api/importaciones              | ACOMODADOR    | 403
             el encargado importa cartelera          | GET  | /api/importaciones              | ADMINISTRADOR | 200
@@ -230,7 +237,7 @@ class SeguridadTest extends PruebaDeApi {
     }
 
     private static String cuerpoPara(String ruta) {
-        return ruta.equals("/api/acceso") ? "{\"codigo\":\"NOEXISTE\"}" : SALA;
+        return ruta.equals("/api/acceso") || ruta.equals("/api/candy/retiros") ? "{\"codigo\":\"NOEXISTE\"}" : SALA;
     }
 
     private Reserva unaReserva() {

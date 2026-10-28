@@ -14,6 +14,9 @@ public interface PasarelaPagos {
     // Entradas (ya con el descuento) y candy por separado, para que el comprador vea los dos (R30).
     Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence);
 
+    // R30: el candy que se suma a una entrada ya paga, en un checkout aparte que no vuelve a cobrar las entradas.
+    Checkout crearSoloCandy(int reservaId, MedioPago medio, Dinero candy, LocalDateTime vence);
+
     Optional<Checkout> buscar(String checkoutId);
 
     String autorizar(Checkout checkout);
@@ -21,8 +24,8 @@ public interface PasarelaPagos {
     // Los checkouts con un pago aprobado desde ese momento, para cobrarlos aunque el comprador no vuelva.
     List<String> aprobadosDesde(LocalDateTime desde);
 
-    // Guarda reservaId y medio para que quien confirma no pueda decir que paga otra cosa.
+    // Guarda reservaId, medio y qué se cobra para que quien confirma no pueda decir que paga otra cosa.
     record Checkout(String id, int reservaId, MedioPago medio, Dinero monto,
-                    String urlPago, String codigoQr) {
+                    String urlPago, String codigoQr, boolean soloCandy) {
     }
 }

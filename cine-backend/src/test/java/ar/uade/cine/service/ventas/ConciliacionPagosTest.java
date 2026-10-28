@@ -129,6 +129,21 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
         assertEquals(MedioPago.QR, cobrada.getMedio());
     }
 
+    // R30: el candy sumado a una entrada ya paga, también si el comprador no vuelve.
+    @Test
+    void laConciliacionCobraElCheckoutSoloDeCandy() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        enTransaccion(() -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
+        pasarela.aprobar(enTransaccion(() -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR)).id());
+
+        assertEquals(1, enTransaccion(conciliacion::conciliar));
+        assertEquals(0, enTransaccion(conciliacion::conciliar), "cobrado el candy, el checkout no se cobra de nuevo");
+
+        assertEquals(EstadoCompraCandy.COBRADA, candy.comprasDeReservas(List.of(reserva.getId())).get(0).getEstado());
+    }
+
     // Uno que no se puede cobrar (acá, uno que MP no conoce) no frena a los demás.
     @Test
     void unCheckoutQueFallaNoFrenaALosDemas() {
