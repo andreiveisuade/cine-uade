@@ -33,10 +33,12 @@ export function Cartelera({ conHero = false }) {
         <Box mb="lg" mt={conHero ? undefined : "-md"}><FiltroGeneros generos={generos} genero={genero} /></Box>
         {peliculas.length ? (
           <GrillaPeliculas peliculas={peliculas} />
-        ) : (
+        ) : genero ? (
           <Vacio accion={<Button component={Link} to="/cartelera" variant="default">Ver toda la cartelera</Button>}>
             No hay películas de ese género en cartelera.
           </Vacio>
+        ) : (
+          <Vacio>Todavía no hay películas en cartelera.</Vacio>
         )}
       </Box>
     </Stack>

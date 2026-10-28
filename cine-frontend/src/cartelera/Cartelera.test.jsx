@@ -64,6 +64,15 @@ describe("Cartelera", () => {
     expect(screen.getByRole("link", { name: "Ver toda la cartelera" })).toHaveAttribute("href", "/cartelera");
   });
 
+  it("sin ninguna película en cartel lo dice sin ofrecer una cartelera que tampoco tiene nada", async () => {
+    api.obtenerCartelera.mockResolvedValue([]);
+
+    abrir();
+
+    expect(await screen.findByText("Todavía no hay películas en cartelera.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ver toda la cartelera" })).not.toBeInTheDocument();
+  });
+
   it("si no puede traerla muestra el error", async () => {
     api.obtenerCartelera.mockRejectedValue(new Error("No se pudo conectar con el servidor"));
 
