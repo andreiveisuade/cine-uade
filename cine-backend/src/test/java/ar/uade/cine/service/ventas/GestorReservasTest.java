@@ -125,7 +125,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaButacaInexistente() {
-        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("Z9"), null));
+        rechaza("La butaca Z9 no existe en la sala", () -> reservas.reservar(1, 1, generales("Z9"), null));
     }
 
     @Test
@@ -137,7 +137,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unaReservaRechazadaNoDejaAlClienteDadoDeAlta() {
-        assertThrows(Rechazo.class,
+        rechaza("La butaca Z9 no existe en la sala",
                 () -> reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("Z9"), null));
 
         assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
@@ -238,7 +238,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(Rechazo.class, () -> reservas.cancelar(reserva.getId()));
+        rechaza("La reserva está cancelada: solo se puede cancelar una reserva sin cobrar",
+                () -> reservas.cancelar(reserva.getId()));
     }
 
     @Test
@@ -247,7 +248,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(9, asientosLibres(1, null).size());
         assertTrue(asientosLibres(1, null).stream().noneMatch(a -> a.getCodigo().equals("A3")));
-        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("A3"), null));
+        rechaza("La butaca A3 está fuera de servicio", () -> reservas.reservar(1, 1, generales("A3"), null));
     }
 
     @Test
@@ -319,7 +320,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     void noSePuedeProgramar3DEnUnaSalaQueNoLoSoporta() {
         salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
-        assertThrows(Rechazo.class,
+        rechaza("La sala Sala 2D no puede proyectar en 3D",
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 24, 20, 0),
                         new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
     }
@@ -379,7 +380,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva 1 venció: sus butacas volvieron a estar disponibles",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -444,7 +445,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
-        assertThrows(Rechazo.class, () -> acceso.registrarIngreso("XXXXXXXX"));
+        rechaza("No existe ninguna reserva con ese código", () -> acceso.registrarIngreso("XXXXXXXX"));
     }
 
     // El código es la única credencial del cliente: con leer el log no se tiene que poder entrar.
@@ -472,7 +473,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void noSeReservaUnaFuncionQueYaEmpezo() {
         int empezada = funcionQueYaEmpezo().getId();
 
-        assertThrows(Rechazo.class,
+        rechaza("La función ya empezó: no se pueden reservar butacas",
                 () -> reservas.reservar(empezada, 1, generales("A1"), null));
     }
 
@@ -498,7 +499,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));
 
-        assertThrows(Rechazo.class,
+        rechaza("La función ya empezó: no se puede cobrar la reserva 1",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 

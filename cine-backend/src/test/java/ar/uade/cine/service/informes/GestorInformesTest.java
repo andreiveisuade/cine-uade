@@ -158,7 +158,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void noHayBorderoDeUnaFuncionQueNoExiste() {
-        assertThrows(Rechazo.class, () -> informes.borderoDe(99));
+        rechaza("No existe la función 99", () -> informes.borderoDe(99));
     }
 
     @Test
@@ -325,7 +325,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void laDeclaracionRechazaUnPeriodoDeMasDeUnMes() {
-        assertThrows(Rechazo.class,
+        rechaza("El período no puede superar los 31 días",
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)));
         assertEquals(LocalDate.of(2026, 8, 31), informes.declaracionJurada(
                 LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 31)).hasta());
@@ -333,7 +333,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
 
     @Test
     void laDeclaracionPideLasDosFechasONinguna() {
-        assertThrows(Rechazo.class,
+        rechaza("Hay que indicar desde y hasta, o ninguna de las dos para la última semana cinematográfica",
                 () -> informes.declaracionJurada(LocalDate.of(2026, 8, 20), null));
     }
 

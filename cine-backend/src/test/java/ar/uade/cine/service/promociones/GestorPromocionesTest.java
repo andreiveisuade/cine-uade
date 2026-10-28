@@ -24,7 +24,6 @@ import ar.uade.cine.model.promociones.Promocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
-import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoAsiento;
@@ -202,20 +201,21 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaUnNxMQueNoDescuenta() {
-        assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.NXM, "2x2",
+        rechaza("En un NxM hay que llevar más de lo que se paga", () -> promociones.crear(TipoPromocion.NXM, "2x2",
                 ParametrosPromocion.deNxM(2, 2), AGOSTO, ImagenUrl.NINGUNA));
-        assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.NXM, "2x3",
+        rechaza("En un NxM hay que llevar más de lo que se paga", () -> promociones.crear(TipoPromocion.NXM, "2x3",
                 ParametrosPromocion.deNxM(2, 3), AGOSTO, ImagenUrl.NINGUNA));
     }
 
     @Test
     void rechazaUnPorcentajeFueraDeRango() {
-        assertThrows(Rechazo.class, () -> porcentaje("gratis", 100));
+        rechaza("El porcentaje tiene que estar entre 1 y 99", () -> porcentaje("gratis", 100));
     }
 
     @Test
     void rechazaUnaVigenciaAlReves() {
-        assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.PORCENTAJE, "rara",
+        rechaza("La vigencia tiene que empezar antes de terminar",
+                () -> promociones.crear(TipoPromocion.PORCENTAJE, "rara",
                 ParametrosPromocion.dePorcentaje(10.0),
                 new CondicionesPromocion(HASTA, DESDE, Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA));
     }
@@ -241,7 +241,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     void rechazaDosPromocionesConElMismoNombre() {
         porcentaje("30 off", 30);
 
-        assertThrows(Rechazo.class, () -> promociones.crear(TipoPromocion.MONTO_FIJO, "30 off",
+        rechaza("Ya existe una promoción con ese nombre", () -> promociones.crear(TipoPromocion.MONTO_FIJO, "30 off",
                 ParametrosPromocion.deMonto(500.0), AGOSTO, ImagenUrl.NINGUNA));
     }
 

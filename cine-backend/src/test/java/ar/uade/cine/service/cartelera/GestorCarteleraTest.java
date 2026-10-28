@@ -99,7 +99,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     void rechazaTituloRepetido() {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
-        assertThrows(Rechazo.class,
+        rechaza("Ya existe una película con ese título",
                 () -> gestor.agregar("matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP));
     }
 
@@ -122,7 +122,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     @DisplayName("R2: rechaza una duración inválida")
     void rechazaDuracionInvalida() {
-        assertThrows(Rechazo.class,
+        rechaza("La duración tiene que estar entre 1 y 600 minutos",
                 () -> gestor.agregar("Sin duración", 0, List.of(Genero.DRAMA), Clasificacion.ATP));
     }
 
@@ -142,7 +142,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     @DisplayName("R7: rechaza una película sin género")
     void rechazaPeliculaSinGenero() {
-        assertThrows(Rechazo.class,
+        rechaza("La película tiene que tener al menos un género",
                 () -> gestor.agregar("Sin género", 100, List.of(), Clasificacion.ATP));
     }
 
@@ -157,16 +157,24 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("ATP", Clasificacion.ATP.getEtiqueta());
     }
 
-    @Test
-    void elAnioVaDelCineAUnosAniosPorDelanteYCeroEsSinDato() {
-        DatosPelicula base = DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
-        Pelicula dune = gestor.agregar(base);
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            negativo,                   -3
+            antes del cine,             1800
+            más de cinco años adelante, 2032
+            """)
+    void elAnioVaDelCineAUnosAniosPorDelante(String caso, int anio) {
+        Pelicula dune = gestor.agregar(DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION),
+                Clasificacion.MAS_13));
 
-        Rechazo negativo = assertThrows(Rechazo.class,
-                () -> gestor.editar(dune.getId(), conAnio(-3)));
-        assertEquals("El año tiene que estar entre 1895 y 2031", negativo.getMessage());
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(1800)));
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(), conAnio(2032)));
+        rechaza("El año tiene que estar entre 1895 y 2031", () -> gestor.editar(dune.getId(), conAnio(anio)));
+    }
+
+    @Test
+    void ceroEsSinAnio() {
+        Pelicula dune = gestor.agregar(DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION),
+                Clasificacion.MAS_13));
+
         assertDoesNotThrow(() -> gestor.editar(dune.getId(), conAnio(0)));
         assertEquals(2021, gestor.editar(dune.getId(), conAnio(2021)).getCatalogo().anio());
     }
@@ -178,7 +186,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     @Test
     @DisplayName("R10: rechaza una película sin clasificación")
     void rechazaPeliculaSinClasificacion() {
-        assertThrows(Rechazo.class,
+        rechaza("Falta la clasificación por edad",
                 () -> gestor.agregar("Sin clasificar", 100, List.of(Genero.DRAMA), null));
     }
 
@@ -270,7 +278,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
+        rechaza("Ya existe una película con ese título", () -> gestor.editar(dune.getId(),
                 DatosPelicula.con().titulo("Matrix").armar()));
     }
 
@@ -351,7 +359,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         gestor.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.ATP);
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
+        rechaza("Ya existe una película con ese título", () -> gestor.editar(dune.getId(),
                 DatosPelicula.con().titulo("Matrix").armar()));
     }
 
@@ -376,15 +384,15 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     void editarNoDejaUnaPeliculaSinTituloNiConDuracionCero() {
         Pelicula dune = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
+        rechaza("Falta el título", () -> gestor.editar(dune.getId(),
                 DatosPelicula.con().titulo("  ").armar()));
-        assertThrows(Rechazo.class, () -> gestor.editar(dune.getId(),
+        rechaza("La duración tiene que estar entre 1 y 600 minutos", () -> gestor.editar(dune.getId(),
                 DatosPelicula.con().duracion(0).armar()));
     }
 
     @Test
     void editarUnaPeliculaInexistenteFalla() {
-        assertThrows(Rechazo.class,
+        rechaza("No existe la película 99",
                 () -> gestor.editar(99, DatosPelicula.con().director("Alguien").armar()));
     }
 
@@ -526,7 +534,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         revision.confirmar(importada.getId());
         programarProxima(importada.getId());
 
-        assertThrows(Rechazo.class, () -> revision.descartar(importada.getId()));
+        rechaza("No se puede descartar una película que ya tiene funciones programadas",
+                () -> revision.descartar(importada.getId()));
     }
 
     @Test

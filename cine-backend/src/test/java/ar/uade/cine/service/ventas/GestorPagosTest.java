@@ -127,7 +127,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está pagada: no se puede cobrar",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -136,7 +136,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
     @DisplayName("R5: no se registra un segundo pago de la misma reserva")
     void unaReservaConUnPagoRegistradoNoSeVuelveACobrar() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        jdbc.update("INSERT INTO pago (reserva_id, subtotal, monto, medio, fecha) VALUES (?, 5000, 5000, 'EFECTIVO', ?)",
+        jdbc.update("INSERT INTO pago (reserva_id, subtotal, monto, medio, fecha)"
+                + " VALUES (?, 5000, 5000, 'EFECTIVO', ?)",
                 reserva.getId(), LocalDateTime.of(2026, 8, 14, 10, 0));
 
         Rechazo error = rechaza("La reserva " + reserva.getId() + " ya tiene un pago registrado",
@@ -150,7 +151,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está cancelada: no se puede cobrar",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -387,7 +388,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elEfectivoNoAbreCheckout() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(Rechazo.class,
+        rechaza("El pago con efectivo no va por checkout: se cobra en la caja del cine",
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.EFECTIVO));
     }
 
@@ -396,7 +397,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está pagada: no se puede cobrar",
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
     }
 
@@ -417,7 +418,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeConfirmaUnCheckoutQueNoExiste() {
-        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout("MP-0000000000"));
+        rechaza("No existe el checkout MP-0000000000", () -> pagos.confirmarCheckout("MP-0000000000"));
     }
 
     @Test
@@ -426,7 +427,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
         pagos.confirmarCheckout(checkout.id());
 
-        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout(checkout.id()));
+        rechaza("La reserva está pagada: no se puede cobrar", () -> pagos.confirmarCheckout(checkout.id()));
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 

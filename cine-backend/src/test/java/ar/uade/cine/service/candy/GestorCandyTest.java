@@ -95,9 +95,9 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void elComboTieneQueSalirMenosQueSusComponentes() {
-        assertThrows(Rechazo.class,
+        rechaza("El combo tiene que salir menos que sus componentes sueltos ($ 6500.00)",
                 () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
-        assertThrows(Rechazo.class,
+        rechaza("El combo tiene que salir menos que sus componentes sueltos ($ 6500.00)",
                 () -> carta.armarCombo("Combo carísimo", Dinero.de(7000), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
     }
 
@@ -125,7 +125,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void unComboNecesitaAlMenosDosProductos() {
-        assertThrows(Rechazo.class,
+        rechaza("Un combo tiene que juntar al menos dos productos distintos",
                 () -> carta.armarCombo("Combo de uno", Dinero.de(3000), pedido(pochoclos, 1), ImagenUrl.NINGUNA));
     }
 
@@ -135,7 +135,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
         Map<Integer, Integer> anidado = pedido(combo, 1);
         anidado.put(gaseosa, 1);
-        assertThrows(Rechazo.class,
+        rechaza("Un combo no puede contener otro combo: Combo pareja",
                 () -> carta.armarCombo("Combo del combo", Dinero.de(6000), anidado, ImagenUrl.NINGUNA));
     }
 
@@ -172,7 +172,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
     void noSeVendeUnProductoQueSeSacoDeLaCarta() {
         carta.sacarDeLaVenta(gaseosa);
 
-        assertThrows(Rechazo.class,
+        rechaza("Gaseosa 500ml no está disponible",
                 () -> candy.vender(1, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
         assertEquals(1, carta.listarDisponibles().size());
         assertEquals(2, carta.listar().size(), "sacarlo de la carta no lo borra");
@@ -180,15 +180,15 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void losMediosElectronicosExigenCodigoDeAutorizacion() {
-        assertThrows(Rechazo.class,
+        rechaza("Falta el código de autorización del pago con crédito",
                 () -> candy.vender(1, pedido(pochoclos, 1), MedioPago.CREDITO, "  "));
     }
 
     @Test
     void rechazaCantidadesInvalidas() {
-        assertThrows(Rechazo.class,
+        rechaza("La cantidad de Pochoclos grandes tiene que ser mayor a cero",
                 () -> candy.vender(1, pedido(pochoclos, 0), MedioPago.EFECTIVO, ""));
-        assertThrows(Rechazo.class,
+        rechaza("Hay que elegir al menos un producto",
                 () -> candy.vender(1, Map.of(), MedioPago.EFECTIVO, ""));
     }
 
@@ -221,9 +221,9 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaProductoRepetidoOPrecioInvalido() {
-        assertThrows(Rechazo.class,
+        rechaza("Ya existe un producto con ese nombre",
                 () -> carta.agregar("pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA));
-        assertThrows(Rechazo.class,
+        rechaza("El precio tiene que ser mayor a cero",
                 () -> carta.agregar("Agua", TipoProducto.BEBIDA, Dinero.de(0), ImagenUrl.NINGUNA));
     }
 
@@ -249,7 +249,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Test
     void unComboNoSeDaDeAltaComoProductoSuelto() {
-        assertThrows(Rechazo.class,
+        rechaza("Un combo se da de alta como combo: con sus componentes",
                 () -> carta.agregar("Combo trucho", TipoProducto.COMBO, Dinero.de(5000), ImagenUrl.NINGUNA));
     }
 

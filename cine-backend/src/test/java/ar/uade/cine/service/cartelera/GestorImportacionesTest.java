@@ -4,7 +4,6 @@ import static ar.uade.cine.infrastructure.importador.CatalogoDePrueba.pelicula;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -26,7 +25,6 @@ import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
-import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.repository.cartelera.ImportacionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 
@@ -228,10 +226,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
 
     @Test
     void masDeTresPaginasSeRechazaYNiSiquieraSeLlamaAlCatalogo() {
-        Rechazo error =
-                assertThrows(Rechazo.class, () -> gestor.ejecutar(4));
+        rechaza("Las páginas a importar tienen que estar entre 1 y 3", () -> gestor.ejecutar(4));
 
-        assertEquals("Las páginas a importar tienen que estar entre 1 y 3", error.getMessage());
         assertEquals(0, catalogo.consultas());
         assertTrue(gestor.listar().isEmpty(), "no tendría que haber quedado registro");
     }
@@ -263,10 +259,8 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
     void noSePuedePedirOtraMientrasHayUnaEnCurso() {
         importacionRepository.save(new Importacion(1, reloj.ahora()));
 
-        Rechazo error =
-                assertThrows(Rechazo.class, () -> gestor.ejecutar(1));
+        rechaza("Ya hay una importación en curso: esperá a que termine", () -> gestor.ejecutar(1));
 
-        assertEquals("Ya hay una importación en curso: esperá a que termine", error.getMessage());
         assertEquals(0, catalogo.consultas());
     }
 
@@ -277,11 +271,9 @@ class GestorImportacionesTest extends PruebaDeIntegracion {
                 new PropiedadesImportador(Duration.ofMinutes(5), Duration.ofMinutes(1)), reloj);
         conEspera.ejecutar(1);
 
-        Rechazo error =
-                assertThrows(Rechazo.class, () -> conEspera.ejecutar(1));
+        rechaza("El importador corrió recién: esperá 60 segundos antes de volver a pedirlo",
+                () -> conEspera.ejecutar(1));
 
-        assertEquals("El importador corrió recién: esperá 60 segundos antes de volver a pedirlo",
-                error.getMessage());
         assertEquals(1, catalogo.consultas());
     }
 
