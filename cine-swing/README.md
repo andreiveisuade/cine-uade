@@ -29,9 +29,8 @@ Apunta a `http://localhost:8080`; otro servidor con `-Dcine.api.url=...` o `CINE
 ```
 
 Render free puede tardar hasta un minuto en despertar; el login espera. Ahí `cine2026` no vale: las claves son
-las que se cargaron con `cargar-aiven.sh`. Tema claro con
-`-Dcine.tema=claro`. `encargado@cine.uade.ar` / `cine2026` ve todo; `puerta@cine.uade.ar` / `cine2026`,
-solo Puerta.
+las que se cargaron con `cargar-aiven.sh`. Tema claro con `-Dcine.tema=claro`. Usuarios de demo:
+[Cómo levantarlo](../_other/COMO-LEVANTARLO.md#usarlo).
 
 ## Paquetes
 

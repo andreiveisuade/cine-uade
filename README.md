@@ -35,50 +35,33 @@ cd ../cine-swing && ./mvnw compile exec:java   # panel (Windows: .\mvnw.cmd)
 cd ../cine-android && ./gradlew assembleDebug  # APK de la Puerta para el celular
 ```
 
-| | |
-|---|---|
-| Web del cliente | <http://localhost:8080> |
-| Swagger | <http://localhost:8080/swagger-ui.html> |
-| Panel | `encargado@cine.uade.ar` / `cine2026` (todo) o `puerta@cine.uade.ar` / `cine2026` (Puerta) |
-
-Sin tokens el sistema anda entero. En `cine-docker/.env`, `TMDB_TOKEN` habilita el importador de
-cartelera y `MP_ACCESS_TOKEN` (credenciales de prueba) el pago con Mercado Pago sandbox; vacío, la
-pasarela es emulada.
-
-A mano, tests y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md).
+La web queda en <http://localhost:8080>. Sin tokens anda entero. URLs, usuarios de demo, tokens opcionales, a mano
+y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO.md).
 
 ## Por dónde empiezo
 
 1. [`ARQUITECTURA.md`](ARQUITECTURA.md): capas, subdominios y el recorrido de una venta, clase por clase.
 2. [Manual](_other/docs/manual/index.html), secciones Reglas y Casos de uso: qué tiene que hacer el sistema.
-3. [`API.md`](cine-frontend/API.md): lo que se dicen el backend y los clientes.
+3. [`API.md`](cine-frontend/API.md): el contrato HTTP, endpoint por endpoint.
 4. Para seguir una venta en el código, abrir `cine-backend/.../service/ventas/GestorReservas.java` (reservar) y
    `GestorPagos.java` (cobrar); el resto del camino está en [Flujo de una venta](ARQUITECTURA.md#flujo-de-una-venta).
+5. [`PRUEBAS.md`](_other/docs/PRUEBAS.md): cómo se verifica antes de entregar, con la
+   [colección de Postman](_other/demo/cine-uade.postman_collection.json).
 
-## Documentación
-
-- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R27, casos de uso, arquitectura,
-  decisiones y diagramas. Es la fuente de verdad.
-- [`API.md`](cine-frontend/API.md): el contrato HTTP, endpoint por endpoint.
-- [`PRUEBAS.md`](_other/docs/PRUEBAS.md): cómo se verifica antes de entregar.
-- [Colección de Postman](_other/demo/cine-uade.postman_collection.json): GET, POST, PUT, PATCH y DELETE,
-  con casos exitosos y de error.
+El manual es la fuente de verdad: requerimientos, reglas, casos de uso, arquitectura, decisiones y diagramas.
 
 ## Scripts
 
 | Script | Qué hace |
 |---|---|
-| `cine-docker/setup.sh` (`setup.ps1` en Windows) | Deja el sistema andando desde cero; se puede correr de nuevo |
+| `cine-docker/setup.sh` (`setup.ps1` en Windows) | Chequea Java 21, arma el `.env`, levanta, espera a que esté sano, siembra e imprime las URLs; se puede correr de nuevo |
 | `cine-docker/seed/datos-de-ejemplo.sh` | Carga salas, la carta del candy y una promoción por la API (películas no: las trae el importador) |
 | `cine-docker/aiven/cargar-aiven.sh` | Primer deploy: aplica `db/schema.sql` en Aiven y crea los dos empleados con claves nuevas |
-| `cine-docker/aiven/migrar-aiven.sh <n>` | Aplica una migración de `db/migraciones/` a Aiven, por número o nombre, antes del deploy |
+| `cine-docker/aiven/migrar-aiven.sh <n>` | Aplica una migración de `db/migraciones/` a Aiven, por número o nombre (`17` o `clave-temporal`), antes del deploy |
 | `_other/demo/humo.sh` | Pruebas de humo de punta a punta contra el sistema levantado; escribe datos: solo en una base desechable |
-| `_other/imagenes/procesar.sh` | Recorta y convierte a webp las fotos de `originales/` a `listas/` |
-| `_other/imagenes/cargar.sh` | Sube cada webp de `listas/` y se lo asigna a la promoción, producto o combo del mismo nombre |
+| `_other/imagenes/procesar.sh` | Recorta y convierte a webp las fotos de `originales/` a `listas/` (cómo se generaron: `PROMPTS.md`) |
+| `_other/imagenes/cargar.sh` | Sube cada webp de `listas/` por `POST /api/imagenes` y se lo asigna a la promoción, producto o combo del mismo nombre |
 | `_other/docs/diagramas/archify/exportar.sh` | Regenera un diagrama de Archify como SVG para el manual |
-
-`_other/imagenes/` guarda las fotos de promociones, productos y combos: `PROMPTS.md` dice cómo se generaron,
-`procesar.sh` las deja listas y `cargar.sh` las sube por `POST /api/imagenes`, que las guarda en la base.
 
 ## Pendiente
 

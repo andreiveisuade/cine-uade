@@ -66,34 +66,15 @@ sandbox y sin cobrar:
 
 1. [Panel de desarrolladores](https://www.mercadopago.com.ar/developers/panel): crear una aplicación de Checkout Pro y copiar el Access Token de **prueba**.
 2. Pegarlo en `cine-docker/.env` (`MP_ACCESS_TOKEN=TEST-...`, sin comillas) y `docker compose up -d backend`. `CINE_URL_PUBLICA` queda en `http://localhost:8080`.
-3. Crear en el mismo panel una cuenta de prueba de **comprador** y entrar a Mercado Pago con ella. Es obligatorio: como invitado, MP rechaza el pago («Una de las partes… es de prueba»).
+3. Crear en el mismo panel dos cuentas de prueba (vendedor y **comprador**) y entrar a Mercado Pago con la del comprador. Es obligatorio: como invitado, MP rechaza el pago («Una de las partes… es de prueba»). En DEBITO/CREDITO MP puede ofrecer también «dinero en cuenta» (no se puede excluir).
 4. En la web: registrarse o ingresar, reservar, Mis reservas, **Pagar online**, **Ir a pagar**. Tarjeta de prueba con titular `APRO` (aprobado).
-5. En localhost MP no vuelve solo, y no hace falta: la conciliación del backend (`cine.mercadopago.conciliacion`, cada 60 s) cobra el pago aprobado en un minuto como máximo y el ticket pasa a Pagada. Tocar **Volver al sitio** (si aparece) lo cobra al instante.
+5. En localhost MP no vuelve solo, y no hace falta: la conciliación del backend (`cine.mercadopago.conciliacion`, cada 60 s) cobra el pago aprobado en un minuto como máximo y el ticket pasa a Pagada. Tocar **Volver al sitio** (si aparece) lo cobra al instante. Con `CINE_URL_PUBLICA` público (https), vuelve solo.
 
 | Mensaje en el ticket | Causa |
 |---|---|
 | Pago rechazado / pendiente / sin pago | MP no tiene un pago aprobado para esa reserva; se puede volver a pagar |
 
-## Sin Docker
-
-Hace falta un MySQL con la base creada desde `cine-backend/src/main/resources/db/schema.sql` y el usuario de
-`cine-docker/seed/02-admin.sql`.
-
-```bash
-cd cine-backend && mvn package -DskipTests && java -jar target/cine-api.war   # localhost:8080
-```
-
-El war también se puede copiar a `webapps/` de un Tomcat. La base se configura con `DB_HOST`, `DB_PORT`,
-`DB_NAME`, `DB_USER` y `DB_PASSWORD` (por defecto `localhost:3306/appsinteractivas`, `root` / `root`). Así se
-sirve solo la API; la web la sirve nginx, o `npm run dev`.
-
-## Tests del front
-
-```bash
-cd cine-frontend && npm test          # Vitest, sin backend
-cd cine-frontend && npm run lint      # reglas de hooks
-cd cine-frontend && npm run coverage  # reporte en coverage/
-```
+Sin Docker: [`cine-backend`](../cine-backend/README.md#correrlo).
 
 ## Si algo falla
 
@@ -107,7 +88,7 @@ cd cine-frontend && npm run coverage  # reporte en coverage/
 | Adminer no conecta | Servidor **`mysql`**, no `localhost`. Usuario y base: `DB_USER` y `DB_NAME`; la clave es `DB_PASSWORD` del `cine-docker/.env` (local, la generó el setup). El setup imprime la URL lista |
 | `mvn` no se reconoce | No hace falta Maven: usar `./mvnw` (`.\mvnw.cmd` en Windows) dentro de `cine-swing` |
 | `ClassNotFoundException` al correr el panel | `exec:java` no compila: usar `compile exec:java` |
-| `JAVA_HOME` no definido o Java viejo | Instalar JDK 21: `winget install EclipseAdoptium.Temurin.21.JDK` o `brew install openjdk@21` |
+| `JAVA_HOME` no definido, Java viejo o el setup avisa que falta Java 21 | Instalar JDK 21: `winget install EclipseAdoptium.Temurin.21.JDK` o `brew install openjdk@21` |
 | Cambiaste el `.env` y sigue igual | La base se creó con la clave vieja: `docker compose down -v`, **que borra los datos** |
 | El backend no levanta tras un `git pull` | Faltan migraciones: ver [La base](../cine-docker/README.md#la-base) |
 
@@ -120,4 +101,4 @@ docker compose down                                # bajar; la base queda
 docker compose down -v                             # bajar y borrar la base
 ```
 
-Tests: [`PRUEBAS.md`](docs/PRUEBAS.md).
+Tests: [`PRUEBAS.md`](docs/PRUEBAS.md) y el README de cada módulo.
