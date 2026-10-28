@@ -72,43 +72,6 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void elPorcentajeDescuentaSobreElSubtotal() {
-        Promocion promo = porcentaje("30 off", 30);
-
-        assertEquals(Dinero.de(3000), promo.calcularDescuento(List.of(entrada(5000), entrada(5000))));
-    }
-
-    @Test
-    void elMontoFijoNuncaDescuentaMasQueElTotal() {
-        Promocion promo = promociones.crear(TipoPromocion.MONTO_FIJO, "2000 off",
-                ParametrosPromocion.deMonto(2000.0), AGOSTO, ImagenUrl.NINGUNA);
-
-        assertEquals(Dinero.de(1500), promo.calcularDescuento(List.of(entrada(1500))));
-    }
-
-    @Test
-    void elDosPorUnoRegalaLaMasBarata() {
-        Promocion promo = dosPorUno("2x1");
-
-        assertEquals(Dinero.de(4000), promo.calcularDescuento(List.of(entrada(6000), entrada(4000))));
-    }
-
-    @Test
-    void elDosPorUnoSoloCuentaGruposCompletos() {
-        Promocion promo = dosPorUno("2x1");
-
-        assertEquals(Dinero.de(5000), promo.calcularDescuento(
-                List.of(entrada(5000), entrada(5000), entrada(5000))));
-    }
-
-    @Test
-    void unaSolaEntradaNoActivaElDosPorUno() {
-        Promocion promo = dosPorUno("2x1");
-
-        assertEquals(Dinero.de(0), promo.calcularDescuento(List.of(entrada(5000))));
-    }
-
-    @Test
     void ganaLaQueMasDescuenta() {
         porcentaje("10 off", 10);
         Promocion dosPorUno = dosPorUno("2x1");

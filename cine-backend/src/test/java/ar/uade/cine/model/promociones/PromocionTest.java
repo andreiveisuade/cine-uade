@@ -9,6 +9,8 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -16,9 +18,14 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.salas.Asiento;
+import ar.uade.cine.model.salas.TipoAsiento;
 import ar.uade.cine.model.tiempo.Periodo;
+import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.MedioPago;
+import ar.uade.cine.model.ventas.TipoTarifa;
 
 // Sin Spring ni base: los invariantes viven en los constructores, así que se prueban con new.
 class PromocionTest {
@@ -35,6 +42,44 @@ class PromocionTest {
 
     private static void rechaza(String mensaje, Executable construir) {
         assertEquals(mensaje, assertThrows(Rechazo.class, construir).getMessage());
+    }
+
+    private static List<Entrada> entradas(String precios) {
+        Asiento butaca = new Asiento(null, 1, 1, TipoAsiento.ESTANDAR);
+        return Arrays.stream(precios.split(" "))
+                .map(precio -> new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(Double.parseDouble(precio))))
+                .toList();
+    }
+
+    // Cuál corre lo elige el gestor; cuánto descuenta cada una es lógica pura. Precios separados por espacio.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            el porcentaje descuenta sobre el subtotal,      PORCENTAJE, 30.0,       ,  ,  , 5000 5000,      3000
+            el monto fijo nunca descuenta más que el total, MONTO_FIJO,     , 2000.0,  ,  , 1500,           1500
+            el 2x1 regala la más barata,                    NXM,            ,       , 2, 1, 6000 4000,      4000
+            el 2x1 solo cuenta grupos completos,            NXM,            ,       , 2, 1, 5000 5000 5000, 5000
+            una sola entrada no activa el 2x1,              NXM,            ,       , 2, 1, 5000,           0
+            el 3x2 regala la más barata de cada grupo,      NXM,            ,       , 3, 2, 6000 5000 4000, 4000
+            """)
+    void cadaTipoCalculaSuDescuento(String caso, TipoPromocion tipo, Double porcentaje, Double monto,
+            Integer lleva, Integer paga, String precios, double descuento) {
+        Promocion promocion = tipo.crear("Promo", new ParametrosPromocion(porcentaje, monto, lleva, paga),
+                AGOSTO, HOY);
+
+        assertEquals(Dinero.de(descuento), promocion.calcularDescuento(entradas(precios)));
+    }
+
+    // Editar valida lo propio del tipo igual que el alta, y si falla no cambia nada.
+    @Test
+    void editarUnNxMCambiaSuDescuentoYUnoInvalidoNoLoToca() {
+        Promocion promocion = TipoPromocion.NXM.crear("Promo", ParametrosPromocion.deNxM(2, 1), AGOSTO, HOY);
+
+        promocion.editar(TipoPromocion.NXM, "Promo", ParametrosPromocion.deNxM(3, 2), AGOSTO, HOY);
+        rechaza("En un NxM hay que llevar más de lo que se paga", () -> promocion.editar(TipoPromocion.NXM,
+                "Promo", ParametrosPromocion.deNxM(2, 2), AGOSTO, HOY));
+
+        assertEquals(ParametrosPromocion.deNxM(3, 2), promocion.getParametros());
+        assertEquals(Dinero.de(0), promocion.calcularDescuento(entradas("5000 5000")));
     }
 
     // Factory Method: cada tipo crea su subclase, que se reconoce como ese tipo y describe solo lo suyo.
