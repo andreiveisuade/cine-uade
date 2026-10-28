@@ -48,7 +48,7 @@ describe("Confirmar: el detalle de la compra", () => {
   it("sin butacas elegidas (se recargó la página) vuelve al mapa", async () => {
     renderConApp(<Confirmar />, { ruta: "/confirmar/:id", en: "/confirmar/5" });
 
-    expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
+    expect(await screen.findByText("en /funcion/5")).toBeInTheDocument();
   });
 
   it("si no puede traer la función muestra el error", async () => {
@@ -133,7 +133,7 @@ describe("Confirmar: reservar", () => {
       funcionId: 5, nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL", A2: "GENERAL" }, sesion: "sesion-del-mapa",
     });
     expect(JSON.parse(localStorage.getItem("cine.cliente"))).toEqual({ nombre: "Ana", email: "ana@mail.com" });
-    expect(await screen.findByText("otra pantalla")).toBeInTheDocument();
+    expect(await screen.findByText("en /ticket/ABCD1234")).toBeInTheDocument();
   });
 
   it("si otra compra ganó una butaca (409) avisa y vuelve al mapa", async () => {
@@ -143,7 +143,7 @@ describe("Confirmar: reservar", () => {
     await completarYConfirmar();
 
     expect(await screen.findByText("La butaca A1 ya no está disponible")).toBeInTheDocument();
-    expect(screen.getByText("otra pantalla")).toBeInTheDocument();
+    expect(screen.getByText("en /funcion/5")).toBeInTheDocument();
   });
 
   it("otro rechazo del backend se muestra en el formulario y deja reintentar", async () => {
