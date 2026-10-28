@@ -38,8 +38,7 @@ class ApiPuertaTest {
         assertEquals("Hablan las aves", reserva.pelicula?.titulo)
         assertEquals("Sala 2", reserva.sala?.nombre)
         assertEquals("2026-10-22T20:30:00", reserva.funcion?.inicio)
-        assertEquals(listOf(Entrada("C5", "GENERAL"), Entrada("C6", "JUBILADO")), reserva.entradas)
-        assertEquals("2026-10-22T20:12:00", reserva.ingresadaEn)
+        assertEquals(listOf(Entrada("C5", "GENERAL", false), Entrada("C6", "JUBILADO", true)), reserva.entradas)
     }
 
     @Test

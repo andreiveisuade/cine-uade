@@ -17,16 +17,23 @@ import ar.uade.cine.repository.Repositorio;
 // Persistencia de reservas; Repository de Spring Data, con join fetch para listar sin N+1.
 public interface ReservaRepository extends Repositorio<Reserva> {
 
+    // R21: la ajena y la inexistente dicen lo mismo; si divergieran, se filtraría qué códigos existen.
+    String NO_EXISTE_CON_ESE_CODIGO = "No existe ninguna reserva con ese código";
+
     Optional<Reserva> findByCodigo(String codigo);
 
     // exigir() por código de acceso; el texto no lo repite, es la credencial del cliente.
     default Reserva exigirPorCodigo(CodigoDeAcceso codigo) {
         return findByCodigo(codigo.valor())
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe ninguna reserva con ese código"));
+                .orElseThrow(() -> new RecursoNoEncontrado(NO_EXISTE_CON_ESE_CODIGO));
     }
 
-    // R22 y R25: el código de una entrada prueba que quien lo trae es ese cliente.
     boolean existsByCodigoAndCliente_Id(String codigo, int clienteId);
+
+    // R22 y R25: el código de una entrada prueba que quien lo trae es ese cliente.
+    default boolean esDelCliente(String codigo, int clienteId) {
+        return existsByCodigoAndCliente_Id(new CodigoDeAcceso(codigo).valor(), clienteId);
+    }
 
     List<Reserva> findByFuncion_Id(int funcionId);
 

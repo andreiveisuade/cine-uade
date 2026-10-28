@@ -33,7 +33,7 @@ public final class Principal {
             if (panel == null) return;
             panel.dispose();
             panel = null;
-            mostrarLogin("La sesión dejó de valer. Volvé a ingresar.");
+            mostrarLogin("La sesión dejó de valer: volvé a ingresar");
         }));
         mostrarLogin(null);
     }

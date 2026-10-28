@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.pantallas.usuarios;
 
 import ar.uade.cine.swing.api.ApiClientes;
-import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Tarea;
@@ -68,9 +67,7 @@ public final class PantallaClientes extends Pantalla {
         String correo = v.email(email, "Email", true);
         if (!v.ok()) return;
         mostrar(null);
-        Tarea.ejecutar(this, () -> apiClientes.buscarClientePorEmail(correo)
-                        .orElseThrow(() -> new ErrorApi(404, "No hay ningún cliente con el email " + correo)),
-                this::mostrar, v::mostrarError);
+        Tarea.ejecutar(this, () -> apiClientes.buscarClientePorEmail(correo), this::mostrar, v::mostrarError);
     }
 
     private void asignar() {

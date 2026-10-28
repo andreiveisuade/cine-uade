@@ -21,7 +21,7 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 // El detalle de una corrida del importador: qué pasó con cada película y el atajo a las pendientes.
 final class DetalleCorrida extends JPanel {
 
-    private static final int POR_PAGINA = 20;
+    static final int POR_PAGINA = 20;
 
     private final JLabel titulo = Componentes.subtitulo(" ");
     private final JLabel resumen = Componentes.texto(" ");
@@ -53,8 +53,8 @@ final class DetalleCorrida extends JPanel {
             return;
         }
         titulo.setText("Corrida del " + fechaHora(corrida.pedidaEn()));
-        boolean fallo = "FALLIDA".equals(corrida.estado());
-        resumen.setText(fallo ? "Falló: " + (corrida.detalle() == null ? "sin motivo" : corrida.detalle())
+        boolean fallo = corrida.fallo();
+        resumen.setText(fallo ? "Falló: " + corrida.motivoDelFallo()
                 : "Pediste hasta " + corrida.paginas() * POR_PAGINA + ". " + resumen(corrida) + ".");
         resumen.setForeground(fallo ? Colores.error() : Colores.texto());
         long pendientes = corrida.peliculas().stream().filter(p -> "PENDIENTE".equals(p.estadoRevision())).count();

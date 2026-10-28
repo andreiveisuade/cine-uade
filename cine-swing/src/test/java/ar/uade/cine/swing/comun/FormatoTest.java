@@ -21,6 +21,24 @@ class FormatoTest {
     }
 
     @Test
+    void laFechaSolaSeVeComoEnArgentina() {
+        assertEquals("01/11/2026", Formato.fecha("2026-11-01"));
+        assertEquals("—", Formato.fecha(null));
+    }
+
+    @Test
+    void unNumeroEnteroSeVeSinPuntoCero() {
+        assertEquals("15", Formato.numero(15.0));
+        assertEquals("12.5", Formato.numero(12.5));
+    }
+
+    @Test
+    void elTextoDelBackendNoSeLeeComoHtml() {
+        assertEquals("Tom &amp; Jerry &lt;3", Formato.escapar("Tom & Jerry <3"));
+        assertEquals("", Formato.escapar(null));
+    }
+
+    @Test
     void elDiaSeNombraIgualDesdeLaFechaQueDesdeElMomento() {
         LocalDate hoy = LocalDate.now();
         assertEquals("Hoy", Formato.dia(hoy));

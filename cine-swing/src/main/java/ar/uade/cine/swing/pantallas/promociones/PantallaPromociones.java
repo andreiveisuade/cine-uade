@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.fecha;
 import static ar.uade.cine.swing.comun.Formato.horaDelDia;
+import static ar.uade.cine.swing.comun.Formato.numero;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // Promociones (CU-17): el listado con su baja y reactivación, y el alta o la edición al costado (FormularioPromocion).
@@ -40,7 +42,7 @@ public final class PantallaPromociones extends Pantalla {
     private final Tabla<Promocion> tabla = new Tabla<>(
             Columna.<Promocion>de("Nombre", Promocion::nombre).ancho(180),
             Columna.<Promocion>de("Beneficio", PantallaPromociones::beneficio),
-            Columna.<Promocion>de("Vigencia", p -> p.vigenciaDesde() + " al " + p.vigenciaHasta()).ancho(170),
+            Columna.<Promocion>de("Vigencia", p -> fecha(p.vigenciaDesde()) + " al " + fecha(p.vigenciaHasta())).ancho(170),
             Columna.<Promocion>de("Cuándo", PantallaPromociones::condiciones).ancho(240),
             Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
 
@@ -83,8 +85,7 @@ public final class PantallaPromociones extends Pantalla {
     // Por los campos que trae, no por el nombre del tipo: son los mismos que el catálogo dice que pide cada uno.
     static String beneficio(Promocion p) {
         if (p.porcentaje() != null) {
-            return (p.porcentaje() % 1 == 0 ? String.valueOf(p.porcentaje().longValue())
-                    : String.valueOf(p.porcentaje())) + "% off";
+            return numero(p.porcentaje()) + "% off";
         }
         if (p.monto() != null) return precio(p.monto()) + " off";
         return p.lleva() + "x" + p.paga();

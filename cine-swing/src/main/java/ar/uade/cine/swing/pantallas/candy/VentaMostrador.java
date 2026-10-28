@@ -3,12 +3,12 @@ package ar.uade.cine.swing.pantallas.candy;
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiClientes;
-import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.dto.candy.PedidoVenta;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Pila;
@@ -22,10 +22,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.List;
 import java.util.Map;
 
@@ -61,11 +57,8 @@ final class VentaMostrador extends Seccion {
         codigo.setToolTipText("El que da el posnet o la app (R11). En efectivo no hace falta.");
         reserva.setToolTipText("Con reserva, el cliente sale de ella y la venta suma al informe de esa función.");
 
-        JPanel datos = new JPanel(new GridBagLayout());
-        agregarCampo(datos, 0, new JLabel("Medio de pago *"), medio);
-        agregarCampo(datos, 1, etiquetaCodigo, codigo);
-        agregarCampo(datos, 2, new JLabel("Cliente (opcional)"), email);
-        agregarCampo(datos, 3, new JLabel("Reserva (opcional)"), reserva);
+        Formulario datos = new Formulario().obligatorio("Medio de pago", medio).campo(etiquetaCodigo, codigo)
+                .campo("Cliente (opcional)", email).campo("Reserva (opcional)", reserva);
 
         Pila pie = new Pila();
         pie.agregar(datos);
@@ -86,21 +79,6 @@ final class VentaMostrador extends Seccion {
             productos.mostrar(carga.productos());
             refrescarCodigo();
         });
-    }
-
-    private void agregarCampo(JPanel panel, int fila, JLabel etiqueta, Component campo) {
-        GridBagConstraints izquierda = new GridBagConstraints();
-        izquierda.gridy = fila;
-        izquierda.anchor = GridBagConstraints.WEST;
-        izquierda.insets = new Insets(3, 0, 3, 8);
-        panel.add(etiqueta, izquierda);
-        GridBagConstraints derecha = new GridBagConstraints();
-        derecha.gridy = fila;
-        derecha.gridx = 1;
-        derecha.weightx = 1;
-        derecha.fill = GridBagConstraints.HORIZONTAL;
-        derecha.insets = new Insets(3, 0, 3, 0);
-        panel.add(campo, derecha);
     }
 
     private boolean requiereCodigo() {
@@ -134,8 +112,7 @@ final class VentaMostrador extends Seccion {
             Integer clienteId = null;
             // Con reserva el email sobra: el backend toma el cliente de la reserva.
             if (correo != null && reservaId == null) {
-                clienteId = apiClientes.buscarClientePorEmail(correo)
-                        .orElseThrow(() -> new ErrorApi(404, "No hay ningún cliente con el email " + correo)).id();
+                clienteId = apiClientes.buscarClientePorEmail(correo).id();
             }
             return apiCandy.venderCandy(new PedidoVenta(clienteId, reservaId, pedidas, medioElegido.nombre(),
                     autorizacion));

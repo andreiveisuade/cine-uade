@@ -8,8 +8,6 @@ data class Usuario(val nombre: String, val rol: String)
 
 @Serializable
 data class Reserva(
-    val codigo: String,
-    val ingresadaEn: String? = null,
     val entradas: List<Entrada> = emptyList(),
     val funcion: Funcion? = null,
     val pelicula: Pelicula? = null,
@@ -17,7 +15,7 @@ data class Reserva(
 )
 
 @Serializable
-data class Entrada(val codigo: String, val tarifa: String)
+data class Entrada(val codigo: String, val tarifa: String, val requiereAcreditacion: Boolean = false)
 
 @Serializable
 data class Funcion(val inicio: String)

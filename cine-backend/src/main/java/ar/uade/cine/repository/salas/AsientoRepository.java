@@ -1,5 +1,6 @@
 package ar.uade.cine.repository.salas;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -10,4 +11,6 @@ import ar.uade.cine.repository.Repositorio;
 public interface AsientoRepository extends Repositorio<Asiento> {
 
     List<Asiento> findBySala_IdOrderByFilaAscNumeroAsc(int salaId);
+
+    List<Asiento> findBySala_IdInOrderByFilaAscNumeroAsc(Collection<Integer> salaIds);
 }

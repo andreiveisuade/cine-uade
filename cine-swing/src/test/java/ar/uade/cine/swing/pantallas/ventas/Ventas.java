@@ -15,8 +15,6 @@ final class Ventas {
             + "\"clasificacion\":\"ATP\",\"enCartelera\":true}";
     static final String SALA = "{\"id\":1,\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[10],"
             + "\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15}";
-    static final String TARIFAS = "[{\"nombre\":\"GENERAL\",\"multiplicador\":1.0,\"requiereAcreditacion\":false},"
-            + "{\"nombre\":\"JUBILADO\",\"multiplicador\":0.5,\"requiereAcreditacion\":true}]";
     static final String MEDIOS = "[{\"nombre\":\"EFECTIVO\",\"requiereAutorizacion\":false},"
             + "{\"nombre\":\"CREDITO\",\"requiereAutorizacion\":true}]";
 
@@ -26,8 +24,8 @@ final class Ventas {
     static String reserva(int id, String estado, boolean cobrable, String pago) {
         return "{\"id\":" + id + ",\"estado\":\"" + estado + "\",\"codigo\":\"ABC" + id + "\","
                 + "\"ingresadaEn\":\"2026-11-06T20:10:00\","
-                + "\"entradas\":[{\"codigo\":\"A1\",\"tarifa\":\"GENERAL\",\"precio\":5000.0},"
-                + "{\"codigo\":\"A2\",\"tarifa\":\"JUBILADO\",\"precio\":2500.0}],\"total\":7500.0,"
+                + "\"entradas\":[{\"codigo\":\"A1\",\"tarifa\":\"GENERAL\",\"requiereAcreditacion\":false,\"precio\":5000.0},"
+                + "{\"codigo\":\"A2\",\"tarifa\":\"JUBILADO\",\"requiereAcreditacion\":true,\"precio\":2500.0}],\"total\":7500.0,"
                 + "\"funcion\":" + FUNCION + ",\"pelicula\":" + PELICULA + ",\"sala\":" + SALA + ","
                 + "\"cliente\":{\"id\":3,\"nombre\":\"Ana Prueba\",\"email\":\"ana@mail.com\"},"
                 + "\"pago\":" + pago + ",\"cobrable\":" + cobrable + ",\"cancelable\":" + cobrable + "}";

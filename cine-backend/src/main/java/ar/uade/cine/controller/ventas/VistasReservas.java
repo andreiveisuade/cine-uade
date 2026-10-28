@@ -96,7 +96,7 @@ public class VistasReservas {
 
     private EntradaVistaDTO entrada(Entrada e) {
         return new EntradaVistaDTO(e.asientoId(), e.codigoAsiento(), e.tarifa().name(),
-                e.precio().aPesos());
+                e.tarifa().requiereAcreditacion(), e.precio().aPesos());
     }
 
     public BloqueoVistaDTO bloqueo(ButacasBloqueadas bloqueo) {

@@ -185,7 +185,7 @@ class PagoControllerTest extends PruebaDeApi {
 
         Respuesta segunda = post("/api/checkouts/" + id + "/confirmacion", "");
 
-        assertEquals(400, segunda.estado());
+        assertEquals(409, segunda.estado());
         assertEquals("La reserva está pagada: no se puede cobrar", segunda.error());
         assertEquals(1, get("/api/arqueo?fecha=" + reloj.hoy()).json().get("pagos").size());
     }
@@ -214,13 +214,13 @@ class PagoControllerTest extends PruebaDeApi {
         reloj.mover(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
         assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R17: vencida");
         assertFalse(get(ruta).json().get("cancelable").asBoolean(), "R17: vencida, aunque siga RESERVADA");
-        assertEquals(400, post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").estado());
+        assertEquals(409, post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").estado());
 
         reloj.reiniciar();
         post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}");
         assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R5: ya cobrada");
         assertFalse(get(ruta).json().get("cancelable").asBoolean(), "R13: cobrada no se cancela");
-        assertEquals(400, post(ruta + "/cancelacion", "").estado());
+        assertEquals(409, post(ruta + "/cancelacion", "").estado());
     }
 
     // Como los demás enums: en minúsculas se entiende, y una que no existe dice de qué butaca es.

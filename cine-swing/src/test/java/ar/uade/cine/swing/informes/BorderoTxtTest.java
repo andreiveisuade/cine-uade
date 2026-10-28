@@ -2,6 +2,7 @@ package ar.uade.cine.swing.informes;
 
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.informes.Total;
+import ar.uade.cine.swing.comun.Formato;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -63,10 +64,10 @@ class BorderoTxtTest {
 
     @Test
     void losPesosSeRedondeanACentavosComoDinero() {
-        assertEquals("1234.50", BorderoTxt.pesos(1234.5));
-        assertEquals("0.07", BorderoTxt.pesos(0.07));
-        assertEquals("-0.50", BorderoTxt.pesos(-0.5));
-        assertEquals("10.01", BorderoTxt.pesos(10.005));
+        assertEquals("1234.50", Formato.conCentavos(1234.5, '.'));
+        assertEquals("0.07", Formato.conCentavos(0.07, '.'));
+        assertEquals("-0.50", Formato.conCentavos(-0.5, '.'));
+        assertEquals("10.01", Formato.conCentavos(10.005, '.'));
     }
 
     @Test

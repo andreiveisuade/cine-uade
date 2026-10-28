@@ -20,12 +20,17 @@ public final class Formulario extends JPanel {
     }
 
     public Formulario campo(String etiqueta, JComponent campo) {
+        return campo(new JLabel(etiqueta), campo);
+    }
+
+    /** Con la etiqueta propia, para quien le cambia el texto (un campo que pasa a ser obligatorio). */
+    public Formulario campo(JLabel etiqueta, JComponent campo) {
         GridBagConstraints izquierda = new GridBagConstraints();
         izquierda.gridx = 0;
         izquierda.gridy = fila;
         izquierda.anchor = GridBagConstraints.NORTHWEST;
         izquierda.insets = new Insets(4, 0, 4, 8);
-        add(new JLabel(etiqueta), izquierda);
+        add(etiqueta, izquierda);
         GridBagConstraints derecha = new GridBagConstraints();
         derecha.gridx = 1;
         derecha.gridy = fila++;

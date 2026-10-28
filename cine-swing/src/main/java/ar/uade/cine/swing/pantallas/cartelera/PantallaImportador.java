@@ -40,7 +40,7 @@ public final class PantallaImportador extends Pantalla {
     private final JLabel aviso = new JLabel();
     private final ButtonGroup cantidad = new ButtonGroup();
     private final Map<Integer, JRadioButton> paginas = Map.of(
-            1, new JRadioButton("20"), 2, new JRadioButton("40"), 3, new JRadioButton("60"));
+            1, opcion(1), 2, opcion(2), 3, opcion(3));
     private final JButton traer = new JButton("Traer cartelera");
     private final JProgressBar trayendo = new JProgressBar();
     private final JLabel error = Componentes.texto(" ");
@@ -115,6 +115,10 @@ public final class PantallaImportador extends Pantalla {
         });
     }
 
+    private static JRadioButton opcion(int paginas) {
+        return new JRadioButton(String.valueOf(paginas * DetalleCorrida.POR_PAGINA));
+    }
+
     // Sin consultas repetidas: la corrida tarda unos quince segundos y su respuesta ya trae los contadores.
     private void traer() {
         Validacion v = new Validacion(error);
@@ -124,8 +128,8 @@ public final class PantallaImportador extends Pantalla {
         trayendo.setVisible(true);
         Tarea.ejecutar(this, () -> apiCartelera.importarAhora(cuantas), corrida -> {
             terminar();
-            if ("FALLIDA".equals(corrida.estado())) {
-                Mensajes.error(this, corrida.detalle() != null ? corrida.detalle() : "La importación falló");
+            if (corrida.fallo()) {
+                Mensajes.error(this, "La importación falló: " + corrida.motivoDelFallo());
             } else {
                 avisar(corrida.nuevas() == 0 ? "No había nada nuevo en TMDB"
                         : DetalleCorrida.resumen(corrida) + ": las nuevas están en Por revisar");

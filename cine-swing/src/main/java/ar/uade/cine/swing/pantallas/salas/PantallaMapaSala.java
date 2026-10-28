@@ -21,8 +21,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.util.List;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 
 // Mapa de una sala para marcar y reponer butacas (R9): no hay ocupación, es el estado físico del asiento.
 public final class PantallaMapaSala extends Pantalla {
@@ -58,7 +60,7 @@ public final class PantallaMapaSala extends Pantalla {
 
     private void pintar(Sala sala) {
         long rotas = sala.asientos().stream().filter(Asiento::fueraDeServicio).count();
-        resumen.setText("<html><span style='font-size:16pt'><b>" + sala.nombre() + "</b></span><br>"
+        resumen.setText("<html><span style='font-size:16pt'><b>" + escapar(sala.nombre()) + "</b></span><br>"
                 + etiqueta(sala.tipo()) + " · " + sala.filas() + " filas · " + sala.capacidadSala() + " butacas · "
                 + rotas + " fuera de servicio</html>");
         Componentes.reemplazar(mapa, new MapaButacas(sala.filas(), sala.asientos(), this::estilo, this::alternar));
@@ -69,22 +71,22 @@ public final class PantallaMapaSala extends Pantalla {
             return new Estilo(Colores.butacaFueraDeServicio(), Colores.borde(), true, true,
                     asiento.codigo() + " · fuera de servicio · clic para reponer");
         }
-        return new Estilo(MapaButacas.colorTipo(asiento.tipo()), Colores.borde(), true, false,
+        return new Estilo(Colores.butaca(asiento.tipo()), Colores.borde(), true, false,
                 asiento.codigo() + " · " + etiqueta(asiento.tipo()) + " · clic para marcar fuera de servicio");
     }
 
     private void alternar(Asiento asiento) {
         String nuevo = asiento.fueraDeServicio() ? "HABILITADO" : "FUERA_DE_SERVICIO";
-        cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), hecho -> recargar());
+        cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), this::pintar);
     }
 
     private static JPanel referencia() {
         JPanel panel = new JPanel(new FlujoConSalto());
-        panel.add(muestra(MapaButacas.colorTipo("ESTANDAR"), "disponible"));
+        panel.add(muestra(Colores.butaca("ESTANDAR"), "disponible"));
         panel.add(muestra(Colores.butacaFueraDeServicio(), "fuera de servicio"));
-        panel.add(muestra(MapaButacas.colorTipo("VIP"), "* VIP"));
-        panel.add(muestra(MapaButacas.colorTipo("PAREJA"), "& pareja"));
-        panel.add(muestra(MapaButacas.colorTipo("ACCESIBLE"), "+ accesible"));
+        for (String tipo : List.of("VIP", "PAREJA", "ACCESIBLE")) {
+            panel.add(muestra(Colores.butaca(tipo), MapaButacas.SIMBOLO.get(tipo) + " " + etiqueta(tipo)));
+        }
         return panel;
     }
 

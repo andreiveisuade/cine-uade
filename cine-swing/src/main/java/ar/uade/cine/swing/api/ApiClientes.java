@@ -5,7 +5,6 @@ import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
-import java.util.Optional;
 
 // Busca al cliente por su email (candy, boletería) y le asigna clave temporal; aparte de la sesión.
 @RequiredArgsConstructor
@@ -13,10 +12,11 @@ public final class ApiClientes {
 
     private final ClienteHttp http;
 
-    /** El backend contesta siempre una lista: con el cliente si el email existe, vacía si no. */
-    public Optional<Cliente> buscarClientePorEmail(String email) {
+    /** El backend contesta una lista, vacía si el email no existe: acá eso es el 404 que muestran las pantallas. */
+    public Cliente buscarClientePorEmail(String email) {
         return http.lista("/clientes" + Parametros.consulta(Map.of("email", Parametros.oVacio(email))), Cliente.class)
-                .stream().findFirst();
+                .stream().findFirst()
+                .orElseThrow(() -> new ErrorApi(404, "No hay ningún cliente con el email " + email));
     }
 
     /** R27: la genera el backend; quien la recibe la muestra una vez y no la guarda. */

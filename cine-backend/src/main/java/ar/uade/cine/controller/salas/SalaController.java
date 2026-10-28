@@ -46,7 +46,7 @@ public class SalaController {
     @Operation(summary = "Las salas del cine")
     @GetMapping("/api/salas")
     public List<SalaVistaDTO> listar() {
-        return salas.listar().stream().map(vistas::sala).toList();
+        return vistas.salas(salas.listar());
     }
 
     @Operation(summary = "Una sala con todas sus butacas")

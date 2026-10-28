@@ -16,7 +16,6 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.SinPrueba;
-import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // Registro con clave e identificación por email de clientes; Usuario valida los datos, el gestor el email.
@@ -41,17 +40,14 @@ public class GestorClientes {
             throw new ConflictoDeNegocio("Ya existe una cuenta con ese email");
         }
         Cliente cliente = clienteRepository.findByEmail(nuevo.getEmail()).orElse(nuevo);
-        if (cliente != nuevo && !cliente.tieneCuenta() && !esDeSuReserva(codigoReserva, cliente)) {
+        if (cliente != nuevo && !cliente.tieneCuenta()
+                && !reservaRepository.esDelCliente(codigoReserva, cliente.getId())) {
             // Mismo texto si falta o es ajeno: no confirma qué códigos existen.
             throw new SinPrueba("Para abrir esta cuenta hace falta el código de una de sus entradas: "
                     + "está en el ticket de la compra");
         }
         cliente.abrirCuenta(claves.encode(clave.valor()));
         return clienteRepository.save(cliente);
-    }
-
-    private boolean esDeSuReserva(String codigo, Cliente cliente) {
-        return reservaRepository.existsByCodigoAndCliente_Id(new CodigoDeAcceso(codigo).valor(), cliente.getId());
     }
 
     // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.

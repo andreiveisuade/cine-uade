@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Formato.fecha;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
@@ -128,9 +129,8 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
 
     private static String cuando(Programacion p) {
         String hora = horaDelDia(p.horaInicio());
-        if (p.hasta() != null) return p.desde() + " al " + p.hasta() + " · " + hora;
-        return p.desde() + " en adelante · " + hora + " (generada hasta "
-                + (p.generadaHasta() == null ? "—" : p.generadaHasta()) + ")";
+        if (p.hasta() != null) return fecha(p.desde()) + " al " + fecha(p.hasta()) + " · " + hora;
+        return fecha(p.desde()) + " en adelante · " + hora + " (generada hasta " + fecha(p.generadaHasta()) + ")";
     }
 
     private JPanel accionesDeFila() {

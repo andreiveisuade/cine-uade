@@ -1,6 +1,5 @@
 package ar.uade.cine.swing.api;
 
-import ar.uade.cine.swing.api.dto.salas.Asiento;
 import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +29,8 @@ public final class ApiSalas {
         http.delete("/salas/" + id);
     }
 
-    public Asiento cambiarEstadoAsiento(int salaId, String codigo, String estado) {
-        return http.patch("/salas/" + salaId + "/asientos/" + Parametros.segmento(codigo.trim().toUpperCase()),
-                Map.of("estado", Parametros.oVacio(estado)), Asiento.class);
+    public Sala cambiarEstadoAsiento(int salaId, String codigo, String estado) {
+        return http.patch("/salas/" + salaId + "/asientos/" + Parametros.segmento(codigo),
+                Map.of("estado", Parametros.oVacio(estado)), Sala.class);
     }
 }

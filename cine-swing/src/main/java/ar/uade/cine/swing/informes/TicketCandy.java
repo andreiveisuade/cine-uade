@@ -7,7 +7,6 @@ import ar.uade.cine.swing.comun.Formato;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 // El ticket de una venta de candy en ancho fijo, como de impresora de mostrador; sin Swing, se prueba solo.
 public final class TicketCandy {
@@ -47,6 +46,6 @@ public final class TicketCandy {
     }
 
     private static String exacto(double monto) {
-        return "$ " + String.format(Locale.ROOT, "%.2f", monto);
+        return "$ " + Formato.conCentavos(monto, '.');
     }
 }

@@ -3,7 +3,6 @@ package ar.uade.cine.swing.pantallas.ventas;
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
-import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
@@ -23,8 +22,6 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.dia;
@@ -36,7 +33,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
 // El importe no se tipea: el descuento depende del medio y lo resuelve el backend al cobrar.
 public final class PantallaCobro extends Pantalla {
 
-    private record Datos(Reserva reserva, List<MedioPago> medios, List<Tarifa> tarifas) {
+    private record Datos(Reserva reserva, List<MedioPago> medios) {
     }
 
     private final ApiVentas apiVentas;
@@ -58,8 +55,8 @@ public final class PantallaCobro extends Pantalla {
         add(centro, BorderLayout.CENTER);
 
         // Un 404 se muestra en la pantalla y no en un diálogo: sin reserva no hay nada más que hacer.
-        Tarea.ejecutar(this, () -> new Datos(apiVentas.obtenerReserva(reservaId), apiCatalogos.obtenerMediosPago(),
-                apiCatalogos.obtenerTarifas()), this::pintar, error -> {
+        Tarea.ejecutar(this, () -> new Datos(apiVentas.obtenerReserva(reservaId), apiCatalogos.obtenerMediosPago()),
+                this::pintar, error -> {
             if (!error.esSesionVencida()) mostrarNota(error.getMessage());
         });
     }
@@ -80,7 +77,7 @@ public final class PantallaCobro extends Pantalla {
         cuerpo.removeAll();
         JPanel columnas = new JPanel(new GridLayout(1, 2, 16, 0));
         columnas.add(new PanelCobro(apiVentas, navegacion, reserva, datos.medios()));
-        columnas.add(detalle(reserva, datos.tarifas()));
+        columnas.add(detalle(reserva));
         cuerpo.add(columnas, BorderLayout.CENTER);
         cuerpo.revalidate();
         cuerpo.repaint();
@@ -102,10 +99,7 @@ public final class PantallaCobro extends Pantalla {
         return texto;
     }
 
-    private JPanel detalle(Reserva reserva, List<Tarifa> tarifas) {
-        // Qué tarifa se acredita lo dice el catálogo, no el nombre: una tarifa nueva no obliga a tocar esta pantalla.
-        Set<String> seAcreditan = tarifas.stream().filter(Tarifa::requiereAcreditacion).map(Tarifa::nombre)
-                .collect(Collectors.toSet());
+    private JPanel detalle(Reserva reserva) {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         Pila arriba = new Pila();
         arriba.agregar(Componentes.subtitulo(
@@ -121,7 +115,8 @@ public final class PantallaCobro extends Pantalla {
 
         Tabla<Entrada> entradas = new Tabla<>(
                 Columna.<Entrada>de("Butaca", Entrada::codigo),
-                Columna.<Entrada>de("Tarifa", e -> seAcreditan.contains(e.tarifa())
+                // Si se acredita lo dice la entrada, no el nombre: una tarifa nueva no obliga a tocar esta pantalla.
+                Columna.<Entrada>de("Tarifa", e -> e.requiereAcreditacion()
                         ? etiqueta(e.tarifa()) + " · se acredita en la puerta" : etiqueta(e.tarifa())),
                 Columna.<Entrada>numero("Precio", e -> precio(e.precio())));
         entradas.mostrar(reserva.entradas());

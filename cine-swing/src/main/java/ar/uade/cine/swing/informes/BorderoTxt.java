@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-// El borderó INCAA en texto, igual al que escribía el backend; se emite en la PC del encargado, sin Swing.
-// Idéntico al que escribía el backend (GeneradorBorderoTxt, ComprobanteTxt); sin Swing para probarlo solo.
+// El borderó INCAA en texto, que se emite en la PC del encargado; sin Swing para probarlo solo.
 public final class BorderoTxt {
 
     private static final String LINEA = "=".repeat(44);
@@ -79,12 +78,7 @@ public final class BorderoTxt {
         return " ".repeat(espacios) + texto;
     }
 
-    /** Como Dinero.toString() del backend: centavos redondeados, punto decimal, sin separador de miles. */
-    static String pesos(double monto) {
-        long centavos = Math.round(monto * 100);
-        long pesos = centavos / 100;
-        long resto = Math.abs(centavos % 100);
-        String signo = centavos < 0 && pesos == 0 ? "-" : "";
-        return signo + pesos + "." + (resto < 10 ? "0" : "") + resto;
+    private static String pesos(double monto) {
+        return Formato.conCentavos(monto, '.');
     }
 }

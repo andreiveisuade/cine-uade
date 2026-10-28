@@ -404,7 +404,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
         reservas.cancelar(reserva.getId());
 
-        Rechazo error = assertThrows(Rechazo.class,
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
                 () -> conEsaPasarela.confirmarCheckout(checkout));
 
         assertEquals("La reserva está cancelada: no se puede cobrar", error.getMessage());

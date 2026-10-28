@@ -58,16 +58,11 @@ export const obtenerCartelera = (genero) =>
   get("/cartelera" + (genero ? `?genero=${encodeURIComponent(genero)}` : ""));
 
 export const obtenerPelicula = (id) => get(`/peliculas/${id}`);
-function consulta(filtros) {
-  const partes = Object.entries(filtros || {})
-    .filter(([, valor]) => valor !== null && valor !== undefined && String(valor).trim() !== "")
-    .map(([clave, valor]) => `${clave}=${encodeURIComponent(String(valor).trim())}`);
-  return partes.length ? `?${partes.join("&")}` : "";
-}
 
 export const obtenerFuncionesDePelicula = (peliculaId) => get(`/peliculas/${peliculaId}/funciones`);
 
-export const obtenerFuncion = (id, sesion) => get(`/funciones/${id}${consulta({ sesion })}`);
+export const obtenerFuncion = (id, sesion) =>
+  get(`/funciones/${id}` + (sesion ? `?sesion=${encodeURIComponent(sesion)}` : ""));
 
 export const bloquearButacas = ({ funcionId, sesion, butacas }) =>
   post(`/funciones/${Number(funcionId)}/bloqueos`, { sesion, butacas });
@@ -122,5 +117,4 @@ export const cancelarReservaPorCodigo = (codigo) =>
 
 export const obtenerPromocionesVigentes = () => get("/promociones/vigentes");
 
-export const obtenerProductosCandy = (todos = false) =>
-  get(`/candy/productos${todos ? "?todos=true" : ""}`);
+export const obtenerProductosCandy = () => get("/candy/productos");

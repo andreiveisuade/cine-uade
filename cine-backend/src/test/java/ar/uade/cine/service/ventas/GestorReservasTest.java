@@ -27,6 +27,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -396,7 +397,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
         ocupacion.asientosOcupados(1, null);
 
-        Rechazo error = assertThrows(Rechazo.class,
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
 
         assertEquals("La reserva está vencida: no se puede cobrar", error.getMessage());
@@ -416,14 +417,14 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @DisplayName("R18: se ingresa una sola vez y solo si está pagada")
     void seIngresaUnaSolaVezYSoloSiEstaPagada() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        Rechazo sinPagar = assertThrows(Rechazo.class,
+        ConflictoDeNegocio sinPagar = assertThrows(ConflictoDeNegocio.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "sin pagar no entra");
 
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
         reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 42, 12, 345_678_000));
         assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
 
-        Rechazo dosVeces = assertThrows(Rechazo.class,
+        ConflictoDeNegocio dosVeces = assertThrows(ConflictoDeNegocio.class,
                 () -> acceso.registrarIngreso(reserva.getCodigo()), "no entra dos veces");
 
         assertEquals("La reserva está sin pagar: solo se ingresa con una reserva pagada",

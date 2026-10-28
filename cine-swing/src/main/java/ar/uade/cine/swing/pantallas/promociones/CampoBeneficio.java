@@ -2,7 +2,12 @@ package ar.uade.cine.swing.pantallas.promociones;
 
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Validacion;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 
 import javax.swing.JTextField;
 import java.util.Arrays;
@@ -10,6 +15,9 @@ import java.util.Optional;
 
 // Cada campo de beneficio de una promoción: nombre en el JSON, etiqueta, si es entero y valor inicial.
 // Qué campos pide cada tipo lo dice {@code GET /api/tipos-promocion}, no este enum.
+@Getter
+@Accessors(fluent = true)
+@RequiredArgsConstructor
 enum CampoBeneficio {
 
     PORCENTAJE("porcentaje", "Porcentaje", false, "30"),
@@ -22,24 +30,9 @@ enum CampoBeneficio {
     private final boolean entero;
     private final String inicial;
 
-    CampoBeneficio(String nombre, String etiqueta, boolean entero, String inicial) {
-        this.nombre = nombre;
-        this.etiqueta = etiqueta;
-        this.entero = entero;
-        this.inicial = inicial;
-    }
-
     /** El campo con ese nombre del JSON; uno que Swing no conoce se saltea. */
     static Optional<CampoBeneficio> llamado(String nombre) {
         return Arrays.stream(values()).filter(c -> c.nombre.equals(nombre)).findFirst();
-    }
-
-    String nombre() {
-        return nombre;
-    }
-
-    String etiqueta() {
-        return etiqueta;
     }
 
     /** La caja de texto del campo, con su valor inicial y sin dejar tipear lo que no es número. */
@@ -61,7 +54,7 @@ enum CampoBeneficio {
             case PAGA -> p.paga();
         };
         if (valor == null) reiniciar(caja);
-        else caja.setText(valor.doubleValue() % 1 == 0 ? String.valueOf(valor.longValue()) : String.valueOf(valor));
+        else caja.setText(Formato.numero(valor.doubleValue()));
     }
 
     Number leer(Validacion v, JTextField caja) {

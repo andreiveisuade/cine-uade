@@ -38,7 +38,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `403` | `POST /cuenta/recuperacion` sin prueba (R25): email inexistente, sin cuenta, código ajeno o inventado, todos con el mismo texto | `El email y el código no corresponden a ninguna cuenta: revisá el ticket de una de tus compras` |
 | `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
-| `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado; borrar o cambiar algo en uso (sala con funciones, función con reservas), una reserva ya cobrada, una importación en curso | `Ya existe una sala con ese nombre` |
+| `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado; borrar o cambiar algo en uso (sala con funciones, función con reservas, película programada), una reserva que en su estado no admite lo pedido (cobrar la ya cobrada, la cancelada o la vencida; cancelar la cobrada; entrar sin pagar o dos veces; candy sin pagar), una importación en curso | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
 | `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic, para `POST /cuenta/recuperacion` (cuenta cada 403) y para la clave actual de `POST /cuenta/clave` y `DELETE /cuenta`. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
@@ -68,7 +68,7 @@ Límites conocidos: `debeCambiarClave` lo hace cumplir solo la web (el backend n
 | `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true}, …]` |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
 | `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
-| `GET /tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
+| `GET /tarifas` | `[{"nombre":"JUBILADO","requiereAcreditacion":true}, …]` |
 | `GET /tipos-producto` | `[{"nombre":"POCHOCLOS","esCombo":false}, …, {"nombre":"COMBO","esCombo":true}]` |
 | `GET /tipos-promocion` | `[{"nombre":"NXM","campos":["lleva","paga"]}, …]`: qué campos pide cada tipo |
 
@@ -154,7 +154,8 @@ reservar: el cliente los muestra y suma, no los recalcula.
 - Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`), el cliente,
   cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas: `400`) y
   recién al final la ocupación (`409`). Un pedido que no puede pasar nunca da `400` aunque además tenga una butaca ocupada.
-- Devuelve la reserva con `codigo` (el del QR) y `entradas[].tarifa`.
+- Devuelve la reserva con `codigo` (el del QR), `entradas[].tarifa` y `entradas[].requiereAcreditacion` (si la puerta
+  pide carnet: sale de la tarifa, los clientes no lo deducen del nombre).
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
 (R5, R17, R19) y al cancelar (R13). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
@@ -163,7 +164,7 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 |---|---|
 | `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): junto con el código sería todo lo que pide la recuperación (R25). El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
-| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `400`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
+| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
 | `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
 
@@ -179,8 +180,8 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 ```
 
 - El monto no viaja: el descuento depende del medio. `monto` es lo que entra en caja.
-- `400`: ya pagada (R5), sin código si el medio lo exige o con código en efectivo (R11), vencida (R17),
-  función empezada (R19).
+- `409`: ya pagada, cancelada (R5) o vencida (R17). `400`: sin código si el medio lo exige o con código en
+  efectivo (R11), función empezada (R19).
 - Cobrar y cancelar a la vez: gana el primero y el otro recibe `409`.
 - `Location` apunta a la reserva: `GET /reservas/{id}` trae el pago en `pago` (`null` si no se cobró).
 
@@ -238,7 +239,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `POST /peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /peliculas/{id}/descarte` | `DESCARTADA`; `409` si tiene funciones |
 | `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA`. `trailerYoutube: ""` saca el trailer |
-| `DELETE /peliculas/{id}` | `400` si tiene funciones o una programación |
+| `DELETE /peliculas/{id}` | `409` si tiene funciones o una programación |
 | `GET /salas` · `GET /salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle suma `asientos` |
 | `POST /salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. 1 a 26 filas, 1 a 40 butacas por fila; cada código especial existe y está en una sola lista. Limpieza 0 a 120, 15 por defecto. Nombre único (`409`) |
 | `PUT /salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan; el tipo, tampoco si tiene funciones (`409`). Los datos se validan antes que el nombre repetido |
@@ -357,7 +358,7 @@ En el alta, el combo y la edición, nombre y precio se validan antes que el nomb
     "total": 12000, "ahorro": 1500 }
 ```
 
-- Sin `reservaId` es venta de mostrador. Con `reservaId`, la reserva tiene que estar pagada y ser del cliente.
+- Sin `reservaId` es venta de mostrador. Con `reservaId`, la reserva tiene que estar pagada (`409`) y ser del cliente.
 - Cada cantidad de 1 a 20; lo que salió de la carta no se vende. El código, como al cobrar una reserva (R11).
 - El pedido y el medio de pago se validan antes de buscar los productos (`404`).
 - `ahorro` es el descuento de los combos, congelado al vender.
@@ -392,9 +393,9 @@ Las fotos de promociones y productos. Primero se sube el archivo y después su `
 
 ## Control de acceso (CU-18)
 
-`POST /acceso` `{ "codigo": "K7M2P9XQ" }`: marca la entrada usada y devuelve la reserva. `400` si está sin
-pagar (R18), ya se usó o no es el día de la función; `404` si no existe. El código tiene 8 caracteres, sin
-`O`, `I`, `0` ni `1`.
+`POST /acceso` `{ "codigo": "K7M2P9XQ" }`: marca la entrada usada y devuelve la reserva. `409` si está sin
+pagar (R18) o ya se usó; `400` si no es el día de la función; `404` si no existe. El código tiene 8 caracteres, sin
+`O`, `I`, `0` ni `1`, y se busca sin espacios ni distinción de mayúsculas (`k7m2 p9xq` encuentra `K7M2P9XQ`).
 
 ## Importador
 

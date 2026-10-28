@@ -62,10 +62,10 @@ class PantallaProgramacionesTest {
         encargado.esperarTexto("2 grillas");
 
         assertEquals("Matrix", encargado.celda(0, "Película"));
-        assertEquals("2026-11-01 en adelante · 20:30 (generada hasta 2026-11-30)", encargado.celda(0, "Cuándo"));
+        assertEquals("01/11/2026 en adelante · 20:30 (generada hasta 30/11/2026)", encargado.celda(0, "Cuándo"));
         assertEquals("Vie, Sáb", encargado.celda(0, "Días"));
         assertEquals("Película 9", encargado.celda(1, "Película"), "una película que ya no está se nombra por id");
-        assertEquals("2026-10-01 al 2026-10-31 · 18:00", encargado.celda(1, "Cuándo"));
+        assertEquals("01/10/2026 al 31/10/2026 · 18:00", encargado.celda(1, "Cuándo"));
         assertEquals("Dada de baja", encargado.celda(1, "Estado"));
     }
 

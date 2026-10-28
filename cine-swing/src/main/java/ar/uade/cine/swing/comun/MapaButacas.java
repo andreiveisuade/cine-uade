@@ -73,8 +73,4 @@ public final class MapaButacas extends JPanel {
             add(renglon, c);
         }
     }
-
-    public static Color colorTipo(String tipo) {
-        return Colores.butaca(tipo);
-    }
 }

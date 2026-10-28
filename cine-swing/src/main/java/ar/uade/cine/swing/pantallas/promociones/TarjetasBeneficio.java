@@ -8,7 +8,7 @@ import ar.uade.cine.swing.comun.Validacion;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.CardLayout;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -45,10 +45,9 @@ final class TarjetasBeneficio extends JPanel {
     }
 
     // Solo se leen los campos del tipo elegido: los demás viajan en null, como pide el contrato.
-    Map<String, Number> leer(Validacion v, String tipo) {
-        Map<String, Number> leidos = new HashMap<>();
-        camposPorTipo.getOrDefault(tipo, Map.of())
-                .forEach((campo, caja) -> leidos.put(campo.nombre(), campo.leer(v, caja)));
+    Map<CampoBeneficio, Number> leer(Validacion v, String tipo) {
+        Map<CampoBeneficio, Number> leidos = new EnumMap<>(CampoBeneficio.class);
+        camposPorTipo.getOrDefault(tipo, Map.of()).forEach((campo, caja) -> leidos.put(campo, campo.leer(v, caja)));
         return leidos;
     }
 

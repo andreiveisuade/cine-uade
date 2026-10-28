@@ -10,6 +10,7 @@ import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
+import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Lo que manda cada Api de subdominio y cómo lee lo que contesta el backend, contra el mismo servidor falso. */
@@ -69,6 +71,20 @@ class ApisTest {
         assertEquals(20, funcion.sala().capacidadSala());
         assertEquals(5000, funcion.precio());
         assertNull(funcion.libres());
+    }
+
+    @Test
+    void cambiarElEstadoDeUnaButacaDevuelveLaSalaConSusButacas() {
+        servidor.responder("PATCH /api/salas/2/asientos/A1", 200, """
+                {"id":2,"nombre":"Sala 2","tipo":"DOS_D","butacasPorFila":[1],"filas":1,"capacidadSala":1,
+                 "minutosLimpieza":15,"asientos":[{"id":9,"fila":1,"numero":1,"codigo":"A1","tipo":"ESTANDAR",
+                 "estado":"FUERA_DE_SERVICIO"}]}
+                """);
+
+        Sala sala = new ApiSalas(http).cambiarEstadoAsiento(2, "A1", "FUERA_DE_SERVICIO");
+
+        assertEquals("{\"estado\":\"FUERA_DE_SERVICIO\"}", servidor.ultimo("PATCH /api/salas/2/asientos/A1").cuerpo());
+        assertTrue(sala.asientos().get(0).fueraDeServicio());
     }
 
     @Test
@@ -142,14 +158,16 @@ class ApisTest {
     }
 
     @Test
-    void elClienteSeBuscaEnUnaListaQuePuedeVenirVacia() {
+    void elClienteSeBuscaEnUnaListaYSinNadieEsUn404() {
         servidor.responder("GET /api/clientes?email=ana%40mail.com", 200,
                 "[{\"id\":3,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}]");
         servidor.responder("GET /api/clientes?email=nadie%40mail.com", 200, "[]");
         ApiClientes clientes = new ApiClientes(http);
 
-        assertEquals(3, clientes.buscarClientePorEmail("ana@mail.com").orElseThrow().id());
-        assertTrue(clientes.buscarClientePorEmail("nadie@mail.com").isEmpty());
+        assertEquals(3, clientes.buscarClientePorEmail("ana@mail.com").id());
+        ErrorApi nadie = assertThrows(ErrorApi.class, () -> clientes.buscarClientePorEmail("nadie@mail.com"));
+        assertEquals(404, nadie.estado());
+        assertEquals("No hay ningún cliente con el email nadie@mail.com", nadie.getMessage());
     }
 
     // R27: el pedido no lleva cuerpo; la clave viene en la respuesta y es lo único que se lee.

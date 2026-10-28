@@ -1,6 +1,5 @@
 package ar.uade.cine.swing.pantallas.ventas;
 
-import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.ServidorFalso;
@@ -11,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static ar.uade.cine.swing.pantallas.ventas.Ventas.TARIFAS;
 import static ar.uade.cine.swing.pantallas.ventas.Ventas.reserva;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,9 +22,8 @@ class PantallaPuertaTest {
     @BeforeEach
     void levantar() throws IOException {
         servidor = new ServidorFalso();
-        servidor.responder("GET /api/tarifas", 200, TARIFAS);
         ClienteHttp http = new ClienteHttp(servidor.url());
-        acomodador = Operador.en(() -> new PantallaPuerta(new ApiCatalogos(http), new ApiVentas(http)));
+        acomodador = Operador.en(() -> new PantallaPuerta(new ApiVentas(http)));
     }
 
     @AfterEach
@@ -44,13 +41,14 @@ class PantallaPuertaTest {
         acomodador.esperarTexto("ADELANTE");
         acomodador.esperarTexto("Jubilado · pedir carnet");
         acomodador.esperarTexto("2 personas");
-        assertEquals("{\"codigo\":\"ABC5\"}", servidor.ultimo("POST /api/acceso").cuerpo());
+        assertEquals(0, servidor.veces("GET /api/tarifas"), "pedir carnet lo dice la entrada");
+        assertEquals("{\"codigo\":\"abc5\"}", servidor.ultimo("POST /api/acceso").cuerpo());
         assertEquals("", acomodador.valor("Validar entrada"), "el campo queda vacío para el siguiente");
     }
 
     @Test
     void unaYaUsadaNoPasaYDiceElMotivoDelBackend() {
-        servidor.responder("POST /api/acceso", 400, "{\"error\":\"La entrada ya se usó a las 20:10\"}");
+        servidor.responder("POST /api/acceso", 409, "{\"error\":\"La entrada ya se usó a las 20:10\"}");
 
         acomodador.tipear("ABC5").clic("Validar");
 

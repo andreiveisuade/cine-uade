@@ -29,7 +29,7 @@ export function PagarOnline({ codigo, alVolver }) {
               acá y el ticket se actualiza solo.
             </Text>
             <Group gap="xs">
-              <Button onClick={yaPague}>Ya pagué</Button>
+              <Button onClick={yaPague} loading={enviando}>Ya pagué</Button>
               <Button variant="default" onClick={irAPagar}>Abrir Mercado Pago</Button>
               <Button variant="subtle" onClick={cambiarMedio}>Cambiar medio</Button>
             </Group>

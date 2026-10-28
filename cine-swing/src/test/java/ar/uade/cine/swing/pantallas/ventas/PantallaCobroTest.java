@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static ar.uade.cine.swing.pantallas.ventas.Ventas.MEDIOS;
-import static ar.uade.cine.swing.pantallas.ventas.Ventas.TARIFAS;
 import static ar.uade.cine.swing.pantallas.ventas.Ventas.reserva;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,7 +32,6 @@ class PantallaCobroTest {
     void levantar() throws IOException {
         servidor = new ServidorFalso();
         servidor.responder("GET /api/medios-pago", 200, MEDIOS);
-        servidor.responder("GET /api/tarifas", 200, TARIFAS);
     }
 
     @AfterEach
@@ -56,6 +54,7 @@ class PantallaCobroTest {
         encargado.esperarFilas(2);
         encargado.esperarTexto("Ana Prueba  ·  ana@mail.com");
         assertEquals("Jubilado · se acredita en la puerta", encargado.celda(1, "Tarifa"));
+        assertEquals(0, servidor.veces("GET /api/tarifas"), "si se acredita lo dice la entrada");
         assertTrue(encargado.textos().stream().anyMatch(t -> t.startsWith("Subtotal")));
         assertTrue(encargado.hayBoton("Registrar cobro"), "el primer medio, efectivo, se cobra en caja");
     }

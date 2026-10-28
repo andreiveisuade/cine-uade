@@ -14,6 +14,7 @@ public final class Formato {
     private static final String[] MESES = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct",
             "nov", "dic"};
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Formato() {
@@ -40,6 +41,18 @@ public final class Formato {
         return String.format(Locale.ROOT, "%.1f", numero).replace('.', ',');
     }
 
+    /** Dos decimales con ese separador y sin separador de miles, como Dinero del backend: 7500 → "7500.00". */
+    public static String conCentavos(double monto, char separador) {
+        long centavos = Math.round(monto * 100);
+        long resto = Math.abs(centavos) % 100;
+        return (centavos < 0 ? "-" : "") + Math.abs(centavos) / 100 + separador + (resto < 10 ? "0" : "") + resto;
+    }
+
+    /** Para volver a poner un número en una caja: 15.0 → "15", 12.5 → "12.5". */
+    public static String numero(double valor) {
+        return valor % 1 == 0 ? String.valueOf((long) valor) : String.valueOf(valor);
+    }
+
     /** 0.79 → "79%". */
     public static String porcentaje(double fraccion) {
         return Math.round(fraccion * 100) + "%";
@@ -54,6 +67,11 @@ public final class Formato {
     public static String horaDelDia(String iso) {
         if (iso == null) return "—";
         return LocalTime.parse(iso).format(HORA);
+    }
+
+    public static String fecha(String iso) {
+        if (iso == null) return "—";
+        return LocalDate.parse(iso).format(FECHA);
     }
 
     public static String fechaHora(String iso) {

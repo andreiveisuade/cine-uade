@@ -1,8 +1,6 @@
 package ar.uade.cine.swing.pantallas.ventas;
 
-import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiVentas;
-import ar.uade.cine.swing.api.dto.catalogos.Tarifa;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Colores;
@@ -21,8 +19,6 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -32,20 +28,13 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 // Control de acceso (CU-18): valida el ticket y avisa qué entradas piden carnet; es lo que ve el acomodador.
 public final class PantallaPuerta extends Pantalla {
 
-    private record Validada(Reserva reserva, Set<String> seAcreditan) {
-    }
-
-    private final ApiCatalogos apiCatalogos;
     private final ApiVentas apiVentas;
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
     private final JLabel error = Componentes.texto(" ");
-    // Las tarifas que piden carnet, del catálogo: se piden una vez, en el primer código.
-    private volatile Set<String> seAcreditan;
 
-    public PantallaPuerta(ApiCatalogos apiCatalogos, ApiVentas apiVentas) {
+    public PantallaPuerta(ApiVentas apiVentas) {
         super("Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez.");
-        this.apiCatalogos = apiCatalogos;
         this.apiVentas = apiVentas;
 
         codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
@@ -79,18 +68,13 @@ public final class PantallaPuerta extends Pantalla {
         Validacion v = new Validacion(error);
         String tipeado = v.texto(codigo, "Código", true);
         if (!v.ok()) return;
-        String limpio = tipeado.toUpperCase();
-        // El catálogo antes que el acceso: si fallara después, la entrada quedaría usada y en pantalla diría NO PASA.
-        Tarea.ejecutar(this, () -> {
-            Set<String> tarifas = tarifasQueSeAcreditan();
-            return new Validada(apiVentas.validarEntrada(limpio), tarifas);
-        }, validada -> {
-            mostrarValida(validada.reserva(), validada.seAcreditan());
+        Tarea.ejecutar(this, () -> apiVentas.validarEntrada(tipeado), reserva -> {
+            mostrarValida(reserva);
             reiniciar();
         }, error -> {
             // Sin conexión o con el servidor caído no se sabe si pasa: error global, no NO PASA.
             if (error.esSesionVencida()) return;
-            if (!error.esDelFormulario()) {
+            if (!error.esDelFormulario() && !error.esConflicto()) {
                 Mensajes.error(this, error);
                 reiniciar();
                 return;
@@ -105,15 +89,7 @@ public final class PantallaPuerta extends Pantalla {
         codigo.requestFocusInWindow();
     }
 
-    private Set<String> tarifasQueSeAcreditan() {
-        if (seAcreditan == null) {
-            seAcreditan = apiCatalogos.obtenerTarifas().stream().filter(Tarifa::requiereAcreditacion)
-                    .map(Tarifa::nombre).collect(Collectors.toSet());
-        }
-        return seAcreditan;
-    }
-
-    private void mostrarValida(Reserva reserva, Set<String> seAcreditan) {
+    private void mostrarValida(Reserva reserva) {
         StringBuilder html = new StringBuilder();
         html.append("<p><b>").append(reserva.pelicula() == null ? "" : escapar(reserva.pelicula().titulo()))
                 .append("</b><br>").append(reserva.sala() == null ? "" : escapar(reserva.sala().nombre()))
@@ -121,9 +97,8 @@ public final class PantallaPuerta extends Pantalla {
                 .append("</p><table>");
         for (Entrada e : reserva.entradas()) {
             String tarifa = e.tarifa();
-            boolean pideCarnet = seAcreditan.contains(tarifa);
             html.append("<tr><td><tt><b>").append(e.codigo()).append("</b></tt></td><td>")
-                    .append(pideCarnet ? "<b>" + etiqueta(tarifa) + " · pedir carnet</b>" : etiqueta(tarifa))
+                    .append(e.requiereAcreditacion() ? "<b>" + etiqueta(tarifa) + " · pedir carnet</b>" : etiqueta(tarifa))
                     .append("</td></tr>");
         }
         int personas = reserva.entradas().size();
