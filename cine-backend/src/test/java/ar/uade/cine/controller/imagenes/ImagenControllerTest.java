@@ -106,6 +106,15 @@ class ImagenControllerTest extends PruebaDeApi {
         assertEquals("La imagen tiene que pesar 2 MB como máximo", respuesta.error());
     }
 
+    // Pasado el tope de multipart Spring corta antes de que llegue a Imagen: el mismo 400 y el mismo texto.
+    @Test
+    void masDeTresMegasCortaSpringConElMismoMensaje() {
+        Respuesta respuesta = subir(Arrays.copyOf(PNG, 3 * 1024 * 1024 + 1), "enorme.png");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La imagen tiene que pesar 2 MB como máximo", respuesta.error());
+    }
+
     @Test
     void sinElCampoArchivoFaltaLaImagen() {
         Respuesta otroCampo = subir("foto", PNG, "foto.png", EMAIL_ADMIN);

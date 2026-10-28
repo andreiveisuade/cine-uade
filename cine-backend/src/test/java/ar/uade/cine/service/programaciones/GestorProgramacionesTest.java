@@ -195,15 +195,15 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
-        assertThrows(Rechazo.class, () -> programaciones.desactivar(99));
+        rechaza("No existe la programación 99", () -> programaciones.desactivar(99));
     }
 
     @Test
     void previsualizarFallaIgualQueElAltaSiLaSalaNoProyectaEn3D() {
-        assertThrows(Rechazo.class,
+        rechaza("La sala Sala 1 no puede proyectar en 3D",
                 () -> programaciones.previsualizar(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))));
-        assertThrows(Rechazo.class,
+        rechaza("La sala Sala 1 no puede proyectar en 3D",
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))));
         assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
@@ -211,7 +211,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaUnRangoQueTerminaAntesDeEmpezar() {
-        assertThrows(Rechazo.class,
+        rechaza("El rango tiene que empezar antes de terminar",
                 () -> programaciones.crear(new DatosGrilla(1, 1, DOMINGO, LUNES, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
@@ -228,17 +228,17 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPrecioCeroYPeliculaInexistente() {
-        assertThrows(Rechazo.class,
+        rechaza("El precio tiene que ser mayor a cero",
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(0)))));
-        assertThrows(Rechazo.class,
+        rechaza("No existe la película 99",
                 () -> programaciones.crear(new DatosGrilla(99, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     @Test
     void rechazaUnaGrillaQueNoCaeEnNingunDiaDelRango() {
-        assertThrows(Rechazo.class,
+        rechaza("Ningún día del rango cae en los días elegidos: la grilla no generaría funciones",
                 () -> programaciones.crear(new DatosGrilla(1, 1, LocalDate.of(2026, 9, 8), LocalDate.of(2026, 9, 10),
                         LAS_2030, Set.of(DayOfWeek.MONDAY),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));

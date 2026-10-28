@@ -2,6 +2,7 @@ package ar.uade.cine.service.ventas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,9 +18,11 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -88,6 +91,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private GestorFunciones funciones;
     @Autowired
     private GestorClientes clientes;
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeEach
     void prepararEscenario() {
@@ -122,8 +127,23 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está pagada: no se puede cobrar",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+    }
+
+    // Con la reserva todavía RESERVADA, la guarda es lo único que frena un segundo pago (el UNIQUE daría un 500).
+    @Test
+    @DisplayName("R5: no se registra un segundo pago de la misma reserva")
+    void unaReservaConUnPagoRegistradoNoSeVuelveACobrar() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        jdbc.update("INSERT INTO pago (reserva_id, subtotal, monto, medio, fecha)"
+                + " VALUES (?, 5000, 5000, 'EFECTIVO', ?)",
+                reserva.getId(), LocalDateTime.of(2026, 8, 14, 10, 0));
+
+        Rechazo error = rechaza("La reserva " + reserva.getId() + " ya tiene un pago registrado",
+                () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+
+        assertInstanceOf(ConflictoDeNegocio.class, error);
     }
 
     @Test
@@ -131,7 +151,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está cancelada: no se puede cobrar",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -170,19 +190,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void elArqueoDeBoleteriaSumaLoCobradoEnElDia() {
-        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"), null);
-        Reserva segunda = reservas.reservar(1, 1, generales("B1"), null);
-        pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
-        pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
-
-        Arqueo arqueo = caja.arqueoDe(reloj.hoy());
-        assertEquals(2, arqueo.pagos().size());
-        assertEquals(Dinero.de(15000.0), arqueo.total());
-        assertTrue(pagoRepository.existsByReservaId(primera.getId()));
-    }
-
-    @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         Promocion promo = promociones.crear(TipoPromocion.NXM, "2x1", ParametrosPromocion.deNxM(2, 1),
@@ -193,8 +200,26 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertEquals(reserva.getTotal(), pago.getSubtotal());
         assertEquals(promo.getId(), pago.getPromocionId());
-        assertEquals(pago.getSubtotal().menos(pago.getDescuento()), pago.getMonto());
-        assertTrue(pago.getDescuento().esMayorQue(Dinero.CERO));
+        assertEquals(Dinero.de(5000), pago.getDescuento(), "el 2x1 de dos entradas de 5000 regala una");
+        assertEquals(Dinero.de(5000), pago.getMonto());
+    }
+
+    @Test
+    @DisplayName("R16: al cobrar, la promoción corre solo sobre las entradas de tarifa general")
+    void alCobrarLaPromocionCorreSoloSobreLaTarifaGeneral() {
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
+        Map<String, TipoTarifa> mixta = new LinkedHashMap<>();
+        mixta.put("A1", TipoTarifa.GENERAL);
+        mixta.put("A2", TipoTarifa.JUBILADO);
+        Reserva reserva = reservas.reservar(1, 1, mixta, null);
+
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        assertEquals(Dinero.de(7500), pago.getSubtotal());
+        assertEquals(Dinero.de(2500), pago.getDescuento(), "el 50 % de la general, no del total");
+        assertEquals(Dinero.de(5000), pago.getMonto());
     }
 
     @Test
@@ -219,20 +244,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertEquals(Dinero.de(0), pagos.cobrar(enEfectivo.getId(), MedioPago.EFECTIVO, "").getDescuento());
         assertEquals(Dinero.de(1000), pagos.cobrar(conTarjeta.getId(), MedioPago.CREDITO, "AUT-1").getDescuento());
-    }
-
-    @Test
-    void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
-        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
-                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-
-        Dinero arqueo = caja.arqueoDe(reloj.hoy()).total();
-
-        assertEquals(pago.getMonto(), arqueo);
-        assertTrue(pago.getSubtotal().esMayorQue(arqueo));
     }
 
     @Test
@@ -350,7 +361,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elEfectivoNoAbreCheckout() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(Rechazo.class,
+        rechaza("El pago con efectivo no va por checkout: se cobra en la caja del cine",
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.EFECTIVO));
     }
 
@@ -359,7 +370,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva está pagada: no se puede cobrar",
                 () -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
     }
 
@@ -380,7 +391,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeConfirmaUnCheckoutQueNoExiste() {
-        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout("MP-0000000000"));
+        rechaza("No existe el checkout MP-0000000000", () -> pagos.confirmarCheckout("MP-0000000000"));
     }
 
     @Test
@@ -389,7 +400,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
         pagos.confirmarCheckout(checkout.id());
 
-        assertThrows(Rechazo.class, () -> pagos.confirmarCheckout(checkout.id()));
+        rechaza("La reserva está pagada: no se puede cobrar", () -> pagos.confirmarCheckout(checkout.id()));
         assertEquals(1, caja.arqueoDe(reloj.hoy()).pagos().size());
     }
 

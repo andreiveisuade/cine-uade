@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import confetti from "canvas-confetti";
 import * as api from "@/api/api-http.js";
@@ -172,10 +172,11 @@ describe("venta cruzada en el ticket", () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA", true));
     abrir();
 
-    const textos = (await screen.findByLabelText("Para sumar a la función")).textContent;
-    expect(textos.indexOf("Combo clásico")).toBeLessThan(textos.indexOf("Pochoclos grandes", textos.indexOf("Combo clásico") + 20));
-    expect(textos.indexOf("Pochoclos grandes", textos.indexOf("Combo clásico") + 20)).toBeLessThan(textos.indexOf("2x1"));
-    expect(textos).not.toContain("Agua");
+    const seccion = await screen.findByRole("region", { name: "Para sumar a la función" });
+    // Texto exacto: el combo también nombra a los pochoclos en su detalle.
+    const nombres = within(seccion).getAllByText(/^(Combo clásico|Pochoclos grandes|2x1)$/).map((n) => n.textContent);
+    expect(nombres).toEqual(["Combo clásico", "Pochoclos grandes", "2x1"]);
+    expect(seccion).not.toHaveTextContent("Agua");
   });
 
   it.each([

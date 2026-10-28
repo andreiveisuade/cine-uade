@@ -71,6 +71,8 @@ class FormaDeCobroTest {
         assertEquals(List.of("¿Registrar el cobro de la reserva #7 en efectivo? No se puede deshacer."),
                 caja.preguntas);
         assertEquals("POST /api/reservas/7/pago", servidor.ultimo().metodo() + " " + servidor.ultimo().ruta());
+        // El monto no viaja: lo calcula el backend con las promociones del medio.
+        assertEquals("{\"medio\":\"EFECTIVO\",\"codigoAutorizacion\":\"\"}", servidor.ultimo().cuerpo());
         assertInstanceOf(Pago.class, caja.resultado);
     }
 
@@ -95,6 +97,7 @@ class FormaDeCobroTest {
         assertEquals("Abrir checkout", forma.boton());
         assertTrue(caja.preguntas.isEmpty());
         assertEquals("POST /api/reservas/7/checkout", servidor.ultimo().metodo() + " " + servidor.ultimo().ruta());
+        assertEquals("{\"medio\":\"CREDITO\"}", servidor.ultimo().cuerpo());
         assertInstanceOf(Checkout.class, caja.resultado);
     }
 

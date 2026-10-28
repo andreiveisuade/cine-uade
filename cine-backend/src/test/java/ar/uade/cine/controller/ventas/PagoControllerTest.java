@@ -106,6 +106,7 @@ class PagoControllerTest extends PruebaDeApi {
         Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/checkouts/no-existe/retorno", null, null, null);
 
         assertEquals(404, respuesta.estado());
+        assertEquals("No existe el checkout no-existe", respuesta.error());
     }
 
     @Test

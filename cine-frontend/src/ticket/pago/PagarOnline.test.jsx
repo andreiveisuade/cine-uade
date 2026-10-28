@@ -50,7 +50,7 @@ describe("PagarOnline", () => {
     await userEvent.click(boton);
     await userEvent.click(boton);
 
-    expect(boton).toHaveAttribute("data-loading", "true");
+    expect(boton).toBeDisabled();
     expect(api.obtenerMediosDePago).toHaveBeenCalledOnce();
     entregar(MEDIOS);
     expect(await screen.findByRole("button", { name: "Continuar" })).toBeInTheDocument();

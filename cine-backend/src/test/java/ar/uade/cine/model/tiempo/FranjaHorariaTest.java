@@ -19,9 +19,13 @@ class FranjaHorariaTest {
     private static final LocalTime SEIS = LocalTime.of(18, 0);
 
     // 22 a 2 cruza la medianoche: ninguna hora cumpliría desde ≤ hora ≤ hasta y la franja no correría nunca.
-    @ParameterizedTest
-    @CsvSource({"18:00, 14:00", "22:00, 02:00", "14:00, 14:00"})
-    void sinEmpezarAntesDeTerminarSeRechaza(LocalTime desde, LocalTime hasta) {
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            al revés,                 18:00, 14:00
+            cruza la medianoche,      22:00, 02:00
+            empieza cuando termina,   14:00, 14:00
+            """)
+    void sinEmpezarAntesDeTerminarSeRechaza(String caso, LocalTime desde, LocalTime hasta) {
         DatoInvalido error = assertThrows(DatoInvalido.class, () -> new FranjaHoraria(desde, hasta));
 
         assertEquals("La franja horaria tiene que empezar antes de terminar", error.getMessage());

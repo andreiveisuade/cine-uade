@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
 import { renderConApp } from "@/test/renderConApp.jsx";
 import { ErrorDePantalla } from "./ErrorDePantalla.jsx";
@@ -20,10 +20,18 @@ const PANTALLAS = (
   </Routes>
 );
 
+let consola;
+
 beforeEach(() => {
   api.sesionActual.mockResolvedValue(null);
-  vi.spyOn(console, "error").mockImplementation(() => {});
+  // Se calla solo el error que la pantalla rota tira a propósito: cualquier otro sigue saliendo.
+  const original = console.error;
+  consola = vi.spyOn(console, "error").mockImplementation((...args) => {
+    if (!args.some((arg) => String(arg?.message ?? arg).includes("se rompió el render"))) original(...args);
+  });
 });
+
+afterEach(() => consola.mockRestore());
 
 describe("ErrorDePantalla", () => {
   it("si una pantalla tira, muestra el aviso en vez de la página en blanco", () => {

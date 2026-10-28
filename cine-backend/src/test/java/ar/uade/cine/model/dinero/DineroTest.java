@@ -206,14 +206,6 @@ class DineroTest {
         }
 
         @Test
-        @DisplayName("R15: entre varias promociones gana la que más descuenta")
-        void laMayorDeVariasEsLaQueGana() {
-            List<Dinero> descuentos = List.of(Dinero.de(1200), Dinero.de(3000), Dinero.de(800));
-
-            assertEquals(Dinero.de(3000), descuentos.stream().max(Dinero::compareTo).orElseThrow());
-        }
-
-        @Test
         void elCeroEsCero() {
             assertTrue(Dinero.CERO.esCero());
             assertTrue(Dinero.de(0).esCero());

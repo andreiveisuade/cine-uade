@@ -67,6 +67,23 @@ class ProgramacionTest {
                 .horarios(LocalDate.of(2028, 12, 31)).size());
     }
 
+    // Del lunes 7 al domingo 20 de septiembre, solo viernes y sábados; el tope corta antes del hasta.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            el tope después del hasta no lo estira, 2026-12-31, 2026-09-11 2026-09-12 2026-09-18 2026-09-19
+            el tope antes del hasta corta ahí,      2026-09-12, 2026-09-11 2026-09-12
+            el tope antes del inicio no da nada,    2026-09-06, ''
+            """)
+    void losHorariosSonLosDiasElegidosHastaElTopeOElHasta(String caso, LocalDate tope, String dias) {
+        Programacion finesDeSemana = grilla(LocalDate.of(2026, 9, 7), LocalDate.of(2026, 9, 20), LocalTime.of(20, 30),
+                Set.of(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY));
+
+        assertEquals(dias.isEmpty() ? List.of() : Arrays.stream(dias.split(" "))
+                        .map(dia -> LocalDate.parse(dia).atTime(20, 30)).toList(),
+                finesDeSemana.horarios(tope));
+        assertEquals(Set.of(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY), finesDeSemana.getDiasSemana());
+    }
+
     // `[null]` llega del JSON como un día que no es ninguno.
     @Test
     void unDiaNuloNoSeConstruye() {

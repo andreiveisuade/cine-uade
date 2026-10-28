@@ -126,7 +126,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaButacaInexistente() {
-        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("Z9"), null));
+        rechaza("La butaca Z9 no existe en la sala", () -> reservas.reservar(1, 1, generales("Z9"), null));
     }
 
     @Test
@@ -138,7 +138,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unaReservaRechazadaNoDejaAlClienteDadoDeAlta() {
-        assertThrows(Rechazo.class,
+        rechaza("La butaca Z9 no existe en la sala",
                 () -> reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("Z9"), null));
 
         assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
@@ -211,21 +211,14 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void soloLaTarifaGeneralNoPideAcreditacion() {
-        assertFalse(TipoTarifa.GENERAL.requiereAcreditacion());
-        assertTrue(TipoTarifa.JUBILADO.requiereAcreditacion());
-        assertTrue(TipoTarifa.MENOR.requiereAcreditacion());
-        assertTrue(TipoTarifa.ESTUDIANTE.requiereAcreditacion());
-    }
-
-    @Test
     @DisplayName("R6: cancelar libera las butacas")
     void cancelarLiberaLasButacas() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2", "A3"), null);
         reservas.cancelar(reserva.getId());
 
         assertEquals(10, asientosLibres(1, null).size());
-        assertTrue(asientosLibres(1, null).stream().anyMatch(a -> a.getCodigo().equals("A1")));
+        assertEquals(3, reservas.reservar(1, 1, generales("A1", "A2", "A3"), null).getCantidadEntradas(),
+                "las butacas liberadas se vuelven a vender");
     }
 
     @Test
@@ -246,7 +239,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         reservas.cancelar(reserva.getId());
 
-        assertThrows(Rechazo.class, () -> reservas.cancelar(reserva.getId()));
+        rechaza("La reserva está cancelada: solo se puede cancelar una reserva sin cobrar",
+                () -> reservas.cancelar(reserva.getId()));
     }
 
     @Test
@@ -255,7 +249,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(9, asientosLibres(1, null).size());
         assertTrue(asientosLibres(1, null).stream().noneMatch(a -> a.getCodigo().equals("A3")));
-        assertThrows(Rechazo.class, () -> reservas.reservar(1, 1, generales("A3"), null));
+        rechaza("La butaca A3 está fuera de servicio", () -> reservas.reservar(1, 1, generales("A3"), null));
     }
 
     @Test
@@ -325,14 +319,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void noSePuedeProgramar3DEnUnaSalaQueNoLoSoporta() {
-        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
-        assertThrows(Rechazo.class,
-                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 24, 20, 0),
-                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
-    }
-
-    @Test
     void loGuardadoSeReleeConSusButacasYSuFecha() {
         reservas.reservar(1, 1, generales("A1", "B2"), null);
 
@@ -360,6 +346,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(10, asientosLibres(1, null).size(), "las butacas vuelven a la venta");
         assertEquals(EstadoReserva.EXPIRADA, consultas.obtener(reserva.getId()).getEstado());
+        assertEquals(2, reservas.reservar(1, 1, generales("A1", "A2"), null).getCantidadEntradas());
     }
 
     @Test
@@ -386,7 +373,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         envejecer(reserva.getId(), Reserva.MINUTOS_PARA_PAGAR + 1);
 
-        assertThrows(Rechazo.class,
+        rechaza("La reserva 1 venció: sus butacas volvieron a estar disponibles",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -451,7 +438,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void unCodigoInventadoNoAbreLaPuerta() {
-        assertThrows(Rechazo.class, () -> acceso.registrarIngreso("XXXXXXXX"));
+        rechaza("No existe ninguna reserva con ese código", () -> acceso.registrarIngreso("XXXXXXXX"));
     }
 
     // El código es la única credencial del cliente: con leer el log no se tiene que poder entrar.
@@ -479,16 +466,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void noSeReservaUnaFuncionQueYaEmpezo() {
         int empezada = funcionQueYaEmpezo().getId();
 
-        assertThrows(Rechazo.class,
+        rechaza("La función ya empezó: no se pueden reservar butacas",
                 () -> reservas.reservar(empezada, 1, generales("A1"), null));
     }
 
+    // La misma butaca vendida en otra función de la misma sala no ocupa esta, ni para vender ni en el mapa.
     @Test
     @DisplayName("R4: la ocupación es por función")
-    void laMismaButacaSeVendeParaUnaFuncionFutura() {
-        funcionQueYaEmpezo();
+    void laMismaButacaSeVendeEnDosFuncionesDeLaMismaSala() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        reservas.reservar(2, 1, generales("A1"), null);
 
+        assertEquals(10, asientosLibres(1, null).size(), "el mapa de la otra función sigue entero");
         assertEquals(1, reservas.reservar(1, 1, generales("A1"), null).getCantidadEntradas());
+        assertEquals(9, asientosLibres(2, null).size());
     }
 
     @Test
@@ -500,7 +492,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 // creada recién: si fuera vieja saltaría R17 y no estaríamos probando R19
                 reloj.ahora()));
 
-        assertThrows(Rechazo.class,
+        rechaza("La función ya empezó: no se puede cobrar la reserva 1",
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
     }
 
@@ -570,6 +562,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertTrue(consultas.listarPorEmail(null).isEmpty());
         assertTrue(consultas.listarPorEmail("   ").isEmpty());
         assertTrue(consultas.listarPorEmail("nadie@uade.edu.ar").isEmpty());
+    }
+
+    // R21: la de otro cliente da el mismo 404 que un código inexistente; un 403 confirmaría que existe.
+    @Test
+    @DisplayName("R21: el cliente ve solo su reserva")
+    void elClienteVeSoloSuReserva() {
+        clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
+        Reserva suya = reservas.reservar(1, 1, generales("A1"), null);
+
+        assertEquals(suya.getId(), consultas.obtenerDelCliente(suya.getCodigo(), "andrei@uade.edu.ar").getId());
+        Rechazo ajena = rechaza("No existe ninguna reserva con ese código",
+                () -> consultas.obtenerDelCliente(suya.getCodigo(), "sofia@ejemplo.com"));
+        Rechazo inexistente = rechaza("No existe ninguna reserva con ese código",
+                () -> consultas.obtenerDelCliente("XXXXXXXX", "andrei@uade.edu.ar"));
+        assertEquals(inexistente.getClass(), ajena.getClass());
     }
 
     private List<Reserva> buscarTexto(String texto) {

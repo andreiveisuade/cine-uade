@@ -398,16 +398,14 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         cargar("Una", 8.0, Genero.ACCION);
         salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
 
-        assertEquals("No hay salas que puedan proyectar en 3D",
-                assertThrows(Rechazo.class, () -> planificador.proponer(unDiaEn3D())).getMessage());
+        rechaza("No hay salas que puedan proyectar en 3D", () -> planificador.proponer(unDiaEn3D()));
     }
 
     @Test
     void sinSalasNoHayGrillaPosible() {
         cargar("Una", 8.0, Genero.ACCION);
 
-        assertEquals("No hay salas cargadas para programar",
-                assertThrows(Rechazo.class, () -> planificador.proponer(unDia(1))).getMessage());
+        rechaza("No hay salas cargadas para programar", () -> planificador.proponer(unDia(1)));
     }
 
     // R20: a las 15:10 de hoy, el primer intento libre es el de las 15:30 (de 8:00, cada 30).

@@ -87,7 +87,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
 
     @Test
     void noSeRegistraUnClienteComoEmpleado() {
-        assertThrows(Rechazo.class,
+        rechaza("El rol tiene que ser encargado o acomodador",
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.CLIENTE));
     }
 }

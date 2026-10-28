@@ -14,6 +14,7 @@ import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
@@ -123,6 +124,54 @@ class TmdbHttpTest {
 
         assertTrue(recibido.toString().contains("language=es-AR"), recibido.toString());
         assertTrue(recibido.toString().contains("region=AR"), recibido.toString());
+    }
+
+    // Sin el token en cada llamada TMDB contesta 401 a todo; la barra final de la base no duplica la del path.
+    @Test
+    void cadaLlamadaLlevaElTokenComoBearerYPideJson() {
+        List<String> recibidos = new CopyOnWriteArrayList<>();
+        levantar(intercambio -> {
+            recibidos.add(intercambio.getRequestURI().getPath() + " · "
+                    + intercambio.getRequestHeaders().getFirst("Authorization") + " · "
+                    + intercambio.getRequestHeaders().getFirst("Accept"));
+            if (intercambio.getRequestURI().getPath().equals("/movie/now_playing")) {
+                responder(intercambio, 200, """
+                        {"results": [{"id": 42, "title": "Duna"}], "total_pages": 1}""");
+            } else {
+                responder(intercambio, 200, "{\"title\": \"Duna\", \"runtime\": 166}");
+            }
+        });
+
+        new TmdbHttp("un-token", "AR", direccion() + "/").enCartelera(1);
+
+        assertEquals(List.of(
+                "/movie/now_playing · Bearer un-token · application/json",
+                "/movie/42 · Bearer un-token · application/json",
+                "/movie/42/release_dates · Bearer un-token · application/json",
+                "/movie/42/videos · Bearer un-token · application/json",
+                "/movie/42/videos · Bearer un-token · application/json"), recibidos);
+    }
+
+    // Pide hasta total_pages aunque se hayan pedido más, y junta los resultados en el orden de las páginas.
+    @Test
+    void recorreLasPaginasHastaLaUltimaQueTiene() {
+        List<String> paginas = new CopyOnWriteArrayList<>();
+        levantar(intercambio -> {
+            String consulta = intercambio.getRequestURI().getQuery();
+            if (intercambio.getRequestURI().getPath().equals("/movie/now_playing")) {
+                String pagina = consulta.replaceAll(".*page=(\\d+).*", "$1");
+                paginas.add(pagina);
+                responder(intercambio, 200, "{\"results\": [{\"id\": " + pagina + ", \"title\": \"Película "
+                        + pagina + "\"}], \"total_pages\": 2}");
+            } else {
+                responder(intercambio, 200, "{\"runtime\": 100}");
+            }
+        });
+
+        List<DatosPelicula> peliculas = catalogo().enCartelera(3);
+
+        assertEquals(List.of("1", "2"), paginas);
+        assertEquals(List.of("Película 1", "Película 2"), peliculas.stream().map(DatosPelicula::titulo).toList());
     }
 
     @Test

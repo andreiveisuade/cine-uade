@@ -114,7 +114,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     // R20 con el corte de R19: la que empieza en este instante ya empezó.
     @Test
     void ahoraMismoYaCuentaComoPasadoYUnMinutoDespuesNo() {
-        assertThrows(Rechazo.class,
+        rechaza("La función no puede empezar en el pasado",
                 () -> funciones.programar(1, 1, reloj.ahora(),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
 
@@ -164,11 +164,11 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            empieza mientras corre otra,                    21:00
-            pegada al final de la anterior por la limpieza, 22:00
+            empieza mientras corre otra,                    21:00, La sala ya tiene una función en ese horario
+            pegada al final de la anterior por la limpieza, 22:00, 'La sala necesita 15 minutos de limpieza: la función anterior termina 22:00 y hasta 22:15 no se puede empezar'
             """)
-    void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio) {
-        assertThrows(Rechazo.class,
+    void rechazaFuncionQueChocaConLaDeLas20(String caso, LocalTime inicio, String mensaje) {
+        rechaza(mensaje,
                 () -> funciones.programar(1, 1, LocalDate.of(2026, 8, 20).atTime(inicio),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
         assertEquals(1, funciones.listar().size());
@@ -181,7 +181,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 25, 22, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
 
-        assertThrows(Rechazo.class,
+        rechaza("La sala ya tiene una función en ese horario",
                 () -> funciones.programar(1, 1, LocalDateTime.of(2026, 8, 26, 4, 0),
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
@@ -217,7 +217,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaSalaConLimpiezaNegativa() {
-        assertThrows(Rechazo.class,
+        rechaza("Los minutos de limpieza no pueden ser negativos",
                 () -> salas.agregar("Sala rota", TipoSala.DOS_D, List.of(10, 10), Map.of(), -5));
     }
 
@@ -277,7 +277,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void rechazaPeliculaInexistente() {
-        assertThrows(Rechazo.class,
+        rechaza("No existe la película 99",
                 () -> funciones.programar(99, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                         new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
@@ -287,7 +287,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"), null);
 
-        assertThrows(Rechazo.class, () -> funciones.eliminar(1));
+        rechaza("La función 1 tiene reservas: no se puede eliminar", () -> funciones.eliminar(1));
         assertEquals(1, funciones.listar().size());
     }
 
@@ -299,8 +299,9 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSeBorraLaSalaNiLaPeliculaConFuncionesProgramadas() {
-        assertThrows(Rechazo.class, () -> salas.eliminar(1));
-        assertThrows(Rechazo.class, () -> cartelera.eliminar(1));
+        rechaza("La sala 1 tiene funciones programadas: primero hay que eliminarlas", () -> salas.eliminar(1));
+        rechaza("La película Interstellar tiene funciones programadas: sacala de cartelera en vez de borrarla",
+                () -> cartelera.eliminar(1));
 
         funciones.eliminar(1);
         assertDoesNotThrow(() -> cartelera.eliminar(1));
