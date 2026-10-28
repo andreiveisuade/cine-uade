@@ -54,6 +54,16 @@ public class GestorClientes {
         return reservaRepository.existsByCodigoAndCliente_Id(new CodigoDeAcceso(codigo).valor(), cliente.getId());
     }
 
+    // R28: Google ya probó el email, así que quien compró sin cuenta es este cliente y conserva sus reservas y su nombre.
+    // Antes de crearlo se mira el personal: comparten el UNIQUE del email, y el panel es Swing con su clave.
+    public Cliente ingresarConGoogle(String nombre, String email) {
+        String valor = new Email(email).valor();
+        if (empleadoRepository.existsByEmail(valor)) {
+            throw new ConflictoDeNegocio("Ese email es del personal del cine: entrá desde la aplicación de escritorio");
+        }
+        return clienteRepository.findByEmail(valor).orElseGet(() -> clienteRepository.save(new Cliente(nombre, valor)));
+    }
+
     // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.
     // El texto no nombra al empleado: la compra es pública y serviría para listar emails del personal.
     public Cliente identificar(String nombre, String email) {

@@ -2,10 +2,13 @@ package ar.uade.cine.controller.usuarios;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.uade.cine.dto.usuarios.IngresoConGoogleVistaDTO;
 import ar.uade.cine.dto.usuarios.UsuarioVistaDTO;
+import ar.uade.cine.infrastructure.seguridad.PropiedadesGoogle;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
 
@@ -22,6 +25,7 @@ public class SesionController {
     private final GestorEmpleados empleados;
     private final GestorClientes clientes;
     private final VistasUsuarios vistas;
+    private final PropiedadesGoogle google;
 
     // El filtro Basic verifica las credenciales (un solo camino) y abre la sesión: la respuesta lleva la cookie
     // El cuerpo se ignora: las credenciales van por Basic
@@ -32,5 +36,11 @@ public class SesionController {
         return empleados.buscarPorEmail(email).map(vistas::usuario)
                 .or(() -> clientes.buscarPorEmail(email).map(vistas::usuario))
                 .orElseThrow();
+    }
+
+    @Operation(summary = "Si el cliente puede ingresar con Google: sin credenciales de Google Cloud, no")
+    @GetMapping("/api/sesion/google")
+    public IngresoConGoogleVistaDTO ingresoConGoogle() {
+        return new IngresoConGoogleVistaDTO(google.configurado());
     }
 }

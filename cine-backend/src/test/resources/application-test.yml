@@ -43,6 +43,10 @@ cine:
   mercadopago:
     # Vacío aunque la máquina tenga MP_ACCESS_TOKEN: la suite usa la pasarela emulada.
     token: ""
+  google:
+    # Inventadas: arman el login con Google sin salir a Google; los tests no llegan a cambiar un código por un token.
+    client-id: id-de-prueba
+    client-secret: secreto-de-prueba
 
 logging:
   level:

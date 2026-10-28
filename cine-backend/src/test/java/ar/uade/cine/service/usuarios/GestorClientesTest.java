@@ -164,4 +164,35 @@ class GestorClientesTest extends PruebaDeIntegracion {
                 () -> gestor.registrar("Andrei", "andrei@uade.edu.ar", "corta", null)).getMessage());
         assertTrue(gestor.listar().isEmpty());
     }
+
+    // R28: Google ya probó el email: es el mismo cliente que compró sin cuenta, con el nombre que dio al comprar.
+    @Test
+    void conGoogleQuienComproSinCuentaEsElMismoCliente() {
+        Cliente compro = gestor.identificar("Andrei", "andrei@uade.edu.ar");
+
+        Cliente conGoogle = gestor.ingresarConGoogle("Andrei Veis", " Andrei@UADE.edu.ar");
+
+        assertEquals(compro.getId(), conGoogle.getId());
+        assertEquals("Andrei", conGoogle.getNombre());
+        assertEquals(1, gestor.listar().size());
+    }
+
+    @Test
+    void conGoogleUnEmailNuevoEsUnClienteConElNombreDeGoogle() {
+        Cliente cliente = gestor.ingresarConGoogle("Andrei Veis", "andrei@uade.edu.ar");
+
+        assertTrue(cliente.getId() > 0);
+        assertEquals("Andrei Veis", cliente.getNombre());
+        assertEquals(cliente.getId(), gestor.ingresarConGoogle("Andrei Veis", "andrei@uade.edu.ar").getId());
+    }
+
+    @Test
+    void conGoogleElEmailDeUnEmpleadoSeRechaza() {
+        empleados.registrar("Encargado", "encargado@cine.com", CLAVE, Rol.ADMINISTRADOR);
+
+        assertEquals("Ese email es del personal del cine: entrá desde la aplicación de escritorio",
+                assertThrows(ConflictoDeNegocio.class,
+                        () -> gestor.ingresarConGoogle("Encargado", "encargado@cine.com")).getMessage());
+        assertTrue(gestor.listar().isEmpty());
+    }
 }

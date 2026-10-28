@@ -82,6 +82,10 @@ cine:
     sitio: ${CINE_URL_PUBLICA:http://localhost:8080}
     # Cada cuánto se le pregunta a MP por los pagos aprobados, por si el comprador no volvió al sitio.
     conciliacion: 60s
+  google:
+    # El cliente OAuth de Google Cloud con el que entra el cliente de la web. Sin los dos, no hay ingreso de clientes.
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
   incaa:
     # El encabezado de la declaración jurada. Ficticios: el TP no tiene un exhibidor inscripto.
     razon-social: ${INCAA_RAZON_SOCIAL:Cine UADE S.A.}

@@ -1,6 +1,8 @@
 package ar.uade.cine.infrastructure.seguridad;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.springframework.boot.web.servlet.server.CookieSameSiteSupplier;
@@ -13,15 +15,21 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.oauth2.client.CommonOAuth2Provider;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -38,8 +46,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
-// Qué rol puede llamar cada ruta y cómo se autentica (Basic contra usuario, bcrypt); SecurityFilterChain.
-// Empleados: Basic en cada pedido, sin sesión; cliente: Basic una vez y cookie (SesionDeClientes). CSRF apagado: SameSite=Lax.
+// Qué rol puede llamar cada ruta y cómo se autentica (Basic de empleados, Google del cliente); SecurityFilterChain.
+// Empleados: Basic en cada pedido, sin sesión; cliente: Google una vez y cookie (SesionDeClientes). CSRF apagado: SameSite=Lax.
 // 401/403 sin WWW-Authenticate, que abriría el login del navegador. Lo no enumerado pide ADMINISTRADOR.
 @Configuration
 @EnableWebSecurity
@@ -49,6 +57,9 @@ public class ConfiguracionSeguridad {
     private static final String COOKIE_DE_SESION = "JSESSIONID";
     private static final String ACOMODADOR = Rol.ACOMODADOR.name();
     private static final String CLIENTE = Rol.CLIENTE.name();
+    // La web (ruteo por hash) en el mismo origen: con nginx o servida por el backend en Render.
+    private static final String VUELTA_A_LA_WEB = "/#/ingresar";
+    private static final String NO_SE_PUDO = "No se pudo ingresar con Google: volvé a intentarlo";
 
     // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
 
@@ -60,6 +71,7 @@ public class ConfiguracionSeguridad {
 
     public static final String[] GET_PUBLICOS = {
             "/api/cartelera",
+            "/api/sesion/google",
             "/api/peliculas/*",
             "/api/peliculas/*/funciones",
             "/api/funciones/*",
@@ -81,7 +93,8 @@ public class ConfiguracionSeguridad {
     public static final String[] GET_PROTEGIDOS_QUE_PARECEN_PUBLICOS = {"/api/peliculas/pendientes"};
 
     @Bean
-    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos)
+    public SecurityFilterChain cadenaDeFiltros(HttpSecurity http, ObjectMapper json, LimiteDeIntentos intentos,
+                                               PropiedadesGoogle google, ClientesDeGoogle clientesDeGoogle)
             throws Exception {
         SecurityContextRepository sesion = new SesionDeClientes();
         AuthenticationEntryPoint sinIdentidad = (pedido, respuesta, error) ->
@@ -94,6 +107,23 @@ public class ConfiguracionSeguridad {
                 responder(respuesta, json, HttpStatus.FORBIDDEN,
                         "Tu rol no tiene permiso para esta operación");
 
+        // R28: sin credenciales no hay login con Google; /oauth2/** cae en el anyRequest y da 401.
+        if (google.configurado()) {
+            http.oauth2Login(login -> login
+                    .clientRegistrationRepository(new InMemoryClientRegistrationRepository(
+                            CommonOAuth2Provider.GOOGLE.getBuilder("google")
+                                    .clientId(google.clientId())
+                                    .clientSecret(google.clientSecret())
+                                    .scope("openid", "email", "profile")
+                                    .build()))
+                    // En la sesión y no en un mapa en memoria que crecería con cada cliente que entró alguna vez.
+                    .authorizedClientRepository(new HttpSessionOAuth2AuthorizedClientRepository())
+                    // Sin la página de login que Spring genera en /login: el ingreso es #/ingresar.
+                    .loginPage(VUELTA_A_LA_WEB)
+                    .userInfoEndpoint(usuario -> usuario.oidcUserService(clientesDeGoogle))
+                    .successHandler(new SimpleUrlAuthenticationSuccessHandler(VUELTA_A_LA_WEB))
+                    .failureHandler(vueltaConError()));
+        }
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -135,6 +165,15 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
                 .build();
+    }
+
+    // El motivo viaja en la URL de la web, que lo muestra: solo los rechazos del cine, el resto con un texto genérico.
+    private static AuthenticationFailureHandler vueltaConError() {
+        return (pedido, respuesta, error) -> {
+            String mensaje = error instanceof OAuth2AuthenticationException e
+                    && ClientesDeGoogle.RECHAZO.equals(e.getError().getErrorCode()) ? e.getMessage() : NO_SE_PUDO;
+            respuesta.sendRedirect(VUELTA_A_LA_WEB + "?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
+        };
     }
 
     // Lax y no Strict: con Strict, entrar al cine desde un link de otro sitio llegaría sin la sesión.
