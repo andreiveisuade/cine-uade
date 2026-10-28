@@ -42,6 +42,7 @@ Todas en `.env`, explicadas en `.env.example`:
 | `TZ` | Zona horaria; en UTC la caja del día pierde las funciones de la noche |
 | `TMDB_TOKEN`, `TMDB_REGION` | El importador de cartelera; sin token el resto anda igual |
 | `MP_ACCESS_TOKEN`, `CINE_URL_PUBLICA` | Pago online con Mercado Pago (sandbox) y la dirección a la que vuelve el comprador. Sin token, pasarela emulada |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | El ingreso del cliente con Google (R28). Sin ellos se reserva igual sin cuenta y la web avisa que no se puede ingresar |
 
 Si falta una obligatoria, Compose no arranca y dice cuál. Cambiar una clave no alcanza a una base ya creada.
 
@@ -60,7 +61,7 @@ El comprador de prueba es obligatorio: pagar como invitado con un vendedor de pr
 
 MySQL corre `db/schema.sql` y `seed/02-admin.sql` solo con el volumen vacío. Sobre una base ya creada hay que
 aplicar a mano las de `cine-backend/src/main/resources/db/migraciones/` que falten, en el orden del número
-(`01-programaciones.sql` … `17-clave-temporal.sql`).
+(`01-programaciones.sql` … `18-clientes-con-google.sql`).
 
 ```sh
 docker compose exec -T mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \

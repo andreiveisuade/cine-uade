@@ -4,21 +4,17 @@ import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
-import ar.uade.cine.model.usuarios.Contrasena;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
-import ar.uade.cine.model.rechazos.SinPrueba;
-import ar.uade.cine.repository.ventas.ReservaRepository;
 
-// Registro con clave e identificación por email de clientes; Usuario valida los datos, el gestor el email.
+// Clientes por email: al comprar, al entrar con Google (R28) y su nombre (R23); Usuario valida los datos.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -26,28 +22,22 @@ public class GestorClientes {
 
     private final ClienteRepository clienteRepository;
     private final EmpleadoRepository empleadoRepository;
-    private final ReservaRepository reservaRepository;
-    private final PasswordEncoder claves;
 
-    // Dato inválido se rechaza antes que el email ocupado, que se busca también entre empleados (UNIQUE compartido).
-    // Empleado o cliente con cuenta, el mismo texto que da abrirCuenta: el alta no delata emails del personal.
-    // Si el email es de quien reservó sin cuenta, la abre sobre ese cliente y conserva sus reservas, pero solo con
-    // el código de una de ellas (R22): si no, quien conozca el email vería sus códigos en /mias.
-    public Cliente registrar(String nombre, String email, String password, String codigoReserva) {
-        Cliente nuevo = new Cliente(nombre, email);
-        Contrasena clave = new Contrasena(password);
-        if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
-            throw new ConflictoDeNegocio("Ya existe una cuenta con ese email");
+    // R28: Google ya probó el email, así que quien compró sin cuenta es este cliente y conserva sus reservas y su nombre.
+    // Antes de crearlo se mira el personal: comparten el UNIQUE del email, y el panel es Swing con su clave.
+    public Cliente ingresarConGoogle(String nombre, String email) {
+        String valor = new Email(email).valor();
+        if (empleadoRepository.existsByEmail(valor)) {
+            throw new ConflictoDeNegocio("Ese email es del personal del cine: entrá desde la aplicación de escritorio");
         }
-        Cliente cliente = clienteRepository.findByEmail(nuevo.getEmail()).orElse(nuevo);
-        if (cliente != nuevo && !cliente.tieneCuenta()
-                && !reservaRepository.esDelCliente(codigoReserva, cliente.getId())) {
-            // Mismo texto si falta o es ajeno: no confirma qué códigos existen.
-            throw new SinPrueba("Para abrir esta cuenta hace falta el código de una de sus entradas: "
-                    + "está en el ticket de la compra");
-        }
-        cliente.abrirCuenta(claves.encode(clave.valor()));
-        return clienteRepository.save(cliente);
+        return clienteRepository.findByEmail(valor).orElseGet(() -> clienteRepository.save(new Cliente(nombre, valor)));
+    }
+
+    // R23: el email no cambia: es el de Google, con el que entra.
+    public Cliente renombrar(String email, String nombre) {
+        Cliente cliente = clienteRepository.findByEmail(email).orElseThrow();
+        cliente.renombrar(nombre);
+        return cliente;
     }
 
     // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.

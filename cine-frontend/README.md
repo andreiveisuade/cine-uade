@@ -39,7 +39,7 @@ src/
   compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
   ticket/         la entrada, acciones, venta cruzada
     pago/         pagar online, espera, vuelta y festejo del pago
-  cuenta/         sesión, ingresar, registro, mi cuenta, recuperar clave, mis reservas
+  cuenta/         sesión, ingresar con Google, mi cuenta, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
   institucional/  nosotros
   test/           setup de Vitest y renderConApp

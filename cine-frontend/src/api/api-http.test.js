@@ -27,6 +27,7 @@ describe("api-http: el armado de cada pedido", () => {
     ["una función con la sesión de compra", () => api.obtenerFuncion(5, "a b"), "/api/funciones/5?sesion=a%20b"],
     ["un ticket por código", () => api.obtenerReservaPorCodigo("AB/12"), "/api/reservas/codigo/AB%2F12"],
     ["el candy de la carta", () => api.obtenerProductosCandy(), "/api/candy/productos"],
+    ["si el ingreso con Google está disponible", () => api.ingresoConGoogle(), "/api/sesion/google"],
   ])("GET de %s", async (_caso, llamar, url) => {
     await llamar();
 
@@ -39,7 +40,6 @@ describe("api-http: el armado de cada pedido", () => {
     ["crear una reserva", () => api.crearReserva({ funcionId: "5", nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL" }, sesion: "s" }),
       "POST", "/api/reservas", { funcionId: 5, nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL" }, sesion: "s" }],
     ["modificar la cuenta", () => api.modificarCuenta({ nombre: "Ana" }), "PUT", "/api/cuenta", { nombre: "Ana" }],
-    ["dar de baja", () => api.darDeBaja({ actual: "x" }), "DELETE", "/api/cuenta", { actual: "x" }],
     ["abrir el checkout", () => api.abrirCheckout("AB12", "MERCADO_PAGO"), "POST", "/api/reservas/codigo/AB12/checkout", { medio: "MERCADO_PAGO" }],
   ])("%s manda JSON", async (_caso, llamar, metodo, url, cuerpo) => {
     await llamar();
@@ -47,14 +47,13 @@ describe("api-http: el armado de cada pedido", () => {
     expect(pedido()).toEqual({ url, metodo, cabeceras: { "Content-Type": "application/json" }, cuerpo });
   });
 
-  it("ingresar manda Basic con la clave en UTF-8, aunque tenga eñes", async () => {
-    await api.ingresar("ana@mail.com", "año");
+  it.each([
+    ["preguntar la sesión", () => api.sesionActual(), "POST", "/api/sesion"],
+    ["dar de baja", () => api.darDeBaja(), "DELETE", "/api/cuenta"],
+  ])("%s va sin credenciales ni cuerpo: las lleva la cookie", async (_caso, llamar, metodo, url) => {
+    await llamar();
 
-    const { url, metodo, cabeceras } = pedido();
-    expect([url, metodo]).toEqual(["/api/sesion", "POST"]);
-    const [tipo, credencial] = cabeceras.Authorization.split(" ");
-    expect(tipo).toBe("Basic");
-    expect(new TextDecoder().decode(Uint8Array.from(atob(credencial), (c) => c.charCodeAt(0)))).toBe("ana@mail.com:año");
+    expect(pedido()).toEqual({ url, metodo, cabeceras: {}, cuerpo: undefined });
   });
 
   it("la vuelta del pago no sigue el redirect y no falla aunque falle la red", async () => {

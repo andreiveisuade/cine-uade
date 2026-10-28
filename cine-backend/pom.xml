@@ -81,6 +81,13 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
 
+    <!-- El cliente entra con Google (OpenID Connect): el cine no guarda claves de clientes. Sin GOOGLE_CLIENT_ID
+         el login no se arma y el resto del sistema levanta igual. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-client</artifactId>
+    </dependency>
+
     <!-- Bean Validation: los Pedido*DTO declaran qué campos son obligatorios, con el mismo
          mensaje que daría el gestor. Las reglas de negocio siguen en el gestor. -->
     <dependency>
@@ -121,6 +128,13 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- oidcLogin(): una sesión de Google armada en el test, sin salir a Google. -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

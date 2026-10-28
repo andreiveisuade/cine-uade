@@ -2,7 +2,6 @@ package ar.uade.cine.controller.usuarios;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -10,15 +9,10 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpSession;
 
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -41,11 +35,7 @@ import ar.uade.cine.service.ventas.GestorReservas;
 class CuentaDelClienteTest extends PruebaDeApi {
 
     private static final String ANA = "ana@mail.com";
-    private static final String CLAVE = "clave-de-ana";
     private static final String QR = "{\"medio\":\"QR\"}";
-
-    @Autowired
-    private TestRestTemplate http;
 
     @Autowired
     private GestorCartelera cartelera;
@@ -65,74 +55,23 @@ class CuentaDelClienteTest extends PruebaDeApi {
     private int funcionId;
 
     @BeforeEach
-    void unaFuncionYAnaConCuenta() {
+    void unaFuncion() {
         cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         funcionId = funcion.getId();
-        pedirComo(HttpMethod.POST, "/api/clientes",
-                "{\"nombre\":\"Ana\",\"email\":\"" + ANA + "\",\"password\":\"" + CLAVE + "\"}", null, null);
     }
 
     @Test
-    @DisplayName("registrarse con un email que ya tiene cuenta es 409")
-    void registrarseDosVecesEs409() {
-        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/clientes",
-                "{\"nombre\":\"Otra\",\"email\":\"" + ANA + "\",\"password\":\"otra-clave\"}", null, null);
-
-        assertThat(respuesta.estado()).isEqualTo(409);
-        assertThat(respuesta.error()).isEqualTo("Ya existe una cuenta con ese email");
-    }
-
-    // R22: el código de una entrada prueba que quien abre la cuenta es el que compró; sin él, cualquiera
-    // que conozca el email vería sus códigos en /mias. Sin código, el ajeno y el inventado dan el mismo 403.
-    @ParameterizedTest(name = "R22: {0}")
-    @CsvSource(textBlock = """
-            sin código,               ''
-            con el código de otro,    AJENO
-            con un código inventado,  ZZZZZZZZ
-            """)
-    void abrirLaCuentaDeQuienYaComproExigeElCodigoDeSuEntrada(String caso, String codigo) {
-        reservar("Beto", "beto@mail.com", "A1");
-        Reserva ajena = reservar("Ana", ANA, "A2");
-        String enviado = "AJENO".equals(codigo) ? ajena.getCodigo() : codigo;
-
-        Respuesta alta = pedirComo(HttpMethod.POST, "/api/clientes", "{\"nombre\":\"Beto\",\"email\":\"beto@mail.com\","
-                + "\"password\":\"clave-de-beto\",\"codigoReserva\":\"" + enviado + "\"}", null, null);
-
-        assertThat(alta.estado()).isEqualTo(403);
-        assertThat(alta.error()).isEqualTo(
-                "Para abrir esta cuenta hace falta el código de una de sus entradas: está en el ticket de la compra");
-        assertThat(pedirComo(HttpMethod.POST, "/api/sesion", null, "beto@mail.com", "clave-de-beto").estado())
-                .isEqualTo(401);
-    }
-
-    @Test
-    @DisplayName("R22: quien reservó sin cuenta se registra con el código de su entrada y ve las reservas de antes")
-    void elQueReservoSinCuentaReclamaSuEmailConElCodigo() {
+    @DisplayName("R28: quien reservó sin cuenta entra con Google con ese email y ve las reservas de antes")
+    void elQueReservoSinCuentaEntraConGoogleYVeSusReservas() {
         Reserva deAntes = reservar("Beto", "beto@mail.com", "A1");
 
-        Respuesta alta = pedirComo(HttpMethod.POST, "/api/clientes", "{\"nombre\":\"Beto\",\"email\":\"beto@mail.com\","
-                + "\"password\":\"clave-de-beto\",\"codigoReserva\":\" " + deAntes.getCodigo().toLowerCase() + "\"}",
-                null, null);
-        assertThat(alta.estado()).isEqualTo(201);
+        Respuesta mias = conSesion(HttpMethod.GET, "/api/reservas/mias", entrarConGoogle("Beto@Mail.com"), null);
 
-        Respuesta mias = conCookie(HttpMethod.GET, "/api/reservas/mias", entrar("beto@mail.com", "clave-de-beto"));
         assertThat(mias.json()).hasSize(1);
         assertThat(mias.json().get(0).get("id").asInt()).isEqualTo(deAntes.getId());
-    }
-
-    @Test
-    @DisplayName("el login del cliente abre una sesión con cookie HttpOnly y sin nada sensible en el cuerpo")
-    void elLoginDelClienteAbreUnaSesion() {
-        Respuesta login = pedirComo(HttpMethod.POST, "/api/sesion", null, ANA, CLAVE);
-
-        assertThat(login.estado()).isEqualTo(200);
-        assertThat(login.json().get("rol").asText()).isEqualTo("CLIENTE");
-        assertThat(login.cuerpo()).doesNotContain("password");
-        String cookie = login.cabeceras().getFirst(HttpHeaders.SET_COOKIE);
-        assertThat(cookie).startsWith("JSESSIONID=").contains("HttpOnly").contains("SameSite=Lax");
     }
 
     // Swing manda Basic en cada pedido: si cada uno abriera una sesión, el servidor juntaría miles.
@@ -151,7 +90,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
         Reserva suya = reservar("Ana", ANA, "A1");
         reservar("Beto", "beto@mail.com", "A2");
 
-        Respuesta mias = conCookie(HttpMethod.GET, "/api/reservas/mias", entrar(ANA, CLAVE));
+        Respuesta mias = conSesion(HttpMethod.GET, "/api/reservas/mias", entrarConGoogle(ANA), null);
 
         assertThat(mias.estado()).isEqualTo(200);
         assertThat(mias.json()).hasSize(1);
@@ -170,7 +109,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
     void cancelaLaSuya() {
         Reserva suya = reservar("Ana", ANA, "A1");
 
-        Respuesta cancelada = conCookie(HttpMethod.POST, cancelacion(suya), entrar(ANA, CLAVE));
+        Respuesta cancelada = conSesion(HttpMethod.POST, cancelacion(suya), entrarConGoogle(ANA), null);
 
         assertThat(cancelada.estado()).isEqualTo(200);
         assertThat(cancelada.json().get("estado").asText()).isEqualTo("CANCELADA");
@@ -182,7 +121,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
     void laDeOtroEs404() {
         Reserva ajena = reservar("Beto", "beto@mail.com", "A2");
 
-        Respuesta respuesta = conCookie(HttpMethod.POST, cancelacion(ajena), entrar(ANA, CLAVE));
+        Respuesta respuesta = conSesion(HttpMethod.POST, cancelacion(ajena), entrarConGoogle(ANA), null);
 
         assertThat(respuesta.estado()).isEqualTo(404);
         assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
@@ -207,29 +146,29 @@ class CuentaDelClienteTest extends PruebaDeApi {
         Reserva suya = reservar("Ana", ANA, "A1");
         pagos.cobrar(suya.getId(), MedioPago.EFECTIVO, "");
 
-        Respuesta respuesta = conCookie(HttpMethod.POST, cancelacion(suya), entrar(ANA, CLAVE));
+        Respuesta respuesta = conSesion(HttpMethod.POST, cancelacion(suya), entrarConGoogle(ANA), null);
 
         assertThat(respuesta.estado()).isEqualTo(409);
         assertThat(respuesta.error()).isEqualTo("La reserva está pagada: solo se puede cancelar una reserva sin cobrar");
     }
 
     @Test
-    @DisplayName("cerrar la sesión deja la cookie sin efecto")
+    @DisplayName("cerrar la sesión la deja sin efecto")
     void cerrarLaSesion() {
-        String cookie = entrar(ANA, CLAVE);
+        MockHttpSession sesion = entrarConGoogle(ANA);
 
-        assertThat(conCookie(HttpMethod.DELETE, "/api/sesion", cookie).estado()).isEqualTo(204);
-        assertThat(conCookie(HttpMethod.GET, "/api/reservas/mias", cookie).estado()).isEqualTo(401);
+        assertThat(conSesion(HttpMethod.DELETE, "/api/sesion", sesion, null).estado()).isEqualTo(204);
+        assertThat(conSesion(HttpMethod.GET, "/api/reservas/mias", sesion, null).estado()).isEqualTo(401);
     }
 
     @Test
     @DisplayName("con la sesión de cliente no se entra a lo del encargado")
     void elClienteNoEsEncargado() {
         Reserva suya = reservar("Ana", ANA, "A1");
-        String cookie = entrar(ANA, CLAVE);
+        MockHttpSession sesion = entrarConGoogle(ANA);
 
-        assertThat(conCookie(HttpMethod.GET, "/api/reservas", cookie).estado()).isEqualTo(403);
-        assertThat(conCookie(HttpMethod.POST, "/api/reservas/" + suya.getId() + "/cancelacion", cookie).estado())
+        assertThat(conSesion(HttpMethod.GET, "/api/reservas", sesion, null).estado()).isEqualTo(403);
+        assertThat(conSesion(HttpMethod.POST, "/api/reservas/" + suya.getId() + "/cancelacion", sesion, null).estado())
                 .isEqualTo(403);
     }
 
@@ -239,7 +178,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
     void abreElCheckoutDeLaSuya() {
         Reserva suya = reservar("Ana", ANA, "A1");
 
-        Respuesta delCliente = conCookie(HttpMethod.POST, checkout(suya), entrar(ANA, CLAVE), QR);
+        Respuesta delCliente = conSesion(HttpMethod.POST, checkout(suya), entrarConGoogle(ANA), QR);
         Respuesta delEncargado = post("/api/reservas/" + suya.getId() + "/checkout", QR);
 
         assertThat(delCliente.estado()).isEqualTo(delEncargado.estado());
@@ -253,7 +192,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
     void elCheckoutDeLaDeOtroEs404() {
         Reserva ajena = reservar("Beto", "beto@mail.com", "A2");
 
-        Respuesta respuesta = conCookie(HttpMethod.POST, checkout(ajena), entrar(ANA, CLAVE), QR);
+        Respuesta respuesta = conSesion(HttpMethod.POST, checkout(ajena), entrarConGoogle(ANA), QR);
 
         assertThat(respuesta.estado()).isEqualTo(404);
         assertThat(respuesta.error()).isEqualTo("No existe ninguna reserva con ese código");
@@ -277,26 +216,5 @@ class CuentaDelClienteTest extends PruebaDeApi {
 
     private static String cancelacion(Reserva reserva) {
         return "/api/reservas/codigo/" + reserva.getCodigo() + "/cancelacion";
-    }
-
-    private String entrar(String email, String clave) {
-        String cookie = pedirComo(HttpMethod.POST, "/api/sesion", null, email, clave)
-                .cabeceras().getFirst(HttpHeaders.SET_COOKIE);
-        return cookie.substring(0, cookie.indexOf(';'));
-    }
-
-    private Respuesta conCookie(HttpMethod metodo, String ruta, String cookie) {
-        return conCookie(metodo, ruta, cookie, null);
-    }
-
-    private Respuesta conCookie(HttpMethod metodo, String ruta, String cookie, String cuerpo) {
-        HttpHeaders cabeceras = new HttpHeaders();
-        cabeceras.add(HttpHeaders.COOKIE, cookie);
-        if (cuerpo != null) {
-            cabeceras.setContentType(MediaType.APPLICATION_JSON);
-        }
-        ResponseEntity<String> respuesta = http.exchange(URI.create(ruta), metodo,
-                new HttpEntity<>(cuerpo, cabeceras), String.class);
-        return new Respuesta(respuesta.getStatusCode().value(), respuesta.getBody(), respuesta.getHeaders());
     }
 }

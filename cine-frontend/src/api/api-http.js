@@ -67,31 +67,20 @@ export const obtenerFuncion = (id, sesion) =>
 export const bloquearButacas = ({ funcionId, sesion, butacas }) =>
   post(`/funciones/${Number(funcionId)}/bloqueos`, { sesion, butacas });
 
-export const registrarCliente = ({ nombre, email, password, codigoReserva }) =>
-  post("/clientes", { nombre, email, password, codigoReserva });
+// Sin credenciales de Google Cloud en el servidor el botón no tiene a dónde ir: la pantalla lo avisa.
+export const ingresoConGoogle = () => get("/sesion/google");
 
-// Basic solo para entrar: después la sesión vive en la cookie HttpOnly y el front no guarda la clave.
-// TextEncoder porque btoa no acepta una clave con tildes o eñes.
-export const ingresar = (email, clave) =>
-  pedir("/sesion", {
-    metodo: "POST",
-    cabeceras: { Authorization: "Basic " + btoa(String.fromCharCode(...new TextEncoder().encode(`${email}:${clave}`))) },
-  });
+// Página entera y no fetch: Google vuelve al backend, que abre la sesión (cookie HttpOnly) y redirige a #/ingresar.
+export const irAGoogle = () => window.location.assign("/oauth2/authorization/google");
 
-// Sin Basic, el backend contesta con quien tenga la cookie, o 401 si no hay sesión.
+// El backend contesta con quien tenga la cookie, o 401 si no hay sesión.
 export const sesionActual = () => post("/sesion");
 
 export const salir = () => pedir("/sesion", { metodo: "DELETE" });
 
 export const modificarCuenta = ({ nombre }) => pedir("/cuenta", { metodo: "PUT", cuerpo: { nombre } });
 
-// El backend rota la cookie al cambiar la clave: la sesión sigue sin volver a entrar.
-export const cambiarClave = ({ actual, nueva }) => post("/cuenta/clave", { actual, nueva });
-
-export const darDeBaja = ({ actual }) => pedir("/cuenta", { metodo: "DELETE", cuerpo: { actual } });
-
-export const recuperarClave = ({ email, codigoReserva, nueva }) =>
-  post("/cuenta/recuperacion", { email, codigoReserva, nueva });
+export const darDeBaja = () => pedir("/cuenta", { metodo: "DELETE" });
 
 export const obtenerMisReservas = () => get("/reservas/mias");
 

@@ -35,16 +35,13 @@ class PantallaClientesTest {
     }
 
     @Test
-    void elEncontradoSeMuestraConSuNombreYHabilitaLaClave() {
+    void elEncontradoSeMuestraConSuNombre() {
         servidor.responder("GET /api/clientes?email=ana%40mail.com", 200,
                 "[{\"id\":5,\"nombre\":\"Ana Prueba\",\"email\":\"ana@mail.com\"}]");
-        assertFalse(encargado.hayBoton("Asignar clave temporal"));
-
         encargado.tipear("Email", " ana@mail.com ").clic("Buscar");
 
         encargado.esperarTexto("Ana Prueba");
-        assertTrue(encargado.hayBoton("Asignar clave temporal"));
-        assertFalse(encargado.hayBoton("Copiar"), "la clave aparece recién al asignarla");
+        assertFalse(encargado.hayBoton("Asignar clave temporal"), "el cliente entra con Google: no tiene clave");
     }
 
     @Test

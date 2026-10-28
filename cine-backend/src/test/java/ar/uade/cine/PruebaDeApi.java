@@ -1,9 +1,13 @@
 package ar.uade.cine;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,16 +16,26 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import ar.uade.cine.infrastructure.importador.CatalogoDePrueba;
+import ar.uade.cine.infrastructure.seguridad.ClientesDeGoogle;
 import ar.uade.cine.infrastructure.seguridad.LimiteDeIntentos;
 import ar.uade.cine.infrastructure.seguridad.ConfiguracionSeguridad;
+import ar.uade.cine.infrastructure.seguridad.PedidosDeGoogle;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 public abstract class PruebaDeApi {
 
@@ -50,6 +64,12 @@ public abstract class PruebaDeApi {
 
     @Autowired
     private LimiteDeIntentos intentos;
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Autowired
+    private ClientesDeGoogle google;
 
     @BeforeEach
     void dejarLaBaseComoNueva() {
@@ -89,6 +109,36 @@ public abstract class PruebaDeApi {
         }
         return respuesta(cliente.exchange(URI.create(ruta), metodo,
                 new HttpEntity<>(cuerpo, cabeceras), String.class));
+    }
+
+    // R28 sin salir a Google: ClientesDeGoogle arma al usuario y oidcLogin() lo deja en la sesión, como el login real.
+    protected MockHttpSession entrarConGoogle(String email) {
+        MvcResult login = hacer(MockMvcRequestBuilders.post("/api/sesion").with(oidcLogin().oidcUser(
+                google.loadUser(PedidosDeGoogle.de(email, "Cliente de Google", true)))));
+        return (MockHttpSession) login.getRequest().getSession(false);
+    }
+
+    protected Respuesta conSesion(HttpMethod metodo, String ruta, MockHttpSession sesion, String cuerpo) {
+        MockHttpServletRequestBuilder pedido = MockMvcRequestBuilders.request(metodo, ruta).session(sesion);
+        if (cuerpo != null) {
+            pedido.contentType(MediaType.APPLICATION_JSON).content(cuerpo);
+        }
+        MockHttpServletResponse respuesta = hacer(pedido).getResponse();
+        HttpHeaders cabeceras = new HttpHeaders();
+        respuesta.getHeaderNames().forEach(nombre -> cabeceras.addAll(nombre, respuesta.getHeaders(nombre)));
+        try {
+            return new Respuesta(respuesta.getStatus(), respuesta.getContentAsString(), cabeceras);
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected MvcResult hacer(RequestBuilder pedido) {
+        try {
+            return mvc.perform(pedido).andReturn();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static Respuesta respuesta(ResponseEntity<String> entidad) {

@@ -1,6 +1,6 @@
 import { Paper, Stack, Text, Title } from "@mantine/core";
 
-// Ingresar y registrarse se ven igual: título, para qué sirve y el formulario en una caja angosta.
+// Título, para qué sirve y el formulario en una caja angosta.
 export function FormularioCentrado({ titulo, bajada, alEnviar, children }) {
   return (
     <Stack gap="lg" maw={420} mx="auto" pt={{ base: "md", sm: "xl" }}>
