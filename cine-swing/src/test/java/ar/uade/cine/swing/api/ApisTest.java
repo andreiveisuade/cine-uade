@@ -28,6 +28,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Lo que manda cada Api de subdominio y cómo lee lo que contesta el backend, contra el mismo servidor falso. */
@@ -157,14 +158,16 @@ class ApisTest {
     }
 
     @Test
-    void elClienteSeBuscaEnUnaListaQuePuedeVenirVacia() {
+    void elClienteSeBuscaEnUnaListaYSinNadieEsUn404() {
         servidor.responder("GET /api/clientes?email=ana%40mail.com", 200,
                 "[{\"id\":3,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\"}]");
         servidor.responder("GET /api/clientes?email=nadie%40mail.com", 200, "[]");
         ApiClientes clientes = new ApiClientes(http);
 
-        assertEquals(3, clientes.buscarClientePorEmail("ana@mail.com").orElseThrow().id());
-        assertTrue(clientes.buscarClientePorEmail("nadie@mail.com").isEmpty());
+        assertEquals(3, clientes.buscarClientePorEmail("ana@mail.com").id());
+        ErrorApi nadie = assertThrows(ErrorApi.class, () -> clientes.buscarClientePorEmail("nadie@mail.com"));
+        assertEquals(404, nadie.estado());
+        assertEquals("No hay ningún cliente con el email nadie@mail.com", nadie.getMessage());
     }
 
     // R27: el pedido no lleva cuerpo; la clave viene en la respuesta y es lo único que se lee.
