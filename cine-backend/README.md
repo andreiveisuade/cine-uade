@@ -6,12 +6,17 @@ HTTP está en [`API.md`](../cine-frontend/API.md); las reglas, en el [manual](..
 
 ## Correrlo
 
-Normalmente con [`cine-docker`](../cine-docker/README.md). A mano, con una MySQL local:
+Normalmente con [`cine-docker`](../cine-docker/README.md). A mano, con un MySQL con la base creada desde
+`src/main/resources/db/schema.sql` y el usuario de `cine-docker/seed/02-admin.sql`:
 
 ```bash
-mvn spring-boot:run            # contra localhost:3306 (variables DB_*)
-timeout 600 mvn test           # perfil test, base H2 en memoria, sin MySQL
+mvn spring-boot:run                                   # contra localhost:3306 (variables DB_*)
+mvn package -DskipTests && java -jar target/cine-api.war   # localhost:8080; el war también va en webapps/ de un Tomcat
+timeout 600 mvn test                                  # perfil test, base H2 en memoria, sin MySQL
 ```
+
+Por defecto la base es `localhost:3306/appsinteractivas`, `root` / `root`. Así se sirve solo la API; la web la
+sirve nginx, o `npm run dev`.
 
 ## Perfiles
 
@@ -48,8 +53,4 @@ adelante. El [`Dockerfile` de la raíz](../Dockerfile) es la imagen de Render: c
 sirve el backend, así web y API comparten origen `https`. Las imágenes de películas viven en la tabla `imagen`,
 no en disco.
 
-## Capas
-
-`controller` → `service` → `repository`, con `dto` en el borde y `model` sin lógica de HTTP. Las reglas
-rechazan con `Rechazo`, que `ManejadorErrores` convierte en `{"error": "…"}`. Capas, subdominios y lo que
-verifica `ArquitecturaTest`: [manual › Las seis capas](../_other/docs/manual/index.html#capas-permitido).
+Capas, subdominios y lo que verifica `ArquitecturaTest`: [manual › Las seis capas](../_other/docs/manual/index.html#capas-permitido).
