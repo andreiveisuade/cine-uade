@@ -117,5 +117,4 @@ export const cancelarReservaPorCodigo = (codigo) =>
 
 export const obtenerPromocionesVigentes = () => get("/promociones/vigentes");
 
-export const obtenerProductosCandy = (todos = false) =>
-  get(`/candy/productos${todos ? "?todos=true" : ""}`);
+export const obtenerProductosCandy = () => get("/candy/productos");

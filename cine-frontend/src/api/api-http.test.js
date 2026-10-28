@@ -27,7 +27,6 @@ describe("api-http: el armado de cada pedido", () => {
     ["una función con la sesión de compra", () => api.obtenerFuncion(5, "a b"), "/api/funciones/5?sesion=a%20b"],
     ["un ticket por código", () => api.obtenerReservaPorCodigo("AB/12"), "/api/reservas/codigo/AB%2F12"],
     ["el candy de la carta", () => api.obtenerProductosCandy(), "/api/candy/productos"],
-    ["todo el candy", () => api.obtenerProductosCandy(true), "/api/candy/productos?todos=true"],
   ])("GET de %s", async (_caso, llamar, url) => {
     await llamar();
 
