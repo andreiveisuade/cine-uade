@@ -15,6 +15,8 @@ public interface ProgramacionRepository extends Repositorio<Programacion> {
 
     boolean existsBySala_Id(int salaId);
 
+    boolean existsByPelicula_Id(int peliculaId);
+
     @Query("""
             select p from Programacion p
             where (:peliculaId is null or p.pelicula.id = :peliculaId)

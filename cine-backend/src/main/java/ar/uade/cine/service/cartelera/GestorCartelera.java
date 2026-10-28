@@ -18,6 +18,7 @@ import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
@@ -32,6 +33,7 @@ public class GestorCartelera {
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
+    private final ProgramacionRepository programacionRepository;
     private final Reloj reloj;
 
     public Pelicula agregar(String titulo, int duracionMinutos, List<Genero> generos,
@@ -154,7 +156,7 @@ public class GestorCartelera {
             throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
         }
-        if (!programaciones.buscar(id, null, null).isEmpty()) {
+        if (programacionRepository.existsByPelicula_Id(id)) {
             throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
                     + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
