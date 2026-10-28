@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-// El borderó INCAA en texto, igual al que escribía el backend; se emite en la PC del encargado, sin Swing.
-// Idéntico al que escribía el backend (GeneradorBorderoTxt, ComprobanteTxt); sin Swing para probarlo solo.
+// El borderó INCAA en texto, que se emite en la PC del encargado; sin Swing para probarlo solo.
 public final class BorderoTxt {
 
     private static final String LINEA = "=".repeat(44);
