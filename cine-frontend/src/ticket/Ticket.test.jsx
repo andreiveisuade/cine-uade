@@ -264,6 +264,8 @@ describe("venta cruzada en el ticket", () => {
     expect(screen.getByText("retirado")).toBeInTheDocument();
     expect(screen.getByText("a retirar")).toBeInTheDocument();
     expect(screen.getByText("sin pagar")).toBeInTheDocument();
+    expect(screen.getByText("Total · 2 entradas y candy")).toBeInTheDocument();
+    expect(screen.getByText("$ 16.700")).toBeInTheDocument();
   });
 
   it("una reserva vencida no ofrece nada para sumar", async () => {

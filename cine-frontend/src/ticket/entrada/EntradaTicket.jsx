@@ -12,6 +12,7 @@ import { TalonEntrada } from "./TalonEntrada.jsx";
 export function EntradaTicket({ reserva, pagoEnVivo }) {
   const atenuada = !vigente(reserva);
   const sala = reserva.sala || reserva.funcion.sala;
+  const items = (reserva.candy ?? []).flatMap((c) => c.items.map((i) => ({ ...i, clave: `${c.id}-${i.productoId}`, estado: estadoDelCandy(c) })));
   return (
     <Entrada talon={reserva.codigo && <TalonEntrada reserva={reserva} pagoEnVivo={pagoEnVivo} />}
       style={atenuada ? { opacity: 0.6, filter: "grayscale(1)" } : undefined}>
@@ -27,8 +28,7 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
 
         <Box>
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
-          {(reserva.candy ?? []).flatMap((c) => c.items.map((i) => ({ ...i, clave: `${c.id}-${i.productoId}`, estado: estadoDelCandy(c) })))
-            .map((i) => (
+          {items.map((i) => (
               <Group key={i.clave} justify="space-between" py={8} style={{ borderBottom: "1px dashed var(--cine-borde)" }}>
                 <Group gap="xs">
                   <Text size="sm">{i.cantidad} × {i.nombre}</Text>
@@ -36,10 +36,12 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
                 </Group>
                 <Text size="sm" fw={600} className="cine-cifras">{precio(i.subtotal)}</Text>
               </Group>
-            ))}
+          ))}
           <Group justify="space-between" align="baseline" pt="sm">
-            <Text fw={650}>Total · {reserva.entradas.length} entrada{reserva.entradas.length === 1 ? "" : "s"}</Text>
-            <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(reserva.total)}</Text>
+            <Text fw={650}>Total · {reserva.entradas.length} entrada{reserva.entradas.length === 1 ? "" : "s"}{items.length ? " y candy" : ""}</Text>
+            <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>
+              {precio(reserva.total + items.reduce((suma, i) => suma + i.subtotal, 0))}
+            </Text>
           </Group>
         </Box>
       </Stack>
