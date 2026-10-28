@@ -663,9 +663,20 @@ docker compose up -d --build
     <section class="doc-section" id="despliegue">
       <h2>Despliegue</h2>
       <figure class="diagram">
-        {{SVG_DESPLIEGUE_RENDER}}
-        <figcaption>Un contenedor en Render sirve API y front por el mismo origen https; la base vive en Aiven</figcaption>
+        {{SVG_MAPA}}
+        <figcaption>Cómo se conecta todo: un contenedor en Render sirve API y front por el mismo origen https, la base vive en Aiven y cada servicio externo entra con su secreto</figcaption>
       </figure>
+
+      <h3 id="recorridos">Un recorrido por cada borde</h3>
+      <figure class="diagram">
+        {{SVG_SECUENCIA_GOOGLE}}
+        <figcaption>Ingresar con Google (rama <code>t79-google</code>): el navegador trae el código, el backend lo canjea con el secret y deja la cookie</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_SECUENCIA_PUERTA}}
+        <figcaption>La puerta: el celular manda el código del QR con Basic y la reserva decide si entra (R18)</figcaption>
+      </figure>
+      <p>Comprar y pagar con Mercado Pago, en <a href="#mercadopago">Pagos</a>.</p>
 
       <h3>Por qué Render Free + Aiven MySQL Free</h3>
       <ul>
@@ -708,20 +719,21 @@ docker compose up -d --build
         <li><strong>Reloj de Buenos Aires</strong> fijo en código, no en <code>TZ</code> (<a href="#decisiones">decisión</a>).</li>
       </ul>
 
-      <h3>Variables (solo en el panel de Render, <code>sync: false</code>)</h3>
+      <h3 id="secretos">De dónde sale cada secreto</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Variable</th><th>Qué es</th></tr></thead>
+          <thead><tr><th>Variable</th><th>La da</th><th>Se carga en</th><th>La usa</th></tr></thead>
           <tbody>
-            <tr><td><code>SPRING_DATASOURCE_URL</code></td><td><code>jdbc:mysql://&lt;host&gt;:&lt;port&gt;/defaultdb?sslMode=REQUIRED</code> de Aiven</td></tr>
-            <tr><td><code>SPRING_DATASOURCE_USERNAME</code>, <code>SPRING_DATASOURCE_PASSWORD</code></td><td>Usuario de Aiven</td></tr>
-            <tr><td><code>MP_ACCESS_TOKEN</code></td><td>Credenciales de prueba de Mercado Pago</td></tr>
-            <tr><td><code>TMDB_TOKEN</code></td><td>Token del importador</td></tr>
-            <tr><td><code>CINE_URL_PUBLICA</code></td><td><code>https://&lt;servicio&gt;.onrender.com</code>: adonde vuelve MP. Sin ella vuelve a localhost</td></tr>
+            <tr><td><code>SPRING_DATASOURCE_URL</code>, <code>_USERNAME</code>, <code>_PASSWORD</code></td><td>Aiven: <code>jdbc:mysql://&lt;host&gt;:&lt;port&gt;/defaultdb?sslMode=REQUIRED</code> y su usuario</td><td>Render</td><td>Hikari: JDBC con TLS, pool de 5</td></tr>
+            <tr><td><code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>MYSQL_ROOT_PASSWORD</code></td><td>Se inventan</td><td><code>cine-docker/.env</code></td><td>La imagen de MySQL al nacer y el backend</td></tr>
+            <tr><td><code>MP_ACCESS_TOKEN</code></td><td>Mercado Pago: credenciales de prueba de Checkout Pro</td><td>Render y <code>.env</code></td><td><code>MercadoPagoHttp</code>: preferencia, búsqueda y conciliación. Vacía: pasarela emulada</td></tr>
+            <tr><td><code>TMDB_TOKEN</code></td><td>TMDB: API Read Access Token</td><td>Render y <code>.env</code></td><td>El importador, a pedido del encargado</td></tr>
+            <tr><td><code>GOOGLE_CLIENT_SECRET</code> (<code>GOOGLE_CLIENT_ID</code> no es secreto: viaja en la URL a Google)</td><td>Google Cloud Console → Clients, tipo aplicación web</td><td>Render y <code>.env</code> (rama <code>t79-google</code>)</td><td><code>oauth2Login</code>: canje del código. Sin ellas no hay botón de Google</td></tr>
+            <tr><td><code>CINE_URL_PUBLICA</code> (pública)</td><td>La URL de Render</td><td>Render y <code>.env</code></td><td>La <code>back_url</code> de Mercado Pago. Sin ella vuelve a localhost</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Ningún valor va al repo. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
+      <p>En Render todas van con <code>sync: false</code> en <code>render.yaml</code>: el nombre está en el repo, el valor solo en el panel (Environment). Ningún valor va al repo. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
 
       <h3>Pasos</h3>
       <ol>
@@ -1638,7 +1650,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <h3 id="mercadopago">Mercado Pago</h3>
       <figure class="diagram">
         {{SVG_PAGO_MERCADOPAGO}}
-        <figcaption>Al volver se consulta a Mercado Pago, no se confía en lo que diga la URL</figcaption>
+        <figcaption>De la butaca al ticket: el pago se cobra cuando el comprador vuelve (se consulta a Mercado Pago, no a la URL) o, si no vuelve, en la conciliación</figcaption>
       </figure>
       <ul>
         <li><strong>Id del checkout = <code>external_reference</code></strong> (<code>&lt;reservaId&gt;-&lt;MEDIO&gt;-&lt;azar&gt;</code>): se conoce antes de crear la preferencia y entra en la <code>back_url</code>. Un id inventado da 404.</li>
