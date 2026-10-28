@@ -613,7 +613,7 @@
 <rect class="resalte" data-m="pagar" x="3895.0238095238096" y="2734.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
 <text class="miembro" data-m="pagar" x="3902.0238095238096" y="2745.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ pagar() : void</text>
 <rect class="resalte" data-m="impedimentoParaCobrar" x="3895.0238095238096" y="2750.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="impedimentoParaCobrar" x="3902.0238095238096" y="2761.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ impedimentoParaCobrar(ahora : LocalDateTime) : Optional&lt;String&gt;</text>
+<text class="miembro" data-m="impedimentoParaCobrar" x="3902.0238095238096" y="2761.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ impedimentoParaCobrar(ahora : LocalDateTime) : Optional&lt;Rechazo&gt;</text>
 <rect class="resalte" data-m="esCobrable" x="3895.0238095238096" y="2766.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
 <text class="miembro" data-m="esCobrable" x="3902.0238095238096" y="2777.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esCobrable(ahora : LocalDateTime) : boolean</text>
 <rect class="resalte" data-m="esCancelable" x="3895.0238095238096" y="2782.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>

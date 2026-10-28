@@ -265,7 +265,7 @@ package "model.ventas" {
     + {static} validarTopeDeButacas(butacas : Collection<?>) : void
     + getTotal() : Dinero
     + pagar() : void
-    + impedimentoParaCobrar(ahora : LocalDateTime) : Optional<String>
+    + impedimentoParaCobrar(ahora : LocalDateTime) : Optional<Rechazo>
     + esCobrable(ahora : LocalDateTime) : boolean
     + esCancelable(ahora : LocalDateTime) : boolean
     + estaPagada() : boolean
