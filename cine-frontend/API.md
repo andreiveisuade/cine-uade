@@ -47,8 +47,8 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | Nivel | Rutas |
 |---|---|
 | Público | `POST` de `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
-| `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
+| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `GET /candy/compras/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
+| `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso`, `POST /candy/retiros` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
 Un cliente con sesión que llama una ruta del encargado recibe `403`, y un empleado que llama `/cuenta`, también. `GET /reservas?email=` ya no existe.
@@ -202,8 +202,8 @@ cancela o vence, el pedido queda `ANULADA` y deja de figurar en `candy`.
 - Reemplaza el pedido entero; `{}` lo saca. Sin `cantidades`, `400` `Faltan las cantidades`.
 - Los topes del mostrador: de 1 a 20 por producto y solo lo disponible (`400`); producto inexistente `404`.
 - Nombre, precio y ahorro se congelan al pedir, como en el mostrador.
-- Solo mientras la reserva se pueda cobrar, con los mismos textos que al cobrar: pagada, cancelada o vencida `409`
-  (R5, R17), función empezada `400` (R19).
+- Mientras la reserva se pueda cobrar, con los mismos textos que al cobrar: cancelada o vencida `409` (R5, R17),
+  función empezada `400` (R19). Pagada, también: ver «Sumar candy a una entrada ya paga».
 - Un pedido `PENDIENTE` no tiene `medio` ni `cobradaEn`; al cobrarse los toma del pago.
 
 `GET /reservas/codigo/{codigo}/cotizacion` (cliente con sesión, solo la suya)
@@ -218,6 +218,30 @@ cancela o vence, el pedido queda `ANULADA` y deja de figurar en `candy`.
 - `total` = `entradas` − `descuento` + `candy`: es el `monto` del checkout que se abra con ese medio. La promo
   corre solo sobre las entradas (R15, R16); `promocionId` y `promocion` no vienen si no hay.
 - No abre preferencias en Mercado Pago. Misma validación que el checkout: `409` o `400` si no se puede cobrar.
+
+### Sumar candy a una entrada ya paga
+
+Las mismas tres rutas, sin pantalla nueva en el backend: con la reserva `PAGADA` el pedido pendiente se cobra solo,
+en un checkout que lleva únicamente el candy.
+
+- `PUT /reservas/codigo/{codigo}/candy` también acepta la reserva pagada, hasta que empieza la función: después,
+  `400` `La función ya empezó: el candy se compra en el mostrador`. Cancelada o vencida sigue en `409`.
+- `GET /reservas/codigo/{codigo}/cotizacion` de una pagada con candy pendiente da `entradas: 0`, `descuento: 0` y el
+  candy en `candy` y `total`. Pagada y sin pedido pendiente: `409` `La reserva está pagada: no se puede cobrar`, como hoy.
+- `POST /reservas/codigo/{codigo}/checkout` `{medio}` con esa reserva abre un checkout solo de candy: `monto` es el
+  candy, la preferencia de MP lleva un solo ítem y el `id` termina en `-CANDY` (`<reservaId>-<MEDIO>-<azar>-CANDY`).
+  Vence en 30 minutos desde que se abre.
+- La vuelta (`GET /checkouts/{id}/retorno`) y la conciliación lo cobran igual que uno de entradas: el pedido pasa a
+  `COBRADA` con el medio y la autorización de MP, sin `Pago` (el borderó no cambia). Vuelve a `/#/ticket/<codigo>`.
+  Si el pedido cambió después de abrirlo, el mismo `409` `El monto cambió después de abrir el pago: …`.
+- `POST /checkouts/{id}/confirmacion` (encargado) no confirma uno de candy: `400` `El checkout <id> es del candy: se
+  cobra cuando el comprador vuelve de la pasarela`.
+
+### Las compras del cliente (CU-16)
+
+`GET /candy/compras/mias` (cliente con sesión): sus compras de candy cobradas, de la más nueva a la más vieja, con la
+forma de `GET /candy/compras`, también las del mostrador a su nombre. Lo pendiente y lo anulado no son compras: se
+ven en la reserva. Sin sesión `401`.
 
 ## Pago
 
@@ -457,6 +481,14 @@ Las fotos de promociones y productos. Primero se sube el archivo y después su `
 `POST /acceso` `{ "codigo": "K7M2P9XQ" }`: marca la entrada usada y devuelve la reserva. `409` si está sin
 pagar (R18) o ya se usó; `400` si no es el día de la función; `404` si no existe. El código tiene 8 caracteres, sin
 `O`, `I`, `0` ni `1`, y se busca sin espacios ni distinción de mayúsculas (`k7m2 p9xq` encuentra `K7M2P9XQ`).
+
+### Retiro del candy
+
+`POST /candy/retiros` `{ "codigo": "K7M2P9XQ" }`: el candy escanea el mismo QR de la entrada y marca como retirado
+todo lo cobrado de esa reserva que todavía no se retiró (lo de la web y lo del mostrador para la reserva). `200` con
+esas compras, cada una con `retiradaEn`. `409` `La entrada no tiene candy para retirar` si no tiene candy cobrado, y
+`El candy de esa entrada ya se retiró el 21/10 19:50` si ya se entregó todo; `404` si el código no existe. El código
+se busca como en `/acceso`. Toda compra de candy trae `retiradaEn` (`null` hasta que se retira).
 
 ## Importador
 
