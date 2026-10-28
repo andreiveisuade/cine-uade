@@ -48,6 +48,23 @@ public final class ServidorFalso {
         }
     }
 
+    /** El último pedido a esa ruta: una pantalla que recarga después de guardar deja otro GET como último. */
+    public Recibido ultimo(String metodoYRuta) {
+        synchronized (recibidos) {
+            for (int i = recibidos.size() - 1; i >= 0; i--) {
+                Recibido r = recibidos.get(i);
+                if ((r.metodo() + " " + r.ruta()).equals(metodoYRuta)) return r;
+            }
+        }
+        throw new AssertionError("Nadie pidió " + metodoYRuta);
+    }
+
+    public long veces(String metodoYRuta) {
+        synchronized (recibidos) {
+            return recibidos.stream().filter(r -> (r.metodo() + " " + r.ruta()).equals(metodoYRuta)).count();
+        }
+    }
+
     private void atender(HttpExchange intercambio) throws IOException {
         String ruta = intercambio.getRequestURI().toString();
         String cuerpo = new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
