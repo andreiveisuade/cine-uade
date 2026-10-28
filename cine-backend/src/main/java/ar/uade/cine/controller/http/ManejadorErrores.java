@@ -43,7 +43,6 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.DemasiadosIntentos;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
-import ar.uade.cine.model.rechazos.SinPrueba;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -74,11 +73,6 @@ public class ManejadorErrores {
     @ExceptionHandler(ConflictoDeNegocio.class)
     public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
         return responder(HttpStatus.CONFLICT, e.getMessage());
-    }
-
-    @ExceptionHandler(SinPrueba.class)
-    public ResponseEntity<ErrorVistaDTO> sinPrueba(SinPrueba e) {
-        return responder(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
     @ExceptionHandler(DemasiadosIntentos.class)

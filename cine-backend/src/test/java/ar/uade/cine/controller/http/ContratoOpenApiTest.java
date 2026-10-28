@@ -139,7 +139,6 @@ class ContratoOpenApiTest extends PruebaDeApi {
     @CsvSource({
             "producto de candy, PedidoProductoDTO, /api/candy/productos",
             "sala,              PedidoSalaDTO,     /api/salas",
-            "cliente,           PedidoClienteDTO,  /api/clientes",
             "promoción,         PedidoPromocionDTO, /api/promociones"})
     @DisplayName("el cuerpo de ejemplo de cada alta se puede enviar tal cual")
     void elEjemploDeLosAltasEsValido(String caso, String esquema, String ruta) {

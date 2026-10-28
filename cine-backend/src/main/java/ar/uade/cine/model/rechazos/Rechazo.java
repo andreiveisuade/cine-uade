@@ -4,7 +4,7 @@ package ar.uade.cine.model.rechazos;
 // No IllegalArgumentException: Spring Data la traduce al salir de un repositorio y el 404 saldría 500.
 // Sellada: un tipo nuevo hace fallar ManejadorErroresTest hasta que ManejadorErrores le dé su status.
 public abstract sealed class Rechazo extends RuntimeException
-        permits DatoInvalido, RecursoNoEncontrado, ConflictoDeNegocio, ButacaOcupada, SinPrueba,
+        permits DatoInvalido, RecursoNoEncontrado, ConflictoDeNegocio, ButacaOcupada,
         DemasiadosIntentos {
 
     protected Rechazo(String mensaje) {

@@ -2,7 +2,6 @@ package ar.uade.cine.model.usuarios;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -58,15 +57,5 @@ class ContrasenaTest {
     @Test
     void noSeMuestraAlImprimirla() {
         assertFalse(new Contrasena("secreta123").toString().contains("secreta123"));
-    }
-
-    // R27: el encargado la dicta; sin caracteres que se confunden y distinta cada vez.
-    @Test
-    void laTemporalEsLegibleYCambiaCadaVez() {
-        String temporal = Contrasena.temporal().valor();
-
-        assertEquals(10, temporal.length());
-        assertFalse(temporal.matches(".*[lo01].*"));
-        assertNotEquals(temporal, Contrasena.temporal().valor());
     }
 }

@@ -52,6 +52,16 @@ class IngresoConGoogleTest extends PruebaDeApi {
         assertThat(destino).contains("redirect_uri=https://cine.example/login/oauth2/code/google");
     }
 
+    // La sesión nace al ir a Google (guarda el pedido) y es la misma cookie que después queda autenticada.
+    @Test
+    @DisplayName("la cookie de la sesión es HttpOnly y SameSite=Lax: la vuelta de Google es otro sitio")
+    void laCookieDeLaSesion() throws Exception {
+        String cookie = sinSeguir("/oauth2/authorization/google", null, null).headers()
+                .firstValue(HttpHeaders.SET_COOKIE).orElseThrow();
+
+        assertThat(cookie).startsWith("JSESSIONID=").contains("HttpOnly").contains("SameSite=Lax");
+    }
+
     @Test
     @DisplayName("si el ingreso falla vuelve a #/ingresar con el motivo, sin sesión")
     void unIngresoFallidoVuelveALaWeb() throws Exception {

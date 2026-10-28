@@ -37,8 +37,6 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.usuarios.Rol;
-import ar.uade.cine.model.usuarios.Usuario;
-import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,8 +62,6 @@ public class ConfiguracionSeguridad {
     // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
 
     public static final String[] POST_PUBLICOS = {
-            "/api/clientes",
-            "/api/cuenta/recuperacion",
             "/api/reservas",
             "/api/funciones/*/bloqueos"};
 
@@ -158,7 +154,6 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.PUT, "/api/cuenta").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.DELETE, "/api/cuenta").hasRole(CLIENTE)
-                        .requestMatchers(HttpMethod.POST, "/api/cuenta/clave").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",
                                 "/api/reservas/codigo/*/checkout").hasRole(CLIENTE)
                         // El acomodador entra al panel para llegar a la puerta.
@@ -183,16 +178,15 @@ public class ConfiguracionSeguridad {
     }
 
     // El email se busca como lo guarda Email: el login tampoco distingue mayúsculas ni espacios.
-    // Sin hash (cliente sin registrar o empleado con NULL) cuenta como email inexistente; User con NULL tiraba.
+    // Solo empleados: el cliente entra con Google (R28). Sin hash cuenta como email inexistente; User con NULL tiraba.
     @Bean
-    public UserDetailsService usuariosConClave(EmpleadoRepository empleados, ClienteRepository clientes) {
+    public UserDetailsService usuariosConClave(EmpleadoRepository empleados) {
         return email -> Email.paraBuscar(email).map(Email::valor)
-                .<Usuario>flatMap(valor -> empleados.findByEmail(valor).<Usuario>map(empleado -> empleado)
-                        .or(() -> clientes.findByEmail(valor)))
-                .filter(usuario -> usuario.getPasswordHash() != null)
-                .map(usuario -> User.withUsername(usuario.getEmail())
-                        .password(usuario.getPasswordHash())
-                        .roles(usuario.getRol().name())
+                .flatMap(empleados::findByEmail)
+                .filter(empleado -> empleado.getPasswordHash() != null)
+                .map(empleado -> User.withUsername(empleado.getEmail())
+                        .password(empleado.getPasswordHash())
+                        .roles(empleado.getRol().name())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("No hay un usuario con ese email"));
     }

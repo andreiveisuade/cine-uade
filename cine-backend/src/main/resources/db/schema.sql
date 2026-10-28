@@ -50,15 +50,14 @@ CREATE TABLE IF NOT EXISTS asiento (
     FOREIGN KEY (sala_id) REFERENCES sala(id) ON DELETE CASCADE
 );
 
--- Clientes y empleados en una tabla, discriminados por rol; password_hash NULL en el cliente, que compra sin sesion
--- 100 y no 64: un hash bcrypt con prefijo mide 68; debe_cambiar_clave marca la clave temporal de boleteria (R27)
+-- Clientes y empleados en una tabla, discriminados por rol; password_hash solo del empleado: el cliente entra con Google (R28)
+-- 100 y no 64: un hash bcrypt con prefijo mide 68
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     rol VARCHAR(15) NOT NULL,
-    password_hash VARCHAR(100) NULL,
-    debe_cambiar_clave BOOLEAN NOT NULL DEFAULT FALSE
+    password_hash VARCHAR(100) NULL
 );
 
 -- Grilla de funciones: patron temporal mas version, proyeccion y precio con los que nace cada funcion

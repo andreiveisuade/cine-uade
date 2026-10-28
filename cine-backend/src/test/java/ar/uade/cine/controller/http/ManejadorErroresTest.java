@@ -39,7 +39,6 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.rechazos.DemasiadosIntentos;
-import ar.uade.cine.model.rechazos.SinPrueba;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.Reserva;
@@ -86,7 +85,6 @@ class ManejadorErroresTest extends PruebaDeApi {
                     case "inexistente" -> new RecursoNoEncontrado("No existe la sala 7");
                     case "conflicto" -> new ConflictoDeNegocio("Ya existe una sala con ese nombre");
                     case "butaca" -> new ButacaOcupada("La butaca B4 ya está ocupada");
-                    case "prueba" -> new SinPrueba("Falta el código");
                     case "intentos" -> new DemasiadosIntentos();
                     default -> new IllegalArgumentException("Illegal base64 character 2d");
                 };
@@ -141,7 +139,6 @@ class ManejadorErroresTest extends PruebaDeApi {
             inexistente, 404, No existe la sala 7
             conflicto,   409, Ya existe una sala con ese nombre
             butaca,      409, La butaca B4 ya está ocupada
-            prueba,      403, Falta el código
             intentos,    429, Demasiados intentos: esperá un minuto y probá de nuevo
             """)
     void cadaRechazoSaleConSuStatusYSuTextoIntacto(String tipo, int estado, String mensaje) {
@@ -230,18 +227,10 @@ class ManejadorErroresTest extends PruebaDeApi {
 
     @Test
     void unPedidoIncompletoEs400ConElMensajeDelPrimerCampoQueFalta() {
-        Respuesta respuesta = post("/api/clientes", "{}");
+        Respuesta respuesta = post("/api/salas", "{}");
 
         assertEquals(400, respuesta.estado());
         assertEquals("Falta el nombre", respuesta.error());
-    }
-
-    @Test
-    void unEmailSinFormatoEs400() {
-        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana-sin-arroba\",\"password\":\"clave-segura\"}");
-
-        assertEquals(400, respuesta.estado());
-        assertEquals("El email tiene que tener la forma usuario@dominio.com", respuesta.error());
     }
 
     @Test
@@ -277,11 +266,6 @@ class ManejadorErroresTest extends PruebaDeApi {
                 + "\"tipo\":\"DOS_D\",\"butacasPorFila\":[5]}");
         assertEquals(400, sala.estado());
         assertEquals("El nombre no puede tener más de 50 caracteres", sala.error());
-
-        Respuesta cliente = post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@"
-                + ("m".repeat(31) + ".").repeat(3) + "com\",\"password\":\"clave-segura\"}");
-        assertEquals(400, cliente.estado());
-        assertEquals("El email no puede tener más de 100 caracteres", cliente.error());
     }
 
     @Test
@@ -299,16 +283,6 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(409, respuesta.getStatusCode().value());
         assertEquals("La reserva cambió mientras se procesaba: volvé a intentarlo", respuesta.getBody().error());
-    }
-
-    @Test
-    void unClienteConEmailRepetidoEs409() {
-        post("/api/clientes", "{\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
-
-        Respuesta respuesta = post("/api/clientes", "{\"nombre\":\"Otra\",\"email\":\"ana@mail.com\",\"password\":\"clave-segura\"}");
-
-        assertEquals(409, respuesta.estado());
-        assertEquals("Ya existe una cuenta con ese email", respuesta.error());
     }
 
     @Test

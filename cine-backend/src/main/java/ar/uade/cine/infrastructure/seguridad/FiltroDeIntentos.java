@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 // Antes del filtro Basic: con el email o la IP bloqueados contesta 429 sin llegar a bcrypt (~1 s en Render).
-// Cuenta todo pedido con Basic: el login del cliente y cada pedido de Swing. El 401 con Basic es clave equivocada.
+// Cuenta todo pedido con Basic, que es solo de empleados: el login y cada pedido de Swing. El 401 es clave equivocada.
 // Sin @Component: como bean, Spring Boot además lo registraría como filtro suelto, fuera de la cadena.
 class FiltroDeIntentos extends OncePerRequestFilter {
 
