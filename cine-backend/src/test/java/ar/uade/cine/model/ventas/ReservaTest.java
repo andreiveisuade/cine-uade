@@ -132,6 +132,27 @@ class ReservaTest {
         assertFalse(pagada().esCancelable(CREADA));
     }
 
+    // R17 sin scheduler: en la base sigue RESERVADA, pero hacia afuera la vencida ya venció.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            recién hecha,        2026-08-14T10:00, RESERVADA
+            al filo de los 30,   2026-08-14T10:30, RESERVADA
+            vencida,             2026-08-14T10:31, EXPIRADA
+            """)
+    void figuraVencidaApenasPasanLosTreintaMinutos(String caso, LocalDateTime ahora, EstadoReserva figura) {
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA);
+
+        assertEquals(figura, reserva.estadoA(ahora), caso);
+        assertEquals(EstadoReserva.RESERVADA, reserva.getEstado(), caso);
+        assertEquals(CREADA.plusMinutes(Reserva.MINUTOS_PARA_PAGAR), reserva.getVenceEn(), caso);
+    }
+
+    @Test
+    void laPagadaYaNoVence() {
+        assertEquals(EstadoReserva.PAGADA, pagada().estadoA(CREADA.plusDays(1)));
+        assertNull(pagada().getVenceEn());
+    }
+
     // La función es el 20/08 a las 20: el acomodador deja pasar ese día y no otro.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """

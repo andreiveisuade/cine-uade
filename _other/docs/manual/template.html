@@ -579,8 +579,8 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-05:</strong> email sin verificar en Google, o de un empleado: vuelve a <code>#/ingresar?error=</code> con el motivo y no entra. Cancelar en Google: «No se pudo ingresar con Google: volvé a intentarlo». Sin credenciales de Google en el servidor, el botón sale deshabilitado (R28).</li>
         <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email es el de Google y no cambia). <code>DELETE /api/cuenta</code>, con una confirmación, cierra la sesión: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas. Entrar de nuevo con Google la reabre (R23, R26).</li>
         <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
-        <li><strong>CU-08:</strong> una reserva vencida, aunque todavía figure <code>RESERVADA</code>, no se cancela: 409 «La reserva N venció: sus butacas volvieron a estar disponibles». Las butacas ya están libres (R17).</li>
-        <li><strong>CU-09:</strong> «Descargar entrada» aparece solo con la reserva vigente (reservada o pagada y sin usar en la puerta). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo».</li>
+        <li><strong>CU-08:</strong> una reserva vencida no se cancela (la API ya la muestra <code>EXPIRADA</code>, aunque en la base siga <code>RESERVADA</code>): 409 «La reserva N venció: sus butacas volvieron a estar disponibles». Las butacas ya están libres (R17).</li>
+        <li><strong>CU-09:</strong> el QR, «Descargar entrada» y «Mostrar en la puerta» aparecen solo con la reserva pagada y sin usar en la puerta: sin pagar, el ticket dice hasta qué hora se paga (<code>venceEn</code>) y en la puerta no serviría (R18). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo».</li>
         <li><strong>CU-10:</strong> contra Producción dormida, el ingreso avisa «Despertando el servidor de producción: puede tardar un minuto» y espera hasta 120 s (contra el resto, 30 s). Con Otro…, una URL mal escrita no deja ingresar.</li>
         <li><strong>CU-10b:</strong> sin token de Aiven, la base sale «Desconocido» y ofrece abrir la consola de Aiven; con el token rechazado, «Aiven rechazó el token: revisá que esté vigente y tenga acceso al proyecto». Sin token, Despertar solo espera a Render.</li>
       </ul>
@@ -1142,7 +1142,7 @@ docker compose up -d --build
         <li>Tokens en <code>app/tema.js</code> y <code>app/tema.css</code>: Archivo Variable (display angosto y cuerpo normal) y un solo color de marca, ámbar; neutros fríos para claro y oscuro, y la banda oscura de la sala.</li>
         <li>Layout común en <code>compartido/layout/</code>: <code>Contenedor</code> de 1280 px con gutters de 16/24/40, <code>Grilla</code> por ancho mínimo y <code>Destacados</code> (el primero a ancho completo): el layout se adapta a la cantidad de ítems.</li>
         <li>Tarjetas de una sola fuente: <code>TarjetaPelicula</code> en <code>cartelera/</code>; <code>TarjetaPromo</code>, <code>TarjetaCombo</code> y <code>TarjetaProducto</code> en <code>promos/tarjetas/</code>, usadas en Promos y en la venta cruzada del ticket.</li>
-        <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código, que se copia con el ícono de al lado; el comprobante de texto del backend se despliega debajo. «Descargar entrada» (solo vigente) arma en el navegador un PDF A4 de una página con la misma entrada sobre fondo claro y el QR en vectores; <code>jspdf</code> se baja recién al tocar el botón.</li>
+        <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código, que se copia con el ícono de al lado; el comprobante de texto del backend se despliega debajo. «Descargar entrada» (solo pagada y sin usar, como el QR) arma en el navegador un PDF A4 de una página con la misma entrada sobre fondo claro y el QR en vectores; <code>jspdf</code> se baja recién al tocar el botón.</li>
         <li>Íconos con <code>@tabler/icons-react</code>; medios de pago y tarifas con ícono mapeado en <code>compartido/iconos.js</code>, como las etiquetas.</li>
       </ul>
       <h3 id="hooks-estado">Hooks y estado</h3>
@@ -1654,7 +1654,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <h3 id="vencimiento">Vencimiento</h3>
       <ul>
         <li><code>RESERVADA</code> vence a los 30 min. El <code>UNIQUE</code> no sabe de tiempo: la primera consulta que la encuentra la pasa a <code>EXPIRADA</code> y libera las butacas (<code>funcion_id = NULL</code>). Sin proceso de fondo (<a href="#mapa-diseno">CQS consciente</a>).</li>
-        <li>La vista trae <code>cancelable: false</code> si venció aunque figure <code>RESERVADA</code>.</li>
+        <li>Hacia afuera ya venció: <code>Reserva.estadoA(ahora)</code> la da <code>EXPIRADA</code> (y <code>cobrable</code>/<code>cancelable</code> en <code>false</code>) aunque la base siga en <code>RESERVADA</code>, y la vista trae <code>venceEn</code> para que el ticket diga hasta qué hora se paga. Leer no escribe: <code>ConsultasReservas</code> es de solo lectura.</li>
       </ul>
 
       <p>El ticket se escribe después del commit (<a href="#observer">Observer</a>).</p>

@@ -169,13 +169,15 @@ reservar: el cliente los muestra y suma, no los recalcula.
   pide carnet: sale de la tarifa, los clientes no lo deducen del nombre).
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
-(R5, R17, R19) y al cancelar (R13, R17). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
+(R5, R17, R19) y al cancelar (R13, R17), y mientras espera el pago, `venceEn`: hasta cuándo se puede pagar (`creadaEn` + 30 min).
+El `estado` es el de ahora: pasado `venceEn` sale `EXPIRADA`, aunque en la base siga `RESERVADA` hasta que alguien
+consulte el mapa de la función (R17 no tiene scheduler).
 
 | Ruta | Qué hace |
 |---|---|
 | `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): el código alcanza para ver el ticket y no tiene por qué decir de quién es. El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
-| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Vencida aunque figure `RESERVADA`: `409` `La reserva N venció: sus butacas volvieron a estar disponibles` (R17). Sin sesión `401`; ajena `404` |
+| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Vencida: `409` `La reserva N venció: sus butacas volvieron a estar disponibles` (R17). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
 | `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
 
@@ -208,7 +210,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 - `GET /checkouts/{id}/retorno` (público): la back_url de MP. Ignora la query que agrega MP, consulta el pago y
   cobra si está aprobado (recargar no cobra dos veces). `302` a `/#/ticket/<codigo>` o
   `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
-  El front abre MP en otra pestaña y, al volver a la del ticket (o con «Ya pagué»), llama esta misma ruta con
+  El front abre MP en la misma pestaña y, al volver al ticket (o con «Ya pagué»), llama esta misma ruta con
   `redirect: "manual"`: en localhost MP no redirige al sitio y así no espera a la conciliación.
 - Un `approved` cuenta solo si coincide monto, moneda (ARS) y tipo de pago del medio; si no, `409` en `/confirmacion` y aviso
   «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería» en el retorno.
@@ -224,7 +226,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `#/ingresar[?error=]` | Botón «Ingresar con Google» (deshabilitado si `GET /sesion/google` dice que no). Al volver con sesión sigue la compra de la que vino (guardada en `sessionStorage`) o va a `#/mis-reservas`; `error` es el motivo del rechazo |
 | `#/mi-cuenta` | Con sesión: nombre y dar de baja (con confirmación) |
 | `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Pagar online. Sin sesión: búsqueda por código |
-| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. `aviso` es el motivo si el pago de MP no se cobró |
+| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. El QR, «Descargar entrada» y «Mostrar en la puerta», solo con la reserva pagada y sin usar; sin pagar dice hasta qué hora se paga (`venceEn`). `aviso` es el motivo si el pago de MP no se cobró |
 
 ---
 

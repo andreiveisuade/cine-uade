@@ -81,8 +81,8 @@ public class VistasReservas {
                                 Pago pago, boolean publica) {
         Funcion f = r.getFuncion();
         List<Asiento> asientos = asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe);
-        return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.getEstado().name(),
-                Fechas.texto(r.getCreadaEn()), r.getCodigo(),
+        return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.estadoA(reloj.ahora()).name(),
+                Fechas.texto(r.getCreadaEn()), Fechas.texto(r.getVenceEn()), r.getCodigo(),
                 Fechas.texto(r.getIngresadaEn()),
                 r.getEntradas().stream().map(this::entrada).toList(),
                 r.getCantidadEntradas(), r.getTotal().aPesos(),

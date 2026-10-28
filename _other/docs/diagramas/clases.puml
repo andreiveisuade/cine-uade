@@ -274,6 +274,8 @@ package "model.ventas" {
     + registrarIngreso(cuando : LocalDateTime) : void
     + estaVigente() : boolean
     + estaVencida(ahora : LocalDateTime) : boolean
+    + estadoA(ahora : LocalDateTime) : EstadoReserva
+    + getVenceEn() : LocalDateTime
   }
   class Entrada <<Entity>> {
     - id : int

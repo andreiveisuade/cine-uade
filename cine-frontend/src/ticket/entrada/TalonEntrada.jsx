@@ -2,7 +2,7 @@ import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
-import { CODIGO_POR_ESTADO, codigoLegible, vigente } from "@/ticket/estadoReserva.js";
+import { CODIGO_POR_ESTADO, codigoLegible, entradaValida } from "@/ticket/estadoReserva.js";
 import { CopiarCodigo } from "./CopiarCodigo.jsx";
 import clases from "./Entrada.module.css";
 
@@ -22,7 +22,7 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
         </Badge>
       )}
       <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.12em" }}>Código de acceso</Text>
-      {vigente(reserva) && (
+      {entradaValida(reserva) && (
         <Box p={8} bg="white" style={{ borderRadius: "var(--mantine-radius-sm)", lineHeight: 0 }}>
           <QRCodeSVG value={reserva.codigo} size={132} level="M" title={`QR del código ${reserva.codigo}`} />
         </Box>

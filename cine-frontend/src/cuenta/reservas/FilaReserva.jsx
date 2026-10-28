@@ -1,7 +1,7 @@
 import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
-import { fechaHora, precio } from "@/compartido/formato.js";
+import { fechaHora, hora, precio } from "@/compartido/formato.js";
 import { COLOR_ESTADO } from "@/ticket/estadoReserva.js";
 import { PagarOnline } from "@/ticket/pago/PagarOnline.jsx";
 import { FechaEnBloque } from "./FechaEnBloque.jsx";
@@ -20,6 +20,7 @@ export function FilaReserva({ reserva: r, cancelando, alCancelar }) {
             </Group>
             <Text size="sm" c="dimmed" className="cine-cifras">
               {fechaHora(r.funcion.inicio)} · {r.sala.nombre} · {r.cantidadEntradas} entrada{r.cantidadEntradas === 1 ? "" : "s"} · {precio(r.total)}
+              {r.estado === "RESERVADA" && ` · pagala antes de las ${hora(r.venceEn)}`}
             </Text>
           </Stack>
         </Group>

@@ -41,7 +41,7 @@ describe("la entrada en PDF", () => {
 
     expect(textos).toContain("RESERVADA");
     expect(textos).not.toContain("PAGADA");
-    expect(textos).toContain("Todavía no está paga. Sirve una sola vez cuando se pague.");
+    expect(textos).toContain("Todavía no está paga: el QR aparece cuando se pague.");
   });
 
   it("entra en una sola página aunque sean diez butacas y el título sea largo", () => {

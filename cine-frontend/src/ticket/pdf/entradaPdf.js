@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { diaDelMes, hora, precio } from "@/compartido/formato.js";
-import { AVISO_POR_ESTADO, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion } from "@/ticket/estadoReserva.js";
+import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion } from "@/ticket/estadoReserva.js";
 
 // Los tonos de tema.js y tema.css sobre papel blanco: se imprime sin gastar tinta en fondos.
 const COLOR = {
@@ -114,7 +114,7 @@ function cuerpo(doc, reserva, poster, arriba, corte) {
   doc.text(titulo, tx, ty, { baseline: "top" });
   ty += titulo.length * tamano * 0.4233 + 1;
   letra(doc, "normal", 9, COLOR.tenue);
-  const aviso = doc.splitTextToSize(AVISO_POR_ESTADO[reserva.estado], tAncho);
+  const aviso = doc.splitTextToSize(avisoDe(reserva), tAncho);
   doc.text(aviso, tx, ty, { baseline: "top" });
   ty += aviso.length * 4.4;
   y = Math.max(y + posterAlto, ty) + 8;
