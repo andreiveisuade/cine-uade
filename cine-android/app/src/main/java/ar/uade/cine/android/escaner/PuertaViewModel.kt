@@ -16,6 +16,7 @@ sealed interface EstadoPuerta {
     data class Validando(val codigo: String) : EstadoPuerta
     data class Adelante(val reserva: Reserva) : EstadoPuerta
     data class NoPasa(val mensaje: String) : EstadoPuerta
+    data class SinVerificar(val mensaje: String) : EstadoPuerta
 }
 
 // Manda cada código al backend y muestra lo que decide; no reenvía el mismo mientras se ve su resultado.
@@ -41,7 +42,9 @@ class PuertaViewModel(
             _estado.value = try {
                 EstadoPuerta.Adelante(api.registrarAcceso(codigo))
             } catch (e: Rechazo) {
-                EstadoPuerta.NoPasa(e.message.orEmpty())
+                // Sin red, timeout o 5xx no se sabe si la entrada pasó: solo un 4xx es la respuesta del backend.
+                if (e.status in 400..499) EstadoPuerta.NoPasa(e.message.orEmpty())
+                else EstadoPuerta.SinVerificar(e.message.orEmpty())
             }
             vuelta = launch {
                 delay(RESULTADO_MS)
@@ -53,6 +56,7 @@ class PuertaViewModel(
     fun escanearOtra() {
         if (_estado.value is EstadoPuerta.Validando) return
         vuelta?.cancel()
+        if (_estado.value is EstadoPuerta.SinVerificar) ultimoCodigo = null
         volvioEn = reloj()
         _estado.value = EstadoPuerta.Escaneando
     }

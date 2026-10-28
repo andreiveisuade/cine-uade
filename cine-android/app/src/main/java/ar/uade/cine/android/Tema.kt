@@ -12,6 +12,7 @@ object Colores {
     val superficie = Color(0xFF1F222B)
     val adelante = Color(0xFF1E8E4E)
     val noPasa = Color(0xFFC62828)
+    val sinVerificar = Color(0xFF455A64)
 }
 
 @Composable

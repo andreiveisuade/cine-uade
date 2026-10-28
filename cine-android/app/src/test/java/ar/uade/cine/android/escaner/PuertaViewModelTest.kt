@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -68,7 +69,6 @@ class PuertaViewModelTest {
             "credenciales | 401 | {\"error\":\"Email o contraseña incorrectos\"} | Email o contraseña incorrectos",
             "no existe | 404 | {\"error\":\"No existe la reserva K7M2P9XQ\"} | No existe la reserva K7M2P9XQ",
             "demasiados intentos | 429 | {\"error\":\"Demasiados intentos\"} | Demasiados intentos",
-            "html | 502 | <html>Bad Gateway</html> | El servidor no está disponible (HTTP 502): volvé a intentarlo en un rato",
         ],
     )
     fun conUnErrorDiceNoPasaConElMensaje(caso: String, status: Int, cuerpo: String, mensaje: String) = runTest(despachador) {
@@ -78,6 +78,33 @@ class PuertaViewModelTest {
         leer(vm, "K7M2P9XQ")
 
         assertEquals(EstadoPuerta.NoPasa(mensaje), vm.estado.value)
+    }
+
+    @Test
+    fun conElServidorCaidoNoDiceNoPasa() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setResponseCode(503).setBody("<html>Service Unavailable</html>"))
+        val vm = viewModel()
+
+        leer(vm, "K7M2P9XQ")
+
+        assertEquals(
+            EstadoPuerta.SinVerificar("El servidor no está disponible (HTTP 503): volvé a intentarlo en un rato"),
+            vm.estado.value,
+        )
+    }
+
+    @Test
+    fun sinRespuestaNoDiceNoPasaYSePuedeReintentarEnSeguida() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        servidor.enqueue(MockResponse().setBody(Ejemplos.RESERVA))
+        val vm = viewModel()
+
+        leer(vm, "K7M2P9XQ")
+        assertInstanceOf(EstadoPuerta.SinVerificar::class.java, vm.estado.value)
+
+        vm.escanearOtra()
+        leer(vm, "K7M2P9XQ")
+        assertInstanceOf(EstadoPuerta.Adelante::class.java, vm.estado.value)
     }
 
     @Test
