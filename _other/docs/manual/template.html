@@ -1924,16 +1924,15 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </ul>
 
       <h3 id="cobertura">Cobertura medida</h3>
-      <p>Medida el 28/10/2026 sobre <code>887d6c99</code> (con el ingreso con Google, T80 y T81). Tests contados de los XML de surefire (<code>target/surefire-reports/TEST-*.xml</code>), no de los <code>.txt</code>, que pueden quedar de corridas viejas.</p>
+      <p>Medida el 28/10/2026 sobre <code>7d407bfa</code> (con el flujo de compra con candy, R30). Tests contados de los XML de surefire (<code>target/surefire-reports/TEST-*.xml</code>), no de los <code>.txt</code>, que pueden quedar de corridas viejas.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th><th>Reporte</th></tr></thead>
           <tbody>
-            <tr><td>Backend</td><td>1471</td><td>97,4 %</td><td>92,5 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
-            <tr><td>Swing</td><td>179</td><td>79,3 %</td><td>63,6 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
-            <tr><td>Front</td><td>142</td><td>89,1 %</td><td>83,8 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
+            <tr><td>Backend</td><td>1558</td><td>97,5 %</td><td>92,9 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
+            <tr><td>Swing</td><td>203</td><td>79,4 %</td><td>64,4 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
+            <tr><td>Front</td><td>171</td><td>90,9 %</td><td>85,1 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
             <tr><td>Android</td><td>—</td><td>37,0 % (134 de 362)</td><td>—</td><td><code>cd cine-android &amp;&amp; ./gradlew test createDebugUnitTestCoverageReport</code></td><td><code>app/build/reports/coverage/test/debug/</code> (html y <code>report.xml</code>)</td></tr>
-            <!-- COBERTURA: fila por módulo y fecha/commit de arriba, re-medidos por la orquestadora sobre main al cierre de T95 -->
           </tbody>
         </table>
       </div>
