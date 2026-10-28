@@ -23,3 +23,6 @@ cine-swing/target/
 
 # Imágenes que genera Andrei a mano; se versionan solo las ya procesadas.
 _other/imagenes/originales/
+
+# Dependencias del motor del diagrama de clases: se bajan con npm install.
+_other/docs/diagramas/dominio/node_modules/
