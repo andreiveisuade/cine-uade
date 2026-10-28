@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.pantallas.ventas;
 
+import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.ServidorFalso;
@@ -23,7 +24,7 @@ class PantallaPuertaTest {
     void levantar() throws IOException {
         servidor = new ServidorFalso();
         ClienteHttp http = new ClienteHttp(servidor.url());
-        acomodador = Operador.en(() -> new PantallaPuerta(new ApiVentas(http)));
+        acomodador = Operador.en(() -> new PantallaPuerta(new ApiVentas(http), new ApiCandy(http)));
     }
 
     @AfterEach
@@ -62,5 +63,30 @@ class PantallaPuertaTest {
 
         acomodador.esperarTexto("Falta completar «Código»");
         assertEquals(0, servidor.veces("POST /api/acceso"));
+    }
+
+    // D7: el mismo código entrega el candy cobrado una sola vez; el segundo intento dice cuándo se retiró.
+    @Test
+    void conElMismoCodigoSeEntregaElCandy() {
+        servidor.responder("POST /api/candy/retiros", 200, "[{\"id\":12,\"reservaId\":5,\"items\":"
+                + "[{\"nombre\":\"Combo clásico\",\"cantidad\":2,\"subtotal\":11000.0}],\"total\":11000.0}]");
+
+        acomodador.tipear("abc5").clic("Entregar candy");
+
+        acomodador.esperarTexto("ENTREGAR");
+        acomodador.esperarTexto("Combo clásico");
+        assertEquals("{\"codigo\":\"abc5\"}", servidor.ultimo("POST /api/candy/retiros").cuerpo());
+        assertEquals(0, servidor.veces("POST /api/acceso"), "entregar el candy no registra el ingreso");
+    }
+
+    @Test
+    void elCandyYaRetiradoNoSeEntregaDeNuevo() {
+        servidor.responder("POST /api/candy/retiros", 409,
+                "{\"error\":\"El candy de esa entrada ya se retiró el 21/10 19:50\"}");
+
+        acomodador.tipear("ABC5").clic("Entregar candy");
+
+        acomodador.esperarTexto("NO SE ENTREGA");
+        acomodador.esperarTexto("El candy de esa entrada ya se retiró el 21/10 19:50");
     }
 }
