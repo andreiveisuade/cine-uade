@@ -33,8 +33,7 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
         {usuario === null && recien && reserva.cobrable && (
           <Text size="sm" c="dimmed" maw="52ch">
             Para pagarla online,{" "}
-            <Anchor component={Link} to="/registro" state={{ email: reserva.cliente.email, volver: pathname }} size="sm">registrate</Anchor>{" "}
-            o <Anchor component={Link} to="/ingresar" state={{ email: reserva.cliente.email, volver: pathname }} size="sm">ingresá</Anchor>{" "}
+            <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="sm">ingresá con Google</Anchor>{" "}
             con {reserva.cliente.email}. Si no, se paga en la boletería.
           </Text>
         )}

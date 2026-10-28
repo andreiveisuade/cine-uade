@@ -1,62 +1,45 @@
-import { useState } from "react";
-import { Anchor, Button, PasswordInput, Text, TextInput } from "@mantine/core";
-import { Link, useLocation, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { Button, Text } from "@mantine/core";
+import { IconBrandGoogle } from "@tabler/icons-react";
+import { Navigate, useLocation, useSearchParams } from "react-router";
 import * as api from "@/api/api-http.js";
-import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
-import { useEnviar } from "@/compartido/hooks/useEnviar.js";
+import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { enfocarPrimero, faltantes } from "@/compartido/formularios/faltantes.js";
 import { FormularioCentrado } from "./FormularioCentrado.jsx";
 import { useSesion } from "./SesionDelCliente.jsx";
 
-export function Ingresar() {
-  const navegar = useNavigate();
-  const avisar = useAvisar();
-  useTitulo("Ingresar");
-  const { setUsuario } = useSesion();
-  // El ticket manda el email con que se reservó, para entrar con ese, y la compra a dónde volver.
-  const { state } = useLocation();
-  const [email, setEmail] = useState(state?.email || "");
-  const [clave, setClave] = useState("");
-  const [faltan, setFaltan] = useState({});
-  const { enviar, enviando, error } = useEnviar();
+// Ir a Google recarga la página entera y el state del router se pierde: la compra a la que volver queda acá.
+const VUELTA = "cine.vuelta";
 
-  async function entrar(evento) {
+export function Ingresar() {
+  useTitulo("Ingresar");
+  const { usuario } = useSesion();
+  const { state } = useLocation();
+  // El backend vuelve a #/ingresar con ?error= si Google o el cine rechazaron el ingreso.
+  const rechazo = useSearchParams()[0].get("error");
+  const [volver] = useState(() => sessionStorage.getItem(VUELTA) ?? state?.volver);
+  const { datos: google, error } = useCargar(api.ingresoConGoogle, []);
+
+  useEffect(() => sessionStorage.removeItem(VUELTA), []);
+
+  function irAGoogle(evento) {
     evento.preventDefault();
-    const vacios = faltantes({
-      email: { valor: email, etiqueta: "tu email" },
-      clave: { valor: clave, etiqueta: "tu contraseña" },
-    });
-    setFaltan(vacios);
-    enfocarPrimero(evento.currentTarget, vacios);
-    if (Object.keys(vacios).length) return;
-    await enviar(async () => {
-      const usuario = await api.ingresar(email.trim(), clave);
-      // Al personal el backend no le abre sesión con cookie: su lugar es la app de escritorio.
-      if (usuario.rol !== "CLIENTE") {
-        throw new Error("Esa cuenta es del personal del cine: entrá desde la aplicación de escritorio");
-      }
-      setUsuario(usuario);
-      avisar(`Hola, ${usuario.nombre}`);
-      // Si vino desde la compra o el ticket, vuelve ahí a seguir.
-      navegar(usuario.debeCambiarClave ? "/mi-cuenta" : state?.volver || "/mis-reservas");
-    });
+    if (volver) sessionStorage.setItem(VUELTA, volver);
+    api.irAGoogle();
   }
 
+  // Ya con sesión (recién vuelto de Google o entrando de nuevo): a la compra que dejó, o a sus reservas.
+  if (usuario) return <Navigate to={volver || "/mis-reservas"} replace />;
   return (
-    <FormularioCentrado titulo="Ingresar" alEnviar={entrar}
-      bajada="Con tu cuenta ves tus reservas, las pagás online o las cancelás.">
-      <TextInput label="Email" type="email" autoComplete="email" required value={email} name="email" error={faltan.email}
-        onChange={(e) => setEmail(e.currentTarget.value)} />
-      <PasswordInput label="Contraseña" autoComplete="current-password" required value={clave} name="clave" error={faltan.clave}
-        onChange={(e) => setClave(e.currentTarget.value)} />
-      <Button type="submit" size="md" mt="xs" loading={enviando}>Ingresar</Button>
-      {error && <ErrorCaja>{error}</ErrorCaja>}
-      <Anchor component={Link} to="/recuperar-clave" state={{ email }} size="sm" ta="center">¿Olvidaste tu clave?</Anchor>
-      <Text size="sm" c="dimmed" ta="center">
-        ¿No tenés cuenta? <Anchor component={Link} to="/registro" state={{ email, volver: state?.volver }} size="sm">Registrate</Anchor>
-      </Text>
+    <FormularioCentrado titulo="Ingresar" alEnviar={irAGoogle}
+      bajada="Con tu cuenta de Google ves tus reservas, las pagás online o las cancelás. Si ya reservaste, usá el mismo email.">
+      <Button type="submit" size="md" variant="default" leftSection={<IconBrandGoogle size={18} />}
+        disabled={!google?.disponible}>Ingresar con Google</Button>
+      {google && !google.disponible && (
+        <Text size="sm" c="dimmed" ta="center">El ingreso con Google no está disponible en este momento: podés reservar igual sin cuenta</Text>
+      )}
+      {(rechazo || error) && <ErrorCaja>{rechazo || error}</ErrorCaja>}
     </FormularioCentrado>
   );
 }

@@ -35,8 +35,7 @@ export function FormularioCliente({ inicial, usuario, enviando, error, alConfirm
           {usuario === null && (
             <Text size="xs" c="dimmed">
               Para pagar online hace falta una cuenta:{" "}
-              <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="xs">ingresá</Anchor> o{" "}
-              <Anchor component={Link} to="/registro" state={{ volver: pathname }} size="xs">registrate</Anchor>, antes o después de reservar.
+              <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="xs">ingresá con Google</Anchor>, antes o después de reservar.
             </Text>
           )}
         </Stack>

@@ -31,6 +31,9 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": SISTEMA,
+      // El ingreso con Google: la ida y la vuelta las atiende el backend.
+      "/oauth2": SISTEMA,
+      "/login/oauth2": SISTEMA,
       "/swagger-ui": SISTEMA,
       "/v3/api-docs": SISTEMA,
     },

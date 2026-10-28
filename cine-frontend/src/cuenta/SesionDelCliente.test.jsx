@@ -28,8 +28,8 @@ describe("barra de la cuenta", () => {
   beforeEach(() => api.obtenerMediosDePago.mockResolvedValue([]));
 
   it.each([
-    ["anónimo", () => Promise.reject(new Error("401")), ["Ingresar", "Registrarme"], ["Mis reservas", "Salir"]],
-    ["con sesión", () => Promise.resolve(ANA), ["Ana", "Mis reservas", "Salir"], ["Ingresar", "Registrarme"]],
+    ["anónimo", () => Promise.reject(new Error("401")), ["Ingresar"], ["Mis reservas", "Salir"]],
+    ["con sesión", () => Promise.resolve(ANA), ["Ana", "Mis reservas", "Salir"], ["Ingresar"]],
   ])("%s muestra solo sus enlaces", async (_caso, respuesta, visibles, ocultos) => {
     api.sesionActual.mockImplementation(respuesta);
     renderConApp(<AppCliente />, { ruta: "/*", en: "/nosotros" });

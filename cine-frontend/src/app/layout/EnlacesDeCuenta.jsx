@@ -25,10 +25,7 @@ export function EnlacesDeCuenta({ alElegir }) {
   if (usuario === undefined) return null;
   if (!usuario) {
     return (
-      <>
-        <Enlace a="/ingresar" alElegir={alElegir}>Ingresar</Enlace>
-        <Enlace a="/registro" alElegir={alElegir}>Registrarme</Enlace>
-      </>
+      <Enlace a="/ingresar" alElegir={alElegir}>Ingresar</Enlace>
     );
   }
   return (
