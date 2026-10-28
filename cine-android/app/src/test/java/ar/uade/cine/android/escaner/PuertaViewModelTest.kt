@@ -53,11 +53,11 @@ class PuertaViewModelTest {
         servidor.enqueue(MockResponse().setBody(Ejemplos.RESERVA))
         val vm = viewModel()
 
-        leer(vm, " k7m2p9xq ")
+        leer(vm, "K7M2 P9XQ")
 
         val estado = vm.estado.value as EstadoPuerta.Adelante
         assertEquals("Hablan las aves", estado.reserva.pelicula?.titulo)
-        assertEquals("""{"codigo":"K7M2P9XQ"}""", servidor.takeRequest().body.readUtf8())
+        assertEquals("""{"codigo":"K7M2 P9XQ"}""", servidor.takeRequest().body.readUtf8())
     }
 
     @ParameterizedTest(name = "{0}")

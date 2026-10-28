@@ -3,7 +3,6 @@ package ar.uade.cine.android.escaner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ar.uade.cine.android.api.ApiPuerta
-import ar.uade.cine.android.api.Codigo
 import ar.uade.cine.android.api.Rechazo
 import ar.uade.cine.android.api.Reserva
 import kotlinx.coroutines.Job
@@ -31,9 +30,9 @@ class PuertaViewModel(
     private var volvioEn = 0L
     private var vuelta: Job? = null
 
-    fun codigoLeido(texto: String) {
-        val codigo = Codigo.normalizar(texto)
-        if (codigo.isEmpty() || _estado.value != EstadoPuerta.Escaneando) return
+    // Viaja tal cual: la forma del código la decide el backend.
+    fun codigoLeido(codigo: String) {
+        if (codigo.isBlank() || _estado.value != EstadoPuerta.Escaneando) return
         // El mismo QR sigue frente a la cámara al volver: se ignora un rato para no rebotarlo.
         if (codigo == ultimoCodigo && reloj() - volvioEn < GRACIA_MS) return
         ultimoCodigo = codigo

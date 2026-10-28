@@ -79,11 +79,10 @@ public final class PantallaPuerta extends Pantalla {
         Validacion v = new Validacion(error);
         String tipeado = v.texto(codigo, "Código", true);
         if (!v.ok()) return;
-        String limpio = tipeado.toUpperCase();
         // El catálogo antes que el acceso: si fallara después, la entrada quedaría usada y en pantalla diría NO PASA.
         Tarea.ejecutar(this, () -> {
             Set<String> tarifas = tarifasQueSeAcreditan();
-            return new Validada(apiVentas.validarEntrada(limpio), tarifas);
+            return new Validada(apiVentas.validarEntrada(tipeado), tarifas);
         }, validada -> {
             mostrarValida(validada.reserva(), validada.seAcreditan());
             reiniciar();

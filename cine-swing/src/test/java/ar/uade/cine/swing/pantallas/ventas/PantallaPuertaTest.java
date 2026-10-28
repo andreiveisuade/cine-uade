@@ -44,7 +44,7 @@ class PantallaPuertaTest {
         acomodador.esperarTexto("ADELANTE");
         acomodador.esperarTexto("Jubilado · pedir carnet");
         acomodador.esperarTexto("2 personas");
-        assertEquals("{\"codigo\":\"ABC5\"}", servidor.ultimo("POST /api/acceso").cuerpo());
+        assertEquals("{\"codigo\":\"abc5\"}", servidor.ultimo("POST /api/acceso").cuerpo());
         assertEquals("", acomodador.valor("Validar entrada"), "el campo queda vacío para el siguiente");
     }
 

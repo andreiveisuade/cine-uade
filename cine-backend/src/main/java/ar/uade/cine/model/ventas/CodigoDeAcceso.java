@@ -14,7 +14,7 @@ public record CodigoDeAcceso(String valor) {
 
     // Se busca sin espacios y en mayúsculas; un null es un código vacío y no encuentra reserva.
     public CodigoDeAcceso {
-        valor = valor == null ? "" : valor.strip().toUpperCase(Locale.ROOT);
+        valor = valor == null ? "" : valor.replaceAll("\\s", "").toUpperCase(Locale.ROOT);
     }
 
     public static CodigoDeAcceso generar() {

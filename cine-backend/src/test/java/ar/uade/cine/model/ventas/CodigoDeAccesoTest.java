@@ -14,6 +14,7 @@ class CodigoDeAccesoTest {
             tal como se generó,         ABCD2345,       ABCD2345
             tipeado en minúsculas,      abcd2345,       ABCD2345
             con espacios en las puntas, '  abcd2345  ', ABCD2345
+            leído del ticket,           ABCD EFGH,      ABCDEFGH
             en blanco,                  '   ',          ''
             sin código,                 ,               ''
             """)
