@@ -12,6 +12,7 @@ El manual es autocontenido (`open manual/index.html`). **No se edita a mano**: s
 
 ```bash
 cd diagramas && plantuml -tsvg *.puml     # tras tocar un .puml
+(cd dominio && npm install && node build.mjs)   # tras tocar clases.puml (clases-dominio.svg)
 archify/exportar.sh capas.archify.json    # tras tocar un .archify.json (skill archify + navegador de cmux)
 cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el HTML
 ```
@@ -25,9 +26,7 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 
 | Archivo | Qué muestra |
 |---|---|
-| `clases-catalogo.puml` | Dominio 1/3: cartelera, salas, funciones y grilla |
-| `clases-ventas.puml` | Dominio 2/3: usuarios, ventas y promociones, con sus Value Objects |
-| `clases-candy-valores.puml` | Dominio 3/3: candy, `Dinero`, `Periodo` y `FranjaHoraria` |
+| `clases.puml` | Dominio completo (bloque `clases-modelo`): lo dibuja `dominio/build.mjs` en `clases-dominio.svg`, interactivo con patrones y GRASP |
 | `capas.archify.json` | Las seis capas y quién llama a quién (Archify) |
 | `casos-de-uso.puml` | Actores y casos de uso |
 | `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |

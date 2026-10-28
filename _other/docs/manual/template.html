@@ -1249,21 +1249,13 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
     <section class="doc-section" id="dominio">
       <h2>Modelo de dominio</h2>
       <ul>
-        <li>Entidades <code>@Entity</code> sin interfaz; solo <code>Promocion</code> y <code>Usuario</code> son jerarquía.</li>
-        <li>Lo que se navega es <code>@ManyToOne</code> LAZY; lo demás, un id. Un valor sin identidad es un <a href="#value-objects">Value Object</a>.</li>
-        <li>Tres vistas por subdominio (en una sola medía casi 7000 px). Una clase de otra vista aparece solo con su nombre, para anclar la flecha.</li>
+        <li>Entidades <code>@Entity</code> sin interfaz. Cuatro jerarquías con comportamiento: <code>Usuario</code>, <code>Producto</code> (<a href="#it-v1">Composite</a>), <code>Promocion</code> y <code>Rechazo</code> (<a href="#rechazos">sellada</a>).</li>
+        <li>Las relaciones son unidireccionales desde la FK: un <code>@ManyToOne</code> o un id (<code>Pago.reservaId</code>), que se dibuja como asociación porque la FK existe. Un valor sin identidad es un <a href="#value-objects">Value Object</a>.</li>
+        <li>Todo <code>model/</code> menos los <code>Validador*</code>. Cada relación se lee como oración del origen al destino, con su multiplicidad en los dos extremos. Pasando el mouse o con un clic en una clase se ven sus relaciones; los botones resaltan los patrones y GRASP.</li>
       </ul>
       <figure class="diagram">
-        {{SVG_DOMINIO_CATALOGO}}
-        <figcaption>1/3: cartelera, salas, funciones y la grilla que las genera</figcaption>
-      </figure>
-      <figure class="diagram">
-        {{SVG_DOMINIO_VENTAS}}
-        <figcaption>2/3: usuarios (la clave vive en <code>Usuario</code>), ventas con su State y promociones con su Factory Method</figcaption>
-      </figure>
-      <figure class="diagram">
-        {{SVG_DOMINIO_CANDY}}
-        <figcaption>3/3: candy y los Value Objects de plata y tiempo</figcaption>
+        {{SVG_DOMINIO}}
+        <figcaption>El dominio: 65 clases en 12 paquetes, con sus atributos, métodos y relaciones tal como están en el código</figcaption>
       </figure>
 
       <h3>Lo que se deriva en vez de guardarse</h3>
@@ -1275,12 +1267,12 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
           <thead><tr><th>Relación</th><th>Tipo</th><th>Por qué</th></tr></thead>
           <tbody>
             <tr><td><code>Sala 1 ◆— 1..* Asiento</code></td><td>Composición</td><td>La butaca no existe fuera de su sala; la FK es de <code>Asiento</code> y <code>Sala</code> no guarda la lista</td></tr>
-            <tr><td><code>Reserva 1 ◆— 1..* Entrada</code></td><td>Composición</td><td>No hay entrada sin reserva</td></tr>
+            <tr><td><code>Reserva 1 ◆— 1..10 Entrada</code></td><td>Composición</td><td>No hay entrada sin reserva; de 1 a 10 butacas por compra</td></tr>
             <tr><td><code>Entrada * → 1 Asiento</code></td><td>Asociación</td><td>Una venta por función, muchas en la historia</td></tr>
             <tr><td><code>Pago 0..1 → 1 Reserva</code></td><td>Asociación</td><td>Nunca dos pagos (<code>UNIQUE</code>)</td></tr>
             <tr><td><code>Funcion</code>, <code>Programacion * → 1 Pelicula</code>, <code>1 Sala</code></td><td>Asociación</td><td>Muchas por película y sala</td></tr>
             <tr><td><code>Funcion * → 0..1 Programacion</code></td><td>Asociación</td><td>La función suelta no tiene grilla y sobrevive a ella</td></tr>
-            <tr><td><code>Producto 1 ◆— 0..* ItemCombo → 1 Producto</code></td><td>Composición</td><td>Un combo contiene productos</td></tr>
+            <tr><td><code>Combo 1 ◆— 2..* ItemCombo → 1 Producto</code></td><td>Composición</td><td>Un combo junta dos productos o más</td></tr>
             <tr><td><code>Pago * → 0..1 Promocion</code></td><td>Asociación</td><td>Una como mucho (R15)</td></tr>
             <tr><td><code>CompraCandy * → 0..1 Cliente</code> / <code>Reserva</code></td><td>Asociación</td><td>Mostrador sin ninguno; web con reserva</td></tr>
           </tbody>
@@ -1290,7 +1282,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
       <h3>Otras decisiones</h3>
       <ul>
         <li><code>{asiento.sala = reserva.funcion.sala}</code> no lo garantiza la base: <code>GestorReservas</code> busca cada butaca entre las de la sala de la función.</li>
-        <li>Los enums son atributos, no clases asociadas; <code>generos [1..*]</code> se dibuja por <a href="#reglas">R7</a>.</li>
+        <li>Un enum va como clase asociada y también como atributo en la caja; <code>generos [1..*]</code> sale de <a href="#reglas">R7</a>.</li>
         <li>Reserva y compra son el mismo registro, de <code>RESERVADA</code> a <code>PAGADA</code> (<a href="#state">State</a>).</li>
         <li><code>Clasificacion</code> guarda la edad mínima, para comparar números.</li>
       </ul>
