@@ -175,7 +175,7 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 |---|---|
 | `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): el código alcanza para ver el ticket y no tiene por qué decir de quién es. El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
-| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
+| `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Vencida aunque figure `RESERVADA`: `409` `La reserva N venció: sus butacas volvieron a estar disponibles` (R17). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
 | `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
 

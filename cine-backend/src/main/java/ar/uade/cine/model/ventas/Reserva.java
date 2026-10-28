@@ -130,8 +130,7 @@ public class Reserva {
             return Optional.of(new ConflictoDeNegocio(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR)));
         }
         if (estaVencida(ahora)) {
-            return Optional.of(new ConflictoDeNegocio(
-                    "La reserva " + id + " venció: sus butacas volvieron a estar disponibles"));
+            return Optional.of(vencida());
         }
         if (funcion.yaEmpezo(ahora)) {
             return Optional.of(new DatoInvalido("La función ya empezó: no se puede cobrar la reserva " + id));
@@ -152,8 +151,13 @@ public class Reserva {
         return estado.estaPagada();
     }
 
-    public void cancelar() {
-        soltarButacasAl(estado.cancelar());
+    // R17: la vencida no se cancela aunque figure RESERVADA; sus butacas las suelta ExpiracionDeReservas.
+    public void cancelar(LocalDateTime ahora) {
+        EstadoReserva siguiente = estado.cancelar();
+        if (estaVencida(ahora)) {
+            throw vencida();
+        }
+        soltarButacasAl(siguiente);
     }
 
     public void expirar() {
@@ -177,6 +181,10 @@ public class Reserva {
         if (!dia.equals(cuando.toLocalDate())) {
             throw new DatoInvalido("La función es el " + dia.format(DIA) + ": se entra solo ese día");
         }
+    }
+
+    private ConflictoDeNegocio vencida() {
+        return new ConflictoDeNegocio("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
     }
 
     // R6: cancelada o vencida, sus butacas vuelven a la venta.

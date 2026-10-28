@@ -164,7 +164,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         laQueCobra.pagar();
         reservaRepository.save(laQueCobra);
-        laQueCancela.cancelar();
+        laQueCancela.cancelar(reloj.ahora());
 
         assertThrows(ObjectOptimisticLockingFailureException.class,
                 () -> reservaRepository.save(laQueCancela));
