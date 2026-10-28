@@ -68,6 +68,9 @@ services:
       MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
       # Adonde MP devuelve al comprador: el sitio como lo ve su navegador, no el nombre del contenedor.
       CINE_URL_PUBLICA: ${CINE_URL_PUBLICA:-http://localhost:${PUERTO_WEB:-8080}}
+      # El ingreso del cliente con Google. Vacíos: se reserva sin cuenta y la web avisa que no se puede ingresar.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     depends_on:
       mysql:
         # Que el contenedor de MySQL esté arriba no significa que la base acepte
