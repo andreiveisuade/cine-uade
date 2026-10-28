@@ -500,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 y R30 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -906,10 +906,10 @@ docker compose up -d --build
             <tr><td><code>Promocion</code> + 3 subclases, <code>CondicionesPromocion</code>, <code>ParametrosPromocion</code></td><td>Cuándo aplica / cuánto descuenta; las crea <code>TipoPromocion.crear</code> (<a href="#promociones-factory">Factory Method</a>); Parameter Objects</td></tr>
             <tr><td><code>Usuario</code> → <code>Cliente</code>, <code>Empleado</code></td><td>Tabla única; el empleado tiene un rol que no puede ser <code>CLIENTE</code></td></tr>
             <tr><td><code>Producto</code> (abstracto), <code>ProductoSuelto</code>, <code>Combo</code> + <code>ItemCombo</code></td><td>Composite: el artículo y el combo contestan precio suelto y ahorro; <code>Combo.armar</code> crea componentes y valida R14 (<a href="#it-v1">V1</a>)</td></tr>
-            <tr><td><code>CompraCandy</code> / <code>ItemCompra</code></td><td>Venta cobrada que crea sus renglones (R11) / renglón con precio congelado</td></tr>
+            <tr><td><code>CompraCandy</code> / <code>ItemCompra</code></td><td>Venta del candy que crea sus renglones (R11), cobrada o pendiente de su reserva (R30) / renglón con precio congelado</td></tr>
             <tr><td>Value Objects</td><td><a href="#value-objects">Lista</a>: se validan y normalizan al construirse</td></tr>
             <tr><td><code>validacion/Regla</code>, <code>Validador*</code>, <code>rechazos/</code></td><td>Guardas fluidas / qué no puede entrar a cada entidad (<a href="#validacion">criterio</a>) / <a href="#rechazos"><code>Rechazo</code></a></td></tr>
-            <tr><td>Enums</td><td><code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code> aplican su multiplicador; <code>EstadoReserva</code>, <code>EstadoRevision</code> son <a href="#state">State</a></td></tr>
+            <tr><td>Enums</td><td><code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code> aplican su multiplicador; <code>EstadoReserva</code>, <code>EstadoRevision</code>, <code>EstadoCompraCandy</code> son <a href="#state">State</a></td></tr>
           </tbody>
         </table>
       </div>
@@ -1229,7 +1229,7 @@ docker compose up -d --build
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>, la URL de Otro… en el ingreso). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R28. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R28 y R30. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1816,7 +1816,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>Un combo es un <code>Producto</code> con sus <code>ItemCombo</code></strong>, no un precio suelto: permite validar <a href="#reglas">R14</a> e imprimir el ahorro. Nace solo por <code>Combo.armar</code> (Creador).</li>
         <li><strong>R14 del otro lado:</strong> abaratar un suelto puede dejar sin convenir a un combo que lo trae; <code>GestorProductos</code> revisa esos combos.</li>
-        <li><strong><code>CompraCandy</code> nace cobrada:</strong> lleva el medio, sin <code>Pago</code> ni estados, así no hace falta una FK polimórfica. R11 lo decide <code>MedioPago</code>, igual que en boletería.</li>
+        <li><strong><code>CompraCandy</code> lleva su propio cobro:</strong> el medio y la autorización, sin <code>Pago</code>, así no hace falta una FK polimórfica y el borderó y la declaración jurada siguen leyendo solo entradas. R11 lo decide <code>MedioPago</code>, igual que en boletería. La de mostrador nace <code>COBRADA</code>; la pedida en la web nace <code>PENDIENTE</code> y la cobra el pago de su reserva (R30, <a href="#it-v14">V14</a>). El arqueo cuenta por <code>cobradaEn</code>.</li>
         <li><strong>Para una reserva, pagada y del mismo cliente:</strong> el candy se retira con la entrada.</li>
                 <li>Carta y venta cambian por motivos distintos: gestores y controllers separados (<code>GestorProductos</code>, <code>GestorCandy</code>).</li>
         <li>Los productos no se borran: salen de la venta y vuelven. Nombre y precio quedan congelados en <code>ItemCompra</code>.</li>
@@ -1879,6 +1879,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R26</td><td>Dar de baja la cuenta cierra la sesión: reservas, pagos y entradas quedan, y entrar de nuevo con Google la vuelve a abrir</td></tr>
             <tr><td><del>R27</del></td><td><del>Solo el ADMINISTRADOR asigna una clave temporal</del>. Cayó: no hay clave que asignar</td></tr>
             <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave</td></tr>
+            <tr><td>R30</td><td>El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes: mismo medio y misma autorización, en caja, por checkout o por la conciliación. Se pide solo mientras la reserva se puede cobrar, y pedir de nuevo reemplaza el pedido. Si la reserva se cancela o vence, el pedido queda anulado. Las promos siguen siendo solo de entradas (R15, R16) y el candy conserva el ahorro de sus combos (R14). Convive con «candy de mostrador con una reserva sin pagar = 409»: las dos aseguran que nunca hay candy cobrado de una reserva sin cobrar</td></tr>
           </tbody>
         </table>
       </div>
@@ -2020,6 +2021,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code>, <code>PromocionTest</code>, <code>TipoTarifaTest</code>, <code>GestorPagosTest</code> (tarifas mixtas)</td></tr>
             <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code>, <code>GestorReservasTest.noSeCancelaUnaReservaVencida</code></td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
+            <tr><td>R30</td><td><code>CompraCandyTest</code> (pendiente, cobrar, anular), <code>GestorCandyTest</code> (<code>elPedido*</code>, <code>cancelarOVencerLaReservaAnulaElPedido</code>, <code>elArqueoCuentaElPedidoRecienCuandoSeCobra</code>, el mostrador sigue en 409), <code>GestorPagosTest</code> (caja, checkout, cotización, <code>siElCandyCambiaDespuesDeAbrirElCheckoutNoSeCobra</code>), <code>ConciliacionPagosTest.laConciliacionCobraTambienElCandyPendiente</code>, <code>MercadoPagoHttpTest.elCandyVaEnSuPropioItem</code>, <code>CuentaDelClienteTest</code> (PUT del candy y cotización, R21), <code>VistasVentasTest</code>, <code>PantallaCobroTest</code> (Swing)</td></tr>
             <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code> (<code>matrizDeRoles</code>: status exacto por rol y familia de rutas), <code>SesionControllerTest</code>, <code>PaginaDePrivacidadTest</code></td></tr>
             <tr><td><a href="#logs">Log</a> sin datos personales</td><td><code>GestorReservasTest.laPuertaRechazadaQuedaEnElLog</code>, <code>ClientesDeGoogleTest.elIngreso*QuedaEnElLogSinElEmail</code></td></tr>
@@ -2140,7 +2142,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><strong>DTO + Assembler</strong></td><td><code>dto/</code> y los <code>Vistas*</code>: el contrato no depende de las entidades (<a href="#dto">DTO</a>)</td></tr>
             <tr><td><strong>Composite</strong> <a href="#it-v1">V1</a></td><td>Component <code>Producto</code>, Leaf <code>ProductoSuelto</code>, Composite <code>Combo</code> (candy)</td></tr>
             <tr><td><strong>Strategy</strong> <a href="#d-strategy-promociones">(promociones)</a> · <a href="#d-strategy-pasarela">(pasarela)</a> · <a href="#it-v2">V2</a></td><td>Promociones: Context <code>GestorPromociones.mejorDescuento</code>, Strategy <code>Promocion.calcularDescuento</code>, ConcreteStrategy las tres subclases (herencia y no composición: la estrategia tiene datos propios persistidos, <code>SINGLE_TABLE</code>). Pasarela: Context <code>GestorPagos</code>, Strategy <code>PasarelaPagos</code>, elegida por <code>Adaptadores</code>. Swing: Context <code>PanelCobro</code>, Strategy <code>FormaDeCobro</code></td></tr>
-            <tr><td><strong>State</strong> <a href="#state">(abajo)</a> · <a href="#d-state-revision">(revisión)</a> · <a href="#it-v7">V7</a></td><td><code>EstadoReserva</code>, <code>EstadoRevision</code> y <code>EstadoImportacion</code>: enums que deciden sus transiciones</td></tr>
+            <tr><td><strong>State</strong> <a href="#state">(abajo)</a> · <a href="#d-state-revision">(revisión)</a> · <a href="#it-v7">V7</a> · <a href="#it-v14">V14</a></td><td><code>EstadoReserva</code>, <code>EstadoRevision</code>, <code>EstadoImportacion</code> y <code>EstadoCompraCandy</code> (<a href="#it-v14">V14</a>): enums que deciden sus transiciones</td></tr>
             <tr><td><strong>Observer</strong> <a href="#observer">(abajo)</a></td><td>Comprobantes después del commit: eventos de los gestores, escuchados por <code>ComprobantesDeVentas</code> y <code>ComprobantesDeCandy</code></td></tr>
             <tr><td><strong>Factory Method</strong> <a href="#d-factory-method">(diagrama)</a></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
             <tr><td><strong>Decorator</strong> <a href="#decorator">(abajo)</a></td><td><code>SesionDeClientes</code></td></tr>
@@ -2321,6 +2323,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <tr><td><a href="#it-v11">V11</a></td><td>Builder de <code>DatosPelicula</code></td><td>Creacional</td><td>Doce parámetros posicionales → Builder</td><td><code>DatosPeliculaBuilder</code></td></tr>
         <tr><td><a href="#it-v12">V12</a></td><td>Command en las acciones de fila (Swing)</td><td>Comportamiento</td><td>Molde repetido 14 veces → Command</td><td><code>AccionDeFila</code>, <code>BotonesDeFila</code>, <code>Pregunta</code> y 8 comandos</td></tr>
         <tr><td><a href="#it-v13">V13</a></td><td>Experto: cada entrada dice si pide carnet</td><td>GRASP</td><td>Cliente que decide por el nombre de una constante → Experto</td><td><code>EntradaVistaDTO.requiereAcreditacion</code> (campo)</td></tr>
+        <tr><td><a href="#it-v14">V14</a></td><td>State en la compra del candy</td><td>Comportamiento</td><td>Estados como nulos y flags → State</td><td><code>EstadoCompraCandy</code></td></tr>
       </tbody></table></div>
       <h3 id="it-v1">V1 · Composite en los combos del candy</h3>
       <p><strong>V0</strong> (antes):</p>
@@ -2542,6 +2545,35 @@ export const conAcreditacion = (entrada) =&gt; entrada.requiereAcreditacion;</co
         <li><strong>Mejora:</strong> un pedido menos en la Puerta de Swing y una sola fuente de la regla.</li>
         <li><strong>Lo protege:</strong> <code>VistasVentasTest.cadaEntradaDiceSiSuTarifaPideCarnet</code> (<code>@EnumSource</code> sobre todas las tarifas), <code>Ticket.test.jsx</code>, <code>PantallaPuertaTest</code>.</li>
       </ul>
+
+      <h3 id="it-v14">V14 · State en la compra del candy</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// CompraCandy nacía cobrada: medio NOT NULL y sin estado
+public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
+                   String codigoAutorizacion, Map&lt;Producto, Integer&gt; cantidades) { … }
+// el candy de la web (R30) habría pedido flags sueltos y un if por cada uno
+if (compra.getMedio() == null &amp;&amp; !compra.isAnulada()) { compra.cobrar(…); }</code></pre>
+      <p><strong>Vn</strong> (después):</p>
+      <pre><code>public enum EstadoCompraCandy {
+    PENDIENTE("sin cobrar") {
+        EstadoCompraCandy cobrar() { return COBRADA; }
+        EstadoCompraCandy anular() { return ANULADA; }
+    },
+    COBRADA("cobrada"), ANULADA("anulada");
+    // el resto rechaza: «La compra de candy está cobrada: no se puede cobrar»
+}
+// CompraCandy, contexto: valida antes de asignar
+public void cobrar(MedioPago medio, String codigo, LocalDateTime cuando) {
+    EstadoCompraCandy siguiente = estado.cobrar();
+    …
+    estado = siguiente;
+}</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> el pedido de la web vive entre que se pide y que se paga la reserva, y puede no cobrarse nunca. Sin estado, «pendiente», «cobrada» y «anulada» habrían sido combinaciones de <code>medio</code> nulo y flags, con la regla de qué se puede hacer en cada caso repartida en <code>GestorCandy</code>, <code>GestorPagos</code> y el arqueo (Open/Closed: un estado nuevo, como el retiro, tocaba todos).</li>
+        <li><strong>Patrón:</strong> State, como <code>EstadoReserva</code>: cada constante sobrescribe lo que permite y el resto rechaza con <code>ConflictoDeNegocio</code>. <code>CompraCandy</code> es el contexto (<code>estado = estado.cobrar()</code>); la de mostrador nace <code>COBRADA</code> y el pedido de la web, <code>PENDIENTE</code> por <code>CompraCandy.pendiente</code>. <code>cobradaEn</code> es el eje del arqueo. <em>(<code>model/candy</code>)</em></li>
+        <li><strong>Mejora:</strong> nadie compara estados afuera del enum: el arqueo y el informe cuentan <code>estaCobrada()</code> y la vista de la reserva oculta lo anulado. Migración <code>19-candy-de-la-web.sql</code> (lo ya vendido queda <code>COBRADA</code>).</li>
+        <li><strong>Lo protege:</strong> <code>CompraCandyTest.loQueYaNoEstaPendienteNoSeCobraNiSeAnula</code> (<code>@CsvSource</code> por transición), <code>GestorCandyTest.cancelarOVencerLaReservaAnulaElPedido</code>, <code>GestorPagosTest.cobrarEnCajaCobraTambienElCandyPendiente</code>, <code>MapeoContraSchemaTest</code>.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="decisiones">
@@ -2610,7 +2642,7 @@ export const conAcreditacion = (entrada) =&gt; entrada.requiereAcreditacion;</co
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R28, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R28 y R30, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>
@@ -2632,7 +2664,7 @@ export const conAcreditacion = (entrada) =&gt; entrada.requiereAcreditacion;</co
           <tbody>
             <tr><td>El texto del buscador de reservas se filtra en Java</td><td>Con decenas de miles de reservas</td></tr>
             <tr><td>Colecciones <code>EAGER</code> (en lotes de 50)</td><td>Se traen aunque no se usen</td></tr>
-            <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.fecha</code></td><td>Con miles de filas en el arqueo</td></tr>
+            <tr><td>Sin índice en <code>funcion.inicio</code>, <code>pago.fecha</code>, <code>compra_candy.cobrada_en</code></td><td>Con miles de filas en el arqueo</td></tr>
             <tr><td><code>reserva.cliente_id</code> apunta a <code>usuario</code> sin filtrar rol</td><td>Lo cubre <code>ClienteRepository</code></td></tr>
             <tr><td>bcrypt en cada pedido (Basic sin sesión)</td><td>Con mucho tráfico del panel</td></tr>
           </tbody>

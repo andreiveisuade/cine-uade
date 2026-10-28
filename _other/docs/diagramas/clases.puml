@@ -533,11 +533,28 @@ package "model.candy" {
     - fecha : LocalDateTime
     - medio : MedioPago
     - codigoAutorizacion : String
+    - estado : EstadoCompraCandy
+    - cobradaEn : LocalDateTime
     - items : List<ItemCompra>
     + CompraCandy(clienteId : Integer, reservaId : Integer, fecha : LocalDateTime, medio : MedioPago, codigoAutorizacion : String, cantidades : Map<Producto, Integer>)
+    + {static} pendiente(clienteId : int, reservaId : int, fecha : LocalDateTime, cantidades : Map<Producto, Integer>) : CompraCandy
     + {static} validarPedido(cantidades : Map<?, Integer>, medio : MedioPago, codigoAutorizacion : String) : String
+    + cobrar(medio : MedioPago, codigoAutorizacion : String, cuando : LocalDateTime) : void
+    + anular() : void
+    + estaPendiente() : boolean
+    + estaCobrada() : boolean
     + getTotal() : Dinero
     + getAhorro() : Dinero
+  }
+  enum EstadoCompraCandy {
+    PENDIENTE
+    COBRADA
+    ANULADA
+    - etiqueta : String
+    ~ cobrar() : EstadoCompraCandy
+    ~ anular() : EstadoCompraCandy
+    + esperaCobro() : boolean
+    + estaCobrada() : boolean
   }
   class ItemCompra <<Entity>> {
     - id : int
@@ -700,7 +717,8 @@ Producto "1" *--> "1" Dinero : cuesta >
 Combo "1" *--> "2..*" ItemCombo : se arma con >
 ItemCombo "0..*" --> "1" Producto : cuenta unidades de >
 CompraCandy "1" *--> "1..*" ItemCompra : se compone de >
-CompraCandy "0..*" --> "1" MedioPago : se cobra con >
+CompraCandy "0..*" --> "0..1" MedioPago : se cobra con >
+CompraCandy "0..*" --> "1" EstadoCompraCandy : está en >
 CompraCandy "0..*" --> "0..1" Cliente : se le vende a >
 CompraCandy "0..*" --> "0..1" Reserva : acompaña a >
 ItemCompra "0..*" --> "1" Producto : vende >
