@@ -16,7 +16,7 @@ import java.util.prefs.Preferences;
 // Las credenciales viven solo en memoria: una sesión rechazada no tiene qué rescatar, solo volver a pedirlas.
 public final class Principal {
 
-    // En la compu del encargado, no en el repo: el último servidor elegido.
+    // En la compu del encargado, no en el repo: el último servidor elegido y la cuenta de Aiven.
     private final Preferences preferencias = Preferences.userNodeForPackage(Principal.class);
     private ClienteHttp http;
     private Apis apis;
@@ -51,7 +51,7 @@ public final class Principal {
     }
 
     private void abrirPanel(Servidor servidor, Empleado empleado) {
-        panel = new VentanaPrincipal(apis, servidor, empleado, () -> {
+        panel = new VentanaPrincipal(apis, servidor, empleado, preferencias, () -> {
             http.olvidarCredenciales();
             panel.dispose();
             panel = null;

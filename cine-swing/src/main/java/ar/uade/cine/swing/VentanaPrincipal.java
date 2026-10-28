@@ -9,6 +9,7 @@ import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.produccion.VentanaProduccion;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -28,6 +29,7 @@ import java.awt.Font;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 
 // El marco del panel: cabecera, menú según el rol y la pantalla elegida, recreada para mostrar datos frescos.
 // Cada entrada del menú crea la pantalla de nuevo, así muestra datos frescos.
@@ -49,13 +51,14 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private final ButtonGroup grupo = new ButtonGroup();
 
-    public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Runnable alSalir) {
+    public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Preferences preferencias,
+                            Runnable alSalir) {
         super("Cine UADE · " + servidor.marca() + " · " + empleado.nombre());
         this.pantallas = new Pantallas(apis, this);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         JPanel raiz = new JPanel(new BorderLayout());
-        raiz.add(cabecera(empleado, servidor, alSalir), BorderLayout.NORTH);
+        raiz.add(cabecera(empleado, servidor, preferencias, alSalir), BorderLayout.NORTH);
         // El rol no es cosmético: el acomodador ni ve el resto del menú, y el backend además le cierra las rutas.
         List<Grupo> menu = empleado.esAdministrador() ? MENU
                 : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
@@ -73,7 +76,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         ir(empleado.esAdministrador() ? Destino.PELICULAS : Destino.PUERTA);
     }
 
-    private JPanel cabecera(Empleado empleado, Servidor servidor, Runnable alSalir) {
+    private JPanel cabecera(Empleado empleado, Servidor servidor, Preferences preferencias, Runnable alSalir) {
         JPanel cabecera = new JPanel();
         cabecera.setLayout(new BoxLayout(cabecera, BoxLayout.X_AXIS));
         cabecera.setBorder(BorderFactory.createCompoundBorder(
@@ -89,6 +92,10 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         cabecera.add(Box.createHorizontalStrut(12));
         cabecera.add(new JLabel(empleado.nombre()));
         cabecera.add(Box.createHorizontalStrut(12));
+        JButton produccion = new JButton("Estado de producción");
+        produccion.addActionListener(e -> VentanaProduccion.abrir(this, preferencias));
+        cabecera.add(produccion);
+        cabecera.add(Box.createHorizontalStrut(8));
         JButton salir = new JButton("Salir");
         salir.addActionListener(e -> alSalir.run());
         cabecera.add(salir);

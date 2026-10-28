@@ -25,7 +25,8 @@ no da de baja clientes.
 El servidor se elige en el ingreso (Local, Producción u Otro… con su URL) y queda recordado en esta compu;
 `-Dcine.api.url=...` o `CINE_API_URL` mandan sobre esa elección. Para cambiarlo, Salir y elegir otro.
 
-Render free puede tardar hasta un minuto en despertar; el login espera. Ahí `cine2026` no vale: las claves son
+Render free puede tardar en despertar; el login espera y **Estado de producción** (en el ingreso con Producción y en
+la cabecera) muestra Render y Aiven y los despierta, con `AIVEN_TOKEN` o el token cargado en **Configurar Aiven…**. Ahí `cine2026` no vale: las claves son
 las que se cargaron con `cargar-aiven.sh`. Tema claro con `-Dcine.tema=claro`. Usuarios de demo:
 [Cómo levantarlo](../_other/COMO-LEVANTARLO.md#usarlo).
 

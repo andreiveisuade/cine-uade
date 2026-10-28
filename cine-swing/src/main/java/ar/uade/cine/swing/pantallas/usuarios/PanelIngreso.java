@@ -12,6 +12,7 @@ import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
+import ar.uade.cine.swing.pantallas.produccion.VentanaProduccion;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -44,6 +45,7 @@ public final class PanelIngreso extends JPanel {
     private final JPasswordField password = new JPasswordField(22);
     private final JLabel mensaje = Componentes.texto(" ");
     private final JButton ingresar = new JButton("Ingresar");
+    private final JButton estado = new JButton("Estado de producción");
 
     public PanelIngreso(Preferences preferencias, Function<Servidor, ApiSesion> conectar, String aviso,
                         BiConsumer<Servidor, Empleado> alIngresar) {
@@ -66,12 +68,14 @@ public final class PanelIngreso extends JPanel {
                 .obligatorio("Email", email)
                 .obligatorio("Contraseña", password)
                 .ancho(mensaje)
-                .ancho(ingresar));
+                .ancho(ingresar)
+                .ancho(estado));
 
         mostrar(Servidor.configurado().orElseGet(() ->
                 Servidor.de(preferencias.get(CLAVE_SERVIDOR, Servidor.LOCAL.url()))));
         servidor.addActionListener(e -> mostrarUrl());
         ingresar.addActionListener(e -> ingresar());
+        estado.addActionListener(e -> VentanaProduccion.abrir(this, preferencias));
     }
 
     JButton botonIngresar() {
@@ -88,6 +92,7 @@ public final class PanelIngreso extends JPanel {
         boolean otro = Campos.elegido(servidor) == Entorno.OTRO;
         etiquetaUrl.setVisible(otro);
         url.setVisible(otro);
+        estado.setVisible(Campos.elegido(servidor) == Entorno.PRODUCCION);
         Window ventana = SwingUtilities.getWindowAncestor(this);
         if (ventana != null) ventana.pack();
     }
@@ -110,7 +115,7 @@ public final class PanelIngreso extends JPanel {
         ingresar.setEnabled(false);
         Tarea.ejecutar(this, () -> sesion.login(correo, clave, elegido.esperaDelIngreso()),
                 empleado -> alIngresar.accept(elegido, empleado), error -> {
-            // En el login el 401 es clave incorrecta y va junto al formulario; sin conexión o un 500 van al diálogo global.
+            // En el login el 401 es clave incorrecta y va junto al formulario; sin conexión o un 500, al diálogo.
             ingresar.setEnabled(true);
             mensaje.setForeground(Colores.error());
             if (error.estado() != 401 && !error.esDelFormulario()) {
