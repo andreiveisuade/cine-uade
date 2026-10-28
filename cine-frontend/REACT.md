@@ -9,7 +9,7 @@ dónde lo usamos (archivo y línea), el error típico y la pregunta que puede ha
 **Qué es.** Un componente es una función que recibe datos y devuelve qué dibujar. JSX es la sintaxis parecida a
 HTML que Vite compila a llamadas de JavaScript; entre `{}` va cualquier expresión.
 
-**Dónde lo usamos.** `cartelera/TarjetaPelicula.jsx:9`
+**Dónde lo usamos.** `cartelera/TarjetaPelicula.jsx:12`
 
 ```jsx
 export function TarjetaPelicula({ pelicula, previa }) {
@@ -33,7 +33,7 @@ componente con mayúscula es una función nuestra, con minúscula una etiqueta d
 **Qué es.** Las props son los parámetros del componente: bajan del padre al hijo y el hijo no las modifica. Para
 que el hijo avise algo, el padre le pasa una función; en el repo se llaman `alVerbo`.
 
-**Dónde lo usamos.** `compra/funcion/Funcion.jsx:47` y `compra/mapa/BotonButaca.jsx:12`
+**Dónde lo usamos.** `compra/funcion/Funcion.jsx:48` y `compra/mapa/BotonButaca.jsx:12`
 
 ```jsx
           <MapaButacas sala={funcion.sala} asientos={funcion.asientos}
@@ -55,7 +55,7 @@ prop (`alElegir(asiento)`); el estado vive en el padre.
 **Qué es.** `useState` guarda un valor que sobrevive entre renders y, al cambiarlo con el setter, vuelve a dibujar
 el componente. React compara por referencia: hay que crear un objeto o arreglo nuevo, no mutar el que hay.
 
-**Dónde lo usamos.** `compra/funcion/useAlternarButaca.js:12` y `compartido/estado/Avisos.jsx:11`
+**Dónde lo usamos.** `compra/funcion/useAlternarButaca.js:21` y `compartido/estado/Avisos.jsx:11`
 
 ```js
     const nuevas = butacas[asiento.codigo]
@@ -126,7 +126,7 @@ equivocado; con el id, cada ítem conserva el suyo.
 **Qué es.** Un input controlado muestra lo que dice el estado y cada tecla actualiza ese estado; el estado es la
 única verdad. El `onSubmit` del `<form>` hace `preventDefault()` para que el navegador no recargue la página.
 
-**Dónde lo usamos.** `compra/confirmar/FormularioCliente.jsx:12` y `:28`
+**Dónde lo usamos.** `compra/confirmar/FormularioCliente.jsx:13` y `:30`
 
 ```jsx
   function confirmar(evento) {
@@ -427,7 +427,6 @@ vi.mock("@/api/api-http.js");
 ```jsx
 beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
-  api.obtenerTarifas.mockResolvedValue([{ nombre: "GENERAL", multiplicador: 1 }]);
   api.obtenerFuncion.mockResolvedValue(FUNCION);
   renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
 });
