@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 sealed interface EstadoPuerta {
     data object Escaneando : EstadoPuerta
-    data class Validando(val codigo: String) : EstadoPuerta
+    data object Validando : EstadoPuerta
     data class Adelante(val reserva: Reserva) : EstadoPuerta
     data class NoPasa(val mensaje: String) : EstadoPuerta
     data class SinVerificar(val mensaje: String) : EstadoPuerta
@@ -37,7 +37,7 @@ class PuertaViewModel(
         // El mismo QR sigue frente a la cámara al volver: se ignora un rato para no rebotarlo.
         if (codigo == ultimoCodigo && reloj() - volvioEn < GRACIA_MS) return
         ultimoCodigo = codigo
-        _estado.value = EstadoPuerta.Validando(codigo)
+        _estado.value = EstadoPuerta.Validando
         viewModelScope.launch {
             _estado.value = try {
                 EstadoPuerta.Adelante(api.registrarAcceso(codigo))

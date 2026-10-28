@@ -88,7 +88,7 @@ fun PantallaPuerta(sesion: Sesion, alSalir: () -> Unit) {
         Barra(sesion, vm::codigoLeido, alSalir, Modifier.align(Alignment.BottomCenter))
 
         when (val actual = estado) {
-            is EstadoPuerta.Validando -> Box(
+            EstadoPuerta.Validando -> Box(
                 Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center,
             ) { EsperandoServidor() }
