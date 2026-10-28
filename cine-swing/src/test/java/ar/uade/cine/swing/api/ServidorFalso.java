@@ -23,6 +23,7 @@ public final class ServidorFalso {
     private final HttpServer servidor;
     private final Map<String, Respuesta> respuestas = new LinkedHashMap<>();
     private final List<Recibido> recibidos = new ArrayList<>();
+    private volatile long ultimoPedido;
 
     public ServidorFalso() throws IOException {
         servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -34,7 +35,17 @@ public final class ServidorFalso {
         return "http://127.0.0.1:" + servidor.getAddress().getPort() + "/";
     }
 
+    /** Espera a que dejen de llegar pedidos: una pantalla que recarga después de guardar no choca con el puerto cerrado. */
     public void bajar() {
+        long limite = System.currentTimeMillis() + 5000;
+        while (System.currentTimeMillis() < limite && System.currentTimeMillis() - ultimoPedido < 300) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
         servidor.stop(0);
     }
 
@@ -45,6 +56,23 @@ public final class ServidorFalso {
     public Recibido ultimo() {
         synchronized (recibidos) {
             return recibidos.get(recibidos.size() - 1);
+        }
+    }
+
+    /** El último pedido a esa ruta: una pantalla que recarga después de guardar deja otro GET como último. */
+    public Recibido ultimo(String metodoYRuta) {
+        synchronized (recibidos) {
+            for (int i = recibidos.size() - 1; i >= 0; i--) {
+                Recibido r = recibidos.get(i);
+                if ((r.metodo() + " " + r.ruta()).equals(metodoYRuta)) return r;
+            }
+        }
+        throw new AssertionError("Nadie pidió " + metodoYRuta);
+    }
+
+    public long veces(String metodoYRuta) {
+        synchronized (recibidos) {
+            return recibidos.stream().filter(r -> (r.metodo() + " " + r.ruta()).equals(metodoYRuta)).count();
         }
     }
 
@@ -67,5 +95,6 @@ public final class ServidorFalso {
             if (bytes.length > 0) intercambio.getResponseBody().write(bytes);
         }
         intercambio.close();
+        ultimoPedido = System.currentTimeMillis();
     }
 }

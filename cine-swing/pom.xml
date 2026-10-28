@@ -86,8 +86,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.5.2</version>
         <configuration>
-          <!-- Los tests no abren ventanas: sin esto, en una máquina sin pantalla (CI) AWT falla al cargar. -->
-          <argLine>-Djava.awt.headless=true</argLine>
+          <!-- Los tests no abren ventanas: sin esto, en una máquina sin pantalla (CI) AWT falla al cargar.
+               @{argLine} conserva el agente de JaCoCo, que si no queda pisado. -->
+          <argLine>@{argLine} -Djava.awt.headless=true</argLine>
           <!-- El humo pide el backend levantado: queda fuera del test de siempre y corre con -Phumo. -->
           <excludedGroups>${grupos.excluidos}</excludedGroups>
           <groups>${grupos}</groups>
@@ -132,6 +133,22 @@
         <configuration>
           <mainClass>${clase.principal}</mainClass>
         </configuration>
+      </plugin>
+      <!-- Cobertura: el agente se engancha a los tests y `mvn test` deja el reporte en target/site/jacoco/. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.13</version>
+        <executions>
+          <execution>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>reporte</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
