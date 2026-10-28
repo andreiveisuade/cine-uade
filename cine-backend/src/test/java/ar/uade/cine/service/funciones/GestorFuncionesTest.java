@@ -86,6 +86,18 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 
+    // R19: la cartelera ofrece solo lo que todavía se puede comprar; la que ya empezó sale de la lista.
+    @Test
+    void laCarteleraDeUnaPeliculaNoOfreceFuncionesQueYaEmpezaron() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 20, 0));
+
+        List<LocalDateTime> inicios = funciones.proximasDe(1).stream().map(Funcion::getInicio).toList();
+
+        assertEquals(List.of(LocalDateTime.of(2026, 8, 21, 20, 0)), inicios);
+    }
+
     // Dos altas iguales a la vez pasan R3 juntas: el UNIQUE frena la segunda y el cine responde 409, no 500.
     @Test
     void laMismaFuncionDadaDeAltaDosVecesALaVezEsUnConflicto() {

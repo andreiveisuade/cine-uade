@@ -81,7 +81,7 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 |---|---|
 | `GET /cartelera?genero=` | Las películas en exhibición |
 | `GET /peliculas/{id}` | Una película |
-| `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
+| `GET /peliculas/{id}/funciones` | Sus funciones que todavía no empezaron (R19), por `inicio`, con la sala |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
 
 ### El ingreso con Google (R28)

@@ -135,9 +135,13 @@ public class GestorFunciones {
                 periodo.hasta() == null ? null : periodo.hasta().plusDays(1).atStartOfDay());
     }
 
+    // R19: la cartelera ofrece solo lo que todavía se puede comprar.
     @Transactional(readOnly = true)
-    public List<Funcion> listarPorPelicula(int peliculaId) {
-        return funcionRepository.findByPelicula_IdOrderByInicioAsc(peliculaId);
+    public List<Funcion> proximasDe(int peliculaId) {
+        LocalDateTime ahora = reloj.ahora();
+        return funcionRepository.findByPelicula_IdOrderByInicioAsc(peliculaId).stream()
+                .filter(f -> !f.yaEmpezo(ahora))
+                .toList();
     }
 
     @Transactional(readOnly = true)

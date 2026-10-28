@@ -73,12 +73,12 @@ public class PeliculaController {
         return vistas.pelicula(visiblePara(pedido, id));
     }
 
-    @Operation(summary = "Las funciones programadas de una película")
+    @Operation(summary = "Las funciones de una película que todavía no empezaron")
     @GetMapping("/api/peliculas/{id}/funciones")
     public List<FuncionVistaDTO> funcionesDe(@PathVariable int id, HttpServletRequest pedido) {
         // Se busca antes y con el criterio del detalle: sin eso saldría [] y delataría una pendiente
         visiblePara(pedido, id);
-        return vistas.funciones(funciones.listarPorPelicula(id));
+        return vistas.funciones(funciones.proximasDe(id));
     }
 
     private Pelicula visiblePara(HttpServletRequest pedido, int id) {
