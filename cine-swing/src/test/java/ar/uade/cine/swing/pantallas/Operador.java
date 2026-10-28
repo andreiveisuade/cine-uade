@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
@@ -168,6 +169,19 @@ public final class Operador {
                                 : c instanceof AbstractButton b ? Stream.of(b.getText()) : Stream.empty()))
                 .filter(t -> t != null && !t.isBlank())
                 .toList();
+    }
+
+    /** Los textos largos de solo lectura: un informe, un detalle, un ticket. */
+    public List<String> areas() {
+        List<String> areas = new ArrayList<>();
+        enEdt(() -> componentes(pantalla).filter(c -> c instanceof JTextArea).filter(Operador::visible)
+                .forEach(c -> areas.add(((JTextArea) c).getText())));
+        return areas;
+    }
+
+    public void esperarArea(String parte) {
+        esperar(() -> componentes(pantalla).filter(c -> c instanceof JTextArea).filter(Operador::visible)
+                .anyMatch(c -> ((JTextArea) c).getText().contains(parte)));
     }
 
     public String valor(String etiqueta) {
