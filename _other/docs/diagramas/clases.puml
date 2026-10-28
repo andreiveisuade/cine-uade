@@ -269,7 +269,7 @@ package "model.ventas" {
     + esCobrable(ahora : LocalDateTime) : boolean
     + esCancelable(ahora : LocalDateTime) : boolean
     + estaPagada() : boolean
-    + cancelar() : void
+    + cancelar(ahora : LocalDateTime) : void
     + expirar() : void
     + registrarIngreso(cuando : LocalDateTime) : void
     + estaVigente() : boolean
@@ -386,7 +386,7 @@ package "model.usuarios" {
     - valor : String
     + Email(valor : String)
     + enmascarado() : String
-    + {static} paraBuscar(texto : String) : Optional<Email>
+    + {static} paraBuscar(texto : String) : Optional<String>
   }
   class Contrasena <<ValueObject / Record>> {
     - valor : String

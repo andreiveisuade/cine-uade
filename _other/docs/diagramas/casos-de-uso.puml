@@ -18,11 +18,12 @@ rectangle Sistema {
   usecase "CU-07b Pagar online\npor checkout" as CU07b
   usecase "CU-07c Cobrar lo que la\npasarela aprobo" as CU07c
   usecase "CU-08 Cancelar reserva" as CU08
-  usecase "CU-09 Ver mis reservas" as CU09
+  usecase "CU-09 Ver mis reservas\ny descargar la entrada" as CU09
   usecase "CU-15 Comprar en el candy" as CU15
   usecase "CU-15b Agregar candy\na mi compra web" as CU15b
   usecase "CU-16 Ver mis compras\ndel candy" as CU16
-  usecase "CU-10 Iniciar sesion" as CU10
+  usecase "CU-10 Iniciar sesion\neligiendo el servidor" as CU10
+  usecase "CU-10b Ver el estado de\nproduccion y despertarla" as CU10b
   usecase "CU-01 Gestionar peliculas" as CU01
   usecase "CU-02 Gestionar salas y butacas" as CU02
   usecase "CU-03 Programar funcion" as CU03
@@ -49,7 +50,8 @@ CU08 -[hidden]down- CU09
 CU09 -[hidden]down- CU15
 CU15 -[hidden]down- CU15b
 CU15b -[hidden]down- CU16
-CU10 -[hidden]down- CU01
+CU10 -[hidden]down- CU10b
+CU10b -[hidden]down- CU01
 CU01 -[hidden]down- CU02
 CU02 -[hidden]down- CU03
 CU03 -[hidden]down- CU03b
@@ -74,6 +76,7 @@ cliente --> CU15b
 cliente --> CU07b
 
 admin --> CU10
+admin --> CU10b
 admin --> CU01
 admin --> CU02
 admin --> CU03
@@ -89,6 +92,7 @@ admin --> CU17
 admin --> CU19
 admin --> CU20
 acomodador --> CU10
+acomodador --> CU10b
 tarea --> CU07c
 acomodador --> CU18
 acomodadorCel --> CU18b

@@ -15,7 +15,7 @@ node "Cualquier host con Docker" {
 }
 
 web --> nginx : "rutas relativas a /api\n(api-http.js)"
-swing --> nginx : "java -Dcine.api.url o CINE_API_URL\n(si no, http://localhost:8080)"
+swing --> nginx : "Local, Produccion u Otro... en el ingreso\n(-Dcine.api.url o CINE_API_URL mandan)"
 nginx --> backend : "proxy_pass http://backend:8080\n(red interna)"
 backend --> mysql : "DB_HOST, DB_PORT, DB_NAME,\nDB_USER, DB_PASSWORD"
 env ..> nginx : "PUERTO_WEB\n(8080 si no se dice)"
@@ -24,7 +24,8 @@ env ..> backend : "DB_NAME, DB_USER, DB_PASSWORD\n(via docker-compose.yml)"
 note bottom of mysql
   Ninguna direccion escrita en el codigo:
   mudar es copiar el repo y el .env,
-  docker compose up y apuntar el panel
+  docker compose up y elegir Otro... en el
+  ingreso del panel con la direccion nueva
 end note
 
 @enduml

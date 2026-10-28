@@ -36,20 +36,20 @@
 <text x="28" y="5612" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#6e6479" letter-spacing="1.2">MODEL.TIEMPO</text>
 <rect x="3626" y="1994" width="1874.2238095238095" height="1702" rx="8" fill="#4f7f86" fill-opacity="0.11" stroke="#4f7f86" stroke-opacity="0.55" stroke-width="1.2"/>
 <text x="3642" y="2021" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#4f7f86" letter-spacing="1.2">MODEL.VENTAS</text>
-<rect x="4998" y="3857" width="1503" height="465" rx="8" fill="#a3566b" fill-opacity="0.11" stroke="#a3566b" stroke-opacity="0.55" stroke-width="1.2"/>
-<text x="5014" y="3884" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#a3566b" letter-spacing="1.2">MODEL.USUARIOS</text>
+<rect x="4991" y="3857" width="1510" height="465" rx="8" fill="#a3566b" fill-opacity="0.11" stroke="#a3566b" stroke-opacity="0.55" stroke-width="1.2"/>
+<text x="5007" y="3884" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#a3566b" letter-spacing="1.2">MODEL.USUARIOS</text>
 <rect x="3864" y="537" width="1715" height="1254" rx="8" fill="#6f6a9c" fill-opacity="0.11" stroke="#6f6a9c" stroke-opacity="0.55" stroke-width="1.2"/>
 <text x="3880" y="564" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#6f6a9c" letter-spacing="1.2">MODEL.PROMOCIONES</text>
 <rect x="5688" y="34" width="1403" height="1757" rx="8" fill="#5b6b3a" fill-opacity="0.11" stroke="#5b6b3a" stroke-opacity="0.55" stroke-width="1.2"/>
 <text x="5704" y="61" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#5b6b3a" letter-spacing="1.2">MODEL.CANDY</text>
 <rect x="5769" y="1994" width="746.1666666666666" height="782" rx="8" fill="#8f7f40" fill-opacity="0.11" stroke="#8f7f40" stroke-opacity="0.55" stroke-width="1.2"/>
 <text x="5785" y="2021" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#8f7f40" letter-spacing="1.2">MODEL.IMAGENES</text>
-<rect x="4526" y="4924" width="458" height="443" rx="8" fill="#5f7f6e" fill-opacity="0.11" stroke="#5f7f6e" stroke-opacity="0.55" stroke-width="1.2"/>
-<text x="4542" y="4951" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#5f7f6e" letter-spacing="1.2">MODEL.DINERO</text>
+<rect x="4519" y="4924" width="458" height="443" rx="8" fill="#5f7f6e" fill-opacity="0.11" stroke="#5f7f6e" stroke-opacity="0.55" stroke-width="1.2"/>
+<text x="4535" y="4951" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#5f7f6e" letter-spacing="1.2">MODEL.DINERO</text>
 <rect x="2309" y="749" width="1507" height="332" rx="8" fill="#b04a3a" fill-opacity="0.11" stroke="#b04a3a" stroke-opacity="0.55" stroke-width="1.2"/>
 <text x="2325" y="776" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="13" font-weight="600" fill="#b04a3a" letter-spacing="1.2">MODEL.RECHAZOS</text>
-<g class="rel" data-a="Usuario" data-b="Cliente" data-sujeto="Cliente" data-frase="Cliente extiende Usuario" data-inv="1"><path d="M5500.8,4067 L5500.8,4132 Q5500.8,4139 5493.8,4139 L5263,4139 Q5256,4139 5256,4146 L5256,4166" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
-<g class="rel" data-a="Usuario" data-b="Empleado" data-sujeto="Empleado" data-frase="Empleado extiende Usuario" data-inv="1"><path d="M5578.6,4067 L5578.6,4087 Q5578.6,4094 5585.6,4094 L5625.5,4094 Q5632.5,4094 5632.5,4101 L5632.5,4166" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
+<g class="rel" data-a="Usuario" data-b="Cliente" data-sujeto="Cliente" data-frase="Cliente extiende Usuario" data-inv="1"><path d="M5493.8,4067 L5493.8,4132 Q5493.8,4139 5486.8,4139 L5256,4139 Q5249,4139 5249,4146 L5249,4166" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
+<g class="rel" data-a="Usuario" data-b="Empleado" data-sujeto="Empleado" data-frase="Empleado extiende Usuario" data-inv="1"><path d="M5571.6,4067 L5571.6,4087 Q5571.6,4094 5578.6,4094 L5618.5,4094 Q5625.5,4094 5625.5,4101 L5625.5,4166" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
 <g class="rel" data-a="Producto" data-b="ProductoSuelto" data-sujeto="ProductoSuelto" data-frase="ProductoSuelto extiende Producto" data-inv="1"><path d="M6732.285714285714,1190 L6732.285714285714,1230 Q6732.285714285714,1237 6725.285714285714,1237 L6042.5,1237 Q6035.5,1237 6035.5,1244 L6035.5,1309" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
 <g class="rel" data-a="Producto" data-b="Combo" data-sujeto="Combo" data-frase="Combo extiende Producto" data-inv="1"><path d="M6799.857142857143,1190 L6799.857142857143,1240 Q6799.857142857143,1247 6792.857142857143,1247 L6528.5,1247 Q6521.5,1247 6521.5,1254 L6521.5,1292" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
 <g class="rel" data-a="Promocion" data-b="PromocionPorcentaje" data-sujeto="PromocionPorcentaje" data-frase="PromocionPorcentaje extiende Promocion" data-inv="1"><path d="M4413.333333333333,1121 L4413.333333333333,1151 Q4413.333333333333,1158 4420.333333333333,1158 L5391,1158 Q5398,1158 5398,1165 L5398,1533" fill="none" stroke="#2d3142" stroke-width="1.5"/></g>
@@ -76,42 +76,42 @@
 <g class="rel" data-a="Funcion" data-b="Programacion" data-sujeto="Funcion" data-frase="Funcion [0..*] sale de [0..1] Programacion"><path d="M3608.833333333333,4244 L3608.833333333333,4274 Q3608.833333333333,4281 3601.833333333333,4281 L3317.9999999999995,4281 Q3310.9999999999995,4281 3310.9999999999995,4288 L3311,4797 Q3311,4804 3304,4804 L2994,4804 Q2987,4804 2986.9695655050505,4810.999933838367 L2986.530434494949,4912.000066161633 Q2986.4999999999995,4919 2986.4999999999995,4926 L2986.4999999999995,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="FormatoDeFuncion" data-b="Version" data-sujeto="FormatoDeFuncion" data-frase="FormatoDeFuncion [0..*] se habla en [1] Version"><path d="M4064.0333333333333,4507 L4064.0333333333333,4606" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="FormatoDeFuncion" data-b="Proyeccion" data-sujeto="FormatoDeFuncion" data-frase="FormatoDeFuncion [0..*] se proyecta en [1] Proyeccion"><path d="M3883.2333333333336,4507 L3883.2333333333336,4527 Q3883.2333333333336,4534 3876.2333333333336,4534 L3502.5,4534 Q3495.5,4534 3495.5,4541 L3495.5,4606" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="FormatoDeFuncion" data-b="Dinero" data-sujeto="FormatoDeFuncion" data-frase="FormatoDeFuncion [1] cuesta [1] Dinero"><path d="M4154.433333333333,4507 L4154.433333333333,4527 Q4154.433333333333,4534 4161.433333333333,4534 L4258.833333333333,4534 Q4265.833333333333,4534 4265.8383190870545,4540.999998224447 L4265.9950142462785,4761.000001775553 Q4266,4768 4266,4775 L4266,4797 Q4266,4804 4273,4804 L4602,4804 Q4609,4804 4608.973913224629,4810.999951391271 L4608.597515346799,4912.000048608729 Q4608.5714285714275,4919 4608.5714285714275,4926 L4608.5714285714275,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="FormatoDeFuncion" data-b="Dinero" data-sujeto="FormatoDeFuncion" data-frase="FormatoDeFuncion [1] cuesta [1] Dinero"><path d="M4154.433333333333,4507 L4154.433333333333,4527 Q4154.433333333333,4534 4161.433333333333,4534 L4258.833333333333,4534 Q4265.833333333333,4534 4265.8383190870545,4540.999998224447 L4265.9950142462785,4761.000001775553 Q4266,4768 4266,4775 L4266,4797 Q4266,4804 4273,4804 L4595,4804 Q4602,4804 4601.973913224629,4810.999951391271 L4601.597515346799,4912.000048608729 Q4601.5714285714275,4919 4601.5714285714275,4926 L4601.5714285714275,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Programacion" data-b="Pelicula" data-sujeto="Programacion" data-frase="Programacion [0..*] repite [1] Pelicula"><path d="M2932.2,5391 L2932.0304344949495,5430.000066161633 Q2932,5437 2931.975524625136,5443.999957211014 L2931.524475374864,5573.000042788986 Q2931.5,5580 2931.5,5587 L2931.5,5648" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Programacion" data-b="Sala" data-sujeto="Programacion" data-frase="Programacion [0..*] ocupa [1] Sala"><path d="M3040.8,5391 L3040.9695655050505,5430.000066161633 Q3041,5437 3041,5444 L3041,5466 Q3041,5473 3048,5473 L3558,5473 Q3565,5473 3565,5480 L3565,5545 Q3565,5552 3572,5552 L3694,5552 Q3701,5552 3700.8750199250817,5558.998884195418 L3700.6249800749183,5573.001115804582 Q3700.5,5580 3700.5,5587 L3700.5,5648" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Programacion" data-b="Periodo" data-sujeto="Programacion" data-frase="Programacion [1] corre en [1] Periodo"><path d="M2823.6,5391 L2823.939132735959,5430.000264635276 Q2824,5437 2824,5444 L2824,5452 Q2824,5459 2817,5459 L736,5459 Q729,5459 729,5466 L729,5545 Q729,5552 722,5552 L377,5552 Q370,5552 370,5559 L370,5648" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Programacion" data-b="FormatoDeFuncion" data-sujeto="Programacion" data-frase="Programacion [1] se ofrece en [1] FormatoDeFuncion"><path d="M3149.4,5391 L3149.060867264041,5430.000264635276 Q3149,5437 3149,5444 L3149,5452 Q3149,5459 3156,5459 L3297,5459 Q3304,5459 3304,5452 L3304,4876 Q3304,4869 3297,4869 L3261,4869 Q3254,4869 3254,4862 L3254,3817 Q3254,3810 3261,3810 L3937,3810 Q3944,3810 3943.916672571179,3816.9995040209724 L3943.5833274288207,3845.0004959790276 Q3943.4999999999995,3852 3943.4999999999995,3859 L3943.4999999999995,4343" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Reserva" data-b="Funcion" data-sujeto="Reserva" data-frase="Reserva [0..*] es para [1] Funcion"><path d="M4013.595238095238,2898 L4013.595238095238,2918 Q4013.595238095238,2925 4006.595238095238,2925 L3657,2925 Q3650,2925 3650,2932 L3650,3716 Q3650,3723 3643,3723 L3616,3723 Q3609,3723 3608.9909560798997,3729.9999941576766 L3608.8423772534334,3845.0000058423234 Q3608.833333333333,3852 3608.833333333333,3859 L3608.833333333333,3920" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="Reserva" data-b="Cliente" data-sujeto="Reserva" data-frase="Reserva [0..*] es de [1] Cliente"><path d="M4411.452380952381,2898 L4411.452380952381,2918 Q4411.452380952381,2925 4418.452380952381,2925 L5457.22380952381,2925 Q5464.22380952381,2925 5464.22179062355,2931.9999997088603 L5464.00201890026,3694.0000002911397 Q5464,3701 5464,3708 L5464,3744 Q5464,3751 5457,3751 L5107,3751 Q5100,3751 5100,3758 L5100,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="Reserva" data-b="Cliente" data-sujeto="Reserva" data-frase="Reserva [0..*] es de [1] Cliente"><path d="M4411.452380952381,2898 L4411.452380952381,2918 Q4411.452380952381,2925 4418.452380952381,2925 L5457.22380952381,2925 Q5464.22380952381,2925 5464.22179062355,2931.9999997088603 L5464.00201890026,3694.0000002911397 Q5464,3701 5464,3708 L5464,3744 Q5464,3751 5457,3751 L5100,3751 Q5093,3751 5093,3758 L5093,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Reserva" data-b="Entrada" data-sujeto="Reserva" data-frase="Reserva [1] incluye [1..10] Entrada"><path d="M4093.1666666666665,2898 L4093.1666666666665,3072.8" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Reserva" data-b="EstadoReserva" data-sujeto="Reserva" data-frase="Reserva [0..*] está en [1] EstadoReserva"><path d="M4331.880952380952,2898 L4331.880952380952,2928 Q4331.880952380952,2935 4338.880952380952,2935 L4892.5,2935 Q4899.5,2935 4899.5,2942 L4899.5,3017" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Entrada" data-b="Asiento" data-sujeto="Entrada" data-frase="Entrada [0..*] corresponde a [1] Asiento"><path d="M3864,3284.8 L3864,3730 Q3864,3737 3871,3737 L4306,3737 Q4313,3737 4313,3744 L4313,4783 Q4313,4790 4306,4790 L4119,4790 Q4112,4790 4112,4797 L4112,5533 Q4112,5538 4107,5538 L4107,5538 Q4102,5538 4102,5543 L4102,5915 Q4102,5922 4095,5922 L4050.3333333333335,5922 Q4043.3333333333335,5922 4043.3333333333335,5929 L4043.3333333333335,5949" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Entrada" data-b="TipoTarifa" data-sujeto="Entrada" data-frase="Entrada [0..*] se vende con [1] TipoTarifa"><path d="M4001.5,3284.8 L4001.5,3362 Q4001.5,3369 4008.5,3369 L4466.5,3369 Q4473.5,3369 4473.5,3376 L4473.5,3431" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="Entrada" data-b="Dinero" data-sujeto="Entrada" data-frase="Entrada [1] cuesta [1] Dinero"><path d="M4139,3284.8 L4139,3342 Q4139,3349 4146,3349 L4698.5,3349 Q4705.5,3349 4705.509943171787,3355.999992938092 L4705.990056828213,3694.000007061908 Q4706,3701 4706,3708 L4706,3716 Q4706,3723 4699,3723 L4674,3723 Q4667,3723 4667.000836120395,3729.9999999500646 L4667.142021022461,4912.000000049936 Q4667.142857142857,4919 4667.142857142857,4926 L4667.142857142857,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="Entrada" data-b="Dinero" data-sujeto="Entrada" data-frase="Entrada [1] cuesta [1] Dinero"><path d="M4139,3284.8 L4139,3342 Q4139,3349 4146,3349 L4698.5,3349 Q4705.5,3349 4705.509943171787,3355.999992938092 L4705.990056828213,3694.000007061908 Q4706,3701 4706,3708 L4706,3716 Q4706,3723 4699,3723 L4667,3723 Q4660,3723 4660.000836120395,3729.9999999500646 L4660.142021022461,4912.000000049936 Q4660.142857142857,4919 4660.142857142857,4926 L4660.142857142857,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="ButacaPedida" data-b="Asiento" data-sujeto="ButacaPedida" data-frase="ButacaPedida [0..*] pide [1] Asiento"><path d="M4351.5,3250.666666666667 L4351.992227984065,3694.000004314589 Q4352,3701 4352,3708 L4352,5531 Q4352,5538 4359,5538 L4394,5538 Q4401,5538 4400.944446194033,5544.99977955186 L4400.722220472633,5573.00022044814 Q4400.666666666666,5580 4400.666666666666,5587 L4400.666666666666,5949" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="ButacaPedida" data-b="TipoTarifa" data-sujeto="ButacaPedida" data-frase="ButacaPedida [0..*] elige [0..1] TipoTarifa"><path d="M4406.5,3250.666666666667 L4406.5,3352 Q4406.5,3359 4413.5,3359 L4521.5,3359 Q4528.5,3359 4528.5,3366 L4528.5,3397 Q4528.5,3404 4535.5,3404 L4577.5,3404 Q4584.5,3404 4584.5,3411 L4584.5,3431" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Pago" data-b="Reserva" data-sujeto="Pago" data-frase="Pago [0..1] cobra [1] Reserva"><path d="M4735.823809523809,2316 L4735.823809523809,2336 Q4735.823809523809,2343 4728.823809523809,2343 L4126.690476190476,2343 Q4119.690476190476,2343 4119.690476190476,2350 L4119.690476190476,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Pago" data-b="Promocion" data-sujeto="Pago" data-frase="Pago [0..*] aplica [0..1] Promocion"><path d="M5019.6238095238095,2316 L5019.6238095238095,2336 Q5019.6238095238095,2343 5026.6238095238095,2343 L5468.22380952381,2343 Q5475.22380952381,2343 5475.222655866486,2349.9999999049337 L5475.001153657324,3694.0000000950663 Q5475,3701 5475,3708 L5475,3716 Q5475,3723 5482,3723 L5594,3723 Q5601,3723 5601,3716 L5601,19 Q5601,12 5594,12 L4244,12 Q4237,12 4237,19 L4237,600" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Pago" data-b="MedioPago" data-sujeto="Pago" data-frase="Pago [0..*] se cobra con [1] MedioPago"><path d="M4830.42380952381,2316 L4830.42380952381,2381 Q4830.42380952381,2388 4823.42380952381,2388 L4696.823809523809,2388 Q4689.823809523809,2388 4689.823809523809,2395 L4689.823809523809,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="Pago" data-b="Dinero" data-sujeto="Pago" data-frase="Pago [1] congela subtotal, descuento y monto en [3] Dinero"><path d="M4925.023809523809,2316 L4925.023809523809,2346 Q4925.023809523809,2353 4932.023809523809,2353 L5446.22380952381,2353 Q5453.22380952381,2353 5453.222647308198,2359.999999903518 L5453.001162215612,3694.000000096482 Q5453,3701 5453,3708 L5453,3730 Q5453,3737 5446,3737 L4689,3737 Q4682,3737 4682,3744 L4682,4862 Q4682,4869 4689,4869 L4719,4869 Q4726,4869 4725.960000653045,4875.999885717085 L4725.75428506124,4912.000114282915 Q4725.714285714285,4919 4725.714285714285,4926 L4725.714285714285,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="Pago" data-b="Dinero" data-sujeto="Pago" data-frase="Pago [1] congela subtotal, descuento y monto en [3] Dinero"><path d="M4925.023809523809,2316 L4925.023809523809,2346 Q4925.023809523809,2353 4932.023809523809,2353 L5446.22380952381,2353 Q5453.22380952381,2353 5453.222647308198,2359.999999903518 L5453.001162215612,3694.000000096482 Q5453,3701 5453,3708 L5453,3730 Q5453,3737 5446,3737 L4682,3737 Q4675,3737 4675,3744 L4675,4862 Q4675,4869 4682,4869 L4712,4869 Q4719,4869 4718.960000653045,4875.999885717085 L4718.75428506124,4912.000114282915 Q4718.714285714285,4919 4718.714285714285,4926 L4718.714285714285,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="BloqueoButaca" data-b="Funcion" data-sujeto="BloqueoButaca" data-frase="BloqueoButaca [0..*] vale para [1] Funcion"><path d="M3725.3333333333335,3635 L3725.0353530844704,3694.0000892748967 Q3725,3701 3725,3708 L3725,3817 Q3725,3824 3732,3824 L3764,3824 Q3771,3824 3771.041665928544,3830.9998759953587 L3771.1250007381227,3845.0001240046413 Q3771.1666666666665,3852 3771.1666666666665,3859 L3771.1666666666665,3920" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="BloqueoButaca" data-b="Asiento" data-sujeto="BloqueoButaca" data-frase="BloqueoButaca [0..*] retiene [1] Asiento"><path d="M3789.6666666666665,3635 L3789.6666666666665,3655 Q3789.6666666666665,3662 3796.6666666666665,3662 L3867,3662 Q3874,3662 3874,3669 L3874,3716 Q3874,3723 3881,3723 L4330,3723 Q4337,3723 4337,3730 L4337,5531 Q4337,5538 4330,5538 L4318,5538 Q4311,5538 4311.055553805967,5544.99977955186 L4311.277779527366,5573.00022044814 Q4311.333333333333,5580 4311.333333333333,5587 L4311.333333333333,5949" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="Usuario" data-b="Rol" data-sujeto="Usuario" data-frase="Usuario [0..*] tiene [1] Rol"><path d="M5656.4,4067 L5656.4,4097 Q5656.4,4104 5663.4,4104 L6017,4104 Q6024,4104 6024,4111 L6024,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="Usuario" data-b="Rol" data-sujeto="Usuario" data-frase="Usuario [0..*] tiene [1] Rol"><path d="M5649.4,4067 L5649.4,4097 Q5649.4,4104 5656.4,4104 L6010,4104 Q6017,4104 6017,4111 L6017,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Promocion" data-b="Periodo" data-sujeto="Promocion" data-frase="Promocion [1] es vigente en [1] Periodo"><path d="M4016.5833333333335,1121 L4016.5833333333335,1141 Q4016.5833333333335,1148 4009.5833333333335,1148 L3895,1148 Q3888,1148 3888,1155 L3888,1811 Q3888,1818 3881,1818 L647,1818 Q640,1818 640,1825 L640,5531 Q640,5538 633,5538 L210,5538 Q203,5538 203,5545 L203,5648" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Promocion" data-b="FranjaHoraria" data-sujeto="Promocion" data-frase="Promocion [1] se limita a [0..1] FranjaHoraria"><path d="M4060.6666666666665,1121 L4060.6666666666665,1151 Q4060.6666666666665,1158 4053.6666666666665,1158 L3906,1158 Q3899,1158 3899,1165 L3899,1825 Q3899,1832 3892,1832 L759,1832 Q752,1832 751.9990661686315,1838.9999999377114 L751.5009338313685,5573.000000062289 Q751.5,5580 751.5,5587 L751.5,5648" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Promocion" data-b="MedioPago" data-sujeto="Promocion" data-frase="Promocion [0..*] se limita a [0..*] MedioPago"><path d="M4148.833333333333,1121 L4148.833333333333,1171 Q4148.833333333333,1178 4141.833333333333,1178 L3928,1178 Q3921,1178 3921,1185 L3921,1867 Q3921,1874 3928,1874 L4564,1874 Q4571,1874 4570.9771015717915,1880.9999625471844 L4570.646707952018,1982.0000374528156 Q4570.6238095238095,1989 4570.6238095238095,1996 L4570.6238095238095,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="PromocionMontoFijo" data-b="Dinero" data-sujeto="PromocionMontoFijo" data-frase="PromocionMontoFijo [1] descuenta [1] Dinero"><path d="M4867,1750 L4867,1881 Q4867,1888 4874,1888 L5739,1888 Q5746,1888 5746,1895 L5746,3716 Q5746,3723 5753,3723 L5812,3723 Q5819,3723 5819,3730 L5819,3803 Q5819,3810 5826,3810 L6516,3810 Q6523,3810 6523,3817 L6523,4862 Q6523,4869 6516,4869 L4791,4869 Q4784,4869 4784.039999346955,4875.999885717085 L4784.245714938759,4912.000114282915 Q4784.285714285714,4919 4784.285714285714,4926 L4784.285714285714,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="PromocionMontoFijo" data-b="Dinero" data-sujeto="PromocionMontoFijo" data-frase="PromocionMontoFijo [1] descuenta [1] Dinero"><path d="M4867,1750 L4867,1881 Q4867,1888 4874,1888 L5739,1888 Q5746,1888 5746,1895 L5746,3716 Q5746,3723 5753,3723 L5812,3723 Q5819,3723 5819,3730 L5819,3803 Q5819,3810 5826,3810 L6516,3810 Q6523,3810 6523,3817 L6523,4862 Q6523,4869 6516,4869 L4784,4869 Q4777,4869 4777.039999346955,4875.999885717085 L4777.245714938759,4912.000114282915 Q4777.285714285714,4919 4777.285714285714,4926 L4777.285714285714,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="CondicionesPromocion" data-b="MedioPago" data-sujeto="CondicionesPromocion" data-frase="CondicionesPromocion [0..*] pide [0..*] MedioPago"><path d="M4042.5,1424.5 L4042.990578743392,1789.0000063400082 Q4043,1796 4043,1803 L4043,1811 Q4043,1818 4050,1818 L4623,1818 Q4630,1818 4630.009161785525,1824.9999940044036 L4630.214647738285,1982.0000059955964 Q4630.22380952381,1989 4630.22380952381,1996 L4630.22380952381,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Producto" data-b="TipoProducto" data-sujeto="Producto" data-frase="Producto [0..*] es del rubro [1] TipoProducto"><path d="M6867.428571428572,1190 L6867.428571428572,1210 Q6867.428571428572,1217 6860.428571428572,1217 L6839.5,1217 Q6832.5,1217 6832.5,1224 L6832.5,1309" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="Producto" data-b="Dinero" data-sujeto="Producto" data-frase="Producto [1] cuesta [1] Dinero"><path d="M6597.142857142857,1190 L6597.142857142857,1210 Q6597.142857142857,1217 6590.142857142857,1217 L5763,1217 Q5756,1217 5756,1224 L5756,1811 Q5756,1818 5763,1818 L6546,1818 Q6553,1818 6553,1825 L6553,4890 Q6553,4897 6546,4897 L4908,4897 Q4901,4897 4901.136337769363,4903.998672160677 L4901.292233659207,4912.001327839323 Q4901.428571428571,4919 4901.428571428571,4926 L4901.428571428571,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="Producto" data-b="Dinero" data-sujeto="Producto" data-frase="Producto [1] cuesta [1] Dinero"><path d="M6597.142857142857,1190 L6597.142857142857,1210 Q6597.142857142857,1217 6590.142857142857,1217 L5763,1217 Q5756,1217 5756,1224 L5756,1811 Q5756,1818 5763,1818 L6546,1818 Q6553,1818 6553,1825 L6553,4890 Q6553,4897 6546,4897 L4901,4897 Q4894,4897 4894.136337769363,4903.998672160677 L4894.292233659207,4912.001327839323 Q4894.428571428571,4919 4894.428571428571,4926 L4894.428571428571,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Combo" data-b="ItemCombo" data-sujeto="Combo" data-frase="Combo [1] se arma con [2..*] ItemCombo"><path d="M6521.5,1509 L6521.5,1564 Q6521.5,1571 6528.5,1571 L6800.666666666667,1571 Q6807.666666666667,1571 6807.666666666667,1578 L6807.666666666667,1598" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="ItemCombo" data-b="Producto" data-sujeto="ItemCombo" data-frase="ItemCombo [0..*] cuenta unidades de [1] Producto"><path d="M6935,1598 L6935,1190" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="CompraCandy" data-b="ItemCompra" data-sujeto="CompraCandy" data-frase="CompraCandy [1] se compone de [1..*] ItemCompra"><path d="M6750.9047619047615,372 L6750.9047619047615,422 Q6750.9047619047615,429 6743.9047619047615,429 L6637.4047619047615,429 Q6630.4047619047615,429 6630.4047619047615,436 L6630.4047619047615,491" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="CompraCandy" data-b="MedioPago" data-sujeto="CompraCandy" data-frase="CompraCandy [0..*] se cobra con [1] MedioPago"><path d="M6468.9047619047615,372 L6468.9047619047615,392 Q6468.9047619047615,399 6461.9047619047615,399 L5719,399 Q5712,399 5712,406 L5712,1867 Q5712,1874 5705,1874 L5449,1874 Q5442,1874 5442.013623162607,1880.999986743519 L5442.210186361202,1982.000013256481 Q5442.223809523809,1989 5442.223809523809,1996 L5442.223809523809,2391 Q5442.223809523809,2398 5435.223809523809,2398 L4756.423809523809,2398 Q4749.423809523809,2398 4749.423809523809,2405 L4749.423809523809,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="CompraCandy" data-b="Cliente" data-sujeto="CompraCandy" data-frase="CompraCandy [0..*] se le vende a [0..1] Cliente"><path d="M6562.9047619047615,372 L6562.9047619047615,402 Q6562.9047619047615,409 6555.9047619047615,409 L5730,409 Q5723,409 5723,416 L5723,3803 Q5723,3810 5716,3810 L5185,3810 Q5178,3810 5178,3817 L5178,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="CompraCandy" data-b="Cliente" data-sujeto="CompraCandy" data-frase="CompraCandy [0..*] se le vende a [0..1] Cliente"><path d="M6562.9047619047615,372 L6562.9047619047615,402 Q6562.9047619047615,409 6555.9047619047615,409 L5730,409 Q5723,409 5723,416 L5723,3803 Q5723,3810 5716,3810 L5178,3810 Q5171,3810 5171,3817 L5171,4166" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="CompraCandy" data-b="Reserva" data-sujeto="CompraCandy" data-frase="CompraCandy [0..*] acompaña a [0..1] Reserva"><path d="M6656.9047619047615,372 L6656.9047619047615,412 Q6656.9047619047615,419 6649.9047619047615,419 L5741,419 Q5734,419 5734,426 L5734,1853 Q5734,1860 5727,1860 L4312,1860 Q4305,1860 4305.01937977069,1866.9999731731264 L4305.3377630864525,1982.0000268268736 Q4305.357142857142,1989 4305.357142857142,1996 L4305.357142857142,2425" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="ItemCompra" data-b="Producto" data-sujeto="ItemCompra" data-frase="ItemCompra [0..*] vende [1] Producto"><path d="M6695.238095238095,724 L6695.238095238095,782 Q6695.238095238095,786 6691.238095238095,786 L6691.238095238095,786 Q6687.238095238095,786 6687.238095238095,790 L6687.238095238095,813" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
-<g class="rel" data-a="ItemCompra" data-b="Dinero" data-sujeto="ItemCompra" data-frase="ItemCompra [1] congela precio y ahorro en [2] Dinero"><path d="M6565.571428571428,724 L6565.571428571428,744 Q6565.571428571428,751 6558.571428571428,751 L5752,751 Q5745,751 5745,758 L5745,1825 Q5745,1832 5752,1832 L6531,1832 Q6538,1832 6538,1839 L6538,4876 Q6538,4883 6531,4883 L4850,4883 Q4843,4883 4842.972222440929,4889.999944886013 L4842.884920416213,4912.000055113987 Q4842.857142857142,4919 4842.857142857142,4926 L4842.857142857142,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
+<g class="rel" data-a="ItemCompra" data-b="Dinero" data-sujeto="ItemCompra" data-frase="ItemCompra [1] congela precio y ahorro en [2] Dinero"><path d="M6565.571428571428,724 L6565.571428571428,744 Q6565.571428571428,751 6558.571428571428,751 L5752,751 Q5745,751 5745,758 L5745,1825 Q5745,1832 5752,1832 L6531,1832 Q6538,1832 6538,1839 L6538,4876 Q6538,4883 6531,4883 L4843,4883 Q4836,4883 4835.972222440929,4889.999944886013 L4835.884920416213,4912.000055113987 Q4835.857142857142,4919 4835.857142857142,4926 L4835.857142857142,4987" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Imagen" data-b="FormatoImagen" data-sujeto="Imagen" data-frase="Imagen [0..*] es del formato [1] FormatoImagen"><path d="M5964.666666666667,2426 L5964.666666666667,2481 Q5964.666666666667,2488 5971.666666666667,2488 L6154.166666666667,2488 Q6161.166666666667,2488 6161.166666666667,2495 L6161.166666666667,2515" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="NombreDeImagen" data-b="FormatoImagen" data-sujeto="NombreDeImagen" data-frase="NombreDeImagen [0..*] lleva la extensión de [1] FormatoImagen"><path d="M6307.166666666667,2426 L6307.166666666667,2515" fill="none" stroke="#2e5aa8" stroke-width="1.5"/></g>
 <g class="rel" data-a="Pelicula" data-b="TrailerYoutube" data-sujeto="Pelicula" data-frase="Pelicula [1] valida su trailer con [0..1] TrailerYoutube"><path d="M3025.5,6121 L3025.5,6240" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
@@ -121,7 +121,7 @@
 <g class="rel" data-a="Sala" data-b="TipoAsiento" data-sujeto="Sala" data-frase="Sala [1] marca sus butacas especiales con [0..*] TipoAsiento"><path d="M3831,5860 L3831,6378" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
 <g class="rel" data-a="Reserva" data-b="ButacaPedida" data-sujeto="Reserva" data-frase="Reserva [1] crea sus entradas desde [1..10] ButacaPedida"><path d="M4172.738095238095,2898 L4172.738095238095,2948 Q4172.738095238095,2955 4179.738095238095,2955 L4372,2955 Q4379,2955 4379,2962 L4379,3159.666666666667" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
 <g class="rel" data-a="Reserva" data-b="CodigoDeAcceso" data-sujeto="Reserva" data-frase="Reserva [1] genera su código con [1] CodigoDeAcceso"><path d="M4252.309523809524,2898 L4252.309523809524,2938 Q4252.309523809524,2945 4259.309523809524,2945 L4595.5,2945 Q4602.5,2945 4602.5,2952 L4602.5,3017" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
-<g class="rel" data-a="Usuario" data-b="Email" data-sujeto="Usuario" data-frase="Usuario [1] valida el email con [1] Email"><path d="M5734.2,4067 L5734.2,4087 Q5734.2,4094 5741.2,4094 L6300,4094 Q6307,4094 6307,4101 L6307,4166" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
+<g class="rel" data-a="Usuario" data-b="Email" data-sujeto="Usuario" data-frase="Usuario [1] valida el email con [1] Email"><path d="M5727.2,4067 L5727.2,4087 Q5727.2,4094 5734.2,4094 L6296.5,4094 Q6303.5,4094 6303.5,4101 L6303.5,4166" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
 <g class="rel" data-a="Promocion" data-b="CondicionesPromocion" data-sujeto="Promocion" data-frase="Promocion [1] se arma con [1] CondicionesPromocion"><path d="M4192.916666666667,1121 L4192.916666666667,1181 Q4192.916666666667,1188 4185.916666666667,1188 L4049.5,1188 Q4042.5,1188 4042.5,1195 L4042.5,1269.5" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
 <g class="rel" data-a="Promocion" data-b="ParametrosPromocion" data-sujeto="Promocion" data-frase="Promocion [1] describe sus parámetros en [1] ParametrosPromocion"><path d="M4281.083333333333,1121 L4281.083333333333,1181 Q4281.083333333333,1188 4288.083333333333,1188 L4477,1188 Q4484,1188 4484,1195 L4484,1250" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
 <g class="rel" data-a="Promocion" data-b="TipoPromocion" data-sujeto="Promocion" data-frase="Promocion [0..*] declara su tipo con [1] TipoPromocion"><path d="M4369.25,1121 L4369.25,1161 Q4369.25,1168 4376.25,1168 L5055,1168 Q5062,1168 5062,1175 L5062,1250" fill="none" stroke="#8b93a7" stroke-width="1.2" stroke-dasharray="4,3"/></g>
@@ -620,7 +620,7 @@
 <rect class="resalte" data-m="estaPagada" x="3936.0238095238096" y="2798.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
 <text class="miembro" data-m="estaPagada" x="3943.0238095238096" y="2809.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ estaPagada() : boolean</text>
 <rect class="resalte" data-m="cancelar" x="3936.0238095238096" y="2814.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="cancelar" x="3943.0238095238096" y="2825.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ cancelar() : void</text>
+<text class="miembro" data-m="cancelar" x="3943.0238095238096" y="2825.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ cancelar(ahora : LocalDateTime) : void</text>
 <rect class="resalte" data-m="expirar" x="3936.0238095238096" y="2830.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
 <text class="miembro" data-m="expirar" x="3943.0238095238096" y="2841.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ expirar() : void</text>
 <rect class="resalte" data-m="registrarIngreso" x="3936.0238095238096" y="2846.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
@@ -796,79 +796,79 @@
 <text class="miembro" data-m="comoSeGuarda" x="5143.22380952381" y="2236" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ comoSeGuarda(sesion : String) : String</text>
 </g>
 <g class="clase" data-id="Usuario" data-nombre="Usuario">
-<rect x="5423" y="3903" width="389" height="164" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M5423.6,3953 V3909 Q5423.6,3903.6 5429,3903.6 H5806 Q5811.4,3903.6 5811.4,3909 V3953 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="5617.5" y="3923" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«abstract · Entity»</text>
-<text x="5617.5" y="3942" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142" font-style="italic">Usuario</text>
-<line x1="5423" y1="3953" x2="5812" y2="3953" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="5432" y="3969.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- id : int</text>
-<text class="miembro" x="5432" y="3985.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- nombre : String</text>
-<text class="miembro" x="5432" y="4001.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- email : String</text>
-<text class="miembro" x="5432" y="4017.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- rol : Rol</text>
-<line x1="5423" y1="4026" x2="5812" y2="4026" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="Usuario" x="5425" y="4031.5" width="385" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="Usuario" x="5432" y="4042.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" ># Usuario(nombre : String, email : String, rol : Rol)</text>
-<rect class="resalte" data-m="renombrar" x="5425" y="4047.5" width="385" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="renombrar" x="5432" y="4058.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ renombrar(nombre : String) : void</text>
+<rect x="5416" y="3903" width="389" height="164" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M5416.6,3953 V3909 Q5416.6,3903.6 5422,3903.6 H5799 Q5804.4,3903.6 5804.4,3909 V3953 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="5610.5" y="3923" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«abstract · Entity»</text>
+<text x="5610.5" y="3942" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142" font-style="italic">Usuario</text>
+<line x1="5416" y1="3953" x2="5805" y2="3953" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="5425" y="3969.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- id : int</text>
+<text class="miembro" x="5425" y="3985.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- nombre : String</text>
+<text class="miembro" x="5425" y="4001.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- email : String</text>
+<text class="miembro" x="5425" y="4017.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- rol : Rol</text>
+<line x1="5416" y1="4026" x2="5805" y2="4026" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="Usuario" x="5418" y="4031.5" width="385" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="Usuario" x="5425" y="4042.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" ># Usuario(nombre : String, email : String, rol : Rol)</text>
+<rect class="resalte" data-m="renombrar" x="5418" y="4047.5" width="385" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="renombrar" x="5425" y="4058.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ renombrar(nombre : String) : void</text>
 </g>
 <g class="clase" data-id="Cliente" data-nombre="Cliente">
-<rect x="5022" y="4166" width="312" height="75" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M5022.6,4216 V4172 Q5022.6,4166.6 5028,4166.6 H5328 Q5333.4,4166.6 5333.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="5178" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«Entity»</text>
-<text x="5178" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Cliente</text>
-<line x1="5022" y1="4216" x2="5334" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="Cliente" x="5024" y="4221.5" width="308" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="Cliente" x="5031" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Cliente(nombre : String, email : String)</text>
+<rect x="5015" y="4166" width="312" height="75" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M5015.6,4216 V4172 Q5015.6,4166.6 5021,4166.6 H5321 Q5326.4,4166.6 5326.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="5171" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«Entity»</text>
+<text x="5171" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Cliente</text>
+<line x1="5015" y1="4216" x2="5327" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="Cliente" x="5017" y="4221.5" width="308" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="Cliente" x="5024" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Cliente(nombre : String, email : String)</text>
 </g>
 <g class="clase" data-id="Empleado" data-nombre="Empleado">
-<rect x="5354" y="4166" width="557" height="100" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M5354.6,4216 V4172 Q5354.6,4166.6 5360,4166.6 H5905 Q5910.4,4166.6 5910.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="5632.5" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«Entity»</text>
-<text x="5632.5" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Empleado</text>
-<line x1="5354" y1="4216" x2="5911" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="5363" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- passwordHash : String</text>
-<line x1="5354" y1="4241" x2="5911" y2="4241" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="Empleado" x="5356" y="4246.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="Empleado" x="5363" y="4257.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Empleado(nombre : String, email : String, passwordHash : String, rol : Rol)</text>
+<rect x="5347" y="4166" width="557" height="100" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M5347.6,4216 V4172 Q5347.6,4166.6 5353,4166.6 H5898 Q5903.4,4166.6 5903.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="5625.5" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«Entity»</text>
+<text x="5625.5" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Empleado</text>
+<line x1="5347" y1="4216" x2="5904" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="5356" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- passwordHash : String</text>
+<line x1="5347" y1="4241" x2="5904" y2="4241" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="Empleado" x="5349" y="4246.5" width="553" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="Empleado" x="5356" y="4257.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Empleado(nombre : String, email : String, passwordHash : String, rol : Rol)</text>
 </g>
 <g class="clase" data-id="Rol" data-nombre="Rol">
-<rect x="5931" y="4166" width="186" height="132" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M5931.6,4216 V4172 Q5931.6,4166.6 5937,4166.6 H6111 Q6116.4,4166.6 6116.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="6024" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«enumeration»</text>
-<text x="6024" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Rol</text>
-<line x1="5931" y1="4216" x2="6117" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="5940" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >CLIENTE</text>
-<text class="miembro" x="5940" y="4248.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >ADMINISTRADOR</text>
-<text class="miembro" x="5940" y="4264.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >ACOMODADOR</text>
-<line x1="5931" y1="4273" x2="6117" y2="4273" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="esEmpleado" x="5933" y="4278.5" width="182" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="esEmpleado" x="5940" y="4289.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esEmpleado() : boolean</text>
+<rect x="5924" y="4166" width="186" height="132" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M5924.6,4216 V4172 Q5924.6,4166.6 5930,4166.6 H6104 Q6109.4,4166.6 6109.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="6017" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«enumeration»</text>
+<text x="6017" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Rol</text>
+<line x1="5924" y1="4216" x2="6110" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="5933" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >CLIENTE</text>
+<text class="miembro" x="5933" y="4248.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >ADMINISTRADOR</text>
+<text class="miembro" x="5933" y="4264.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >ACOMODADOR</text>
+<line x1="5924" y1="4273" x2="6110" y2="4273" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="esEmpleado" x="5926" y="4278.5" width="182" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="esEmpleado" x="5933" y="4289.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esEmpleado() : boolean</text>
 </g>
 <g class="clase" data-id="Email" data-nombre="Email">
-<rect x="6137" y="4166" width="340" height="132" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M6137.6,4216 V4172 Q6137.6,4166.6 6143,4166.6 H6471 Q6476.4,4166.6 6476.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="6307" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
-<text x="6307" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Email</text>
-<line x1="6137" y1="4216" x2="6477" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="6146" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- valor : String</text>
-<line x1="6137" y1="4241" x2="6477" y2="4241" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="Email" x="6139" y="4246.5" width="336" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="Email" x="6146" y="4257.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Email(valor : String)</text>
-<rect class="resalte" data-m="enmascarado" x="6139" y="4262.5" width="336" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="enmascarado" x="6146" y="4273.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ enmascarado() : String</text>
-<rect class="resalte" data-m="paraBuscar" x="6139" y="4278.5" width="336" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="paraBuscar" x="6146" y="4289.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ paraBuscar(texto : String) : Optional&lt;Email&gt;</text>
+<rect x="6130" y="4166" width="347" height="132" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M6130.6,4216 V4172 Q6130.6,4166.6 6136,4166.6 H6471 Q6476.4,4166.6 6476.4,4172 V4216 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="6303.5" y="4186" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
+<text x="6303.5" y="4205" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Email</text>
+<line x1="6130" y1="4216" x2="6477" y2="4216" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="6139" y="4232.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- valor : String</text>
+<line x1="6130" y1="4241" x2="6477" y2="4241" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="Email" x="6132" y="4246.5" width="343" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="Email" x="6139" y="4257.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Email(valor : String)</text>
+<rect class="resalte" data-m="enmascarado" x="6132" y="4262.5" width="343" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="enmascarado" x="6139" y="4273.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ enmascarado() : String</text>
+<rect class="resalte" data-m="paraBuscar" x="6132" y="4278.5" width="343" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="paraBuscar" x="6139" y="4289.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ paraBuscar(texto : String) : Optional&lt;String&gt;</text>
 </g>
 <g class="clase" data-id="Contrasena" data-nombre="Contrasena">
-<rect x="5189" y="3943.5" width="214" height="100" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
-<path d="M5189.6,3993.5 V3949.5 Q5189.6,3944.1 5195,3944.1 H5397 Q5402.4,3944.1 5402.4,3949.5 V3993.5 Z" fill="#a3566b" fill-opacity="0.32"/>
-<text x="5296" y="3963.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
-<text x="5296" y="3982.5" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Contrasena</text>
-<line x1="5189" y1="3993.5" x2="5403" y2="3993.5" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="5198" y="4010" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- valor : String</text>
-<line x1="5189" y1="4018.5" x2="5403" y2="4018.5" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="Contrasena" x="5191" y="4024" width="210" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="Contrasena" x="5198" y="4035" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Contrasena(valor : String)</text>
+<rect x="5182" y="3943.5" width="214" height="100" rx="6" fill="#ffffff" stroke="#a3566b" stroke-width="1.2"/>
+<path d="M5182.6,3993.5 V3949.5 Q5182.6,3944.1 5188,3944.1 H5390 Q5395.4,3944.1 5395.4,3949.5 V3993.5 Z" fill="#a3566b" fill-opacity="0.32"/>
+<text x="5289" y="3963.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
+<text x="5289" y="3982.5" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Contrasena</text>
+<line x1="5182" y1="3993.5" x2="5396" y2="3993.5" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="5191" y="4010" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- valor : String</text>
+<line x1="5182" y1="4018.5" x2="5396" y2="4018.5" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="Contrasena" x="5184" y="4024" width="210" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="Contrasena" x="5191" y="4035" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ Contrasena(valor : String)</text>
 </g>
 <g class="clase" data-id="Promocion" data-nombre="Promocion">
 <rect x="3972.5" y="600" width="529" height="521" rx="6" fill="#ffffff" stroke="#6f6a9c" stroke-width="1.2"/>
@@ -1280,45 +1280,45 @@
 <text class="miembro" data-m="conExtension" x="6024.166666666667" y="2743.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ conExtension(extension : String) : Optional&lt;FormatoImagen&gt;</text>
 </g>
 <g class="clase" data-id="Dinero" data-nombre="Dinero">
-<rect x="4550" y="4987" width="410" height="356" rx="6" fill="#ffffff" stroke="#5f7f6e" stroke-width="1.2"/>
-<path d="M4550.6,5037 V4993 Q4550.6,4987.6 4556,4987.6 H4954 Q4959.4,4987.6 4959.4,4993 V5037 Z" fill="#5f7f6e" fill-opacity="0.32"/>
-<text x="4755" y="5007" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
-<text x="4755" y="5026" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Dinero</text>
-<line x1="4550" y1="5037" x2="4960" y2="5037" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="4559" y="5053.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- centavos : long</text>
-<text class="miembro" x="4559" y="5069.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ CERO : Dinero</text>
-<text class="miembro" x="4559" y="5085.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ IMPORTE_MAXIMO : Dinero</text>
-<line x1="4550" y1="5094" x2="4960" y2="5094" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="de" x="4552" y="5099.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="de" x="4559" y="5110.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ de(pesos : double) : Dinero</text>
-<rect class="resalte" data-m="deCentavos" x="4552" y="5115.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="deCentavos" x="4559" y="5126.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ deCentavos(centavos : long) : Dinero</text>
-<rect class="resalte" data-m="importe" x="4552" y="5131.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="importe" x="4559" y="5142.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ importe(pesos : Double, que : String) : Dinero</text>
-<rect class="resalte" data-m="importeValido" x="4552" y="5147.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="importeValido" x="4559" y="5158.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ importeValido(importe : Dinero, que : String) : Dinero</text>
-<rect class="resalte" data-m="aPesos" x="4552" y="5163.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="aPesos" x="4559" y="5174.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ aPesos() : double</text>
-<rect class="resalte" data-m="mas" x="4552" y="5179.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="mas" x="4559" y="5190.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ mas(otro : Dinero) : Dinero</text>
-<rect class="resalte" data-m="menos" x="4552" y="5195.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="menos" x="4559" y="5206.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ menos(otro : Dinero) : Dinero</text>
-<rect class="resalte" data-m="por" x="4552" y="5211.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="por" x="4559" y="5222.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ por(factor : double) : Dinero</text>
-<rect class="resalte" data-m="porcentaje" x="4552" y="5227.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="porcentaje" x="4559" y="5238.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ porcentaje(porcentaje : double) : Dinero</text>
-<rect class="resalte" data-m="acotadoA" x="4552" y="5243.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="acotadoA" x="4559" y="5254.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ acotadoA(techo : Dinero) : Dinero</text>
-<rect class="resalte" data-m="sinBajarDeCero" x="4552" y="5259.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="sinBajarDeCero" x="4559" y="5270.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ sinBajarDeCero() : Dinero</text>
-<rect class="resalte" data-m="esCero" x="4552" y="5275.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="esCero" x="4559" y="5286.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esCero() : boolean</text>
-<rect class="resalte" data-m="esMayorQue" x="4552" y="5291.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="esMayorQue" x="4559" y="5302.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esMayorQue(otro : Dinero) : boolean</text>
-<rect class="resalte" data-m="sumar" x="4552" y="5307.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="sumar" x="4559" y="5318.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ sumar(importes : Collection&lt;Dinero&gt;) : Dinero</text>
-<rect class="resalte" data-m="compareTo" x="4552" y="5323.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="compareTo" x="4559" y="5334.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ compareTo(otro : Dinero) : int</text>
+<rect x="4543" y="4987" width="410" height="356" rx="6" fill="#ffffff" stroke="#5f7f6e" stroke-width="1.2"/>
+<path d="M4543.6,5037 V4993 Q4543.6,4987.6 4549,4987.6 H4947 Q4952.4,4987.6 4952.4,4993 V5037 Z" fill="#5f7f6e" fill-opacity="0.32"/>
+<text x="4748" y="5007" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«ValueObject · Record»</text>
+<text x="4748" y="5026" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">Dinero</text>
+<line x1="4543" y1="5037" x2="4953" y2="5037" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="4552" y="5053.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- centavos : long</text>
+<text class="miembro" x="4552" y="5069.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ CERO : Dinero</text>
+<text class="miembro" x="4552" y="5085.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ IMPORTE_MAXIMO : Dinero</text>
+<line x1="4543" y1="5094" x2="4953" y2="5094" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="de" x="4545" y="5099.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="de" x="4552" y="5110.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ de(pesos : double) : Dinero</text>
+<rect class="resalte" data-m="deCentavos" x="4545" y="5115.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="deCentavos" x="4552" y="5126.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ deCentavos(centavos : long) : Dinero</text>
+<rect class="resalte" data-m="importe" x="4545" y="5131.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="importe" x="4552" y="5142.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ importe(pesos : Double, que : String) : Dinero</text>
+<rect class="resalte" data-m="importeValido" x="4545" y="5147.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="importeValido" x="4552" y="5158.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ importeValido(importe : Dinero, que : String) : Dinero</text>
+<rect class="resalte" data-m="aPesos" x="4545" y="5163.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="aPesos" x="4552" y="5174.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ aPesos() : double</text>
+<rect class="resalte" data-m="mas" x="4545" y="5179.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="mas" x="4552" y="5190.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ mas(otro : Dinero) : Dinero</text>
+<rect class="resalte" data-m="menos" x="4545" y="5195.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="menos" x="4552" y="5206.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ menos(otro : Dinero) : Dinero</text>
+<rect class="resalte" data-m="por" x="4545" y="5211.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="por" x="4552" y="5222.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ por(factor : double) : Dinero</text>
+<rect class="resalte" data-m="porcentaje" x="4545" y="5227.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="porcentaje" x="4552" y="5238.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ porcentaje(porcentaje : double) : Dinero</text>
+<rect class="resalte" data-m="acotadoA" x="4545" y="5243.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="acotadoA" x="4552" y="5254.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ acotadoA(techo : Dinero) : Dinero</text>
+<rect class="resalte" data-m="sinBajarDeCero" x="4545" y="5259.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="sinBajarDeCero" x="4552" y="5270.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ sinBajarDeCero() : Dinero</text>
+<rect class="resalte" data-m="esCero" x="4545" y="5275.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="esCero" x="4552" y="5286.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esCero() : boolean</text>
+<rect class="resalte" data-m="esMayorQue" x="4545" y="5291.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="esMayorQue" x="4552" y="5302.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ esMayorQue(otro : Dinero) : boolean</text>
+<rect class="resalte" data-m="sumar" x="4545" y="5307.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="sumar" x="4552" y="5318.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" text-decoration="underline">+ sumar(importes : Collection&lt;Dinero&gt;) : Dinero</text>
+<rect class="resalte" data-m="compareTo" x="4545" y="5323.5" width="406" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="compareTo" x="4552" y="5334.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ compareTo(otro : Dinero) : int</text>
 </g>
 <g class="clase" data-id="Rechazo" data-nombre="Rechazo">
 <rect x="2397.3333333333335" y="795" width="340" height="91" rx="6" fill="#ffffff" stroke="#b04a3a" stroke-width="1.2"/>
@@ -1375,8 +1375,8 @@
 <rect class="resalte" data-m="DemasiadosIntentos" x="3614" y="1037.5" width="176" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
 <text class="miembro" data-m="DemasiadosIntentos" x="3621" y="1048.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ DemasiadosIntentos()</text>
 </g>
-<g class="rel" data-a="Usuario" data-b="Cliente"><polygon points="5500.8,4067 5507.8,4080 5493.8,4080" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Usuario" data-b="Empleado"><polygon points="5578.6,4067 5585.6,4080 5571.6,4080" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Usuario" data-b="Cliente"><polygon points="5493.8,4067 5500.8,4080 5486.8,4080" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Usuario" data-b="Empleado"><polygon points="5571.6,4067 5578.6,4080 5564.6,4080" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Producto" data-b="ProductoSuelto"><polygon points="6732.285714285714,1190 6739.285714285714,1203 6725.285714285714,1203" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Producto" data-b="Combo"><polygon points="6799.857142857143,1190 6806.857142857143,1203 6792.857142857143,1203" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="PromocionPorcentaje"><polygon points="4413.333333333333,1121 4420.333333333333,1134 4406.333333333333,1134" fill="#ffffff" stroke="#2d3142" stroke-width="1.2" stroke-linejoin="miter"/></g>
@@ -1403,42 +1403,42 @@
 <g class="rel" data-a="Funcion" data-b="Programacion"><polyline points="2981.4999999999995,4977 2986.4999999999995,4987 2991.4999999999995,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="FormatoDeFuncion" data-b="Version"><polyline points="4059.0333333333333,4596 4064.0333333333333,4606 4069.0333333333333,4596" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="FormatoDeFuncion" data-b="Proyeccion"><polyline points="3490.5,4596 3495.5,4606 3500.5,4596" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="FormatoDeFuncion" data-b="Dinero"><polygon points="4154.433333333333,4507 4159.433333333333,4515 4154.433333333333,4523 4149.433333333333,4515" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4603.5714285714275,4977 4608.5714285714275,4987 4613.5714285714275,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="FormatoDeFuncion" data-b="Dinero"><polygon points="4154.433333333333,4507 4159.433333333333,4515 4154.433333333333,4523 4149.433333333333,4515" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4596.5714285714275,4977 4601.5714285714275,4987 4606.5714285714275,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Programacion" data-b="Pelicula"><polyline points="2926.5,5638 2931.5,5648 2936.5,5638" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Programacion" data-b="Sala"><polyline points="3695.5,5638 3700.5,5648 3705.5,5638" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Programacion" data-b="Periodo"><polygon points="2823.6,5391 2828.6693735622785,5398.956220942513 2823.739125174951,5406.999395119369 2818.6697516126724,5399.043174176857" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="365,5638 370,5648 375,5638" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Programacion" data-b="FormatoDeFuncion"><polygon points="3149.4,5391 3154.3302483873276,5399.043174176857 3149.260874825049,5406.999395119369 3144.3306264377215,5398.956220942513" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="3938.4999999999995,4333 3943.4999999999995,4343 3948.4999999999995,4333" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Reserva" data-b="Funcion"><polyline points="3603.833333333333,3910 3608.833333333333,3920 3613.833333333333,3910" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Reserva" data-b="Cliente"><polyline points="5095,4156 5100,4166 5105,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Reserva" data-b="Cliente"><polyline points="5088,4156 5093,4166 5098,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Reserva" data-b="Entrada"><polygon points="4093.1666666666665,2898 4098.166666666666,2906 4093.1666666666665,2914 4088.1666666666665,2906" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4088.1666666666665,3062.8 4093.1666666666665,3072.8 4098.166666666666,3062.8" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Reserva" data-b="EstadoReserva"><polyline points="4894.5,3007 4899.5,3017 4904.5,3007" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Entrada" data-b="Asiento"><polyline points="4038.3333333333335,5939 4043.3333333333335,5949 4048.3333333333335,5939" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Entrada" data-b="TipoTarifa"><polyline points="4468.5,3421 4473.5,3431 4478.5,3421" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Entrada" data-b="Dinero"><polygon points="4139,3284.8 4144,3292.8 4139,3300.8 4134,3292.8" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4662.142857142857,4977 4667.142857142857,4987 4672.142857142857,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Entrada" data-b="Dinero"><polygon points="4139,3284.8 4144,3292.8 4139,3300.8 4134,3292.8" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4655.142857142857,4977 4660.142857142857,4987 4665.142857142857,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="ButacaPedida" data-b="Asiento"><polyline points="4395.666666666666,5939 4400.666666666666,5949 4405.666666666666,5939" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="ButacaPedida" data-b="TipoTarifa"><polyline points="4579.5,3421 4584.5,3431 4589.5,3421" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Pago" data-b="Reserva"><polyline points="4114.690476190476,2415 4119.690476190476,2425 4124.690476190476,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Pago" data-b="Promocion"><polyline points="4232,590 4237,600 4242,590" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Pago" data-b="MedioPago"><polyline points="4684.823809523809,2415 4689.823809523809,2425 4694.823809523809,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Pago" data-b="Dinero"><polygon points="4925.023809523809,2316 4930.023809523809,2324 4925.023809523809,2332 4920.023809523809,2324" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4720.714285714285,4977 4725.714285714285,4987 4730.714285714285,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Pago" data-b="Dinero"><polygon points="4925.023809523809,2316 4930.023809523809,2324 4925.023809523809,2332 4920.023809523809,2324" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4713.714285714285,4977 4718.714285714285,4987 4723.714285714285,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="BloqueoButaca" data-b="Funcion"><polyline points="3766.1666666666665,3910 3771.1666666666665,3920 3776.1666666666665,3910" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="BloqueoButaca" data-b="Asiento"><polyline points="4306.333333333333,5939 4311.333333333333,5949 4316.333333333333,5939" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Usuario" data-b="Rol"><polyline points="6019,4156 6024,4166 6029,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Usuario" data-b="Rol"><polyline points="6012,4156 6017,4166 6022,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="Periodo"><polygon points="4016.5833333333335,1121 4021.5833333333335,1129 4016.5833333333335,1137 4011.5833333333335,1129" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="198,5638 203,5648 208,5638" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="FranjaHoraria"><polygon points="4060.6666666666665,1121 4065.6666666666665,1129 4060.6666666666665,1137 4055.6666666666665,1129" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="746.5,5638 751.5,5648 756.5,5638" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="MedioPago"><polyline points="4565.6238095238095,2415 4570.6238095238095,2425 4575.6238095238095,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="PromocionMontoFijo" data-b="Dinero"><polygon points="4867,1750 4872,1758 4867,1766 4862,1758" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4779.285714285714,4977 4784.285714285714,4987 4789.285714285714,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="PromocionMontoFijo" data-b="Dinero"><polygon points="4867,1750 4872,1758 4867,1766 4862,1758" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4772.285714285714,4977 4777.285714285714,4987 4782.285714285714,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="CondicionesPromocion" data-b="MedioPago"><polyline points="4625.22380952381,2415 4630.22380952381,2425 4635.22380952381,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Producto" data-b="TipoProducto"><polyline points="6827.5,1299 6832.5,1309 6837.5,1299" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Producto" data-b="Dinero"><polygon points="6597.142857142857,1190 6602.142857142857,1198 6597.142857142857,1206 6592.142857142857,1198" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4896.428571428571,4977 4901.428571428571,4987 4906.428571428571,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Producto" data-b="Dinero"><polygon points="6597.142857142857,1190 6602.142857142857,1198 6597.142857142857,1206 6592.142857142857,1198" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4889.428571428571,4977 4894.428571428571,4987 4899.428571428571,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Combo" data-b="ItemCombo"><polygon points="6521.5,1509 6526.5,1517 6521.5,1525 6516.5,1517" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="6802.666666666667,1588 6807.666666666667,1598 6812.666666666667,1588" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="ItemCombo" data-b="Producto"><polyline points="6940,1200 6935,1190 6930,1200" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="CompraCandy" data-b="ItemCompra"><polygon points="6750.9047619047615,372 6755.9047619047615,380 6750.9047619047615,388 6745.9047619047615,380" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="6625.4047619047615,481 6630.4047619047615,491 6635.4047619047615,481" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="CompraCandy" data-b="MedioPago"><polyline points="4744.423809523809,2415 4749.423809523809,2425 4754.423809523809,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="CompraCandy" data-b="Cliente"><polyline points="5173,4156 5178,4166 5183,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="CompraCandy" data-b="Cliente"><polyline points="5166,4156 5171,4166 5176,4156" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="CompraCandy" data-b="Reserva"><polyline points="4300.357142857142,2415 4305.357142857142,2425 4310.357142857142,2415" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="ItemCompra" data-b="Producto"><polyline points="6682.238095238095,803 6687.238095238095,813 6692.238095238095,803" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="ItemCompra" data-b="Dinero"><polygon points="6565.571428571428,724 6570.571428571428,732 6565.571428571428,740 6560.571428571428,732" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4837.857142857142,4977 4842.857142857142,4987 4847.857142857142,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="ItemCompra" data-b="Dinero"><polygon points="6565.571428571428,724 6570.571428571428,732 6565.571428571428,740 6560.571428571428,732" fill="#2e5aa8" stroke="#2e5aa8" stroke-width="1.2"/><polyline points="4830.857142857142,4977 4835.857142857142,4987 4840.857142857142,4977" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Imagen" data-b="FormatoImagen"><polyline points="6156.166666666667,2505 6161.166666666667,2515 6166.166666666667,2505" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="NombreDeImagen" data-b="FormatoImagen"><polyline points="6302.166666666667,2505 6307.166666666667,2515 6312.166666666667,2505" fill="none" stroke="#2e5aa8" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Pelicula" data-b="TrailerYoutube"><polyline points="3020.5,6230 3025.5,6240 3030.5,6230" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
@@ -1448,7 +1448,7 @@
 <g class="rel" data-a="Sala" data-b="TipoAsiento"><polyline points="3826,6368 3831,6378 3836,6368" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Reserva" data-b="ButacaPedida"><polyline points="4374,3149.666666666667 4379,3159.666666666667 4384,3149.666666666667" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Reserva" data-b="CodigoDeAcceso"><polyline points="4597.5,3007 4602.5,3017 4607.5,3007" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
-<g class="rel" data-a="Usuario" data-b="Email"><polyline points="6302,4156 6307,4166 6312,4156" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
+<g class="rel" data-a="Usuario" data-b="Email"><polyline points="6298.5,4156 6303.5,4166 6308.5,4156" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="CondicionesPromocion"><polyline points="4037.5,1259.5 4042.5,1269.5 4047.5,1259.5" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="ParametrosPromocion"><polyline points="4479,1240 4484,1250 4489,1240" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Promocion" data-b="TipoPromocion"><polyline points="5057,1240 5062,1250 5067,1240" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
@@ -1462,10 +1462,10 @@
 <g class="rel" data-a="ImagenUrl" data-b="NombreDeImagen"><polyline points="6363.5,2252 6368.5,2262 6373.5,2252" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="ArchivoDeImagen" data-b="NombreDeImagen"><polyline points="6240.833333333333,2252 6245.833333333333,2262 6250.833333333333,2252" fill="none" stroke="#8b93a7" stroke-width="1.3" stroke-linejoin="miter"/></g>
 <g class="rel" data-a="Usuario" data-b="Cliente">
-<rect x="5436.8" y="4114" width="62" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5467.8" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-style="italic">extiende</text>
+<rect x="5429.8" y="4114" width="62" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5460.8" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-style="italic">extiende</text>
 </g>
 <g class="rel" data-a="Usuario" data-b="Empleado">
-<rect x="5568.5" y="4114" width="62" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5599.5" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-style="italic">extiende</text>
+<rect x="5561.5" y="4114" width="62" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5592.5" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-style="italic">extiende</text>
 </g>
 <g class="rel" data-a="Producto" data-b="ProductoSuelto">
 <rect x="5971.5" y="1257" width="62" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6002.5" y="1268" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-style="italic">extiende</text>
@@ -1578,9 +1578,9 @@
 <rect x="3498.5" y="4589" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="3506" y="4600" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="FormatoDeFuncion" data-b="Dinero">
-<rect x="4556" y="4832" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4580.5" y="4843" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">cuesta</text>
+<rect x="4549" y="4832" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4573.5" y="4843" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">cuesta</text>
 <rect x="4157.433333333333" y="4509" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4164.933333333333" y="4520" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4611.5714285714275" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4619.0714285714275" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="4604.5714285714275" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4612.0714285714275" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Programacion" data-b="Pelicula">
 <rect x="2879" y="5501" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="2903.5" y="5512" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">repite</text>
@@ -1608,9 +1608,9 @@
 <rect x="3611.8333333333335" y="3903" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="3619.3333333333335" y="3914" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Reserva" data-b="Cliente">
-<rect x="5054" y="3773" width="42" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5075" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">es de</text>
+<rect x="5047" y="3773" width="42" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5068" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">es de</text>
 <rect x="4414.452380952381" y="2900" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4431.952380952381" y="2911" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..*</text>
-<rect x="5103" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5110.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="5096" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5103.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Reserva" data-b="Entrada">
 <rect x="4036.1666666666665" y="2965" width="55" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4063.6666666666665" y="2976" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">incluye</text>
@@ -1633,9 +1633,9 @@
 <rect x="4476.5" y="3414" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4484" y="3425" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Entrada" data-b="Dinero">
-<rect x="4614" y="4302.5" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4638.5" y="4313.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">cuesta</text>
+<rect x="4607" y="4302.5" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4631.5" y="4313.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">cuesta</text>
 <rect x="4142" y="3286.8" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4149.5" y="3297.8" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4670.142857142857" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4677.642857142857" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="4663.142857142857" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4670.642857142857" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="ButacaPedida" data-b="Asiento">
 <rect x="4357" y="4832" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4374.5" y="4843" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">pide</text>
@@ -1663,9 +1663,9 @@
 <rect x="4692.823809523809" y="2408" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4700.323809523809" y="2419" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Pago" data-b="Dinero">
-<rect x="4687" y="4302.5" width="263" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4818.5" y="4313.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">congela subtotal, descuento y monto en</text>
+<rect x="4680" y="4302.5" width="263" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4811.5" y="4313.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">congela subtotal, descuento y monto en</text>
 <rect x="4928.023809523809" y="2318" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4935.523809523809" y="2329" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4728.714285714285" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4736.214285714285" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">3</text>
+<rect x="4721.714285714285" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4729.214285714285" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">3</text>
 </g>
 <g class="rel" data-a="BloqueoButaca" data-b="Funcion">
 <rect x="3730" y="3773" width="69" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="3764.5" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">vale para</text>
@@ -1678,9 +1678,9 @@
 <rect x="4314.333333333333" y="5932" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4321.833333333333" y="5943" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Usuario" data-b="Rol">
-<rect x="5980" y="4114" width="42" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6001" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">tiene</text>
-<rect x="5659.4" y="4069" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5676.9" y="4080" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..*</text>
-<rect x="6027" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6034.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="5973" y="4114" width="42" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5994" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">tiene</text>
+<rect x="5652.4" y="4069" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5669.9" y="4080" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..*</text>
+<rect x="6020" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6027.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Promocion" data-b="Periodo">
 <rect x="540" y="4302.5" width="96" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="588" y="4313.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">es vigente en</text>
@@ -1700,7 +1700,7 @@
 <g class="rel" data-a="PromocionMontoFijo" data-b="Dinero">
 <rect x="5746" y="3773" width="69" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5780.5" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">descuenta</text>
 <rect x="4870" y="1752" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4877.5" y="1763" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4787.285714285715" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4794.785714285715" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="4780.285714285715" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4787.785714285715" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="CondicionesPromocion" data-b="MedioPago">
 <rect x="4635" y="1910" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4652.5" y="1921" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">pide</text>
@@ -1715,7 +1715,7 @@
 <g class="rel" data-a="Producto" data-b="Dinero">
 <rect x="6558" y="3773" width="49" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6582.5" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">cuesta</text>
 <rect x="6600.142857142857" y="1192" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6607.642857142857" y="1203" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4904.428571428571" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4911.928571428571" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="4897.428571428571" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4904.928571428571" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Combo" data-b="ItemCombo">
 <rect x="6437.5" y="1546" width="82" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6478.5" y="1557" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">se arma con</text>
@@ -1740,7 +1740,7 @@
 <g class="rel" data-a="CompraCandy" data-b="Cliente">
 <rect x="5623" y="2837.5" width="96" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5671" y="2848.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">se le vende a</text>
 <rect x="6565.9047619047615" y="374" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6583.4047619047615" y="385" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..*</text>
-<rect x="5181" y="4149" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5198.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..1</text>
+<rect x="5174" y="4149" width="35" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5191.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">0..1</text>
 </g>
 <g class="rel" data-a="CompraCandy" data-b="Reserva">
 <rect x="4226" y="1910" width="75" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4263.5" y="1921" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">acompaña a</text>
@@ -1755,7 +1755,7 @@
 <g class="rel" data-a="ItemCompra" data-b="Dinero">
 <rect x="6351" y="3773" width="183" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6442.5" y="3784" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">congela precio y ahorro en</text>
 <rect x="6568.571428571428" y="726" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6576.071428571428" y="737" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="4845.857142857143" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4853.357142857143" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">2</text>
+<rect x="4838.857142857143" y="4970" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4846.357142857143" y="4981" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">2</text>
 </g>
 <g class="rel" data-a="Imagen" data-b="FormatoImagen">
 <rect x="5860.666666666667" y="2463" width="102" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5911.666666666667" y="2474" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2e5aa8" font-style="italic">es del formato</text>
@@ -1803,9 +1803,9 @@
 <rect x="4605.5" y="3000" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="4613" y="3011" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Usuario" data-b="Email">
-<rect x="6169" y="4114" width="136" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6237" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#5a6580" font-style="italic">valida el email con</text>
-<rect x="5737.2" y="4069" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5744.7" y="4080" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
-<rect x="6310" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6317.5" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="6165.5" y="4114" width="136" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6233.5" y="4125" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#5a6580" font-style="italic">valida el email con</text>
+<rect x="5730.2" y="4069" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="5737.7" y="4080" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
+<rect x="6306.5" y="4149" width="15" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="6314" y="4160" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#2d3142" font-weight="600">1</text>
 </g>
 <g class="rel" data-a="Promocion" data-b="CondicionesPromocion">
 <rect x="3958.5" y="1198" width="82" height="15" rx="2" fill="#f5f5f5" fill-opacity="0.92"/><text x="3999.5" y="1209" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11" fill="#5a6580" font-style="italic">se arma con</text>
