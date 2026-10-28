@@ -23,11 +23,19 @@ public class MercadoPagoEmulado implements PasarelaPagos {
     // Relativo: el comprador vuelve al host del que salió, sea nginx o el servidor de Vite.
     @Override
     public Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence) {
+        return abrir(reservaId, medio, entradas.mas(candy), false);
+    }
+
+    @Override
+    public Checkout crearSoloCandy(int reservaId, MedioPago medio, Dinero candy, LocalDateTime vence) {
+        return abrir(reservaId, medio, candy, true);
+    }
+
+    private Checkout abrir(int reservaId, MedioPago medio, Dinero monto, boolean soloCandy) {
         String id = "MP-" + numero(10);
-        Dinero monto = entradas.mas(candy);
         String urlPago = PANTALLA + id + "?monto=" + monto.aPesos() + "&medio=" + medio.name();
         // El QR lleva solo el id: con el monto adentro, alguien podría editarlo antes de pagar.
-        Checkout checkout = new Checkout(id, reservaId, medio, monto, urlPago, "MP-QR|" + id);
+        Checkout checkout = new Checkout(id, reservaId, medio, monto, urlPago, "MP-QR|" + id, soloCandy);
         checkouts.put(id, checkout);
         return checkout;
     }

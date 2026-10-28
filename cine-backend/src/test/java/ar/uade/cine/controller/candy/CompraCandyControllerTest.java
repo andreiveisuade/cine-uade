@@ -26,6 +26,7 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorPagos;
+import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorReservas;
 
 class CompraCandyControllerTest extends PruebaDeApi {
@@ -42,6 +43,8 @@ class CompraCandyControllerTest extends PruebaDeApi {
     private GestorFunciones funciones;
     @Autowired
     private GestorReservas reservas;
+    @Autowired
+    private ConsultasReservas consultas;
     @Autowired
     private GestorPagos pagos;
 
@@ -79,6 +82,26 @@ class CompraCandyControllerTest extends PruebaDeApi {
                 + "\"precioUnitario\":4000.0,\"subtotal\":8000.0},{\"productoId\":" + gaseosa
                 + ",\"nombre\":\"Gaseosa 500ml\",\"cantidad\":1,\"precioUnitario\":2500.0,\"subtotal\":2500.0}],"
                 + "\"total\":10500.0,\"ahorro\":0.0}", respuesta.cuerpo());
+    }
+
+    // D7: el candy escanea el QR de la entrada; la segunda vez el 409 dice cuándo se retiró.
+    @Test
+    void elRetiroConElQrDevuelveLoEntregadoYNoSeRepite() {
+        cargarCarta();
+        int duenio = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
+        int reserva = reservaPagadaDe(duenio);
+        post("/api/candy/compras", "{\"reservaId\":" + reserva
+                + ",\"cantidades\":{\"" + pochoclos + "\":1},\"medio\":\"EFECTIVO\"}");
+        String codigo = "{\"codigo\":\"" + consultas.obtener(reserva).getCodigo() + "\"}";
+
+        Respuesta retiro = post("/api/candy/retiros", codigo);
+        Respuesta otraVez = post("/api/candy/retiros", codigo);
+
+        assertEquals(200, retiro.estado());
+        assertEquals("2026-08-14T10:00:00", retiro.json().get(0).get("retiradaEn").asText());
+        assertEquals(409, otraVez.estado());
+        assertEquals("El candy de esa entrada ya se retiró el 14/08 10:00", otraVez.error());
+        assertEquals(400, post("/api/candy/retiros", "{}").estado());
     }
 
     // Sin clienteId la compra queda a nombre del dueño de la reserva.

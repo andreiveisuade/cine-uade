@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.candy;
 
+import java.security.Principal;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
+import ar.uade.cine.dto.candy.PedidoRetiroDTO;
 import ar.uade.cine.dto.candy.PedidoVentaDTO;
 import ar.uade.cine.service.candy.GestorCandy;
 
@@ -23,7 +25,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/candy/compras: traduce HTTP a GestorCandy; separado de la carta porque no la edita.
+// Rutas de /api/candy/compras y /retiros: traduce HTTP a GestorCandy; separado de la carta porque no la edita.
 // Comparte el tag con ProductoController para que Swagger muestre el candy en un solo grupo.
 @Tag(name = "Candy", description = "La carta del candy y sus ventas de mostrador")
 @RestController
@@ -56,5 +58,19 @@ public class CompraCandyController {
                 ? candy.listarComprasDe(Parseo.numeroOpcional(clienteId, "el id del cliente"))
                 : candy.listarComprasDelDia(Parseo.dia(fecha, "la fecha"));
         return compras.stream().map(vistas::compra).toList();
+    }
+
+    // CU-16: el cliente sale de la sesión, no del pedido, como en /reservas/mias.
+    @Operation(summary = "Las compras de candy cobradas del cliente de la sesión, la más nueva primero")
+    @GetMapping("/api/candy/compras/mias")
+    public List<CompraCandyVistaDTO> mias(Principal cliente) {
+        return candy.listarCobradasDe(cliente.getName()).stream().map(vistas::compra).toList();
+    }
+
+    // D7: por código, como la puerta: es lo que trae el QR de la entrada.
+    @Operation(summary = "Entregar el candy cobrado de una entrada, con su QR")
+    @PostMapping("/api/candy/retiros")
+    public List<CompraCandyVistaDTO> retirar(@Valid @RequestBody PedidoRetiroDTO pedido) {
+        return candy.retirar(pedido.codigo()).stream().map(vistas::compra).toList();
     }
 }

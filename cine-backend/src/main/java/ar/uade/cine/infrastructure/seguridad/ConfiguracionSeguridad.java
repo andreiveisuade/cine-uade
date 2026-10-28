@@ -159,8 +159,10 @@ public class ConfiguracionSeguridad {
                                 "/api/reservas/codigo/*/checkout").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.PUT, "/api/reservas/codigo/*/candy").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.GET, "/api/reservas/codigo/*/cotizacion").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/candy/compras/mias").hasRole(CLIENTE)
                         // El acomodador entra al panel para llegar a la puerta.
-                        .requestMatchers(HttpMethod.POST, "/api/acceso").hasAnyRole(ADMINISTRADOR, ACOMODADOR)
+                        .requestMatchers(HttpMethod.POST, "/api/acceso", "/api/candy/retiros")
+                                .hasAnyRole(ADMINISTRADOR, ACOMODADOR)
                         .anyRequest().hasRole(ADMINISTRADOR))
                 .build();
     }

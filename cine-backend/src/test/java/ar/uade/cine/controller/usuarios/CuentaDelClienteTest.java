@@ -283,6 +283,25 @@ class CuentaDelClienteTest extends PruebaDeApi {
         assertThat(respuesta.estado()).as(caso).isEqualTo(estado);
     }
 
+    // CU-16: las suyas y cobradas; el pedido sin pagar se ve en la reserva, no acá.
+    @Test
+    void veSusComprasDeCandyCobradas() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva suya = reservar("Ana", ANA, "A1");
+        Reserva sinPagar = reservar("Ana", ANA, "A2");
+        MockHttpSession sesion = entrarConGoogle(ANA);
+        conSesion(HttpMethod.PUT, candy(suya), sesion, "{\"cantidades\":{\"" + pochoclos + "\":1}}");
+        conSesion(HttpMethod.PUT, candy(sinPagar), sesion, "{\"cantidades\":{\"" + pochoclos + "\":3}}");
+        pagos.cobrar(suya.getId(), MedioPago.EFECTIVO, "");
+
+        Respuesta mias = conSesion(HttpMethod.GET, "/api/candy/compras/mias", sesion, null);
+
+        assertThat(mias.estado()).isEqualTo(200);
+        assertThat(mias.json()).hasSize(1);
+        assertThat(mias.json().get(0).get("reservaId").asInt()).isEqualTo(suya.getId());
+        assertThat(mias.json().get(0).get("estado").asText()).isEqualTo("COBRADA");
+    }
+
     private static String candy(Reserva reserva) {
         return "/api/reservas/codigo/" + reserva.getCodigo() + "/candy";
     }

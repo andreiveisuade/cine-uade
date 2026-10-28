@@ -28,7 +28,7 @@ public class VistasCandy {
 
     public CompraCandyVistaDTO compra(CompraCandy c) {
         return new CompraCandyVistaDTO(c.getId(), c.getClienteId(), c.getReservaId(), c.getEstado().name(),
-                Fechas.texto(c.getFecha()), Fechas.texto(c.getCobradaEn()),
+                Fechas.texto(c.getFecha()), Fechas.texto(c.getCobradaEn()), Fechas.texto(c.getRetiradaEn()),
                 c.getMedio() == null ? null : c.getMedio().name(), c.getCodigoAutorizacion(),
                 c.getItems().stream().map(this::item).toList(), c.getTotal().aPesos(), c.getAhorro().aPesos());
     }

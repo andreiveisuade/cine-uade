@@ -229,6 +229,7 @@ CREATE TABLE IF NOT EXISTS combo_item (
 -- sin medio, y se cobra en el pago de su reserva (o queda ANULADA si la reserva se cancela o vence)
 -- cliente y reserva admiten NULL: mostrador no tiene ninguno, la web los toma de la reserva
 -- cobrada_en es la fecha del arqueo: el pedido de la web puede cobrarse otro dia que fecha
+-- retirada_en NULL = no se entrego; se marca con el QR de la entrada, como ingresada_en en reserva
 CREATE TABLE IF NOT EXISTS compra_candy (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NULL,
@@ -238,6 +239,7 @@ CREATE TABLE IF NOT EXISTS compra_candy (
     codigo_autorizacion VARCHAR(50) NOT NULL DEFAULT '',
     estado VARCHAR(15) NOT NULL,
     cobrada_en DATETIME NULL,
+    retirada_en DATETIME NULL,
     FOREIGN KEY (cliente_id) REFERENCES usuario(id),
     FOREIGN KEY (reserva_id) REFERENCES reserva(id)
 );

@@ -152,4 +152,23 @@ class CompraCandyTest {
         rechaza("Falta el código de autorización del pago con QR", () -> pedido.cobrar(MedioPago.QR, "", AHORA));
         assertEquals(EstadoCompraCandy.PENDIENTE, pedido.getEstado(), "un cobro rechazado no cambia el estado");
     }
+
+    // D7: como el ingreso a la sala, el mismo QR no retira dos veces.
+    @Test
+    void elCandyCobradoSeRetiraUnaSolaVez() {
+        CompraCandy compra = comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, 1));
+
+        compra.registrarRetiro(AHORA.plusMinutes(5));
+
+        assertEquals(AHORA.plusMinutes(5), compra.getRetiradaEn());
+        rechaza("El candy de esa entrada ya se retiró el 13/08 20:05", () -> compra.registrarRetiro(AHORA.plusHours(1)));
+    }
+
+    @Test
+    void loQueNoSeCobroNoSeRetira() {
+        CompraCandy pedido = CompraCandy.pendiente(3, 25, AHORA, Map.of(pochoclos, 1));
+
+        rechaza("La compra de candy está sin cobrar: solo se retira lo cobrado", () -> pedido.registrarRetiro(AHORA));
+        assertNull(pedido.getRetiradaEn());
+    }
 }

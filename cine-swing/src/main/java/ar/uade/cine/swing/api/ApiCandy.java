@@ -41,6 +41,11 @@ public final class ApiCandy {
         return http.post("/candy/compras", venta, CompraCandy.class);
     }
 
+    // D7: con el mismo código que la puerta; devuelve lo que hay que entregar.
+    public List<CompraCandy> retirarCandy(String codigo) {
+        return List.of(http.post("/candy/retiros", Map.of("codigo", Parametros.oVacio(codigo)), CompraCandy[].class));
+    }
+
     public List<CompraCandy> obtenerComprasCandy(Map<String, String> filtros) {
         return http.lista("/candy/compras" + Parametros.consulta(filtros), CompraCandy.class);
     }

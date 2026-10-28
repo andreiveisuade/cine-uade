@@ -594,6 +594,83 @@ class GestorPagosTest extends PruebaDeIntegracion {
         rechaza("La reserva está pagada: no se puede cobrar", () -> pagos.cotizar(reserva.getId()));
     }
 
+    // R30: candy sumado a una entrada ya paga, 1 pochoclo de 4000.
+    private Reserva pagadaConCandyNuevo() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
+        return reserva;
+    }
+
+    // D6: lo que se suma después de pagar no vuelve a cobrar las entradas ni lleva promo (D4).
+    @Test
+    void conLaEntradaPagaSeCotizaYSeAbreUnCheckoutSoloDelCandy() {
+        cincuentaOff();
+        Reserva reserva = pagadaConCandyNuevo();
+
+        Cotizacion qr = pagos.cotizar(reserva.getId()).get(2);
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+
+        assertEquals(Dinero.CERO, qr.entradas());
+        assertEquals(Dinero.CERO, qr.descuento().monto());
+        assertEquals(Dinero.de(4000), qr.total());
+        assertTrue(checkout.soloCandy());
+        assertEquals(Dinero.de(4000), checkout.monto());
+    }
+
+    @Test
+    void laVueltaDelCheckoutDelCandyLoCobraSinOtroPagoYUnaSolaVez() {
+        Reserva reserva = pagadaConCandyNuevo();
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), null), pagos.retornarDeCheckout(checkout, "approved"));
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), null), pagos.retornarDeCheckout(checkout, "approved"));
+
+        CompraCandy cobrada = candyDe(reserva);
+        assertEquals(EstadoCompraCandy.COBRADA, cobrada.getEstado());
+        assertEquals(MedioPago.QR, cobrada.getMedio());
+        assertFalse(cobrada.getCodigoAutorizacion().isBlank());
+        assertEquals(1, pagoRepository.findByReservaIdIn(List.of(reserva.getId())).size(), "el borderó no cambia");
+        assertEquals(Dinero.de(4000), caja.arqueoCandyDe(reloj.hoy()).total());
+    }
+
+    @Test
+    void elCheckoutDelCandyNoSeConfirmaComoUnoDeEntradas() {
+        Reserva reserva = pagadaConCandyNuevo();
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+
+        rechaza("El checkout " + checkout + " es del candy: se cobra cuando el comprador vuelve de la pasarela",
+                () -> pagos.confirmarCheckout(checkout));
+    }
+
+    @Test
+    void siElCandySumadoCambiaDespuesDeAbrirElCheckoutNoSeCobra() {
+        Reserva reserva = pagadaConCandyNuevo();
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+        candy.pedirParaReserva(reserva.getId(), Map.of(carta.listar().get(0).getId(), 2));
+
+        RetornoCheckout retorno = pagos.retornarDeCheckout(checkout, "approved");
+
+        assertEquals("El monto cambió después de abrir el pago: acercate a la boletería", retorno.aviso());
+        assertEquals(EstadoCompraCandy.PENDIENTE, candyDe(reserva).getEstado());
+    }
+
+    // El de candy vence a la media hora o cuando empieza la función, lo que pase primero.
+    @Test
+    void elCheckoutDelCandyVenceAntesDeQueEmpieceLaFuncion() {
+        PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, candy, eventos, reloj);
+        Reserva reserva = pagadaConCandyNuevo();
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 50));
+
+        new TransactionTemplate(transacciones)
+                .executeWithoutResult(estado -> conEsaPasarela.iniciarCheckout(reserva.getId(), MedioPago.QR));
+
+        assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), pasarela.vence);
+    }
+
     private static class PasarelaQueNoAprueba extends MercadoPagoEmulado {
 
         @Override
@@ -611,6 +688,12 @@ class GestorPagosTest extends PruebaDeIntegracion {
         public Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence) {
             this.vence = vence;
             return super.crear(reservaId, medio, entradas, candy, vence);
+        }
+
+        @Override
+        public Checkout crearSoloCandy(int reservaId, MedioPago medio, Dinero candy, LocalDateTime vence) {
+            this.vence = vence;
+            return super.crearSoloCandy(reservaId, medio, candy, vence);
         }
 
         @Override

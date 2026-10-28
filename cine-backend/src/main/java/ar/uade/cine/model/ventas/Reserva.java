@@ -138,6 +138,16 @@ public class Reserva {
         return Optional.empty();
     }
 
+    // R30: el candy se pide mientras la reserva se puede cobrar o, ya pagada, hasta que empieza la función.
+    public Optional<Rechazo> impedimentoParaPedirCandy(LocalDateTime ahora) {
+        if (!estaPagada()) {
+            return impedimentoParaCobrar(ahora);
+        }
+        return funcion.yaEmpezo(ahora)
+                ? Optional.of(new DatoInvalido("La función ya empezó: el candy se compra en el mostrador"))
+                : Optional.empty();
+    }
+
     public boolean esCobrable(LocalDateTime ahora) {
         return impedimentoParaCobrar(ahora).isEmpty();
     }

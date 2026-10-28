@@ -25,6 +25,11 @@ public enum EstadoCompraCandy {
 
     COBRADA("cobrada") {
         @Override
+        EstadoCompraCandy retirar() {
+            return this;
+        }
+
+        @Override
         public boolean estaCobrada() {
             return true;
         }
@@ -46,6 +51,11 @@ public enum EstadoCompraCandy {
     // R30: se anula solo el pedido que todavía espera el pago de su reserva.
     EstadoCompraCandy anular() {
         throw rechazo("solo se anula un pedido sin cobrar");
+    }
+
+    // Se entrega lo que se pagó, como a la sala se entra con la reserva pagada (R18).
+    EstadoCompraCandy retirar() {
+        throw rechazo("solo se retira lo cobrado");
     }
 
     public boolean esperaCobro() {

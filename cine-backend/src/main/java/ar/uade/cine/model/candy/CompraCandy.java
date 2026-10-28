@@ -1,12 +1,14 @@
 package ar.uade.cine.model.candy;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import ar.uade.cine.model.candy.validacion.ValidadorCompraCandy;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.ventas.MedioPago;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -28,6 +30,8 @@ import lombok.Getter;
 @Table(name = "compra_candy")
 @Getter
 public class CompraCandy {
+
+    private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,6 +55,9 @@ public class CompraCandy {
 
     // El arqueo cuenta por cobro: el pedido de la web se hace un día y se cobra cuando se paga la reserva.
     private LocalDateTime cobradaEn;
+
+    // Fecha y no estado, como ingresada_en de la reserva: sin ella el mismo QR retiraba dos veces el combo.
+    private LocalDateTime retiradaEn;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "compra_id", nullable = false)
@@ -106,6 +113,20 @@ public class CompraCandy {
     // R30: la reserva se canceló o venció, así que el pedido ya no se cobra.
     public void anular() {
         estado = estado.anular();
+    }
+
+    // Con el QR de la entrada. El momento lo pone el gestor: la compra no sabe qué hora es.
+    public void registrarRetiro(LocalDateTime cuando) {
+        EstadoCompraCandy siguiente = estado.retirar();
+        if (retiradaEn != null) {
+            throw new ConflictoDeNegocio("El candy de esa entrada ya se retiró el " + retiradaEn.format(DIA_Y_HORA));
+        }
+        estado = siguiente;
+        retiradaEn = cuando;
+    }
+
+    public boolean estaParaRetirar() {
+        return estado.estaCobrada() && retiradaEn == null;
     }
 
     public boolean estaPendiente() {

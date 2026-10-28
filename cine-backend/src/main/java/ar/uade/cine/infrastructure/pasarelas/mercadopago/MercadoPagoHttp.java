@@ -32,8 +32,9 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final SecureRandom AZAR = new SecureRandom();
     private static final String MONEDA = "ARS";
-    // <reservaId>-<MEDIO>-<azar>: el que arma crear. Cualquier otra referencia es de otra venta de la cuenta.
-    private static final String FORMATO_ID = "\\d{1,9}-[A-Z]+-\\d+";
+    private static final String SOLO_CANDY = "-CANDY";
+    // <reservaId>-<MEDIO>-<azar>[-CANDY]: el que arma crear. Cualquier otra referencia es de otra venta de la cuenta.
+    private static final String FORMATO_ID = "\\d{1,9}-[A-Z]+-\\d+(" + SOLO_CANDY + ")?";
     // Los payment_type_id de MP Argentina: los que no son el medio pedido van en excluded_payment_types.
     private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
             "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
@@ -52,14 +53,25 @@ public class MercadoPagoHttp implements PasarelaPagos {
     }
 
     // Las entradas van en un ítem con el descuento ya restado (el detalle de butacas está en la reserva) y el candy
-    // en otro (R30). MP no acepta un ítem en cero: el candy entra solo si hay.
+    // en otro (R30). MP no acepta un ítem en cero: cada uno entra solo si hay.
     @Override
     public Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence) {
-        String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
+        return abrir(reservaId, medio, entradas, candy, vence, "");
+    }
+
+    @Override
+    public Checkout crearSoloCandy(int reservaId, MedioPago medio, Dinero candy, LocalDateTime vence) {
+        return abrir(reservaId, medio, Dinero.CERO, candy, vence, SOLO_CANDY);
+    }
+
+    // El sufijo viaja en el external_reference: es lo que dice qué cobrar cuando el checkout vuelve por la URL.
+    private Checkout abrir(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence,
+                           String sufijo) {
+        String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong()) + sufijo;
         String cuerpo = preferencia(id, reservaId, medio, entradas, candy, vence).toString();
         JsonNode creada = api.post("/checkout/preferences", cuerpo);
         String urlPago = urlDePago(creada);
-        return new Checkout(id, reservaId, medio, entradas.mas(candy), urlPago, urlPago);
+        return new Checkout(id, reservaId, medio, entradas.mas(candy), urlPago, urlPago, !sufijo.isEmpty());
     }
 
     private ObjectNode preferencia(String id, int reservaId, MedioPago medio, Dinero entradas, Dinero candy,
@@ -67,7 +79,9 @@ public class MercadoPagoHttp implements PasarelaPagos {
         String retorno = sitio + "/api/checkouts/" + id + "/retorno";
         ObjectNode preferencia = JSON.createObjectNode();
         ArrayNode items = preferencia.putArray("items");
-        item(items, "Reserva " + reservaId + " · Cine UADE", entradas);
+        if (!entradas.esCero()) {
+            item(items, "Reserva " + reservaId + " · Cine UADE", entradas);
+        }
         if (!candy.esCero()) {
             item(items, "Candy de la reserva " + reservaId, candy);
         }
@@ -119,7 +133,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
         List<Dinero> precios = new ArrayList<>();
         preferencia.path("items").forEach(item -> precios.add(Dinero.de(item.path("unit_price").asDouble())));
         return Optional.of(new Checkout(checkoutId, Integer.parseInt(partes[0]), medio,
-                Dinero.sumar(precios), urlPago, urlPago));
+                Dinero.sumar(precios), urlPago, urlPago, checkoutId.endsWith(SOLO_CANDY)));
     }
 
     // Lo que dijo el comprador al volver no cuenta (se escribe a mano): vale lo que MP registró para el

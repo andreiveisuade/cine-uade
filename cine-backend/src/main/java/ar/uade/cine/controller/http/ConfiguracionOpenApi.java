@@ -39,7 +39,7 @@ public class ConfiguracionOpenApi {
     private static final Set<String> CON_IDS_EN_EL_CUERPO = Set.of(
             "POST /api/funciones", "POST /api/reservas",
             "POST /api/programaciones", "POST /api/programaciones/previsualizacion",
-            "POST /api/candy/compras", "POST /api/candy/combos", "POST /api/acceso");
+            "POST /api/candy/compras", "POST /api/candy/combos", "POST /api/acceso", "POST /api/candy/retiros");
 
     // Con qué puede chocar un pedido (409): cada conflicto sabe sus rutas y cómo se describe.
     private enum Conflicto {
@@ -91,8 +91,8 @@ public class ConfiguracionOpenApi {
                                 empleado (botón *Authorize*). Sin credenciales se puede usar lo que \
                                 usa el sitio del cliente —cartelera, detalle de película y función, \
                                 catálogos, carta del candy, bloquear butacas y consultar un ticket por su código—. \
-                                Reservar, pagar y cancelar la propia piden la sesión de Google del cliente. \
-                                `POST /api/sesion` (el login) y `POST /api/acceso` piden \
+                                Reservar, pagar, pedir candy y cancelar la propia piden la sesión de Google del cliente. \
+                                `POST /api/sesion` (el login), `POST /api/acceso` y `POST /api/candy/retiros` piden \
                                 ACOMODADOR o ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
                                 """))
                 // Relativo: sirve igual detrás del nginx del compose que contra el backend directo.

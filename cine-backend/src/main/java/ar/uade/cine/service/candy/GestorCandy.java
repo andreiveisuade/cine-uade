@@ -1,6 +1,7 @@
 package ar.uade.cine.service.candy;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.candy.EstadoCompraCandy;
 import ar.uade.cine.model.candy.ItemCompra;
+import ar.uade.cine.model.usuarios.Email;
+import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
@@ -80,12 +83,12 @@ public class GestorCandy {
         return compra;
     }
 
-    // R30: reemplaza el pedido anterior y sin productos lo saca. Solo mientras la reserva se pueda cobrar,
-    // porque se cobra con ella; los precios se congelan ahora, como en el mostrador.
+    // R30: reemplaza el pedido anterior y sin productos lo saca. Sin pagar se cobra con la reserva; ya pagada,
+    // en un checkout aparte. Los precios se congelan ahora, como en el mostrador.
     public void pedirParaReserva(int reservaId, Map<Integer, Integer> cantidades) {
         Reserva reserva = reservaRepository.findParaCambiar(reservaId)
                 .orElseThrow(() -> new RecursoNoEncontrado("No existe la reserva " + reservaId));
-        reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
+        reserva.impedimentoParaPedirCandy(reloj.ahora()).ifPresent(motivo -> {
             throw motivo;
         });
         pendienteDe(reservaId).ifPresent(compraCandyRepository::delete);
@@ -105,14 +108,49 @@ public class GestorCandy {
 
     // R30: en la misma transacción que el pago de la reserva, con su medio, su autorización y su fecha.
     public Optional<CompraCandy> cobrarPendiente(Pago pago) {
-        Optional<CompraCandy> pendiente = pendienteDe(pago.getReservaId());
+        return cobrarPendiente(pago.getReservaId(), pago.getMedio(), pago.getCodigoAutorizacion(), pago.getFecha());
+    }
+
+    // R30: el de una entrada ya paga se cobra solo, con lo que autorizó su checkout.
+    public Optional<CompraCandy> cobrarPendiente(int reservaId, MedioPago medio, String codigoAutorizacion,
+                                                 LocalDateTime cuando) {
+        Optional<CompraCandy> pendiente = pendienteDe(reservaId);
         pendiente.ifPresent(compra -> {
-            compra.cobrar(pago.getMedio(), pago.getCodigoAutorizacion(), pago.getFecha());
+            compra.cobrar(medio, codigoAutorizacion, cuando);
+            // Observer: el ticket lo emite ComprobantesDeCandy cuando esta transacción confirma.
             eventos.publishEvent(new CompraCandyRegistrada(compra.getId()));
-            log.info("compra candy {} COBRADA · reserva {} · total ${} · {}", compra.getId(), pago.getReservaId(),
-                    compra.getTotal(), pago.getMedio());
+            log.info("compra candy {} COBRADA · reserva {} · total ${} · {}", compra.getId(), reservaId,
+                    compra.getTotal(), medio);
         });
         return pendiente;
+    }
+
+    // D7: con el QR de la entrada se entrega todo lo cobrado para esa reserva que todavía no se retiró.
+    public List<CompraCandy> retirar(String codigo) {
+        Reserva reserva = reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
+        List<CompraCandy> cobradas = compraCandyRepository.findByReservaIdIn(List.of(reserva.getId())).stream()
+                .filter(CompraCandy::estaCobrada)
+                .toList();
+        if (cobradas.isEmpty()) {
+            throw new ConflictoDeNegocio("La entrada no tiene candy para retirar");
+        }
+        List<CompraCandy> aRetirar = cobradas.stream().filter(CompraCandy::estaParaRetirar).toList();
+        if (aRetirar.isEmpty()) {
+            // Todo entregado: el rechazo lo arma la compra, con la hora en que se retiró.
+            cobradas.get(cobradas.size() - 1).registrarRetiro(reloj.ahora());
+        }
+        aRetirar.forEach(compra -> compra.registrarRetiro(reloj.ahora()));
+        log.info("candy retirado · reserva {} · {} compras", reserva.getId(), aRetirar.size());
+        return aRetirar;
+    }
+
+    // CU-16: lo que el cliente compró; lo pendiente o anulado no es una compra y se ve en la reserva.
+    @Transactional(readOnly = true)
+    public List<CompraCandy> listarCobradasDe(String email) {
+        return Email.paraBuscar(email).flatMap(clienteRepository::findByEmail)
+                .map(cliente -> compraCandyRepository.findByClienteIdAndEstadoOrderByCobradaEnDesc(cliente.getId(),
+                        EstadoCompraCandy.COBRADA))
+                .orElse(List.of());
     }
 
     // R30: la reserva se canceló o venció, así que su pedido ya no se va a cobrar.
