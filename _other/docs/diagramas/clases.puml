@@ -366,21 +366,14 @@ package "model.usuarios" {
     - nombre : String
     - email : String
     - rol : Rol
-    - passwordHash : String
     # Usuario(nombre : String, email : String, rol : Rol)
     + renombrar(nombre : String) : void
-    # guardarPasswordHash(passwordHash : String) : void
   }
   class Cliente <<Entity>> {
-    - debeCambiarClave : boolean
     + Cliente(nombre : String, email : String)
-    + tieneCuenta() : boolean
-    + abrirCuenta(passwordHash : String) : void
-    + cambiarClave(passwordHash : String) : void
-    + asignarClaveTemporal(passwordHash : String) : void
-    + cerrarCuenta() : void
   }
   class Empleado <<Entity>> {
+    - passwordHash : String
     + Empleado(nombre : String, email : String, passwordHash : String, rol : Rol)
   }
   enum Rol {
@@ -398,7 +391,6 @@ package "model.usuarios" {
   class Contrasena <<ValueObject / Record>> {
     - valor : String
     + Contrasena(valor : String)
-    + {static} temporal() : Contrasena
   }
 }
 
@@ -638,9 +630,6 @@ package "model.rechazos" {
     + ButacaOcupada(mensaje : String)
     + ButacaOcupada(mensaje : String, causa : Throwable)
   }
-  class SinPrueba {
-    + SinPrueba(mensaje : String)
-  }
   class DemasiadosIntentos {
     + {static} MENSAJE : String
     + DemasiadosIntentos()
@@ -659,7 +648,6 @@ Rechazo <|-- DatoInvalido : extiende
 Rechazo <|-- RecursoNoEncontrado : extiende
 Rechazo <|-- ConflictoDeNegocio : extiende
 Rechazo <|-- ButacaOcupada : extiende
-Rechazo <|-- SinPrueba : extiende
 Rechazo <|-- DemasiadosIntentos : extiende
 
 ' ---------- estructura ----------
