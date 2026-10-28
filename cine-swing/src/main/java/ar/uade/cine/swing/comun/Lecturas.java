@@ -1,5 +1,7 @@
 package ar.uade.cine.swing.comun;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -91,6 +93,20 @@ public final class Lecturas {
         return leer(texto, nombre, obligatorio, limpio -> EMAIL.matcher(limpio).matches()
                 ? ValorLeido.de(limpio)
                 : ValorLeido.falla(noEs(nombre, limpio, "un email")));
+    }
+
+    /** Solo la forma: http o https y un servidor; si contesta lo dice el ingreso. */
+    public static ValorLeido<String> leerUrl(String texto, String nombre, boolean obligatorio) {
+        return leer(texto, nombre, obligatorio, limpio -> {
+            try {
+                URI uri = new URI(limpio);
+                boolean web = "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
+                if (web && uri.getHost() != null) return ValorLeido.de(limpio);
+            } catch (URISyntaxException e) {
+                // Cae al mismo rechazo que una URL sin servidor.
+            }
+            return ValorLeido.falla(noEs(nombre, limpio, "una dirección web (http:// o https:// y el servidor)"));
+        });
     }
 
     // Lo que abre el botón Ver del trailer: un id suelto es un video de YouTube. Null si no hay nada.

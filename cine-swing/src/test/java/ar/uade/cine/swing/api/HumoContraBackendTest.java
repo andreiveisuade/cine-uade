@@ -25,7 +25,7 @@ class HumoContraBackendTest {
     private static final String CLAVE = "cine2026";
     private static final String CLIENTE = "humo-swing@cine.uade.ar";
 
-    private final String url = ClienteHttp.urlConfigurada();
+    private final String url = Servidor.configurado().orElse(Servidor.LOCAL).url();
 
     @Test
     void elEncargadoRecorreSalasCatalogoFuncionesYReservas() {
