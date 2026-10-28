@@ -14,7 +14,6 @@ import ar.uade.cine.model.rechazos.SinPrueba;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Contrasena;
 import ar.uade.cine.model.usuarios.Email;
-import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
@@ -60,7 +59,7 @@ public class GestorCuentas {
         Contrasena clave = new Contrasena(nueva);
         Optional<Cliente> dueno = clienteRepository.findByEmail(quien)
                 .filter(Cliente::tieneCuenta)
-                .filter(cliente -> esDeSuReserva(codigoReserva, cliente));
+                .filter(cliente -> reservaRepository.esDelCliente(codigoReserva, cliente.getId()));
         if (dueno.isEmpty()) {
             intentos.fallo(quien, ip);
             throw new SinPrueba(SIN_CUENTA_PARA_ESE_CODIGO);
@@ -99,9 +98,5 @@ public class GestorCuentas {
             throw new DatoInvalido(CLAVE_ACTUAL_INCORRECTA);
         }
         intentos.exito(cliente.getEmail());
-    }
-
-    private boolean esDeSuReserva(String codigo, Cliente cliente) {
-        return reservaRepository.existsByCodigoAndCliente_Id(new CodigoDeAcceso(codigo).valor(), cliente.getId());
     }
 }
