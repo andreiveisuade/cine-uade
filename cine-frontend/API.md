@@ -47,7 +47,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | Nivel | Rutas |
 |---|---|
 | Público | `POST` de `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
+| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
@@ -181,6 +181,44 @@ consulte el mapa de la función (R17 no tiene scheduler).
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
 | `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
 
+Toda reserva trae también `candy`: sus compras de candy sin las anuladas, cada una con la forma de
+`GET /candy/compras` (`estado` `PENDIENTE` o `COBRADA`). La `PENDIENTE` es la pedida en la web y se cobra con la
+reserva; las `COBRADA` son la que se cobró con ella y las del mostrador. `total` sigue siendo solo de las entradas.
+
+## Candy de la compra (R30)
+
+El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes. Si la reserva se
+cancela o vence, el pedido queda `ANULADA` y deja de figurar en `candy`.
+
+`PUT /reservas/codigo/{codigo}/candy` (cliente con sesión, solo la suya: sin sesión `401`, ajena `404`)
+
+```json
+{ "cantidades": { "4": 1, "1": 2 } }
+→ 200, la reserva como en GET /reservas/codigo/{codigo} (email sin enmascarar), con el pedido en candy:
+  "candy": [{ "id": 12, "reservaId": 25, "clienteId": 3, "estado": "PENDIENTE", "fecha": "…",
+              "codigoAutorizacion": "", "items": [ … ], "total": 12500, "ahorro": 1500 }]
+```
+
+- Reemplaza el pedido entero; `{}` lo saca. Sin `cantidades`, `400` `Faltan las cantidades`.
+- Los topes del mostrador: de 1 a 20 por producto y solo lo disponible (`400`); producto inexistente `404`.
+- Nombre, precio y ahorro se congelan al pedir, como en el mostrador.
+- Solo mientras la reserva se pueda cobrar, con los mismos textos que al cobrar: pagada, cancelada o vencida `409`
+  (R5, R17), función empezada `400` (R19).
+- Un pedido `PENDIENTE` no tiene `medio` ni `cobradaEn`; al cobrarse los toma del pago.
+
+`GET /reservas/codigo/{codigo}/cotizacion` (cliente con sesión, solo la suya)
+
+```json
+→ [{ "medio": "DEBITO", "entradas": 16000, "descuento": 4800, "promocionId": 3,
+     "promocion": "Miércoles 30 % OFF", "candy": 5500, "total": 16700 },
+   { "medio": "CREDITO", "entradas": 16000, "descuento": 0, "candy": 5500, "total": 21500 }, …]
+```
+
+- Un renglón por medio con checkout (los de `requiereAutorizacion` en `GET /medios-pago`), en el orden del catálogo.
+- `total` = `entradas` − `descuento` + `candy`: es el `monto` del checkout que se abra con ese medio. La promo
+  corre solo sobre las entradas (R15, R16); `promocionId` y `promocion` no vienen si no hay.
+- No abre preferencias en Mercado Pago. Misma validación que el checkout: `409` o `400` si no se puede cobrar.
+
 ## Pago
 
 `POST /reservas/{id}/pago`
@@ -192,7 +230,9 @@ consulte el mapa de la función (R17 no tiene scheduler).
     "fecha": "2026-08-13T19:40:00", "codigoAutorizacion": "AUTH-40219" }
 ```
 
-- El monto no viaja: el descuento depende del medio. `monto` es lo que entra en caja.
+- El monto no viaja: el descuento depende del medio. `monto` es lo que entra en caja por las entradas.
+- El mismo pago cobra el candy `PENDIENTE` de la reserva, con el mismo medio y la misma autorización (R30): queda
+  `COBRADA` con `cobradaEn` y sale su ticket. El borderó y la declaración jurada siguen leyendo solo `monto`.
 - `409`: ya pagada, cancelada (R5) o vencida (R17). `400`: sin código si el medio lo exige o con código en
   efectivo (R11), función empezada (R19).
 - Cobrar y cancelar a la vez: gana el primero y el otro recibe `409`.
@@ -201,11 +241,13 @@ consulte el mapa de la función (R17 no tiene scheduler).
 `POST /reservas/{id}/checkout` `{ "medio": "QR" }` (encargado) y `POST /reservas/codigo/{codigo}/checkout`
 (cliente con sesión, solo la suya: sin sesión `401`, ajena `404`): medios electrónicos, efectivo es `400`. Ambos
 van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `201` con
-`{id, reservaId, medio, monto, urlPago, codigoQr}`.
+`{id, reservaId, medio, monto, urlPago, codigoQr}`. `monto` = entradas − descuento + candy pendiente, como la cotización.
 
-- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`; `account_money` se acepta siempre porque MP no deja excluirlo.
+- Si el candy (o la promo) cambia después de abrir el checkout, ese checkout ya no se cobra: `409`
+  `El monto cambió después de abrir el pago: acercate a la boletería` (en el retorno, como `aviso`). Se abre otro antes de pagar.
+- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. La preferencia lleva un ítem por las entradas (ya con el descuento) y otro por el candy, si hay. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`; `account_money` se acepta siempre porque MP no deja excluirlo.
   Con la emulada, `urlPago` es relativa al sitio: `/#/pasarela-emulada/<id>?monto=<monto>&medio=<MEDIO>`, una pantalla
-  de prueba con Aprobar y Rechazar que vuelve por el retorno con `?status=approved` o `?status=rejected`.
+  de prueba con Aprobar y Rechazar que vuelve por el retorno con `?status=approved` o `?status=rejected`. `monto` es el total, candy incluido.
 - `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
 - `POST /checkouts/{id}/confirmacion`, sin cuerpo, lo autoriza: `201` con el pago y revalida la reserva. Con MP
   consulta `GET /v1/payments/search`; sin un pago `approved` da `409` con el motivo (rechazado, pendiente, sin pago).
@@ -361,15 +403,15 @@ si tiene imagen.
 | `PUT /candy/productos/{id}` | `{nombre, precio, imagenUrl}`; sin `imagenUrl` le saca la imagen. `400` si un combo que lo trae deja de convenir (R14) |
 | `PATCH /candy/productos/{id}` | `{disponible}`. No hay `DELETE`: el producto vive en compras viejas |
 | `POST /candy/compras` | La venta, que nace cobrada |
-| `GET /candy/compras?fecha=&clienteId=` | Las del cliente, o si no las del día |
-| `GET /candy/arqueo?fecha=` | `{fecha, total, compras}`, caja aparte de boletería |
+| `GET /candy/compras?fecha=&clienteId=` | Las del cliente en cualquier estado, o si no las cobradas ese día (por `cobradaEn`) |
+| `GET /candy/arqueo?fecha=` | `{fecha, total, compras}`, caja aparte de boletería: las cobradas ese día, también las que se cobraron con una reserva |
 
 En el alta, el combo y la edición, nombre y precio se validan antes que el nombre repetido.
 
 ```json
 { "clienteId": 3, "reservaId": 25, "cantidades": { "1": 2, "4": 1 },
   "medio": "EFECTIVO", "codigoAutorizacion": "" }
-→ { "id": 8, "fecha": "…", "medio": "EFECTIVO",
+→ { "id": 8, "estado": "COBRADA", "fecha": "…", "cobradaEn": "…", "medio": "EFECTIVO",
     "items": [{ "productoId": 4, "nombre": "Combo clásico", "cantidad": 1,
                 "precioUnitario": 5500, "subtotal": 5500 }],
     "total": 12000, "ahorro": 1500 }
@@ -379,6 +421,8 @@ En el alta, el combo y la edición, nombre y precio se validan antes que el nomb
 - Cada cantidad de 1 a 20; lo que salió de la carta no se vende. El código, como al cobrar una reserva (R11).
 - El pedido y el medio de pago se validan antes de buscar los productos (`404`).
 - `ahorro` es el descuento de los combos, congelado al vender.
+- `estado`: `PENDIENTE` (pedida en la web, sin cobrar), `COBRADA` o `ANULADA` (su reserva se canceló o venció). La
+  de mostrador nace `COBRADA`, con `cobradaEn` igual a `fecha`. Lo pendiente no tiene `medio` ni `cobradaEn`.
 
 ## Imágenes
 
@@ -401,7 +445,7 @@ Las fotos de promociones y productos. Primero se sube el archivo y después su `
 |---|---|
 | `GET /arqueo?fecha=` | La caja de boletería del día: `total`, `entradas`, `porMedio` y `pagos` |
 | `GET /funciones/{id}/bordero` | Lo cobrado de una función: espectadores, bruta, descuentos, neta y `porTarifa` |
-| `GET /funciones/{id}/informe` | El borderó más el candy asociado a reservas de esa función |
+| `GET /funciones/{id}/informe` | El borderó más el candy cobrado asociado a reservas de esa función |
 | `GET /declaracion-jurada?desde=&hasta=` | Las funciones con entradas cobradas del período, por función, por película y en total, con los datos del exhibidor |
 
 - El borderó corta por función y la declaración jurada por período (INCAA). Sin fechas, la declaración toma
