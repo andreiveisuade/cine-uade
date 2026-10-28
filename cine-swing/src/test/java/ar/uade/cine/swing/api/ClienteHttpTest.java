@@ -171,7 +171,7 @@ class ClienteHttpTest {
         ErrorApi error = assertThrows(ErrorApi.class, salas::obtenerSalas);
 
         assertEquals(502, error.estado());
-        assertEquals("El servidor no está disponible en este momento. Probá de nuevo en unos segundos.",
+        assertEquals("El servidor no está disponible en este momento: probá de nuevo en unos segundos",
                 error.getMessage());
     }
 
@@ -182,7 +182,7 @@ class ClienteHttpTest {
 
         ErrorApi error = assertThrows(ErrorApi.class, salas::obtenerSalas);
 
-        assertEquals("Falló el servidor. Probá de nuevo; si sigue pasando, avisá al administrador.",
+        assertEquals("Falló el servidor: probá de nuevo y, si sigue pasando, avisá al administrador",
                 error.getMessage());
     }
 
@@ -193,7 +193,7 @@ class ClienteHttpTest {
 
         ErrorApi error = assertThrows(ErrorApi.class, salas::obtenerSalas);
 
-        assertEquals("No se encontró el recurso en el servidor.", error.getMessage());
+        assertEquals("No se encontró el recurso en el servidor", error.getMessage());
     }
 
     @Test
@@ -203,7 +203,7 @@ class ClienteHttpTest {
 
         ErrorApi error = assertThrows(ErrorApi.class, salas::obtenerSalas);
 
-        assertEquals("El servidor respondió con un error (código 418).", error.getMessage());
+        assertEquals("El servidor respondió con un error (código 418)", error.getMessage());
     }
 
     @Test

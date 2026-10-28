@@ -25,10 +25,10 @@ final class MensajeDeError {
         }
         if (!texto.isEmpty()) System.err.println("Respuesta " + estado + " sin mensaje de error en JSON: " + texto);
         return switch (estado) {
-            case 502, 503, 504 -> "El servidor no está disponible en este momento. Probá de nuevo en unos segundos.";
-            case 500 -> "Falló el servidor. Probá de nuevo; si sigue pasando, avisá al administrador.";
-            case 404 -> "No se encontró el recurso en el servidor.";
-            default -> "El servidor respondió con un error (código " + estado + ").";
+            case 502, 503, 504 -> "El servidor no está disponible en este momento: probá de nuevo en unos segundos";
+            case 500 -> "Falló el servidor: probá de nuevo y, si sigue pasando, avisá al administrador";
+            case 404 -> "No se encontró el recurso en el servidor";
+            default -> "El servidor respondió con un error (código " + estado + ")";
         };
     }
 }
