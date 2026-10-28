@@ -48,6 +48,11 @@ public final class Formato {
         return (centavos < 0 ? "-" : "") + Math.abs(centavos) / 100 + separador + (resto < 10 ? "0" : "") + resto;
     }
 
+    /** Para volver a poner un número en una caja: 15.0 → "15", 12.5 → "12.5". */
+    public static String numero(double valor) {
+        return valor % 1 == 0 ? String.valueOf((long) valor) : String.valueOf(valor);
+    }
+
     /** 0.79 → "79%". */
     public static String porcentaje(double fraccion) {
         return Math.round(fraccion * 100) + "%";

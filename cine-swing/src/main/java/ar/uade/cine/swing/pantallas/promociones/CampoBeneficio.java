@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.promociones;
 
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Validacion;
 
 import lombok.Getter;
@@ -53,7 +54,7 @@ enum CampoBeneficio {
             case PAGA -> p.paga();
         };
         if (valor == null) reiniciar(caja);
-        else caja.setText(valor.doubleValue() % 1 == 0 ? String.valueOf(valor.longValue()) : String.valueOf(valor));
+        else caja.setText(Formato.numero(valor.doubleValue()));
     }
 
     Number leer(Validacion v, JTextField caja) {

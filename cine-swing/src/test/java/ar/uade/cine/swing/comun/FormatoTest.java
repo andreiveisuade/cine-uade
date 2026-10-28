@@ -27,6 +27,12 @@ class FormatoTest {
     }
 
     @Test
+    void unNumeroEnteroSeVeSinPuntoCero() {
+        assertEquals("15", Formato.numero(15.0));
+        assertEquals("12.5", Formato.numero(12.5));
+    }
+
+    @Test
     void elTextoDelBackendNoSeLeeComoHtml() {
         assertEquals("Tom &amp; Jerry &lt;3", Formato.escapar("Tom & Jerry <3"));
         assertEquals("", Formato.escapar(null));

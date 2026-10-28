@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.candy.PedidoEdicionProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Mensajes;
@@ -39,8 +40,7 @@ final class EdicionProducto {
         this.producto = producto;
         this.alGuardar = alGuardar;
         nombre = new JTextField(producto.nombre(), 20);
-        precio = Campos.soloDecimal(new JTextField(producto.precio() % 1 == 0
-                ? String.valueOf((long) producto.precio()) : String.valueOf(producto.precio())));
+        precio = Campos.soloDecimal(new JTextField(Formato.numero(producto.precio())));
         imagen = new CampoImagen(apiImagenes);
         imagen.poner(producto.imagenUrl());
         formulario = new Formulario()
