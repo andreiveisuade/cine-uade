@@ -9,6 +9,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
@@ -224,16 +225,20 @@ public final class Operador {
                 .orElseThrow(() -> new AssertionError("No hay botón " + texto + ". Se ve: " + textos()));
     }
 
-    /** El campo que sigue a la etiqueta en su panel, como los arma Formulario; el asterisco no cuenta. */
+    /** El primer campo que sigue a la etiqueta, en el orden en que está armada la pantalla; el asterisco no cuenta. */
     private Component campo(String etiqueta) {
-        JLabel label = buscar(JLabel.class, l -> l.getText() != null
-                && l.getText().replace(" *", "").equals(etiqueta))
-                .orElseThrow(() -> new AssertionError("No hay campo " + etiqueta + ". Se ve: " + textos()));
-        Container padre = label.getParent();
-        for (int i = 0; i < padre.getComponentCount() - 1; i++) {
-            if (padre.getComponent(i) == label) return padre.getComponent(i + 1);
+        List<Component> todos = componentes(pantalla).filter(Operador::visible).toList();
+        for (int i = 0; i < todos.size(); i++) {
+            if (todos.get(i) instanceof JLabel l && l.getText() != null
+                    && l.getText().replace(" *", "").equals(etiqueta)) {
+                return todos.subList(i + 1, todos.size()).stream()
+                        .filter(c -> c instanceof JTextComponent || c instanceof JComboBox<?>
+                                || c instanceof CampoFecha || c instanceof JSpinner)
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError("La etiqueta " + etiqueta + " no tiene campo"));
+            }
         }
-        throw new AssertionError("La etiqueta " + etiqueta + " no tiene campo al lado");
+        throw new AssertionError("No hay campo " + etiqueta + ". Se ve: " + textos());
     }
 
     private <C extends Component> Optional<C> buscar(Class<C> tipo, Predicate<C> condicion) {

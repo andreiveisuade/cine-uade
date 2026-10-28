@@ -49,8 +49,8 @@ class PantallaPromocionesTest {
 
     @AfterEach
     void bajar() {
-        encargado.cerrar();
         servidor.bajar();
+        encargado.cerrar();
     }
 
     @Test

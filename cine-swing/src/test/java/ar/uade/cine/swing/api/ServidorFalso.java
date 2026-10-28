@@ -23,6 +23,7 @@ public final class ServidorFalso {
     private final HttpServer servidor;
     private final Map<String, Respuesta> respuestas = new LinkedHashMap<>();
     private final List<Recibido> recibidos = new ArrayList<>();
+    private volatile long ultimoPedido;
 
     public ServidorFalso() throws IOException {
         servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -34,7 +35,17 @@ public final class ServidorFalso {
         return "http://127.0.0.1:" + servidor.getAddress().getPort() + "/";
     }
 
+    /** Espera a que dejen de llegar pedidos: una pantalla que recarga después de guardar no choca con el puerto cerrado. */
     public void bajar() {
+        long limite = System.currentTimeMillis() + 5000;
+        while (System.currentTimeMillis() < limite && System.currentTimeMillis() - ultimoPedido < 300) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
         servidor.stop(0);
     }
 
@@ -84,5 +95,6 @@ public final class ServidorFalso {
             if (bytes.length > 0) intercambio.getResponseBody().write(bytes);
         }
         intercambio.close();
+        ultimoPedido = System.currentTimeMillis();
     }
 }
