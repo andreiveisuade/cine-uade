@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -72,5 +75,33 @@ class ClientesDeGoogleTest extends PruebaDeIntegracion {
         assertThat(error.getMessage())
                 .isEqualTo("Ese email es del personal del cine: entrá desde la aplicación de escritorio");
         assertThat(clientes.listar()).isEmpty();
+    }
+
+    // El log de Render es público para quien vea el repo: el ingreso se rastrea por id, sin email ni nombre.
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void elIngresoQuedaEnElLogSinElEmail(CapturedOutput log) {
+        google.loadUser(PedidosDeGoogle.de("ana@mail.com", "Ana Pérez", true));
+        google.loadUser(PedidosDeGoogle.de("ana@mail.com", "Ana Pérez", true));
+        int id = clientes.buscarPorEmail("ana@mail.com").orElseThrow().getId();
+
+        assertThat(log.getOut()).contains("cliente " + id + " entra con google · nuevo")
+                .contains("cliente " + id + " entra con google · existente");
+        assertThat(log.getAll()).doesNotContain("ana@mail.com").doesNotContain("Ana Pérez");
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void elIngresoRechazadoQuedaEnElLogSinElEmail(CapturedOutput log) {
+        empleados.registrar("Encargado", "encargado@cine.com", "clave-del-encargado", Rol.ADMINISTRADOR);
+
+        assertThrows(OAuth2AuthenticationException.class,
+                () -> google.loadUser(PedidosDeGoogle.de("ana@mail.com", "Ana", false)));
+        assertThrows(OAuth2AuthenticationException.class,
+                () -> google.loadUser(PedidosDeGoogle.de("encargado@cine.com", "Encargado", true)));
+
+        assertThat(log.getOut()).contains("ingreso con google rechazado · email sin verificar")
+                .contains("ingreso con google rechazado · email del personal");
+        assertThat(log.getAll()).doesNotContain("ana@mail.com").doesNotContain("encargado@cine.com");
     }
 }

@@ -3,6 +3,7 @@ package ar.uade.cine.infrastructure.seguridad;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -24,6 +25,7 @@ import ar.uade.cine.service.usuarios.GestorClientes;
 // La sesión queda a nombre del email guardado y con solo ROLE_CLIENTE: el panel sigue siendo de Basic.
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ClientesDeGoogle implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
     // Con este código la web muestra el texto tal cual; otro error de OAuth2 (cancelar en Google) sale genérico.
@@ -37,6 +39,7 @@ public class ClientesDeGoogle implements OAuth2UserService<OidcUserRequest, Oidc
         OidcUser usuario = google.loadUser(pedido);
         // Sin verificar, el email es solo lo que alguien escribió: ser ese cliente le daría sus reservas.
         if (!Boolean.TRUE.equals(usuario.getEmailVerified())) {
+            log.warn("ingreso con google rechazado · email sin verificar");
             throw rechazo("Tu cuenta de Google no tiene el email verificado: verificalo y volvé a intentar");
         }
         Cliente cliente;
