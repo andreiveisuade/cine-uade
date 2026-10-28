@@ -86,13 +86,10 @@ public final class PantallaAgenda extends Pantalla {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         JPanel izquierda = new JPanel(new BorderLayout(0, 8));
         izquierda.add(calendario, BorderLayout.NORTH);
-        JLabel nota = new JLabel("<html><div style='width:210px'>El alto de cada bloque es su duración. Los que "
-                + "duran menos de "
+        JLabel nota = Componentes.nota("El alto de cada bloque es su duración. Los que duran menos de "
                 + Math.round(GrillaAgenda.ALTO_MINIMO / GrillaAgenda.PX_POR_MINUTO) + " minutos se dibujan con un alto "
                 + "mínimo para que el título entre: es la única parte del gráfico que no está a escala. Lo rayado es "
-                + "la limpieza de la sala, que también ocupa.</div></html>");
-        nota.setForeground(Colores.secundario());
-        nota.setFont(nota.getFont().deriveFont(12f));
+                + "la limpieza de la sala, que también ocupa.");
         nota.setVerticalAlignment(JLabel.TOP);
         izquierda.add(nota, BorderLayout.CENTER);
         izquierda.setPreferredSize(new Dimension(290, 0));
