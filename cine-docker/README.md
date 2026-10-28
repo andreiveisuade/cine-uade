@@ -9,7 +9,7 @@ Levanta el sistema completo desde las carpetas hermanas. Cómo ponerlo a andar y
 | `.env.example` | Las variables, comentadas una por una. Se copia a `.env`, que no se versiona. Si falta una obligatoria, Compose no arranca y dice cuál |
 | `seed/02-admin.sql` | Los dos usuarios de demo, al crear la base |
 
-Los scripts (`setup`, `seed/datos-de-ejemplo.sh`, que siembra por la API para que pase por las reglas, y `aiven/`)
+Los scripts (`setup`, `seed/datos-de-ejemplo.sh`, que siembra por la API salas, candy, seis películas con una semana de grilla y una promo, y `aiven/`)
 están en la [tabla de scripts](../README.md#scripts).
 
 ## Servicios

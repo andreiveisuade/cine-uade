@@ -55,7 +55,7 @@ El manual es la fuente de verdad: requerimientos, reglas, casos de uso, arquitec
 | Script | Qué hace |
 |---|---|
 | `cine-docker/setup.sh` (`setup.ps1` en Windows) | Chequea Java 21, arma el `.env`, levanta, espera a que esté sano, siembra e imprime las URLs; se puede correr de nuevo |
-| `cine-docker/seed/datos-de-ejemplo.sh` | Carga salas, la carta del candy y una promoción por la API (películas no: las trae el importador) |
+| `cine-docker/seed/datos-de-ejemplo.sh` | Carga por la API salas, la carta del candy, seis películas con una semana de funciones y una promoción |
 | `cine-docker/aiven/cargar-aiven.sh` | Primer deploy: aplica `db/schema.sql` en Aiven y crea los dos empleados con claves nuevas |
 | `cine-docker/aiven/migrar-aiven.sh <n>` | Aplica una migración de `db/migraciones/` a Aiven, por número o nombre (`18` o `clientes-con-google`) |
 | `_other/demo/humo.sh` | Pruebas de humo de punta a punta contra el sistema levantado; escribe datos: solo en una base desechable |

@@ -19,7 +19,7 @@ sano, siembra e imprime las URLs. Se puede correr de nuevo: no pisa el `.env` ni
 cp .env.example .env                 # cambiar las dos contraseñas
 docker compose up -d --build         # la primera vez tarda: Maven baja dependencias
 docker compose ps                    # hasta que mysql y backend digan (healthy)
-./seed/datos-de-ejemplo.sh           # 6 salas, la carta del candy y la promo «Miércoles 2x1»
+./seed/datos-de-ejemplo.sh           # 6 salas, candy, 6 películas con una semana de funciones y la promo «Miércoles 2x1»
 git config core.hooksPath .githooks  # hook que frena commits con credenciales
 ```
 
@@ -43,8 +43,8 @@ En IntelliJ: la configuración **Panel Swing** ya viene en el proyecto.
 | Swagger | <http://localhost:8080/swagger-ui.html> | las rutas del encargado piden el mismo usuario |
 | Adminer | <http://localhost:8081> | servidor `mysql`, `DB_USER` / `DB_PASSWORD` del `.env` (`setup` los imprime al final) |
 
-Las películas no se siembran: **Importador** del panel → confirmarlas en **Por revisar** → funciones desde
-**Funciones**, **Grilla** o **Planificador**.
+El seed trae seis clásicos para no arrancar vacío (si la base ya tiene películas, no los agrega). La cartelera
+real: **Importador** del panel → confirmarlas en **Por revisar** → funciones desde **Funciones**, **Grilla** o **Planificador**.
 
 ## Token de TMDB
 
@@ -84,7 +84,7 @@ Sin Docker: [`cine-backend`](../cine-backend/README.md#correrlo).
 | `falta DB_USER, copiá .env.example a .env` | `cp .env.example .env` |
 | `port is already allocated` | Cambiar `PUERTO_WEB` o `PUERTO_ADMINER` en el `.env` |
 | `localhost:8080` no responde, o «El servidor no está disponible» | El backend está arrancando o se cayó: `docker compose ps` y `docker compose logs backend` |
-| La web carga vacía | Falta importar películas y programar funciones |
+| La web carga vacía | No corrió el seed, o las funciones de la semana sembrada ya pasaron: grilla nueva desde el panel |
 | Adminer no conecta | Servidor **`mysql`**, no `localhost`. Usuario y base: `DB_USER` y `DB_NAME`; la clave es `DB_PASSWORD` del `cine-docker/.env` (local, la generó el setup). El setup imprime la URL lista |
 | `mvn` no se reconoce | No hace falta Maven: usar `./mvnw` (`.\mvnw.cmd` en Windows) dentro de `cine-swing` |
 | `ClassNotFoundException` al correr el panel | `exec:java` no compila: usar `compile exec:java` |

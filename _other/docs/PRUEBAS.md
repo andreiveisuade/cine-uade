@@ -73,7 +73,7 @@ proyecto de Docker aparte, con su propio volumen:
 cd cine-docker
 cp .env.example .env                 # si no existe
 docker compose -p cine-prueba up -d --build
-./seed/datos-de-ejemplo.sh           # salas, candy y una promo
+./seed/datos-de-ejemplo.sh           # salas, candy, películas con funciones y una promo
 # ... niveles 3 a 5 ...
 docker compose -p cine-prueba down -v   # borra solo la base de prueba
 ```
