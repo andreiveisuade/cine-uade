@@ -208,9 +208,12 @@ function dibujar(inicial, cab) {
   out.push(inicial.html.replace('class="vista"', 'class="vista visible"'));
   out.push(`</g>`);
   out.push(`<style>${ESTILO}</style>`);
-  // ELK y el motor, una sola vez por pagina: arman en el navegador las vistas con mas capas
-  out.push(`<script><![CDATA[if (!window.ELK) {\n${ELK_JS}\n}]]></script>`);
-  out.push(`<script><![CDATA[if (!window.__dominioMotor && window.ELK) {\n${MOTOR}\nwindow.__dominioMotor = motorDominio(window.ELK, ${datos});\n}]]></script>`);
+  // ELK y el motor, una sola vez por pagina: arman en el navegador las vistas con mas capas.
+  // Sin capas que prender no hay otra vista que calcular, y son 1,6 MB que nunca correrian.
+  if (Object.keys(CAPAS).length) {
+    out.push(`<script><![CDATA[if (!window.ELK) {\n${ELK_JS}\n}]]></script>`);
+    out.push(`<script><![CDATA[if (!window.__dominioMotor && window.ELK) {\n${MOTOR}\nwindow.__dominioMotor = motorDominio(window.ELK, ${datos});\n}]]></script>`);
+  }
   out.push(`<script><![CDATA[${INTERACCION}]]></script>`);
   out.push(`</svg>`);
   return out.join("\n");
@@ -408,7 +411,7 @@ const INTERACCION = `
     var arrastre = abajo && Math.abs(e.clientX - abajo.x) + Math.abs(e.clientY - abajo.y) > 5;
     if (arrastre) { e.stopPropagation(); return; }
     var t = e.target;
-    if (t.closest && (t.closest(".panel-dominio") || (t.closest(".lb-bar") && !t.closest("#lbClose")))) return;
+    if (t.closest && (t.closest(".panel-dominio") || (t.closest(".lb-bar, .lightbox-bar") && !t.closest("#lbClose, #lightboxClose")))) return;
     var k = t.closest && t.closest(".btn-capa"), sk = svgDe(k);
     if (sk) {
       e.stopPropagation();
@@ -443,7 +446,8 @@ const INTERACCION = `
     }
   }, true);
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && fijada) soltar();
+    // Con algo fijado, Esc solo lo suelta: el lightbox de la pagina tambien escucha Esc y se cerraria
+    if (e.key === "Escape" && fijada) { soltar(); e.stopImmediatePropagation(); }
   });
 })();
 `;
