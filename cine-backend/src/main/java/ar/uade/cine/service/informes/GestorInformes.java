@@ -21,7 +21,6 @@ import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
-import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
 // Borderó e informe por función y declaración jurada del INCAA; lee con consultas batch y los records suman.
 @Service
@@ -36,7 +35,7 @@ public class GestorInformes {
     private final Reloj reloj;
 
     public Bordero borderoDe(int funcionId) {
-        return borderoDe(buscarFuncion(funcionId), reservaRepository.findByFuncion_Id(funcionId));
+        return borderoDe(funcionRepository.exigir(funcionId, "la función"), reservaRepository.findByFuncion_Id(funcionId));
     }
 
     private Bordero borderoDe(Funcion funcion, List<Reserva> reservas) {
@@ -75,15 +74,10 @@ public class GestorInformes {
 
     // Solo el candy con reservaId: el de mostrador va al arqueo (GestorCaja#arqueoCandyDe).
     public InformeFuncion informeDe(int funcionId) {
-        Funcion funcion = buscarFuncion(funcionId);
+        Funcion funcion = funcionRepository.exigir(funcionId, "la función");
         List<Reserva> reservas = reservaRepository.findByFuncion_Id(funcionId);
         List<CompraCandy> compras = compraCandyRepository.findByReservaIdIn(
                 reservas.stream().map(Reserva::getId).toList());
         return InformeFuncion.de(borderoDe(funcion, reservas), compras);
-    }
-
-    private Funcion buscarFuncion(int funcionId) {
-        return funcionRepository.findById(funcionId)
-                .orElseThrow(() -> new RecursoNoEncontrado("No existe la función " + funcionId));
     }
 }
