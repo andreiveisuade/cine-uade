@@ -1,0 +1,694 @@
+' Diagrama de clases integrado de cine-uade. Fuente de dominio/build.mjs, que dibuja
+' clases-dominio.svg; cada bloque @startuml es una capa del diagrama.
+' Cada relación se lee como oración del origen al destino: Reserva "0..*" --> "1" Funcion : es para >
+
+@startuml clases-modelo
+!pragma layout elk
+title CINE UADE — diagrama de clases del dominio
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+set separator none
+hide empty members
+
+package "model.cartelera" {
+  class Pelicula <<Entity>> {
+    - id : int
+    - titulo : String
+    - duracionMinutos : int
+    - clasificacion : Clasificacion
+    - generos : List<Genero>
+    - catalogo : CatalogoPelicula
+    - enCartelera : boolean
+    - trailerYoutube : String
+    - estadoRevision : EstadoRevision
+    + Pelicula(titulo, duracionMinutos, generos, clasificacion)
+    + actualizar(titulo, duracionMinutos, generos, clasificacion) : void
+    + cambiarCatalogo(catalogo : CatalogoPelicula) : void
+    + cambiarTrailer(texto : String) : void
+    + completarTrailer(trailer : TrailerYoutube) : void
+    + ponerEnCartelera() : void
+    + sacarDeCartelera() : void
+    + exigirProgramable() : void
+    + seMuestraAlPublico() : boolean
+    + dejarPendiente() : void
+    + confirmar() : void
+    + descartar() : void
+  }
+  class CatalogoPelicula <<Embeddable / ValueObject>> {
+    - director : String
+    - sinopsis : String
+    - anio : int
+    - idiomaOriginal : String
+    - posterUrl : String
+    - puntaje : double
+    - votos : int
+    + conCambios(director, sinopsis, anio, idiomaOriginal, posterUrl, puntaje, votos, hoy) : CatalogoPelicula
+  }
+  class TrailerYoutube <<ValueObject>> {
+    - id : String
+    + TrailerYoutube(id : String)
+    + {static} siEs(texto : String) : Optional<TrailerYoutube>
+  }
+  enum Clasificacion {
+    ATP
+    MAS_13
+    MAS_16
+    MAS_18
+    - edadMinima : int
+    + getEtiqueta() : String
+  }
+  enum Genero {
+    ACCION
+    COMEDIA
+    DRAMA
+    TERROR
+    CIENCIA_FICCION
+    ANIMACION
+    DOCUMENTAL
+    ROMANCE
+    SUSPENSO
+  }
+  enum EstadoRevision {
+    PENDIENTE
+    CONFIRMADA
+    DESCARTADA
+    ~ {abstract} exigirPublicable(titulo : String) : void
+    ~ {abstract} exigirProgramable(titulo : String) : void
+    ~ {abstract} seMuestraAlPublico() : boolean
+  }
+  class Importacion <<Entity>> {
+    - id : int
+    - paginas : int
+    - pedidaEn : LocalDateTime
+    - estado : EstadoImportacion
+    - terminoEn : LocalDateTime
+    - resumen : ResumenDeCorrida
+    + Importacion(paginas : Integer, pedidaEn : LocalDateTime)
+    + terminar(resumen : ResumenDeCorrida, cuando : LocalDateTime) : void
+    + fallar(motivo : String, cuando : LocalDateTime) : void
+    + estaEnCurso() : boolean
+    + quedoColgada(plazo : Duration, ahora : LocalDateTime) : boolean
+    + terminoHaceMenosDe(espera : Duration, ahora : LocalDateTime) : boolean
+  }
+  enum EstadoImportacion {
+    EN_CURSO
+    TERMINADA
+    FALLIDA
+    ~ terminar() : EstadoImportacion
+    ~ fallar() : EstadoImportacion
+    + estaEnCurso() : boolean
+  }
+  class ResumenDeCorrida <<Embeddable>> {
+    - nuevas : int
+    - salteadas : int
+    - fallidas : int
+    - detalle : String
+    + {static} deFalla(motivo : String) : ResumenDeCorrida
+  }
+  class RenglonDeCorrida <<Record>> {
+    - resultado : Resultado
+    - peliculaId : Integer
+    - titulo : String
+    - motivo : String
+    + {static} nueva(peliculaId : int, titulo : String) : RenglonDeCorrida
+    + {static} yaEstaba(titulo : String) : RenglonDeCorrida
+    + {static} rechazada(titulo : String, motivo : String) : RenglonDeCorrida
+    + texto() : String
+    + {static} leer(detalle : String) : List<RenglonDeCorrida>
+  }
+}
+
+package "model.salas" {
+  class Sala <<Entity>> {
+    + {static} LIMPIEZA_POR_DEFECTO : int
+    - id : int
+    - nombre : String
+    - tipo : TipoSala
+    - minutosLimpieza : int
+    + Sala(nombre : String, tipo : TipoSala, minutosLimpieza : int)
+    + editar(nombre : String, tipo : TipoSala, minutosLimpieza : int) : void
+    + generarAsientos(butacasPorFila, especiales) : List<Asiento>
+  }
+  class Asiento <<Entity>> {
+    - id : int
+    - sala : Sala
+    - fila : int
+    - numero : int
+    - tipo : TipoAsiento
+    - estado : EstadoAsiento
+    + Asiento(sala : Sala, fila : int, numero : int, tipo : TipoAsiento)
+    + marcarFueraDeServicio() : void
+    + reponer() : void
+    + estaFueraDeServicio() : boolean
+    + exigirEnServicio() : void
+    + getCodigo() : String
+    + {static} codigoDe(fila : int, numero : int) : String
+    + {static} exigirConCodigo(deLaSala : List<Asiento>, codigo : String) : Asiento
+  }
+  enum TipoSala {
+    DOS_D
+    TRES_D
+    IMAX
+    CUATRO_D
+    - multiplicadorPrecio : double
+    - soportaTresD : boolean
+    + aplicarA(precio : Dinero) : Dinero
+  }
+  enum TipoAsiento {
+    ESTANDAR
+    VIP
+    PAREJA
+    ACCESIBLE
+    - multiplicadorPrecio : double
+    + aplicarA(precio : Dinero) : Dinero
+  }
+  enum EstadoAsiento {
+    HABILITADO
+    FUERA_DE_SERVICIO
+  }
+}
+
+package "model.funciones" {
+  class Funcion <<Entity>> {
+    - id : int
+    - pelicula : Pelicula
+    - sala : Sala
+    - programacionId : Integer
+    - inicio : LocalDateTime
+    - formato : FormatoDeFuncion
+    + Funcion(pelicula, sala, inicio, formato, programacionId)
+    + {static} yaPaso(inicio : LocalDateTime, ahora : LocalDateTime) : boolean
+    + yaEmpezo(ahora : LocalDateTime) : boolean
+    + exigirProgramableA(ahora : LocalDateTime) : void
+    + getFin(duracionMinutos : int) : LocalDateTime
+    + precioEn(sala : Sala) : Dinero
+    + precioDe(asiento : Asiento, sala : Sala) : Dinero
+  }
+  class FormatoDeFuncion <<Embeddable / ValueObject>> {
+    - version : Version
+    - proyeccion : Proyeccion
+    - precio : Dinero
+    + FormatoDeFuncion(version : Version, proyeccion : Proyeccion, precio : Dinero)
+    + exigirProyectableEn(sala : Sala) : void
+  }
+  enum Proyeccion {
+    DOS_D
+    TRES_D
+    + sePuedeProyectarEn(tipo : TipoSala) : boolean
+  }
+  enum Version {
+    DOBLADA
+    SUBTITULADA
+  }
+}
+
+package "model.programaciones" {
+  class Programacion <<Entity>> {
+    - id : int
+    - pelicula : Pelicula
+    - sala : Sala
+    - periodo : Periodo
+    - horaInicio : LocalTime
+    - diasSemana : Set<DayOfWeek>
+    - formato : FormatoDeFuncion
+    - activa : boolean
+    - generadaHasta : LocalDate
+    + Programacion(pelicula, sala, desde, hasta, horaInicio, diasSemana, formato)
+    + exigirGenerableA(ahora : LocalDateTime) : void
+    + horarios(tope : LocalDate) : List<LocalDateTime>
+    + topePara(hoy : LocalDate) : LocalDate
+    + estaAlDia(hoy : LocalDate) : boolean
+    + horariosSinGenerar(tope : LocalDate) : List<LocalDateTime>
+    + marcarGeneradaHasta(tope : LocalDate) : void
+    + activar() : void
+    + desactivar() : void
+  }
+}
+
+package "model.tiempo" {
+  class Periodo <<Embeddable / ValueObject>> {
+    - desde : LocalDate
+    - hasta : LocalDate
+    + {static} de(desde : LocalDate, hasta : LocalDate, sujeto : String) : Periodo
+    + incluye(dia : LocalDate) : boolean
+  }
+  class FranjaHoraria <<Embeddable / ValueObject>> {
+    - desde : LocalTime
+    - hasta : LocalTime
+    + incluye(hora : LocalTime) : boolean
+  }
+}
+
+package "model.ventas" {
+  class Reserva <<Entity>> {
+    + {static} MINUTOS_PARA_PAGAR : int
+    - id : int
+    - funcion : Funcion
+    - cliente : Cliente
+    - creadaEn : LocalDateTime
+    - entradas : List<Entrada>
+    - codigo : String
+    - estado : EstadoReserva
+    - ingresadaEn : LocalDateTime
+    - version : int
+    + Reserva(funcion, cliente, butacas, creadaEn)
+    + {static} validarTopeDeButacas(butacas : Collection<?>) : void
+    + getTotal() : Dinero
+    + pagar() : void
+    + impedimentoParaCobrar(ahora : LocalDateTime) : Optional<String>
+    + esCobrable(ahora : LocalDateTime) : boolean
+    + esCancelable(ahora : LocalDateTime) : boolean
+    + estaPagada() : boolean
+    + cancelar() : void
+    + expirar() : void
+    + registrarIngreso(cuando : LocalDateTime) : void
+    + estaVigente() : boolean
+    + estaVencida(ahora : LocalDateTime) : boolean
+  }
+  class Entrada <<Entity>> {
+    - id : int
+    - asiento : Asiento
+    - funcionId : Integer
+    - tarifa : TipoTarifa
+    - precio : Dinero
+    + Entrada(asiento : Asiento, tarifa : TipoTarifa, precioDeLaButaca : Dinero)
+    + codigoAsiento() : String
+    ~ ocupar(funcionId : int) : void
+    ~ liberar() : void
+  }
+  enum EstadoReserva {
+    RESERVADA
+    PAGADA
+    CANCELADA
+    EXPIRADA
+    - etiqueta : String
+    ~ pagar() : EstadoReserva
+    ~ cancelar() : EstadoReserva
+    ~ expirar() : EstadoReserva
+    ~ ingresar() : EstadoReserva
+    + esperaPago() : boolean
+    + ocupaButacas() : boolean
+    + estaPagada() : boolean
+  }
+  class ButacaPedida <<Record>> {
+    - asiento : Asiento
+    - tarifa : TipoTarifa
+  }
+  enum TipoTarifa {
+    GENERAL
+    MENOR
+    JUBILADO
+    ESTUDIANTE
+    - multiplicadorPrecio : double
+    - requiereAcreditacion : boolean
+    - participaDePromociones : boolean
+    + {static} excluidasDePromociones() : List<TipoTarifa>
+    + aplicarA(precio : Dinero) : Dinero
+  }
+  class CodigoDeAcceso <<ValueObject>> {
+    - valor : String
+    + CodigoDeAcceso(valor : String)
+    + {static} generar() : CodigoDeAcceso
+  }
+  class Pago <<Entity>> {
+    - id : int
+    - reservaId : int
+    - subtotal : Dinero
+    - promocionId : Integer
+    - descuento : Dinero
+    - monto : Dinero
+    - medio : MedioPago
+    - fecha : LocalDateTime
+    - codigoAutorizacion : String
+    + Pago(reservaId, subtotal, promocionId, descuento, medio, fecha, codigoAutorizacion)
+    + llevaRecibo() : boolean
+  }
+  enum MedioPago {
+    EFECTIVO
+    DEBITO
+    CREDITO
+    QR
+    TRANSFERENCIA
+    - etiqueta : String
+    - requiereAutorizacion : boolean
+    + autorizacion(codigo : String) : String
+    + seCobraEnCaja() : boolean
+    + exigirCheckout() : void
+  }
+  class BloqueoButaca <<Entity>> {
+    - funcion : Funcion
+    - asiento : Asiento
+    - sesion : String
+    - venceEn : LocalDateTime
+  }
+  class SesionDeCompra <<ValueObject>> {
+    - valor : String
+    + SesionDeCompra(valor : String)
+    + {static} comoSeGuarda(sesion : String) : String
+  }
+}
+
+package "model.usuarios" {
+  abstract class Usuario <<Entity>> {
+    - id : int
+    - nombre : String
+    - email : String
+    - rol : Rol
+    - passwordHash : String
+    # Usuario(nombre : String, email : String, rol : Rol)
+    + renombrar(nombre : String) : void
+    # guardarPasswordHash(passwordHash : String) : void
+  }
+  class Cliente <<Entity>> {
+    - debeCambiarClave : boolean
+    + Cliente(nombre : String, email : String)
+    + tieneCuenta() : boolean
+    + abrirCuenta(passwordHash : String) : void
+    + cambiarClave(passwordHash : String) : void
+    + asignarClaveTemporal(passwordHash : String) : void
+    + cerrarCuenta() : void
+  }
+  class Empleado <<Entity>> {
+    + Empleado(nombre : String, email : String, passwordHash : String, rol : Rol)
+  }
+  enum Rol {
+    CLIENTE
+    ADMINISTRADOR
+    ACOMODADOR
+    + esEmpleado() : boolean
+  }
+  class Email <<ValueObject>> {
+    - valor : String
+    + Email(valor : String)
+    + enmascarado() : String
+    + {static} paraBuscar(texto : String) : Optional<Email>
+  }
+  class Contrasena <<ValueObject>> {
+    - valor : String
+    + Contrasena(valor : String)
+    + {static} temporal() : Contrasena
+  }
+}
+
+package "model.promociones" {
+  abstract class Promocion <<Entity>> {
+    - id : int
+    - nombre : String
+    - vigencia : Periodo
+    - diasSemana : Set<DayOfWeek>
+    - franja : FranjaHoraria
+    - mediosPago : Set<MedioPago>
+    - activa : boolean
+    - imagenUrl : String
+    # Promocion(nombre : String, condiciones : CondicionesPromocion, hoy : LocalDate)
+    + editar(tipo, nombre, parametros, condiciones, hoy) : void
+    # {abstract} cambiarParametros(parametros : ParametrosPromocion) : void
+    + cambiarImagen(imagen : ImagenUrl) : void
+    + {abstract} getTipo() : TipoPromocion
+    + {abstract} getParametros() : ParametrosPromocion
+    + {abstract} calcularDescuento(entradas : List<Entrada>) : Dinero
+    + {abstract} beneficio() : String
+    + sigueVigente(hoy : LocalDate) : boolean
+    + aplicaA(inicioFuncion : LocalDateTime, medio : MedioPago) : boolean
+    + activar() : void
+    + desactivar() : void
+  }
+  class PromocionPorcentaje <<Entity>> {
+    - porcentaje : double
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + beneficio() : String
+  }
+  class PromocionMontoFijo <<Entity>> {
+    - monto : Dinero
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + beneficio() : String
+  }
+  class PromocionNxM <<Entity>> {
+    - lleva : int
+    - paga : int
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + beneficio() : String
+  }
+  enum TipoPromocion {
+    PORCENTAJE
+    MONTO_FIJO
+    NXM
+    - campos : List<String>
+    + {abstract} crear(nombre, parametros, condiciones, hoy) : Promocion
+  }
+  class CondicionesPromocion <<Record>> {
+    - desde : LocalDate
+    - hasta : LocalDate
+    - dias : Set<DayOfWeek>
+    - horaDesde : LocalTime
+    - horaHasta : LocalTime
+    - mediosPago : Set<MedioPago>
+  }
+  class ParametrosPromocion <<Record>> {
+    - porcentaje : Double
+    - monto : Double
+    - lleva : Integer
+    - paga : Integer
+    + {static} dePorcentaje(porcentaje : Double) : ParametrosPromocion
+    + {static} deMonto(monto : Double) : ParametrosPromocion
+    + {static} deNxM(lleva : Integer, paga : Integer) : ParametrosPromocion
+  }
+}
+
+package "model.candy" {
+  abstract class Producto <<Entity>> {
+    - id : int
+    - nombre : String
+    - tipo : TipoProducto
+    - precio : Dinero
+    - disponible : boolean
+    - imagenUrl : String
+    # Producto(nombre : String, tipo : TipoProducto, precio : Dinero)
+    + {abstract} getPrecioSuelto() : Dinero
+    + {abstract} getAhorro() : Dinero
+    + getComponentes() : List<ItemCombo>
+    + estaDisponible() : boolean
+    + sacarDeLaVenta() : void
+    + volverALaVenta() : void
+    + editar(nombre : String, precio : Dinero) : void
+    + cambiarImagen(imagen : ImagenUrl) : void
+    # validarEdicion(nombre : String, precio : Dinero) : void
+  }
+  class ProductoSuelto <<Entity>> {
+    + ProductoSuelto(nombre : String, tipo : TipoProducto, precio : Dinero)
+    + getPrecioSuelto() : Dinero
+    + getAhorro() : Dinero
+  }
+  class Combo <<Entity>> {
+    - componentes : List<ItemCombo>
+    + {static} armar(nombre, precio, componentes) : Combo
+    + getComponentes() : List<ItemCombo>
+    + getPrecioSuelto() : Dinero
+    + getAhorro() : Dinero
+    # validarEdicion(nombre : String, precio : Dinero) : void
+    + exigirQueSigaConviniendo() : void
+  }
+  class ItemCombo <<Embeddable>> {
+    - producto : Producto
+    - cantidad : int
+    + nombre() : String
+    + precioSuelto() : Dinero
+  }
+  enum TipoProducto {
+    POCHOCLOS
+    BEBIDA
+    GOLOSINA
+    COMBO
+    + esCombo() : boolean
+  }
+  class CompraCandy <<Entity>> {
+    - id : int
+    - clienteId : Integer
+    - reservaId : Integer
+    - fecha : LocalDateTime
+    - medio : MedioPago
+    - codigoAutorizacion : String
+    - items : List<ItemCompra>
+    + CompraCandy(clienteId, reservaId, fecha, medio, codigoAutorizacion, cantidades)
+    + {static} validarPedido(cantidades, medio, codigoAutorizacion) : String
+    + getTotal() : Dinero
+    + getAhorro() : Dinero
+  }
+  class ItemCompra <<Entity>> {
+    - id : int
+    - producto : Producto
+    - nombre : String
+    - cantidad : int
+    - precioUnitario : Dinero
+    - ahorroUnitario : Dinero
+    + getSubtotal() : Dinero
+    + getAhorro() : Dinero
+  }
+}
+
+package "model.imagenes" {
+  class ArchivoDeImagen <<Entity>> {
+    - nombre : String
+    - contenido : byte[]
+    + ArchivoDeImagen(nombre : NombreDeImagen, contenido : byte[])
+  }
+  class Imagen <<ValueObject>> {
+    - contenido : byte[]
+    - formato : FormatoImagen
+    + {static} subida(contenido : byte[]) : Imagen
+  }
+  class ImagenUrl <<ValueObject>> {
+    + {static} NINGUNA : ImagenUrl
+    - valor : String
+    + ImagenUrl(valor : String)
+  }
+  class NombreDeImagen <<ValueObject>> {
+    + {static} RUTA : String
+    - valor : String
+    - formato : FormatoImagen
+    + {static} nuevo(formato : FormatoImagen) : NombreDeImagen
+    + {static} leer(nombre : String) : Optional<NombreDeImagen>
+    + url() : String
+  }
+  enum FormatoImagen {
+    JPG
+    PNG
+    WEBP
+    - extension : String
+    - tipoDeContenido : String
+    + {static} de(contenido : byte[]) : Optional<FormatoImagen>
+    + {static} conExtension(extension : String) : Optional<FormatoImagen>
+  }
+}
+
+package "model.dinero" {
+  class Dinero <<ValueObject>> {
+    + {static} CERO : Dinero
+    + {static} IMPORTE_MAXIMO : Dinero
+    - centavos : long
+    + {static} de(pesos : double) : Dinero
+    + {static} importe(pesos : Double, que : String) : Dinero
+    + {static} importeValido(importe : Dinero, que : String) : Dinero
+    + {static} sumar(importes : Collection<Dinero>) : Dinero
+    + mas(otro : Dinero) : Dinero
+    + menos(otro : Dinero) : Dinero
+    + por(factor : double) : Dinero
+    + porcentaje(porcentaje : double) : Dinero
+    + acotadoA(techo : Dinero) : Dinero
+    + sinBajarDeCero() : Dinero
+    + esMayorQue(otro : Dinero) : boolean
+  }
+}
+
+package "model.rechazos" {
+  abstract class Rechazo {
+    # Rechazo(mensaje : String)
+  }
+  class DatoInvalido {
+    + DatoInvalido(mensaje : String)
+  }
+  class RecursoNoEncontrado {
+    + RecursoNoEncontrado(mensaje : String)
+  }
+  class ConflictoDeNegocio {
+    + ConflictoDeNegocio(mensaje : String)
+  }
+  class ButacaOcupada {
+    + ButacaOcupada(mensaje : String, causa : Throwable)
+  }
+  class SinPrueba {
+    + SinPrueba(mensaje : String)
+  }
+  class DemasiadosIntentos {
+    + {static} MENSAJE : String
+    + DemasiadosIntentos()
+  }
+}
+
+' ---------- herencia ----------
+Usuario <|-- Cliente : extiende
+Usuario <|-- Empleado : extiende
+Producto <|-- ProductoSuelto : extiende
+Producto <|-- Combo : extiende
+Promocion <|-- PromocionPorcentaje : extiende
+Promocion <|-- PromocionMontoFijo : extiende
+Promocion <|-- PromocionNxM : extiende
+Rechazo <|-- DatoInvalido : extiende
+Rechazo <|-- RecursoNoEncontrado : extiende
+Rechazo <|-- ConflictoDeNegocio : extiende
+Rechazo <|-- ButacaOcupada : extiende
+Rechazo <|-- SinPrueba : extiende
+Rechazo <|-- DemasiadosIntentos : extiende
+
+' ---------- estructura ----------
+Pelicula "1" *--> "1" CatalogoPelicula : se describe con >
+Pelicula "0..*" --> "1" Clasificacion : se clasifica como >
+Pelicula "0..*" --> "1..*" Genero : pertenece a >
+Pelicula "0..*" --> "1" EstadoRevision : se revisa según >
+Importacion "0..*" --> "1" EstadoImportacion : avanza según >
+Importacion "1" *--> "1" ResumenDeCorrida : resume la corrida en >
+Sala "1" *-- "1..*" Asiento : se compone de >
+Sala "0..*" --> "1" TipoSala : es del formato >
+Asiento "0..*" --> "1" TipoAsiento : es del tipo >
+Asiento "0..*" --> "1" EstadoAsiento : está >
+Funcion "0..*" --> "1" Pelicula : proyecta >
+Funcion "0..*" --> "1" Sala : se da en >
+Funcion "1" *--> "1" FormatoDeFuncion : se ofrece en >
+FormatoDeFuncion "0..*" --> "1" Version : se habla en >
+FormatoDeFuncion "0..*" --> "1" Proyeccion : se proyecta en >
+FormatoDeFuncion "1" *--> "1" Dinero : cuesta >
+Programacion "0..*" --> "1" Pelicula : repite >
+Programacion "0..*" --> "1" Sala : ocupa >
+Programacion "1" *--> "1" Periodo : corre en >
+Programacion "1" *--> "1" FormatoDeFuncion : se ofrece en >
+Reserva "0..*" --> "1" Funcion : es para >
+Reserva "0..*" --> "1" Cliente : es de >
+Reserva "1" *-- "1..*" Entrada : incluye >
+Reserva "0..*" --> "1" EstadoReserva : está en >
+Entrada "0..*" --> "1" Asiento : ocupa >
+Entrada "0..*" --> "1" TipoTarifa : se vende con >
+Entrada "1" *--> "1" Dinero : cuesta >
+ButacaPedida "0..*" --> "1" Asiento : pide >
+ButacaPedida "0..*" --> "0..1" TipoTarifa : elige >
+Pago "0..*" --> "1" MedioPago : se cobra con >
+Pago "1" *--> "3" Dinero : congela subtotal, descuento y monto en >
+BloqueoButaca "0..*" --> "1" Funcion : bloquea en >
+BloqueoButaca "0..1" --> "1" Asiento : retiene >
+Usuario "0..*" --> "1" Rol : tiene el rol >
+Promocion "1" *--> "1" Periodo : es vigente en >
+Promocion "1" *--> "0..1" FranjaHoraria : se limita a >
+Promocion "0..*" --> "0..*" MedioPago : se limita a >
+PromocionMontoFijo "1" *--> "1" Dinero : descuenta >
+CondicionesPromocion "0..*" --> "0..*" MedioPago : pide >
+Producto "0..*" --> "1" TipoProducto : es del rubro >
+Producto "1" *--> "1" Dinero : cuesta >
+Combo "1" *-- "2..*" ItemCombo : se arma con >
+ItemCombo "0..*" --> "1" Producto : cuenta unidades de >
+CompraCandy "1" *-- "1..*" ItemCompra : se compone de >
+CompraCandy "0..*" --> "1" MedioPago : se cobra con >
+ItemCompra "0..*" --> "1" Producto : vende >
+ItemCompra "1" *--> "2" Dinero : congela precio y ahorro en >
+Imagen "0..*" --> "1" FormatoImagen : es del formato >
+NombreDeImagen "0..*" --> "1" FormatoImagen : lleva la extensión de >
+
+' ---------- dependencias ----------
+Pelicula "1" ..> "0..1" TrailerYoutube : valida su trailer con >
+FormatoDeFuncion "1" ..> "1" Sala : exige poder proyectarse en >
+Proyeccion "1" ..> "1" TipoSala : pregunta si da 3D a >
+Funcion "1" ..> "1" Asiento : le pone precio a >
+Reserva "1" ..> "1..*" ButacaPedida : crea sus entradas desde >
+Reserva "1" ..> "1" CodigoDeAcceso : genera su código con >
+Usuario "1" ..> "1" Email : valida el email con >
+Promocion "1" ..> "1" CondicionesPromocion : se arma con >
+Promocion "1" ..> "1" ParametrosPromocion : describe sus parámetros en >
+Promocion "0..*" ..> "1..*" Entrada : descuenta sobre >
+TipoPromocion "1" ..> "0..*" PromocionPorcentaje : crea >
+TipoPromocion "1" ..> "0..*" PromocionMontoFijo : crea >
+TipoPromocion "1" ..> "0..*" PromocionNxM : crea >
+Producto "1" ..> "0..1" ImagenUrl : cambia su imagen con >
+Promocion "1" ..> "0..1" ImagenUrl : cambia su imagen con >
+ImagenUrl "1" ..> "1" NombreDeImagen : reconoce >
+ArchivoDeImagen "1" ..> "1" NombreDeImagen : se guarda con el nombre de >
+@enduml
