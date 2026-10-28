@@ -93,7 +93,7 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         String checkout = enTransaccion(() -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR)).id();
         pasarela.aprobar(checkout);
-        enTransaccion(() -> pagos.retornarDeCheckout(checkout));
+        enTransaccion(() -> pagos.retornarDeCheckout(checkout, null));
 
         assertEquals(0, enTransaccion(conciliacion::conciliar));
         assertEquals(0, enTransaccion(conciliacion::conciliar));

@@ -204,11 +204,15 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 `{id, reservaId, medio, monto, urlPago, codigoQr}`.
 
 - Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`; `account_money` se acepta siempre porque MP no deja excluirlo.
+  Con la emulada, `urlPago` es relativa al sitio: `/#/pasarela-emulada/<id>?monto=<monto>&medio=<MEDIO>`, una pantalla
+  de prueba con Aprobar y Rechazar que vuelve por el retorno con `?status=approved` o `?status=rejected`.
 - `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
 - `POST /checkouts/{id}/confirmacion`, sin cuerpo, lo autoriza: `201` con el pago y revalida la reserva. Con MP
   consulta `GET /v1/payments/search`; sin un pago `approved` da `409` con el motivo (rechazado, pendiente, sin pago).
-- `GET /checkouts/{id}/retorno` (público): la back_url de MP. Ignora la query que agrega MP, consulta el pago y
-  cobra si está aprobado (recargar no cobra dos veces). `302` a `/#/ticket/<codigo>` o
+- `GET /checkouts/{id}/retorno` (público): la back_url de MP. De la query que agrega MP solo mira `status`: con
+  `rejected` no cobra y avisa «Mercado Pago rechazó el pago: probá de nuevo con otro medio»; con cualquier otro (o sin
+  query) consulta el pago y cobra si está aprobado (recargar no cobra dos veces). `approved` no alcanza: con MP de
+  verdad lo decide `/v1/payments/search`, y solo la emulada aprueba sin preguntar. `302` a `/#/ticket/<codigo>` o
   `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
   El front abre MP en la misma pestaña y, al volver al ticket (o con «Ya pagué»), llama esta misma ruta con
   `redirect: "manual"`: en localhost MP no redirige al sitio y así no espera a la conciliación.

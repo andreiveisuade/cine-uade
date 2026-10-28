@@ -88,10 +88,15 @@ public class GestorPagos {
     }
 
     // El comprador vuelve al navegador sin nadie que lea JSON: lo que impide cobrar viaja como aviso.
-    public RetornoCheckout retornarDeCheckout(String checkoutId) {
+    // El status de la back_url se escribe a mano: rejected no cobra, pero approved no alcanza, autoriza la pasarela.
+    public RetornoCheckout retornarDeCheckout(String checkoutId, String status) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         Reserva reserva = buscarReserva(checkout.reservaId());
         if (!reserva.estaPagada()) {
+            if ("rejected".equals(status)) {
+                return new RetornoCheckout(reserva.getCodigo(),
+                        "Mercado Pago rechazó el pago: probá de nuevo con otro medio");
+            }
             try {
                 cobrarCheckout(checkout, reserva);
             } catch (Rechazo motivo) {

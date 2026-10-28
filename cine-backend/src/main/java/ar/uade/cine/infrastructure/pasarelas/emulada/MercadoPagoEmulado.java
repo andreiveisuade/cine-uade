@@ -12,18 +12,21 @@ import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.model.dinero.Dinero;
 
 // Mercado Pago simulado en memoria: checkouts y códigos de autorización al azar; Adapter de PasarelaPagos.
+// El link lleva a una pantalla de prueba del sitio, que vuelve por el retorno con el status approved o rejected.
 public class MercadoPagoEmulado implements PasarelaPagos {
 
-    private static final String HOST = "https://checkout.emulado.local/mp/";
+    private static final String PANTALLA = "/#/pasarela-emulada/";
     private static final SecureRandom AZAR = new SecureRandom();
 
     private final Map<String, Checkout> checkouts = new ConcurrentHashMap<>();
 
+    // Relativo: el comprador vuelve al host del que salió, sea nginx o el servidor de Vite.
     @Override
     public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
         String id = "MP-" + numero(10);
+        String urlPago = PANTALLA + id + "?monto=" + monto.aPesos() + "&medio=" + medio.name();
         // El QR lleva solo el id: con el monto adentro, alguien podría editarlo antes de pagar.
-        Checkout checkout = new Checkout(id, reservaId, medio, monto, HOST + id, "MP-QR|" + id);
+        Checkout checkout = new Checkout(id, reservaId, medio, monto, urlPago, "MP-QR|" + id);
         checkouts.put(id, checkout);
         return checkout;
     }
