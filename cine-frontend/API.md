@@ -13,7 +13,7 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | Textos | Nombres, títulos, emails, códigos y enums se comparan sin distinguir mayúsculas ni espacios alrededor |
 | Números | Un entero no acepta decimales (`1.0` tampoco) |
 | Importes | Un precio o un monto que se carga es mayor a cero, con hasta 2 decimales y hasta $ 1.000.000. Los precios que salen ya traen los multiplicadores |
-| Auth | Empleados (Swing): HTTP Basic en cada pedido, `Authorization: Basic base64(email:contraseña)`. Clientes (web): cookie `JSESSIONID` que abre `POST /sesion`, HttpOnly y `SameSite=Lax` |
+| Auth | Empleados (Swing): HTTP Basic en cada pedido, `Authorization: Basic base64(email:contraseña)`. Clientes (web): solo Google (R28), que deja la cookie `JSESSIONID`, HttpOnly y `SameSite=Lax` |
 
 ### Respuestas
 
@@ -34,13 +34,11 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 | `400` | Un cuerpo ilegible: ausente, JSON roto, raíz que no es objeto, tipo equivocado o decimal en un entero | `El campo precio tiene un valor inválido: abc` |
 | `401` | Sin credenciales o sin sesión, o inválidas (también en rutas públicas) | `Hace falta iniciar sesión para esta operación` · `Email o contraseña incorrectos` |
 | `403` | El rol no alcanza | `Tu rol no tiene permiso para esta operación` |
-| `403` | `POST /clientes` sobre un email que ya compró sin cuenta, sin el código de una de sus entradas (R22) | `Para abrir esta cuenta hace falta el código de una de sus entradas: está en el ticket de la compra` |
-| `403` | `POST /cuenta/recuperacion` sin prueba (R25): email inexistente, sin cuenta, código ajeno o inventado, todos con el mismo texto | `El email y el código no corresponden a ninguna cuenta: revisá el ticket de una de tus compras` |
 | `404` | Un id o código inexistente, en la ruta o en el cuerpo; una ruta inexistente; la reserva de otro cliente (mismo texto que un código inexistente) | `No existe la película 99` |
 | `405` · `406` · `415` | Método no aceptado (con `Allow`), `Accept` sin JSON, cuerpo que no es JSON | `La ruta no acepta PUT` |
 | `409` | Nombre, título o email ya usado; un checkout cuyo pago MP no está aprobado; borrar o cambiar algo en uso (sala con funciones, función con reservas), una reserva ya cobrada, una importación en curso | `Ya existe una sala con ese nombre` |
 | `409` | Butaca de otro (R4), o dos pedidos que cambian lo mismo a la vez | `La butaca A1 ya está ocupada` |
-| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion`, para cualquier ruta con Basic, para `POST /cuenta/recuperacion` (cuenta cada 403) y para la clave actual de `POST /cuenta/clave` y `DELETE /cuenta`. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
+| `429` | Cinco claves equivocadas seguidas por email o por IP: un minuto bloqueado, sin llegar a verificar la clave. Vale para `POST /sesion` y cualquier ruta con Basic, que son solo de empleados. Un ingreso correcto reinicia el contador del email, no el de la IP | `Demasiados intentos: esperá un minuto y probá de nuevo` |
 | `500` | Falla del servidor, con el detalle solo en el log. Si falla el archivo de un comprobante, la venta ya quedó guardada y responde igual | `Ocurrió un error inesperado en el servidor` |
 | `413` · `502` · `504` | nginx: cuerpo de más de 1 MB (3 MB en `POST /imagenes`), backend caído, más de 30 s sin respuesta (180 s en importaciones) | `El servidor no está disponible: volvé a intentarlo en un rato` |
 
@@ -48,8 +46,8 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/clientes`, `/cuenta/recuperacion`, `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `POST /cuenta/clave`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
+| Público | `POST` de `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
+| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion` y `POST /reservas/codigo/{codigo}/checkout`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
@@ -57,7 +55,7 @@ Un cliente con sesión que llama una ruta del encargado recibe `403`, y un emple
 
 ### Seguridad
 
-Límites conocidos: `debeCambiarClave` lo hace cumplir solo la web (el backend no bloquea otras rutas a quien no la cambió), y la recuperación, el login, el cambio de clave y la baja comparten el mismo contador de intentos por email e IP.
+Límites conocidos: el login con Basic (empleados) y cada pedido de Swing comparten el mismo contador de intentos por email e IP. El cliente no tiene clave en el cine: la verifica Google.
 
 ## Catálogos
 
@@ -84,11 +82,26 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /cartelera?genero=` | Las películas en exhibición |
 | `GET /peliculas/{id}` | Una película |
 | `GET /peliculas/{id}/funciones` | Sus funciones por `inicio`, con la sala |
-| `POST /clientes` | `{nombre, email, password, codigoReserva?}`: abre la cuenta (clave en bcrypt). Email `usuario@dominio.algo`, guardado en minúsculas, único contra los empleados (`409 Ya existe un usuario con ese email`). Quien reservó sin cuenta la abre sobre ese mismo cliente y ve sus reservas de antes, pero tiene que mandar `codigoReserva`, el de una de sus entradas (R22): sin él, o con uno ajeno o inventado, `403` con el mismo texto en los tres casos. Con email nuevo el código se ignora. Si ya tiene clave, o el email es de un empleado, `409 Ya existe una cuenta con ese email`. Sin `password`, `400` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
-| `POST /clientes/{id}/clave-temporal` | Sin cuerpo. Solo `ADMINISTRADOR` (Swing, boletería). `200 {"clave":"k7m2qx9pab"}`: diez letras y números sin `l`, `o`, `0` ni `1`, en claro una sola vez (no se guarda ni se loguea). Abre la cuenta si no la tenía y marca `debeCambiarClave` (R27). Id inexistente o de un empleado, `404 No existe el cliente N` |
 
-### La cuenta (cliente con sesión, R23 a R26)
+### El ingreso con Google (R28)
+
+El cliente no tiene clave en el cine. No son rutas de `/api`: el navegador va con la página entera.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/sesion/google` | Pública. `{"disponible": true}`, o `false` si el servidor no tiene `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: la web deshabilita el botón |
+| `GET /oauth2/authorization/google` | `302` a Google con `scope=openid email profile` y la vuelta en `redirect_uri`. Sin credenciales, `401` |
+| `GET /login/oauth2/code/google` | La vuelta de Google. Bien: abre la sesión (cookie `JSESSIONID`, el id cambia al entrar) y `302` a `/#/ingresar`. Mal: `302` a `/#/ingresar?error=<motivo>` sin sesión |
+
+- Email sin verificar en Google: `Tu cuenta de Google no tiene el email verificado: verificalo y volvé a intentar`.
+- Email de un empleado: `Ese email es del personal del cine: entrá desde la aplicación de escritorio` (el panel es Swing, con Basic).
+- Si ya hay un cliente con ese email (compró sin cuenta, o tenía clave antes), es él: sus reservas pasan a verse en
+  `/reservas/mias` y su nombre queda. Si no, se crea con el nombre de Google.
+- Cualquier otra falla (canceló en Google, la vuelta sin el pedido de ida): `No se pudo ingresar con Google: volvé a intentarlo`.
+- La sesión tiene solo el rol `CLIENTE`: lo del encargado da `403`.
+
+### La cuenta (cliente con sesión, R23 y R26)
 
 Siempre la del cliente de la cookie: ninguna ruta recibe su email ni su id. Sin sesión, `401`. Las que cambian estado
 son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cookie en esos métodos desde otro sitio.
@@ -96,9 +109,7 @@ son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cooki
 | Ruta | Qué hace |
 |---|---|
 | `PUT /cuenta` | `{nombre}` → `200` con el usuario de `POST /sesion`. Mismas reglas que el alta; el email no cambia (si viaja, se ignora) (R23) |
-| `POST /cuenta/clave` | `{actual, nueva}` → `204`. `nueva` con la política del alta; `actual` equivocada, `400 La contraseña actual no es correcta`, que cuenta para el límite de intentos (`429`). La respuesta trae una cookie nueva (cambia el id de sesión). Apaga `debeCambiarClave` (R24) |
-| `DELETE /cuenta` | `{actual}` → `204`; la clave equivocada cuenta para el límite de intentos. Borra la clave: vuelve a ser cliente sin cuenta. Cierra esta sesión (borra la cookie). Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; se reabre con `POST /clientes` y el código de una entrada (R22, R26) |
-| `POST /cuenta/recuperacion` | Pública. `{email, codigoReserva, nueva}` → `204`. El código de una entrada propia prueba que es el dueño, como en R22. Cualquier otro caso, `403` neutro (ver Errores). Pasa por el límite de intentos (`429`), por email y por IP (R25) |
+| `DELETE /cuenta` | Sin cuerpo → `204`. Cierra esta sesión (borra la cookie). Reservas, pagos y entradas quedan, también las `RESERVADA` sin pagar, que vencen solas; entrar de nuevo con Google la vuelve a abrir (R26, R28) |
 
 ```json
 { "id": 1, "titulo": "Matrix", "duracionMinutos": 136, "generos": ["ACCION"],
@@ -161,7 +172,7 @@ Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas qu
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): junto con el código sería todo lo que pide la recuperación (R25). El ticket lo consulta cada 10 s mientras la reserva espera el pago |
+| `GET /reservas/codigo/{codigo}` | El ticket, con función, película, sala, cliente, `total` y `codigo`. El email del cliente sale enmascarado (`a***@mail.com`): el código alcanza para ver el ticket y no tiene por qué decir de quién es. El ticket lo consulta cada 10 s mientras la reserva espera el pago |
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
 | `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `400`); libera las butacas (R6). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
@@ -209,9 +220,8 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 |---|---|
 | `#/` | Hero con destacadas y la cartelera |
 | `#/nosotros` | Integrantes y descripción del cine |
-| `#/ingresar` · `#/registro` | Entrar con email y clave · alta con nombre, email y clave (después entra solo). Con `debeCambiarClave`, entrar lleva a `#/mi-cuenta` |
-| `#/mi-cuenta` | Con sesión: nombre, cambiar clave y dar de baja (con confirmación) |
-| `#/recuperar-clave` | Sin sesión: email, código de una entrada y clave nueva. Link «¿Olvidaste tu clave?» desde Ingresar |
+| `#/ingresar[?error=]` | Botón «Ingresar con Google» (deshabilitado si `GET /sesion/google` dice que no). Al volver con sesión sigue la compra de la que vino (guardada en `sessionStorage`) o va a `#/mis-reservas`; `error` es el motivo del rechazo |
+| `#/mi-cuenta` | Con sesión: nombre y dar de baja (con confirmación) |
 | `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Pagar online. Sin sesión: búsqueda por código |
 | `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. `aviso` es el motivo si el pago de MP no se cobró |
 
@@ -219,13 +229,13 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 
 # Encargado
 
-`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol, debeCambiarClave}` (`ADMINISTRADOR`,
-`ACOMODADOR` o `CLIENTE`; `debeCambiarClave` es `true` solo si el cliente entró con la clave temporal de R27). Clave mala y email inexistente dan el mismo `401`.
+`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol}` (`ADMINISTRADOR` o `ACOMODADOR`; un cliente
+no tiene clave y da `401`). Clave mala y email inexistente dan el mismo `401`.
 
 - Empleado: no hay token ni sesión; quien llama guarda las credenciales y las manda en cada pedido (Swing).
-- Cliente: la respuesta setea `JSESSIONID` (HttpOnly, `SameSite=Lax`) y los pedidos siguientes la mandan sin Basic
+- Cliente: la vuelta de Google setea `JSESSIONID` (HttpOnly, `SameSite=Lax`) y los pedidos siguientes la mandan
   (`credentials: 'same-origin'`, el default de fetch). Sin CSRF: `SameSite=Lax` no envía la cookie en un `POST` o `DELETE` de otro sitio.
-- `POST /sesion` sin Basic devuelve al usuario de la cookie, o `401`: así la web sabe quién está.
+- `POST /sesion` sin Basic devuelve al cliente de la cookie (`rol` `CLIENTE`), o `401`: así la web sabe quién está.
 - `DELETE /sesion` → `204`: invalida la sesión y borra la cookie.
 
 ## Cartelera y salas
