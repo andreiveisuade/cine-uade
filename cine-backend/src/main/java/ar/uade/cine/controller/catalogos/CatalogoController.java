@@ -76,7 +76,7 @@ public class CatalogoController {
     @GetMapping("/api/tarifas")
     public List<TarifaVistaDTO> tarifas() {
         return Arrays.stream(TipoTarifa.values())
-                .map(t -> new TarifaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.requiereAcreditacion()))
+                .map(t -> new TarifaVistaDTO(t.name(), t.requiereAcreditacion()))
                 .toList();
     }
 

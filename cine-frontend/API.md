@@ -68,7 +68,7 @@ Límites conocidos: `debeCambiarClave` lo hace cumplir solo la web (el backend n
 | `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true}, …]` |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
 | `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
-| `GET /tarifas` | `[{"nombre":"JUBILADO","multiplicador":0.5,"requiereAcreditacion":true}, …]` |
+| `GET /tarifas` | `[{"nombre":"JUBILADO","requiereAcreditacion":true}, …]` |
 | `GET /tipos-producto` | `[{"nombre":"POCHOCLOS","esCombo":false}, …, {"nombre":"COMBO","esCombo":true}]` |
 | `GET /tipos-promocion` | `[{"nombre":"NXM","campos":["lleva","paga"]}, …]`: qué campos pide cada tipo |
 
