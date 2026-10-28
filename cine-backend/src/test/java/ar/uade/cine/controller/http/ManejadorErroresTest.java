@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -90,6 +92,28 @@ class ManejadorErroresTest extends PruebaDeApi {
                     case "intentos" -> new DemasiadosIntentos();
                     default -> new IllegalArgumentException("Illegal base64 character 2d");
                 };
+            }
+        }
+
+        static final String RUTA_EXCEPCIONES = "/api/prueba/excepcion/";
+
+        // Lo que tiran la base, Hibernate o la aritmética de fechas dentro de un gestor, pedido por HTTP para que
+        // se pruebe que Spring despacha el handler y no solo lo que el handler devuelve.
+        @RestController
+        static class Excepciones {
+
+            @PostMapping(RUTA_EXCEPCIONES + "{tipo}")
+            public void lanzar(@PathVariable String tipo) {
+                throw switch (tipo) {
+                    case "version" -> new ObjectOptimisticLockingFailureException(Reserva.class, 1);
+                    case "fecha" -> new DateTimeException("Invalid value for Year");
+                    case "datos" -> new DataAccessResourceFailureException("Connection refused");
+                    default -> new IllegalStateException("Un bug");
+                };
+            }
+
+            @GetMapping(RUTA_EXCEPCIONES + "parametro")
+            public void conParametro(@RequestParam String fecha) {
             }
         }
 
@@ -207,6 +231,7 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(405, respuesta.estado());
         assertEquals("La ruta no acepta PUT", respuesta.error());
+        assertEquals(Set.of(HttpMethod.GET), respuesta.cabeceras().getAllow());
     }
 
     @Test
@@ -292,13 +317,27 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals(201, pelicula.estado());
     }
 
-    @Test
-    void unaReservaQueCambioMientrasSeProcesabaEs409() {
-        var respuesta = new ManejadorErrores()
-                .conflictoDeVersion(new ObjectOptimisticLockingFailureException(Reserva.class, 1));
+    // @Version, una fecha que desborda en un gestor, la base caída y un bug: cada uno con su status, nunca el detail.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            una reserva que cambió mientras se procesaba, version, 409, 'La reserva cambió mientras se procesaba: volvé a intentarlo'
+            una fecha que desborda en un gestor,          fecha,   400, Una de las fechas del pedido no es válida
+            la base no responde,                          datos,   500, No se pudo acceder a los datos
+            una excepción no prevista,                    bug,     500, Ocurrió un error inesperado en el servidor
+            """)
+    void cadaExcepcionDeAbajoLlegaPorHttpConSuStatusYSuTexto(String caso, String tipo, int estado, String mensaje) {
+        Respuesta respuesta = post(RutasDePrueba.RUTA_EXCEPCIONES + tipo, null);
 
-        assertEquals(409, respuesta.getStatusCode().value());
-        assertEquals("La reserva cambió mientras se procesaba: volvé a intentarlo", respuesta.getBody().error());
+        assertEquals(estado, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
+    @Test
+    void unParametroObligatorioQueFaltaEs400YLoNombra() {
+        Respuesta respuesta = get(RutasDePrueba.RUTA_EXCEPCIONES + "parametro");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("Falta el parámetro fecha", respuesta.error());
     }
 
     @Test
@@ -471,15 +510,6 @@ class ManejadorErroresTest extends PruebaDeApi {
         assertEquals(estado, respuesta.estado());
         assertEquals(MediaType.APPLICATION_JSON, respuesta.cabeceras().getContentType());
         assertEquals(error, respuesta.error());
-    }
-
-    // Una fecha que pasó Parseo y desborda en la aritmética de un gestor la provocó el pedido: 400, no 500.
-    @Test
-    void unaFechaQueDesbordaEnUnGestorEs400() {
-        var respuesta = new ManejadorErrores().fechaFueraDeRango(new DateTimeException("Invalid value for Year"));
-
-        assertEquals(400, respuesta.getStatusCode().value());
-        assertEquals("Una de las fechas del pedido no es válida", respuesta.getBody().error());
     }
 
     private Respuesta pedirConTipo(String metodo, String ruta, String tipo, String cuerpo) {

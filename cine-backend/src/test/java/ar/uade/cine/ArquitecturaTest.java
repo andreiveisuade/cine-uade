@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +26,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ArquitecturaTest {
 
     private static final Path RAIZ = Path.of("src/main/java/ar/uade/cine");
+
+    // Un nombre calificado de tipo (paquetes en minúscula y la clase): lo mismo un import que uno escrito en el código.
+    private static final Pattern NOMBRE_CALIFICADO = Pattern.compile("\\b(?:[a-z]\\w*\\.)+(?:[A-Z]\\w*|\\*)");
+
+    // Comentarios y textos no son dependencias: un string con "ar.uade.cine.x" o un // con un import no cuentan.
+    private static final Pattern COMENTARIO_O_TEXTO = Pattern.compile(
+            "(?s)\"\"\".*?\"\"\"|\"(?:\\\\.|[^\"\\\\\n])*\"|'(?:\\\\.|[^'\\\\\n])+'|/\\*.*?\\*/|//[^\n]*");
 
     // Romper una regla es cambiar esta tabla a mano, a propósito.
     private static final Map<String, Set<String>> PERMITIDO = Map.of(
@@ -73,11 +83,12 @@ class ArquitecturaTest {
                 if (!capa.equals("service") && !capa.equals("controller")) {
                     continue;
                 }
-                for (String importado : importsExternos(archivo)) {
+                for (String importado : referenciasExternas(archivo)) {
                     if (importado.startsWith("org.springframework.jdbc")
                             || importado.startsWith("jakarta.persistence")
+                            || importado.startsWith("org.hibernate")
                             || importado.startsWith("java.sql")) {
-                        violaciones.add(RAIZ.relativize(archivo) + " importa " + importado);
+                        violaciones.add(RAIZ.relativize(archivo) + " nombra " + importado);
                     }
                 }
             }
@@ -131,7 +142,8 @@ class ArquitecturaTest {
         @Test
         @DisplayName("nadie tira una IllegalArgumentException suelta, sino un Rechazo de model/rechazos")
         void nadieTiraUnaIllegalArgumentExceptionSuelta() {
-            List<String> violaciones = lineasQueDicen("new IllegalArgumentException(", archivo -> true);
+            List<String> violaciones = lineasQueDicen(
+                    Pattern.compile("new\\s+(?:java\\.lang\\.)?IllegalArgumentException\\s*\\("), archivo -> true);
             assertTrue(violaciones.isEmpty(), () -> "Tiran new IllegalArgumentException(…), que sale como 500: "
                     + "usá DatoInvalido (400), RecursoNoEncontrado (404) o ConflictoDeNegocio (409) "
                     + "de model/rechazos en:\n  " + String.join("\n  ", violaciones));
@@ -146,29 +158,38 @@ class ArquitecturaTest {
         @Test
         @DisplayName("ningún controller contesta ResponseEntity<Object>")
         void ningunControllerContestaObject() {
-            List<String> violaciones = lineasQueDicen("ResponseEntity<Object>",
+            List<String> violaciones = lineasQueDicen(Pattern.compile("ResponseEntity<\\s*Object\\s*>"),
                     archivo -> capaDe(archivo).equals("controller"));
             assertTrue(violaciones.isEmpty(), () -> "Contestan ResponseEntity<Object>: usá el DTO, una lista "
                     + "para un filtro o un rechazo para lo que no está, en:\n  " + String.join("\n  ", violaciones));
         }
     }
 
-    // Archivo y número de línea, sin contar comentarios.
-    private static List<String> lineasQueDicen(String texto, Predicate<Path> revisar) {
+    // Archivo y número de línea, sin contar comentarios ni textos.
+    private static List<String> lineasQueDicen(Pattern patron, Predicate<Path> revisar) {
         List<String> encontradas = new ArrayList<>();
         for (Path archivo : fuentes()) {
             if (!revisar.test(archivo)) {
                 continue;
             }
-            List<String> lineas = lineasDe(archivo);
-            for (int i = 0; i < lineas.size(); i++) {
-                String linea = lineas.get(i).strip();
-                if (!linea.startsWith("//") && linea.contains(texto)) {
+            String[] lineas = codigoDe(archivo).split("\n", -1);
+            for (int i = 0; i < lineas.length; i++) {
+                if (patron.matcher(lineas[i]).find()) {
                     encontradas.add(RAIZ.relativize(archivo) + ":" + (i + 1));
                 }
             }
         }
         return encontradas;
+    }
+
+    // El fuente con cada comentario y cada texto en blanco; se conservan los saltos para no correr los números de línea.
+    private static String codigoDe(Path archivo) {
+        Matcher ignorado = COMENTARIO_O_TEXTO.matcher(String.join("\n", lineasDe(archivo)));
+        StringBuilder codigo = new StringBuilder();
+        while (ignorado.find()) {
+            ignorado.appendReplacement(codigo, ignorado.group().replaceAll("[^\n]", ""));
+        }
+        return ignorado.appendTail(codigo).toString();
     }
 
     private static List<String> lineasDe(Path archivo) {
@@ -220,30 +241,23 @@ class ArquitecturaTest {
     }
 
     private static List<String> importsInternos(Path archivo) {
-        try {
-            return Files.readAllLines(archivo).stream()
-                    .map(String::strip)
-                    .filter(linea -> linea.startsWith("import "))
-                    .map(linea -> linea.replaceFirst("^import (static )?", "").replaceFirst(";$", ""))
-                    .filter(clase -> clase.startsWith("ar.uade.cine."))
-                    .map(clase -> clase.substring("ar.uade.cine.".length()))
-                    .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return referencias(archivo).stream()
+                .filter(clase -> clase.startsWith("ar.uade.cine."))
+                .map(clase -> clase.substring("ar.uade.cine.".length()))
+                .toList();
     }
 
-    private static List<String> importsExternos(Path archivo) {
-        try {
-            return Files.readAllLines(archivo).stream()
-                    .map(String::strip)
-                    .filter(linea -> linea.startsWith("import "))
-                    .map(linea -> linea.replaceFirst("^import (static )?", "").replaceFirst(";$", ""))
-                    .filter(clase -> !clase.startsWith("ar.uade.cine."))
-                    .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    private static List<String> referenciasExternas(Path archivo) {
+        return referencias(archivo).stream()
+                .filter(clase -> !clase.startsWith("ar.uade.cine."))
+                .toList();
+    }
+
+    // Los import y también los nombres calificados escritos en el código, que se saltean la lista de imports.
+    private static List<String> referencias(Path archivo) {
+        return NOMBRE_CALIFICADO.matcher(codigoDe(archivo)).results()
+                .map(MatchResult::group)
+                .toList();
     }
 
     private static List<Path> fuentes() {

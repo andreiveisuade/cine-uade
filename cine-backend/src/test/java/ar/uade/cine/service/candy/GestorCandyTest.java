@@ -1,6 +1,7 @@
 package ar.uade.cine.service.candy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -97,6 +99,19 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 () -> carta.armarCombo("Combo caro", Dinero.de(6500), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
         assertThrows(Rechazo.class,
                 () -> carta.armarCombo("Combo carísimo", Dinero.de(7000), pochoclosYGaseosa(), ImagenUrl.NINGUNA));
+    }
+
+    @Test
+    @DisplayName("R14: abaratar un suelto no puede dejar sin convenir al combo que lo trae")
+    void abaratarUnSueltoNoPuedeDejarSinConvenirAlCombo() {
+        carta.armarCombo("Combo pareja", Dinero.de(5500), pochoclosYGaseosa(), ImagenUrl.NINGUNA);
+
+        Rechazo error = rechaza("Con ese precio, el combo Combo pareja dejaría de salir menos que sus"
+                        + " componentes sueltos ($ 4500.00)",
+                () -> carta.editar(pochoclos, "Pochoclos grandes", Dinero.de(2000), ImagenUrl.NINGUNA));
+
+        assertInstanceOf(DatoInvalido.class, error);
+        assertEquals(Dinero.de(4000), carta.obtener(pochoclos).getPrecio());
     }
 
     @Test

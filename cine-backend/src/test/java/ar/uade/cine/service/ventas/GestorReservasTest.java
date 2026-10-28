@@ -224,7 +224,8 @@ class GestorReservasTest extends PruebaDeIntegracion {
         reservas.cancelar(reserva.getId());
 
         assertEquals(10, asientosLibres(1, null).size());
-        assertTrue(asientosLibres(1, null).stream().anyMatch(a -> a.getCodigo().equals("A1")));
+        assertEquals(3, reservas.reservar(1, 1, generales("A1", "A2", "A3"), null).getCantidadEntradas(),
+                "las butacas liberadas se vuelven a vender");
     }
 
     @Test
@@ -359,6 +360,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
         assertEquals(10, asientosLibres(1, null).size(), "las butacas vuelven a la venta");
         assertEquals(EstadoReserva.EXPIRADA, consultas.obtener(reserva.getId()).getEstado());
+        assertEquals(2, reservas.reservar(1, 1, generales("A1", "A2"), null).getCantidadEntradas());
     }
 
     @Test
@@ -482,12 +484,17 @@ class GestorReservasTest extends PruebaDeIntegracion {
                 () -> reservas.reservar(empezada, 1, generales("A1"), null));
     }
 
+    // La misma butaca vendida en otra función de la misma sala no ocupa esta, ni para vender ni en el mapa.
     @Test
     @DisplayName("R4: la ocupación es por función")
-    void laMismaButacaSeVendeParaUnaFuncionFutura() {
-        funcionQueYaEmpezo();
+    void laMismaButacaSeVendeEnDosFuncionesDeLaMismaSala() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        reservas.reservar(2, 1, generales("A1"), null);
 
+        assertEquals(10, asientosLibres(1, null).size(), "el mapa de la otra función sigue entero");
         assertEquals(1, reservas.reservar(1, 1, generales("A1"), null).getCantidadEntradas());
+        assertEquals(9, asientosLibres(2, null).size());
     }
 
     @Test

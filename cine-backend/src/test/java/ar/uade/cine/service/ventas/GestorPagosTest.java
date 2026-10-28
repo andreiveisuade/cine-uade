@@ -2,6 +2,7 @@ package ar.uade.cine.service.ventas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,9 +18,11 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -88,6 +91,8 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private GestorFunciones funciones;
     @Autowired
     private GestorClientes clientes;
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @BeforeEach
     void prepararEscenario() {
@@ -124,6 +129,20 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertThrows(Rechazo.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+    }
+
+    // Con la reserva todavía RESERVADA, la guarda es lo único que frena un segundo pago (el UNIQUE daría un 500).
+    @Test
+    @DisplayName("R5: no se registra un segundo pago de la misma reserva")
+    void unaReservaConUnPagoRegistradoNoSeVuelveACobrar() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        jdbc.update("INSERT INTO pago (reserva_id, subtotal, monto, medio, fecha) VALUES (?, 5000, 5000, 'EFECTIVO', ?)",
+                reserva.getId(), LocalDateTime.of(2026, 8, 14, 10, 0));
+
+        Rechazo error = rechaza("La reserva " + reserva.getId() + " ya tiene un pago registrado",
+                () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
+
+        assertInstanceOf(ConflictoDeNegocio.class, error);
     }
 
     @Test
