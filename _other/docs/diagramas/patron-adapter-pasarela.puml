@@ -9,9 +9,14 @@ class MercadoPagoHttp <<Adapter>> {
   + crear(reservaId, medio, monto, vence)
   + autorizar(checkout)
 }
+class ClienteMercadoPago {
+  + post(ruta, cuerpo)
+  + get(ruta)
+}
 class "API REST de Mercado Pago" as Mp <<Adaptee>>
 GestorPagos --> PasarelaPagos
 PasarelaPagos <|.. MercadoPagoHttp
-MercadoPagoHttp --> Mp
+MercadoPagoHttp --> ClienteMercadoPago
+ClienteMercadoPago --> Mp
 note bottom of MercadoPagoHttp : traduce crear() a una preferencia\nde Checkout Pro, sin el SDK
 @enduml

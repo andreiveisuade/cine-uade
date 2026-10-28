@@ -26,10 +26,8 @@ package "service/usuarios" {
 
 package "infrastructure/seguridad" {
   [ConfiguracionSeguridad\nquien llama a que; cerrado por defecto] as CFG
-  [PasswordBcrypt\nhashea y compara (SHA-256 viejo se migra)] as BC
+  [PasswordEncoder\nbcrypt, unico formato aceptado] as BC
   [SesionDeClientes\nsolo la sesion del CLIENTE va a cookie] as SDC
-  [RegistroDeSesiones\nsesiones por email, para cerrarlas] as RS
-  [FiltroDeSesionesCerradas\ncookie de sesion cerrada = sin cookie] as FSC
   [LimiteDeIntentos\n5 fallos por email o IP: 1 min (429)] as LI
 }
 
@@ -52,7 +50,6 @@ SC --> GEM
 CC --> GCL
 CUC --> GCU
 GCU --> LI
-GCU --> RS
 GCU --> BC
 GCL --> BC
 GCU --> US
@@ -61,7 +58,6 @@ US --> EM
 US --> CO
 US --> DB : JPA
 CFG ..> SDC
-CFG ..> FSC
 CFG ..> LI
 CFG ..> BC
 @enduml

@@ -9,7 +9,7 @@ actor "Cliente\n(web)" as CLI
 actor "Empleado\n(Swing / Android)" as EMP
 participant "FiltroDeIntentos\n+ LimiteDeIntentos" as LI
 participant "Spring Security\n(Basic, ConfiguracionSeguridad)" as SEC
-participant "SesionDeClientes\nRegistroDeSesiones" as SES
+participant "SesionDeClientes" as SES
 participant "Controller" as CTRL
 participant "GestorCuentas" as GCU
 
@@ -23,7 +23,7 @@ else
   alt clave mala o email inexistente
     SEC --> CLI : 401 (mismo texto); cuenta un fallo
   else ok
-    SEC -> SES : CLIENTE: guarda la identidad,\ncambia el id (session fixation)\ny la registra por email
+    SEC -> SES : CLIENTE: guarda la identidad,\ncambia el id (session fixation)
     SEC -> CTRL : SesionController.iniciar
     CTRL --> CLI : 200 usuario + Set-Cookie JSESSIONID\n(HttpOnly, SameSite=Lax)
   end
@@ -49,7 +49,6 @@ else email inexistente, sin cuenta,\ncodigo ajeno o inventado
 else el codigo es de una entrada suya
   GCU -> LI : exito(email)
   GCU -> GCU : bcrypt de la nueva
-  GCU -> SES : cerrarTodas(email)
   GCU --> CLI : 204; entra con la nueva
 end
 @enduml
