@@ -50,7 +50,7 @@ class PantallaPuertaTest {
 
     @Test
     void unaYaUsadaNoPasaYDiceElMotivoDelBackend() {
-        servidor.responder("POST /api/acceso", 400, "{\"error\":\"La entrada ya se usó a las 20:10\"}");
+        servidor.responder("POST /api/acceso", 409, "{\"error\":\"La entrada ya se usó a las 20:10\"}");
 
         acomodador.tipear("ABC5").clic("Validar");
 

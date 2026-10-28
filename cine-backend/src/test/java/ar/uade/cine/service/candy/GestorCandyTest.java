@@ -296,7 +296,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
             reservas.cancelar(reserva.getId());
         }
 
-        DatoInvalido error = assertThrows(DatoInvalido.class, () -> candy.venderParaReserva(reserva.getId(),
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class, () -> candy.venderParaReserva(reserva.getId(),
                 null, pedido(pochoclos, 1), MedioPago.EFECTIVO, ""));
 
         assertEquals("La reserva " + reserva.getId() + " no está pagada: cobrala antes de agregarle candy",

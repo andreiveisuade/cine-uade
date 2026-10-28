@@ -10,8 +10,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
@@ -134,11 +132,8 @@ public class GestorPagos {
     private void validarQueSePuedaCobrar(Reserva reserva) {
         // R17: puede figurar RESERVADA si nadie consultó la función desde que venció.
         reserva.impedimentoParaCobrar(reloj.ahora()).ifPresent(motivo -> {
-            throw new DatoInvalido(motivo);
+            throw motivo;
         });
-        if (pagoRepository.existsByReservaId(reserva.getId())) {
-            throw new ConflictoDeNegocio("La reserva " + reserva.getId() + " ya tiene un pago registrado");
-        }
     }
 
     // Recién al cobrar se conoce el medio, y de él dependen las promociones.

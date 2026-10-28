@@ -1,6 +1,6 @@
 package ar.uade.cine.model.ventas;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 // Estados de una reserva y sus transiciones (R5, R13, R17, R18), una constante por estado.
 // Patrón State (GoF): la regla de qué se puede hacer en cada estado vive en la constante, no en Reserva.
@@ -100,7 +100,7 @@ public enum EstadoReserva {
         return "La reserva está " + etiqueta + ": " + queNoSePuede;
     }
 
-    private DatoInvalido rechazo(String queNoSePuede) {
-        return new DatoInvalido(porQueNo(queNoSePuede));
+    private ConflictoDeNegocio rechazo(String queNoSePuede) {
+        return new ConflictoDeNegocio(porQueNo(queNoSePuede));
     }
 }

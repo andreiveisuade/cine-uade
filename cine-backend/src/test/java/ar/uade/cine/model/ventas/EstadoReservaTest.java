@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
 class EstadoReservaTest {
 
@@ -40,7 +40,7 @@ class EstadoReservaTest {
             """)
     void loQueUnEstadoNoPermiteSeRechazaDiciendoEnQueEstadoEsta(String caso, EstadoReserva desde,
                                                                String transicion, String mensaje) {
-        DatoInvalido error = assertThrows(DatoInvalido.class, () -> aplicar(desde, transicion));
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class, () -> aplicar(desde, transicion));
 
         assertEquals(mensaje, error.getMessage());
     }

@@ -16,6 +16,7 @@ import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.candy.CompraCandyRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 
 // Venta del candy en mostrador o para una reserva; Controlador: busca, CompraCandy valida y sale el ticket.
@@ -46,7 +47,7 @@ public class GestorCandy {
                     + " es de otro cliente: revisá la reserva o el cliente");
         }
         if (!reserva.estaPagada()) {
-            throw new DatoInvalido("La reserva " + reservaId
+            throw new ConflictoDeNegocio("La reserva " + reservaId
                     + " no está pagada: cobrala antes de agregarle candy");
         }
         return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);

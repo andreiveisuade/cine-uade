@@ -151,11 +151,11 @@ public class GestorCartelera {
     public void eliminar(int id) {
         Pelicula pelicula = peliculaRepository.exigir(id, "la película");
         if (funcionRepository.existsByPelicula_Id(id)) {
-            throw new DatoInvalido("La película " + pelicula.getTitulo()
+            throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
                     + " tiene funciones programadas: sacala de cartelera en vez de borrarla");
         }
         if (!programaciones.buscar(id, null, null).isEmpty()) {
-            throw new DatoInvalido("La película " + pelicula.getTitulo()
+            throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
                     + " está programada en una grilla: sacala de cartelera en vez de borrarla");
         }
         peliculaRepository.deleteById(id);

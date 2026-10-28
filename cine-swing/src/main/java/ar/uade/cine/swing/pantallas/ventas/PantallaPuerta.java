@@ -89,7 +89,7 @@ public final class PantallaPuerta extends Pantalla {
         }, error -> {
             // Sin conexión o con el servidor caído no se sabe si pasa: error global, no NO PASA.
             if (error.esSesionVencida()) return;
-            if (!error.esDelFormulario()) {
+            if (!error.esDelFormulario() && !error.esConflicto()) {
                 Mensajes.error(this, error);
                 reiniciar();
                 return;

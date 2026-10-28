@@ -209,7 +209,7 @@ class CuentaDelClienteTest extends PruebaDeApi {
 
         Respuesta respuesta = conCookie(HttpMethod.POST, cancelacion(suya), entrar(ANA, CLAVE));
 
-        assertThat(respuesta.estado()).isEqualTo(400);
+        assertThat(respuesta.estado()).isEqualTo(409);
         assertThat(respuesta.error()).isEqualTo("La reserva está pagada: solo se puede cancelar una reserva sin cobrar");
     }
 

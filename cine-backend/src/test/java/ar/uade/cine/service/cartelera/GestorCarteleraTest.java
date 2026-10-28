@@ -545,7 +545,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        Rechazo e = assertThrows(Rechazo.class,
+        ConflictoDeNegocio e = assertThrows(ConflictoDeNegocio.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("Matrix"), e.getMessage());
@@ -561,7 +561,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
 
-        Rechazo e = assertThrows(Rechazo.class,
+        ConflictoDeNegocio e = assertThrows(ConflictoDeNegocio.class,
                 () -> gestor.eliminar(pelicula.getId()));
 
         assertTrue(e.getMessage().contains("La Odisea"), e.getMessage());

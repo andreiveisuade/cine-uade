@@ -10,7 +10,9 @@ import java.util.Optional;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.ventas.validacion.ValidadorReserva;
 import jakarta.persistence.CascadeType;
@@ -122,16 +124,17 @@ public class Reserva {
         estado = estado.pagar();
     }
 
-    // Por qué no se puede cobrar, o vacío: R5, R17 (vencida) y R19 (función empezada). Lo usan el gestor y la vista.
-    public Optional<String> impedimentoParaCobrar(LocalDateTime ahora) {
+    // Por qué no se puede cobrar, o vacío: R5 y R17 son conflictos de estado (409); R19, función empezada (400).
+    public Optional<Rechazo> impedimentoParaCobrar(LocalDateTime ahora) {
         if (!estado.esperaPago()) {
-            return Optional.of(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR));
+            return Optional.of(new ConflictoDeNegocio(estado.porQueNo(EstadoReserva.NO_SE_PUEDE_COBRAR)));
         }
         if (estaVencida(ahora)) {
-            return Optional.of("La reserva " + id + " venció: sus butacas volvieron a estar disponibles");
+            return Optional.of(new ConflictoDeNegocio(
+                    "La reserva " + id + " venció: sus butacas volvieron a estar disponibles"));
         }
         if (funcion.yaEmpezo(ahora)) {
-            return Optional.of("La función ya empezó: no se puede cobrar la reserva " + id);
+            return Optional.of(new DatoInvalido("La función ya empezó: no se puede cobrar la reserva " + id));
         }
         return Optional.empty();
     }
@@ -161,7 +164,7 @@ public class Reserva {
     public void registrarIngreso(LocalDateTime cuando) {
         EstadoReserva siguiente = estado.ingresar();
         if (ingresadaEn != null) {
-            throw new DatoInvalido("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
+            throw new ConflictoDeNegocio("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
         exigirElDiaDeLaFuncion(cuando);
         estado = siguiente;
