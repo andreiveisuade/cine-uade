@@ -670,7 +670,7 @@ docker compose up -d --build
       <h3>Por qué Render Free + Aiven MySQL Free</h3>
       <ul>
         <li><strong>Un solo contenedor</strong> sirve la API y el build de React: un origen https, así la cookie de sesión y la vuelta de Mercado Pago andan sin proxy ni CORS.</li>
-        <li><strong>Aiven</strong> da MySQL gratis: el mismo motor que en local, sin tocar <code>schema.sql</code>.</li>
+        <li><strong>Aiven</strong> da MySQL gratis: el mismo motor que en local, sin tocar <code>db/schema.sql</code>.</li>
       </ul>
       <div class="table-wrap">
         <table>
@@ -725,16 +725,9 @@ docker compose up -d --build
 
       <h3>Pasos</h3>
       <ol>
-        <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga a mano antes del primer arranque:
-<pre><code>mysql --ssl-mode=REQUIRED -h &lt;host&gt; -P &lt;port&gt; -u avnadmin -p defaultdb \
-  &lt; cine-backend/src/main/resources/schema.sql
-mysql ... defaultdb &lt; cine-docker/seed/02-admin.sql</code></pre>
-          Si la base ya existía, los <code>migracion-*.sql</code> que falten, en <a href="#der">su orden</a>.</li>
-        <li><strong>Admin con clave nueva.</strong> <code>cine2026</code> es pública (está en el repo). Se pisa con el SHA-256 de una nueva, que el primer login pasa a bcrypt:
-<pre><code>printf %s '&lt;clave nueva&gt;' | shasum -a 256
-UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cine.uade.ar', 'puerta@cine.uade.ar');</code></pre></li>
+        <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga antes del primer arranque: <code>cine-docker/aiven/cargar-aiven.sh</code> aplica <code>db/schema.sql</code> y crea los dos empleados con clave nueva en bcrypt (pide las claves sin eco; <code>cine2026</code> es pública y no puede quedar en internet).</li>
+        <li><strong>Base ya cargada:</strong> cada migración nueva va antes del deploy, con <code>cine-docker/aiven/migrar-aiven.sh &lt;número o nombre&gt;</code> (<code>17</code> o <code>clave-temporal</code> aplican <code>db/migraciones/17-clave-temporal.sql</code>).</li>
         <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
-        <li><strong>Base:</strong> <code>cine-docker/aiven/cargar-aiven.sh</code> aplica <code>schema.sql</code> y crea los dos empleados con clave nueva en bcrypt (pide las claves sin eco).</li>
         <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (salas, candy, promo), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador, Por revisar y la grilla.</li>
         <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>./mvnw compile exec:java -Dcine.api.url=https://cine-uade.onrender.com</code>.</li>
         <li>Humo del 22/10/2026: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, Swagger 404, la cookie de sesión sale <code>Secure; HttpOnly; SameSite=Lax</code>. Recorrido completo: compra en la web, pago en Mercado Pago sandbox que vuelve solo al ticket como Pagada, la misma reserva en Reservas del panel y el ingreso en Puerta con el acomodador.</li>
@@ -837,32 +830,33 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
             <tr><td><code>GestorPagos</code> / <code>ConciliacionPagos</code></td><td>Cobro directo y checkout (R5, R11, R17, R19), publica <code>PagoRegistrado</code> / tarea que cobra lo que MP aprobó</td></tr>
             <tr><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>FuncionesEnVenta</code>, <code>ExpiracionDeReservas</code></td><td>R4 butacas tomadas / bloqueo efímero y su limpieza / R19 función en venta / R17 vencer reservas (<a href="#it-v6">V6</a>)</td></tr>
             <tr><td><code>ComprobantesDeVentas</code> / <code>ComprobantesDeCandy</code></td><td>Comprobantes después del commit (<a href="#observer">Observer</a>)</td></tr>
-            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta e identificación para la sesión y el rehash de la clave</td></tr>
+            <tr><td><code>GestorClientes</code> / <code>GestorEmpleados</code></td><td>Alta e identificación para la sesión</td></tr>
             <tr><td><code>GestorProductos</code> / <code>GestorCandy</code></td><td>Carta y combos / ventas de mostrador o para una reserva pagada, publica <code>CompraCandyRegistrada</code></td></tr>
             <tr><td><code>GestorCaja</code> / <code>GestorInformes</code></td><td>Arqueo del día / borderó, recaudación por función y declaración jurada</td></tr>
             <tr><td>Records y eventos</td><td>Entrada (<code>DatosPelicula</code>, <code>CriteriosGrilla</code>…) y resultado (<code>Arqueo</code>, <code>Bordero</code>, <code>PropuestaGrilla</code>…) de cada gestor; eventos con solo el id</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>controller/</code></td></tr>
-            <tr><td>19 <code>*Controller</code></td><td>Una familia de rutas cada uno (<a href="#api">API</a>); si una ruta cambia por otro motivo, va aparte (<code>BloqueoController</code>)</td></tr>
+            <tr><td>21 <code>*Controller</code></td><td>Una familia de rutas cada uno (<a href="#api">API</a>); si una ruta cambia por otro motivo, va aparte (<code>BloqueoController</code>)</td></tr>
             <tr><td><code>Vistas*</code> (9)</td><td>Arman los <code>*VistaDTO</code> consultando gestores (Assembler)</td></tr>
             <tr><td><code>http/Parseo</code>, <code>http/Fechas</code></td><td>Texto de la URL a tipos; lo que no convierte es <code>DatoInvalido</code></td></tr>
             <tr><td><code>http/Creado</code></td><td>El <code>201</code> con <code>Location</code>; cabecera con la <a href="#respuestas">política de respuestas</a></td></tr>
             <tr><td><code>http/ManejadorErrores</code> / <code>http/ErroresController</code></td><td>Excepción → código y <code>{"error"}</code> / lo mismo para lo que no llega a un controller (<code>/error</code>)</td></tr>
             <tr><td><code>http/ConfiguracionOpenApi</code></td><td>Errores comunes en Swagger</td></tr>
+            <tr><td><code>http/cuerpo/</code></td><td><code>LecturaDelCuerpo</code> y sus eslabones: un cuerpo ilegible a un 400 con nombre (<a href="#it-v4">V4</a>)</td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>dto/</code> y <code>repository/</code></td></tr>
-            <tr><td>66 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen (<a href="#dto">DTO</a>)</td></tr>
+            <tr><td>74 <code>record</code></td><td><code>Pedido*DTO</code> entran, <code>*VistaDTO</code> salen (<a href="#dto">DTO</a>)</td></tr>
             <tr><td><code>Repositorio&lt;T&gt;</code> + 15 <code>*Repository</code></td><td>Base con <code>exigir</code> (<a href="#repositorio">detalle</a>); Spring Data genera la implementación</td></tr>
             <tr><td><code>DineroConverter</code></td><td><code>Dinero</code> ↔ <code>DECIMAL</code></td></tr>
 
             <tr><td colspan="2" style="font-weight:600"><code>infrastructure/</code> (puerto → adaptador)</td></tr>
             <tr><td><code>Adaptadores</code></td><td><code>@Bean</code> que eligen cada implementación; <code>Adaptadores.Tareas</code> prende las tareas programadas fuera de los tests</td></tr>
-            <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoHttp</code> / <code>MercadoPagoEmulado</code></td><td>Checkout y autorización (<a href="#pasarela">pasarela</a>)</td></tr>
+            <tr><td><code>PasarelaPagos</code> → <code>MercadoPagoHttp</code> (+ <code>ClienteMercadoPago</code>) / <code>MercadoPagoEmulado</code></td><td>Checkout y autorización (<a href="#pasarela">pasarela</a>); <code>ClienteMercadoPago</code> es el transporte: Bearer, timeouts y un no-2xx como rechazo</td></tr>
             <tr><td><code>GeneradorTicket</code>, <code>GeneradorTicketCandy</code>, <code>GeneradorRecibo</code> → <code>*Txt</code></td><td>Comprobantes <code>.txt</code>; los piden los observadores</td></tr>
             <tr><td><code>AlmacenDeImagenes</code> → <code>AlmacenDeImagenesEnBase</code></td><td>Guarda y lee las imágenes subidas en la tabla <code>imagen</code> (<a href="#imagenes">por qué</a>)</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual de Buenos Aires (<code>Reloj.ZONA</code>), reemplazable en tests</td></tr>
-            <tr><td><code>ConfiguracionSeguridad</code>, <code>PasswordBcrypt</code>, <code>PasswordSha256</code></td><td>Rutas por rol, HTTP Basic, bcrypt (<a href="#decorator">Decorator</a>) y el SHA-256 heredado</td></tr>
+            <tr><td><code>ConfiguracionSeguridad</code>, <code>SesionDeClientes</code></td><td>Rutas por rol, HTTP Basic, bcrypt como único formato de clave y la sesión solo para clientes (<a href="#decorator">Decorator</a>)</td></tr>
             <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas de cada puerto</td></tr>
             <tr><td><code>Propiedades*</code></td><td>Cada sección <code>cine.*</code> de <code>application.yml</code>, tipada, junto a quien la usa</td></tr>
 
@@ -987,7 +981,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
 
     <section class="doc-section" id="api">
       <h2>API HTTP</h2>
-      <p>74 endpoints REST bajo <code>/api</code>, 19 controladores, JSON. Detalle por ruta: <a href="../../../cine-frontend/API.md">API.md</a> y <a href="#swagger">Swagger</a>.</p>
+      <p>82 endpoints REST bajo <code>/api</code>, 21 controladores, JSON. Detalle por ruta: <a href="../../../cine-frontend/API.md">API.md</a> y <a href="#swagger">Swagger</a>.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Subdominio</th><th>Controladores</th><th>Qué cubre</th></tr></thead>
@@ -1073,7 +1067,9 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
             <tr><td><code>compra/CompraEnCurso.jsx</code>, <code>useRenovarBloqueo</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
             <tr><td><code>app/Rutas.jsx</code></td><td>Las rutas de las pantallas</td></tr>
             <tr><td><code>cuenta/SesionDelCliente.jsx</code></td><td>Quién tiene la sesión, preguntándoselo al backend; la verdadera es la cookie</td></tr>
-            <tr><td><code>ticket/PagarOnline.jsx</code></td><td>Elegir medio, ver el monto que devuelve el backend e ir a Mercado Pago</td></tr>
+            <tr><td><code>ticket/pago/</code></td><td><code>PagarOnline</code> (elegir medio, ver el monto del backend e ir a Mercado Pago) con sus pasos en <code>usePagarOnline</code>; la espera y la vuelta del pago en <code>useEsperarPago</code> y <code>useVueltaDelPago</code></td></tr>
+            <tr><td><code>compartido/hooks/useEnviar</code></td><td>Mandar un formulario: <code>{ enviar, enviando, error }</code>, usado por los de <code>cuenta/</code></td></tr>
+            <tr><td><code>compartido/formato.js</code></td><td>Plata, fechas y cantidades como se leen; <code>api/</code> queda solo para hablar con el backend</td></tr>
           </tbody>
         </table>
       </div>
@@ -1099,7 +1095,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li>Layout común en <code>compartido/layout/</code>: <code>Contenedor</code> de 1280 px con gutters de 16/24/40, <code>Grilla</code> por ancho mínimo y <code>Destacados</code> (el primero a ancho completo): el layout se adapta a la cantidad de ítems.</li>
         <li>Tarjetas de una sola fuente: <code>TarjetaPelicula</code> en <code>cartelera/</code>; <code>TarjetaPromo</code>, <code>TarjetaCombo</code> y <code>TarjetaProducto</code> en <code>promos/tarjetas/</code>, usadas en Promos y en la venta cruzada del ticket.</li>
         <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código; el comprobante de texto del backend queda para copiar.</li>
-        <li>Íconos con <code>@tabler/icons-react</code>; medios de pago y tarifas con ícono mapeado en <code>api/iconos.js</code>, como las etiquetas.</li>
+        <li>Íconos con <code>@tabler/icons-react</code>; medios de pago y tarifas con ícono mapeado en <code>compartido/iconos.js</code>, como las etiquetas.</li>
       </ul>
       <h3 id="hooks-estado">Hooks y estado</h3>
       <ul>
@@ -1117,6 +1113,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li>La web lista películas, muestra su detalle y deja ver, cancelar y pagar las reservas propias.</li>
         <li>Por qué no en la web: obligaría a un login de administrador en el navegador.</li>
         <li>Ninguna regla vive en el front. Lo único que anticipa (pedir carnet en tarifas reducidas) es un aviso que el backend revalida.</li>
+        <li>Ni siquiera el precio: cada butaca del mapa trae <code>precios</code> por tarifa (<code>GENERAL</code>, <code>MENOR</code>, <code>JUBILADO</code>, <code>ESTUDIANTE</code>) y el front solo lo lee; la pantalla de butacas ya no pide <code>/tarifas</code>.</li>
       </ul>
       <h3 id="animaciones">Animaciones</h3>
       <p>
@@ -1153,7 +1150,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <table>
           <thead><tr><th>Paquete</th><th>Qué hay</th></tr></thead>
           <tbody>
-            <tr><td><code>api/</code></td><td><code>ClienteHttp</code>, el transporte: Basic en cada pedido, JSON, el <code>{"error"}</code> en una <code>ErrorApi</code> y un 401 que vuelve al login. Encima, una <code>Api&lt;Subdominio&gt;</code> por subdominio del backend, que solo sabe de rutas, y un record por forma de JSON en <code>api/dto/&lt;subdominio&gt;/</code></td></tr>
+            <tr><td><code>api/</code></td><td><code>ClienteHttp</code>, el transporte: Basic en cada pedido, JSON y un 401 que vuelve al login; <code>MensajeDeError</code> traduce la respuesta de error (<code>{"error"}</code> o un texto por código) a la <code>ErrorApi</code> que ve el encargado. Encima, una <code>Api&lt;Subdominio&gt;</code> por subdominio del backend, que solo sabe de rutas, y un record por forma de JSON en <code>api/dto/&lt;subdominio&gt;/</code></td></tr>
             <tr><td><code>informes/</code></td><td>Borderó (<code>.txt</code>), declaración jurada (<code>.csv</code>) y ticket de candy: el backend da los números y el archivo se escribe en la PC. Sin Swing y con tests</td></tr>
             <tr><td><code>comun/</code></td><td>Lo que usan todas las pantallas: <code>Tarea</code> (pedidos fuera del EDT), <code>Validacion</code>, <code>Mensajes</code>, <code>Fechas</code> (JCalendar ↔ <code>java.time</code>), <code>Formato</code>, <code>Colores</code>, <code>MapaButacas</code>…</td></tr>
           </tbody>
@@ -1317,9 +1314,8 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
         <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave vive en <code>Usuario</code> (el cliente con cuenta también la tiene); sin clave = reservó sin cuenta. Los cargos los distingue <code>Rol</code>, no clases.</li>
         <li><strong>Email</strong> normalizado: se busca igual en clientes, reservas y login.</li>
         <li><strong>Cuenta opcional:</strong> nombre, email y clave (<code>Cliente.abrirCuenta</code>); ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Por id (secuencial) solo accede el encargado.</li>
-        <li><strong>Sesiones al cambiar la clave (R24 a R27):</strong> <code>RegistroDeSesiones</code> envuelve el <code>SessionRegistry</code> de Spring, indexado por email; <code>SesionDeClientes</code> registra cada login de cliente. No se usa <code>maximumSessions</code>/<code>ConcurrentSessionFilter</code>: el login es Basic y no pasa por <code>SessionManagementFilter</code>, y ese filtro corta el pedido (un login con la cookie vieja daría 401). <code>FiltroDeSesionesCerradas</code> invalida la sesión vencida y sigue como si no hubiera cookie. <em>Límite aceptado:</em> el registro vive en memoria, como el límite de intentos: una sola instancia.</li>
         <li><strong>Reclamo del email (R22):</strong> quien reservó sin cuenta se registra con ese email y ve sus reservas de antes, pero tiene que mandar el código de una de ellas (<code>GestorClientes.registrar</code> compara <code>reserva.getClienteId()</code> con el cliente). Sin código, ajeno o inventado: 403 <code>SinPrueba</code> con un solo texto, así no se delata qué códigos existen. Es 403 y no 400 ni 409 porque la web decide por status: 400 es «dato inválido», 409 «ya existe cuenta», y ninguno debe abrir el campo del código. <em>Límite aceptado:</em> que pida código delata que ese email compró, pero un email nuevo se registra directo, así que la diferencia ya existía. Quien tenga el ticket de otro lo reclama; confirmar por mail lo cerraría.</li>
-        <li><strong>Contraseñas en bcrypt.</strong> Un hash sin prefijo es el SHA-256 viejo: se acepta y el primer login correcto lo reescribe en bcrypt (único momento con la clave en claro; las de más de 72 bytes, ver <a href="#decorator">Decorator</a>). El login no distingue email inexistente de clave errónea.</li>
+        <li><strong>Contraseñas en bcrypt, y solo bcrypt:</strong> <code>passwordEncoder()</code> es un <code>DelegatingPasswordEncoder</code> con únicamente <code>{bcrypt}</code> (el de fábrica aceptaría <code>{noop}</code>). Un hash sin prefijo no entra. Más de 72 bytes lo rechaza <code>Contrasena</code> al alta o al cambio. El login no distingue email inexistente de clave errónea.</li>
       </ul>
 
       <h3 id="seguridad">Quién puede llamar a qué</h3>
@@ -1397,7 +1393,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
 
     <section class="doc-section" id="der">
       <h2>Modelo de datos (DER)</h2>
-      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/schema.sql</code>, 21 tablas.</p>
+      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/db/schema.sql</code>, 21 tablas.</p>
       <figure class="diagram">
         {{SVG_DER_DESIGN}}
         <figcaption>Las 21 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
@@ -1454,8 +1450,8 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
 
       <h3>Esquema y migraciones</h3>
       <ul>
-        <li>MySQL corre <code>schema.sql</code> solo con el volumen vacío. Sobre una base existente, los <code>migracion-*.sql</code> a mano (comando en <code>cine-docker/README.md</code>); solo la llevan al mismo estado. Orden: <code>programaciones</code>, <code>grilla-abierta</code>, <code>limpieza</code>, <code>staging</code>, <code>puntaje</code>, <code>votos</code>, <code>importaciones</code>, <code>bcrypt</code>, <code>bloqueos</code>, <code>version-reserva</code>, <code>ahorro-congelado</code>, <code>email-minusculas</code>, <code>imagenes</code>, <code>trailer</code>, <code>imagenes-en-base</code> y <code>funcion-unica</code> (este trae arriba, comentado, el <code>SELECT</code> que encuentra duplicados).</li>
-        <li>Los tests usan H2 creada con el mismo <code>schema.sql</code> y <code>ddl-auto: validate</code>: restricciones iguales a MySQL; <code>MapeoContraSchemaTest</code> verifica el mapeo.</li>
+        <li>MySQL corre <code>db/schema.sql</code> solo con el volumen vacío. Sobre una base existente van los <code>db/migraciones/NN-*.sql</code> que falten, en el orden del número (comando en <code>cine-docker/README.md</code>; en Aiven, <code>migrar-aiven.sh</code>); solo la llevan al mismo estado que el schema. <code>16-funcion-unica</code> trae arriba, comentado, el <code>SELECT</code> que encuentra duplicados.</li>
+        <li>Los tests usan H2 creada con el mismo <code>db/schema.sql</code> y <code>ddl-auto: validate</code>: restricciones iguales a MySQL; <code>MapeoContraSchemaTest</code> verifica el mapeo.</li>
         <li>Un texto más largo que su columna es un 400 de la entidad, no un 500 de la base.</li>
       </ul>
     </section>
@@ -1500,7 +1496,7 @@ UPDATE usuario SET password_hash = '&lt;hash&gt;' WHERE email IN ('encargado@cin
 
     <section class="doc-section" id="dto">
       <h2>El patrón DTO</h2>
-      <p>66 <code>record</code>, uno por forma de JSON. Serializar entidades ataría el contrato a su forma interna, y una respuesta suele juntar varias (función con sala, película, precios y butacas tomadas).</p>
+      <p>74 <code>record</code>, uno por forma de JSON. Serializar entidades ataría el contrato a su forma interna, y una respuesta suele juntar varias (función con sala, película, precios y butacas tomadas).</p>
       <ul>
         <li><code>Pedido*DTO</code> (entra): solo presencia, con el mismo «Falta …» que el modelo; 400 con el primer campo que falta (<a href="#validacion">por qué</a>). Campos objeto (<code>Integer</code>, no <code>int</code>): un ausente llega <code>null</code>, no 0. Enums como texto, los convierte <code>Parseo</code>.</li>
         <li><code>*VistaDTO</code> (sale): opcionales con <code>@JsonInclude(NON_NULL)</code>.</li>
@@ -2053,9 +2049,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><strong>State</strong> <a href="#state">(abajo)</a> · <a href="#d-state-revision">(revisión)</a> · <a href="#it-v7">V7</a></td><td><code>EstadoReserva</code>, <code>EstadoRevision</code> y <code>EstadoImportacion</code>: enums que deciden sus transiciones</td></tr>
             <tr><td><strong>Observer</strong> <a href="#observer">(abajo)</a></td><td>Comprobantes después del commit: eventos de los gestores, escuchados por <code>ComprobantesDeVentas</code> y <code>ComprobantesDeCandy</code></td></tr>
             <tr><td><strong>Factory Method</strong> <a href="#d-factory-method">(diagrama)</a></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
-            <tr><td><strong>Decorator</strong> <a href="#decorator">(abajo)</a></td><td><code>PasswordBcrypt</code>, <code>SesionDeClientes</code></td></tr>
-            <tr><td><strong>Adapter</strong> <a href="#d-adapter-tmdb">(TMDB)</a> · <a href="#d-adapter-pasarela">(Mercado Pago)</a> · <a href="#it-v10">V10</a></td><td>Adapter <code>TmdbHttp</code> (Target <code>CatalogoExterno</code>, Adaptee la API REST de TMDB); <code>MercadoPagoHttp</code> (Target <code>PasarelaPagos</code>); <code>CampoFecha</code> y <code>Calendario</code> sobre <code>JCalendar</code>; <code>DineroConverter</code> entre <code>Dinero</code> y la columna</td></tr>
-            <tr><td><strong>Facade</strong> <a href="#d-facade">(diagrama)</a></td><td><code>ClienteHttp</code> en Swing esconde <code>HttpClient</code>, Jackson y Basic; las <code>Api&lt;Subdominio&gt;</code> son fachadas más chicas. Los <code>Gestor*</code> son Controlador (GRASP), no Facade</td></tr>
+            <tr><td><strong>Decorator</strong> <a href="#decorator">(abajo)</a></td><td><code>SesionDeClientes</code></td></tr>
+            <tr><td><strong>Adapter</strong> <a href="#d-adapter-tmdb">(TMDB)</a> · <a href="#d-adapter-pasarela">(Mercado Pago)</a> · <a href="#it-v10">V10</a></td><td>Adapter <code>TmdbHttp</code> (Target <code>CatalogoExterno</code>, Adaptee la API REST de TMDB); <code>MercadoPagoHttp</code> (Target <code>PasarelaPagos</code>, el HTTP en <code>ClienteMercadoPago</code>); <code>CampoFecha</code> y <code>Calendario</code> sobre <code>JCalendar</code>; <code>DineroConverter</code> entre <code>Dinero</code> y la columna</td></tr>
+            <tr><td><strong>Facade</strong> <a href="#d-facade">(diagrama)</a></td><td><code>ClienteHttp</code> en Swing esconde <code>HttpClient</code>, Jackson y Basic (el texto del error lo arma <code>MensajeDeError</code>); las <code>Api&lt;Subdominio&gt;</code> son fachadas más chicas. Los <code>Gestor*</code> son Controlador (GRASP), no Facade</td></tr>
             <tr><td><strong>Template Method</strong> <a href="#d-template-method-listado">(listado)</a> · <a href="#it-v5">V5</a></td><td><code>PantallaListado&lt;T&gt;</code> (Swing) fija cuándo se pide y filtra; <code>ComprobanteTxt&lt;T&gt;.imprimir</code> fija el orden de los <code>.txt</code></td></tr>
             <tr><td><strong>Null Object</strong> <a href="#it-v3">V3</a></td><td><code>AgendaDeSala.vacia()</code>; también <code>PoliticaPromociones.Descuento.ninguno()</code> y <code>Promocion.TODO_EL_DIA</code></td></tr>
             <tr><td><strong>Chain of Responsibility</strong> <a href="#it-v4">V4</a></td><td><code>LecturaDelCuerpo</code> y sus cuatro eslabones en <code>ManejadorErrores</code></td></tr>
@@ -2090,7 +2086,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </figure>
       <figure class="diagram" id="d-adapter-pasarela">
         {{SVG_PATRON_ADAPTER_PASARELA}}
-        <figcaption>Adapter: <code>MercadoPagoHttp</code> adapta la API REST de Mercado Pago a <code>PasarelaPagos</code></figcaption>
+        <figcaption>Adapter: <code>MercadoPagoHttp</code> adapta la API REST de Mercado Pago a <code>PasarelaPagos</code>; el transporte va en <code>ClienteMercadoPago</code></figcaption>
       </figure>
       <figure class="diagram" id="d-facade">
         {{SVG_PATRON_FACADE}}
@@ -2130,10 +2126,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h3 id="decorator">Decorator</h3>
       <figure class="diagram" id="d-decorator">
         {{SVG_PATRON_DECORATOR}}
-        <figcaption>Decorator: <code>PasswordBcrypt</code> y <code>SesionDeClientes</code> envuelven componentes de Spring</figcaption>
+        <figcaption>Decorator: <code>SesionDeClientes</code> envuelve el repositorio de contexto de Spring</figcaption>
       </figure>
       <ul>
-        <li><strong><code>PasswordBcrypt</code>:</strong> bcrypt no acepta más de 72 bytes; una clave así solo viene del SHA-256 viejo, y re-hashearla en el login daba 500. Envuelve al <code>PasswordEncoder</code> de Spring y delega todo, salvo que <code>encode</code> deja en SHA-256 lo que no entra.</li>
         <li><strong><code>SesionDeClientes</code>:</strong> envuelve el repositorio de contexto de Spring y guarda en sesión solo la identidad de un <code>CLIENTE</code> (<a href="#usuarios">usuarios</a>).</li>
       </ul>
 
@@ -2162,7 +2157,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </figure>
       <ul>
         <li><strong>Antes:</strong> <code>IllegalArgumentException</code>. Una librería también la tira (texto en inglés al usuario) y Spring Data la traduce al salir de un repositorio: el 404 de <code>exigir</code> salía 500.</li>
-        <li><strong>Ahora:</strong> <code>Rechazo</code> sellada con cuatro hijas: <code>DatoInvalido</code> 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> 409.</li>
+        <li><strong>Ahora:</strong> <code>Rechazo</code> sellada con cuatro hijas: <code>DatoInvalido</code> 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> 409. <code>ConflictoDeNegocio</code> es un pedido válido que choca con el estado: un nombre o email ya usado, borrar o cambiar algo en uso (sala o película con funciones, función con reservas), una reserva ya cobrada o una importación con otra en curso.</li>
         <li>Una <code>IllegalArgumentException</code> suelta es 500 genérico; <code>ArquitecturaTest</code> prohíbe crearla. <code>ManejadorErroresTest</code> falla hasta que un tipo nuevo tenga status.</li>
       </ul>
 
