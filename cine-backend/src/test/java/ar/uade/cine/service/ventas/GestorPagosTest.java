@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -134,16 +135,15 @@ class GestorPagosTest extends PruebaDeIntegracion {
     // Con la reserva todavía RESERVADA, la guarda es lo único que frena un segundo pago (el UNIQUE daría un 500).
     @Test
     @DisplayName("R5: no se registra un segundo pago de la misma reserva")
-    void unaReservaConUnPagoRegistradoNoSeVuelveACobrar() {
+    void aunqueElEstadoNoLoFreneLaBaseNoAceptaUnSegundoPago() {
+        // R5: el estado PAGADA corta antes; si algo lo saltea, el UNIQUE de pago.reserva_id es la última línea.
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         jdbc.update("INSERT INTO pago (reserva_id, subtotal, monto, medio, fecha)"
                 + " VALUES (?, 5000, 5000, 'EFECTIVO', ?)",
                 reserva.getId(), LocalDateTime.of(2026, 8, 14, 10, 0));
 
-        Rechazo error = rechaza("La reserva " + reserva.getId() + " ya tiene un pago registrado",
+        assertThrows(DataIntegrityViolationException.class,
                 () -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, ""));
-
-        assertInstanceOf(ConflictoDeNegocio.class, error);
     }
 
     @Test

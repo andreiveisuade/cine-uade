@@ -69,10 +69,10 @@ class CatalogoControllerTest extends PruebaDeApi {
 
     @Test
     void lasTarifasDicenSuDescuentoYCualesSeAcreditan() {
-        assertEquals("[{\"nombre\":\"GENERAL\",\"multiplicador\":1.0,\"requiereAcreditacion\":false},"
-                + "{\"nombre\":\"MENOR\",\"multiplicador\":0.6,\"requiereAcreditacion\":true},"
-                + "{\"nombre\":\"JUBILADO\",\"multiplicador\":0.5,\"requiereAcreditacion\":true},"
-                + "{\"nombre\":\"ESTUDIANTE\",\"multiplicador\":0.7,\"requiereAcreditacion\":true}]",
+        assertEquals("[{\"nombre\":\"GENERAL\",\"requiereAcreditacion\":false},"
+                + "{\"nombre\":\"MENOR\",\"requiereAcreditacion\":true},"
+                + "{\"nombre\":\"JUBILADO\",\"requiereAcreditacion\":true},"
+                + "{\"nombre\":\"ESTUDIANTE\",\"requiereAcreditacion\":true}]",
                 getPublico("/api/tarifas").cuerpo());
     }
 
