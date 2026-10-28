@@ -67,7 +67,7 @@ sandbox y sin cobrar:
 1. [Panel de desarrolladores](https://www.mercadopago.com.ar/developers/panel): crear una aplicación de Checkout Pro y copiar el Access Token de **prueba**.
 2. Pegarlo en `cine-docker/.env` (`MP_ACCESS_TOKEN=TEST-...`, sin comillas) y `docker compose up -d backend`. `CINE_URL_PUBLICA` queda en `http://localhost:8080`.
 3. Crear en el mismo panel una cuenta de prueba de **comprador** y entrar a Mercado Pago con ella. Es obligatorio: como invitado, MP rechaza el pago («Una de las partes… es de prueba»).
-4. En la web: registrarse o ingresar, reservar, Mis reservas, **Pagar online**, **Ir a pagar**. Tarjeta de prueba con titular `APRO` (aprobado).
+4. En la web: ingresar con Google (con `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` en el `.env`), reservar, Mis reservas, **Pagar online**, **Ir a pagar**. Tarjeta de prueba con titular `APRO` (aprobado).
 5. En localhost MP no vuelve solo, y no hace falta: la conciliación del backend (`cine.mercadopago.conciliacion`, cada 60 s) cobra el pago aprobado en un minuto como máximo y el ticket pasa a Pagada. Tocar **Volver al sitio** (si aparece) lo cobra al instante.
 
 | Mensaje en el ticket | Causa |

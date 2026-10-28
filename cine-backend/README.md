@@ -52,4 +52,4 @@ no en disco.
 
 `controller` → `service` → `repository`, con `dto` en el borde y `model` sin lógica de HTTP. Las reglas
 rechazan con `Rechazo`, que `ManejadorErrores` convierte en `{"error": "…"}`. Capas, subdominios y lo que
-verifica `ArquitecturaTest`: [`ARQUITECTURA.md`](../ARQUITECTURA.md).
+verifica `ArquitecturaTest`: [manual › Las seis capas](../_other/docs/manual/index.html#capas-permitido).

@@ -36,6 +36,7 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `sistema-contexto.html` | C4 nivel 1 (diagram-design, exportado a `.svg`): cliente, encargado y acomodador, el sistema, Mercado Pago y TMDB |
 | `sistema-mapa.html` | Cómo se conecta todo (diagram-design): dónde corre cada pieza, el protocolo de cada flecha y qué secreto entra en cada servicio externo |
 | `secuencia-google.html` | Ingresar con Google: código, canje con el secret, cliente en MySQL y cookie (diagram-design) |
+| `google-configuracion.puml` | Qué se configuró en Google Cloud y por dónde llegan el client id y el secret al backend |
 | `secuencia-pago-mp.html` | Comprar y pagar con Mercado Pago: reserva, preferencia, vuelta o conciliación, ticket (diagram-design) |
 | `secuencia-puerta.html` | La puerta: Android escanea, `POST /api/acceso` con Basic, MySQL (diagram-design) |
 | `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué carpeta construye a cada uno |
@@ -48,7 +49,7 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `usuarios-herencia.puml` | Usuarios: herencia, no un enum suelto |
 | `patron-*.puml` | Un diagrama por patrón GoF, principio SOLID y patrón GRASP aplicado, con `_estilo-patrones.iuml` (el estilo de los apuntes) |
 | `terminal-desktop.puml` | Terminal de boletería (pendiente) y servidor: dos instalaciones, una sincronización |
-| `reglas-donde-viven.puml` | En qué clase se decide cada regla R1..R22 (R23–R27, la cuenta del cliente, están en la tabla del manual) |
+| `reglas-donde-viven.puml` | En qué clase se decide cada regla, hasta R28 |
 | `validacion-capas.puml` | Qué valida cada capa, del cliente a la base |
 | `rechazos-jerarquia.puml` | `Rechazo` sellada: una clase por status |
 | `api-errores.puml` | Quién contesta cada error: nginx, Spring Security, controller o `ManejadorErrores` |

@@ -23,7 +23,7 @@ despertar si estuvo inactivo.
 | [`_other/`](_other/docs/README.md) | Manual, diagramas, colección de Postman y las fotos de la carta (`imagenes/`) | PlantUML |
 
 En la raíz, además: el `Dockerfile` es la imagen de producción (compila el front y lo sirve el backend, un solo
-origen `https`) y `render.yaml` el Blueprint de Render que la usa. Cómo encaja todo: [`ARQUITECTURA.md`](ARQUITECTURA.md).
+origen `https`) y `render.yaml` el Blueprint de Render que la usa. Cómo encaja todo: [manual › Arquitectura en capas](_other/docs/manual/index.html#capas).
 
 ## Levantarlo
 
@@ -49,15 +49,15 @@ A mano, tests y problemas comunes: [`COMO-LEVANTARLO.md`](_other/COMO-LEVANTARLO
 
 ## Por dónde empiezo
 
-1. [`ARQUITECTURA.md`](ARQUITECTURA.md): capas, subdominios y el recorrido de una venta, clase por clase.
+1. [Manual › Arquitectura en capas](_other/docs/manual/index.html#capas): cómo se conecta todo, capas, subdominios y el recorrido de una venta, clase por clase.
 2. [Manual](_other/docs/manual/index.html), secciones Reglas y Casos de uso: qué tiene que hacer el sistema.
 3. [`API.md`](cine-frontend/API.md): lo que se dicen el backend y los clientes.
 4. Para seguir una venta en el código, abrir `cine-backend/.../service/ventas/GestorReservas.java` (reservar) y
-   `GestorPagos.java` (cobrar); el resto del camino está en [Flujo de una venta](ARQUITECTURA.md#flujo-de-una-venta).
+   `GestorPagos.java` (cobrar); el resto del camino está en [Flujo de una venta](_other/docs/manual/index.html#flujo-venta).
 
 ## Documentación
 
-- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R27, casos de uso, arquitectura,
+- [Manual](_other/docs/manual/index.html): requerimientos, reglas R1..R28, casos de uso, arquitectura,
   decisiones y diagramas. Es la fuente de verdad.
 - [`API.md`](cine-frontend/API.md): el contrato HTTP, endpoint por endpoint.
 - [`PRUEBAS.md`](_other/docs/PRUEBAS.md): cómo se verifica antes de entregar.

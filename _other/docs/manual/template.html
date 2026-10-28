@@ -435,6 +435,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><a href="#dominio" data-target="dominio">Modelo de dominio</a></li>
         <li><a href="#salas" data-target="salas">Salas y butacas</a></li>
         <li><a href="#usuarios" data-target="usuarios">Usuarios y seguridad</a></li>
+        <li><a href="#google" data-target="google">Ingresar con Google</a></li>
         <li><a href="#cuentas" data-target="cuentas">Usuarios y cuentas</a></li>
         <li><a href="#der" data-target="der">Modelo de datos (DER)</a></li>
         <li><a href="#persistencia" data-target="persistencia">Persistencia</a></li>
@@ -499,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R27.</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R28 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -520,7 +521,7 @@ body.lightbox-locked { overflow: hidden; }
       <h2>Casos de uso</h2>
       <ul>
         <li><strong>Administrador</strong> y <strong>Acomodador</strong> (solo la puerta): con contraseña, en el <a href="#swing">panel Swing</a>. El acomodador también desde el <a href="#android">celular</a>.</li>
-        <li><strong>Cliente</strong>: en la web, con <a href="#usuarios">cuenta opcional</a> o solo con el código de su reserva.</li>
+        <li><strong>Cliente</strong>: en la web, con su <a href="#google">cuenta de Google</a> (opcional) o solo con el código de su reserva.</li>
         <li><strong>Tarea de conciliación</strong>: cobra lo que Mercado Pago aprobó (<a href="#conciliacion">detalle</a>).</li>
       </ul>
 
@@ -540,12 +541,8 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20</td></tr>
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
-            <tr><td>CU-05</td><td>Cliente</td><td>Registrarse</td><td>email único, R22</td></tr>
-            <tr><td>CU-05b</td><td>Cliente</td><td>Modificar su nombre y cambiar la clave (<code>#/mi-cuenta</code>)</td><td>R23, R24</td></tr>
-            <tr><td>CU-05c</td><td>Cliente</td><td>Recuperar la clave olvidada con el código de una entrada (<code>#/recuperar-clave</code>)</td><td>R25</td></tr>
-            <tr><td>CU-05d</td><td>Cliente</td><td>Dar de baja la cuenta</td><td>R26</td></tr>
-            <tr><td>CU-05e</td><td>Admin</td><td>Asignar una clave temporal a un cliente desde boletería (Swing, Clientes)</td><td>R27</td></tr>
-            <tr><td>CU-05b</td><td>Cliente</td><td>Ingresar con su cuenta y salir</td><td>R21</td></tr>
+            <tr><td>CU-05</td><td>Cliente</td><td><a href="#google">Ingresar con Google</a> y salir</td><td>R28</td></tr>
+            <tr><td>CU-05b</td><td>Cliente</td><td>Cambiar su nombre o dar de baja la cuenta (<code>#/mi-cuenta</code>)</td><td>R23, R26</td></tr>
             <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R9, R19</td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
             <tr><td>CU-07b</td><td>Cliente</td><td>Pagar online por <a href="#pasarela">checkout</a> (débito, crédito, QR o transferencia), con sesión</td><td>R5, R11, R17, R19, R21</td></tr>
@@ -578,12 +575,8 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Otros flujos alternativos</h3>
       <ul>
         <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
-        <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email no se cambia). <code>POST /api/cuenta/clave</code> pide la actual y la nueva: cambia el id de sesión y cierra las demás sesiones del cliente (R23, R24).</li>
-        <li><strong>CU-05c:</strong> sin sesión, email + código de una entrada propia + clave nueva. Email inexistente, sin cuenta, código ajeno o inventado: el mismo 403 neutro. Cuenta para el límite de intentos (429) por email y por IP; al recuperar se cierran todas las sesiones (R25).</li>
-        <li><strong>CU-05d:</strong> con la clave actual y una confirmación. Se borra solo la clave: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas (son ventas del cine y su butaca ya está en juego). Se reabre con CU-05 y un código (R26, R22).</li>
-        <li><strong>CU-05e:</strong> el encargado busca por email, confirma y el backend genera una clave legible de 10 caracteres que Swing muestra una sola vez, copiable. La cuenta queda con <code>debeCambiarClave</code>: al entrar, la web lleva a <code>#/mi-cuenta</code> (R27).</li>
-        <li><strong>CU-05:</strong> si el email ya compró sin cuenta, el formulario pide «Código de una de tus entradas» (está en el ticket de la compra) y el backend responde 403 hasta que sea de una reserva de ese cliente. Con el código correcto abre la cuenta y ve sus reservas de antes (R22). Si ya tiene cuenta, o el email es de un empleado: 409 «Ya existe una cuenta con ese email».</li>
-        <li><strong>CU-05b:</strong> cinco claves equivocadas seguidas, por email o por IP: 429 «Demasiados intentos: esperá un minuto y probá de nuevo» (<a href="#seguridad">límite de intentos</a>).</li>
+        <li><strong>CU-05:</strong> email sin verificar en Google, o de un empleado: vuelve a <code>#/ingresar?error=</code> con el motivo y no entra. Cancelar en Google: «No se pudo ingresar con Google: volvé a intentarlo». Sin credenciales de Google en el servidor, el botón sale deshabilitado (R28).</li>
+        <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email es el de Google y no cambia). <code>DELETE /api/cuenta</code>, con una confirmación, cierra la sesión: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas. Entrar de nuevo con Google la reabre (R23, R26).</li>
         <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
       </ul>
     </section>
@@ -662,21 +655,7 @@ docker compose up -d --build
 
     <section class="doc-section" id="despliegue">
       <h2>Despliegue</h2>
-      <figure class="diagram">
-        {{SVG_MAPA}}
-        <figcaption>Cómo se conecta todo: un contenedor en Render sirve API y front por el mismo origen https, la base vive en Aiven y cada servicio externo entra con su secreto</figcaption>
-      </figure>
-
-      <h3 id="recorridos">Un recorrido por cada borde</h3>
-      <figure class="diagram">
-        {{SVG_SECUENCIA_GOOGLE}}
-        <figcaption>Ingresar con Google (rama <code>t79-google</code>): el navegador trae el código, el backend lo canjea con el secret y deja la cookie</figcaption>
-      </figure>
-      <figure class="diagram">
-        {{SVG_SECUENCIA_PUERTA}}
-        <figcaption>La puerta: el celular manda el código del QR con Basic y la reserva decide si entra (R18)</figcaption>
-      </figure>
-      <p>Comprar y pagar con Mercado Pago, en <a href="#mercadopago">Pagos</a>.</p>
+      <p>Qué corre dónde y cómo se habla cada pieza: <a href="#conexiones">Cómo se conecta todo</a>. Acá, por qué así y cómo se sube.</p>
 
       <h3>Por qué Render Free + Aiven MySQL Free</h3>
       <ul>
@@ -728,7 +707,7 @@ docker compose up -d --build
             <tr><td><code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>MYSQL_ROOT_PASSWORD</code></td><td>Se inventan</td><td><code>cine-docker/.env</code></td><td>La imagen de MySQL al nacer y el backend</td></tr>
             <tr><td><code>MP_ACCESS_TOKEN</code></td><td>Mercado Pago: credenciales de prueba de Checkout Pro</td><td>Render y <code>.env</code></td><td><code>MercadoPagoHttp</code>: preferencia, búsqueda y conciliación. Vacía: pasarela emulada</td></tr>
             <tr><td><code>TMDB_TOKEN</code></td><td>TMDB: API Read Access Token</td><td>Render y <code>.env</code></td><td>El importador, a pedido del encargado</td></tr>
-            <tr><td><code>GOOGLE_CLIENT_SECRET</code> (<code>GOOGLE_CLIENT_ID</code> no es secreto: viaja en la URL a Google)</td><td>Google Cloud Console → Clients, tipo aplicación web</td><td>Render y <code>.env</code> (rama <code>t79-google</code>)</td><td><code>oauth2Login</code>: canje del código. Sin ellas no hay botón de Google</td></tr>
+            <tr><td><code>GOOGLE_CLIENT_SECRET</code> (<code>GOOGLE_CLIENT_ID</code> no es secreto: viaja en la URL a Google)</td><td>Google Cloud Console → Clients, tipo aplicación web</td><td>Render y <code>.env</code></td><td><code>oauth2Login</code>: canje del código (<a href="#google">Ingresar con Google</a>). Sin ellas no hay botón de Google</td></tr>
             <tr><td><code>CINE_URL_PUBLICA</code> (pública)</td><td>La URL de Render</td><td>Render y <code>.env</code></td><td>La <code>back_url</code> de Mercado Pago. Sin ella vuelve a localhost</td></tr>
           </tbody>
         </table>
@@ -738,7 +717,7 @@ docker compose up -d --build
       <h3>Pasos</h3>
       <ol>
         <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga antes del primer arranque: <code>cine-docker/aiven/cargar-aiven.sh</code> aplica <code>db/schema.sql</code> y crea los dos empleados con clave nueva en bcrypt (pide las claves sin eco; <code>cine2026</code> es pública y no puede quedar en internet).</li>
-        <li><strong>Base ya cargada:</strong> cada migración nueva va antes del deploy, con <code>cine-docker/aiven/migrar-aiven.sh &lt;número o nombre&gt;</code> (<code>17</code> o <code>clave-temporal</code> aplican <code>db/migraciones/17-clave-temporal.sql</code>).</li>
+        <li><strong>Base ya cargada:</strong> cada migración nueva va antes del deploy, con <code>cine-docker/aiven/migrar-aiven.sh &lt;número o nombre&gt;</code> (<code>18</code> o <code>clientes-con-google</code> aplican <code>db/migraciones/18-clientes-con-google.sql</code>). La 18 es la excepción: va <em>después</em>, porque el código viejo no arranca sin la columna que borra y el nuevo la tolera.</li>
         <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
         <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (salas, candy, promo), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador, Por revisar y la grilla.</li>
         <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>./mvnw compile exec:java -Dcine.api.url=https://cine-uade.onrender.com</code>.</li>
@@ -748,68 +727,95 @@ docker compose up -d --build
 
     <section class="doc-section" id="capas">
       <h2>Arquitectura en capas</h2>
+      <p>Un backend con todas las reglas y tres clientes que no deciden nada: la web, Swing y Android hablan con el mismo <code>/api</code>.</p>
       <figure class="diagram">
         {{SVG_CONTEXTO}}
         <figcaption>El sistema en su contexto (C4 nivel 1): quién lo usa y con qué sistemas externos habla</figcaption>
       </figure>
+
+      <h3 id="conexiones">Cómo se conecta todo</h3>
+      <figure class="diagram">
+        {{SVG_MAPA}}
+        <figcaption>Un contenedor en Render sirve API y front por el mismo origen https, la base vive en Aiven y cada servicio externo entra con su secreto</figcaption>
+      </figure>
       <ul>
-        <li>Web (cookie de sesión) y Swing (HTTP Basic) llaman al mismo <code>/api</code>.</li>
-        <li>El backend sale a <a href="#pagos">Mercado Pago</a> y a <a href="#importador">TMDB</a>.</li>
-        <li>Backend (<code>ar.uade.cine</code>): seis capas; cada una usa solo las de abajo. Excepción: <code>infrastructure/</code>, el borde — el gestor usa sus puertos y la seguridad usa un gestor en el login.</li>
+        <li><strong>Todo pasa por el contenedor:</strong> ningún cliente llega a MySQL ni a un servicio externo con un secreto.</li>
+        <li><strong>El navegador va a Google y a Mercado Pago solo redirigido</strong> y vuelve con un código o un id que el backend verifica él mismo.</li>
+        <li>Cada secreto, quién lo da y dónde se carga: <a href="#secretos">De dónde sale cada secreto</a>. Por qué Render y Aiven: <a href="#despliegue">Despliegue</a>.</li>
       </ul>
 
+      <h3 id="recorridos">Un recorrido por cada borde</h3>
+      <figure class="diagram">
+        {{SVG_SECUENCIA_PUERTA}}
+        <figcaption>La puerta: el celular manda el código del QR con Basic y la reserva decide si entra (R18)</figcaption>
+      </figure>
+      <p>Los otros dos bordes, en su sección: <a href="#google">Ingresar con Google</a> y <a href="#mercadopago">comprar y pagar con Mercado Pago</a>.</p>
+
+      <h3 id="capas-permitido">Las seis capas</h3>
       <figure class="diagram">
         {{SVG_CAPAS_PAQUETES}}
         <figcaption>Las capas y quién llama a quién</figcaption>
       </figure>
-
+      <p><code>ar.uade.cine</code> tiene seis carpetas y las seis son capas; al lado solo está <code>Aplicacion.java</code>, que arranca. La última columna es la tabla <code>PERMITIDO</code> de <code>ArquitecturaTest</code>.</p>
       <div class="table-wrap">
         <table class="capas">
-          <thead><tr><th>Capa</th><th>Responsabilidad</th></tr></thead>
+          <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Puede importar</th></tr></thead>
           <tbody>
-            <tr><td><code>controller/</code></td><td><ul>
-              <li>Recibe el pedido HTTP y lo pasa al gestor.</li>
-              <li>Convierte el JSON en DTO y el resultado en respuesta, con su status.</li>
-              <li>Traduce cada rechazo a un error HTTP (<code>ManejadorErrores</code>).</li>
-            </ul></td></tr>
-            <tr><td><code>dto/</code></td><td><ul>
-              <li>La forma del JSON: <code>Pedido*DTO</code> entra, <code>*VistaDTO</code> sale.</li>
-              <li>Solo datos, sin lógica.</li>
-            </ul></td></tr>
-            <tr><td><code>service/</code></td><td><ul>
-              <li>Un gestor por subdominio: coordina cada caso de uso.</li>
-              <li>Aplica las reglas que necesitan la base, otras filas o la hora.</li>
-              <li>Abre y cierra la transacción.</li>
-            </ul></td></tr>
-            <tr><td><code>model/</code></td><td><ul>
-              <li>Entidades, enums y Value Objects del cine.</li>
-              <li>Cada entidad valida sus datos con su <code>Validador*</code>.</li>
-              <li>No sabe de HTTP ni de la base.</li>
-            </ul></td></tr>
-            <tr><td><code>repository/</code></td><td><ul>
-              <li>Guarda y busca entidades.</li>
-              <li>Interfaces: Spring Data genera la implementación.</li>
-            </ul></td></tr>
-            <tr><td><code>infrastructure/</code></td><td><ul>
-              <li>Lo que sale del sistema: TMDB, pasarela de pago, comprobantes, reloj.</li>
-              <li>La interfaz (puerto) y su implementación; <code>Adaptadores</code> elige cuál va.</li>
-              <li>La seguridad: rutas por rol y contraseñas.</li>
-            </ul></td></tr>
+            <tr><td><code>controller/</code></td><td>Recibe el pedido HTTP y lo pasa al gestor; JSON ↔ DTO y status. <code>Vistas*</code> arma la respuesta; <code>ManejadorErrores</code> traduce cada rechazo</td><td><code>model</code>, <code>dto</code>, <code>service</code>, <code>infrastructure</code>, <code>controller</code></td></tr>
+            <tr><td><code>dto/</code></td><td><code>Pedido*DTO</code> entra, <code>*VistaDTO</code> sale; solo datos</td><td><code>model</code>, <code>dto</code></td></tr>
+            <tr><td><code>service/</code></td><td>Un <code>Gestor*</code> por caso de uso: las reglas que necesitan la base, otras filas o la hora, y la transacción</td><td><code>model</code>, <code>repository</code>, <code>infrastructure</code>, <code>service</code></td></tr>
+            <tr><td><code>model/</code></td><td>Entidades, Value Objects, enums con estado y <code>Validador*</code>; no sabe de HTTP ni de la base</td><td><code>model</code></td></tr>
+            <tr><td><code>repository/</code></td><td><code>Repositorio&lt;T&gt;</code> (con <code>exigir</code>) + un <code>*Repository</code> de Spring Data por entidad</td><td><code>model</code>, <code>repository</code></td></tr>
+            <tr><td><code>infrastructure/</code></td><td>Puertos hacia afuera (comprobantes, imágenes, importador, pasarelas, reloj) y <code>seguridad/</code>; <code>Adaptadores</code> elige cada implementación</td><td><code>model</code>, <code>repository</code>, <code>service</code>, <code>infrastructure</code></td></tr>
           </tbody>
         </table>
       </div>
-
+      <p><code>ArquitecturaTest</code> corre en cada <code>mvn test</code>, lee los nombres calificados (no solo los <code>import</code>) y además falla si:</p>
       <ul>
-        <li>Cada capa se divide en los mismos subdominios (<code>candy</code>, <code>cartelera</code>, <code>ventas</code>…): subdominio → paquete.</li>
-        <li><code>ArquitecturaTest</code> lee los <code>import</code> y falla si una capa usa una que no le corresponde.</li>
-        <li>Spring arma todo: dependencias por constructor, nadie hace <code>new GestorReservas(...)</code>. Si falta una, la app no levanta y dice cuál.</li>
+        <li>un <code>service/</code> o un <code>controller/</code> habla con la base por debajo del repositorio (<code>jakarta.persistence</code>, JDBC, <code>java.sql</code>);</li>
+        <li>alguien fuera de <code>Adaptadores</code> nombra un adaptador concreto (<code>comprobantes.txt</code>, <code>imagenes.base</code>, <code>importador.tmdb</code>, <code>pasarelas.emulada</code>, <code>pasarelas.mercadopago</code>) en vez de su puerto;</li>
+        <li>la raíz de un puerto tiene algo más que su interfaz y su excepción;</li>
+        <li>alguien tira <code>new IllegalArgumentException(</code> en vez de un <a href="#rechazos"><code>Rechazo</code></a>;</li>
+        <li>un controller contesta <code>ResponseEntity&lt;Object&gt;</code>.</li>
       </ul>
+      <p>Romper una regla es cambiar la tabla a mano, a propósito. Spring arma todo por constructor: si falta una dependencia, la app no levanta y dice cuál.</p>
 
-      <h3>Una reserva, clase por clase</h3>
+      <h3 id="subdominios">Subdominios</h3>
+      <p>Todas las capas usan la misma lista: sabiendo el subdominio se sabe el paquete en cualquiera.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Subdominio</th><th>Qué resuelve</th></tr></thead>
+          <tbody>
+            <tr><td><code>cartelera/</code></td><td>Películas y buzón de revisión de lo importado de TMDB</td></tr>
+            <tr><td><code>salas/</code></td><td>Salas, butacas y fuera de servicio</td></tr>
+            <tr><td><code>funciones/</code></td><td>Funciones sueltas y la agenda de cada sala</td></tr>
+            <tr><td><code>programaciones/</code></td><td>Grillas y el planificador</td></tr>
+            <tr><td><code>ventas/</code></td><td>Reservas, bloqueo de butacas, cobro, checkout y acceso por código</td></tr>
+            <tr><td><code>promociones/</code></td><td>Los tres tipos de promoción y la mejor al cobrar</td></tr>
+            <tr><td><code>candy/</code></td><td>Carta, combos y ventas de mostrador</td></tr>
+            <tr><td><code>informes/</code></td><td>Borderó, recaudación, declaración jurada y caja del día</td></tr>
+            <tr><td><code>usuarios/</code></td><td>Clientes (con Google), empleados y la cuenta del cliente</td></tr>
+            <tr><td><code>imagenes/</code></td><td>Imágenes propias de promociones y productos, guardadas en la base (<a href="#imagenes">por qué</a>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Transversales</strong>, solo donde hacen falta: <code>catalogos/</code> (enums que la API expone), <code>dinero/</code>, <code>rechazos/</code>, <code>validacion/</code>, <code>tiempo/</code> y <code>controller/http/</code> (<code>Parseo</code>, <code>Fechas</code>, <code>Creado</code>, <code>ManejadorErrores</code> y la cadena de <code>cuerpo/</code>, <a href="#it-v4">V4</a>).</p>
+
+      <h3 id="flujo-venta">Flujo de una venta, clase por clase</h3>
       <figure class="diagram">
         {{SVG_RESERVA_CLASES}}
         <figcaption>Las mismas capas con las clases de <code>POST /api/reservas</code></figcaption>
       </figure>
+      <ol>
+        <li><code>compra/funcion/Funcion.jsx</code>: el mapa; cada butaca trae sus <code>precios</code> por tarifa y <code>compra/bloqueo.js</code> la bloquea mientras se elige.</li>
+        <li><code>compra/confirmar/useReservar.js</code> → <code>crearReserva</code> en <code>api/api-http.js</code>.</li>
+        <li><code>ReservaController</code> → <code>GestorReservas.reservar</code>: función en venta (R19), butacas (R9) y libres (R4).</li>
+        <li><code>Reserva</code> crea sus <code>Entrada</code> (<a href="#it-v9">Creador</a>) y cada una fija su precio con la tarifa.</li>
+        <li><code>GestorReservas</code> publica <code>ReservaCreada</code>; <code>ComprobantesDeVentas</code> emite el ticket después del commit (<a href="#observer">Observer</a>).</li>
+        <li>Cobro: <code>PagoController</code> → <code>GestorPagos.cobrar</code> en caja, o el checkout de <a href="#mercadopago">Mercado Pago</a>; <code>ConciliacionPagos</code> cobra lo aprobado aunque el comprador no vuelva.</li>
+        <li>Puerta: <code>AccesoController</code> → <code>GestorAcceso</code> busca la reserva por el código y <code>Reserva</code> registra el ingreso (R18).</li>
+      </ol>
+      <p>La misma venta como secuencia, en <a href="#reservas">Reservas y ticket</a>.</p>
 
       <h3>Una petición de punta a punta</h3>
       <figure class="diagram">
@@ -868,7 +874,8 @@ docker compose up -d --build
             <tr><td><code>AlmacenDeImagenes</code> → <code>AlmacenDeImagenesEnBase</code></td><td>Guarda y lee las imágenes subidas en la tabla <code>imagen</code> (<a href="#imagenes">por qué</a>)</td></tr>
             <tr><td><code>CatalogoExterno</code> → <code>TmdbHttp</code> + <code>MapeoTmdb</code></td><td>Cliente de TMDB y traducción a los enums propios</td></tr>
             <tr><td><code>Reloj</code></td><td>La hora actual de Buenos Aires (<code>Reloj.ZONA</code>), reemplazable en tests</td></tr>
-            <tr><td><code>ConfiguracionSeguridad</code>, <code>SesionDeClientes</code></td><td>Rutas por rol, HTTP Basic, bcrypt como único formato de clave y la sesión solo para clientes (<a href="#decorator">Decorator</a>)</td></tr>
+            <tr><td><code>ConfiguracionSeguridad</code>, <code>SesionDeClientes</code></td><td>Rutas por rol, HTTP Basic de empleados, bcrypt como único formato de clave, <code>oauth2Login</code> con Google y la sesión solo para clientes (<a href="#decorator">Decorator</a>)</td></tr>
+            <tr><td><code>ClientesDeGoogle</code></td><td>Adapter sobre <code>OidcUserService</code>: el usuario de Google con email verificado pasa a ser el cliente del cine (<a href="#google">R28</a>)</td></tr>
             <tr><td><code>ComprobanteException</code>, <code>ImportadorError</code></td><td>Fallas de cada puerto</td></tr>
             <tr><td><code>Propiedades*</code></td><td>Cada sección <code>cine.*</code> de <code>application.yml</code>, tipada, junto a quien la usa</td></tr>
 
@@ -1004,7 +1011,7 @@ docker compose up -d --build
             <tr><td><code>ventas/</code></td><td><code>BloqueoController</code>, <code>ReservaController</code>, <code>PagoController</code>, <code>AccesoController</code></td><td>Bloqueo, reserva, cobro y Puerta</td></tr>
             <tr><td><code>promociones/</code>, <code>candy/</code></td><td><code>PromocionController</code>, <code>ProductoController</code>, <code>CompraCandyController</code></td><td>Promociones, carta, combos y ventas del candy</td></tr>
             <tr><td><code>informes/</code></td><td><code>CajaController</code>, <code>InformeController</code></td><td>Arqueo, borderó, declaración jurada</td></tr>
-            <tr><td><code>usuarios/</code>, <code>catalogos/</code></td><td><code>ClienteController</code>, <code>SesionController</code>, <code>CatalogoController</code></td><td>Alta de cliente, login y enums para formularios</td></tr>
+            <tr><td><code>usuarios/</code>, <code>catalogos/</code></td><td><code>ClienteController</code>, <code>SesionController</code>, <code>CuentaController</code>, <code>CatalogoController</code></td><td>Búsqueda de clientes, quién entró, la cuenta del cliente y enums para formularios (el ingreso con Google lo atiende Spring Security en <code>/oauth2/**</code>)</td></tr>
           </tbody>
         </table>
       </div>
@@ -1041,6 +1048,18 @@ docker compose up -d --build
         {{SVG_API_ERRORES}}
         <figcaption>Quién contesta cada error y con qué status</figcaption>
       </figure>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Status</th><th>Rechazo</th><th>Cuándo</th></tr></thead>
+          <tbody>
+            <tr><td>400</td><td><code>DatoInvalido</code></td><td>El pedido está mal y repetirlo no cambia nada: topes, formato, función empezada (R19), sin código de autorización (R11), «no es el día» en la puerta (R18), email de empleado al comprar</td></tr>
+            <tr><td>404</td><td><code>RecursoNoEncontrado</code></td><td>No existe, o es de otro cliente (R21: el mismo texto)</td></tr>
+            <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
+            <tr><td>429</td><td><code>DemasiadosIntentos</code></td><td>Cinco claves mal seguidas por email o IP (solo Basic)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Los clientes deciden por status: Android trata todo 4xx como «no pasa»; Swing muestra el 409 sin campo en un pop-up y en la Puerta como NO PASA.</p>
 
       <h3 id="swagger">Swagger</h3>
       <p><code>/swagger-ui.html</code> para probar, <code>/v3/api-docs</code> para Postman. Lo genera springdoc; <code>ContratoOpenApiTest</code> falla si un <code>$ref</code> no resuelve.</p>
@@ -1094,7 +1113,7 @@ docker compose up -d --build
             <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster y Comprar entradas que baja a las funciones</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
-            <tr><td><code>#/registro</code>, <code>#/ingresar</code></td><td>Alta con clave (después entra sola) y login. La barra muestra Ingresar y Registrarme, o nombre, Mis reservas y Salir</td></tr>
+            <tr><td><code>#/ingresar</code>, <code>#/mi-cuenta</code></td><td>Botón «Ingresar con Google» (deshabilitado si el servidor no tiene credenciales) y el <code>?error=</code> de la vuelta; al volver, a la compra que quedó en <code>sessionStorage</code> o a Mis reservas. Mi cuenta: nombre y baja. La barra muestra Ingresar, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
             <tr><td>Pagar online</td><td>Medio, monto del backend, Mercado Pago y vuelta al ticket</td></tr>
             <tr><td><code>#/ticket/&lt;codigo&gt;</code></td><td>Público, sin cancelar. Siempre pide la reserva por código al backend, aunque venga en la navegación: el historial del navegador guarda la de cuando se reservó. Aviso y texto según estado (Reservada, Pagada, Vencida, Cancelada) y el <code>?aviso=</code> si el pago no se cobró. Mientras espera el pago consulta cada 10 s: pasa a Pagada cuando la <a href="#conciliacion">conciliación</a> cobra. «Ya pagué» avisa el retorno y relee la reserva: si sigue <code>cobrable</code>, «Mercado Pago todavía no confirmó el pago»</td></tr>
@@ -1156,7 +1175,7 @@ docker compose up -d --build
         <li><code>cine-swing/</code>: Java 21 + Swing, con login, para <code>ADMINISTRADOR</code> y <code>ACOMODADOR</code>. Todos los CU del encargado y la Puerta (CU-18).</li>
         <li>Cliente HTTP de la misma API que la web: nunca toca MySQL. Reglas en el backend, rol en Spring Security.</li>
         <li>FlatLaf oscuro por defecto (<code>-Dcine.tema=claro</code>); JCalendar para toda fecha: <code>dd/MM/yyyy</code> en pantalla, ISO al backend.</li>
-        <li>El login rechaza clientes: <code>ApiSesion.login</code> pregunta <code>Empleado.esEmpleado()</code>, olvida las credenciales que <code>ClienteHttp</code> guardó y muestra «Esta aplicación es para empleados del cine: los clientes compran en la web».</li>
+        <li>El login es solo de empleados: un cliente no tiene clave (entra con Google) y su email da 401. Por si acaso, <code>ApiSesion.login</code> pregunta <code>Empleado.esEmpleado()</code>, olvida las credenciales que <code>ClienteHttp</code> guardó y muestra «Esta aplicación es para empleados del cine: los clientes compran en la web».</li>
       </ul>
       <div class="table-wrap">
         <table>
@@ -1175,14 +1194,14 @@ docker compose up -d --build
       <ul>
         <li><code>Pantallas</code> es la única clase con todas las <code>Api</code>; le da a cada pantalla solo las que usa (Creador).</li>
         <li>Ninguna pantalla anticipa una regla: manda el pedido y muestra el mensaje del backend.</li>
-        <li>Lo que necesita del negocio lo lee de los catálogos, no de nombres de constantes: <code>requiereAcreditacion</code> (tarifa a acreditar en la puerta), <code>requiereAutorizacion</code> (medio por checkout), <code>campos</code> (de cada promoción).</li>
+        <li>Lo que necesita del negocio lo lee de la API, no de nombres de constantes: <code>requiereAcreditacion</code> viaja en cada entrada de la reserva (Puerta y Cobro ya no cruzan con <code>/tarifas</code>, <a href="#it-v13">V13</a>); <code>requiereAutorizacion</code> (medio por checkout) y <code>campos</code> (de cada promoción), de los catálogos.</li>
         <li>Cobrar y cancelar se habilitan con <code>cobrable</code>/<code>cancelable</code>, calculados por <code>Reserva</code> con el mismo método que rechaza: botón y rechazo no pueden diferir.</li>
       </ul>
 
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R27. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R28. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1246,8 +1265,8 @@ docker compose up -d --build
       <h2>Puerta en el celular (Android)</h2>
       <ul>
         <li><code>cine-android/</code>: Kotlin + Jetpack Compose, tercer cliente de la misma API. Solo la Puerta (CU-18): login, escáner a pantalla completa y resultado.</li>
-        <li>CameraX + ML Kit (en el teléfono, solo QR) lee el código; <code>POST /api/acceso</code> con Basic decide. Verde <strong>ADELANTE</strong> con película, sala, hora, butacas y tarifas, o rojo con el <code>{error}</code> tal cual.</li>
-        <li>Vibración distinta para cada resultado, vuelta sola al escáner a los 4 s, ingreso a mano si la cámara no enfoca. No reenvía el mismo código mientras se ve su resultado.</li>
+        <li>CameraX + ML Kit (en el teléfono, solo QR) lee el código; <code>POST /api/acceso</code> con Basic decide. Tres resultados: verde <strong>ADELANTE</strong> con película, sala, hora, butacas y tarifas («pedir carnet» si la entrada lo dice); rojo <strong>NO PASA</strong> con el <code>{error}</code> tal cual, solo ante un 4xx; y gris <strong>No se pudo verificar</strong> sin red, por timeout o con un 5xx, sin vibrar y con «Reintentar».</li>
+        <li>Vibración distinta para ADELANTE y NO PASA, vuelta sola al escáner a los 4 s, ingreso a mano si la cámara no enfoca. No reenvía el mismo código mientras se ve su resultado.</li>
         <li>Seguridad: clave solo en memoria; por <code>http</code> solo a la red propia (docker local), a internet solo <code>https</code>; no sigue redirecciones; <code>FLAG_SECURE</code>.</li>
         <li>Tests JVM contra MockWebServer, como Swing con su servidor falso: <code>cd cine-android &amp;&amp; ./gradlew test</code>.</li>
       </ul>
@@ -1315,11 +1334,10 @@ docker compose up -d --build
         <figcaption>La jerarquía de usuarios y el enum que discrimina adentro</figcaption>
       </figure>
       <ul>
-        <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave vive en <code>Usuario</code> (el cliente con cuenta también la tiene); sin clave = reservó sin cuenta. Los cargos los distingue <code>Rol</code>, no clases.</li>
+        <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave (<code>passwordHash</code>) es solo de <code>Empleado</code>: el cliente no tiene clave, entra con Google. Los cargos los distingue <code>Rol</code>, no clases.</li>
         <li><strong>Email</strong> normalizado: se busca igual en clientes, reservas y login.</li>
-        <li><strong>Cuenta opcional:</strong> nombre, email y clave (<code>Cliente.abrirCuenta</code>); ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Por id (secuencial) solo accede el encargado.</li>
-        <li><strong>Reclamo del email (R22):</strong> quien reservó sin cuenta se registra con ese email y ve sus reservas de antes, pero tiene que mandar el código de una de ellas (<code>GestorClientes.registrar</code> compara <code>reserva.getClienteId()</code> con el cliente). Sin código, ajeno o inventado: 403 <code>SinPrueba</code> con un solo texto, así no se delata qué códigos existen. Es 403 y no 400 ni 409 porque la web decide por status: 400 es «dato inválido», 409 «ya existe cuenta», y ninguno debe abrir el campo del código. <em>Límite aceptado:</em> que pida código delata que ese email compró, pero un email nuevo se registra directo, así que la diferencia ya existía. Quien tenga el ticket de otro lo reclama; confirmar por mail lo cerraría.</li>
-        <li><strong>Contraseñas en bcrypt, y solo bcrypt:</strong> <code>passwordEncoder()</code> es un <code>DelegatingPasswordEncoder</code> con únicamente <code>{bcrypt}</code> (el de fábrica aceptaría <code>{noop}</code>). Un hash sin prefijo no entra. Más de 72 bytes lo rechaza <code>Contrasena</code> al alta o al cambio. El login no distingue email inexistente de clave errónea.</li>
+        <li><strong>Cuenta opcional, la de Google:</strong> con sesión ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Quien compró sin cuenta y después entra con Google con ese email es el mismo cliente (R28). Por id (secuencial) solo accede el encargado.</li>
+        <li><strong>Contraseñas de empleados en bcrypt, y solo bcrypt:</strong> <code>passwordEncoder()</code> es un <code>DelegatingPasswordEncoder</code> con únicamente <code>{bcrypt}</code> (el de fábrica aceptaría <code>{noop}</code>). Un hash sin prefijo no entra. Más de 72 bytes lo rechaza <code>Contrasena</code> al alta. El login no distingue email inexistente de clave errónea.</li>
       </ul>
 
       <h3 id="seguridad">Quién puede llamar a qué</h3>
@@ -1328,25 +1346,43 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
-            <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, alta de cliente, reserva <em>por código</em>, retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
+            <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, reserva <em>por código</em>, el ingreso con Google (<code>/oauth2/**</code>, <code>/login/oauth2/**</code>, <code>GET /api/sesion/google</code>), retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
             <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
-            <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente</td></tr>
+            <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente. Su cuenta (<code>PUT</code>/<code>DELETE /api/cuenta</code>)</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
           </tbody>
         </table>
       </div>
       <ul>
-        <li><strong>Basic para Swing, cookie para la web:</strong> el empleado manda credenciales en cada pedido, sin sesión. Al cliente, <code>POST /api/sesion</code> setea <code>JSESSIONID</code> (HttpOnly, <code>SameSite=Lax</code>) y <code>DELETE</code> la cierra; <code>SesionDeClientes</code> (<a href="#decorator">Decorator</a>) guarda solo la identidad de un <code>CLIENTE</code>.</li>
+        <li><strong>Basic para empleados, Google y cookie para el cliente:</strong> el empleado (Swing, Android) manda credenciales en cada pedido, sin sesión. El cliente <a href="#google">entra con Google</a> una vez y queda con <code>JSESSIONID</code> (HttpOnly, <code>SameSite=Lax</code>); <code>POST /api/sesion</code> dice quién está y <code>DELETE</code> la cierra. <code>SesionDeClientes</code> (<a href="#decorator">Decorator</a>) guarda solo la identidad de un <code>CLIENTE</code>.</li>
         <li><strong>CSRF apagado, <code>SameSite=Lax</code> en su lugar:</strong> un <code>POST</code>/<code>DELETE</code> de otro sitio llega sin cookie. Un token sería más fuerte, pero el front tendría que reenviarlo.</li>
-        <li><strong>Un solo lugar verifica credenciales:</strong> el login es una ruta protegida más; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
-        <li><strong>Mensajes neutros contra enumeración:</strong> <code>POST /clientes</code> con el email de un empleado o de un cliente con cuenta da el mismo 409 «Ya existe una cuenta con ese email». <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
-        <li><strong>Límite de intentos:</strong> <code>FiltroDeIntentos</code> corre antes de <code>BasicAuthenticationFilter</code> y cuenta todo pedido con <code>Authorization: Basic</code> (login del cliente y cada pedido de Swing). Un 401 es un fallo; otro status, un acierto. Cinco fallos seguidos por email o por IP bloquean un minuto con 429 y sin tocar bcrypt; los fallos vencen al minuto del último y cada fallo barre los vencidos. Un acierto reinicia solo el contador del email: reiniciar el de la IP dejaría esquivar el límite alternando con una cuenta propia. La IP es <code>getRemoteAddr()</code>, que con <code>forward-headers-strategy: native</code> es la de <code>X-Forwarded-For</code>.
+        <li><strong>Un solo lugar verifica credenciales:</strong> Spring Security, con Basic para el empleado y OIDC para el cliente; <code>SesionController</code> devuelve al que el filtro autenticó. Al abrir sesión cambia el id (session fixation).</li>
+        <li><strong>Mensajes neutros contra enumeración:</strong> el login de empleados no distingue email inexistente de clave errónea. <code>POST /reservas</code> con email de empleado: 400 «No se puede comprar con ese email: usá otro» (400 y no 409, porque la web toma el 409 como butaca perdida). Sigue viéndose que ese email no sirve para comprar; cerrarlo del todo es dejar comprar al empleado como cliente, decisión de negocio.</li>
+        <li><strong>Límite de intentos:</strong> <code>FiltroDeIntentos</code> corre antes de <code>BasicAuthenticationFilter</code> y cuenta todo pedido con <code>Authorization: Basic</code> (el login y cada pedido de Swing y Android; el cliente no tiene clave que adivinar). Un 401 es un fallo; otro status, un acierto. Cinco fallos seguidos por email o por IP bloquean un minuto con 429 y sin tocar bcrypt; los fallos vencen al minuto del último y cada fallo barre los vencidos. Un acierto reinicia solo el contador del email: reiniciar el de la IP dejaría esquivar el límite alternando con una cuenta propia. La IP es <code>getRemoteAddr()</code>, que con <code>forward-headers-strategy: native</code> es la de <code>X-Forwarded-For</code>.
           <br><em>Por qué:</em> bcrypt cuesta ~1 s con 0,1 CPU en Render, así que unos pocos intentos por segundo tumban el servicio, además de permitir adivinar claves. Cortar antes de bcrypt evita ese costo.
           <br><em>Límite conocido:</em> el contador por IP frena a todos los que salen por la misma IP pública. Si el Swing del cine está detrás de un router, cinco claves mal en un minuto dejan sin panel a todo el cine ese minuto. Si molesta, se sube el umbral de IP. El contador vive en memoria: un reinicio lo borra.</li>
         <li><strong>Swagger apagado en producción:</strong> springdoc lee <code>CINE_SWAGGER</code> (por defecto <code>true</code>); <code>render.yaml</code> la fija en <code>false</code> y ni la UI ni <code>/v3/api-docs</code> existen. Si el servicio se creó a mano, se carga en el panel.</li>
         <li><strong>Cerrado por defecto:</strong> una ruta nueva nace pidiendo <code>ADMINISTRADOR</code>, también un archivo estático que no esté en <code>FRONT</code> (<code>/otra</code> da 401). El front no necesita más: las rutas son por hash.</li>
         <li><strong>401/403 sin <code>WWW-Authenticate</code></strong>, para que el navegador no abra su diálogo.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="google">
+      <h2>Ingresar con Google</h2>
+      <p>El cliente no tiene clave: entra con su cuenta de Google y el backend lo identifica por el email verificado (R28). Basic queda solo para empleados.</p>
+      <figure class="diagram">
+        {{SVG_SECUENCIA_GOOGLE}}
+        <figcaption>El navegador trae el código, el backend lo canjea con el secret, encuentra o da de alta al cliente y deja la cookie</figcaption>
+      </figure>
+      <figure class="diagram">
+        {{SVG_GOOGLE_CONFIG}}
+        <figcaption>Qué se configuró en Google Cloud y por dónde llegan el client id y el secret hasta <code>oauth2Login</code></figcaption>
+      </figure>
+      <ul>
+        <li><strong>Mismo email, mismo cliente:</strong> quien compró sin cuenta conserva nombre y reservas. Email sin verificar o de un empleado: vuelve a <code>#/ingresar?error=</code> con el motivo.</li>
+        <li><strong>Detrás de Render la vuelta sale https:</strong> <code>forward-headers-strategy: native</code> aplica el <code>X-Forwarded-Proto</code>; lo fija <code>IngresoConGoogleTest.detrasDelProxyLaVueltaEsHttps</code>.</li>
+        <li><strong>Ir a Google recarga la página:</strong> la web guarda en <code>sessionStorage</code> la compra a la que volver.</li>
       </ul>
     </section>
 
@@ -1359,11 +1395,11 @@ docker compose up -d --build
       </figure>
       <figure class="diagram">
         {{SVG_USUARIOS_SESIONES}}
-        <figcaption>Cliente: Basic una vez y después cookie. Empleado: Basic en cada pedido. Recuperar la clave: el código de una entrada</figcaption>
+        <figcaption>Cliente: Google una vez y después cookie. Empleado: Basic en cada pedido</figcaption>
       </figure>
       <figure class="diagram">
         {{SVG_USUARIOS_CICLO}}
-        <figcaption>Una cuenta es una clave sobre un cliente: abrirla, cambiarla o darla de baja no toca sus reservas</figcaption>
+        <figcaption>La cuenta es la de Google sobre un cliente: entrar, renombrarse o darse de baja no toca sus reservas</figcaption>
       </figure>
 
       <h3 id="cuentas-reglas">Reglas de usuarios</h3>
@@ -1372,23 +1408,20 @@ docker compose up -d --build
           <thead><tr><th>Regla</th><th>Qué asegura</th><th>Dónde</th></tr></thead>
           <tbody>
             <tr><td>R21</td><td>Solo sus reservas; la ajena da 404 como un código inexistente</td><td><code>ConsultasReservas</code></td></tr>
-            <tr><td>R22</td><td>Abrir cuenta sobre un email que ya compró pide el código de una entrada suya; si no, 403 con un solo texto</td><td><code>GestorClientes.registrar</code></td></tr>
-            <tr><td>R23</td><td>Cambia el nombre con las reglas del alta; el email no</td><td><code>GestorCuentas.renombrar</code></td></tr>
-            <tr><td>R24</td><td>Cambiar la clave pide la actual; su sesión sigue con otro id, las demás se cierran</td><td><code>GestorCuentas.cambiarClave</code></td></tr>
-            <tr><td>R25</td><td>Recuperar con email + código propio; toda falla, el mismo 403; cierra todas las sesiones</td><td><code>GestorCuentas.recuperarClave</code></td></tr>
-            <tr><td>R26</td><td>Baja con la clave actual: borra solo la clave</td><td><code>GestorCuentas.darDeBaja</code></td></tr>
-            <tr><td>R27</td><td>Solo <code>ADMINISTRADOR</code>; la genera el backend, se muestra una vez y marca <code>debeCambiarClave</code></td><td><code>GestorCuentas.asignarClaveTemporal</code></td></tr>
-            <tr><td>Intentos</td><td>Cinco fallos por email o IP: 429 un minuto, antes de bcrypt. Cuentan login, Basic, recuperación, clave actual del cambio y de la baja</td><td><code>LimiteDeIntentos</code></td></tr>
-            <tr><td>Mensajes neutros</td><td>Login, alta, compra y recuperación no delatan qué emails o códigos existen</td><td>Gestores y filtro Basic</td></tr>
-            <tr><td>Ticket público</td><td>El email sale enmascarado (<code>a***@mail.com</code>): con el código sería todo lo que pide R25</td><td><code>VistasReservas</code>, <code>Email.enmascarado</code></td></tr>
+            <tr><td>R23</td><td>Cambia el nombre con las reglas del alta; el email (el de Google) no</td><td><code>GestorClientes.renombrar</code></td></tr>
+            <tr><td>R26</td><td>La baja cierra la sesión; reservas, pagos y entradas quedan, y entrar con Google la reabre</td><td><code>CuentaController</code></td></tr>
+            <tr><td>R28</td><td>Solo con Google y el email verificado; mismo email, mismo cliente; el de un empleado no entra</td><td><code>ClientesDeGoogle</code>, <code>GestorClientes.ingresarConGoogle</code></td></tr>
+            <tr><td>Intentos</td><td>Cinco fallos por email o IP: 429 un minuto, antes de bcrypt. Solo Basic: el login y cada pedido de los empleados</td><td><code>LimiteDeIntentos</code></td></tr>
+            <tr><td>Mensajes neutros</td><td>Login de empleados, compra y búsqueda por código no delatan qué emails o códigos existen</td><td>Gestores y filtro Basic</td></tr>
+            <tr><td>Ticket público</td><td>El email sale enmascarado (<code>a***@mail.com</code>): el código no tiene por qué decir de quién es</td><td><code>VistasReservas</code>, <code>Email.enmascarado</code></td></tr>
           </tbody>
         </table>
       </div>
-      <p><em>Límites conocidos</em> (<code>API.md</code> › Seguridad): <code>debeCambiarClave</code> lo hace cumplir solo la web, el backend no bloquea otras rutas a quien no la cambió; y login, recuperación, cambio de clave y baja comparten el mismo contador por email e IP. Además, sesiones e intentos viven en memoria: una sola instancia.</p>
+      <p><em>Límites conocidos:</em> la baja es casi un salir, porque no hay clave que borrar y Google la reabre; bloquear el reingreso sería otra regla. Sesiones e intentos viven en memoria: una sola instancia.</p>
 
       <h3 id="cuentas-nunca">Qué nunca pasa</h3>
       <ul>
-        <li><strong>La clave no se guarda ni se loguea:</strong> solo su bcrypt. La temporal sale en claro una vez, en la respuesta a Swing.</li>
+        <li><strong>La clave no se guarda ni se loguea:</strong> del empleado, solo su bcrypt; del cliente, ninguna: la verifica Google.</li>
         <li><strong>El front no decide permisos:</strong> esconde botones, pero quien rechaza es <code>ConfiguracionSeguridad</code>, cerrada por defecto.</li>
         <li><strong>Ninguna ruta de <code>/cuenta</code> recibe a quién modificar:</strong> el cliente es siempre el de la sesión.</li>
         <li><strong>Swing y Android no tocan la base:</strong> hablan HTTP con Basic, como cualquier otro cliente.</li>
@@ -1740,8 +1773,8 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <h2>Control de acceso</h2>
       <ul>
         <li><strong>Un código por reserva:</strong> el grupo entra junto.</li>
-        <li><strong>No es el id:</strong> aleatorio, 8 caracteres, sin <code>O I 0 1</code>. <code>CodigoDeAcceso</code> lo genera y lo normaliza, porque se tipea a mano cuando el escáner no lee. No valida la forma a propósito: uno mal tipeado da 404 y no le cuenta a nadie cómo es uno válido.</li>
-        <li><strong>Solo el día de la función</strong> (<a href="#reglas">R18</a>).</li>
+        <li><strong>No es el id:</strong> aleatorio, 8 caracteres, sin <code>O I 0 1</code>. <code>CodigoDeAcceso</code> lo genera y lo normaliza (sin ningún espacio, sin distinguir mayúsculas), porque se tipea o se dicta cuando el escáner no lee; los clientes lo mandan tal cual. No valida la forma a propósito: uno mal tipeado da 404 y no le cuenta a nadie cómo es uno válido.</li>
+        <li><strong>Solo el día de la función</strong> (<a href="#reglas">R18</a>): otro día es 400; sin pagar o ya usada, 409.</li>
         <li><strong>El ingreso es un timestamp</strong>, no un estado: el cobro es otro eje.</li>
       </ul>
     </section>
@@ -1794,7 +1827,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R2</td><td>Duración de película de 1 a 600 minutos, y de 1 a 40 butacas en cada fila de la sala</td></tr>
             <tr><td>R3</td><td>Una sala no tiene funciones superpuestas, contando la limpieza; dos pedidos a la vez los frena <code>UNIQUE (sala_id, inicio)</code></td></tr>
             <tr><td>R4</td><td>No se reserva una butaca ya tomada <strong>en esa función</strong></td></tr>
-            <tr><td>R5</td><td>Solo se cobra una reserva RESERVADA, y una sola vez</td></tr>
+            <tr><td>R5</td><td>Solo se cobra una reserva RESERVADA, y una sola vez (409)</td></tr>
             <tr><td>R6</td><td>Cancelar una reserva libera sus butacas</td></tr>
             <tr><td>R7</td><td>Una película tiene al menos un género</td></tr>
             <tr><td>R8</td><td>Una función 3D solo en sala que lo soporte</td></tr>
@@ -1802,21 +1835,22 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R10</td><td>Toda película tiene clasificación por edad</td></tr>
             <tr><td>R11</td><td>Los medios electrónicos exigen código de autorización</td></tr>
             <tr><td>R12</td><td>No se elimina película con funciones o grilla, sala con funciones o grilla, ni función con reservas</td></tr>
-            <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar</td></tr>
+            <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar (409)</td></tr>
             <tr><td>R14</td><td>Un combo cuesta menos que sus componentes sueltos</td></tr>
             <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento (empate: menor id)</td></tr>
             <tr><td>R16</td><td>Las tarifas reducidas no participan del descuento</td></tr>
-            <tr><td>R17</td><td>No se cobra una reserva vencida</td></tr>
-            <tr><td>R18</td><td>Solo ingresa una reserva pagada, una sola vez y el día de la función</td></tr>
+            <tr><td>R17</td><td>No se cobra una reserva vencida (409)</td></tr>
+            <tr><td>R18</td><td>Solo ingresa una reserva pagada, una sola vez (409) y el día de la función (400)</td></tr>
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
             <tr><td>R21</td><td>Un cliente solo ve, cancela y paga las reservas que son suyas</td></tr>
-            <tr><td>R22</td><td>Abrir una cuenta sobre un cliente que ya compró sin cuenta exige el código de una de sus entradas: prueba de que es quien compró</td></tr>
+            <tr><td><del>R22</del></td><td><del>Abrir una cuenta sobre quien compró sin cuenta exige el código de una de sus entradas</del>. Cayó: la reemplaza R28</td></tr>
             <tr><td>R23</td><td>Con sesión, el cliente cambia su nombre con las reglas del alta; el email no se cambia</td></tr>
-            <tr><td>R24</td><td>Cambiar la clave exige la actual; la sesión del que la cambia sigue con otro id y las demás se cierran</td></tr>
-            <tr><td>R25</td><td>Sin sesión, la clave se recupera con email + código de una entrada propia; cualquier falla da el mismo mensaje, pasa por el límite de intentos y cierra todas las sesiones</td></tr>
-            <tr><td>R26</td><td>Dar de baja la cuenta exige la clave actual y borra solo la clave: reservas, pagos y entradas quedan</td></tr>
-            <tr><td>R27</td><td>Solo el ADMINISTRADOR asigna una clave temporal generada por el backend; la web pide cambiarla al entrar</td></tr>
+            <tr><td><del>R24</del></td><td><del>Cambiar la clave exige la actual</del>. Cayó: el cliente no tiene clave</td></tr>
+            <tr><td><del>R25</del></td><td><del>Sin sesión, la clave se recupera con email + código de una entrada propia</del>. Cayó: la recupera Google</td></tr>
+            <tr><td>R26</td><td>Dar de baja la cuenta cierra la sesión: reservas, pagos y entradas quedan, y entrar de nuevo con Google la vuelve a abrir</td></tr>
+            <tr><td><del>R27</del></td><td><del>Solo el ADMINISTRADOR asigna una clave temporal</del>. Cayó: no hay clave que asignar</td></tr>
+            <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave</td></tr>
           </tbody>
         </table>
       </div>
@@ -1860,14 +1894,14 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </ul>
 
       <h3 id="cobertura">Cobertura medida</h3>
-      <p>Medida el 28/10/2026 sobre <code>cc08e5a</code>. Tests contados de los XML de surefire (<code>target/surefire-reports/TEST-*.xml</code>), no de los <code>.txt</code>, que pueden quedar de corridas viejas.</p>
+      <p>Medida el 28/10/2026 sobre <code>887d6c99</code> (con el ingreso con Google, T80 y T81). Tests contados de los XML de surefire (<code>target/surefire-reports/TEST-*.xml</code>), no de los <code>.txt</code>, que pueden quedar de corridas viejas.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th><th>Reporte</th></tr></thead>
           <tbody>
-            <tr><td>Backend</td><td>1454</td><td>95,7 %</td><td>92,2 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
-            <tr><td>Swing</td><td>176</td><td>79,3 %</td><td>63,0 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
-            <tr><td>Front</td><td>154</td><td>90,5 %</td><td>84,7 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
+            <tr><td>Backend</td><td>1471</td><td>97,4 %</td><td>92,5 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
+            <tr><td>Swing</td><td>179</td><td>79,3 %</td><td>63,6 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
+            <tr><td>Front</td><td>142</td><td>89,1 %</td><td>83,8 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -1876,6 +1910,25 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <li><strong>Swing:</strong> las pantallas se prueban en headless con <code>Operador</code> (campo por etiqueta, botón por texto) contra <code>ServidorFalso</code>. Quedan afuera los <code>JFrame</code> (<code>VentanaPrincipal</code>, <code>VentanaLogin</code>), lo que confirma con <code>JOptionPane</code> y la pintura (<code>GrillaAgenda</code>, <code>MapaButacas</code>): en headless tiran <code>HeadlessException</code>.</li>
         <li><strong>Front:</strong> Vitest, jsdom y Testing Library; tests junto al código (<code>src/**/*.test.jsx</code>); <code>src/test/renderConApp.jsx</code> arma la app con sesión, compra y rutas. Lint: <code>npm run lint</code>.</li>
       </ul>
+
+      <h3 id="mutaciones">Mutaciones</h3>
+      <p>Para saber si un test protege su regla se rompió el código a propósito, en una copia, y se miró si algún test fallaba. Las que sobrevivían tienen ahora quien las mate:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mutación</th><th>Test que la mata</th></tr></thead>
+          <tbody>
+            <tr><td><code>Ocupacion</code> mira todas las funciones y no solo esta (R4)</td><td><code>GestorReservasTest.laMismaButacaSeVendeEnDosFuncionesDeLaMismaSala</code></td></tr>
+            <tr><td><code>Entrada.liberar()</code> no suelta la butaca (R6)</td><td><code>cancelarLiberaLasButacas</code>, <code>unaReservaSinPagarVencidaLiberaSusButacas</code>: la revenden</td></tr>
+            <tr><td>Editar un producto no revisa sus combos (R14)</td><td><code>GestorCandyTest.abaratarUnSueltoNoPuedeDejarSinConvenirAlCombo</code></td></tr>
+            <tr><td>Cobrar dos veces si el estado no lo frenara (R5)</td><td><code>GestorPagosTest.aunqueElEstadoNoLoFreneLaBaseNoAceptaUnSegundoPago</code>: el <code>UNIQUE</code> de <code>pago.reserva_id</code></td></tr>
+            <tr><td>Sin el handler de <code>@Version</code> (409 → 500)</td><td><code>ManejadorErroresTest.cadaExcepcionDeAbajoLlegaPorHttpConSuStatusYSuTexto</code></td></tr>
+            <tr><td>TMDB sin el token <code>Bearer</code></td><td><code>TmdbHttpTest.cadaLlamadaLlevaElTokenComoBearerYPideJson</code></td></tr>
+            <tr><td>Un <code>service/</code> que nombra <code>controller.http</code> sin <code>import</code></td><td><code>ArquitecturaTest</code> (lee nombres calificados, no comentarios ni strings)</td></tr>
+            <tr><td>Swing cobra en caja con otro campo y manda el monto</td><td><code>FormaDeCobroTest.enCajaPreguntaYRegistraElPago</code> (cuerpo exacto)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Además, los rechazos de service se afirman con su texto exacto (<code>rechaza(mensaje, …)</code> de <code>PruebaDeIntegracion</code>), no solo con el tipo: un test que pasa por otro motivo ya no da verde.</p>
 
       <h3>Casos de la defensa</h3>
       <p>CP-01 a CP-09 y CP-19 recorren la API con Postman; CP-10 a CP-18 se hacen a mano en la web y en Swing.</p>
@@ -1927,12 +1980,13 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code>, <code>PeliculaTest</code>, <code>SalaTest</code></td></tr>
             <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
-            <tr><td>R21, R22</td><td><code>CuentaDelClienteTest</code>, <code>GestorClientesTest</code></td></tr>
-            <tr><td>R23 a R27</td><td><code>CuentaControllerTest</code>, <code>ClienteTest</code>, <code>ContrasenaTest</code>, <code>ApisTest</code> (Swing), <code>MiCuenta.test.jsx</code>, <code>RecuperarClave.test.jsx</code></td></tr>
+            <tr><td>R21</td><td><code>CuentaDelClienteTest</code></td></tr>
+            <tr><td>R23, R26</td><td><code>CuentaControllerTest</code> (<code>laBajaSeReabreConGoogle</code>), <code>GestorClientesTest</code>, <code>MiCuenta.test.jsx</code></td></tr>
+            <tr><td>R28</td><td><code>ClientesDeGoogleTest</code>, <code>GestorClientesTest</code> (<code>conGoogle*</code>), <code>IngresoConGoogleTest</code>, <code>SinGoogleTest</code>, <code>CuentaDelClienteTest.elQueReservoSinCuentaEntraConGoogleYVeSusReservas</code>, <code>Ingresar.test.jsx</code></td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>
-            <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code></td></tr>
+            <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code>, <code>PromocionTest</code>, <code>TipoTarifaTest</code>, <code>GestorPagosTest</code> (tarifas mixtas)</td></tr>
             <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code></td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
             <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
@@ -1996,7 +2050,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong> <a href="#d-experto">(diagrama)</a></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
+            <tr><td><strong>Experto</strong> <a href="#d-experto">(diagrama)</a> · <a href="#it-v13">V13</a></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code> (con el precio de su <code>FormatoDeFuncion</code>), <code>TipoTarifa.requiereAcreditacion</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
             <tr><td><strong>Creador</strong> <a href="#d-creador">(diagrama)</a> · <a href="#it-v9">V9</a></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Combo.armar</code> → <code>ItemCombo</code>, <code>Reserva</code> → <code>Entrada</code> (<a href="#it-v9">V9</a>), <code>CompraCandy</code> → <code>ItemCompra</code> (constructores de paquete); <code>TipoPromocion</code> tiene los datos para crear su subclase</td></tr>
             <tr><td><strong>Fabricación pura</strong> <a href="#d-fabricacion-pura">(diagrama)</a> · <a href="#it-v8">V8</a></td><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>RepartoDePases</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
             <tr><td><strong>Controlador</strong> <a href="#d-controlador">(diagrama)</a></td><td><code>Gestor*</code> reciben cada operación; <code>*Controller</code> solo traduce HTTP. Los tests llaman a los gestores sin HTTP</td></tr>
@@ -2163,7 +2217,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </figure>
       <ul>
         <li><strong>Antes:</strong> <code>IllegalArgumentException</code>. Una librería también la tira (texto en inglés al usuario) y Spring Data la traduce al salir de un repositorio: el 404 de <code>exigir</code> salía 500.</li>
-        <li><strong>Ahora:</strong> <code>Rechazo</code> sellada con cuatro hijas: <code>DatoInvalido</code> 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> 409. <code>ConflictoDeNegocio</code> es un pedido válido que choca con el estado: un nombre o email ya usado, borrar o cambiar algo en uso (sala o película con funciones, función con reservas), una reserva ya cobrada o una importación con otra en curso.</li>
+        <li><strong>Ahora:</strong> <code>Rechazo</code> sellada con cinco hijas: <code>DatoInvalido</code> 400, <code>RecursoNoEncontrado</code> 404, <code>ConflictoDeNegocio</code> y <code>ButacaOcupada</code> 409, <code>DemasiadosIntentos</code> 429. <code>ConflictoDeNegocio</code> es un pedido válido que choca con el estado: un nombre o email ya usado, borrar o cambiar algo en uso (sala o película con funciones, función con reservas), una transición que el estado de la reserva no permite (cobrar, cancelar o entrar), candy con una reserva sin pagar o una importación con otra en curso. La lista completa, en <a href="#api">Errores</a>.</li>
         <li>Una <code>IllegalArgumentException</code> suelta es 500 genérico; <code>ArquitecturaTest</code> prohíbe crearla. <code>ManejadorErroresTest</code> falla hasta que un tipo nuevo tenga status.</li>
       </ul>
 
@@ -2197,7 +2251,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <thead><tr><th>Smell</th><th>Refactoring</th><th>Resultado</th></tr></thead>
           <tbody>
             <tr><td><strong>Data Clump</strong> y Long Parameter List: versión, proyección y precio viajaban sueltos por cinco firmas</td><td>Introduce Parameter Object: <code>FormatoDeFuncion</code></td><td>Record <code>@Embeddable</code> de <code>Funcion</code> y <code>Programacion</code>, validado al construirse; columnas iguales. <code>GestorFunciones.programar</code> de 7 a 5 parámetros, <code>Programacion</code> de 9 a 7. R8 queda en la entidad (cruza formato con sala). Costo: con R8 y precio inválidos a la vez sale primero el precio; por HTTP no cambia, los controllers ya validaban el precio antes</td></tr>
-            <tr><td><strong>Código duplicado</strong>: confirmar, retornar y conciliar repetían el cobro por checkout</td><td>Extract Method: <code>cobrarCheckout</code></td><td>Los tres públicos solo deciden qué hacer con el rechazo. <code>existsByReservaId</code> se consulta una vez</td></tr>
+            <tr><td><strong>Código duplicado</strong>: confirmar, retornar y conciliar repetían el cobro por checkout</td><td>Extract Method: <code>cobrarCheckout</code></td><td>Los tres públicos solo deciden qué hacer con el rechazo. El segundo cobro lo frenan el estado (R5) y el <code>UNIQUE</code> de <code>pago.reserva_id</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -2217,7 +2271,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
 
     <section class="doc-section" id="iteraciones">
       <h2>Iteraciones de patrones</h2>
-      <p>Cada patrón entró como una iteración V0 → Vn: el código de antes, el smell, el patrón y cómo quedó. Ninguna cambió el contrato HTTP ni el esquema. Los diagramas siguen el estilo de los apuntes de la cátedra: las clases reales con el rol del patrón como estereotipo.</p>
+      <p>Cada patrón entró como una iteración V0 → Vn: el código de antes, el smell, el patrón y cómo quedó. Ninguna cambió el esquema; solo V13 sumó un campo al contrato HTTP. Los diagramas siguen el estilo de los apuntes de la cátedra: las clases reales con el rol del patrón como estereotipo.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>It.</th><th>Tema</th><th>Categoría</th><th>Smell → patrón</th><th>Clases nuevas</th></tr></thead><tbody>
         <tr><td><a href="#it-v1">V1</a></td><td>Composite en los combos del candy</td><td>Estructural</td><td>Enum de tipo + <code>if esCombo()</code> → Composite</td><td><code>ProductoSuelto</code>, <code>Combo</code></td></tr>
@@ -2232,6 +2286,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <tr><td><a href="#it-v10">V10</a></td><td>Adapter de JCalendar en Swing</td><td>Estructural</td><td>La lógica importa una librería → Adapter</td><td><code>CampoFecha</code>, <code>Calendario</code></td></tr>
         <tr><td><a href="#it-v11">V11</a></td><td>Builder de <code>DatosPelicula</code></td><td>Creacional</td><td>Doce parámetros posicionales → Builder</td><td><code>DatosPeliculaBuilder</code></td></tr>
         <tr><td><a href="#it-v12">V12</a></td><td>Command en las acciones de fila (Swing)</td><td>Comportamiento</td><td>Molde repetido 14 veces → Command</td><td><code>AccionDeFila</code>, <code>BotonesDeFila</code>, <code>Pregunta</code> y 8 comandos</td></tr>
+        <tr><td><a href="#it-v13">V13</a></td><td>Experto: cada entrada dice si pide carnet</td><td>GRASP</td><td>Cliente que decide por el nombre de una constante → Experto</td><td><code>EntradaVistaDTO.requiereAcreditacion</code> (campo)</td></tr>
       </tbody></table></div>
       <h3 id="it-v1">V1 · Composite en los combos del candy</h3>
       <p><strong>V0</strong> (antes):</p>
@@ -2434,6 +2489,25 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
         {{SVG_PATRON_COMMAND}}
         <figcaption>V12: Cada operación del encargado es un comando; BotonesDeFila los dispara</figcaption>
       </figure>
+      <h3 id="it-v13">V13 · Experto: cada entrada dice si pide carnet</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// web
+export const conAcreditacion = (entrada) =&gt; entrada.tarifa &amp;&amp; entrada.tarifa !== &quot;GENERAL&quot;;
+// Swing, Puerta y Cobro: GET /tarifas para saber cuáles piden carnet, y cruzar por nombre
+seAcreditan = apiCatalogos.obtenerTarifas().stream().filter(Tarifa::requiereAcreditacion)
+        .map(Tarifa::nombre).collect(Collectors.toSet());</code></pre>
+      <p><strong>Vn</strong> (después):</p>
+      <pre><code>// backend, VistasReservas: lo decide quien tiene el dato
+new EntradaVistaDTO(e.asientoId(), e.codigoAsiento(), e.tarifa().name(),
+        e.tarifa().requiereAcreditacion(), e.precio().aPesos());
+// web
+export const conAcreditacion = (entrada) =&gt; entrada.requiereAcreditacion;</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> la web decidía por el nombre de una constante (<code>!== "GENERAL"</code>) y Swing hacía un pedido más a <code>/tarifas</code> para cruzarlo. Una tarifa nueva que no pida carnet habría salido «pedir carnet» en la web.</li>
+        <li><strong>Patrón:</strong> Experto: <code>TipoTarifa</code> sabe si se acredita; la entrada lo dice en la API y los cuatro clientes (web, Swing Puerta y Cobro, Android) lo leen.</li>
+        <li><strong>Mejora:</strong> un pedido menos en la Puerta de Swing y una sola fuente de la regla.</li>
+        <li><strong>Lo protege:</strong> <code>VistasVentasTest.cadaEntradaDiceSiSuTarifaPideCarnet</code> (<code>@EnumSource</code> sobre todas las tarifas), <code>Ticket.test.jsx</code>, <code>PantallaPuertaTest</code>.</li>
+      </ul>
     </section>
 
     <section class="doc-section" id="decisiones">
@@ -2468,6 +2542,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
             <tr><td><code>Genero</code>, <code>TipoTarifa</code> enum</td><td>Entidad con ABM</td><td>Catálogos cerrados</td></tr>
             <tr><td><code>Empleado</code> con <code>Rol</code></td><td>Clase por cargo</td><td>La herencia corta por la contraseña</td></tr>
             <tr><td>Cuenta de cliente opcional</td><td>Login obligatorio</td><td>Sin cuenta se reserva con el código como credencial; con cuenta se ve, cancela y paga online (R21)</td></tr>
+            <tr><td>El cliente entra con Google (OIDC)</td><td>Clave propia con registro, recuperación por código y clave temporal de boletería</td><td>Nada que guardar, recuperar ni asignar: Google ya probó el email. Se fueron R22, R24, R25 y R27 (<a href="#google">detalle</a>)</td></tr>
             <tr><td>Grilla que materializa funciones</td><td>Derivarlas</td><td>Cada función tiene vida propia</td></tr>
             <tr><td>Buzón para lo importado</td><td>Alta directa</td><td>El catálogo lo decide el cine</td></tr>
 
@@ -2501,7 +2576,7 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R27, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R28, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>

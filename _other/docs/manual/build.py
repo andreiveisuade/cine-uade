@@ -22,6 +22,7 @@ svg_map = {
     # Con diagram-design: el mapa de todas las piezas y un recorrido por cada borde del sistema.
     "{{SVG_MAPA}}": DIAGRAMAS / "sistema-mapa.svg",
     "{{SVG_SECUENCIA_GOOGLE}}": DIAGRAMAS / "secuencia-google.svg",
+    "{{SVG_GOOGLE_CONFIG}}": DIAGRAMAS / "google-configuracion.svg",
     "{{SVG_SECUENCIA_PUERTA}}": DIAGRAMAS / "secuencia-puerta.svg",
     "{{SVG_ARRANQUE}}": DIAGRAMAS / "arranque-orden.svg",
     "{{SVG_TERMINAL}}": DIAGRAMAS / "terminal-desktop.svg",
