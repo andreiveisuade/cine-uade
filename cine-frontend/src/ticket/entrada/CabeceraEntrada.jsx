@@ -1,7 +1,7 @@
 import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { Poster } from "@/compartido/ui/Poster.jsx";
-import { AVISO_POR_ESTADO, COLOR_ESTADO } from "@/ticket/estadoReserva.js";
+import { avisoDe, COLOR_ESTADO } from "@/ticket/estadoReserva.js";
 
 export function CabeceraEntrada({ reserva }) {
   return (
@@ -15,7 +15,7 @@ export function CabeceraEntrada({ reserva }) {
           <Text size="xs" c="dimmed" className="cine-cifras">Reserva #{reserva.id}</Text>
         </Group>
         <Title order={1} fz="clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem)">{reserva.pelicula.titulo}</Title>
-        {AVISO_POR_ESTADO[reserva.estado] && <Text size="sm" c="dimmed">{AVISO_POR_ESTADO[reserva.estado]}</Text>}
+        {avisoDe(reserva) && <Text size="sm" c="dimmed">{avisoDe(reserva)}</Text>}
       </Stack>
     </Group>
   );

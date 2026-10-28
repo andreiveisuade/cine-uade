@@ -198,7 +198,17 @@ public class Reserva {
     }
 
     public boolean estaVencida(LocalDateTime ahora) {
-        return estado.esperaPago() && creadaEn.plusMinutes(MINUTOS_PARA_PAGAR).isBefore(ahora);
+        return estado.esperaPago() && getVenceEn().isBefore(ahora);
+    }
+
+    // R17 sin scheduler: la vencida figura RESERVADA hasta que alguien abre el mapa; para afuera ya venció.
+    public EstadoReserva estadoA(LocalDateTime ahora) {
+        return estaVencida(ahora) ? estado.expirar() : estado;
+    }
+
+    // Hasta cuándo se puede pagar; null si ya no espera el pago.
+    public LocalDateTime getVenceEn() {
+        return estado.esperaPago() ? creadaEn.plusMinutes(MINUTOS_PARA_PAGAR) : null;
     }
 
     @Override

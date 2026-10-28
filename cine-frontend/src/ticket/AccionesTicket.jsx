@@ -2,7 +2,7 @@ import { Anchor, Box, Button, Group, Text } from "@mantine/core";
 import { IconQrcode } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
-import { vigente } from "./estadoReserva.js";
+import { entradaValida } from "./estadoReserva.js";
 import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
 import { PagarOnline } from "./pago/PagarOnline.jsx";
 
@@ -15,7 +15,7 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
     <Group gap="sm" justify="space-between" align="flex-start">
       <Box id="pagar">
         {/* Sin cancelar acá: el ticket es público y se muestra en la puerta; cancelar es del dueño, en Mis reservas. */}
-        {reserva.estado === "PAGADA" && !reserva.ingresadaEn && (
+        {entradaValida(reserva) && (
           <Button size="md" leftSection={<IconQrcode size={20} />} onClick={alMostrarEnPuerta}>Mostrar en la puerta</Button>
         )}
         {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} alVolver={alVolverDelPago} />}
@@ -28,7 +28,7 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
         )}
       </Box>
       <Group gap="xs">
-        {vigente(reserva) && <DescargarEntrada reserva={reserva} />}
+        {entradaValida(reserva) && <DescargarEntrada reserva={reserva} />}
         <Button variant="subtle" color="gray" c="var(--mantine-color-text)" component={Link} to="/">Volver a la cartelera</Button>
       </Group>
     </Group>

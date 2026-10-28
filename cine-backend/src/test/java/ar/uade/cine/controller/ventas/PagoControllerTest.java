@@ -20,7 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpMethod;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.funciones.GestorFunciones;
@@ -222,6 +225,26 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R5: ya cobrada");
         assertFalse(get(ruta).json().get("cancelable").asBoolean(), "R13: cobrada no se cancela");
         assertEquals(409, post(ruta + "/cancelacion", "").estado());
+    }
+
+    // El ticket y Mis reservas la muestran vencida y con su hora límite, sin esperar a que alguien abra el mapa.
+    @Test
+    void laReservaSaleConSuVencimientoYVencidaApenasPasaLaHora() {
+        String ticket = "/api/reservas/codigo/" + reserva.getCodigo();
+        JsonNode recien = get(ticket).json();
+        assertEquals("RESERVADA", recien.get("estado").asText());
+        assertEquals(Fechas.texto(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR)),
+                recien.get("venceEn").asText());
+
+        reloj.mover(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+        assertEquals("EXPIRADA", get(ticket).json().get("estado").asText());
+        assertEquals("EXPIRADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText());
+
+        reloj.reiniciar();
+        post("/api/reservas/" + reserva.getId() + "/pago", "{\"medio\":\"EFECTIVO\"}");
+        JsonNode pagada = get(ticket).json();
+        assertEquals("PAGADA", pagada.get("estado").asText());
+        assertFalse(pagada.has("venceEn"), "la pagada ya no vence");
     }
 
     // Como los demás enums: en minúsculas se entiende, y una que no existe dice de qué butaca es.

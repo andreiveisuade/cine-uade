@@ -106,6 +106,18 @@ describe("MisReservas con sesión: las reservas de la cuenta", () => {
     expect(acciones.queryByRole("button", { name: "Pagar online" }) !== null).toBe(pagar);
   });
 
+  it("la que espera el pago dice hasta qué hora; la paga no", async () => {
+    api.obtenerMisReservas.mockResolvedValue([
+      reserva(1, "AAAA1111", "RESERVADA", { venceEn: "2026-10-21T19:30:00" }),
+      reserva(2, "BBBB2222", "PAGADA"),
+    ]);
+    abrir();
+
+    await screen.findByRole("link", { name: "AAAA1111" });
+    expect(within(fila("AAAA1111")).getByText(/pagala antes de las 19:30/)).toBeInTheDocument();
+    expect(within(fila("BBBB2222")).queryByText(/pagala antes/)).not.toBeInTheDocument();
+  });
+
   it("cancelar avisa y vuelve a pedir la lista", async () => {
     api.obtenerMisReservas
       .mockResolvedValueOnce([reserva(1, "AAAA1111", "RESERVADA", { cancelable: true })])

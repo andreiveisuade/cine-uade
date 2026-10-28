@@ -19,7 +19,7 @@ vi.mock("jspdf", () => ({
 }));
 
 const reserva = (estado, cobrable = false) => ({
-  id: 1, codigo: "ABCD1234", estado, cobrable, total: 2000,
+  id: 1, codigo: "ABCD1234", estado, cobrable, total: 2000, venceEn: "2026-10-21T19:30:00",
   pelicula: { titulo: "Matrix" }, sala: { nombre: "Sala 1", tipo: "DOS_D" },
   funcion: { inicio: "2026-10-21T20:00:00", proyeccion: "DOS_D", idioma: "SUBTITULADA" },
   cliente: { nombre: "Ana", email: "ana@mail.com" },
@@ -42,7 +42,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("Ticket", () => {
   it.each([
-    ["RESERVADA", "Reserva confirmada. Pagala online o en boletería antes de que venza."],
+    ["RESERVADA", "Reserva confirmada. Pagala online o en boletería antes de las 19:30: después se liberan las butacas."],
     ["PAGADA", "Entrada paga. Mostrá el código en la puerta."],
     ["EXPIRADA", "Esta reserva venció. Las butacas ya se liberaron."],
     ["CANCELADA", "Esta reserva está cancelada."],
@@ -129,7 +129,7 @@ describe("Ticket", () => {
 
 describe("Ticket como entrada", () => {
   it.each([
-    ["RESERVADA", true],
+    ["RESERVADA", false],
     ["PAGADA", true],
     ["EXPIRADA", false],
     ["CANCELADA", false],
@@ -179,7 +179,7 @@ describe("Ticket como entrada", () => {
 
 describe("descargar la entrada en PDF", () => {
   it.each([
-    ["RESERVADA", true],
+    ["RESERVADA", false],
     ["PAGADA", true],
     ["EXPIRADA", false],
     ["CANCELADA", false],
