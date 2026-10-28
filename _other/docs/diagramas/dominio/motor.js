@@ -69,10 +69,34 @@ function compartimentos(c) {
   return [c.miembros.filter((l) => !esMetodo(l)), c.miembros.filter(esMetodo)].filter((g) => g.length);
 }
 
+// Una firma larga sigue en otra fila, cortada despues de una coma fuera de <>: completa y sin
+// que la caja mida lo que la firma entera
+const LARGO = 78;
+function filas(l) {
+  const t = limpiar(l);
+  if (t.length <= LARGO) return [t];
+  const partes = [];
+  let prof = 0, ini = 0;
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === "<") prof++;
+    else if (t[i] === ">") prof--;
+    else if (t[i] === "," && prof === 0) { partes.push(t.slice(ini, i + 2)); ini = i + 2; }
+  }
+  partes.push(t.slice(ini));
+  const res = [];
+  let fila = "";
+  for (const p of partes) {
+    if (fila.trim() && (fila + p).trimEnd().length > LARGO) { res.push(fila.trimEnd()); fila = "    "; }
+    fila += p;
+  }
+  res.push(fila);
+  return res;
+}
+
 function medir(c, capas) {
   const est = cabecera(c);
   const grupos = compartimentos(c);
-  const textos = grupos.flat().map(limpiar);
+  const textos = grupos.flat().flatMap(filas);
   const pastillas = rolesDe(c.id, capas);
   const anchoPast = pastillas.reduce((s, p) => s + anchoPastilla(p.texto) + 4, 0);
   const ancho = Math.max(
@@ -82,7 +106,7 @@ function medir(c, capas) {
     anchoPast,
   ) + PAD * 2;
   const altoCab = PAD + (pastillas.length ? PASTILLA.alto + 4 : 0) + (est ? ESTEREO.alto : 0) + NOMBRE.alto + PAD - 2;
-  const alto = altoCab + grupos.reduce((s, g) => s + g.length * MIEMBRO.alto + PAD, 0);
+  const alto = altoCab + grupos.reduce((s, g) => s + g.reduce((t, l) => t + filas(l).length, 0) * MIEMBRO.alto + PAD, 0);
   return { ancho: Math.ceil(ancho), alto: Math.ceil(alto), altoCab, est, grupos, pastillas };
 }
 
@@ -180,8 +204,13 @@ function caja(c, m, x, y) {
       if (l.includes("{abstract}")) deco.push(`font-style="italic"`);
       const nombre = (l.match(/(\w+)\(/) || [])[1];
       const dm = nombre ? ` data-m="${nombre}"` : "";
-      if (nombre) s.push(`<rect class="resalte"${dm} x="${x + 2}" y="${cy - MIEMBRO.alto + 1}" width="${m.ancho - 4}" height="${MIEMBRO.alto - 1}" rx="2" style="fill:var(--patron)" opacity="0"/>`);
-      s.push(`<text class="miembro"${dm} x="${x + PAD}" y="${cy - 4}" font-family="${MONO}" font-size="${MIEMBRO.size}" fill="${C.ink}" ${deco.join(" ")}>${esc(limpiar(l))}</text>`);
+      const fs = filas(l);
+      if (nombre) s.push(`<rect class="resalte"${dm} x="${x + 2}" y="${cy - MIEMBRO.alto + 1}" width="${m.ancho - 4}" height="${fs.length * MIEMBRO.alto - 1}" rx="2" style="fill:var(--patron)" opacity="0"/>`);
+      fs.forEach((f, i) => {
+        const sangria = (f.length - f.trimStart().length) * MIEMBRO.ancho;
+        s.push(`<text class="miembro"${dm} x="${x + PAD + sangria}" y="${cy - 4 + i * MIEMBRO.alto}" font-family="${MONO}" font-size="${MIEMBRO.size}" fill="${C.ink}" ${deco.join(" ")}>${esc(f.trimStart())}</text>`);
+      });
+      cy += (fs.length - 1) * MIEMBRO.alto;
     }
     cy += PAD / 2;
   }
