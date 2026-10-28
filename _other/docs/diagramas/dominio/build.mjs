@@ -21,7 +21,7 @@ const CAPAS = {};
 const PATRONES = {
   Composite: {
     color: "#c2410c",
-    roles: { Producto: "Component", ProductoSuelto: "Leaf", Combo: "Composite", ItemCombo: "Componente", CompraCandy: "Client", ItemCompra: "Client" },
+    roles: { Producto: "Component", ProductoSuelto: "Leaf", Combo: "Composite", ItemCombo: "Child", ItemCompra: "Client" },
     problema: "El precio suelto y el ahorro se preguntan igual a un producto suelto o a un combo: la hoja contesta lo suyo y el combo suma sus componentes, sin preguntar esCombo().",
   },
   "State Reserva": {
@@ -36,7 +36,7 @@ const PATRONES = {
   },
   "State Importación": {
     color: "#4338ca",
-    roles: { Importacion: "Context", EstadoImportacion: "State", ResumenDeCorrida: "Resultado" },
+    roles: { Importacion: "Context", EstadoImportacion: "State" },
     problema: "Solo una corrida en curso puede terminar o fallar: el estado devuelve el siguiente o rechaza, y la importación lo asigna.",
   },
   "Factory Method": {
@@ -50,17 +50,32 @@ const GRASP = {
   Expert: {
     color: "#0369a1", relaciones: false,
     metodos: {
-      Reserva: ["getTotal", "impedimentoParaCobrar", "estaVencida"], Funcion: ["precioEn", "precioDe", "yaEmpezo"],
-      FormatoDeFuncion: ["exigirProyectableEn"], Proyeccion: ["sePuedeProyectarEn"], Combo: ["getPrecioSuelto", "getAhorro"],
-      Asiento: ["getCodigo", "estaFueraDeServicio"], Programacion: ["horariosSinGenerar", "estaAlDia"],
-      Promocion: ["aplicaA"], Importacion: ["quedoColgada"],
+      Reserva: ["getTotal", "pagar", "cancelar", "expirar", "impedimentoParaCobrar", "estaVencida"],
+      Funcion: ["precioEn", "precioDe", "yaEmpezo"], FormatoDeFuncion: ["exigirProyectableEn"], Proyeccion: ["sePuedeProyectarEn"],
+      Asiento: ["getCodigo", "estaFueraDeServicio", "exigirEnServicio"], Programacion: ["horariosSinGenerar", "estaAlDia"],
+      Importacion: ["terminar", "fallar", "quedoColgada"], Pelicula: ["dejarPendiente", "confirmar", "descartar"],
+      MedioPago: ["autorizacion", "seCobraEnCaja"], Producto: ["estaDisponible", "editar"], Combo: ["getPrecioSuelto", "getAhorro"],
+      TipoProducto: ["esCombo"],
     },
-    problema: "La responsabilidad va a la clase que tiene la información: la reserva suma sus entradas y sabe si venció, la función calcula el precio con su formato y su sala, el combo suma sus componentes y la promoción decide si aplica.",
+    problema: "La responsabilidad va a la clase que tiene la información: la reserva suma sus entradas y decide sus transiciones, la función calcula el precio con su formato y su sala, el asiento sabe su código y si está en servicio, el medio de pago qué autorización lleva y el combo cuánto ahorra.",
   },
   Creator: {
     color: "#be185d", relaciones: true,
     metodos: { Reserva: ["Reserva"], Entrada: [], ButacaPedida: [], Sala: ["generarAsientos"], Asiento: [], Combo: ["armar"], ItemCombo: [], CompraCandy: ["CompraCandy"], ItemCompra: [] },
     problema: "Crea quien contiene al objeto creado y tiene los datos para inicializarlo: la reserva crea sus entradas con el precio de su función, la sala sus butacas, el combo sus componentes y la compra del candy sus renglones.",
+  },
+  Polymorphism: {
+    color: "#4d7c0f", relaciones: true,
+    metodos: {
+      Promocion: ["getTipo", "getParametros", "calcularDescuento", "beneficio", "cambiarParametros"],
+      PromocionPorcentaje: ["getTipo", "getParametros", "calcularDescuento", "beneficio", "cambiarParametros"],
+      PromocionMontoFijo: ["getTipo", "getParametros", "calcularDescuento", "beneficio", "cambiarParametros"],
+      PromocionNxM: ["getTipo", "getParametros", "calcularDescuento", "beneficio", "cambiarParametros"],
+      TipoPromocion: ["crear"], EstadoReserva: ["pagar", "cancelar", "expirar", "ingresar", "esperaPago", "ocupaButacas", "estaPagada"],
+      EstadoRevision: ["exigirPublicable", "exigirProgramable", "seMuestraAlPublico"],
+      TipoSala: ["aplicarA"], TipoAsiento: ["aplicarA"], TipoTarifa: ["aplicarA"],
+    },
+    problema: "Lo que cambia según el tipo lo resuelve el tipo, sin un switch: cada promoción calcula su descuento y dice su beneficio, cada constante de TipoPromocion crea su subclase, cada estado decide su transición y cada tipo de sala, butaca y tarifa aplica su multiplicador.",
   },
 };
 
@@ -193,9 +208,12 @@ function dibujar(inicial, cab) {
   out.push(inicial.html.replace('class="vista"', 'class="vista visible"'));
   out.push(`</g>`);
   out.push(`<style>${ESTILO}</style>`);
-  // ELK y el motor, una sola vez por pagina: arman en el navegador las vistas con mas capas
-  out.push(`<script><![CDATA[if (!window.ELK) {\n${ELK_JS}\n}]]></script>`);
-  out.push(`<script><![CDATA[if (!window.__dominioMotor && window.ELK) {\n${MOTOR}\nwindow.__dominioMotor = motorDominio(window.ELK, ${datos});\n}]]></script>`);
+  // ELK y el motor, una sola vez por pagina: arman en el navegador las vistas con mas capas.
+  // Sin capas que prender no hay otra vista que calcular, y son 1,6 MB que nunca correrian.
+  if (Object.keys(CAPAS).length) {
+    out.push(`<script><![CDATA[if (!window.ELK) {\n${ELK_JS}\n}]]></script>`);
+    out.push(`<script><![CDATA[if (!window.__dominioMotor && window.ELK) {\n${MOTOR}\nwindow.__dominioMotor = motorDominio(window.ELK, ${datos});\n}]]></script>`);
+  }
   out.push(`<script><![CDATA[${INTERACCION}]]></script>`);
   out.push(`</svg>`);
   return out.join("\n");
@@ -393,7 +411,7 @@ const INTERACCION = `
     var arrastre = abajo && Math.abs(e.clientX - abajo.x) + Math.abs(e.clientY - abajo.y) > 5;
     if (arrastre) { e.stopPropagation(); return; }
     var t = e.target;
-    if (t.closest && (t.closest(".panel-dominio") || (t.closest(".lb-bar") && !t.closest("#lbClose")))) return;
+    if (t.closest && (t.closest(".panel-dominio") || (t.closest(".lb-bar, .lightbox-bar") && !t.closest("#lbClose, #lightboxClose")))) return;
     var k = t.closest && t.closest(".btn-capa"), sk = svgDe(k);
     if (sk) {
       e.stopPropagation();
@@ -428,7 +446,8 @@ const INTERACCION = `
     }
   }, true);
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && fijada) soltar();
+    // Con algo fijado, Esc solo lo suelta: el lightbox de la pagina tambien escucha Esc y se cerraria
+    if (e.key === "Escape" && fijada) { soltar(); e.stopImmediatePropagation(); }
   });
 })();
 `;

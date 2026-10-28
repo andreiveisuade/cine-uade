@@ -8,9 +8,8 @@ CAPTURAS = MANUAL / "capturas"
 
 svg_map = {
     "{{SVG_CASOS_USO}}": DIAGRAMAS / "casos-de-uso.svg",
-    "{{SVG_DOMINIO_CATALOGO}}": DIAGRAMAS / "clases-catalogo.svg",
-    "{{SVG_DOMINIO_VENTAS}}": DIAGRAMAS / "clases-ventas.svg",
-    "{{SVG_DOMINIO_CANDY}}": DIAGRAMAS / "clases-candy-valores.svg",
+    # Interactivo, de diagramas/dominio/build.mjs desde clases.puml; trae sus propios scripts.
+    "{{SVG_DOMINIO}}": DIAGRAMAS / "clases-dominio.svg",
     "{{SVG_DER}}": DIAGRAMAS / "der.svg",
     # Hecho con diagram-design, como sistema-contexto.
     "{{SVG_DER_DESIGN}}": DIAGRAMAS / "der-design.svg",
