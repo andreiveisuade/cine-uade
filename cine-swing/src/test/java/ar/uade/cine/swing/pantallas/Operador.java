@@ -18,7 +18,10 @@ import java.awt.Component;
 import java.awt.Container;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -102,6 +105,12 @@ public final class Operador {
 
     public Operador fecha(String etiqueta, LocalDate fecha) {
         enEdt(() -> ((CampoFecha) campo(etiqueta)).poner(fecha));
+        return this;
+    }
+
+    public Operador hora(String etiqueta, LocalTime hora) {
+        enEdt(() -> ((JSpinner) campo(etiqueta)).setValue(
+                Date.from(LocalDate.now().atTime(hora).atZone(ZoneId.systemDefault()).toInstant())));
         return this;
     }
 
@@ -229,8 +238,9 @@ public final class Operador {
     private Component campo(String etiqueta) {
         List<Component> todos = componentes(pantalla).filter(Operador::visible).toList();
         for (int i = 0; i < todos.size(); i++) {
+            // "Sala *" pide la obligatoria del formulario, no el filtro "Sala" de la barra.
             if (todos.get(i) instanceof JLabel l && l.getText() != null
-                    && l.getText().replace(" *", "").equals(etiqueta)) {
+                    && (l.getText().equals(etiqueta) || l.getText().replace(" *", "").equals(etiqueta))) {
                 return todos.subList(i + 1, todos.size()).stream()
                         .filter(c -> c instanceof JTextComponent || c instanceof JComboBox<?>
                                 || c instanceof CampoFecha || c instanceof JSpinner)
