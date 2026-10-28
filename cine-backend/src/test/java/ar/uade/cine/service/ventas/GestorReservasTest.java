@@ -469,6 +469,21 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertFalse(log.getAll().contains(reserva.getCodigo()));
     }
 
+    // El portero rechazado tiene que poder rastrearse en el log de Render, sin el código que se tipeó.
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void laPuertaRechazadaQuedaEnElLog(CapturedOutput log) {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+
+        assertThrows(Rechazo.class, () -> acceso.registrarIngreso("XXXXXXXX"));
+        assertThrows(Rechazo.class, () -> acceso.registrarIngreso(reserva.getCodigo()));
+
+        assertTrue(log.getOut().contains("acceso rechazado · código inexistente"));
+        assertTrue(log.getOut().contains("acceso rechazado · reserva " + reserva.getId() + " · "));
+        assertFalse(log.getAll().contains("XXXXXXXX"));
+        assertFalse(log.getAll().contains(reserva.getCodigo()));
+    }
+
     // Por el repositorio: el gestor no deja programar en el pasado.
     private Funcion funcionQueYaEmpezo() {
         return funcionRepository.save(new Funcion(cartelera.buscar(1).orElseThrow(),

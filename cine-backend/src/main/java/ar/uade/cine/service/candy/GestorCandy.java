@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.candy.ItemCompra;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
@@ -23,6 +25,7 @@ import ar.uade.cine.model.rechazos.DatoInvalido;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class GestorCandy {
 
     private final CompraCandyRepository compraCandyRepository;
@@ -66,6 +69,9 @@ public class GestorCandy {
         compraCandyRepository.save(compra);
         // Observer: el ticket lo emite ComprobantesDeCandy cuando esta transacción confirma.
         eventos.publishEvent(new CompraCandyRegistrada(compra.getId()));
+        log.info("compra candy {} · {} · {} ítems · total ${} · {}", compra.getId(),
+                reservaId != null ? "reserva " + reservaId : "mostrador",
+                compra.getItems().stream().mapToInt(ItemCompra::cantidad).sum(), compra.getTotal(), medio);
         return compra;
     }
 

@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.rechazos.Rechazo;
+import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.ventas.ReservaRepository;
@@ -23,8 +25,19 @@ public class GestorAcceso {
 
     // Un código que falta lo rechaza PedidoAccesoDTO; sin HTTP, uno vacío no encuentra reserva (404).
     public Reserva registrarIngreso(String codigo) {
-        Reserva reserva = reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
-        reserva.registrarIngreso(reloj.ahora());
+        Reserva reserva;
+        try {
+            reserva = reservaRepository.exigirPorCodigo(new CodigoDeAcceso(codigo));
+        } catch (RecursoNoEncontrado e) {
+            log.warn("acceso rechazado · código inexistente");
+            throw e;
+        }
+        try {
+            reserva.registrarIngreso(reloj.ahora());
+        } catch (Rechazo e) {
+            log.warn("acceso rechazado · reserva {} · {}", reserva.getId(), e.getMessage());
+            throw e;
+        }
         // Sin el código: es la única credencial del cliente, y con el id alcanza para rastrearlo.
         log.info("ingreso reserva {} · {} personas", reserva.getId(), reserva.getCantidadEntradas());
         return reserva;

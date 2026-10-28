@@ -41,7 +41,8 @@ public class CuentaController {
     @Operation(summary = "Dar de baja la cuenta: cierra la sesión; reservas y entradas quedan (R26)")
     @DeleteMapping("/api/cuenta")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void darDeBaja(HttpServletRequest http) throws ServletException {
+    public void darDeBaja(HttpServletRequest http, Authentication identidad) throws ServletException {
+        clientes.darDeBaja(identidad.getName());
         http.logout();
     }
 }

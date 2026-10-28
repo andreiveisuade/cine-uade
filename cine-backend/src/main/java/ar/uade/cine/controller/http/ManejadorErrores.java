@@ -59,6 +59,7 @@ public class ManejadorErrores {
             new SinCuerpo(), new CampoConValorInvalido(), new RaizQueNoEsObjeto(), new JsonMalFormado());
 
     // Los rechazos: el texto lo escribió quien rechazó, para el usuario, y sale intacto.
+    // Los 409 van al log (ningún texto nombra a una persona); los 400 no: son ruido.
 
     @ExceptionHandler(DatoInvalido.class)
     public ResponseEntity<ErrorVistaDTO> datoInvalido(DatoInvalido e) {
@@ -72,6 +73,7 @@ public class ManejadorErrores {
 
     @ExceptionHandler(ConflictoDeNegocio.class)
     public ResponseEntity<ErrorVistaDTO> conflicto(ConflictoDeNegocio e) {
+        log.info("rechazo 409 · {}", e.getMessage());
         return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
@@ -83,6 +85,7 @@ public class ManejadorErrores {
     // Otro ganó la butaca (R4): la web vuelve al mapa recargado solo ante un 409.
     @ExceptionHandler(ButacaOcupada.class)
     public ResponseEntity<ErrorVistaDTO> butacaOcupada(ButacaOcupada e) {
+        log.info("rechazo 409 · {}", e.getMessage());
         return responder(HttpStatus.CONFLICT, e.getMessage());
     }
 
