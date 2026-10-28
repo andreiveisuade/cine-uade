@@ -82,7 +82,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      # Generoso a propósito: en una máquina cargada o en Windows Spring tarda más de 3 minutos en
+      # arrancar, y con 20s el `up` cortaba por unhealthy y dejaba el frontend sin levantar. Los fallos
+      # de este período no cuentan y el primer chequeo que pasa lo pone healthy, así que no demora nada.
+      start_period: 300s
     networks:
       # En las dos: habla con la base y lo consume nginx. Es el único puente entre las
       # dos redes, así que el frontend no tiene forma de llegar a MySQL.
