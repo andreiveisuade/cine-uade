@@ -627,8 +627,9 @@ body.lightbox-locked { overflow: hidden; }
       <pre><code>cd cine-docker
 cp .env.example .env          # MYSQL_ROOT_PASSWORD, DB_PASSWORD, TMDB_TOKEN; MP_ACCESS_TOKEN opcional
 docker compose up -d --build
-./seed/datos-de-ejemplo.sh    # datos de ejemplo, por API</code></pre>
+./seed/datos-de-ejemplo.sh    # 6 salas, candy, 6 películas con póster, una semana de grilla y una promo</code></pre>
       <ul>
+        <li>El seed va por la API, con las mismas reglas que la aplicación, y es idempotente: correrlo de nuevo no duplica nada. Para la cartelera real, el importador.</li>
         <li>Web: <code>localhost:8080</code>; Swagger: <code>/swagger-ui.html</code> (apagado en Render con <code>CINE_SWAGGER=false</code>).</li>
         <li>Panel: <code>cd cine-swing &amp;&amp; mvn exec:java</code> y, en el ingreso, servidor Local. Usuario <code>encargado@cine.uade.ar</code> / <code>cine2026</code>; <code>puerta@cine.uade.ar</code> para la Puerta.</li>
         <li>Instalación, token de TMDB, Adminer y problemas comunes: <a href="../../COMO-LEVANTARLO.md"><code>_other/COMO-LEVANTARLO.md</code></a>.</li>
@@ -734,7 +735,7 @@ docker compose up -d --build
         <li><strong>Base en Aiven.</strong> <code>ddl-auto: validate</code> no crea tablas y <code>sql.init</code> solo corre en bases embebidas, así que se carga antes del primer arranque: <code>cine-docker/aiven/cargar-aiven.sh</code> aplica <code>db/schema.sql</code> y crea los dos empleados con clave nueva en bcrypt (pide las claves sin eco; <code>cine2026</code> es pública y no puede quedar en internet).</li>
         <li><strong>Base ya cargada:</strong> cada migración nueva va antes del deploy, con <code>cine-docker/aiven/migrar-aiven.sh &lt;número o nombre&gt;</code> (<code>18</code> o <code>clientes-con-google</code> aplican <code>db/migraciones/18-clientes-con-google.sql</code>). La 18 es la excepción: va <em>después</em>, porque el código viejo no arranca sin la columna que borra y el nuevo la tolera.</li>
         <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
-        <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (salas, candy, promo), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador, Por revisar y la grilla.</li>
+        <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (lo mismo que en local), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador y Por revisar para la cartelera real.</li>
         <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code>; en el panel es Producción en el ingreso.</li>
         <li>Humo del 22/10/2026: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, Swagger 404, la cookie de sesión sale <code>Secure; HttpOnly; SameSite=Lax</code>. Recorrido completo: compra en la web, pago en Mercado Pago sandbox que vuelve solo al ticket como Pagada, la misma reserva en Reservas del panel y el ingreso en Puerta con el acomodador.</li>
       </ol>
