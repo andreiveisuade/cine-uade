@@ -30,6 +30,11 @@ public class VistasSalas {
         return sala(s, salas.asientosDe(s.getId()));
     }
 
+    public List<SalaVistaDTO> salas(List<Sala> lista) {
+        Map<Integer, List<Asiento>> asientos = salas.asientosDe(lista.stream().map(Sala::getId).toList());
+        return lista.stream().map(s -> sala(s, asientos.getOrDefault(s.getId(), List.of()))).toList();
+    }
+
     public SalaVistaDTO sala(Sala s, List<Asiento> asientos) {
         return armar(s, asientos, null);
     }

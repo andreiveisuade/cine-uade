@@ -14,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
@@ -37,6 +39,8 @@ import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.model.dinero.Dinero;
 
+import jakarta.persistence.EntityManagerFactory;
+
 class VistasSalasTest extends PruebaDeIntegracion {
 
     @Autowired
@@ -47,6 +51,8 @@ class VistasSalasTest extends PruebaDeIntegracion {
     private VistasSalas vistas;
     @Autowired
     private GestorCartelera cartelera;
+    @Autowired
+    private EntityManagerFactory emf;
 
     @BeforeEach
     void prepararEscenario() {
@@ -176,5 +182,32 @@ class VistasSalasTest extends PruebaDeIntegracion {
                 .filter(a -> a.codigo().equals(codigo))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("La vista no tiene la butaca " + codigo));
+    }
+
+    // Convención de los listados: un número fijo de consultas, no una por sala.
+    @Test
+    void elListadoDeSalasNoHaceUnaConsultaPorSala() {
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(2));
+        long conUna = consultasDe(() -> vistas.salas(salas.listar()));
+
+        salas.agregar("Sala 2", TipoSala.DOS_D, List.of(3));
+        salas.agregar("Sala 3", TipoSala.DOS_D, List.of(4));
+        List<SalaVistaDTO> tres = vistas.salas(salas.listar());
+        long conTres = consultasDe(() -> vistas.salas(salas.listar()));
+
+        assertEquals(conUna, conTres);
+        assertEquals(List.of(2, 3, 4), tres.stream().map(SalaVistaDTO::capacidadSala).toList());
+    }
+
+    private long consultasDe(Runnable listado) {
+        Statistics estadisticas = emf.unwrap(SessionFactory.class).getStatistics();
+        estadisticas.setStatisticsEnabled(true);
+        try {
+            estadisticas.clear();
+            listado.run();
+            return estadisticas.getPrepareStatementCount();
+        } finally {
+            estadisticas.setStatisticsEnabled(false);
+        }
     }
 }

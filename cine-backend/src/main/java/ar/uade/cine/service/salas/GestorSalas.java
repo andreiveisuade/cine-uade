@@ -1,5 +1,6 @@
 package ar.uade.cine.service.salas;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +107,13 @@ public class GestorSalas {
     @Transactional(readOnly = true)
     public List<Asiento> asientosDe(int salaId) {
         return asientoRepository.findBySala_IdOrderByFilaAscNumeroAsc(salaId);
+    }
+
+    // Las de varias salas en una consulta, agrupadas por sala: para listar sin una consulta por sala.
+    @Transactional(readOnly = true)
+    public Map<Integer, List<Asiento>> asientosDe(Collection<Integer> salaIds) {
+        return asientoRepository.findBySala_IdInOrderByFilaAscNumeroAsc(salaIds).stream()
+                .collect(Collectors.groupingBy(Asiento::getSalaId));
     }
 
     @Transactional(readOnly = true)
