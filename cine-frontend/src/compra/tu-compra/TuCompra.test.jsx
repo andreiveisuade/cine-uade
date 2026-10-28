@@ -61,8 +61,8 @@ describe("Tu compra: lo elegido", () => {
     expect(await screen.findByText("en /ingresar")).toBeInTheDocument();
   });
 
-  it("ya paga, lleva al ticket", async () => {
-    api.obtenerReservaPorCodigo.mockResolvedValue({ ...RESERVA, estado: "PAGADA", cobrable: false });
+  it("ya usada en la puerta, lleva al ticket", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...RESERVA, estado: "PAGADA", cobrable: false, ingresadaEn: "2026-10-21T20:20:00" });
 
     abrir();
 
@@ -159,5 +159,34 @@ describe("Tu compra: pagar", () => {
 
     expect(api.cancelarReservaPorCodigo).toHaveBeenCalledWith("ABCD1234");
     expect(await screen.findByText("en /funcion/5")).toBeInTheDocument();
+  });
+});
+
+describe("Tu compra: sumar candy a una entrada paga", () => {
+  const PAGADA = { ...RESERVA, estado: "PAGADA", cobrable: false, cancelable: false, venceEn: undefined };
+  const soloCandy = [{ medio: "DEBITO", entradas: 0, descuento: 0, candy: 5500, total: 5500 }];
+
+  beforeEach(() => api.obtenerReservaPorCodigo.mockResolvedValue(PAGADA));
+
+  it("sin pedido no cotiza, no deja abandonar y vuelve a la entrada", async () => {
+    abrir();
+
+    expect(await screen.findByText("Sumá candy a tu entrada")).toBeInTheDocument();
+    expect(screen.getByText(/Elegí algo del candy y pagalo acá/)).toBeInTheDocument();
+    expect(api.obtenerCotizacion).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Abandonar la compra" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Volver a la entrada" })).toHaveAttribute("href", "/ticket/ABCD1234");
+  });
+
+  it("al sumar un combo cotiza solo el candy y deja pagarlo", async () => {
+    api.pedirCandy.mockResolvedValue({ ...PAGADA, candy: conCombo.candy });
+    api.obtenerCotizacion.mockResolvedValue(soloCandy);
+    abrir();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Sumar Combo clásico" }));
+
+    expect(await pagar("Pagar $ 5.500 con Mercado Pago")).toBeEnabled();
+    // «Entradas» queda solo en la tabla de lo elegido: el desglose del pago no muestra entradas en cero.
+    expect(screen.getAllByText("Entradas")).toHaveLength(1);
   });
 });

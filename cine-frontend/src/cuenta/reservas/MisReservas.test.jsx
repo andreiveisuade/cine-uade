@@ -55,7 +55,10 @@ describe("MisReservas sin sesión: buscar por código", () => {
 });
 
 describe("MisReservas con sesión: las reservas de la cuenta", () => {
-  beforeEach(() => { api.sesionActual.mockResolvedValue(ANA); });
+  beforeEach(() => {
+    api.sesionActual.mockResolvedValue(ANA);
+    api.obtenerMisComprasDeCandy.mockResolvedValue([]);
+  });
 
   it("sin reservas invita a ver la cartelera", async () => {
     api.obtenerMisReservas.mockResolvedValue([]);
@@ -143,5 +146,36 @@ describe("MisReservas con sesión: las reservas de la cuenta", () => {
     expect(await screen.findByText("La función ya empezó")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancelar" })).toBeEnabled();
     expect(api.obtenerMisReservas).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("MisReservas con sesión: las compras del candy (CU-16)", () => {
+  beforeEach(() => {
+    api.sesionActual.mockResolvedValue(ANA);
+    api.obtenerMisReservas.mockResolvedValue([]);
+    api.obtenerMisComprasDeCandy.mockResolvedValue([]);
+  });
+
+  it("lista lo cobrado con lo que trae, cuándo se cobró y si ya se retiró", async () => {
+    api.obtenerMisComprasDeCandy.mockResolvedValue([
+      { id: 9, estado: "COBRADA", cobradaEn: "2026-10-21T19:40:00", total: 5500, retiradaEn: "2026-10-21T19:55:00",
+        items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1 }] },
+      { id: 8, estado: "COBRADA", cobradaEn: "2026-10-20T18:00:00", total: 7000,
+        items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2 }] },
+    ]);
+    abrir();
+
+    const seccion = await screen.findByRole("region", { name: "Tus compras del candy" });
+    expect(within(seccion).getByText("1 × Combo clásico")).toBeInTheDocument();
+    expect(within(seccion).getByText("retirado")).toBeInTheDocument();
+    expect(within(seccion).getByText("2 × Pochoclos")).toBeInTheDocument();
+    expect(within(seccion).getByText("a retirar")).toBeInTheDocument();
+  });
+
+  it("sin compras no muestra la sección", async () => {
+    abrir();
+
+    await screen.findByText("Todavía no tenés reservas.");
+    expect(screen.queryByRole("region", { name: "Tus compras del candy" })).not.toBeInTheDocument();
   });
 });

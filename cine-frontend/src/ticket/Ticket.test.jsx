@@ -236,12 +236,34 @@ describe("venta cruzada en el ticket", () => {
 
   it.each([
     ["sin pagar invita a sumarlo a la compra", reserva("RESERVADA", true), "Sumalo a tu compra y pagalo con la entrada."],
-    ["paga, a pedirlo en el candy con el número", reserva("PAGADA"), /Pedilo en el candy diciendo tu reserva/],
+    ["paga, a sumarlo y retirarlo con el QR", reserva("PAGADA"), "Sumalo ahora y retiralo con el QR de tu entrada."],
   ])("%s", async (_caso, laReserva, llamado) => {
     api.obtenerReservaPorCodigo.mockResolvedValue(laReserva);
     abrir();
 
     expect(await screen.findByText(llamado)).toBeInTheDocument();
+  });
+
+  it("paga, el llamado lleva a sumar candy a la entrada", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    expect(await screen.findByRole("link", { name: "Sumar candy" })).toHaveAttribute("href", "/compra/ABCD1234");
+  });
+
+  // El candy pedido no se entrega hasta cobrarse, y lo cobrado se retira una vez con el QR.
+  it("cada renglón del candy dice si falta pagarlo, si se retira o si ya se retiró", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("PAGADA"), candy: [
+      { id: 1, estado: "COBRADA", retiradaEn: "2026-10-21T19:55:00", items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1, subtotal: 5500 }] },
+      { id: 2, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, subtotal: 7000 }] },
+      { id: 3, estado: "PENDIENTE", items: [{ productoId: 2, nombre: "Gaseosa", cantidad: 1, subtotal: 2200 }] },
+    ] });
+    abrir();
+
+    expect(await screen.findByText("1 × Combo clásico")).toBeInTheDocument();
+    expect(screen.getByText("retirado")).toBeInTheDocument();
+    expect(screen.getByText("a retirar")).toBeInTheDocument();
+    expect(screen.getByText("sin pagar")).toBeInTheDocument();
   });
 
   it("una reserva vencida no ofrece nada para sumar", async () => {

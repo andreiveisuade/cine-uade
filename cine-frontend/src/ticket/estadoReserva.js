@@ -28,5 +28,11 @@ export const entradaValida = (reserva) => reserva.estado === "PAGADA" && !reserv
 
 export const conAcreditacion = (entrada) => entrada.requiereAcreditacion;
 
+// El candy de la entrada: lo pedido sin pagar no se entrega, y lo cobrado se retira una vez con el QR.
+export const estadoDelCandy = (compra) => {
+  if (compra.estado === "PENDIENTE") return { texto: "sin pagar", color: "gray" };
+  return compra.retiradaEn ? { texto: "retirado", color: "gray" } : { texto: "a retirar", color: "ambar" };
+};
+
 // En dos bloques de cuatro se dicta y se lee mejor en la puerta.
 export const codigoLegible = (codigo) => `${codigo.slice(0, 4)} ${codigo.slice(4)}`;

@@ -47,5 +47,6 @@ export function useCandyDeLaCompra(reserva, alGuardar) {
     });
   }
 
-  return { cantidades, cambiar, actualizando: pendiente || enviando, error, maximo: MAXIMO };
+  const hayPedido = Object.keys(guardadas).length > 0;
+  return { cantidades, cambiar, hayPedido, actualizando: pendiente || enviando, error, maximo: MAXIMO };
 }

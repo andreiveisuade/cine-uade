@@ -7,6 +7,7 @@ import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
 import { Vacio } from "@/compartido/estado/Vacio.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
+import { ComprasDeCandy } from "./ComprasDeCandy.jsx";
 import { FilaReserva } from "./FilaReserva.jsx";
 
 // Qué se puede hacer con cada una lo dicen cobrable y cancelable: la regla vive en el backend.
@@ -42,6 +43,7 @@ export function ReservasDelCliente() {
           Todavía no tenés reservas.
         </Vacio>
       )}
+      <ComprasDeCandy />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Badge, Button, Grid, Stack } from "@mantine/core";
+import { Alert, Badge, Button, Grid, Paper, Stack, Text } from "@mantine/core";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
@@ -16,37 +16,46 @@ import { PagoDeLaCompra } from "./PagoDeLaCompra.jsx";
 import { useCandyDeLaCompra } from "./useCandyDeLaCompra.js";
 import { usePagar, useVueltaDelPago } from "./usePagar.js";
 
-// Una sola pantalla después del mapa: lo elegido a modo de confirmación, el candy para sumar y el pago.
+// Una sola pantalla después del mapa: lo elegido a modo de confirmación, el candy para sumar y el pago. Con la entrada
+// ya paga es la misma, solo para el candy (R30).
 export function TuCompra() {
   const { codigo } = useParams();
   useTitulo("Tu compra");
+  const navegar = useNavigate();
   const { usuario } = useSesion();
   const carga = useCargar(() => Promise.all([
     api.obtenerReservaPorCodigo(codigo),
     api.obtenerProductosCandy().catch(() => []),
   ]), [codigo]);
-  useVueltaDelPago(codigo, carga.recargar);
+  // El ticket cuenta cómo terminó: cobrado, todavía esperando a MP o con el motivo del rechazo.
+  useVueltaDelPago(codigo, () => navegar(`/ticket/${codigo}`, { replace: true }));
 
   // R21: la cotización, el candy y el pago son del dueño, con su sesión.
   if (usuario === null) return <Navigate to="/ingresar" state={{ volver: `/compra/${codigo}` }} replace />;
   if (!carga.datos || usuario === undefined) return <EsperaOError carga={carga} />;
   const [reserva, productos] = carga.datos;
-  if (reserva.estado === "PAGADA") return <Navigate to={`/ticket/${codigo}`} replace />;
-  if (!reserva.cobrable) return <CompraTerminada reserva={reserva} />;
-  return <Compra reserva={reserva} productos={productos} />;
+  if (reserva.ingresadaEn) return <Navigate to={`/ticket/${codigo}`} replace />;
+  const sumar = reserva.estado === "PAGADA";
+  if (!sumar && !reserva.cobrable) return <CompraTerminada reserva={reserva} />;
+  return <Compra reserva={reserva} productos={productos} sumar={sumar} />;
 }
 
-function Compra({ reserva, productos }) {
+function Compra({ reserva, productos, sumar }) {
   const navegar = useNavigate();
   const avisar = useAvisar();
-  const cotizacion = useCargar(() => api.obtenerCotizacion(reserva.codigo), [reserva.codigo]);
-  const candy = useCandyDeLaCompra(reserva, cotizacion.recargar);
+  const [guardados, setGuardados] = useState(0);
+  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1));
+  // Paga y sin pedido no hay nada que cotizar: el backend daría 409.
+  const cotiza = !sumar || candy.hayPedido;
+  const cotizacion = useCargar(() => (cotiza ? api.obtenerCotizacion(reserva.codigo) : Promise.resolve([])),
+    [reserva.codigo, cotiza, guardados]);
   const [medio, setMedio] = useState(null);
   const { pagar, pagando, error } = usePagar(reserva.codigo);
   const [abandonando, setAbandonando] = useState(false);
 
-  // Si no eligió, el que menos cuesta: no se acumulan promos y va la que más conviene (R15).
-  const renglones = cotizacion.datos ?? [];
+  // Si no eligió, el que menos cuesta: no se acumulan promos y va la que más conviene (R15). Mientras se recotiza
+  // queda a la vista lo último que llegó.
+  const renglones = cotizacion.datos ?? cotizacion.previos ?? [];
   const elegido = medio ?? renglones.reduce((barato, c) => (!barato || c.total < barato.total ? c : barato), null)?.medio;
 
   async function abandonar() {
@@ -63,10 +72,12 @@ function Compra({ reserva, productos }) {
 
   return (
     <div>
-      <Encabezado titulo="Tu compra">
-        <Badge color="ambar" variant="light" size="lg" tt="none" className="cine-cifras" style={{ alignSelf: "flex-start" }}>
-          Tus butacas te esperan hasta las {hora(reserva.venceEn)}
-        </Badge>
+      <Encabezado titulo={sumar ? "Sumá candy a tu entrada" : "Tu compra"}>
+        {!sumar && (
+          <Badge color="ambar" variant="light" size="lg" tt="none" className="cine-cifras" style={{ alignSelf: "flex-start" }}>
+            Tus butacas te esperan hasta las {hora(reserva.venceEn)}
+          </Badge>
+        )}
       </Encabezado>
       <Grid gap="lg" align="flex-start">
         <Grid.Col span={{ base: 12, md: 7 }}>
@@ -77,13 +88,23 @@ function Compra({ reserva, productos }) {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }} style={{ position: "sticky", top: 88 }}>
           <Stack gap="xs">
-            {cotizacion.datos
-              ? <PagoDeLaCompra cotizacion={renglones} medio={elegido} alElegir={setMedio}
-                  actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando} error={error} alPagar={pagar} />
-              : <EsperaOError carga={cotizacion} />}
-            <Button variant="subtle" color="red" loading={abandonando} onClick={abandonar} style={{ alignSelf: "flex-start" }}>
-              Abandonar la compra
-            </Button>
+            {!cotiza ? (
+              <Paper withBorder p="lg">
+                <Text>Elegí algo del candy y pagalo acá: lo retirás con el QR de tu entrada.</Text>
+              </Paper>
+            ) : renglones.length ? (
+              <PagoDeLaCompra cotizacion={renglones} medio={elegido} alElegir={setMedio}
+                actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando} error={error} alPagar={pagar} />
+            ) : <EsperaOError carga={cotizacion} />}
+            {sumar ? (
+              <Button variant="subtle" component={Link} to={`/ticket/${reserva.codigo}`} style={{ alignSelf: "flex-start" }}>
+                Volver a la entrada
+              </Button>
+            ) : (
+              <Button variant="subtle" color="red" loading={abandonando} onClick={abandonar} style={{ alignSelf: "flex-start" }}>
+                Abandonar la compra
+              </Button>
+            )}
           </Stack>
         </Grid.Col>
       </Grid>

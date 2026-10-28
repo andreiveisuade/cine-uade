@@ -37,7 +37,7 @@ src/
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas y función; selección, bloqueo y tarifas
-    tu-compra/    lo elegido, el candy para sumar y el pago, en una pantalla
+    tu-compra/    lo elegido, el candy para sumar y el pago, en una pantalla; también el candy de una entrada paga
   ticket/         la entrada, acciones, venta cruzada
     pago/         espera y festejo del pago
     pdf/          la entrada en PDF para descargar

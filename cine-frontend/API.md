@@ -297,9 +297,9 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `#/ingresar[?error=]` | Botón «Ingresar con Google» (deshabilitado si `GET /sesion/google` dice que no). Al volver con sesión sigue la compra de la que vino (guardada en `sessionStorage`) o va a `#/mis-reservas`; `error` es el motivo del rechazo |
 | `#/mi-cuenta` | Con sesión: nombre y dar de baja (con confirmación) |
 | `#/funcion/<id>` | El mapa de butacas, sin sesión. «Continuar» con sesión reserva (`POST /reservas`) y sigue a `#/compra/<codigo>`; sin sesión pasa por `#/ingresar` y vuelve al mapa con lo elegido |
-| `#/compra/<codigo>` | Tu compra, con sesión: las butacas con su tarifa, el candy para sumar (`PUT …/candy` por cada cambio, de a uno) y el pago (`GET …/cotizacion`, y un checkout nuevo en cada «Pagar»). Pagada lleva al ticket; vencida o cancelada dice por qué |
-| `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Terminar compra. Sin sesión: búsqueda por código |
-| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. El QR, «Descargar entrada» y «Mostrar en la puerta», solo con la reserva pagada y sin usar; sin pagar dice hasta qué hora se paga (`venceEn`) y al dueño le ofrece «Terminar la compra». `aviso` es el motivo si el pago de MP no se cobró |
+| `#/compra/<codigo>` | Tu compra, con sesión: las butacas con su tarifa, el candy para sumar (`PUT …/candy` por cada cambio, de a uno) y el pago (`GET …/cotizacion`, y un checkout nuevo en cada «Pagar»). Con la entrada paga es «Sumá candy a tu entrada»: solo el candy, en un checkout aparte. Usada lleva al ticket; vencida o cancelada dice por qué |
+| `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Terminar compra, y `GET /candy/compras/mias` con «a retirar» o «retirado». Sin sesión: búsqueda por código |
+| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. El QR, «Descargar entrada» y «Mostrar en la puerta», solo con la reserva pagada y sin usar; sin pagar dice hasta qué hora se paga (`venceEn`) y al dueño le ofrece «Terminar la compra»; paga, «Sumar candy». El candy de la reserva dice «sin pagar», «a retirar» o «retirado». `aviso` es el motivo si el pago de MP no se cobró |
 
 ---
 

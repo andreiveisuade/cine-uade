@@ -1,7 +1,7 @@
-import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Badge, Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, hora, precio } from "@/compartido/formato.js";
-import { vigente } from "@/ticket/estadoReserva.js";
+import { estadoDelCandy, vigente } from "@/ticket/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";
 import { DatoEntrada } from "./DatoEntrada.jsx";
@@ -27,12 +27,16 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
 
         <Box>
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
-          {(reserva.candy ?? []).flatMap((c) => c.items.map((i) => ({ ...i, clave: `${c.id}-${i.productoId}` }))).map((i) => (
-            <Group key={i.clave} justify="space-between" py={8} style={{ borderBottom: "1px dashed var(--cine-borde)" }}>
-              <Text size="sm">{i.cantidad} × {i.nombre}</Text>
-              <Text size="sm" fw={600} className="cine-cifras">{precio(i.subtotal)}</Text>
-            </Group>
-          ))}
+          {(reserva.candy ?? []).flatMap((c) => c.items.map((i) => ({ ...i, clave: `${c.id}-${i.productoId}`, estado: estadoDelCandy(c) })))
+            .map((i) => (
+              <Group key={i.clave} justify="space-between" py={8} style={{ borderBottom: "1px dashed var(--cine-borde)" }}>
+                <Group gap="xs">
+                  <Text size="sm">{i.cantidad} × {i.nombre}</Text>
+                  <Badge size="sm" variant="light" color={i.estado.color}>{i.estado.texto}</Badge>
+                </Group>
+                <Text size="sm" fw={600} className="cine-cifras">{precio(i.subtotal)}</Text>
+              </Group>
+            ))}
           <Group justify="space-between" align="baseline" pt="sm">
             <Text fw={650}>Total · {reserva.entradas.length} entrada{reserva.entradas.length === 1 ? "" : "s"}</Text>
             <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(reserva.total)}</Text>

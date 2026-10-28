@@ -39,7 +39,7 @@ export function PagoDeLaCompra({ cotizacion, medio, alElegir, actualizando, paga
 
       {elegido && (
         <Stack gap={4} mt="md" className="cine-cifras">
-          <Group justify="space-between"><Text size="sm">Entradas</Text><Text size="sm">{precio(elegido.entradas)}</Text></Group>
+          {elegido.entradas > 0 && <Group justify="space-between"><Text size="sm">Entradas</Text><Text size="sm">{precio(elegido.entradas)}</Text></Group>}
           {elegido.descuento > 0 && (
             <Group justify="space-between" c="green"><Text size="sm">{elegido.promocion}</Text><Text size="sm">−{precio(elegido.descuento)}</Text></Group>
           )}
