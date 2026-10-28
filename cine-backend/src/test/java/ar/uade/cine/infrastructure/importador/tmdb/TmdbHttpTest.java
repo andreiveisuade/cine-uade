@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -255,7 +256,8 @@ class TmdbHttpTest {
 
     private void levantar(Consumer<HttpExchange> manejador) {
         try {
-            servidor = HttpServer.create(new InetSocketAddress(0), 0);
+            // En el wildcard macOS reparte puertos que ya tiene un IPv4 ajeno (Docker) y el pedido le llega a ese.
+            servidor = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -264,7 +266,7 @@ class TmdbHttpTest {
     }
 
     private String direccion() {
-        return "http://localhost:" + servidor.getAddress().getPort();
+        return "http://127.0.0.1:" + servidor.getAddress().getPort();
     }
 
     private static void responder(HttpExchange intercambio, int codigo, String cuerpo) {
