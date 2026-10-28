@@ -156,12 +156,24 @@ describe("Ticket como entrada", () => {
     expect(screen.getAllByText(/traé el carnet/)).toHaveLength(1);
   });
 
-  it("el comprobante del backend no se muestra suelto: se copia o se despliega", async () => {
+  it("el comprobante del backend no se muestra suelto: se despliega", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA"));
     abrir();
 
-    expect(await screen.findByRole("button", { name: "Copiar comprobante" })).toBeInTheDocument();
+    expect(await screen.findByText("Ver el comprobante en texto")).toBeInTheDocument();
     expect(screen.getByText("Ver el comprobante en texto").closest("details")).not.toHaveAttribute("open");
+    expect(screen.queryByRole("button", { name: "Copiar comprobante" })).not.toBeInTheDocument();
+  });
+
+  it("el código se copia desde el talón, al lado del código legible", async () => {
+    const usuario = userEvent.setup();
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    await usuario.click(await screen.findByRole("button", { name: "Copiar código" }));
+
+    expect(await navigator.clipboard.readText()).toBe("ABCD1234");
+    expect(await screen.findByText("Código copiado")).toBeInTheDocument();
   });
 });
 

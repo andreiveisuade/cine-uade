@@ -3,6 +3,8 @@ import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
 import { CODIGO_POR_ESTADO, codigoLegible, vigente } from "@/ticket/estadoReserva.js";
+import { CopiarCodigo } from "./CopiarCodigo.jsx";
+import clases from "./Entrada.module.css";
 
 // El sello cae solo si el pago se vio llegar en esta pantalla; un ticket que ya abrió pago lo muestra quieto.
 const SELLO_CAYENDO = { opacity: 0, scale: 2.2, rotate: -24 };
@@ -25,10 +27,16 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
           <QRCodeSVG value={reserva.codigo} size={132} level="M" title={`QR del código ${reserva.codigo}`} />
         </Box>
       )}
-      <Text ff="monospace" fz={28} fw={700} className="cine-cifras"
-        style={{ letterSpacing: "0.18em", textDecoration: usada ? "line-through" : "none" }}>
-        {codigoLegible(reserva.codigo)}
-      </Text>
+      {/* El ícono cuelga a la derecha para que el código siga centrado bajo el QR. */}
+      <Box pos="relative">
+        <Text ff="monospace" fw={700} className={`cine-cifras ${clases.codigo}`}
+          style={{ letterSpacing: "0.18em", textDecoration: usada ? "line-through" : "none" }}>
+          {codigoLegible(reserva.codigo)}
+        </Text>
+        <Box pos="absolute" left="100%" top="50%" style={{ transform: "translateY(-50%)" }}>
+          <CopiarCodigo codigo={reserva.codigo} />
+        </Box>
+      </Box>
       <Text size="xs" c="dimmed" maw="24ch">
         {usada ? `Ya se usó el ${fechaHora(usada)}` : CODIGO_POR_ESTADO[reserva.estado]}
       </Text>

@@ -14,9 +14,13 @@
 
 .cuerpo, .talon { background: var(--papel); padding: var(--mantine-spacing-lg); }
 
+.codigo { font-size: 28px; }
+
 /* Apaisada: talón a la derecha, muescas arriba y abajo de la línea de corte. */
 @container (min-width: 34rem) {
   .partes { grid-template-columns: 1fr minmax(12rem, 32%); }
+  /* El código (7,1em con el espaciado) y el ícono de copiar entran en un renglón del talón. */
+  .codigo { font-size: min(28px, calc((max(12rem, 32cqi) - 86px) / 7.1)); }
   .cuerpo {
     border-radius: var(--mantine-radius-lg) 0 0 var(--mantine-radius-lg);
     mask: radial-gradient(circle var(--muesca) at 100% 0, #0000 98%, #000) top / 100% 51% no-repeat,

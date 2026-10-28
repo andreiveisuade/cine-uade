@@ -1,9 +1,7 @@
 import { Anchor, Box, Button, Group, Text } from "@mantine/core";
-import { IconCopy, IconFileText, IconQrcode } from "@tabler/icons-react";
+import { IconQrcode } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
-import { useAvisar } from "@/compartido/estado/Avisos.jsx";
-import { armarComprobante } from "./armarComprobante.js";
 import { vigente } from "./estadoReserva.js";
 import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
 import { PagarOnline } from "./pago/PagarOnline.jsx";
@@ -12,17 +10,6 @@ import { PagarOnline } from "./pago/PagarOnline.jsx";
 export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDelPago }) {
   const { usuario } = useSesion();
   const { pathname } = useLocation();
-  const avisar = useAvisar();
-
-  async function copiar(texto, aviso) {
-    // Sin permiso o fuera de HTTPS el navegador rechaza la escritura.
-    try {
-      await navigator.clipboard.writeText(texto);
-      avisar(aviso);
-    } catch {
-      avisar("No pudimos copiar. Seleccionalo y copialo a mano.", "error");
-    }
-  }
 
   return (
     <Group gap="sm" justify="space-between" align="flex-start">
@@ -41,10 +28,6 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
         )}
       </Box>
       <Group gap="xs">
-        <Button variant="default" leftSection={<IconCopy size={16} />} onClick={() => copiar(reserva.codigo, "Código copiado")}>Copiar código</Button>
-        <Button variant="default" leftSection={<IconFileText size={16} />} onClick={() => copiar(armarComprobante(reserva), "Comprobante copiado")}>
-          Copiar comprobante
-        </Button>
         {vigente(reserva) && <DescargarEntrada reserva={reserva} />}
         <Button variant="subtle" color="gray" c="var(--mantine-color-text)" component={Link} to="/">Volver a la cartelera</Button>
       </Group>
