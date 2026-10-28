@@ -42,7 +42,7 @@ class ApisTest {
         servidor = new ServidorFalso();
         http = new ClienteHttp(servidor.url());
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\"}");
+                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\",\"empleado\":true}");
         new ApiSesion(http).login("encargado@cine.uade.ar", "cine2026");
     }
 

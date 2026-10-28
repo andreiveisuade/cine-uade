@@ -11,7 +11,7 @@ public final class ApiSesion {
 
     public Empleado login(String email, String password) {
         Empleado empleado = http.ingresar("/sesion", email, password, Empleado.class);
-        if (!empleado.esEmpleado()) {
+        if (!empleado.empleado()) {
             // El backend ya aceptó la clave: se suelta y se rechaza como login fallido (401).
             http.olvidarCredenciales();
             throw new ErrorApi(401, "Esta aplicación es para empleados del cine: los clientes compran en la web");

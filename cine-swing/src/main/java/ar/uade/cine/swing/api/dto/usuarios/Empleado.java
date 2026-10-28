@@ -1,14 +1,10 @@
 package ar.uade.cine.swing.api.dto.usuarios;
 
 // El empleado que entró al panel; su rol decide si ve todo (encargado) o solo Puerta (acomodador).
-public record Empleado(int id, String nombre, String email, String rol) {
+// POST /api/sesion también acepta clientes: si entra al panel lo dice empleado, que decide el backend.
+public record Empleado(int id, String nombre, String email, String rol, boolean empleado) {
 
     public boolean esAdministrador() {
         return "ADMINISTRADOR".equals(rol);
-    }
-
-    // POST /api/sesion también acepta clientes, que no tienen nada que hacer en el panel.
-    public boolean esEmpleado() {
-        return esAdministrador() || "ACOMODADOR".equals(rol);
     }
 }

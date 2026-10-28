@@ -41,7 +41,7 @@ class LoginViewModelTest {
 
     @Test
     fun conCredencialesBuenasAbreLaSesion() = runTest(despachador) {
-        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR"}"""))
+        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR","empleado":true}"""))
         val vm = viewModel()
 
         vm.ingresar()
@@ -65,7 +65,7 @@ class LoginViewModelTest {
 
     @Test
     fun unClienteNoEntra() = runTest(despachador) {
-        servidor.enqueue(MockResponse().setBody("""{"id":9,"nombre":"Ana","email":"a@x","rol":"CLIENTE"}"""))
+        servidor.enqueue(MockResponse().setBody("""{"id":9,"nombre":"Ana","email":"a@x","rol":"CLIENTE","empleado":false}"""))
         val vm = viewModel()
 
         vm.ingresar()
@@ -89,7 +89,7 @@ class LoginViewModelTest {
 
     @Test
     fun salirOlvidaLaClave() = runTest(despachador) {
-        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR"}"""))
+        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR","empleado":true}"""))
         val vm = viewModel()
         vm.ingresar()
         runCurrent()

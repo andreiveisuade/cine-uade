@@ -230,13 +230,14 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 
 # Encargado
 
-`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol}` (`ADMINISTRADOR` o `ACOMODADOR`; un cliente
-no tiene clave y da `401`). Clave mala y email inexistente dan el mismo `401`.
+`POST /sesion`, sin cuerpo y con Basic: `200` con `{id, nombre, email, rol, empleado}` (`ADMINISTRADOR` o `ACOMODADOR`;
+un cliente no tiene clave y da `401`). `empleado` (boolean) dice si entra al panel: los clientes lo leen en vez de
+deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 
 - Empleado: no hay token ni sesión; quien llama guarda las credenciales y las manda en cada pedido (Swing).
 - Cliente: la vuelta de Google setea `JSESSIONID` (HttpOnly, `SameSite=Lax`) y los pedidos siguientes la mandan
   (`credentials: 'same-origin'`, el default de fetch). Sin CSRF: `SameSite=Lax` no envía la cookie en un `POST` o `DELETE` de otro sitio.
-- `POST /sesion` sin Basic devuelve al cliente de la cookie (`rol` `CLIENTE`), o `401`: así la web sabe quién está.
+- `POST /sesion` sin Basic devuelve al cliente de la cookie (`rol` `CLIENTE`, `empleado` `false`), o `401`: así la web sabe quién está.
 - `DELETE /sesion` → `204`: invalida la sesión y borra la cookie.
 
 ## Cartelera y salas

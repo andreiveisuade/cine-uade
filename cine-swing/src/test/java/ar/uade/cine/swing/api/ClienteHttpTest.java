@@ -54,14 +54,14 @@ class ClienteHttpTest {
 
     private void ingresar() {
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\"}");
+                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\",\"empleado\":true}");
         sesion.login("encargado@cine.uade.ar", "cine2026");
     }
 
     @Test
     void elLoginMandaLasCredencialesNuevasSoloEnBasic() {
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\"}");
+                "{\"id\":1,\"nombre\":\"Encargado\",\"email\":\"encargado@cine.uade.ar\",\"rol\":\"ADMINISTRADOR\",\"empleado\":true}");
 
         Empleado empleado = sesion.login("encargado@cine.uade.ar", "cine2026");
 
@@ -100,11 +100,12 @@ class ClienteHttpTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource({
             "administrador entra, ADMINISTRADOR",
-            "acomodador entra, ACOMODADOR"
+            "acomodador entra, ACOMODADOR",
+            "un rol de empleado que Swing no conoce entra, BOLETERO"
     })
     void unEmpleadoEntra(String caso, String rol) {
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":2,\"nombre\":\"Empleado\",\"email\":\"puerta@cine.uade.ar\",\"rol\":\"" + rol + "\"}");
+                "{\"id\":2,\"nombre\":\"Empleado\",\"email\":\"puerta@cine.uade.ar\",\"rol\":\"" + rol + "\",\"empleado\":true}");
 
         assertEquals(rol, sesion.login("puerta@cine.uade.ar", "otra").rol());
     }
@@ -112,7 +113,7 @@ class ClienteHttpTest {
     @Test
     void unClienteNoEntraNiDejaCredencialesGuardadas() {
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":9,\"nombre\":\"Cliente\",\"email\":\"cliente@mail.com\",\"rol\":\"CLIENTE\"}");
+                "{\"id\":9,\"nombre\":\"Cliente\",\"email\":\"cliente@mail.com\",\"rol\":\"CLIENTE\",\"empleado\":false}");
 
         ErrorApi error = assertThrows(ErrorApi.class, () -> sesion.login("cliente@mail.com", "clave"));
 
@@ -125,7 +126,7 @@ class ClienteHttpTest {
     void unLoginNuevoNoMandaLasCredencialesViejas() {
         ingresar();
         servidor.responder("POST /api/sesion", 200,
-                "{\"id\":2,\"nombre\":\"Acomodador\",\"email\":\"puerta@cine.uade.ar\",\"rol\":\"ACOMODADOR\"}");
+                "{\"id\":2,\"nombre\":\"Acomodador\",\"email\":\"puerta@cine.uade.ar\",\"rol\":\"ACOMODADOR\",\"empleado\":true}");
 
         Empleado otro = sesion.login("puerta@cine.uade.ar", "otra");
 

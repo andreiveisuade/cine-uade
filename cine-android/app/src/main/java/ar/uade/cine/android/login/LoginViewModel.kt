@@ -40,7 +40,7 @@ class LoginViewModel(private val io: CoroutineDispatcher = Dispatchers.IO) : Vie
             try {
                 val api = ApiPuerta(actual.servidor, actual.usuario, actual.clave, io)
                 val usuario = api.iniciarSesion()
-                if (usuario.rol == "CLIENTE") throw Rechazo(SOLO_EMPLEADOS)
+                if (!usuario.empleado) throw Rechazo(SOLO_EMPLEADOS)
                 _estado.update { it.copy(cargando = false, sesion = Sesion(api, usuario)) }
             } catch (e: Rechazo) {
                 _estado.update { it.copy(cargando = false, error = e.message) }

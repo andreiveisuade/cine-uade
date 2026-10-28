@@ -43,12 +43,12 @@ class ApiPuertaTest {
 
     @Test
     fun iniciarSesionLeeElUsuario() = runTest {
-        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR"}"""))
+        servidor.enqueue(MockResponse().setBody("""{"id":3,"nombre":"Puerta","email":"p@x","rol":"ACOMODADOR","empleado":true}"""))
         val usuario = ApiPuerta(servidor.url("/api").toString(), "p@x", "c", StandardTestDispatcher(testScheduler))
             .iniciarSesion()
 
         assertEquals("/api/sesion", servidor.takeRequest().path)
-        assertEquals("ACOMODADOR", usuario.rol)
+        assertEquals(true, usuario.empleado)
     }
 
     @ParameterizedTest(name = "{0}")
