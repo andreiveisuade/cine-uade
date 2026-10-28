@@ -1,0 +1,3 @@
+# Los .sh corren adentro de contenedores Linux: con CRLF (Git para Windows) fallan.
+*.sh text eol=lf
+mvnw text eol=lf
