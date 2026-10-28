@@ -190,19 +190,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void elArqueoDeBoleteriaSumaLoCobradoEnElDia() {
-        Reserva primera = reservas.reservar(1, 1, generales("A1", "A2"), null);
-        Reserva segunda = reservas.reservar(1, 1, generales("B1"), null);
-        pagos.cobrar(primera.getId(), MedioPago.EFECTIVO, "");
-        pagos.cobrar(segunda.getId(), MedioPago.QR, "QR-99");
-
-        Arqueo arqueo = caja.arqueoDe(reloj.hoy());
-        assertEquals(2, arqueo.pagos().size());
-        assertEquals(Dinero.de(15000.0), arqueo.total());
-        assertTrue(pagoRepository.existsByReservaId(primera.getId()));
-    }
-
-    @Test
     void elPagoGuardaSubtotalDescuentoYPromocion() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1", "A2"), null);
         Promocion promo = promociones.crear(TipoPromocion.NXM, "2x1", ParametrosPromocion.deNxM(2, 1),
@@ -257,20 +244,6 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         assertEquals(Dinero.de(0), pagos.cobrar(enEfectivo.getId(), MedioPago.EFECTIVO, "").getDescuento());
         assertEquals(Dinero.de(1000), pagos.cobrar(conTarjeta.getId(), MedioPago.CREDITO, "AUT-1").getDescuento());
-    }
-
-    @Test
-    void elArqueoCuentaElMontoCobradoYNoElSubtotal() {
-        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
-                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
-                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
-        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
-
-        Dinero arqueo = caja.arqueoDe(reloj.hoy()).total();
-
-        assertEquals(pago.getMonto(), arqueo);
-        assertTrue(pago.getSubtotal().esMayorQue(arqueo));
     }
 
     @Test

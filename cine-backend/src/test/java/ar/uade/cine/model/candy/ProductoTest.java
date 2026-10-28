@@ -73,11 +73,12 @@ class ProductoTest {
     // Composite: quien cobra pregunta a un Producto sin saber si es hoja o combo, y cada uno contesta lo suyo.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
-            suelto, 4000, 0
-            combo,  6500, 1000
+            un suelto vale su precio,     false, 4000, 0
+            un combo vale sus partes,     true,  6500, 1000
             """)
-    void cualquierProductoContestaSuPrecioSueltoYSuAhorro(String caso, double precioSuelto, double ahorro) {
-        Producto producto = caso.equals("combo") ? comboPareja() : pochoclos;
+    void cualquierProductoContestaSuPrecioSueltoYSuAhorro(String caso, boolean esCombo, double precioSuelto,
+            double ahorro) {
+        Producto producto = esCombo ? comboPareja() : pochoclos;
 
         assertEquals(Dinero.de(precioSuelto), producto.getPrecioSuelto());
         assertEquals(Dinero.de(ahorro), producto.getAhorro());

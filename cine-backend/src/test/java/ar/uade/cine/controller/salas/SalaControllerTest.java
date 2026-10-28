@@ -157,6 +157,7 @@ class SalaControllerTest extends PruebaDeApi {
         Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"OCHO_D\"}");
 
         assertEquals(400, respuesta.estado());
+        assertEquals("El tipo de sala no es válido: OCHO_D", respuesta.error());
     }
 
     @Test

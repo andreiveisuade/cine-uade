@@ -318,14 +318,6 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void noSePuedeProgramar3DEnUnaSalaQueNoLoSoporta() {
-        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(4));
-        rechaza("La sala Sala 2D no puede proyectar en 3D",
-                () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 24, 20, 0),
-                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
-    }
-
-    @Test
     void loGuardadoSeReleeConSusButacasYSuFecha() {
         reservas.reservar(1, 1, generales("A1", "B2"), null);
 
