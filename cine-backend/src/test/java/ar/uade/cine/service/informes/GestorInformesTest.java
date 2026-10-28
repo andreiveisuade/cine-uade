@@ -77,7 +77,7 @@ class GestorInformesTest extends PruebaDeIntegracion {
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
     }
 
     @Test

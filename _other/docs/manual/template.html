@@ -496,7 +496,7 @@ body.lightbox-locked { overflow: hidden; }
     <section class="doc-section" id="resumen">
       <h2>Resumen</h2>
       <ul>
-        <li><strong>Cliente (web):</strong> elige película, función y butacas; reserva con o sin cuenta y recibe un código. Paga en boletería o, con cuenta, online con Mercado Pago. Entra con el código.</li>
+        <li><strong>Cliente (web):</strong> elige película, función y butacas sin cuenta; para reservar entra con Google y recibe un código. Paga online con Mercado Pago o en la boletería. Entra con el código.</li>
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
@@ -543,7 +543,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td><a href="#google">Ingresar con Google</a> y salir</td><td>R28</td></tr>
             <tr><td>CU-05b</td><td>Cliente</td><td>Cambiar su nombre o dar de baja la cuenta (<code>#/mi-cuenta</code>)</td><td>R23, R26</td></tr>
-            <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar</td><td>R4, R9, R19</td></tr>
+            <tr><td>CU-06</td><td>Cliente</td><td>Elegir butacas y reservar, con la sesión de Google</td><td>R4, R9, R19, R28</td></tr>
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
             <tr><td>CU-07b</td><td>Cliente</td><td>Pagar online por <a href="#pasarela">checkout</a> (débito, crédito, QR o transferencia), con sesión</td><td>R5, R11, R17, R19, R21</td></tr>
             <tr><td>CU-07c</td><td>Conciliación</td><td>Cobrar lo que Mercado Pago aprobó aunque el comprador no vuelva</td><td>R5, R17</td></tr>
@@ -1084,7 +1084,7 @@ docker compose up -d --build
     <section class="doc-section" id="frontend">
       <h2>Frontend</h2>
       <ul>
-        <li>Solo la venta al cliente, con <a href="#usuarios">cuenta opcional</a>. Encargado y acomodador usan el <a href="#swing">panel Swing</a>.</li>
+        <li>Solo la venta al cliente, que compra con su <a href="#usuarios">cuenta de Google</a>. Encargado y acomodador usan el <a href="#swing">panel Swing</a>.</li>
         <li>React 19, React Router por hash (<code>#/pelicula/3</code>) y Mantine, en <code>cine-frontend/src</code>.</li>
         <li>Vite compila a un <code>index.html</code> HTML5. En local nginx lo sirve (con <code>public/</code>: favicon, íconos y og) y reenvía <code>/api</code>; en Render lo sirve el backend. Sin CORS en los dos.</li>
         <li>Guía con ejemplos del código: <code>cine-frontend/REACT.md</code>.</li>
@@ -1364,7 +1364,7 @@ docker compose up -d --build
       <ul>
         <li><strong><code>Cliente</code> y <code>Empleado</code></strong>: una tabla, discriminador <code>rol</code>. La clave (<code>passwordHash</code>) es solo de <code>Empleado</code>: el cliente no tiene clave, entra con Google. Los cargos los distingue <code>Rol</code>, no clases.</li>
         <li><strong>Email</strong> normalizado: se busca igual en clientes, reservas y login.</li>
-        <li><strong>Cuenta opcional, la de Google:</strong> con sesión ve, cancela y paga sus reservas (R21). Sin cuenta reserva igual y el <a href="#acceso">código</a> es su credencial. Quien compró sin cuenta y después entra con Google con ese email es el mismo cliente (R28). Por id (secuencial) solo accede el encargado.</li>
+        <li><strong>La cuenta de Google, para comprar:</strong> elige butacas sin sesión, pero reserva con ella, y con ella ve, cancela y paga sus reservas (R21, R28). Sin sesión, el <a href="#acceso">código</a> alcanza para ver un ticket. Quien compró sin cuenta antes y entra con Google con ese email es el mismo cliente (R28). Por id (secuencial) solo accede el encargado.</li>
         <li><strong>Contraseñas de empleados en bcrypt, y solo bcrypt:</strong> <code>passwordEncoder()</code> es un <code>DelegatingPasswordEncoder</code> con únicamente <code>{bcrypt}</code> (el de fábrica aceptaría <code>{noop}</code>). Un hash sin prefijo no entra. Más de 72 bytes lo rechaza <code>Contrasena</code> al alta. El login no distingue email inexistente de clave errónea.</li>
       </ul>
 
@@ -1878,7 +1878,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><del>R25</del></td><td><del>Sin sesión, la clave se recupera con email + código de una entrada propia</del>. Cayó: la recupera Google</td></tr>
             <tr><td>R26</td><td>Dar de baja la cuenta cierra la sesión: reservas, pagos y entradas quedan, y entrar de nuevo con Google la vuelve a abrir</td></tr>
             <tr><td><del>R27</del></td><td><del>Solo el ADMINISTRADOR asigna una clave temporal</del>. Cayó: no hay clave que asignar</td></tr>
-            <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave</td></tr>
+            <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave. En la web se compra con esa sesión: la reserva es del cliente de la sesión, nunca del email que viaje en el pedido</td></tr>
             <tr><td>R30</td><td>El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes: mismo medio y misma autorización, en caja, por checkout o por la conciliación. Se pide mientras la reserva se puede cobrar o, ya pagada, hasta que empieza la función: ahí se cobra solo el candy, en un checkout aparte que no vuelve a cobrar las entradas. Pedir de nuevo reemplaza el pedido. Si la reserva se cancela o vence, el pedido queda anulado. Las promos siguen siendo solo de entradas (R15, R16) y el candy conserva el ahorro de sus combos (R14). Convive con «candy de mostrador con una reserva sin pagar = 409»: las dos aseguran que nunca hay candy cobrado de una reserva sin cobrar. El candy cobrado se entrega con el QR de la entrada, una sola vez (409 la segunda, con la hora del retiro)</td></tr>
           </tbody>
         </table>
@@ -2014,7 +2014,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
             <tr><td>R21</td><td><code>CuentaDelClienteTest</code></td></tr>
             <tr><td>R23, R26</td><td><code>CuentaControllerTest</code> (<code>laBajaSeReabreConGoogle</code>), <code>GestorClientesTest</code>, <code>MiCuenta.test.jsx</code></td></tr>
-            <tr><td>R28</td><td><code>ClientesDeGoogleTest</code>, <code>GestorClientesTest</code> (<code>conGoogle*</code>), <code>IngresoConGoogleTest</code>, <code>SinGoogleTest</code>, <code>CuentaDelClienteTest.elQueReservoSinCuentaEntraConGoogleYVeSusReservas</code>, <code>Ingresar.test.jsx</code></td></tr>
+            <tr><td>R28</td><td><code>ClientesDeGoogleTest</code>, <code>GestorClientesTest</code> (<code>conGoogle*</code>), <code>IngresoConGoogleTest</code>, <code>SinGoogleTest</code>, <code>CuentaDelClienteTest.elQueReservoSinCuentaEntraConGoogleYVeSusReservas</code>, <code>Ingresar.test.jsx</code>, <code>PagoControllerTest.laReservaEsDelClienteDeLaSesionAunqueElPedidoNombreAOtro</code>, <code>SeguridadTest.reservarPideLaSesionDeUnCliente</code></td></tr>
             <tr><td>R4, R6, R9, R13</td><td><code>GestorReservasTest</code></td></tr>
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>

@@ -100,8 +100,9 @@ export const avisarVueltaDelPago = (checkoutId) =>
 export const volverDeLaPasarelaEmulada = (checkoutId, status) =>
   window.location.assign(`${BASE}/checkouts/${encodeURIComponent(checkoutId)}/retorno?status=${status}`);
 
-export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
-  post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });
+// Sin nombre ni email: la reserva es del cliente de la sesión (R28).
+export const crearReserva = ({ funcionId, butacas, sesion }) =>
+  post("/reservas", { funcionId: Number(funcionId), butacas, sesion });
 
 export const obtenerReservaPorCodigo = (codigo) =>
   get(`/reservas/codigo/${encodeURIComponent(codigo)}`);

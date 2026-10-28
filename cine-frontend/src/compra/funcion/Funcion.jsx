@@ -5,13 +5,14 @@ import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
-import { sesionDeCompra } from "@/compra/bloqueo.js";
+import { sesionDeCompra, sostenerSeleccion } from "@/compra/bloqueo.js";
 import { useCompra } from "@/compra/CompraEnCurso.jsx";
 import { DatosFuncion } from "@/compra/DatosFuncion.jsx";
 import { MapaButacas } from "@/compra/mapa/MapaButacas.jsx";
 import { Referencia } from "@/compra/mapa/Referencia.jsx";
 import { resumenCompra } from "@/compra/tarifas.js";
 import { useRenovarBloqueo } from "@/compra/useRenovarBloqueo.js";
+import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { FuncionEsqueleto } from "./FuncionEsqueleto.jsx";
 import { pintarParaComprar, REFERENCIAS } from "./pintarParaComprar.js";
 import { TuSeleccion } from "./TuSeleccion.jsx";
@@ -22,6 +23,7 @@ export function Funcion() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { seleccion } = useCompra();
+  const { usuario } = useSesion();
   // Con la sesión, las butacas que uno mismo bloqueó no vuelven como ocupadas.
   const carga = useCargar(() => api.obtenerFuncion(id, sesionDeCompra()), [id]);
   const funcion = carga.datos;
@@ -35,6 +37,15 @@ export function Funcion() {
 
   if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
   const { elegidas, total } = resumenCompra(funcion, butacas);
+
+  // R28: sin sesión se ingresa con Google y se vuelve a confirmar. El bloqueo se renueva antes de salir, así la vuelta
+  // tiene sus 3 minutos enteros; si igual se pierde una butaca, reservar da 409 y vuelve al mapa.
+  async function continuar() {
+    const confirmar = `/confirmar/${funcion.id}`;
+    if (usuario) return navegar(confirmar);
+    await sostenerSeleccion(funcion.id, butacas).catch(() => {});
+    navegar("/ingresar", { state: { volver: confirmar } });
+  }
 
   return (
     <div>
@@ -52,7 +63,7 @@ export function Funcion() {
 
         <Grid.Col span={{ base: 12, lg: "content" }} w={{ lg: 320 }} style={{ position: "sticky", top: 88 }}>
           <TuSeleccion elegidas={elegidas} butacas={butacas} total={total}
-            alContinuar={() => navegar(`/confirmar/${funcion.id}`)} />
+            alContinuar={continuar} />
         </Grid.Col>
       </Grid>
     </div>

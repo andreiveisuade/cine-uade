@@ -62,7 +62,6 @@ public class ConfiguracionSeguridad {
     // Públicas para que ConfiguracionOpenApi le saque el candado a las mismas rutas.
 
     public static final String[] POST_PUBLICOS = {
-            "/api/reservas",
             "/api/funciones/*/bloqueos"};
 
     public static final String[] GET_PUBLICOS = {
@@ -152,6 +151,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.POST, "/api/sesion").hasAnyRole(ADMINISTRADOR, ACOMODADOR, CLIENTE)
                         // R21: el dueño cancela y paga online la suya; que sea suya lo decide GestorReservas.
                         .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
+                        // R28: en la web se compra con la sesión de Google; elegir y bloquear butacas sigue público.
+                        .requestMatchers(HttpMethod.POST, "/api/reservas").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.PUT, "/api/cuenta").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.DELETE, "/api/cuenta").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { sesionDeCompra } from "@/compra/bloqueo.js";
-import { recordarCliente } from "@/compra/clienteRecordado.js";
 import { useCompra } from "@/compra/CompraEnCurso.jsx";
 
 // Crear la reserva con lo elegido y llevar al ticket; si otra compra ganó una butaca, volver al mapa.
@@ -17,20 +16,18 @@ export function useReservar(funcionId) {
   // el render lo lee (esta pantalla sigue montada mientras dura la animación de salida).
   const [reservada, setReservada] = useState(false);
 
-  async function reservar({ nombre, email }) {
+  async function reservar() {
     setError(null);
     setEnviando(true);
     try {
       const reserva = await api.crearReserva({
-        funcionId, nombre, email, butacas: seleccion.butacas,
+        funcionId, butacas: seleccion.butacas,
         // La misma sesión que bloqueó: si no, el propio bloqueo rebotaría la reserva.
         sesion: sesionDeCompra(),
       });
-      recordarCliente({ nombre, email });
       setReservada(true);
       setSeleccion({ funcionId: null, butacas: {} });
-      // El alta ya trae la reserva entera: el ticket la dibuja sin volver a pedirla.
-      navegar(`/ticket/${reserva.codigo}`, { state: { reserva } });
+      navegar(`/ticket/${reserva.codigo}`);
     } catch (e) {
       setEnviando(false);
       // 409: otra compra ganó una butaca en el medio (vendida o bloqueada); vuelve al mapa recargado.

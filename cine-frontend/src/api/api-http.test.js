@@ -37,8 +37,8 @@ describe("api-http: el armado de cada pedido", () => {
   it.each([
     ["bloquear butacas", () => api.bloquearButacas({ funcionId: "5", sesion: "s", butacas: ["A1"] }),
       "POST", "/api/funciones/5/bloqueos", { sesion: "s", butacas: ["A1"] }],
-    ["crear una reserva", () => api.crearReserva({ funcionId: "5", nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL" }, sesion: "s" }),
-      "POST", "/api/reservas", { funcionId: 5, nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL" }, sesion: "s" }],
+    ["crear una reserva", () => api.crearReserva({ funcionId: "5", butacas: { A1: "GENERAL" }, sesion: "s" }),
+      "POST", "/api/reservas", { funcionId: 5, butacas: { A1: "GENERAL" }, sesion: "s" }],
     ["modificar la cuenta", () => api.modificarCuenta({ nombre: "Ana" }), "PUT", "/api/cuenta", { nombre: "Ana" }],
     ["abrir el checkout", () => api.abrirCheckout("AB12", "MERCADO_PAGO"), "POST", "/api/reservas/codigo/AB12/checkout", { medio: "MERCADO_PAGO" }],
   ])("%s manda JSON", async (_caso, llamar, metodo, url, cuerpo) => {

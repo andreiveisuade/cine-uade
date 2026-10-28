@@ -82,7 +82,7 @@ class InformeControllerTest extends PruebaDeApi {
         Funcion funcion = funciones.programar(1, 1,
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.JUBILADO), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
@@ -189,7 +189,7 @@ class InformeControllerTest extends PruebaDeApi {
         cartelera.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
         Funcion funcion = funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4000)));
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         pagos.cobrar(reservas.reservar(funcion.getId(), cliente.getId(), Map.of("A1", TipoTarifa.MENOR), null).getId(),
                 MedioPago.EFECTIVO, "");
 

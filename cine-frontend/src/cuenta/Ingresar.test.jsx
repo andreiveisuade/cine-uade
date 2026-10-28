@@ -34,6 +34,12 @@ describe("Ingresar", () => {
     expect(sessionStorage.getItem("cine.vuelta")).toBe("/confirmar/5");
   });
 
+  it("viniendo de una compra dice que es para terminarla", async () => {
+    renderConApp(<Ingresar />, { en: { pathname: "/", state: { volver: "/confirmar/5" } } });
+
+    expect(await screen.findByText(/Ingresá con Google para terminar la compra/)).toBeInTheDocument();
+  });
+
   it("antes de ir a Google, la política de privacidad está a un click", async () => {
     renderConApp(<Ingresar />);
 

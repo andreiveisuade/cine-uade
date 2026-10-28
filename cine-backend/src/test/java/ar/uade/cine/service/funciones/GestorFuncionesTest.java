@@ -296,7 +296,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void noSeBorraUnaFuncionConReservas() {
-        clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         reservas.reservar(1, 1, generales("A1"), null);
 
         rechaza("La función 1 tiene reservas: no se puede eliminar", () -> funciones.eliminar(1));

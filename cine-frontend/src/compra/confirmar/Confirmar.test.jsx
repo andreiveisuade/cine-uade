@@ -23,7 +23,7 @@ const TARIFAS = [{ nombre: "GENERAL", requiereAcreditacion: false }, { nombre: "
 
 const ANA = { id: 1, nombre: "Ana", email: "ana@mail.com", rol: "CLIENTE" };
 
-// La selección viene del mapa, en memoria: el test la deja puesta como si se hubiera elegido antes de llegar.
+// La selección viene del mapa: el test la deja puesta como si se hubiera elegido antes de llegar.
 // Desde el mapa ya se sabe quién tiene sesión, así que la pantalla se monta recién cuando eso se resolvió.
 function ConSeleccion({ butacas, children }) {
   const { seleccion, setSeleccion } = useCompra();
@@ -35,11 +35,10 @@ function ConSeleccion({ butacas, children }) {
 const abrir = (butacas = { A1: "GENERAL", A2: "GENERAL" }) =>
   renderConApp(<ConSeleccion butacas={butacas}><Confirmar /></ConSeleccion>, { ruta: "/confirmar/:id", en: "/confirmar/5" });
 
-const campo = (nombre) => screen.findByRole("textbox", { name: nombre });
-const confirmar = () => userEvent.click(screen.getByRole("button", { name: "Confirmar reserva" }));
+const confirmar = async () => userEvent.click(await screen.findByRole("button", { name: "Confirmar reserva" }));
 
 beforeEach(() => {
-  api.sesionActual.mockRejectedValue(new Error("401"));
+  api.sesionActual.mockResolvedValue(ANA);
   api.obtenerFuncion.mockResolvedValue(FUNCION);
   api.obtenerTarifas.mockResolvedValue(TARIFAS);
 });
@@ -81,58 +80,35 @@ describe("Confirmar: el detalle de la compra", () => {
   });
 });
 
-describe("Confirmar: los datos de quien reserva", () => {
-  it("sin sesión precompleta lo de la compra anterior en este navegador e invita a tener cuenta", async () => {
-    localStorage.setItem("cine.cliente", JSON.stringify({ nombre: "Ana", email: "ana@mail.com" }));
+describe("Confirmar: con qué cuenta se reserva", () => {
+  // R28: se compra con la cuenta de Google. Desde el mapa ya se pasó por el ingreso; un link directo también.
+  it("sin sesión manda a ingresar y vuelve a esta compra", async () => {
+    api.sesionActual.mockRejectedValue(new Error("401"));
 
     abrir();
 
-    expect(await campo("Nombre")).toHaveValue("Ana");
-    expect(await campo("Email")).toHaveValue("ana@mail.com");
-    expect(screen.getByText(/Para pagar online hace falta una cuenta/)).toBeInTheDocument();
+    expect(await screen.findByText("en /ingresar")).toBeInTheDocument();
   });
 
-  it("con sesión precompleta los datos de la cuenta y no pide ingresar", async () => {
-    api.sesionActual.mockResolvedValue(ANA);
-
+  it("con sesión muestra la cuenta y no pide datos", async () => {
     abrir();
 
-    expect(await campo("Nombre")).toHaveValue("Ana");
-    expect(await campo("Email")).toHaveValue("ana@mail.com");
-    expect(screen.queryByText(/Para pagar online hace falta una cuenta/)).not.toBeInTheDocument();
-  });
-
-  // Un email de solo espacios ni llega: el navegador lo vacía y el `required` frena el envío.
-  it("con el nombre en blanco no reserva y dice qué falta", async () => {
-    abrir();
-    await userEvent.type(await campo("Nombre"), "   ");
-    await userEvent.type(await campo("Email"), "ana@mail.com");
-
-    await confirmar();
-
-    expect(screen.getByText("Completá tu nombre")).toBeInTheDocument();
-    expect(api.crearReserva).not.toHaveBeenCalled();
+    expect(await screen.findByText("ana@mail.com")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 });
 
 describe("Confirmar: reservar", () => {
-  async function completarYConfirmar() {
-    await userEvent.type(await campo("Nombre"), " Ana ");
-    await userEvent.type(await campo("Email"), "ana@mail.com ");
-    await confirmar();
-  }
-
-  it("reserva con la sesión que bloqueó, recuerda al cliente y lleva al ticket", async () => {
+  it("reserva con la sesión que bloqueó, sin nombre ni email, y lleva al ticket", async () => {
     api.crearReserva.mockResolvedValue({ codigo: "ABCD1234" });
     sessionStorage.setItem("cine.sesionDeCompra", "sesion-del-mapa");
     abrir();
 
-    await completarYConfirmar();
+    await confirmar();
 
     expect(api.crearReserva).toHaveBeenCalledWith({
-      funcionId: 5, nombre: "Ana", email: "ana@mail.com", butacas: { A1: "GENERAL", A2: "GENERAL" }, sesion: "sesion-del-mapa",
+      funcionId: 5, butacas: { A1: "GENERAL", A2: "GENERAL" }, sesion: "sesion-del-mapa",
     });
-    expect(JSON.parse(localStorage.getItem("cine.cliente"))).toEqual({ nombre: "Ana", email: "ana@mail.com" });
     expect(await screen.findByText("en /ticket/ABCD1234")).toBeInTheDocument();
   });
 
@@ -140,20 +116,19 @@ describe("Confirmar: reservar", () => {
     api.crearReserva.mockRejectedValue(Object.assign(new Error("La butaca A1 ya no está disponible"), { status: 409 }));
     abrir();
 
-    await completarYConfirmar();
+    await confirmar();
 
     expect(await screen.findByText("La butaca A1 ya no está disponible")).toBeInTheDocument();
     expect(screen.getByText("en /funcion/5")).toBeInTheDocument();
   });
 
-  it("otro rechazo del backend se muestra en el formulario y deja reintentar", async () => {
-    api.crearReserva.mockRejectedValue(Object.assign(new Error("Ese email es de un empleado"), { status: 400 }));
+  it("otro rechazo del backend se muestra al lado del botón y deja reintentar", async () => {
+    api.crearReserva.mockRejectedValue(Object.assign(new Error("La función ya empezó: no se pueden reservar butacas"), { status: 400 }));
     abrir();
 
-    await completarYConfirmar();
+    await confirmar();
 
-    expect(await screen.findByText("Ese email es de un empleado")).toBeInTheDocument();
+    expect(await screen.findByText("La función ya empezó: no se pueden reservar butacas")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar reserva" })).toBeEnabled();
-    expect(localStorage.getItem("cine.cliente")).toBeNull();
   });
 });

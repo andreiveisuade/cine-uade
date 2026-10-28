@@ -75,7 +75,7 @@ class AplicacionTest extends PruebaDeIntegracion {
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL), null);
         Pago pago = pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
@@ -93,7 +93,7 @@ class AplicacionTest extends PruebaDeIntegracion {
         Funcion funcion = funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
@@ -115,7 +115,7 @@ class AplicacionTest extends PruebaDeIntegracion {
         Funcion funcion = funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         Reserva reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL), null);
         pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");

@@ -81,7 +81,7 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         pagos = new GestorPagos(pagoRepository, reservaRepository, politica, pasarela, candy, eventos, reloj);
         conciliacion = new ConciliacionPagos(pasarela, pagos, reloj);
     }

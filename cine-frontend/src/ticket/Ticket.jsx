@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Stack } from "@mantine/core";
-import { useLocation, useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
@@ -21,7 +21,6 @@ export function Ticket() {
   useTitulo("Tu ticket");
   // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
   const aviso = useSearchParams()[0].get("aviso");
-  const recien = useLocation().state?.reserva;
   // Siempre por código, aunque venga en la navegación: el historial la conserva al recargar y quedaría
   // la foto de cuando se reservó. El código es la única llave del cliente. La carta y las promos son opcionales.
   const carga = useCargar(() => Promise.all([
@@ -41,7 +40,7 @@ export function Ticket() {
       <Stack gap="lg">
         {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
         <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
-        <AccionesTicket reserva={reserva} recien={recien} alMostrarEnPuerta={() => setEnPuerta(true)}
+        <AccionesTicket reserva={reserva} alMostrarEnPuerta={() => setEnPuerta(true)}
           alVolverDelPago={consultar} />
         <ComprobanteTexto reserva={reserva} />
       </Stack>

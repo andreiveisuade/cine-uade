@@ -44,7 +44,7 @@ class ClientesDeGoogleTest extends PruebaDeIntegracion {
     @Test
     @DisplayName("R28: la sesión queda a nombre del email como lo guarda el cine")
     void laSesionUsaElEmailNormalizado() {
-        clientes.identificar("Ana", "ana@mail.com");
+        clientes.ingresarConGoogle("Ana", "ana@mail.com");
 
         OidcUser usuario = google.loadUser(PedidosDeGoogle.de("Ana@Mail.com", "Ana Pérez", true));
 

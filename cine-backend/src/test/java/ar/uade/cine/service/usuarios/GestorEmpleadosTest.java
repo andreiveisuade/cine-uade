@@ -72,7 +72,7 @@ class GestorEmpleadosTest extends PruebaDeIntegracion {
     // Simétrico del cliente con email de empleado: EmpleadoRepository no ve a los clientes y chocaba con el UNIQUE.
     @Test
     void elEmailDeUnClienteNoSeRegistraComoEmpleado() {
-        clientes.identificar("Ana", "ana@mail.com");
+        clientes.ingresarConGoogle("Ana", "ana@mail.com");
 
         assertEquals("Ya existe un usuario con ese email", assertThrows(ConflictoDeNegocio.class,
                 () -> empleados.registrar("Ana", "ana@mail.com", "secreta123", Rol.ACOMODADOR)).getMessage());

@@ -8,14 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.usuarios.EmpleadoRepository;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-// Clientes por email: al comprar, al entrar con Google (R28) y su nombre (R23); Usuario valida los datos.
+// Clientes por email: el ingreso con Google (R28), su nombre (R23) y su baja (R26); Usuario valida los datos.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -50,19 +49,6 @@ public class GestorClientes {
         Cliente cliente = clienteRepository.findByEmail(email).orElseThrow();
         cliente.renombrar(nombre);
         return cliente;
-    }
-
-    // Al comprar, el email de un empleado es 400 y no el 409 del alta, que la web toma como butaca perdida.
-    // El texto no nombra al empleado: la compra es pública y serviría para listar emails del personal.
-    public Cliente identificar(String nombre, String email) {
-        return buscarPorEmail(email).orElseGet(() -> {
-            Cliente nuevo = new Cliente(nombre, email);
-            if (empleadoRepository.existsByEmail(nuevo.getEmail())) {
-                throw new DatoInvalido("No se puede comprar con ese email: usá otro");
-            }
-            clienteRepository.save(nuevo);
-            return nuevo;
-        });
     }
 
     @Transactional(readOnly = true)
