@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cómo se conecta todo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Noto+Serif:ital@0;1&family=Noto+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@400&family=Noto+Sans+TC:wght@400;500;600&family=Noto+Serif+TC:wght@400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;   /* white-smoke */
+      --color-ink:     #2d3142;   /* jet-black */
+      --color-muted:   #4f5d75;   /* blue-slate */
+      --color-accent:  #bf4520;   /* burnt-tangerine */
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', 'Noto Serif', 'Noto Serif KR', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    /* The SVG holds its readable width (min-width == the viewBox width, so the
+       type ramp is never silently scaled down). This wrapper lets a narrow
+       screen scroll the diagram instead of the whole page. */
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 1280px; display: block; }
+    /* Paper has no scrollbar, so the local scroller would clip instead of
+       scroll. Let the diagram scale down to the sheet: smaller but whole
+       beats sharp but cut off. Must come after the svg rule above - a media
+       query adds no specificity, so a later plain rule would win. */
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Arquitectura · despliegue</p>
+    <h1>Cómo se conecta todo</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 776" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sistema-mapa-title sistema-mapa-desc">
+        <title id="sistema-mapa-title">Cómo se conecta todo</title>
+        <desc id="sistema-mapa-desc">Navegador, Swing y Android le hablan por https al contenedor de Render, que guarda en MySQL de Aiven y llama a Google, Mercado Pago y TMDB con secretos cargados en Render; GitHub solo lo construye.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+<rect x="40" y="40" width="260" height="468" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="48" y="44" width="161.0" height="12" rx="2" fill="#f5f5f5"/>
+<text x="54" y="53" fill="#5a6580" font-size="7" font-family="Geist Mono" letter-spacing="0.14em">DISPOSITIVOS DE LOS USUARIOS</text>
+<rect x="380" y="208" width="420" height="312" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="388" y="212" width="129.0" height="12" rx="2" fill="#f5f5f5"/>
+<text x="394" y="221" fill="#5a6580" font-size="7" font-family="Geist Mono" letter-spacing="0.14em">RENDER · FREE · 512 MB</text>
+<rect x="450" y="556" width="280" height="148" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="458" y="560" width="107.8" height="12" rx="2" fill="#f5f5f5"/>
+<text x="464" y="569" fill="#5a6580" font-size="7" font-family="Geist Mono" letter-spacing="0.14em">AIVEN · MYSQL FREE</text>
+<path d="M280,124 H332 Q340,124 340,132 V280 Q340,288 348,288 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M280,100 H470" fill="none" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+<path d="M240,80 V60 Q240,52 248,52 H1012 Q1020,52 1020,60 V80" fill="none" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-link)"/>
+<path d="M280,368 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M280,448 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M560,248 V168" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M780,272 H1012 Q1020,272 1020,264 V168" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M780,368 H900" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M900,464 H780" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<path d="M590,488 V592" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<rect x="245.9" y="197" width="88.2" height="14" rx="2" fill="#f5f5f5"/>
+<text x="290.0" y="207" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">HTTPS · COOKIE</text>
+<rect x="330.9" y="77" width="88.2" height="14" rx="2" fill="#f5f5f5"/>
+<text x="375.0" y="87" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">LOGIN · OAUTH2</text>
+<rect x="748.6" y="29" width="82.7" height="14" rx="2" fill="#f5f5f5"/>
+<text x="790.0" y="39" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">PAGA Y VUELVE</text>
+<rect x="298.6" y="345" width="82.7" height="14" rx="2" fill="#f5f5f5"/>
+<text x="340.0" y="355" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">HTTPS · BASIC</text>
+<rect x="298.6" y="425" width="82.7" height="14" rx="2" fill="#f5f5f5"/>
+<text x="340.0" y="435" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">HTTPS · BASIC</text>
+<rect x="568.0" y="181" width="82.7" height="14" rx="2" fill="#f5f5f5"/>
+<text x="574.0" y="191" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="start">CODE + SECRET</text>
+<rect x="819.9" y="249" width="88.2" height="14" rx="2" fill="#f5f5f5"/>
+<text x="864.0" y="259" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">HTTPS · BEARER</text>
+<rect x="795.9" y="345" width="88.2" height="14" rx="2" fill="#f5f5f5"/>
+<text x="840.0" y="355" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">HTTPS · BEARER</text>
+<rect x="798.6" y="441" width="82.7" height="14" rx="2" fill="#f5f5f5"/>
+<text x="840.0" y="451" fill="#4f5d75" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="middle">MANUAL DEPLOY</text>
+<rect x="598.0" y="525" width="66.4" height="14" rx="2" fill="#f5f5f5"/>
+<text x="604.0" y="535" fill="#2e5aa8" font-size="8" font-family="Geist Mono" letter-spacing="0.06em" text-anchor="start">JDBC · TLS</text>
+<rect x="60" y="80" width="220" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="60" y="80" width="220" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="72" y="90" width="26.0" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="85.0" y="100" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">WEB</text>
+<text x="72" y="122" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Navegador del cliente</text>
+<text x="72" y="138" fill="#5a6580" font-size="9" font-family="Geist Mono">React · cookie JSESSIONID</text>
+<rect x="60" y="336" width="220" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="60" y="336" width="220" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="72" y="346" width="36.6" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="90.3" y="356" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">SWING</text>
+<text x="72" y="378" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">cine-swing</text>
+<text x="72" y="394" fill="#5a6580" font-size="9" font-family="Geist Mono">PC del encargado · Basic</text>
+<rect x="60" y="416" width="220" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="60" y="416" width="220" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="72" y="426" width="47.2" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="95.6" y="436" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">ANDROID</text>
+<text x="72" y="458" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">cine-android · Puerta</text>
+<text x="72" y="474" fill="#5a6580" font-size="9" font-family="Geist Mono">celular · escanea el QR</text>
+<rect x="400" y="248" width="380" height="240" rx="6" fill="#f5f5f5"/>
+<rect x="400" y="248" width="380" height="240" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1.4"/>
+<rect x="412" y="258" width="137.7" height="14" rx="2" fill="none" stroke="#bf4520" stroke-width="0.8"/>
+<text x="480.8" y="268" fill="#bf4520" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">DOCKER · Dockerfile raíz</text>
+<text x="412" y="290" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">cine-uade</text>
+<text x="412" y="306" fill="#5a6580" font-size="9" font-family="Geist Mono">https://cine-uade.onrender.com</text>
+<rect x="412" y="314" width="356" height="24" rx="4" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+<text x="422" y="330" fill="#2d3142" font-size="12" font-family="Geist">Spring Boot</text>
+<text x="758" y="330" fill="#5a6580" font-size="9" font-family="Geist Mono" text-anchor="end">/api/** · :PORT</text>
+<rect x="412" y="346" width="356" height="24" rx="4" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+<text x="422" y="362" fill="#2d3142" font-size="12" font-family="Geist">React (build de Vite)</text>
+<text x="758" y="362" fill="#5a6580" font-size="9" font-family="Geist Mono" text-anchor="end">static/ · mismo origen</text>
+<rect x="412" y="378" width="356" height="24" rx="4" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+<text x="422" y="394" fill="#2d3142" font-size="12" font-family="Geist">Spring Security</text>
+<text x="758" y="394" fill="#5a6580" font-size="9" font-family="Geist Mono" text-anchor="end">Basic · sesión · oauth2Login</text>
+<rect x="412" y="410" width="356" height="24" rx="4" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="0.8"/>
+<text x="422" y="426" fill="#2d3142" font-size="12" font-family="Geist">ConciliacionPagos</text>
+<text x="758" y="426" fill="#5a6580" font-size="9" font-family="Geist Mono" text-anchor="end">@Scheduled cada 60 s</text>
+<rect x="470" y="80" width="240" height="88" rx="6" fill="#f5f5f5"/>
+<rect x="470" y="80" width="240" height="88" rx="6" fill="#f5f5f5" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="482" y="90" width="47.2" height="14" rx="2" fill="none" stroke="#2e5aa8" stroke-width="0.8"/>
+<text x="505.6" y="100" fill="#2e5aa8" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">EXTERNO</text>
+<text x="482" y="122" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Google Cloud</text>
+<text x="482" y="138" fill="#5a6580" font-size="9" font-family="Geist Mono">OAuth2 / OIDC · openid email</text>
+<rect x="482" y="144" width="127.6" height="14" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="0.8"/>
+<rect x="487" y="148" width="6" height="6" rx="1" fill="#2d3142"/>
+<text x="498" y="154" fill="#2d3142" font-size="8" font-family="Geist Mono" letter-spacing="0.04em">GOOGLE_CLIENT_SECRET</text>
+<rect x="900" y="80" width="240" height="88" rx="6" fill="#f5f5f5"/>
+<rect x="900" y="80" width="240" height="88" rx="6" fill="#f5f5f5" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="912" y="90" width="47.2" height="14" rx="2" fill="none" stroke="#2e5aa8" stroke-width="0.8"/>
+<text x="935.6" y="100" fill="#2e5aa8" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">EXTERNO</text>
+<text x="912" y="122" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">Mercado Pago</text>
+<text x="912" y="138" fill="#5a6580" font-size="9" font-family="Geist Mono">Checkout Pro sandbox</text>
+<rect x="912" y="144" width="101.2" height="14" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="0.8"/>
+<rect x="917" y="148" width="6" height="6" rx="1" fill="#2d3142"/>
+<text x="928" y="154" fill="#2d3142" font-size="8" font-family="Geist Mono" letter-spacing="0.04em">MP_ACCESS_TOKEN</text>
+<rect x="900" y="324" width="240" height="88" rx="6" fill="#f5f5f5"/>
+<rect x="900" y="324" width="240" height="88" rx="6" fill="#f5f5f5" stroke="#2e5aa8" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="912" y="334" width="47.2" height="14" rx="2" fill="none" stroke="#2e5aa8" stroke-width="0.8"/>
+<text x="935.6" y="344" fill="#2e5aa8" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">EXTERNO</text>
+<text x="912" y="366" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">TMDB</text>
+<text x="912" y="382" fill="#5a6580" font-size="9" font-family="Geist Mono">now_playing · a pedido</text>
+<rect x="912" y="388" width="74.8" height="14" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="0.8"/>
+<rect x="917" y="392" width="6" height="6" rx="1" fill="#2d3142"/>
+<text x="928" y="398" fill="#2d3142" font-size="8" font-family="Geist Mono" letter-spacing="0.04em">TMDB_TOKEN</text>
+<rect x="900" y="432" width="240" height="64" rx="6" fill="#f5f5f5"/>
+<rect x="900" y="432" width="240" height="64" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="912" y="442" width="31.3" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="927.6" y="452" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">REPO</text>
+<text x="912" y="474" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">GitHub</text>
+<text x="912" y="490" fill="#5a6580" font-size="9" font-family="Geist Mono">repo público · push a mano</text>
+<rect x="470" y="592" width="240" height="88" rx="6" fill="#f5f5f5"/>
+<rect x="470" y="592" width="240" height="88" rx="6" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/>
+<rect x="482" y="602" width="47.2" height="14" rx="2" fill="none" stroke="#2d3142" stroke-width="0.8"/>
+<text x="505.6" y="612" fill="#2d3142" font-size="7" font-family="Geist Mono" letter-spacing="0.14em" text-anchor="middle">MANAGED</text>
+<text x="482" y="634" fill="#2d3142" font-size="13" font-weight="600" font-family="Geist">MySQL 8 · defaultdb</text>
+<text x="482" y="650" fill="#5a6580" font-size="9" font-family="Geist Mono">&lt;host&gt;:&lt;port&gt; · sslMode=REQUIRED</text>
+<rect x="482" y="656" width="122.3" height="14" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="0.8"/>
+<rect x="487" y="660" width="6" height="6" rx="1" fill="#2d3142"/>
+<text x="498" y="666" fill="#2d3142" font-size="8" font-family="Geist Mono" letter-spacing="0.04em">SPRING_DATASOURCE_*</text>
+<text x="412" y="472" fill="#5a6580" font-size="9" font-family="Geist Mono">secretos: Environment de Render · en local, cine-docker/.env</text>
+<line x1="40" y1="724" x2="1240" y2="724" stroke="rgba(45,49,66,0.12)"/>
+<rect x="40" y="740" width="14" height="10" rx="2" fill="rgba(191,69,32,0.08)" stroke="#bf4520"/>
+<text x="60" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">lo que corre en Render</text>
+<rect x="202.76" y="740" width="14" height="10" rx="2" fill="#f5f5f5" stroke="#2e5aa8" stroke-dasharray="3,2"/>
+<text x="222.76" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">servicio externo</text>
+<rect x="332.03999999999996" y="740" width="14" height="10" rx="2" fill="#f5f5f5" stroke="#2d3142" stroke-width="0.8"/><rect x="336.03999999999996" y="743" width="6" height="4" rx="1" fill="#2d3142"/>
+<text x="352.03999999999996" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">secreto: variable en Environment de Render</text>
+<line x1="606.4" y1="745" x2="634.4" y2="745" stroke="#4f5d75" stroke-width="1.2"/>
+<text x="642.4" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">pedido a /api</text>
+<line x1="734.9399999999999" y1="745" x2="762.9399999999999" y2="745" stroke="#2e5aa8" stroke-width="1.2"/>
+<text x="770.9399999999999" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">sale del backend</text>
+<line x1="880.2199999999999" y1="745" x2="908.2199999999999" y2="745" stroke="#2e5aa8" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="916.2199999999999" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">navegador redirigido</text>
+<line x1="1047.82" y1="745" x2="1075.82" y2="745" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="1083.82" y="749" fill="#5a6580" font-size="9" font-family="Geist Mono">deploy a mano</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
