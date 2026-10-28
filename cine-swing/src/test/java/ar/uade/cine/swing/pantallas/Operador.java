@@ -40,12 +40,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public final class Operador {
 
-    private final JComponent pantalla;
+    private final Container pantalla;
     private final JLabel barra;
-    private final List<Throwable> errores = new ArrayList<>();
-    private final Thread.UncaughtExceptionHandler anterior = Thread.getDefaultUncaughtExceptionHandler();
+    private final List<Throwable> errores;
+    private final Thread.UncaughtExceptionHandler anterior;
+
+    private Operador(Container parte, Operador de) {
+        pantalla = parte;
+        barra = de.barra;
+        errores = de.errores;
+        anterior = de.anterior;
+    }
 
     private Operador(Supplier<? extends JComponent> armar) {
+        errores = new ArrayList<>();
+        anterior = Thread.getDefaultUncaughtExceptionHandler();
         // Lo que tira un callback en el EDT (un diálogo en headless, un null) no llega al test: se junta acá.
         Thread.setDefaultUncaughtExceptionHandler((hilo, error) -> {
             synchronized (errores) {
@@ -71,8 +80,12 @@ public final class Operador {
         return new Operador(armar);
     }
 
-    public JComponent pantalla() {
-        return pantalla;
+    /** Solo la parte con ese subtítulo: dos formularios en la misma pantalla pueden repetir etiquetas. */
+    public Operador seccion(String subtitulo) {
+        AtomicReference<Container> parte = new AtomicReference<>();
+        enEdt(() -> parte.set(buscar(JLabel.class, l -> subtitulo.equals(l.getText()))
+                .orElseThrow(() -> new AssertionError("No hay sección " + subtitulo)).getParent()));
+        return new Operador(parte.get(), this);
     }
 
     /** Para el @AfterEach: nada reventó en el EDT. */
@@ -120,6 +133,12 @@ public final class Operador {
     public Operador hora(String etiqueta, LocalTime hora) {
         enEdt(() -> ((JSpinner) campo(etiqueta)).setValue(
                 Date.from(LocalDate.now().atTime(hora).atZone(ZoneId.systemDefault()).toInstant())));
+        return this;
+    }
+
+    /** Un spinner de cantidad, como los de un combo o una venta de candy. */
+    public Operador cantidad(String etiqueta, int cantidad) {
+        enEdt(() -> ((JSpinner) campo(etiqueta)).setValue(cantidad));
         return this;
     }
 
