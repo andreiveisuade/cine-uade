@@ -3,7 +3,26 @@
 Un backend con todas las reglas y tres clientes que no deciden nada. El detalle de cada decisión está en el
 [manual](_other/docs/manual/index.html); acá, el mapa para orientarse en el código.
 
-![Contexto: cliente, encargado y acomodador, el sistema, Mercado Pago y TMDB](_other/docs/diagramas/sistema-contexto.svg)
+## Cómo se conecta todo
+
+![Navegador, Swing y Android contra el contenedor de Render; MySQL en Aiven; Google, Mercado Pago y TMDB con su secreto](_other/docs/diagramas/sistema-mapa.svg)
+
+Todo pasa por el contenedor de Render: ningún cliente llega a MySQL ni a un servicio externo con un secreto. El navegador solo va a Google y a Mercado Pago redirigido, y vuelve con un código o un id que el backend verifica él mismo.
+
+| Ingresar con Google (rama `t79-google`) | Acceso en la puerta |
+|---|---|
+| ![Código, canje con el secret, cliente en MySQL y cookie](_other/docs/diagramas/secuencia-google.svg) | ![Android escanea, POST /api/acceso con Basic, MySQL](_other/docs/diagramas/secuencia-puerta.svg) |
+
+![Comprar y pagar: reserva, preferencia, vuelta o conciliación cada 60 s, ticket](_other/docs/diagramas/secuencia-pago-mp.svg)
+
+| Secreto | La da | Se carga en | La usa |
+|---|---|---|---|
+| `SPRING_DATASOURCE_*` (local: `DB_*`) | Aiven (local: se inventa) | Environment de Render (local: `cine-docker/.env`) | Hikari, JDBC con TLS |
+| `MP_ACCESS_TOKEN` | Mercado Pago, credenciales de prueba | Render y `.env` | `MercadoPagoHttp`; vacío, pasarela emulada |
+| `TMDB_TOKEN` | TMDB | Render y `.env` | El importador |
+| `GOOGLE_CLIENT_SECRET` (el `_ID` es público) | Google Cloud Console | Render y `.env` | `oauth2Login`, canje del código |
+
+`render.yaml` nombra cada variable con `sync: false`: el nombre está en el repo, el valor solo en el panel. El repo es público y se sube a mano; Render construye el `Dockerfile` con Manual Deploy.
 
 ## Capas del backend
 
@@ -77,10 +96,11 @@ El contrato de los tres es [`API.md`](cine-frontend/API.md).
 
 ## Despliegue
 
-| Local (`cine-docker/`) | Producción (Render + Aiven) |
-|---|---|
-| ![Contenedores de cine-docker](_other/docs/diagramas/docker-despliegue.svg) | ![Render y Aiven](_other/docs/diagramas/despliegue-render.svg) |
-| nginx sirve el front y reenvía `/api` al backend (`cine-backend/Dockerfile`); MySQL en una red aparte | El `Dockerfile` de la raíz compila el front y lo sirve el backend: un origen `https` para la cookie y la vuelta de Mercado Pago. `render.yaml` es el Blueprint: servicio, health check y variables (`sync: false`, se cargan en el panel) |
+Producción, en el [mapa](#cómo-se-conecta-todo): el `Dockerfile` de la raíz compila el front y lo sirve el backend, un origen `https` para la cookie, la vuelta de Mercado Pago y la de Google. `render.yaml` es el Blueprint: servicio, health check y variables.
+
+Local (`cine-docker/`): nginx sirve el front y reenvía `/api` al backend (`cine-backend/Dockerfile`); MySQL en una red aparte.
+
+![Contenedores de cine-docker](_other/docs/diagramas/docker-despliegue.svg)
 
 La base nace de `cine-backend/src/main/resources/db/schema.sql`; una base existente se pone al día con
 `db/migraciones/NN-*.sql` en el orden del número (en Aiven, `cine-docker/aiven/migrar-aiven.sh <número o nombre>`).

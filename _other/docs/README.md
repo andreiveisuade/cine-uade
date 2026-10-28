@@ -20,6 +20,8 @@ cd ../manual && python3 build.py          # inyecta los SVG y las capturas en el
 DER desde `db/schema.sql`, desde la raíz del repo (Python 3 solo; el export pide la skill diagram-design en `~/.claude/skills`):
 `python3 _other/docs/diagramas/der/generar_der.py && python3 ~/.claude/skills/diagram-design/scripts/export_svg.py _other/docs/diagramas/der-design.html && python3 _other/docs/diagramas/der/verificar_der.py`
 
+Los de diagram-design (`sistema-*.html`, `secuencia-google`, `secuencia-pago-mp`, `secuencia-puerta`): el `.html` es la fuente y el `.svg` sale de `python3 ~/.claude/skills/diagram-design/scripts/export_svg.py <archivo>.html`.
+
 Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `imagen_map`.
 
 ## Diagramas
@@ -32,6 +34,10 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `secuencia-reserva.puml` | `POST /api/reservas`: de reservar butacas a emitir el ticket |
 | `secuencia-candy.puml` | Comprar en el candy: del combo al ticket |
 | `sistema-contexto.html` | C4 nivel 1 (diagram-design, exportado a `.svg`): cliente, encargado y acomodador, el sistema, Mercado Pago y TMDB |
+| `sistema-mapa.html` | Cómo se conecta todo (diagram-design): dónde corre cada pieza, el protocolo de cada flecha y qué secreto entra en cada servicio externo |
+| `secuencia-google.html` | Ingresar con Google: código, canje con el secret, cliente en MySQL y cookie (diagram-design) |
+| `secuencia-pago-mp.html` | Comprar y pagar con Mercado Pago: reserva, preferencia, vuelta o conciliación, ticket (diagram-design) |
+| `secuencia-puerta.html` | La puerta: Android escanea, `POST /api/acceso` con Basic, MySQL (diagram-design) |
 | `docker-despliegue.puml` | Los 4 contenedores de `cine-docker`, las redes `web`/`datos`, volúmenes y qué carpeta construye a cada uno |
 | `reserva-clases.archify.json` | Las mismas capas con las clases de `POST /api/reservas` (Archify) |
 | `peticion-capas.puml` | Una petición de punta a punta: contenedores, puertos y capas |
@@ -50,7 +56,6 @@ Un diagrama nuevo se registra en `svg_map` de `build.py`; una captura, en `image
 | `base-venta-er.puml` | Zoom del DER en la venta: PK, FK, `UNIQUE` y cascadas |
 | `precio-entrada.puml` | El precio de una entrada y el descuento al cobrar |
 | `checkout-pasarela.puml` | Checkout: abrir y confirmar contra la pasarela |
-| `pago-mercadopago.puml` | Pago online con Mercado Pago: el retorno consulta el pago |
 | `conciliacion-pagos.puml` | Conciliación: la tarea cobra lo que Mercado Pago aprobó aunque el comprador no vuelva |
 | `grilla-plan.puml` | La grilla: un plan para previsualizar, crear y extender |
 | `front-estructura.puml` | Front: carpetas por funcionalidad, dependencias hacia abajo |
