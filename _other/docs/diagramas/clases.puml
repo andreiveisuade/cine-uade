@@ -1,6 +1,6 @@
-' Diagrama de clases integrado de cine-uade. Fuente de dominio/build.mjs, que dibuja
-' clases-dominio.svg; cada bloque @startuml es una capa del diagrama.
+' Diagrama de clases del dominio de cine-uade. Fuente de dominio/build.mjs, que dibuja clases-dominio.svg.
 ' Cada relación se lee como oración del origen al destino: Reserva "0..*" --> "1" Funcion : es para >
+' Las referencias por id con FK en el schema (Pago.reservaId) se dibujan como asociación.
 
 @startuml clases-modelo
 !pragma layout elk
@@ -23,15 +23,16 @@ package "model.cartelera" {
     - enCartelera : boolean
     - trailerYoutube : String
     - estadoRevision : EstadoRevision
-    + Pelicula(titulo, duracionMinutos, generos, clasificacion)
-    + actualizar(titulo, duracionMinutos, generos, clasificacion) : void
+    + Pelicula(titulo : String, duracionMinutos : Integer, generos : List<Genero>, clasificacion : Clasificacion)
+    + actualizar(titulo : String, duracionMinutos : Integer, generos : List<Genero>, clasificacion : Clasificacion) : void
     + cambiarCatalogo(catalogo : CatalogoPelicula) : void
     + cambiarTrailer(texto : String) : void
     + completarTrailer(trailer : TrailerYoutube) : void
+    + estaEnCartelera() : boolean
     + ponerEnCartelera() : void
-    + sacarDeCartelera() : void
     + exigirProgramable() : void
     + seMuestraAlPublico() : boolean
+    + sacarDeCartelera() : void
     + dejarPendiente() : void
     + confirmar() : void
     + descartar() : void
@@ -44,9 +45,9 @@ package "model.cartelera" {
     - posterUrl : String
     - puntaje : double
     - votos : int
-    + conCambios(director, sinopsis, anio, idiomaOriginal, posterUrl, puntaje, votos, hoy) : CatalogoPelicula
+    + conCambios(director : String, sinopsis : String, anio : Integer, idiomaOriginal : String, posterUrl : String, puntaje : Double, votos : Integer, hoy : LocalDate) : CatalogoPelicula
   }
-  class TrailerYoutube <<ValueObject>> {
+  class TrailerYoutube <<ValueObject / Record>> {
     - id : String
     + TrailerYoutube(id : String)
     + {static} siEs(texto : String) : Optional<TrailerYoutube>
@@ -100,7 +101,7 @@ package "model.cartelera" {
     ~ fallar() : EstadoImportacion
     + estaEnCurso() : boolean
   }
-  class ResumenDeCorrida <<Embeddable>> {
+  class ResumenDeCorrida <<Embeddable / Record>> {
     - nuevas : int
     - salteadas : int
     - fallidas : int
@@ -129,7 +130,7 @@ package "model.salas" {
     - minutosLimpieza : int
     + Sala(nombre : String, tipo : TipoSala, minutosLimpieza : int)
     + editar(nombre : String, tipo : TipoSala, minutosLimpieza : int) : void
-    + generarAsientos(butacasPorFila, especiales) : List<Asiento>
+    + generarAsientos(butacasPorFila : List<Integer>, especiales : Map<TipoAsiento, List<String>>) : List<Asiento>
   }
   class Asiento <<Entity>> {
     - id : int
@@ -145,7 +146,10 @@ package "model.salas" {
     + exigirEnServicio() : void
     + getCodigo() : String
     + {static} codigoDe(fila : int, numero : int) : String
+    + {static} conCodigo(asientos : List<Asiento>, codigo : String) : Optional<Asiento>
     + {static} exigirConCodigo(deLaSala : List<Asiento>, codigo : String) : Asiento
+    + {static} inexistente(codigo : String) : String
+    + {static} normalizarCodigo(codigo : String) : String
   }
   enum TipoSala {
     DOS_D
@@ -178,7 +182,8 @@ package "model.funciones" {
     - programacionId : Integer
     - inicio : LocalDateTime
     - formato : FormatoDeFuncion
-    + Funcion(pelicula, sala, inicio, formato, programacionId)
+    + Funcion(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion)
+    + Funcion(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion, programacionId : Integer)
     + {static} yaPaso(inicio : LocalDateTime, ahora : LocalDateTime) : boolean
     + yaEmpezo(ahora : LocalDateTime) : boolean
     + exigirProgramableA(ahora : LocalDateTime) : void
@@ -186,7 +191,7 @@ package "model.funciones" {
     + precioEn(sala : Sala) : Dinero
     + precioDe(asiento : Asiento, sala : Sala) : Dinero
   }
-  class FormatoDeFuncion <<Embeddable / ValueObject>> {
+  class FormatoDeFuncion <<Embeddable / ValueObject / Record>> {
     - version : Version
     - proyeccion : Proyeccion
     - precio : Dinero
@@ -215,28 +220,31 @@ package "model.programaciones" {
     - formato : FormatoDeFuncion
     - activa : boolean
     - generadaHasta : LocalDate
-    + Programacion(pelicula, sala, desde, hasta, horaInicio, diasSemana, formato)
+    + Programacion(pelicula : Pelicula, sala : Sala, desde : LocalDate, hasta : LocalDate, horaInicio : LocalTime, diasSemana : Set<DayOfWeek>, formato : FormatoDeFuncion)
     + exigirGenerableA(ahora : LocalDateTime) : void
     + horarios(tope : LocalDate) : List<LocalDateTime>
     + topePara(hoy : LocalDate) : LocalDate
     + estaAlDia(hoy : LocalDate) : boolean
     + horariosSinGenerar(tope : LocalDate) : List<LocalDateTime>
     + marcarGeneradaHasta(tope : LocalDate) : void
+    + estaActiva() : boolean
     + activar() : void
     + desactivar() : void
   }
 }
 
 package "model.tiempo" {
-  class Periodo <<Embeddable / ValueObject>> {
+  class Periodo <<Embeddable / ValueObject / Record>> {
     - desde : LocalDate
     - hasta : LocalDate
+    + Periodo(desde : LocalDate, hasta : LocalDate)
     + {static} de(desde : LocalDate, hasta : LocalDate, sujeto : String) : Periodo
     + incluye(dia : LocalDate) : boolean
   }
-  class FranjaHoraria <<Embeddable / ValueObject>> {
+  class FranjaHoraria <<Embeddable / ValueObject / Record>> {
     - desde : LocalTime
     - hasta : LocalTime
+    + FranjaHoraria(desde : LocalTime, hasta : LocalTime)
     + incluye(hora : LocalTime) : boolean
   }
 }
@@ -253,7 +261,7 @@ package "model.ventas" {
     - estado : EstadoReserva
     - ingresadaEn : LocalDateTime
     - version : int
-    + Reserva(funcion, cliente, butacas, creadaEn)
+    + Reserva(funcion : Funcion, cliente : Cliente, butacas : List<ButacaPedida>, creadaEn : LocalDateTime)
     + {static} validarTopeDeButacas(butacas : Collection<?>) : void
     + getTotal() : Dinero
     + pagar() : void
@@ -283,6 +291,7 @@ package "model.ventas" {
     PAGADA
     CANCELADA
     EXPIRADA
+    ~ {static} NO_SE_PUEDE_COBRAR : String
     - etiqueta : String
     ~ pagar() : EstadoReserva
     ~ cancelar() : EstadoReserva
@@ -291,6 +300,7 @@ package "model.ventas" {
     + esperaPago() : boolean
     + ocupaButacas() : boolean
     + estaPagada() : boolean
+    ~ porQueNo(queNoSePuede : String) : String
   }
   class ButacaPedida <<Record>> {
     - asiento : Asiento
@@ -307,7 +317,7 @@ package "model.ventas" {
     + {static} excluidasDePromociones() : List<TipoTarifa>
     + aplicarA(precio : Dinero) : Dinero
   }
-  class CodigoDeAcceso <<ValueObject>> {
+  class CodigoDeAcceso <<ValueObject / Record>> {
     - valor : String
     + CodigoDeAcceso(valor : String)
     + {static} generar() : CodigoDeAcceso
@@ -322,7 +332,7 @@ package "model.ventas" {
     - medio : MedioPago
     - fecha : LocalDateTime
     - codigoAutorizacion : String
-    + Pago(reservaId, subtotal, promocionId, descuento, medio, fecha, codigoAutorizacion)
+    + Pago(reservaId : int, subtotal : Dinero, promocionId : Integer, descuento : Dinero, medio : MedioPago, fecha : LocalDateTime, codigoAutorizacion : String)
     + llevaRecibo() : boolean
   }
   enum MedioPago {
@@ -343,7 +353,7 @@ package "model.ventas" {
     - sesion : String
     - venceEn : LocalDateTime
   }
-  class SesionDeCompra <<ValueObject>> {
+  class SesionDeCompra <<ValueObject / Record>> {
     - valor : String
     + SesionDeCompra(valor : String)
     + {static} comoSeGuarda(sesion : String) : String
@@ -379,13 +389,13 @@ package "model.usuarios" {
     ACOMODADOR
     + esEmpleado() : boolean
   }
-  class Email <<ValueObject>> {
+  class Email <<ValueObject / Record>> {
     - valor : String
     + Email(valor : String)
     + enmascarado() : String
     + {static} paraBuscar(texto : String) : Optional<Email>
   }
-  class Contrasena <<ValueObject>> {
+  class Contrasena <<ValueObject / Record>> {
     - valor : String
     + Contrasena(valor : String)
     + {static} temporal() : Contrasena
@@ -403,7 +413,7 @@ package "model.promociones" {
     - activa : boolean
     - imagenUrl : String
     # Promocion(nombre : String, condiciones : CondicionesPromocion, hoy : LocalDate)
-    + editar(tipo, nombre, parametros, condiciones, hoy) : void
+    + editar(tipo : TipoPromocion, nombre : String, parametros : ParametrosPromocion, condiciones : CondicionesPromocion, hoy : LocalDate) : void
     # {abstract} cambiarParametros(parametros : ParametrosPromocion) : void
     + cambiarImagen(imagen : ImagenUrl) : void
     + {abstract} getTipo() : TipoPromocion
@@ -412,31 +422,47 @@ package "model.promociones" {
     + {abstract} beneficio() : String
     + sigueVigente(hoy : LocalDate) : boolean
     + aplicaA(inicioFuncion : LocalDateTime, medio : MedioPago) : boolean
+    + getFranja() : FranjaHoraria
+    # {static} topear(descuento : Dinero, entradas : List<Entrada>) : Dinero
+    # {static} subtotalDe(entradas : List<Entrada>) : Dinero
+    + estaActiva() : boolean
     + activar() : void
     + desactivar() : void
   }
   class PromocionPorcentaje <<Entity>> {
     - porcentaje : double
-    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + PromocionPorcentaje(nombre : String, porcentaje : Double, condiciones : CondicionesPromocion, hoy : LocalDate)
+    # cambiarParametros(parametros : ParametrosPromocion) : void
+    + getTipo() : TipoPromocion
+    + getParametros() : ParametrosPromocion
     + beneficio() : String
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
   }
   class PromocionMontoFijo <<Entity>> {
     - monto : Dinero
-    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + PromocionMontoFijo(nombre : String, monto : Double, condiciones : CondicionesPromocion, hoy : LocalDate)
+    # cambiarParametros(parametros : ParametrosPromocion) : void
+    + getTipo() : TipoPromocion
+    + getParametros() : ParametrosPromocion
     + beneficio() : String
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
   }
   class PromocionNxM <<Entity>> {
     - lleva : int
     - paga : int
-    + calcularDescuento(entradas : List<Entrada>) : Dinero
+    + PromocionNxM(nombre : String, lleva : Integer, paga : Integer, condiciones : CondicionesPromocion, hoy : LocalDate)
+    # cambiarParametros(parametros : ParametrosPromocion) : void
+    + getTipo() : TipoPromocion
+    + getParametros() : ParametrosPromocion
     + beneficio() : String
+    + calcularDescuento(entradas : List<Entrada>) : Dinero
   }
   enum TipoPromocion {
     PORCENTAJE
     MONTO_FIJO
     NXM
     - campos : List<String>
-    + {abstract} crear(nombre, parametros, condiciones, hoy) : Promocion
+    + {abstract} crear(nombre : String, parametros : ParametrosPromocion, condiciones : CondicionesPromocion, hoy : LocalDate) : Promocion
   }
   class CondicionesPromocion <<Record>> {
     - desde : LocalDate
@@ -466,9 +492,11 @@ package "model.candy" {
     - disponible : boolean
     - imagenUrl : String
     # Producto(nombre : String, tipo : TipoProducto, precio : Dinero)
+    + {static} validarNombreYPrecio(nombre : String, precio : Dinero) : String
     + {abstract} getPrecioSuelto() : Dinero
     + {abstract} getAhorro() : Dinero
     + getComponentes() : List<ItemCombo>
+    + esCombo() : boolean
     + estaDisponible() : boolean
     + sacarDeLaVenta() : void
     + volverALaVenta() : void
@@ -483,7 +511,7 @@ package "model.candy" {
   }
   class Combo <<Entity>> {
     - componentes : List<ItemCombo>
-    + {static} armar(nombre, precio, componentes) : Combo
+    + {static} armar(nombre : String, precio : Dinero, componentes : Map<Producto, Integer>) : Combo
     + getComponentes() : List<ItemCombo>
     + getPrecioSuelto() : Dinero
     + getAhorro() : Dinero
@@ -493,6 +521,7 @@ package "model.candy" {
   class ItemCombo <<Embeddable>> {
     - producto : Producto
     - cantidad : int
+    ~ ItemCombo(producto : Producto, cantidad : Integer)
     + nombre() : String
     + precioSuelto() : Dinero
   }
@@ -511,8 +540,8 @@ package "model.candy" {
     - medio : MedioPago
     - codigoAutorizacion : String
     - items : List<ItemCompra>
-    + CompraCandy(clienteId, reservaId, fecha, medio, codigoAutorizacion, cantidades)
-    + {static} validarPedido(cantidades, medio, codigoAutorizacion) : String
+    + CompraCandy(clienteId : Integer, reservaId : Integer, fecha : LocalDateTime, medio : MedioPago, codigoAutorizacion : String, cantidades : Map<Producto, Integer>)
+    + {static} validarPedido(cantidades : Map<?, Integer>, medio : MedioPago, codigoAutorizacion : String) : String
     + getTotal() : Dinero
     + getAhorro() : Dinero
   }
@@ -523,6 +552,7 @@ package "model.candy" {
     - cantidad : int
     - precioUnitario : Dinero
     - ahorroUnitario : Dinero
+    ~ ItemCompra(producto : Producto, cantidad : Integer)
     + getSubtotal() : Dinero
     + getAhorro() : Dinero
   }
@@ -535,19 +565,20 @@ package "model.imagenes" {
     + ArchivoDeImagen(nombre : NombreDeImagen, contenido : byte[])
   }
   class Imagen <<ValueObject>> {
+    + {static} DEMASIADO_PESADA : String
     - contenido : byte[]
     - formato : FormatoImagen
     + {static} subida(contenido : byte[]) : Imagen
   }
-  class ImagenUrl <<ValueObject>> {
-    + {static} NINGUNA : ImagenUrl
+  class ImagenUrl <<ValueObject / Record>> {
     - valor : String
+    + {static} NINGUNA : ImagenUrl
     + ImagenUrl(valor : String)
   }
-  class NombreDeImagen <<ValueObject>> {
-    + {static} RUTA : String
+  class NombreDeImagen <<ValueObject / Record>> {
     - valor : String
     - formato : FormatoImagen
+    + {static} RUTA : String
     + {static} nuevo(formato : FormatoImagen) : NombreDeImagen
     + {static} leer(nombre : String) : Optional<NombreDeImagen>
     + url() : String
@@ -558,33 +589,41 @@ package "model.imagenes" {
     WEBP
     - extension : String
     - tipoDeContenido : String
+    - inicio : byte[]
+    - desplazamiento : int
+    - marca : byte[]
     + {static} de(contenido : byte[]) : Optional<FormatoImagen>
     + {static} conExtension(extension : String) : Optional<FormatoImagen>
   }
 }
 
 package "model.dinero" {
-  class Dinero <<ValueObject>> {
+  class Dinero <<ValueObject / Record>> {
+    - centavos : long
     + {static} CERO : Dinero
     + {static} IMPORTE_MAXIMO : Dinero
-    - centavos : long
     + {static} de(pesos : double) : Dinero
+    + {static} deCentavos(centavos : long) : Dinero
     + {static} importe(pesos : Double, que : String) : Dinero
     + {static} importeValido(importe : Dinero, que : String) : Dinero
-    + {static} sumar(importes : Collection<Dinero>) : Dinero
+    + aPesos() : double
     + mas(otro : Dinero) : Dinero
     + menos(otro : Dinero) : Dinero
     + por(factor : double) : Dinero
     + porcentaje(porcentaje : double) : Dinero
     + acotadoA(techo : Dinero) : Dinero
     + sinBajarDeCero() : Dinero
+    + esCero() : boolean
     + esMayorQue(otro : Dinero) : boolean
+    + {static} sumar(importes : Collection<Dinero>) : Dinero
+    + compareTo(otro : Dinero) : int
   }
 }
 
 package "model.rechazos" {
-  abstract class Rechazo {
+  abstract class Rechazo <<Sealed>> {
     # Rechazo(mensaje : String)
+    # Rechazo(mensaje : String, causa : Throwable)
   }
   class DatoInvalido {
     + DatoInvalido(mensaje : String)
@@ -596,6 +635,7 @@ package "model.rechazos" {
     + ConflictoDeNegocio(mensaje : String)
   }
   class ButacaOcupada {
+    + ButacaOcupada(mensaje : String)
     + ButacaOcupada(mensaje : String, causa : Throwable)
   }
   class SinPrueba {
@@ -626,16 +666,17 @@ Rechazo <|-- DemasiadosIntentos : extiende
 Pelicula "1" *--> "1" CatalogoPelicula : se describe con >
 Pelicula "0..*" --> "1" Clasificacion : se clasifica como >
 Pelicula "0..*" --> "1..*" Genero : pertenece a >
-Pelicula "0..*" --> "1" EstadoRevision : se revisa según >
-Importacion "0..*" --> "1" EstadoImportacion : avanza según >
-Importacion "1" *--> "1" ResumenDeCorrida : resume la corrida en >
+Pelicula "0..*" --> "1" EstadoRevision : está en >
+Importacion "0..*" --> "1" EstadoImportacion : está en >
+Importacion "1" *--> "1" ResumenDeCorrida : se resume en >
 Sala "1" *-- "1..*" Asiento : se compone de >
 Sala "0..*" --> "1" TipoSala : es del formato >
 Asiento "0..*" --> "1" TipoAsiento : es del tipo >
-Asiento "0..*" --> "1" EstadoAsiento : está >
+Asiento "0..*" --> "1" EstadoAsiento : está en >
 Funcion "0..*" --> "1" Pelicula : proyecta >
 Funcion "0..*" --> "1" Sala : se da en >
 Funcion "1" *--> "1" FormatoDeFuncion : se ofrece en >
+Funcion "0..*" --> "0..1" Programacion : sale de >
 FormatoDeFuncion "0..*" --> "1" Version : se habla en >
 FormatoDeFuncion "0..*" --> "1" Proyeccion : se proyecta en >
 FormatoDeFuncion "1" *--> "1" Dinero : cuesta >
@@ -645,18 +686,20 @@ Programacion "1" *--> "1" Periodo : corre en >
 Programacion "1" *--> "1" FormatoDeFuncion : se ofrece en >
 Reserva "0..*" --> "1" Funcion : es para >
 Reserva "0..*" --> "1" Cliente : es de >
-Reserva "1" *-- "1..*" Entrada : incluye >
+Reserva "1" *--> "1..10" Entrada : incluye >
 Reserva "0..*" --> "1" EstadoReserva : está en >
-Entrada "0..*" --> "1" Asiento : ocupa >
+Entrada "0..*" --> "1" Asiento : corresponde a >
 Entrada "0..*" --> "1" TipoTarifa : se vende con >
 Entrada "1" *--> "1" Dinero : cuesta >
 ButacaPedida "0..*" --> "1" Asiento : pide >
 ButacaPedida "0..*" --> "0..1" TipoTarifa : elige >
+Pago "0..1" --> "1" Reserva : cobra >
+Pago "0..*" --> "0..1" Promocion : aplica >
 Pago "0..*" --> "1" MedioPago : se cobra con >
 Pago "1" *--> "3" Dinero : congela subtotal, descuento y monto en >
-BloqueoButaca "0..*" --> "1" Funcion : bloquea en >
-BloqueoButaca "0..1" --> "1" Asiento : retiene >
-Usuario "0..*" --> "1" Rol : tiene el rol >
+BloqueoButaca "0..*" --> "1" Funcion : vale para >
+BloqueoButaca "0..*" --> "1" Asiento : retiene >
+Usuario "0..*" --> "1" Rol : tiene >
 Promocion "1" *--> "1" Periodo : es vigente en >
 Promocion "1" *--> "0..1" FranjaHoraria : se limita a >
 Promocion "0..*" --> "0..*" MedioPago : se limita a >
@@ -664,10 +707,12 @@ PromocionMontoFijo "1" *--> "1" Dinero : descuenta >
 CondicionesPromocion "0..*" --> "0..*" MedioPago : pide >
 Producto "0..*" --> "1" TipoProducto : es del rubro >
 Producto "1" *--> "1" Dinero : cuesta >
-Combo "1" *-- "2..*" ItemCombo : se arma con >
+Combo "1" *--> "2..*" ItemCombo : se arma con >
 ItemCombo "0..*" --> "1" Producto : cuenta unidades de >
-CompraCandy "1" *-- "1..*" ItemCompra : se compone de >
+CompraCandy "1" *--> "1..*" ItemCompra : se compone de >
 CompraCandy "0..*" --> "1" MedioPago : se cobra con >
+CompraCandy "0..*" --> "0..1" Cliente : se le vende a >
+CompraCandy "0..*" --> "0..1" Reserva : acompaña a >
 ItemCompra "0..*" --> "1" Producto : vende >
 ItemCompra "1" *--> "2" Dinero : congela precio y ahorro en >
 Imagen "0..*" --> "1" FormatoImagen : es del formato >
@@ -678,17 +723,20 @@ Pelicula "1" ..> "0..1" TrailerYoutube : valida su trailer con >
 FormatoDeFuncion "1" ..> "1" Sala : exige poder proyectarse en >
 Proyeccion "1" ..> "1" TipoSala : pregunta si da 3D a >
 Funcion "1" ..> "1" Asiento : le pone precio a >
-Reserva "1" ..> "1..*" ButacaPedida : crea sus entradas desde >
+Sala "1" ..> "0..*" TipoAsiento : marca sus butacas especiales con >
+Reserva "1" ..> "1..10" ButacaPedida : crea sus entradas desde >
 Reserva "1" ..> "1" CodigoDeAcceso : genera su código con >
 Usuario "1" ..> "1" Email : valida el email con >
 Promocion "1" ..> "1" CondicionesPromocion : se arma con >
 Promocion "1" ..> "1" ParametrosPromocion : describe sus parámetros en >
+Promocion "0..*" ..> "1" TipoPromocion : declara su tipo con >
 Promocion "0..*" ..> "1..*" Entrada : descuenta sobre >
 TipoPromocion "1" ..> "0..*" PromocionPorcentaje : crea >
 TipoPromocion "1" ..> "0..*" PromocionMontoFijo : crea >
 TipoPromocion "1" ..> "0..*" PromocionNxM : crea >
-Producto "1" ..> "0..1" ImagenUrl : cambia su imagen con >
-Promocion "1" ..> "0..1" ImagenUrl : cambia su imagen con >
+CompraCandy "1" ..> "1..*" Producto : arma sus renglones con >
+Producto "1" ..> "1" ImagenUrl : cambia su imagen con >
+Promocion "1" ..> "1" ImagenUrl : cambia su imagen con >
 ImagenUrl "1" ..> "1" NombreDeImagen : reconoce >
 ArchivoDeImagen "1" ..> "1" NombreDeImagen : se guarda con el nombre de >
 @enduml
