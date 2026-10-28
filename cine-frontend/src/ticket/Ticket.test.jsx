@@ -131,10 +131,14 @@ describe("Ticket como entrada", () => {
     expect(screen.queryByTitle("QR del código ABCD1234") !== null).toBe(conQr);
   });
 
-  it("la tarifa que se acredita en la puerta lleva la nota del carnet en su butaca", async () => {
+  it("la nota del carnet la decide la entrada que manda el backend, no el nombre de la tarifa", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue({
       ...reserva("RESERVADA"),
-      entradas: [{ codigo: "A1", precio: 1000, tarifa: "GENERAL" }, { codigo: "A2", precio: 700, tarifa: "ESTUDIANTE" }],
+      entradas: [
+        { codigo: "A1", precio: 1000, tarifa: "GENERAL", requiereAcreditacion: false },
+        { codigo: "A2", precio: 700, tarifa: "ESTUDIANTE", requiereAcreditacion: true },
+        { codigo: "A3", precio: 600, tarifa: "MENOR", requiereAcreditacion: false },
+      ],
     });
     abrir();
 

@@ -12,6 +12,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +135,16 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals("GENERAL", entrada(vista, "A1").tarifa());
         assertEquals("JUBILADO", entrada(vista, "A2").tarifa());
         assertTrue(entrada(vista, "A2").precio() < entrada(vista, "A1").precio());
+    }
+
+    // Los clientes no deciden «pide carnet» por el nombre de la tarifa: lo leen de la entrada.
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(TipoTarifa.class)
+    void cadaEntradaDiceSiSuTarifaPideCarnet(TipoTarifa tarifa) {
+        ReservaVistaDTO vista = vistas.reserva(reservas
+                .reservar(1, cliente.getId(), Map.of("A1", tarifa), null));
+
+        assertEquals(tarifa.requiereAcreditacion(), entrada(vista, "A1").requiereAcreditacion());
     }
 
     @Test

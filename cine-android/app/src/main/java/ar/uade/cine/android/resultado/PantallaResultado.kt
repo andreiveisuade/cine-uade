@@ -73,7 +73,11 @@ private fun Detalle(reserva: Reserva) {
     reserva.entradas.forEach {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(it.codigo, fontSize = 22.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(Formato.tarifa(it.tarifa), fontSize = 22.sp, color = Color.White)
+            Text(
+                Formato.tarifa(it.tarifa) + if (it.requiereAcreditacion) " · pedir carnet" else "",
+                fontSize = 22.sp, color = Color.White,
+                fontWeight = if (it.requiereAcreditacion) FontWeight.Bold else FontWeight.Normal,
+            )
         }
     }
     Spacer(Modifier.height(4.dp))

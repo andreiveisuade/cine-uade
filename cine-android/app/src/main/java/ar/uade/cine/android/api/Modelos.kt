@@ -17,7 +17,7 @@ data class Reserva(
 )
 
 @Serializable
-data class Entrada(val codigo: String, val tarifa: String)
+data class Entrada(val codigo: String, val tarifa: String, val requiereAcreditacion: Boolean = false)
 
 @Serializable
 data class Funcion(val inicio: String)

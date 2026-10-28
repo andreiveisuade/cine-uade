@@ -3,7 +3,7 @@ export const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gr
 
 export const vigente = (reserva) => ["RESERVADA", "PAGADA"].includes(reserva.estado) && !reserva.ingresadaEn;
 
-export const conAcreditacion = (entrada) => entrada.tarifa && entrada.tarifa !== "GENERAL";
+export const conAcreditacion = (entrada) => entrada.requiereAcreditacion;
 
 // En dos bloques de cuatro se dicta y se lee mejor en la puerta.
 export const codigoLegible = (codigo) => `${codigo.slice(0, 4)} ${codigo.slice(4)}`;

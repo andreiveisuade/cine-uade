@@ -154,7 +154,8 @@ reservar: el cliente los muestra y suma, no los recalcula.
 - Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`), el cliente,
   cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas: `400`) y
   recién al final la ocupación (`409`). Un pedido que no puede pasar nunca da `400` aunque además tenga una butaca ocupada.
-- Devuelve la reserva con `codigo` (el del QR) y `entradas[].tarifa`.
+- Devuelve la reserva con `codigo` (el del QR), `entradas[].tarifa` y `entradas[].requiereAcreditacion` (si la puerta
+  pide carnet: sale de la tarifa, los clientes no lo deducen del nombre).
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
 (R5, R17, R19) y al cancelar (R13). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
