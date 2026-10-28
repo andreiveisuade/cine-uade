@@ -48,7 +48,7 @@ describe("Pelicula", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Activar sonido" }));
 
-    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ event: "command", func: "unMute", args: [] }), "*");
+    expect(postMessage).toHaveBeenCalledWith(JSON.stringify({ event: "command", func: "unMute", args: [] }), "https://www.youtube-nocookie.com");
     expect(screen.queryByRole("button", { name: "Activar sonido" })).not.toBeInTheDocument();
   });
 

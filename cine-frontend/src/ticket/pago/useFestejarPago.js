@@ -17,7 +17,7 @@ export function useFestejarPago(pagoEnVivo, codigo) {
       celebrada.current = codigo;
       confetti = lanzar;
       lanzar({ particleCount: 120, spread: 75, origin: { y: 0.3 }, disableForReducedMotion: true });
-    });
+    }).catch(() => {}); // Sin red no hay festejo: es decoración.
     return () => {
       activo = false;
       confetti?.reset();

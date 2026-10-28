@@ -4,5 +4,5 @@ export function festejar(evento) {
   import("canvas-confetti").then(({ default: lanzar }) => lanzar({
     particleCount: 80, spread: 70, startVelocity: 35, disableForReducedMotion: true,
     origin: { x: (left + width / 2) / window.innerWidth, y: (top + height / 2) / window.innerHeight },
-  }));
+  })).catch(() => {}); // Si no baja (sin red), no hay festejo: es decoración.
 }

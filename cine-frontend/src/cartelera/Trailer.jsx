@@ -13,7 +13,7 @@ export function Trailer({ id, titulo, radio = "md" }) {
 
   function activarSonido() {
     for (const func of ["unMute", "playVideo"]) {
-      video.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "*");
+      video.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), new URL(urlTrailer(id)).origin);
     }
     setConSonido(true);
   }
