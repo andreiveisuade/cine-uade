@@ -3,7 +3,7 @@ import { Route, Routes, useLocation } from "react-router";
 import { Cartelera } from "@/cartelera/Cartelera.jsx";
 import { Pelicula } from "@/cartelera/pelicula/Pelicula.jsx";
 import { Funcion } from "@/compra/funcion/Funcion.jsx";
-import { Confirmar } from "@/compra/confirmar/Confirmar.jsx";
+import { TuCompra } from "@/compra/tu-compra/TuCompra.jsx";
 import { Ticket } from "@/ticket/Ticket.jsx";
 import { MisReservas } from "@/cuenta/reservas/MisReservas.jsx";
 import { Ingresar } from "@/cuenta/Ingresar.jsx";
@@ -31,7 +31,7 @@ export function Rutas() {
       <Route path="cartelera/:genero?" element={<Cartelera />} />
       <Route path="pelicula/:id" element={<Pelicula />} />
       <Route path="funcion/:id" element={<Funcion />} />
-      <Route path="confirmar/:id" element={<Confirmar />} />
+      <Route path="compra/:codigo" element={<TuCompra />} />
       <Route path="ticket/:codigo" element={<Ticket />} />
       <Route path="mis-reservas" element={<MisReservas />} />
       <Route path="ingresar" element={<Ingresar />} />

@@ -1,17 +1,16 @@
 import { Button, Group, Text } from "@mantine/core";
+import { Link } from "react-router";
 
-// El candy no se reserva: se paga en el mostrador. Lo que cambia según el estado es qué tiene que hacer el cliente.
+// Sin pagar, el candy se suma a la compra y se paga con la entrada (R30); ya paga, se pide en el mostrador.
 export function LlamadoAlCandy({ reserva }) {
   if (reserva.estado === "PAGADA") {
     return <Text fw={650}>Pedilo en el candy diciendo tu reserva <Text span c="var(--mantine-color-ambar-text)" fw={800}>#{reserva.id}</Text></Text>;
   }
   return (
     <Group gap="sm">
-      <Text fw={650}>Pagá online y sumá tu combo en el candy.</Text>
+      <Text fw={650}>Sumalo a tu compra y pagalo con la entrada.</Text>
       {reserva.cobrable && (
-        <Button size="compact-md" variant="light" onClick={() => document.getElementById("pagar")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
-          Pagar online
-        </Button>
+        <Button size="compact-md" variant="light" component={Link} to={`/compra/${reserva.codigo}`}>Sumar a mi compra</Button>
       )}
     </Group>
   );

@@ -14,8 +14,8 @@ package "app/" as APP #F7EBE3 {
 
 package "pantallas por funcionalidad" as PANT {
   [cartelera/\nhome, pelicula, trailer] as CART
-  [compra/\nfuncion, confirmar, mapa\nCompraEnCurso, bloqueo] as COMPRA
-  [ticket/\nentrada, pagar online\nventa cruzada] as TICKET
+  [compra/\nfuncion, mapa, tu-compra\nCompraEnCurso, bloqueo] as COMPRA
+  [ticket/\nentrada, espera del pago\nventa cruzada] as TICKET
   [cuenta/\ningresar con Google, mi cuenta\nmis reservas, sesion] as CUENTA
   [promos/\npromos, candy\ntarjetas] as PROMOS
   [institucional/\nnosotros] as INST
@@ -35,7 +35,8 @@ MARCO --> RUTAS
 MARCO --> LAYOUT
 RUTAS --> PANT
 TICKET ..> PROMOS : tarjetas
-CUENTA ..> TICKET : PagarOnline
+CUENTA ..> COMPRA : Terminar compra
+TICKET ..> COMPRA : Terminar compra
 PANT --> COMP
 PANT --> API
 COMP --> PRES

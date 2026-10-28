@@ -4,21 +4,21 @@ import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { entradaValida } from "./estadoReserva.js";
 import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
-import { PagarOnline } from "./pago/PagarOnline.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
-export function AccionesTicket({ reserva, alMostrarEnPuerta, alVolverDelPago }) {
+export function AccionesTicket({ reserva, alMostrarEnPuerta }) {
   const { usuario } = useSesion();
   const { pathname } = useLocation();
 
   return (
     <Group gap="sm" justify="space-between" align="flex-start">
-      <Box id="pagar">
+      <Box>
         {/* Sin cancelar acá: el ticket es público y se muestra en la puerta; cancelar es del dueño, en Mis reservas. */}
         {entradaValida(reserva) && (
           <Button size="md" leftSection={<IconQrcode size={20} />} onClick={alMostrarEnPuerta}>Mostrar en la puerta</Button>
         )}
-        {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} alVolver={alVolverDelPago} />}
+        {/* El pago vive en Tu compra, la misma pantalla que después del mapa: un solo lugar para pagar. */}
+        {usuario && reserva.cobrable && <Button size="md" component={Link} to={`/compra/${reserva.codigo}`}>Terminar la compra</Button>}
         {usuario === null && reserva.cobrable && (
           <Text size="sm" c="dimmed" maw="52ch">
             Para pagarla online,{" "}

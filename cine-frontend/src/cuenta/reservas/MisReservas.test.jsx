@@ -103,7 +103,7 @@ describe("MisReservas con sesión: las reservas de la cuenta", () => {
     await screen.findByRole("link", { name: "AAAA1111" });
     const acciones = within(fila("AAAA1111"));
     expect(acciones.queryByRole("button", { name: "Cancelar" }) !== null).toBe(cancelar);
-    expect(acciones.queryByRole("button", { name: "Pagar online" }) !== null).toBe(pagar);
+    expect(acciones.queryByRole("link", { name: "Terminar compra" }) !== null).toBe(pagar);
   });
 
   it("la que espera el pago dice hasta qué hora; la paga no", async () => {

@@ -29,7 +29,7 @@ export function Ticket() {
     api.obtenerPromocionesVigentes().catch(() => []),
   ]), [codigo]);
   const [enPuerta, setEnPuerta] = useState(false);
-  const { reserva, pagoEnVivo, consultar } = useEsperarPago(codigo, carga.datos?.[0]);
+  const { reserva, pagoEnVivo } = useEsperarPago(codigo, carga.datos?.[0]);
   useFestejarPago(pagoEnVivo, codigo);
 
   if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<TicketEsqueleto />} />;
@@ -40,8 +40,7 @@ export function Ticket() {
       <Stack gap="lg">
         {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
         <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
-        <AccionesTicket reserva={reserva} alMostrarEnPuerta={() => setEnPuerta(true)}
-          alVolverDelPago={consultar} />
+        <AccionesTicket reserva={reserva} alMostrarEnPuerta={() => setEnPuerta(true)} />
         <ComprobanteTexto reserva={reserva} />
       </Stack>
 

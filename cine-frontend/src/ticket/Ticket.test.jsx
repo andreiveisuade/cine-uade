@@ -235,7 +235,7 @@ describe("venta cruzada en el ticket", () => {
   });
 
   it.each([
-    ["sin pagar invita a pagar online", reserva("RESERVADA", true), "Pagá online y sumá tu combo en el candy."],
+    ["sin pagar invita a sumarlo a la compra", reserva("RESERVADA", true), "Sumalo a tu compra y pagalo con la entrada."],
     ["paga, a pedirlo en el candy con el número", reserva("PAGADA"), /Pedilo en el candy diciendo tu reserva/],
   ])("%s", async (_caso, laReserva, llamado) => {
     api.obtenerReservaPorCodigo.mockResolvedValue(laReserva);

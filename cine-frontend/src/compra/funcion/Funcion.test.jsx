@@ -19,14 +19,16 @@ const FUNCION = {
 
 const butaca = (codigo) => screen.findByTitle(new RegExp(`^${codigo} ·`));
 
+const abrir = () => renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
+
 beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
   api.obtenerFuncion.mockResolvedValue(FUNCION);
-  renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
 });
 
 describe("Funcion: elegir butacas", () => {
   it("elegir una libre la suma a la selección y la bloquea en el backend", async () => {
+    abrir();
     api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
 
     await userEvent.click(await butaca("A1"));
@@ -37,6 +39,7 @@ describe("Funcion: elegir butacas", () => {
   });
 
   it("la tarifa ofrece las que trae la butaca y muestra el precio que manda el backend", async () => {
+    abrir();
     api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
     await userEvent.click(await butaca("A1"));
     const tarifa = screen.getByRole("combobox");
@@ -47,6 +50,7 @@ describe("Funcion: elegir butacas", () => {
   });
 
   it("una ocupada no se puede elegir", async () => {
+    abrir();
     const ocupada = await butaca("A3");
 
     expect(ocupada).toBeDisabled();
@@ -55,6 +59,7 @@ describe("Funcion: elegir butacas", () => {
   });
 
   it("volver a tocar una elegida la suelta", async () => {
+    abrir();
     api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
     await userEvent.click(await butaca("A1"));
 
@@ -66,6 +71,7 @@ describe("Funcion: elegir butacas", () => {
 
   // Dos clics antes de que React vuelva a pintar: el segundo no puede partir de la selección vieja.
   it("dos clics seguidos en butacas distintas suman las dos", async () => {
+    abrir();
     api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
     const [a1, a2] = [await butaca("A1"), await butaca("A2")];
 
@@ -79,6 +85,7 @@ describe("Funcion: elegir butacas", () => {
   });
 
   it("no manda un bloqueo mientras el anterior está en vuelo: el backend los tomaría a la vez y rechazaría la primera", async () => {
+    abrir();
     let soltar;
     api.bloquearButacas
       .mockImplementationOnce(() => new Promise((r) => { soltar = () => r({ rechazadas: [] }); }))
@@ -104,6 +111,7 @@ describe("Funcion: elegir butacas", () => {
     ["el backend la rechaza (400)", () => Promise.reject(Object.assign(new Error("Pasaste el tope de 10 butacas"), { status: 400 })),
       "Pasaste el tope de 10 butacas"],
   ])("si %s vuelve atrás y muestra el error tal cual", async (_caso, respuesta, mensaje) => {
+    abrir();
     api.bloquearButacas.mockImplementation(respuesta);
 
     await userEvent.click(await butaca("A1"));
@@ -119,6 +127,7 @@ describe("Funcion: elegir butacas", () => {
 describe("Funcion: continuar sin sesión", () => {
   // R28: se compra con la cuenta de Google. Ir a Google recarga la página: lo elegido queda en la pestaña.
   it("renueva el bloqueo, guarda lo elegido y lleva a ingresar", async () => {
+    abrir();
     api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
     await userEvent.click(await butaca("A1"));
     api.bloquearButacas.mockClear();
@@ -128,5 +137,45 @@ describe("Funcion: continuar sin sesión", () => {
     expect(api.bloquearButacas).toHaveBeenCalledWith(expect.objectContaining({ funcionId: 5, butacas: ["A1"] }));
     expect(await screen.findByText("en /ingresar")).toBeInTheDocument();
     expect(JSON.parse(sessionStorage.getItem("cine.compra"))).toEqual({ funcionId: 5, butacas: { A1: "GENERAL" } });
+  });
+});
+
+describe("Funcion: continuar con sesión", () => {
+  beforeEach(() => api.sesionActual.mockResolvedValue({ id: 1, nombre: "Ana", email: "ana@mail.com", rol: "CLIENTE" }));
+
+  async function elegirYContinuar() {
+    api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
+    abrir();
+    await userEvent.click(await butaca("A1"));
+    await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
+  }
+
+  it("reserva lo elegido con la sesión que bloqueó y sigue a Tu compra", async () => {
+    api.crearReserva.mockResolvedValue({ codigo: "ABCD1234" });
+    sessionStorage.setItem("cine.sesionDeCompra", "sesion-del-mapa");
+
+    await elegirYContinuar();
+
+    expect(api.crearReserva).toHaveBeenCalledWith({ funcionId: 5, butacas: { A1: "GENERAL" }, sesion: "sesion-del-mapa" });
+    expect(await screen.findByText("en /compra/ABCD1234")).toBeInTheDocument();
+  });
+
+  it("si otra compra ganó una butaca (409) avisa, suelta lo elegido y vuelve a pedir el mapa", async () => {
+    api.crearReserva.mockRejectedValue(Object.assign(new Error("La butaca A1 ya está ocupada"), { status: 409 }));
+
+    await elegirYContinuar();
+
+    expect(await screen.findByText("La butaca A1 ya está ocupada")).toBeInTheDocument();
+    expect(screen.getByText("Elegí una o más butacas")).toBeInTheDocument();
+    await waitFor(() => expect(api.obtenerFuncion).toHaveBeenCalledTimes(2));
+  });
+
+  it("otro rechazo se muestra al lado del botón y deja reintentar", async () => {
+    api.crearReserva.mockRejectedValue(Object.assign(new Error("La función ya empezó: no se pueden reservar butacas"), { status: 400 }));
+
+    await elegirYContinuar();
+
+    expect(await screen.findByText("La función ya empezó: no se pueden reservar butacas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeEnabled();
   });
 });

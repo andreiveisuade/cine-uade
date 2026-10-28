@@ -26,16 +26,16 @@ beforeEach(() => {
 
 describe("Ingresar", () => {
   it("el botón lleva a Google y recuerda a qué compra volver", async () => {
-    renderConApp(<Ingresar />, { en: { pathname: "/", state: { volver: "/confirmar/5" } } });
+    renderConApp(<Ingresar />, { en: { pathname: "/", state: { volver: "/funcion/5" } } });
 
     await userEvent.click(await screen.findByRole("button", { name: "Ingresar con Google" }));
 
     expect(api.irAGoogle).toHaveBeenCalledOnce();
-    expect(sessionStorage.getItem("cine.vuelta")).toBe("/confirmar/5");
+    expect(sessionStorage.getItem("cine.vuelta")).toBe("/funcion/5");
   });
 
   it("viniendo de una compra dice que es para terminarla", async () => {
-    renderConApp(<Ingresar />, { en: { pathname: "/", state: { volver: "/confirmar/5" } } });
+    renderConApp(<Ingresar />, { en: { pathname: "/", state: { volver: "/funcion/5" } } });
 
     expect(await screen.findByText(/Ingresá con Google para terminar la compra/)).toBeInTheDocument();
   });

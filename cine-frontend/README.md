@@ -36,9 +36,10 @@ src/
     ui/           Poster, Chips, MontoAnimado, MediosDePago
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
-  compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
+  compra/         mapa de butacas y función; selección, bloqueo y tarifas
+    tu-compra/    lo elegido, el candy para sumar y el pago, en una pantalla
   ticket/         la entrada, acciones, venta cruzada
-    pago/         pagar online, espera, vuelta y festejo del pago
+    pago/         espera y festejo del pago
     pdf/          la entrada en PDF para descargar
   cuenta/         sesión, ingresar con Google, mi cuenta, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
@@ -69,10 +70,11 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `useRenovarBloqueo(funcionId)`: renueva el bloqueo de las butacas cada minuto.
 - `useCambiarTarifa()`: cambia la tarifa de una butaca elegida.
 - `useAlternarButaca`: elegir o soltar una butaca y bloquearla en el backend.
-- `useReservar(funcionId)`: crea la reserva y va al ticket, o vuelve al mapa si perdió una butaca.
+- `useReservar(funcionId, recargarMapa)`: crea la reserva y sigue a Tu compra, o recarga el mapa si perdió una butaca.
+- `useCandyDeLaCompra(reserva, alGuardar)`: el pedido de candy, un PUT por vez con los clics seguidos juntos.
+- `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» y la vuelta de Mercado Pago.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
 - `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.
-- `usePagarOnline(codigo, alVolver)`: los pasos del pago online, de traer los medios a ir a Mercado Pago.
 - `useRotacion(cantidad, frenada)`: la portada avanza sola cada 7 s y se frena con el mouse, el foco, la
   pestaña oculta o movimiento reducido.
 - `usePrevia`: trailer muteado al dejar el mouse sobre un póster.

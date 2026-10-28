@@ -104,6 +104,13 @@ export const volverDeLaPasarelaEmulada = (checkoutId, status) =>
 export const crearReserva = ({ funcionId, butacas, sesion }) =>
   post("/reservas", { funcionId: Number(funcionId), butacas, sesion });
 
+// R30: va el pedido entero y {} lo saca; vuelve la reserva con el candy pendiente.
+export const pedirCandy = (codigo, cantidades) =>
+  pedir(`/reservas/codigo/${encodeURIComponent(codigo)}/candy`, { metodo: "PUT", cuerpo: { cantidades } });
+
+// Lo que costaría con cada medio, sin abrir el pago: la promo depende del medio (R15, R16).
+export const obtenerCotizacion = (codigo) => get(`/reservas/codigo/${encodeURIComponent(codigo)}/cotizacion`);
+
 export const obtenerReservaPorCodigo = (codigo) =>
   get(`/reservas/codigo/${encodeURIComponent(codigo)}`);
 

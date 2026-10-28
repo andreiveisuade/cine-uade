@@ -1,4 +1,5 @@
-import { Button, Group, Paper, ScrollArea, Text, Title } from "@mantine/core";
+import { Box, Button, Group, Paper, ScrollArea, Text, Title } from "@mantine/core";
+import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { precio } from "@/compartido/formato.js";
 import { MontoAnimado } from "@/compartido/ui/MontoAnimado.jsx";
 import { SelectorTarifa } from "@/compra/SelectorTarifa.jsx";
@@ -6,7 +7,7 @@ import { precioConTarifa } from "@/compra/tarifas.js";
 import { useCambiarTarifa } from "@/compra/useCambiarTarifa.js";
 
 // Lo elegido con su tarifa y el total, al lado del mapa.
-export function TuSeleccion({ elegidas, butacas, total, alContinuar }) {
+export function TuSeleccion({ elegidas, butacas, total, enviando, error, alContinuar }) {
   const cambiarTarifa = useCambiarTarifa();
   return (
     <Paper withBorder p="lg">
@@ -33,9 +34,10 @@ export function TuSeleccion({ elegidas, butacas, total, alContinuar }) {
         </Text>
         <Text className="cine-display cine-cifras" fz={34} fw={850} lh={1}><MontoAnimado valor={total} /></Text>
       </Group>
-      <Button fullWidth size="md" disabled={!elegidas.length} onClick={alContinuar}>
+      <Button fullWidth size="md" disabled={!elegidas.length} loading={enviando} onClick={alContinuar}>
         Continuar
       </Button>
+      {error && <Box mt="sm"><ErrorCaja>{error}</ErrorCaja></Box>}
     </Paper>
   );
 }

@@ -17,6 +17,7 @@ import { FuncionEsqueleto } from "./FuncionEsqueleto.jsx";
 import { pintarParaComprar, REFERENCIAS } from "./pintarParaComprar.js";
 import { TuSeleccion } from "./TuSeleccion.jsx";
 import { useAlternarButaca } from "./useAlternarButaca.js";
+import { useReservar } from "./useReservar.js";
 
 // Primer paso de la compra: elegir butacas en el mapa de la sala.
 export function Funcion() {
@@ -31,6 +32,7 @@ export function Funcion() {
   // la vacíe; el primer clic la reemplaza porque `alternar` escribe la selección entera con este funcionId.
   const butacas = funcion && seleccion.funcionId === funcion.id ? seleccion.butacas : {};
   const alternar = useAlternarButaca(funcion, butacas, carga.recargar);
+  const { reservar, enviando, error } = useReservar(funcion?.id, carga.recargar);
 
   useRenovarBloqueo(funcion?.id);
   useTitulo(funcion && `Butacas de ${funcion.pelicula.titulo}`);
@@ -38,13 +40,12 @@ export function Funcion() {
   if (!funcion) return <EsperaOError carga={carga} esqueleto={<FuncionEsqueleto />} />;
   const { elegidas, total } = resumenCompra(funcion, butacas);
 
-  // R28: sin sesión se ingresa con Google y se vuelve a confirmar. El bloqueo se renueva antes de salir, así la vuelta
-  // tiene sus 3 minutos enteros; si igual se pierde una butaca, reservar da 409 y vuelve al mapa.
+  // R28: se reserva con la sesión de Google. Sin ella se ingresa y se vuelve acá con lo elegido; el bloqueo se renueva
+  // antes de salir, así la vuelta tiene sus 3 minutos enteros, y si igual se pierde una butaca, reservar da 409.
   async function continuar() {
-    const confirmar = `/confirmar/${funcion.id}`;
-    if (usuario) return navegar(confirmar);
+    if (usuario) return reservar();
     await sostenerSeleccion(funcion.id, butacas).catch(() => {});
-    navegar("/ingresar", { state: { volver: confirmar } });
+    navegar("/ingresar", { state: { volver: `/funcion/${funcion.id}` } });
   }
 
   return (
@@ -63,7 +64,7 @@ export function Funcion() {
 
         <Grid.Col span={{ base: 12, lg: "content" }} w={{ lg: 320 }} style={{ position: "sticky", top: 88 }}>
           <TuSeleccion elegidas={elegidas} butacas={butacas} total={total}
-            alContinuar={continuar} />
+            enviando={enviando} error={error} alContinuar={continuar} />
         </Grid.Col>
       </Grid>
     </div>

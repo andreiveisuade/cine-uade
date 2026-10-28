@@ -257,7 +257,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
   query) consulta el pago y cobra si está aprobado (recargar no cobra dos veces). `approved` no alcanza: con MP de
   verdad lo decide `/v1/payments/search`, y solo la emulada aprueba sin preguntar. `302` a `/#/ticket/<codigo>` o
   `/#/ticket/<codigo>?aviso=<texto>` si no se pudo cobrar; `404` si el checkout no existe.
-  El front abre MP en la misma pestaña y, al volver al ticket (o con «Ya pagué»), llama esta misma ruta con
+  El front abre MP en la misma pestaña y, al volver a `#/compra/<codigo>` con Atrás (el id queda en `sessionStorage`), llama esta misma ruta con
   `redirect: "manual"`: en localhost MP no redirige al sitio y así no espera a la conciliación.
 - Un `approved` cuenta solo si coincide monto, moneda (ARS) y tipo de pago del medio; si no, `409` en `/confirmacion` y aviso
   «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería» en el retorno.
@@ -272,8 +272,10 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 | `#/nosotros` | Integrantes y descripción del cine |
 | `#/ingresar[?error=]` | Botón «Ingresar con Google» (deshabilitado si `GET /sesion/google` dice que no). Al volver con sesión sigue la compra de la que vino (guardada en `sessionStorage`) o va a `#/mis-reservas`; `error` es el motivo del rechazo |
 | `#/mi-cuenta` | Con sesión: nombre y dar de baja (con confirmación) |
-| `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Pagar online. Sin sesión: búsqueda por código |
-| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. El QR, «Descargar entrada» y «Mostrar en la puerta», solo con la reserva pagada y sin usar; sin pagar dice hasta qué hora se paga (`venceEn`). `aviso` es el motivo si el pago de MP no se cobró |
+| `#/funcion/<id>` | El mapa de butacas, sin sesión. «Continuar» con sesión reserva (`POST /reservas`) y sigue a `#/compra/<codigo>`; sin sesión pasa por `#/ingresar` y vuelve al mapa con lo elegido |
+| `#/compra/<codigo>` | Tu compra, con sesión: las butacas con su tarifa, el candy para sumar (`PUT …/candy` por cada cambio, de a uno) y el pago (`GET …/cotizacion`, y un checkout nuevo en cada «Pagar»). Pagada lleva al ticket; vencida o cancelada dice por qué |
+| `#/mis-reservas` | Con sesión: `GET /reservas/mias`, con Cancelar y Terminar compra. Sin sesión: búsqueda por código |
+| `#/ticket/<codigo>[?aviso=]` | Público, sin cancelar. El QR, «Descargar entrada» y «Mostrar en la puerta», solo con la reserva pagada y sin usar; sin pagar dice hasta qué hora se paga (`venceEn`) y al dueño le ofrece «Terminar la compra». `aviso` es el motivo si el pago de MP no se cobró |
 
 ---
 

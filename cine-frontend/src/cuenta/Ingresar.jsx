@@ -32,7 +32,7 @@ export function Ingresar() {
   // Ya con sesión (recién vuelto de Google o entrando de nuevo): a la compra que dejó, o a sus reservas.
   if (usuario) return <Navigate to={volver || "/mis-reservas"} replace />;
   return (
-    <FormularioCentrado titulo="Ingresar" alEnviar={irAGoogle} bajada={volver?.startsWith("/confirmar/")
+    <FormularioCentrado titulo="Ingresar" alEnviar={irAGoogle} bajada={volver?.startsWith("/funcion/")
       ? "Ingresá con Google para terminar la compra: tus butacas te esperan unos minutos."
       : "Con tu cuenta de Google comprás entradas, ves tus reservas, las pagás online o las cancelás. Si ya compraste antes, usá el mismo email."}>
       <Button type="submit" size="md" variant="default" leftSection={<IconBrandGoogle size={18} />}

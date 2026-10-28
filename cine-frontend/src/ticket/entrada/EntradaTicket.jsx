@@ -27,6 +27,12 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
 
         <Box>
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
+          {(reserva.candy ?? []).flatMap((c) => c.items.map((i) => ({ ...i, clave: `${c.id}-${i.productoId}` }))).map((i) => (
+            <Group key={i.clave} justify="space-between" py={8} style={{ borderBottom: "1px dashed var(--cine-borde)" }}>
+              <Text size="sm">{i.cantidad} × {i.nombre}</Text>
+              <Text size="sm" fw={600} className="cine-cifras">{precio(i.subtotal)}</Text>
+            </Group>
+          ))}
           <Group justify="space-between" align="baseline" pt="sm">
             <Text fw={650}>Total · {reserva.entradas.length} entrada{reserva.entradas.length === 1 ? "" : "s"}</Text>
             <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(reserva.total)}</Text>
