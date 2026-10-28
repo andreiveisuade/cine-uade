@@ -16,6 +16,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpSession;
 
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.imagenes.ImagenUrl;
@@ -54,6 +56,9 @@ class CuentaDelClienteTest extends PruebaDeApi {
 
     @Autowired
     private GestorReservas reservas;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
 
     @Autowired
     private GestorPagos pagos;
@@ -291,7 +296,9 @@ class CuentaDelClienteTest extends PruebaDeApi {
     }
 
     private Reserva reservar(String nombre, String email, String butaca) {
-        return reservas.reservar(funcionId, nombre, email, Map.of(butaca, TipoTarifa.GENERAL), null);
+        // Como quien compró antes de que la web pidiera la sesión: el cliente puede existir sin haber entrado con Google.
+        Cliente cliente = clienteRepository.findByEmail(email).orElseGet(() -> clienteRepository.save(new Cliente(nombre, email)));
+        return reservas.reservar(funcionId, cliente.getId(), Map.of(butaca, TipoTarifa.GENERAL), null);
     }
 
     private static String cancelacion(Reserva reserva) {

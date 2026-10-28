@@ -16,7 +16,7 @@ despertar si estuvo inactivo.
 | Carpeta | Qué es | Tecnología |
 |---|---|---|
 | [`cine-backend/`](cine-backend/README.md) | API REST y reglas de negocio | Java 21, Spring Boot 3.5, JPA, Spring Security, MySQL 8.4 |
-| [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, con cuenta opcional | React 19, Mantine, Vite, nginx |
+| [`cine-frontend/`](cine-frontend/README.md) | Venta web al cliente, que compra con su cuenta de Google | React 19, Mantine, Vite, nginx |
 | [`cine-swing/`](cine-swing/README.md) | Panel del encargado y Puerta del acomodador | Java 21, Swing, FlatLaf |
 | [`cine-android/`](cine-android/README.md) | Puerta del acomodador en el celular: escanea el QR del ticket | Kotlin, Jetpack Compose, CameraX, ML Kit |
 | [`cine-docker/`](cine-docker/README.md) | Levanta todo: MySQL, backend, frontend y Adminer | Docker Compose |

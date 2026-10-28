@@ -379,8 +379,8 @@ class ManejadorErroresTest extends PruebaDeApi {
     @Test
     void unTipoEquivocadoEnElCuerpoEs400YNombraElCampo() {
         Respuesta precio = post("/api/candy/productos", "{\"nombre\":\"Agua\",\"tipo\":\"BEBIDA\",\"precio\":\"abc\"}");
-        Respuesta funcion = post("/api/reservas", "{\"funcionId\":\"uno\",\"nombre\":\"Ana\","
-                + "\"email\":\"ana@mail.com\",\"butacas\":{\"A1\":\"GENERAL\"}}");
+        Respuesta funcion = conSesion(HttpMethod.POST, "/api/reservas", entrarConGoogle("ana@mail.com"),
+                "{\"funcionId\":\"uno\",\"butacas\":{\"A1\":\"GENERAL\"}}");
 
         assertEquals(400, precio.estado());
         assertEquals("El campo precio tiene un valor inválido: abc", precio.error());
@@ -469,10 +469,8 @@ class ManejadorErroresTest extends PruebaDeApi {
             cuerpo de solo espacios,         POST, /api/salas,                             application/json, '   ',                            400, El cuerpo del pedido tiene que ser un objeto JSON
             decimal en un id,                POST, /api/funciones,                         application/json, '{"peliculaId":1.9,"salaId":1}',  400, 'El campo peliculaId tiene un valor inválido: 1.9'
             decimal en una cantidad,         POST, /api/candy/compras,                     application/json, '{"cantidades":{"3":1.5}}',       400, 'El campo cantidades.3 tiene un valor inválido: 1.5'
-            tarifa escrita como número,      POST, /api/reservas,                          application/json, '{"funcionId":1,"butacas":{"A1":1}}', 400, 'La tarifa de la butaca A1 no es válida: 1'
             id que desborda en la ruta,      GET,  /api/funciones/99999999999,             ,                 ,                                 404, No existe la ruta /api/funciones/99999999999
             id que desborda en la query,     GET,  /api/funciones?peliculaId=99999999999,  ,                 ,                                 400, El id de la película tiene que estar entre -2147483648 y 2147483647
-            id que desborda en el cuerpo,    POST, /api/reservas,                          application/json, '{"funcionId":99999999999}',      400, 'El campo funcionId tiene un valor inválido: 99999999999'
             año de nueve cifras en la query, GET,  /api/arqueo?fecha=%2B999999999-12-31,   ,                 ,                                 400, La fecha tiene que estar entre los años 1000 y 9999
             año de nueve cifras en la grilla, POST, /api/grilla/propuesta,                 application/json, '{"desde":"+999999999-12-31","precio":5000}', 400, La fecha de inicio tiene que estar entre los años 1000 y 9999
             año de nueve cifras al programar, POST, /api/funciones,                        application/json, '{"peliculaId":1,"salaId":1,"inicio":"+999999999-12-31T23:00","idioma":"DOBLADA","proyeccion":"DOS_D","precio":5000}', 400, La fecha y hora de la función tiene que estar entre los años 1000 y 9999
@@ -483,6 +481,19 @@ class ManejadorErroresTest extends PruebaDeApi {
 
         assertEquals(estado, respuesta.estado());
         assertEquals(MediaType.APPLICATION_JSON, respuesta.cabeceras().getContentType());
+        assertEquals(error, respuesta.error());
+    }
+
+    // Reservar pide la sesión del cliente (R28): lo mal armado de ese cuerpo, con Ana adentro.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            tarifa escrita como número,   '{"funcionId":1,"butacas":{"A1":1}}', 'La tarifa de la butaca A1 no es válida: 1'
+            id que desborda en el cuerpo, '{"funcionId":99999999999}',         'El campo funcionId tiene un valor inválido: 99999999999'
+            """)
+    void loMalArmadoAlReservarNombraQueCorregir(String caso, String cuerpo, String error) {
+        Respuesta respuesta = conSesion(HttpMethod.POST, "/api/reservas", entrarConGoogle("ana@mail.com"), cuerpo);
+
+        assertEquals(400, respuesta.estado());
         assertEquals(error, respuesta.error());
     }
 

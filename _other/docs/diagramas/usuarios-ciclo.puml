@@ -3,7 +3,7 @@ title Ciclo de vida de un cliente: la cuenta es la de Google
 
 hide empty description
 
-[*] --> SinCuenta : compra sin cuenta\n(GestorClientes.identificar)
+[*] --> SinCuenta : compro sin cuenta antes de R28\n(en la web ya no se puede)
 [*] --> ConGoogle : entra con Google\nemail nuevo: alta con el nombre de Google (R28)
 
 state "Sin sesion\nsu credencial: el codigo de la entrada" as SinCuenta

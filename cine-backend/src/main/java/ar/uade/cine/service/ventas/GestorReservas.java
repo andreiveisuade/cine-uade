@@ -27,7 +27,6 @@ import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.candy.GestorCandy;
-import ar.uade.cine.service.usuarios.GestorClientes;
 
 // Vende y cancela butacas de una función (R4, R6, R9, R13, R19); coordina y cada entidad valida lo suyo.
 @Service
@@ -39,7 +38,6 @@ public class GestorReservas {
     private final ReservaRepository reservaRepository;
     private final AsientoRepository asientoRepository;
     private final ClienteRepository clienteRepository;
-    private final GestorClientes clientes;
     private final ApplicationEventPublisher eventos;
     private final FuncionesEnVenta enVenta;
     private final Ocupacion ocupacion;
@@ -47,11 +45,10 @@ public class GestorReservas {
     private final GestorCandy candy;
     private final Reloj reloj;
 
-    // El alta del cliente comparte la transacción. La función va antes que el cliente: si no existe o ya empezó (R19) anula lo demás.
-    public Reserva reservar(int funcionId, String nombre, String email, Map<String, TipoTarifa> butacas,
-                            String sesion) {
+    // R28: la web compra con la sesión de Google, que ya dio de alta al cliente. La función va primero (R19).
+    public Reserva reservar(int funcionId, String emailDeLaSesion, Map<String, TipoTarifa> butacas, String sesion) {
         Funcion funcion = enVenta.exigir(funcionId);
-        return vender(funcion, clientes.identificar(nombre, email), butacas, sesion);
+        return vender(funcion, clienteRepository.findByEmail(emailDeLaSesion).orElseThrow(), butacas, sesion);
     }
 
     public Reserva reservar(int funcionId, int clienteId, Map<String, TipoTarifa> butacas,

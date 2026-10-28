@@ -150,6 +150,6 @@ class CuentaControllerTest extends PruebaDeApi {
     }
 
     private Reserva reservar(String email, String butaca) {
-        return reservas.reservar(funcionId, "Cliente", email, Map.of(butaca, TipoTarifa.GENERAL), null);
+        return reservas.reservar(funcionId, email, Map.of(butaca, TipoTarifa.GENERAL), null);
     }
 }

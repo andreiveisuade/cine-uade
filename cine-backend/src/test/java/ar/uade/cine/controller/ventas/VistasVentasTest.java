@@ -111,7 +111,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
         funciones.programar(1, sala.getId(),
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
     }
 
@@ -286,7 +286,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
             int funcion = funciones.programar(pelicula, sala.getId(),
                     LocalDateTime.of(2026, 9, 1, 10, 0).plusHours(3L * vendidas),
                     new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))).getId();
-            Cliente otro = clientes.identificar("Cliente " + vendidas, "cliente" + vendidas + "@uade.edu.ar");
+            Cliente otro = clientes.ingresarConGoogle("Cliente " + vendidas, "cliente" + vendidas + "@uade.edu.ar");
             for (int clienteId : List.of(cliente.getId(), otro.getId())) {
                 Reserva reserva = reservas.reservar(funcion, clienteId,
                         Map.of(clienteId == cliente.getId() ? "A1" : "A2", TipoTarifa.GENERAL), null);

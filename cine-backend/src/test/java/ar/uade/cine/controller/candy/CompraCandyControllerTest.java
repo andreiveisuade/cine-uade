@@ -85,7 +85,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
     @Test
     void unaVentaParaUnaReservaSinClienteHeredaElDeLaReserva() {
         cargarCarta();
-        int duenio = clientes.identificar("Andrei", "andrei@uade.edu.ar").getId();
+        int duenio = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
         int reserva = reservaPagadaDe(duenio);
 
         Respuesta respuesta = post("/api/candy/compras", "{\"reservaId\":" + reserva
@@ -99,7 +99,7 @@ class CompraCandyControllerTest extends PruebaDeApi {
     @Test
     void lasComprasSeListanPorDiaOPorCliente() {
         cargarCarta();
-        int andrei = clientes.identificar("Andrei", "andrei@uade.edu.ar").getId();
+        int andrei = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
         post("/api/candy/compras", "{\"cantidades\":{\"" + pochoclos + "\":1},\"medio\":\"EFECTIVO\"}");
         post("/api/candy/compras", "{\"clienteId\":" + andrei + ",\"cantidades\":{\"" + gaseosa
                 + "\":1},\"medio\":\"EFECTIVO\"}");
@@ -144,8 +144,8 @@ class CompraCandyControllerTest extends PruebaDeApi {
     @Test
     void unaVentaParaLaReservaDeOtroClienteEs400() {
         cargarCarta();
-        int duenio = clientes.identificar("Andrei", "andrei@uade.edu.ar").getId();
-        int otro = clientes.identificar("Otra", "otra@uade.edu.ar").getId();
+        int duenio = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
+        int otro = clientes.ingresarConGoogle("Otra", "otra@uade.edu.ar").getId();
         int reserva = reservaPagadaDe(duenio);
 
         Respuesta respuesta = post("/api/candy/compras", "{\"clienteId\":" + otro + ",\"reservaId\":" + reserva

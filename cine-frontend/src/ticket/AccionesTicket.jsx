@@ -7,7 +7,7 @@ import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
 import { PagarOnline } from "./pago/PagarOnline.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
-export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDelPago }) {
+export function AccionesTicket({ reserva, alMostrarEnPuerta, alVolverDelPago }) {
   const { usuario } = useSesion();
   const { pathname } = useLocation();
 
@@ -19,11 +19,10 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
           <Button size="md" leftSection={<IconQrcode size={20} />} onClick={alMostrarEnPuerta}>Mostrar en la puerta</Button>
         )}
         {usuario && reserva.cobrable && <PagarOnline codigo={reserva.codigo} alVolver={alVolverDelPago} />}
-        {usuario === null && recien && reserva.cobrable && (
+        {usuario === null && reserva.cobrable && (
           <Text size="sm" c="dimmed" maw="52ch">
             Para pagarla online,{" "}
-            <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="sm">ingresá con Google</Anchor>{" "}
-            con {reserva.cliente.email}. Si no, se paga en la boletería.
+            <Anchor component={Link} to="/ingresar" state={{ volver: pathname }} size="sm">ingresá con tu cuenta de Google</Anchor>.
           </Text>
         )}
       </Box>

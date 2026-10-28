@@ -18,7 +18,7 @@ class ClienteControllerTest extends PruebaDeApi {
     // Un filtro sobre la colección: siempre una lista, con el cliente o vacía; nunca el literal null.
     @Test
     void laBusquedaPorEmailEsUnaListaQueIgnoraLosEspaciosYSinEmailVieneVacia() {
-        clientes.identificar("Ana", "ana@mail.com");
+        clientes.ingresarConGoogle("Ana", "ana@mail.com");
 
         JsonNode encontrados = get("/api/clientes?email=%20ana@mail.com%20").json();
         assertEquals(1, encontrados.size());

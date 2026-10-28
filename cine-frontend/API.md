@@ -46,8 +46,8 @@ los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST` de `/reservas` y `/funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
+| Público | `POST /funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
+| Cliente (cookie de sesión) | `POST /reservas` (R28), `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
@@ -155,14 +155,15 @@ reservar: el cliente los muestra y suma, no los recalcula.
 `POST /reservas`
 
 ```json
-{ "funcionId": 1, "nombre": "…", "email": "…", "sesion": "3f9a…",
+{ "funcionId": 1, "sesion": "3f9a…",
   "butacas": { "C5": "GENERAL", "C6": "JUBILADO" } }
 ```
 
 - `butacas`: código → tarifa, de 1 a 10. Una tarifa vacía es `GENERAL`.
-- `sesion`: la de los bloqueos, que se sueltan al confirmar. Opcional en boletería.
-- Si el email es nuevo, da de alta al cliente; el de un empleado es `400 No se puede comprar con ese email: usá otro`.
-- Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`), el cliente,
+- `sesion`: la de los bloqueos, que se sueltan al confirmar. Opcional.
+- Con la sesión de Google del cliente (R28): la reserva es suya, y un `nombre` o `email` en el cuerpo se ignora. Sin sesión
+  `401`; con la clave de un empleado, `403`. Elegir y bloquear butacas no pide sesión.
+- Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`),
   cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas: `400`) y
   recién al final la ocupación (`409`). Un pedido que no puede pasar nunca da `400` aunque además tenga una butaca ocupada.
 - Devuelve la reserva con `codigo` (el del QR), `entradas[].tarifa` y `entradas[].requiereAcreditacion` (si la puerta

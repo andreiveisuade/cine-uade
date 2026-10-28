@@ -114,12 +114,18 @@ class SeguridadTest extends PruebaDeApi {
         assertThat(sinCredenciales.error()).isEqualTo("Hace falta iniciar sesión para esta operación");
     }
 
+    // R28: se compra con la sesión de Google del cliente; elegir y bloquear butacas sigue sin credenciales.
     @Test
-    @DisplayName("el cliente reserva sin credenciales: el pedido llega al gestor")
-    void reservaDelClienteSinCredenciales() {
-        Respuesta respuesta = pedirComo(HttpMethod.POST, "/api/reservas", "{\"funcionId\":999}", null, null);
+    @DisplayName("reservar pide la sesión de un cliente: sin ella 401, y con la clave del encargado 403")
+    void reservarPideLaSesionDeUnCliente() {
+        String pedido = "{\"funcionId\":999}";
 
-        assertThat(respuesta.estado()).isNotIn(401, 403);
+        assertThat(pedirComo(HttpMethod.POST, "/api/reservas", pedido, null, null).estado()).isEqualTo(401);
+        assertThat(post("/api/reservas", pedido).estado()).isEqualTo(403);
+        assertThat(conSesion(HttpMethod.POST, "/api/reservas", entrarConGoogle("ana@mail.com"), pedido).estado())
+                .isEqualTo(404);
+        assertThat(pedirComo(HttpMethod.POST, "/api/funciones/999/bloqueos", "{\"sesion\":\"s\",\"butacas\":[]}",
+                null, null).estado()).isNotIn(401, 403);
     }
 
     // Por email cualquiera listaba las reservas de otro: las del cliente salen de su sesión.
@@ -238,8 +244,8 @@ class SeguridadTest extends PruebaDeApi {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         Funcion funcion = funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        return reservas.reservar(funcion.getId(), "Andrei", "andrei@uade.edu.ar",
-                Map.of("A1", TipoTarifa.GENERAL), null);
+        entrarConGoogle("andrei@uade.edu.ar");
+        return reservas.reservar(funcion.getId(), "andrei@uade.edu.ar", Map.of("A1", TipoTarifa.GENERAL), null);
     }
 
     // Header ilegible: 401 con {error}, no 500 ni cuadro del navegador; Basic roto equivale a clave equivocada.

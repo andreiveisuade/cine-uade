@@ -83,7 +83,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @BeforeEach
     void prepararCarta() {
-        clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         pochoclos = carta.agregar("Pochoclos grandes", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
         gaseosa = carta.agregar("Gaseosa 500ml", TipoProducto.BEBIDA, Dinero.de(2500), ImagenUrl.NINGUNA).getId();
     }
@@ -329,7 +329,7 @@ class GestorCandyTest extends PruebaDeIntegracion {
     @Test
     void siElPedidoNombraAlClienteTieneQueSerElDeLaReserva() {
         Reserva reserva = reservarYCobrar();
-        int otro = clientes.identificar("Otra", "otra@uade.edu.ar").getId();
+        int otro = clientes.ingresarConGoogle("Otra", "otra@uade.edu.ar").getId();
 
         DatoInvalido error = assertThrows(DatoInvalido.class, () -> candy.venderParaReserva(reserva.getId(),
                 otro, pedido(pochoclos, 1), MedioPago.EFECTIVO, ""));

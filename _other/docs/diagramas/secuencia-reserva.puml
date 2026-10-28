@@ -8,7 +8,7 @@ actor Cliente
 participant "ReservaController" as Ctrl
 participant "GestorReservas" as Gestor
 participant "Ocupacion" as Ocupacion
-participant "GestorClientes" as Clientes
+participant "ClienteRepository" as Clientes <<interface>>
 participant "Funcion" as Funcion <<Entity>>
 participant "Entrada" as Entrada <<Entity>>
 participant "Reserva" as Reserva <<Entity>>
@@ -17,13 +17,12 @@ participant "Spring\n(eventos)" as Eventos
 participant "ComprobantesDeVentas" as Comprobantes
 participant "GeneradorTicket" as Ticket <<interface>>
 
-Cliente -> Ctrl : POST /api/reservas\n{funcionId, nombre, email,\nbutacas: codigo -> tarifa, sesion}
+Cliente -> Ctrl : POST /api/reservas (sesion de Google)\n{funcionId, butacas: codigo -> tarifa, sesion}
 activate Ctrl
-Ctrl -> Gestor : reservar(funcionId, nombre,\nemail, butacas, sesion)
+Ctrl -> Gestor : reservar(funcionId, email de la sesion,\nbutacas, sesion)
 activate Gestor
 
-' La funcion va antes que el cliente: si no existe o ya empezo, eso anula lo
-' demas, y un email de empleado no puede taparlo.
+' La funcion va antes que el cliente: si no existe o ya empezo, eso anula lo demas.
 Gestor -> Ocupacion : funcionEnVenta(funcionId)
 activate Ocupacion
 Ocupacion -> Funcion : yaEmpezo(ahora)
@@ -35,9 +34,9 @@ else
   Ocupacion --> Gestor : funcion
   deactivate Ocupacion
 
-  Gestor -> Clientes : identificar(nombre, email)
+  Gestor -> Clientes : findByEmail(email de la sesion)
   activate Clientes
-  Clientes --> Gestor : cliente (lo da de alta si no existia)
+  Clientes --> Gestor : cliente (R28: lo dio de alta el ingreso con Google)
   deactivate Clientes
 
   Gestor -> Ocupacion : asientosOcupados(funcionId, sesion)

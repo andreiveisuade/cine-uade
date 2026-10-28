@@ -71,7 +71,7 @@ class PagoControllerTest extends PruebaDeApi {
         Funcion funcion = funciones.programar(1, 1,
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        Cliente cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        Cliente cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
         reserva = reservas.reservar(funcion.getId(), cliente.getId(),
                 Map.of("A1", TipoTarifa.GENERAL, "A2", TipoTarifa.GENERAL), null);
     }
@@ -269,10 +269,9 @@ class PagoControllerTest extends PruebaDeApi {
     // Como los demás enums: en minúsculas se entiende, y una que no existe dice de qué butaca es.
     @Test
     void laTarifaDeCadaButacaSeEscribeComoLosDemasEnums() {
-        Respuesta enMinusculas = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
-                + "\"email\":\"ana@mail.com\",\"butacas\":{\"B1\":\" jubilado \",\"B2\":null,\"B3\":\"\"}}");
-        Respuesta inexistente = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
-                + "\"email\":\"ana@mail.com\",\"butacas\":{\"b4\":\"VIP\"}}");
+        Respuesta enMinusculas = reservarComoAna(
+                "{\"funcionId\":1,\"butacas\":{\"B1\":\" jubilado \",\"B2\":null,\"B3\":\"\"}}");
+        Respuesta inexistente = reservarComoAna("{\"funcionId\":1,\"butacas\":{\"b4\":\"VIP\"}}");
 
         assertEquals(201, enMinusculas.estado());
         var entradas = enMinusculas.json().get("entradas");
@@ -288,10 +287,8 @@ class PagoControllerTest extends PruebaDeApi {
     void reservarUnaButacaYaVendidaEs409YUnaFueraDeServicio400() {
         salas.marcarFueraDeServicio(1, "B1");
 
-        Respuesta vendida = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
-                + "\"butacas\":{\"A1\":\"GENERAL\"}}");
-        Respuesta fueraDeServicio = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\","
-                + "\"email\":\"ana@mail.com\",\"butacas\":{\"B1\":\"GENERAL\"}}");
+        Respuesta vendida = reservarComoAna("{\"funcionId\":1,\"butacas\":{\"A1\":\"GENERAL\"}}");
+        Respuesta fueraDeServicio = reservarComoAna("{\"funcionId\":1,\"butacas\":{\"B1\":\"GENERAL\"}}");
 
         assertEquals(409, vendida.estado());
         assertEquals("La butaca A1 ya está ocupada", vendida.error());
@@ -312,46 +309,36 @@ class PagoControllerTest extends PruebaDeApi {
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         reservas.reservar(funcion.getId(), reserva.getClienteId(), Map.of("A1", TipoTarifa.GENERAL), null);
 
-        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":" + funcion.getId()
-                + ",\"nombre\":\"Ana\",\"email\":\"ana@mail.com\",\"butacas\":{" + butacas + "}}");
+        Respuesta respuesta = reservarComoAna("{\"funcionId\":" + funcion.getId()
+                + ",\"butacas\":{" + butacas + "}}");
 
         assertEquals(400, respuesta.estado());
         assertEquals(mensaje, respuesta.error());
     }
 
-    // Regresión: salía 409 y la web vaciaba la selección como si otro hubiera ganado la butaca.
+    // R28: nadie reserva a nombre de otro. Un email en el pedido se ignora: la reserva es de quien tiene la sesión.
     @Test
-    void reservarConElEmailDeUnEmpleadoEs400() {
-        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\""
-                + EMAIL_ADMIN + "\",\"butacas\":{\"B1\":\"GENERAL\"}}");
+    void laReservaEsDelClienteDeLaSesionAunqueElPedidoNombreAOtro() {
+        Respuesta respuesta = reservarComoAna("{\"funcionId\":1,\"nombre\":\"Beto\",\"email\":\"beto@mail.com\","
+                + "\"butacas\":{\"B1\":\"GENERAL\"}}");
 
-        assertEquals(400, respuesta.estado());
-        assertEquals("No se puede comprar con ese email: usá otro", respuesta.error());
+        assertEquals(201, respuesta.estado());
+        assertEquals("ana@mail.com", respuesta.json().get("cliente").get("email").asText());
     }
 
-    // La función va primero: que no exista o que ya empezó anula la compra, sea quien sea el que compra.
+    // La función va primero: que no exista o que ya empezó anula la compra.
     @Test
-    void conElEmailDeUnEmpleadoLoPrimeroQueSeMiraEsLaFuncion() {
-        String deUnEmpleado = ",\"nombre\":\"Ana\",\"email\":\"" + EMAIL_ADMIN + "\",\"butacas\":{\"B1\":\"GENERAL\"}}";
+    void loPrimeroQueSeMiraEsLaFuncion() {
+        String butacas = ",\"butacas\":{\"B1\":\"GENERAL\"}}";
 
-        Respuesta inexistente = post("/api/reservas", "{\"funcionId\":99" + deUnEmpleado);
+        Respuesta inexistente = reservarComoAna("{\"funcionId\":99" + butacas);
         reloj.mover(LocalDateTime.of(2026, 8, 20, 20, 5));
-        Respuesta empezada = post("/api/reservas", "{\"funcionId\":1" + deUnEmpleado);
+        Respuesta empezada = reservarComoAna("{\"funcionId\":1" + butacas);
 
         assertEquals(404, inexistente.estado());
         assertEquals("No existe la función 99", inexistente.error());
         assertEquals(400, empezada.estado());
         assertEquals("La función ya empezó: no se pueden reservar butacas", empezada.error());
-    }
-
-    // Reservar no pasa por el DTO del alta de clientes: «a@» se aceptaba.
-    @Test
-    void reservarConUnEmailSinDominioEs400() {
-        Respuesta respuesta = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"a@\","
-                + "\"butacas\":{\"B1\":\"GENERAL\"}}");
-
-        assertEquals(400, respuesta.estado());
-        assertEquals("El email tiene que tener la forma usuario@dominio.com", respuesta.error());
     }
 
     @Test
@@ -377,13 +364,17 @@ class PagoControllerTest extends PruebaDeApi {
     void conLaFuncionEmpezadaLaReservaNoEsCobrable() {
         // Reservada diez minutos antes: al empezar la función todavía no venció.
         reloj.mover(LocalDateTime.of(2026, 8, 20, 19, 50));
-        int id = post("/api/reservas", "{\"funcionId\":1,\"nombre\":\"Ana\",\"email\":\"ana@mail.com\","
-                + "\"butacas\":{\"B1\":\"GENERAL\"}}").json().get("id").asInt();
+        int id = reservarComoAna("{\"funcionId\":1,\"butacas\":{\"B1\":\"GENERAL\"}}").json().get("id").asInt();
         reloj.mover(LocalDateTime.of(2026, 8, 20, 20, 0));
         String ruta = "/api/reservas/" + id;
 
         assertFalse(get(ruta).json().get("cobrable").asBoolean(), "R19");
         assertEquals("La función ya empezó: no se puede cobrar la reserva " + id,
                 post(ruta + "/pago", "{\"medio\":\"EFECTIVO\"}").error());
+    }
+
+    // POST /api/reservas pide la sesión de un cliente (R28): Ana entra con Google y reserva.
+    private Respuesta reservarComoAna(String cuerpo) {
+        return conSesion(HttpMethod.POST, "/api/reservas", entrarConGoogle("ana@mail.com"), cuerpo);
     }
 }

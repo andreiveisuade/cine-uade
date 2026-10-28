@@ -90,8 +90,9 @@ public class ConfiguracionOpenApi {
                                 **Autenticación: HTTP Basic** con el email y la contraseña de un \
                                 empleado (botón *Authorize*). Sin credenciales se puede usar lo que \
                                 usa el sitio del cliente —cartelera, detalle de película y función, \
-                                catálogos, carta del candy, reservar, bloquear butacas, consultar y cancelar la propia \
-                                reserva—. `POST /api/sesion` (el login) y `POST /api/acceso` piden \
+                                catálogos, carta del candy, bloquear butacas y consultar un ticket por su código—. \
+                                Reservar, pagar y cancelar la propia piden la sesión de Google del cliente. \
+                                `POST /api/sesion` (el login) y `POST /api/acceso` piden \
                                 ACOMODADOR o ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
                                 """))
                 // Relativo: sirve igual detrás del nginx del compose que contra el backend directo.

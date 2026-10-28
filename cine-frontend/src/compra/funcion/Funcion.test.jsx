@@ -115,3 +115,18 @@ describe("Funcion: elegir butacas", () => {
     await waitFor(() => expect(api.obtenerFuncion).toHaveBeenCalledTimes(2));
   });
 });
+
+describe("Funcion: continuar sin sesión", () => {
+  // R28: se compra con la cuenta de Google. Ir a Google recarga la página: lo elegido queda en la pestaña.
+  it("renueva el bloqueo, guarda lo elegido y lleva a ingresar", async () => {
+    api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
+    await userEvent.click(await butaca("A1"));
+    api.bloquearButacas.mockClear();
+
+    await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(api.bloquearButacas).toHaveBeenCalledWith(expect.objectContaining({ funcionId: 5, butacas: ["A1"] }));
+    expect(await screen.findByText("en /ingresar")).toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem("cine.compra"))).toEqual({ funcionId: 5, butacas: { A1: "GENERAL" } });
+  });
+});

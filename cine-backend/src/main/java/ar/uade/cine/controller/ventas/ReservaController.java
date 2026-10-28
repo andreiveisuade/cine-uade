@@ -79,12 +79,12 @@ public class ReservaController {
         return vistas.reservaPublica(consultas.obtenerPorCodigo(codigo));
     }
 
-    @Operation(summary = "Reservar butacas. Al cliente nuevo se lo da de alta en el momento")
+    // El cliente sale de la sesión, no del pedido: nadie reserva a nombre de otro (R28).
+    @Operation(summary = "Reservar butacas, con la sesión de Google del cliente")
     @PostMapping("/api/reservas")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ReservaVistaDTO> reservar(@Valid @RequestBody PedidoReservaDTO pedido) {
-        Reserva reserva = reservas.reservar(pedido.funcionId(),
-                pedido.nombre(), pedido.email(),
+    public ResponseEntity<ReservaVistaDTO> reservar(@Valid @RequestBody PedidoReservaDTO pedido, Principal cliente) {
+        Reserva reserva = reservas.reservar(pedido.funcionId(), cliente.getName(),
                 tarifas(pedido.butacas()),
                 pedido.sesion());
         return Creado.en("/api/reservas/" + reserva.getId(), vistas.reserva(reserva));

@@ -141,7 +141,7 @@ class VistasCarteleraTest extends PruebaDeIntegracion {
     void elMapaMarcaLasButacasYaReservadas() {
         Funcion funcion = programarUnaFuncion();
         reservas.reservar(funcion.getId(),
-                clientes.identificar("Andrei", "andrei@uade.edu.ar").getId(),
+                clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId(),
                 Map.of("A1", TipoTarifa.GENERAL), null);
 
         FuncionVistaDTO vista = vistas.funcionConButacas(funcion);

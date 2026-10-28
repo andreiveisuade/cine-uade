@@ -97,7 +97,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
-        clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
 
         ahora = LocalDateTime.of(2026, 8, 14, 10, 0);
         reloj.mover(ahora);
@@ -129,19 +129,12 @@ class GestorReservasTest extends PruebaDeIntegracion {
         rechaza("La butaca Z9 no existe en la sala", () -> reservas.reservar(1, 1, generales("Z9"), null));
     }
 
+    // R28: la web reserva con el email de la sesión de Google, y la reserva es de ese cliente.
     @Test
-    void reservarDaDeAltaAlClienteQueNoExistia() {
-        Reserva reserva = reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("A1"), null);
+    void conElEmailDeLaSesionLaReservaEsDeEseCliente() {
+        Reserva reserva = reservas.reservar(1, "andrei@uade.edu.ar", generales("A1"), null);
 
-        assertEquals(clientes.buscarPorEmail("nueva@uade.edu.ar").orElseThrow().getId(), reserva.getClienteId());
-    }
-
-    @Test
-    void unaReservaRechazadaNoDejaAlClienteDadoDeAlta() {
-        rechaza("La butaca Z9 no existe en la sala",
-                () -> reservas.reservar(1, "Nueva", "nueva@uade.edu.ar", generales("Z9"), null));
-
-        assertTrue(clientes.buscarPorEmail("nueva@uade.edu.ar").isEmpty());
+        assertEquals(clientes.buscarPorEmail("andrei@uade.edu.ar").orElseThrow().getId(), reserva.getClienteId());
     }
 
     @Test
@@ -526,7 +519,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     }
 
     private void cargarReservas() {
-        clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
+        clientes.ingresarConGoogle("Sofía Pérez", "sofia@ejemplo.com");
         cartelera.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.MAS_16);
         funciones.programar(2, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
@@ -597,7 +590,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     @Test
     @DisplayName("R21: el cliente ve solo su reserva")
     void elClienteVeSoloSuReserva() {
-        clientes.identificar("Sofía Pérez", "sofia@ejemplo.com");
+        clientes.ingresarConGoogle("Sofía Pérez", "sofia@ejemplo.com");
         Reserva suya = reservas.reservar(1, 1, generales("A1"), null);
 
         assertEquals(suya.getId(), consultas.obtenerDelCliente(suya.getCodigo(), "andrei@uade.edu.ar").getId());
