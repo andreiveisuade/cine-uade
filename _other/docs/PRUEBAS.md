@@ -23,17 +23,19 @@ mvn test -Dtest=GestorPagosTest      # una clase
 
 Sin Java ni Maven: `docker run --rm -v "$PWD":/app -w /app maven:3.9-eclipse-temurin-21 mvn -B clean test`.
 
-Levanta el contexto de Spring contra H2 en modo MySQL, creado con el `schema.sql` real: los `UNIQUE`, los
+Levanta el contexto de Spring contra H2 en modo MySQL, creado con el `db/schema.sql` real: los `UNIQUE`, los
 `NOT NULL` y los largos de columna son los mismos que en producción. No hace falta Docker.
 
-| Capa | Clases | Casos | Qué prueba |
-|---|---|---|---|
-| `model` | 23 | 397 | Entidades, validadores, Value Objects y estados, sin Spring: cada regla con su mensaje exacto |
-| `service` | 17 | 378 | Gestores con la base de H2: transacciones, orden de los errores, comprobantes después del commit |
-| `controller` | 26 | 303 | La API por HTTP en un puerto libre (`PruebaDeApi`): status, cuerpo `{error}`, seguridad por rol |
-| `infrastructure` | 3 | 44 | Importador de TMDB con un catálogo falso, encoder de contraseñas |
-| raíz | 4 | 20 | `ArquitecturaTest` (quién importa a quién), `MapeoContraSchemaTest`, migraciones, arranque |
-| `dto` y `repository` | 2 | 7 | Presencia en los DTO, `Repositorio.exigir` |
+| Capa | Qué prueba |
+|---|---|
+| `model` | Entidades, validadores, Value Objects y estados, sin Spring: cada regla con su mensaje exacto |
+| `service` | Gestores con la base de H2: transacciones, orden de los errores, comprobantes después del commit |
+| `controller` | La API por HTTP en un puerto libre (`PruebaDeApi`): status, cuerpo `{error}`, seguridad por rol |
+| `infrastructure` | Importador de TMDB con un catálogo falso, Mercado Pago, comprobantes `.txt`, imágenes en la base, límite de intentos y encoder de contraseñas |
+| raíz | `ArquitecturaTest` (quién importa a quién), `MapeoContraSchemaTest`, migraciones, arranque |
+| `dto` y `repository` | Presencia en los DTO, `Repositorio.exigir` |
+
+Cuántos tests hay y qué cubren, con cómo re-medirlo: [Cobertura medida](manual/index.html#cobertura) del manual.
 
 Dos clases base: `PruebaDeIntegracion` (el sistema armado, 22 clases la extienden) y `PruebaDeApi` (además la
 API levantada, 19 clases). Los casos con varias entradas de la misma forma son `@ParameterizedTest` con
@@ -41,7 +43,7 @@ API levantada, 19 clases). Los casos con varias entradas de la misma forma son `
 
 Tres pruebas cuidan cosas que un test de regla no ve:
 - `ArquitecturaTest` lee los `import` y falla si una capa nombra a otra que no tiene debajo.
-- `MapeoContraSchemaTest` valida las entidades contra el `schema.sql`, lo mismo que `ddl-auto: validate` hace al
+- `MapeoContraSchemaTest` valida las entidades contra el `db/schema.sql`, lo mismo que `ddl-auto: validate` hace al
   desplegar.
 - `VistasVentasTest` cuenta las consultas con las estadísticas de Hibernate y falla si crecen con las filas (N+1).
 
@@ -52,12 +54,13 @@ No correr dos `mvn test` a la vez sobre el mismo `target/`.
 ```bash
 cd cine-swing && mvn clean test      # contra un servidor HTTP falso, sin backend
 cd cine-frontend && npm run build    # compila la web; un error de sintaxis o un import roto corta acá
-cd cine-frontend && npm test           # 49 tests (Vitest + Testing Library), sin backend
+cd cine-frontend && npm test          # Vitest + Testing Library, sin backend
 cd cine-frontend && npm run lint      # reglas de hooks
 ```
 
 `PantallasTest` arma cada pantalla del menú en modo headless contra un servidor que contesta 401 a todo, y
-falla si algún callback tira una excepción en el hilo de Swing. Los demás prueban el transporte (`ClienteHttp`,
+falla si algún callback tira una excepción en el hilo de Swing. Las pantallas con formulario se manejan con
+`Operador` (campo por su etiqueta, botón por su texto) contra `ServidorFalso`, que registra qué pedido salió. Los demás prueban el transporte (`ClienteHttp`,
 las `Api*`), la lectura de los formularios (`Lecturas`, `Validacion`) y los archivos que genera el encargado
 (borderó, declaración jurada, ticket de candy).
 

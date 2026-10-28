@@ -1856,19 +1856,21 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       </ul>
 
       <h3 id="cobertura">Cobertura medida</h3>
+      <p>Medida el 28/10/2026 sobre <code>cc08e5a</code>. Tests contados de los XML de surefire (<code>target/surefire-reports/TEST-*.xml</code>), no de los <code>.txt</code>, que pueden quedar de corridas viejas.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th></tr></thead>
+          <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th><th>Reporte</th></tr></thead>
           <tbody>
-            <tr><td>Backend</td><td>1146</td><td>95,2 %</td><td>90,6 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code> (JaCoCo)</td></tr>
-            <tr><td>Swing</td><td>63</td><td>49,8 %</td><td>31,3 %</td><td><code>cd cine-swing &amp;&amp; mvn test</code></td></tr>
-            <tr><td>Front</td><td>49</td><td>64,7 %</td><td>45,4 %</td><td><code>cd cine-frontend &amp;&amp; npm test</code>; <code>npm run coverage</code> deja el reporte en <code>coverage/</code></td></tr>
+            <tr><td>Backend</td><td>1454</td><td>95,7 %</td><td>92,2 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
+            <tr><td>Swing</td><td>176</td><td>79,3 %</td><td>63,0 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
+            <tr><td>Front</td><td>154</td><td>90,5 %</td><td>84,7 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
           </tbody>
         </table>
       </div>
       <ul>
-        <li><strong>Swing, por qué tan baja:</strong> las pantallas (41 % de líneas, 1 % de ramas) son listeners y formularios sin reglas. Lo que tiene lógica (<code>api</code>, <code>comun</code>, <code>informes</code>) está testeado.</li>
-        <li><strong>Front:</strong> Vitest, jsdom y Testing Library; tests junto al código (<code>src/**/*.test.jsx</code>); <code>src/test/renderConApp.jsx</code> arma la app con sesión, compra y rutas. La API se mockea: <code>api/</code> mide 47 %. Lint: <code>npm run lint</code>.</li>
+        <li><strong>Re-medir:</strong> borrar <code>target/surefire-reports</code> y <code>target/site/jacoco</code> antes de <code>mvn test</code> (JaCoCo está en los dos <code>pom.xml</code>: <code>prepare-agent</code> + <code>report</code> en la fase <code>test</code>). Líneas y ramas salen de sumar <code>LINE_*</code> y <code>BRANCH_*</code> de <code>jacoco.csv</code>; el front las imprime en la fila <code>All files</code>.</li>
+        <li><strong>Swing:</strong> las pantallas se prueban en headless con <code>Operador</code> (campo por etiqueta, botón por texto) contra <code>ServidorFalso</code>. Quedan afuera los <code>JFrame</code> (<code>VentanaPrincipal</code>, <code>VentanaLogin</code>), lo que confirma con <code>JOptionPane</code> y la pintura (<code>GrillaAgenda</code>, <code>MapaButacas</code>): en headless tiran <code>HeadlessException</code>.</li>
+        <li><strong>Front:</strong> Vitest, jsdom y Testing Library; tests junto al código (<code>src/**/*.test.jsx</code>); <code>src/test/renderConApp.jsx</code> arma la app con sesión, compra y rutas. Lint: <code>npm run lint</code>.</li>
       </ul>
 
       <h3>Casos de la defensa</h3>
