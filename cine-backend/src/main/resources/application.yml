@@ -44,6 +44,9 @@ server:
   port: ${PORT:8080}
   # Detrás de nginx o del proxy de Render: X-Forwarded-Proto hace https las URLs y Secure la cookie.
   forward-headers-strategy: native
+  tomcat:
+    # Tras el 400 de multipart Tomcat cierra; si no drena el cuerpo entero, el cliente recibe un reset y no el 400.
+    max-swallow-size: 4MB
 
 # La documentación de la API, generada desde los @RestController. En producción CINE_SWAGGER=false: no publica el mapa de la API.
 springdoc:
