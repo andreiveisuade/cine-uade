@@ -3,6 +3,9 @@ package ar.uade.cine.swing.pantallas.funciones;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.SelectorDias;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,6 +18,9 @@ import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 
 // Cómo mira la Agenda, una sala la semana o todas las salas un día; cada modo arma sus columnas y su pedido.
 /** En una sola columna, las funciones simultáneas de varias salas se pisarían: por eso hay dos modos y no uno. */
+@Getter
+@Accessors(fluent = true)
+@RequiredArgsConstructor
 enum ModoAgenda {
 
     SEMANA("Semana (una sala)", 7, true) {
@@ -68,28 +74,10 @@ enum ModoAgenda {
     };
 
     private final String texto;
-    private final int dias;
-    private final boolean eligeSala;
-
-    ModoAgenda(String texto, int dias, boolean eligeSala) {
-        this.texto = texto;
-        this.dias = dias;
-        this.eligeSala = eligeSala;
-    }
-
-    String texto() {
-        return texto;
-    }
-
     /** Cuánto se ve, y cuánto avanzan las flechas. */
-    int dias() {
-        return dias;
-    }
-
+    private final int dias;
     /** Si hay que elegir una sala: la semana es de una, el día las muestra todas. */
-    boolean eligeSala() {
-        return eligeSala;
-    }
+    private final boolean eligeSala;
 
     abstract List<ColumnaAgenda> columnas(LocalDate desde, List<Sala> salas, Sala elegida);
 
