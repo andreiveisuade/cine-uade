@@ -8,10 +8,6 @@ import ar.uade.cine.swing.api.dto.salas.Sala;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Contrato real: las Api de Swing contra el backend levantado, que ServidorFalso no ve cambiar. `mvn -Phumo test`.
-// Lo que crea lo borra; la cuenta de cliente es una sola y fija, porque el backend no da de baja clientes.
+// Lo que crea lo borra.
 @Tag("humo")
 class HumoContraBackendTest {
 
@@ -59,28 +55,15 @@ class HumoContraBackendTest {
         }
     }
 
+    // El cliente entra a la web con Google (R28): con Basic no hay nada que comparar.
     @Test
-    void unClienteNoEntraAlPanel() throws Exception {
-        abrirCuentaDeCliente();
-        ClienteHttp http = new ClienteHttp(url);
-        ErrorApi error = assertThrows(ErrorApi.class, () -> new ApiSesion(http).login(CLIENTE, CLAVE));
+    void unClienteNoEntraAlPanel() {
+        ErrorApi error = assertThrows(ErrorApi.class, () -> new ApiSesion(new ClienteHttp(url)).login(CLIENTE, CLAVE));
         assertEquals(401, error.estado());
-        assertTrue(error.getMessage().contains("los clientes compran en la web"));
     }
 
     @Test
     void elAcomodadorEntraSinSerAdministrador() {
         assertEquals("ACOMODADOR", new ApiSesion(new ClienteHttp(url)).login("puerta@cine.uade.ar", CLAVE).rol());
-    }
-
-    // Swing no da de alta clientes, así que va directo; el 409 de las corridas siguientes dice que ya existe.
-    private void abrirCuentaDeCliente() throws Exception {
-        String cuerpo = "{\"nombre\":\"Humo Swing\",\"email\":\"" + CLIENTE + "\",\"password\":\"" + CLAVE + "\"}";
-        HttpResponse<String> respuesta = HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder(URI.create(url.replaceAll("/+$", "") + "/api/clientes"))
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(cuerpo)).build(),
-                HttpResponse.BodyHandlers.ofString());
-        assertTrue(respuesta.statusCode() == 201 || respuesta.statusCode() == 409, respuesta.body());
     }
 }
