@@ -175,7 +175,7 @@ tiene lo que se espera ver; si algo no coincide, se anota con captura.
 | 3. Postman | 41 pedidos, 41 aserciones |
 | 4. Humo | 21 de 21 |
 | 5. Web | W1 a W8 como se espera (browser de cmux) |
-| 5. Swing | S1 a S12 como se espera, a mano; capturas en [`evidencia/`](evidencia/) |
+| 5. Swing | S1 a S12 como se espera, a mano; capturas del 30/09/2026 en [`evidencia/`](evidencia/) |
 
 Lo que encontró esta corrida, y ya está arreglado:
 - La colección de Postman creaba funciones en 2030, fuera del horizonte de un año nuevo: la creación daba 400 y

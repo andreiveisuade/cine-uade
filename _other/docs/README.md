@@ -4,7 +4,7 @@
 |---|---|
 | `manual/` | El manual (`index.html`): requerimientos, reglas, casos de uso, arquitectura, decisiones y diagramas. Es la fuente de verdad |
 | `diagramas/` | Fuentes PlantUML (`.puml`) y sus `.svg` |
-| `evidencia/` | Capturas de la última recorrida visual |
+| `evidencia/` | Capturas de la recorrida visual de Swing del 30/09/2026 (casos S1 a S12 de `PRUEBAS.md`); no se repitió después |
 | `PRUEBAS.md` | Cómo se verifica el sistema y el resultado de la última corrida |
 
 El manual es autocontenido (`open manual/index.html`). **No se edita a mano**: se edita
