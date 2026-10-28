@@ -2848,18 +2848,22 @@ private final JDateChooser dia = Fechas.selector(LocalDate.now());
   var arrastrando = false, inicioX = 0, inicioY = 0, scrollX = 0, scrollY = 0;
   lbScroll.addEventListener("pointerdown", function (e) {
     arrastrando = true;
+    huboArrastre = false;
     inicioX = e.clientX;
     inicioY = e.clientY;
     scrollX = lbScroll.scrollLeft;
     scrollY = lbScroll.scrollTop;
     lbScroll.classList.add("grabbing");
-    lbScroll.setPointerCapture(e.pointerId);
   });
   lbScroll.addEventListener("pointermove", function (e) {
     if (!arrastrando) return;
     var dx = e.clientX - inicioX;
     var dy = e.clientY - inicioY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) huboArrastre = true;
+    /* captura recien al arrastrar: si no, el clic en una clase del diagrama de dominio le llega al fondo */
+    if (!huboArrastre && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+      huboArrastre = true;
+      lbScroll.setPointerCapture(e.pointerId);
+    }
     lbScroll.scrollLeft = scrollX - dx;
     lbScroll.scrollTop = scrollY - dy;
   });
