@@ -10,6 +10,7 @@ import { Ingresar } from "@/cuenta/Ingresar.jsx";
 import { MiCuenta } from "@/cuenta/MiCuenta.jsx";
 import { Nosotros } from "@/institucional/Nosotros.jsx";
 import { Promociones } from "@/promos/Promociones.jsx";
+import { PasarelaEmulada } from "@/pasarela/PasarelaEmulada.jsx";
 import { NoExiste } from "./NoExiste.jsx";
 
 // Corta y sin desplazamiento grande: acompaña el cambio de pantalla sin demorarlo.
@@ -37,6 +38,7 @@ export function Rutas() {
       <Route path="mi-cuenta" element={<MiCuenta />} />
       <Route path="promociones" element={<Promociones />} />
       <Route path="nosotros" element={<Nosotros />} />
+      <Route path="pasarela-emulada/:id" element={<PasarelaEmulada />} />
       <Route path="*" element={<NoExiste />} />
     </Routes>
   );

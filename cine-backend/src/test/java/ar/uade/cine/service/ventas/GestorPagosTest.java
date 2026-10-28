@@ -427,7 +427,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
 
-        RetornoCheckout retorno = pagos.retornarDeCheckout(checkout);
+        RetornoCheckout retorno = pagos.retornarDeCheckout(checkout, null);
 
         assertEquals(new RetornoCheckout(reserva.getCodigo(), null), retorno);
         assertEquals(Dinero.de(5000.0), pagoRepository.findByReservaId(reserva.getId()).orElseThrow().getMonto());
@@ -443,7 +443,35 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         // Armado a mano no tiene el proxy de @Transactional: sin esto la función LAZY no se carga.
         RetornoCheckout retorno = new TransactionTemplate(transacciones)
-                .execute(estado -> conEsaPasarela.retornarDeCheckout(checkout));
+                .execute(estado -> conEsaPasarela.retornarDeCheckout(checkout, null));
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(), "Mercado Pago rechazó el pago"), retorno);
+        assertFalse(pagoRepository.existsByReservaId(reserva.getId()));
+    }
+
+    @Test
+    void volverDeLaPasarelaConElPagoRechazadoNoCobraYDiceElMotivo() {
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
+
+        RetornoCheckout retorno = pagos.retornarDeCheckout(checkout, "rejected");
+
+        assertEquals(new RetornoCheckout(reserva.getCodigo(),
+                "Mercado Pago rechazó el pago: probá de nuevo con otro medio"), retorno);
+        assertFalse(pagoRepository.existsByReservaId(reserva.getId()));
+    }
+
+    // El status lo escribe cualquiera en la URL, también la pantalla emulada: approved solo no cobra.
+    @Test
+    void elStatusApprovedDeLaVueltaNoCobraLoQueLaPasarelaNoAutoriza() {
+        PasarelaQueNoAprueba pasarela = new PasarelaQueNoAprueba();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, eventos, reloj);
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
+
+        RetornoCheckout retorno = new TransactionTemplate(transacciones)
+                .execute(estado -> conEsaPasarela.retornarDeCheckout(checkout, "approved"));
 
         assertEquals(new RetornoCheckout(reserva.getCodigo(), "Mercado Pago rechazó el pago"), retorno);
         assertFalse(pagoRepository.existsByReservaId(reserva.getId()));
@@ -454,9 +482,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void volverDosVecesDeLaPasarelaCobraUnaSola() {
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
         String checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR).id();
-        pagos.retornarDeCheckout(checkout);
+        pagos.retornarDeCheckout(checkout, null);
 
-        RetornoCheckout otraVez = pagos.retornarDeCheckout(checkout);
+        RetornoCheckout otraVez = pagos.retornarDeCheckout(checkout, null);
 
         assertEquals(new RetornoCheckout(reserva.getCodigo(), null), otraVez);
         assertEquals(1, pagoRepository.findByReservaIdIn(List.of(reserva.getId())).size());

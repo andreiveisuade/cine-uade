@@ -1129,6 +1129,7 @@ docker compose up -d --build
             <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster y Comprar entradas que baja a las funciones</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
+            <tr><td><code>#/pasarela-emulada/&lt;id&gt;</code></td><td>Solo sin <code>MP_ACCESS_TOKEN</code>: el link de pago de la pasarela emulada. Dice que es un pago de prueba, muestra monto y medio, y Aprobar o Rechazar vuelven por el retorno con el <code>status</code> de MP</td></tr>
             <tr><td><code>/privacidad.html</code></td><td>Política de privacidad, enlazada desde el pie y bajo el botón de <code>#/ingresar</code>. Es un HTML estático en <code>public/</code>, fuera del hash: Google la pide en la pantalla de consentimiento y tiene que leerse sin correr JS (un <code>#/privacidad</code> no llega al servidor). Vite la copia tal cual a <code>dist/</code>; en Render está en <code>FRONT</code></td></tr>
             <tr><td><code>#/ingresar</code>, <code>#/mi-cuenta</code></td><td>Botón «Ingresar con Google» (deshabilitado si el servidor no tiene credenciales) y el <code>?error=</code> de la vuelta; al volver, a la compra que quedó en <code>sessionStorage</code> o a Mis reservas. Mi cuenta: nombre y baja. La barra muestra Ingresar, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
@@ -1706,7 +1707,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
         {{SVG_CHECKOUT_PASARELA}}
         <figcaption>El checkout se valida al abrirlo y otra vez antes de autorizar</figcaption>
       </figure>
-      <p><code>PasarelaPagos</code> emite el código de autorización; <code>Adaptadores</code> elige al arrancar (Strategy): con <code>MP_ACCESS_TOKEN</code>, <code>MercadoPagoHttp</code> (Checkout Pro sandbox, <code>java.net.http</code> + Jackson, sin SDK); sin token, <code>MercadoPagoEmulado</code>.</p>
+      <p><code>PasarelaPagos</code> emite el código de autorización; <code>Adaptadores</code> elige al arrancar (Strategy): con <code>MP_ACCESS_TOKEN</code>, <code>MercadoPagoHttp</code> (Checkout Pro sandbox, <code>java.net.http</code> + Jackson, sin SDK); sin token, <code>MercadoPagoEmulado</code>, cuyo <code>urlPago</code> lleva a <code>#/pasarela-emulada/&lt;id&gt;</code>: una pantalla de prueba del sitio con el monto, Aprobar y Rechazar, que vuelve por el mismo retorno con <code>?status=approved</code> o <code>rejected</code>. Así la compra entera se recorre en local sin token.</p>
       <h3 id="mercadopago">Mercado Pago</h3>
       <figure class="diagram">
         {{SVG_PAGO_MERCADOPAGO}}
@@ -1714,7 +1715,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       </figure>
       <ul>
         <li><strong>Id del checkout = <code>external_reference</code></strong> (<code>&lt;reservaId&gt;-&lt;MEDIO&gt;-&lt;azar&gt;</code>): se conoce antes de crear la preferencia y entra en la <code>back_url</code>. Un id inventado da 404.</li>
-        <li><strong>Retorno</strong> <code>GET /api/checkouts/{id}/retorno</code>: consulta <code>/v1/payments/search</code>; la query de la URL se ignora (falsificable). Recargar no cobra dos veces.</li>
+        <li><strong>Retorno</strong> <code>GET /api/checkouts/{id}/retorno</code>: consulta <code>/v1/payments/search</code>; de la query solo cuenta <code>status=rejected</code>, que no cobra. Un <code>approved</code> no aprueba nada (falsificable): por eso la pantalla emulada no sirve para cobrar con MP de verdad. Recargar no cobra dos veces.</li>
         <li><strong>Mismo camino que la caja</strong> (<code>registrarPago</code>): mismo descuento y recibo, con el medio elegido al abrir el checkout.</li>
         <li><strong>Un aprobado cuenta solo si coinciden</strong> monto, moneda (ARS) y <code>payment_type_id</code> del medio. Si no: «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería».</li>
         <li><strong>Local:</strong> con <code>back_url</code> a localhost MP no muestra «Volver al sitio» ni hace <code>auto_return</code>; con https (túnel) vuelve solo.</li>

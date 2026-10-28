@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -83,8 +84,9 @@ public class PagoController {
     // back_url de Mercado Pago: llega el navegador del comprador, así que responde 302 al ticket (motivo en `aviso`)
     @Operation(summary = "Vuelta desde Mercado Pago: cobra si MP aprobó el pago y redirige al ticket")
     @GetMapping("/api/checkouts/{id}/retorno")
-    public ResponseEntity<Void> retornoCheckout(@PathVariable String id) {
-        RetornoCheckout retorno = pagos.retornarDeCheckout(id);
+    public ResponseEntity<Void> retornoCheckout(@PathVariable String id,
+                                                @RequestParam(required = false) String status) {
+        RetornoCheckout retorno = pagos.retornarDeCheckout(id, status);
         String destino = "/#/ticket/" + retorno.codigoReserva() + (retorno.aviso() == null
                 ? "" : "?aviso=" + URLEncoder.encode(retorno.aviso(), StandardCharsets.UTF_8));
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(destino)).build();

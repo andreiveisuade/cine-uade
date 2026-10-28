@@ -95,6 +95,11 @@ export const avisarVueltaDelPago = (checkoutId) =>
   fetch(`${BASE}/checkouts/${encodeURIComponent(checkoutId)}/retorno`, { redirect: "manual" })
     .then(() => {}, () => {});
 
+// La pantalla de la pasarela emulada vuelve como MP: el navegador va al retorno con el status y este lo deja en el
+// ticket. Un approved no cobra nada que la pasarela no autorice, así que con MP de verdad no sirve.
+export const volverDeLaPasarelaEmulada = (checkoutId, status) =>
+  window.location.assign(`${BASE}/checkouts/${encodeURIComponent(checkoutId)}/retorno?status=${status}`);
+
 export const crearReserva = ({ funcionId, nombre, email, butacas, sesion }) =>
   post("/reservas", { funcionId: Number(funcionId), nombre, email, butacas, sesion });
 

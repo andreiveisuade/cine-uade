@@ -101,6 +101,25 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("PAGADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText(), "quedó cobrada");
     }
 
+    // La pantalla de la pasarela emulada vuelve con el status que MP pone en la back_url.
+    @Test
+    void laVueltaRechazadaDeLaEmuladaNoCobraYAvisaYDespuesSePuedeAprobar() throws Exception {
+        String checkout = checkout("QR").json().get("id").asText();
+        String retorno = "http://localhost:" + puerto + "/api/checkouts/" + checkout + "/retorno?status=";
+
+        HttpResponse<Void> rechazada = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create(retorno + "rejected")).build(), HttpResponse.BodyHandlers.discarding());
+
+        assertEquals("/#/ticket/" + reserva.getCodigo() + "?aviso=Mercado+Pago+rechaz%C3%B3+el+pago%3A+prob%C3%A1"
+                + "+de+nuevo+con+otro+medio", rechazada.headers().firstValue("Location").orElseThrow());
+        assertEquals("RESERVADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText());
+
+        HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create(retorno + "approved")).build(), HttpResponse.BodyHandlers.discarding());
+
+        assertEquals("PAGADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText());
+    }
+
     @Test
     void laVueltaDeUnCheckoutQueNoExisteEs404() {
         Respuesta respuesta = pedirComo(HttpMethod.GET, "/api/checkouts/no-existe/retorno", null, null, null);
