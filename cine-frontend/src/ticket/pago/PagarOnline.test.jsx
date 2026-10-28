@@ -69,11 +69,10 @@ describe("PagarOnline", () => {
     expect(window.location.assign).toHaveBeenCalledWith("https://pasarela/pagar/1");
   });
 
-  it("Ya pagué le avisa la vuelta al backend y vuelve a consultar la reserva", async () => {
+  it("Ya pagué le avisa la vuelta al backend y lee la reserva que vuelve a consultar el ticket, sin pedirla otra vez", async () => {
     api.abrirCheckout.mockResolvedValue(CHECKOUT);
     api.avisarVueltaDelPago.mockResolvedValue();
-    api.obtenerReservaPorCodigo.mockResolvedValue({ codigo: "ABCD1234", estado: "PAGADA", cobrable: false });
-    const alVolver = vi.fn();
+    const alVolver = vi.fn().mockResolvedValue({ codigo: "ABCD1234", estado: "PAGADA", cobrable: false });
     renderConApp(<PagarOnline codigo="ABCD1234" alVolver={alVolver} />);
 
     await irAPagar();
@@ -81,14 +80,15 @@ describe("PagarOnline", () => {
 
     expect(api.avisarVueltaDelPago).toHaveBeenCalledWith("1-MERCADO_PAGO-9");
     expect(alVolver).toHaveBeenCalled();
+    expect(api.obtenerReservaPorCodigo).not.toHaveBeenCalled();
   });
 
   // Si MP rechazó, el motivo viaja en el 302 del retorno, que el fetch no lee: sin esto el botón no decía nada.
   it("Ya pagué con la reserva todavía sin pagar avisa que Mercado Pago no confirmó", async () => {
     api.abrirCheckout.mockResolvedValue(CHECKOUT);
     api.avisarVueltaDelPago.mockResolvedValue();
-    api.obtenerReservaPorCodigo.mockResolvedValue({ codigo: "ABCD1234", estado: "RESERVADA", cobrable: true });
-    renderConApp(<PagarOnline codigo="ABCD1234" alVolver={vi.fn()} />);
+    const alVolver = vi.fn().mockResolvedValue({ codigo: "ABCD1234", estado: "RESERVADA", cobrable: true });
+    renderConApp(<PagarOnline codigo="ABCD1234" alVolver={alVolver} />);
 
     await irAPagar();
     await userEvent.click(await screen.findByRole("button", { name: "Ya pagué" }));

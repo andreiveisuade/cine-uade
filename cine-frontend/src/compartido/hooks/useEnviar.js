@@ -16,5 +16,5 @@ export function useEnviar() {
     setEnviando(false);
   }
 
-  return { enviar, enviando, error, setError };
+  return { enviar, enviando, error };
 }
