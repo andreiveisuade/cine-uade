@@ -169,7 +169,7 @@ reservar: el cliente los muestra y suma, no los recalcula.
   pide carnet: sale de la tarifa, los clientes no lo deducen del nombre).
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
-(R5, R17, R19) y al cancelar (R13). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
+(R5, R17, R19) y al cancelar (R13, R17). `cancelable` es `false` también si la reserva venció aunque siga figurando `RESERVADA`.
 
 | Ruta | Qué hace |
 |---|---|

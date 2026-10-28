@@ -500,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 28 casos de uso, reglas R1 a R28 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -547,9 +547,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-07</td><td>Admin</td><td>Cobrar una reserva</td><td>R5, R11, R17, R19</td></tr>
             <tr><td>CU-07b</td><td>Cliente</td><td>Pagar online por <a href="#pasarela">checkout</a> (débito, crédito, QR o transferencia), con sesión</td><td>R5, R11, R17, R19, R21</td></tr>
             <tr><td>CU-07c</td><td>Conciliación</td><td>Cobrar lo que Mercado Pago aprobó aunque el comprador no vuelva</td><td>R5, R17</td></tr>
-            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva, con sesión</td><td>R6, R13, R21</td></tr>
-            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas (con sesión) o un ticket por su código</td><td>R21</td></tr>
-            <tr><td>CU-10</td><td>Admin, Acomodador</td><td>Iniciar sesión en el panel de escritorio</td><td>—</td></tr>
+            <tr><td>CU-08</td><td>Cliente</td><td>Cancelar una reserva, con sesión</td><td>R6, R13, R17, R21</td></tr>
+            <tr><td>CU-09</td><td>Cliente</td><td>Ver sus reservas (con sesión) o un ticket por su código, y descargar la entrada en PDF</td><td>R21</td></tr>
+            <tr><td>CU-10</td><td>Admin, Acomodador</td><td>Iniciar sesión en el panel de escritorio, eligiendo el <a href="#swing-servidor">servidor</a> (Local, Producción u Otro)</td><td>—</td></tr>
+            <tr><td>CU-10b</td><td>Admin, Acomodador</td><td>Ver el <a href="#swing-servidor">estado de producción</a> (Render y Aiven) y despertarla</td><td>—</td></tr>
             <tr><td>CU-11</td><td>Admin</td><td>Marcar o reponer una butaca fuera de servicio</td><td>R9</td></tr>
             <tr><td>CU-12</td><td>Admin</td><td>Arqueo del día</td><td>—</td></tr>
             <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy</td><td>—</td></tr>
@@ -578,6 +579,10 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-05:</strong> email sin verificar en Google, o de un empleado: vuelve a <code>#/ingresar?error=</code> con el motivo y no entra. Cancelar en Google: «No se pudo ingresar con Google: volvé a intentarlo». Sin credenciales de Google en el servidor, el botón sale deshabilitado (R28).</li>
         <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email es el de Google y no cambia). <code>DELETE /api/cuenta</code>, con una confirmación, cierra la sesión: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas. Entrar de nuevo con Google la reabre (R23, R26).</li>
         <li><strong>CU-07b:</strong> «Ya pagué» con el pago todavía sin aprobar en MP: «Mercado Pago todavía no confirmó el pago» y la reserva sigue esperando.</li>
+        <li><strong>CU-08:</strong> una reserva vencida, aunque todavía figure <code>RESERVADA</code>, no se cancela: 409 «La reserva N venció: sus butacas volvieron a estar disponibles». Las butacas ya están libres (R17).</li>
+        <li><strong>CU-09:</strong> «Descargar entrada» aparece solo con la reserva vigente (reservada o pagada y sin usar en la puerta). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo».</li>
+        <li><strong>CU-10:</strong> contra Producción dormida, el ingreso avisa «Despertando el servidor de producción: puede tardar un minuto» y espera hasta 120 s (contra el resto, 30 s). Con Otro…, una URL mal escrita no deja ingresar.</li>
+        <li><strong>CU-10b:</strong> sin token de Aiven, la base sale «Desconocido» y ofrece abrir la consola de Aiven; con el token rechazado, «Aiven rechazó el token: revisá que esté vigente y tenga acceso al proyecto». Sin token, Despertar solo espera a Render.</li>
       </ul>
     </section>
 
@@ -625,7 +630,7 @@ docker compose up -d --build
 ./seed/datos-de-ejemplo.sh    # datos de ejemplo, por API</code></pre>
       <ul>
         <li>Web: <code>localhost:8080</code>; Swagger: <code>/swagger-ui.html</code> (apagado en Render con <code>CINE_SWAGGER=false</code>).</li>
-        <li>Panel: <code>cd cine-swing &amp;&amp; mvn exec:java</code>. Usuario <code>encargado@cine.uade.ar</code> / <code>cine2026</code>; <code>puerta@cine.uade.ar</code> para la Puerta.</li>
+        <li>Panel: <code>cd cine-swing &amp;&amp; mvn exec:java</code> y, en el ingreso, servidor Local. Usuario <code>encargado@cine.uade.ar</code> / <code>cine2026</code>; <code>puerta@cine.uade.ar</code> para la Puerta.</li>
         <li>Instalación, token de TMDB, Adminer y problemas comunes: <a href="../../COMO-LEVANTARLO.md"><code>_other/COMO-LEVANTARLO.md</code></a>.</li>
       </ul>
 
@@ -644,7 +649,7 @@ docker compose up -d --build
         {{SVG_TRASLADO_SERVIDOR}}
         <figcaption>De dónde saca cada parte la dirección de la siguiente</figcaption>
       </figure>
-      <p>Ninguna dirección está escrita en el código (rutas relativas, red de Docker o variable). Mudarlo: copiar repo y <code>.env</code>, <code>docker compose up</code>, abrir el panel con la dirección nueva.</p>
+      <p>Ninguna dirección está escrita en el código (rutas relativas, red de Docker o variable). Mudarlo: copiar repo y <code>.env</code>, <code>docker compose up</code>, en el ingreso del panel, Otro… con la dirección nueva.</p>
 
       <h3 id="tomcat">Tomcat: embebido o aparte</h3>
       <p>
@@ -679,12 +684,12 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Límite</th><th>Efecto</th></tr></thead>
           <tbody>
-            <tr><td>Render se duerme a los 15 min sin pedidos</td><td>El primer pedido lo despierta: ~9 min con 0,1 CPU</td></tr>
+            <tr><td>Render se duerme a los 15 min sin pedidos</td><td>El primer pedido lo despierta: ~9 min con 0,1 CPU. El ingreso de Swing contra Producción lo avisa y espera más</td></tr>
             <tr><td>Sesiones en memoria</td><td>Cada sueño o deploy desloguea a todos</td></tr>
             <tr><td>Dormido no corre <code>@Scheduled</code></td><td>La <a href="#conciliacion">conciliación</a> no corre; un pago aprobado sin retorno durante el sueño puede quedar afuera de su ventana de 30 min</td></tr>
             <tr><td>512 MB de memoria</td><td>Medido: 316 MB RSS. <code>-XX:MaxRAMPercentage=70</code>, porque con el 25 % de fábrica el heap quedaba en 128 MB</td></tr>
             <tr><td>Disco efímero</td><td>Imágenes en la tabla <code>imagen</code>; tickets <code>.txt</code> se pierden al reiniciar</td></tr>
-            <tr><td>Aiven Free: 1 GB, se apaga por inactividad</td><td>Sobra para el TP; hay que volver a prenderla desde su panel</td></tr>
+            <tr><td>Aiven Free: 1 GB, se apaga por inactividad</td><td>Sobra para el TP; se prende desde <a href="#swing-servidor">Estado de producción</a> en Swing o desde la consola de Aiven</td></tr>
           </tbody>
         </table>
       </div>
@@ -698,6 +703,15 @@ docker compose up -d --build
         <li><strong>Reloj de Buenos Aires</strong> fijo en código, no en <code>TZ</code> (<a href="#decisiones">decisión</a>).</li>
       </ul>
 
+      <h3 id="logs">Qué queda en el log</h3>
+      <p>Una línea por hecho de negocio, en <code>INFO</code> (<code>logging.level.ar.uade.cine: info</code>, sin perfil que lo cambie): lo que se mira en Logs de Render o en <code>docker compose logs backend</code> para reconstruir qué pasó.</p>
+      <ul>
+        <li><strong>Ventas:</strong> reserva creada, cancelada y vencida; pago y checkout; compra de candy (ítems, total y medio); ingreso por la puerta.</li>
+        <li><strong>Clientes:</strong> entra con Google (nuevo o existente), se da de baja; por id, nunca por email.</li>
+        <li><strong>Rechazos:</strong> la puerta rechazada (<code>WARN</code>, con el motivo y la reserva; el código tipeado no), el ingreso con Google rechazado (email sin verificar o del personal) y cada 409 de negocio (<code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code>) con su mensaje. Un <code>DatoInvalido</code> (400) no se loguea; un 500, con el stack.</li>
+        <li><strong>Nunca:</strong> emails, nombres de personas, claves, códigos de acceso ni tokens. Los mensajes de 409 tampoco nombran a nadie.</li>
+      </ul>
+
       <h3 id="secretos">De dónde sale cada secreto</h3>
       <div class="table-wrap">
         <table>
@@ -709,10 +723,11 @@ docker compose up -d --build
             <tr><td><code>TMDB_TOKEN</code></td><td>TMDB: API Read Access Token</td><td>Render y <code>.env</code></td><td>El importador, a pedido del encargado</td></tr>
             <tr><td><code>GOOGLE_CLIENT_SECRET</code> (<code>GOOGLE_CLIENT_ID</code> no es secreto: viaja en la URL a Google)</td><td>Google Cloud Console → Clients, tipo aplicación web</td><td>Render y <code>.env</code></td><td><code>oauth2Login</code>: canje del código (<a href="#google">Ingresar con Google</a>). Sin ellas no hay botón de Google</td></tr>
             <tr><td><code>CINE_URL_PUBLICA</code> (pública)</td><td>La URL de Render</td><td>Render y <code>.env</code></td><td>La <code>back_url</code> de Mercado Pago. Sin ella vuelve a localhost</td></tr>
+            <tr><td><code>AIVEN_TOKEN</code>, <code>AIVEN_PROYECTO</code>, <code>AIVEN_SERVICIO</code></td><td>Aiven: User profile → Tokens → Generate token (se muestra una sola vez). Proyecto y servicio, los nombres de la consola</td><td>La PC del encargado: variable de entorno, <code>-Dcine.aiven.token</code> (y <code>.proyecto</code>, <code>.servicio</code>) o «Configurar Aiven…», que lo guarda en las <code>Preferences</code> del usuario</td><td>Swing, <a href="#swing-servidor">Estado de producción</a>: ver y prender la base. Leer pide un rol de solo lectura en el proyecto; prender, uno que opere servicios</td></tr>
           </tbody>
         </table>
       </div>
-      <p>En Render todas van con <code>sync: false</code> en <code>render.yaml</code>: el nombre está en el repo, el valor solo en el panel (Environment). Ningún valor va al repo. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
+      <p>En Render todas van con <code>sync: false</code> en <code>render.yaml</code>: el nombre está en el repo, el valor solo en el panel (Environment). Ningún valor va al repo. El token de Aiven no pasa por Render ni por el backend: es del panel y vive solo en la PC que lo usa. <code>CINE_IMAGENES</code> ya no existe: si quedó cargada, borrarla.</p>
 
       <h3>Pasos</h3>
       <ol>
@@ -720,7 +735,7 @@ docker compose up -d --build
         <li><strong>Base ya cargada:</strong> cada migración nueva va antes del deploy, con <code>cine-docker/aiven/migrar-aiven.sh &lt;número o nombre&gt;</code> (<code>18</code> o <code>clientes-con-google</code> aplican <code>db/migraciones/18-clientes-con-google.sql</code>). La 18 es la excepción: va <em>después</em>, porque el código viejo no arranca sin la columna que borra y el nuevo la tolera.</li>
         <li><strong>Servicio en Render:</strong> New → Blueprint sobre el repo (lee <code>render.yaml</code>) y cargar las variables de arriba.</li>
         <li><strong>Datos:</strong> <code>API=https://cine-uade.onrender.com/api ./cine-docker/seed/datos-de-ejemplo.sh</code> (salas, candy, promo), <code>_other/imagenes/cargar.sh</code> (fotos a la tabla <code>imagen</code>) y desde Swing el importador, Por revisar y la grilla.</li>
-        <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code> y en el panel: <code>./mvnw compile exec:java -Dcine.api.url=https://cine-uade.onrender.com</code>.</li>
+        <li>URL pública: <code>https://cine-uade.onrender.com</code>. Va en <code>CINE_URL_PUBLICA</code>; en el panel es Producción en el ingreso.</li>
         <li>Humo del 22/10/2026: <code>/</code> y <code>/api/cartelera</code> dan 200, una ruta sin listar da 401, Swagger 404, la cookie de sesión sale <code>Secure; HttpOnly; SameSite=Lax</code>. Recorrido completo: compra en la web, pago en Mercado Pago sandbox que vuelve solo al ticket como Pagada, la misma reserva en Reservas del panel y el ingreso en Puerta con el acomodador.</li>
       </ol>
     </section>
@@ -1054,7 +1069,7 @@ docker compose up -d --build
           <tbody>
             <tr><td>400</td><td><code>DatoInvalido</code></td><td>El pedido está mal y repetirlo no cambia nada: topes, formato, función empezada (R19), sin código de autorización (R11), «no es el día» en la puerta (R18), email de empleado al comprar</td></tr>
             <tr><td>404</td><td><code>RecursoNoEncontrado</code></td><td>No existe, o es de otro cliente (R21: el mismo texto)</td></tr>
-            <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
+            <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13) o vencida (R17); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
             <tr><td>429</td><td><code>DemasiadosIntentos</code></td><td>Cinco claves mal seguidas por email o IP (solo Basic)</td></tr>
           </tbody>
         </table>
@@ -1113,6 +1128,7 @@ docker compose up -d --build
             <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha, póster y Comprar entradas que baja a las funciones</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
+            <tr><td><code>/privacidad.html</code></td><td>Política de privacidad, enlazada desde el pie y bajo el botón de <code>#/ingresar</code>. Es un HTML estático en <code>public/</code>, fuera del hash: Google la pide en la pantalla de consentimiento y tiene que leerse sin correr JS (un <code>#/privacidad</code> no llega al servidor). Vite la copia tal cual a <code>dist/</code>; en Render está en <code>FRONT</code></td></tr>
             <tr><td><code>#/ingresar</code>, <code>#/mi-cuenta</code></td><td>Botón «Ingresar con Google» (deshabilitado si el servidor no tiene credenciales) y el <code>?error=</code> de la vuelta; al volver, a la compra que quedó en <code>sessionStorage</code> o a Mis reservas. Mi cuenta: nombre y baja. La barra muestra Ingresar, o nombre, Mis reservas y Salir</td></tr>
             <tr><td><code>#/mis-reservas</code></td><td>Con sesión: sus reservas con Cancelar y Pagar online. Sin sesión: búsqueda por código</td></tr>
             <tr><td>Pagar online</td><td>Medio, monto del backend, Mercado Pago y vuelta al ticket</td></tr>
@@ -1175,13 +1191,14 @@ docker compose up -d --build
         <li><code>cine-swing/</code>: Java 21 + Swing, con login, para <code>ADMINISTRADOR</code> y <code>ACOMODADOR</code>. Todos los CU del encargado y la Puerta (CU-18).</li>
         <li>Cliente HTTP de la misma API que la web: nunca toca MySQL. Reglas en el backend, rol en Spring Security.</li>
         <li>FlatLaf oscuro por defecto (<code>-Dcine.tema=claro</code>); JCalendar para toda fecha: <code>dd/MM/yyyy</code> en pantalla, ISO al backend.</li>
-        <li>El login es solo de empleados: un cliente no tiene clave (entra con Google) y su email da 401. Por si acaso, <code>ApiSesion.login</code> pregunta <code>Empleado.esEmpleado()</code>, olvida las credenciales que <code>ClienteHttp</code> guardó y muestra «Esta aplicación es para empleados del cine: los clientes compran en la web».</li>
+        <li>El login es solo de empleados: un cliente no tiene clave (entra con Google) y su email da 401. Por si acaso, <code>ApiSesion.login</code> lee el <code>empleado</code> que manda <code>POST /api/sesion</code> (no lo deduce del rol), olvida las credenciales que <code>ClienteHttp</code> guardó y muestra «Esta aplicación es para empleados del cine: los clientes compran en la web».</li>
       </ul>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Paquete</th><th>Qué hay</th></tr></thead>
           <tbody>
-            <tr><td><code>api/</code></td><td><code>ClienteHttp</code>, el transporte: Basic en cada pedido, JSON y un 401 que vuelve al login; <code>MensajeDeError</code> traduce la respuesta de error (<code>{"error"}</code> o un texto por código) a la <code>ErrorApi</code> que ve el encargado. Encima, una <code>Api&lt;Subdominio&gt;</code> por subdominio del backend, que solo sabe de rutas, y un record por forma de JSON en <code>api/dto/&lt;subdominio&gt;/</code></td></tr>
+            <tr><td><code>api/</code></td><td><code>ClienteHttp</code>, el transporte: Basic en cada pedido, JSON y un 401 que vuelve al login; <code>MensajeDeError</code> traduce la respuesta de error (<code>{"error"}</code> o un texto por código) a la <code>ErrorApi</code> que ve el encargado. Encima, una <code>Api&lt;Subdominio&gt;</code> por subdominio del backend, que solo sabe de rutas, y un record por forma de JSON en <code>api/dto/&lt;subdominio&gt;/</code>. <code>Servidor</code> guarda las dos URLs conocidas; <code>ApiRender</code> y <code>ApiAiven</code> (con <code>EstadoServicio</code>) son del <a href="#swing-servidor">estado de producción</a></td></tr>
+            <tr><td><code>pantallas/produccion/</code></td><td><code>VentanaProduccion</code> y <code>PanelProduccion</code> (estado y Despertar) y <code>CuentaAiven</code> (token, proyecto y servicio, del entorno o de las <code>Preferences</code>)</td></tr>
             <tr><td><code>informes/</code></td><td>Borderó (<code>.txt</code>), declaración jurada (<code>.csv</code>) y ticket de candy: el backend da los números y el archivo se escribe en la PC. Sin Swing y con tests</td></tr>
             <tr><td><code>comun/</code></td><td>Lo que usan todas las pantallas: <code>Tarea</code> (pedidos fuera del EDT), <code>Validacion</code>, <code>Mensajes</code>, <code>Fechas</code> (JCalendar ↔ <code>java.time</code>), <code>Formato</code>, <code>Colores</code>, <code>MapaButacas</code>…</td></tr>
           </tbody>
@@ -1198,9 +1215,18 @@ docker compose up -d --build
         <li>Cobrar y cancelar se habilitan con <code>cobrable</code>/<code>cancelable</code>, calculados por <code>Reserva</code> con el mismo método que rechaza: botón y rechazo no pueden diferir.</li>
       </ul>
 
+      <h3 id="swing-servidor">Contra qué servidor trabaja</h3>
+      <ul>
+        <li><strong>Se elige al ingresar</strong> (CU-10): Local (<code>localhost:8080</code>), Producción (<code>cine-uade.onrender.com</code>) u Otro… con su URL. Las dos conocidas viven solo en <code>api/Servidor</code>. La elección se recuerda en las <code>Preferences</code> del usuario de esa PC; <code>-Dcine.api.url</code> o <code>CINE_API_URL</code> mandan sobre lo recordado.</li>
+        <li><strong>Un <code>ClienteHttp</code> por ingreso:</strong> cambiar de servidor es salir y elegir otro; las credenciales no pasan de uno al otro.</li>
+        <li><strong>Marca de entorno</strong> en la cabecera y en el título de la ventana principal: LOCAL en gris, <strong>PRODUCCIÓN</strong> en rojo con borde, OTRO con el host. Cobrar o borrar contra producción no se confunde con una prueba local.</li>
+        <li><strong>Estado de producción</strong> (CU-10b), en el ingreso con Producción elegida y en la cabecera: Render (<code>GET /api/generos</code>: en línea, encendiendo o error) y la base en Aiven (por su API, <code>service.state</code>: apagada, encendiendo o en línea). <strong>Despertar</strong> prende la base si está apagada, espera a que esté en línea y después espera a Render; un pedido cada 10 s por <code>comun/Tarea</code>, y cerrar la ventana corta la espera.</li>
+        <li><strong>El token de Aiven nunca va al repo</strong> (es público): sale de <code>AIVEN_TOKEN</code> o <code>-Dcine.aiven.token</code>, y si no de las <code>Preferences</code>, donde lo guarda «Configurar Aiven…». No aparece en pantalla, en mensajes ni en <code>toString</code>. De dónde se saca: <a href="#secretos">secretos</a>.</li>
+      </ul>
+
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
-        <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
+        <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>, la URL de Otro… en el ingreso). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
         <li><strong>Backend:</strong> las reglas R1 a R28. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
@@ -1347,7 +1373,7 @@ docker compose up -d --build
           <thead><tr><th>Nivel</th><th>Rutas</th></tr></thead>
           <tbody>
             <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, reserva <em>por código</em>, el ingreso con Google (<code>/oauth2/**</code>, <code>/login/oauth2/**</code>, <code>GET /api/sesion/google</code>), retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
-            <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
+            <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/privacidad.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
             <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente. Su cuenta (<code>PUT</code>/<code>DELETE /api/cuenta</code>)</td></tr>
             <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
@@ -1614,7 +1640,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
           <thead><tr><th>Operación</th><th>Qué valida (<a href="#reglas">reglas</a>)</th></tr></thead>
           <tbody>
             <tr><td><code>GestorReservas.reservar</code></td><td>La función (R19), cada butaca (de esa sala y en servicio, R9), el pedido entero (tope, repetidas) y al final que esté libre (R4): un pedido que no puede pasar nunca da 400 antes que 409. El <code>UNIQUE</code> cierra la carrera</td></tr>
-            <tr><td><code>GestorReservas.cancelar</code></td><td>R13 y R6, que decide la reserva con su estado</td></tr>
+            <tr><td><code>GestorReservas.cancelar</code></td><td>R13, R17 y R6, que decide la reserva con su estado y la hora</td></tr>
             <tr><td><code>GestorPagos.cobrar</code></td><td>R5, R11, R17, R19</td></tr>
             <tr><td><code>GestorAcceso.registrarIngreso</code></td><td>R18</td></tr>
           </tbody>
@@ -1839,7 +1865,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R14</td><td>Un combo cuesta menos que sus componentes sueltos</td></tr>
             <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento (empate: menor id)</td></tr>
             <tr><td>R16</td><td>Las tarifas reducidas no participan del descuento</td></tr>
-            <tr><td>R17</td><td>No se cobra una reserva vencida (409)</td></tr>
+            <tr><td>R17</td><td>No se cobra ni se cancela una reserva vencida, aunque figure <code>RESERVADA</code> (409): sus butacas ya volvieron a la venta</td></tr>
             <tr><td>R18</td><td>Solo ingresa una reserva pagada, una sola vez (409) y el día de la función (400)</td></tr>
             <tr><td>R19</td><td>Una función empezada no se reserva ni se cobra</td></tr>
             <tr><td>R20</td><td>No se programa una función que empieza antes del momento actual, ni en el mismo instante; grillas y planificador saltean esos pases</td></tr>
@@ -1902,11 +1928,14 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>Backend</td><td>1471</td><td>97,4 %</td><td>92,5 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
             <tr><td>Swing</td><td>179</td><td>79,3 %</td><td>63,6 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
             <tr><td>Front</td><td>142</td><td>89,1 %</td><td>83,8 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
+            <tr><td>Android</td><td>—</td><td>37,0 % (134 de 362)</td><td>—</td><td><code>cd cine-android &amp;&amp; ./gradlew test createDebugUnitTestCoverageReport</code></td><td><code>app/build/reports/coverage/test/debug/</code> (html y <code>report.xml</code>)</td></tr>
+            <!-- COBERTURA: fila por módulo y fecha/commit de arriba, re-medidos por la orquestadora sobre main al cierre de T95 -->
           </tbody>
         </table>
       </div>
       <ul>
         <li><strong>Re-medir:</strong> borrar <code>target/surefire-reports</code> y <code>target/site/jacoco</code> antes de <code>mvn test</code> (JaCoCo está en los dos <code>pom.xml</code>: <code>prepare-agent</code> + <code>report</code> en la fase <code>test</code>). Líneas y ramas salen de sumar <code>LINE_*</code> y <code>BRANCH_*</code> de <code>jacoco.csv</code>; el front las imprime en la fila <code>All files</code>.</li>
+        <li><strong>Android:</strong> el JaCoCo que ya trae el plugin de Android (<code>enableUnitTestCoverage</code> en el build <code>debug</code>), sin plugin aparte, sobre los tests JVM. Para SonarQube, <code>sonar.coverage.jacoco.xmlReportPaths</code> apunta a ese <code>report.xml</code>.</li>
         <li><strong>Swing:</strong> las pantallas se prueban en headless con <code>Operador</code> (campo por etiqueta, botón por texto) contra <code>ServidorFalso</code>. Quedan afuera los <code>JFrame</code> (<code>VentanaPrincipal</code>, <code>VentanaLogin</code>), lo que confirma con <code>JOptionPane</code> y la pintura (<code>GrillaAgenda</code>, <code>MapaButacas</code>): en headless tiran <code>HeadlessException</code>.</li>
         <li><strong>Front:</strong> Vitest, jsdom y Testing Library; tests junto al código (<code>src/**/*.test.jsx</code>); <code>src/test/renderConApp.jsx</code> arma la app con sesión, compra y rutas. Lint: <code>npm run lint</code>.</li>
       </ul>
@@ -1987,10 +2016,13 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R5, R11</td><td><code>GestorPagosTest</code>, <code>CompraCandyTest</code></td></tr>
             <tr><td>R14</td><td><code>ProductoTest</code>, <code>GestorCandyTest</code></td></tr>
             <tr><td>R15, R16</td><td><code>GestorPromocionesTest</code>, <code>PromocionTest</code>, <code>TipoTarifaTest</code>, <code>GestorPagosTest</code> (tarifas mixtas)</td></tr>
-            <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code></td></tr>
+            <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code>, <code>GestorReservasTest.noSeCancelaUnaReservaVencida</code></td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
             <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
-            <tr><td>Seguridad</td><td><code>SeguridadTest</code>, <code>SesionControllerTest</code></td></tr>
+            <tr><td>Seguridad</td><td><code>SeguridadTest</code> (<code>matrizDeRoles</code>: status exacto por rol y familia de rutas), <code>SesionControllerTest</code>, <code>PaginaDePrivacidadTest</code></td></tr>
+            <tr><td><a href="#logs">Log</a> sin datos personales</td><td><code>GestorReservasTest.laPuertaRechazadaQuedaEnElLog</code>, <code>ClientesDeGoogleTest.elIngreso*QuedaEnElLogSinElEmail</code></td></tr>
+            <tr><td>CU-09 (PDF de la entrada)</td><td><code>Ticket.test.jsx</code>, <code>entradaPdf.test.jsx</code></td></tr>
+            <tr><td>CU-10, CU-10b</td><td><code>ServidorTest</code>, <code>PanelIngresoTest</code>, <code>PanelProduccionTest</code>, <code>CuentaAivenTest</code> (Swing)</td></tr>
             <tr><td>CU-03b, CU-07b, CU-19, CU-20</td><td><code>ProgramacionTest</code>, <code>GestorPagosTest</code>, <code>GestorInformesTest</code></td></tr>
             <tr><td>CU-07c</td><td><code>ConciliacionPagosTest</code></td></tr>
             <tr><td>Buzón de revisión</td><td><code>GestorImportacionesTest</code>, <code>RevisionControllerTest</code></td></tr>
