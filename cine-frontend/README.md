@@ -39,6 +39,7 @@ src/
   compra/         mapa de butacas, función, confirmar; selección, bloqueo y tarifas
   ticket/         la entrada, acciones, venta cruzada
     pago/         pagar online, espera, vuelta y festejo del pago
+    pdf/          la entrada en PDF para descargar
   cuenta/         sesión, ingresar con Google, mi cuenta, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
   institucional/  nosotros

@@ -1,4 +1,5 @@
 import { act, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import confetti from "canvas-confetti";
 import * as api from "@/api/api-http.js";
@@ -7,6 +8,15 @@ import { Ticket } from "./Ticket.jsx";
 
 vi.mock("@/api/api-http.js");
 vi.mock("canvas-confetti", () => ({ default: Object.assign(vi.fn(), { reset: vi.fn() }) }));
+// Un documento que acepta cualquier dibujo y anota lo que se escribe y con qué nombre se guarda.
+const pdf = vi.hoisted(() => ({ text: vi.fn(), save: vi.fn(), getTextWidth: () => 10, splitTextToSize: (t) => [t] }));
+vi.mock("jspdf", () => ({
+  jsPDF: class {
+    constructor() {
+      return new Proxy({}, { get: (_, metodo) => pdf[metodo] ?? (() => {}) });
+    }
+  },
+}));
 
 const reserva = (estado, cobrable = false) => ({
   id: 1, codigo: "ABCD1234", estado, cobrable, total: 2000,
@@ -152,6 +162,39 @@ describe("Ticket como entrada", () => {
 
     expect(await screen.findByRole("button", { name: "Copiar comprobante" })).toBeInTheDocument();
     expect(screen.getByText("Ver el comprobante en texto").closest("details")).not.toHaveAttribute("open");
+  });
+});
+
+describe("descargar la entrada en PDF", () => {
+  it.each([
+    ["RESERVADA", true],
+    ["PAGADA", true],
+    ["EXPIRADA", false],
+    ["CANCELADA", false],
+  ])("con estado %s el botón aparece: %s", async (estado, aparece) => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva(estado));
+    abrir();
+    await screen.findByText("ABCD 1234");
+
+    expect(screen.queryByRole("button", { name: "Descargar entrada" }) !== null).toBe(aparece);
+  });
+
+  it("una entrada ya usada en la puerta no se descarga", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("PAGADA"), ingresadaEn: "2026-10-21T19:50:00" });
+    abrir();
+    await screen.findByText("ABCD 1234");
+
+    expect(screen.queryByRole("button", { name: "Descargar entrada" })).not.toBeInTheDocument();
+  });
+
+  it("al tocarlo guarda el PDF con el código en el nombre y en la entrada", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Descargar entrada" }));
+
+    await vi.waitFor(() => expect(pdf.save).toHaveBeenCalledWith("entrada-cine-uade-ABCD1234.pdf"));
+    expect(pdf.text).toHaveBeenCalledWith("ABCD 1234", expect.any(Number), expect.any(Number), expect.any(Object));
   });
 });
 

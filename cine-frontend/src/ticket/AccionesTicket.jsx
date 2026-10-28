@@ -4,6 +4,8 @@ import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { armarComprobante } from "./armarComprobante.js";
+import { vigente } from "./estadoReserva.js";
+import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
 import { PagarOnline } from "./pago/PagarOnline.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.
@@ -43,6 +45,7 @@ export function AccionesTicket({ reserva, recien, alMostrarEnPuerta, alVolverDel
         <Button variant="default" leftSection={<IconFileText size={16} />} onClick={() => copiar(armarComprobante(reserva), "Comprobante copiado")}>
           Copiar comprobante
         </Button>
+        {vigente(reserva) && <DescargarEntrada reserva={reserva} />}
         <Button variant="subtle" color="gray" c="var(--mantine-color-text)" component={Link} to="/">Volver a la cartelera</Button>
       </Group>
     </Group>

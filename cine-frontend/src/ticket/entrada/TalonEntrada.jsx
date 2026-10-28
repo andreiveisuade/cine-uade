@@ -2,14 +2,7 @@ import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
-import { codigoLegible, vigente } from "@/ticket/estadoReserva.js";
-
-const CODIGO_POR_ESTADO = {
-  RESERVADA: "Todavía no está paga. Sirve una sola vez cuando se pague.",
-  PAGADA: "Mostralo en la puerta. Sirve una sola vez.",
-  EXPIRADA: "Ya no sirve: la reserva venció.",
-  CANCELADA: "Ya no sirve: la reserva se canceló.",
-};
+import { CODIGO_POR_ESTADO, codigoLegible, vigente } from "@/ticket/estadoReserva.js";
 
 // El sello cae solo si el pago se vio llegar en esta pantalla; un ticket que ya abrió pago lo muestra quieto.
 const SELLO_CAYENDO = { opacity: 0, scale: 2.2, rotate: -24 };

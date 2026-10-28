@@ -1,15 +1,7 @@
 import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { Poster } from "@/compartido/ui/Poster.jsx";
-import { COLOR_ESTADO } from "@/ticket/estadoReserva.js";
-
-// Qué le decimos al comprador según el estado que manda el backend; el front no decide vencimientos.
-const AVISO_POR_ESTADO = {
-  RESERVADA: "Reserva confirmada. Pagala online o en boletería antes de que venza.",
-  PAGADA: "Entrada paga. Mostrá el código en la puerta.",
-  EXPIRADA: "Esta reserva venció. Las butacas ya se liberaron.",
-  CANCELADA: "Esta reserva está cancelada.",
-};
+import { AVISO_POR_ESTADO, COLOR_ESTADO } from "@/ticket/estadoReserva.js";
 
 export function CabeceraEntrada({ reserva }) {
   return (

@@ -27,6 +27,11 @@ export function dia(iso) {
   const diferencia = Math.round((new Date(d).setHours(0, 0, 0, 0) - hoy) / 86400000);
   if (diferencia === 0) return "Hoy";
   if (diferencia === 1) return "Mañana";
+  return diaDelMes(iso);
+}
+
+export function diaDelMes(iso) {
+  const d = new Date(iso);
   return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
 }
 

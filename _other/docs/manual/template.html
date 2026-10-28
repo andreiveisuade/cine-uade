@@ -1125,7 +1125,7 @@ docker compose up -d --build
         <li>Tokens en <code>app/tema.js</code> y <code>app/tema.css</code>: Archivo Variable (display angosto y cuerpo normal) y un solo color de marca, ámbar; neutros fríos para claro y oscuro, y la banda oscura de la sala.</li>
         <li>Layout común en <code>compartido/layout/</code>: <code>Contenedor</code> de 1280 px con gutters de 16/24/40, <code>Grilla</code> por ancho mínimo y <code>Destacados</code> (el primero a ancho completo): el layout se adapta a la cantidad de ítems.</li>
         <li>Tarjetas de una sola fuente: <code>TarjetaPelicula</code> en <code>cartelera/</code>; <code>TarjetaPromo</code>, <code>TarjetaCombo</code> y <code>TarjetaProducto</code> en <code>promos/tarjetas/</code>, usadas en Promos y en la venta cruzada del ticket.</li>
-        <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código; el comprobante de texto del backend queda para copiar.</li>
+        <li>El ticket es una <code>Entrada</code> con talón perforado, QR (<code>qrcode.react</code>) y código; el comprobante de texto del backend queda para copiar. «Descargar entrada» (solo vigente) arma en el navegador un PDF A4 de una página con la misma entrada sobre fondo claro y el QR en vectores; <code>jspdf</code> se baja recién al tocar el botón.</li>
         <li>Íconos con <code>@tabler/icons-react</code>; medios de pago y tarifas con ícono mapeado en <code>compartido/iconos.js</code>, como las etiquetas.</li>
       </ul>
       <h3 id="hooks-estado">Hooks y estado</h3>
@@ -1156,7 +1156,7 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Dónde</th><th>Qué</th></tr></thead>
           <tbody>
-            <tr><td>Librerías</td><td><code>motion</code>, <code>canvas-confetti</code>, <code>@mantine/carousel</code> (Embla + autoplay), versión exacta en <code>package.json</code></td></tr>
+            <tr><td>Librerías</td><td><code>motion</code>, <code>canvas-confetti</code>, <code>jspdf</code> (las dos con <code>import()</code> al usarse), <code>@mantine/carousel</code> (Embla + autoplay), versión exacta en <code>package.json</code></td></tr>
             <tr><td>Mapa de butacas</td><td>Filas escalonadas, pop al tocar, total que corre al valor nuevo</td></tr>
             <tr><td>Entre pantallas</td><td><code>AnimatePresence</code> con fundido; sesión y compra quedan afuera y no se remontan</td></tr>
             <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; la portada rota sola (se frena como dice <code>#/</code>). Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
