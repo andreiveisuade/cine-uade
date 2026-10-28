@@ -76,7 +76,7 @@ public final class PantallaMapaSala extends Pantalla {
 
     private void alternar(Asiento asiento) {
         String nuevo = asiento.fueraDeServicio() ? "HABILITADO" : "FUERA_DE_SERVICIO";
-        cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), hecho -> recargar());
+        cargar(() -> apiSalas.cambiarEstadoAsiento(salaId, asiento.codigo(), nuevo), this::pintar);
     }
 
     private static JPanel referencia() {

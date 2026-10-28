@@ -10,6 +10,7 @@ import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.promociones.PedidoPromocion;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
+import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,6 +70,20 @@ class ApisTest {
         assertEquals(20, funcion.sala().capacidadSala());
         assertEquals(5000, funcion.precio());
         assertNull(funcion.libres());
+    }
+
+    @Test
+    void cambiarElEstadoDeUnaButacaDevuelveLaSalaConSusButacas() {
+        servidor.responder("PATCH /api/salas/2/asientos/A1", 200, """
+                {"id":2,"nombre":"Sala 2","tipo":"DOS_D","butacasPorFila":[1],"filas":1,"capacidadSala":1,
+                 "minutosLimpieza":15,"asientos":[{"id":9,"fila":1,"numero":1,"codigo":"A1","tipo":"ESTANDAR",
+                 "estado":"FUERA_DE_SERVICIO"}]}
+                """);
+
+        Sala sala = new ApiSalas(http).cambiarEstadoAsiento(2, "A1", "FUERA_DE_SERVICIO");
+
+        assertEquals("{\"estado\":\"FUERA_DE_SERVICIO\"}", servidor.ultimo("PATCH /api/salas/2/asientos/A1").cuerpo());
+        assertTrue(sala.asientos().get(0).fueraDeServicio());
     }
 
     @Test
