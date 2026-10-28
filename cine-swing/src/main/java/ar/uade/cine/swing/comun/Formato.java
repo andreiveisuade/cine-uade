@@ -14,6 +14,7 @@ public final class Formato {
     private static final String[] MESES = {"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct",
             "nov", "dic"};
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Formato() {
@@ -54,6 +55,11 @@ public final class Formato {
     public static String horaDelDia(String iso) {
         if (iso == null) return "—";
         return LocalTime.parse(iso).format(HORA);
+    }
+
+    public static String fecha(String iso) {
+        if (iso == null) return "—";
+        return LocalDate.parse(iso).format(FECHA);
     }
 
     public static String fechaHora(String iso) {

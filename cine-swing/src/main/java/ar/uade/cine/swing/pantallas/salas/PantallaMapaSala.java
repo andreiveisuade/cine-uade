@@ -23,6 +23,7 @@ import java.awt.Component;
 import java.awt.Graphics;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 
 // Mapa de una sala para marcar y reponer butacas (R9): no hay ocupación, es el estado físico del asiento.
 public final class PantallaMapaSala extends Pantalla {
@@ -58,7 +59,7 @@ public final class PantallaMapaSala extends Pantalla {
 
     private void pintar(Sala sala) {
         long rotas = sala.asientos().stream().filter(Asiento::fueraDeServicio).count();
-        resumen.setText("<html><span style='font-size:16pt'><b>" + sala.nombre() + "</b></span><br>"
+        resumen.setText("<html><span style='font-size:16pt'><b>" + escapar(sala.nombre()) + "</b></span><br>"
                 + etiqueta(sala.tipo()) + " · " + sala.filas() + " filas · " + sala.capacidadSala() + " butacas · "
                 + rotas + " fuera de servicio</html>");
         Componentes.reemplazar(mapa, new MapaButacas(sala.filas(), sala.asientos(), this::estilo, this::alternar));

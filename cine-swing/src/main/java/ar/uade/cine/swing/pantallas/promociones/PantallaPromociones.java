@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.fecha;
 import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -40,7 +41,7 @@ public final class PantallaPromociones extends Pantalla {
     private final Tabla<Promocion> tabla = new Tabla<>(
             Columna.<Promocion>de("Nombre", Promocion::nombre).ancho(180),
             Columna.<Promocion>de("Beneficio", PantallaPromociones::beneficio),
-            Columna.<Promocion>de("Vigencia", p -> p.vigenciaDesde() + " al " + p.vigenciaHasta()).ancho(170),
+            Columna.<Promocion>de("Vigencia", p -> fecha(p.vigenciaDesde()) + " al " + fecha(p.vigenciaHasta())).ancho(170),
             Columna.<Promocion>de("Cuándo", PantallaPromociones::condiciones).ancho(240),
             Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
 

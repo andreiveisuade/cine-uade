@@ -62,6 +62,7 @@ class PantallaPromocionesTest {
         assertEquals("15% off", encargado.celda(1, "Beneficio"));
         assertEquals("todos los días, cualquier medio", encargado.celda(1, "Cuándo"));
         assertEquals("Dada de baja", encargado.celda(1, "Estado"));
+        assertEquals("01/01/2026 al 30/06/2026", encargado.celda(1, "Vigencia"));
     }
 
     @ParameterizedTest(name = "{0}")

@@ -19,6 +19,7 @@ import java.awt.GridLayout;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.dia;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -57,8 +58,8 @@ public final class PantallaInformeFuncion extends Pantalla {
 
     private void pintar(Datos datos) {
         Funcion f = datos.funcion();
-        subtitulo.setText("<html><span style='font-size:18pt'><b>" + f.pelicula().titulo() + "</b></span><br>"
-                + dia(f.inicio()) + " " + hora(f.inicio()) + " · " + f.sala().nombre() + " ("
+        subtitulo.setText("<html><span style='font-size:18pt'><b>" + escapar(f.pelicula().titulo()) + "</b></span><br>"
+                + dia(f.inicio()) + " " + hora(f.inicio()) + " · " + escapar(f.sala().nombre()) + " ("
                 + etiqueta(f.sala().tipo()) + ") · " + etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma())
                 + " · precio base " + precio(f.precio()) + " · " + (f.libres() == null ? "?" : f.libres())
                 + " de " + f.sala().capacidadSala() + " butacas libres</html>");
