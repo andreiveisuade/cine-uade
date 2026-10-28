@@ -82,7 +82,7 @@ public class ConfiguracionSeguridad {
 
     // El build de React cuando el backend lo sirve (Render); con nginx no llegan acá.
     private static final String[] FRONT = {
-            "/", "/index.html", "/assets/**",
+            "/", "/index.html", "/privacidad.html", "/assets/**",
             "/favicon.svg", "/favicon.ico", "/icon-192.png", "/icon-512.png",
             "/apple-touch-icon.png", "/og.jpg", "/site.webmanifest"};
 

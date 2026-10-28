@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Text } from "@mantine/core";
+import { Anchor, Button, Text } from "@mantine/core";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { Navigate, useLocation, useSearchParams } from "react-router";
 import * as api from "@/api/api-http.js";
@@ -36,6 +36,9 @@ export function Ingresar() {
       bajada="Con tu cuenta de Google ves tus reservas, las pagás online o las cancelás. Si ya reservaste, usá el mismo email.">
       <Button type="submit" size="md" variant="default" leftSection={<IconBrandGoogle size={18} />}
         disabled={!google?.disponible}>Ingresar con Google</Button>
+      <Text size="xs" c="dimmed" ta="center">
+        Al ingresar aceptás la <Anchor href="/privacidad.html" inherit>política de privacidad</Anchor>
+      </Text>
       {google && !google.disponible && (
         <Text size="sm" c="dimmed" ta="center">El ingreso con Google no está disponible en este momento: podés reservar igual sin cuenta</Text>
       )}

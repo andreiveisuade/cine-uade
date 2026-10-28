@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Política de privacidad · Cine UADE</title>
+<meta name="description" content="Qué datos guarda Cine UADE, para qué los usa y cómo dar de baja tu cuenta." />
+<meta name="color-scheme" content="dark light" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="canonical" href="https://cine-uade.onrender.com/privacidad.html" />
+<!-- Página estática y no una ruta de React: el hash (#/...) no llega al servidor y Google tiene que leerla sin JS. -->
+<script>
+  // El mismo tema que eligió el visitante en el sitio; sin JS manda la preferencia del sistema.
+  try {
+    var tema = localStorage.getItem("cine-tema");
+    if (tema === "dark" || tema === "light") document.documentElement.setAttribute("data-tema", tema);
+  } catch (e) {}
+</script>
+<style>
+  /* Los tokens de src/app/tema.js y tema.css, copiados: esta página no pasa por Vite ni por Mantine. */
+  :root {
+    --fondo: #f4f3ef; --texto: #15171d; --tenue: #5b606d; --enlace: #8a6100; --borde: #dcd9d1; --ambar: #f5b301;
+    --gutter: 1rem;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-tema="light"]) { --fondo: #0d0f13; --texto: #e6e8ee; --tenue: #9ba1af; --enlace: #fbc433; --borde: #2b2f39; }
+  }
+  :root[data-tema="dark"] { --fondo: #0d0f13; --texto: #e6e8ee; --tenue: #9ba1af; --enlace: #fbc433; --borde: #2b2f39; }
+  @media (min-width: 48em) { :root { --gutter: 1.5rem; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); line-height: 1.65; }
+  header, main, footer { max-width: 44rem; margin: 0 auto; padding-inline: var(--gutter); }
+  header { padding-block: 1rem; border-bottom: 1px solid var(--borde); max-width: none; }
+  .marca { color: var(--texto); text-decoration: none; font-size: 26px; font-weight: 850; line-height: 1;
+    letter-spacing: -0.01em; }
+  .marca span { color: var(--enlace); }
+  main { padding-block: 3rem; }
+  h1 { font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); line-height: 1; letter-spacing: -0.01em; margin: 0 0 0.75rem; }
+  h2 { font-size: 1.375rem; line-height: 1.15; margin: 2.5rem 0 0.5rem; }
+  p, ul { margin: 0 0 0.75rem; }
+  ul { padding-left: 1.25rem; }
+  li { margin-bottom: 0.35rem; }
+  .bajada { color: var(--tenue); font-size: 1.125rem; }
+  .fecha { color: var(--tenue); font-size: 0.875rem; }
+  a { color: var(--enlace); text-underline-offset: 0.2em; }
+  :focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.9em; }
+  footer { padding-block: 1.5rem 3rem; border-top: 1px solid var(--borde); color: var(--tenue); font-size: 0.75rem; }
+</style>
+</head>
+<body>
+<header>
+  <a class="marca" href="/" aria-label="Cine UADE, inicio">CINE <span>UADE</span></a>
+</header>
+<main>
+  <h1>Política de privacidad</h1>
+  <p class="bajada">Qué datos guarda Cine UADE, para qué los usa y qué podés hacer con ellos.</p>
+  <p class="fecha">Última actualización: 28 de octubre de 2026</p>
+
+  <h2>Quiénes somos</h2>
+  <p>Cine UADE es el Trabajo Práctico Obligatorio de Aplicaciones Interactivas de la UADE (segundo cuatrimestre de 2026).
+    Es un proyecto académico, sin fines comerciales: no es un cine real y lo que se paga en el sitio es de prueba.</p>
+
+  <h2>Qué datos guardamos</h2>
+  <ul>
+    <li><strong>Tu nombre y tu email.</strong> Los que te da Google cuando ingresás con tu cuenta, o los que escribís al
+      comprar sin cuenta. De Google no pedimos nada más: ni tu foto, ni tus contactos, ni acceso a tu correo.</li>
+    <li><strong>Tus compras.</strong> Las reservas (función, butacas, tarifa, precio, código y estado), las entradas, la
+      hora en que entraste a la sala, el candy y los pagos (monto, descuento, medio de pago, fecha y el código de
+      autorización del pago).</li>
+  </ul>
+  <p>No guardamos datos de tarjetas. El pago online lo procesa Mercado Pago en su propio sitio: a Mercado Pago le
+    mandamos solo el número de reserva y el monto, y nos devuelve si el pago se aprobó.</p>
+
+  <h2>Para qué los usamos</h2>
+  <ul>
+    <li>Identificarte cuando ingresás, para que veas, pagues o canceles tus reservas.</li>
+    <li>Emitir tus entradas y comprobantes, que llevan tu nombre.</li>
+    <li>Dejarte entrar a la sala con el código de tu entrada.</li>
+  </ul>
+
+  <h2>Qué no hacemos</h2>
+  <ul>
+    <li>No vendemos ni compartimos tus datos con nadie.</li>
+    <li>No mostramos publicidad ni usamos herramientas de seguimiento o de estadísticas.</li>
+    <li>De tu cuenta de Google solo usamos tu nombre y tu email.</li>
+  </ul>
+  <p>Los pósters de las películas vienen de TMDB y los trailers de YouTube, en su modo de privacidad mejorada: esas
+    imágenes y videos los carga tu navegador directamente desde sus servidores.</p>
+
+  <h2>Cookies y lo que queda en tu navegador</h2>
+  <ul>
+    <li><strong>Una sola cookie</strong>, la de sesión (<code>JSESSIONID</code>), y solo cuando ingresás con Google.
+      Es HttpOnly: el código de la página no la puede leer. Se borra cuando salís o cerrás el navegador.</li>
+    <li><strong>En la pestaña</strong> (<code>sessionStorage</code>): un identificador al azar de la compra en curso,
+      para sostenerte las butacas mientras elegís, y la compra a la que volver después de ingresar con Google. Se borra
+      al cerrar la pestaña.</li>
+    <li><strong>En el navegador</strong> (<code>localStorage</code>): si elegiste el modo claro u oscuro, y el nombre y el
+      email de tu última compra, para no tener que escribirlos de nuevo. Se quedan en tu equipo y los podés borrar
+      limpiando los datos del sitio.</li>
+  </ul>
+
+  <h2>Cómo darte de baja</h2>
+  <p>En <a href="/#/mi-cuenta">Mi cuenta</a>, «Dar de baja la cuenta» cierra tu sesión. Tus reservas, entradas y pagos
+    quedan, porque son ventas del cine: las entradas siguen valiendo y las encontrás con el código de cada una. Si
+    volvés a ingresar con Google con el mismo email, la cuenta se abre de nuevo con tus reservas.</p>
+
+  <h2>Contacto</h2>
+  <p>Para cualquier consulta sobre tus datos, escribinos por el
+    <a href="https://github.com/andreiveisuade/cine-uade">repositorio del proyecto</a>.</p>
+</main>
+<footer>TPO Aplicaciones Interactivas · UADE · 2C 2026</footer>
+</body>
+</html>

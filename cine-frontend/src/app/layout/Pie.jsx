@@ -28,6 +28,8 @@ export function Pie() {
           </Group>
           <Group gap="lg" wrap="wrap">
             {medios.datos?.length > 0 && <MediosDePago medios={medios.datos.map((m) => m.nombre)} tamanio={18} />}
+            {/* Fuera del nav, que en celular se oculta: es una página aparte, sin ruteo por hash. */}
+            <Anchor href="/privacidad.html" size="xs" c="dimmed">Privacidad</Anchor>
             <Text size="xs" c="dimmed">TPO Aplicaciones Interactivas · UADE · 2C 2026</Text>
           </Group>
         </Group>
