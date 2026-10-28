@@ -1,6 +1,7 @@
 package ar.uade.cine.swing;
 
 import ar.uade.cine.swing.api.Apis;
+import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
@@ -8,6 +9,7 @@ import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.produccion.VentanaProduccion;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -27,6 +29,7 @@ import java.awt.Font;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 
 // El marco del panel: cabecera, menú según el rol y la pantalla elegida, recreada para mostrar datos frescos.
 // Cada entrada del menú crea la pantalla de nuevo, así muestra datos frescos.
@@ -48,13 +51,14 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private final ButtonGroup grupo = new ButtonGroup();
 
-    public VentanaPrincipal(Apis apis, String servidor, Empleado empleado, Runnable alSalir) {
-        super("Cine UADE · " + empleado.nombre());
+    public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Preferences preferencias,
+                            Runnable alSalir) {
+        super("Cine UADE · " + servidor.marca() + " · " + empleado.nombre());
         this.pantallas = new Pantallas(apis, this);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         JPanel raiz = new JPanel(new BorderLayout());
-        raiz.add(cabecera(empleado, servidor, alSalir), BorderLayout.NORTH);
+        raiz.add(cabecera(empleado, servidor, preferencias, alSalir), BorderLayout.NORTH);
         // El rol no es cosmético: el acomodador ni ve el resto del menú, y el backend además le cierra las rutas.
         List<Grupo> menu = empleado.esAdministrador() ? MENU
                 : List.of(new Grupo("Acceso", List.of(Destino.PUERTA)));
@@ -72,7 +76,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         ir(empleado.esAdministrador() ? Destino.PELICULAS : Destino.PUERTA);
     }
 
-    private JPanel cabecera(Empleado empleado, String servidor, Runnable alSalir) {
+    private JPanel cabecera(Empleado empleado, Servidor servidor, Preferences preferencias, Runnable alSalir) {
         JPanel cabecera = new JPanel();
         cabecera.setLayout(new BoxLayout(cabecera, BoxLayout.X_AXIS));
         cabecera.setBorder(BorderFactory.createCompoundBorder(
@@ -84,12 +88,40 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         cabecera.add(Box.createHorizontalStrut(12));
         cabecera.add(new JLabel(Etiquetas.etiqueta(empleado.rol())));
         cabecera.add(Box.createHorizontalGlue());
-        cabecera.add(new JLabel(empleado.nombre() + "  ·  " + servidor));
+        cabecera.add(marca(servidor));
         cabecera.add(Box.createHorizontalStrut(12));
+        cabecera.add(new JLabel(empleado.nombre()));
+        cabecera.add(Box.createHorizontalStrut(12));
+        JButton produccion = new JButton("Estado de producción");
+        produccion.addActionListener(e -> VentanaProduccion.abrir(this, preferencias));
+        cabecera.add(produccion);
+        cabecera.add(Box.createHorizontalStrut(8));
         JButton salir = new JButton("Salir");
         salir.addActionListener(e -> alSalir.run());
         cabecera.add(salir);
         return cabecera;
+    }
+
+    // Producción salta a la vista: un alta de prueba ahí la ve el público.
+    static JLabel marca(Servidor servidor) {
+        JLabel marca = new JLabel(servidor.marca());
+        marca.setToolTipText(servidor.url() + " · para cambiarlo, salí y elegilo al ingresar");
+        marca.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+        switch (servidor.entorno()) {
+            case LOCAL -> marca.setForeground(Colores.secundario());
+            case PRODUCCION -> {
+                marca.setForeground(Colores.error());
+                marca.setFont(marca.getFont().deriveFont(Font.BOLD));
+                marca.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Colores.error(), 2),
+                        BorderFactory.createEmptyBorder(2, 8, 2, 8)));
+            }
+            case OTRO -> {
+                marca.setForeground(Colores.aviso());
+                marca.setFont(marca.getFont().deriveFont(Font.BOLD));
+            }
+        }
+        return marca;
     }
 
     private JPanel menu(List<Grupo> grupos) {

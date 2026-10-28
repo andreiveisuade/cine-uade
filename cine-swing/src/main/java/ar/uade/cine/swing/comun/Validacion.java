@@ -64,6 +64,10 @@ public final class Validacion {
         return anotar(campo, nombre, Lecturas.leerEmail(campo.getText(), nombre, obligatorio));
     }
 
+    public String url(JTextComponent campo, String nombre, boolean obligatorio) {
+        return anotar(campo, nombre, Lecturas.leerUrl(campo.getText(), nombre, obligatorio));
+    }
+
     /** La fecha en ISO, o null; recibe el Adapter {@link CampoFecha}: Validacion no conoce JCalendar. */
     public String fecha(CampoFecha selector, String nombre, boolean obligatorio) {
         LocalDate fecha = selector.valor();

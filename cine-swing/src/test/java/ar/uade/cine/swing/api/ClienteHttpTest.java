@@ -238,16 +238,4 @@ class ClienteHttpTest {
 
         assertNull(funciones.obtenerFuncion(9));
     }
-
-    @Test
-    void laUrlSeTomaDeLaPropiedadAntesQueDelDefault() {
-        String anterior = System.getProperty("cine.api.url");
-        try {
-            System.setProperty("cine.api.url", "http://otro:9090");
-            assertEquals("http://otro:9090", ClienteHttp.urlConfigurada());
-        } finally {
-            if (anterior == null) System.clearProperty("cine.api.url");
-            else System.setProperty("cine.api.url", anterior);
-        }
-    }
 }

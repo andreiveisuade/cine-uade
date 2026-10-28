@@ -24,7 +24,6 @@ import java.util.UUID;
 // Bloqueante a propósito: quien llama lo corre fuera del EDT (comun.Tarea).
 public final class ClienteHttp {
 
-    public static final String URL_POR_DEFECTO = "http://localhost:8080";
     private static final Duration ESPERA = Duration.ofSeconds(30);
 
     private final String base;
@@ -44,15 +43,6 @@ public final class ClienteHttp {
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    /** Propiedad {@code -Dcine.api.url}, si no la variable {@code CINE_API_URL}, si no el backend local del docker. */
-    public static String urlConfigurada() {
-        String propiedad = System.getProperty("cine.api.url");
-        if (propiedad != null && !propiedad.isBlank()) return propiedad.trim();
-        String entorno = System.getenv("CINE_API_URL");
-        if (entorno != null && !entorno.isBlank()) return entorno.trim();
-        return URL_POR_DEFECTO;
-    }
-
     public String urlBase() {
         return base;
     }
@@ -68,9 +58,13 @@ public final class ClienteHttp {
 
     /** Credenciales nuevas en Basic, nunca las viejas; se guardan solo si el login contestó bien (un 401 sale antes). */
     <T> T ingresar(String ruta, String email, String password, Class<T> tipo) {
+        return ingresar(ruta, email, password, tipo, ESPERA);
+    }
+
+    <T> T ingresar(String ruta, String email, String password, Class<T> tipo, Duration espera) {
         String nuevas = Base64.getEncoder().encodeToString(
                 (Parametros.oVacio(email) + ":" + Parametros.oVacio(password)).getBytes(StandardCharsets.UTF_8));
-        T respuesta = pedir("POST", ruta, null, tipo(tipo), nuevas, false, ESPERA);
+        T respuesta = pedir("POST", ruta, null, tipo(tipo), nuevas, false, espera);
         credenciales = nuevas;
         return respuesta;
     }

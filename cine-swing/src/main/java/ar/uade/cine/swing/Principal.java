@@ -1,20 +1,25 @@
 package ar.uade.cine.swing;
 
+import ar.uade.cine.swing.api.ApiSesion;
 import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.ClienteHttp;
+import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.pantallas.usuarios.VentanaLogin;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.SwingUtilities;
+import java.util.prefs.Preferences;
 
 // Arranca el panel de escritorio y lo alterna con el login: un 401 en cualquier pantalla vuelve al login.
 // Las credenciales viven solo en memoria: una sesión rechazada no tiene qué rescatar, solo volver a pedirlas.
 public final class Principal {
 
-    private final ClienteHttp http = new ClienteHttp(ClienteHttp.urlConfigurada());
-    private final Apis apis = Apis.sobre(http);
+    // En la compu del encargado, no en el repo: el último servidor elegido y la cuenta de Aiven.
+    private final Preferences preferencias = Preferences.userNodeForPackage(Principal.class);
+    private ClienteHttp http;
+    private Apis apis;
     private VentanaPrincipal panel;
 
     public static void main(String[] args) {
@@ -24,26 +29,29 @@ public final class Principal {
         } else {
             FlatDarkLaf.setup();
         }
-        SwingUtilities.invokeLater(() -> new Principal().arrancar());
+        SwingUtilities.invokeLater(() -> new Principal().mostrarLogin(null));
     }
 
-    private void arrancar() {
-        http.alVencerSesion(() -> SwingUtilities.invokeLater(() -> {
-            // Varias pantallas pueden recibir el 401 a la vez: solo la primera cierra el panel.
-            if (panel == null) return;
+    private void mostrarLogin(String aviso) {
+        new VentanaLogin(preferencias, this::conectar, aviso, this::abrirPanel).setVisible(true);
+    }
+
+    private ApiSesion conectar(Servidor servidor) {
+        ClienteHttp nuevo = new ClienteHttp(servidor.url());
+        nuevo.alVencerSesion(() -> SwingUtilities.invokeLater(() -> {
+            // Varias pantallas reciben el 401 a la vez: solo la primera cierra; el de una sesión vieja, ninguna.
+            if (panel == null || http != nuevo) return;
             panel.dispose();
             panel = null;
             mostrarLogin("La sesión dejó de valer: volvé a ingresar");
         }));
-        mostrarLogin(null);
+        http = nuevo;
+        apis = Apis.sobre(nuevo);
+        return apis.sesion();
     }
 
-    private void mostrarLogin(String aviso) {
-        new VentanaLogin(apis.sesion(), http.urlBase(), aviso, this::abrirPanel).setVisible(true);
-    }
-
-    private void abrirPanel(Empleado empleado) {
-        panel = new VentanaPrincipal(apis, http.urlBase(), empleado, () -> {
+    private void abrirPanel(Servidor servidor, Empleado empleado) {
+        panel = new VentanaPrincipal(apis, servidor, empleado, preferencias, () -> {
             http.olvidarCredenciales();
             panel.dispose();
             panel = null;
