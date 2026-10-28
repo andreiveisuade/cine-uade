@@ -59,6 +59,22 @@ class PantallaCobroTest {
         assertTrue(encargado.hayBoton("Registrar cobro"), "el primer medio, efectivo, se cobra en caja");
     }
 
+    // R30: lo pedido en la web se ve en el detalle y se cobra con las entradas: el backend lo cobra en el mismo pago.
+    @Test
+    void elCandyPedidoEnLaWebSeMuestraYSeCobraJunto() {
+        String candy = "[{\"id\":12,\"reservaId\":5,\"estado\":\"PENDIENTE\",\"fecha\":\"2026-11-05T09:50:00\","
+                + "\"codigoAutorizacion\":\"\",\"items\":[{\"nombre\":\"Combo clásico\",\"cantidad\":2,"
+                + "\"subtotal\":11000.0}],\"total\":11000.0,\"ahorro\":3000.0}]";
+        servidor.responder("GET /api/reservas/5", 200,
+                reserva(5, "RESERVADA", true, "null").replace("\"cancelable\":true}", "\"cancelable\":true,\"candy\":" + candy + "}"));
+        abrir(5);
+
+        encargado.esperarTexto("Candy pedido en la web");
+        encargado.esperarTexto("Candy  $ 11.000");
+        encargado.esperarTexto("$ 18.500");
+        encargado.esperarTexto("Las butacas y el candy pedido en la web se cobran juntos");
+    }
+
     @Test
     void unaYaPagadaDiceCuantoYConQueSeCobro() {
         servidor.responder("GET /api/reservas/5", 200, reserva(5, "PAGADA", false, PAGO));

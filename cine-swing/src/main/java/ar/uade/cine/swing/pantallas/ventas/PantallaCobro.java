@@ -2,6 +2,8 @@ package ar.uade.cine.swing.pantallas.ventas;
 
 import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiVentas;
+import ar.uade.cine.swing.api.dto.candy.CompraCandy;
+import ar.uade.cine.swing.api.dto.candy.ItemCompra;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
@@ -29,7 +31,7 @@ import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-// Cobro de una reserva: el detalle de lo que se cobra a un lado, el medio y el botón al otro (PanelCobro).
+// Cobro de una reserva con su candy de la web (R30): detalle a un lado, medio y botón al otro (PanelCobro).
 // El importe no se tipea: el descuento depende del medio y lo resuelve el backend al cobrar.
 public final class PantallaCobro extends Pantalla {
 
@@ -123,7 +125,23 @@ public final class PantallaCobro extends Pantalla {
         panel.add(entradas.conScroll(), BorderLayout.CENTER);
         JLabel subtotal = new JLabel("Subtotal  " + precio(reserva.total()), JLabel.RIGHT);
         subtotal.setFont(subtotal.getFont().deriveFont(Font.BOLD));
-        panel.add(subtotal, BorderLayout.SOUTH);
+        if (reserva.candy().isEmpty()) {
+            panel.add(subtotal, BorderLayout.SOUTH);
+            return Componentes.conBorde(panel);
+        }
+        Pila abajo = new Pila();
+        abajo.agregar(subtotal);
+        abajo.agregar(Componentes.subtitulo("Candy pedido en la web"));
+        Tabla<ItemCompra> candy = new Tabla<>(
+                Columna.<ItemCompra>de("Producto", ItemCompra::nombre),
+                Columna.<ItemCompra>numero("Cantidad", i -> String.valueOf(i.cantidad())),
+                Columna.<ItemCompra>numero("Subtotal", i -> precio(i.subtotal())));
+        candy.mostrar(reserva.candy().stream().map(CompraCandy::items).flatMap(List::stream).toList());
+        abajo.agregar(candy.conScroll());
+        JLabel totalCandy = new JLabel("Candy  " + precio(reserva.totalCandy()), JLabel.RIGHT);
+        totalCandy.setFont(totalCandy.getFont().deriveFont(Font.BOLD));
+        abajo.agregar(totalCandy);
+        panel.add(abajo, BorderLayout.SOUTH);
         return Componentes.conBorde(panel);
     }
 }

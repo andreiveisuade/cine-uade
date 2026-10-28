@@ -51,7 +51,7 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
         this.reserva = reserva;
         Campos.llenar(medio, Opciones.medios(medios));
 
-        JLabel total = new JLabel(precio(reserva.total()));
+        JLabel total = new JLabel(precio(reserva.total() + reserva.totalCandy()));
         total.setFont(total.getFont().deriveFont(Font.BOLD, 22f));
 
         Pila contenido = new Pila();
@@ -62,9 +62,10 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
         contenido.agregar(new JLabel(" "));
         contenido.agregar(new JLabel("A cobrar"));
         contenido.agregar(total);
-        contenido.agregar(Componentes.nota("Sale del total de las butacas: no se puede cobrar "
-                + "otro importe. Si hay una promoción vigente para este medio de pago, el descuento se aplica al "
-                + "cobrar."));
+        contenido.agregar(Componentes.nota((reserva.candy().isEmpty() ? "Sale del total de las butacas"
+                : "Las butacas y el candy pedido en la web se cobran juntos, con el mismo medio")
+                + ": no se puede cobrar otro importe. Si hay una promoción vigente para este medio de pago, el "
+                + "descuento se aplica al cobrar, solo a las entradas."));
         contenido.agregar(new JLabel(" "));
         contenido.agregar(explicacion);
         contenido.agregar(enviar);
@@ -111,10 +112,11 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
 
     @Override
     public void cobrado(Pago pago) {
+        String candy = reserva.candy().isEmpty() ? "" : " · candy " + precio(reserva.totalCandy());
         avisar(pago.descuento() > 0
                 ? "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()) + " · "
-                + precio(pago.descuento()) + " de descuento"
-                : "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()));
+                + precio(pago.descuento()) + " de descuento" + candy
+                : "Cobrado " + precio(pago.monto()) + " con " + etiqueta(pago.medio()) + candy);
         navegacion.ir(Destino.CAJA);
     }
 
