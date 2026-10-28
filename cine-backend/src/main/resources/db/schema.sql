@@ -225,15 +225,19 @@ CREATE TABLE IF NOT EXISTS combo_item (
     FOREIGN KEY (producto_id) REFERENCES producto(id)
 );
 
--- Venta de mostrador, cobrada en el acto: lleva el medio de pago y no pasa por pago
+-- Venta del candy; no pasa por pago. La de mostrador nace COBRADA; la de la web (R30) nace PENDIENTE,
+-- sin medio, y se cobra en el pago de su reserva (o queda ANULADA si la reserva se cancela o vence)
 -- cliente y reserva admiten NULL: mostrador no tiene ninguno, la web los toma de la reserva
+-- cobrada_en es la fecha del arqueo: el pedido de la web puede cobrarse otro dia que fecha
 CREATE TABLE IF NOT EXISTS compra_candy (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NULL,
     reserva_id INT NULL,
     fecha DATETIME NOT NULL,
-    medio VARCHAR(15) NOT NULL,
+    medio VARCHAR(15) NULL,
     codigo_autorizacion VARCHAR(50) NOT NULL DEFAULT '',
+    estado VARCHAR(15) NOT NULL,
+    cobrada_en DATETIME NULL,
     FOREIGN KEY (cliente_id) REFERENCES usuario(id),
     FOREIGN KEY (reserva_id) REFERENCES reserva(id)
 );

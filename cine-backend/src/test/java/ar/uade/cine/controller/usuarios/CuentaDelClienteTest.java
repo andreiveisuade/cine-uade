@@ -9,12 +9,18 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpSession;
 
 import ar.uade.cine.PruebaDeApi;
+import ar.uade.cine.model.candy.TipoProducto;
+import ar.uade.cine.model.imagenes.ImagenUrl;
+import ar.uade.cine.service.candy.GestorProductos;
+import com.fasterxml.jackson.databind.JsonNode;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
@@ -51,6 +57,9 @@ class CuentaDelClienteTest extends PruebaDeApi {
 
     @Autowired
     private GestorPagos pagos;
+
+    @Autowired
+    private GestorProductos carta;
 
     private int funcionId;
 
@@ -204,6 +213,77 @@ class CuentaDelClienteTest extends PruebaDeApi {
         Reserva suya = reservar("Ana", ANA, "A1");
 
         assertThat(pedirComo(HttpMethod.POST, checkout(suya), QR, null, null).estado()).isEqualTo(401);
+    }
+
+    // R30: el candy viaja con la reserva; la vista lo trae pendiente y la cotización lo suma.
+    @Test
+    @DisplayName("R30: el cliente pide candy para la suya, lo ve en la reserva y lo cotiza con las entradas")
+    void pideCandyParaLaSuyaYLoCotiza() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva suya = reservar("Ana", ANA, "A1");
+        MockHttpSession sesion = entrarConGoogle(ANA);
+
+        Respuesta pedido = conSesion(HttpMethod.PUT, candy(suya), sesion, "{\"cantidades\":{\"" + pochoclos + "\":2}}");
+        Respuesta cotizacion = conSesion(HttpMethod.GET, cotizacion(suya), sesion, null);
+
+        assertThat(pedido.estado()).isEqualTo(200);
+        JsonNode candy = pedido.json().get("candy").get(0);
+        assertThat(candy.get("estado").asText()).isEqualTo("PENDIENTE");
+        assertThat(candy.get("total").asDouble()).isEqualTo(8000.0);
+        assertThat(candy.has("medio")).isFalse();
+        assertThat(pedido.json().get("total").asDouble()).as("el total sigue siendo de las entradas").isEqualTo(5000.0);
+        assertThat(cotizacion.estado()).isEqualTo(200);
+        assertThat(cotizacion.json()).hasSize(4);
+        assertThat(cotizacion.json().get(0).get("medio").asText()).isEqualTo("DEBITO");
+        assertThat(cotizacion.json().get(0).get("candy").asDouble()).isEqualTo(8000.0);
+        assertThat(cotizacion.json().get(0).get("total").asDouble()).isEqualTo(13000.0);
+        assertThat(cotizacion.json().get(0).has("promocion")).isFalse();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            sin cantidades | {}                | 400 | Faltan las cantidades
+            sin productos  | {"cantidades":{}} | 200 |
+            """)
+    void elPedidoDeCandyExigeLasCantidades(String caso, String cuerpo, int estado, String error) {
+        Reserva suya = reservar("Ana", ANA, "A1");
+
+        Respuesta respuesta = conSesion(HttpMethod.PUT, candy(suya), entrarConGoogle(ANA), cuerpo);
+
+        assertThat(respuesta.estado()).as(caso).isEqualTo(estado);
+        if (error != null) {
+            assertThat(respuesta.error()).isEqualTo(error);
+        }
+    }
+
+    // R21: lo de otro es 404 como un código que no existe, y sin sesión 401.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            candy de otro,         PUT, candy,      true,  404
+            cotización de otro,    GET, cotizacion, true,  404
+            candy sin sesión,      PUT, candy,      false, 401
+            cotización sin sesión, GET, cotizacion, false, 401
+            """)
+    void elCandyYLaCotizacionSonSoloDeLaPropia(String caso, String metodo, String ruta, boolean conSesion,
+                                               int estado) {
+        Reserva ajena = reservar("Beto", "beto@mail.com", "A2");
+        String url = "/api/reservas/codigo/" + ajena.getCodigo() + "/" + ruta;
+        HttpMethod verbo = HttpMethod.valueOf(metodo);
+        String cuerpo = verbo == HttpMethod.PUT ? "{\"cantidades\":{}}" : null;
+
+        Respuesta respuesta = conSesion
+                ? conSesion(verbo, url, entrarConGoogle(ANA), cuerpo)
+                : pedirComo(verbo, url, cuerpo, null, null);
+
+        assertThat(respuesta.estado()).as(caso).isEqualTo(estado);
+    }
+
+    private static String candy(Reserva reserva) {
+        return "/api/reservas/codigo/" + reserva.getCodigo() + "/candy";
+    }
+
+    private static String cotizacion(Reserva reserva) {
+        return "/api/reservas/codigo/" + reserva.getCodigo() + "/cotizacion";
     }
 
     private static String checkout(Reserva reserva) {

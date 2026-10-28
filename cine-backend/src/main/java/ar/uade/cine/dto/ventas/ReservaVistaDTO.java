@@ -4,17 +4,18 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.usuarios.ClienteVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
 
-// Una reserva como la ven el cliente y el panel; la arma VistasReservas, con los flags cobrable y cancelable.
+// Una reserva como la ven el cliente y el panel; la arma VistasReservas, con cobrable, cancelable y su candy.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ReservaVistaDTO(int id, int funcionId, int clienteId, String estado, String creadaEn,
                               String venceEn, String codigo, String ingresadaEn,
                               List<EntradaVistaDTO> entradas, int cantidadEntradas, double total,
                               boolean cobrable, boolean cancelable,
                               FuncionVistaDTO funcion, PeliculaVistaDTO pelicula, SalaVistaDTO sala,
-                              ClienteVistaDTO cliente, PagoVistaDTO pago) {
+                              ClienteVistaDTO cliente, PagoVistaDTO pago, List<CompraCandyVistaDTO> candy) {
 }

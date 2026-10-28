@@ -55,7 +55,7 @@ public class ConfiguracionOpenApi {
         RESERVA_CAMBIADA("Otro pedido cambió la reserva al mismo tiempo: hay que volver a intentarlo",
                 "POST /api/reservas/{id}/pago", "POST /api/reservas/{id}/cancelacion",
                 "POST /api/reservas/codigo/{codigo}/cancelacion", "POST /api/checkouts/{id}/confirmacion",
-                "POST /api/acceso");
+                "POST /api/acceso", "PUT /api/reservas/codigo/{codigo}/candy");
 
         private final String descripcion;
         private final Set<String> rutas;

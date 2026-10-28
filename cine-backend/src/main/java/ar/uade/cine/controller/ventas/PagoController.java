@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import ar.uade.cine.controller.http.Creado;
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.dto.ventas.CheckoutVistaDTO;
+import ar.uade.cine.dto.ventas.CotizacionVistaDTO;
 import ar.uade.cine.dto.ventas.PagoVistaDTO;
 import ar.uade.cine.dto.ventas.PedidoCheckoutDTO;
 import ar.uade.cine.dto.ventas.PedidoPagoDTO;
@@ -71,6 +73,14 @@ public class PagoController {
         MedioPago medio = Parseo.constante(MedioPago.class, pedido.medio(), "el medio de pago");
         int id = consultas.obtenerDelCliente(codigo, cliente.getName()).getId();
         return vistas.checkout(pagos.iniciarCheckout(id, medio));
+    }
+
+    // R30: el mismo cálculo que el checkout, sin abrir uno por medio en Mercado Pago.
+    @Operation(summary = "Lo que el cliente pagaría por su reserva con cada medio, con promo y candy")
+    @GetMapping("/api/reservas/codigo/{codigo}/cotizacion")
+    public List<CotizacionVistaDTO> cotizar(@PathVariable String codigo, Principal cliente) {
+        int id = consultas.obtenerDelCliente(codigo, cliente.getName()).getId();
+        return pagos.cotizar(id).stream().map(vistas::cotizacion).toList();
     }
 
     @Operation(summary = "Confirmar el checkout una vez que el cliente pagó")

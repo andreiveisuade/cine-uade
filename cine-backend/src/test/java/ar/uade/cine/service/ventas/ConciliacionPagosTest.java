@@ -33,6 +33,13 @@ import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.candy.GestorCandy;
+import ar.uade.cine.service.candy.GestorProductos;
+import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.candy.EstadoCompraCandy;
+import ar.uade.cine.model.candy.TipoProducto;
+import ar.uade.cine.model.imagenes.ImagenUrl;
+import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
@@ -47,6 +54,10 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
     private PagoRepository pagoRepository;
     @Autowired
     private PoliticaPromociones politica;
+    @Autowired
+    private GestorCandy candy;
+    @Autowired
+    private GestorProductos carta;
     @Autowired
     private ApplicationEventPublisher eventos;
     @Autowired
@@ -71,7 +82,7 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
         funciones.programar(1, 1, LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
         clientes.identificar("Andrei", "andrei@uade.edu.ar");
-        pagos = new GestorPagos(pagoRepository, reservaRepository, politica, pasarela, eventos, reloj);
+        pagos = new GestorPagos(pagoRepository, reservaRepository, politica, pasarela, candy, eventos, reloj);
         conciliacion = new ConciliacionPagos(pasarela, pagos, reloj);
     }
 
@@ -99,6 +110,23 @@ class ConciliacionPagosTest extends PruebaDeIntegracion {
         assertEquals(0, enTransaccion(conciliacion::conciliar));
 
         assertEquals(1, pagoRepository.findByReservaIdIn(List.of(reserva.getId())).size());
+    }
+
+    // R30: el candy pedido en la web se cobra con la reserva también cuando la cobra la conciliación.
+    @Test
+    void laConciliacionCobraTambienElCandyPendiente() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
+        PasarelaPagos.Checkout checkout = enTransaccion(() -> pagos.iniciarCheckout(reserva.getId(), MedioPago.QR));
+        pasarela.aprobar(checkout.id());
+
+        assertEquals(1, enTransaccion(conciliacion::conciliar));
+
+        assertEquals(Dinero.de(9000), checkout.monto());
+        CompraCandy cobrada = candy.comprasDeReservas(List.of(reserva.getId())).get(0);
+        assertEquals(EstadoCompraCandy.COBRADA, cobrada.getEstado());
+        assertEquals(MedioPago.QR, cobrada.getMedio());
     }
 
     // Uno que no se puede cobrar (acá, uno que MP no conoce) no frena a los demás.

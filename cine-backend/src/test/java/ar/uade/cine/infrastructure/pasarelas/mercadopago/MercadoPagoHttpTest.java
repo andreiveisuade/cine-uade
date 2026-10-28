@@ -44,6 +44,7 @@ class MercadoPagoHttpTest {
     private String preferenciaEnviada;
     private String pagosEnMp = "[]";
     private String preferenciasEnMp = "[{\"id\": \"pref-1\"}]";
+    private String itemsEnMp = "[{\"unit_price\": 2500.0}]";
 
     @BeforeEach
     void levantarMercadoPagoFalso() throws IOException {
@@ -60,8 +61,8 @@ class MercadoPagoHttpTest {
                 }
                 case "/checkout/preferences/search" ->
                         responder(intercambio, 200, "{\"elements\": " + preferenciasEnMp + "}");
-                case "/checkout/preferences/pref-1" -> responder(intercambio, 200, """
-                        {"items": [{"unit_price": 2500.0}], "init_point": "https://mp.test/init"}""");
+                case "/checkout/preferences/pref-1" -> responder(intercambio, 200,
+                        "{\"items\": " + itemsEnMp + ", \"init_point\": \"https://mp.test/init\"}");
                 case "/v1/payments/search" -> responder(intercambio, 200, "{\"results\": " + pagosEnMp + "}");
                 default -> responder(intercambio, 404, "{}");
             }
@@ -76,7 +77,7 @@ class MercadoPagoHttpTest {
 
     @Test
     void laPreferenciaLlevaElMontoLaReferenciaYLaVueltaAlBackend() throws IOException {
-        Checkout checkout = pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(7680), VENCE);
+        Checkout checkout = pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(7680), Dinero.CERO, VENCE);
 
         JsonNode preferencia = JSON.readTree(preferenciaEnviada);
         assertEquals(7680.0, preferencia.at("/items/0/unit_price").asDouble(), 0.001);
@@ -91,6 +92,26 @@ class MercadoPagoHttpTest {
         assertEquals(Dinero.de(7680), checkout.monto());
     }
 
+    // R30: el comprador ve en MP qué es entrada y qué es candy; sin candy, MP no acepta un ítem en cero.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin candy, 0,    1, 7680
+            con candy, 5500, 2, 13180
+            """)
+    void elCandyVaEnSuPropioItem(String caso, double candy, int items, double monto) throws IOException {
+        Checkout checkout = pasarela("http://localhost:8080")
+                .crear(25, MedioPago.QR, Dinero.de(7680), Dinero.de(candy), VENCE);
+
+        JsonNode enviados = JSON.readTree(preferenciaEnviada).path("items");
+        assertEquals(items, enviados.size(), caso);
+        assertEquals(7680.0, enviados.path(0).path("unit_price").asDouble(), 0.001, caso);
+        if (items == 2) {
+            assertEquals(candy, enviados.path(1).path("unit_price").asDouble(), 0.001);
+            assertEquals("Candy de la reserva 25", enviados.path(1).path("title").asText());
+        }
+        assertEquals(Dinero.de(monto), checkout.monto(), caso);
+    }
+
     // MP no debe ofrecer otro medio que el pedido; account_money nunca se excluye (MP responde 400).
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
@@ -101,7 +122,7 @@ class MercadoPagoHttpTest {
             """)
     void laPreferenciaExcluyeLoQueNoEsElMedioPedido(String caso, MedioPago medio, String permitidos)
             throws IOException {
-        pasarela("http://localhost:8080").crear(25, medio, Dinero.de(100), VENCE);
+        pasarela("http://localhost:8080").crear(25, medio, Dinero.de(100), Dinero.CERO, VENCE);
 
         Set<String> excluidos = new HashSet<>();
         JSON.readTree(preferenciaEnviada).at("/payment_methods/excluded_payment_types")
@@ -116,7 +137,7 @@ class MercadoPagoHttpTest {
     // R13/R17: pasado el vencimiento la reserva ya soltó las butacas y no hay devolución; MP no debe cobrar.
     @Test
     void laPreferenciaVenceConLaReservaEnHoraArgentina() throws IOException {
-        pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), VENCE);
+        pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), Dinero.CERO, VENCE);
 
         JsonNode preferencia = JSON.readTree(preferenciaEnviada);
         assertTrue(preferencia.path("expires").asBoolean());
@@ -131,7 +152,7 @@ class MercadoPagoHttpTest {
             sitio publico,  https://cine.ejemplo.ar, true
             """)
     void elAutoReturnSoloConUnSitioPublico(String caso, String sitio, boolean conAutoReturn) throws IOException {
-        pasarela(sitio).crear(25, MedioPago.QR, Dinero.de(100), VENCE);
+        pasarela(sitio).crear(25, MedioPago.QR, Dinero.de(100), Dinero.CERO, VENCE);
 
         assertEquals(conAutoReturn, JSON.readTree(preferenciaEnviada).has("auto_return"), caso);
     }
@@ -140,7 +161,7 @@ class MercadoPagoHttpTest {
     void conCredencialesDePruebaElLinkEsElDelSandbox() {
         MercadoPagoHttp pasarela = new MercadoPagoHttp("TEST-123", direccion(), "http://localhost:8080");
 
-        assertEquals("https://mp.test/sandbox", pasarela.crear(25, MedioPago.QR, Dinero.de(100), VENCE).urlPago());
+        assertEquals("https://mp.test/sandbox", pasarela.crear(25, MedioPago.QR, Dinero.de(100), Dinero.CERO, VENCE).urlPago());
     }
 
     @Test
@@ -151,6 +172,14 @@ class MercadoPagoHttpTest {
         assertEquals(MedioPago.CREDITO, checkout.medio());
         assertEquals(Dinero.de(2500), checkout.monto());
         assertTrue(pedidos.contains("GET /checkout/preferences/search?external_reference=25-CREDITO-99"), pedidos.toString());
+    }
+
+    // R30: lo que se valida contra el pago aprobado es todo lo de la preferencia, entradas y candy.
+    @Test
+    void elMontoDeUnaPreferenciaConCandySumaSusDosItems() {
+        itemsEnMp = "[{\"unit_price\": 7680.0}, {\"unit_price\": 5500.0}]";
+
+        assertEquals(Dinero.de(13180), pasarela("http://localhost:8080").buscar("25-QR-99").orElseThrow().monto());
     }
 
     @ParameterizedTest(name = "{0}")
@@ -261,7 +290,7 @@ class MercadoPagoHttpTest {
         servidor.createContext("/", intercambio -> responder(intercambio, 401, "{\"message\": \"invalid token\"}"));
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
-                () -> pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), VENCE));
+                () -> pasarela("http://localhost:8080").crear(25, MedioPago.QR, Dinero.de(100), Dinero.CERO, VENCE));
 
         assertEquals("Mercado Pago no respondió bien: probá de nuevo en un rato", error.getMessage());
         assertFalse(error.getMessage().contains("token"));

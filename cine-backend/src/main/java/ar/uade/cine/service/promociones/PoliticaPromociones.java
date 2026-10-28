@@ -12,9 +12,10 @@ public interface PoliticaPromociones {
 
     Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion, MedioPago medio);
 
-    record Descuento(Integer promocionId, Dinero monto) {
+    // El nombre es para mostrar la promo antes de cobrar (la cotización); el pago guarda solo el id.
+    record Descuento(Integer promocionId, String promocion, Dinero monto) {
 
-        private static final Descuento NINGUNO = new Descuento(null, Dinero.CERO);
+        private static final Descuento NINGUNO = new Descuento(null, null, Dinero.CERO);
 
         public static Descuento ninguno() {
             return NINGUNO;

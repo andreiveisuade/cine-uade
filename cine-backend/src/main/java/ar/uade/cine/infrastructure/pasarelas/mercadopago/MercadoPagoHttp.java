@@ -51,24 +51,26 @@ public class MercadoPagoHttp implements PasarelaPagos {
         this.sitio = sinBarraFinal(sitio);
     }
 
-    // El monto viaja como un solo ítem: el detalle de butacas ya está en la reserva y el total ya trae el descuento.
+    // Las entradas van en un ítem con el descuento ya restado (el detalle de butacas está en la reserva) y el candy
+    // en otro (R30). MP no acepta un ítem en cero: el candy entra solo si hay.
     @Override
-    public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
+    public Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence) {
         String id = reservaId + "-" + medio.name() + "-" + Math.abs(AZAR.nextLong());
-        String cuerpo = preferencia(id, reservaId, medio, monto, vence).toString();
+        String cuerpo = preferencia(id, reservaId, medio, entradas, candy, vence).toString();
         JsonNode creada = api.post("/checkout/preferences", cuerpo);
         String urlPago = urlDePago(creada);
-        return new Checkout(id, reservaId, medio, monto, urlPago, urlPago);
+        return new Checkout(id, reservaId, medio, entradas.mas(candy), urlPago, urlPago);
     }
 
-    private ObjectNode preferencia(String id, int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
+    private ObjectNode preferencia(String id, int reservaId, MedioPago medio, Dinero entradas, Dinero candy,
+                                   LocalDateTime vence) {
         String retorno = sitio + "/api/checkouts/" + id + "/retorno";
         ObjectNode preferencia = JSON.createObjectNode();
-        preferencia.putArray("items").addObject()
-                .put("title", "Reserva " + reservaId + " · Cine UADE")
-                .put("quantity", 1)
-                .put("currency_id", MONEDA)
-                .put("unit_price", monto.aPesos());
+        ArrayNode items = preferencia.putArray("items");
+        item(items, "Reserva " + reservaId + " · Cine UADE", entradas);
+        if (!candy.esCero()) {
+            item(items, "Candy de la reserva " + reservaId, candy);
+        }
         preferencia.put("external_reference", id);
         preferencia.putObject("back_urls")
                 .put("success", retorno)
@@ -84,6 +86,14 @@ public class MercadoPagoHttp implements PasarelaPagos {
             preferencia.put("auto_return", "approved");
         }
         return preferencia;
+    }
+
+    private static void item(ArrayNode items, String titulo, Dinero precio) {
+        items.addObject()
+                .put("title", titulo)
+                .put("quantity", 1)
+                .put("currency_id", MONEDA)
+                .put("unit_price", precio.aPesos());
     }
 
     // El id lo arma crear, pero llega por la URL: solo vale si MP tiene una preferencia con ese external_reference.
@@ -106,8 +116,10 @@ public class MercadoPagoHttp implements PasarelaPagos {
         }
         JsonNode preferencia = api.get("/checkout/preferences/" + resumen.path("id").asText());
         String urlPago = urlDePago(preferencia);
+        List<Dinero> precios = new ArrayList<>();
+        preferencia.path("items").forEach(item -> precios.add(Dinero.de(item.path("unit_price").asDouble())));
         return Optional.of(new Checkout(checkoutId, Integer.parseInt(partes[0]), medio,
-                Dinero.de(preferencia.path("items").path(0).path("unit_price").asDouble()), urlPago, urlPago));
+                Dinero.sumar(precios), urlPago, urlPago));
     }
 
     // Lo que dijo el comprador al volver no cuenta (se escribe a mano): vale lo que MP registró para el

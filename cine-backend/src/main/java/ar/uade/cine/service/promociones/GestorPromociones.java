@@ -61,7 +61,7 @@ public class GestorPromociones implements PoliticaPromociones {
     public Descuento calcularPara(List<Entrada> entradas, LocalDateTime inicioFuncion,
                                   MedioPago medio) {
         return mejorDescuento(entradas, inicioFuncion, medio)
-                .map(c -> new Descuento(c.promocion().getId(), c.monto()))
+                .map(c -> new Descuento(c.promocion().getId(), c.promocion().getNombre(), c.monto()))
                 .orElseGet(Descuento::ninguno);
     }
 

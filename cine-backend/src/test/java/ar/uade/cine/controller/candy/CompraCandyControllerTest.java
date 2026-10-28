@@ -72,7 +72,8 @@ class CompraCandyControllerTest extends PruebaDeApi {
                 + "\":1},\"medio\":\"DEBITO\",\"codigoAutorizacion\":\"AUT-1\"}");
 
         assertEquals(201, respuesta.estado());
-        assertEquals("{\"id\":1,\"fecha\":\"2026-08-14T10:00:00\",\"medio\":\"DEBITO\","
+        assertEquals("{\"id\":1,\"estado\":\"COBRADA\",\"fecha\":\"2026-08-14T10:00:00\","
+                + "\"cobradaEn\":\"2026-08-14T10:00:00\",\"medio\":\"DEBITO\","
                 + "\"codigoAutorizacion\":\"AUT-1\","
                 + "\"items\":[{\"productoId\":" + pochoclos + ",\"nombre\":\"Pochoclos grandes\",\"cantidad\":2,"
                 + "\"precioUnitario\":4000.0,\"subtotal\":8000.0},{\"productoId\":" + gaseosa

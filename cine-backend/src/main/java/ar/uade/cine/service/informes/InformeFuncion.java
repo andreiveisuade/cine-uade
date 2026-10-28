@@ -8,9 +8,11 @@ import ar.uade.cine.model.dinero.Dinero;
 // Borderó de una función más su candy; Experto en sumar el candy, con el total calculado y no guardado.
 public record InformeFuncion(Bordero bordero, int comprasCandy, Dinero candy) {
 
+    // R30: el pedido de la web sin cobrar o anulado no es venta.
     public static InformeFuncion de(Bordero bordero, List<CompraCandy> compras) {
-        return new InformeFuncion(bordero, compras.size(),
-                Dinero.sumar(compras.stream().map(CompraCandy::getTotal).toList()));
+        List<CompraCandy> cobradas = compras.stream().filter(CompraCandy::estaCobrada).toList();
+        return new InformeFuncion(bordero, cobradas.size(),
+                Dinero.sumar(cobradas.stream().map(CompraCandy::getTotal).toList()));
     }
 
     public Dinero total() {

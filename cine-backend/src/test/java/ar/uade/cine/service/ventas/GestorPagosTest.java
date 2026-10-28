@@ -56,6 +56,11 @@ import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.TipoPromocion;
 import ar.uade.cine.service.promociones.GestorPromociones;
+import ar.uade.cine.service.candy.GestorCandy;
+import ar.uade.cine.service.candy.GestorProductos;
+import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.candy.EstadoCompraCandy;
+import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
@@ -80,6 +85,10 @@ class GestorPagosTest extends PruebaDeIntegracion {
     private PagoRepository pagoRepository;
     @Autowired
     private PoliticaPromociones politica;
+    @Autowired
+    private GestorCandy candy;
+    @Autowired
+    private GestorProductos carta;
     @Autowired
     private PlatformTransactionManager transacciones;
     @Autowired
@@ -348,7 +357,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elCheckoutVenceCuandoVenceLaReserva() {
         PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
-                pasarela, eventos, reloj);
+                pasarela, candy, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
 
         new TransactionTemplate(transacciones)
@@ -410,9 +419,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void noSeAutorizaEnLaPasarelaElCheckoutDeUnaReservaQueYaNoSePuedeCobrar() {
         PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
-                pasarela, eventos, reloj);
+                pasarela, candy, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), Dinero.CERO, reloj.ahora()).id();
         reservas.cancelar(reserva.getId());
 
         ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
@@ -437,9 +446,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void volverDeLaPasarelaSinPagoAprobadoNoCobraYDiceElMotivo() {
         PasarelaQueNoAprueba pasarela = new PasarelaQueNoAprueba();
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
-                pasarela, eventos, reloj);
+                pasarela, candy, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), Dinero.CERO, reloj.ahora()).id();
 
         // Armado a mano no tiene el proxy de @Transactional: sin esto la función LAZY no se carga.
         RetornoCheckout retorno = new TransactionTemplate(transacciones)
@@ -466,9 +475,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elStatusApprovedDeLaVueltaNoCobraLoQueLaPasarelaNoAutoriza() {
         PasarelaQueNoAprueba pasarela = new PasarelaQueNoAprueba();
         GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
-                pasarela, eventos, reloj);
+                pasarela, candy, eventos, reloj);
         Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
-        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), reloj.ahora()).id();
+        String checkout = pasarela.crear(reserva.getId(), MedioPago.QR, reserva.getTotal(), Dinero.CERO, reloj.ahora()).id();
 
         RetornoCheckout retorno = new TransactionTemplate(transacciones)
                 .execute(estado -> conEsaPasarela.retornarDeCheckout(checkout, "approved"));
@@ -490,6 +499,101 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(1, pagoRepository.findByReservaIdIn(List.of(reserva.getId())).size());
     }
 
+    // R30: candy pendiente de la reserva, 2 pochoclos de 4000.
+    private Reserva reservarConCandy() {
+        int pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+        Reserva reserva = reservas.reservar(1, 1, generales("A1"), null);
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 2));
+        return reserva;
+    }
+
+    private CompraCandy candyDe(Reserva reserva) {
+        return candy.comprasDeReservas(List.of(reserva.getId())).get(0);
+    }
+
+    private void cincuentaOff() {
+        promociones.crear(TipoPromocion.PORCENTAJE, "50 off", ParametrosPromocion.dePorcentaje(50.0),
+                new CondicionesPromocion(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31),
+                Set.of(), null, null, Set.of()), ImagenUrl.NINGUNA);
+    }
+
+    // R30: un solo cobro, con el mismo medio y la misma autorización; el pago guarda solo las entradas.
+    @Test
+    void cobrarEnCajaCobraTambienElCandyPendiente() {
+        Reserva reserva = reservarConCandy();
+
+        Pago pago = pagos.cobrar(reserva.getId(), MedioPago.DEBITO, "AUT-5");
+
+        assertEquals(Dinero.de(5000), pago.getMonto(), "el borderó y la DJ siguen leyendo solo entradas");
+        CompraCandy cobrada = candyDe(reserva);
+        assertEquals(EstadoCompraCandy.COBRADA, cobrada.getEstado());
+        assertEquals(MedioPago.DEBITO, cobrada.getMedio());
+        assertEquals("AUT-5", cobrada.getCodigoAutorizacion());
+        assertEquals(pago.getFecha(), cobrada.getCobradaEn());
+        assertEquals(Dinero.de(8000), caja.arqueoCandyDe(reloj.hoy()).total());
+    }
+
+    // D4: las promos son solo de entradas (R15, R16); el candy ya trae el ahorro de sus combos (R14).
+    @Test
+    void laCotizacionDescuentaSoloLasEntradasYSumaElCandy() {
+        cincuentaOff();
+        Reserva reserva = reservarConCandy();
+
+        List<Cotizacion> cotizaciones = pagos.cotizar(reserva.getId());
+
+        assertEquals(List.of(MedioPago.DEBITO, MedioPago.CREDITO, MedioPago.QR, MedioPago.TRANSFERENCIA),
+                cotizaciones.stream().map(Cotizacion::medio).toList(), "solo los medios con checkout");
+        Cotizacion qr = cotizaciones.get(2);
+        assertEquals(Dinero.de(5000), qr.entradas());
+        assertEquals(Dinero.de(2500), qr.descuento().monto());
+        assertEquals("50 off", qr.descuento().promocion());
+        assertEquals(Dinero.de(8000), qr.candy());
+        assertEquals(Dinero.de(10500), qr.total());
+    }
+
+    // La cotización no puede prometer otro monto que el que pide el checkout.
+    @Test
+    void elCheckoutPideLoMismoQueLaCotizacionYAlConfirmarCobraElCandy() {
+        cincuentaOff();
+        Reserva reserva = reservarConCandy();
+        Dinero cotizado = pagos.cotizar(reserva.getId()).get(2).total();
+
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+        Pago pago = pagos.confirmarCheckout(checkout.id());
+
+        assertEquals(cotizado, checkout.monto());
+        assertEquals(Dinero.de(2500), pago.getMonto());
+        assertEquals(pago.getCodigoAutorizacion(), candyDe(reserva).getCodigoAutorizacion());
+        assertEquals(EstadoCompraCandy.COBRADA, candyDe(reserva).getEstado());
+    }
+
+    // Lo pagado en la pasarela es el monto de cuando se abrió: si el candy cambió, no se autoriza (no hay devolución, R13).
+    @Test
+    void siElCandyCambiaDespuesDeAbrirElCheckoutNoSeCobra() {
+        PasarelaQueCuenta pasarela = new PasarelaQueCuenta();
+        GestorPagos conEsaPasarela = new GestorPagos(pagoRepository, reservaRepository, politica,
+                pasarela, candy, eventos, reloj);
+        Reserva reserva = reservarConCandy();
+        String checkout = new TransactionTemplate(transacciones).execute(
+                estado -> conEsaPasarela.iniciarCheckout(reserva.getId(), MedioPago.QR)).id();
+        candy.pedirParaReserva(reserva.getId(), Map.of());
+
+        rechaza("El monto cambió después de abrir el pago: acercate a la boletería",
+                () -> new TransactionTemplate(transacciones)
+                        .executeWithoutResult(estado -> conEsaPasarela.confirmarCheckout(checkout)));
+
+        assertEquals(0, pasarela.autorizaciones);
+        assertFalse(pagoRepository.existsByReservaId(reserva.getId()));
+    }
+
+    @Test
+    void noSeCotizaUnaReservaQueYaNoSePuedeCobrar() {
+        Reserva reserva = reservarConCandy();
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+
+        rechaza("La reserva está pagada: no se puede cobrar", () -> pagos.cotizar(reserva.getId()));
+    }
+
     private static class PasarelaQueNoAprueba extends MercadoPagoEmulado {
 
         @Override
@@ -504,9 +608,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
         private LocalDateTime vence;
 
         @Override
-        public Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence) {
+        public Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence) {
             this.vence = vence;
-            return super.crear(reservaId, medio, monto, vence);
+            return super.crear(reservaId, medio, entradas, candy, vence);
         }
 
         @Override

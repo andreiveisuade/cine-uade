@@ -11,7 +11,8 @@ import ar.uade.cine.model.dinero.Dinero;
 public interface PasarelaPagos {
 
     // Vence con la reserva (R17): después ya soltó sus butacas y lo cobrado no tendría devolución (R13).
-    Checkout crear(int reservaId, MedioPago medio, Dinero monto, LocalDateTime vence);
+    // Entradas (ya con el descuento) y candy por separado, para que el comprador vea los dos (R30).
+    Checkout crear(int reservaId, MedioPago medio, Dinero entradas, Dinero candy, LocalDateTime vence);
 
     Optional<Checkout> buscar(String checkoutId);
 

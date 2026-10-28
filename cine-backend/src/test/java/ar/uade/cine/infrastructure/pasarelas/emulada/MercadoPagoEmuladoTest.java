@@ -12,11 +12,11 @@ import ar.uade.cine.model.ventas.MedioPago;
 
 class MercadoPagoEmuladoTest {
 
-    // Relativo, para que el comprador no salga del host en el que está.
+    // Relativo, para que el comprador no salga del host en el que está. El monto es el total, candy incluido (R30).
     @Test
     void elLinkLlevaALaPantallaDePruebaDelSitioConElMontoYElMedio() {
         Checkout checkout = new MercadoPagoEmulado()
-                .crear(7, MedioPago.DEBITO, Dinero.de(4500.5), LocalDateTime.of(2026, 8, 14, 10, 30));
+                .crear(7, MedioPago.DEBITO, Dinero.de(4000.5), Dinero.de(500), LocalDateTime.of(2026, 8, 14, 10, 30));
 
         assertEquals("/#/pasarela-emulada/" + checkout.id() + "?monto=4500.5&medio=DEBITO", checkout.urlPago());
     }

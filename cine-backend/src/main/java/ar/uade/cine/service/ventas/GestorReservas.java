@@ -26,6 +26,7 @@ import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.salas.AsientoRepository;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
+import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.usuarios.GestorClientes;
 
 // Vende y cancela butacas de una función (R4, R6, R9, R13, R19); coordina y cada entidad valida lo suyo.
@@ -43,6 +44,7 @@ public class GestorReservas {
     private final FuncionesEnVenta enVenta;
     private final Ocupacion ocupacion;
     private final BloqueoDeButacas bloqueo;
+    private final GestorCandy candy;
     private final Reloj reloj;
 
     // El alta del cliente comparte la transacción. La función va antes que el cliente: si no existe o ya empezó (R19) anula lo demás.
@@ -101,6 +103,7 @@ public class GestorReservas {
     public Reserva cancelar(int reservaId) {
         Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
         reserva.cancelar(reloj.ahora());
+        candy.anularPendiente(reservaId);
         log.info("reserva {} CANCELADA · {} butacas vuelven a la venta",
                 reservaId, reserva.getCantidadEntradas());
         return reserva;

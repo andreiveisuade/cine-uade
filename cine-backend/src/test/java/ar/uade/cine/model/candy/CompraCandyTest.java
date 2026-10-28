@@ -1,6 +1,7 @@
 package ar.uade.cine.model.candy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDateTime;
@@ -83,5 +84,72 @@ class CompraCandyTest {
 
         assertEquals(Dinero.de(11000), compra.getTotal());
         assertEquals(Dinero.de(2000), compra.getAhorro(), "6500 sueltos contra 5500, por dos combos");
+    }
+
+    // R30: el pedido de la web no tiene medio hasta que se cobra con su reserva.
+    @Test
+    void elPedidoDeLaWebNacePendienteYSinMedio() {
+        CompraCandy pedido = CompraCandy.pendiente(3, 25, AHORA, Map.of(pochoclos, 2));
+
+        assertEquals(EstadoCompraCandy.PENDIENTE, pedido.getEstado());
+        assertNull(pedido.getMedio());
+        assertNull(pedido.getCobradaEn());
+        assertEquals(Dinero.de(8000), pedido.getTotal());
+        rechaza("Hay que elegir al menos un producto", () -> CompraCandy.pendiente(3, 25, AHORA, Map.of()));
+    }
+
+    @Test
+    void laDeMostradorNaceCobradaEnElMomentoDeLaVenta() {
+        CompraCandy compra = comprar(MedioPago.EFECTIVO, "", Map.of(pochoclos, 1));
+
+        assertEquals(EstadoCompraCandy.COBRADA, compra.getEstado());
+        assertEquals(AHORA, compra.getCobradaEn());
+    }
+
+    @Test
+    void cobrarElPedidoLeDaElMedioYLaHoraDelPago() {
+        CompraCandy pedido = CompraCandy.pendiente(3, 25, AHORA, Map.of(pochoclos, 1));
+
+        pedido.cobrar(MedioPago.DEBITO, " MP-1 ", AHORA.plusMinutes(10));
+
+        assertEquals(EstadoCompraCandy.COBRADA, pedido.getEstado());
+        assertEquals(MedioPago.DEBITO, pedido.getMedio());
+        assertEquals("MP-1", pedido.getCodigoAutorizacion());
+        assertEquals(AHORA.plusMinutes(10), pedido.getCobradaEn());
+        assertEquals(AHORA, pedido.getFecha(), "la fecha sigue siendo la del pedido");
+    }
+
+    // Patrón State: cada estado dice qué deja hacer, como EstadoReserva.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            cobrar lo cobrado  | true  | cobrar | La compra de candy está cobrada: no se puede cobrar
+            anular lo cobrado  | true  | anular | La compra de candy está cobrada: solo se anula un pedido sin cobrar
+            cobrar lo anulado  | false | cobrar | La compra de candy está anulada: no se puede cobrar
+            anular lo anulado  | false | anular | La compra de candy está anulada: solo se anula un pedido sin cobrar
+            """)
+    void loQueYaNoEstaPendienteNoSeCobraNiSeAnula(String caso, boolean cobrada, String accion, String mensaje) {
+        CompraCandy pedido = CompraCandy.pendiente(3, 25, AHORA, Map.of(pochoclos, 1));
+        if (cobrada) {
+            pedido.cobrar(MedioPago.EFECTIVO, "", AHORA);
+        } else {
+            pedido.anular();
+        }
+
+        rechaza(mensaje, () -> {
+            if (accion.equals("cobrar")) {
+                pedido.cobrar(MedioPago.EFECTIVO, "", AHORA);
+            } else {
+                pedido.anular();
+            }
+        });
+    }
+
+    @Test
+    void elCobroValidaElMedioComoElMostrador() {
+        CompraCandy pedido = CompraCandy.pendiente(3, 25, AHORA, Map.of(pochoclos, 1));
+
+        rechaza("Falta el medio de pago", () -> pedido.cobrar(null, "", AHORA));
+        rechaza("Falta el código de autorización del pago con QR", () -> pedido.cobrar(MedioPago.QR, "", AHORA));
+        assertEquals(EstadoCompraCandy.PENDIENTE, pedido.getEstado(), "un cobro rechazado no cambia el estado");
     }
 }

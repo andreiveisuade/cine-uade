@@ -19,6 +19,11 @@ import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
+import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
+import ar.uade.cine.model.candy.TipoProducto;
+import ar.uade.cine.model.imagenes.ImagenUrl;
+import ar.uade.cine.service.candy.GestorCandy;
+import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.controller.informes.CajaController;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
@@ -90,7 +95,14 @@ class VistasVentasTest extends PruebaDeIntegracion {
     @Autowired
     private EntityManagerFactory emf;
 
+    @Autowired
+    private GestorCandy candy;
+
+    @Autowired
+    private GestorProductos carta;
+
     private Cliente cliente;
+    private int pochoclos;
 
     @BeforeEach
     void prepararEscenario() {
@@ -100,6 +112,34 @@ class VistasVentasTest extends PruebaDeIntegracion {
                 LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
         cliente = clientes.identificar("Andrei", "andrei@uade.edu.ar");
+        pochoclos = carta.agregar("Pochoclos", TipoProducto.POCHOCLOS, Dinero.de(4000), ImagenUrl.NINGUNA).getId();
+    }
+
+    // R30: la reserva trae el candy pedido en la web; lo anulado no figura.
+    @Test
+    void laReservaTraeSuCandyPendienteYDespuesCobrado() {
+        Reserva reserva = reservar("A1");
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
+
+        CompraCandyVistaDTO pendiente = vistas.reserva(reserva).candy().get(0);
+        assertEquals("PENDIENTE", pendiente.estado());
+        assertNull(pendiente.medio());
+        assertNull(pendiente.cobradaEn());
+
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        CompraCandyVistaDTO cobrada = vistas.reserva(reserva).candy().get(0);
+        assertEquals("COBRADA", cobrada.estado());
+        assertEquals("EFECTIVO", cobrada.medio());
+        assertNotNull(cobrada.cobradaEn());
+    }
+
+    @Test
+    void elCandyAnuladoNoFiguraEnLaReserva() {
+        Reserva reserva = reservar("A1");
+        candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
+        reservas.cancelar(reserva.getId());
+
+        assertEquals(List.of(), vistas.reserva(reserva).candy());
     }
 
     @Test
@@ -250,6 +290,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
             for (int clienteId : List.of(cliente.getId(), otro.getId())) {
                 Reserva reserva = reservas.reservar(funcion, clienteId,
                         Map.of(clienteId == cliente.getId() ? "A1" : "A2", TipoTarifa.GENERAL), null);
+                candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
                 pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
             }
         }

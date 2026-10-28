@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +14,7 @@ import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.Repositorio;
+import jakarta.persistence.LockModeType;
 
 // Persistencia de reservas; Repository de Spring Data, con join fetch para listar sin N+1.
 public interface ReservaRepository extends Repositorio<Reserva> {
@@ -27,6 +29,11 @@ public interface ReservaRepository extends Repositorio<Reserva> {
         return findByCodigo(codigo.valor())
                 .orElseThrow(() -> new RecursoNoEncontrado(NO_EXISTE_CON_ESE_CODIGO));
     }
+
+    // R30: cambiar el candy sube la versión de la reserva, así compite con cobrarla como cancelarla.
+    @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+    @Query("select r from Reserva r where r.id = :id")
+    Optional<Reserva> findParaCambiar(@Param("id") int id);
 
     List<Reserva> findByFuncion_Id(int funcionId);
 

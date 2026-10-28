@@ -1,7 +1,9 @@
 package ar.uade.cine.service.ventas;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.ventas.MedioPago;
 import ar.uade.cine.model.ventas.Pago;
@@ -17,12 +21,13 @@ import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.infrastructure.pasarelas.PasarelaPagos;
 import ar.uade.cine.repository.ventas.PagoRepository;
 import ar.uade.cine.repository.ventas.ReservaRepository;
+import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.promociones.PoliticaPromociones;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 
-// Cobra reservas en caja o por checkout (R5, R11, R15, R17, R19); coordina reserva, promociones y pasarela.
+// Cobra reservas y su candy en caja o por checkout (R5, R11, R15, R17, R19, R30); coordina promos y pasarela.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -33,6 +38,7 @@ public class GestorPagos {
     private final ReservaRepository reservaRepository;
     private final PoliticaPromociones promociones;
     private final PasarelaPagos pasarela;
+    private final GestorCandy candy;
     private final ApplicationEventPublisher eventos;
     private final Reloj reloj;
 
@@ -43,6 +49,7 @@ public class GestorPagos {
     }
 
     // Sin save(): la reserva la trajo esta transacción y su cambio sale en el commit, donde se chequea @Version.
+    // R30: el candy pendiente se cobra acá, con el mismo medio; el pago guarda solo las entradas (borderó, INCAA).
     private Pago registrarPago(Reserva reserva, MedioPago medio, String codigoAutorizacion) {
         PoliticaPromociones.Descuento descuento = descuentoPara(reserva, medio);
 
@@ -52,16 +59,37 @@ public class GestorPagos {
         pagoRepository.save(pago);
 
         reserva.pagar();
+        Optional<CompraCandy> conCandy = candy.cobrarPendiente(pago);
         // Observer: el recibo lo emite ComprobantesDeVentas cuando esta transacción confirma.
         eventos.publishEvent(new PagoRegistrado(pago.getId()));
-        log.info("pago reserva {} · {} · subtotal {}{} · cobrado {}",
+        log.info("pago reserva {} · {} · subtotal {}{} · cobrado {}{}",
                 reserva.getId(), medio, reserva.getTotal(),
                 !descuento.monto().esCero()
                         ? " · promo " + descuento.promocionId() + " -" + descuento.monto()
                         : " · sin promo",
-                pago.getMonto());
+                pago.getMonto(), conCandy.map(c -> " · candy " + c.getTotal()).orElse(""));
 
         return pago;
+    }
+
+    // Lo que costaría con cada medio electrónico, sin abrir checkouts: el mismo cálculo que el checkout (R30).
+    @Transactional(readOnly = true)
+    public List<Cotizacion> cotizar(int reservaId) {
+        Reserva reserva = buscarReserva(reservaId);
+        validarQueSePuedaCobrar(reserva);
+        Dinero candyPendiente = candyPendiente(reserva);
+        return Arrays.stream(MedioPago.values())
+                .filter(medio -> !medio.seCobraEnCaja())
+                .map(medio -> cotizacion(reserva, medio, candyPendiente))
+                .toList();
+    }
+
+    private Cotizacion cotizacion(Reserva reserva, MedioPago medio, Dinero candyPendiente) {
+        return new Cotizacion(medio, reserva.getTotal(), descuentoPara(reserva, medio), candyPendiente);
+    }
+
+    private Dinero candyPendiente(Reserva reserva) {
+        return candy.pendienteDe(reserva.getId()).map(CompraCandy::getTotal).orElse(Dinero.CERO);
     }
 
     // Valida como al cobrar: mandar a pagar algo incobrable terminaría en una devolución, que no existe (R13).
@@ -71,17 +99,16 @@ public class GestorPagos {
         validarQueSePuedaCobrar(reserva);
         medio.exigirCheckout();
 
-        Dinero monto = reserva.getTotal().menos(descuentoPara(reserva, medio).monto());
+        Cotizacion cotizacion = cotizacion(reserva, medio, candyPendiente(reserva));
 
-        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, monto,
-                reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR));
+        PasarelaPagos.Checkout checkout = pasarela.crear(reservaId, medio, cotizacion.entradasConDescuento(),
+                cotizacion.candy(), reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR));
         log.info("checkout {} · reserva {} · {} · a pagar {}",
-                checkout.id(), reservaId, medio, monto);
+                checkout.id(), reservaId, medio, checkout.monto());
         return checkout;
     }
 
-    // El descuento se recalcula: pudo cambiar una promoción. Se valida antes de autorizar, porque esa plata
-    // no tiene cómo volver (R13).
+    // Se valida antes de autorizar, porque esa plata no tiene cómo volver (R13).
     public Pago confirmarCheckout(String checkoutId) {
         PasarelaPagos.Checkout checkout = buscarCheckout(checkoutId);
         return cobrarCheckout(checkout, buscarReserva(checkout.reservaId()));
@@ -121,7 +148,15 @@ public class GestorPagos {
     // La idempotencia mira el estado de la reserva (PAGADA en la misma transacción que el pago).
     private Pago cobrarCheckout(PasarelaPagos.Checkout checkout, Reserva reserva) {
         validarQueSePuedaCobrar(reserva);
+        exigirElMismoPedido(checkout, reserva);
         return registrarPago(reserva, checkout.medio(), pasarela.autorizar(checkout));
+    }
+
+    // Se recalcula: si cambió una promo o el candy (R30), lo pagado ya no es lo que se cobraría.
+    private void exigirElMismoPedido(PasarelaPagos.Checkout checkout, Reserva reserva) {
+        if (!checkout.monto().equals(cotizacion(reserva, checkout.medio(), candyPendiente(reserva)).total())) {
+            throw new ConflictoDeNegocio("El monto cambió después de abrir el pago: acercate a la boletería");
+        }
     }
 
     private PasarelaPagos.Checkout buscarCheckout(String checkoutId) {

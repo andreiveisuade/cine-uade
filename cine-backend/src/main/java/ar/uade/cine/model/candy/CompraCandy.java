@@ -22,7 +22,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
-// Venta del candy que nace cobrada; Creador de sus ItemCompra y suma el total. Valida ValidadorCompraCandy.
+// Venta del candy, cobrada en mostrador o pendiente de su reserva (R30); Creador de sus ItemCompra.
+// Contexto del patrón State: cobrar y anular le piden la transición a EstadoCompraCandy.
 @Entity
 @Table(name = "compra_candy")
 @Getter
@@ -45,6 +46,12 @@ public class CompraCandy {
 
     private String codigoAutorizacion;
 
+    @Enumerated(EnumType.STRING)
+    private EstadoCompraCandy estado;
+
+    // El arqueo cuenta por cobro: el pedido de la web se hace un día y se cobra cuando se paga la reserva.
+    private LocalDateTime cobradaEn;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "compra_id", nullable = false)
     private List<ItemCompra> items = new ArrayList<>();
@@ -56,15 +63,57 @@ public class CompraCandy {
     public CompraCandy(Integer clienteId, Integer reservaId, LocalDateTime fecha, MedioPago medio,
                        String codigoAutorizacion, Map<Producto, Integer> cantidades) {
         String autorizacion = validarPedido(cantidades, medio, codigoAutorizacion);
-        List<ItemCompra> renglones = cantidades.entrySet().stream()
-                .map(renglon -> new ItemCompra(renglon.getKey(), renglon.getValue()))
-                .toList();
+        this.items.addAll(renglones(cantidades));
         this.clienteId = clienteId;
         this.reservaId = reservaId;
         this.fecha = fecha;
         this.medio = medio;
         this.codigoAutorizacion = autorizacion;
-        this.items.addAll(renglones);
+        this.estado = EstadoCompraCandy.COBRADA;
+        this.cobradaEn = fecha;
+    }
+
+    // R30: el pedido de la web, sin medio hasta que se cobra con su reserva.
+    public static CompraCandy pendiente(int clienteId, int reservaId, LocalDateTime fecha,
+                                        Map<Producto, Integer> cantidades) {
+        ValidadorCompraCandy.exigirProductos(cantidades);
+        CompraCandy pedido = new CompraCandy();
+        pedido.items.addAll(renglones(cantidades));
+        pedido.clienteId = clienteId;
+        pedido.reservaId = reservaId;
+        pedido.fecha = fecha;
+        pedido.codigoAutorizacion = "";
+        pedido.estado = EstadoCompraCandy.PENDIENTE;
+        return pedido;
+    }
+
+    private static List<ItemCompra> renglones(Map<Producto, Integer> cantidades) {
+        return cantidades.entrySet().stream()
+                .map(renglon -> new ItemCompra(renglon.getKey(), renglon.getValue()))
+                .toList();
+    }
+
+    // R30: con el medio y la autorización del pago de la reserva. El momento lo pone el gestor.
+    public void cobrar(MedioPago medio, String codigoAutorizacion, LocalDateTime cuando) {
+        EstadoCompraCandy siguiente = estado.cobrar();
+        String autorizacion = ValidadorCompraCandy.medio(medio).autorizacion(codigoAutorizacion);
+        this.medio = medio;
+        this.codigoAutorizacion = autorizacion;
+        this.cobradaEn = cuando;
+        this.estado = siguiente;
+    }
+
+    // R30: la reserva se canceló o venció, así que el pedido ya no se cobra.
+    public void anular() {
+        estado = estado.anular();
+    }
+
+    public boolean estaPendiente() {
+        return estado.esperaCobro();
+    }
+
+    public boolean estaCobrada() {
+        return estado.estaCobrada();
     }
 
     // Valida sin buscar productos: así un pedido vacío no queda tapado por el 404 de un producto. Devuelve el código limpio
@@ -88,6 +137,6 @@ public class CompraCandy {
     @Override
     public String toString() {
         return "[" + id + "] cliente " + clienteId + " - " + items + " - $" + getTotal()
-                + " - " + medio + " - " + fecha;
+                + " - " + estado + " - " + medio + " - " + fecha;
     }
 }

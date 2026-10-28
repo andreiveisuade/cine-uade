@@ -90,6 +90,8 @@ class ContratoOpenApiTest extends PruebaDeApi {
         List.of("/api/reservas/{id}/pago", "/api/reservas/{id}/cancelacion",
                         "/api/reservas/codigo/{codigo}/cancelacion", "/api/checkouts/{id}/confirmacion", "/api/acceso")
                 .forEach(ruta -> assertThat(respuestas(rutas, ruta, "post").has("409")).as(ruta).isTrue());
+        // R30: cambiar el candy sube la versión de la reserva y compite con cobrarla.
+        assertThat(respuestas(rutas, "/api/reservas/codigo/{codigo}/candy", "put").has("409")).isTrue();
     }
 
     // El email de un empleado al reservar es un 400: el 409 de la reserva es solo la butaca ganada por otro.

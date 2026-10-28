@@ -9,19 +9,23 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import ar.uade.cine.controller.candy.VistasCandy;
 import ar.uade.cine.controller.cartelera.VistasCartelera;
 import ar.uade.cine.controller.http.Fechas;
 import ar.uade.cine.controller.salas.VistasSalas;
 import ar.uade.cine.controller.usuarios.VistasUsuarios;
+import ar.uade.cine.dto.candy.CompraCandyVistaDTO;
 import ar.uade.cine.dto.ventas.BloqueoVistaDTO;
 import ar.uade.cine.dto.ventas.EntradaVistaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
 import ar.uade.cine.infrastructure.reloj.Reloj;
+import ar.uade.cine.model.candy.CompraCandy;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.Pago;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.ventas.BloqueoDeButacas;
 import ar.uade.cine.service.ventas.ButacasBloqueadas;
@@ -29,19 +33,21 @@ import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorPagos;
 
 // Arma los JSON de reservas y del bloqueo de butacas; Assembler que compone Cartelera, Salas y Pagos.
-// Un listado cuesta consultas fijas: reservas con detalle en una, pagos en otra, butacas por sala;
+// Un listado cuesta consultas fijas: reservas con detalle en una, pagos y candy en otras, butacas por sala;
 // VistasVentasTest cuenta las sentencias
 @Component
 @RequiredArgsConstructor
 public class VistasReservas {
 
     private final GestorPagos pagos;
+    private final GestorCandy candy;
     private final GestorSalas salas;
     private final ConsultasReservas reservas;
     private final VistasCartelera vistasCartelera;
     private final VistasSalas vistasSalas;
     private final VistasUsuarios vistasUsuarios;
     private final VistasPagos vistasPagos;
+    private final VistasCandy vistasCandy;
     private final Reloj reloj;
 
     public List<ReservaVistaDTO> reservas(List<Reserva> lista) {
@@ -70,15 +76,19 @@ public class VistasReservas {
                 .collect(Collectors.toMap(Reserva::getId, Function.identity()));
         Map<Integer, Pago> porReserva = pagos.buscarPorReservas(ids).stream()
                 .collect(Collectors.toMap(Pago::getReservaId, Function.identity()));
+        Map<Integer, List<CompraCandyVistaDTO>> candyPorReserva = candy.comprasDeReservas(ids).stream()
+                .collect(Collectors.groupingBy(CompraCandy::getReservaId,
+                        Collectors.mapping(vistasCandy::compra, Collectors.toList())));
         Map<Integer, List<Asiento>> asientosPorSala = new HashMap<>();
 
         return lista.stream()
-                .map(r -> dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()), publica))
+                .map(r -> dto(conDetalle.get(r.getId()), asientosPorSala, porReserva.get(r.getId()),
+                        candyPorReserva.getOrDefault(r.getId(), List.of()), publica))
                 .toList();
     }
 
     private ReservaVistaDTO dto(Reserva r, Map<Integer, List<Asiento>> asientosPorSala,
-                                Pago pago, boolean publica) {
+                                Pago pago, List<CompraCandyVistaDTO> conCandy, boolean publica) {
         Funcion f = r.getFuncion();
         List<Asiento> asientos = asientosPorSala.computeIfAbsent(f.getSalaId(), salas::asientosDe);
         return new ReservaVistaDTO(r.getId(), r.getFuncionId(), r.getClienteId(), r.estadoA(reloj.ahora()).name(),
@@ -91,7 +101,7 @@ public class VistasReservas {
                 vistasCartelera.pelicula(f.getPelicula()),
                 vistasSalas.sala(f.getSala(), asientos),
                 publica ? vistasUsuarios.clientePublico(r.getCliente()) : vistasUsuarios.cliente(r.getCliente()),
-                pago == null ? null : vistasPagos.pago(pago));
+                pago == null ? null : vistasPagos.pago(pago), conCandy);
     }
 
     private EntradaVistaDTO entrada(Entrada e) {

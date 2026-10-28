@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -22,8 +23,10 @@ import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.model.ventas.TipoTarifa;
+import ar.uade.cine.dto.candy.PedidoCandyDeReservaDTO;
 import ar.uade.cine.dto.ventas.PedidoReservaDTO;
 import ar.uade.cine.dto.ventas.ReservaVistaDTO;
+import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.CriteriosReserva;
 import ar.uade.cine.service.ventas.GestorReservas;
@@ -33,7 +36,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/reservas (reservar, consultar, cancelar, las del cliente); delega en GestorReservas.
+// Rutas de /api/reservas (reservar, consultar, cancelar, su candy, las del cliente); delega en los gestores.
 // El tag lo comparten BloqueoController y AccesoController: bloquear y entrar son del mismo circuito.
 @Tag(name = "Reservas", description = "El circuito de compra: bloquear, reservar, entrar y cancelar")
 @RestController
@@ -42,6 +45,7 @@ public class ReservaController {
 
     private final GestorReservas reservas;
     private final ConsultasReservas consultas;
+    private final GestorCandy candy;
     private final VistasReservas vistas;
 
     // Sin ?email= público (listaba reservas ajenas): el encargado busca con q, el cliente en /mias
@@ -107,5 +111,15 @@ public class ReservaController {
     @PostMapping("/api/reservas/codigo/{codigo}/cancelacion")
     public ReservaVistaDTO cancelarPorCodigo(@PathVariable String codigo, Principal cliente) {
         return vistas.reserva(reservas.cancelar(consultas.obtenerDelCliente(codigo, cliente.getName()).getId()));
+    }
+
+    // R30: el candy viaja con la reserva y se cobra en su pago; reemplaza el pedido anterior.
+    @Operation(summary = "El cliente pide candy para su reserva sin pagar, con la sesión abierta (R21)")
+    @PutMapping("/api/reservas/codigo/{codigo}/candy")
+    public ReservaVistaDTO pedirCandy(@PathVariable String codigo, Principal cliente,
+                                      @Valid @RequestBody PedidoCandyDeReservaDTO pedido) {
+        int id = consultas.obtenerDelCliente(codigo, cliente.getName()).getId();
+        candy.pedirParaReserva(id, pedido.cantidades());
+        return vistas.reserva(consultas.obtener(id));
     }
 }

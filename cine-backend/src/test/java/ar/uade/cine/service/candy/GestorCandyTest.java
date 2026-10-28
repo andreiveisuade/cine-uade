@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.candy.CompraCandy;
+import ar.uade.cine.model.candy.EstadoCompraCandy;
 import ar.uade.cine.model.candy.Producto;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
@@ -43,10 +44,12 @@ import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.informes.ArqueoCandy;
 import ar.uade.cine.service.informes.GestorCaja;
+import ar.uade.cine.service.informes.GestorInformes;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
+import ar.uade.cine.service.ventas.Ocupacion;
 
 class GestorCandyTest extends PruebaDeIntegracion {
 
@@ -70,6 +73,10 @@ class GestorCandyTest extends PruebaDeIntegracion {
     private GestorReservas reservas;
     @Autowired
     private GestorPagos pagos;
+    @Autowired
+    private GestorInformes informes;
+    @Autowired
+    private Ocupacion ocupacion;
 
     private int pochoclos;
     private int gaseosa;
@@ -347,5 +354,136 @@ class GestorCandyTest extends PruebaDeIntegracion {
                 () -> carta.editar(gaseosa, " pochoclos GRANDES ", Dinero.de(2500), ImagenUrl.NINGUNA));
 
         assertEquals("Ya existe un producto con ese nombre", error.getMessage());
+    }
+
+    private EstadoCompraCandy estadoDelPedido(int reservaId) {
+        return candy.listarComprasDe(1).stream()
+                .filter(compra -> compra.getReservaId() == reservaId)
+                .findFirst().orElseThrow().getEstado();
+    }
+
+    @Test
+    @DisplayName("R30: el candy pedido en la web queda pendiente, con los precios de la carta de ese momento")
+    void elPedidoDeLaWebQuedaPendienteConLosPreciosCongelados() {
+        Reserva reserva = reservar();
+
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 2));
+        carta.editar(pochoclos, "Pochoclos grandes", Dinero.de(4500), ImagenUrl.NINGUNA);
+
+        CompraCandy pedido = candy.pendienteDe(reserva.getId()).orElseThrow();
+        assertEquals(EstadoCompraCandy.PENDIENTE, pedido.getEstado());
+        assertEquals(reserva.getClienteId(), pedido.getClienteId());
+        assertNull(pedido.getMedio());
+        assertEquals(Dinero.de(8000), pedido.getTotal());
+    }
+
+    @Test
+    void pedirDeNuevoReemplazaElPedidoYVacioLoSaca() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 2));
+
+        candy.pedirParaReserva(reserva.getId(), pochoclosYGaseosa());
+        assertEquals(1, candy.listarComprasDe(1).size());
+        assertEquals(Dinero.de(6500), candy.pendienteDe(reserva.getId()).orElseThrow().getTotal());
+
+        candy.pedirParaReserva(reserva.getId(), Map.of());
+        assertEquals(List.of(), candy.listarComprasDe(1));
+    }
+
+    // Los topes del mostrador; un pedido rechazado deja el anterior como estaba.
+    @Test
+    void elPedidoTieneLosTopesDelMostrador() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        carta.sacarDeLaVenta(gaseosa);
+
+        rechaza("La cantidad de Pochoclos grandes tiene que ser como máximo 20",
+                () -> candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 21)));
+        rechaza("Gaseosa 500ml no está disponible",
+                () -> candy.pedirParaReserva(reserva.getId(), pedido(gaseosa, 1)));
+        rechaza("No existe el producto 99", () -> candy.pedirParaReserva(reserva.getId(), pedido(99, 1)));
+        assertEquals(Dinero.de(4000), candy.pendienteDe(reserva.getId()).orElseThrow().getTotal());
+    }
+
+    // R30: se cobra con la reserva, así que solo mientras se pueda cobrar (R5, R17).
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            pagada    | La reserva está pagada: no se puede cobrar
+            cancelada | La reserva está cancelada: no se puede cobrar
+            vencida   | venció: sus butacas volvieron a estar disponibles
+            """)
+    void soloSePideCandyParaUnaReservaQueSePuedeCobrar(String caso, String mensaje) {
+        Reserva reserva = reservar();
+        switch (caso) {
+            case "pagada" -> pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+            case "cancelada" -> reservas.cancelar(reserva.getId());
+            default -> reloj.mover(reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+        }
+
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                () -> candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1)));
+
+        assertTrue(error.getMessage().contains(mensaje), error.getMessage());
+        assertEquals(List.of(), candy.listarComprasDe(1));
+    }
+
+    // R30: si la reserva se cancela o vence, el pedido no se va a cobrar.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            cancelar la reserva, true
+            que venza,           false
+            """)
+    void cancelarOVencerLaReservaAnulaElPedido(String caso, boolean cancelarla) {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+
+        if (cancelarla) {
+            reservas.cancelar(reserva.getId());
+        } else {
+            reloj.mover(reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+            ocupacion.asientosOcupados(reserva.getFuncionId(), null);
+        }
+
+        assertEquals(EstadoCompraCandy.ANULADA, estadoDelPedido(reserva.getId()), caso);
+        assertTrue(candy.pendienteDe(reserva.getId()).isEmpty());
+        assertEquals(List.of(), candy.comprasDeReservas(List.of(reserva.getId())), "lo anulado no figura en la reserva");
+    }
+
+    // El arqueo cuenta por cobro: el pedido sin cobrar no entró a la caja y el cobrado entra el día del pago.
+    @Test
+    void elArqueoCuentaElPedidoRecienCuandoSeCobra() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        assertEquals(0, caja.arqueoCandyDe(reloj.hoy()).compras().size());
+        assertEquals(0, informes.informeDe(reserva.getFuncionId()).comprasCandy());
+
+        reloj.mover(reloj.ahora().plusMinutes(10));
+        pagos.cobrar(reserva.getId(), MedioPago.DEBITO, "AUT-9");
+
+        ArqueoCandy arqueo = caja.arqueoCandyDe(reloj.hoy());
+        assertEquals(1, arqueo.compras().size());
+        assertEquals(Dinero.de(4000), arqueo.total());
+        assertEquals(reloj.ahora(), arqueo.compras().get(0).getCobradaEn());
+        assertEquals(Dinero.de(4000), informes.informeDe(reserva.getFuncionId()).candy());
+    }
+
+    // Lo anulado tampoco es venta del día ni de la función.
+    @Test
+    void elPedidoAnuladoNoEntraAlArqueoNiAlInforme() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        reservas.cancelar(reserva.getId());
+
+        assertEquals(Dinero.CERO, caja.arqueoCandyDe(reloj.hoy()).total());
+        assertEquals(0, informes.informeDe(reserva.getFuncionId()).comprasCandy());
+    }
+
+    @Test
+    void elMostradorConUnaReservaSinPagarSigueRechazandoAunqueTengaPedidoDeLaWeb() {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+
+        rechaza("La reserva " + reserva.getId() + " no está pagada: cobrala antes de agregarle candy",
+                () -> candy.venderParaReserva(reserva.getId(), null, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
     }
 }
