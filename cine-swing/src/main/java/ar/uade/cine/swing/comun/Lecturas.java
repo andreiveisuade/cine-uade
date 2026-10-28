@@ -93,8 +93,6 @@ public final class Lecturas {
                 : ValorLeido.falla(noEs(nombre, limpio, "un email")));
     }
 
-    // Lo común a todas: vacío es un faltante si es obligatorio y null si no; lo tipeado, sin espacios, lo interpreta
-    // cada una.
     // Lo que abre el botón Ver del trailer: un id suelto es un video de YouTube. Null si no hay nada.
     public static String direccionDelTrailer(String texto) {
         String limpio = texto == null ? "" : texto.strip();
@@ -103,6 +101,8 @@ public final class Lecturas {
         return limpio.startsWith("http://") || limpio.startsWith("https://") ? limpio : "https://" + limpio;
     }
 
+    // Lo común a todas: vacío es un faltante si es obligatorio y null si no; lo tipeado, sin espacios, lo interpreta
+    // cada una.
     private static <T> ValorLeido<T> leer(String texto, String nombre, boolean obligatorio,
                                           Function<String, ValorLeido<T>> interpretar) {
         String limpio = texto == null ? "" : texto.trim();
