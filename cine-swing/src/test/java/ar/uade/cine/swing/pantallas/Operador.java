@@ -12,6 +12,7 @@ import javax.swing.JRootPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
@@ -90,6 +91,13 @@ public final class Operador {
         return this;
     }
 
+    /** Para la pantalla que tiene un solo campo y sin etiqueta, como el código de la Puerta. */
+    public Operador tipear(String texto) {
+        enEdt(() -> buscar(JTextField.class, JTextField::isEditable)
+                .orElseThrow(() -> new AssertionError("No hay campo de texto")).setText(texto));
+        return this;
+    }
+
     public Operador elegir(String etiqueta, String opcion) {
         enEdt(() -> {
             JComboBox<?> combo = (JComboBox<?>) campo(etiqueta);
@@ -155,7 +163,8 @@ public final class Operador {
     }
 
     public void esperarFilas(int cantidad) {
-        esperar(() -> tabla().getRowCount() == cantidad);
+        // La tabla puede no estar todavía: algunas pantallas la arman recién cuando llegan los datos.
+        esperar(() -> buscar(JTable.class, t -> t.getRowCount() == cantidad).isPresent());
     }
 
     public String barra() {
