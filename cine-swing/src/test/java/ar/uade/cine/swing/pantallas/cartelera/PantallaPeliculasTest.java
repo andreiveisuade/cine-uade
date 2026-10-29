@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.cartelera;
 
 import ar.uade.cine.swing.api.ApiCartelera;
 import ar.uade.cine.swing.api.ApiCatalogos;
+import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.ServidorFalso;
 import ar.uade.cine.swing.pantallas.Operador;
@@ -35,7 +36,8 @@ class PantallaPeliculasTest {
                 "[{\"nombre\":\"ATP\",\"edadMinima\":0},{\"nombre\":\"MAS_13\",\"edadMinima\":13}]");
         servidor.responder("GET /api/peliculas", 200, "[" + MATRIX + "," + COCO + "]");
         ClienteHttp http = new ClienteHttp(servidor.url());
-        encargado = Operador.en(() -> new PantallaPeliculas(new ApiCartelera(http), new ApiCatalogos(http)));
+        encargado = Operador.en(() -> new PantallaPeliculas(new ApiCartelera(http), new ApiCatalogos(http),
+                new ApiImagenes(http)));
         encargado.esperarFilas(2);
     }
 

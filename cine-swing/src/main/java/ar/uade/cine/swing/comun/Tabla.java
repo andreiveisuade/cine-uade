@@ -2,6 +2,7 @@ package ar.uade.cine.swing.comun;
 
 import com.formdev.flatlaf.ui.FlatUIUtils;
 
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -40,7 +41,7 @@ public final class Tabla<T> {
         return ALTO_ENCABEZADO + ALTO_FILA * filas;
     }
 
-    /** {@code color}: el de un estado (pagada, vencida, publicada); null deja el del tema. */
+    /** {@code color}: si viene, la celda es un estado (pagada, vencida, publicada) y se dibuja como pastilla. */
     public record Columna<T>(String titulo, Function<T, Object> valor, boolean aLaDerecha, int ancho,
                              Function<T, Color> color) {
 
@@ -56,7 +57,7 @@ public final class Tabla<T> {
             return new Columna<>(titulo, valor, aLaDerecha, pixeles, color);
         }
 
-        public Columna<T> conColor(Function<T, Color> segunFila) {
+        public Columna<T> comoEstado(Function<T, Color> segunFila) {
             return new Columna<>(titulo, valor, aLaDerecha, ancho, segunFila);
         }
     }
@@ -146,6 +147,7 @@ public final class Tabla<T> {
     private final class Celda extends DefaultTableCellRenderer {
 
         private final Columna<T> columna;
+        private Color pastilla;
 
         Celda(Columna<T> columna, int alineacion) {
             this.columna = columna;
@@ -158,8 +160,40 @@ public final class Tabla<T> {
             // DefaultTableCellRenderer recuerda el último color puesto: sin esto, el de una fila pasa a la siguiente.
             setForeground(null);
             super.getTableCellRendererComponent(tabla, valor, elegida, foco, fila, col);
-            if (columna.color() != null && !elegida) setForeground(columna.color().apply(filas.get(fila)));
+            pastilla = columna.color() == null ? null : columna.color().apply(filas.get(fila));
+            if (pastilla != null && !elegida) setForeground(pastilla);
             return this;
+        }
+
+        // Un ícono (la miniatura de un póster) se muestra como ícono; lo demás, como texto.
+        @Override
+        protected void setValue(Object valor) {
+            setIcon(valor instanceof Icon icono ? icono : null);
+            super.setValue(valor instanceof Icon ? null : valor);
+        }
+
+        // El fondo (zebra o selección) primero, encima la pastilla translúcida y arriba el texto de siempre.
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (pastilla == null) {
+                super.paintComponent(g);
+                return;
+            }
+            Graphics2D g2 = (Graphics2D) g.create();
+            FlatUIUtils.setRenderingHints(g2);
+            g2.setColor(getBackground());
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            FontMetrics medida = g2.getFontMetrics(getFont());
+            int alto = medida.getHeight() + Componentes.PEGADO;
+            int ancho = medida.stringWidth(getText()) + 2 * Componentes.JUNTO;
+            int x = getHorizontalAlignment() == RIGHT ? getWidth() - getInsets().right - ancho + Componentes.JUNTO
+                    : getInsets().left - Componentes.JUNTO;
+            g2.setColor(new Color(pastilla.getRed(), pastilla.getGreen(), pastilla.getBlue(), 40));
+            g2.fillRoundRect(x, (getHeight() - alto) / 2, ancho, alto, alto, alto);
+            g2.dispose();
+            setOpaque(false);
+            super.paintComponent(g);
+            setOpaque(true);
         }
     }
 

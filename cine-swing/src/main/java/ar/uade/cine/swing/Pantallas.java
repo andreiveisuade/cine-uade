@@ -39,7 +39,7 @@ final class Pantallas {
     // Sin default a propósito: un destino nuevo sin pantalla no compila.
     JComponent de(Destino destino) {
         return switch (destino) {
-            case PELICULAS -> new PantallaPeliculas(apis.cartelera(), apis.catalogos());
+            case PELICULAS -> new PantallaPeliculas(apis.cartelera(), apis.catalogos(), apis.imagenes());
             case POR_REVISAR -> new PantallaPendientes(apis.cartelera(), apis.imagenes(), navegacion);
             case IMPORTADOR -> new PantallaImportador(apis.cartelera(), navegacion);
             case SALAS -> new PantallaSalas(apis.catalogos(), apis.salas(), navegacion);

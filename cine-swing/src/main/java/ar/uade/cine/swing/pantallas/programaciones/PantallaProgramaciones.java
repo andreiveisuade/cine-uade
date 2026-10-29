@@ -55,7 +55,7 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
             Columna.<Programacion>de("Días", p -> SelectorDias.resumen(p.diasSemana())),
             Columna.<Programacion>numero("Precio", p -> precio(p.precio())),
             Columna.<Programacion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja")
-                    .conColor(p -> p.activa() ? Colores.exito() : Colores.secundario()))
+                    .comoEstado(p -> p.activa() ? Colores.exito() : Colores.secundario()))
             .vacia("Todavía no hay grillas: armá una con el formulario de la derecha");
     private final JTextArea detalle = Componentes.areaDeLectura(6, 30);
     private final FormularioProgramacion formulario;

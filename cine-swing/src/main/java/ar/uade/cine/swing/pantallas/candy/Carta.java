@@ -43,7 +43,7 @@ final class Carta extends Seccion {
             Columna.<Producto>de("Trae", PantallaCandy::componentesDe).ancho(220),
             Columna.<Producto>numero("Precio", p -> precio(p.precio())),
             Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta")
-                    .conColor(p -> p.disponible() ? Colores.exito() : Colores.secundario()))
+                    .comoEstado(p -> p.disponible() ? Colores.exito() : Colores.secundario()))
             .vacia("La carta está vacía: agregá el primer producto a la derecha");
     private final JLabel resumen = new JLabel(" ");
 

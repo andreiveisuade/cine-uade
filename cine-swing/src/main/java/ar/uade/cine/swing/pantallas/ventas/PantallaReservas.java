@@ -51,7 +51,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
             Columna.<Reserva>de("Candy", PantallaReservas::candy),
             // R30: el total es el del ticket de la web, entradas y candy; la Caja los sigue desglosando.
             Columna.<Reserva>numero("Total", r -> precio(r.total() + r.totalCandy())),
-            Columna.<Reserva>de("Estado", r -> etiqueta(r.estado())).conColor(PantallaReservas::color),
+            Columna.<Reserva>de("Estado", r -> etiqueta(r.estado())).comoEstado(PantallaReservas::color),
             Columna.<Reserva>de("Pago", PantallaReservas::pago).ancho(130))
             .vacia("Ninguna reserva con esos filtros");
 
@@ -141,7 +141,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         return r.ingresadaEn() == null ? pago : pago + " · entró " + hora(r.ingresadaEn());
     }
 
-    private static Color color(Reserva r) {
+    static Color color(Reserva r) {
         return switch (r.estado()) {
             case "RESERVADA" -> Colores.aviso();
             case "PAGADA" -> Colores.exito();
