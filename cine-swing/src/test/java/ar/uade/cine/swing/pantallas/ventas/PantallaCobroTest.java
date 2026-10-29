@@ -90,7 +90,7 @@ class PantallaCobroTest {
                 reserva(5, "RESERVADA", false, "null").replace("\"cancelable\":false", "\"cancelable\":true"));
         abrir(5);
 
-        encargado.esperarTexto("venció el plazo para pagarla o la función ya empezó.");
+        encargado.esperarTexto("venció el plazo para pagarla o la función ya empezó");
     }
 
     @Test

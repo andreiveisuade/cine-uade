@@ -30,12 +30,15 @@ final class PanelCheckout extends Seccion {
         panel.agregar(Componentes.nota(checkout.id()));
         panel.agregar(new JLabel("El cliente aprueba"));
         JLabel monto = new JLabel(precio(checkout.monto()));
-        monto.setFont(monto.getFont().deriveFont(Font.BOLD, 22f));
+        monto.setFont(monto.getFont().deriveFont(Font.BOLD, Componentes.LETRA_TITULO));
         panel.agregar(monto);
         panel.agregar(new JLabel("Contenido del QR"));
         panel.agregar(texto(checkout.codigoQr()));
-        panel.agregar(new JLabel("Link de pago"));
-        panel.agregar(texto(checkout.urlPago()));
+        // La emulada devuelve una ruta del sitio, que no se abre fuera de él: el link sirve solo si es completo.
+        if (checkout.urlPago() != null && checkout.urlPago().startsWith("http")) {
+            panel.agregar(new JLabel("Link de pago"));
+            panel.agregar(texto(checkout.urlPago()));
+        }
         JButton confirmar = Componentes.primario(new JButton("El cliente pagó · confirmar"));
         confirmar.addActionListener(e -> {
             if (!confirmar("¿El cliente aprobó el pago de " + precio(checkout.monto()) + "? Se registra "
@@ -48,9 +51,8 @@ final class PanelCheckout extends Seccion {
             });
         });
         panel.agregar(confirmar);
-        panel.agregar(Componentes.nota("El monto <b>ya tiene el descuento aplicado</b>: es el "
-                + "importe que se aprueba. La pasarela es una emulación —el host no existe—, así que el aviso de "
-                + "«pagó» lo da esta pantalla; en una integración de verdad lo dispara el procesador."));
+        panel.agregar(Componentes.nota("El monto <b>ya tiene el descuento aplicado</b>: es el importe que se "
+                + "aprueba. Cuando el cliente pague con el QR o el link, confirmalo acá."));
         add(Componentes.conBorde(panel));
     }
 

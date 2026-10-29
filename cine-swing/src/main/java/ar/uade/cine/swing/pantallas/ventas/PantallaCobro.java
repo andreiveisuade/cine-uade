@@ -21,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
@@ -49,7 +50,7 @@ public final class PantallaCobro extends Pantalla {
 
         JButton volver = Componentes.deTexto(new JButton("← Reservas"));
         volver.addActionListener(e -> navegacion.ir(Destino.RESERVAS));
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
+        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
         JPanel fila = new JPanel(new BorderLayout());
         fila.add(volver, BorderLayout.WEST);
         centro.add(fila, BorderLayout.NORTH);
@@ -73,11 +74,14 @@ public final class PantallaCobro extends Pantalla {
     private void pintar(Datos datos) {
         Reserva reserva = datos.reserva();
         if (!reserva.cobrable()) {
-            mostrarNota(yaNoSeCobra(reserva));
+            cuerpo.removeAll();
+            cuerpo.add(noSeCobra(reserva), BorderLayout.WEST);
+            cuerpo.revalidate();
+            cuerpo.repaint();
             return;
         }
         cuerpo.removeAll();
-        JPanel columnas = new JPanel(new GridLayout(1, 2, 16, 0));
+        JPanel columnas = new JPanel(new GridLayout(1, 2, Componentes.BLOQUE, 0));
         columnas.add(new PanelCobro(apiVentas, navegacion, reserva, datos.medios()));
         columnas.add(detalle(reserva));
         cuerpo.add(columnas, BorderLayout.CENTER);
@@ -88,21 +92,42 @@ public final class PantallaCobro extends Pantalla {
     private static String yaNoSeCobra(Reserva reserva) {
         // Cancelable y no cobrable es una reserva que sigue abierta pero ya se pasó de hora (R17 o R19).
         String texto = "La reserva " + reserva.id() + " no se puede cobrar: "
-                + (reserva.cancelable() ? "venció el plazo para pagarla o la función ya empezó."
-                : "está " + etiqueta(reserva.estado()).toLowerCase() + ".");
+                + (reserva.cancelable() ? "venció el plazo para pagarla o la función ya empezó"
+                : "está " + etiqueta(reserva.estado()).toLowerCase());
         Pago pago = reserva.pago();
         if (pago != null) {
-            texto += " Se cobró " + precio(pago.monto()) + " con " + etiqueta(pago.medio());
+            texto += ". Se cobró " + precio(pago.monto()) + " con " + etiqueta(pago.medio());
             if (pago.descuento() > 0) {
                 texto += " (subtotal " + precio(pago.subtotal()) + " − " + precio(pago.descuento()) + " de promoción)";
             }
-            texto += " el " + fechaHora(pago.fecha()) + ".";
+            texto += " el " + fechaHora(pago.fecha());
         }
         return texto;
     }
 
+    // Una tarjeta con lo que pasó y lo que se llevó, en vez de una línea gris en una pantalla vacía.
+    private static JPanel noSeCobra(Reserva reserva) {
+        Pila pila = new Pila();
+        JLabel estado = Componentes.subtitulo(etiqueta(reserva.estado()));
+        estado.setForeground(PantallaReservas.color(reserva));
+        pila.agregar(estado);
+        pila.agregar(Componentes.nota(yaNoSeCobra(reserva)));
+        pila.agregar(Componentes.renglon("Entradas", precio(reserva.total()), false));
+        for (CompraCandy compra : reserva.candy()) {
+            pila.agregar(Componentes.renglon("Candy · " + compra.situacion().toLowerCase(), precio(compra.total()),
+                    false));
+        }
+        pila.agregar(Componentes.renglon("Total", precio(reserva.total() + reserva.totalCandy()), true));
+        JPanel tarjeta = Componentes.conBorde(pila);
+        tarjeta.setPreferredSize(new Dimension(Componentes.ANCHO_LATERAL + Componentes.MARGEN * 3,
+                tarjeta.getPreferredSize().height));
+        JPanel arriba = new JPanel(new BorderLayout());
+        arriba.add(tarjeta, BorderLayout.NORTH);
+        return arriba;
+    }
+
     private JPanel detalle(Reserva reserva) {
-        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        JPanel panel = new JPanel(new BorderLayout(0, Componentes.JUNTO));
         Pila arriba = new Pila();
         arriba.agregar(Componentes.subtitulo(
                 reserva.pelicula() == null ? "—" : reserva.pelicula().titulo()));
