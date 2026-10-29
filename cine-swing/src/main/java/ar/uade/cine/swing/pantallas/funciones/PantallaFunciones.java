@@ -9,7 +9,7 @@ import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Fechas;
-import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -48,17 +48,17 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
             Columna.<Funcion>de("Película", f -> f.pelicula().titulo()).ancho(260),
             Columna.<Funcion>de("Sala", f -> f.sala().nombre()),
             Columna.<Funcion>de("Formato", f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma())),
-            Columna.<Funcion>numero("Precio", f -> precio(f.precio())));
+            Columna.<Funcion>numero("Precio", f -> precio(f.precio())))
+            .vacia("Ninguna función con esos filtros");
 
     public PantallaFunciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiFunciones apiFunciones,
                              ApiSalas apiSalas, Navegacion navegacion) {
-        super("Funciones", "Es la lista más larga del panel: una semana de seis salas pasa de cien funciones. "
-                + "Doble clic en una función abre su borderó e informe.");
+        super("Funciones", "Doble clic en una función abre su borderó e informe.");
         this.apiFunciones = apiFunciones;
         this.navegacion = navegacion;
         this.formulario = new FormularioFuncion(apiFunciones, this::recargar);
 
-        filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
+        filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Película de título"));
         JButton buscar = new JButton("Buscar");
         buscar.addActionListener(e -> buscar());
         filtros.combo("Película", "peliculaId", filtroPelicula)
@@ -68,11 +68,7 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
                 .boton(buscar)
                 .limpiar(this::recargar);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(filtros, BorderLayout.NORTH);
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(accionesDeFila(), BorderLayout.SOUTH);
-        add(centro, BorderLayout.CENTER);
+        add(Componentes.listado(filtros, filtros.conteo(), accionesDeFila(), tabla.conScroll()), BorderLayout.CENTER);
         add(formulario, BorderLayout.EAST);
 
         tabla.alDobleClic(this::abrirInformes);
@@ -104,10 +100,9 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
     }
 
     private JPanel accionesDeFila() {
-        JPanel acciones = new JPanel(new FlujoConSalto());
         JButton informes = new JButton("Borderó e informe");
         informes.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirInformes));
-        acciones.add(informes);
+        JPanel acciones = Componentes.aLaDerecha(informes);
         // Command: ver AccionDeFila.
         new BotonesDeFila<>(this, tabla, this::recargar, new BorrarFuncion(apiFunciones)).agregarA(acciones);
         return acciones;

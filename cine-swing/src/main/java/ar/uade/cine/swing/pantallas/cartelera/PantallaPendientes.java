@@ -69,7 +69,7 @@ public final class PantallaPendientes extends Pantalla {
         JPanel vacio = new JPanel(new FlujoConSalto());
         vacio.add(Componentes.nota("No hay nada esperando. Cuando el importador traiga títulos nuevos van a "
                 + "aparecer acá."));
-        JButton importar = new JButton("Traer cartelera ahora");
+        JButton importar = Componentes.primario(new JButton("Traer cartelera ahora"));
         importar.addActionListener(e -> navegacion.ir(Destino.IMPORTADOR));
         vacio.add(importar);
         tarjetas.add(vacio);
@@ -92,8 +92,8 @@ public final class PantallaPendientes extends Pantalla {
                 + escapar(vacioSi(pelicula.director(), "Sin director")) + "<br>"
                 + pelicula.generos().stream().map(g -> etiqueta(g)).collect(Collectors.joining(", "))
                 + "<p style='margin-top:6px'>" + escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis.")) + "</p>");
-        JButton confirmar = new JButton("Confirmar");
-        JButton descartar = new JButton("Descartar");
+        JButton confirmar = Componentes.primario(new JButton("Confirmar"));
+        JButton descartar = Componentes.peligro(new JButton("Descartar"));
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         botones.add(descartar);
         botones.add(confirmar);

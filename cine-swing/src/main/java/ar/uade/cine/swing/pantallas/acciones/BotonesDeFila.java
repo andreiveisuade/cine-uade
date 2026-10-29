@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.pantallas.acciones;
 
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -36,13 +37,18 @@ public final class BotonesDeFila<T> {
         this.tabla = tabla;
         this.alTerminar = alTerminar;
         this.confirmar = confirmar;
-        this.botones = acciones.stream().map(a -> new Boton<>(a, new JButton(a.texto()))).toList();
+        this.botones = acciones.stream().map(a -> new Boton<>(a, boton(a))).toList();
         botones.forEach(b -> b.boton().addActionListener(e -> disparar(b.accion())));
+    }
+
+    private static JButton boton(AccionDeFila<?> accion) {
+        JButton boton = new JButton(accion.texto());
+        return accion.destructiva() ? Componentes.peligro(boton) : boton;
     }
 
     /** Después de los botones propios de la pantalla (Editar, Cobrar): no le piden nada al backend, no son Command. */
     public void agregarA(JPanel panel) {
-        botones.forEach(b -> panel.add(b.boton()));
+        botones.forEach(b -> Componentes.agregarALaDerecha(panel, b.boton()));
     }
 
     /** Texto y habilitación según la fila elegida; sin fila, apagados. La pantalla lo llama al cambiar la fila. */

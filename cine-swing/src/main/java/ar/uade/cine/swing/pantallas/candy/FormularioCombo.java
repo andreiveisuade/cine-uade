@@ -43,7 +43,7 @@ final class FormularioCombo extends Seccion {
         this.apiCandy = apiCandy;
         this.alGuardar = alGuardar;
         this.imagen = new CampoImagen(apiImagenes);
-        JButton armar = new JButton("Armar combo");
+        JButton armar = Componentes.primario(new JButton("Armar combo"));
         armar.addActionListener(e -> armar());
         add(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Armar combo"))
@@ -54,7 +54,7 @@ final class FormularioCombo extends Seccion {
                 .ancho(filas)
                 .obligatorio("Precio del combo", precioCombo)
                 .campo("Imagen", imagen)
-                .ancho(armar)
+                .ancho(Componentes.aLaDerecha(armar))
                 .ancho(error)
                 .cerrar()), BorderLayout.CENTER);
     }
@@ -63,7 +63,7 @@ final class FormularioCombo extends Seccion {
         filas.removeAll();
         cantidades.olvidar();
         if (sueltos.isEmpty()) {
-            filas.add(Componentes.nota("Primero cargá productos sueltos."));
+            filas.add(Componentes.nota("Primero cargá productos sueltos"));
         }
         int fila = 0;
         for (Producto p : sueltos) {

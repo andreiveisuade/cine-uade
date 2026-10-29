@@ -7,7 +7,6 @@ import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.informes.InformeFuncion;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
@@ -42,8 +41,8 @@ public final class PantallaInformeFuncion extends Pantalla {
         this.apiInformes = apiInformes;
         this.funcionId = funcionId;
 
-        JButton volver = new JButton("← Funciones");
-        volver.addActionListener(e -> navegacion.ir(Destino.FUNCIONES));
+        JButton volver = Componentes.deTexto(new JButton("← Volver"));
+        volver.addActionListener(e -> navegacion.volver());
         JPanel norte = new JPanel(new BorderLayout(0, 6));
         norte.add(volver, BorderLayout.WEST);
         norte.add(subtitulo, BorderLayout.SOUTH);

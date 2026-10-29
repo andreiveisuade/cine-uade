@@ -44,7 +44,7 @@ public final class PanelIngreso extends JPanel {
     private final JTextField email = new JTextField(22);
     private final JPasswordField password = new JPasswordField(22);
     private final JLabel mensaje = Componentes.texto(" ");
-    private final JButton ingresar = new JButton("Ingresar");
+    private final JButton ingresar = Componentes.primario(new JButton("Ingresar"));
     private final JButton estado = new JButton("Estado de producción");
 
     public PanelIngreso(Preferences preferencias, Function<Servidor, ApiSesion> conectar, String aviso,

@@ -14,6 +14,11 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 record BorrarFuncion(ApiFunciones api) implements AccionDeFila<Funcion> {
 
     @Override
+    public boolean destructiva() {
+        return true;
+    }
+
+    @Override
     public String texto() {
         return "Borrar";
     }

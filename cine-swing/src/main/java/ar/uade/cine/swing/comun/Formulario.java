@@ -28,15 +28,16 @@ public final class Formulario extends JPanel {
         GridBagConstraints izquierda = new GridBagConstraints();
         izquierda.gridx = 0;
         izquierda.gridy = fila;
-        izquierda.anchor = GridBagConstraints.NORTHWEST;
-        izquierda.insets = new Insets(4, 0, 4, 8);
+        // A la línea base: la etiqueta se lee a la altura del texto del campo, no pegada a su borde de arriba.
+        izquierda.anchor = GridBagConstraints.BASELINE_LEADING;
+        izquierda.insets = new Insets(Componentes.PEGADO, 0, Componentes.PEGADO, Componentes.CERCA);
         add(etiqueta, izquierda);
         GridBagConstraints derecha = new GridBagConstraints();
         derecha.gridx = 1;
         derecha.gridy = fila++;
         derecha.weightx = 1;
         derecha.fill = GridBagConstraints.HORIZONTAL;
-        derecha.insets = new Insets(4, 0, 4, 0);
+        derecha.insets = new Insets(Componentes.PEGADO, 0, Componentes.PEGADO, 0);
         add(campo, derecha);
         return this;
     }
@@ -53,7 +54,7 @@ public final class Formulario extends JPanel {
         todo.gridwidth = 2;
         todo.weightx = 1;
         todo.fill = GridBagConstraints.HORIZONTAL;
-        todo.insets = new Insets(4, 0, 4, 0);
+        todo.insets = new Insets(Componentes.PEGADO, 0, Componentes.PEGADO, 0);
         add(componente, todo);
         return this;
     }

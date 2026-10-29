@@ -64,6 +64,10 @@ class PantallaFuncionesTest {
             }
 
             @Override
+            public void volver() {
+            }
+
+            @Override
             public void abrirMapa(int salaId) {
             }
         };

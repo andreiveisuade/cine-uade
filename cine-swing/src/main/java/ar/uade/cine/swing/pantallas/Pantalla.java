@@ -9,8 +9,9 @@ import java.awt.BorderLayout;
 public abstract class Pantalla extends Seccion {
 
     protected Pantalla(String titulo, String descripcion) {
-        super(new BorderLayout(12, 12));
-        setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
+        super(new BorderLayout(Componentes.BLOQUE, Componentes.APARTE));
+        setBorder(BorderFactory.createEmptyBorder(Componentes.BLOQUE, Componentes.MARGEN, Componentes.BLOQUE,
+                Componentes.MARGEN));
         add(Componentes.encabezado(titulo, descripcion), BorderLayout.NORTH);
     }
 }

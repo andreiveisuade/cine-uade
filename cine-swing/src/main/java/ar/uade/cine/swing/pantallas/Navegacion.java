@@ -6,6 +6,9 @@ public interface Navegacion {
     /** Va a una entrada del menú, y la marca. */
     void ir(Destino destino);
 
+    /** De vuelta a la entrada del menú marcada: un informe abierto desde la Agenda vuelve a la Agenda. */
+    void volver();
+
     /** El borderó y el informe de una función. No está en el menú: se llega desde Funciones o desde la Agenda. */
     void abrirInforme(int funcionId);
 

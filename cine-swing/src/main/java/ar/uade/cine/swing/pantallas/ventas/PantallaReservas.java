@@ -4,8 +4,9 @@ import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Fechas;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -16,15 +17,16 @@ import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.dia;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
@@ -37,21 +39,24 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
 
     private final ApiVentas apiVentas;
     private final Navegacion navegacion;
-    private final JLabel resumen = new JLabel(" ");
-    private final JButton cobrar = new JButton("Cobrar");
+    private final JButton cobrar = Componentes.primario(new JButton("Cobrar"));
     private final BotonesDeFila<Reserva> botones;
     private final Tabla<Reserva> tabla = new Tabla<>(
-            Columna.<Reserva>de("#", r -> r.id()).ancho(40),
-            Columna.<Reserva>de("Función", PantallaReservas::funcion).ancho(280),
+            Columna.<Reserva>numero("#", r -> r.id()).ancho(40),
+            Columna.<Reserva>de("Función", PantallaReservas::funcion).ancho(260),
             Columna.<Reserva>de("Cliente", r -> r.cliente() == null ? "—"
-                    : r.cliente().nombre() + " · " + r.cliente().email()).ancho(240),
+                    : r.cliente().nombre() + " · " + r.cliente().email()).ancho(220),
             Columna.<Reserva>de("Butacas", r -> r.entradas().stream().map(Entrada::codigo)
                     .collect(Collectors.joining(", "))),
-            Columna.<Reserva>numero("Total", r -> precio(r.total())),
-            Columna.<Reserva>de("Estado", PantallaReservas::estado).ancho(170));
+            Columna.<Reserva>de("Candy", PantallaReservas::candy),
+            // R30: el total es el del ticket de la web, entradas y candy; la Caja los sigue desglosando.
+            Columna.<Reserva>numero("Total", r -> precio(r.total() + r.totalCandy())),
+            Columna.<Reserva>de("Estado", r -> etiqueta(r.estado())).conColor(PantallaReservas::color),
+            Columna.<Reserva>de("Pago", PantallaReservas::pago).ancho(130))
+            .vacia("Ninguna reserva con esos filtros");
 
     public PantallaReservas(ApiVentas apiVentas, Navegacion navegacion) {
-        super("Reservas", null);
+        super("Reservas", "Lo que pasa por boletería: se cobra, se cancela o vence sola.");
         this.apiVentas = apiVentas;
         this.navegacion = navegacion;
         // Command: ver AccionDeFila.
@@ -66,19 +71,11 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
                 .fecha("Función del día", "dia", Fechas.selector(null))
                 .limpiar(this::buscar);
 
-        JPanel norte = new JPanel(new BorderLayout(0, 8));
-        norte.add(resumen, BorderLayout.NORTH);
-        norte.add(filtros, BorderLayout.CENTER);
-
-        JPanel acciones = new JPanel(new FlujoConSalto());
-        acciones.add(cobrar);
+        // Cobrar al final: el primario va a la derecha de su grupo, después de lo que cancela.
+        JPanel acciones = Componentes.aLaDerecha();
         botones.agregarA(acciones);
-
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(norte, BorderLayout.NORTH);
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(acciones, BorderLayout.SOUTH);
-        add(centro, BorderLayout.CENTER);
+        Componentes.agregarALaDerecha(acciones, cobrar);
+        add(Componentes.listado(filtros, filtros.conteo(), acciones, tabla.conScroll()), BorderLayout.CENTER);
 
         tabla.tabla().getSelectionModel().addListSelectionListener(e -> habilitar());
         tabla.alDobleClic(r -> {
@@ -101,17 +98,21 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
 
     @Override
     protected String sinFiltrar(List<Reserva> todas) {
-        return "";
-    }
-
-    @Override
-    protected void alRecargar(List<Reserva> todas) {
         List<Reserva> aCobrar = todas.stream().filter(Reserva::cobrable).toList();
-        long activas = todas.stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
+        // Activa es la que todavía cuenta para la sala: ni cancelada ni vencida.
+        long activas = todas.stream().filter(r -> !List.of("CANCELADA", "EXPIRADA").contains(r.estado())).count();
         // R30: el candy pedido en la web se cobra junto con la reserva.
         double pendiente = aCobrar.stream().mapToDouble(r -> r.total() + r.totalCandy()).sum();
-        resumen.setText(todas.size() + " reservas · " + activas + " activas · " + aCobrar.size()
-                + " pendientes de cobro" + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")"));
+        return cantidad(todas.size(), "reserva", "reservas") + " · " + cantidad((int) activas, "activa", "activas")
+                + " · " + cantidad(aCobrar.size(), "pendiente", "pendientes") + " de cobro"
+                + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")");
+    }
+
+    // El resumen se ve siempre, filtre lo que filtre: es lo que mira quien atiende la caja.
+    @Override
+    protected String conteo(List<Reserva> todas, List<Reserva> visibles) {
+        return sinFiltrar(todas) + (visibles.size() == todas.size() ? ""
+                : " · mostrando " + visibles.size() + " de " + todas.size());
     }
 
     @Override
@@ -126,10 +127,27 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
                 + (r.sala() == null ? "" : " · " + r.sala().nombre());
     }
 
-    private static String estado(Reserva r) {
-        String texto = etiqueta(r.estado());
-        if (r.pago() != null) texto += " · " + etiqueta(r.pago().medio()) + " " + hora(r.pago().fecha());
-        return texto;
+    private static String candy(Reserva r) {
+        if (r.candy().isEmpty()) return "—";
+        return r.candy().stream().flatMap(c -> c.items().stream())
+                .map(i -> i.cantidad() + "× " + i.nombre()).collect(Collectors.joining(", "));
+    }
+
+    // Lo que importa de cada estado: hasta cuándo se paga, con qué se pagó y si ya entró.
+    private static String pago(Reserva r) {
+        if ("RESERVADA".equals(r.estado()) && r.venceEn() != null) return "Vence " + hora(r.venceEn());
+        if (r.pago() == null) return "—";
+        String pago = etiqueta(r.pago().medio()) + " " + hora(r.pago().fecha());
+        return r.ingresadaEn() == null ? pago : pago + " · entró " + hora(r.ingresadaEn());
+    }
+
+    private static Color color(Reserva r) {
+        return switch (r.estado()) {
+            case "RESERVADA" -> Colores.aviso();
+            case "PAGADA" -> Colores.exito();
+            case "CANCELADA" -> Colores.error();
+            default -> Colores.secundario();
+        };
     }
 
     // Mismas reglas del backend que al cobrar y cancelar (R13, R17, R19): un botón habilitado no termina en rechazo.

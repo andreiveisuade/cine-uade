@@ -5,7 +5,8 @@ import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Colores;
+import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -35,14 +36,14 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
     private final JComboBox<Opcion<String>> filtroGenero = new JComboBox<>();
     private final FormularioPelicula formulario;
     private final Tabla<Pelicula> tabla = new Tabla<>(
-            Columna.<Pelicula>de("Título", p -> p.titulo() + (p.anio() > 0 ? " (" + p.anio() + ")" : "")).ancho(260),
-            Columna.<Pelicula>de("Dirección", p -> p.director() == null || p.director().isEmpty() ? "—"
-                    : p.director()),
+            Columna.<Pelicula>de("Título", p -> p.titulo() + (p.anio() > 0 ? " (" + p.anio() + ")" : "")).ancho(220),
             Columna.<Pelicula>de("Duración", p -> duracion(p.duracionMinutos())),
             Columna.<Pelicula>de("Edad", p -> etiqueta(p.clasificacion())),
             Columna.<Pelicula>de("Géneros", p -> p.generos().stream().map(g -> etiqueta(g))
                     .collect(Collectors.joining(", "))).ancho(180),
-            Columna.<Pelicula>de("Estado", p -> p.enCartelera() ? "Publicada" : "Despublicada"));
+            Columna.<Pelicula>de("Estado", p -> p.enCartelera() ? "Publicada" : "Despublicada").ancho(110)
+                    .conColor(p -> p.enCartelera() ? Colores.exito() : Colores.secundario()))
+            .vacia("Ninguna película con esos filtros");
 
     public PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos) {
         super("Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
@@ -54,16 +55,12 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
         filtroEstado.addItem(new Opcion<>(null, "Todas"));
         filtroEstado.addItem(new Opcion<>("true", "Publicadas"));
         filtroEstado.addItem(new Opcion<>("false", "Despublicadas"));
-        filtros.texto("Buscar", "q", new JTextField(16))
+        filtros.texto("Buscar", "q", new JTextField(12))
                 .combo("Género", "genero", filtroGenero)
                 .combo("Estado", "publicada", filtroEstado)
                 .limpiar(this::buscar);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(filtros, BorderLayout.NORTH);
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(accionesDeFila(), BorderLayout.SOUTH);
-        add(centro, BorderLayout.CENTER);
+        add(Componentes.listado(filtros, filtros.conteo(), accionesDeFila(), tabla.conScroll()), BorderLayout.CENTER);
         add(formulario, BorderLayout.EAST);
         tabla.alDobleClic(formulario::editar);
 
@@ -99,8 +96,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
     private JPanel accionesDeFila() {
         JButton editar = new JButton("Editar");
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
-        JPanel acciones = new JPanel(new FlujoConSalto());
-        acciones.add(editar);
+        JPanel acciones = Componentes.aLaDerecha(editar);
         // Command: cada operación es un objeto y BotonesDeFila la dispara (ver AccionDeFila).
         new BotonesDeFila<>(this, tabla, this::recargar, new PublicarPelicula(apiCartelera),
                 new BorrarPelicula(apiCartelera)).agregarA(acciones);

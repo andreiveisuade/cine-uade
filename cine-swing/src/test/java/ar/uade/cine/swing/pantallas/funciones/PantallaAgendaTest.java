@@ -79,6 +79,10 @@ class PantallaAgendaTest {
         }
 
         @Override
+        public void volver() {
+        }
+
+        @Override
         public void abrirInforme(int funcionId) {
         }
 

@@ -55,7 +55,7 @@ class PantallaPromocionesTest {
 
     @Test
     void listaCadaPromocionConSuBeneficioYCuandoCorre() {
-        encargado.esperarTexto("1 activas de 2");
+        encargado.esperarTexto("1 activa de 2");
 
         assertEquals("2x1", encargado.celda(0, "Beneficio"));
         assertEquals("Mié · 18:00–23:59 · Efectivo", encargado.celda(0, "Cuándo").replace(", ", " · "));

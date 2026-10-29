@@ -40,7 +40,7 @@ public final class PantallaMapaSala extends Pantalla {
         this.apiSalas = apiSalas;
         this.salaId = salaId;
 
-        JButton volver = new JButton("← Salas");
+        JButton volver = Componentes.deTexto(new JButton("← Salas"));
         volver.addActionListener(e -> navegacion.ir(Destino.SALAS));
         JPanel norte = new JPanel(new BorderLayout(0, 6));
         norte.add(volver, BorderLayout.WEST);

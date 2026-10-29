@@ -28,7 +28,7 @@ public final class PantallaClientes extends Pantalla {
         super("Clientes", "Buscá un cliente por email. Entra a la web con su cuenta de Google: no tiene clave del cine.");
         this.apiClientes = apiClientes;
 
-        JButton buscar = new JButton("Buscar");
+        JButton buscar = Componentes.primario(new JButton("Buscar"));
         JPanel fila = new JPanel(new BorderLayout(6, 0));
         fila.add(email, BorderLayout.CENTER);
         fila.add(buscar, BorderLayout.EAST);

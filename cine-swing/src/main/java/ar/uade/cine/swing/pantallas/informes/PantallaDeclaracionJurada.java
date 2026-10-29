@@ -75,7 +75,7 @@ public final class PantallaDeclaracionJurada extends Pantalla {
         this.apiCatalogos = apiCatalogos;
         this.apiInformes = apiInformes;
 
-        JButton consultar = new JButton("Consultar");
+        JButton consultar = Componentes.primario(new JButton("Consultar"));
         consultar.addActionListener(e -> consultar());
         exportar.addActionListener(e -> exportar());
         exportar.setEnabled(false);

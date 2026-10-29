@@ -8,8 +8,8 @@ import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.programaciones.Programacion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.SelectorDias;
@@ -54,22 +54,24 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
             Columna.<Programacion>de("Cuándo", PantallaProgramaciones::cuando).ancho(260),
             Columna.<Programacion>de("Días", p -> SelectorDias.resumen(p.diasSemana())),
             Columna.<Programacion>numero("Precio", p -> precio(p.precio())),
-            Columna.<Programacion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
+            Columna.<Programacion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja")
+                    .conColor(p -> p.activa() ? Colores.exito() : Colores.secundario()))
+            .vacia("Todavía no hay grillas: armá una con el formulario de la derecha");
     private final JTextArea detalle = Componentes.areaDeLectura(6, 30);
     private final FormularioProgramacion formulario;
     private final BotonesDeFila<Programacion> botones;
 
     public PantallaProgramaciones(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos,
                                   ApiProgramaciones apiProgramaciones, ApiSalas apiSalas) {
-        super("Grilla de funciones", "Una grilla genera las funciones del rango de una sola vez. Las que chocan "
-                + "con algo ya programado en esa sala se saltean, y el informe dice cuáles.");
+        super("Grilla de funciones", "Genera las funciones de un rango de una vez; las que chocan con algo ya "
+                + "programado se saltean.");
         this.apiProgramaciones = apiProgramaciones;
         this.formulario = new FormularioProgramacion(apiProgramaciones, this::recargar);
         // Command: ver AccionDeFila.
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar,
                 new CambiarActivacionGrilla(apiProgramaciones));
 
-        filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
+        filtroPelicula.setPrototypeDisplayValue(new Opcion<>(0, "Película de título"));
         JComboBox<Opcion<String>> filtroEstado = new JComboBox<>();
         filtroEstado.addItem(new Opcion<>(null, "Todas"));
         filtroEstado.addItem(new Opcion<>("true", "Activas"));
@@ -79,21 +81,17 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
                 .combo("Estado", "activa", filtroEstado)
                 .limpiar(this::recargar);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(filtros, BorderLayout.NORTH);
-        JPanel listado = new JPanel(new BorderLayout(0, 6));
-        listado.add(tabla.conScroll(), BorderLayout.CENTER);
-        listado.add(accionesDeFila(), BorderLayout.SOUTH);
-        JPanel abajo = new JPanel(new BorderLayout(0, 4));
-        abajo.add(Componentes.nota("Dar de baja una grilla <b>no borra las funciones que ya generó</b>: pueden tener "
-                + "entradas vendidas. Solo evita que genere nuevas. Elegí una fila para ver qué funciones creó."),
-                BorderLayout.NORTH);
+        JPanel listado = Componentes.listado(filtros, filtros.conteo(), accionesDeFila(), tabla.conScroll());
+        JPanel abajo = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        abajo.add(Componentes.subtitulo("Funciones que generó"), BorderLayout.NORTH);
         abajo.add(new JScrollPane(detalle), BorderLayout.CENTER);
+        abajo.add(Componentes.nota("Elegí una grilla para ver qué funciones creó. Darla de baja <b>no borra las "
+                + "funciones que ya generó</b>: pueden tener entradas vendidas, solo evita que genere nuevas."),
+                BorderLayout.SOUTH);
         JSplitPane partido = new JSplitPane(JSplitPane.VERTICAL_SPLIT, listado, abajo);
         partido.setResizeWeight(0.7);
         partido.setBorder(null);
-        centro.add(partido, BorderLayout.CENTER);
-        add(centro, BorderLayout.CENTER);
+        add(partido, BorderLayout.CENTER);
         add(formulario, BorderLayout.EAST);
 
         tabla.tabla().getSelectionModel().addListSelectionListener(e -> {
@@ -134,7 +132,7 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
     }
 
     private JPanel accionesDeFila() {
-        JPanel acciones = new JPanel(new FlujoConSalto());
+        JPanel acciones = Componentes.aLaDerecha();
         botones.agregarA(acciones);
         return acciones;
     }
@@ -144,7 +142,7 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
         cargar(() -> apiProgramaciones.obtenerProgramacion(elegida.id()), grilla -> {
             if (grilla.funciones() == null || grilla.funciones().isEmpty()) {
                 detalle.setText("Esta grilla no generó ninguna función: todas sus fechas chocaban con algo ya "
-                        + "programado.");
+                        + "programado");
                 return;
             }
             detalle.setText("Funciones de la grilla " + grilla.id() + " (" + grilla.funciones().size() + "):\n"

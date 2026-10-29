@@ -49,7 +49,7 @@ final class FormularioProgramacion extends Seccion {
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
     private final JLabel error = Componentes.texto(" ");
-    private final JButton confirmar = new JButton("Confirmar");
+    private final JButton confirmar = Componentes.primario(new JButton("Confirmar"));
     private final JTextArea informe = Componentes.areaDeLectura(6, 30);
     // El plan previsualizado vale solo para los datos con que se pidió.
     private Plan previsualizado;
@@ -78,7 +78,7 @@ final class FormularioProgramacion extends Seccion {
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
                 .obligatorio("Precio base", precioBase)
-                .ancho(Componentes.botones(previsualizar, confirmar))
+                .ancho(Componentes.aLaDerecha(previsualizar, confirmar))
                 .ancho(error)
                 .ancho(scrollInforme)
                 .ancho(Componentes.nota("Al confirmar, el servidor <b>vuelve a revisar</b> cada fecha: entre que "

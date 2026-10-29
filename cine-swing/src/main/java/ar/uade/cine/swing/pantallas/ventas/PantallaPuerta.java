@@ -47,7 +47,7 @@ public final class PantallaPuerta extends Pantalla {
         this.apiCandy = apiCandy;
 
         codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
-        JButton validar = new JButton("Validar");
+        JButton validar = Componentes.primario(new JButton("Validar"));
         validar.setFont(validar.getFont().deriveFont(18f));
         JPanel fila = new JPanel(new FlujoConSalto());
         JButton entregar = new JButton("Entregar candy");

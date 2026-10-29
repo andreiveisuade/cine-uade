@@ -5,9 +5,8 @@ import ar.uade.cine.swing.api.Apis;
 import ar.uade.cine.swing.api.ClienteHttp;
 import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.pantallas.usuarios.VentanaLogin;
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.SwingUtilities;
 import java.util.prefs.Preferences;
@@ -23,12 +22,10 @@ public final class Principal {
     private VentanaPrincipal panel;
 
     public static void main(String[] args) {
-        // Antes de crear cualquier componente: los que ya existen se quedan con los colores del tema anterior.
-        if ("claro".equalsIgnoreCase(System.getProperty("cine.tema"))) {
-            FlatLightLaf.setup();
-        } else {
-            FlatDarkLaf.setup();
-        }
+        // -Dcine.tema manda; si no, el último que eligió el encargado con el interruptor; si no, oscuro.
+        String tema = System.getProperty("cine.tema",
+                Preferences.userNodeForPackage(Principal.class).get(VentanaPrincipal.CLAVE_TEMA, "oscuro"));
+        Colores.usarTema(!"claro".equalsIgnoreCase(tema));
         SwingUtilities.invokeLater(() -> new Principal().mostrarLogin(null));
     }
 

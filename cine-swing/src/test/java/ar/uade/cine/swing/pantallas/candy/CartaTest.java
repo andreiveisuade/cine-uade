@@ -87,7 +87,7 @@ class CartaTest {
     @Test
     void armaUnComboConLasCantidadesElegidas() {
         servidor.responder("POST /api/candy/combos", 201, COMBO);
-        encargado.seccion("Armar combo").tipear("Nombre", "Combo pareja")
+        encargado.pestana("Combo").seccion("Armar combo").tipear("Nombre", "Combo pareja")
                 .cantidad("Pochoclos  · $ 3.000", 2)
                 .cantidad("Gaseosa  · $ 2.000", 1)
                 .tipear("Precio del combo", "6000")
@@ -103,7 +103,7 @@ class CartaTest {
     void elRechazoDeR14SeMuestraJuntoAlCombo() {
         servidor.responder("POST /api/candy/combos", 400,
                 "{\"error\":\"El combo tiene que salir menos que sus componentes sueltos\"}");
-        encargado.seccion("Armar combo").tipear("Nombre", "Combo caro").tipear("Precio del combo", "9000")
+        encargado.pestana("Combo").seccion("Armar combo").tipear("Nombre", "Combo caro").tipear("Precio del combo", "9000")
                 .clic("Armar combo");
 
         encargado.esperarTexto("El combo tiene que salir menos que sus componentes sueltos");

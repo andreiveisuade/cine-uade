@@ -7,8 +7,8 @@ import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -23,10 +23,12 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // La pestaña de la carta: alta de productos (los combos, en FormularioCombo), edición, y sacar o reponer; nada se borra.
@@ -40,7 +42,10 @@ final class Carta extends Seccion {
             Columna.<Producto>de("Tipo", p -> etiqueta(p.tipo())),
             Columna.<Producto>de("Trae", PantallaCandy::componentesDe).ancho(220),
             Columna.<Producto>numero("Precio", p -> precio(p.precio())),
-            Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta"));
+            Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta")
+                    .conColor(p -> p.disponible() ? Colores.exito() : Colores.secundario()))
+            .vacia("La carta está vacía: agregá el primer producto a la derecha");
+    private final JLabel resumen = new JLabel(" ");
 
     private final JTextField nombreProducto = new JTextField();
     private final JComboBox<Opcion<String>> tipoProducto = new JComboBox<>();
@@ -52,25 +57,20 @@ final class Carta extends Seccion {
     private final BotonesDeFila<Producto> botones;
 
     Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
-        super(new BorderLayout(12, 8));
+        super(new BorderLayout(Componentes.BLOQUE, 0));
         this.apiCandy = apiCandy;
         this.apiImagenes = apiImagenes;
         this.imagenProducto = new CampoImagen(apiImagenes);
         this.formularioCombo = new FormularioCombo(apiCandy, apiImagenes, this::recargar);
         // Command: ver AccionDeFila.
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarDisponibilidadProducto(apiCandy));
-        JPanel acciones = new JPanel(new FlujoConSalto());
-        acciones.add(editar);
+        JPanel acciones = Componentes.aLaDerecha(editar);
         botones.agregarA(acciones);
-        JPanel abajo = new JPanel(new BorderLayout(0, 4));
-        abajo.add(acciones, BorderLayout.NORTH);
-        abajo.add(Componentes.nota("Los productos no se borran: se sacan de la carta. Uno que ya se vendió tiene "
+        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        centro.add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
+        centro.add(Componentes.nota("Los productos no se borran: se sacan de la carta. Uno que ya se vendió tiene "
                 + "que seguir existiendo para que el ticket de esa venta diga qué se llevó. Cambiar un precio no "
-                + "toca las ventas hechas: cada una guardó el precio que tenía."), BorderLayout.CENTER);
-
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(abajo, BorderLayout.SOUTH);
+                + "toca las ventas hechas: cada una guardó el precio que tenía."), BorderLayout.SOUTH);
         add(centro, BorderLayout.CENTER);
         add(altas(), BorderLayout.EAST);
 
@@ -91,26 +91,28 @@ final class Carta extends Seccion {
     }
 
     private JScrollPane altas() {
-        JButton agregar = new JButton("Agregar a la carta");
+        JButton agregar = Componentes.primario(new JButton("Agregar a la carta"));
         agregar.addActionListener(e -> crearProducto());
 
-        // El de combo abajo y estirado: así el costado llega al fondo como en las demás pantallas.
-        JPanel columna = new JPanel(new BorderLayout(0, 8));
-        columna.add(Componentes.conBorde(new Formulario()
+        // Una sola alta a la vista: con las dos apiladas competían por el mismo costado.
+        JTabbedPane altas = new JTabbedPane();
+        altas.addTab("Producto suelto", Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Nuevo producto"))
                 .obligatorio("Nombre", nombreProducto)
                 .obligatorio("Tipo", tipoProducto)
                 .obligatorio("Precio", precioProducto)
                 .campo("Imagen", imagenProducto)
-                .ancho(agregar)
-                .ancho(errorProducto)), BorderLayout.NORTH);
-        columna.add(formularioCombo, BorderLayout.CENTER);
-        return Componentes.lateral(columna);
+                .ancho(Componentes.aLaDerecha(agregar))
+                .ancho(errorProducto)));
+        altas.addTab("Combo", formularioCombo);
+        return Componentes.lateral(altas);
     }
 
     private void recargar() {
         cargar(() -> apiCandy.obtenerProductosCandy(true), productos -> {
             tabla.mostrar(productos);
+            resumen.setText(cantidad(productos.size(), "producto", "productos") + " · "
+                    + productos.stream().filter(Producto::disponible).count() + " a la venta");
             formularioCombo.pintarComponentes(productos.stream().filter(p -> !p.esCombo()).toList());
             habilitar();
         });

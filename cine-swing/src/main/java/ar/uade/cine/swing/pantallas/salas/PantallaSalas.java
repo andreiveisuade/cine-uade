@@ -7,7 +7,6 @@ import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Lecturas;
 import ar.uade.cine.swing.comun.Opcion;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 
 // Las salas: listado, alta con su distribución de butacas y baja; doble clic abre el mapa de butacas.
 public final class PantallaSalas extends Pantalla {
@@ -47,7 +47,9 @@ public final class PantallaSalas extends Pantalla {
             Columna.<Sala>de("Distribución", s -> s.butacasPorFila().stream().map(String::valueOf)
                     .collect(Collectors.joining(","))).ancho(180),
             Columna.<Sala>numero("Butacas", Sala::capacidadSala),
-            Columna.<Sala>numero("Limpieza", s -> s.minutosLimpieza() + " min"));
+            Columna.<Sala>numero("Limpieza", s -> s.minutosLimpieza() + " min"))
+            .vacia("Todavía no hay salas: creá la primera con el formulario de la derecha");
+    private final JLabel resumen = new JLabel(" ");
 
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
@@ -71,15 +73,11 @@ public final class PantallaSalas extends Pantalla {
         JButton butacas = new JButton("Butacas");
         butacas.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirMapa));
         tabla.alDobleClic(this::abrirMapa);
-        JPanel acciones = new JPanel(new FlujoConSalto());
-        acciones.add(butacas);
+        JPanel acciones = Componentes.aLaDerecha(butacas);
         // Command: ver AccionDeFila.
         new BotonesDeFila<>(this, tabla, this::recargar, new BorrarSala(apiSalas)).agregarA(acciones);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(acciones, BorderLayout.SOUTH);
-        add(centro, BorderLayout.CENTER);
+        add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
         add(formulario(), BorderLayout.EAST);
         recargar();
     }
@@ -91,7 +89,7 @@ public final class PantallaSalas extends Pantalla {
         pareja.setToolTipText("Ej: A1,A2");
         accesibles.setToolTipText("Ej: A1,A8");
         Campos.alCambiar(distribucion, this::resumir);
-        JButton crear = new JButton("Crear sala");
+        JButton crear = Componentes.primario(new JButton("Crear sala"));
         crear.addActionListener(e -> crear());
 
         Formulario formulario = new Formulario()
@@ -107,7 +105,7 @@ public final class PantallaSalas extends Pantalla {
                 .campo("Minutos de limpieza", limpieza)
                 .ancho(Componentes.nota("Lo que hay que esperar entre dos funciones. Una sala chica se levanta más "
                         + "rápido."))
-                .ancho(crear)
+                .ancho(Componentes.aLaDerecha(crear))
                 .ancho(error)
                 .cerrar();
         return Componentes.lateral(Componentes.conBorde(formulario));
@@ -129,6 +127,8 @@ public final class PantallaSalas extends Pantalla {
     private void recargar() {
         cargar(() -> new Datos(apiSalas.obtenerSalas(), apiCatalogos.obtenerTiposSala()), datos -> {
             tabla.mostrar(datos.salas());
+            resumen.setText(cantidad(datos.salas().size(), "sala", "salas") + " · "
+                    + datos.salas().stream().mapToInt(Sala::capacidadSala).sum() + " butacas");
             if (tipo.getItemCount() == 0) {
                 datos.tipos().forEach(t -> tipo.addItem(new Opcion<>(t.nombre(),
                         etiqueta(t.nombre()) + " (×" + t.multiplicador() + ")")));

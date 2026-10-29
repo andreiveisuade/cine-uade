@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-// La barra de filtros de un listado: cada filtro con su clave de la API, un Limpiar y el conteo al final.
+// La barra de filtros de un listado: cada filtro con su clave de la API y un Limpiar; el conteo va aparte.
 // Cada filtro sabe vaciarse, así Limpiar no dispara una búsqueda por campo.
 public final class BarraFiltros extends JPanel {
 
@@ -28,7 +28,11 @@ public final class BarraFiltros extends JPanel {
 
     public BarraFiltros() {
         super(new FlujoConSalto());
-        add(conteo);
+    }
+
+    /** El «mostrando 3 de 40»: el listado lo pone junto a las acciones de la tabla, no entre los filtros. */
+    public JLabel conteo() {
+        return conteo;
     }
 
     /** Texto libre: busca cuando se deja de tipear, porque cada tecla sería un pedido. */
@@ -69,7 +73,7 @@ public final class BarraFiltros extends JPanel {
 
     /** Vuelve todo a cero sin buscar en el medio y corre {@code despues} una vez. */
     public BarraFiltros limpiar(Runnable despues) {
-        JButton limpiar = new JButton("Limpiar");
+        JButton limpiar = Componentes.deTexto(new JButton("Limpiar"));
         limpiar.addActionListener(e -> {
             enSilencio(() -> vaciadores.forEach(Runnable::run));
             esperas.forEach(Timer::stop);
@@ -103,9 +107,8 @@ public final class BarraFiltros extends JPanel {
         conteo.setText(texto);
     }
 
-    // Todo antes del conteo, que queda siempre al final.
     private void agregar(JComponent... componentes) {
-        for (JComponent componente : componentes) add(componente, getComponentCount() - 1);
+        for (JComponent componente : componentes) add(componente);
     }
 
     private void cambio() {

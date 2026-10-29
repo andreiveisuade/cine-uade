@@ -11,6 +11,11 @@ import java.util.Optional;
 record BorrarSala(ApiSalas api) implements AccionDeFila<Sala> {
 
     @Override
+    public boolean destructiva() {
+        return true;
+    }
+
+    @Override
     public String texto() {
         return "Borrar";
     }

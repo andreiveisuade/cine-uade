@@ -42,6 +42,10 @@ class PantallasTest {
         }
 
         @Override
+        public void volver() {
+        }
+
+        @Override
         public void abrirMapa(int salaId) {
         }
     };

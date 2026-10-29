@@ -1,17 +1,33 @@
 package ar.uade.cine.swing.comun;
 
+import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.UIManager;
 import java.awt.Color;
 
 // Los colores de estado y de tipo de butaca, cada uno con su par claro y oscuro; el resto sale del tema.
+// El tema son los .properties de resources/ar/uade/cine/swing/tema: los neutros y el ámbar de la web.
 public final class Colores {
+
+    private static final String TEMA = "ar.uade.cine.swing.tema";
 
     private Colores() {
     }
 
-    private static boolean oscuro() {
+    /** Pone el tema y redibuja lo abierto; lo que ya leyó un color de acá se renueva al recrear la pantalla. */
+    public static void usarTema(boolean oscuro) {
+        FlatLaf.registerCustomDefaultsSource(TEMA);
+        if (oscuro) {
+            FlatDarkLaf.setup();
+        } else {
+            FlatLightLaf.setup();
+        }
+        FlatLaf.updateUI();
+    }
+
+    public static boolean oscuro() {
         return FlatLaf.isLafDark();
     }
 
@@ -47,6 +63,12 @@ public final class Colores {
 
     public static Color fondo() {
         return UIManager.getColor("Panel.background");
+    }
+
+    /** El menú de la izquierda: un paso más hondo que la pantalla, como el costado de la web. */
+    public static Color lateral() {
+        Color color = UIManager.getColor("Cine.lateral.background");
+        return color != null ? color : fondo();
     }
 
     public static Color seleccion() {

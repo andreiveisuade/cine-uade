@@ -46,7 +46,7 @@ final class FormularioPelicula extends Seccion {
     private final JPanel panelGeneros = new JPanel(new GridLayout(0, 2));
     private final List<JCheckBox> generos = new ArrayList<>();
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
-    private final JButton guardar = new JButton("Agregar");
+    private final JButton guardar = Componentes.primario(new JButton("Agregar"));
     private final JButton cancelar = new JButton("Cancelar");
     private final JLabel error = Componentes.texto(" ");
     private Pelicula editando;
@@ -75,7 +75,7 @@ final class FormularioPelicula extends Seccion {
                 .ancho(new JLabel("Géneros (al menos uno) *"))
                 .ancho(panelGeneros)
                 .ancho(publicada)
-                .ancho(Componentes.botones(guardar, cancelar))
+                .ancho(Componentes.aLaDerecha(cancelar, guardar))
                 .ancho(error)
                 .cerrar())));
     }

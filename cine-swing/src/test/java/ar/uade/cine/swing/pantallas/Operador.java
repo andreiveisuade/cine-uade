@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.JSpinner;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -149,6 +150,16 @@ public final class Operador {
 
     public Operador clic(String texto) {
         enEdt(() -> boton(texto).doClick());
+        return this;
+    }
+
+    /** Una pestaña por su título, como «Combo» en las altas de la carta. */
+    public Operador pestana(String titulo) {
+        enEdt(() -> {
+            JTabbedPane pestanas = buscar(JTabbedPane.class, p -> p.indexOfTab(titulo) >= 0)
+                    .orElseThrow(() -> new AssertionError("No hay pestaña " + titulo));
+            pestanas.setSelectedIndex(pestanas.indexOfTab(titulo));
+        });
         return this;
     }
 

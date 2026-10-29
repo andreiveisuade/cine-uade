@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Cada forma de cobro por separado: qué muestra, si pregunta antes y qué le pide al backend. Sin ventanas. */
 class FormaDeCobroTest {
 
-    private static final Reserva RESERVA = new Reserva(7, "PENDIENTE", "ABC123", null, List.of(), 5000, null, null,
+    private static final Reserva RESERVA = new Reserva(7, "PENDIENTE", "ABC123", null, null, List.of(), 5000, null, null,
             null, null, null, true, true, List.of());
 
     private ServidorFalso servidor;

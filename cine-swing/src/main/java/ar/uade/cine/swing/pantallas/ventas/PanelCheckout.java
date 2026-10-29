@@ -36,7 +36,7 @@ final class PanelCheckout extends Seccion {
         panel.agregar(texto(checkout.codigoQr()));
         panel.agregar(new JLabel("Link de pago"));
         panel.agregar(texto(checkout.urlPago()));
-        JButton confirmar = new JButton("El cliente pagó · confirmar");
+        JButton confirmar = Componentes.primario(new JButton("El cliente pagó · confirmar"));
         confirmar.addActionListener(e -> {
             if (!confirmar("¿El cliente aprobó el pago de " + precio(checkout.monto()) + "? Se registra "
                     + "el cobro y no se puede deshacer.", "Sí, confirmar el pago")) return;

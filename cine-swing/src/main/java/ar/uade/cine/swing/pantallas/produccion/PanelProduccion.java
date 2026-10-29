@@ -48,7 +48,7 @@ public final class PanelProduccion extends JPanel {
     private final JLabel render = new JLabel(" ");
     private final JLabel aiven = new JLabel(" ");
     private final JLabel mensaje = Componentes.texto(" ");
-    private final JButton actualizar = new JButton("Actualizar");
+    private final JButton actualizar = Componentes.primario(new JButton("Actualizar"));
     private final JButton despertar = new JButton("Despertar");
     private final JButton consola = new JButton("Abrir consola de Aiven");
     private final JButton configurar = new JButton("Configurar Aiven…");

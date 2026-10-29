@@ -11,6 +11,11 @@ import java.util.Optional;
 record BorrarPelicula(ApiCartelera api) implements AccionDeFila<Pelicula> {
 
     @Override
+    public boolean destructiva() {
+        return true;
+    }
+
+    @Override
     public String texto() {
         return "Borrar";
     }

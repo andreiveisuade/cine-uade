@@ -43,11 +43,25 @@ class PantallaReservasTest {
 
     @Test
     void resumeLoQueFaltaCobrar() {
-        encargado.esperarTexto("3 reservas · 2 activas · 1 pendientes de cobro");
+        encargado.esperarTexto("3 reservas · 2 activas · 1 pendiente de cobro");
 
         assertEquals("Matrix · viernes 6 nov 20:30 · Sala 1", encargado.celda(0, "Función"));
         assertEquals("A1, A2", encargado.celda(0, "Butacas"));
-        assertEquals("Pagada · Efectivo 10:00", encargado.celda(1, "Estado"));
+        assertEquals("Vence 10:30", encargado.celda(0, "Pago"));
+        assertEquals("Pagada", encargado.celda(1, "Estado"));
+        assertEquals("Efectivo 10:00 · entró 20:10", encargado.celda(1, "Pago"));
+    }
+
+    @Test
+    void unaVencidaNoCuentaComoActiva() {
+        servidor.responder("GET /api/reservas", 200, "[" + reserva(5, "RESERVADA", true, "null") + ","
+                + reserva(8, "EXPIRADA", false, "null") + "]");
+        encargado.cerrar();
+
+        encargado = Operador.en(() -> new PantallaReservas(new ApiVentas(new ClienteHttp(servidor.url())),
+                navegacion));
+
+        encargado.esperarTexto("2 reservas · 1 activa · 1 pendiente de cobro");
     }
 
     @Test
@@ -61,7 +75,9 @@ class PantallaReservasTest {
         encargado = Operador.en(() -> new PantallaReservas(new ApiVentas(new ClienteHttp(servidor.url())),
                 navegacion));
 
-        encargado.esperarTexto("1 pendientes de cobro ($ 10.500)");
+        encargado.esperarTexto("1 pendiente de cobro ($ 10.500)");
+        assertEquals("$ 10.500", encargado.celda(0, "Total"));
+        assertEquals("1× Pochoclos", encargado.celda(0, "Candy"));
     }
 
     @Test

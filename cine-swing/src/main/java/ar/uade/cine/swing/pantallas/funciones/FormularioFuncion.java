@@ -44,7 +44,7 @@ final class FormularioFuncion extends Seccion {
         super(new BorderLayout());
         this.apiFunciones = apiFunciones;
         this.alProgramar = alProgramar;
-        JButton programar = new JButton("Programar");
+        JButton programar = Componentes.primario(new JButton("Programar"));
         programar.addActionListener(e -> programar());
         pelicula.setPrototypeDisplayValue(new Opcion<>(0, "Una película de título largo"));
         add(Componentes.lateral(Componentes.conBorde(new Formulario()
@@ -56,7 +56,7 @@ final class FormularioFuncion extends Seccion {
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
                 .obligatorio("Precio base", precioBase)
-                .ancho(programar)
+                .ancho(Componentes.aLaDerecha(programar))
                 .ancho(error)
                 .cerrar())));
     }

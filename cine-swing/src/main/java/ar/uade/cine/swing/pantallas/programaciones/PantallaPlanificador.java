@@ -53,7 +53,7 @@ public final class PantallaPlanificador extends Pantalla {
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JButton previsualizar = new JButton("Previsualizar");
-    private final JButton aplicar = new JButton("Aplicar");
+    private final JButton aplicar = Componentes.primario(new JButton("Aplicar"));
     private final ResultadoGrilla resultado = new ResultadoGrilla();
     private PropuestaGrilla propuesta;
     // Cada cambio de criterio sube la versión: una respuesta de criterios viejos se descarta al llegar.

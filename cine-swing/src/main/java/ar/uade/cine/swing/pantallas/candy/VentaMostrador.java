@@ -51,7 +51,7 @@ final class VentaMostrador extends Seccion {
         super(new BorderLayout(12, 8));
         this.apiCandy = apiCandy;
         this.apiClientes = apiClientes;
-        JButton cobrar = new JButton("Cobrar");
+        JButton cobrar = Componentes.primario(new JButton("Cobrar"));
         cobrar.addActionListener(e -> cobrar());
         medio.addActionListener(e -> refrescarCodigo());
         codigo.setToolTipText("El que da el posnet o la app (R11). En efectivo no hace falta.");

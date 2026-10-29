@@ -23,7 +23,7 @@ final class Ventas {
 
     static String reserva(int id, String estado, boolean cobrable, String pago) {
         return "{\"id\":" + id + ",\"estado\":\"" + estado + "\",\"codigo\":\"ABC" + id + "\","
-                + "\"ingresadaEn\":\"2026-11-06T20:10:00\","
+                + "\"ingresadaEn\":\"2026-11-06T20:10:00\",\"venceEn\":\"2026-11-05T10:30:00\","
                 + "\"entradas\":[{\"codigo\":\"A1\",\"tarifa\":\"GENERAL\",\"requiereAcreditacion\":false,\"precio\":5000.0},"
                 + "{\"codigo\":\"A2\",\"tarifa\":\"JUBILADO\",\"requiereAcreditacion\":true,\"precio\":2500.0}],\"total\":7500.0,"
                 + "\"funcion\":" + FUNCION + ",\"pelicula\":" + PELICULA + ",\"sala\":" + SALA + ","
@@ -38,6 +38,11 @@ final class Ventas {
         @Override
         public void ir(Destino destino) {
             visitas.add(destino.name());
+        }
+
+        @Override
+        public void volver() {
+            visitas.add("volver");
         }
 
         @Override

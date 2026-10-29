@@ -41,7 +41,7 @@ public final class PantallaImportador extends Pantalla {
     private final ButtonGroup cantidad = new ButtonGroup();
     private final Map<Integer, JRadioButton> paginas = Map.of(
             1, opcion(1), 2, opcion(2), 3, opcion(3));
-    private final JButton traer = new JButton("Traer cartelera");
+    private final JButton traer = Componentes.primario(new JButton("Traer cartelera"));
     private final JProgressBar trayendo = new JProgressBar();
     private final JLabel error = Componentes.texto(" ");
     private final Tabla<Importacion> corridas = new Tabla<>(

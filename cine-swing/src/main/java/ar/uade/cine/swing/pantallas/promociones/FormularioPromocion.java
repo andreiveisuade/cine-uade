@@ -51,7 +51,7 @@ final class FormularioPromocion extends Seccion {
     private final Map<String, JCheckBox> medios = new LinkedHashMap<>();
     private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
     private final CampoImagen imagen;
-    private final JButton guardar = new JButton("Crear promoción");
+    private final JButton guardar = Componentes.primario(new JButton("Crear promoción"));
     private final JButton cancelar = new JButton("Cancelar");
     private final JLabel error = Componentes.texto(" ");
     private Promocion editando;
@@ -84,7 +84,7 @@ final class FormularioPromocion extends Seccion {
                 .ancho(new JLabel("Medios (ninguno = cualquiera)"))
                 .ancho(panelMedios)
                 .campo("Imagen", imagen)
-                .ancho(Componentes.botones(guardar, cancelar))
+                .ancho(Componentes.aLaDerecha(cancelar, guardar))
                 .ancho(error)
                 .ancho(Componentes.nota("Las condiciones se evalúan contra el horario de la <b>función</b>, no "
                         + "contra el momento de la compra: un 2x1 de los miércoles vale para la función del miércoles "

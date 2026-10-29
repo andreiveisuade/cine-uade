@@ -52,7 +52,6 @@ class PantallaPeliculasTest {
         assertEquals("Matrix (1999)", encargado.celda(0, "Título"));
         assertEquals("Acción, Ciencia ficción", encargado.celda(0, "Géneros"));
         assertEquals("Coco", encargado.celda(1, "Título"));
-        assertEquals("—", encargado.celda(1, "Dirección"));
         assertEquals("Despublicada", encargado.celda(1, "Estado"));
     }
 

@@ -5,8 +5,8 @@ import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.fecha;
 import static ar.uade.cine.swing.comun.Formato.horaDelDia;
 import static ar.uade.cine.swing.comun.Formato.numero;
@@ -44,7 +45,9 @@ public final class PantallaPromociones extends Pantalla {
             Columna.<Promocion>de("Beneficio", PantallaPromociones::beneficio),
             Columna.<Promocion>de("Vigencia", p -> fecha(p.vigenciaDesde()) + " al " + fecha(p.vigenciaHasta())).ancho(170),
             Columna.<Promocion>de("Cuándo", PantallaPromociones::condiciones).ancho(240),
-            Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja"));
+            Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja")
+                    .conColor(p -> p.activa() ? Colores.exito() : Colores.secundario()))
+            .vacia("Todavía no hay promociones: creá la primera con el formulario de la derecha");
 
     public PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones, ApiImagenes apiImagenes) {
         super("Promociones", "No se acumulan: en cada cobro se aplica la que más descuenta.");
@@ -56,18 +59,12 @@ public final class PantallaPromociones extends Pantalla {
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarActivacionPromocion(apiPromociones));
         JButton editar = new JButton("Editar");
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
-        JPanel acciones = new JPanel(new FlujoConSalto());
-        acciones.add(editar);
+        JPanel acciones = Componentes.aLaDerecha(editar);
         botones.agregarA(acciones);
-        JPanel abajo = new JPanel(new BorderLayout(0, 4));
-        abajo.add(acciones, BorderLayout.NORTH);
-        abajo.add(Componentes.nota("Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro "
-                + "tiene que seguir existiendo para poder explicar por qué se cobró ese monto."), BorderLayout.CENTER);
-
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(resumen, BorderLayout.NORTH);
-        centro.add(tabla.conScroll(), BorderLayout.CENTER);
-        centro.add(abajo, BorderLayout.SOUTH);
+        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        centro.add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
+        centro.add(Componentes.nota("Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro "
+                + "tiene que seguir existiendo para poder explicar por qué se cobró ese monto."), BorderLayout.SOUTH);
         add(centro, BorderLayout.CENTER);
         add(formulario, BorderLayout.EAST);
 
@@ -113,7 +110,7 @@ public final class PantallaPromociones extends Pantalla {
     private void recargar() {
         cargar(() -> new Datos(apiPromociones.obtenerPromociones(), apiCatalogos.obtenerMediosPago()), datos -> {
             long activas = datos.promociones().stream().filter(Promocion::activa).count();
-            resumen.setText(activas + " activas de " + datos.promociones().size());
+            resumen.setText(cantidad((int) activas, "activa", "activas") + " de " + datos.promociones().size());
             tabla.mostrar(datos.promociones());
             formulario.llenarMedios(datos.medios());
             botones.refrescar();

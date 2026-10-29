@@ -11,6 +11,11 @@ import java.util.Optional;
 record CancelarReserva(ApiVentas api) implements AccionDeFila<Reserva> {
 
     @Override
+    public boolean destructiva() {
+        return true;
+    }
+
+    @Override
     public String texto() {
         return "Cancelar reserva";
     }

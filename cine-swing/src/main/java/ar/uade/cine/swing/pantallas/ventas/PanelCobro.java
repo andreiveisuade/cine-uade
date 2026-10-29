@@ -38,7 +38,7 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
     private final Reserva reserva;
     private final JComboBox<Opcion<MedioPago>> medio = new JComboBox<>();
     private final JLabel explicacion = Componentes.nota("");
-    private final JButton enviar = new JButton();
+    private final JButton enviar = Componentes.primario(new JButton());
     private final JLabel error = Componentes.texto(" ");
     private final JPanel checkout = new JPanel(new BorderLayout());
     private FormaDeCobro forma;
