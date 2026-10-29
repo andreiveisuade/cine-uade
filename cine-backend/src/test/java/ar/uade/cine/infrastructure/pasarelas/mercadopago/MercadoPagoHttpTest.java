@@ -119,6 +119,7 @@ class MercadoPagoHttpTest {
             credito       | CREDITO       | credit_card account_money
             qr            | QR            | account_money
             transferencia | TRANSFERENCIA | bank_transfer account_money
+            mercado pago  | MERCADO_PAGO  | credit_card debit_card prepaid_card ticket atm bank_transfer account_money digital_currency
             """)
     void laPreferenciaExcluyeLoQueNoEsElMedioPedido(String caso, MedioPago medio, String permitidos)
             throws IOException {
@@ -166,12 +167,12 @@ class MercadoPagoHttpTest {
 
     @Test
     void buscarLeeLaReservaYElMedioDelIdYElMontoDeLaPreferencia() {
-        Checkout checkout = pasarela("http://localhost:8080").buscar("25-CREDITO-99").orElseThrow();
+        Checkout checkout = pasarela("http://localhost:8080").buscar("25-MERCADO_PAGO-99").orElseThrow();
 
         assertEquals(25, checkout.reservaId());
-        assertEquals(MedioPago.CREDITO, checkout.medio());
+        assertEquals(MedioPago.MERCADO_PAGO, checkout.medio());
         assertEquals(Dinero.de(2500), checkout.monto());
-        assertTrue(pedidos.contains("GET /checkout/preferences/search?external_reference=25-CREDITO-99"), pedidos.toString());
+        assertTrue(pedidos.contains("GET /checkout/preferences/search?external_reference=25-MERCADO_PAGO-99"), pedidos.toString());
     }
 
     // R30: el candy sumado a una entrada ya paga va solo, y el id dice qué cobrar cuando vuelve.
@@ -247,6 +248,7 @@ class MercadoPagoHttpTest {
             debito en checkout de credito   | CREDITO | debit_card    | false
             saldo en checkout de credito    | CREDITO | account_money | true
             tarjeta en checkout de qr       | QR      | credit_card   | false
+            tarjeta en checkout de mp       | MERCADO_PAGO | credit_card | true
             """)
     void unAprobadoCuentaSoloConUnTipoDePagoDelMedioDelCheckout(String caso, MedioPago medio, String tipo,
             boolean cuenta) {

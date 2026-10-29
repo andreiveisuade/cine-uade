@@ -24,10 +24,9 @@ const COMBO = { id: 4, nombre: "Combo clásico", tipo: "COMBO", esCombo: true, p
   componentes: [{ productoId: 1, nombre: "Pochoclos", cantidad: 1 }] };
 const POCHOCLOS = { id: 1, nombre: "Pochoclos", tipo: "POCHOCLOS", esCombo: false, precio: 3500 };
 
-// La promo es del débito y corre solo sobre las entradas; el candy suma igual con cualquier medio.
+// La web cotiza solo Mercado Pago; la promo corre sobre las entradas y el candy suma entero.
 const cotizacion = (candy) => [
-  { medio: "DEBITO", entradas: 16000, descuento: 4800, promocionId: 3, promocion: "Miércoles 30 % OFF", candy, total: 11200 + candy },
-  { medio: "CREDITO", entradas: 16000, descuento: 0, candy, total: 16000 + candy },
+  { medio: "MERCADO_PAGO", entradas: 16000, descuento: 4800, promocionId: 3, promocion: "Miércoles 30 % OFF", candy, total: 11200 + candy },
 ];
 
 const pedido = (...items) => [{ id: 12, estado: "PENDIENTE", items: items.map(([producto, cantidad]) => ({
@@ -193,29 +192,29 @@ describe("Tu compra: el candy", () => {
 });
 
 describe("Tu compra: pagar", () => {
-  it("de entrada elige el medio que menos cuesta, y cada uno dice su total", async () => {
+  it("un solo botón de Mercado Pago con el total y la promo en el desglose, sin elegir medio", async () => {
     abrir();
 
     expect(await pagar("Pagar $ 11.200 con Mercado Pago")).toBeEnabled();
-    expect(screen.getByText("Miércoles 30 % OFF, en las entradas")).toBeInTheDocument();
+    expect(screen.getByText("Miércoles 30 % OFF")).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /Débito|Crédito/ })).not.toBeInTheDocument();
   });
 
-  it("cada Pagar abre un checkout nuevo con el medio elegido y va a Mercado Pago", async () => {
-    api.abrirCheckout.mockResolvedValue({ id: "7-CREDITO-1", urlPago: "https://pasarela/pagar/1" });
+  it("cada Pagar abre un checkout nuevo con el medio que cotizó el backend y va a Mercado Pago", async () => {
+    api.abrirCheckout.mockResolvedValue({ id: "7-MERCADO_PAGO-1", urlPago: "https://pasarela/pagar/1" });
     abrir();
 
-    await userEvent.click(await screen.findByRole("radio", { name: /Crédito/ }));
-    await userEvent.click(await pagar("Pagar $ 16.000 con Mercado Pago"));
-    await userEvent.click(await pagar("Pagar $ 16.000 con Mercado Pago"));
+    await userEvent.click(await pagar("Pagar $ 11.200 con Mercado Pago"));
+    await userEvent.click(await pagar("Pagar $ 11.200 con Mercado Pago"));
 
     expect(api.abrirCheckout).toHaveBeenCalledTimes(2);
-    expect(api.abrirCheckout).toHaveBeenCalledWith("ABCD1234", "CREDITO");
+    expect(api.abrirCheckout).toHaveBeenCalledWith("ABCD1234", "MERCADO_PAGO");
     expect(window.location.assign).toHaveBeenCalledWith("https://pasarela/pagar/1");
-    expect(JSON.parse(sessionStorage.getItem("cine.checkout"))).toEqual({ codigo: "ABCD1234", id: "7-CREDITO-1" });
+    expect(JSON.parse(sessionStorage.getItem("cine.checkout"))).toEqual({ codigo: "ABCD1234", id: "7-MERCADO_PAGO-1" });
   });
 
   it("al volver de Mercado Pago con el checkout abierto le avisa al backend y, cobrada, lleva al ticket", async () => {
-    sessionStorage.setItem("cine.checkout", JSON.stringify({ codigo: "ABCD1234", id: "7-DEBITO-1" }));
+    sessionStorage.setItem("cine.checkout", JSON.stringify({ codigo: "ABCD1234", id: "7-MERCADO_PAGO-1" }));
     api.avisarVueltaDelPago.mockResolvedValue();
     api.obtenerReservaPorCodigo.mockResolvedValueOnce(RESERVA).mockResolvedValue({ ...RESERVA, estado: "PAGADA", cobrable: false });
 
@@ -223,7 +222,7 @@ describe("Tu compra: pagar", () => {
 
     expect(await screen.findByText("en /ticket/ABCD1234")).toBeInTheDocument();
     expect(api.avisarVueltaDelPago).toHaveBeenCalledOnce();
-    expect(api.avisarVueltaDelPago).toHaveBeenCalledWith("7-DEBITO-1");
+    expect(api.avisarVueltaDelPago).toHaveBeenCalledWith("7-MERCADO_PAGO-1");
     expect(sessionStorage.getItem("cine.checkout")).toBeNull();
   });
 
@@ -240,7 +239,7 @@ describe("Tu compra: pagar", () => {
 
 describe("Tu compra: sumar candy a una entrada paga", () => {
   const PAGADA = { ...RESERVA, estado: "PAGADA", cobrable: false, cancelable: false, venceEn: undefined };
-  const soloCandy = [{ medio: "DEBITO", entradas: 0, descuento: 0, candy: 5500, total: 5500 }];
+  const soloCandy = [{ medio: "MERCADO_PAGO", entradas: 0, descuento: 0, candy: 5500, total: 5500 }];
 
   beforeEach(() => api.obtenerReservaPorCodigo.mockResolvedValue(PAGADA));
 

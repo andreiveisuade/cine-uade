@@ -34,7 +34,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
     private static final String MONEDA = "ARS";
     private static final String SOLO_CANDY = "-CANDY";
     // <reservaId>-<MEDIO>-<azar>[-CANDY]: el que arma crear. Cualquier otra referencia es de otra venta de la cuenta.
-    private static final String FORMATO_ID = "\\d{1,9}-[A-Z]+-\\d+(" + SOLO_CANDY + ")?";
+    private static final String FORMATO_ID = "\\d{1,9}-[A-Z_]+-\\d+(" + SOLO_CANDY + ")?";
     // Los payment_type_id de MP Argentina: los que no son el medio pedido van en excluded_payment_types.
     private static final List<String> TIPOS_DE_PAGO = List.of("credit_card", "debit_card", "prepaid_card",
             "ticket", "atm", "bank_transfer", "account_money", "digital_currency");
@@ -177,6 +177,7 @@ public class MercadoPagoHttp implements PasarelaPagos {
             case CREDITO -> Set.of("credit_card", "account_money");
             case QR -> Set.of("account_money");
             case TRANSFERENCIA -> Set.of("bank_transfer", "account_money");
+            case MERCADO_PAGO -> Set.copyOf(TIPOS_DE_PAGO);
             case EFECTIVO -> throw new IllegalStateException("El efectivo no abre checkout");
         };
     }

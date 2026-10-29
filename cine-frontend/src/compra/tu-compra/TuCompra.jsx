@@ -59,7 +59,6 @@ function Compra({ reserva, productos, sumar }) {
   const cotiza = !sumar || candy.hayPedido;
   const cotizacion = useCargar(() => (cotiza ? api.obtenerCotizacion(reserva.codigo) : Promise.resolve([])),
     [reserva.codigo, cotiza, guardados]);
-  const [medio, setMedio] = useState(null);
   const { pagar, pagando, error } = usePagar(reserva.codigo);
   const [abandonando, setAbandonando] = useState(false);
   const { ref: mirarPedido, inViewport: pedidoALaVista } = useInViewport();
@@ -73,14 +72,13 @@ function Compra({ reserva, productos, sumar }) {
     ahorro: items.reduce((t, i) => t + (i.ahorro ?? 0) * i.cantidad, 0),
   };
 
-  // Si no eligió, el que menos cuesta: no se acumulan promos y va la que más conviene (R15). Mientras el pedido viaja
-  // y hasta que llega la cotización nueva, cada medio muestra ya el candy nuevo (la promo no lo toca).
-  const cotizados = cotizacion.datos ?? cotizacion.previos ?? [];
-  const renglones = candy.actualizando || cotizacion.cargando
-    ? cotizados.map((c) => ({ ...c, candy: pedido.total, total: c.entradas - c.descuento + pedido.total }))
-    : cotizados;
-  const elegido = medio ?? renglones.reduce((barato, c) => (!barato || c.total < barato.total ? c : barato), null)?.medio;
-  const total = renglones.find((c) => c.medio === elegido)?.total ?? pedido.total;
+  // La web cobra con un solo medio, Mercado Pago, y el backend cotiza solo ese. Mientras el pedido viaja y hasta que
+  // llega la cotización nueva, muestra ya el candy nuevo (la promo no lo toca).
+  const cotizada = (cotizacion.datos ?? cotizacion.previos ?? [])[0];
+  const aPagar = cotizada && (candy.actualizando || cotizacion.cargando)
+    ? { ...cotizada, candy: pedido.total, total: cotizada.entradas - cotizada.descuento + pedido.total }
+    : cotizada;
+  const total = aPagar?.total ?? pedido.total;
 
   async function abandonar() {
     setAbandonando(true);
@@ -97,9 +95,9 @@ function Compra({ reserva, productos, sumar }) {
   const delPedido = { reserva, sumar, pedido, candy };
   const talon = !cotiza ? (
     <Text size="sm">Elegí algo del candy y pagalo acá: lo retirás con el QR de tu entrada.</Text>
-  ) : renglones.length ? (
-    <PagoDeLaCompra cotizacion={renglones} medio={elegido} alElegir={setMedio}
-      actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando} error={error} alPagar={pagar} />
+  ) : aPagar ? (
+    <PagoDeLaCompra cotizacion={aPagar} actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando}
+      error={error} alPagar={() => pagar(aPagar.medio)} />
   ) : <EsperaOError carga={cotizacion} />;
 
   return (

@@ -38,6 +38,8 @@ export function TarjetaPromo({ promo, destacada = false, conCondiciones = true }
             {promo.mediosPago.map((medio) => (
               <Badge key={medio} variant="default" tt="none">{etiqueta(medio)}</Badge>
             ))}
+            {/* La web cobra con Mercado Pago sin elegir medio: una promo atada a uno es solo de la boletería. */}
+            {promo.mediosPago.length > 0 && <Badge variant="default" tt="none">Solo en la boletería</Badge>}
             <Badge variant="default" tt="none">Hasta {fecha(promo.vigenciaHasta, false)}</Badge>
           </Group>
           {conCondiciones && <CondicionesPromo promo={promo} />}

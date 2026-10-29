@@ -64,10 +64,12 @@ public class CatalogoController {
         return nombres(Proyeccion.values());
     }
 
+    // Mercado Pago es solo de la web: la caja no lo ofrece ni una promo se ata a él.
     @Operation(summary = "Los medios de pago que acepta la boletería")
     @GetMapping("/api/medios-pago")
     public List<MedioPagoVistaDTO> mediosDePago() {
         return Arrays.stream(MedioPago.values())
+                .filter(m -> !m.seCobraEnLaWeb())
                 .map(m -> new MedioPagoVistaDTO(m.name(), m.requiereAutorizacion()))
                 .toList();
     }

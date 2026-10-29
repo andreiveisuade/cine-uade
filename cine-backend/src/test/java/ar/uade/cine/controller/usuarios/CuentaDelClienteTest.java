@@ -238,8 +238,8 @@ class CuentaDelClienteTest extends PruebaDeApi {
         assertThat(candy.has("medio")).isFalse();
         assertThat(pedido.json().get("total").asDouble()).as("el total sigue siendo de las entradas").isEqualTo(5000.0);
         assertThat(cotizacion.estado()).isEqualTo(200);
-        assertThat(cotizacion.json()).hasSize(4);
-        assertThat(cotizacion.json().get(0).get("medio").asText()).isEqualTo("DEBITO");
+        assertThat(cotizacion.json()).as("la web cobra solo con Mercado Pago").hasSize(1);
+        assertThat(cotizacion.json().get(0).get("medio").asText()).isEqualTo("MERCADO_PAGO");
         assertThat(cotizacion.json().get(0).get("candy").asDouble()).isEqualTo(8000.0);
         assertThat(cotizacion.json().get(0).get("total").asDouble()).isEqualTo(13000.0);
         assertThat(cotizacion.json().get(0).has("promocion")).isFalse();

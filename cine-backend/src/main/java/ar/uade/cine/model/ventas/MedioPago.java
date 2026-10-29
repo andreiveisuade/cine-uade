@@ -13,7 +13,9 @@ public enum MedioPago {
     DEBITO("débito", true),
     CREDITO("crédito", true),
     QR("QR", true),
-    TRANSFERENCIA("transferencia", true);
+    TRANSFERENCIA("transferencia", true),
+    // La web cobra solo con este: el comprador elige tarjeta o saldo adentro de Mercado Pago.
+    MERCADO_PAGO("Mercado Pago", true);
 
     // VARCHAR(50) de pago y compra_candy: pasado, MySQL rechaza el INSERT con un 500.
     private static final int LARGO_AUTORIZACION = 50;
@@ -41,6 +43,10 @@ public enum MedioPago {
 
     public boolean seCobraEnCaja() {
         return !requiereAutorizacion;
+    }
+
+    public boolean seCobraEnLaWeb() {
+        return this == MERCADO_PAGO;
     }
 
     public void exigirCheckout() {
