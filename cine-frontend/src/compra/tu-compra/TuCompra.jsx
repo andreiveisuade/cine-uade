@@ -1,18 +1,21 @@
-import { useState } from "react";
-import { Alert, Badge, Button, Grid, Paper, Stack, Text } from "@mantine/core";
+import { useRef, useState } from "react";
+import { Alert, Badge, Button, Grid, Stack, Text, VisuallyHidden } from "@mantine/core";
+import { useInViewport, useMergedRef } from "@mantine/hooks";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
-import { hora } from "@/compartido/formato.js";
+import { hora, precio } from "@/compartido/formato.js";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { avisoDe } from "@/ticket/estadoReserva.js";
 import { AlgoDulce } from "./AlgoDulce.jsx";
+import { BarraDelPedido } from "./BarraDelPedido.jsx";
 import { EntradasDeLaCompra } from "./EntradasDeLaCompra.jsx";
 import { PagoDeLaCompra } from "./PagoDeLaCompra.jsx";
+import { TuPedido } from "./TuPedido.jsx";
 import { useCandyDeLaCompra } from "./useCandyDeLaCompra.js";
 import { usePagar, useVueltaDelPago } from "./usePagar.js";
 
@@ -40,11 +43,18 @@ export function TuCompra() {
   return <Compra reserva={reserva} productos={productos} sumar={sumar} />;
 }
 
+// Nombre y precio de cada producto del pedido: de la carta, o del pedido guardado si ya no está a la venta.
+function catalogoDe(productos, reserva) {
+  const pendiente = (reserva.candy ?? []).find((c) => c.estado === "PENDIENTE");
+  const guardados = (pendiente?.items ?? []).map((i) => [i.productoId, { nombre: i.nombre, precio: i.precioUnitario, ahorro: 0 }]);
+  return new Map([...guardados, ...productos.map((p) => [p.id, p])]);
+}
+
 function Compra({ reserva, productos, sumar }) {
   const navegar = useNavigate();
   const avisar = useAvisar();
   const [guardados, setGuardados] = useState(0);
-  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1));
+  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1), (mensaje) => avisar(mensaje, "error"));
   // Paga y sin pedido no hay nada que cotizar: el backend daría 409.
   const cotiza = !sumar || candy.hayPedido;
   const cotizacion = useCargar(() => (cotiza ? api.obtenerCotizacion(reserva.codigo) : Promise.resolve([])),
@@ -52,11 +62,25 @@ function Compra({ reserva, productos, sumar }) {
   const [medio, setMedio] = useState(null);
   const { pagar, pagando, error } = usePagar(reserva.codigo);
   const [abandonando, setAbandonando] = useState(false);
+  const { ref: mirarPedido, inViewport: pedidoALaVista } = useInViewport();
+  const pedidoRef = useRef(null);
 
-  // Si no eligió, el que menos cuesta: no se acumulan promos y va la que más conviene (R15). Mientras se recotiza
-  // queda a la vista lo último que llegó.
-  const renglones = cotizacion.datos ?? cotizacion.previos ?? [];
+  const catalogo = catalogoDe(productos, reserva);
+  const items = Object.entries(candy.cantidades).map(([id, cantidad]) => ({ id: Number(id), cantidad, ...catalogo.get(Number(id)) }));
+  const pedido = {
+    items,
+    total: items.reduce((t, i) => t + i.precio * i.cantidad, 0),
+    ahorro: items.reduce((t, i) => t + (i.ahorro ?? 0) * i.cantidad, 0),
+  };
+
+  // Si no eligió, el que menos cuesta: no se acumulan promos y va la que más conviene (R15). Mientras el pedido viaja
+  // y hasta que llega la cotización nueva, cada medio muestra ya el candy nuevo (la promo no lo toca).
+  const cotizados = cotizacion.datos ?? cotizacion.previos ?? [];
+  const renglones = candy.actualizando || cotizacion.cargando
+    ? cotizados.map((c) => ({ ...c, candy: pedido.total, total: c.entradas - c.descuento + pedido.total }))
+    : cotizados;
   const elegido = medio ?? renglones.reduce((barato, c) => (!barato || c.total < barato.total ? c : barato), null)?.medio;
+  const total = renglones.find((c) => c.medio === elegido)?.total ?? pedido.total;
 
   async function abandonar() {
     setAbandonando(true);
@@ -69,6 +93,14 @@ function Compra({ reserva, productos, sumar }) {
       setAbandonando(false);
     }
   }
+
+  const delPedido = { reserva, sumar, pedido, candy };
+  const talon = !cotiza ? (
+    <Text size="sm">Elegí algo del candy y pagalo acá: lo retirás con el QR de tu entrada.</Text>
+  ) : renglones.length ? (
+    <PagoDeLaCompra cotizacion={renglones} medio={elegido} alElegir={setMedio}
+      actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando} error={error} alPagar={pagar} />
+  ) : <EsperaOError carga={cotizacion} />;
 
   return (
     <div>
@@ -87,15 +119,9 @@ function Compra({ reserva, productos, sumar }) {
           </Stack>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }} style={{ position: "sticky", top: 88 }}>
-          <Stack gap="xs">
-            {!cotiza ? (
-              <Paper withBorder p="lg">
-                <Text>Elegí algo del candy y pagalo acá: lo retirás con el QR de tu entrada.</Text>
-              </Paper>
-            ) : renglones.length ? (
-              <PagoDeLaCompra cotizacion={renglones} medio={elegido} alElegir={setMedio}
-                actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando} error={error} alPagar={pagar} />
-            ) : <EsperaOError carga={cotizacion} />}
+          <Stack gap="xs" ref={useMergedRef(pedidoRef, mirarPedido)} style={{ scrollMarginTop: 80 }}>
+            <TuPedido {...delPedido} talon={talon} />
+            <VisuallyHidden role="status" aria-live="polite">{`Total ${precio(total)}`}</VisuallyHidden>
             {sumar ? (
               <Button variant="subtle" component={Link} to={`/ticket/${reserva.codigo}`} style={{ alignSelf: "flex-start" }}>
                 Volver a la entrada
@@ -108,6 +134,8 @@ function Compra({ reserva, productos, sumar }) {
           </Stack>
         </Grid.Col>
       </Grid>
+      <BarraDelPedido {...delPedido} total={total} visible={!pedidoALaVista}
+        alIrAPagar={() => pedidoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
     </div>
   );
 }

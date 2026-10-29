@@ -1,40 +1,40 @@
-import { Badge, Button, Group, Paper, Radio, Stack, Text, Title } from "@mantine/core";
+import { Badge, Box, Button, Group, Radio, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { precio } from "@/compartido/formato.js";
 import { iconoMedio } from "@/compartido/iconos.js";
 import { MontoAnimado } from "@/compartido/ui/MontoAnimado.jsx";
+import clases from "./Candy.module.css";
 
 // Cada medio con lo que se paga con él, ya con su promo: el total lo calcula el backend, la pantalla solo lo muestra.
 export function PagoDeLaCompra({ cotizacion, medio, alElegir, actualizando, pagando, error, alPagar }) {
   const elegido = cotizacion.find((c) => c.medio === medio);
   return (
-    <Paper withBorder p="lg">
-      <Title order={2} fz="h4" mb="sm">¿Con qué pagás?</Title>
+    <Box>
+      <Title order={3} fz="h4" mb="sm">¿Con qué pagás?</Title>
       <Radio.Group value={medio} onChange={alElegir}>
-        <Stack gap="xs">
+        {/* De a dos cuando entran: los cuatro medios y el botón de pagar quedan a la vista sin bajar. */}
+        <SimpleGrid type="container" cols={{ base: 1, "330px": 2 }} spacing="xs">
           {cotizacion.map((c) => {
             const Icono = iconoMedio(c.medio);
             return (
-              <Radio.Card key={c.medio} value={c.medio} p="sm" radius="md">
-                <Group justify="space-between" wrap="nowrap" gap="sm">
-                  <Group gap="sm" wrap="nowrap">
-                    <Radio.Indicator />
-                    <Icono size={20} stroke={1.5} aria-hidden />
-                    <Stack gap={0}>
-                      <Text fw={650}>{etiqueta(c.medio)}</Text>
-                      {c.promocion && <Text size="xs" c="dimmed">{c.promocion}, en las entradas</Text>}
-                    </Stack>
+              <Radio.Card key={c.medio} value={c.medio} px="sm" py="xs" radius="md" className={clases.medio}>
+                <div className={clases.medioFila}>
+                  <Group gap="xs" wrap="nowrap">
+                    <Radio.Indicator size="sm" />
+                    <Icono size={18} stroke={1.5} aria-hidden />
+                    <Text fw={650} size="sm">{etiqueta(c.medio)}</Text>
                   </Group>
-                  <Stack gap={0} align="flex-end">
+                  <Group gap={6} align="center" wrap="nowrap">
                     <Text fw={800} className="cine-cifras">{precio(c.total)}</Text>
                     {c.descuento > 0 && <Badge color="green" variant="light" size="sm">−{precio(c.descuento)}</Badge>}
-                  </Stack>
-                </Group>
+                  </Group>
+                </div>
+                {c.promocion && <Text size="xs" c="dimmed">{c.promocion}, en las entradas</Text>}
               </Radio.Card>
             );
           })}
-        </Stack>
+        </SimpleGrid>
       </Radio.Group>
 
       {elegido && (
@@ -46,7 +46,7 @@ export function PagoDeLaCompra({ cotizacion, medio, alElegir, actualizando, paga
           {elegido.candy > 0 && <Group justify="space-between"><Text size="sm">Candy</Text><Text size="sm">{precio(elegido.candy)}</Text></Group>}
           <Group justify="space-between" align="baseline" mt={4}>
             <Text fw={650}>Total</Text>
-            <Text className="cine-display" fz={34} fw={850} lh={1}><MontoAnimado valor={elegido.total} /></Text>
+            <Text className="cine-display" fz={40} fw={850} lh={1} aria-hidden><MontoAnimado valor={elegido.total} /></Text>
           </Group>
         </Stack>
       )}
@@ -58,6 +58,6 @@ export function PagoDeLaCompra({ cotizacion, medio, alElegir, actualizando, paga
         Te llevamos a Mercado Pago y volvés acá. Si el pago no pasa, probás con otro medio sin perder las butacas.
       </Text>
       {error && <ErrorCaja>{error}</ErrorCaja>}
-    </Paper>
+    </Box>
   );
 }

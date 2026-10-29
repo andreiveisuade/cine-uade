@@ -1,0 +1,93 @@
+/* El contador ocupa lo mismo en cero que con algo: «Agregar» y «− N +» se reemplazan sin mover la tarjeta. */
+.contador {
+  --button-height: 2.25rem;
+  flex: none;
+  width: 7.25rem;
+  height: 2.25rem;
+  border-radius: var(--mantine-radius-xl);
+}
+
+.contador[data-lleno] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3px;
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-primary-color-contrast);
+}
+
+.contador[data-lleno] :global(.mantine-ActionIcon-root) { color: inherit; }
+.contador[data-lleno] :global(.mantine-ActionIcon-root):hover { background: rgb(0 0 0 / 0.12); }
+/* Sobre el ámbar el anillo de foco del sitio no se ve: adentro y del color del texto. */
+.contador[data-lleno] :focus-visible { outline-color: var(--mantine-primary-color-contrast); outline-offset: -3px; }
+.contador[data-lleno] :global(.mantine-ActionIcon-root[data-disabled]) { opacity: 0.35; cursor: not-allowed; background: none; }
+
+/* Elegido, el borde toma la luz del proyector: se ve qué ya está en el pedido sin leer los números. */
+.tarjeta {
+  container-type: inline-size;
+  height: 100%;
+  background: var(--cine-superficie);
+  border: 1px solid var(--cine-borde);
+  border-radius: var(--mantine-radius-lg);
+  overflow: hidden;
+  transition: border-color 160ms ease-out;
+}
+
+.tarjeta[data-elegido] { border-color: var(--mantine-primary-color-filled); }
+
+.combo { display: grid; height: 100%; }
+.combo .foto { aspect-ratio: 16 / 9; }
+
+@container (min-width: 30rem) {
+  .combo { grid-template-columns: minmax(0, 42%) 1fr; }
+  .combo .foto { aspect-ratio: auto; min-height: 100%; }
+}
+
+.foto { position: relative; background: var(--cine-superficie-2); }
+.foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.suelto {
+  display: grid;
+  grid-template-columns: 4.75rem 1fr;
+  gap: var(--mantine-spacing-sm);
+  align-items: center;
+  height: 100%;
+  padding: var(--mantine-spacing-sm);
+}
+
+.suelto .foto { aspect-ratio: 1; border-radius: var(--mantine-radius-md); overflow: hidden; }
+
+/* El renglón nuevo del pedido se enciende un instante con el ámbar y se apaga. Angosto va en dos líneas; en la
+   columna del pedido, en una: nombre, contador y subtotal. */
+.renglon {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "nombre subtotal" "unitario acciones";
+  align-items: center;
+  gap: 2px var(--mantine-spacing-sm);
+  padding: 6px 4px;
+  border-radius: var(--mantine-radius-md);
+}
+
+@container (min-width: 26rem) {
+  .renglon {
+    grid-template-columns: 1fr auto 5rem;
+    grid-template-areas: "nombre acciones subtotal" "unitario acciones subtotal";
+  }
+}
+
+.renglon > :nth-child(1) { grid-area: nombre; }
+.renglon > :nth-child(2) { grid-area: unitario; }
+.renglon > :nth-child(3) { grid-area: acciones; justify-self: end; }
+.renglon > :nth-child(4) { grid-area: subtotal; justify-self: end; }
+
+[data-mantine-color-scheme="light"] .ahorro { color: var(--mantine-color-green-9); }
+[data-mantine-color-scheme="dark"] .ahorro { color: var(--mantine-color-green-4); }
+
+/* Cada medio en una línea si entra; en la grilla de a dos, el total abajo del nombre, igual en los cuatro. */
+.medio { container-type: inline-size; }
+.medioFila { display: flex; flex-direction: column; gap: 4px; }
+
+@container (min-width: 16rem) {
+  .medioFila { flex-direction: row; justify-content: space-between; align-items: center; }
+}

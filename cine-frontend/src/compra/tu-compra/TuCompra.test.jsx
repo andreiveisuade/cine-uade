@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "@/api/api-http.js";
@@ -30,10 +30,16 @@ const cotizacion = (candy) => [
   { medio: "CREDITO", entradas: 16000, descuento: 0, candy, total: 16000 + candy },
 ];
 
-const conCombo = { ...RESERVA, candy: [{ id: 12, estado: "PENDIENTE", items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1, subtotal: 5500 }] }] };
+const pedido = (...items) => [{ id: 12, estado: "PENDIENTE", items: items.map(([producto, cantidad]) => ({
+  productoId: producto.id, nombre: producto.nombre, cantidad, precioUnitario: producto.precio, subtotal: producto.precio * cantidad })) }];
+const conCombo = { ...RESERVA, candy: pedido([COMBO, 1]) };
 
 const abrir = () => renderConApp(<TuCompra />, { ruta: "/compra/:codigo", en: "/compra/ABCD1234" });
 const pagar = (texto) => screen.findByRole("button", { name: texto });
+// La tarjeta de la carta y el pedido tienen el mismo contador: cada test dice cuál toca.
+const tarjeta = async (nombre) => within(await screen.findByRole("article", { name: nombre }));
+const elPedido = () => within(screen.getByRole("region", { name: "Tu pedido" }));
+const esperar = (ms) => new Promise((listo) => setTimeout(listo, ms));
 
 beforeEach(() => {
   vi.stubGlobal("location", { ...window.location, assign: vi.fn() });
@@ -81,38 +87,108 @@ describe("Tu compra: lo elegido", () => {
 });
 
 describe("Tu compra: el candy", () => {
-  it("sumar un combo manda el pedido entero y vuelve a cotizar, sin dejar pagar mientras tanto", async () => {
+  it("agregar un combo cambia el total en el acto, manda el pedido entero y no deja pagar hasta que vuelve", async () => {
     api.pedirCandy.mockResolvedValue(conCombo);
     abrir();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Sumar Combo clásico" }));
+    await userEvent.click((await tarjeta("Combo clásico")).getByRole("button", { name: "Agregar Combo clásico" }));
     api.obtenerCotizacion.mockResolvedValue(cotizacion(5500));
 
-    expect(screen.getByRole("button", { name: /^Pagar/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Pagar $ 16.700 con Mercado Pago" })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Total $ 16.700");
     await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", { 4: 1 }));
     expect(await pagar("Pagar $ 16.700 con Mercado Pago")).toBeEnabled();
-    expect(screen.getByLabelText("1 Combo clásico")).toBeInTheDocument();
+    expect((await tarjeta("Combo clásico")).getByLabelText("1 Combo clásico")).toBeInTheDocument();
+    expect(elPedido().getByText("Con los combos ahorrás $ 1.500")).toBeInTheDocument();
   });
 
   it("dos clics seguidos viajan en un solo pedido", async () => {
-    api.pedirCandy.mockResolvedValue({ ...conCombo, candy: [{ ...conCombo.candy[0], items: [{ ...conCombo.candy[0].items[0], cantidad: 2 }] }] });
+    api.pedirCandy.mockResolvedValue({ ...RESERVA, candy: pedido([COMBO, 2]) });
     abrir();
+    const combo = await tarjeta("Combo clásico");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Sumar Combo clásico" }));
-    await userEvent.click(screen.getByRole("button", { name: "Sumar otro Combo clásico" }));
+    await userEvent.click(combo.getByRole("button", { name: "Agregar Combo clásico" }));
+    await userEvent.click(combo.getByRole("button", { name: "Sumar una unidad de Combo clásico" }));
 
     await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", { 4: 2 }));
     expect(api.pedirCandy).toHaveBeenCalledOnce();
+  });
+
+  it("restar hasta cero lo saca del pedido y la tarjeta vuelve a «Agregar»", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(conCombo);
+    api.obtenerCotizacion.mockResolvedValue(cotizacion(5500));
+    api.pedirCandy.mockResolvedValue(RESERVA);
+    abrir();
+
+    await userEvent.click((await tarjeta("Combo clásico")).getByRole("button", { name: "Quitar Combo clásico" }));
+
+    expect((await tarjeta("Combo clásico")).getByRole("button", { name: "Agregar Combo clásico" })).toBeInTheDocument();
+    await waitFor(() => expect(elPedido().queryByText("Combo clásico")).not.toBeInTheDocument());
+    await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", {}));
+  });
+
+  it("desde el pedido se cambia la cantidad y se saca un producto entero", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...RESERVA, candy: pedido([COMBO, 2], [POCHOCLOS, 1]) });
+    api.obtenerCotizacion.mockResolvedValue(cotizacion(14500));
+    api.pedirCandy.mockResolvedValue({ ...RESERVA, candy: pedido([POCHOCLOS, 2]) });
+    abrir();
+
+    expect(await pagar("Pagar $ 25.700 con Mercado Pago")).toBeEnabled();
+    expect(elPedido().getByText("$ 11.000")).toBeInTheDocument();
+    await userEvent.click(elPedido().getByRole("button", { name: "Sacar Combo clásico del pedido" }));
+    await userEvent.click(elPedido().getByRole("button", { name: "Sumar una unidad de Pochoclos" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("Total $ 18.200");
+    await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", { 1: 2 }));
+  });
+
+  it("vaciar saca todo el candy de una vez", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...RESERVA, candy: pedido([COMBO, 2], [POCHOCLOS, 1]) });
+    api.obtenerCotizacion.mockResolvedValue(cotizacion(14500));
+    api.pedirCandy.mockResolvedValue(RESERVA);
+    abrir();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Vaciar el candy" }));
+
+    await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", {}));
+    expect(api.pedirCandy).toHaveBeenCalledOnce();
+    expect(await screen.findByText(/Sin candy por ahora/)).toBeInTheDocument();
+  });
+
+  it("en el tope de 20 el más no suma y dice por qué", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...RESERVA, candy: pedido([COMBO, 20]) });
+    abrir();
+    const mas = (await tarjeta("Combo clásico")).getByRole("button", { name: "Sumar una unidad de Combo clásico: llegaste al tope de 20" });
+
+    expect(mas).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(mas);
+    await userEvent.hover(mas);
+
+    expect(await screen.findByText("Hasta 20 por producto")).toBeInTheDocument();
+    await esperar(500);
+    expect(api.pedirCandy).not.toHaveBeenCalled();
   });
 
   it("si el backend lo rechaza, lo dice y vuelve a lo que había", async () => {
     api.pedirCandy.mockRejectedValue(new Error("La reserva 7 venció: sus butacas volvieron a estar disponibles"));
     abrir();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Sumar Combo clásico" }));
+    await userEvent.click((await tarjeta("Combo clásico")).getByRole("button", { name: "Agregar Combo clásico" }));
 
-    expect(await screen.findByText("La reserva 7 venció: sus butacas volvieron a estar disponibles")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sumar Combo clásico" })).toBeInTheDocument();
+    expect(await elPedido().findByText("La reserva 7 venció: sus butacas volvieron a estar disponibles")).toBeInTheDocument();
+    expect((await tarjeta("Combo clásico")).getByRole("button", { name: "Agregar Combo clásico" })).toBeInTheDocument();
+    expect(await pagar("Pagar $ 11.200 con Mercado Pago")).toBeEnabled();
+  });
+
+  it("los filtros muestran un tipo por vez, con los combos primero", async () => {
+    abrir();
+
+    const filtros = await screen.findAllByRole("radio", { name: /^(Todo|Combos|Pochoclos)$/ });
+    expect(filtros.map((f) => f.labels[0].textContent)).toEqual(["Todo", "Combos", "Pochoclos"]);
+    await userEvent.click(screen.getByRole("radio", { name: "Pochoclos" }));
+
+    expect(screen.queryByRole("article", { name: "Combo clásico" })).not.toBeInTheDocument();
+    expect(screen.getByRole("article", { name: "Pochoclos" })).toBeInTheDocument();
   });
 });
 
@@ -179,14 +255,27 @@ describe("Tu compra: sumar candy a una entrada paga", () => {
   });
 
   it("al sumar un combo cotiza solo el candy y deja pagarlo", async () => {
-    api.pedirCandy.mockResolvedValue({ ...PAGADA, candy: conCombo.candy });
+    api.pedirCandy.mockResolvedValue({ ...PAGADA, candy: pedido([COMBO, 1]) });
     api.obtenerCotizacion.mockResolvedValue(soloCandy);
     abrir();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Sumar Combo clásico" }));
+    await userEvent.click((await tarjeta("Combo clásico")).getByRole("button", { name: "Agregar Combo clásico" }));
 
     expect(await pagar("Pagar $ 5.500 con Mercado Pago")).toBeEnabled();
     // «Entradas» queda solo en la tabla de lo elegido: el desglose del pago no muestra entradas en cero.
     expect(screen.getAllByText("Entradas")).toHaveLength(1);
+  });
+
+  it("lo ya cobrado se ve aparte, con si falta retirarlo, y no se puede cambiar", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...PAGADA, candy: [
+      { id: 9, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, precioUnitario: 3500, subtotal: 7000 }] },
+    ] });
+    abrir();
+
+    const comprado = within(await screen.findByRole("group", { name: "Ya en tu entrada" }));
+    expect(comprado.getByText("2 × Pochoclos")).toBeInTheDocument();
+    expect(comprado.getByText("a retirar")).toBeInTheDocument();
+    expect(comprado.queryByRole("button")).not.toBeInTheDocument();
+    expect((await tarjeta("Pochoclos")).getByRole("button", { name: "Agregar Pochoclos" })).toBeInTheDocument();
   });
 });
